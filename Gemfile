@@ -107,7 +107,12 @@ gem "image_processing", "~> 1.2"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
+  gem 'brakeman'
+  gem "bundle-audit", "~> 0.1.0"
   gem "debug", platforms: %i[mri mingw x64_mingw]
+  gem 'rubocop-performance', require: false
+  gem 'rubocop-rails', require: false
+  gem 'rubocop-rspec', require: false
 end
 
 gem 'awesome_print'
@@ -120,16 +125,10 @@ group :development do
   gem 'bullet'
   gem "letter_opener", group: :development
   gem 'overcommit', '~> 0.58.0'
-  gem 'rubocop-performance', require: false
-  gem 'rubocop-rails', require: false
-  gem 'rubocop-rspec', require: false
   gem "web-console"
 
   gem "better_errors"
   gem "binding_of_caller"
-
-  gem 'brakeman'
-  gem "bundle-audit", "~> 0.1.0"
 
   gem 'rails-erd'
   # Add speed badges [https://github.com/MiniProfiler/rack-mini-profiler]
