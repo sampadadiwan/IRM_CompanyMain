@@ -38,16 +38,11 @@ jobs:
       RAILS_ENV: test
       DATABASE_URL: "mysql://root:root@localhost:3306/IRM_test"
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
- 
-      # Add or replace dependency steps here
-      - name: Install Ruby and gems
-        uses: ruby/setup-ruby@v1
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1.0' # Not needed with a .ruby-version file
-          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
- 
+          ruby-version: '3.1.2' # Not needed with a .ruby-version file
+          bundler-cache: true
           
       - name: Verify MySQL connection from host
         run: |
