@@ -132,19 +132,21 @@ class Holding < ApplicationRecord
   end
 
   def lapse_date
-    grant_date + option_pool.excercise_period_months.months
+    _lapsed_quantity, date = compute_lapsed_quantity
+    date
   end
 
   def days_to_lapse
-    (lapse_date - Time.zone.today).to_i
+    lapse_date ? (lapse_date - Time.zone.today).to_i : -1
   end
 
   def lapsed?
-    Time.zone.today > lapse_date
+    lapse_date ? Time.zone.today > lapse_date : false
   end
 
   def lapse
-    update(lapsed: true, lapsed_quantity: compute_lapsed_quantity, audit_comment: "Holding lapsed") if lapsed?
+    lapsed_quantity, _date = compute_lapsed_quantity
+    update(lapsed: true, lapsed_quantity:, audit_comment: "Holding lapsed") if lapsed?
   end
 
   def allowed_percentage
@@ -169,6 +171,8 @@ class Holding < ApplicationRecord
 
   def compute_lapsed_quantity
     lapsed_breakdown = []
+    first_expiry_date = nil
+
     vesting_breakdown.each do |struct|
       # excercise_period_months after the vesting date - the option expires
       struct.expiry_date = struct.vesting_date + option_pool.excercise_period_months.months
@@ -179,12 +183,15 @@ class Holding < ApplicationRecord
                                                       struct.vesting_date, struct.expiry_date).sum(:quantity)
         # This has expired
         struct.lapsed_quantity += struct.quantity - struct.excercised_quantity
+
+        first_expiry_date ||= struct.expiry_date if struct.lapsed_quantity.positive?
       end
 
       lapsed_breakdown << struct
     end
 
     Rails.logger.debug lapsed_breakdown
-    lapsed_breakdown.inject(0) { |sum, e| sum + e.lapsed_quantity }
+    qty = lapsed_breakdown.inject(0) { |sum, e| sum + e.lapsed_quantity }
+    [qty, first_expiry_date]
   end
 end
