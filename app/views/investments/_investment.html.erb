@@ -25,7 +25,6 @@
 <td>
     <%= (current_user.entity_id == investment.investee_entity_id) ? 
             link_to(investment.investor.investor_name, investment.investor) : investment.investor.investor_name %>
-    <div><span class="badge badge-info"><%= investment.category %><span></div>
 </td>  
 
 <% if !params[:prospective] %>

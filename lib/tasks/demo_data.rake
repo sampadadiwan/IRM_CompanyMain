@@ -147,7 +147,6 @@ namespace :irm do
       i = nil
       
       round = FactoryBot.create(:funding_round, entity: e)
-      scenario = Scenario.where(entity_id: e.id).first
       Entity.vcs.each do |vc|
         inv = FactoryBot.create(:investor, investee_entity: e, investor_entity: vc, tag_list: [tags.sample, tags.sample].join(","))
         puts "Investor #{inv.id}"
@@ -166,13 +165,12 @@ namespace :irm do
     Entity.startups.each do |e|
       i = nil
       round = FactoryBot.create(:funding_round, entity: e)
-      scenario = Scenario.where(entity_id: e.id).first
       Entity.vcs.each do |vc|
         inv = e.investors.not_holding.not_trust.sample
         (1..3).each do
           round = FactoryBot.create(:funding_round, entity: e) if rand(10) < 2 
           instrument = ["Equity", "Preferred"][rand(2)]
-          i = FactoryBot.build(:investment, investee_entity: e, investor: inv, investment_instrument: instrument, funding_round: round, scenario: scenario, notes: "generateFakeInvestments")
+          i = FactoryBot.build(:investment, investee_entity: e, investor: inv, investment_instrument: instrument, funding_round: round, notes: "generateFakeInvestments")
           i = SaveInvestment.call(investment: i).investment
           puts "Investment #{i.to_json}"
         end
