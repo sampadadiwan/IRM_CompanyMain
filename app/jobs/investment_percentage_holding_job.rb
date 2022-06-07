@@ -8,13 +8,20 @@ class InvestmentPercentageHoldingJob < ApplicationJob
 
         Rails.logger.debug { "InvestmentPercentageHoldingJob: Started #{entity_id}" }
 
-        # Ensure that all investments of the investee entity are adjusted for percentage
-        update_investment_percentage(entity)
-        # Ensure that all aggregate investments of the investee entity are adjusted for percentage
-        update_aggregate_percentage(entity) if entity.aggregate_investments.present?
+        begin
+          # Ensure that all investments of the investee entity are adjusted for percentage
+          update_investment_percentage(entity)
+          # Ensure that all aggregate investments of the investee entity are adjusted for percentage
+          update_aggregate_percentage(entity) if entity.aggregate_investments.present?
+        rescue StandardError => e
+          Rails.logger.debug { "InvestmentPercentageHoldingJob: Error #{e.message}" }
+        end
 
-        entity.percentage_in_progress = false
-        entity.save
+        entity.transaction do
+          entity.reload
+          entity.percentage_in_progress = false
+          entity.save
+        end
 
         Rails.logger.debug { "InvestmentPercentageHoldingJob: Completed #{entity_id}" }
       end
