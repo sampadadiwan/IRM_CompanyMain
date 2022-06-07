@@ -20,29 +20,23 @@ class AggregateInvestment < ApplicationRecord
   audited
 
   belongs_to :entity
-  delegate :actual_scenario, to: :entity
 
   has_many :investments, dependent: :destroy
 
   belongs_to :investor
   delegate :investor_name, to: :investor
 
-  # Investments which belong to the Actual scenario are the real ones
-  # All others are imaginary scenarios for planning and dont add to the real
-  belongs_to :scenario
-
   def self.for_investor(current_user, entity)
-    actual_scenario = entity.actual_scenario
-    investments = actual_scenario.aggregate_investments
-                                 # Ensure the access rights for Investment
-                                 .joins(entity: %i[investors access_rights])
-                                 .merge(AccessRight.access_filter)
-                                 # Ensure that the user is an investor and tis investor has been given access rights
-                                 .where("entities.id=?", entity.id)
-                                 .where("investors.investor_entity_id=?", current_user.entity_id)
-                                 # Ensure this user has investor access
-                                 .joins(entity: :investor_accesses)
-                                 .merge(InvestorAccess.approved_for_user(current_user))
+    investments = entity.aggregate_investments
+                        # Ensure the access rights for Investment
+                        .joins(entity: %i[investors access_rights])
+                        .merge(AccessRight.access_filter)
+                        # Ensure that the user is an investor and tis investor has been given access rights
+                        .where("entities.id=?", entity.id)
+                        .where("investors.investor_entity_id=?", current_user.entity_id)
+                        # Ensure this user has investor access
+                        .joins(entity: :investor_accesses)
+                        .merge(InvestorAccess.approved_for_user(current_user))
 
     # return investments if investments.blank?
 

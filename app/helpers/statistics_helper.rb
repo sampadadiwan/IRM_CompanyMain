@@ -12,8 +12,7 @@ module StatisticsHelper
   end
 
   def investment_diluted(entity)
-    scenario_id = current_scenario(entity)
-    investments = Investment.where(investee_entity_id: entity.id, scenario_id:,
+    investments = Investment.where(investee_entity_id: entity.id,
                                    investment_instrument: %w[Equity Preferred Options])
                             .joins(:investor).includes(:investor)
     diluted = investments.group_by { |i| i.investor.investor_name }
@@ -23,8 +22,7 @@ module StatisticsHelper
   end
 
   def investment_undiluted(entity)
-    scenario_id = current_scenario(entity)
-    investments = Investment.where(investee_entity_id: entity.id, scenario_id:,
+    investments = Investment.where(investee_entity_id: entity.id,
                                    investment_instrument: %w[Equity Preferred Options])
                             .joins(:investor).includes(:investor)
 
@@ -35,8 +33,7 @@ module StatisticsHelper
   end
 
   def investment_by_intrument(entity)
-    scenario_id = current_scenario(entity)
-    investments = Investment.where(investee_entity_id: entity.id, scenario_id:)
+    investments = Investment.where(investee_entity_id: entity.id)
                             .group_by(&:investment_instrument)
                             .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.amount_cents / 100) }] }
                             .sort_by { |_k, v| v }.reverse
@@ -65,9 +62,8 @@ module StatisticsHelper
   end
 
   def investment_by_investor(entity)
-    scenario_id = current_scenario(entity)
     # We cant use the DB, as values are encrypted
-    column_chart Investment.where(investee_entity_id: entity.id, scenario_id:)
+    column_chart Investment.where(investee_entity_id: entity.id)
                            .joins(:investor).includes(:investor).group_by { |i| i.investor.investor_name }
                            .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.amount_cents / 100) }] }
                            .sort_by { |_k, v| v }.reverse,

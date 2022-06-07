@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_07_062314) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_07_130410) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -136,10 +136,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_07_062314) do
     t.decimal "full_diluted_percentage", precision: 5, scale: 2, default: "0.0"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "scenario_id", null: false
     t.index ["entity_id"], name: "index_aggregate_investments_on_entity_id"
     t.index ["investor_id"], name: "index_aggregate_investments_on_investor_id"
-    t.index ["scenario_id"], name: "index_aggregate_investments_on_scenario_id"
   end
 
   create_table "audits", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -326,6 +324,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_07_062314) do
     t.integer "equity", default: 0
     t.integer "preferred", default: 0
     t.integer "options", default: 0
+    t.boolean "percentage_in_progress", default: false
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
@@ -562,7 +561,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_07_062314) do
     t.decimal "price_cents", precision: 20, scale: 2
     t.bigint "funding_round_id"
     t.decimal "liquidation_preference", precision: 4, scale: 2
-    t.bigint "scenario_id", null: false
     t.bigint "aggregate_investment_id"
     t.string "spv", limit: 50
     t.index ["aggregate_investment_id"], name: "index_investments_on_aggregate_investment_id"
@@ -570,7 +568,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_07_062314) do
     t.index ["funding_round_id"], name: "index_investments_on_funding_round_id"
     t.index ["investee_entity_id"], name: "index_investments_on_investee_entity_id"
     t.index ["investor_id", "investor_type"], name: "index_investments_on_investor"
-    t.index ["scenario_id"], name: "index_investments_on_scenario_id"
   end
 
   create_table "investor_accesses", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -736,19 +733,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_07_062314) do
     t.index ["name", "resource_type", "resource_id"], name: "index_roles_on_name_and_resource_type_and_resource_id"
     t.index ["name"], name: "index_roles_on_name"
     t.index ["resource_type", "resource_id"], name: "index_roles_on_resource"
-  end
-
-  create_table "scenarios", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.string "name", limit: 100
-    t.bigint "entity_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.integer "cloned_from"
-    t.datetime "deleted_at"
-    t.boolean "percentage_in_progress", default: false
-    t.integer "lock_version", default: 0
-    t.index ["deleted_at"], name: "index_scenarios_on_deleted_at"
-    t.index ["entity_id"], name: "index_scenarios_on_entity_id"
   end
 
   create_table "secondary_sales", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -925,7 +909,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_07_062314) do
   add_foreign_key "interests", "users"
   add_foreign_key "investments", "aggregate_investments"
   add_foreign_key "investments", "funding_rounds"
-  add_foreign_key "investments", "scenarios"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "offers", "entities"
@@ -936,7 +919,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_07_062314) do
   add_foreign_key "option_pools", "funding_rounds"
   add_foreign_key "payments", "entities"
   add_foreign_key "payments", "users"
-  add_foreign_key "scenarios", "entities"
   add_foreign_key "secondary_sales", "entities"
   add_foreign_key "taggings", "tags"
   add_foreign_key "valuations", "entities"

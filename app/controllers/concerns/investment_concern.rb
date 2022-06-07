@@ -12,7 +12,6 @@ module InvestmentConcern
       @investment = Investment.new(investment_params)
       @investment.investee_entity_id = current_user.entity_id
       @investment.currency = current_user.entity.currency
-      @investment.scenario_id ||= @investment.actual_scenario.id
       @investment.investment_instrument = instrument
       @investment.quantity = quantity
       @investment.price_cents = price.to_f * 100

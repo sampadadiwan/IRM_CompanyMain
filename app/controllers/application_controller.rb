@@ -40,12 +40,10 @@ class ApplicationController < ActionController::Base
   end
 
   def after_sign_out_path_for(_resource_or_scope)
-    cookies.delete(:scenario_id, domain: :all)
     request.referer
   end
 
   def after_sign_in_path_for(resource)
-    cookies.delete(:scenario_id, domain: :all)
     stored_location_for(resource) || root_path
   end
 end

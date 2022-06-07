@@ -29,7 +29,6 @@ module InvestmentCounters
   end
 
   def actual_scenario?
-    @scenario ||= scenario
-    @scenario.actual?
+    true
   end
 end

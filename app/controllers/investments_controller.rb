@@ -8,11 +8,8 @@ class InvestmentsController < ApplicationController
   def index
     @entity = current_user.entity
 
-    @investments = policy_scope(Investment).includes(:investor, :investee_entity, :scenario, :funding_round)
+    @investments = policy_scope(Investment).includes(:investor, :investee_entity, :funding_round)
 
-    scenario_id = helpers.current_scenario(@entity)
-
-    @investments = @investments.where(scenario_id:)
     @investments = @investments.where(investor_id: params[:investor_id]) if params[:investor_id]
     @investments = @investments.where(funding_round_id: params[:funding_round_id]) if params[:funding_round_id]
     @investments = @investments.where(investment_instrument: Investment::EQUITY_LIKE) if params[:equity_like]
@@ -151,6 +148,6 @@ class InvestmentsController < ApplicationController
     params.require(:investment).permit(:funding_round_id, :investor_id, :price, :notes,
                                        :investee_entity_id, :investor_type, :investment_instrument, :quantity,
                                        :category, :initial_value, :current_value, :spv,
-                                       :status, :liquidation_preference, :scenario_id)
+                                       :status, :liquidation_preference)
   end
 end

@@ -11,12 +11,12 @@ class UpdateInvestorHoldings
     end
   end
 
-  # For Actual Scenario, for Investors (Not Employees or Founders), we want to create a holding
+  # For Investors (Not Employees or Founders), we want to create a holding
   # corresponding to this investment.
   # There will be only one such Holding per investment
   def update_investor_holdings(investment)
     # Rails.logger.debug { "update_investor_holdings: investment.investor = #{investment.investor.investor_name}" }
-    if investment.scenario.actual? && !investment.investor.is_holdings_entity &&
+    if !investment.investor.is_holdings_entity &&
        Investment::EQUITY_LIKE.include?(investment.investment_instrument)
 
       holding = investment.holdings.first

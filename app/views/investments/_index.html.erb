@@ -1,22 +1,15 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
   <span>
-  <% show_scenarios ||= false %>
   <% if title == "Equity" && params[:investor_id].blank? %>
     <%= render "investments/currency_form" %>
 
     <% if current_user.entity_id == entity.id %>
     
-      <% if show_scenarios %>
-        <%#= render "investments/scenarios_form"  %>
-        <%#= link_to "Scenarios", scenarios_path, {class: "btn btn-primary", data: {toggle: "tooltip", title: "View all scenarios"} } %>
-      <% end %>
-
       <%= link_to "Aggregated View", aggregate_investments_path, {class: "btn btn-primary"} %>
 
       <%= link_to "New Investment", new_investment_path("investment[investee_entity_id]": current_user.entity_id,
-                                                      "investment[investment_instrument]": title,
-                                                      "investment[scenario_id]": current_scenario), 
+                                                      "investment[investment_instrument]": title), 
         {class: "btn btn-primary"} %>
 
       <%= link_to "Funding Rounds", funding_rounds_path, {class: "btn btn-primary"} %>

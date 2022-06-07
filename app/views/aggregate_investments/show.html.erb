@@ -79,6 +79,6 @@
     <div class="associated_entity" data-controller="investments">
       <%= render "investments/index", title: "Equity", entity: @aggregate_investment.entity,
                   investments: @aggregate_investment.
-                  investments.includes(:investor, :investee_entity, :scenario, :funding_round) %>
+                  investments.includes(:investor, :investee_entity, :funding_round) %>
     </div>
   <% end %>

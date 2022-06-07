@@ -7,10 +7,8 @@ class AggregateInvestmentsController < ApplicationController
     @aggregate_investments = policy_scope(AggregateInvestment)
 
     @entity = current_user.entity
-    scenario_id = helpers.current_scenario(@entity)
-    @aggregate_investments = @aggregate_investments.where(scenario_id:)
 
-    @aggregate_investments = @aggregate_investments.includes(:investor, :entity, :scenario)
+    @aggregate_investments = @aggregate_investments.includes(:investor, :entity)
 
     respond_to do |format|
       format.xlsx do
@@ -27,15 +25,13 @@ class AggregateInvestmentsController < ApplicationController
   end
 
   def investor_investments
-    helpers.clear_current_scenario
-
     if params[:entity_id].present?
       @entity = Entity.find(params[:entity_id])
       @aggregate_investments = AggregateInvestment.for_investor(current_user, @entity)
     end
 
     @aggregate_investments = @aggregate_investments.order(id: :desc)
-                                                   .includes(:investor, :entity, :scenario).distinct
+                                                   .includes(:investor, :entity).distinct
 
     render "index"
   end

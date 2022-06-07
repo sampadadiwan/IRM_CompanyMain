@@ -2,12 +2,6 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Investments</h1>
     <span>
-    <% show_scenarios ||= false %>
-      
-      <% if show_scenarios %>
-        <%= render "investments/scenarios_form"  %>
-        <%= link_to "Scenarios", scenarios_path, {class: "btn btn-primary"} %>
-      <% end %>
   
       <%= link_to investments_path(format: :xlsx), {class: "btn btn-success"} do %>
         <i class="fa-lg fa-regular fa-file-excel"></i> Download

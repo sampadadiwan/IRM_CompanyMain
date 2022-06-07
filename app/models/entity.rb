@@ -77,7 +77,6 @@ class Entity < ApplicationRecord
   has_many :investee_entities, through: :investees
   has_many :notes, dependent: :destroy
   has_many :folders, dependent: :destroy
-  has_many :scenarios, dependent: :destroy
 
   has_many :investor_accesses, dependent: :destroy
   has_many :access_rights, dependent: :destroy
@@ -123,11 +122,14 @@ class Entity < ApplicationRecord
     Entity.joins(:investor_accesses).where("investor_accesses.user_id=?", user.id).distinct
   end
 
-  def actual_scenario
-    scenarios.where(name: "Actual").first
-  end
-
   def trust_investor
     investors.is_trust.first
+  end
+
+  def recompute_investment_percentages(force: false)
+    count = Entity.where(id:, percentage_in_progress: false).update_all(percentage_in_progress: true)
+    InvestmentPercentageHoldingJob.perform_later(id) if count.positive? || force
+  rescue ActiveRecord::StaleObjectError => e
+    Rails.logger.info "StaleObjectError: #{e.message}"
   end
 end

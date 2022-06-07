@@ -31,7 +31,7 @@ class SetupHoldingForInvestment
                                     investor_id: employee_investor.id, employee_holdings: true,
                                     quantity: 0, price_cents: holding.price_cents,
                                     currency: holding.entity.currency, funding_round: holding.funding_round,
-                                    scenario: holding.entity.actual_scenario, notes: "Holdings Investment")
+                                    notes: "Holdings Investment")
 
         holding.investment = SaveInvestment.call(investment:).investment
       else

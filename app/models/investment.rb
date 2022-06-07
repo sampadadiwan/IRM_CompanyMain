@@ -49,10 +49,6 @@ class Investment < ApplicationRecord
   # encrypts :investment_type
   has_rich_text :notes
 
-  # Investments which belong to the Actual scenario are the real ones
-  # All others are imaginary scenarios for planning and dont add to the real
-  belongs_to :scenario
-
   belongs_to :investor
   delegate :investor_entity_id, to: :investor
   delegate :investor_name, to: :investor
@@ -63,7 +59,6 @@ class Investment < ApplicationRecord
   belongs_to :aggregate_investment, optional: true
 
   belongs_to :investee_entity, class_name: "Entity"
-  delegate :actual_scenario, to: :investee_entity
   delegate :name, to: :investee_entity, prefix: :investee
 
   has_many :holdings, dependent: :destroy
@@ -107,17 +102,16 @@ class Investment < ApplicationRecord
   end
 
   def self.for_investor(current_user, entity)
-    actual_scenario = entity.actual_scenario
-    investments = actual_scenario.investments
-                                 # Ensure the access rights for Investment
-                                 .joins(investee_entity: %i[investors access_rights])
-                                 .merge(AccessRight.access_filter)
-                                 # Ensure that the user is an investor and tis investor has been given access rights
-                                 .where("entities.id=?", entity.id)
-                                 .where("investors.investor_entity_id=?", current_user.entity_id)
-                                 # Ensure this user has investor access
-                                 .joins(investee_entity: :investor_accesses)
-                                 .merge(InvestorAccess.approved_for_user(current_user))
+    investments = entity.investments
+                        # Ensure the access rights for Investment
+                        .joins(investee_entity: %i[investors access_rights])
+                        .merge(AccessRight.access_filter)
+                        # Ensure that the user is an investor and tis investor has been given access rights
+                        .where("entities.id=?", entity.id)
+                        .where("investors.investor_entity_id=?", current_user.entity_id)
+                        # Ensure this user has investor access
+                        .joins(investee_entity: :investor_accesses)
+                        .merge(InvestorAccess.approved_for_user(current_user))
 
     # return investments if investments.blank?
 

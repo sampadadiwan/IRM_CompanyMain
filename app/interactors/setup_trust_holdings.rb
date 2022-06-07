@@ -30,8 +30,7 @@ class SetupTrustHoldings
                                   quantity: option_pool.number_of_options,
                                   price_cents: option_pool.excercise_price_cents,
                                   investment_instrument: "Options", investor_id: trust_investor.id,
-                                  funding_round_id: option_pool.funding_round_id,
-                                  scenario: option_pool.entity.actual_scenario)
+                                  funding_round_id: option_pool.funding_round_id)
 
     end
 

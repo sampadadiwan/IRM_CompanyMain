@@ -13,6 +13,5 @@ class SetupFolders
 
   def setup_root_folder(entity)
     Folder.create(name: "/", entity_id: entity.id, level: 0)
-    Scenario.create(name: "Actual", entity_id: entity.id)
   end
 end

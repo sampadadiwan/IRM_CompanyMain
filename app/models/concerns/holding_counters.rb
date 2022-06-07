@@ -71,19 +71,15 @@ module HoldingCounters
                     delta_column: 'net_unvested_quantity'
   end
 
-  def cached_scenario
-    @cached_scenario ||= investment.scenario
-  end
-
   def call_counter_cache?
-    investment && cached_scenario.actual? &&
+    investment &&
       INVESTMENT_FOR.include?(holding_type) &&
       EQUITY_LIKE.include?(investment_instrument) &&
       approved
   end
 
   def update_option_pool?
-    investment && cached_scenario.actual? &&
+    investment &&
       INVESTMENT_FOR.include?(holding_type) &&
       investment_instrument == "Options" &&
       approved

@@ -101,7 +101,6 @@ Given('given there is a investment {string} for the entity') do |arg1|
                                   funding_round: @funding_round,
                                   investment_instrument: Investment::EQUITY_LIKE[rand(3)])
   @investment.currency = @entity.currency
-  @investment.scenario = @investment.actual_scenario
   key_values(@investment, arg1)
   @investment = SaveInvestment.call(investment: @investment).investment
 
@@ -280,7 +279,7 @@ end
 Given('there are {string} investments {string}') do |count, args|
   (1..count.to_i).each do 
     i = FactoryBot.build(:investment, investee_entity: @entity, investor: Investor.not_holding.sample, 
-      funding_round: @funding_round, scenario: @entity.actual_scenario)
+      funding_round: @funding_round)
     key_values(i, args)
 
     # Hack to get the right funding round for Options
@@ -302,7 +301,6 @@ Given('the aggregate investments must be created') do
     
     agg.entity_id.should == @entity.id
     investments = Investment.where(investor_id: agg.investor_id, 
-                                   scenario_id: agg.scenario_id,
                                    investee_entity_id: agg.entity_id)
     agg.equity.should == investments.equity.sum(:quantity)
     agg.preferred.should == investments.preferred.sum(:quantity)
@@ -368,7 +366,7 @@ Given('there are {string} exisiting investments {string} from my firm in startup
     (1..count.to_i).each do 
       @investment = FactoryBot.build(:investment, investee_entity: 
           @startup_entity, investor: @investor, funding_round: @funding_round)
-      @investment.scenario = @investment.actual_scenario
+
       @investment = SaveInvestment.call(investment: @investment).investment
     end
   end
@@ -386,7 +384,6 @@ Given('there are {string} exisiting investments {string} from another firm in st
     (1..count.to_i).each do 
       @investment = FactoryBot.build(:investment, investee_entity: startup, 
                         investor: @investor, funding_round: @funding_round)
-      @investment.scenario = @investment.actual_scenario
       @investment = SaveInvestment.call(investment: @investment).investment
     end
   end

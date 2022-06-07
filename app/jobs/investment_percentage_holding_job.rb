@@ -1,31 +1,31 @@
 class InvestmentPercentageHoldingJob < ApplicationJob
   queue_as :default
 
-  def perform(scenario_id)
+  def perform(entity_id)
     Chewy.strategy(:sidekiq) do
-      scenario = Scenario.find(scenario_id)
-      if scenario.percentage_in_progress
+      entity = Entity.find(entity_id)
+      if entity.percentage_in_progress
 
-        Rails.logger.debug { "InvestmentPercentageHoldingJob: Started #{scenario_id}" }
+        Rails.logger.debug { "InvestmentPercentageHoldingJob: Started #{entity_id}" }
 
         # Ensure that all investments of the investee entity are adjusted for percentage
-        update_investment_percentage(scenario)
+        update_investment_percentage(entity)
         # Ensure that all aggregate investments of the investee entity are adjusted for percentage
-        update_aggregate_percentage(scenario) if scenario.aggregate_investments.present?
+        update_aggregate_percentage(entity) if entity.aggregate_investments.present?
 
-        scenario.percentage_in_progress = false
-        scenario.save
+        entity.percentage_in_progress = false
+        entity.save
 
-        Rails.logger.debug { "InvestmentPercentageHoldingJob: Completed #{scenario_id}" }
+        Rails.logger.debug { "InvestmentPercentageHoldingJob: Completed #{entity_id}" }
       end
     end
   end
 
   private
 
-  def update_investment_percentage(scenario)
-    equity_investments = scenario.investments.equity_or_pref
-    esop_investments = scenario.investments.options_or_esop
+  def update_investment_percentage(entity)
+    equity_investments = entity.investments.equity_or_pref
+    esop_investments = entity.investments.options_or_esop
     equity_quantity = equity_investments.sum(:quantity)
     esop_quantity = esop_investments.sum(:quantity)
 
@@ -40,8 +40,8 @@ class InvestmentPercentageHoldingJob < ApplicationJob
     )
   end
 
-  def update_aggregate_percentage(scenario)
-    all = scenario.aggregate_investments
+  def update_aggregate_percentage(entity)
+    all = entity.aggregate_investments
     equity = all.sum(:equity)
     preferred = all.sum(:preferred)
     options = all.sum(:options)
