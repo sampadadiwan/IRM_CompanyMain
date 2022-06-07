@@ -18,7 +18,8 @@ class ImportInvestorAccess
 
     Rails.logger.debug user_data
     approved = user_data["Approved"] ? user_data["Approved"].strip == "Yes" : false
-    ia = InvestorAccess.new(email: user_data["Email"], approved:,
+    ia = InvestorAccess.new(first_name: user_data["First Name"], last_name: user_data["Last Name"],
+                            email: user_data["Email"], approved:,
                             entity_id: import_upload.entity_id, investor_id: import_upload.owner_id,
                             granted_by: import_upload.user_id)
 
