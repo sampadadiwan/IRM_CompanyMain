@@ -1,6 +1,6 @@
 class AggregateInvestmentsController < ApplicationController
   before_action :set_aggregate_investment, only: %i[show edit update destroy]
-  after_action :verify_authorized, except: %i[index search investor_investments]
+  after_action :verify_authorized, except: %i[simple_simulator index search investor_investments]
 
   # GET /aggregate_investments or /aggregate_investments.json
   def index
@@ -22,6 +22,10 @@ class AggregateInvestmentsController < ApplicationController
         render template: "aggregate_investments/index", formats: [:html], pdf: "#{@entity.name} Aggregate Investments"
       end
     end
+  end
+
+  def simple_simulator
+    @entity = current_user.entity
   end
 
   def investor_investments

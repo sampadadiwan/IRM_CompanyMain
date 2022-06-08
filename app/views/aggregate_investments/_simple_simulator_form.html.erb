@@ -1,0 +1,26 @@
+<form action="/aggregate_investments/simple_simulator" method="GET">
+
+    <div class="form-group">
+        <label for="amount">Amount to be Raised</label>
+        <input class="form-control" placeholder="Expected amount to be raised" type="number" 
+            value="<%= params[:amount] %>" name="amount" id="amount">
+    </div>
+
+    <div class="form-group">
+        <label for="pre_money_valuation">Pre Money Valuation</label>
+        <input class="form-control" placeholder="Pre money valuation" type="number" 
+            value="<%= params[:pre_money_valuation] %>" name="pre_money_valuation" id="pre_money_valuation">
+    </div>
+
+
+    <div class="form-group">
+        <label for="new_investor_stake">New Investor Stake</label>
+        <input class="form-control" placeholder="New Investor Stake" type="number" value="<%= stake %>"
+            name="new_investor_stake" id="new_investor_stake" disabled>
+    </div>
+
+    <div class="form-group">
+        <input type="submit" name="commit" value="Compute" class="btn-lg btn-primary">
+    </div>
+
+</form>
