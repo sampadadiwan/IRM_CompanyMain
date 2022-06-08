@@ -77,10 +77,12 @@
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 
                                 <% if current_user && current_user.entity.logo.present? %>
-                                    <%= image_tag image_url(rails_blob_path(current_user.entity.logo)), 
-                                        class: "top_bar_logo" %>
-                                <% else %>
-                                    <span class="mr-2 d-none d-lg-inline text-gray-600 small"><%= current_user.entity.name  %></span>                                
+                                    <% if current_user.entity.logo.present? %>
+                                        <%= image_tag image_url(rails_blob_path(current_user.entity.logo)), 
+                                            class: "top_bar_logo" %>
+                                    <% else %>
+                                        <span class="mr-2 d-none d-lg-inline text-gray-600 small"><%= current_user.entity.name  %></span>                                
+                                    <% end %>
                                 <% end %>
                                 
                             </a>
