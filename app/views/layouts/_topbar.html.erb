@@ -76,7 +76,7 @@
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 
-                                <% if current_user && current_user.entity.logo.present? %>
+                                <% if current_user && current_user.entity %>
                                     <% if current_user.entity.logo.present? %>
                                         <%= image_tag image_url(rails_blob_path(current_user.entity.logo)), 
                                             class: "top_bar_logo" %>
