@@ -39,7 +39,7 @@
 
   <% end %>
 
-  <div class="form-group">
+  <div class="form-group" data-controller="directuploads">
     <%= form.label :logo %>
     <%= form.file_field :logo, class: "form-control", direct_upload: true %>
     <small class="text-muted"> 

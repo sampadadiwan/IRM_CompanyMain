@@ -124,6 +124,6 @@ class SecondarySale < ApplicationRecord
   end
 
   def to_s
-    self.name
+    name
   end
 end
