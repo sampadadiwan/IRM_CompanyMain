@@ -16,4 +16,21 @@ class ElasticImporterJob < ApplicationJob
     HoldingAuditTrailIndex.import
     ExcerciseIndex.import
   end
+
+  def reset
+    UserIndex.reset
+    EntityIndex.reset
+    InvestmentIndex.reset
+    AccessRightIndex.reset
+    DealInvestorIndex.reset
+    DocumentIndex.reset
+    HoldingIndex.reset
+    InvestorIndex.reset
+    InvestorAccessIndex.reset
+    NoteIndex.reset
+    SecondarySaleIndex.reset
+    HoldingAuditTrailIndex.reset
+    ExcerciseIndex.reset
+  end
+
 end

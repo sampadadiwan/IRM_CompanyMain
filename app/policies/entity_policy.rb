@@ -34,7 +34,7 @@ class EntityPolicy < ApplicationPolicy
   end
 
   def update?
-    user.entity_id == record.id
+    user.entity_id == record.id && user.curr_role != "holding"
   end
 
   def edit?

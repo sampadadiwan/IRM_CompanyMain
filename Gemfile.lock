@@ -1,11 +1,4 @@
 GIT
-  remote: git@github.com:jbox-web/ajax-datatables-rails.git
-  revision: f3008c6f98a2fa3f23076e02111608640efe945d
-  specs:
-    ajax-datatables-rails (1.3.1)
-      zeitwerk
-
-GIT
   remote: https://github.com/chaps-io/public_activity.git
   revision: aff5b50ff474c9434e619c0fb0f8daa6acf47655
   branch: master
@@ -659,7 +652,6 @@ DEPENDENCIES
   administrate
   administrate-field-active_storage
   administrate-field-boolean_emoji (~> 0.3.0)
-  ajax-datatables-rails!
   annotate
   audited (~> 5.0)
   awesome_print

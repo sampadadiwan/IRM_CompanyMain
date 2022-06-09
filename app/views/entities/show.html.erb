@@ -87,7 +87,7 @@
          </tr>
 
       </table>
-      <% if current_user.entity_id == @entity.id %>
+      <% if policy(@entity).edit? %>
       <div>
          <%= link_to "Edit", edit_entity_path(@entity), {class: "btn btn-primary"} %> |
          <%= link_to "View Payments", payments_path, {class: "btn btn-success"} if @entity.entity_type == "Startup" %> 

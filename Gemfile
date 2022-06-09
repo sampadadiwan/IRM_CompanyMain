@@ -62,7 +62,7 @@ gem 'wkhtmltopdf-binary-edge'
 gem "administrate"
 gem 'administrate-field-active_storage'
 gem 'administrate-field-boolean_emoji', '~> 0.3.0'
-gem 'ajax-datatables-rails', git: "git@github.com:jbox-web/ajax-datatables-rails.git"
+# gem 'ajax-datatables-rails', git: "git@github.com:jbox-web/ajax-datatables-rails.git"
 
 # For custom buckets in S3 per client
 gem "kt-paperclip", git: "https://github.com/thimmaiah/kt-paperclip.git"
