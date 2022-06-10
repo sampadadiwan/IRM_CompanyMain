@@ -211,7 +211,7 @@
       </td>
     </tr>
 
-    <% if Pundit.policy(current_user, secondary_sale).see_private_docs?  %>
+    <% if policy(secondary_sale).see_private_docs?  %>
     <tr>
       <td>
         Private Files: Viewable only by shortlisted buyers
@@ -222,5 +222,27 @@
     </tr>
     <% end %>
 
+
+    <% if policy(secondary_sale).update? || policy(secondary_sale).buyer?  %>
+    <tr>
+      <td>
+        Buyer Instructions
+      </td>
+      <td>
+        <%= render "/layouts/attachments" , attachments: secondary_sale.buyer_instructions if secondary_sale.buyer_instructions.present? %>
+      </td>
+    </tr>
+    <% end %>
+
+    <% if policy(secondary_sale).update? || policy(secondary_sale).seller?  %>
+    <tr>
+      <td>
+        Seller Instructions
+      </td>
+      <td>
+        <%= render "/layouts/attachments" , attachments: secondary_sale.seller_instructions if secondary_sale.seller_instructions.present? %>
+      </td>
+    </tr>
+    <% end %>
 
   </table>

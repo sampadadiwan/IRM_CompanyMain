@@ -38,6 +38,10 @@ class SecondarySale < ApplicationRecord
 
   belongs_to :entity
   has_many :access_rights, as: :owner, dependent: :destroy
+
+  has_many_attached :buyer_instructions, service: :amazon
+  has_many_attached :seller_instructions, service: :amazon
+
   has_many_attached :public_docs, service: :amazon
   has_many_attached :private_docs, service: :amazon
 
