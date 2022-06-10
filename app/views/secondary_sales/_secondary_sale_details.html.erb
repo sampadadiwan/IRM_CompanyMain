@@ -16,20 +16,12 @@
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#offerings-tab" data-action="click->tabdetails#loadData">Pending Offers</a>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData">Interests</a>
     
-    <% elsif current_user.has_cached_role?(:holding) %>
+    <% elsif policy(secondary_sale).seller? %>
       <% holdings_active = true %>
       <input hidden=true value="#holdings-tab" id="clickOnLoad" />
       
       <a class="nav-link <%= holdings_active ? 'active' : '' %>" data-bs-toggle="pill" data-toggle="tab" href="#holdings-tab" data-action="click->tabdetails#loadData">My Holdings</a>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#offerings-tab" data-action="click->tabdetails#loadData">My Offers</a>      
-
-    <% elsif current_user.has_cached_role?(:investor) %>
-      <% holdings_active = true %>
-      <input hidden=true value="#holdings-tab" id="clickOnLoad" />
-      
-      <a class="nav-link <%= holdings_active ? 'active' : '' %>" data-bs-toggle="pill" data-toggle="tab" href="#holdings-tab" data-action="click->tabdetails#loadData">My Holdings</a>
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#offerings-tab" data-action="click->tabdetails#loadData">My Offers</a>      
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData">My Interests</a>      
 
     <% elsif policy(secondary_sale).show_interest? %>
       <% interests_active = true %>

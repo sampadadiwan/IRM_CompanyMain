@@ -140,8 +140,8 @@ Given('employee investor should have {string} access to the sale {string}') do |
 end
 
 
-Given('employee investor has access rights to the sale') do
-  ar = AccessRight.create(owner: @sale, access_type: "SecondarySale", 
+Given('employee investor has {string} access rights to the sale') do |metadata|
+  ar = AccessRight.create(owner: @sale, access_type: "SecondarySale", metadata: metadata,
     entity: @entity, access_to_investor_id: @holdings_investor.id)
 
   
@@ -150,8 +150,8 @@ Given('employee investor has access rights to the sale') do
     
 end
 
-Given('existing investor has access rights to the sale') do
-  ar = AccessRight.create(owner: @sale, access_type: "SecondarySale", 
+Given('existing investor has {string} access rights to the sale') do |metadata|
+  ar = AccessRight.create(owner: @sale, access_type: "SecondarySale", metadata: metadata,
     entity: @entity, access_to_investor_id: @investor.id)
 
   
@@ -201,8 +201,9 @@ Given('I should not see the sale details on the details page') do
   expect(page).to have_no_content(@sale.name)
 end
 
-Given('the investor has access rights to the sale') do
-  AccessRight.create!(owner: @sale, access_to_investor_id: @investor.id, access_type: "SecondarySale", entity: @startup)
+Given('the investor has {string} access rights to the sale') do |metadata|
+  AccessRight.create!(owner: @sale, access_to_investor_id: @investor.id, metadata: metadata,
+      access_type: "SecondarySale", entity: @startup)
 end
 
 Given('there are {string} investments {string} in the startup') do |count, args|

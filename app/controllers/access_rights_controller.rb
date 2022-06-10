@@ -45,7 +45,7 @@ class AccessRightsController < ApplicationController
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
-          turbo_stream.append('new_access_right', partial: "access_rights/form", locals: { access_right: @access_right, hide_owner: true })
+          turbo_stream.append('new_access_right', partial: "access_rights/form", locals: { access_right: @access_right })
         ]
       end
       format.html

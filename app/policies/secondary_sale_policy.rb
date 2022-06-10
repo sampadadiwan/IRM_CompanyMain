@@ -20,11 +20,24 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def offer?
-    SecondarySale.for(user).where(id: record.id).present?
+    seller?
+  end
+
+  def external_sale?
+    (user.has_cached_role?(:secondary_buyer) && record.visible_externally)
+  end
+
+  def buyer?
+    SecondarySale.for(user).where("access_rights.metadata=?", "Buyer").where(id: record.id).present?
+  end
+
+  def seller?
+    SecondarySale.for(user).where("access_rights.metadata=?", "Seller").where(id: record.id).present?
   end
 
   def show_interest?
-    record.active? && user.has_cached_role?(:secondary_buyer)
+    record.active? &&
+      (buyer? || external_sale?)
   end
 
   def see_private_docs?
@@ -32,12 +45,12 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def show?
-    if user.has_cached_role?(:super) || (user.entity_id == record.entity_id && user.entity.enable_secondary_sale)
+    if user.entity_id == record.entity_id && user.entity.enable_secondary_sale
       true
     else
       record.active? &&
         (SecondarySale.for(user).where(id: record.id).present? ||
-        (user.has_cached_role?(:secondary_buyer) && record.visible_externally))
+        external_sale?)
     end
   end
 

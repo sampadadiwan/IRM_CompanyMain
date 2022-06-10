@@ -32,5 +32,4 @@ class ElasticImporterJob < ApplicationJob
     HoldingAuditTrailIndex.reset
     ExcerciseIndex.reset
   end
-
 end
