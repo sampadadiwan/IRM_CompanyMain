@@ -42,7 +42,7 @@ class OfferPolicy < ApplicationPolicy
   end
 
   def update?
-    user.id == record.user_id
+    user.id == record.user_id && !record.approved
   end
 
   def edit?
