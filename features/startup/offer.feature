@@ -8,7 +8,7 @@ Scenario Outline: See my holdings in a sale
   Given there is a FundingRound "name=Series A"
   And there is a holding "approved=true;orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
   Given there is a sale "<sale>"
-  Given I have access to the sale  
+  Given I have "Seller" access to the sale  
   And I am at the sales details page
   Then I should see only my holdings
 Examples:
@@ -25,7 +25,7 @@ Scenario Outline: Place an offer
   Given there is a FundingRound "name=Series A"
   And there is a holding "approved=true;orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
   Given there is a sale "<sale>"
-  Given I have access to the sale  
+  Given I have "Seller" access to the sale  
   And I am at the sales details page
   Then when I place an offer "<offer>"
   Then I should see the offer details
@@ -47,7 +47,7 @@ Scenario Outline: Place a wrong offer
   Given there is a FundingRound "name=Series A"
   And there is a holding "approved=true;orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
   Given there is a sale "<sale>"
-  Given I have access to the sale  
+  Given I have "Seller" access to the sale  
   And I am at the sales details page
   Then when I place an offer "<offer>"
   Then I should see the "<msg>"

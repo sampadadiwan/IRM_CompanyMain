@@ -110,9 +110,12 @@
   
 
 
-Given('I have access to the sale') do  
+Given('I have {string} access to the sale') do |metadata|
+  
   investor = Investor.where(investor_entity_id: @user.entity_id, investee_entity_id: @entity.id).first
-  ar = AccessRight.create!(entity: @entity, owner: @sale, access_type: "SecondarySale", access_to_investor_id: investor.id)
+  ar = AccessRight.create!(entity: @entity, owner: @sale, access_type: "SecondarySale", 
+          access_to_investor_id: investor.id, metadata: metadata)
+
   puts "\n####AccessRight####\n"
   puts ar.to_json
   puts "\n####InvestorAccess####\n"
