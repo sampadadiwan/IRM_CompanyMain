@@ -63,7 +63,11 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    create? && !record.finalized
+  end
+
+  def spa_upload?
+    update?
   end
 
   def make_visible?

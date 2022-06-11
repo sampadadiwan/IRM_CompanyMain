@@ -1,0 +1,33 @@
+<%= form_with(model: @secondary_sale, validate: true, id: "@secondary_sale_form") do |form| %>
+  <% if @secondary_sale.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(@secondary_sale.errors.count, "error") %> prohibited this @secondary_sale from being saved:</h2>
+
+      <ul>
+        <% @secondary_sale.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+
+  <%= form.number_field :finalized, class: "form-control", hidden: true, value: "1"  %>
+
+  <div class="field" class="form-group" data-controller="directuploads" >
+    <%= form.label :final_allocation %>
+    <%= form.file_field :final_allocation, class: "form-control", direct_upload: true, multiple:false %>
+    <small class="text-muted"> Upload final allocation for audit and to close out the sale. </small>
+  </div>
+
+  <div class="field" class="form-group" data-controller="directuploads" >
+    <%= form.label :spa, "Share Purchase Agreement" %>
+    <%= form.file_field :spa, class: "form-control", direct_upload: true, multiple:false %>
+    <small class="text-muted"> Upload SPA for audit and to close out the sale. </small>
+  </div>
+
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

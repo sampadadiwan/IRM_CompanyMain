@@ -32,6 +32,7 @@ Rails.application.routes.draw do
     get 'download', on: :member
     get 'allocate', on: :member
     get 'notify_allocation', on: :member
+    get 'spa_upload', on: :member
   end
 
   resources :holdings do

@@ -45,6 +45,9 @@ class SecondarySale < ApplicationRecord
   has_many_attached :public_docs, service: :amazon
   has_many_attached :private_docs, service: :amazon
 
+  has_one_attached :final_allocation, service: :amazon
+  has_one_attached :spa, service: :amazon
+
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy
 

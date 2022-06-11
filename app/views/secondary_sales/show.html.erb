@@ -8,7 +8,7 @@
       <%= link_to "Edit" , edit_secondary_sale_path(@secondary_sale), {class: "btn btn-primary" } %> 
 
       <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
-      <%= link_to "Download Details XL" , download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
+      <%= link_to "Download Allocations" , download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
               {class: "btn btn-success #{download_disabled}"  } if @secondary_sale.allocation_status.present? %> 
 
       <%= link_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), {class: "btn btn-success" } %> 
@@ -18,6 +18,8 @@
       <%= button_to label , make_visible_secondary_sale_path(@secondary_sale), method: :patch, class: "btn btn-success" , form_class: "deleteButton" %> 
       
       <%= button_to "Delete" , @secondary_sale, method: :delete, class: "btn btn-danger" , form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+
+      <%= link_to "Finalize" , spa_upload_secondary_sale_path(@secondary_sale), class: "btn btn-danger" ,  data: {action: "click->confirm#delete", turbo:false}  %>
       
     <% end %>
   </div>

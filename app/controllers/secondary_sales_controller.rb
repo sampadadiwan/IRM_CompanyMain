@@ -1,5 +1,5 @@
 class SecondarySalesController < ApplicationController
-  before_action :set_secondary_sale, only: %i[show edit update destroy make_visible download allocate notify_allocation]
+  before_action :set_secondary_sale, only: %i[show edit update destroy make_visible download allocate notify_allocation spa_upload]
   after_action :verify_policy_scoped, only: []
 
   # GET /secondary_sales or /secondary_sales.json
@@ -50,6 +50,8 @@ class SecondarySalesController < ApplicationController
 
   # GET /secondary_sales/1/edit
   def edit; end
+
+  def spa_upload; end
 
   def make_visible
     @secondary_sale.visible_externally = !@secondary_sale.visible_externally
@@ -134,7 +136,7 @@ class SecondarySalesController < ApplicationController
   def secondary_sale_params
     params.require(:secondary_sale).permit(:name, :entity_id, :start_date, :end_date, :final_price,
                                            :percent_allowed, :min_price, :max_price, :active, :price_type,
-                                           private_docs: [], public_docs: [], buyer_instructions: [],
-                                           seller_instructions: [])
+                                           :finalized, :spa, :final_allocation, seller_instructions: [],
+                                                                                private_docs: [], public_docs: [], buyer_instructions: [])
   end
 end

@@ -223,7 +223,7 @@
     <% end %>
 
 
-    <% if policy(secondary_sale).update? || policy(secondary_sale).buyer?  %>
+    <% if current_user.entity_id == secondary_sale.entity_id || policy(secondary_sale).buyer?  %>
     <tr>
       <td>
         Buyer Instructions
@@ -234,7 +234,7 @@
     </tr>
     <% end %>
 
-    <% if policy(secondary_sale).update? || policy(secondary_sale).seller?  %>
+    <% if current_user.entity_id == secondary_sale.entity_id || policy(secondary_sale).seller?  %>
     <tr>
       <td>
         Seller Instructions
@@ -244,5 +244,28 @@
       </td>
     </tr>
     <% end %>
+
+    <% if secondary_sale.final_allocation.present?  %>
+    <tr>
+      <td>
+        Final Allocation
+      </td>
+      <td>
+        <%= render "/layouts/attachments" , attachments: [secondary_sale.final_allocation] %>
+      </td>
+    </tr>
+    <% end %>
+    
+    <% if secondary_sale.spa.present?  %>
+    <tr>
+      <td>
+        SPA
+      </td>
+      <td>
+        <%= render "/layouts/attachments" , attachments: [secondary_sale.spa] %>
+      </td>
+    </tr>
+    <% end %>
+
 
   </table>
