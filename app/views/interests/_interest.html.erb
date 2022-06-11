@@ -38,17 +38,21 @@
   
 
   <td id="short_listed">
-    <span class="badge <%= interest.short_listed? ? 'bg-success' : 'bg-warning' %>"><%= interest.short_listed? ? "Yes" : "No" %></span>
+    <span class="badge <%= interest.short_listed? ? 'bg-success' : 'bg-warning' %>">
+      <%= interest.short_listed? ? "Yes" : "No" %>
+    </span>
   </td>
   <td id="escrow_deposited">
-    <span class="badge <%= interest.escrow_deposited? ? 'bg-success' : 'bg-warning' %>"><%= interest.escrow_deposited? ? "Yes" : "No" %></span>
+    <span class="badge <%= interest.escrow_deposited? ? 'bg-success' : 'bg-warning' %>">
+      <%= interest.escrow_deposited? ? "Yes" : "No" %>
+    </span>
   </td>
   
   <td>
     <%= link_to "Show" , interest , {class: "btn btn-primary" }%>
     <% label = interest.short_listed? ? "Remove Shortlist" : "Shortlist" %>
     <%= button_to label , short_list_interest_path(interest), method: :patch, class: "btn btn-success" , 
-      form_class: "deleteButton" if Pundit.policy(current_user, interest).short_list? %>
+      form_class: "deleteButton" if policy(interest).short_list? %>
 
   </td>
 </tr>

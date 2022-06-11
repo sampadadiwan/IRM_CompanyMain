@@ -27,7 +27,7 @@ class InterestPolicy < ApplicationPolicy
   end
 
   def create?
-    update?
+    user.id == record.user_id
   end
 
   def new?
@@ -35,11 +35,15 @@ class InterestPolicy < ApplicationPolicy
   end
 
   def update?
-    user.id == record.user_id
+    create? && !record.finalized
   end
 
   def edit?
     update?
+  end
+
+  def finalize?
+    update? && record.short_listed
   end
 
   def destroy?

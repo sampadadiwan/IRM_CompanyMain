@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_11_051351) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_11_052910) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -531,6 +531,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_11_051351) do
     t.bigint "allocation_quantity", default: 0
     t.decimal "allocation_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "allocation_percentage", precision: 5, scale: 2, default: "0.0"
+    t.boolean "finalized", default: false
     t.index ["interest_entity_id"], name: "index_interests_on_interest_entity_id"
     t.index ["offer_entity_id"], name: "index_interests_on_offer_entity_id"
     t.index ["secondary_sale_id"], name: "index_interests_on_secondary_sale_id"

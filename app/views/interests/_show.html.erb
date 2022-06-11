@@ -38,7 +38,9 @@
         Shortlisted
       </td>
       <td>
-        <%= interest.short_listed? ? "Yes" : "No" %>
+        <span class="badge <%= interest.short_listed? ? 'bg-success' : 'bg-warning' %>">
+          <%= interest.short_listed? ? "Yes" : "No" %>
+        </span>
       </td>
     </tr>
     <tr id="escrow_deposited">
@@ -46,7 +48,20 @@
         Escrow Deposited
       </td>
       <td>
-        <%= interest.escrow_deposited? ? "Yes" : "No" %>
+        <span class="badge <%= interest.escrow_deposited? ? 'bg-success' : 'bg-warning' %>">
+          <%= interest.escrow_deposited? ? "Yes" : "No" %>
+        </span>
+      </td>
+    </tr>
+
+    <tr id="finalized">
+      <td>
+        Finalized
+      </td>
+      <td>
+        <span class="badge <%= interest.finalized? ? 'bg-success' : 'bg-warning' %>">
+          <%= interest.finalized? ? "Yes" : "No" %>
+        </span>
       </td>
     </tr>
 

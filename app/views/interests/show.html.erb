@@ -1,11 +1,23 @@
   <%= render "/layouts/alerts" %>
 
+  <% if policy(@interest).finalize? %>
+    <%= render "/layouts/steps", steps: ["Review your interest details below", 
+            "Finalize your interest by clicking 'Finalize' below", 
+            "Wait for communication from #{@interest.secondary_sale.entity.name}"].freeze %>
+  <% end %>
+
+
   <%= render "/interests/show", interest: @interest %>
 
 
   <div>
     <% if policy(@interest).update? %>
-      <%= link_to "Edit" , edit_interest_path(@interest), {class: "btn btn-primary" } %> |
+      <%= link_to "Edit" , edit_interest_path(@interest), {class: "btn btn-primary" } %> 
       <%= button_to "Delete" , @interest, method: :delete, class: "btn btn-danger" , form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
     <% end %>
+
+
+    <%= button_to "Finalize" , finalize_interest_path(@interest), method: :patch, "data-turbo": false, 
+        class: "btn btn-danger", form_class: "deleteButton" if policy(@interest).finalize? %>
+
   </div>

@@ -1,5 +1,5 @@
 class InterestsController < ApplicationController
-  before_action :set_interest, only: %i[show edit update destroy short_list]
+  before_action :set_interest, only: %i[show edit update destroy short_list finalize]
 
   # GET /interests or /interests.json
   def index
@@ -66,6 +66,21 @@ class InterestsController < ApplicationController
         ]
       end
       format.html { redirect_to interest_url(@interest), notice: "Interest was successfully shortlisted." }
+      format.json { @interest.to_json }
+    end
+  end
+
+  def finalize
+    @interest.finalized = true
+    @interest.save
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace(@interest, partial: "interests/interest",
+                                          locals: { interest: @interest, secondary_sale: @interest.secondary_sale })
+        ]
+      end
+      format.html { redirect_to interest_url(@interest), notice: "Interest was successfully marked as final." }
       format.json { @interest.to_json }
     end
   end
