@@ -123,7 +123,7 @@ class Offer < ApplicationRecord
     (total_holdings_quantity * secondary_sale.percent_allowed / 100).round
   end
 
-  def spa_pdf(cleanup: true)
+  def generate_spa_pdf(cleanup: true)
     if secondary_sale.spa_template.present?
 
       # Build a template out of the SPA template

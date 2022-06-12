@@ -41,7 +41,7 @@
       </td>
       <td>
         <%= @offer.percentage %>%
-          <% if @offer.percentage > @offer.secondary_sale.percent_allowed %>
+          <% if @offer.percentage && @offer.percentage > @offer.secondary_sale.percent_allowed %>
             <div>
               <div class="badge badge-danger">Over Allowed Percentage</div>
               The current sale allows you to sell only <%= @offer.secondary_sale.percent_allowed %>% of your holdings
@@ -225,18 +225,22 @@
         </td>
       </tr>
 
-      <tr>
-        <td colspan="2" class="bg-primary"></td>
-      </tr>
       
-      <tr>
-        <td>
-          SPA
-        </td>
-        <td>
-          <%= render "/layouts/attachments" , attachments: [@offer.spa] %>
-        </td>
-      </tr>
+      <% if @offer.spa.present? %>
+
+        <tr>
+          <td colspan="2" class="bg-primary"></td>
+        </tr>      
+        <tr>
+          <td>
+            SPA
+          </td>
+          <td>
+            <%= render "/layouts/attachments" , attachments: [@offer.spa], allow_delete: "No" %>
+          </td>
+        </tr>
+
+      <% end %>
 
   </table>
 
