@@ -25,7 +25,8 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     total_offered_quantity: ObfuscatedField,
-    visible_externally: Field::BooleanEmoji
+    visible_externally: Field::BooleanEmoji,
+    seller_transaction_fees_pct: Field::Number
   }.freeze
 
   # COLLECTION_ATTRIBUTES

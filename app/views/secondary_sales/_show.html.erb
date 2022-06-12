@@ -202,47 +202,50 @@
       </td>
     </tr>
 
-    <tr>
-      <td>
-        Public Files: Viewable by all buyers
-      </td>
-      <td>
-        <%= render "/layouts/attachments" , attachments: secondary_sale.public_docs if secondary_sale.public_docs.present? %>
-      </td>
-    </tr>
-
+    
     <% if policy(secondary_sale).see_private_docs?  %>
-    <tr>
-      <td>
-        Private Files: Viewable only by shortlisted buyers
-      </td>
-      <td>
-        <%= render "/layouts/attachments" , attachments: secondary_sale.private_docs if secondary_sale.private_docs.present? %>
-      </td>
-    </tr>
+      <tr>
+        <td>
+          Private Files: Viewable only by shortlisted buyers
+        </td>
+        <td>
+          <%= render "/layouts/attachments" , attachments: secondary_sale.private_docs if secondary_sale.private_docs.present? %>
+        </td>
+      </tr>
     <% end %>
 
 
     <% if current_user.entity_id == secondary_sale.entity_id || policy(secondary_sale).buyer?  %>
-    <tr>
-      <td>
-        Buyer Instructions
-      </td>
-      <td>
-        <%= render "/layouts/attachments" , attachments: secondary_sale.buyer_instructions if secondary_sale.buyer_instructions.present? %>
-      </td>
-    </tr>
+
+      <tr>
+        <td>
+          Public Files: Viewable by all buyers
+        </td>
+        <td>
+          <%= render "/layouts/attachments" , attachments: secondary_sale.public_docs if secondary_sale.public_docs.present? %>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>
+          Buyer Instructions
+        </td>
+        <td>
+          <%= render "/layouts/attachments" , attachments: secondary_sale.buyer_instructions if secondary_sale.buyer_instructions.present? %>
+        </td>
+      </tr>
+
     <% end %>
 
     <% if current_user.entity_id == secondary_sale.entity_id || policy(secondary_sale).seller?  %>
-    <tr>
-      <td>
-        Seller Instructions
-      </td>
-      <td>
-        <%= render "/layouts/attachments" , attachments: secondary_sale.seller_instructions if secondary_sale.seller_instructions.present? %>
-      </td>
-    </tr>
+      <tr>
+        <td>
+          Seller Instructions
+        </td>
+        <td>
+          <%= render "/layouts/attachments" , attachments: secondary_sale.seller_instructions if secondary_sale.seller_instructions.present? %>
+        </td>
+      </tr>
     <% end %>
 
     <% if secondary_sale.final_allocation.present?  %>

@@ -136,7 +136,7 @@ class SecondarySalesController < ApplicationController
   def secondary_sale_params
     params.require(:secondary_sale).permit(:name, :entity_id, :start_date, :end_date, :final_price,
                                            :percent_allowed, :min_price, :max_price, :active, :price_type,
-                                           :finalized, :spa, :final_allocation, seller_instructions: [],
-                                                                                private_docs: [], public_docs: [], buyer_instructions: [])
+                                           :seller_doc_list, :finalized, :spa, :final_allocation,
+                                           seller_instructions: [], private_docs: [], public_docs: [], buyer_instructions: [])
   end
 end

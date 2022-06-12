@@ -85,6 +85,7 @@ class User < ApplicationRecord
         add_role :holding
         self.curr_role = :holding
       elsif entity.entity_type == "VC" || InvestorAccess.where(user_id: id).first.present?
+        add_role :secondary_buyer
         add_role :investor
         self.curr_role ||= :investor
       elsif ["Advisor", "Family Office"].include?(entity.entity_type)
