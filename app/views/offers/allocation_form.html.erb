@@ -1,0 +1,33 @@
+<%= turbo_frame_tag "tf_#{dom_id(@offer)}" do %>
+
+    <%= form_with(model: @offer, url: allocate_offer_path(@offer), method: "PATCH", validate: true, 
+        class: "allocation_form divTableRow #{cycle('even', 'odd')}") do |form| %>
+
+        <div class="divTableCell"><%= @offer.user&.full_name %></div>
+        <div class="divTableCell"><%= @offer.investor&.investor_name %></div>
+        <div class="divTableCell"><%= custom_format_number(@offer.quantity, params) %></div>
+        <div class="divTableCell"><%= @offer.percentage %></div>
+        <div class="divTableCell"><%= @offer.final_price %></div>
+        <div class="divTableCell"><%= money_to_currency(@offer.allocation_amount, params) %></div>
+        <div class="divTableCell"><%= @offer.approved %></div>
+        <div class="divTableCell"><%= @offer.PAN %></div>
+        <div class="divTableCell"><%= @offer.address %></div>
+        <div class="divTableCell"><%= @offer.bank_name %></div>
+        <div class="divTableCell"><%= @offer.bank_account_number %></div>
+        <div class="divTableCell"><%= @offer.bank_routing_info %></div>
+        <div class="divTableCell"><%= @offer.allocation_percentage %></div>
+        <div class="divTableCell">    
+            <%= form.number_field :allocation_quantity, class: "form-control"  %>
+        </div>
+        <div class="divTableCell">
+            <%= form.check_box :verified, class: "form-control"  %>
+        </div>
+        <div class="divTableCell">
+            <%= form.text_field :comments, class: "form-control"  %>
+        </div>
+        <div class="divTableCell">
+            <%= form.submit "Save", {class: "btn btn-primary"}%>
+        </div>
+    <% end %>
+
+<% end %>

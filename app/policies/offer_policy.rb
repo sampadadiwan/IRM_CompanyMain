@@ -45,6 +45,14 @@ class OfferPolicy < ApplicationPolicy
     user.id == record.user_id && !record.approved
   end
 
+  def allocation_form?
+    SecondarySalePolicy.new(user, record.secondary_sale).update?
+  end
+
+  def allocate?
+    SecondarySalePolicy.new(user, record.secondary_sale).update?
+  end
+
   def edit?
     update?
   end

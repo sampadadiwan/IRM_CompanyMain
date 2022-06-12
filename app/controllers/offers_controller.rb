@@ -1,5 +1,5 @@
 class OffersController < ApplicationController
-  before_action :set_offer, only: %i[show edit update destroy approve]
+  before_action :set_offer, only: %i[show edit update destroy approve allocate allocation_form]
 
   # GET /offers or /offers.json
   def index
@@ -36,6 +36,29 @@ class OffersController < ApplicationController
 
   # GET /offers/1/edit
   def edit; end
+
+  def allocate
+    @offer.allocation_quantity = offer_params[:allocation_quantity]
+    @offer.comments = offer_params[:comments]
+    @offer.verified = offer_params[:verified]
+
+    respond_to do |format|
+      if @offer.save
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.replace("tf_offer_#{@offer.id}", partial: "offers/final_offer", locals: { offer: @offer })
+          ]
+        end
+        format.html { redirect_to offer_url(@offer), notice: "Offer was successfully updated." }
+        format.json { render :show, status: :ok, location: @offer }
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @offer.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  def allocation_form; end
 
   # POST /offers or /offers.json
   def create
@@ -96,6 +119,7 @@ class OffersController < ApplicationController
     params.require(:offer).permit(:user_id, :entity_id, :secondary_sale_id, :investor_id,
                                   :holding_id, :quantity, :percentage, :notes, :first_name, :last_name,
                                   :middle_name, :PAN, :address, :bank_account_number, :bank_name,
-                                  :allocated_quantity, :acquirer_name, :bank_routing_info, :id_proof, :address_proof, additional_docs: [], signature: [], docs: [])
+                                  :comments, :verified,
+                                  :allocation_quantity, :acquirer_name, :bank_routing_info, :id_proof, :address_proof, additional_docs: [], signature: [], docs: [])
   end
 end

@@ -673,7 +673,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_12_032708) do
     t.bigint "allocation_quantity", default: 0
     t.decimal "allocation_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "allocation_percentage", precision: 5, scale: 2, default: "0.0"
-    t.integer "allocated_quantity"
     t.string "acquirer_name"
     t.boolean "verified", default: false
     t.text "comments"

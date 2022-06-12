@@ -24,6 +24,8 @@ Rails.application.routes.draw do
   resources :import_uploads
   resources :offers do
     patch 'approve', on: :member
+    patch 'allocate', on: :member
+    get   'allocation_form', on: :member
   end
 
   resources :secondary_sales do
