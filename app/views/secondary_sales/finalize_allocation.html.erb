@@ -1,9 +1,17 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Finalize Allocations</h1>
-    <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
-    <%= link_to "Download Allocations" , download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
-            {class: "btn btn-success #{download_disabled}"  } if @secondary_sale.allocation_status.present? %> 
 
+    <span>
+        <%= link_to "All Offers" , finalize_allocation_secondary_sale_path(@secondary_sale), 
+                {class: "btn btn-primary" } if @secondary_sale.allocation_status.present? %> 
+        <%= link_to "Un-Verified", finalize_allocation_secondary_sale_path(@secondary_sale, verified: false), 
+                {class: "btn btn-warning" } if @secondary_sale.allocation_status.present? %> 
+
+        <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
+        <%= link_to "Download Allocations" , download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
+                {class: "btn btn-success #{download_disabled}"  } if @secondary_sale.allocation_status.present? %> 
+
+    </span>
 </div>
 
 <div class="divTable minimalistBlack">

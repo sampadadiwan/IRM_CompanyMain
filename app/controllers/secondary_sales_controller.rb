@@ -38,8 +38,10 @@ class SecondarySalesController < ApplicationController
   end
 
   def finalize_allocation
+
     @offers = @secondary_sale.offers
-                             .with_attached_docs.with_attached_id_proof.with_attached_signature
+    @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
+    @offers = @offers.with_attached_docs.with_attached_id_proof.with_attached_signature
                              .page(params[:page]).per(params[:per_page] || 20)
   end
 
