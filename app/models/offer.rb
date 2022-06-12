@@ -56,7 +56,7 @@ class Offer < ApplicationRecord
 
   has_many_attached :docs, service: :amazon
   has_many_attached :signature, service: :amazon
-  has_many_attached :buyer_docs, service: :amazon
+  has_many_attached :seller_docs, service: :amazon
 
   delegate :quantity, to: :holding, prefix: :holding
 

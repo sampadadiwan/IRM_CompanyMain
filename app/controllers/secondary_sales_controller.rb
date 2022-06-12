@@ -1,5 +1,7 @@
 class SecondarySalesController < ApplicationController
-  before_action :set_secondary_sale, only: %i[show edit update destroy make_visible download allocate notify_allocation spa_upload]
+  before_action :set_secondary_sale, only: %i[show edit update destroy make_visible download allocate
+                                              notify_allocation spa_upload finalize_allocation]
+
   after_action :verify_policy_scoped, only: []
 
   # GET /secondary_sales or /secondary_sales.json
@@ -34,6 +36,8 @@ class SecondarySalesController < ApplicationController
   def download
     authorize @secondary_sale
   end
+
+  def finalize_allocation; end
 
   # GET /secondary_sales/1 or /secondary_sales/1.json
   def show; end

@@ -1,0 +1,18 @@
+<div class="divTableRow <%= cycle('even', 'odd') %>">
+    <div class="divTableCell"><%= offer.user&.full_name %></div>
+    <div class="divTableCell"><%= offer.investor&.investor_name %></div>
+    <div class="divTableCell"><%= custom_format_number(offer.quantity, params) %></div>
+    <div class="divTableCell"><%= offer.percentage %></div>
+    <div class="divTableCell"><%= offer.final_price %></div>
+    <div class="divTableCell"><%= offer.allocation_percentage %></div>
+    <div class="divTableCell"><%= offer.allocation_quantity %></div>
+    <div class="divTableCell"><%= money_to_currency(offer.allocation_amount, params) %></div>
+    <div class="divTableCell"><%= offer.approved %></div>
+    <div class="divTableCell"><%= offer.PAN %></div>
+    <div class="divTableCell"><%= offer.address %></div>
+    <div class="divTableCell"><%= offer.bank_name %></div>
+    <div class="divTableCell"><%= offer.bank_account_number %></div>
+    <div class="divTableCell"><%= offer.bank_routing_info %></div>
+    <div class="divTableCell"><%= offer.verified %></div>
+    <div class="divTableCell"><%= offer.comments %></div>
+</div>

@@ -33,6 +33,7 @@ Rails.application.routes.draw do
     get 'allocate', on: :member
     get 'notify_allocation', on: :member
     get 'spa_upload', on: :member
+    get 'finalize_allocation', on: :member
   end
 
   resources :holdings do

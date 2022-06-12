@@ -70,6 +70,10 @@ class SecondarySalePolicy < ApplicationPolicy
     update?
   end
 
+  def finalize_allocation?
+    update?
+  end
+
   def make_visible?
     update?
   end
