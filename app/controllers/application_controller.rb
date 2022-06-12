@@ -20,7 +20,9 @@ class ApplicationController < ActionController::Base
     devise_parameter_sanitizer.permit(:sign_up, keys: %i[first_name last_name phone role entity_id whatsapp_enabled])
   end
 
-  SEARCH_CONTROLLERS = %w[notes access_rights entities holdings excercises investors holding_audit_trails].freeze
+  SEARCH_CONTROLLERS = %w[notes access_rights entities holdings excercises investors
+                          holding_audit_trails offers].freeze
+
   def set_search_controller
     @search_controller = SEARCH_CONTROLLERS.include?(params[:controller]) ? params[:controller] : nil
   end

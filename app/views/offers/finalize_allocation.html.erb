@@ -2,9 +2,10 @@
     <h1 class="h3 mb-0 text-gray-800">Finalize Allocations</h1>
 
     <span>
-        <%= link_to "All Offers" , finalize_allocation_secondary_sale_path(@secondary_sale), 
+        <%= link_to "All Offers", offers_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
                 {class: "btn btn-primary" } if @secondary_sale.allocation_status.present? %> 
-        <%= link_to "Un-Verified", finalize_allocation_secondary_sale_path(@secondary_sale, verified: false), 
+        <%= link_to "Un-Verified", offers_path( secondary_sale_id: @secondary_sale.id, 
+                                                finalize_allocation: true, verified: false), 
                 {class: "btn btn-warning" } if @secondary_sale.allocation_status.present? %> 
 
         <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>

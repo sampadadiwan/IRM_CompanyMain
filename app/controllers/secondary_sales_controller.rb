@@ -1,6 +1,6 @@
 class SecondarySalesController < ApplicationController
   before_action :set_secondary_sale, only: %i[show edit update destroy make_visible download allocate
-                                              notify_allocation spa_upload finalize_allocation]
+                                              notify_allocation spa_upload]
 
   after_action :verify_policy_scoped, only: []
 
@@ -35,14 +35,6 @@ class SecondarySalesController < ApplicationController
 
   def download
     authorize @secondary_sale
-  end
-
-  def finalize_allocation
-
-    @offers = @secondary_sale.offers
-    @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
-    @offers = @offers.with_attached_docs.with_attached_id_proof.with_attached_signature
-                             .page(params[:page]).per(params[:per_page] || 20)
   end
 
   # GET /secondary_sales/1 or /secondary_sales/1.json

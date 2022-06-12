@@ -7,7 +7,7 @@
     <% if policy(@secondary_sale).update? %>
       <%= link_to "Edit" , edit_secondary_sale_path(@secondary_sale), {class: "btn btn-primary" } %> 
 
-      <%= link_to "Show Allocations" , finalize_allocation_secondary_sale_path(@secondary_sale), 
+      <%= link_to "Show Allocations",offers_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
               {class: "btn btn-success" } if @secondary_sale.allocation_status.present? %> 
 
       <%= link_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), {class: "btn btn-success" } %> 

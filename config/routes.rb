@@ -26,6 +26,7 @@ Rails.application.routes.draw do
     patch 'approve', on: :member
     patch 'allocate', on: :member
     get   'allocation_form', on: :member
+    get 'search', on: :collection
   end
 
   resources :secondary_sales do
@@ -35,7 +36,6 @@ Rails.application.routes.draw do
     get 'allocate', on: :member
     get 'notify_allocation', on: :member
     get 'spa_upload', on: :member
-    get 'finalize_allocation', on: :member
   end
 
   resources :holdings do

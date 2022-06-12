@@ -15,6 +15,7 @@ class ElasticImporterJob < ApplicationJob
     SecondarySaleIndex.import
     HoldingAuditTrailIndex.import
     ExcerciseIndex.import
+    OfferIndex.import
   end
 
   def reset
@@ -31,5 +32,6 @@ class ElasticImporterJob < ApplicationJob
     SecondarySaleIndex.reset
     HoldingAuditTrailIndex.reset
     ExcerciseIndex.reset
+    OfferIndex.reset
   end
 end

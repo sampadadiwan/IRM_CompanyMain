@@ -1,11 +1,42 @@
 class OffersController < ApplicationController
   before_action :set_offer, only: %i[show edit update destroy approve allocate allocation_form]
+  after_action :verify_authorized, except: %i[index search]
 
   # GET /offers or /offers.json
   def index
     @offers = policy_scope(Offer).includes(:user, :investor, :secondary_sale, :entity)
     @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
-    @offers = @offers.where(secondary_sale_id: params[:secondary_sale_id]) if params[:secondary_sale_id].present?
+    @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
+
+    if params[:secondary_sale_id].present?
+      @offers = @offers.where(secondary_sale_id: params[:secondary_sale_id])
+      @offers = @offers.with_attached_docs.with_attached_id_proof.with_attached_signature
+      @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+    end
+
+    @offers = @offers.page(params[:page]).per(params[:per_page] || 10)
+    render params[:finalize_allocation].present? ? "finalize_allocation" : "index"
+  end
+
+  def search
+    @entity = current_user.entity
+    @secondary_sale_id = params[:secondary_sale_id]
+    query = params[:query]
+
+    if query.present?
+
+      term = if @secondary_sale_id.present?
+               { entity_id: @entity.id, secondary_sale_id: @secondary_sale_id }
+             else
+               { entity_id: @entity.id }
+             end
+
+      @offers = OfferIndex.filter(term:)
+                          .query(query_string: { fields: OfferIndex::SEARCH_FIELDS,
+                                                 query:, default_operator: 'and' }).objects
+
+    end
+    render "index"
   end
 
   # GET /offers/1 or /offers/1.json
@@ -65,6 +96,7 @@ class OffersController < ApplicationController
   def create
     @offer = Offer.new(offer_params)
     @offer.user_id = current_user.id
+    @offer.entity_id = @offer.secondary_sale.entity_id
 
     authorize @offer
 
