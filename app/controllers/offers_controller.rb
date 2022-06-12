@@ -15,18 +15,23 @@ class OffersController < ApplicationController
     end
 
     @offers = @offers.page(params[:page]).per(params[:per_page] || 10)
+
     render params[:finalize_allocation].present? ? "finalize_allocation" : "index"
   end
 
   def search
     @entity = current_user.entity
-    @secondary_sale_id = params[:secondary_sale_id]
     query = params[:query]
 
     if query.present?
 
+      if params[:secondary_sale_id].present?
+        @secondary_sale_id = params[:secondary_sale_id].to_i
+        @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+      end
+
       term = if @secondary_sale_id.present?
-               { entity_id: @entity.id, secondary_sale_id: @secondary_sale_id }
+               { secondary_sale_id: @secondary_sale_id }
              else
                { entity_id: @entity.id }
              end
@@ -35,8 +40,11 @@ class OffersController < ApplicationController
                           .query(query_string: { fields: OfferIndex::SEARCH_FIELDS,
                                                  query:, default_operator: 'and' }).objects
 
+      render params[:finalize_allocation].present? ? "finalize_allocation" : "index"
+
+    else
+      redirect_to offers_path(request.parameters)
     end
-    render "index"
   end
 
   # GET /offers/1 or /offers/1.json

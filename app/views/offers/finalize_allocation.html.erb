@@ -12,6 +12,14 @@
         <%= link_to "Download Allocations" , download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
                 {class: "btn btn-success #{download_disabled}"  } if @secondary_sale.allocation_status.present? %> 
 
+        <form class="d-sm-inline-block form-inline navbar-search" action="<%= search_offers_path %>">
+            <div class="input-group">
+                <input name="query" type="text" class="form-control border-0 small" placeholder="Search for..." value="<%= params[:query] %>" aria-label="Search" aria-describedby="basic-addon2">
+                <input type="hidden" name="secondary_sale_id" value="<%= @secondary_sale.id %>">
+                <input type="hidden" name="finalize_allocation" value="true">
+            </div>
+        
+        </form>        
     </span>
 </div>
 
