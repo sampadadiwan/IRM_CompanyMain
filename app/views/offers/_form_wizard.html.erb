@@ -53,7 +53,8 @@
 
                 <div class="form-group">
                     <%= form.label :quantity %>
-                    <%= form.number_field :quantity, class: "form-control", required: true  %>
+                    <%= form.number_field :quantity, class: "form-control", 
+                        required: true, disabled: offer.approved %>
                     <small class="text-muted"><%= offer.secondary_sale.percent_allowed %>% of your <%=offer.total_holdings_quantity%> holdings is <%= offer.allowed_quantity %> units</small>
                 </div>
 

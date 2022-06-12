@@ -12,7 +12,6 @@
         <div class="divTableCell"><%= @offer.user ? @offer.user&.full_name : @offer.investor&.investor_name %></div>
         <div class="divTableCell"><%= custom_format_number(@offer.quantity, params) %></div>
         <div class="divTableCell"><%= @offer.percentage %></div>
-        <div class="divTableCell"><%= @offer.final_price %></div>
         <div class="divTableCell"><%= @offer.PAN %></div>
         <div class="divTableCell"><%= @offer.bank_name %></div>
         <div class="divTableCell"></div>
@@ -26,7 +25,7 @@
             <%= form.check_box :verified, class: "form-control"  %>
         </div>
         <div class="divTableCell">
-            <%= form.text_field :comments, class: "form-control"  %>
+            <%= form.text_area :comments, class: "form-control", rows: 2  %>
         </div>
         <div class="divTableCell">
             <%= form.submit "Save", {class: "btn btn-primary"}%>

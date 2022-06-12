@@ -9,15 +9,14 @@
     <div class="divTableCell"><%= offer.user ? offer.user&.full_name : offer.investor&.investor_name %></div>
     <div class="divTableCell"><%= custom_format_number(offer.quantity, params) %></div>
     <div class="divTableCell"><%= offer.percentage %></div>
-    <div class="divTableCell"><%= offer.final_price %></div>
     <div class="divTableCell">
         <%= offer.PAN %>
         <%= render "/layouts/attachments" , attachments: [offer.id_proof] if offer.id_proof.present? %>
     </div>
     <div class="divTableCell">
-        <%= offer.bank_name %>,
-        <%= offer.bank_account_number %>,
-        <%= offer.bank_routing_info %>
+        Name: <%= offer.bank_name %> </br>
+        Account: <%= offer.bank_account_number %> </br>
+        Routing Info: <%= offer.bank_routing_info %>
     </div>
     <div class="divTableCell">  
         Docs:
