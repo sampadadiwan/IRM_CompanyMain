@@ -18,16 +18,9 @@ class SecondarySalesController < ApplicationController
 
     query = params[:query]
     if query.present?
-      @secondary_sales = if current_user.has_role?(:super)
-
-                           SecondarySaleIndex.query(query_string: { fields: SecondarySaleIndex::SEARCH_FIELDS,
-                                                                    query:, default_operator: 'and' }).objects
-
-                         else
-                           SecondarySaleIndex.filter(term: { entity_id: @entity.id })
-                                             .query(query_string: { fields: SecondarySaleIndex::SEARCH_FIELDS,
-                                                                    query:, default_operator: 'and' }).objects
-                         end
+      @secondary_sales = SecondarySaleIndex.filter(term: { entity_id: @entity.id })
+                                           .query(query_string: { fields: SecondarySaleIndex::SEARCH_FIELDS,
+                                                                  query:, default_operator: 'and' }).objects
 
     end
     render "index"
@@ -138,7 +131,7 @@ class SecondarySalesController < ApplicationController
   def secondary_sale_params
     params.require(:secondary_sale).permit(:name, :entity_id, :start_date, :end_date, :final_price,
                                            :percent_allowed, :min_price, :max_price, :active, :price_type,
-                                           :seller_doc_list, :finalized, :spa, :final_allocation,
+                                           :seller_doc_list, :finalized, :spa, :final_allocation, :spa_template,
                                            seller_instructions: [], private_docs: [], public_docs: [], buyer_instructions: [])
   end
 end

@@ -71,7 +71,7 @@
 
     </tr>
 
-    <% if @offer.final_price> 0 %>
+    <% if @offer.final_price > 0 %>
       <tr>
         <td colspan="2" class="bg-primary"></td>
       </tr>
@@ -107,6 +107,16 @@
           <%= @offer.allocation_percentage %> %
         </td>
       </tr>
+
+      <tr>
+        <td>
+          Aquirer
+        </td>
+        <td>
+          <%= @offer.acquirer_name %> 
+        </td>
+      </tr>
+
     <% end %>
 
       <tr>
@@ -212,6 +222,19 @@
         </td>
         <td>
           <%= render "/layouts/attachments" , attachments: @offer.signature %>
+        </td>
+      </tr>
+
+      <tr>
+        <td colspan="2" class="bg-primary"></td>
+      </tr>
+      
+      <tr>
+        <td>
+          SPA
+        </td>
+        <td>
+          <%= render "/layouts/attachments" , attachments: [@offer.spa] %>
         </td>
       </tr>
 

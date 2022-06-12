@@ -57,6 +57,7 @@ class Offer < ApplicationRecord
   has_many_attached :docs, service: :amazon
   has_many_attached :signature, service: :amazon
   has_many_attached :seller_docs, service: :amazon
+  has_one_attached  :spa, service: :amazon
 
   delegate :quantity, to: :holding, prefix: :holding
 
@@ -120,5 +121,30 @@ class Offer < ApplicationRecord
   def allowed_quantity
     # holding users total holding amount
     (total_holdings_quantity * secondary_sale.percent_allowed / 100).round
+  end
+
+  def spa_pdf(cleanup: true)
+    if secondary_sale.spa_template.present?
+
+      # Build a template out of the SPA template
+      offer = self
+      template = HTMLEntities.new.decode(secondary_sale.spa_template.body.to_html)
+      html = ERB.new(template).result(binding)
+
+      # Create a PDF out of it
+      pdf = WickedPdf.new.pdf_from_string(html)
+      file_name = "Offer_#{id}_SPA.pdf"
+      save_path = Rails.root.join('tmp', file_name)
+      File.open(save_path, 'wb') do |file|
+        file << pdf
+      end
+
+      # Attach it to the offer
+      spa.attach(io: File.open("tmp/#{file_name}"), filename: file_name)
+
+      # Cleanup
+      File.delete("tmp/#{file_name}") if File.exist?("tmp/#{file_name}") && cleanup
+
+    end
   end
 end

@@ -47,6 +47,7 @@ class SecondarySale < ApplicationRecord
 
   has_one_attached :final_allocation, service: :amazon
   has_one_attached :spa, service: :amazon
+  has_rich_text :spa_template
 
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy
