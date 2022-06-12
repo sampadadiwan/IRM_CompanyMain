@@ -1,20 +1,31 @@
 <%= turbo_frame_tag "tf_#{dom_id(offer)}", class: "divTableRow #{cycle('even', 'odd')}" do %>
 
-    <div class="divTableCell"><%= offer.user&.full_name %></div>
-    <div class="divTableCell">o <%= offer.investor&.investor_name %></div>
-    <div class="divTableCell"><%= custom_format_number(offer.quantity, params) %></div>
-    <div class="divTableCell"><%= offer.percentage %></div>
-    <div class="divTableCell"><%= offer.final_price %></div>
     <div class="divTableCell">
         <span class="badge <%= offer.approved ? 'bg-success' : 'bg-warning' %>">
             <%= offer.approved ?  "Yes" : "No" %>
         </span>
     </div>
-    <div class="divTableCell"><%= offer.PAN %></div>
-    <div class="divTableCell"><%= offer.address %></div>
-    <div class="divTableCell"><%= offer.bank_name %></div>
-    <div class="divTableCell"><%= offer.bank_account_number %></div>
-    <div class="divTableCell"><%= offer.bank_routing_info %></div>
+
+    <div class="divTableCell"><%= offer.user ? offer.user&.full_name : offer.investor&.investor_name %></div>
+    <div class="divTableCell"><%= custom_format_number(offer.quantity, params) %></div>
+    <div class="divTableCell"><%= offer.percentage %></div>
+    <div class="divTableCell"><%= offer.final_price %></div>
+    <div class="divTableCell">
+        <%= offer.PAN %>
+        <%= render "/layouts/attachments" , attachments: [offer.id_proof] if offer.id_proof.present? %>
+    </div>
+    <div class="divTableCell">
+        <%= offer.bank_name %>,
+        <%= offer.bank_account_number %>,
+        <%= offer.bank_routing_info %>
+    </div>
+    <div class="divTableCell">  
+        Docs:
+        <%= render "/layouts/attachments" , attachments: offer.docs %>
+        Signature:
+        <%= render "/layouts/attachments" , attachments: offer.signature if offer.signature.present? %>
+    </div>
+
     <div class="divTableCell"><%= money_to_currency(offer.allocation_amount, params) %></div>
     <div class="divTableCell"><%= offer.allocation_percentage %></div>
     <div class="divTableCell"><%= offer.allocation_quantity %></div>
@@ -25,7 +36,7 @@
     </div>
     <div class="divTableCell"><%= offer.comments %></div>
     <div class="divTableCell">
-        <%= link_to "Show", offer, class: "btn btn-primary" %>
+        <%= link_to "Show", offer, class: "btn btn-primary", target: '_top' %>
         <%= link_to "Edit", allocation_form_offer_path(offer), data: { turbo_frame: "tf_#{dom_id(offer)}" }, class: "btn btn-success" %>
     </div>
 
