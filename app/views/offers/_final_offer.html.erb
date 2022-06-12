@@ -31,6 +31,7 @@
     <div class="divTableCell"><%= money_to_currency(offer.allocation_amount, params) %></div>
     <div class="divTableCell"><%= offer.allocation_percentage %></div>
     <div class="divTableCell"><%= offer.allocation_quantity %></div>
+    <div class="divTableCell"><%= offer.acquirer_name %></div>
     <div class="divTableCell">
         <span class="badge <%= offer.verified ? 'bg-success' : 'bg-warning' %>">
             <%= offer.verified ?  "Yes" : "No" %>

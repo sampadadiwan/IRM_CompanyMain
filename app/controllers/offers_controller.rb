@@ -81,6 +81,7 @@ class OffersController < ApplicationController
     @offer.comments = offer_params[:comments]
     @offer.verified = offer_params[:verified]
     @offer.approved = offer_params[:approved]
+    @offer.acquirer_name = offer_params[:acquirer_name]
 
     respond_to do |format|
       if @offer.save
