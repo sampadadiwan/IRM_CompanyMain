@@ -15,7 +15,8 @@ class HoldingsController < ApplicationController
     @holdings = @holdings.where(funding_round_id: params[:funding_round_id]) if params[:funding_round_id].present?
     @holdings = @holdings.where(holding_type: params[:holding_type]) if params[:holding_type].present?
     @holdings = @holdings.where(investment_instrument: params[:investment_instrument]) if params[:investment_instrument].present?
-    @holdings = @holdings.limit params[:limit] if params[:limit]
+
+    @holdings = @holdings.page params[:page]
   end
 
   def search

@@ -37,7 +37,9 @@ class SecondarySalesController < ApplicationController
     authorize @secondary_sale
   end
 
-  def finalize_allocation; end
+  def finalize_allocation
+    @offers = @secondary_sale.offers.page(params[:page]).per(params[:per_page] || 20)
+  end
 
   # GET /secondary_sales/1 or /secondary_sales/1.json
   def show; end

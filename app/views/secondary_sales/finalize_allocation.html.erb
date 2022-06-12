@@ -1,3 +1,11 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Finalize Allocations</h1>
+    <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
+    <%= link_to "Download Allocations" , download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
+            {class: "btn btn-success #{download_disabled}"  } if @secondary_sale.allocation_status.present? %> 
+
+</div>
+
 <div class="divTable minimalistBlack">
     <div class="divTableHeading datatable jqDataTable">
         <div class="divTableRow thead">
@@ -20,7 +28,7 @@
         </div>
     </div>
     <div class="divTableBody tbody">
-        <% @secondary_sale.offers.each do |offer| %>
+        <% @offers.each do |offer| %>
             <%= render "offers/final_offer", offer: offer %>
         <% end %>        
     </div>
@@ -41,4 +49,6 @@
             <div class="divTableCell">foot5</div>
         </div>
     </div>
+
 </div>
+<%=paginate @offers %>

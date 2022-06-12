@@ -7,9 +7,6 @@
     <% if policy(@secondary_sale).update? %>
       <%= link_to "Edit" , edit_secondary_sale_path(@secondary_sale), {class: "btn btn-primary" } %> 
 
-      <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
-      <%= link_to "Download Allocations" , download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
-              {class: "btn btn-success #{download_disabled}"  } if @secondary_sale.allocation_status.present? %> 
 
       <%= link_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), {class: "btn btn-success" } %> 
       <%= link_to "Send Allocation Notification" , notify_allocation_secondary_sale_path(@secondary_sale), {class: "btn btn-success" } if @secondary_sale.allocation_status == "Completed" %> 
