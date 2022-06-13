@@ -4,4 +4,5 @@
 
 <%= turbo_frame_tag "holdings_frame", target: "_top" do %>
     <%= render "/holdings/index", holdings: @holdings, secondary_sale: @secondary_sale %>
+    <%= paginate @holdings %>
 <% end %>
