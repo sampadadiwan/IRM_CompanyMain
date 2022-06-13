@@ -58,8 +58,8 @@ Scenario Outline: Place a wrong offer
 
 Examples:
     |user	    |entity               |sale                                                        |offer	              | msg |
-    |  	      |entity_type=Startup  |name=Grand Sale;visible_externally=true;percent_allowed=50  |quantity=100        | Over Allowed Percentage |
-    |  	      |entity_type=Startup  |name=Winter Sale;visible_externally=true;percent_allowed=50 |quantity=200        | is > total holdings   |
+    |  	      |entity_type=Startup  |name=Grand Sale;visible_externally=true;percent_allowed=50  |quantity=100;approved=false        | Over Allowed Percentage |
+    |  	      |entity_type=Startup  |name=Winter Sale;visible_externally=true;percent_allowed=50 |quantity=200;approved=false        | is > total holdings   |
 
 
 
