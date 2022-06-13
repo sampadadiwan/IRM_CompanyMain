@@ -28,10 +28,12 @@
       
       <%= button_to "Delete" , @secondary_sale, method: :delete, class: "btn btn-danger" , 
           form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
-
-      <%= link_to "Finalize" , spa_upload_secondary_sale_path(@secondary_sale), class: "btn btn-danger" %>
       
     <% end %>
+
+    <%= link_to "Finalize" , spa_upload_secondary_sale_path(@secondary_sale), 
+        class: "btn btn-danger" if policy(@secondary_sale).finalize_allocation? %>
+
   </div>
 
   <%= render "/layouts/steps", steps: ["Setup Access Rights", "View / Approve Offers", "View / Shortlist Interests"].freeze if @secondary_sale.entity_id == current_user.entity_id %>

@@ -71,7 +71,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def finalize_allocation?
-    update?
+    update? && record.allocation_percentage.positive?
   end
 
   def make_visible?
@@ -91,7 +91,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def view_allocations?
-    create?
+    create? && record.allocation_status.present?
   end
 
   def edit?
