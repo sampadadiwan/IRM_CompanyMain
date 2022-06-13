@@ -1,0 +1,18 @@
+<%= render "/layouts/alerts" %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Form Custom Fields</h1>
+  <%= link_to "New Form Custom Field", new_form_custom_field_path, {class: "btn btn-primary"}  %>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+
+  <table id="form_custom_fields" class="table table-bordered dataTable">
+    <tbody>
+    <% @form_custom_fields.each do |form_custom_field| %>
+      <%= render form_custom_field %>
+    <% end %>
+    </tbody>
+  </table>
+
+</div>

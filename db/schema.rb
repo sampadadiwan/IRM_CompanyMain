@@ -371,6 +371,26 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_13_070920) do
     t.index ["parent_folder_id"], name: "index_folders_on_parent_folder_id"
   end
 
+  create_table "form_custom_fields", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name", limit: 50
+    t.string "field_type", limit: 20
+    t.boolean "required"
+    t.bigint "form_type_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "meta_data"
+    t.boolean "has_attachment", default: false
+    t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
+  end
+
+  create_table "form_types", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "entity_id", null: false
+    t.index ["entity_id"], name: "index_form_types_on_entity_id"
+  end
+
   create_table "funding_rounds", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name"
     t.decimal "total_amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -941,4 +961,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_13_070920) do
   add_foreign_key "valuations", "entities"
   add_foreign_key "vesting_schedules", "entities"
   add_foreign_key "vesting_schedules", "option_pools"
+  add_foreign_key "form_custom_fields", "form_types"
+  add_foreign_key "form_types", "entities"
+
 end

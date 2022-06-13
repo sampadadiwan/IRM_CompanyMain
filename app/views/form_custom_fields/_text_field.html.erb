@@ -1,0 +1,12 @@
+<div class="form-group">
+    <%= f.label field.name %>
+    <%= f.text_field field.name, class: "form-control" %>
+</div>
+
+<% if field.has_attachment %>
+    <div class="field" class="form-group" data-controller="directuploads" >
+        <%= f.label :files, "Files" %>
+        <%= f.file_field :files, class: "form-control", direct_upload: true, multiple:true %>
+        <small class="text-muted"> Upload multiple files. </small>
+    </div>
+<% end %>

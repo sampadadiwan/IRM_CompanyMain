@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  resources :form_custom_fields
+  resources :form_types
+
   resources :holding_audit_trails do
     get 'search', on: :collection
   end
