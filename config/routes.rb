@@ -33,7 +33,7 @@ Rails.application.routes.draw do
     patch 'make_visible', on: :member
     get 'search', on: :collection
     get 'download', on: :member
-    get 'allocate', on: :member
+    patch 'allocate', on: :member
     get 'notify_allocation', on: :member
     get 'spa_upload', on: :member
   end

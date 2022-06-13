@@ -13,10 +13,18 @@
       <%= link_to "Edit" , edit_secondary_sale_path(@secondary_sale), {class: "btn btn-primary" } %> 
 
       
-      <%= link_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), {class: "btn btn-success" } %> 
+      <%= button_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), method: :patch, class: 
+          "btn btn-success", 
+          data: { action: "click->confirm#popup", turbo:false, method: "patch",
+                  msg: "This will kick off the allocation process, which will take a few mins."}  %> 
       
       <% label = @secondary_sale.visible_externally ? "Hide Externally" : "Make Visible Externally" %>
-      <%= button_to label , make_visible_secondary_sale_path(@secondary_sale), method: :patch, class: "btn btn-success" , form_class: "deleteButton" %> 
+      <% popupMsg = @secondary_sale.visible_externally ? "This will hide the Sale from external advisors" : 
+                    "This will allow external advisors to view this sale and place interests for buying." %>
+
+      <%= button_to label , make_visible_secondary_sale_path(@secondary_sale), method: :patch, 
+          class: "btn btn-success" , 
+          data: {action: "click->confirm#popup", turbo:false, msg: popupMsg, title: label, method: "patch"}  %> 
       
       <%= button_to "Delete" , @secondary_sale, method: :delete, class: "btn btn-danger" , 
           form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
