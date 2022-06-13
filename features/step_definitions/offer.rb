@@ -133,7 +133,7 @@
     end
   end
 
-  Then('when the sale is finalized') do
+  Then('when the offer sale is finalized') do
     @offer.secondary_sale.finalized = true
     @offer.secondary_sale.save
   end

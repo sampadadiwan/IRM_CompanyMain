@@ -40,6 +40,10 @@ class Interest < ApplicationRecord
   scope :eligible, ->(secondary_sale) { short_listed.priced_above(secondary_sale.final_price) }
 
   before_validation :set_defaults
+
+  validates :quantity, :price, presence: true
+  validates :buyer_entity_name, :address, :PAN, :contact_name, :email, presence: true, if: proc { |i| i.secondary_sale.finalized }
+
   before_save :notify_shortlist, if: :short_listed
   after_create :notify_interest
 

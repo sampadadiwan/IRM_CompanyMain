@@ -29,6 +29,26 @@
     click_on("Save")
   end
 
+  Then('when the interest sale is finalized') do
+    @created_interest.secondary_sale.finalized = true
+    @created_interest.secondary_sale.save
+  end
+  
+  Then('I edit the interest {string}') do |args|
+    visit (edit_interest_url(@created_interest))
+    @interest = FactoryBot.build(:interest, quantity: @created_interest.quantity, price: @created_interest.price)    
+    key_values(@interest, args)
+
+    fill_in("interest_buyer_entity_name", with: @interest.buyer_entity_name)
+    fill_in("interest_address", with: @interest.address)
+    fill_in("interest_contact_name", with: @interest.contact_name)
+    fill_in("interest_email", with: @interest.email)
+    fill_in("interest_PAN", with: @interest.PAN)
+
+    click_on("Save")
+  end
+  
+
   Given('an interest {string} from some entity {string}') do |int_args, entity_args|
     @buyer_entity = FactoryBot.build(:entity)
     key_values(@buyer_entity, entity_args)
@@ -77,6 +97,14 @@
     within("#escrow_deposited") do
         label = @created_interest.escrow_deposited ? "Yes" : "No"
         expect(page).to have_content(label)
+    end
+
+    if @created_interest.secondary_sale.finalized
+      expect(page).to have_content(@created_interest.buyer_entity_name)
+      expect(page).to have_content(@created_interest.address)
+      expect(page).to have_content(@created_interest.contact_name)
+      expect(page).to have_content(@created_interest.email)
+      expect(page).to have_content(@created_interest.PAN)
     end
   end
   

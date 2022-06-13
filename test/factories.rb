@@ -94,8 +94,13 @@ FactoryBot.define do
   # end
 
   
-  # factory :interest do
-  # end
+  factory :interest do
+    buyer_entity_name {Faker::Company.name}
+    address {Faker::Address.street_address}
+    contact_name {Faker::Name.name}
+    email {Faker::Internet.email}
+    PAN {Faker::Number.number(digits: 10)}
+  end
 
   
   factory :offer do
