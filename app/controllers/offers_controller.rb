@@ -80,7 +80,6 @@ class OffersController < ApplicationController
     @offer.allocation_quantity = offer_params[:allocation_quantity]
     @offer.comments = offer_params[:comments]
     @offer.verified = offer_params[:verified]
-    @offer.approved = offer_params[:approved]
     @offer.interest_id = offer_params[:interest_id]
 
     respond_to do |format|
