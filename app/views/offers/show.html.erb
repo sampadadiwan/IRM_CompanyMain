@@ -222,6 +222,8 @@
         </td>
         <td>
           <%= render "/layouts/attachments" , attachments: @offer.signature %>
+          <%= image_tag image_url(rails_blob_path(@offer.signature[0])), 
+          style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if @offer.signature.present? %>
         </td>
       </tr>
 

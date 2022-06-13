@@ -123,6 +123,10 @@ class Offer < ApplicationRecord
     (total_holdings_quantity * secondary_sale.percent_allowed / 100).round
   end
 
+  include Rails.application.routes.url_helpers
+  include ActionView::Helpers::UrlHelper
+  include ActionView::Helpers
+
   def generate_spa_pdf(cleanup: true)
     if secondary_sale.spa_template.present?
 
@@ -140,7 +144,7 @@ class Offer < ApplicationRecord
       end
 
       # Attach it to the offer
-      spa.attach(io: File.open("tmp/#{file_name}"), filename: file_name)
+      spa.attach(io: File.open("tmp/#{file_name}"), filename: "file_name-#{Time.zone.now.strftime('%F %T')}")
 
       # Cleanup
       File.delete("tmp/#{file_name}") if File.exist?("tmp/#{file_name}") && cleanup

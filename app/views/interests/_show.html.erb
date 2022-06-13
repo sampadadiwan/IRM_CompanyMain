@@ -124,4 +124,50 @@
 
     <% end %>
 
+    <% if interest.secondary_sale.finalized %>
+
+      <tr>
+        <td colspan="2" class="bg-primary"></td>
+      </tr>
+      <tr>
+        <td>
+          Buyer Entity Name
+        </td>
+        <td>
+          <%= interest.buyer_entity_name %> 
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Contact Name
+        </td>
+        <td>
+          <%= interest.contact_name %> 
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Contact Email
+        </td>
+        <td>
+          <%= interest.email %> 
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Address
+        </td>
+        <td>
+          <%= interest.address %> 
+        </td>
+      </tr>
+      <tr>
+        <td>
+          PAN
+        </td>
+        <td>
+          <%= interest.PAN %> 
+        </td>
+      </tr>
+    <% end %>
   </table>

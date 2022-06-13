@@ -53,8 +53,11 @@
 
                 <div class="form-group">
                     <%= form.label :quantity %>
-                    <%= form.number_field :quantity, class: "form-control", 
-                        required: true, disabled: offer.approved %>
+                    <% if offer.approved %>
+                    <%= form.number_field :quantity, class: "form-control", required: true, disabled: true %>
+                    <% else %>
+                        <%= form.number_field :quantity, class: "form-control", required: true %>
+                    <% end %>
                     <small class="text-muted"><%= offer.secondary_sale.percent_allowed %>% of your <%=offer.total_holdings_quantity%> holdings is <%= offer.allowed_quantity %> units</small>
                 </div>
 
@@ -132,7 +135,14 @@
             <div class="card-header"> 3. Additional Documents </div>
             <div class="card-body">
 
-
+                <% if offer.secondary_sale.seller_doc_list.present? %>
+                    <div>
+                        <h3> 
+                            Please upload the following documents below. 
+                            <%= offer.secondary_sale.seller_doc_list %>
+                        </h3>
+                    </div>
+                <% end %>
                 <div class="field" class="form-group" data-controller="directuploads" >
                     <%= form.label :docs, "Documents" %>
                     <%= form.file_field :docs, class: "form-control", direct_upload: true, multiple:true %>

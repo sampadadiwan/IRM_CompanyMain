@@ -11,23 +11,52 @@
     </div>
   <% end %>
 
-  <div class="form-group">
-    <%= form.number_field :offer_entity_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :user_id, class: "form-control", hidden: true  %>
-    <%= form.number_field :interest_entity_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :secondary_sale_id, class: "form-control", hidden: true  %>
-  </div>
+  <%= form.number_field :offer_entity_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :user_id, class: "form-control", hidden: true  %>
+  <%= form.number_field :interest_entity_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :secondary_sale_id, class: "form-control", hidden: true  %>
 
-  <div class="form-group">
-    <%= form.label :quantity %>
-    <%= form.number_field :quantity, class: "form-control"  %>
-  </div>
 
-  <div class="form-group">
-    <%= form.label :price %>
-    <%= form.number_field :price, class: "form-control"  %>
-  </div>
+  <% if interest.secondary_sale.finalized %>
+    
+    <div class="form-group">
+      <%= form.label :buyer_entity_name %>
+      <%= form.text_field :buyer_entity_name, class: "form-control"  %>
+    </div>
 
+    <div class="form-group">
+      <%= form.label :contact_name %>
+      <%= form.text_field :contact_name, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :email %>
+      <%= form.text_field :email, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :address %>
+      <%= form.text_area :address, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :PAN %>
+      <%= form.text_field :PAN, class: "form-control"  %>
+    </div>
+
+  <% else %>
+
+    <div class="form-group">
+      <%= form.label :quantity %>
+      <%= form.number_field :quantity, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :price %>
+      <%= form.number_field :price, class: "form-control"  %>
+    </div>
+
+  <% end %>
   
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-primary"}%>

@@ -14,7 +14,7 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def show?
-    if user.has_cached_role?(:super) || (user.entity_id == record.investee_entity_id && user.entity.enable_investments)
+    if user.entity_id == record.investee_entity_id && user.entity.enable_investments
       true
     else
       user.entity.enable_investments &&
@@ -24,7 +24,7 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def create?
-    user.has_cached_role?(:super) || (user.entity_id == record.investee_entity_id && user.entity.enable_investments)
+    (user.entity_id == record.investee_entity_id && user.entity.enable_investments)
   end
 
   def new?

@@ -106,6 +106,7 @@ class InterestsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def interest_params
     params.require(:interest).permit(:offer_entity_id, :quantity, :price, :user_id,
-                                     :interest_entity_id, :secondary_sale_id)
+                                     :interest_entity_id, :secondary_sale_id, :buyer_entity_name,
+                                     :address, :contact_name, :email, :PAN)
   end
 end
