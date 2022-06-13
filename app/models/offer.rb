@@ -64,7 +64,7 @@ class Offer < ApplicationRecord
   scope :approved, -> { where(approved: true) }
   scope :pending_approval, -> { where(approved: false) }
 
-  validates :first_name, :last_name, :address, :PAN, :bank_account_number, :bank_name, :bank_routing_info, presence: true
+  validates :first_name, :last_name, :address, :PAN, :bank_account_number, :bank_name, :bank_routing_info, presence: true, if: proc { |o| o.secondary_sale.finalized }
 
   validates :address_proof, :id_proof, :signature, presence: true if Rails.env.production?
 

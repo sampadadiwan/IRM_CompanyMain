@@ -64,22 +64,38 @@
     end
 
   end
+
+  Then('I edit the offer {string}') do |arg|
+    visit(edit_offer_path(@offer))
+
+    @offer = FactoryBot.build(:offer, approved: @offer.approved, secondary_sale: @offer.secondary_sale)
+    key_values(@offer, arg)
+        
+    steps %(
+      Then when I submit the offer
+    )  
+  end
+  
   
   Then('when I submit the offer') do 
 
     puts "\n####Offer####\n"
     puts @offer.to_json
 
-    fill_in("offer_quantity", with: @offer.quantity)
-    click_on("Next")
-    fill_in("offer_first_name", with: @offer.first_name)
-    fill_in("offer_last_name", with: @offer.last_name)
-    fill_in("offer_PAN", with: @offer.PAN)
-    fill_in("offer_address", with: @offer.address)
-    fill_in("offer_bank_account_number", with: @offer.bank_account_number)
-    fill_in("offer_bank_name", with: @offer.bank_name)
-    fill_in("offer_bank_routing_info", with: @offer.bank_routing_info)
-    click_on("Next")
+    fill_in("offer_quantity", with: @offer.quantity) unless @offer.approved
+
+    if(@offer.secondary_sale && @offer.secondary_sale.finalized)
+      click_on("Next")
+      fill_in("offer_first_name", with: @offer.first_name)
+      fill_in("offer_last_name", with: @offer.last_name)
+      fill_in("offer_PAN", with: @offer.PAN)
+      fill_in("offer_address", with: @offer.address)
+      fill_in("offer_bank_account_number", with: @offer.bank_account_number)
+      fill_in("offer_bank_name", with: @offer.bank_name)
+      fill_in("offer_bank_routing_info", with: @offer.bank_routing_info)
+      click_on("Next")
+    end
+
     click_on("Save")
     sleep(1)
 
@@ -101,9 +117,25 @@
     expect(page).to have_content(@entity.name)
     expect(page).to have_content(@sale.name)
     expect(page).to have_content(@offer.quantity)
-    within("tr#approved") do
-        expect(page).to have_content("No")
+
+    if(@offer.secondary_sale && @offer.secondary_sale.finalized)
+      expect(page).to have_content(@offer.first_name)
+      expect(page).to have_content(@offer.last_name)
+      expect(page).to have_content(@offer.PAN)
+      expect(page).to have_content(@offer.address)
+      expect(page).to have_content(@offer.bank_account_number)
+      expect(page).to have_content(@offer.bank_name)
+      expect(page).to have_content(@offer.bank_routing_info)
     end
+
+    within("tr#approved") do
+        expect(page).to have_content(@offer.approved ? "Yes" : "No")
+    end
+  end
+
+  Then('when the sale is finalized') do
+    @offer.secondary_sale.finalized = true
+    @offer.secondary_sale.save
   end
   
   Then('I should see the offer in the offers tab') do

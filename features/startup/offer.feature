@@ -33,6 +33,10 @@ Scenario Outline: Place an offer
   Then I should see the offer in the offers tab
   And when the offer is approved
   Then the sales total_offered_quantity should be "<total_quantity>"
+  And when the sale is finalized
+  And I edit the offer "<offer>"
+  Then I should see the offer details
+  
   
 Examples:
     |user	    |entity               |sale                                                         |offer	             | total_quantity |

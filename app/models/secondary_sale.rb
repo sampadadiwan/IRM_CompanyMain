@@ -80,7 +80,7 @@ class SecondarySale < ApplicationRecord
 
   before_save :post_finalized, if: :finalized
   def post_finalized
-    OfferSpaJob.perform_later(id) if finalized_changed?
+    # OfferSpaJob.perform_later(id) if finalized_changed?
   end
 
   def self.for_investor(user, entity)
