@@ -52,6 +52,7 @@ end
 Then('when I approve the esop pool in the UI') do
   visit(option_pool_path(@created))
   click_on("Approve")
+  click_on("Proceed")  
   sleep(1)
 end
 

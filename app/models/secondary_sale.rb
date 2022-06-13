@@ -56,6 +56,7 @@ class SecondarySale < ApplicationRecord
            with_currency: ->(s) { s.entity.currency }
 
   validates :name, :start_date, :end_date, :min_price, :percent_allowed, presence: true
+  validates :final_price, numericality: { greater_than: 0 }, if: proc { |s| s.finalized }
 
   scope :for, lambda { |user|
                 joins(:access_rights)
