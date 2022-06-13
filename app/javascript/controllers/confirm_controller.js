@@ -6,10 +6,18 @@ export default class extends Controller {
         console.log("confirm connect");
     }
 
-    delete(event) { 
+    popup(event) { 
         let btn = $(event.target);
-        console.log();
+        let title = event.target.dataset.title || "Are you sure?";
+        let msg = event.target.dataset.msg || "This will permanently delete this item. Proceed?" ;
+       
+        console.log(`btn.dataset.modalId: ${event.target.dataset.modalId}`);
+
         this.deleteForm = event.target.closest("form");
+
+        $('#confirmModal #msg').text(msg);
+        $('#confirmModal #title').text(title);
+        
         // We set the action to the delete btn form action
         $("#confirm_submit").attr("action", this.deleteForm.action);
 

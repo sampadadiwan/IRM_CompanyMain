@@ -13,7 +13,7 @@
   <div>
     <% if policy(@interest).update? %>
       <%= link_to "Edit" , edit_interest_path(@interest), {class: "btn btn-primary" } %> 
-      <%= button_to "Delete" , @interest, method: :delete, class: "btn btn-danger" , form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+      <%= button_to "Delete" , @interest, method: :delete, class: "btn btn-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
     <% end %>
 
 

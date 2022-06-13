@@ -1,3 +1,5 @@
+<%= render "/layouts/steps", steps: ["This is the closing process for the sale", "Once completed the sale/offers/interests will not be editable", "Please review the allocations and confirm the closing of the sale"].freeze if current_user.has_cached_role?(:startup) %>
+
 <%= form_with(model: @secondary_sale, validate: true, id: "@secondary_sale_form") do |form| %>
   <% if @secondary_sale.errors.any? %>
     <div class="alert alert-danger">

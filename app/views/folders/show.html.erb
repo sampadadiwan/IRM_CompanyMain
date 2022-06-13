@@ -36,5 +36,5 @@
   <%= link_to "Create Sub Folder", new_folder_path("folder[entity_id]": current_user.entity_id, "folder[parent_folder_id]": @folder.id), 
         {class: "btn btn-success"}%> |
 
-  <%= button_to "Delete", @folder, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+  <%= button_to "Delete", @folder, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>

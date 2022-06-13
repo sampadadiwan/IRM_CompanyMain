@@ -26,5 +26,5 @@
 
 <div>
   <%= link_to "Edit", edit_note_path(@note), {class: "btn btn-primary"} %> |
-  <%= button_to "Delete", @note, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false} %>
+  <%= button_to "Delete", @note, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} %>
 </div>

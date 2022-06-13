@@ -142,7 +142,7 @@
 
       <% end %>                                                      
 
-      <%= button_to "Delete", @investment, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+      <%= button_to "Delete", @investment, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
    </div>
 
 <% end %>

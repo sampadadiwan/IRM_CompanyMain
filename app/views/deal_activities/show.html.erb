@@ -95,7 +95,7 @@
 
 <div>
   <%= link_to "Edit", edit_deal_activity_path(@deal_activity), {class: "btn btn-primary"} %> |
-  <%= button_to "Delete", @deal_activity, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+  <%= button_to "Delete", @deal_activity, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>
 
 <% end %>

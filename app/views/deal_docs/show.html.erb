@@ -57,5 +57,5 @@
 </table>
 <div>
    <%= link_to "Edit" , edit_deal_doc_path(@deal_doc), {class: "btn btn-primary" } %> |
-   <%= button_to "Delete" , @deal_doc, method: :delete, class: "btn btn-danger" , form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+   <%= button_to "Delete" , @deal_doc, method: :delete, class: "btn btn-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>

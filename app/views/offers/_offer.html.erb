@@ -42,6 +42,6 @@
   <td>
     <%= link_to "Show" , offer , {class: "btn btn-primary" }%>
     
-    <%= button_to "Delete", offer, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete"} if Pundit.policy(current_user, offer).destroy? %>    
+    <%= button_to "Delete", offer, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup"} if Pundit.policy(current_user, offer).destroy? %>    
   </td>
 </tr>

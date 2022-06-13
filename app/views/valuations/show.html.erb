@@ -49,5 +49,5 @@
 
 <div>
   <%= link_to "Edit", edit_valuation_path(@valuation), {class: "btn btn-primary"} %> |
-  <%= button_to "Delete", @valuation, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+  <%= button_to "Delete", @valuation, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>

@@ -81,7 +81,7 @@
         <%= button_to "Start Deal", start_deal_deal_path(@deal), 
           {class: "btn btn-primary", form_class: "deleteButton"} %> |
       <% end %>
-      <%= button_to "Delete", @deal, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+      <%= button_to "Delete", @deal, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
     
     </div>
   <% end %>
