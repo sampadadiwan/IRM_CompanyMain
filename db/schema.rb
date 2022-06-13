@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_13_035923) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_13_070920) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -683,9 +683,11 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_13_035923) do
     t.boolean "verified", default: false
     t.text "comments"
     t.boolean "final_agreement", default: false
+    t.bigint "interest_id"
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
     t.index ["entity_id"], name: "index_offers_on_entity_id"
     t.index ["holding_id"], name: "index_offers_on_holding_id"
+    t.index ["interest_id"], name: "index_offers_on_interest_id"
     t.index ["investor_id"], name: "index_offers_on_investor_id"
     t.index ["secondary_sale_id"], name: "index_offers_on_secondary_sale_id"
     t.index ["user_id"], name: "index_offers_on_user_id"
@@ -927,6 +929,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_13_035923) do
   add_foreign_key "nudges", "users"
   add_foreign_key "offers", "entities"
   add_foreign_key "offers", "holdings"
+  add_foreign_key "offers", "interests"
   add_foreign_key "offers", "secondary_sales"
   add_foreign_key "offers", "users"
   add_foreign_key "option_pools", "entities"

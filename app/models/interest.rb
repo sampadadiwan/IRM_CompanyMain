@@ -25,6 +25,9 @@ class Interest < ApplicationRecord
   belongs_to :secondary_sale
   belongs_to :interest_entity, class_name: "Entity"
   belongs_to :offer_entity, class_name: "Entity"
+  has_many :offers, dependent: :destroy
+
+  has_one_attached  :spa, service: :amazon
 
   validates :quantity, comparison: { less_than_or_equal_to: :total_offered_quantity }
   validates :price, comparison: { less_than_or_equal_to: :max_price } if proc { |i| i.secondary_sale.max_price }

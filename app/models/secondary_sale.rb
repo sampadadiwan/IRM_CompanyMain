@@ -47,7 +47,6 @@ class SecondarySale < ApplicationRecord
 
   has_one_attached :final_allocation, service: :amazon
   has_one_attached :spa, service: :amazon
-  has_rich_text :spa_template
 
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy
@@ -76,11 +75,6 @@ class SecondarySale < ApplicationRecord
       self.min_price = final_price
       self.max_price = final_price
     end
-  end
-
-  before_save :post_finalized, if: :finalized
-  def post_finalized
-    # OfferSpaJob.perform_later(id) if finalized_changed?
   end
 
   def self.for_investor(user, entity)

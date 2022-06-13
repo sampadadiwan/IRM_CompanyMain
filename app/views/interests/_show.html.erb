@@ -124,7 +124,7 @@
 
     <% end %>
 
-    <% if interest.secondary_sale.finalized %>
+    <% if interest.secondary_sale.finalized || params[:debug].present? %>
 
       <tr>
         <td colspan="2" class="bg-primary"></td>
@@ -169,6 +169,23 @@
           <%= interest.PAN %> 
         </td>
       </tr>
+
+      <% if interest.secondary_sale.spa.present? || interest.spa.present? %>
+
+        <tr>
+          <td colspan="2" class="bg-primary"></td>
+        </tr>      
+        <tr>
+          <td>
+            SPA
+          </td>
+          <td>
+            <% spa = interest.secondary_sale.spa.present? ? interest.secondary_sale.spa : interest.spa %>
+            <%= render "/layouts/attachments" , attachments: [spa], allow_delete: "No" %>
+          </td>
+        </tr>
+
+      <% end %>
 
       <tr>
         <td>

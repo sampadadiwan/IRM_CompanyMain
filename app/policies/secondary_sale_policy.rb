@@ -101,5 +101,4 @@ class SecondarySalePolicy < ApplicationPolicy
   def destroy?
     update?
   end
-
 end

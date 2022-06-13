@@ -6,12 +6,15 @@
                 {class: "btn btn-primary" } if @secondary_sale.allocation_status.present? %> 
         <%= link_to "Un-Verified", offers_path( secondary_sale_id: @secondary_sale.id, 
                                                 finalize_allocation: true, verified: false), 
-                {class: "btn btn-warning" } if @secondary_sale.allocation_status.present? %> 
+                {class: "btn btn-warning" } if @secondary_sale.allocation_status.present? %> |
 
         <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
         <%= link_to "Download Allocations" , download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
                 {class: "btn btn-success #{download_disabled}"  } if @secondary_sale.allocation_status.present? %> 
 
+        <%= link_to "Send Allocation Notification" , notify_allocation_secondary_sale_path(@secondary_sale),    
+                    {class: "btn btn-success" } if @secondary_sale.allocation_status == "Completed" %> |
+      
         <form class="d-sm-inline-block form-inline navbar-search" action="<%= search_offers_path %>">
             <div class="input-group">
                 <input name="query" type="text" class="form-control border-0 small" placeholder="Search for..." value="<%= params[:query] %>" aria-label="Search" aria-describedby="basic-addon2">

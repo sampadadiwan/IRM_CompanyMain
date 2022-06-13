@@ -14,7 +14,6 @@
 
       
       <%= link_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), {class: "btn btn-success" } %> 
-      <%= link_to "Send Allocation Notification" , notify_allocation_secondary_sale_path(@secondary_sale), {class: "btn btn-success" } if @secondary_sale.allocation_status == "Completed" %> 
       
       <% label = @secondary_sale.visible_externally ? "Hide Externally" : "Make Visible Externally" %>
       <%= button_to label , make_visible_secondary_sale_path(@secondary_sale), method: :patch, class: "btn btn-success" , form_class: "deleteButton" %> 

@@ -47,7 +47,11 @@ class Offer < ApplicationRecord
                   column_name: proc { |o| o.approved ? 'total_offered_amount_cents' : nil },
                   delta_column: 'amount_cents'
 
+  # This is the holding owned by the user which is offered out
   belongs_to :holding
+  # This is the buyer against which this sellers quantity is matched
+  belongs_to :interest, optional: true
+
   belongs_to :granter, class_name: "User", foreign_key: :granted_by_user_id, optional: true
   belongs_to :buyer, class_name: "Entity", optional: true
 
