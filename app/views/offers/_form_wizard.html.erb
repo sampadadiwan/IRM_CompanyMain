@@ -1,22 +1,24 @@
 <div class="wizard_container" data-controller="wizard">
-    <div class="stepwizard">
-        <div class="stepwizard-row setup-panel">
-            <div class="stepwizard-step">
-                <a href="#step-1" type="button" class="btn btn-primary btn-outline-primary btn-circle">1</a>
-                <p>Step 1</p>
-            </div>
-            <div class="stepwizard-step">
-                <a href="#step-2" type="button" class="btn btn-outline-primary btn-circle" disabled="disabled">2</a>
-                <p>Step 2</p>
-            </div>
-            <div class="stepwizard-step">
-                <a href="#step-3" type="button" class="btn btn-outline-primary btn-circle" disabled="disabled">3</a>
-                <p>Step 3</p>
-            </div>
-        </div>
+    
+    <div class="stepwizard <%= offer.secondary_sale.finalized ? '': 'd-none' %>">
+            <div class="stepwizard-row setup-panel">
+                
+                <div class="stepwizard-step">
+                    <a href="#step-1" type="button" class="btn btn-primary btn-outline-primary btn-circle">1</a>
+                    <p>Step 1</p>
+                </div>
+                <div class="stepwizard-step">
+                    <a href="#step-2" type="button" class="btn btn-outline-primary btn-circle" disabled="disabled">2</a>
+                    <p>Step 2</p>
+                </div>
+                <div class="stepwizard-step">
+                    <a href="#step-3" type="button" class="btn btn-outline-primary btn-circle" disabled="disabled">3</a>
+                    <p>Step 3</p>
+                </div>
+
+            </div>        
     </div>
-
-
+    
 <%= form_with(model: offer, validate: true) do |form| %>
   <% if offer.errors.any? %>
     <div class="alert alert-danger">
@@ -54,7 +56,7 @@
                 <div class="form-group">
                     <%= form.label :quantity %>
                     <% if offer.approved %>
-                    <%= form.number_field :quantity, class: "form-control", required: true, disabled: true %>
+                        <%= form.number_field :quantity, class: "form-control", required: true, disabled: true %>
                     <% else %>
                         <%= form.number_field :quantity, class: "form-control", required: true %>
                     <% end %>
@@ -66,104 +68,109 @@
                     <%= form.text_area :notes, class: "form-control"  %>
                 </div>
 
-                <button class="btn btn-primary nextBtn btn-lg pull-right" type="button">Next</button>
+                <div class="form-group">
+                    <% if offer.secondary_sale.finalized %>
+                        <button class="btn btn-primary nextBtn btn-lg pull-right" type="button">Next</button>
+                    <% else %>
+                        <%= form.submit "Save", {class: "btn btn-primary btn-lg"}%>
+                    <% end %>
+                </div>
+
             </div>
         </div>
     </div>
   </div>
 
+  <% if offer.secondary_sale.finalized %>
 
-  <div class="row setup-content" id="step-2">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header"> 2. Personal Details </div>
-            <div class="card-body">
+    <div class="row setup-content" id="step-2">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header"> 2. Personal Details </div>
+                <div class="card-body">
 
-                <div class="form-group">
-                    <%= form.label :first_name %>
-                    <%= form.text_field :first_name, class: "form-control", required: true  %>
-                </div>
-                <div class="form-group">
-                    <%= form.label :middle_name %>
-                    <%= form.text_field :middle_name, class: "form-control"  %>
-                </div>
-                <div class="form-group">
-                    <%= form.label :last_name %>
-                    <%= form.text_field :last_name, class: "form-control", required: true  %>
-                </div>
-                <div class="form-group">
-                    <%= form.label :address %>
-                    <%= form.text_area :address, class: "form-control", required: true  %>
-                </div>
-                <div class="field" class="form-group" data-controller="directuploads" >
-                    <%= form.label :address_proof %>
-                    <%= form.file_field :address_proof, class: "form-control", direct_upload: true %>
-                </div>
-
-                <div class="form-group">
-                    <%= form.label :PAN, "PAN" %>
-                    <%= form.text_field :PAN, class: "form-control", required: true  %>
-                </div>
-                <div class="field" class="form-group" data-controller="directuploads" >
-                    <%= form.label :id_proof %>
-                    <%= form.file_field :id_proof, class: "form-control", direct_upload: true %>
-                </div>
-
-
-                <div class="form-group">
-                    <%= form.label :bank_account_number %>
-                    <%= form.text_field :bank_account_number, class: "form-control", required: true  %>
-                </div>
-                <div class="form-group">
-                    <%= form.label :bank_name %>
-                    <%= form.text_field :bank_name, class: "form-control", required: true  %>
-                </div>
-                <div class="form-group">
-                    <%= form.label :bank_routing_info %>
-                    <%= form.text_area :bank_routing_info, class: "form-control", required: true  %>
-                    <small class="text-muted">IFSC code, Branch etc</small>
-                </div>
-                <button class="btn btn-primary nextBtn btn-lg pull-right" type="button">Next</button>
-            </div>
-        </div>
-    </div>
-  </div>
-
-  <div class="row setup-content" id="step-3">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header"> 3. Additional Documents </div>
-            <div class="card-body">
-
-                <% if offer.secondary_sale.seller_doc_list.present? %>
-                    <div>
-                        <h3> 
-                            Please upload the following documents below. 
-                            <%= offer.secondary_sale.seller_doc_list %>
-                        </h3>
+                    <div class="form-group">
+                        <%= form.label :first_name %>
+                        <%= form.text_field :first_name, class: "form-control", required: true  %>
                     </div>
-                <% end %>
-                <div class="field" class="form-group" data-controller="directuploads" >
-                    <%= form.label :docs, "Documents" %>
-                    <%= form.file_field :docs, class: "form-control", direct_upload: true, multiple:true %>
-                    <small class="text-muted"> Upload bank statements, tax documents and shareholding documents. </small>
+                    <div class="form-group">
+                        <%= form.label :middle_name %>
+                        <%= form.text_field :middle_name, class: "form-control"  %>
+                    </div>
+                    <div class="form-group">
+                        <%= form.label :last_name %>
+                        <%= form.text_field :last_name, class: "form-control", required: true  %>
+                    </div>
+                    <div class="form-group">
+                        <%= form.label :address %>
+                        <%= form.text_area :address, class: "form-control", required: true  %>
+                    </div>
+                    <div class="field" class="form-group" data-controller="directuploads" >
+                        <%= form.label :address_proof %>
+                        <%= form.file_field :address_proof, class: "form-control", direct_upload: true %>
+                    </div>
+
+                    <div class="form-group">
+                        <%= form.label :PAN, "PAN" %>
+                        <%= form.text_field :PAN, class: "form-control", required: true  %>
+                    </div>
+                    <div class="field" class="form-group" data-controller="directuploads" >
+                        <%= form.label :id_proof %>
+                        <%= form.file_field :id_proof, class: "form-control", direct_upload: true %>
+                    </div>
+
+
+                    <div class="form-group">
+                        <%= form.label :bank_account_number %>
+                        <%= form.text_field :bank_account_number, class: "form-control", required: true  %>
+                    </div>
+                    <div class="form-group">
+                        <%= form.label :bank_name %>
+                        <%= form.text_field :bank_name, class: "form-control", required: true  %>
+                    </div>
+                    <div class="form-group">
+                        <%= form.label :bank_routing_info %>
+                        <%= form.text_area :bank_routing_info, class: "form-control", required: true  %>
+                        <small class="text-muted">IFSC code, Branch etc</small>
+                    </div>
+                    <button class="btn btn-primary nextBtn btn-lg pull-right" type="button">Next</button>
                 </div>
-
-
-                <div class="field" class="form-group" data-controller="directuploads" >
-                    <%= form.label :signature %>
-                    <%= form.file_field :signature, class: "form-control", direct_upload: true, multiple:true %>
-                    <small class="text-muted"> Upload signature. </small>
-                </div>
-
-                <div class="form-group">
-                    <%= form.submit "Save", {class: "btn btn-primary btn-lg"}%>
-                </div>
-
             </div>
         </div>
     </div>
-  </div>
+
+    <div class="row setup-content" id="step-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header"> 3. Additional Documents </div>
+                <div class="card-body">
+
+                    <div class="field" class="form-group" data-controller="directuploads" >
+                        <%= form.label :docs, "Documents" %>
+                        <%= form.file_field :docs, class: "form-control", direct_upload: true, multiple:true %>
+                        <small class="text-muted"> Upload <%= offer.secondary_sale.seller_doc_list || "Required Documents." %>  </small>
+                    </div>
+
+
+                    <div class="field" class="form-group" data-controller="directuploads" >
+                        <%= form.label :signature %>
+                        <%= form.file_field :signature, class: "form-control", direct_upload: true, multiple:true %>
+                        <small class="text-muted"> Upload signature. </small>
+                    </div>
+
+                    <div class="form-group">
+                        <%= form.submit "Save", {class: "btn btn-primary btn-lg"}%>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+  <% end %>
+
 <% end %>
 
 </div>

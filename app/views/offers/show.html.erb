@@ -119,6 +119,7 @@
 
     <% end %>
 
+    <% if @offer.secondary_sale.finalized %>
       <tr>
         <td colspan="2" class="bg-primary"></td>
       </tr>
@@ -243,6 +244,9 @@
         </tr>
 
       <% end %>
+
+    <% end %>
+
 
   </table>
 
