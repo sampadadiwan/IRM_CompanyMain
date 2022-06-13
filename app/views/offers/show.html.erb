@@ -228,6 +228,18 @@
         </td>
       </tr>
 
+      <tr>
+        <td>
+          I agree to enter into the SPA
+        </td>
+        <td>
+          <span class="badge <%= @offer.final_agreement ? 'bg-success' : 'bg-warning' %>">
+            <%= @offer.final_agreement ? "Yes" : "No" %>
+          </span>
+        </td>
+      </tr>
+
+
       
       <% if @offer.spa.present? %>
 

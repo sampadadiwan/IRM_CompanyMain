@@ -107,6 +107,6 @@ class InterestsController < ApplicationController
   def interest_params
     params.require(:interest).permit(:offer_entity_id, :quantity, :price, :user_id,
                                      :interest_entity_id, :secondary_sale_id, :buyer_entity_name,
-                                     :address, :contact_name, :email, :PAN)
+                                     :address, :contact_name, :email, :PAN, :final_agreement)
   end
 end

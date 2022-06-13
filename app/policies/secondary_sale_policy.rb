@@ -79,7 +79,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def download?
-    update?
+    create?
   end
 
   def allocate?
@@ -87,7 +87,11 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def notify_allocation?
-    update?
+    create?
+  end
+
+  def view_allocations?
+    create?
   end
 
   def edit?
@@ -97,4 +101,5 @@ class SecondarySalePolicy < ApplicationPolicy
   def destroy?
     update?
   end
+
 end

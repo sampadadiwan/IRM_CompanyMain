@@ -169,5 +169,17 @@
           <%= interest.PAN %> 
         </td>
       </tr>
+
+      <tr>
+        <td>
+          I agree to enter into the SPA
+        </td>
+        <td>
+          <span class="badge <%= interest.final_agreement ? 'bg-success' : 'bg-warning' %>">
+            <%= interest.final_agreement ? "Yes" : "No" %>
+          </span>
+        </td>
+      </tr>
+
     <% end %>
   </table>

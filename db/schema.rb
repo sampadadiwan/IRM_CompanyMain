@@ -537,6 +537,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_13_035923) do
     t.string "contact_name", limit: 50
     t.string "email", limit: 40
     t.string "PAN", limit: 15
+    t.boolean "final_agreement", default: false
     t.index ["interest_entity_id"], name: "index_interests_on_interest_entity_id"
     t.index ["offer_entity_id"], name: "index_interests_on_offer_entity_id"
     t.index ["secondary_sale_id"], name: "index_interests_on_secondary_sale_id"
@@ -681,6 +682,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_13_035923) do
     t.string "acquirer_name"
     t.boolean "verified", default: false
     t.text "comments"
+    t.boolean "final_agreement", default: false
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
     t.index ["entity_id"], name: "index_offers_on_entity_id"
     t.index ["holding_id"], name: "index_offers_on_holding_id"

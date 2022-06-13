@@ -159,6 +159,11 @@
                     </div>
 
                     <div class="form-group">
+                        <%= form.label :final_agreement, "I agree to enter into the SPA" %>
+                        <%= form.check_box :final_agreement, class: "form-control form-checkbox"  %>
+                    </div>
+
+                    <div class="form-group">
                         <%= form.submit "Save", {class: "btn btn-primary btn-lg"}%>
                     </div>
 

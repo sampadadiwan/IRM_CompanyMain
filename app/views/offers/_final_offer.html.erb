@@ -40,7 +40,7 @@
     <div class="divTableCell"><%= offer.comments %></div>
     <div class="divTableCell">
         <%= link_to "Show", offer, class: "btn btn-primary", target: '_top' %>
-        <%= link_to "Edit", allocation_form_offer_path(offer), data: { turbo_frame: "tf_#{dom_id(offer)}" }, class: "btn btn-success" %>
+        <%= link_to "Edit", allocation_form_offer_path(offer), data: { turbo_frame: "tf_#{dom_id(offer)}" }, class: "btn btn-success" unless @secondary_sale.finalized %>
     </div>
 
 <% end %>
