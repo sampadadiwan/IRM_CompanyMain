@@ -58,6 +58,7 @@ class InterestsController < ApplicationController
   def short_list
     @interest.short_listed = !@interest.short_listed
     @interest.save
+
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [

@@ -4,7 +4,7 @@ class OffersController < ApplicationController
 
   # GET /offers or /offers.json
   def index
-    @offers = policy_scope(Offer).includes(:user, :investor, :secondary_sale, :entity)
+    @offers = policy_scope(Offer).includes(:user, :investor, :secondary_sale, :entity, :interest)
     @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
     @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
 
@@ -81,7 +81,7 @@ class OffersController < ApplicationController
     @offer.comments = offer_params[:comments]
     @offer.verified = offer_params[:verified]
     @offer.approved = offer_params[:approved]
-    @offer.acquirer_name = offer_params[:acquirer_name]
+    @offer.interest_id = offer_params[:interest_id]
 
     respond_to do |format|
       if @offer.save
@@ -161,7 +161,7 @@ class OffersController < ApplicationController
     params.require(:offer).permit(:user_id, :entity_id, :secondary_sale_id, :investor_id,
                                   :holding_id, :quantity, :percentage, :notes, :first_name, :last_name,
                                   :middle_name, :PAN, :address, :bank_account_number, :bank_name,
-                                  :comments, :verified, :final_agreement,
+                                  :comments, :verified, :final_agreement, :interest_id,
                                   :allocation_quantity, :acquirer_name, :bank_routing_info, :id_proof, :address_proof, additional_docs: [], signature: [], docs: [])
   end
 end
