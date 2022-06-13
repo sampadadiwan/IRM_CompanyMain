@@ -279,7 +279,8 @@
 
     <%= button_to "Approve" , approve_option_pool_path(@option_pool), method: :patch, 
         class: "btn btn-success" , form_class: "deleteButton", 
-        data: {turbo:false} if policy(@option_pool).approve?  %> 
+        data: {action: "click->confirm#popup", turbo:false, method: "patch",
+        msg: "Please verify the details of this option pool. Once approved, the option pool cannot be modified."} if policy(@option_pool).approve?  %> 
 
   </div>
 
