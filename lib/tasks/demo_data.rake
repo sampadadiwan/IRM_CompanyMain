@@ -321,7 +321,7 @@ namespace :irm do
     SecondarySale.all.each do |sale|
 
       sale.entity.investors.holding.each do |inv|
-        AccessRight.create(owner: sale, access_type: "SecondarySale", entity: sale.entity, investor: inv)
+        AccessRight.create(owner: sale, access_type: "SecondarySale", entity: sale.entity, investor: inv, metadata: "Seller")
       end
       
       sale.entity.holdings.each do |h|

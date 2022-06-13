@@ -79,7 +79,9 @@
                               "offer[holding_id]": holding.id, "offer[investor_id]": holding.investor_id) , 
               {class: "btn btn-success" } if ["Equity", "Preferred"].include?(holding.investment_instrument) %>
 
-      <% elsif holding.active_secondary_sale && Pundit.policy(current_user, holding.active_secondary_sale).offer? %>
+      <% elsif  holding.investment_instrument != "Options" && 
+                holding.active_secondary_sale && 
+                Pundit.policy(current_user, holding.active_secondary_sale).offer? %>
         <!-- We are in the holdings -->
         <%= link_to "Secondary Sale" , secondary_sale_path(holding.active_secondary_sale) , 
               {class: "btn btn-success" }   %>

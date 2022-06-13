@@ -71,7 +71,7 @@
 
     </tr>
 
-    <% if @offer.final_price > 0 %>
+    <% if @offer.secondary_sale.finalized  || params[:debug].present? %>
       <tr>
         <td colspan="2" class="bg-primary"></td>
       </tr>
@@ -117,9 +117,7 @@
         </td>
       </tr>
 
-    <% end %>
 
-    <% if @offer.secondary_sale.finalized  || params[:debug].present? %>
       <tr>
         <td colspan="2" class="bg-primary"></td>
       </tr>
