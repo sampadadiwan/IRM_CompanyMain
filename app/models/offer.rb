@@ -71,6 +71,8 @@ class Offer < ApplicationRecord
 
   scope :approved, -> { where(approved: true) }
   scope :pending_approval, -> { where(approved: false) }
+  scope :verified, -> { where(verified: true) }
+  scope :pending_verification, -> { where(verified: false) }
 
   validates :first_name, :last_name, :address, :PAN, :bank_account_number, :bank_name, :bank_routing_info, presence: true, if: proc { |o| o.secondary_sale.finalized }
 
@@ -101,8 +103,8 @@ class Offer < ApplicationRecord
 
     self.approved = false if quantity_changed?
 
-    self.amount_cents = quantity * final_price if final_price.positive?
-    self.allocation_amount_cents = allocation_quantity * final_price if final_price.positive?
+    self.amount_cents = quantity * final_price * 100 if final_price.positive?
+    self.allocation_amount_cents = allocation_quantity * final_price * 100 if final_price.positive?
   end
 
   def check_quantity

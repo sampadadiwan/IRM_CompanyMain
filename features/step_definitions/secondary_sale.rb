@@ -406,8 +406,9 @@ Then('the sale must be allocated correctly') do
   @sale.total_interest_quantity.should == @sale.interests.short_listed.sum(:quantity)
   @sale.offer_allocation_quantity.should == @sale.offers.approved.sum(:allocation_quantity)
   @sale.interest_allocation_quantity.should == @sale.interests.short_listed.sum(:allocation_quantity)
-  @sale.allocation_offer_amount_cents.should == @sale.offers.approved.sum(:allocation_amount_cents)  
   @sale.allocation_interest_amount_cents.should == @sale.interests.short_listed.sum(:allocation_amount_cents) 
+  
+  @sale.allocation_offer_amount_cents.should == @sale.offers.approved.sum(:allocation_amount_cents)  
 end
 
 
@@ -433,4 +434,15 @@ Then('the interests must be allocated correctly') do
     puts interest.to_json
     interest.allocation_quantity.should  == (interest.quantity * interest.allocation_percentage / 100).ceil
   end
+end
+
+Then('when the sale is finalized') do
+  @sale.finalized = true
+  @sale.final_price = 100
+  @sale.save!
+  @sale.reload
+end
+
+Then('when the cap table is updated from the sale') do
+  CapTableFromSaleJob.new.perform(@sale.id)
 end

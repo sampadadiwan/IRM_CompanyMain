@@ -91,7 +91,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def view_allocations?
-    create? && record.allocation_status.present?
+    create?
   end
 
   def edit?

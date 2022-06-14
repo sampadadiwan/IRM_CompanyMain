@@ -76,7 +76,7 @@ class Interest < ApplicationRecord
   def set_defaults
     self.interest_entity_id ||= user.entity_id
     self.offer_entity_id ||= secondary_sale.entity_id
-    self.amount_cents = quantity * final_price if final_price.positive?
-    self.allocation_amount_cents = allocation_quantity * final_price if final_price.positive?
+    self.amount_cents = quantity * final_price * 100 if final_price.positive?
+    self.allocation_amount_cents = allocation_quantity * final_price * 100 if final_price.positive?
   end
 end

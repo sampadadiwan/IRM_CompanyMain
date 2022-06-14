@@ -30,9 +30,11 @@ class AllocationJob < ApplicationJob
     total_interest_quantity = secondary_sale.interests.eligible(secondary_sale).sum(:quantity)
 
     secondary_sale.allocation_percentage = total_offered_quantity.positive? ? (total_interest_quantity * 1.0 / total_offered_quantity).round(4) : 0
-    logger.debug "total_offered_quantity = #{total_offered_quantity},
+    Rails.logger.debug do
+      "total_offered_quantity = #{total_offered_quantity},
                   total_interest_quantity = #{total_interest_quantity},
                   secondary_sale.allocation_percentage: #{secondary_sale.allocation_percentage}"
+    end
   end
 
   def clean_up(secondary_sale)
@@ -50,35 +52,32 @@ class AllocationJob < ApplicationJob
   def update_offers(secondary_sale)
     interests = secondary_sale.interests.eligible(secondary_sale)
     offers = secondary_sale.offers.approved
+
     if secondary_sale.allocation_percentage <= 1
-      # We have more interests than offers
-      interests.update_all("allocation_percentage = 100.00,
-                            allocation_quantity = quantity,
-                            final_price = #{secondary_sale.final_price},
-                            allocation_amount_cents = (quantity * 100 * #{secondary_sale.final_price})")
-
+      interest_percentage = 1
       # We only can allocate  a portion of the offers
-      percentage = (1.0 * secondary_sale.allocation_percentage).round(6)
-      logger.debug "allocating #{percentage}% of offers"
-      offers.update_all(" allocation_percentage = #{100.00 * percentage},
-                          allocation_quantity = ceil(quantity * #{percentage}),
-                          final_price = #{secondary_sale.final_price},
-                          allocation_amount_cents = (ceil(quantity * #{percentage}) * 100 * #{secondary_sale.final_price})")
+      offer_percentage = (1.0 * secondary_sale.allocation_percentage).round(6)
     else
-      # We have more offers than interests
-      offers.update_all(" allocation_percentage = 100.00,
-                          allocation_quantity = quantity,
-                          final_price = #{secondary_sale.final_price},
-                          allocation_amount_cents = (quantity * 100 * #{secondary_sale.final_price})")
-
+      offer_percentage = 1
       # We only can allocate a portion of the interests
-      percentage = (1.0 / secondary_sale.allocation_percentage).round(6)
-      logger.debug "allocating #{percentage}% of interests"
-      interests.update_all("allocation_percentage = #{100.00 * percentage},
-                            allocation_quantity = ceil(quantity * #{percentage}),
-                            final_price = #{secondary_sale.final_price},
-                            allocation_amount_cents = (ceil(quantity * #{percentage}) * 100 * #{secondary_sale.final_price})")
+      interest_percentage = (1.0 / secondary_sale.allocation_percentage).round(6)
     end
+
+    Rails.logger.debug { "allocating #{interest_percentage}% of interests and #{offer_percentage} % of offers" }
+
+    # We have more interests #{100.00 * interest_percentage},
+    interests.update_all("allocation_percentage = #{100.00 * interest_percentage},
+      allocation_quantity = ceil(quantity * #{interest_percentage}),
+      final_price = #{secondary_sale.final_price},
+      allocation_amount_cents = (ceil(quantity * #{interest_percentage}) * #{secondary_sale.final_price * 100})")
+
+    offers.update_all(" allocation_percentage = #{100.00 * offer_percentage},
+      allocation_quantity = ceil(quantity * #{offer_percentage}),
+      final_price = #{secondary_sale.final_price},
+      allocation_amount_cents = (ceil(quantity * #{offer_percentage}) * #{secondary_sale.final_price * 100})")
+
+    # Now match the offers to interests
+    match_offers_to_interests(interests, offers)
   end
 
   def update_sale(secondary_sale)
@@ -86,21 +85,51 @@ class AllocationJob < ApplicationJob
     offers = secondary_sale.offers.approved
     offer_allocation_quantity = offers.sum(:allocation_quantity)
     offer_total_quantity = offers.sum(:quantity)
-    logger.debug "offer_allocation_quantity: #{offer_allocation_quantity}"
+    Rails.logger.debug { "offer_allocation_quantity: #{offer_allocation_quantity}" }
 
     interests = secondary_sale.interests.eligible(secondary_sale)
     interest_allocation_quantity = interests.sum(:allocation_quantity)
     interest_total_quantity = interests.sum(:quantity)
-    logger.debug "interest_allocation_quantity: #{interest_allocation_quantity}"
+    Rails.logger.debug { "interest_allocation_quantity: #{interest_allocation_quantity}" }
 
+    final_price_cents = secondary_sale.final_price * 100
     secondary_sale.update(allocation_percentage: secondary_sale.allocation_percentage,
                           total_offered_quantity: offer_total_quantity,
-                          total_offered_amount_cents: offer_total_quantity * secondary_sale.final_price * 100,
+                          total_offered_amount_cents: offer_total_quantity * final_price_cents,
                           total_interest_quantity: interest_total_quantity,
-                          total_interest_amount_cents: interest_total_quantity * secondary_sale.final_price * 100,
+                          total_interest_amount_cents: interest_total_quantity * final_price_cents,
                           offer_allocation_quantity:,
-                          allocation_offer_amount_cents: offer_allocation_quantity * secondary_sale.final_price * 100,
+                          allocation_offer_amount_cents: offer_allocation_quantity * final_price_cents,
                           interest_allocation_quantity:,
-                          allocation_interest_amount_cents: interest_allocation_quantity * secondary_sale.final_price * 100)
+                          allocation_interest_amount_cents: interest_allocation_quantity * final_price_cents)
+  end
+
+  def match_offers_to_interests(interests, offers)
+    Rails.logger.debug { "matching #{offers.count} offers to #{interests.count} interests" }
+    # Clear out any prev matches
+    offers.update_all(interest_id: nil)
+
+    # Match interests to offers
+    interests.each do |interest|
+      Rails.logger.debug { "matching interest #{interest.id} to offers" }
+      assigned_qty = 0
+      # Run thru the unmatched offers
+      offers.where(interest_id: nil).each do |offer|
+        Rails.logger.debug { "matching interest #{interest.id} to offer #{offer.id}" }
+
+        unassigned_qty = interest.allocation_quantity - assigned_qty
+        # Can we assing this offer to this interest?
+        if offer.allocation_quantity < unassigned_qty
+          assigned_qty += offer.allocation_quantity
+          offer.interest = interest
+          offer.save!
+          Rails.logger.debug { "Assigned offer #{offer.id} to interest #{interest.id}" }
+        else
+          break
+        end
+      end
+
+      Rails.logger.debug { "assigned #{assigned_qty} to interest #{interest.id} with #{interest.allocation_quantity} total" }
+    end
   end
 end

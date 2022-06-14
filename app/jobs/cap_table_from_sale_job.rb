@@ -46,7 +46,7 @@ class CapTableFromSaleJob < ApplicationJob
       # Create investor for the interest
       investor = create_investors(interest)
 
-      offers = interest.offers.approved.verified.include(:holding)
+      offers = interest.offers.approved.verified.includes(:holding)
       equity_quantity    = offers.where("holdings.investment_instrument=?", "Equity").sum(:allocation_quantity)
       preferred_quantity = offers.where("holdings.investment_instrument=?", "Preferred").sum(:allocation_quantity)
 
