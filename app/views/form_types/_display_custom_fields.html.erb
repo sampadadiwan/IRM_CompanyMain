@@ -1,7 +1,7 @@
 <% model.properties.each do |k,v| %>
     <tr>
     <td>
-        <%= k %>
+        <%= k.humanize.titleize %>
     </td>
     <td>
         <%= v %>

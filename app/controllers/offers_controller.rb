@@ -164,7 +164,7 @@ class OffersController < ApplicationController
     params.require(:offer).permit(:user_id, :entity_id, :secondary_sale_id, :investor_id,
                                   :holding_id, :quantity, :percentage, :notes, :first_name, :last_name,
                                   :middle_name, :PAN, :address, :bank_account_number, :bank_name,
-                                  :comments, :verified, :final_agreement, :interest_id,
+                                  :comments, :verified, :final_agreement, :interest_id, :form_type_id,
                                   :allocation_quantity, :acquirer_name, :bank_routing_info, :id_proof, :address_proof, additional_docs: [], signature: [], docs: [], properties: {})
   end
 end

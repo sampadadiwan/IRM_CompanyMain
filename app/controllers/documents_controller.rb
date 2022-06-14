@@ -126,7 +126,7 @@ class DocumentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def document_params
-    params.require(:document).permit(:name, :file, :text, :entity_id, :video,
+    params.require(:document).permit(:name, :file, :text, :entity_id, :video, :form_type_id,
                                      :tag_list, :folder_id, properties: {})
   end
 end
