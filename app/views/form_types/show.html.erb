@@ -4,6 +4,9 @@
 
     <tr>
       <td>
+        Position
+      </td>
+      <td>
         Name
       </td>
       <td>
@@ -14,11 +17,14 @@
     <% @form_type.form_custom_fields.each do |f| %>
       <tr>
         <td>
+          <%= f.position %>
+        </td>
+        <td>
           <%= f.name %>
         </td>
         <td>
           <%= f.field_type %>  : 
-          <%= f.required ? "Required" : "Not Required" %>  
+          <%= f.required ? "Required " : "Not Required " %>  
           <%= f.meta_data %>
         </td>
       </tr>

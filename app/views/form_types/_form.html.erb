@@ -13,8 +13,8 @@
   
   <div data-controller="customfield">
     <div class="form-group">
-      <%= form.label :name %>
-      <%= form.text_field :name, class: "form-control"  %>
+      <%= form.label :name, "Form Name" %>
+      <%= form.select :name, ["Investor", "SecondarySale", "Deal", "Offer", "Interest", "Document", "OptionPool"], {}, class: "form-control"  %>
     </div>
 
     <h1>Custom Fields</h1>

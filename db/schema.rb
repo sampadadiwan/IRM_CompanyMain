@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_13_070920) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_14_024210) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -380,6 +380,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_13_070920) do
     t.datetime "updated_at", null: false
     t.text "meta_data"
     t.boolean "has_attachment", default: false
+    t.integer "position"
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
   end
 
@@ -796,8 +797,11 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_13_070920) do
     t.boolean "finalized", default: false
     t.text "seller_doc_list"
     t.decimal "seller_transaction_fees_pct", precision: 5, scale: 2
+    t.text "properties"
+    t.bigint "form_type_id"
     t.index ["deleted_at"], name: "index_secondary_sales_on_deleted_at"
     t.index ["entity_id"], name: "index_secondary_sales_on_entity_id"
+    t.index ["form_type_id"], name: "index_secondary_sales_on_form_type_id"
   end
 
   create_table "taggings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -928,6 +932,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_13_070920) do
   add_foreign_key "excercises", "option_pools"
   add_foreign_key "excercises", "users"
   add_foreign_key "folders", "entities"
+  add_foreign_key "form_custom_fields", "form_types"
+  add_foreign_key "form_types", "entities"
   add_foreign_key "funding_rounds", "entities"
   add_foreign_key "holding_actions", "entities"
   add_foreign_key "holding_actions", "holdings"
@@ -957,11 +963,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_13_070920) do
   add_foreign_key "payments", "entities"
   add_foreign_key "payments", "users"
   add_foreign_key "secondary_sales", "entities"
+  add_foreign_key "secondary_sales", "form_types"
   add_foreign_key "taggings", "tags"
   add_foreign_key "valuations", "entities"
   add_foreign_key "vesting_schedules", "entities"
   add_foreign_key "vesting_schedules", "option_pools"
-  add_foreign_key "form_custom_fields", "form_types"
-  add_foreign_key "form_types", "entities"
-
 end

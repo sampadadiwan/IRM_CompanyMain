@@ -1,4 +1,4 @@
 <div class="form-group">
-    <%= f.label field.name %>
-    <%= f.check_box field.name, class: "form-control form-checkbox" %>    
+    <%= f.label field.name, field.name.humanize.titleize %>
+    <%= f.check_box field.name, class: "form-control form-checkbox", required: field.required %>    
 </div>

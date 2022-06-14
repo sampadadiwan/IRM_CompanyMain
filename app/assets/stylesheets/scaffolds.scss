@@ -88,7 +88,17 @@ h1 {
 }
 
 .form-checkbox {
-  width: 5% !important;
+  width: 3% !important;
+}
+
+.form-radio {
+  width: 3% !important;
+  display: inline !important;
+  vertical-align: middle !important;
+}
+
+.radio_label {
+  padding-right: 10px;
 }
 
 .btn {

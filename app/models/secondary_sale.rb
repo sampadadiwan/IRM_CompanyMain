@@ -51,6 +51,10 @@ class SecondarySale < ApplicationRecord
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy
 
+  # Customize form for Sale
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   monetize :total_offered_amount_cents, :total_interest_amount_cents,
            :allocation_offer_amount_cents, :allocation_interest_amount_cents,
            with_currency: ->(s) { s.entity.currency }

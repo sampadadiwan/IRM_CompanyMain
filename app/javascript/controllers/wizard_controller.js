@@ -30,7 +30,7 @@ export default class extends Controller {
             var curStep = $(this).closest(".setup-content"),
                 curStepBtn = curStep.attr("id"),
                 nextStepWizard = $('div.setup-panel div a[href="#' + curStepBtn + '"]').parent().next().children("a"),
-                curInputs = curStep.find("input[type='file'],input[type='text'],input[type='number'],input[type='date'],select,textarea"),
+                curInputs = curStep.find("input[type='checkbox'],input[type='file'],input[type='text'],input[type='number'],input[type='date'],select,textarea"),
                 isValid = true;
 
             $(".form-group").removeClass("field_with_errors");

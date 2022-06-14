@@ -40,6 +40,11 @@ class SecondarySalesController < ApplicationController
     @secondary_sale.start_date = Time.zone.today
     @secondary_sale.end_date = Time.zone.today + 2.weeks
     @secondary_sale.percent_allowed = 100
+
+    # Custom form fields
+    form_type = FormType.where(entity_id: current_user.entity_id, name: "SecondarySale").first
+    @secondary_sale.form_type = form_type
+
     authorize @secondary_sale
   end
 
@@ -132,6 +137,6 @@ class SecondarySalesController < ApplicationController
     params.require(:secondary_sale).permit(:name, :entity_id, :start_date, :end_date, :final_price,
                                            :percent_allowed, :min_price, :max_price, :active, :price_type,
                                            :seller_doc_list, :finalized, :spa, :final_allocation, :spa_template,
-                                           seller_instructions: [], private_docs: [], public_docs: [], buyer_instructions: [])
+                                           seller_instructions: [], private_docs: [], public_docs: [], buyer_instructions: [], properties: {})
   end
 end
