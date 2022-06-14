@@ -63,7 +63,7 @@ Scenario Outline: Sale Allocation
 Scenario Outline: Sale To Cap Table
   Given there is a user "first_name=Emp1" for an entity "entity_type=Startup"
   Given there is a sale "<sale>"
-  Given there are "2" employee investors
+  Given there are "3" employee investors
   Given there is a FundingRound "name=Series A"
   And there is a holding "approved=true;orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
   Given there are offers "<offer>" for the sale
@@ -71,7 +71,17 @@ Scenario Outline: Sale To Cap Table
   Then when the allocation is done
   And when the sale is finalized
   And when the cap table is updated from the sale 
+  Then there are "<interest_count>" investor investments in the cap table
+  Then the employee holdings must be reduced by the sold amount
+  And the employee investments must be reduced by the sold amount
+  # And the investor investments quantity should be the interest quantity
   
   Examples:
-|allocation_percentage |interest_count |interest                     |offer	                      |entity                     |sale                                     |
-  	| .5                   |1              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
+    |interest_count |interest                                            |offer              	                          |entity                     |sale                                     |
+  	|1              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true |entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
+    |2              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
+    |3              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Fixed Price;final_price=10000;percent_allowed=100  |    
+    |1              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
+    |2              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
+    |3              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
+    

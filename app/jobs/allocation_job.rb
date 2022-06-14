@@ -76,8 +76,20 @@ class AllocationJob < ApplicationJob
       final_price = #{secondary_sale.final_price},
       allocation_amount_cents = (ceil(quantity * #{offer_percentage}) * #{secondary_sale.final_price * 100})")
 
+    # Sometimes we overallocate. so we need to adjust
+    # update_delta(interests, offers)
+
     # Now match the offers to interests
     match_offers_to_interests(interests, offers)
+  end
+
+  def update_delta(interests, offers)
+    delta = interests.sum(:allocation_quantity) - offers.sum(:allocation_quantity)
+    if delta.positive?
+      # We over allocated, we cant allocate more to buyers than what sellers are selling
+      last_interest = interests.last
+      last_interest.update(allocation_quantity: last_interest.allocation_quantity - delta)
+    end
   end
 
   def update_sale(secondary_sale)
@@ -119,7 +131,7 @@ class AllocationJob < ApplicationJob
 
         unassigned_qty = interest.allocation_quantity - assigned_qty
         # Can we assing this offer to this interest?
-        if offer.allocation_quantity < unassigned_qty
+        if offer.allocation_quantity <= unassigned_qty
           assigned_qty += offer.allocation_quantity
           offer.interest = interest
           offer.save!

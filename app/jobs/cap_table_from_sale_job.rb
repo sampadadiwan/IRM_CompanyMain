@@ -13,7 +13,9 @@ class CapTableFromSaleJob < ApplicationJob
 
   def update_sold_holdings(secondary_sale)
     # Only consider approved and verified offers
-    secondary_sale.offers.approved.verified.each do |offer|
+    offers = secondary_sale.offers.approved.verified
+    Rails.logger.debug { "#### offers = #{offers.count}" }
+    offers.each do |offer|
       holding = offer.holding
       holding.sold_quantity = offer.allocation_quantity
       holding.save
@@ -42,13 +44,16 @@ class CapTableFromSaleJob < ApplicationJob
   end
 
   def create_investments(secondary_sale)
-    secondary_sale.interests.short_listed.each do |interest|
+    interests = secondary_sale.interests.short_listed
+    Rails.logger.debug { "#### interests = #{interests.count}" }
+    interests.each do |interest|
       # Create investor for the interest
       investor = create_investors(interest)
 
       offers = interest.offers.approved.verified.includes(:holding)
       equity_quantity    = offers.where("holdings.investment_instrument=?", "Equity").sum(:allocation_quantity)
       preferred_quantity = offers.where("holdings.investment_instrument=?", "Preferred").sum(:allocation_quantity)
+      Rails.logger.debug { "#### offers = #{offers.count} equity_quantity = #{equity_quantity} preferred_quantity = #{preferred_quantity}" }
 
       if equity_quantity.positive?
         equity_investment = build_investment(secondary_sale, investor, "Equity", equity_quantity)
@@ -68,9 +73,9 @@ class CapTableFromSaleJob < ApplicationJob
                    investee_entity_id: investor.investee_entity_id,
                    investor_id: investor.id, employee_holdings: false,
                    quantity:,
-                   price_cents: secondary_sale.final_price_cents,
+                   price_cents: secondary_sale.final_price * 100,
                    currency: secondary_sale.entity.currency,
-                   funding_round: holding.funding_round,
+                   funding_round: secondary_sale.entity.funding_rounds.first,
                    notes: "Investment from secondary sale #{secondary_sale.id} purchase")
   end
 end

@@ -446,3 +446,26 @@ end
 Then('when the cap table is updated from the sale') do
   CapTableFromSaleJob.new.perform(@sale.id)
 end
+
+Then('there are {string} investor investments in the cap table') do |count|
+  investor_ids = Investor.not_holding.all.collect(&:id)
+  Investment.where(investor_id: investor_ids).count.should == count.to_i
+end
+
+Then('the investor investments quantity should be the interest quantity') do
+  investor_ids = Investor.not_holding.all.collect(&:id)
+  Investment.where(investor_id: investor_ids).sum(:quantity).should == Interest.short_listed.escrow_deposited.sum(:quantity)
+end
+
+
+Then('the employee holdings must be reduced by the sold amount') do
+  @holding_quantity = 0
+  @sale.offers.approved.verified.each do |offer|
+    offer.holding.quantity.should == offer.holding.orig_grant_quantity - offer.allocation_quantity
+    @holding_quantity = @holding_quantity + offer.holding.quantity
+  end
+end
+
+Then('the employee investments must be reduced by the sold amount') do
+  Investment.where(employee_holdings: true).sum(:quantity).should == @holding_quantity
+end
