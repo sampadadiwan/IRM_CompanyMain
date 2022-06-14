@@ -17,6 +17,11 @@ class InterestsController < ApplicationController
     @interest.interest_entity_id = current_user.entity_id
     @interest.offer_entity_id = @interest.secondary_sale.entity_id
     @interest.price = @interest.secondary_sale.final_price if @interest.secondary_sale.price_type == "Fixed Price"
+
+    # Custom form fields
+    form_type = FormType.where(entity_id: current_user.entity_id, name: "Interest").first
+    @interest.form_type = form_type
+
     authorize @interest
   end
 
@@ -108,6 +113,6 @@ class InterestsController < ApplicationController
   def interest_params
     params.require(:interest).permit(:offer_entity_id, :quantity, :price, :user_id,
                                      :interest_entity_id, :secondary_sale_id, :buyer_entity_name,
-                                     :address, :contact_name, :email, :PAN, :final_agreement)
+                                     :address, :contact_name, :email, :PAN, :final_agreement, properties: {})
   end
 end

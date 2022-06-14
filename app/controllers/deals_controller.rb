@@ -81,6 +81,11 @@ class DealsController < ApplicationController
     @deal.currency = @deal.entity.currency
     @deal.units = @deal.entity.units
     @deal.activity_list = Deal::ACTIVITIES
+
+    # Custom form fields
+    form_type = FormType.where(entity_id: current_user.entity_id, name: "Deal").first
+    @deal.form_type = form_type
+
     authorize @deal
   end
 
@@ -151,6 +156,6 @@ class DealsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def deal_params
     params.require(:deal).permit(:entity_id, :name, :amount, :status,
-                                 :currency, :units, :activity_list, :archived)
+                                 :currency, :units, :activity_list, :archived, properties: {})
   end
 end

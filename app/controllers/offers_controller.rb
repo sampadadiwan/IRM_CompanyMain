@@ -59,6 +59,10 @@ class OffersController < ApplicationController
     @offer.entity_id = @offer.secondary_sale.entity_id
     @offer.quantity = @offer.allowed_quantity
 
+    # Custom form fields
+    form_type = FormType.where(entity_id: current_user.entity_id, name: "Offer").first
+    @offer.form_type = form_type
+
     authorize @offer
   end
 
@@ -161,6 +165,6 @@ class OffersController < ApplicationController
                                   :holding_id, :quantity, :percentage, :notes, :first_name, :last_name,
                                   :middle_name, :PAN, :address, :bank_account_number, :bank_name,
                                   :comments, :verified, :final_agreement, :interest_id,
-                                  :allocation_quantity, :acquirer_name, :bank_routing_info, :id_proof, :address_proof, additional_docs: [], signature: [], docs: [])
+                                  :allocation_quantity, :acquirer_name, :bank_routing_info, :id_proof, :address_proof, additional_docs: [], signature: [], docs: [], properties: {})
   end
 end

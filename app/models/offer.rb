@@ -63,6 +63,10 @@ class Offer < ApplicationRecord
   has_many_attached :seller_docs, service: :amazon
   has_one_attached  :spa, service: :amazon
 
+  # Customize form
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   delegate :quantity, to: :holding, prefix: :holding
 
   scope :approved, -> { where(approved: true) }

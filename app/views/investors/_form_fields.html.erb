@@ -30,3 +30,5 @@
   </div>
 
   <%= form.text_field :back_to, name: "back_to", class: "form-control", hidden: true, value: params[:back_to] %>
+
+  <%= custom_form_fields(investor, form) %>

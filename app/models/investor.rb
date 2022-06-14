@@ -40,6 +40,10 @@ class Investor < ApplicationRecord
   has_many :notes, dependent: :destroy
   has_many :aggregate_investments, dependent: :destroy
 
+  # Customize form
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   delegate :name, to: :investee_entity, prefix: :investee
   validates :category, presence: true
 

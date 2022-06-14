@@ -133,6 +133,9 @@
                         <%= form.text_area :bank_routing_info, class: "form-control", required: true  %>
                         <small class="text-muted">IFSC code, Branch etc</small>
                     </div>
+
+                    <%= custom_form_fields(offer, form) %>
+
                     <button class="btn btn-primary nextBtn btn-lg pull-right" type="button">Next</button>
                 </div>
             </div>

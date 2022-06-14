@@ -14,16 +14,9 @@ class InvestorsController < ApplicationController
   def search
     query = params[:query]
     if query.present?
-      @investors = if current_user.has_role?(:super)
-
-                     InvestorIndex.query(query_string: { fields: InvestorIndex::SEARCH_FIELDS,
-                                                         query:, default_operator: 'and' })
-
-                   else
-                     InvestorIndex.filter(term: { investee_entity_id: current_user.entity_id })
-                                  .query(query_string: { fields: InvestorIndex::SEARCH_FIELDS,
-                                                         query:, default_operator: 'and' })
-                   end
+      @investors = InvestorIndex.filter(term: { investee_entity_id: current_user.entity_id })
+                                .query(query_string: { fields: InvestorIndex::SEARCH_FIELDS,
+                                                       query:, default_operator: 'and' })
 
     end
     render "index"
@@ -37,6 +30,11 @@ class InvestorsController < ApplicationController
   # GET /investors/new
   def new
     @investor = Investor.new(investor_params)
+
+    # Custom form fields
+    form_type = FormType.where(entity_id: current_user.entity_id, name: "Investor").first
+    @investor.form_type = form_type
+
     authorize @investor
   end
 
@@ -100,6 +98,6 @@ class InvestorsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def investor_params
     params.require(:investor).permit(:investor_entity_id, :tag_list, :investor_name,
-                                     :investee_entity_id, :category, :city)
+                                     :investee_entity_id, :category, :city, properties: {})
   end
 end

@@ -1,0 +1,6 @@
+<%= form.fields_for :properties, OpenStruct.new(model.properties) do |builder| %>
+    <% model.form_type.form_custom_fields.each do |field| %>
+        <%= render "form_custom_fields/#{field.field_type.underscore}", 
+                    field: field, f: builder %>
+    <% end %>
+<% end %>

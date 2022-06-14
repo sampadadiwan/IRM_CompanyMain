@@ -37,6 +37,10 @@ class Document < ApplicationRecord
   has_rich_text :text
   has_one_attached :video, service: :amazon
 
+  # Customize form
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   validates :name, presence: true
 
   delegate :full_path, to: :folder, prefix: :folder

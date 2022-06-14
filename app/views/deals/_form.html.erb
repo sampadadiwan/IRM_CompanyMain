@@ -39,13 +39,7 @@
     <%= form.select :currency, ENV["CURRENCY"].split(","), {}, class: "form-control"  %>
   </div>
 
-  <!-- <div class="form-group">
-    <%= form.label :units %>
-    <%= form.select :units, ENV["CURRENCY_UNITS"].split(","), {}, class: "form-control"  %>
-  </div> -->
-
-
-
+  <%= custom_form_fields(deal, form) %>
 
   <div class="form-group">
     <%= form.label :archived %>

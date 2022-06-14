@@ -95,6 +95,7 @@
     <small class="text-muted">Only if you want the options to be manually vested. This will ignore the vesting schedule</small> 
   </div>
 
+  <%= custom_form_fields(holding, form) %>
 
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-primary"}%>

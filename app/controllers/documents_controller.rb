@@ -66,6 +66,10 @@ class DocumentsController < ApplicationController
   # GET /documents/new
   def new
     @document = Document.new(document_params)
+    # Custom form fields
+    form_type = FormType.where(entity_id: current_user.entity_id, name: "Document").first
+    @document.form_type = form_type
+
     authorize @document
   end
 
@@ -122,6 +126,7 @@ class DocumentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def document_params
-    params.require(:document).permit(:name, :file, :text, :entity_id, :video, :tag_list, :folder_id)
+    params.require(:document).permit(:name, :file, :text, :entity_id, :video,
+                                     :tag_list, :folder_id, properties: {})
   end
 end

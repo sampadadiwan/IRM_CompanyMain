@@ -263,8 +263,11 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_14_024210) do
     t.boolean "archived", default: false
     t.string "currency", limit: 10
     t.string "units", limit: 15
+    t.text "properties"
+    t.bigint "form_type_id"
     t.index ["deleted_at"], name: "index_deals_on_deleted_at"
     t.index ["entity_id"], name: "index_deals_on_entity_id"
+    t.index ["form_type_id"], name: "index_deals_on_form_type_id"
   end
 
   create_table "documents", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -281,9 +284,12 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_14_024210) do
     t.datetime "deleted_at"
     t.bigint "folder_id", null: false
     t.integer "impressions_count", default: 0
+    t.text "properties"
+    t.bigint "form_type_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
     t.index ["folder_id"], name: "index_documents_on_folder_id"
+    t.index ["form_type_id"], name: "index_documents_on_form_type_id"
   end
 
   create_table "entities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -482,8 +488,11 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_14_024210) do
     t.integer "unvested_cancelled_quantity", default: 0
     t.integer "net_unvested_quantity", default: 0
     t.boolean "manual_vesting", default: false
+    t.text "properties"
+    t.bigint "form_type_id"
     t.index ["created_from_excercise_id"], name: "index_holdings_on_created_from_excercise_id"
     t.index ["entity_id"], name: "index_holdings_on_entity_id"
+    t.index ["form_type_id"], name: "index_holdings_on_form_type_id"
     t.index ["funding_round_id"], name: "index_holdings_on_funding_round_id"
     t.index ["investment_id"], name: "index_holdings_on_investment_id"
     t.index ["investor_id"], name: "index_holdings_on_investor_id"
@@ -559,6 +568,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_14_024210) do
     t.string "email", limit: 40
     t.string "PAN", limit: 15
     t.boolean "final_agreement", default: false
+    t.text "properties"
+    t.bigint "form_type_id"
+    t.index ["form_type_id"], name: "index_interests_on_form_type_id"
     t.index ["interest_entity_id"], name: "index_interests_on_interest_entity_id"
     t.index ["offer_entity_id"], name: "index_interests_on_offer_entity_id"
     t.index ["secondary_sale_id"], name: "index_interests_on_secondary_sale_id"
@@ -631,7 +643,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_14_024210) do
     t.boolean "is_holdings_entity", default: false
     t.boolean "is_trust", default: false
     t.string "city", limit: 50
+    t.text "properties"
+    t.bigint "form_type_id"
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
+    t.index ["form_type_id"], name: "index_investors_on_form_type_id"
     t.index ["investee_entity_id"], name: "index_investors_on_investee_entity_id"
     t.index ["investor_entity_id", "investee_entity_id"], name: "index_investors_on_investor_entity_id_and_investee_entity_id", unique: true
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
@@ -705,8 +720,11 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_14_024210) do
     t.text "comments"
     t.boolean "final_agreement", default: false
     t.bigint "interest_id"
+    t.text "properties"
+    t.bigint "form_type_id"
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
     t.index ["entity_id"], name: "index_offers_on_entity_id"
+    t.index ["form_type_id"], name: "index_offers_on_form_type_id"
     t.index ["holding_id"], name: "index_offers_on_holding_id"
     t.index ["interest_id"], name: "index_offers_on_interest_id"
     t.index ["investor_id"], name: "index_offers_on_investor_id"
@@ -737,7 +755,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_14_024210) do
     t.bigint "unvested_cancelled_quantity", default: 0
     t.bigint "net_unvested_quantity", default: 0
     t.boolean "manual_vesting", default: false
+    t.text "properties"
+    t.bigint "form_type_id"
     t.index ["entity_id"], name: "index_option_pools_on_entity_id"
+    t.index ["form_type_id"], name: "index_option_pools_on_form_type_id"
     t.index ["funding_round_id"], name: "index_option_pools_on_funding_round_id"
   end
 
@@ -926,7 +947,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_14_024210) do
   add_foreign_key "deal_messages", "deal_investors"
   add_foreign_key "deal_messages", "users"
   add_foreign_key "deals", "entities"
+  add_foreign_key "deals", "form_types"
   add_foreign_key "documents", "folders"
+  add_foreign_key "documents", "form_types"
   add_foreign_key "excercises", "entities"
   add_foreign_key "excercises", "holdings"
   add_foreign_key "excercises", "option_pools"
@@ -941,24 +964,29 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_14_024210) do
   add_foreign_key "holding_audit_trails", "entities"
   add_foreign_key "holdings", "entities"
   add_foreign_key "holdings", "excercises", column: "created_from_excercise_id"
+  add_foreign_key "holdings", "form_types"
   add_foreign_key "holdings", "investments"
   add_foreign_key "holdings", "investors"
   add_foreign_key "holdings", "option_pools"
   add_foreign_key "holdings", "users"
   add_foreign_key "import_uploads", "entities"
   add_foreign_key "import_uploads", "users"
+  add_foreign_key "interests", "form_types"
   add_foreign_key "interests", "secondary_sales"
   add_foreign_key "interests", "users"
   add_foreign_key "investments", "aggregate_investments"
   add_foreign_key "investments", "funding_rounds"
+  add_foreign_key "investors", "form_types"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "offers", "entities"
+  add_foreign_key "offers", "form_types"
   add_foreign_key "offers", "holdings"
   add_foreign_key "offers", "interests"
   add_foreign_key "offers", "secondary_sales"
   add_foreign_key "offers", "users"
   add_foreign_key "option_pools", "entities"
+  add_foreign_key "option_pools", "form_types"
   add_foreign_key "option_pools", "funding_rounds"
   add_foreign_key "payments", "entities"
   add_foreign_key "payments", "users"

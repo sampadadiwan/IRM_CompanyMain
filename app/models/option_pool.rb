@@ -35,6 +35,10 @@ class OptionPool < ApplicationRecord
   has_one_attached :certificate_signature, service: :amazon
   has_rich_text :details
 
+  # Customize form
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   validates :name, :start_date, :number_of_options, :excercise_price, presence: true
   validates :number_of_options, :excercise_price, numericality: { greater_than: 0 }
 

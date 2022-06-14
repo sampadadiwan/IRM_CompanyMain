@@ -29,6 +29,10 @@ class Interest < ApplicationRecord
 
   has_one_attached  :spa, service: :amazon
 
+  # Customize form
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   validates :quantity, comparison: { less_than_or_equal_to: :total_offered_quantity }
   validates :price, comparison: { less_than_or_equal_to: :max_price } if proc { |i| i.secondary_sale.max_price }
   validates :price, comparison: { greater_than_or_equal_to: :min_price }

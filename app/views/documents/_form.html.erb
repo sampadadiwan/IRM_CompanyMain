@@ -54,6 +54,8 @@
     <%= form.file_field :video, class: "form-control", direct_upload: true, placeholder: "Upload video" %>
   </div>
 
+  <%= custom_form_fields(document, form) %>
+
   <div class="form-group">
     <%= form.label :description %>
     <%= form.rich_text_area :text, class: "form-control trix-content"  %>

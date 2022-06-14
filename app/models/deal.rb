@@ -42,6 +42,10 @@ class Deal < ApplicationRecord
   has_many :deal_docs, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
 
+  # Customize form
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   validates :name, :amount_cents, :status, :currency, presence: true
 
   STATUS = %w[Open Closed].freeze

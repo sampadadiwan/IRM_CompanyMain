@@ -17,6 +17,11 @@ class OptionPoolsController < ApplicationController
     (1..4).each do |i|
       @option_pool.vesting_schedules.build(months_from_grant: i * 12, vesting_percent: 25)
     end
+
+    # Custom form fields
+    form_type = FormType.where(entity_id: current_user.entity_id, name: "OptionPool").first
+    @option_pool.form_type = form_type
+
     authorize(@option_pool)
   end
 
@@ -97,7 +102,7 @@ class OptionPoolsController < ApplicationController
   def option_pool_params
     params.require(:option_pool).permit(:name, :start_date, :number_of_options, :excercise_price,
                                         :excercise_period_months, :entity_id, :funding_round_id, :certificate_signature, :manual_vesting, :details,
-                                        attachments: [], excercise_instructions: [],
+                                        attachments: [], excercise_instructions: [], properties: {},
                                         vesting_schedules_attributes: %i[id months_from_grant vesting_percent _destroy])
   end
 end

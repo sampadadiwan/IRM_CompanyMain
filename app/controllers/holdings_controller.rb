@@ -23,16 +23,9 @@ class HoldingsController < ApplicationController
     @entity = current_user.entity
     query = params[:query]
     if query.present?
-      @holdings = if current_user.has_role?(:super)
-
-                    HoldingIndex.query(query_string: { fields: HoldingIndex::SEARCH_FIELDS,
-                                                       query:, default_operator: 'and' }).objects
-
-                  else
-                    HoldingIndex.filter(term: { entity_id: @entity.id })
-                                .query(query_string: { fields: HoldingIndex::SEARCH_FIELDS,
-                                                       query:, default_operator: 'and' }).objects
-                  end
+      @holdings = HoldingIndex.filter(term: { entity_id: @entity.id })
+                              .query(query_string: { fields: HoldingIndex::SEARCH_FIELDS,
+                                                     query:, default_operator: 'and' }).objects
 
     end
     render "index"
@@ -55,6 +48,11 @@ class HoldingsController < ApplicationController
     @holding = Holding.new(holding_params)
     @holding.entity_id = current_user.entity_id
     @holding.holding_type = @holding.investor.category
+
+    # Custom form fields
+    form_type = FormType.where(entity_id: current_user.entity_id, name: "Holding").first
+    @holding.form_type = form_type
+
     authorize @holding
   end
 
@@ -181,6 +179,6 @@ class HoldingsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def holding_params
     params.require(:holding).permit(:user_id, :investor_id, :entity_id, :orig_grant_quantity, :price,
-                                    :value, :investment_instrument, :holding_type, :funding_round_id, :option_pool_id, :grant_date, :employee_id, :manual_vesting, :vested_quantity)
+                                    :value, :investment_instrument, :holding_type, :funding_round_id, :option_pool_id, :grant_date, :employee_id, :manual_vesting, :vested_quantity, properties: {})
   end
 end

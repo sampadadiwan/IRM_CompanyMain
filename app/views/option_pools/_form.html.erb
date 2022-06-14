@@ -117,6 +117,8 @@
               <%= form.rich_text_area :details, class: "form-control trix-content"  %>
             </div>
 
+            <%= custom_form_fields(option_pool, form) %>
+
             <div class="form-group">
               <%= link_to_add_association 'Add Schedule', form, :vesting_schedules , class: "btn btn-success btn-lg" %>
               <%= form.submit "Save", {class: "btn btn-primary btn-lg"}%>

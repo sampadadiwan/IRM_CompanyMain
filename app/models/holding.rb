@@ -59,6 +59,10 @@ class Holding < ApplicationRecord
   belongs_to :created_from_excercise, class_name: "Excercise", optional: true
   has_one :aggregated_investment, through: :investment
 
+  # Customize form
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   monetize :price_cents, :value_cents, with_currency: ->(i) { i.entity.currency }
 
   validates :quantity, :holding_type, presence: true
