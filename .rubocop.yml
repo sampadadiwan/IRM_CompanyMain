@@ -40,6 +40,7 @@ Rails/SkipsModelValidations:
     - 'app/jobs/investment_percentage_holding_job.rb'
     - 'app/interactors/create_audit_trail.rb'
     - 'app/models/entity.rb'
+    - 'app/jobs/offer_spa_job.rb'
 Rails/HasAndBelongsToMany:
   Exclude:
     - 'app/models/role.rb'
