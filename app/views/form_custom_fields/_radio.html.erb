@@ -4,4 +4,6 @@
         <%= f.radio_button field.name, option, required: field.required, class: "form-control form-radio" %> 
         <%= f.label option, class: "radio_label" %>
     <% end %>
+    <br>
+    <small class="text-muted"><%= field.help_text %></small>
 </div>

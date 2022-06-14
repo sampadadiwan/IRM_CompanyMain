@@ -24,8 +24,9 @@
         </td>
         <td>
           <%= f.field_type %>  : 
-          <%= f.required ? "Required " : "Not Required " %>  
-          <%= f.meta_data %>
+          <%= f.required ? "Required " : "Not Required " %>  <br>
+          Metadata: <%= f.meta_data %><br>
+          Help Text: <%= f.help_text %><br>
         </td>
       </tr>
     <% end %>
