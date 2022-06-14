@@ -14,7 +14,7 @@ class CapTableFromSaleJob < ApplicationJob
   def update_sold_holdings(secondary_sale)
     # Only consider approved and verified offers
     offers = secondary_sale.offers.approved.verified
-    Rails.logger.debug { "#### offers = #{offers.count}" }
+    Rails.logger.debug { "offers = #{offers.count}" }
     offers.each do |offer|
       holding = offer.holding
       holding.sold_quantity = offer.allocation_quantity
@@ -45,7 +45,7 @@ class CapTableFromSaleJob < ApplicationJob
 
   def create_investments(secondary_sale)
     interests = secondary_sale.interests.short_listed
-    Rails.logger.debug { "#### interests = #{interests.count}" }
+    Rails.logger.debug { "interests = #{interests.count}" }
     interests.each do |interest|
       # Create investor for the interest
       investor = create_investors(interest)
@@ -53,7 +53,7 @@ class CapTableFromSaleJob < ApplicationJob
       offers = interest.offers.approved.verified.includes(:holding)
       equity_quantity    = offers.where("holdings.investment_instrument=?", "Equity").sum(:allocation_quantity)
       preferred_quantity = offers.where("holdings.investment_instrument=?", "Preferred").sum(:allocation_quantity)
-      Rails.logger.debug { "#### offers = #{offers.count} equity_quantity = #{equity_quantity} preferred_quantity = #{preferred_quantity}" }
+      Rails.logger.debug { "offers = #{offers.count} equity_quantity = #{equity_quantity} preferred_quantity = #{preferred_quantity}" }
 
       if equity_quantity.positive?
         equity_investment = build_investment(secondary_sale, investor, "Equity", equity_quantity)

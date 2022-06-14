@@ -79,4 +79,8 @@ class Interest < ApplicationRecord
     self.amount_cents = quantity * final_price * 100 if final_price.positive?
     self.allocation_amount_cents = allocation_quantity * final_price * 100 if final_price.positive?
   end
+
+  def allocation_delta
+    allocation_quantity - offer_quantity
+  end
 end

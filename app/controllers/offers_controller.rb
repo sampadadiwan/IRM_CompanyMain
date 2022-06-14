@@ -11,6 +11,7 @@ class OffersController < ApplicationController
     if params[:secondary_sale_id].present?
       @offers = @offers.where(secondary_sale_id: params[:secondary_sale_id])
       @offers = @offers.with_attached_docs.with_attached_id_proof.with_attached_signature
+      @offers = @offers.order(allocation_quantity: :desc)
       @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
     end
 

@@ -131,6 +131,46 @@
       </tr>
       <tr>
         <td>
+          Mapped Offer Quantity
+        </td>
+        <td>
+          <%= interest.offer_quantity %> 
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Allocation - Mapped
+        </td>
+        <td>
+          <%= interest.allocation_delta %> 
+        </td>
+      </tr>
+
+    <% end %>
+
+    <% if interest.secondary_sale.finalized || params[:debug].present? %>
+
+      <tr>
+        <td colspan="2" class="bg-primary"></td>
+      </tr>
+      <tr>
+        <td>
+          Allocation Quantity
+        </td>
+        <td>
+          <%= interest.allocation_quantity %> 
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Allocation %
+        </td>
+        <td>
+          <%= interest.allocation_percentage %> %
+        </td>
+      </tr>
+      <tr>
+        <td>
           Buyer Entity Name
         </td>
         <td>

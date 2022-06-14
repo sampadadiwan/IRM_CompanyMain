@@ -39,6 +39,11 @@ class Offer < ApplicationRecord
   belongs_to :investor
   belongs_to :entity
   belongs_to :secondary_sale
+
+  counter_culture :interest,
+                  column_name: proc { |o| o.approved ? 'offer_quantity' : nil },
+                  delta_column: 'quantity'
+
   counter_culture :secondary_sale,
                   column_name: proc { |o| o.approved ? 'total_offered_quantity' : nil },
                   delta_column: 'quantity'
@@ -79,15 +84,15 @@ class Offer < ApplicationRecord
   validates :address_proof, :id_proof, :signature, presence: true if Rails.env.production?
 
   validate :check_quantity
-  validate :already_offered, :sale_active, on: :create
+  validate :sale_active, on: :create
 
   monetize :amount_cents, :allocation_amount_cents, with_currency: ->(o) { o.entity.currency }
 
   BUYER_STATUS = %w[Confirmed Rejected].freeze
 
-  def already_offered
-    errors.add(:secondary_sale, ": An existing offer from this user already exists. Pl modify or delete that one.") if secondary_sale.offers.where(user_id:, holding_id:).first.present?
-  end
+  # def already_offered
+  #   errors.add(:secondary_sale, ": An existing offer from this user already exists. Pl modify or delete that one.") if secondary_sale.offers.where(user_id:, holding_id:).first.present?
+  # end
 
   def sale_active
     errors.add(:secondary_sale, ": Is not active.") unless secondary_sale.active?
@@ -159,6 +164,26 @@ class Offer < ApplicationRecord
       # Cleanup
       File.delete("tmp/#{file_name}") if File.exist?("tmp/#{file_name}") && cleanup
 
+    end
+  end
+
+  def break_offer(allocation_qtys)
+    Rails.logger.debug { "breaking offer #{id} into #{allocation_qtys} pieces" }
+
+    # Duplicate the offer
+    dup_offers = [self]
+    (1..allocation_qtys.length - 1).each do |_i|
+      dup_offers << dup
+    end
+
+    Offer.transaction do
+      # Update the peices with the quantites
+      dup_offers.each_with_index do |dup_offer, i|
+        diff =  dup_offer.allocation_quantity - allocation_qtys[i]
+        dup_offer.allocation_quantity = allocation_qtys[i]
+        dup_offer.quantity -= diff
+        dup_offer.save!
+      end
     end
   end
 end
