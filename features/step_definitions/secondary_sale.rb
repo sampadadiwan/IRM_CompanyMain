@@ -393,8 +393,8 @@ end
 Then('the sale allocation percentage must be {string}') do |arg|
   puts "\n####Eligible Interests####\n"
   puts @sale.interests.eligible(@sale).to_json
-  puts "\n####All Interests####\n"
-  puts @sale.interests.to_json
+  # puts "\n####All Interests####\n"
+  # puts @sale.interests.to_json
   @sale.allocation_percentage.should == arg.to_f  
 end
 
@@ -431,7 +431,7 @@ Then('the interests must be allocated correctly') do
     else
       interest.allocation_percentage.should be_within(0.1).of(100.0 / @sale.allocation_percentage)
     end 
-    puts interest.to_json
+    # puts interest.to_json
     interest.allocation_quantity.should  == (interest.quantity * interest.allocation_percentage / 100).ceil
   end
 end
