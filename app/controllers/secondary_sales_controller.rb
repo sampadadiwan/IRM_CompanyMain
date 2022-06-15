@@ -6,11 +6,7 @@ class SecondarySalesController < ApplicationController
 
   # GET /secondary_sales or /secondary_sales.json
   def index
-    @secondary_sales = if current_user.has_cached_role?(:holding)
-                         SecondarySale.none
-                       else
-                         policy_scope(SecondarySale)
-                       end
+    @secondary_sales = policy_scope(SecondarySale)
   end
 
   def search
@@ -22,8 +18,10 @@ class SecondarySalesController < ApplicationController
                                            .query(query_string: { fields: SecondarySaleIndex::SEARCH_FIELDS,
                                                                   query:, default_operator: 'and' }).objects
 
+      render "index"
+    else
+      redirect_to secondary_sales_path
     end
-    render "index"
   end
 
   def download

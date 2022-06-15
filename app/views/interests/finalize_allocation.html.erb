@@ -3,7 +3,7 @@
 
     <span>
         
-        <% if @secondary_sale && @secondary_sale.allocation_status.present? %>
+        <% if @secondary_sale %>
             <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
 
             <%= link_to download_secondary_sale_path(@secondary_sale, format: "xlsx"), 

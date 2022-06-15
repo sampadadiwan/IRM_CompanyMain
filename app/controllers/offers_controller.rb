@@ -15,7 +15,7 @@ class OffersController < ApplicationController
       @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
     end
 
-    @offers = @offers.page(params[:page]).per(params[:per_page] || 10)
+    @offers = @offers.page(params[:page])
 
     render params[:finalize_allocation].present? ? "finalize_allocation" : "index"
   end

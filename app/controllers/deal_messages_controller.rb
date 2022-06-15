@@ -19,7 +19,7 @@ class DealMessagesController < ApplicationController
                          DealMessage.where(entity_id: current_user.entity_id).tasks_not_done
                        end
 
-      @deal_messages = @deal_messages.with_all_rich_text.includes(:user, deal_investor: :investor)
+      @deal_messages = @deal_messages.with_all_rich_text.includes(:user, :deal_investor)
     else
       @deal_messages = DealMessage.none
     end

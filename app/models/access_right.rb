@@ -28,7 +28,7 @@ class AccessRight < ApplicationRecord
   VIEWS = [ALL, SELF].freeze
   TYPES = ["All Users for Specific Investor", "All Investors of Specific Category"].freeze
 
-  belongs_to :owner, polymorphic: true, strict_loading: true
+  belongs_to :owner, polymorphic: true
   belongs_to :entity
   belongs_to :investor, foreign_key: :access_to_investor_id, optional: true, strict_loading: true
 
