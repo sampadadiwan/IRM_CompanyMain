@@ -30,12 +30,16 @@
         <% deal_investor.deal_activities.order("sequence ASC").each do |activity| %>
             <td class="deal_activity_cell">
                 
-                <div id="<%=dom_id(activity)%>" class="dropdown" data-toggle="tooltip" data-placement="left" title="By: <%= l activity.by_date if activity.by_date && !Rails.env.test? %>">
+                <div id="<%=dom_id(activity)%>" class="dropdown">
                     <span class="btn btn-sm dropdown-toggle <%=activity_color(activity)%>" 
                         id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <%= activity.summary %>
                     </span>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+                        <a class="dropdown-item">Due: <%= l activity.by_date if activity.by_date %></a>
+                        <div class="dropdown-divider"></div>
+
 
                         <%= button_to "Toggle Done", toggle_completed_deal_activity_path(activity), class: "dropdown-item" %>
 

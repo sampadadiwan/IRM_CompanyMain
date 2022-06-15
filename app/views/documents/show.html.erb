@@ -83,7 +83,7 @@
                   </tr>
                   <% end %>
 
-                  <%= display_custom_fields(@document) %>
+                  <%= display_custom_fields(@document) if current_user %>
 
                </table>
 

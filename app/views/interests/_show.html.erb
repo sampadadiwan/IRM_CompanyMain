@@ -240,6 +240,6 @@
 
     <% end %>
 
-    <%= display_custom_fields(interest) %>
+    <%= display_custom_fields(interest) if current_user %>
 
   </table>

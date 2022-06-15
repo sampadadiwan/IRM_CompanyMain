@@ -292,8 +292,6 @@
       
     <% end %>
     
-    <%= display_custom_fields(@holding) %>
-
-
+    <%= display_custom_fields(@holding) if current_user %>
 
 </table>

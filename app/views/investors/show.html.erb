@@ -44,7 +44,7 @@
       </td>    
     </tr>
     
-    <%= display_custom_fields(@investor) %>
+    <%= display_custom_fields(@investor) if current_user %>
 
 </table>
 

@@ -235,7 +235,7 @@
       
     <% end %>
 
-    <%= display_custom_fields(@option_pool) %>
+    <%= display_custom_fields(@option_pool) if current_user %>
 
   </table>
   </div>
