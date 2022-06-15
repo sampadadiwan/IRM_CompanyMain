@@ -37,12 +37,12 @@ Scenario Outline: Create new interest and check obfuscation
   And there is an "approved" offer "quantity=110;approved=1" for each employee investor
   Given an interest "quantity=100;price=150" from some entity "entity_type=Advisor"
   And I am at the sales details page
-  And I click "Interest"
+  And I click "Interests"
   Then I should see the interest details
   And I click "Show"
   Then I should see the interest details
   And I am at the sales details page
-  And I click "Interest"
+  And I click "Interests"
   And I click "Shortlist"
   Then the interest should be shortlisted
   
@@ -62,7 +62,7 @@ Scenario Outline: Create new interest which is escrow approved
   And there is an "approved" offer "quantity=110;approved=1" for each employee investor
   Given an interest "quantity=100;price=150;escrow_deposited=true" from some entity "entity_type=Advisor"
   And I am at the sales details page
-  And I click "Interest"
+  And I click "Interests"
   Then I should see the interest details
   
   
