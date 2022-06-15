@@ -39,17 +39,13 @@
       </div>
       <div id="activities-tab" class="tab-pane fade">
         <div id="deal_activities" class="associated_entity">
-          <% params[:template] = true %>
-          <%#= render "deal_activities/index", deal: deal, 
-            deal_activities: deal.deal_activities.templates(deal).with_all_rich_text.includes(:deal_investor), 
-            template: true, params: {deal_id: deal.id, back_to: deal_path(deal, grid_view: true, tab: "activities-tab"), template: true} %>
-
-            <%= link_to deal_activities_path(deal_id: deal.id, template: true), class: "load_data_link", 
+          
+          <%= link_to deal_activities_path(deal_id: deal.id, template: true), class: "load_data_link", 
             data: { turbo_frame: 'deal_activities_frame' } do %>
               <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "deal_activities_frame", target: "_top" do %>
-            <% end %>
+          <% end %>
+          <%= turbo_frame_tag "deal_activities_frame", target: "_top" do %>
+          <% end %>
 
         </div>  
       </div>
