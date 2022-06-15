@@ -3,7 +3,7 @@ class OptionPoolsController < ApplicationController
 
   # GET /option_pools or /option_pools.json
   def index
-    @option_pools = policy_scope(OptionPool).includes(:entity, :funding_round)
+    @option_pools = policy_scope(OptionPool).includes(:entity)
   end
 
   # GET /option_pools/1 or /option_pools/1.json

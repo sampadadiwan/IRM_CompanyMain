@@ -8,7 +8,7 @@ class InvestmentsController < ApplicationController
   def index
     @entity = current_user.entity
 
-    @investments = policy_scope(Investment).includes(:investor, :investee_entity, :funding_round)
+    @investments = policy_scope(Investment).includes(:investor, :funding_round)
 
     @investments = @investments.where(investor_id: params[:investor_id]) if params[:investor_id]
     @investments = @investments.where(funding_round_id: params[:funding_round_id]) if params[:funding_round_id]

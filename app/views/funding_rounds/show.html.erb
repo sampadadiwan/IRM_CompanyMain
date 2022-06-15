@@ -106,6 +106,6 @@
   </div>
 
   <div class="associated_entity" data-controller="investments">
-    <%= render "investments/index", investments: @funding_round.investments, 
+    <%= render "investments/index", investments: @funding_round.investments.includes(:investor), 
                       entity: @funding_round.entity, title: "Equity" %>
   </div>
