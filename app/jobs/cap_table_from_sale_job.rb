@@ -15,7 +15,7 @@ class CapTableFromSaleJob < ApplicationJob
     # Only consider approved and verified offers
     offers = secondary_sale.offers.approved.verified
     Rails.logger.debug { "offers = #{offers.count}" }
-    offers.each do |offer|
+    offers.find_each(batch_size: 100) do |offer|
       holding = offer.holding
       holding.sold_quantity = offer.allocation_quantity
       holding.save

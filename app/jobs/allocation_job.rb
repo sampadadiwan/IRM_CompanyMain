@@ -128,11 +128,11 @@ class AllocationJob < ApplicationJob
     offers.update_all(interest_id: nil)
 
     # Match interests to offers
-    interests.order(allocation_quantity: :desc).each do |interest|
+    interests.order(allocation_quantity: :desc).find_each(batch_size: 100) do |interest|
       Rails.logger.debug { "matching interest #{interest.id} to offers" }
       assigned_qty = 0
       # Run thru the unmatched offers
-      offers.where(interest_id: nil).order(allocation_quantity: :desc).each do |offer|
+      offers.where(interest_id: nil).order(allocation_quantity: :desc).find_each(batch_size: 100) do |offer|
         Rails.logger.debug { "matching interest #{interest.id} to offer #{offer.id}" }
 
         unassigned_qty = interest.allocation_quantity - assigned_qty

@@ -14,7 +14,7 @@ class HoldingApproveJob < ApplicationJob
         holdings = Holding.not_approved.where(entity: id)
       end
 
-      holdings.each do |holding|
+      holdings.find_each(batch_size: 1000) do |holding|
         ApproveHolding.call(holding:)
       end
 
