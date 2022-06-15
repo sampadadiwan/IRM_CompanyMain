@@ -40,7 +40,7 @@
               owner_type: "SecondarySale", 
               entity_id: secondary_sale.entity_id) %>
               
-          <%= render "/access_rights/index", access_rights: AccessRight.for_secondary_sale(secondary_sale).includes(:investor), access_right: access_right %>
+          <%= render "/access_rights/index", access_rights: AccessRight.for_secondary_sale(secondary_sale).includes(:investor, :owner), access_right: access_right %>
         </div>
       </div>
       <div id="offerings-tab" class="tab-pane fade">
