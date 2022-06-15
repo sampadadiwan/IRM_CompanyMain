@@ -68,6 +68,10 @@ class CapTableFromSaleJob < ApplicationJob
   end
 
   def build_investment(secondary_sale, investor, instrument, quantity)
+    funding_round = FundingRound.create(name: secondary_sale.name,
+                                        currency: secondary_sale.entity.currency,
+                                        status: "Open")
+
     Investment.new(investment_instrument: instrument,
                    category: investor.category,
                    investee_entity_id: investor.investee_entity_id,
@@ -75,7 +79,7 @@ class CapTableFromSaleJob < ApplicationJob
                    quantity:,
                    price_cents: secondary_sale.final_price * 100,
                    currency: secondary_sale.entity.currency,
-                   funding_round: secondary_sale.entity.funding_rounds.first,
+                   funding_round:,
                    notes: "Investment from secondary sale #{secondary_sale.id} purchase")
   end
 end

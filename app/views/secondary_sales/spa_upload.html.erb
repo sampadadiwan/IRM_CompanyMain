@@ -1,4 +1,4 @@
-<%= render "/layouts/steps", steps: ["This is the closing process for the sale", "Once completed the sale/offers/interests will not be editable", "Please review the allocations and confirm the closing of the sale"].freeze if current_user.has_cached_role?(:startup) %>
+<%= render "/layouts/steps", steps: ["This is the closing process for the sale", "Once completed the saleprice is frozen", "Please review the allocations post this step"].freeze if current_user.has_cached_role?(:startup) %>
 
 <%= form_with(model: @secondary_sale, validate: true, id: "spa_upload") do |form| %>
   <% if @secondary_sale.errors.any? %>
@@ -12,9 +12,6 @@
       </ul>
     </div>
   <% end %>
-
-
-  <%= form.number_field :finalized, class: "form-control", hidden: true, value: "1"  %>
 
 
   <div class="form-group fixed_price_group">
@@ -45,7 +42,7 @@
   <div class="form-group">
     <%= form.submit "Save", class: "btn btn-lg btn-primary",
         data: { action: "click->confirm#popup", turbo:false, method: "post", "submit-form": "#spa_upload",
-                msg: "This will finalize the sale. Post this the sale/offers/interests cannot be modified. Pl review the allocations before proceeding."} %>
+                msg: "This will freeze the final price for the sale. Post this You will need to start verifying the offers and finalizing the allocations."} %>
 
     <%= link_to "Review Allocations",offers_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
                 {class: "btn btn-lg btn-success" } if policy(@secondary_sale).view_allocations? %> 

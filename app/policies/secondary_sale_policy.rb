@@ -78,6 +78,10 @@ class SecondarySalePolicy < ApplicationPolicy
     update?
   end
 
+  def lock_allocations?
+    update?
+  end
+
   def download?
     create?
   end

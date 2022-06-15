@@ -1,6 +1,6 @@
 class SecondarySalesController < ApplicationController
   before_action :set_secondary_sale, only: %i[show edit update destroy make_visible download allocate
-                                              notify_allocation spa_upload]
+                                              notify_allocation spa_upload lock_allocations ]
 
   after_action :verify_policy_scoped, only: []
 
@@ -73,6 +73,26 @@ class SecondarySalesController < ApplicationController
     respond_to do |format|
       format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "Allocation in progress, checkback in a few minutes. Please use the Dowload button once allocation is complete." }
       format.json { render :show, status: :ok, location: @secondary_sale }
+    end
+  end
+
+  def lock_allocations
+    @secondary_sale.lock_allocations = !@secondary_sale.lock_allocations
+    @secondary_sale.finalized = !@secondary_sale.finalized
+
+    label = @secondary_sale.lock_allocations ? "Locked" : "Unlocked"
+    respond_to do |format|
+      if @secondary_sale.save
+        format.html do
+          redirect_to offers_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true),
+                      notice: "Allocations are now #{label}."
+        end
+
+        format.json { render :show, status: :created, location: @secondary_sale }
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: @secondary_sale.errors, status: :unprocessable_entity }
+      end
     end
   end
 

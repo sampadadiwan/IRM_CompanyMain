@@ -5,13 +5,16 @@
         
         <%= link_to "All Offers", offers_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
                 {class: "btn btn-primary" }  %> 
+        <%= link_to "Verified", offers_path( secondary_sale_id: @secondary_sale.id, 
+                                                finalize_allocation: true, verified: true), 
+                {class: "btn btn-success" }  %> 
         <%= link_to "Un-Verified", offers_path( secondary_sale_id: @secondary_sale.id, 
                                                 finalize_allocation: true, verified: false), 
                 {class: "btn btn-warning" }  %> 
                 
         &nbsp;&nbsp;&nbsp;
 
-        <% if @secondary_sale.allocation_status.present? %>
+        <% if @secondary_sale && @secondary_sale.allocation_status.present? %>
             <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
 
             <%= link_to download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
@@ -24,6 +27,9 @@
         
             &nbsp;&nbsp;&nbsp;
       
+            <%= link_to "Lock Allocations" , lock_allocations_secondary_sale_path(@secondary_sale),    
+                        {class: "btn btn-danger" } %> 
+        
         <% end %>
         <form class="d-sm-inline-block form-inline navbar-search" action="<%= search_offers_path %>">
             <div class="input-group">

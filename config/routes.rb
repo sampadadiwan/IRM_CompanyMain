@@ -39,6 +39,7 @@ Rails.application.routes.draw do
     patch 'allocate', on: :member
     get 'notify_allocation', on: :member
     get 'spa_upload', on: :member
+    get 'lock_allocations', on: :member
   end
 
   resources :holdings do
