@@ -3,10 +3,12 @@ class OfferPolicy < ApplicationPolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      elsif user.has_cached_role?(:holding)
+      elsif user.curr_role.to_sym == :holding
         scope.where(user_id: user.id)
-      elsif user.has_cached_role?(:investor)
+      elsif user.curr_role.to_sym == :investor
         scope.joins(:investor).where('investors.investor_entity_id': user.entity_id)
+      elsif user.curr_role.to_sym == :secondary_buyer
+        scope.joins(:interest).where("interests.interest_entity_id=?", user.entity_id)
       else
         scope.where(entity_id: user.entity_id)
       end
@@ -18,16 +20,16 @@ class OfferPolicy < ApplicationPolicy
   end
 
   def show?
-    create?
+    create? || record.interest.interest_entity_id == user.entity_id
   end
 
   def create?
-    if user.has_cached_role?(:super) || (user.entity_id == record.entity_id)
+    if user.entity_id == record.entity_id
       true
     elsif user.has_cached_role?(:holding)
       record.holding.user_id == user.id && record.holding.entity_id == record.entity_id
     elsif user.has_cached_role?(:investor)
-      record.holding.investor.investor_entity_id == user.entity_id && record.holding.entity_id == record.entity_id
+      record.holding.investor.investor_entity_id == user.entity_id
     else
       false
     end
