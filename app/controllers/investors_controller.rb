@@ -8,7 +8,7 @@ class InvestorsController < ApplicationController
     @investors = @investors.where(category: params[:category]) if params[:category]
 
     @investors = @investors.order("investors.id desc")
-                           .includes(tags: :taggings)
+                           .includes(:tags)
   end
 
   def search
@@ -16,7 +16,7 @@ class InvestorsController < ApplicationController
     if query.present?
       @investors = InvestorIndex.filter(term: { investee_entity_id: current_user.entity_id })
                                 .query(query_string: { fields: InvestorIndex::SEARCH_FIELDS,
-                                                       query:, default_operator: 'and' })
+                                                       query:, default_operator: 'and' }).objects
 
     end
     render "index"

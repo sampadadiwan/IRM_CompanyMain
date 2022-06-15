@@ -25,10 +25,10 @@ class InvestorAccess < ApplicationRecord
   belongs_to :entity
   counter_culture :entity, column_name: proc { |ia| ia.approved ? nil : 'pending_accesses_count' }
 
-  belongs_to :investor
+  belongs_to :investor, strict_loading: true
   counter_culture :investor, column_name: proc { |model| model.approved ? 'investor_access_count' : 'unapproved_investor_access_count' }
 
-  belongs_to :user, optional: true
+  belongs_to :user, optional: true, strict_loading: true
   belongs_to :granter, class_name: "User", foreign_key: :granted_by, optional: true
 
   delegate :name, to: :entity, prefix: :entity
