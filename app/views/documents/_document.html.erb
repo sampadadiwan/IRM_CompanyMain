@@ -6,7 +6,7 @@
     <%= document&.folder_full_path %>
   </td>
   <td class="hideMobP">
-      <%= raw document.tag_list.map{|tag| link_to(tag, search_documents_path(query: tag))}.join(", ") %>
+      <%= raw document.tags.map{|tag| link_to(tag.name, search_documents_path(query: tag.name))}.join(", ") %>
   </td>  
   <td class="hideMobP">
     <%= document.created_at.is_a?(Time) ? l(document.created_at) : l(Time.parse(document.created_at)) %>

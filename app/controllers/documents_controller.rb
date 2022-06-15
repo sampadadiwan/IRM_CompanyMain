@@ -25,7 +25,7 @@ class DocumentsController < ApplicationController
 
     @documents = @documents.order(id: :desc)
     @documents = @documents.where(folder_id: params[:folder_id]) if params[:folder_id].present?
-    @documents = @documents.joins(:folder).includes(:folder, tags: :taggings).page params[:page]
+    @documents = @documents.joins(:folder).includes(:folder, :tags).page params[:page]
   end
 
   def investor_documents
@@ -44,20 +44,14 @@ class DocumentsController < ApplicationController
     @entity = params[:entity_id].present? ? Entity.find(params[:entity_id]) : current_user.entity
     query = params[:query]
     if query.present?
-      @documents = if current_user.has_role?(:super)
+      @documents = DocumentIndex.filter(term: { entity_id: @entity.id })
+                                .query(query_string: { fields: DocumentIndex::SEARCH_FIELDS,
+                                                       query:, default_operator: 'and' }).objects
 
-                     DocumentIndex.query(query_string: { fields: DocumentIndex::SEARCH_FIELDS,
-                                                         query:, default_operator: 'and' })
-
-                   else
-                     DocumentIndex.filter(term: { entity_id: @entity.id })
-                                  .query(query_string: { fields: DocumentIndex::SEARCH_FIELDS,
-                                                         query:, default_operator: 'and' })
-                   end
-
+      render "index"
+    else
+      redirect_to documents_path
     end
-
-    render "index"
   end
 
   # GET /documents/1 or /documents/1.json
