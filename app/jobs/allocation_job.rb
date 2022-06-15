@@ -46,11 +46,13 @@ class AllocationJob < ApplicationJob
     secondary_sale.interests.update_all("allocation_percentage = 0.00,
       allocation_quantity = 0,
       final_price = #{secondary_sale.final_price},
-      allocation_amount_cents = 0")
+      allocation_amount_cents = 0,
+      offer_quantity = 0")
     secondary_sale.offers.update_all("allocation_percentage = 0,
       allocation_quantity = 0,
       final_price = #{secondary_sale.final_price},
-      allocation_amount_cents = 0")
+      allocation_amount_cents = 0,
+      interest_id = null")
   end
 
   def update_offers(secondary_sale)
