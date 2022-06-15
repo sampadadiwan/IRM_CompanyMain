@@ -1,0 +1,47 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Finalize Interest Allocations</h1>
+
+    <span>
+        
+        <% if @secondary_sale && @secondary_sale.allocation_status.present? %>
+            <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
+
+            <%= link_to download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
+                                                    {class: "btn btn-success #{download_disabled}"  } do %> 
+                    <i class="fa-lg fa-regular fa-file-excel"></i> Download
+            <% end %>
+        
+      
+            <%= link_to "Lock Allocations" , lock_allocations_secondary_sale_path(@secondary_sale),    
+                        {class: "btn btn-danger" } %> 
+        
+        <% end %>
+
+    </span>
+</div>
+
+<div class="divTable minimalistBlack">
+    <div class="divTableHeading datatable jqDataTable">
+        <div class="divTableRow thead">
+            <div class="divTableHead">Short Listed</div>
+            <div class="divTableHead">Entity</div>
+            <div class="divTableHead">Quantity</div>
+            <div class="divTableHead">Price %</div>
+            <div class="divTableHead">PAN</div>
+            <div class="divTableHead">Allocation Amount</div>
+            <div class="divTableHead">Allocated %</div>
+            <div class="divTableHead">Allocation Quantity</div>
+            <div class="divTableHead">Verifed</div>            
+            <div class="divTableHead">Comments</div>
+            <div class="divTableHead">Action</div>
+        </div>
+    </div>
+    <div class="divTableBody tbody">
+        <% @interests.each do |interest| %>
+            <%= render "interests/final_interest", interest: interest %>
+        <% end %>        
+    </div>
+    
+</div>
+
+<%=paginate @interests %>

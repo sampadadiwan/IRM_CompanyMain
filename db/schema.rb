@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_15_024650) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_15_044918) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -572,6 +572,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_15_024650) do
     t.text "properties"
     t.bigint "form_type_id"
     t.integer "offer_quantity", default: 0
+    t.boolean "verified", default: false
+    t.text "comments"
     t.index ["form_type_id"], name: "index_interests_on_form_type_id"
     t.index ["interest_entity_id"], name: "index_interests_on_interest_entity_id"
     t.index ["offer_entity_id"], name: "index_interests_on_offer_entity_id"

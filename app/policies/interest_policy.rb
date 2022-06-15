@@ -49,4 +49,12 @@ class InterestPolicy < ApplicationPolicy
   def destroy?
     update?
   end
+
+  def allocation_form?
+    SecondarySalePolicy.new(user, record.secondary_sale).update?
+  end
+
+  def allocate?
+    SecondarySalePolicy.new(user, record.secondary_sale).update?
+  end
 end

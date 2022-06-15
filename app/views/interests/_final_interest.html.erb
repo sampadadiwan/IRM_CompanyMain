@@ -1,0 +1,34 @@
+<%= turbo_frame_tag "tf_#{dom_id(interest)}", class: "divTableRow #{cycle('even', 'odd')}" do %>
+
+    <div class="divTableCell">
+        <span class="badge <%= interest.short_listed ? 'bg-success' : 'bg-warning' %>">
+            <%= interest.short_listed ?  "Yes" : "No" %>
+        </span>
+    </div>
+
+    <div class="divTableCell">
+        <%= interest.interest_entity.name %> <br>
+        <%= link_to interest.user.email, "mailto:#{interest.user.email}?body=Dear #{interest.user.full_name}. View your interest at #{interest_url(interest)}", target: "_blank" if interest.user %> 
+    </div>
+    <div class="divTableCell"><%= custom_format_number(interest.quantity, params) %></div>
+    <div class="divTableCell"><%= custom_format_number(interest.price, params) %></div>
+    <div class="divTableCell">
+        <%= interest.PAN %>
+        <%#= render "/layouts/attachments" , attachments: [interest.id_proof] if interest.id_proof.present? %>
+    </div>
+
+    <div class="divTableCell"><%= money_to_currency(interest.allocation_amount, params) %></div>
+    <div class="divTableCell"><%= interest.allocation_percentage %></div>
+    <div class="divTableCell"><%= interest.allocation_quantity %></div>
+    <div class="divTableCell">
+        <span class="badge <%= interest.verified ? 'bg-success' : 'bg-warning' %>">
+            <%= interest.verified ?  "Yes" : "No" %>
+        </span>
+    </div>
+    <div class="divTableCell"><%= interest.comments %></div>
+    <div class="divTableCell">
+        <%= link_to "Show", interest, class: "btn btn-primary", target: '_top' %>
+        <%= link_to "Edit", allocation_form_interest_path(interest), data: { turbo_frame: "tf_#{dom_id(interest)}" }, class: "btn btn-success" unless interest.secondary_sale.finalized %>
+    </div>
+
+<% end %>

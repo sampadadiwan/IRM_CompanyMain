@@ -25,11 +25,19 @@ Rails.application.routes.draw do
   resources :payments
   resources :nudges
   resources :import_uploads
+
   resources :offers do
     patch 'approve', on: :member
     patch 'allocate', on: :member
     get   'allocation_form', on: :member
     get 'search', on: :collection
+  end
+
+  resources :interests do
+    patch 'short_list', on: :member
+    patch 'finalize', on: :member
+    patch 'allocate', on: :member
+    get   'allocation_form', on: :member
   end
 
   resources :secondary_sales do
@@ -128,11 +136,6 @@ Rails.application.routes.draw do
   resources :documents do
     get 'search', on: :collection
     get 'investor_documents', on: :collection
-  end
-
-  resources :interests do
-    patch 'short_list', on: :member
-    patch 'finalize', on: :member
   end
 
   devise_for :users, controllers: {

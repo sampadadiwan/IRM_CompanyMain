@@ -1,10 +1,19 @@
 class InterestsController < ApplicationController
-  before_action :set_interest, only: %i[show edit update destroy short_list finalize]
+  before_action :set_interest, only: %i[show edit update destroy short_list finalize allocate allocation_form]
 
   # GET /interests or /interests.json
   def index
     @interests = policy_scope(Interest).includes(:interest_entity, :user)
-    @interests = @interests.where(secondary_sale_id: params[:secondary_sale_id]) if params[:secondary_sale_id].present?
+
+    if params[:secondary_sale_id].present?
+      @interests = @interests.where(secondary_sale_id: params[:secondary_sale_id])
+      @interests = @interests.order(allocation_quantity: :desc)
+      @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+    end
+
+    @interests = @interests.page(params[:page]).per(params[:per_page] || 10)
+
+    render params[:finalize_allocation].present? ? "finalize_allocation" : "index"
   end
 
   # GET /interests/1 or /interests/1.json
@@ -60,6 +69,29 @@ class InterestsController < ApplicationController
     end
   end
 
+  def allocate
+    @interest.allocation_quantity = interest_params[:allocation_quantity]
+    @interest.comments = interest_params[:comments]
+    @interest.verified = interest_params[:verified]
+
+    respond_to do |format|
+      if @interest.save
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.replace("tf_interest_#{@interest.id}", partial: "interests/final_interest", locals: { interest: @interest })
+          ]
+        end
+        format.html { redirect_to interest_url(@interest), notice: "Interest was successfully updated." }
+        format.json { render :show, status: :ok, location: @interest }
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @interest.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  def allocation_form; end
+
   def short_list
     @interest.short_listed = !@interest.short_listed
     @interest.save
@@ -111,7 +143,8 @@ class InterestsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def interest_params
-    params.require(:interest).permit(:offer_entity_id, :quantity, :price, :user_id,
+    params.require(:interest).permit(:offer_entity_id, :quantity, :price, :user_id, :verified,
+                                     :allocation_quantity, :comments,
                                      :interest_entity_id, :secondary_sale_id, :buyer_entity_name,
                                      :address, :contact_name, :email, :PAN, :final_agreement, properties: {})
   end

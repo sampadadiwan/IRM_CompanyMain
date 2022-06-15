@@ -1,0 +1,40 @@
+<%= turbo_frame_tag "tf_#{dom_id(@interest)}" do %>
+
+<%= form_with(model: @interest, url: allocate_interest_path(@interest), method: "PATCH", validate: true, 
+class: "allocation_form divTableRow #{cycle('even', 'odd')}") do |form| %>
+
+    <div class="divTableCell">
+        <span class="badge <%= @interest.short_listed ? 'bg-success' : 'bg-warning' %>">
+            <%= @interest.short_listed ?  "Yes" : "No" %>
+        </span>
+    </div>
+
+    <div class="divTableCell">
+        <%= @interest.interest_entity.name %> <br>
+        <%= link_to @interest.user.email, "mailto:#{@interest.user.email}?body=Dear #{@interest.user.full_name}. View your interest at #{interest_url(@interest)}", target: "_blank" if @interest.user %> 
+    </div>
+    <div class="divTableCell"><%= custom_format_number(@interest.quantity, params) %></div>
+    <div class="divTableCell"><%= custom_format_number(@interest.price, params) %></div>
+    <div class="divTableCell">
+        <%= @interest.PAN %>
+        <%#= render "/layouts/attachments" , attachments: [@interest.id_proof] if @interest.id_proof.present? %>
+    </div>
+
+    <div class="divTableCell"><%= money_to_currency(@interest.allocation_amount, params) %></div>
+    <div class="divTableCell"><%= @interest.allocation_percentage %></div>
+    <div class="divTableCell">
+        <%= form.number_field :allocation_quantity, class: "form-control"  %>
+    </div>
+    <div class="divTableCell">
+        <%= form.check_box :verified, class: "form-control"  %>
+    </div>
+    <div class="divTableCell">
+        <%= form.text_area :comments, class: "form-control", rows: 2  %>
+    </div>
+    <div class="divTableCell">
+        <%= form.submit "Save", {class: "btn btn-primary"}%>
+    </div>
+
+<% end %>
+
+<% end %>

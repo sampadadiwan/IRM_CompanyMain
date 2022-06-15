@@ -5,10 +5,14 @@
 
   <div>
 
-    <%= link_to "View Allocations",offers_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
+    <%= link_to "Offer Allocations",
+              offers_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
               {class: "btn btn-success" } if policy(@secondary_sale).view_allocations? %> 
 
-              
+    <%= link_to "Interest Allocations",
+              interests_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
+              {class: "btn btn-success" } if policy(@secondary_sale).view_allocations? %> 
+          
     <% if policy(@secondary_sale).update? %>
       <%= link_to "Edit" , edit_secondary_sale_path(@secondary_sale), {class: "btn btn-primary" } %> 
 
