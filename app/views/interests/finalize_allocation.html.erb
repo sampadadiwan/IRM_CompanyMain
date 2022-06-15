@@ -11,8 +11,12 @@
                     <i class="fa-lg fa-regular fa-file-excel"></i> Download
             <% end %>
         
-      
-            <%= link_to "Lock Allocations" , lock_allocations_secondary_sale_path(@secondary_sale),    
+            <%= link_to "Offer Allocations",
+              offers_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
+              {class: "btn btn-success" } if policy(@secondary_sale).view_allocations? %> 
+              
+            <% label = @secondary_sale.lock_allocations ? 'Unlock Allocations' : 'Lock Allocations' %>
+            <%= link_to label , lock_allocations_secondary_sale_path(@secondary_sale),    
                         {class: "btn btn-danger" } %> 
         
         <% end %>

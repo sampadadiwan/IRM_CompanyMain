@@ -55,7 +55,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def create?
-    user.has_cached_role?(:super) || (user.entity_id == record.entity_id && user.entity.enable_secondary_sale)
+    (user.entity_id == record.entity_id && user.entity.enable_secondary_sale)
   end
 
   def new?
@@ -79,7 +79,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def lock_allocations?
-    update?
+    create?
   end
 
   def download?
