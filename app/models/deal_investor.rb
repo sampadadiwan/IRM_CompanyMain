@@ -35,12 +35,12 @@ class DealInvestor < ApplicationRecord
   update_index('deal_investor') { self }
 
   has_rich_text :notes
-  belongs_to :deal
+  belongs_to :deal, strict_loading: true
   belongs_to :investor
   belongs_to :entity
   counter_culture :entity
 
-  has_many :deal_activities, dependent: :destroy
+  has_many :deal_activities, -> { order(sequence: :asc) }, dependent: :destroy
   has_many :deal_messages, dependent: :destroy
 
   has_many :deal_docs, dependent: :destroy

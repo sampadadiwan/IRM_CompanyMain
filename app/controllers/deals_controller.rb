@@ -21,17 +21,11 @@ class DealsController < ApplicationController
     @entity = current_user.entity
     query = params[:query]
     if query.present?
-      @deals = if current_user.has_role?(:super)
-
-                 DealIndex.query(query_string: { fields: DealIndex::SEARCH_FIELDS,
-                                                 query:, default_operator: 'and' }).objects
-
-               else
-                 DealIndex.filter(term: { entity_id: @entity.id })
-                          .query(query_string: { fields: DealIndex::SEARCH_FIELDS,
-                                                 query:, default_operator: 'and' }).objects
-               end
-
+      @deals = DealIndex.filter(term: { entity_id: @entity.id })
+                        .query(query_string: { fields: DealIndex::SEARCH_FIELDS,
+                                               query:, default_operator: 'and' }).objects
+    else
+      redirect_to deals_path
     end
 
     render "index"
@@ -52,8 +46,8 @@ class DealsController < ApplicationController
 
   # GET /deals/1 or /deals/1.json
   def show
-    @deal_investors = @deal.deal_investors.order("deal_investors.primary_amount_cents desc")
-    @deal_investors = @deal_investors.not_declined if params[:all].blank?
+    # @deal_investors = @deal.deal_investors.order("deal_investors.primary_amount_cents desc")
+    # @deal_investors = @deal_investors.not_declined if params[:all].blank?
 
     if params[:grid_view] == "false" || @deal.start_date.nil?
       render "show"

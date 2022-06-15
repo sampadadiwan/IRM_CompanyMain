@@ -4,16 +4,23 @@
 %>
 <div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
+      
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab">Deal Docs</a>
       
       <% if show_deal == "Yes" %>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#deal-tab">Deal</a>
       <% end %>
+      
       <% if show_investors == "Yes" %>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#investors-tab" data-action="click->tabdetails#loadData">Investments</a>
+        <a  class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#investors-tab"   
+            data-action="click->tabdetails#loadData">Investments</a>
       <% end %>
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#activities-tab">Deal Steps</a>
+
+      <a  class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#activities-tab" 
+          data-action="click->tabdetails#loadData">Deal Steps</a>
+
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-tab">Access Rights</a>
+      
     </nav>
     
   
@@ -33,9 +40,17 @@
       <div id="activities-tab" class="tab-pane fade">
         <div id="deal_activities" class="associated_entity">
           <% params[:template] = true %>
-          <%= render "deal_activities/index", deal: deal, 
+          <%#= render "deal_activities/index", deal: deal, 
             deal_activities: deal.deal_activities.templates(deal).with_all_rich_text.includes(:deal_investor), 
             template: true, params: {deal_id: deal.id, back_to: deal_path(deal, grid_view: true, tab: "activities-tab"), template: true} %>
+
+            <%= link_to deal_activities_path(deal_id: deal.id, template: true), class: "load_data_link", 
+            data: { turbo_frame: 'deal_activities_frame' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "deal_activities_frame", target: "_top" do %>
+            <% end %>
+
         </div>  
       </div>
 
