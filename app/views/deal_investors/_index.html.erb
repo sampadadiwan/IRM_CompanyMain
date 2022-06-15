@@ -2,9 +2,9 @@
   <h1 class="h3 mb-0 text-gray-800">Potential Investments</h1>
 
   <span>
-    <%= link_to "New Potential Investment", new_deal_investor_path("deal_investor[deal_id]": @deal.id, 
+    <%= link_to "New Potential Investment", new_deal_investor_path("deal_investor[deal_id]": params[:deal_id], 
                 "deal_investor[entity_id]": current_user.entity_id ), 
-                {class: "btn btn-primary"} if @deal %>
+                {class: "btn btn-primary"} if params[:deal_id] %>
     
     <%= render "investments/currency_form" %>
   </span>

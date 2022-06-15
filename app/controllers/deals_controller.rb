@@ -86,10 +86,7 @@ class DealsController < ApplicationController
   def edit; end
 
   def start_deal
-    Deal.public_activity_off
     @deal.start_deal
-    Deal.public_activity_on
-    @deal.create_activity key: 'deal.started', owner: current_user
 
     respond_to do |format|
       format.turbo_stream { render :start_deal }
