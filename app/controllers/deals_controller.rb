@@ -1,7 +1,6 @@
 class DealsController < ApplicationController
   before_action :set_deal, only: %w[show update destroy edit start_deal recreate_activities]
   after_action :verify_authorized, except: %i[index search investor_deals]
-  impressionist actions: [:show]
 
   # GET /deals or /deals.json
   def index
@@ -10,7 +9,7 @@ class DealsController < ApplicationController
     @deals = if params[:other_deals].present?
                Deal.deals_for_vc(current_user)
              else
-               @deals.includes(:entity)
+               @deals # .includes(:entity)
              end
 
     @deals = @deals.where("deals.archived=?", false) if params[:include_archived].blank?

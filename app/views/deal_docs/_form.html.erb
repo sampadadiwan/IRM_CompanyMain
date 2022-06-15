@@ -44,19 +44,14 @@
     <small class="text-muted">Comma separated list of tags to classify the document</small>
   </div>
   
-  <% 
-    if deal_doc.deal_activity.blank? 
-    investor_disabled = deal_doc.deal_investor_id.present? ? "disabled" : false
-  %>
   <div class="form-group">
     <%= form.label :deal_investor_id %>
-    <%= form.select :deal_investor_id, deal_doc.deal.deal_investors.includes(:investor).map{|i| [i.investor_name, i.id]}, 
-      {include_blank: true}, class: "form-control", disabled: investor_disabled  %>
-    <%= form.text_field :deal_investor_id, class: "form-control", hidden: true  %>
+    <%= form.select :deal_investor_id, 
+        deal_doc.deal.deal_investors.includes(:investor).map{|i| [i.investor_name, i.id]}, 
+        {include_blank: true}, class: "form-control" %>
 
     <small class="text-muted">Leave this blank to allow all deal investors access to this document. Or select and limit it to a specific investor</small>
   </div>
-  <% end %>
 
   <div class="form-group">
     <%= form.label :file %>

@@ -2,7 +2,7 @@
   show_deal ||= "Yes"
   show_investors ||= "Yes"
 %>
-<div class="associated_entity" data-controller="tabs">
+<div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab">Deal Docs</a>
       
@@ -10,7 +10,7 @@
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#deal-tab">Deal</a>
       <% end %>
       <% if show_investors == "Yes" %>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#investors-tab">Investments</a>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#investors-tab" data-action="click->tabdetails#loadData">Investments</a>
       <% end %>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#activities-tab">Deal Steps</a>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-tab">Access Rights</a>
@@ -26,7 +26,8 @@
       </div>
       <div id="docs-tab" class="tab-pane fade in show active">
         <div id="deal_docs" class="associated_entity">
-          <%= render "/deal_docs/index", deal: deal, deal_docs: deal.deal_docs.includes(:tags=>:taggings), deal_investor: nil, title: "Deal Docs" %>
+          <%= render "/deal_docs/index", deal: deal, deal_docs: deal.deal_docs.includes(:tags), 
+              deal_investor: nil, title: "Deal Docs" %>
         </div>     
       </div>
       <div id="activities-tab" class="tab-pane fade">
@@ -39,8 +40,14 @@
       </div>
 
       <div id="investors-tab" class="tab-pane fade">
-        <div id="deal_messages" class="associated_entity">
-          <%= render "deal_investors/index", deal_investors: deal.deal_investors.includes(:investor, :entity) %>
+        <div id="deal_investors" class="associated_entity">          
+          <%= link_to deal_investors_path(deal_id: deal.id), class: "load_data_link", 
+              data: { turbo_frame: 'deal_investors_frame' } do %>
+            <span>Loading...</span>
+          <% end %>
+          <%= turbo_frame_tag "deal_investors_frame", target: "_top" do %>
+          <% end %>
+
         </div>  
       </div>
 

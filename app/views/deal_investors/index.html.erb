@@ -1,5 +1,7 @@
 <%= render "/layouts/alerts" %>
 
-<div data-controller="datatable">
-    <%= render "/deal_investors/index", deal_investors: @deal_investors %>
-</div>
+<%= turbo_frame_tag "deal_investors_frame", target: "_top" do %>
+    <div data-controller="datatable">
+        <%= render "/deal_investors/index", deal_investors: @deal_investors %>
+    </div>
+<% end %>

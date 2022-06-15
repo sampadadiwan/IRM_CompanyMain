@@ -21,8 +21,8 @@
 
 class Deal < ApplicationRecord
   include Trackable
-  include ActivityTrackable
-  include Impressionable
+  # include ActivityTrackable
+  # include Impressionable
 
   # encrypts :name
   monetize :amount_cents, with_model_currency: :currency
