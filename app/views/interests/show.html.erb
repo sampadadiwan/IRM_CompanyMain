@@ -16,8 +16,10 @@
       <%= button_to "Delete" , @interest, method: :delete, class: "btn btn-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
     <% end %>
 
+    <% popupMsg = "This will mark your acceptance of the final price, allocated quantity and terms of the sale. No more modifications will be allowed from here on." %>
 
     <%= button_to "Finalize" , finalize_interest_path(@interest), method: :patch, "data-turbo": false, 
-        class: "btn btn-danger", form_class: "deleteButton" if policy(@interest).finalize? %>
+        class: "btn btn-danger", form_class: "deleteButton",
+        data: {action: "click->confirm#popup", turbo:false, msg: popupMsg, method: "patch"} if policy(@interest).finalize? %>
 
   </div>
