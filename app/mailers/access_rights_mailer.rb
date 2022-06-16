@@ -1,6 +1,6 @@
 class AccessRightsMailer < ApplicationMailer
   def notify_access
-    @access_right = AccessRight.find params[:access_right_id]
+    @access_right = AccessRight.includes(:owner, :investor).find params[:access_right_id]
 
     # We need to figure out all the users impacted by this access right
 
