@@ -22,4 +22,6 @@
         class: "btn btn-danger", form_class: "deleteButton",
         data: {action: "click->confirm#popup", turbo:false, msg: popupMsg, method: "patch"} if policy(@interest).finalize? %>
 
+    <%= link_to "Matched Offers", finalize_allocation_offers_path(secondary_sale_id: @interest.secondary_sale_id), 
+        {class: "btn btn-primary" }  %> 
   </div>

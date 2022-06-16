@@ -51,17 +51,21 @@ class OffersController < ApplicationController
       if params[:secondary_sale_id].present?
         @secondary_sale_id = params[:secondary_sale_id].to_i
         @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
-      end
 
-      term = if @secondary_sale_id.present?
-               { secondary_sale_id: @secondary_sale_id }
-             else
-               { entity_id: @entity.id }
-             end
+        if @secondary_sale.entity_id == current_user.entity_id
+          term = { secondary_sale_id: @secondary_sale_id }
+        else
+          # This is a shortlisted interest. Show offers allocated to it
+          @interest = @secondary_sale.interests.short_listed.where(interest_entity_id: current_user.entity_id).first
+          term = { interest_id: @interest.id }
+        end
+      else
+        term = { entity_id: @entity.id }
+      end
 
       @offers = OfferIndex.filter(term:)
                           .query(query_string: { fields: OfferIndex::SEARCH_FIELDS,
-                                                 query:, default_operator: 'and' }).objects
+                                                 query:, default_operator: 'and' }).page(params[:page]).objects
 
       render params[:finalize_allocation].present? ? "finalize_allocation" : "index"
 

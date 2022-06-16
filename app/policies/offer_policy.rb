@@ -20,7 +20,7 @@ class OfferPolicy < ApplicationPolicy
   end
 
   def show?
-    create? || record.interest.interest_entity_id == user.entity_id
+    create? || (record.interest && record.interest.interest_entity_id == user.entity_id)
   end
 
   def create?
