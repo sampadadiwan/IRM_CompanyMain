@@ -14,7 +14,7 @@
                 owner_type: "Document", 
                 entity_id: document.entity_id) %> 
 
-            <%= render "/access_rights/index", access_rights: document.access_rights, access_right: access_right %>
+            <%= render "/access_rights/index", access_rights: document.access_rights.includes(:investor, :owner), access_right: access_right %>
           </div>
         </div>
         <div id="viewers-tab" class="tab-pane fade">
