@@ -12,8 +12,8 @@
             <% end %>
         
             <%= link_to "Offer Allocations",
-              offers_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
-              {class: "btn btn-success" } if policy(@secondary_sale).view_allocations? %> 
+                finalize_allocation_offers_path(secondary_sale_id: @secondary_sale.id), 
+                {class: "btn btn-success" } if policy(@secondary_sale).view_allocations? %> 
               
             <% label = @secondary_sale.lock_allocations ? 'Unlock Allocations' : 'Lock Allocations' %>
             <%= link_to label , lock_allocations_secondary_sale_path(@secondary_sale),    

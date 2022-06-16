@@ -1,23 +1,45 @@
 class OffersController < ApplicationController
   before_action :set_offer, only: %i[show edit update destroy approve allocate allocation_form]
-  after_action :verify_authorized, except: %i[index search]
+  after_action :verify_authorized, except: %i[index search finalize_allocation]
 
   # GET /offers or /offers.json
   def index
-    @offers = policy_scope(Offer).includes(:user, :investor, :secondary_sale, :entity, :interest)
+    # Default to policy
+    @offers = policy_scope(Offer)
+
     @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
     @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
-
-    if params[:secondary_sale_id].present?
-      @offers = @offers.where(secondary_sale_id: params[:secondary_sale_id])
-      @offers = @offers.with_attached_docs.with_attached_id_proof.with_attached_signature
-      @offers = @offers.order(allocation_quantity: :desc)
-      @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
-    end
-
+    @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest)
     @offers = @offers.page(params[:page])
 
-    render params[:finalize_allocation].present? ? "finalize_allocation" : "index"
+    render "index"
+  end
+
+  def finalize_allocation
+    @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+    if @secondary_sale.entity_id == current_user.entity_id
+      @offers = policy_scope(Offer)
+      @offers = @offers.where(secondary_sale_id: params[:secondary_sale_id])
+    else
+      # This is a shortlisted interest. Show offers allocated to it
+      @interest = @secondary_sale.interests.short_listed.where(interest_entity_id: current_user.entity_id).first
+      @offers = if @interest
+                  @interest.offers
+                else
+                  # Default to policy
+                  policy_scope(Offer)
+                end
+    end
+
+    @offers = @offers.with_attached_docs.with_attached_id_proof.with_attached_signature
+    @offers = @offers.order(allocation_quantity: :desc)
+
+    @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
+    @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
+    @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest)
+    @offers = @offers.page(params[:page])
+
+    render "finalize_allocation"
   end
 
   def search

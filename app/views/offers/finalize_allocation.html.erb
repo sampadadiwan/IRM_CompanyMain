@@ -3,13 +3,13 @@
 
     <span>
         
-        <%= link_to "All Offers", offers_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
+        <%= link_to "All Offers", finalize_allocation_offers_path(secondary_sale_id: @secondary_sale.id), 
                 {class: "btn btn-primary" }  %> 
-        <%= link_to "Verified", offers_path( secondary_sale_id: @secondary_sale.id, 
-                                                finalize_allocation: true, verified: true), 
+        <%= link_to "Verified", finalize_allocation_offers_path( secondary_sale_id: @secondary_sale.id, 
+                                                verified: true), 
                 {class: "btn btn-success" }  %> 
-        <%= link_to "Un-Verified", offers_path( secondary_sale_id: @secondary_sale.id, 
-                                                finalize_allocation: true, verified: false), 
+        <%= link_to "Un-Verified", finalize_allocation_offers_path( secondary_sale_id: @secondary_sale.id, 
+                                                verified: false), 
                 {class: "btn btn-warning" }  %> 
                 
         &nbsp;&nbsp;&nbsp;

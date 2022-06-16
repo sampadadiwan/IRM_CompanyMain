@@ -31,6 +31,7 @@ Rails.application.routes.draw do
     patch 'allocate', on: :member
     get   'allocation_form', on: :member
     get 'search', on: :collection
+    get 'finalize_allocation', on: :collection
   end
 
   resources :interests do
