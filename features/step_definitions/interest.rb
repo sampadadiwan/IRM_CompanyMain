@@ -31,6 +31,7 @@
 
   Then('when the interest sale is finalized') do
     @created_interest.secondary_sale.finalized = true
+    @created_interest.secondary_sale.lock_allocations = true    
     @created_interest.secondary_sale.final_price = 100
     @created_interest.secondary_sale.save!
     @created_interest.reload

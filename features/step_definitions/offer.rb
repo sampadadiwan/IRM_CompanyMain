@@ -135,6 +135,8 @@
 
   Then('when the offer sale is finalized') do
     @offer.secondary_sale.finalized = true
+    @offer.secondary_sale.lock_allocations = true
+    
     @offer.secondary_sale.final_price = 100
     @offer.secondary_sale.save
   end
