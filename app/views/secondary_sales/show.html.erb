@@ -2,15 +2,17 @@
 
   <%= render "/secondary_sales/stats", secondary_sale: @secondary_sale %>
 
-  <%= render "/secondary_sales/show", secondary_sale: @secondary_sale %>
-
+  <div class="row">
+    <div class="col-md-9">
+      <%= render "/secondary_sales/show", secondary_sale: @secondary_sale %>
+    </div>
+    <div class="col-md-3">
+      <%= render "/secondary_sales/faq", secondary_sale: @secondary_sale %>
+    </div>
+  </div>
 
   <div>
 
-    
-
-
-          
     <% if policy(@secondary_sale).update? %>
       <%= link_to "Edit" , edit_secondary_sale_path(@secondary_sale), {class: "btn btn-primary" } %> 
 

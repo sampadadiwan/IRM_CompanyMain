@@ -52,11 +52,11 @@ class OfferPolicy < ApplicationPolicy
   end
 
   def allocation_form?
-    SecondarySalePolicy.new(user, record.secondary_sale).update?
+    SecondarySalePolicy.new(user, record.secondary_sale).create?
   end
 
   def allocate?
-    SecondarySalePolicy.new(user, record.secondary_sale).update?
+    SecondarySalePolicy.new(user, record.secondary_sale).create?
   end
 
   def edit?

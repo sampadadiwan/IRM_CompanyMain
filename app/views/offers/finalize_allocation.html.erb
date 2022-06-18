@@ -35,7 +35,7 @@
               interests_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
               {class: "btn btn-success" } if policy(@secondary_sale).view_allocations? %> 
               
-            <% label = @secondary_sale.lock_allocations ? 'Lock Allocations' : 'Unlock Allocations' %>
+            <% label = @secondary_sale.lock_allocations ? 'Unlock Allocations' : 'Lock Allocations' %>
             <%= link_to label , lock_allocations_secondary_sale_path(@secondary_sale),    
                         class: "btn btn-danger" if policy(@secondary_sale).lock_allocations? %> 
         
@@ -50,6 +50,8 @@
         </form>        
     </span>
 </div>
+
+<div class="table-responsive">
 
 <div class="divTable minimalistBlack">
     <div class="divTableHeading datatable jqDataTable">
@@ -79,3 +81,5 @@
 </div>
 
 <%= paginate @offers %>
+
+</div>
