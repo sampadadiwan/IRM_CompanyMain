@@ -5,11 +5,11 @@ module EmailCurrencyHelper
 
   INDIA_FORMAT = /(\d+?)(?=(\d\d)+(\d)(?!\d))/
 
-  def custom_format_number(number, _params = {}, _ignore_units: false)
+  def custom_format_number(number, _params = {}, _ignore_units = false)
     number_with_delimiter(number)
   end
 
-  def money_to_currency(money, _params = {}, _ignore_units: false)
+  def money_to_currency(money, _params = {}, _ignore_units = false)
     sanf = true
     money = money.clone
     units = ""

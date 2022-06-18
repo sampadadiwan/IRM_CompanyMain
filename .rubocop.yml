@@ -65,6 +65,7 @@ Rails/OutputSafety:
 Style/OptionalBooleanParameter:
   Exclude:
     - 'app/helpers/investments_helper.rb'
+    - 'app/mailers/email_currency_helper.rb'
 # Metrics Cops
 Metrics/CyclomaticComplexity:
   Max: 10

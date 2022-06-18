@@ -46,8 +46,9 @@
     expect(page).to have_content(@input_sale.end_date.strftime("%d/%m/%Y"))
     if @user.entity_id == @sale.entity_id
       expect(page).to have_content(@input_sale.percent_allowed)
-      expect(page).to have_content(@input_sale.min_price)
-      expect(page).to have_content(@input_sale.max_price)
+      puts "### min_price = #{custom_format_number(@input_sale.min_price, {})}"
+      expect(page).to have_content(custom_format_number(@input_sale.min_price, {}))
+      expect(page).to have_content(custom_format_number(@input_sale.max_price, {}))
     end
     puts "\n####Sale####\n"
     puts @sale.to_json
