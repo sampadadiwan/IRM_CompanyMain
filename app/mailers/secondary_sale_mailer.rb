@@ -1,5 +1,5 @@
 class SecondarySaleMailer < ApplicationMailer
-  helper InvestmentsHelper
+  helper EmailCurrencyHelper
 
   def notify_advisors
     @secondary_sale = SecondarySale.find(params[:id])

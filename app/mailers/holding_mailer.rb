@@ -1,5 +1,5 @@
 class HoldingMailer < ApplicationMailer
-  helper InvestmentsHelper
+  helper EmailCurrencyHelper
 
   def notify_cancellation
     @holding = Holding.find params[:holding_id]

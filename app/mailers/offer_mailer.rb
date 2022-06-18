@@ -1,5 +1,5 @@
 class OfferMailer < ApplicationMailer
-  helper InvestmentsHelper
+  helper EmailCurrencyHelper
 
   def notify_approval
     @offer = Offer.find params[:offer_id]

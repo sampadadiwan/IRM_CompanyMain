@@ -1,5 +1,5 @@
 class InterestMailer < ApplicationMailer
-  helper InvestmentsHelper
+  helper EmailCurrencyHelper
 
   def notify_interest
     @interest = Interest.find params[:interest_id]
