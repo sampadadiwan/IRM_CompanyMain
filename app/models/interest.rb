@@ -28,6 +28,7 @@ class Interest < ApplicationRecord
   has_many :offers, dependent: :destroy
 
   has_one_attached  :spa, service: :amazon
+  has_many_attached :buyer_docs, service: :amazon
 
   # Customize form
   belongs_to :form_type, optional: true
@@ -53,6 +54,7 @@ class Interest < ApplicationRecord
   validates :buyer_entity_name, :address, :PAN, :contact_name, :email, presence: true, if: proc { |i| i.secondary_sale.finalized }
 
   before_save :notify_shortlist, if: :short_listed
+  before_save :notify_finalized, if: :finalized
   after_create :notify_interest
 
   monetize :amount_cents, :allocation_amount_cents, with_currency: ->(i) { i.offer_entity.currency }
@@ -71,6 +73,10 @@ class Interest < ApplicationRecord
 
   def notify_shortlist
     InterestMailer.with(interest_id: id).notify_shortlist.deliver_later if short_listed_changed?
+  end
+
+  def notify_finalized
+    InterestMailer.with(interest_id: id).notify_finalized.deliver_later if finalized_changed?
   end
 
   def set_defaults

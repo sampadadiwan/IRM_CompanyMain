@@ -146,6 +146,7 @@ class InterestsController < ApplicationController
     params.require(:interest).permit(:offer_entity_id, :quantity, :price, :user_id, :verified,
                                      :allocation_quantity, :comments,
                                      :interest_entity_id, :secondary_sale_id, :buyer_entity_name,
-                                     :address, :contact_name, :email, :PAN, :final_agreement, properties: {})
+                                     :address, :contact_name, :email, :PAN, :final_agreement,
+                                     buyer_docs: [], properties: {})
   end
 end

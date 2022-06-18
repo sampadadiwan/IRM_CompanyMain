@@ -65,7 +65,7 @@
       </td>
     </tr>
 
-    <% if interest.final_price> 0 %>
+    <% if interest.secondary_sale.lock_allocations %>
     <tr>
       <td colspan="2" class="bg-primary"></td>
     </tr>
@@ -103,26 +103,6 @@
     </tr>
   <% end %>
     
-    <% if current_user %>
-    
-    <tr>
-      <td>
-        User
-      </td>
-      <td>
-        <%= interest.user_id == current_user.id || interest.escrow_deposited? ? interest.user.full_name + " " + interest.user.email : ENV["OBFUSCATION"] %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Interest Entity
-      </td>
-      <td>
-        <%= interest.user_id == current_user.id || interest.escrow_deposited? ? interest.interest_entity.name : ENV["OBFUSCATION"] %>
-      </td>
-    </tr>
-
-    <% end %>
 
     <% if interest.secondary_sale.finalized || params[:debug].present? %>
 
@@ -148,7 +128,7 @@
 
     <% end %>
 
-    <% if interest.secondary_sale.finalized || params[:debug].present? %>
+    <% if interest.secondary_sale.lock_allocations || params[:debug].present? %>
 
       <tr>
         <td colspan="2" class="bg-primary"></td>
@@ -210,6 +190,38 @@
         </td>
       </tr>
 
+      <% if current_user %>
+    
+      <tr>
+        <td>
+          User
+        </td>
+        <td>
+          <%= interest.user_id == current_user.id || interest.escrow_deposited? ? interest.user.full_name + " " + interest.user.email : ENV["OBFUSCATION"] %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Interest Entity
+        </td>
+        <td>
+          <%= interest.user_id == current_user.id || interest.escrow_deposited? ? interest.interest_entity.name : ENV["OBFUSCATION"] %>
+        </td>
+      </tr>
+  
+      <tr>
+        <td>
+        Documents
+        </td>
+        <td>
+        <%= render "/layouts/attachments" , attachments: interest.buyer_docs %>
+        </td>
+      </tr>
+
+      
+      <% end %>
+
+      
       <% if interest.secondary_sale.spa.present? || interest.spa.present? %>
 
         <tr>

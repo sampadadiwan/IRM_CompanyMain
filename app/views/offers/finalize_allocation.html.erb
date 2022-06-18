@@ -24,7 +24,7 @@
 
             <%= button_to "Allocation Notification", notify_allocation_secondary_sale_path(@secondary_sale),    
                         class: "btn btn-success", 
-                        data: {action: "click->confirm#popup", msg: "Send email to all participants notifying that the allocation is complete", method: :patch } if @secondary_sale.allocation_status == "Completed" %> 
+                        data: {action: "click->confirm#popup", msg: "Send email to all participants notifying that the allocation is complete", method: :patch } if policy(@secondary_sale).notify_allocations? %> 
         
             &nbsp;&nbsp;&nbsp;
       
@@ -34,7 +34,7 @@
               
             <% label = @secondary_sale.lock_allocations ? 'Lock Allocations' : 'Unlock Allocations' %>
             <%= link_to label , lock_allocations_secondary_sale_path(@secondary_sale),    
-                        class: "btn btn-danger" %> 
+                        class: "btn btn-danger" if policy(@secondary_sale).lock_allocations? %> 
         
         <% end %>
         <form class="d-sm-inline-block form-inline navbar-search" action="<%= search_offers_path %>">

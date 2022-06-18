@@ -82,6 +82,10 @@ class SecondarySalePolicy < ApplicationPolicy
     create?
   end
 
+  def notify_allocations?
+    create? && !record.lock_allocations
+  end
+
   def download?
     create?
   end
