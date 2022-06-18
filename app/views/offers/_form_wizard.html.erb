@@ -1,6 +1,6 @@
 <div class="wizard_container" data-controller="wizard">
     
-    <div class="stepwizard <%= offer.secondary_sale.finalized ? '': 'd-none' %>">
+    <div class="stepwizard <%= offer.secondary_sale.lock_allocations ? '': 'd-none' %>">
             <div class="stepwizard-row setup-panel">
                 
                 <div class="stepwizard-step">
@@ -69,7 +69,7 @@
                 </div>
 
                 <div class="form-group">
-                    <% if offer.secondary_sale.finalized %>
+                    <% if offer.secondary_sale.lock_allocations %>
                         <button class="btn btn-primary nextBtn btn-lg pull-right" type="button">Next</button>
                     <% else %>
                         <%= form.submit "Save", {class: "btn btn-primary btn-lg"}%>
@@ -81,7 +81,7 @@
     </div>
   </div>
 
-  <% if offer.secondary_sale.finalized %>
+  <% if offer.secondary_sale.lock_allocations %>
 
     <div class="row setup-content" id="step-2">
         <div class="col-md-12">

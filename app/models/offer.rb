@@ -186,4 +186,8 @@ class Offer < ApplicationRecord
       end
     end
   end
+
+  def notify_approval
+    OfferMailer.with(offer_id: id).notify_approval.deliver_later
+  end
 end

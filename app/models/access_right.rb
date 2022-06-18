@@ -30,7 +30,7 @@ class AccessRight < ApplicationRecord
 
   belongs_to :owner, polymorphic: true # , strict_loading: true
   belongs_to :entity
-  belongs_to :investor, foreign_key: :access_to_investor_id, optional: true #, strict_loading: true
+  belongs_to :investor, foreign_key: :access_to_investor_id, optional: true # , strict_loading: true
 
   delegate :name, to: :entity, prefix: :entity
   delegate :name, to: :owner, prefix: :owner

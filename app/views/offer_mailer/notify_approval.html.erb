@@ -1,0 +1,11 @@
+<h3>Dear <%= @offer.user.full_name %></h3>
+
+<p>
+    Your offer for quantity <%=@offer.quantity%>, is now approved. 
+</p>
+
+<p>
+    <%= render "/offers/show", offer: @offer, current_user: nil %>
+</p>
+
+<p class="btn btn-primary"><%= link_to 'View offer', offer_url(@offer) %></p>

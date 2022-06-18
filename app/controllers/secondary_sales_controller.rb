@@ -82,7 +82,7 @@ class SecondarySalesController < ApplicationController
     respond_to do |format|
       if @secondary_sale.save
         format.html do
-          redirect_to offers_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true),
+          redirect_to finalize_allocation_offers_path(secondary_sale_id: @secondary_sale.id),
                       notice: "Allocations are now #{label}."
         end
 

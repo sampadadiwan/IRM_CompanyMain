@@ -46,7 +46,7 @@ Rails.application.routes.draw do
     get 'search', on: :collection
     get 'download', on: :member
     patch 'allocate', on: :member
-    get 'notify_allocation', on: :member
+    patch 'notify_allocation', on: :member
     get 'spa_upload', on: :member
     get 'lock_allocations', on: :member
   end
