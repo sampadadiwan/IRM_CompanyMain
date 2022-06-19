@@ -1,10 +1,14 @@
 <div class="row">
-    <div class="col-lg-7 mb-4">
+    <div class="col-lg-6 mb-4">
         <!-- Illustrations -->
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
-                    Chat between <%#= investor.investor_name %> and <%#= owner.entity.name %>
+                    <% if investor %>
+                        Chat between <%= investor.investor_name %> and <%= owner.entity.name %>
+                    <% else %>
+                        Chat
+                    <% end %>
                     <%= link_to messages_path(owner_id: owner.id, owner_type: owner.class.name.underscore, investor_id: investor&.id), target: "_blank", class: "float-right" do %>
                         <i class="fas fa-expand"></i>
                     <% end %>
@@ -15,7 +19,7 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-5 mb-4">
+    <div class="col-lg-6 mb-4">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">

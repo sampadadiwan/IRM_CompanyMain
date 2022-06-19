@@ -14,7 +14,7 @@ class TaskPolicy < ApplicationPolicy
   end
 
   def show?
-    create?
+    create? || Pundit.policy(user, record.owner).show?
   end
 
   def create?

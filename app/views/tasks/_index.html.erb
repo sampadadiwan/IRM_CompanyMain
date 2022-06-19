@@ -1,5 +1,5 @@
 <% investor||= nil; owner||= nil %>
-<%= turbo_frame_tag "task_list" do %>
+<%= turbo_frame_tag "task_list", target: "_top" do %>
 
     <h6 class="m-0 font-weight-bold text-primary">
         <%= link_to "Show All" , tasks_path(investor_id: investor&.id, 
