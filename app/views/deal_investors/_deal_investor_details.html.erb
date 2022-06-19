@@ -35,7 +35,7 @@
   
     <div id="chat-tab" class="tab-pane fade">
       <div id="messages" class="associated_entity">
-        <%= link_to messages_path(deal_investor_id: deal_investor.id), class: "load_data_link", data: { turbo_frame: 'messages_frame' } do %>
+        <%= link_to messages_path(owner_id: deal_investor.id, owner_type: "DealInvestor", investor_id: deal_investor.investor_id), class: "load_data_link", data: { turbo_frame: 'messages_frame' } do %>
           <span>Loading...</span>
         <% end %>
         <%= turbo_frame_tag "messages_frame", target: "_top" do %>

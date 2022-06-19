@@ -19,7 +19,7 @@ class MessagesController < ApplicationController
     @messages = @messages.with_all_rich_text.includes(:user)
     if params[:investor_id].present?
       @messages = @messages.where(investor_id: params[:investor_id])
-      @investor_id = params[:investor_id]
+      @investor = Investor.find(params[:investor_id])
     end
     @messages = @messages.where(user_id: params[:user_id]) if params[:user_id].present?
   end
@@ -100,6 +100,6 @@ class MessagesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def message_params
-    params.require(:message).permit(:user_id, :content, :owner_id, :owner_type)
+    params.require(:message).permit(:user_id, :content, :owner_id, :owner_type, :investor_id)
   end
 end

@@ -14,11 +14,15 @@ class TaskPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id)
+    create?
   end
 
   def create?
-    (user.entity_id == record.entity_id)
+    if user.entity_id == record.owner.entity_id
+      true
+    else
+      record.investor && record.investor.investor_entity_id == user.entity_id
+    end
   end
 
   def new?

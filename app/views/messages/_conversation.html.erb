@@ -18,7 +18,7 @@
       </div> <!-- end chat-history -->
       
       <div class="chat-message clearfix">
-        <%= render "messages/new", message: Message.new(owner: owner) %>
+        <%= render "messages/new", message: Message.new(owner: owner, investor: investor) %>
       </div>
       
     </div> <!-- end chat -->
