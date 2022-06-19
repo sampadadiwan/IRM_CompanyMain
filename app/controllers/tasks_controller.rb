@@ -6,10 +6,12 @@ class TasksController < ApplicationController
   def index
     @tasks = policy_scope(Task).includes(:investor, :user)
     @tasks = @tasks.where(completed: false) if params[:completed].blank?
+
     if params[:investor_id].present?
       @tasks = @tasks.where(investor_id: params[:investor_id])
       @investor = Investor.find(params[:investor_id])
     end
+
     if params[:owner_id].present? && params[:owner_type].present?
       @owner = params[:owner_type].constantize.find(params[:owner_id])
       @tasks = @tasks.where(owner_id: params[:owner_id])
@@ -18,6 +20,7 @@ class TasksController < ApplicationController
       dummy_owner = Struct.new(:id, :owner_id, :owner_type)
       @owner = dummy_owner.new(nil, nil, nil)
     end
+
     @tasks = @tasks.page(params[:page])
   end
 

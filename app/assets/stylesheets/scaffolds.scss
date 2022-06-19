@@ -484,3 +484,9 @@ ul.vesting_schedule {
     width:auto;
   }
 }
+
+.faq {
+	@media only screen and (max-width: $screen-xs-max) {
+		display: none !important;
+	}
+}
