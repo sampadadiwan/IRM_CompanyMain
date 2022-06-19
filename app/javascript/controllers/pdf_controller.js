@@ -10,9 +10,9 @@ export default class extends Controller {
         let viewer_content_type = $("#viewer_content_type").val();
 
         // Hide the direct download link
-        if($("#download_document").val() != "true") { 
+        if($("#download_document").val() !== "true") { 
             $(".document_download_icon").hide();
-        end
+        }
         $("#viewer").hide();
 
         console.log(`pdf_controller connected: ${viewer_link}`);
@@ -35,10 +35,10 @@ export default class extends Controller {
                 instance.UI.disableElements(['ribbons']);
                 instance.UI.disableElements(['toolsHeader']);
                 instance.UI.openElements([ 'menuOverlay' ]);
-                if($("#download_document").val() == "true") { 
+                if($("#download_document").val() !== "true") { 
                     instance.UI.disableElements([ 'downloadButton' ]);
                 }
-                if($("#printing_document").val() == "true") { 
+                if($("#printing_document").val() !== "true") { 
                     instance.UI.disableElements([ 'printButton' ]);
                 }
 
@@ -82,7 +82,9 @@ export default class extends Controller {
                     }
                 });
 
-                $(".document_download_icon").hide();
+                if($("#download_document").val() !== "true") { 
+                    $(".document_download_icon").hide();
+                }
             });
     }
 
