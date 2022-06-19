@@ -3,7 +3,7 @@
 # Table name: interests
 #
 #  id                      :integer          not null, primary key
-#  offer_entity_id         :integer
+#  entity_id         :integer
 #  quantity                :integer
 #  price                   :decimal(10, )
 #  user_id                 :integer          not null
@@ -24,7 +24,7 @@ class Interest < ApplicationRecord
   belongs_to :user
   belongs_to :secondary_sale
   belongs_to :interest_entity, class_name: "Entity"
-  belongs_to :offer_entity, class_name: "Entity"
+  belongs_to :entity, class_name: "Entity"
   has_many :offers, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
   has_many :messages, as: :owner, dependent: :destroy
@@ -59,7 +59,7 @@ class Interest < ApplicationRecord
   before_save :notify_finalized, if: :finalized
   after_create :notify_interest
 
-  monetize :amount_cents, :allocation_amount_cents, with_currency: ->(i) { i.offer_entity.currency }
+  monetize :amount_cents, :allocation_amount_cents, with_currency: ->(i) { i.entity.currency }
 
   counter_culture :secondary_sale,
                   column_name: proc { |o| o.short_listed ? 'total_interest_quantity' : nil },
@@ -83,7 +83,7 @@ class Interest < ApplicationRecord
 
   def set_defaults
     self.interest_entity_id ||= user.entity_id
-    self.offer_entity_id ||= secondary_sale.entity_id
+    self.entity_id ||= secondary_sale.entity_id
     self.amount_cents = quantity * final_price * 100 if final_price.positive?
     self.allocation_amount_cents = allocation_quantity * final_price * 100 if final_price.positive?
   end

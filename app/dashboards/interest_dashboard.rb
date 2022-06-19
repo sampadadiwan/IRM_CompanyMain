@@ -11,7 +11,7 @@ class InterestDashboard < Administrate::BaseDashboard
     user: Field::BelongsTo,
     secondary_sale: Field::BelongsTo,
     interest_entity: Field::BelongsTo,
-    offer_entity: Field::BelongsTo,
+    entity: Field::BelongsTo,
     id: Field::Number,
     quantity: Field::Number,
     price: Field::String.with_options(searchable: false),
@@ -31,7 +31,7 @@ class InterestDashboard < Administrate::BaseDashboard
     user
     secondary_sale
     interest_entity
-    offer_entity
+    entity
     price
     quantity
     short_listed
@@ -45,7 +45,7 @@ class InterestDashboard < Administrate::BaseDashboard
     user
     secondary_sale
     interest_entity
-    offer_entity
+    entity
     quantity
     price
     short_listed

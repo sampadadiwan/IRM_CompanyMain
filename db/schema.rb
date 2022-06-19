@@ -534,7 +534,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
   end
 
   create_table "interests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.integer "offer_entity_id"
+    t.integer "entity_id"
     t.integer "quantity"
     t.decimal "price", precision: 10
     t.bigint "user_id", null: false
@@ -563,7 +563,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
     t.text "comments"
     t.index ["form_type_id"], name: "index_interests_on_form_type_id"
     t.index ["interest_entity_id"], name: "index_interests_on_interest_entity_id"
-    t.index ["offer_entity_id"], name: "index_interests_on_offer_entity_id"
+    t.index ["entity_id"], name: "index_interests_on_entity_id"
     t.index ["secondary_sale_id"], name: "index_interests_on_secondary_sale_id"
     t.index ["user_id"], name: "index_interests_on_user_id"
   end

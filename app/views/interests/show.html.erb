@@ -8,14 +8,7 @@
   <% end %>
 
 
-  <div class="row">
-    <div class="col-md-8">
-      <%= render "/interests/show", interest: @interest %>
-    </div>
-    <div class="col-md-4">
-      <%= render "/interests/faq", interest: @interest %>
-    </div>
-  </div>
+  <%= render "/interests/show", interest: @interest %>
 
   <div>
     <% if policy(@interest).update? %>

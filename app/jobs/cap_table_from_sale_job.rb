@@ -25,11 +25,11 @@ class CapTableFromSaleJob < ApplicationJob
   def create_investors(interest)
     # Create investors for the interests which are short_listed
     investor = Investor.where(investor_entity_id: interest.interest_entity_id,
-                              investee_entity_id: interest.offer_entity_id).first
+                              investee_entity_id: interest.entity_id).first
 
     if investor.nil?
       investor = Investor.create(investor_entity_id: interest.interest_entity_id,
-                                 investee_entity_id: interest.offer_entity_id,
+                                 investee_entity_id: interest.entity_id,
                                  investor_name: interest.interest_entity.name,
                                  category: "Co-Investor")
 

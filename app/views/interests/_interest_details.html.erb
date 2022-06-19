@@ -2,17 +2,17 @@
 
   
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
-    <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab">
-        Tasks</a>
+    <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#faqs-tab">
+        FAQ</a>
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#chat-tab" 
         data-action="click->tabdetails#loadData">Chat</a>
   </nav>
 
   <div class="tab-content" data-controller="datatable">
 
-      <div id="tasks-tab" class="tab-pane fade in show active">
-        <div id="tasks" class="associated_entity">
-          <%= render "tasks/index", tasks: interest.tasks, owner: interest %>
+      <div id="faqs-tab" class="tab-pane fade in show active">
+        <div id="faqs" class="associated_entity">
+          <%= render "/interests/faq", interest: @interest %>
         </div>     
       </div>
 

@@ -3,7 +3,7 @@ class InterestMailer < ApplicationMailer
 
   def notify_interest
     @interest = Interest.find params[:interest_id]
-    emails = @interest.offer_entity.employees.collect(&:email)
+    emails = @interest.entity.employees.collect(&:email)
     mail(to: emails,
          cc: ENV['SUPPORT_EMAIL'],
          subject: "Interest for #{@interest.secondary_sale.name} ")

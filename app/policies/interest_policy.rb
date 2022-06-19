@@ -4,7 +4,7 @@ class InterestPolicy < ApplicationPolicy
       if user.has_cached_role?(:super)
         scope.all
       else
-        scope.where("interest_entity_id=? or offer_entity_id=?", user.entity_id, user.entity_id)
+        scope.where("interest_entity_id=? or entity_id=?", user.entity_id, user.entity_id)
       end
     end
   end
@@ -15,15 +15,15 @@ class InterestPolicy < ApplicationPolicy
 
   def show?
     user.has_cached_role?(:super) || (user.entity_id == record.interest_entity_id) ||
-      (user.entity_id == record.offer_entity_id)
+      (user.entity_id == record.entity_id)
   end
 
   def short_list?
-    (user.entity_id == record.offer_entity_id)
+    (user.entity_id == record.entity_id)
   end
 
   def unscramble?
-    (record.escrow_deposited? && user.entity_id == record.offer_entity_id) || user.entity_id == record.interest_entity_id
+    (record.escrow_deposited? && user.entity_id == record.entity_id) || user.entity_id == record.interest_entity_id
   end
 
   def create?
