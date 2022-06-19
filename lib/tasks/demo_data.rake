@@ -293,6 +293,12 @@ namespace :irm do
             msg = FactoryBot.create(:message, owner: di, entity: e, user: u, investor: di.investor)
           end
 
+          (1..rand(5)).each do
+            u = rand(2).positive? ? di.investor.investor_entity.employees.sample : di.investor.investee_entity.employees.sample
+            msg = FactoryBot.create(:task, owner: di, entity: e, user: u, investor: di.investor)
+          end
+
+
           AccessRight.create(owner: deal, access_type: "Deal", entity: e, investor: inv)
         end
 

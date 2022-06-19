@@ -3,7 +3,6 @@ FactoryBot.define do
     details { Faker::Company.catch_phrase }
     entity { Entity.startups.sample }
     investor { entity.investors.all.sample }
-    filter_id {  }
     completed { rand(2) }
     user { entity.employees.all.sample }
   end
