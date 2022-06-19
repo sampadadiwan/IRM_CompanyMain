@@ -20,6 +20,7 @@ class Folder < ApplicationRecord
   belongs_to :parent, class_name: "Folder", foreign_key: :parent_folder_id, optional: true
   belongs_to :entity
   has_many :documents, dependent: :destroy
+  has_many :access_rights, as: :owner, dependent: :destroy
 
   # Stores all the ids of folders till root from this Folder, i.e all ids from root till here
   serialize :path_ids

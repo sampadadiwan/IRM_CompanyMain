@@ -38,3 +38,5 @@
 
   <%= button_to "Delete", @folder, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>
+
+<%= render "folders/folder_details", folder: @folder %>

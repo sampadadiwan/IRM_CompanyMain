@@ -1,0 +1,21 @@
+<div class="associated_entity">
+    <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
+      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
+    </nav>
+  
+  
+    <div class="tab-content" data-controller="datatable">
+        <div id="access-rights-tab" class="tab-pane fade in show active">
+          <div id="access_rights" class="associated_entity">
+            <%  access_right = AccessRight.new(
+                owner_id: folder.id, 
+                access_type: "Folder", 
+                owner_type: "Folder", 
+                entity_id: folder.entity_id) %> 
+
+            <%= render "/access_rights/index", access_rights: folder.access_rights.includes(:investor, :owner), access_right: access_right %>
+          </div>
+        </div>
+    </div>
+
+</div>

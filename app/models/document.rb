@@ -44,6 +44,7 @@ class Document < ApplicationRecord
   validates :name, presence: true
 
   delegate :full_path, to: :folder, prefix: :folder
+  after_create :setup_access_rights
 
   has_attached_file :file,
                     bucket: proc { |attachment|
@@ -58,6 +59,15 @@ class Document < ApplicationRecord
 
   def to_s
     name
+  end
+
+  def setup_access_rights
+    folder.access_rights.each do |folder_ar|
+      doc_ar = folder_ar.dup
+      doc_ar.owner = self
+      doc_ar.access_type = 'Document'
+      doc_ar.save
+    end
   end
 
   def self.documents_for(current_user, entity)
