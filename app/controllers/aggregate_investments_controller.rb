@@ -1,6 +1,6 @@
 class AggregateInvestmentsController < ApplicationController
   before_action :set_aggregate_investment, only: %i[show edit update destroy]
-  after_action :verify_authorized, except: %i[simple_simulator index search investor_investments]
+  after_action :verify_authorized, except: %i[simple_simulator new_simulator index search investor_investments]
 
   # GET /aggregate_investments or /aggregate_investments.json
   def index
@@ -26,6 +26,11 @@ class AggregateInvestmentsController < ApplicationController
 
   def simple_simulator
     @entity = current_user.entity
+  end
+
+  def new_simulator
+    @entity = current_user.entity
+    @count = params[:count].to_i
   end
 
   def investor_investments

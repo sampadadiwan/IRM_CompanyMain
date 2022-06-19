@@ -23,6 +23,7 @@ Rails.application.routes.draw do
   resources :aggregate_investments do
     get 'investor_investments', on: :collection
     get 'simple_simulator', on: :collection
+    get 'new_simulator', on: :collection
   end
 
   resources :funding_rounds

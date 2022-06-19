@@ -1,4 +1,4 @@
-<form action="/aggregate_investments/simple_simulator" method="GET">
+<form action="/aggregate_investments/new_simulator" method="GET">
 
     <div class="form-group">
         <label for="amount">Amount to be Raised</label>
@@ -21,6 +21,7 @@
 
     <div class="form-group">
         <input type="submit" name="commit" value="Compute" class="btn-lg btn-primary">
+        <input type="text" name="count" value="<%=@count%>" hidden="hidden" class="btn-lg btn-primary">
     </div>
 
 </form>

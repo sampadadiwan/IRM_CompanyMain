@@ -14,7 +14,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def show?
-    if user.has_cached_role?(:super) || (user.entity_id == record.entity_id && user.entity.enable_documents)
+    if user.entity_id == record.entity_id && user.entity.enable_documents
       true
     else
       user.entity.enable_documents &&
@@ -24,7 +24,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def create?
-    user.has_cached_role?(:super) || (user.entity_id == record.entity_id && user.entity.enable_documents)
+    (user.entity_id == record.entity_id && user.entity.enable_documents)
   end
 
   def new?

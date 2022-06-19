@@ -1,13 +1,16 @@
-<div class="card shadow mb-4 col-md-4">
+<% @count ||= 1 %>
+<%= turbo_frame_tag "new_simulator_#{@count}", class:"col-lg-6 mb-4" do %>
+
+<div class="card shadow mb-4">
     <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">Scenario <%= number %></h6>
+        <h6 class="m-0 font-weight-bold text-primary">Scenario <%= @count %></h6>
     </div>
     <div class="card-body">
 
         <% stake, aggregate_investments = calculate_scenario(entity, params) %>
             
         <%= render "simple_simulator_form", stake: stake %>
-        <div class="table-responsive" data-controller="agginvestments">
+        <div class="table-responsive">
 
             <table id="aggregate_investments" class="table table-bordered dataTable jqDataTable">
 
@@ -48,3 +51,6 @@
         </div>
     </div>
 </div>
+
+<% end %>
+
