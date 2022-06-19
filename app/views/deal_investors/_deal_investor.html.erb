@@ -41,23 +41,23 @@
         <% if current_user.entity_id == deal_investor.investor_entity_id %>
             <% if deal_investor.unread_messages_investor > 0 %>
             <span class="badge <%= message_badge(deal_investor.unread_messages_investor) %>">
-                <%= link_to "Unread: #{deal_investor.unread_messages_investor}", deal_messages_path(deal_investor_id: deal_investor.id) %>
+                <%= link_to "Unread: #{deal_investor.unread_messages_investor}", messages_path(deal_investor_id: deal_investor.id) %>
             </span>
             <% end %>
             <% if deal_investor.todays_messages_investor > 0 %>
             <span class="badge <%= message_badge(deal_investor.todays_messages_investor) %>">
-                <%= link_to "Todays: #{deal_investor.todays_messages_investor}", deal_messages_path(deal_investor_id: deal_investor.id) %>                
+                <%= link_to "Todays: #{deal_investor.todays_messages_investor}", messages_path(deal_investor_id: deal_investor.id) %>                
             </span>
             <% end %>
         <% else %> 
             <% if deal_investor.unread_messages_investee > 0 %>
             <span class="badge <%= message_badge(deal_investor.unread_messages_investee) %>">
-                <%= link_to "Unread: #{deal_investor.unread_messages_investee}", deal_messages_path(deal_investor_id: deal_investor.id) %>                
+                <%= link_to "Unread: #{deal_investor.unread_messages_investee}", messages_path(deal_investor_id: deal_investor.id) %>                
             </span>
             <% end %>
             <% if deal_investor.todays_messages_investee > 0 %>
             <span class="badge <%= message_badge(deal_investor.todays_messages_investee) %>">
-                <%= link_to "Todays: #{deal_investor.todays_messages_investee}", deal_messages_path(deal_investor_id: deal_investor.id) %>                
+                <%= link_to "Todays: #{deal_investor.todays_messages_investee}", messages_path(deal_investor_id: deal_investor.id) %>                
             </span>  
             <% end %> 
         <% end %>

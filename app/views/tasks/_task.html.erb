@@ -1,0 +1,17 @@
+<tr id="<%= dom_id task %>">
+  <td>
+    <%= task.details.html_safe %>
+  </td>
+  <td>
+    <%= task.investor.investor_name %>
+  </td>
+  <td>
+    <%= display_boolean(task.completed) %>
+  </td>
+  <td>
+    <%= task.user.full_name %>
+  </td>
+  <td>
+    <%= link_to "Show" , task , {class: "btn btn-primary" }%>
+  </td>
+</tr>

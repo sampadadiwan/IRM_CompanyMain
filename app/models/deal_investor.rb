@@ -41,7 +41,7 @@ class DealInvestor < ApplicationRecord
   counter_culture :entity
 
   has_many :deal_activities, -> { order(sequence: :asc) }, dependent: :destroy
-  has_many :deal_messages, dependent: :destroy
+  has_many :messages, dependent: :destroy
 
   has_many :deal_docs, dependent: :destroy
 

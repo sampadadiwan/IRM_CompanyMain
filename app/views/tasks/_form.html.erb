@@ -1,0 +1,33 @@
+<%= form_with(model: task) do |form| %>
+  <% if task.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(task.errors.count, "error") %> prohibited this task from being saved:</h2>
+
+      <ul>
+        <% task.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
+  <%= form.number_field :filter_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :user_id, class: "form-control", hidden: true  %>
+
+  <div class="form-group">
+    <%= form.label :details %>
+    <%= form.rich_text_area :details, class: "form-control"  %>
+  </div>
+
+
+  <div class="form-group">
+    <%= form.label :completed %>
+    <%= form.check_box :completed, class: "form-control form-checkbox"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

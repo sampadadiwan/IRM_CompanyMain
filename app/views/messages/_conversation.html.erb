@@ -1,0 +1,26 @@
+<div class="chat_container clearfix">
+
+    <div class="chat">  
+
+      <div class="chat-history">
+        
+        <ul id="chat-msg-list">
+            <% messages.each do |msg| %>          
+              <%= render "messages/conversation_msg", msg: msg %>          
+            <% end %>
+
+            <%= turbo_stream_from dom_id(owner) %>  
+            <%= turbo_frame_tag dom_id(owner) do %>
+            <% end %>
+
+        </ul>
+        
+      </div> <!-- end chat-history -->
+      
+      <div class="chat-message clearfix">
+        <%= render "messages/new", message: Message.new(owner: deal_investor) %>
+      </div>
+      
+    </div> <!-- end chat -->
+    
+</div> <!-- end container -->

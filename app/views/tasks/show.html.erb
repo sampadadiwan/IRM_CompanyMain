@@ -1,0 +1,63 @@
+<%= render "/layouts/alerts" %>
+
+<table class="table table-bordered dataTable">
+
+          <tr>
+        <td>
+          Details
+        </td>
+        <td>
+          <%= @task.details.html_safe %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Entity
+        </td>
+        <td>
+          <%= @task.entity.name %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Investor
+        </td>
+        <td>
+          <%= @task.investor.investor_name %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Filter
+        </td>
+        <td>
+          <%= @task.filter_id %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Completed
+        </td>
+        <td>
+          <%= display_boolean(@task.completed) %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          User
+        </td>
+        <td>
+          <%= @task.user.full_name %>
+        </td>    
+      </tr>
+    
+  
+</table>
+
+
+<div>
+  <%= link_to "Edit", edit_task_path(@task), {class: "btn btn-primary"} %> |
+  <%= link_to "Back", :back, {class: "btn btn-primary"} %> |
+
+  <%= button_to "Delete", @task, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+</div>

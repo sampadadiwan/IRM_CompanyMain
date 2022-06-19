@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  resources :tasks do
+    get 'search', on: :collection
+  end
   resources :form_custom_fields
   resources :form_types
 
@@ -74,7 +77,7 @@ Rails.application.routes.draw do
   resources :deal_docs
   resources :notifications
 
-  resources :deal_messages do
+  resources :messages do
     post 'mark_as_task', on: :member
     patch 'task_done', on: :member
   end

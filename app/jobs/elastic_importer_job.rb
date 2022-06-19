@@ -16,6 +16,7 @@ class ElasticImporterJob < ApplicationJob
     HoldingAuditTrailIndex.import
     ExcerciseIndex.import
     OfferIndex.import
+    TaskIndex.import
   end
 
   def reset
@@ -33,5 +34,6 @@ class ElasticImporterJob < ApplicationJob
     HoldingAuditTrailIndex.reset
     ExcerciseIndex.reset
     OfferIndex.reset
+    TaskIndex.reset
   end
 end

@@ -1,0 +1,29 @@
+<%= render "/layouts/alerts" %>
+
+<table class="table table-bordered dataTable ">
+
+      <tr>
+        <td>
+          User
+        </td>
+        <td>
+          <%= @message.user.name %>
+        </td>    
+      </tr>
+      <tr>
+        <td>
+          Content
+        </td>
+        <td>
+          <%= @message.content %>
+        </td>    
+      </tr>
+        
+  
+</table>
+
+
+<div>
+  <%= link_to "Edit", edit_message_path(@message), {class: "btn btn-primary"} %> |
+  <%= button_to "Delete", @message, method: :delete, class: "btn btn-danger", form_class: "deleteButton" %>
+</div>

@@ -1,9 +1,0 @@
-<%= render "/layouts/alerts" %>
-
-<% if params[:tasks].present? %>
-    <%= render "deal_messages/index", deal_messages: @deal_messages, deal_investor: nil %>
-<% else %>
-    <%= turbo_frame_tag "deal_messages_frame", target: "_top" do %>
-        <%= render "deal_messages/chats_and_tasks", deal_messages: @deal_messages, deal_investor: @deal_investor %>
-    <% end %>    
-<% end %>

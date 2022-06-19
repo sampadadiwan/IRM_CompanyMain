@@ -64,7 +64,7 @@ class Entity < ApplicationRecord
   # Will have many employees
   has_many :employees, class_name: "User", dependent: :destroy
   has_many :holdings, dependent: :destroy
-  has_many :deal_messages, dependent: :destroy
+  has_many :messages, dependent: :destroy
 
   # List of investors who are invested in this entity
   has_many :investors, foreign_key: "investee_entity_id", dependent: :destroy

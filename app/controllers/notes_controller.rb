@@ -20,19 +20,14 @@ class NotesController < ApplicationController
   def search
     query = params[:query]
     if query.present?
-      @notes = if current_user.has_role?(:super)
+      @notes = NoteIndex.filter(term: { entity_id: current_user.entity_id })
+                        .query(query_string: { fields: NoteIndex::SEARCH_FIELDS,
+                                               query:, default_operator: 'and' })
 
-                 NoteIndex.query(query_string: { fields: NoteIndex::SEARCH_FIELDS,
-                                                 query:, default_operator: 'and' })
-
-               else
-                 NoteIndex.filter(term: { entity_id: current_user.entity_id })
-                          .query(query_string: { fields: NoteIndex::SEARCH_FIELDS,
-                                                 query:, default_operator: 'and' })
-               end
-
+      render "index"
+    else
+      redirect_to notes_path(request.parameters)
     end
-    render "index"
   end
 
   # GET /notes/1 or /notes/1.json

@@ -34,11 +34,11 @@
     </div>
   
     <div id="chat-tab" class="tab-pane fade">
-      <div id="deal_messages" class="associated_entity">
-        <%= link_to deal_messages_path(deal_investor_id: deal_investor.id), class: "load_data_link", data: { turbo_frame: 'deal_messages_frame' } do %>
+      <div id="messages" class="associated_entity">
+        <%= link_to messages_path(deal_investor_id: deal_investor.id), class: "load_data_link", data: { turbo_frame: 'messages_frame' } do %>
           <span>Loading...</span>
         <% end %>
-        <%= turbo_frame_tag "deal_messages_frame", target: "_top" do %>
+        <%= turbo_frame_tag "messages_frame", target: "_top" do %>
         <% end %>
       </div>  
     </div>

@@ -289,7 +289,8 @@ namespace :irm do
           di = FactoryBot.create(:deal_investor, investor: inv, entity: e, deal: deal)
           puts "DealInvestor #{di.id} for investor #{inv.id}"
           (1..rand(10)).each do
-            msg = FactoryBot.create(:deal_message, deal_investor: di)
+            u = rand(2).positive? ? di.investor.investor_entity.employees.sample : di.investor.investee_entity.employees.sample
+            msg = FactoryBot.create(:message, owner: di, entity: e, user: u)
           end
 
           AccessRight.create(owner: deal, access_type: "Deal", entity: e, investor: inv)

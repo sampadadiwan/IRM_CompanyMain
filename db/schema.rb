@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_19_035135) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_19_061317) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -231,22 +231,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_035135) do
     t.index ["investor_entity_id"], name: "index_deal_investors_on_investor_entity_id"
     t.index ["investor_id", "deal_id"], name: "index_deal_investors_on_investor_id_and_deal_id", unique: true
     t.index ["investor_id"], name: "index_deal_investors_on_investor_id"
-  end
-
-  create_table "deal_messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "user_id", null: false
-    t.bigint "deal_investor_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.boolean "is_task", default: false
-    t.boolean "task_done", default: false
-    t.datetime "deleted_at"
-    t.boolean "not_msg", default: false
-    t.bigint "entity_id", null: false
-    t.index ["deal_investor_id"], name: "index_deal_messages_on_deal_investor_id"
-    t.index ["deleted_at"], name: "index_deal_messages_on_deleted_at"
-    t.index ["entity_id"], name: "index_deal_messages_on_entity_id"
-    t.index ["user_id"], name: "index_deal_messages_on_user_id"
   end
 
   create_table "deals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -660,6 +644,23 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_035135) do
     t.index ["investor_name", "investee_entity_id"], name: "index_investors_on_investor_name_and_investee_entity_id", unique: true
   end
 
+  create_table "messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "is_task", default: false
+    t.boolean "task_done", default: false
+    t.datetime "deleted_at"
+    t.boolean "not_msg", default: false
+    t.bigint "entity_id", null: false
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.index ["deleted_at"], name: "index_messages_on_deleted_at"
+    t.index ["entity_id"], name: "index_messages_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_messages_on_owner"
+    t.index ["user_id"], name: "index_messages_on_user_id"
+  end
+
   create_table "notes", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.text "details"
     t.integer "entity_id"
@@ -864,6 +865,20 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_035135) do
     t.index ["name"], name: "index_tags_on_name", unique: true
   end
 
+  create_table "tasks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.text "details"
+    t.bigint "entity_id", null: false
+    t.bigint "investor_id", null: false
+    t.integer "filter_id"
+    t.boolean "completed", default: false
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_tasks_on_entity_id"
+    t.index ["investor_id"], name: "index_tasks_on_investor_id"
+    t.index ["user_id"], name: "index_tasks_on_user_id"
+  end
+
   create_table "users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "first_name"
     t.string "last_name"
@@ -952,8 +967,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_035135) do
   add_foreign_key "deal_investors", "deals"
   add_foreign_key "deal_investors", "entities"
   add_foreign_key "deal_investors", "investors"
-  add_foreign_key "deal_messages", "deal_investors"
-  add_foreign_key "deal_messages", "users"
   add_foreign_key "deals", "entities"
   add_foreign_key "deals", "form_types"
   add_foreign_key "documents", "folders"
@@ -985,6 +998,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_035135) do
   add_foreign_key "investments", "aggregate_investments"
   add_foreign_key "investments", "funding_rounds"
   add_foreign_key "investors", "form_types"
+  add_foreign_key "messages", "users"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "offers", "entities"
@@ -1001,6 +1015,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_035135) do
   add_foreign_key "secondary_sales", "entities"
   add_foreign_key "secondary_sales", "form_types"
   add_foreign_key "taggings", "tags"
+  add_foreign_key "tasks", "entities"
+  add_foreign_key "tasks", "investors"
+  add_foreign_key "tasks", "users"
   add_foreign_key "valuations", "entities"
   add_foreign_key "vesting_schedules", "entities"
   add_foreign_key "vesting_schedules", "option_pools"

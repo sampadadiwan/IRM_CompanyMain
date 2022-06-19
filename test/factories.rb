@@ -1,14 +1,11 @@
 FactoryBot.define do
-
-  factory :holding_audit_trail do
-    action { "MyString" }
-    action_id { "" }
-    owner { "MyString" }
-    quantity { "" }
-    operation { "MyString" }
-    ref { nil }
-    comments { "MyText" }
-    entity { nil }
+  factory :task do
+    details { Faker::Company.catch_phrase }
+    entity { Entity.startups.sample }
+    investor { entity.investors.all.sample }
+    filter_id {  }
+    completed { rand(2) }
+    user { entity.employees.all.sample }
   end
 
   factory :valuation do
@@ -74,24 +71,6 @@ FactoryBot.define do
     user { entity.employees.sample }
   end
 
-  # factory :nudge do
-  #   to { "MyText" }
-  #   subject { "MyText" }
-  #   msg_body { "MyText" }
-  #   user { nil }
-  #   entity { nil }
-  #   item { nil }
-  # end
-
-  # factory :import_upload do
-  #   name { "MyString" }
-  #   entity { nil }
-  #   owner { nil }
-  #   user { nil }
-  #   import_type { "MyString" }
-  #   status { "MyString" }
-  #   error_text { "MyText" }
-  # end
 
   
   factory :interest do
@@ -146,10 +125,8 @@ FactoryBot.define do
   end
 
 
-  factory :deal_message do
-    deal_investor { DealInvestor.all.sample }
-    entity_id { deal_investor.entity_id}
-    user { rand(2).positive? ? deal_investor.investor.investor_entity.employees.sample : deal_investor.investor.investee_entity.employees.sample }
+  factory :message do
+    user {  }
     content { Faker::Company.catch_phrase }
     is_task { rand(2) }
     not_msg { rand(2) }
