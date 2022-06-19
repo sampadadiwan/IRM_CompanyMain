@@ -4,18 +4,18 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
-                    <span class="chat-with">Chat between <%=investor.investor_entity.name %> & <%=owner.entity.name%> </span>
+                    
                     <%= link_to messages_path(owner_id: owner.id, owner_type: owner.class.name.underscore), target: "_blank", class: "float-right" do %>
                         <i class="fas fa-expand"></i>
                     <% end %>
                 </h6>
             </div>
             <div class="card-body">
-                <%= render "messages/conversation", messages: messages.msg, owner: owner %>
+                <%= render "messages/conversation", messages: messages, owner: owner %>
             </div>
         </div>
     </div>
     <div class="col-lg-5 mb-4">
-        <%= render "messages/index", messages: @messages, owner: owner %>
+        <%= render "tasks/index", tasks: Task.all.page(params[:page]) %>
     </div>
 </div>

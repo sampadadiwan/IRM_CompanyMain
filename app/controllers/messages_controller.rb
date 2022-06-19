@@ -5,11 +5,11 @@ class MessagesController < ApplicationController
   # GET /messages or /messages.json
   def index
     if params[:owner_id].present? && params[:owner_type].present?
-      @owner = Message.new(owner_id: params[:owner_id], owner_type: params[:owner_type])
+      @owner = Message.new(owner_id: params[:owner_id], owner_type: params[:owner_type]).owner
       # Ensure the user has access to the deal investor
       authorize @owner, :show?
       # Mark messages as read
-      @owner.messages_viewed(current_user)
+      # @owner.messages_viewed(current_user)
       # Return the messages
       @messages = @owner.messages
     else

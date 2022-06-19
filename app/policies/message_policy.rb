@@ -14,10 +14,10 @@ class MessagePolicy < ApplicationPolicy
   end
 
   def show?
-    if user.has_cached_role?(:super) || (user.entity_id == record.deal_investor.entity_id)
+    if user.entity_id == record.entity_id
       true
     else
-      record.deal_investor && record.deal_investor.investor_entity_id == user.entity_id
+      record.owner && record.owner.entity_id == user.entity_id
     end
   end
 
@@ -30,10 +30,10 @@ class MessagePolicy < ApplicationPolicy
   end
 
   def create?
-    if user.has_cached_role?(:super) || (user.entity_id == record.deal_investor.entity_id)
+    if user.entity_id == record.owner.entity_id
       true
     else
-      record.deal_investor && record.deal_investor.investor_entity_id == user.entity_id
+      record.investor && record.investor.investor_entity_id == user.entity_id
     end
   end
 

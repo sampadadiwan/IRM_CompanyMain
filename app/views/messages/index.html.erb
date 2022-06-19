@@ -1,9 +1,5 @@
 <%= render "/layouts/alerts" %>
 
-<% if params[:tasks].present? %>
-    <%= render "messages/index", messages: @messages, owner: nil %>
-<% else %>
-    <%= turbo_frame_tag "messages_frame", target: "_top" do %>
-        <%= render "messages/chats_and_tasks", messages: @messages, owner: @owner %>
-    <% end %>    
-<% end %>
+<%= turbo_frame_tag "messages_frame", target: "_top" do %>
+    <%= render "messages/chats_and_tasks", messages: @messages, owner: @owner %>
+<% end %>    

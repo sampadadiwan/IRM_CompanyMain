@@ -128,8 +128,6 @@ FactoryBot.define do
   factory :message do
     user {  }
     content { Faker::Company.catch_phrase }
-    is_task { rand(2) }
-    not_msg { rand(2) }
   end
 
   factory :deal_activity do

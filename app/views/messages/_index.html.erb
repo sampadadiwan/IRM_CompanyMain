@@ -8,7 +8,8 @@
             <% if owner %>
                 <span class="float-right">
                     <%= link_to label, messages_path(owner_id: owner.id, owner_type: owner.class.name.underscore, deal_id: owner.deal_id, show_all: params[:show_all] != "true"), class: "btn btn-sm btn-primary"%>    
-                    <%= link_to "New Task", new_message_path("message[deal_investor_id]": deal_investor.id), 
+                    <%= link_to "New Task", new_message_path("message[owner_id]": owner.id, 
+                                "message[owner_type]": owner.class.name.underscore), 
                                 { data: { turbo_frame: 'new_task_message' },
                                 method: :get, class: "btn btn-sm btn-primary"} %>    
                 </span>
@@ -24,25 +25,9 @@
 
             <%= turbo_frame_tag "new_task_message" do %>
             <% end %>
-            <% tasks = params[:show_all]=='true' ? messages.tasks : messages.tasks_not_done %>
+            <% tasks = Task.where(investor_id: 1) %>
 
-            <div class="table-responsive" data-controller="datatable">    
-                <table id="message_tasks" class="table table-bordered dataTable jqDataTable">
-                    <thead>
-                        <tr>
-                            <th class="hideMobP">From</th>
-                            <th>Investor</th>
-                            <th>Task</th>
-                            <th>Done</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tasks_body">
-                        <% tasks.order(id: :desc).each do |msg| %>          
-                            <%= render "messages/message", message: msg%>
-                        <% end %>
-                    </tbody>
-                </table>
-            </div>
+            <%= render "/tasks/index", tasks: tasks %>
             
         </div>
     </div>
