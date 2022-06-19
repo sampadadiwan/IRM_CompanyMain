@@ -33,6 +33,12 @@ export default class extends Controller {
                 instance.UI.disableElements(['ribbons']);
                 instance.UI.disableElements(['toolsHeader']);
                 instance.UI.openElements([ 'menuOverlay' ]);
+                if($("#download_document").val() == "true") { 
+                    instance.UI.disableElements([ 'downloadButton' ]);
+                }
+                if($("#printing_document").val() == "true") { 
+                    instance.UI.disableElements([ 'printButton' ]);
+                }
 
 
                 const docViewer = instance.Core.documentViewer;

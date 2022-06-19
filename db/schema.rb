@@ -10,7 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_15_072927) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_19_035135) do
+  create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "controller_name"
+    t.string "action_name"
+    t.string "tour_name"
+    t.integer "creator_id", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
+    t.index ["created_at"], name: "index_abraham_histories_on_created_at"
+    t.index ["creator_id"], name: "index_abraham_histories_on_creator_id"
+    t.index ["updated_at"], name: "index_abraham_histories_on_updated_at"
+  end
+
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -275,6 +287,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_15_072927) do
     t.integer "impressions_count", default: 0
     t.text "properties"
     t.bigint "form_type_id"
+    t.boolean "download", default: false
+    t.boolean "printing", default: false
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
     t.index ["folder_id"], name: "index_documents_on_folder_id"
