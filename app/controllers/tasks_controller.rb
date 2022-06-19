@@ -4,12 +4,12 @@ class TasksController < ApplicationController
 
   # GET /tasks or /tasks.json
   def index
-    @tasks = policy_scope(Task)
+    @tasks = policy_scope(Task).includes(:investor, :user)
     @tasks = @tasks.where(completed: false) if params[:completed].blank?
     @tasks = @tasks.where(investor_id: params[:investor_id]) if params[:investor_id].present?
     @tasks = @tasks.where(owner_id: params[:owner_id]) if params[:owner_id].present?
     @tasks = @tasks.where(owner_type: params[:owner_type]) if params[:owner_type].present?
-    @tasks = @tasks.includes(:investor, :user).page(params[:page])
+    @tasks = @tasks.page(params[:page])
   end
 
   def search

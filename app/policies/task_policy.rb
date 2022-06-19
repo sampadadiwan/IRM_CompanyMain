@@ -4,7 +4,7 @@ class TaskPolicy < ApplicationPolicy
       if user.has_cached_role?(:super)
         scope.all
       else
-        scope.where(entity_id: user.entity_id)
+        scope.where(entity_id: user.entity_id).or(scope.where("investors.investor_entity_id=?", user.entity_id)).joins(:investor)
       end
     end
   end
