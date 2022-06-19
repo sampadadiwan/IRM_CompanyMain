@@ -20,16 +20,28 @@
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
                     Tasks
+
+                    <%= link_to "Show All" , tasks_path(investor_id: investor.id, 
+                        owner_id: owner.id, owner_type: owner.class.name, completed: :all), 
+                        data: { turbo_frame: 'task_list' },
+                        class: "btn btn-sm btn-success float-right" if investor %>
+
+                    <%= link_to "Incomplete" , tasks_path(investor_id: investor.id, 
+                        owner_id: owner.id, owner_type: owner.class.name), 
+                        data: { turbo_frame: 'task_list' },
+                        class: "btn btn-sm btn-warning float-right" if investor %>
+
                     <%= link_to "New Task" , new_task_path("task[investor_id]": investor.id, 
                         "task[owner_id]": owner.id, "task[owner_type]": owner.class.name), 
                         data: { turbo_frame: 'new_task' },
-                        class: "btn btn-primary float-right" if investor %>
+                        class: "btn btn-sm btn-primary float-right" if investor %>
                 </h6>
             </div>
             <div class="card-body">
                 <%= turbo_frame_tag "new_task" do %>
                 <% end %>
-                <%= render "tasks/index", tasks: Task.where(investor_id: investor.id, owner: owner) %>
+                <%= render "tasks/index", tasks: 
+                    Task.incomplete.where(investor_id: investor.id, owner: owner).includes(:user, :investor) %>
             </div>
         </div>
     </div>
