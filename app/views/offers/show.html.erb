@@ -7,7 +7,14 @@
             "Wait for communication from #{@offer.secondary_sale.entity.name}"].freeze %>
 <% end %>
 
-<%= render "/offers/show" %>
+<div class="row">
+  <div class="col-md-8">
+    <%= render "/offers/show" %>
+  </div>
+  <div class="col-md-4">
+    <%= render "/offers/faq", offer: @offer %>
+  </div>
+</div>
 
 
   <div>
