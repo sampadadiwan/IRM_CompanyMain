@@ -6,8 +6,14 @@
     <%= document&.folder_full_path %>
   </td>
   <td class="hideMobP">
-      <%= raw document.tags.map{|tag| link_to(tag.name, search_documents_path(query: tag.name))}.join(", ") %>
+    <%= raw document.tags.map{|tag| link_to(tag.name, search_documents_path(query: tag.name))}.join(", ") %>
   </td>  
+  <td class="hideMobP">
+    <%= display_boolean(document.download) %>
+  </td>
+  <td class="hideMobP">
+    <%= display_boolean(document.printing) %>
+  </td>
   <td class="hideMobP">
     <%= document.created_at.is_a?(Time) ? l(document.created_at) : l(Time.parse(document.created_at)) %>
   </td>  

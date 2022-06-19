@@ -10,7 +10,9 @@ export default class extends Controller {
         let viewer_content_type = $("#viewer_content_type").val();
 
         // Hide the direct download link
-        $(".document_download_icon").hide();
+        if($("#download_document").val() != "true") { 
+            $(".document_download_icon").hide();
+        end
         $("#viewer").hide();
 
         console.log(`pdf_controller connected: ${viewer_link}`);
