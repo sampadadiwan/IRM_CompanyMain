@@ -10,9 +10,7 @@ export default class extends Controller {
         let viewer_content_type = $("#viewer_content_type").val();
 
         // Hide the direct download link
-        if($("#download_document").val() !== "true") { 
-            $(".document_download_icon").hide();
-        }
+        $(".document_download_icon").hide();
         $("#viewer").hide();
 
         console.log(`pdf_controller connected: ${viewer_link}`);
@@ -82,9 +80,7 @@ export default class extends Controller {
                     }
                 });
 
-                if($("#download_document").val() !== "true") { 
-                    $(".document_download_icon").hide();
-                }
+                $(".document_download_icon").hide();
             });
     }
 
