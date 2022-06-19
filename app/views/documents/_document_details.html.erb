@@ -1,7 +1,9 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
-      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#viewers-tab">Viewed By</a>
+      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#viewers-tab">Viewed By</a>
+      <% if policy(document).update? %>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
+      <% end %>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab" 
           data-action="click->tabdetails#loadData">
         Tasks
@@ -10,22 +12,27 @@
   
   
     <div class="tab-content" data-controller="datatable">
-        <div id="access-rights-tab" class="tab-pane fade in show active">
-          <div id="access_rights" class="associated_entity">
-            <%  access_right = AccessRight.new(
-                owner_id: document.id, 
-                access_type: "Document", 
-                owner_type: "Document", 
-                entity_id: document.entity_id) %> 
 
-            <%= render "/access_rights/index", access_rights: document.access_rights.includes(:investor, :owner), access_right: access_right %>
-          </div>
-        </div>
-        <div id="viewers-tab" class="tab-pane fade">
+        <div id="viewers-tab" class="tab-pane fade in show active">
           <div id="users" class="associated_entity">
-            <%= render "/users/index", users: document.viewed_by.includes(:entity) %>
+            <% entity_id = policy(document).update? ? nil : current_user.entity_id   %>
+            <%= render "/users/index", users: document.viewed_by(entity_id:).includes(:entity) %>
           </div>     
         </div>
+
+        <% if policy(document).update? %>
+          <div id="access-rights-tab" class="tab-pane fade">
+            <div id="access_rights" class="associated_entity">
+              <%  access_right = AccessRight.new(
+                  owner_id: document.id, 
+                  access_type: "Document", 
+                  owner_type: "Document", 
+                  entity_id: document.entity_id) %> 
+
+              <%= render "/access_rights/index", access_rights: document.access_rights.includes(:investor, :owner), access_right: access_right %>
+            </div>
+          </div>
+        <% end %>        
 
         <div id="tasks-tab" class="tab-pane fade">
           <div id="tasks" class="associated_entity">
