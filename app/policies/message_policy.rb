@@ -29,7 +29,7 @@ class MessagePolicy < ApplicationPolicy
       record.owner &&
         (
           record.owner.entity_id == user.entity_id ||
-          (record.owner_type == "Interest" && record.owner.interest_entity_id == user.entity_id)
+          Pundit.policy(user, record.owner).show?
         )
     end
   end

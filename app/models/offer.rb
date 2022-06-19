@@ -60,6 +60,7 @@ class Offer < ApplicationRecord
   belongs_to :granter, class_name: "User", foreign_key: :granted_by_user_id, optional: true
   belongs_to :buyer, class_name: "Entity", optional: true
 
+  has_many :messages, as: :owner, dependent: :destroy
   has_one_attached :id_proof, service: :amazon
   has_one_attached :address_proof, service: :amazon
 

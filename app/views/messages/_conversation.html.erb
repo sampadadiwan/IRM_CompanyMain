@@ -2,9 +2,9 @@
 
     <div class="chat">  
 
-      <div class="chat-history">
+      <div class="chat-history" data-controller="scroll">
         
-        <ul id="chat-msg-list">
+        <ul id="chat-msg-list" class="chat-msg-list">
             <% messages.each do |msg| %>          
               <%= render "messages/conversation_msg", msg: msg %>          
             <% end %>

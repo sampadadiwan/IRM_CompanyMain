@@ -7,14 +7,7 @@
             "Wait for communication from #{@offer.secondary_sale.entity.name}"].freeze %>
 <% end %>
 
-<div class="row">
-  <div class="col-md-8">
-    <%= render "/offers/show" %>
-  </div>
-  <div class="col-md-4">
-    <%= render "/offers/faq", offer: @offer %>
-  </div>
-</div>
+  <%= render "/offers/show" %>
 
 
   <div>
@@ -28,3 +21,5 @@
 
     <%= link_to "Secondary Sale" , secondary_sale_path(@offer.secondary_sale), {class: "btn btn-primary" } %>
   </div>
+
+  <%= render "offers/offer_details", offer: @offer %> 

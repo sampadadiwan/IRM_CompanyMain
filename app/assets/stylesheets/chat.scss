@@ -11,7 +11,7 @@ $gray: #92959E;
 
 .chat_container {
   margin: 0 auto;
-  overflow-y: scroll;
+  // overflow-y: scroll;
   max-height: 750px;
   max-width: 1200px;
   // background: #444753;
@@ -61,8 +61,10 @@ $gray: #92959E;
   .chat-history {
     padding: 10px;
     border-bottom: 2px solid white;
-    // overflow-y: scroll;
-    // max-height: 540px;
+    .chat-msg-list {
+      overflow-y: scroll;
+      max-height: 540px;
+    }
 
     ul, ol {
         list-style: none;
