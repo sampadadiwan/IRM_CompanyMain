@@ -1,36 +1,57 @@
+
 <%= turbo_frame_tag "task_list" do %>
 
-<div class="table-responsive" data-controller="datatable">
+    <h6 class="m-0 font-weight-bold text-primary">
+        <%= link_to "Show All" , tasks_path(investor_id: investor.id, 
+            owner_id: owner.id, owner_type: owner.class.name, completed: :all), 
+            data: { turbo_frame: 'task_list' },
+            class: "btn btn-sm btn-success float-right" if investor %>
 
-    <table id="tasks" class="table table-bordered dataTable">
+        <%= link_to "Incomplete" , tasks_path(investor_id: investor.id, 
+            owner_id: owner.id, owner_type: owner.class.name), 
+            data: { turbo_frame: 'task_list' },
+            class: "btn btn-sm btn-warning float-right" if investor %>
 
-        <thead>
-            <tr>
-                <th>
-                    Details
-                </th>
-                <th>
-                    Investor
-                </th>
-                <th>
-                    Completed
-                </th>
-                <th>
-                    User
-                </th>
+        <%= link_to "New Task" , new_task_path("task[investor_id]": investor.id, 
+            "task[owner_id]": owner.id, "task[owner_type]": owner.class.name), 
+            data: { turbo_frame: 'new_task' },
+            class: "btn btn-sm btn-primary float-right" if investor %>
+    </h6>
 
-                <th>
-                </th>
-            </tr>
-        </thead>
+                
+    <div class="table-responsive" data-controller="datatable">
+        <%= turbo_frame_tag "new_task" do %>
+        <% end %>
+    
+        <table id="tasks" class="table table-bordered dataTable">
 
-        <tbody id="tasks_body">
-            <% tasks.each do |task| %>
-                <%= render task %>
-            <% end %>
-        </tbody>
-    </table>
+            <thead>
+                <tr>
+                    <th>
+                        Details
+                    </th>
+                    <th>
+                        Investor
+                    </th>
+                    <th>
+                        Completed
+                    </th>
+                    <th>
+                        User
+                    </th>
 
-</div>
+                    <th>
+                    </th>
+                </tr>
+            </thead>
+
+            <tbody id="tasks_body">
+                <% tasks.each do |task| %>
+                    <%= render task %>
+                <% end %>
+            </tbody>
+        </table>
+
+    </div>
 
 <% end %>

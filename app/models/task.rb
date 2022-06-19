@@ -2,7 +2,7 @@ class Task < ApplicationRecord
   belongs_to :entity
   belongs_to :investor
   belongs_to :user
-  belongs_to :owner, polymorphic: true
+  belongs_to :owner, polymorphic: true, optional: true
 
   scope :completed, -> { where(completed: true) }
   scope :incomplete, -> { where(completed: false) }
