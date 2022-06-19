@@ -2,7 +2,7 @@
 <tr id="<%= dom_id message %>">
   <td class="hideMobP">
       <% if message.entity_id == current_user.entity_id %>
-        <%= link_to message.user.name, messages_path(user_id: message.user_id, tasks: true) %>
+        <%= link_to message.user.name, messages_path(user_id: message.user_id) %>
       <% else %>
         <%= message.user.name %>
       <% end %>
@@ -15,9 +15,5 @@
       <%= message.content %>
   </td>
   <td>
-      <% checked = message.task_done == 1 ? "checked" : ""%>
-      <%= form_with(model: message, url: task_done_message_path(message)) do |form| %>
-          <%= form.check_box :task_done, class: "form-control task-done-checkbox", onchange:"this.form.requestSubmit();"  %>
-      <% end %>
   </td>  
 </tr>

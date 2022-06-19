@@ -1,5 +1,5 @@
 class MessagesController < ApplicationController
-  before_action :set_message, only: %w[show update destroy edit mark_as_task task_done]
+  before_action :set_message, only: %w[show update destroy edit mark_as_task]
   after_action :verify_policy_scoped, only: []
 
   # GET /messages or /messages.json
@@ -25,9 +25,7 @@ class MessagesController < ApplicationController
   end
 
   # GET /messages/1 or /messages/1.json
-  def show
-    authorize @message
-  end
+  def show; end
 
   # GET /messages/new
   def new
@@ -38,9 +36,7 @@ class MessagesController < ApplicationController
   end
 
   # GET /messages/1/edit
-  def edit
-    authorize @message
-  end
+  def edit; end
 
   # POST /messages or /messages.json
   def create
@@ -63,8 +59,6 @@ class MessagesController < ApplicationController
 
   # PATCH/PUT /messages/1 or /messages/1.json
   def update
-    authorize @message
-
     respond_to do |format|
       if @message.update(message_params)
         format.html { redirect_to message_url(@message), notice: "Deal message was successfully updated." }
@@ -76,9 +70,18 @@ class MessagesController < ApplicationController
     end
   end
 
+  def mark_as_task
+    @task = Task.new(user_id: current_user.id, entity_id: @message.entity_id,
+                     owner_id: @message.owner_id, owner_type: @message.owner_type,
+                     investor_id: @message.investor_id, details: @message.content)
+
+    respond_to do |format|
+      format.turbo_stream { render "/tasks/create" } if @task.save
+    end
+  end
+
   # DELETE /messages/1 or /messages/1.json
   def destroy
-    authorize @message
     @message.destroy
 
     respond_to do |format|
@@ -92,6 +95,7 @@ class MessagesController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_message
     @message = Message.find(params[:id])
+    authorize @message
   end
 
   # Only allow a list of trusted parameters through.
