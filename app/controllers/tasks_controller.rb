@@ -12,7 +12,7 @@ class TasksController < ApplicationController
         @tasks = @tasks.where(owner_type: params[:owner_type])
       end
     else
-      @tasks = policy_scope(Task).includes(:investor, :user)
+      @tasks = policy_scope(Task)
     end
 
     if params[:investor_id].present?
@@ -22,7 +22,7 @@ class TasksController < ApplicationController
 
     @tasks = @tasks.where(completed: false) if params[:completed].blank?
 
-    @tasks = @tasks.page(params[:page])
+    @tasks = @tasks.includes(:investor, :user).page(params[:page])
   end
 
   def search

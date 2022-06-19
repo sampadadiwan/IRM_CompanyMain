@@ -4,7 +4,7 @@ class MessagePolicy < ApplicationPolicy
       if user.has_cached_role?(:super)
         scope.all
       else
-        scope.where('deal_investors.entity_id': user.entity_id).joins(:deal_investor)
+        scope.where(entity_id: user.entity_id)
       end
     end
   end
@@ -14,26 +14,23 @@ class MessagePolicy < ApplicationPolicy
   end
 
   def show?
-    if user.entity_id == record.entity_id
-      true
-    else
-      record.owner && record.owner.entity_id == user.entity_id
-    end
+    create?
   end
 
   def mark_as_task?
     create?
   end
 
-  def task_done?
-    create?
-  end
-
   def create?
-    if user.entity_id == record.owner.entity_id
+    Rails.logger.debug record.to_json
+    if user.entity_id == record.entity_id
       true
     else
-      record.investor && record.investor.investor_entity_id == user.entity_id
+      record.owner &&
+        (
+          record.owner.entity_id == user.entity_id ||
+          (record.owner_type == "Interest" && record.owner.interest_entity_id == user.entity_id)
+        )
     end
   end
 
