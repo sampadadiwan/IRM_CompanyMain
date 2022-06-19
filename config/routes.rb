@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   resources :tasks do
     get 'search', on: :collection
+    patch 'completed', on: :member
   end
   resources :form_custom_fields
   resources :form_types

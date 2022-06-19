@@ -7,7 +7,6 @@
 #  deal_investor_id :integer          not null
 #  created_at       :datetime         not null
 #  updated_at       :datetime         not null
-#  is_task          :boolean          default("0")
 #  task_done        :boolean          default("0")
 #  deleted_at       :datetime
 #  not_msg          :boolean          default("0")
@@ -17,18 +16,13 @@
 class Message < ApplicationRecord
   belongs_to :user
   belongs_to :entity
-  counter_culture :entity, column_name: proc { |msg| msg.is_task && !msg.task_done ? 'tasks_count' : nil }
 
   belongs_to :owner, polymorphic: true
   has_rich_text :content
   # encrypts :content
   validates :content, presence: true
 
-  scope :tasks, -> { where(is_task: true) }
-  scope :not_msg, -> { where(not_msg: true) }
   scope :msg, -> { where(not_msg: false) }
-
-  scope :tasks_not_done, -> { where(is_task: true, task_done: false) }
 
   after_create :broadcast_message, unless: :not_msg
 

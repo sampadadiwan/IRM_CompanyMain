@@ -475,3 +475,12 @@ ul.vesting_schedule {
 .form_wizard_faq {
   padding-top: 80px;
 }
+
+.inline_form {
+  display: inline !important;
+  .form-group, .form-control {
+    display: inline;
+    vertical-align: middle;
+    width:auto;
+  }
+}

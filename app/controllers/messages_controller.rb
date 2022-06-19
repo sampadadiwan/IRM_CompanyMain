@@ -58,46 +58,6 @@ class MessagesController < ApplicationController
     end
   end
 
-  def mark_as_task
-    authorize @message
-    @message.is_task = !@message.is_task
-
-    respond_to do |format|
-      if @message.save
-        format.turbo_stream do
-          render turbo_stream: [
-            if @message.is_task
-              turbo_stream.append('message_tasks', partial: "messages/message",
-                                                   locals: { message: @message })
-            else
-              turbo_stream.remove(@message)
-            end
-          ]
-        end
-      end
-    end
-  end
-
-  def task_done
-    authorize @message
-    @message.task_done = !@message.task_done
-
-    respond_to do |format|
-      if @message.save
-        format.turbo_stream do
-          render turbo_stream: [
-            # if @message.task_done
-            #   turbo_stream.remove(@message)
-            # else
-            #   turbo_stream.replace(@message)
-            # end
-            turbo_stream.replace(@message)
-          ]
-        end
-      end
-    end
-  end
-
   # PATCH/PUT /messages/1 or /messages/1.json
   def update
     authorize @message
@@ -133,7 +93,6 @@ class MessagesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def message_params
-    params.require(:message).permit(:user_id, :content, :owner_id, :owner_type, :task_done,
-                                    :is_task, :not_msg)
+    params.require(:message).permit(:user_id, :content, :owner_id, :owner_type)
   end
 end

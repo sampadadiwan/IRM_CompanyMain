@@ -29,11 +29,15 @@ class TaskPolicy < ApplicationPolicy
     create?
   end
 
+  def completed?
+    update?
+  end
+
   def edit?
-    create?
+    update?
   end
 
   def destroy?
-    create?
+    update?
   end
 end

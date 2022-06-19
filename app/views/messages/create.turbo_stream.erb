@@ -1,7 +1,7 @@
 <% if @message.not_msg %>
     <%= turbo_stream.replace('new_task_message', partial: "messages/new_task",
                             locals: { message: Message.new(owner_id: @message.owner_id, 
-                                                owner_type: @message.owner_type, is_task: true, not_msg: true) }) %>
+                                                owner_type: @message.owner_type) }) %>
 
 
     <%= turbo_stream.prepend('tasks_body', partial: "messages/message",
@@ -10,6 +10,6 @@
 <% else %>
     <%= turbo_stream.replace('new_message', partial: "messages/new",
                             locals: { message: Message.new(owner_id: @message.owner_id, 
-                                            owner_type: @message.owner_type,is_task: false, not_msg: false) }) %>
+                                            owner_type: @message.owner_type) }) %>
 
 <% end %>
