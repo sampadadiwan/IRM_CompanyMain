@@ -17,7 +17,10 @@ class MessagesController < ApplicationController
     end
 
     @messages = @messages.with_all_rich_text.includes(:user)
-    @messages = @messages.where(investor_id: params[:investor_id]) if params[:investor_id].present?
+    if params[:investor_id].present?
+      @messages = @messages.where(investor_id: params[:investor_id])
+      @investor_id = params[:investor_id]
+    end
     @messages = @messages.where(user_id: params[:user_id]) if params[:user_id].present?
   end
 

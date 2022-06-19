@@ -5,7 +5,7 @@
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
                     
-                    <%= link_to messages_path(owner_id: owner.id, owner_type: owner.class.name.underscore), target: "_blank", class: "float-right" do %>
+                    <%= link_to messages_path(owner_id: owner.id, owner_type: owner.class.name.underscore, investor_id: investor_id), target: "_blank", class: "float-right" do %>
                         <i class="fas fa-expand"></i>
                     <% end %>
                 </h6>
@@ -16,6 +16,21 @@
         </div>
     </div>
     <div class="col-lg-5 mb-4">
-        <%= render "tasks/index", tasks: Task.all.page(params[:page]) %>
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    Tasks
+                    <%= link_to "New Task" , new_task_path("task[investor_id]": investor_id, 
+                        "task[owner_id]": owner.id, "task[owner_type]": owner.class.name), 
+                        data: { turbo_frame: 'new_task' },
+                        class: "btn btn-primary float-right" if investor_id %>
+                </h6>
+            </div>
+            <div class="card-body">
+                <%= turbo_frame_tag "new_task" do %>
+                <% end %>
+                <%= render "tasks/index", tasks: Task.where(investor_id: investor_id, owner: owner) %>
+            </div>
+        </div>
     </div>
 </div>

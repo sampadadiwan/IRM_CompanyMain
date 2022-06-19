@@ -27,7 +27,7 @@ class TasksController < ApplicationController
 
   # GET /tasks/new
   def new
-    @task = Task.new
+    @task = Task.new(task_params)
     @task.entity_id = current_user.entity_id
     @task.user = current_user
     authorize @task
@@ -46,6 +46,7 @@ class TasksController < ApplicationController
 
     respond_to do |format|
       if @task.save
+        format.turbo_stream { render :create }
         format.html { redirect_to task_url(@task), notice: "Task was successfully created." }
         format.json { render :show, status: :created, location: @task }
       else
@@ -103,6 +104,6 @@ class TasksController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def task_params
-    params.require(:task).permit(:details, :entity_id, :investor_id, :filter_id, :completed, :user_id)
+    params.require(:task).permit(:details, :entity_id, :investor_id, :owner_id, :owner_type, :completed, :user_id)
   end
 end

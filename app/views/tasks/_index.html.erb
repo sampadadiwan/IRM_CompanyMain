@@ -1,9 +1,3 @@
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Tasks</h1>
-    <% investor ||= nil %>
-    <%= link_to "New Task" , new_task_path("task[investor_id]": investor.id), 
-            {class: "btn btn-primary" } if investor %>
-</div>
 
 <div class="table-responsive" data-controller="datatable">
 
@@ -29,7 +23,7 @@
             </tr>
         </thead>
 
-        <tbody>
+        <tbody id="tasks_body">
             <% tasks.each do |task| %>
                 <%= render task %>
             <% end %>
@@ -38,4 +32,3 @@
 
 </div>
 
-<%= paginate tasks %>

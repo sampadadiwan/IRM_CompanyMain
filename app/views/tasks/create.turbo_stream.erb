@@ -1,0 +1,4 @@
+
+    <%= turbo_stream.prepend('tasks_body', partial: "tasks/task", locals: { task: @task }) %>
+    <% dup_task = @task.dup; dup_task.details=nil; dup_task.completed=false %>
+    <%= turbo_stream.replace('task_form', partial: "tasks/form", locals: { task: dup_task }) %>

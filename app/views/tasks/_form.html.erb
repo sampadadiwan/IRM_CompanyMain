@@ -1,4 +1,4 @@
-<%= form_with(model: task) do |form| %>
+<%= form_with(model: task, id: "task_form") do |form| %>
   <% if task.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(task.errors.count, "error") %> prohibited this task from being saved:</h2>
@@ -13,7 +13,8 @@
 
   <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
   <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
-  <%= form.number_field :filter_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
   <%= form.text_field :user_id, class: "form-control", hidden: true  %>
 
   <div class="form-group">
@@ -21,11 +22,15 @@
     <%= form.rich_text_area :details, class: "form-control"  %>
   </div>
 
-
-  <div class="form-group">
-    <%= form.label :completed %>
-    <%= form.check_box :completed, class: "form-control form-checkbox"  %>
-  </div>
+  <% 
+    show_completed ||= false  
+    if show_completed 
+  %>
+    <div class="form-group">
+      <%= form.label :completed %>
+      <%= form.check_box :completed, class: "form-control form-checkbox"  %>
+    </div>
+  <% end %>
 
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-primary"}%>
