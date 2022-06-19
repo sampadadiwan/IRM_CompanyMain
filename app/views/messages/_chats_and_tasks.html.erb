@@ -4,8 +4,8 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
-                    Chat between <%= investor.investor_name %> and <%= owner.entity.name %>
-                    <%= link_to messages_path(owner_id: owner.id, owner_type: owner.class.name.underscore, investor_id: investor.id), target: "_blank", class: "float-right" do %>
+                    Chat between <%#= investor.investor_name %> and <%#= owner.entity.name %>
+                    <%= link_to messages_path(owner_id: owner.id, owner_type: owner.class.name.underscore, investor_id: investor&.id), target: "_blank", class: "float-right" do %>
                         <i class="fas fa-expand"></i>
                     <% end %>
                 </h6>
@@ -24,7 +24,7 @@
             </div>
             <div class="card-body">
                 <%= render "tasks/index", investor: investor, owner: owner, tasks: 
-                    Task.incomplete.where(investor_id: investor.id, owner: owner).includes(:user, :investor) %>
+                    Task.incomplete.where(investor_id: investor&.id, owner: owner).includes(:user, :investor) %>
             </div>
         </div>
     </div>

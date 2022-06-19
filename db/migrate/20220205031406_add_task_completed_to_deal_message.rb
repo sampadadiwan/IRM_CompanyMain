@@ -1,5 +1,0 @@
-class AddTaskCompletedToDealMessage < ActiveRecord::Migration[7.0]
-  def change
-    add_column :deal_messages, :task_done, :boolean, default: false
-  end
-end

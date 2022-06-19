@@ -1,25 +1,26 @@
 class TasksController < ApplicationController
   before_action :set_task, only: %i[show edit update destroy completed]
   after_action :verify_authorized, except: %i[index search]
+  after_action :verify_policy_scoped, only: []
 
   # GET /tasks or /tasks.json
   def index
-    @tasks = policy_scope(Task).includes(:investor, :user)
-    @tasks = @tasks.where(completed: false) if params[:completed].blank?
+    if params[:owner_id].present? && params[:owner_type].present?
+      @owner = params[:owner_type].constantize.find(params[:owner_id])
+      if policy(@owner).show?
+        @tasks = Task.where(owner_id: params[:owner_id])
+        @tasks = @tasks.where(owner_type: params[:owner_type])
+      end
+    else
+      @tasks = policy_scope(Task).includes(:investor, :user)
+    end
 
     if params[:investor_id].present?
       @tasks = @tasks.where(investor_id: params[:investor_id])
       @investor = Investor.find(params[:investor_id])
     end
 
-    if params[:owner_id].present? && params[:owner_type].present?
-      @owner = params[:owner_type].constantize.find(params[:owner_id])
-      @tasks = @tasks.where(owner_id: params[:owner_id])
-      @tasks = @tasks.where(owner_type: params[:owner_type])
-    else
-      dummy_owner = Struct.new(:id, :owner_id, :owner_type)
-      @owner = dummy_owner.new(nil, nil, nil)
-    end
+    @tasks = @tasks.where(completed: false) if params[:completed].blank?
 
     @tasks = @tasks.page(params[:page])
   end

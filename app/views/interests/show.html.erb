@@ -32,3 +32,5 @@
     <%= link_to "Matched Offers", finalize_allocation_offers_path(secondary_sale_id: @interest.secondary_sale_id), 
         {class: "btn btn-primary" }  %> 
   </div>
+
+  <%= render "interests/interest_details", interest: @interest, investor: nil %>

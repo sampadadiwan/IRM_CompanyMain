@@ -3,7 +3,7 @@
     <%= task.details.html_safe %>
   </td>
   <td>
-    <%= task.investor.investor_name %>
+    <%= task.investor&.investor_name %>
   </td>
   <td>
     <%= display_boolean(task.completed) %>

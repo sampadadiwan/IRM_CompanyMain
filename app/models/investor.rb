@@ -32,6 +32,7 @@ class Investor < ApplicationRecord
 
   has_many :investor_accesses, dependent: :destroy
   has_many :investments, dependent: :destroy
+  has_many :tasks, as: :owner, dependent: :destroy
 
   has_many :access_rights, foreign_key: :access_to_investor_id, dependent: :destroy
   has_many :deal_investors, dependent: :destroy

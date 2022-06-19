@@ -26,6 +26,8 @@ class Interest < ApplicationRecord
   belongs_to :interest_entity, class_name: "Entity"
   belongs_to :offer_entity, class_name: "Entity"
   has_many :offers, dependent: :destroy
+  has_many :tasks, as: :owner, dependent: :destroy
+  has_many :messages, as: :owner, dependent: :destroy
 
   has_one_attached  :spa, service: :amazon
   has_many_attached :buyer_docs, service: :amazon

@@ -1,0 +1,33 @@
+<div class="associated_entity" data-controller="tabs tabdetails">
+
+  
+  <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
+    <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab">
+        Tasks</a>
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#chat-tab" 
+        data-action="click->tabdetails#loadData">Chat</a>
+  </nav>
+
+  <div class="tab-content" data-controller="datatable">
+
+      <div id="tasks-tab" class="tab-pane fade in show active">
+        <div id="tasks" class="associated_entity">
+          <%= render "tasks/index", tasks: interest.tasks, owner: interest %>
+        </div>     
+      </div>
+
+      <div id="chat-tab" class="tab-pane fade">
+        <div id="messages" class="associated_entity">
+          <%= link_to messages_path(owner_id: interest.id, owner_type: "Interest"), 
+              class: "load_data_link", data: { turbo_frame: 'messages_frame' } do %>
+            <span>Loading...</span>
+          <% end %>
+          <%= turbo_frame_tag "messages_frame", target: "_top" do %>
+          <% end %>
+        </div>  
+      </div>
+      
+
+  </div>
+
+</div>
