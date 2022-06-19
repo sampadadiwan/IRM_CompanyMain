@@ -3,6 +3,9 @@
     <%= task.details.html_safe %>
   </td>
   <td>
+    <%= link_to task.owner_type, "/#{task.owner_type.underscore.pluralize}/#{task.owner_id}" %>
+  </td>
+  <td>
     <%= task.investor&.investor_name %>
   </td>
   <td>
@@ -10,6 +13,9 @@
   </td>
   <td>
     <%= task.user.full_name %>
+  </td>
+  <td>
+    <%= l task.created_at %>
   </td>
   <td>
     <% if policy(task).update? %>

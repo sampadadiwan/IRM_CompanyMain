@@ -129,7 +129,6 @@
       <%= link_to "All Documents", documents_path, {class: "btn btn-success"} %> |
       <%= button_to "Delete", @document, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %> 
    </div>
+<% end %>
 
 <%= render "documents/document_details", document: @document %>
-
-<% end %>

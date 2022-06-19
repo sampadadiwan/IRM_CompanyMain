@@ -1,7 +1,11 @@
-<div class="associated_entity">
+<div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#viewers-tab">Viewed By</a>
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab" 
+          data-action="click->tabdetails#loadData">
+        Tasks
+      </a>
     </nav>
   
   
@@ -20,6 +24,17 @@
         <div id="viewers-tab" class="tab-pane fade">
           <div id="users" class="associated_entity">
             <%= render "/users/index", users: document.viewed_by.includes(:entity) %>
+          </div>     
+        </div>
+
+        <div id="tasks-tab" class="tab-pane fade">
+          <div id="tasks" class="associated_entity">
+            <% investor = Investor.for(current_user, document.entity).first if !policy(document).update? %>
+            <%= link_to tasks_path(investor_id: investor&.id, owner_id:document.id, owner_type: "Document"), class: "load_data_link", data: { turbo_frame: 'task_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "task_list", target: "_top" do %>
+            <% end %>
           </div>     
         </div>
     </div>

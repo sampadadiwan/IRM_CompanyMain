@@ -51,9 +51,9 @@ class Investor < ApplicationRecord
   validates :investor_name, uniqueness: { scope: :investee_entity_id, message: "already exists as an investor. Duplicate Investor." }
   validates :investor_entity_id, uniqueness: { scope: :investee_entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }
 
-  scope :for, lambda { |vc_user, startup_entity|
+  scope :for, lambda { |user, startup_entity|
                 where(investee_entity_id: startup_entity.id,
-                      investor_entity_id: vc_user.entity_id)
+                      investor_entity_id: user.entity_id)
               }
 
   scope :for_vc, ->(vc_user) { where(investor_entity_id: vc_user.entity_id) }

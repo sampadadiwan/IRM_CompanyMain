@@ -55,7 +55,7 @@ class TasksController < ApplicationController
   # POST /tasks or /tasks.json
   def create
     @task = Task.new(task_params)
-    @task.entity_id = current_user.entity_id
+    @task.entity_id = @task.owner.entity_id
     @task.user = current_user
 
     authorize @task
