@@ -9,7 +9,7 @@ class InvestorDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     investor_entity: Field::BelongsTo,
-    investee_entity: Field::BelongsTo,
+    entity: Field::BelongsTo,
     access_rights: Field::HasMany,
     id: Field::Number,
     category: Field::String,
@@ -26,7 +26,7 @@ class InvestorDashboard < Administrate::BaseDashboard
   COLLECTION_ATTRIBUTES = %i[
     id
     investor_name
-    investee_entity
+    entity
     category
   ].freeze
 
@@ -34,7 +34,7 @@ class InvestorDashboard < Administrate::BaseDashboard
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
     investor_entity
-    investee_entity
+    entity
     access_rights
     id
     category
@@ -49,7 +49,7 @@ class InvestorDashboard < Administrate::BaseDashboard
   FORM_ATTRIBUTES = %i[
     investor_name
     investor_entity
-    investee_entity
+    entity
     category
   ].freeze
 

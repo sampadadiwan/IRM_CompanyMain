@@ -27,8 +27,8 @@
 
   <% if current_user.has_cached_role?(:super) %>
   <div class="form-group">
-    <%= form.label :investee_entity_id %>
-    <%= form.select :investee_entity_id, Entity.startups.order(:name).map{|c| [c.name, c.id]}, {include_blank: true}, {class: "form-control"} %>
+    <%= form.label :entity_id %>
+    <%= form.select :entity_id, Entity.startups.order(:name).map{|c| [c.name, c.id]}, {include_blank: true}, {class: "form-control"} %>
   </div>
   <% end %>
 

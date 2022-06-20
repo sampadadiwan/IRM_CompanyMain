@@ -25,11 +25,11 @@ class CapTableFromSaleJob < ApplicationJob
   def create_investors(interest)
     # Create investors for the interests which are short_listed
     investor = Investor.where(investor_entity_id: interest.interest_entity_id,
-                              investee_entity_id: interest.entity_id).first
+                              entity_id: interest.entity_id).first
 
     if investor.nil?
       investor = Investor.create(investor_entity_id: interest.interest_entity_id,
-                                 investee_entity_id: interest.entity_id,
+                                 entity_id: interest.entity_id,
                                  investor_name: interest.interest_entity.name,
                                  category: "Co-Investor")
 
@@ -37,7 +37,7 @@ class CapTableFromSaleJob < ApplicationJob
       InvestorAccess.create(investor:, user: interest.user,
                             first_name: interest.user.first_name, last_name: interest.user.last_name,
                             email: interest.user.email, approved: false,
-                            entity_id: investor.investee_entity_id)
+                            entity_id: investor.entity_id)
     end
 
     investor
@@ -75,7 +75,7 @@ class CapTableFromSaleJob < ApplicationJob
 
     Investment.new(investment_instrument: instrument,
                    category: investor.category,
-                   investee_entity_id: investor.investee_entity_id,
+                   entity_id: investor.entity_id,
                    investor_id: investor.id, employee_holdings: false,
                    quantity:,
                    price_cents: secondary_sale.final_price * 100,

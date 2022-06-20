@@ -101,7 +101,7 @@ end
 
 
 Given('another entity is an investor {string} in entity') do |arg|
-  @investor = Investor.new(investor_entity: @another_entity, investee_entity: @entity)  
+  @investor = Investor.new(investor_entity: @another_entity, entity: @entity)  
   key_values(@investor, arg)
   @investor.save!
   puts "\n####Investor####\n"
@@ -152,7 +152,7 @@ Given('there are {string} exisiting deals {string} with another firm in the star
   @another_entity = FactoryBot.create(:entity, entity_type: "VC", name: "Another VC Firm")
 
   Entity.startups.each do |startup|
-    @investor = FactoryBot.create(:investor, investor_entity: @another_entity, investee_entity: startup)
+    @investor = FactoryBot.create(:investor, investor_entity: @another_entity, entity: startup)
     (1..count.to_i).each do 
       deal = FactoryBot.build(:deal, entity: startup)
       deal = CreateDeal.call(deal: deal).deal

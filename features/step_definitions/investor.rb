@@ -28,7 +28,7 @@ Then('an investor entity should be created') do
   @investor_entity = Entity.find_by(name: @investor.investor_name)
   @investor.investor_name.include?(@investor_entity.name).should == true
   @investor.investor_entity_id.should == @investor_entity.id
-  @investor.investee_entity_id.should == @user.entity_id
+  @investor.entity_id.should == @user.entity_id
 end
 
 Then('an investor entity should not be created') do
@@ -36,14 +36,14 @@ Then('an investor entity should not be created') do
 
   @investor_entity.name.include?(@investor_entity.name).should == true
   @investor.investor_entity_id.should == @investor_entity.id
-  @investor.investee_entity_id.should == @user.entity_id
+  @investor.entity_id.should == @user.entity_id
 end
 
 Then('I should see the investor details on the details page') do
   visit investor_path(@investor)
   expect(page).to have_content(@investor.investor_name)
   expect(page).to have_content(@investor.category)
-  expect(page).to have_content(@investor.investee_entity.name)
+  expect(page).to have_content(@investor.entity.name)
 end
 
 Given('there is an existing investor entity {string} with employee {string}') do |arg1, arg2|
@@ -65,7 +65,7 @@ Given('there is an existing investor {string}') do |arg1|
   steps %(
         Given there is an existing investor entity "#{arg1}"
     )
-  @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, investee_entity_id: @entity.id)
+  @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id)
   puts "\n####Investor####\n"
   puts @investor.to_json
 end

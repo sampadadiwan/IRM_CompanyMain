@@ -12,7 +12,7 @@ module StatisticsHelper
   end
 
   def investment_diluted(entity)
-    investments = Investment.where(investee_entity_id: entity.id,
+    investments = Investment.where(entity_id: entity.id,
                                    investment_instrument: %w[Equity Preferred Options])
                             .joins(:investor).includes(:investor)
     diluted = investments.group_by { |i| i.investor.investor_name }
@@ -22,7 +22,7 @@ module StatisticsHelper
   end
 
   def investment_undiluted(entity)
-    investments = Investment.where(investee_entity_id: entity.id,
+    investments = Investment.where(entity_id: entity.id,
                                    investment_instrument: %w[Equity Preferred Options])
                             .joins(:investor).includes(:investor)
 
@@ -33,7 +33,7 @@ module StatisticsHelper
   end
 
   def investment_by_intrument(entity)
-    investments = Investment.where(investee_entity_id: entity.id)
+    investments = Investment.where(entity_id: entity.id)
                             .group_by(&:investment_instrument)
                             .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.amount_cents / 100) }] }
                             .sort_by { |_k, v| v }.reverse
@@ -63,7 +63,7 @@ module StatisticsHelper
 
   def investment_by_investor(entity)
     # We cant use the DB, as values are encrypted
-    column_chart Investment.where(investee_entity_id: entity.id)
+    column_chart Investment.where(entity_id: entity.id)
                            .joins(:investor).includes(:investor).group_by { |i| i.investor.investor_name }
                            .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.amount_cents / 100) }] }
                            .sort_by { |_k, v| v }.reverse,
@@ -78,7 +78,7 @@ module StatisticsHelper
   end
 
   def count_by_investor(entity)
-    pie_chart Investor.where(investee_entity_id: entity.id)
+    pie_chart Investor.where(entity_id: entity.id)
                       .group("category").count,
               #   xtitle: "Investment Amount",
               #   ytitle: "Type",
@@ -103,7 +103,7 @@ module StatisticsHelper
   end
 
   def investor_interaction(entity)
-    investors = Investor.where("investee_entity_id =? and last_interaction_date > ?", entity.id, Time.zone.today - 6.months)
+    investors = Investor.where("entity_id =? and last_interaction_date > ?", entity.id, Time.zone.today - 6.months)
                         .group('MONTH(last_interaction_date)')
     group_by_month = investors.count.sort.to_h.transform_keys { |k| I18n.t('date.month_names')[k] }
     column_chart group_by_month

@@ -10,7 +10,7 @@ module InvestmentConcern
       next unless instrument.present? && quantity.present? && price.present?
 
       @investment = Investment.new(investment_params)
-      @investment.investee_entity_id = current_user.entity_id
+      @investment.entity_id = current_user.entity_id
       @investment.currency = current_user.entity.currency
       @investment.investment_instrument = instrument
       @investment.quantity = quantity

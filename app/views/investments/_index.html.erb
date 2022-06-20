@@ -8,7 +8,7 @@
     
       <%= link_to "Aggregated View", aggregate_investments_path, {class: "btn btn-primary"} %>
 
-      <%= link_to "New Investment", new_investment_path("investment[investee_entity_id]": current_user.entity_id,
+      <%= link_to "New Investment", new_investment_path("investment[entity_id]": current_user.entity_id,
                                                       "investment[investment_instrument]": title), 
         {class: "btn btn-primary"} %>
 

@@ -1,6 +1,5 @@
 <% investor||= nil; owner||= nil %>
 <%= turbo_frame_tag "task_list", target: "_top" do %>
-
     <h6 class="m-0 font-weight-bold text-primary">
         <%= link_to "Show All" , tasks_path(investor_id: investor&.id, 
             owner_id: owner&.id, owner_type: owner&.class&.name, completed: :all), 
@@ -12,8 +11,9 @@
             data: { turbo_frame: 'task_list' },
             class: "btn btn-sm btn-warning float-right" if investor || owner %>
 
+        <% task_owner = owner ? owner : investor %>    
         <%= link_to "New Task" , new_task_path("task[investor_id]": investor&.id, 
-            "task[owner_id]": owner&.id, "task[owner_type]": owner&.class&.name), 
+            "task[owner_id]": task_owner.id, "task[owner_type]": task_owner.class.name), 
             data: { turbo_frame: 'new_task' },
             class: "btn btn-sm btn-primary float-right" if investor || owner %>
     </h6>

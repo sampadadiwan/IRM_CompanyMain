@@ -4,7 +4,7 @@
 #
 #  id                               :integer          not null, primary key
 #  investor_entity_id               :integer
-#  investee_entity_id               :integer
+#  entity_id               :integer
 #  category                         :string(100)
 #  created_at                       :datetime         not null
 #  updated_at                       :datetime         not null
@@ -27,8 +27,8 @@ class Investor < ApplicationRecord
   acts_as_taggable_on :tags
 
   belongs_to :investor_entity, class_name: "Entity"
-  belongs_to :investee_entity, class_name: "Entity"
-  counter_culture :investee_entity
+  belongs_to :entity, class_name: "Entity"
+  counter_culture :entity
 
   has_many :investor_accesses, dependent: :destroy
   has_many :investments, dependent: :destroy
@@ -45,14 +45,14 @@ class Investor < ApplicationRecord
   belongs_to :form_type, optional: true
   serialize :properties, Hash
 
-  delegate :name, to: :investee_entity, prefix: :investee
+  delegate :name, to: :entity, prefix: :investee
   validates :category, presence: true
 
-  validates :investor_name, uniqueness: { scope: :investee_entity_id, message: "already exists as an investor. Duplicate Investor." }
-  validates :investor_entity_id, uniqueness: { scope: :investee_entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }
+  validates :investor_name, uniqueness: { scope: :entity_id, message: "already exists as an investor. Duplicate Investor." }
+  validates :investor_entity_id, uniqueness: { scope: :entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }
 
   scope :for, lambda { |user, startup_entity|
-                where(investee_entity_id: startup_entity.id,
+                where(entity_id: startup_entity.id,
                       investor_entity_id: user.entity_id)
               }
 

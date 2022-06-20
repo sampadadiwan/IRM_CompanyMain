@@ -6,18 +6,21 @@ class TasksController < ApplicationController
   # GET /tasks or /tasks.json
   def index
     if params[:owner_id].present? && params[:owner_type].present?
+      # This is the tasks for a specific owen like interest/offer/deal etc
       @owner = params[:owner_type].constantize.find(params[:owner_id])
       if policy(@owner).show?
         @tasks = Task.where(owner_id: params[:owner_id])
         @tasks = @tasks.where(owner_type: params[:owner_type])
       end
+    elsif params[:entity_id].present?
+      # This is from investors view of the entity
+      @investor = Investor.for(current_user, Entity.find(params[:entity_id])).first
+      @tasks = Task.where(investor_id: @investor.id)
+    elsif params[:investor_id].present?
+      @investor = Investor.find(params[:investor_id])
+      @tasks = Task.where(investor_id: params[:investor_id]) if policy(@investor).show?
     else
       @tasks = policy_scope(Task)
-    end
-
-    if params[:investor_id].present?
-      @tasks = @tasks.where(investor_id: params[:investor_id])
-      @investor = Investor.find(params[:investor_id])
     end
 
     @tasks = @tasks.where(completed: false) if params[:completed].blank?

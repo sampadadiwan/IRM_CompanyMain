@@ -10,7 +10,7 @@ class InvestmentDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     audits: Field::HasMany,
     investor: Field::BelongsTo,
-    investee_entity: Field::BelongsTo,
+    entity: Field::BelongsTo,
     id: Field::Number,
     investment_type: Field::String,
     investor_type: Field::String,
@@ -33,7 +33,7 @@ class InvestmentDashboard < Administrate::BaseDashboard
     id
     investment_type
     investor
-    investee_entity
+    entity
     investment_instrument
     quantity
   ].freeze
@@ -44,7 +44,7 @@ class InvestmentDashboard < Administrate::BaseDashboard
     id
     category
     investor
-    investee_entity
+    entity
     investment_type
     status
     investment_instrument

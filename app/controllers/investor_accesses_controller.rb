@@ -34,7 +34,7 @@ class InvestorAccessesController < ApplicationController
     @investor_access.email = current_user.email
     @investor_access.first_name = current_user.first_name
     @investor_access.last_name = current_user.last_name
-    @investor_access.entity_id = @investor_access.investor.investee_entity_id
+    @investor_access.entity_id = @investor_access.investor.entity_id
     @investor_access.approved = false
     authorize @investor_access
 

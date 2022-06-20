@@ -37,7 +37,7 @@ class InvestmentsController < ApplicationController
     end
 
     @investments = @investments.order(initial_value: :desc)
-                               .includes(:investee_entity, investor: :investor_entity).distinct
+                               .includes(:entity, investor: :investor_entity).distinct
 
     render "index"
   end
@@ -53,7 +53,7 @@ class InvestmentsController < ApplicationController
                                                              query:, default_operator: 'and' }).objects
 
                      else
-                       InvestmentIndex.filter(term: { investee_entity_id: current_user.entity_id })
+                       InvestmentIndex.filter(term: { entity_id: current_user.entity_id })
                                       .query(query_string: { fields: InvestmentIndex::SEARCH_FIELDS,
                                                              query:, default_operator: 'and' }).objects
                      end
@@ -146,7 +146,7 @@ class InvestmentsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def investment_params
     params.require(:investment).permit(:funding_round_id, :investor_id, :price, :notes,
-                                       :investee_entity_id, :investor_type, :investment_instrument, :quantity,
+                                       :entity_id, :investor_type, :investment_instrument, :quantity,
                                        :category, :initial_value, :current_value, :spv,
                                        :status, :liquidation_preference)
   end

@@ -73,6 +73,7 @@ Metrics/CyclomaticComplexity:
 Metrics/PerceivedComplexity:
   Exclude:
     - 'app/models/user.rb'
+    - 'app/controllers/tasks_controller.rb'
 Metrics/ClassLength:
   Description: 'Avoid classes longer than 100 lines of code.'
   Max: 150

@@ -67,7 +67,7 @@ class Entity < ApplicationRecord
   has_many :messages, dependent: :destroy
 
   # List of investors who are invested in this entity
-  has_many :investors, foreign_key: "investee_entity_id", dependent: :destroy
+  has_many :investors, dependent: :destroy
   has_many :investor_entities, through: :investors
 
   has_many :interests_shown, class_name: "Interest", foreign_key: "interest_entity_id", dependent: :destroy
@@ -80,7 +80,7 @@ class Entity < ApplicationRecord
 
   has_many :investor_accesses, dependent: :destroy
   has_many :access_rights, dependent: :destroy
-  has_many :investments, foreign_key: "investee_entity_id", dependent: :destroy
+  has_many :investments, dependent: :destroy
   has_many :aggregate_investments, dependent: :destroy
 
   has_one_attached :logo, service: :amazon

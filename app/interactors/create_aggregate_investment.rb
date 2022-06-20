@@ -15,11 +15,11 @@ class CreateAggregateInvestment
     if Investment::EQUITY_LIKE.include?(investment.investment_instrument)
 
       ai = AggregateInvestment.where(investor_id: investment.investor_id,
-                                     entity_id: investment.investee_entity_id).first
+                                     entity_id: investment.entity_id).first
 
       investment.aggregate_investment = ai.presence ||
                                         AggregateInvestment.create!(investor_id: investment.investor_id,
-                                                                    entity_id: investment.investee_entity_id,
+                                                                    entity_id: investment.entity_id,
                                                                     audit_comment: context.audit_comment)
 
       create_audit_trail(investment)
@@ -29,6 +29,6 @@ class CreateAggregateInvestment
   def create_audit_trail(investment)
     context.holding_audit_trail ||= []
     context.parent_id ||= SecureRandom.uuid
-    context.holding_audit_trail << HoldingAuditTrail.new(action: :create_aggregate_investment, owner: "Investment", quantity: investment.quantity, operation: :modify, ref: investment.aggregate_investment, entity_id: investment.investee_entity_id, completed: true, parent_id: context.parent_id)
+    context.holding_audit_trail << HoldingAuditTrail.new(action: :create_aggregate_investment, owner: "Investment", quantity: investment.quantity, operation: :modify, ref: investment.aggregate_investment, entity_id: investment.entity_id, completed: true, parent_id: context.parent_id)
   end
 end

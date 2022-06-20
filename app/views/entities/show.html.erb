@@ -94,7 +94,7 @@
          <% end %>
 
          <% 
-            investor = Investor.where( investee_entity_id: @entity.id, 
+            investor = Investor.where( entity_id: @entity.id, 
                                     investor_entity_id: current_user.entity_id).first
             if investor.present? 
          %>

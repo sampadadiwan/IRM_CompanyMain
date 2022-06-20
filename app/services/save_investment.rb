@@ -14,6 +14,6 @@ class SaveInvestment
 
   # Ensure that the percentages are recomputed
   after do |_organizer|
-    context.investment.investee_entity.recompute_investment_percentages
+    context.investment.entity.recompute_investment_percentages
   end
 end

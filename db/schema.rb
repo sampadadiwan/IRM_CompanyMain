@@ -572,7 +572,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
     t.string "investment_type", limit: 100
     t.integer "investor_id"
     t.string "investor_type", limit: 100
-    t.integer "investee_entity_id"
+    t.integer "entity_id"
     t.string "status", limit: 20
     t.string "investment_instrument", limit: 100
     t.integer "quantity", default: 0
@@ -597,7 +597,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
     t.index ["aggregate_investment_id"], name: "index_investments_on_aggregate_investment_id"
     t.index ["deleted_at"], name: "index_investments_on_deleted_at"
     t.index ["funding_round_id"], name: "index_investments_on_funding_round_id"
-    t.index ["investee_entity_id"], name: "index_investments_on_investee_entity_id"
+    t.index ["entity_id"], name: "index_investments_on_entity_id"
     t.index ["investor_id"], name: "index_investments_on_investor"
   end
 
@@ -622,7 +622,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
 
   create_table "investors", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "investor_entity_id"
-    t.integer "investee_entity_id"
+    t.integer "entity_id"
     t.string "category", limit: 100
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -638,10 +638,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
     t.bigint "form_type_id"
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
     t.index ["form_type_id"], name: "index_investors_on_form_type_id"
-    t.index ["investee_entity_id"], name: "index_investors_on_investee_entity_id"
-    t.index ["investor_entity_id", "investee_entity_id"], name: "index_investors_on_investor_entity_id_and_investee_entity_id", unique: true
+    t.index ["entity_id"], name: "index_investors_on_entity_id"
+    t.index ["investor_entity_id", "entity_id"], name: "index_investors_on_investor_entity_id_and_entity_id", unique: true
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
-    t.index ["investor_name", "investee_entity_id"], name: "index_investors_on_investor_name_and_investee_entity_id", unique: true
+    t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
   end
 
   create_table "messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

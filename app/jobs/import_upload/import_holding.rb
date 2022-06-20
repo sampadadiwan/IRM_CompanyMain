@@ -54,7 +54,7 @@ class ImportHolding
     Rails.logger.debug { "Processing holdings #{user_data}" }
 
     # Find the Founder or Employee Investor for the entity
-    investor = Investor.where(investee_entity_id: import_upload.owner_id,
+    investor = Investor.where(entity_id: import_upload.owner_id,
                               is_holdings_entity: true, category: user_data["Founder or Employee"]).first
 
     # Create the user if he does not exists

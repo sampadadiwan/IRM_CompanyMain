@@ -123,8 +123,8 @@ class User < ApplicationRecord
     Entity.user_investor_entities(self).where('entities.id': entity_id).first
   end
 
-  def investor(investee_entity_id)
-    Investor.includes(:investee_entity).user_investors(self).where('entities.id': investee_entity_id).first
+  def investor(entity_id)
+    Investor.includes(:entity).user_investors(self).where('entities.id': entity_id).first
   end
 
   def active_for_authentication?
@@ -136,6 +136,6 @@ class User < ApplicationRecord
   end
 
   def employee_parent_entity
-    entity.investees.first&.investee_entity
+    entity.investees.first&.entity
   end
 end

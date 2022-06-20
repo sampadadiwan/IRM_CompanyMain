@@ -1,9 +1,9 @@
 <tr id="<%= dom_id investment %>">
 
-<% if current_user.entity_id == investment.investee_entity_id %>
+<% if current_user.entity_id == investment.entity_id %>
     <% if investment.investor.is_holdings_entity %>
         <td class="dt-control" data-instrument="<%=investment.investment_instrument%>" 
-            data-entity="<%=investment.investee_entity_id%>"
+            data-entity="<%=investment.entity_id%>"
             data-funding_round="<%=investment.funding_round_id%>"
             data-category="<%=investment.category%>"></td>
     <% else %>
@@ -15,7 +15,7 @@
     <%= investment.category %>
 </td>
 <td>
-    <% if current_user.entity_id == investment.investee_entity_id %>
+    <% if current_user.entity_id == investment.entity_id %>
         <%= investment.funding_round ? link_to(investment.investment_type, investment.funding_round) : investment.investment_type %>
     <% else %>
         <%= investment.investment_type %>
@@ -23,7 +23,7 @@
 
 </td>  
 <td>
-    <%= (current_user.entity_id == investment.investee_entity_id) ? 
+    <%= (current_user.entity_id == investment.entity_id) ? 
             link_to(investment.investor.investor_name, investment.investor) : investment.investor.investor_name %>
 </td>  
 

@@ -5,7 +5,7 @@
          Investment Type
       </td>
       <td>
-         <% if current_user.entity_id == @investment.investee_entity_id %>
+         <% if current_user.entity_id == @investment.entity_id %>
             <%= @investment.funding_round ? link_to(@investment.investment_type, @investment.funding_round) : @investment.investment_type %>
          <% else %>
             <%= @investment.investment_type %>
@@ -17,7 +17,7 @@
          Investor
       </td>
       <td>
-         <%= (current_user.entity_id == @investment.investee_entity_id) ? 
+         <%= (current_user.entity_id == @investment.entity_id) ? 
             link_to(@investment.investor.investor_name, @investment.investor) : @investment.investor.investor_name %>
       </td>
    </tr>
@@ -26,7 +26,7 @@
          Investee Entity
       </td>
       <td>
-         <%= @investment.investee_entity.name %>
+         <%= @investment.entity.name %>
       </td>
    </tr>
 
@@ -114,7 +114,7 @@
       </td>
    </tr>
 
-   <% if current_user.entity_id == @investment.investee_entity_id %>
+   <% if current_user.entity_id == @investment.entity_id %>
       <tr>
          <td>
             Notes
@@ -128,15 +128,15 @@
    <% end %>
 </table>
 
-<% if current_user.entity_id == @investment.investee_entity_id %>
+<% if current_user.entity_id == @investment.entity_id %>
 
    <div>
       <%= link_to "Edit", edit_investment_path(@investment), {class: "btn btn-primary"} unless @investment.employee_holdings %> |
       <%= link_to "Back", investments_path, {class: "btn btn-primary"} %> |
 
-      <% if current_user.entity_id == @investment.investee_entity_id %>
+      <% if current_user.entity_id == @investment.entity_id %>
       <%= link_to "New Investment", 
-            new_investment_path("investment[investee_entity_id]": current_user.entity_id,
+            new_investment_path("investment[entity_id]": current_user.entity_id,
             "investment[investment_instrument]": @investment.investment_instrument), 
             {class: "btn btn-primary"}  %> |
 
@@ -148,7 +148,7 @@
 <% end %>
 
 <div class="associated_entity">
-<% if @investment.investor.is_holdings_entity && current_user.entity_id == @investment.investee_entity_id %>
+<% if @investment.investor.is_holdings_entity && current_user.entity_id == @investment.entity_id %>
    <%= render "/holdings/index", holdings: @investment.holdings.order(quantity: :desc), 
       secondary_sale: nil, title: "#{@investment.investor.category} Holdings" %>
 <% end %>

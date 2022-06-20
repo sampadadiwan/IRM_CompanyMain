@@ -17,9 +17,9 @@ module InvestmentCounters
                     column_name: proc { |i| i.actual_scenario? && EQUITY_LIKE.include?(i.investment_instrument) ? i.investment_instrument.downcase : nil },
                     delta_column: 'quantity'
 
-    counter_culture :investee_entity,
+    counter_culture :entity,
                     column_name: proc { |i| i.actual_scenario? ? 'investments_count' : nil }
-    counter_culture :investee_entity,
+    counter_culture :entity,
                     column_name: proc { |i| i.actual_scenario? ? 'total_investments' : nil },
                     delta_column: 'amount_cents'
 

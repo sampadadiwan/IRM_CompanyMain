@@ -6,7 +6,7 @@
     </h1>
 
     <span>
-    <%= link_to "New Investor" , new_investor_path("investor[investee_entity_id]": current_user.entity_id),
+    <%= link_to "New Investor" , new_investor_path("investor[entity_id]": current_user.entity_id),
       {class: "btn btn-primary" } %>
     
     <%= link_to "All Notes" , notes_path, {class: "btn btn-primary" } %>

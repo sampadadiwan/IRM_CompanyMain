@@ -1,4 +1,4 @@
-<% if Investment.where(investee_entity_id: entity.id).count > 0 %>
+<% if Investment.where(entity_id: entity.id).count > 0 %>
 
 <div class="row">
     <div class="col-lg-6 mb-4">

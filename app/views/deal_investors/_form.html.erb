@@ -29,7 +29,7 @@
     <%= form.select :investor_id, current_user.entity.investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, {include_blank: true}, {class: "form-control select2"} %>
     <small class="text-muted">
       Create <%= link_to "New Investor", 
-        new_investor_path("investor[investee_entity_id]": current_user.entity_id,
+        new_investor_path("investor[entity_id]": current_user.entity_id,
             "back_to": new_deal_investor_path("deal_investor[deal_id]": deal_investor.deal_id,
             "deal_investor[entity_id]": deal_investor.entity_id)) %>
     </small>

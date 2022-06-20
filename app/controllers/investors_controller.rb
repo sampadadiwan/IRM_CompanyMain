@@ -14,7 +14,7 @@ class InvestorsController < ApplicationController
   def search
     query = params[:query]
     if query.present?
-      @investors = InvestorIndex.filter(term: { investee_entity_id: current_user.entity_id })
+      @investors = InvestorIndex.filter(term: { entity_id: current_user.entity_id })
                                 .query(query_string: { fields: InvestorIndex::SEARCH_FIELDS,
                                                        query:, default_operator: 'and' }).objects
 
@@ -46,7 +46,7 @@ class InvestorsController < ApplicationController
   # POST /investors or /investors.json
   def create
     @investor = Investor.new(investor_params)
-    @investor.investee_entity_id = current_user.entity_id unless current_user.has_role?(:super)
+    @investor.entity_id = current_user.entity_id unless current_user.has_role?(:super)
     authorize @investor
 
     respond_to do |format|
@@ -98,6 +98,6 @@ class InvestorsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def investor_params
     params.require(:investor).permit(:investor_entity_id, :tag_list, :investor_name, :form_type_id,
-                                     :investee_entity_id, :category, :city, properties: {})
+                                     :entity_id, :category, :city, properties: {})
   end
 end

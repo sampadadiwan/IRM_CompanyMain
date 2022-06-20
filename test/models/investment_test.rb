@@ -6,7 +6,7 @@
 #  investment_type         :string(100)
 #  investor_id             :integer
 #  investor_type           :string(100)
-#  investee_entity_id      :integer
+#  entity_id      :integer
 #  status                  :string(20)
 #  investment_instrument   :string(100)
 #  quantity                :integer          default("0")

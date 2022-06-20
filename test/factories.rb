@@ -3,6 +3,7 @@ FactoryBot.define do
     details { Faker::Company.catch_phrase }
     entity { Entity.startups.sample }
     investor { entity.investors.all.sample }
+    owner {investor}
     completed { rand(2) }
     user { entity.employees.all.sample }
   end
@@ -179,8 +180,8 @@ FactoryBot.define do
         "High energy team; have offered to make introductions with the Silicon valley biggies for US roll-out"
       ].sample 
     }
-    entity_id { investor.investee_entity_id }
-    user { investor.investee_entity.employees.sample }
+    entity_id { investor.entity_id }
+    user { investor.entity.employees.sample }
     on { Time.now - rand(120).days }
     created_at {Time.now - rand(120).days}
   end
@@ -188,14 +189,14 @@ FactoryBot.define do
 
   factory :investor do
     investor_entity_id { Entity.vcs.sample.id }
-    investee_entity_id { Entity.startups.sample.id }
+    entity_id { Entity.startups.sample.id }
     category { ["Lead Investor", "Co-Investor"][rand(2)] }
     city {Faker::Address.city}
   end
 
   factory :investment do
-    # investee_entity_id { Entity.startups.sample.id }
-    # investor { Investor.where(investee_entity_id: investee_entity_id).all.sample }
+    # entity_id { Entity.startups.sample.id }
+    # investor { Investor.where(entity_id: entity_id).all.sample }
     investment_instrument { Investment::INSTRUMENT_TYPES[rand(Investment::INSTRUMENT_TYPES.length)] }
     category { ["Lead Investor", "Co-Investor"][rand(2)] }
     quantity { (rand(3..10) * 10000) }

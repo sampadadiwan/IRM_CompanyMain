@@ -25,7 +25,7 @@ class UpdateInvestorHoldings
         # Just assign the quantityand price
         holding.update(orig_grant_quantity: investment.quantity, investment_instrument: investment.investment_instrument, price: investment.price, audit_comment: "Updated by UpdateInvestorHoldings")
       else
-        holding = Holding.new(entity: investment.investee_entity, investment_id: investment.id,
+        holding = Holding.new(entity: investment.entity, investment_id: investment.id,
                               investor_id: investment.investor_id, funding_round_id: investment.funding_round_id,
                               option_pool: investment.funding_round.option_pool,
                               grant_date: Time.zone.today, holding_type: "Investor",

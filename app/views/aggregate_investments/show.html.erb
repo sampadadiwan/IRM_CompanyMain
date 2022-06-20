@@ -73,12 +73,12 @@
   </table>
 
   <% 
-    if  current_user.entity_id == @aggregate_investment.investor.investee_entity_id || 
+    if  current_user.entity_id == @aggregate_investment.investor.entity_id || 
         current_user.entity_id == @aggregate_investment.investor.investor_entity_id   
   %>
     <div class="associated_entity" data-controller="investments">
       <%= render "investments/index", title: "Equity", entity: @aggregate_investment.entity,
                   investments: @aggregate_investment.
-                  investments.includes(:investor, :investee_entity, :funding_round) %>
+                  investments.includes(:investor, :entity, :funding_round) %>
     </div>
   <% end %>

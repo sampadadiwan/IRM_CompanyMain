@@ -4,7 +4,7 @@
 #
 #  id                               :integer          not null, primary key
 #  investor_entity_id               :integer
-#  investee_entity_id               :integer
+#  entity_id               :integer
 #  category                         :string(100)
 #  created_at                       :datetime         not null
 #  updated_at                       :datetime         not null

@@ -6,7 +6,7 @@ end
 
 Given('I create an investment {string}') do |arg1|
   @funding_round ||= FundingRound.last.presence || FactoryBot.create(:funding_round, entity: @entity)
-  @investment = FactoryBot.build(:investment, investee_entity: @entity, 
+  @investment = FactoryBot.build(:investment, entity: @entity, 
                       investment_type: @funding_round.name, funding_round: @funding_round)
   @investment.currency = @entity.currency
   key_values(@investment, arg1)
@@ -61,7 +61,7 @@ Then('an investment should be created') do
   @created.investment_instrument.should == @investment.investment_instrument
   @created.quantity.should == @investment.quantity
   @created.price_cents.should == @investment.price_cents
-  @created.currency.should == @investment.investee_entity.currency
+  @created.currency.should == @investment.entity.currency
   @created.amount.should == @investment.price * @investment.quantity 
   @created.liquidation_preference.should == @investment.liquidation_preference 
   @created.spv.should == @investment.spv
@@ -97,7 +97,7 @@ Given('given there is a investment {string} for the entity') do |arg1|
 
   @funding_round ||= FactoryBot.create(:funding_round, entity: @entity)
   @investment = FactoryBot.build(:investment, investor: @investor, 
-                                  investee_entity: @entity, 
+                                  entity: @entity, 
                                   funding_round: @funding_round,
                                   investment_instrument: Investment::EQUITY_LIKE[rand(3)])
   @investment.currency = @entity.currency
@@ -145,7 +145,7 @@ Then('a holding should be created for the investor') do
 
   @holding.quantity.should == @investment.quantity
   @holding.investment_instrument.should == @investment.investment_instrument
-  @holding.entity_id.should == @investment.investee_entity_id  
+  @holding.entity_id.should == @investment.entity_id  
   @holding.investor_id.should == @investment.investor_id
   @holding.user_id.should == nil
   @holding.holding_type.should == "Investor"
@@ -162,7 +162,7 @@ Given('there are {string} employee investors') do |arg|
     user = FactoryBot.create(:user, entity: @investor_entity)
     ia = InvestorAccess.create!(investor:@holdings_investor, user: user, email: user.email, 
         first_name: user.first_name, last_name: user.last_name, 
-        approved: true, entity_id: @holdings_investor.investee_entity_id)
+        approved: true, entity_id: @holdings_investor.entity_id)
 
     puts "\n####InvestorAccess####\n"
     puts ia.to_json
@@ -205,7 +205,7 @@ end
 
 Then('There should be a corresponding investment created') do
   @holding_investment = Investment.last
-  @holding_investment.investee_entity_id.should == @entity.id
+  @holding_investment.entity_id.should == @entity.id
   @holding_investment.investor_entity_id.should == @investor_entity.id
   @holding_investment.investment_instrument.should == "Equity"
   @holding_investment.quantity.should == Holding.all.sum(:quantity)
@@ -272,13 +272,13 @@ end
 Given('there is are {string} investors') do |count|
   (1..count.to_i).each do |i|
     vc = FactoryBot.create(:entity, entity_type: "VC")
-    inv = FactoryBot.create(:investor, investee_entity: @entity, investor_entity: vc)
+    inv = FactoryBot.create(:investor, entity: @entity, investor_entity: vc)
   end
 end
 
 Given('there are {string} investments {string}') do |count, args|
   (1..count.to_i).each do 
-    i = FactoryBot.build(:investment, investee_entity: @entity, investor: Investor.not_holding.sample, 
+    i = FactoryBot.build(:investment, entity: @entity, investor: Investor.not_holding.sample, 
       funding_round: @funding_round)
     key_values(i, args)
 
@@ -301,7 +301,7 @@ Given('the aggregate investments must be created') do
     
     agg.entity_id.should == @entity.id
     investments = Investment.where(investor_id: agg.investor_id, 
-                                   investee_entity_id: agg.entity_id)
+                                   entity_id: agg.entity_id)
     agg.equity.should == investments.equity.sum(:quantity)
     agg.preferred.should == investments.preferred.sum(:quantity)
     agg.options.should == investments.options.sum(:quantity)
@@ -362,9 +362,9 @@ Given('there are {string} exisiting investments {string} from my firm in startup
   (1..count.to_i).each do |i|
     @startup_entity = FactoryBot.create(:entity, entity_type: "Startup", name: "Startup #{i}")
     @startup_entity_employee = FactoryBot.create(:user, entity: @startup_entity)
-    @investor = FactoryBot.create(:investor, investor_entity: @entity, investee_entity: @startup_entity)
+    @investor = FactoryBot.create(:investor, investor_entity: @entity, entity: @startup_entity)
     (1..count.to_i).each do 
-      @investment = FactoryBot.build(:investment, investee_entity: 
+      @investment = FactoryBot.build(:investment, entity: 
           @startup_entity, investor: @investor, funding_round: @funding_round)
 
       @investment = SaveInvestment.call(investment: @investment).investment
@@ -380,9 +380,9 @@ Given('there are {string} exisiting investments {string} from another firm in st
   @another_entity_employee = FactoryBot.create(:user, entity: @another_entity)
 
   Entity.startups.each do |startup|
-    @investor = FactoryBot.create(:investor, investor_entity: @another_entity, investee_entity: startup)
+    @investor = FactoryBot.create(:investor, investor_entity: @another_entity, entity: startup)
     (1..count.to_i).each do 
-      @investment = FactoryBot.build(:investment, investee_entity: startup, 
+      @investment = FactoryBot.build(:investment, entity: startup, 
                         investor: @investor, funding_round: @funding_round)
       @investment = SaveInvestment.call(investment: @investment).investment
     end
@@ -396,13 +396,13 @@ end
 
 Then('I should see the entities I have invested in') do
   @entity.investments.each do |inv|
-    expect(page).to have_content(inv.investee_entity.name)
+    expect(page).to have_content(inv.entity.name)
   end
 end
 
 Then('I should not see the entities I have invested in') do
   @entity.investments.each do |inv|
-    expect(page).to have_no_content(inv.investee_entity.name)
+    expect(page).to have_no_content(inv.entity.name)
   end
 end
 
@@ -410,10 +410,10 @@ Given('I have been granted access {string} to the investments') do |arg|
   Investment.joins(:investor).where("investors.investor_entity_id=?", @entity.id).each do |inv|
     InvestorAccess.create!(investor:inv.investor, user: @user, first_name: @user.first_name,
         last_name: @user.last_name, email: @user.email, approved: true, 
-        entity_id: inv.investee_entity_id)
+        entity_id: inv.entity_id)
 
-    AccessRight.create(owner: inv.investee_entity, access_type: "Investment", metadata: arg,
-        entity: inv.investee_entity, access_to_investor_id: inv.investor_id)
+    AccessRight.create(owner: inv.entity, access_type: "Investment", metadata: arg,
+        entity: inv.entity, access_to_investor_id: inv.investor_id)
   end
 
 end

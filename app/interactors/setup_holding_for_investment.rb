@@ -27,7 +27,7 @@ class SetupHoldingForInvestment
         employee_investor = Investor.for(holding.user, holding.entity).first
         investment = Investment.new(investment_type: "#{holding.holding_type} Holdings",
                                     investment_instrument: holding.investment_instrument,
-                                    category: holding.holding_type, investee_entity_id: holding.entity.id,
+                                    category: holding.holding_type, entity_id: holding.entity.id,
                                     investor_id: employee_investor.id, employee_holdings: true,
                                     quantity: 0, price_cents: holding.price_cents,
                                     currency: holding.entity.currency, funding_round: holding.funding_round,

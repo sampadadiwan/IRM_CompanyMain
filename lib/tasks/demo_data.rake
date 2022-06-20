@@ -148,10 +148,10 @@ namespace :irm do
       
       round = FactoryBot.create(:funding_round, entity: e)
       Entity.vcs.each do |vc|
-        inv = FactoryBot.create(:investor, investee_entity: e, investor_entity: vc, tag_list: [tags.sample, tags.sample].join(","))
+        inv = FactoryBot.create(:investor, entity: e, investor_entity: vc, tag_list: [tags.sample, tags.sample].join(","))
         puts "Investor #{inv.id}"
         inv.investor_entity.employees.each do |user|
-          InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.investee_entity_id)
+          InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
         end
       end
     end
@@ -170,7 +170,7 @@ namespace :irm do
         (1..3).each do
           round = FactoryBot.create(:funding_round, entity: e) if rand(10) < 2 
           instrument = ["Equity", "Preferred"][rand(2)]
-          i = FactoryBot.build(:investment, investee_entity: e, investor: inv, investment_instrument: instrument, funding_round: round, notes: "generateFakeInvestments")
+          i = FactoryBot.build(:investment, entity: e, investor: inv, investment_instrument: instrument, funding_round: round, notes: "generateFakeInvestments")
           i = SaveInvestment.call(investment: i).investment
           puts "Investment #{i.to_json}"
         end
@@ -181,6 +181,8 @@ namespace :irm do
         AccessRight.create(owner: e, access_type: "Investment", metadata: "All",
                            entity: e, access_to_category: Investor::INVESTOR_CATEGORIES[rand(Investor::INVESTOR_CATEGORIES.length)])
       end
+
+      InvestmentPercentageHoldingJob.new.perform(e.id)
     end
 
     # AggregateInvestment.all.each.map(&:update_percentage_holdings)
@@ -218,7 +220,7 @@ namespace :irm do
         
         InvestorAccess.create!(investor:investor, user: user, first_name: user.first_name, 
               last_name: user.last_name, email: user.email, approved: false, 
-              entity_id: investor.investee_entity_id)
+              entity_id: investor.entity_id)
 
       
 
@@ -226,16 +228,16 @@ namespace :irm do
 
           investment_instrument = ["Equity", "Preferred", "Options"][rand(3)]
           if investment_instrument == "Options" 
-            pool = investor.investee_entity.option_pools.sample 
+            pool = investor.entity.option_pools.sample 
             funding_round = pool.funding_round
             grant_date = Date.today - rand(36).months
           else 
             pool = nil
-            funding_round = investor.investee_entity.funding_rounds.where("funding_rounds.name not like 'Pool%'").sample
+            funding_round = investor.entity.funding_rounds.where("funding_rounds.name not like 'Pool%'").sample
             grant_date = nil
           end
     
-          holding = Holding.new(user: user, entity: investor.investee_entity, investor_id: investor.id, 
+          holding = Holding.new(user: user, entity: investor.entity, investor_id: investor.id, 
               orig_grant_quantity: (1 + rand(10))*100, price_cents: rand(3..10) * 100000, 
               employee_id: (0...8).map { (65 + rand(26)).chr }.join,
               investment_instrument: investment_instrument, option_pool: pool, grant_date: grant_date,
@@ -289,12 +291,12 @@ namespace :irm do
           di = FactoryBot.create(:deal_investor, investor: inv, entity: e, deal: deal)
           puts "DealInvestor #{di.id} for investor #{inv.id}"
           (1..rand(10)).each do
-            u = rand(2).positive? ? di.investor.investor_entity.employees.sample : di.investor.investee_entity.employees.sample
+            u = rand(2).positive? ? di.investor.investor_entity.employees.sample : di.investor.entity.employees.sample
             msg = FactoryBot.create(:message, owner: di, entity: e, user: u, investor: di.investor)
           end
 
           (1..rand(5)).each do
-            u = rand(2).positive? ? di.investor.investor_entity.employees.sample : di.investor.investee_entity.employees.sample
+            u = rand(2).positive? ? di.investor.investor_entity.employees.sample : di.investor.entity.employees.sample
             msg = FactoryBot.create(:task, owner: di, entity: e, user: u, investor: di.investor)
           end
 

@@ -6,7 +6,7 @@
 #  investment_type         :string(100)
 #  investor_id             :integer
 #  investor_type           :string(100)
-#  investee_entity_id      :integer
+#  entity_id      :integer
 #  status                  :string(20)
 #  investment_instrument   :string(100)
 #  quantity                :integer          default("0")
@@ -58,8 +58,8 @@ class Investment < ApplicationRecord
 
   belongs_to :aggregate_investment, optional: true
 
-  belongs_to :investee_entity, class_name: "Entity"
-  delegate :name, to: :investee_entity, prefix: :investee
+  belongs_to :entity, class_name: "Entity"
+  delegate :name, to: :entity, prefix: :investee
 
   has_many :holdings, dependent: :destroy
   validate :validate_option_pool, if: -> { investment_instrument == 'Options' }
@@ -94,8 +94,8 @@ class Investment < ApplicationRecord
     else
       self.amount = quantity * price
     end
-    self.currency = investee_entity.currency
-    self.units = investee_entity.units
+    self.currency = entity.currency
+    self.units = entity.units
     self.investment_type = funding_round.name
     self.investment_instrument = investment_instrument.strip
     self.employee_holdings = true if investment_type == "Employee Holdings"
@@ -104,13 +104,13 @@ class Investment < ApplicationRecord
   def self.for_investor(current_user, entity)
     investments = entity.investments
                         # Ensure the access rights for Investment
-                        .joins(investee_entity: %i[investors access_rights])
+                        .joins(entity: %i[investors access_rights])
                         .merge(AccessRight.access_filter)
                         # Ensure that the user is an investor and tis investor has been given access rights
                         .where("entities.id=?", entity.id)
                         .where("investors.investor_entity_id=?", current_user.entity_id)
                         # Ensure this user has investor access
-                        .joins(investee_entity: :investor_accesses)
+                        .joins(entity: :investor_accesses)
                         .merge(InvestorAccess.approved_for_user(current_user))
 
     # return investments if investments.blank?

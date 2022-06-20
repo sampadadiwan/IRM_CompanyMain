@@ -271,7 +271,7 @@ Then('the new investment and holding must be created with excercised quantity') 
   puts @new_investment.to_json
 
   @new_investment.quantity.should == @excercise.quantity
-  @new_investment.investee_entity_id.should == @excercise.entity_id
+  @new_investment.entity_id.should == @excercise.entity_id
   @new_investment.investment_instrument.should == "Equity"
   
 end

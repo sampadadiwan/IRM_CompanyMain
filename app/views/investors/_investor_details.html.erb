@@ -28,7 +28,7 @@
       <div id="access-rights-tab" class="tab-pane fade in show active">
         <div id="access_rights" class="associated_entity">
           <% access_right = AccessRight.new(access_to_investor_id: investor.id, 
-              owner_id: investor.investee_entity_id, 
+              owner_id: investor.entity_id, 
               access_type: "Investment", 
               owner_type: "Entity", 
               entity_id: current_user.entity_id) %>

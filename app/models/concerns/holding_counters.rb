@@ -20,11 +20,11 @@ module HoldingCounters
                     column_name: proc { |h| h.call_counter_cache? ? h.investment_instrument.downcase : nil },
                     delta_column: 'quantity'
 
-    counter_culture %i[investment investee_entity],
+    counter_culture %i[investment entity],
                     column_name: proc { |h| h.call_counter_cache? ? h.investment_instrument.downcase : nil },
                     delta_column: 'quantity'
 
-    counter_culture %i[investment investee_entity],
+    counter_culture %i[investment entity],
                     column_name: proc { |h| h.call_counter_cache? ? 'total_investments' : nil },
                     delta_column: 'value_cents'
 

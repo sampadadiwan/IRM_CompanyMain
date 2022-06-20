@@ -113,7 +113,7 @@
 
 Given('I have {string} access to the sale') do |metadata|
   
-  investor = Investor.where(investor_entity_id: @user.entity_id, investee_entity_id: @entity.id).first
+  investor = Investor.where(investor_entity_id: @user.entity_id, entity_id: @entity.id).first
   ar = AccessRight.create!(entity: @entity, owner: @sale, access_type: "SecondarySale", 
           access_to_investor_id: investor.id, metadata: metadata)
 
@@ -186,7 +186,7 @@ end
 
 Given('my firm is an investor in the startup') do
   @startup = Entity.startups.first
-  @investor = Investor.create!(investee_entity: @startup, investor_entity: @entity, category: "Lead Investor")
+  @investor = Investor.create!(entity: @startup, investor_entity: @entity, category: "Lead Investor")
 
   InvestorAccess.create!(investor:@investor, user: @user, 
     first_name: @user.first_name, 
@@ -212,7 +212,7 @@ end
 
 Given('there are {string} investments {string} in the startup') do |count, args|
   (1..count.to_i).each do 
-    i = FactoryBot.build(:investment, investee_entity: @startup, investor: @investor, 
+    i = FactoryBot.build(:investment, entity: @startup, investor: @investor, 
       funding_round: @funding_round)
     key_values(i, args)
     i = SaveInvestment.call(investment: i).investment
