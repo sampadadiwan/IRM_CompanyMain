@@ -1,14 +1,15 @@
 <% owner||= nil %>
 <%= turbo_frame_tag "task_list", target: "_top" do %>
     <h6 class="m-0 font-weight-bold text-primary">
-        <%= link_to "Show All" , tasks_path(for_entity_id: for_entity.id, 
+        <% show_for = for_entity.id == current_user.entity_id ? nil : for_entity %>
+        <%= link_to "Show All" , tasks_path(for_entity_id: show_for&.id, 
                                         entity_id: params[:entity_id],
                                         owner_id: owner&.id, owner_type: owner&.class&.name, 
                                         completed: :all), 
                                         data: { turbo_frame: 'task_list' },
                                         class: "btn btn-sm btn-success float-right" if for_entity || owner%>
 
-        <%= link_to "Incomplete" , tasks_path(for_entity_id: for_entity.id, 
+        <%= link_to "Incomplete" , tasks_path(for_entity_id: show_for&.id, 
                                         entity_id: params[:entity_id],
                                         owner_id: owner&.id, owner_type: owner&.class&.name), 
                                         data: { turbo_frame: 'task_list' },
@@ -23,7 +24,7 @@
     </h6>
 
                 
-    <div class="table-responsive" data-controller="datatable">
+    <div class="table-responsive">
         <%= turbo_frame_tag "new_task" do %>
         <% end %>
     
@@ -38,7 +39,7 @@
                         Type
                     </th>
                     <th>
-                        By
+                        For
                     </th>
                     <th>
                         Completed
