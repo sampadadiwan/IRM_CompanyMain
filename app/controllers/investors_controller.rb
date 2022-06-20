@@ -18,8 +18,11 @@ class InvestorsController < ApplicationController
                                 .query(query_string: { fields: InvestorIndex::SEARCH_FIELDS,
                                                        query:, default_operator: 'and' }).objects
 
+      render "index"
+    else
+      redirect_to investors_path
     end
-    render "index"
+    
   end
 
   # GET /investors/1 or /investors/1.json
