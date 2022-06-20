@@ -6,8 +6,8 @@ class InvestorIndex < Chewy::Index
   field :investee_name
   field :category
   field :city
-  field :tag_list
-  field :properties, value: ->(doc) { doc.properties.to_json if doc.properties }
+  field :tag_list, value: ->(i) { i.tags.map{|tag| tag.name}.join(", ") }
+  field :properties, value: ->(i) { i.properties.to_json if i.properties }
   field :entity_id
   field :is_holdings_entity
   field :investor_access_count

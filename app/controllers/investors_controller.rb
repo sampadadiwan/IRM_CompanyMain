@@ -22,7 +22,6 @@ class InvestorsController < ApplicationController
     else
       redirect_to investors_path
     end
-    
   end
 
   # GET /investors/1 or /investors/1.json

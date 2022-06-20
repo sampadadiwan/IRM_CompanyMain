@@ -4,7 +4,7 @@ class DocumentIndex < Chewy::Index
   index_scope Document.includes(:entity, :folder, tags: :taggings)
 
   field :name
-  field :tag_list
+  field :tag_list, value: ->(i) { i.tags.map{|tag| tag.name}.join(", ") }
   field :entity_id
   field :entity_name, value: ->(doc) { doc.entity.name if doc.entity }
   field :file_file_name
