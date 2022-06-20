@@ -14,8 +14,10 @@ class TasksController < ApplicationController
         @tasks = @tasks.where(owner_type: params[:owner_type])
       end
     elsif params[:entity_id].present?
+      # This is the tasks for a specific entity, usually by investor
       @tasks = Task.where(entity_id: params[:entity_id], for_entity_id: current_user.entity_id)
     elsif params[:for_entity_id].present?
+      # This is to see all tasks under investors task tab
       @for_entity = Entity.find(params[:for_entity_id])
       @tasks = Task.where(entity_id: current_user.entity_id, for_entity_id: params[:for_entity_id])
     else
@@ -23,6 +25,8 @@ class TasksController < ApplicationController
     end
 
     @tasks = @tasks.where(completed: false) if params[:completed].blank?
+    # Hack to filter by for_entity_id for documents
+    @tasks = @tasks.where(for_entity_id: params[:for_entity_id]) if params[:for_entity_id].present?
 
     @tasks = @tasks.includes(:for_entity, :user).page(params[:page])
   end
@@ -57,7 +61,7 @@ class TasksController < ApplicationController
   # POST /tasks or /tasks.json
   def create
     @task = Task.new(task_params)
-    @task.entity_id ||= @task.owner ? @task.owner.entity_id : current_user.entity_id
+    @task.entity_id = @task.owner ? @task.owner.entity_id : current_user.entity_id
     @task.for_entity_id ||= current_user.entity_id
     @task.user = current_user
 

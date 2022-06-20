@@ -1,10 +1,11 @@
 class TaskIndex < Chewy::Index
-  SEARCH_FIELDS = %i[investor_name entity_name user_full_name details].freeze
+  SEARCH_FIELDS = %i[for_entity_name entity_name user_full_name details].freeze
 
-  index_scope Task.includes(:user, :investor, :entity)
+  index_scope Task.includes(:user, :for_entity, :entity)
   field :entity_name, value: ->(h) { h.entity.name }
-  field :investor_name, value: ->(h) { h.investor.investor_name if h.investor }
+  field :for_entity_name, value: ->(h) { h.for_entity.name }
   field :entity_id
+  field :for_entity_id
   field :user_full_name, value: ->(h) { h.user.full_name if h.user }
   field :details
 end
