@@ -1,21 +1,25 @@
-<% investor||= nil; owner||= nil %>
+<% owner||= nil %>
 <%= turbo_frame_tag "task_list", target: "_top" do %>
     <h6 class="m-0 font-weight-bold text-primary">
-        <%= link_to "Show All" , tasks_path(investor_id: investor&.id, 
-            owner_id: owner&.id, owner_type: owner&.class&.name, completed: :all), 
-            data: { turbo_frame: 'task_list' },
-            class: "btn btn-sm btn-success float-right" if investor || owner%>
+        <%= link_to "Show All" , tasks_path(for_entity_id: for_entity.id, 
+                                        entity_id: params[:entity_id],
+                                        owner_id: owner&.id, owner_type: owner&.class&.name, 
+                                        completed: :all), 
+                                        data: { turbo_frame: 'task_list' },
+                                        class: "btn btn-sm btn-success float-right" if for_entity || owner%>
 
-        <%= link_to "Incomplete" , tasks_path(investor_id: investor&.id, 
-            owner_id: owner&.id, owner_type: owner&.class&.name), 
-            data: { turbo_frame: 'task_list' },
-            class: "btn btn-sm btn-warning float-right" if investor || owner %>
+        <%= link_to "Incomplete" , tasks_path(for_entity_id: for_entity.id, 
+                                        entity_id: params[:entity_id],
+                                        owner_id: owner&.id, owner_type: owner&.class&.name), 
+                                        data: { turbo_frame: 'task_list' },
+                                        class: "btn btn-sm btn-warning float-right" if for_entity || owner %>
 
-        <% task_owner = owner ? owner : investor %>    
-        <%= link_to "New Task" , new_task_path("task[investor_id]": investor&.id, 
-            "task[owner_id]": task_owner.id, "task[owner_type]": task_owner.class.name), 
-            data: { turbo_frame: 'new_task' },
-            class: "btn btn-sm btn-primary float-right" if investor || owner %>
+        <%= link_to "New Task" , new_task_path("task[for_entity_id]": for_entity.id, 
+                                        "task[entity_id]": params[:entity_id],
+                                        "task[owner_id]": owner&.id,
+                                        "task[owner_type]": owner&.class&.name), 
+                                        data: { turbo_frame: 'new_task' },
+                                        class: "btn btn-sm btn-primary float-right" if for_entity || owner %>
     </h6>
 
                 
@@ -34,7 +38,7 @@
                         Type
                     </th>
                     <th>
-                        Investor
+                        By
                     </th>
                     <th>
                         Completed

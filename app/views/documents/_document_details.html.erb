@@ -37,7 +37,10 @@
         <div id="tasks-tab" class="tab-pane fade">
           <div id="tasks" class="associated_entity">
             <% investor = Investor.for(current_user, document.entity).first if !policy(document).update? %>
-            <%= link_to tasks_path(investor_id: investor&.id, owner_id:document.id, owner_type: "Document"), class: "load_data_link", data: { turbo_frame: 'task_list' } do %>
+            <%= link_to tasks_path( for_entity_id: investor&.investor_entity_id, 
+                                    owner_id: document.id, owner_type: "Document"), 
+                                    class: "load_data_link", 
+                                    data: { turbo_frame: 'task_list' } do %>
               <span>Loading...</span>
             <% end %>
             <%= turbo_frame_tag "task_list", target: "_top" do %>

@@ -5,6 +5,7 @@ class TasksController < ApplicationController
 
   # GET /tasks or /tasks.json
   def index
+    @for_entity = current_user.entity
     if params[:owner_id].present? && params[:owner_type].present?
       # This is the tasks for a specific owen like interest/offer/deal etc
       @owner = params[:owner_type].constantize.find(params[:owner_id])
@@ -13,19 +14,17 @@ class TasksController < ApplicationController
         @tasks = @tasks.where(owner_type: params[:owner_type])
       end
     elsif params[:entity_id].present?
-      # This is from investors view of the entity
-      @investor = Investor.for(current_user, Entity.find(params[:entity_id])).first
-      @tasks = Task.where(investor_id: @investor.id)
-    elsif params[:investor_id].present?
-      @investor = Investor.find(params[:investor_id])
-      @tasks = Task.where(investor_id: params[:investor_id]) if policy(@investor).show?
+      @tasks = Task.where(entity_id: params[:entity_id], for_entity_id: current_user.entity_id)
+    elsif params[:for_entity_id].present?
+      @for_entity = Entity.find(params[:for_entity_id])
+      @tasks = Task.where(entity_id: current_user.entity_id, for_entity_id: params[:for_entity_id])
     else
       @tasks = policy_scope(Task)
     end
 
     @tasks = @tasks.where(completed: false) if params[:completed].blank?
 
-    @tasks = @tasks.includes(:investor, :user).page(params[:page])
+    @tasks = @tasks.includes(:for_entity, :user).page(params[:page])
   end
 
   def search
@@ -46,8 +45,8 @@ class TasksController < ApplicationController
 
   # GET /tasks/new
   def new
-    @task = Task.new(task_params)
-    @task.entity_id = current_user.entity_id
+    @task = params[:task] ? Task.new(task_params) : Task.new
+    @task.entity_id ||= current_user.entity_id
     @task.user = current_user
     authorize @task
   end
@@ -58,7 +57,8 @@ class TasksController < ApplicationController
   # POST /tasks or /tasks.json
   def create
     @task = Task.new(task_params)
-    @task.entity_id = @task.owner.entity_id
+    @task.entity_id ||= @task.owner ? @task.owner.entity_id : current_user.entity_id
+    @task.for_entity_id ||= current_user.entity_id
     @task.user = current_user
 
     authorize @task
@@ -123,6 +123,6 @@ class TasksController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def task_params
-    params.require(:task).permit(:details, :entity_id, :investor_id, :owner_id, :owner_type, :completed, :user_id)
+    params.require(:task).permit(:details, :entity_id, :for_entity_id, :owner_id, :owner_type, :completed, :user_id)
   end
 end

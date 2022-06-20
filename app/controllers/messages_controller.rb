@@ -73,7 +73,7 @@ class MessagesController < ApplicationController
   def mark_as_task
     @task = Task.new(user_id: current_user.id, entity_id: @message.entity_id,
                      owner_id: @message.owner_id, owner_type: @message.owner_type,
-                     investor_id: @message.investor_id, details: @message.content)
+                     for_entity_id: current_user.entity_id, details: @message.content)
 
     respond_to do |format|
       format.turbo_stream { render "/tasks/create" } if @task.save

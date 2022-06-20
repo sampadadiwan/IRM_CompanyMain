@@ -865,7 +865,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
   create_table "tasks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.text "details"
     t.bigint "entity_id", null: false
-    t.bigint "investor_id"
+    t.bigint "for_entity_id"
     t.boolean "completed", default: false
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
@@ -873,7 +873,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
     t.string "owner_type"
     t.bigint "owner_id"
     t.index ["entity_id"], name: "index_tasks_on_entity_id"
-    t.index ["investor_id"], name: "index_tasks_on_investor_id"
+    t.index ["for_entity_id"], name: "index_tasks_on_for_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_tasks_on_owner"
     t.index ["user_id"], name: "index_tasks_on_user_id"
   end
@@ -1016,7 +1016,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
   add_foreign_key "secondary_sales", "form_types"
   add_foreign_key "taggings", "tags"
   add_foreign_key "tasks", "entities"
-  add_foreign_key "tasks", "investors"
   add_foreign_key "tasks", "users"
   add_foreign_key "valuations", "entities"
   add_foreign_key "vesting_schedules", "entities"

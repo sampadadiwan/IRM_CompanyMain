@@ -297,7 +297,8 @@ namespace :irm do
 
           (1..rand(5)).each do
             u = rand(2).positive? ? di.investor.investor_entity.employees.sample : di.investor.entity.employees.sample
-            msg = FactoryBot.create(:task, owner: di, entity: e, user: u, investor: di.investor)
+            msg = FactoryBot.create(:task, owner: di, entity: e, user: u, 
+                                    for_entity_id: di.investor.investor_entity_id)
           end
 
 

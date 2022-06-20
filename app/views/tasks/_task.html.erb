@@ -6,7 +6,7 @@
     <%= link_to task.owner_type, "/#{task.owner_type.underscore.pluralize}/#{task.owner_id}" %>
   </td>
   <td>
-    <%= task.investor&.investor_name %>
+    <%= task.for_entity.name %>
   </td>
   <td>
     <%= display_boolean(task.completed) %>

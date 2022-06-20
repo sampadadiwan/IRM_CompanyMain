@@ -14,14 +14,14 @@ class TaskPolicy < ApplicationPolicy
   end
 
   def show?
-    create? || Pundit.policy(user, record.owner).show?
+    create? || (record.owner && Pundit.policy(user, record.owner).show?)
   end
 
   def create?
     if user.entity_id == record.entity_id
       true
     else
-      record.investor && record.investor.investor_entity_id == user.entity_id
+      record.for_entity_id == user.entity_id
     end
   end
 
@@ -30,7 +30,7 @@ class TaskPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    create? || (record.owner && Pundit.policy(user, record.owner).show?)
   end
 
   def completed?

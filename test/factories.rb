@@ -2,8 +2,8 @@ FactoryBot.define do
   factory :task do
     details { Faker::Company.catch_phrase }
     entity { Entity.startups.sample }
-    investor { entity.investors.all.sample }
-    owner {investor}
+    for_entity { entity.all.sample }
+    owner {for_entity}
     completed { rand(2) }
     user { entity.employees.all.sample }
   end
