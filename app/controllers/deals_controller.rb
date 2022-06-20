@@ -75,15 +75,14 @@ class DealsController < ApplicationController
     @deal.units = @deal.entity.units
     @deal.activity_list = Deal::ACTIVITIES
 
-    # Custom form fields
-    form_type = FormType.where(entity_id: current_user.entity_id, name: "Deal").first
-    @deal.form_type = form_type
-
     authorize @deal
+    setup_custom_fields(@deal)
   end
 
   # GET /deals/1/edit
-  def edit; end
+  def edit 
+    setup_custom_fields(@deal)
+  end
 
   def start_deal
     @deal.start_deal

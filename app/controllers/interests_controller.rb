@@ -26,16 +26,14 @@ class InterestsController < ApplicationController
     @interest.interest_entity_id = current_user.entity_id
     @interest.entity_id = @interest.secondary_sale.entity_id
     @interest.price = @interest.secondary_sale.final_price if @interest.secondary_sale.price_type == "Fixed Price"
-
-    # Custom form fields
-    form_type = FormType.where(entity_id: current_user.entity_id, name: "Interest").first
-    @interest.form_type = form_type
-
+    setup_custom_fields(@interest)
     authorize @interest
   end
 
   # GET /interests/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@interest)
+  end
 
   # POST /interests or /interests.json
   def create

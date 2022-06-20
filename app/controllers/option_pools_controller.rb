@@ -17,16 +17,14 @@ class OptionPoolsController < ApplicationController
     (1..4).each do |i|
       @option_pool.vesting_schedules.build(months_from_grant: i * 12, vesting_percent: 25)
     end
-
-    # Custom form fields
-    form_type = FormType.where(entity_id: current_user.entity_id, name: "OptionPool").first
-    @option_pool.form_type = form_type
-
+    setup_custom_fields(@option_pool)
     authorize(@option_pool)
   end
 
   # GET /option_pools/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@option_pool)
+  end
 
   # POST /option_pools or /option_pools.json
   def create

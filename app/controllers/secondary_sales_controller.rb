@@ -38,16 +38,14 @@ class SecondarySalesController < ApplicationController
     @secondary_sale.start_date = Time.zone.today
     @secondary_sale.end_date = Time.zone.today + 2.weeks
     @secondary_sale.percent_allowed = 100
-
-    # Custom form fields
-    form_type = FormType.where(entity_id: current_user.entity_id, name: "SecondarySale").first
-    @secondary_sale.form_type = form_type
-
+    setup_custom_fields(@secondary_sale)
     authorize @secondary_sale
   end
 
   # GET /secondary_sales/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@secondary_sale)
+  end
 
   def spa_upload; end
 

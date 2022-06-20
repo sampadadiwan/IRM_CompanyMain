@@ -60,15 +60,14 @@ class DocumentsController < ApplicationController
   # GET /documents/new
   def new
     @document = Document.new(document_params)
-    # Custom form fields
-    form_type = FormType.where(entity_id: current_user.entity_id, name: "Document").first
-    @document.form_type = form_type
-
+    setup_custom_fields(@document)
     authorize @document
   end
 
   # GET /documents/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@document)
+  end
 
   # POST /documents or /documents.json
   def create

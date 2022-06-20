@@ -6,6 +6,10 @@ class Task < ApplicationRecord
   belongs_to :user
   belongs_to :owner, polymorphic: true, optional: true
 
+  # Customize form
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   scope :completed, -> { where(completed: true) }
   scope :incomplete, -> { where(completed: false) }
 

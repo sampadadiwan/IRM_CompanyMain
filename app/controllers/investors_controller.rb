@@ -32,17 +32,14 @@ class InvestorsController < ApplicationController
   # GET /investors/new
   def new
     @investor = Investor.new(investor_params)
-
-    # Custom form fields
-    form_type = FormType.where(entity_id: current_user.entity_id, name: "Investor").first
-    @investor.form_type = form_type
-
     authorize @investor
+    setup_custom_fields(@investor)
   end
 
   # GET /investors/1/edit
   def edit
     authorize @investor
+    setup_custom_fields(@investor)    
   end
 
   # POST /investors or /investors.json

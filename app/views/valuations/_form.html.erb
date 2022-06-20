@@ -30,8 +30,9 @@
     <%= form.label :reports, "Valuation Reports" %>
     <%= form.file_field :reports, class: "form-control", direct_upload: true, multiple:true %>
     <small class="text-muted"> Upload the valuation reports. </small>
+  </div>
 
-</div>
+  <%= custom_form_fields(valuation, form) %>
 
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-primary"}%>

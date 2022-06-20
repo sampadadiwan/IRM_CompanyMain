@@ -55,10 +55,13 @@ class TasksController < ApplicationController
     @task.entity_id ||= current_user.entity_id
     @task.user = current_user
     authorize @task
+    setup_custom_fields(@task)
   end
 
   # GET /tasks/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@task)
+  end
 
   # POST /tasks or /tasks.json
   def create
@@ -68,7 +71,6 @@ class TasksController < ApplicationController
     @task.user = current_user
 
     authorize @task
-
     respond_to do |format|
       if @task.save
         format.turbo_stream { render :create }
@@ -129,6 +131,7 @@ class TasksController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def task_params
-    params.require(:task).permit(:details, :entity_id, :for_entity_id, :owner_id, :owner_type, :completed, :user_id)
+    params.require(:task).permit(:details, :entity_id, :for_entity_id, :owner_id, :owner_type, 
+                                  :form_type_id, :completed, :user_id, properties: {})
   end
 end

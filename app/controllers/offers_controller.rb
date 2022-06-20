@@ -85,10 +85,7 @@ class OffersController < ApplicationController
     @offer.last_name = current_user.last_name
     @offer.entity_id = @offer.secondary_sale.entity_id
     @offer.quantity = @offer.allowed_quantity
-
-    # Custom form fields
-    form_type = FormType.where(entity_id: current_user.entity_id, name: "Offer").first
-    @offer.form_type = form_type
+    setup_custom_fields(@offer)
 
     authorize @offer
   end
@@ -105,7 +102,9 @@ class OffersController < ApplicationController
   end
 
   # GET /offers/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@offer)
+  end
 
   def allocate
     @offer.allocation_quantity = offer_params[:allocation_quantity]

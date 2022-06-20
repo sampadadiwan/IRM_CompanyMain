@@ -48,4 +48,11 @@ class ApplicationController < ActionController::Base
   def after_sign_in_path_for(resource)
     stored_location_for(resource) || root_path
   end
+
+  def setup_custom_fields(model)
+    # Custom form fields
+    form_type = FormType.where(entity_id: current_user.entity_id, name: model.class.name).first
+    model.form_type = form_type
+  end
+  
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_20_112108) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -561,9 +561,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
     t.integer "offer_quantity", default: 0
     t.boolean "verified", default: false
     t.text "comments"
+    t.index ["entity_id"], name: "index_interests_on_entity_id"
     t.index ["form_type_id"], name: "index_interests_on_form_type_id"
     t.index ["interest_entity_id"], name: "index_interests_on_interest_entity_id"
-    t.index ["entity_id"], name: "index_interests_on_entity_id"
     t.index ["secondary_sale_id"], name: "index_interests_on_secondary_sale_id"
     t.index ["user_id"], name: "index_interests_on_user_id"
   end
@@ -596,8 +596,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
     t.string "spv", limit: 50
     t.index ["aggregate_investment_id"], name: "index_investments_on_aggregate_investment_id"
     t.index ["deleted_at"], name: "index_investments_on_deleted_at"
-    t.index ["funding_round_id"], name: "index_investments_on_funding_round_id"
     t.index ["entity_id"], name: "index_investments_on_entity_id"
+    t.index ["funding_round_id"], name: "index_investments_on_funding_round_id"
     t.index ["investor_id"], name: "index_investments_on_investor"
   end
 
@@ -637,8 +637,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
     t.text "properties"
     t.bigint "form_type_id"
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
-    t.index ["form_type_id"], name: "index_investors_on_form_type_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
+    t.index ["form_type_id"], name: "index_investors_on_form_type_id"
     t.index ["investor_entity_id", "entity_id"], name: "index_investors_on_investor_entity_id_and_entity_id", unique: true
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
     t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
@@ -872,8 +872,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
     t.datetime "updated_at", null: false
     t.string "owner_type"
     t.bigint "owner_id"
+    t.bigint "form_type_id"
     t.index ["entity_id"], name: "index_tasks_on_entity_id"
     t.index ["for_entity_id"], name: "index_tasks_on_for_entity_id"
+    t.index ["form_type_id"], name: "index_tasks_on_form_type_id"
     t.index ["owner_type", "owner_id"], name: "index_tasks_on_owner"
     t.index ["user_id"], name: "index_tasks_on_user_id"
   end
@@ -927,7 +929,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
     t.decimal "per_share_value_cents", precision: 15, scale: 2, default: "0.0"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "form_type_id"
     t.index ["entity_id"], name: "index_valuations_on_entity_id"
+    t.index ["form_type_id"], name: "index_valuations_on_form_type_id"
   end
 
   create_table "versions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
@@ -1016,8 +1020,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_19_074506) do
   add_foreign_key "secondary_sales", "form_types"
   add_foreign_key "taggings", "tags"
   add_foreign_key "tasks", "entities"
+  add_foreign_key "tasks", "form_types"
   add_foreign_key "tasks", "users"
   add_foreign_key "valuations", "entities"
+  add_foreign_key "valuations", "form_types"
   add_foreign_key "vesting_schedules", "entities"
   add_foreign_key "vesting_schedules", "option_pools"
 end

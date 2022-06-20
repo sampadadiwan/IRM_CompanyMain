@@ -15,10 +15,13 @@ class ValuationsController < ApplicationController
     @valuation.entity_id = current_user.entity_id
     @valuation.valuation_date = Time.zone.today
     authorize @valuation
+    setup_custom_fields(@valuation)
   end
 
   # GET /valuations/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@valuation)
+  end
 
   # POST /valuations or /valuations.json
   def create
@@ -72,6 +75,7 @@ class ValuationsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def valuation_params
-    params.require(:valuation).permit(:entity_id, :valuation_date, :pre_money_valuation, :per_share_value, reports: [])
+    params.require(:valuation).permit(:entity_id, :valuation_date, :pre_money_valuation, 
+                                      :form_type_id, :per_share_value, reports: [], properties: {})
   end
 end
