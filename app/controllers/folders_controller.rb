@@ -68,6 +68,6 @@ class FoldersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def folder_params
-    params.require(:folder).permit(:name, :parent_folder_id, :full_path, :level, :entity_id)
+    params.require(:folder).permit(:name, :parent_folder_id, :full_path, :level, :entity_id, docs: [])
   end
 end

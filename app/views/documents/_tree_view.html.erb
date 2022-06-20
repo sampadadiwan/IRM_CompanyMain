@@ -9,7 +9,7 @@
                 <span class="m-0 font-weight-bold text-primary">Folders</span> 
                 <% if current_user.entity_id == @entity.id %>
                     <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id), class: "btn btn-sm btn-primary float-right"  %>               
-                    <%= link_to "Edit Folders", folders_path(), class: "btn btn-sm btn-primary float-right"  %>               
+                    <%= link_to "Show Folders", folders_path(), class: "btn btn-sm btn-primary float-right"  %>               
                 <% end %>
             </div>
             <div class="card-body">
