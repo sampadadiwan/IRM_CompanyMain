@@ -445,6 +445,7 @@ GEM
       net-protocol
       timeout
     net-ssh (6.1.0)
+    newrelic_rpm (8.8.0)
     nio4r (2.5.8)
     nokogiri (1.13.6-x86_64-linux)
       racc (~> 1.4)
@@ -699,6 +700,7 @@ DEPENDENCIES
   marginalia (~> 1.11)
   money-rails (~> 1.12)
   mysql2 (~> 0.5)
+  newrelic_rpm
   overcommit (~> 0.58.0)
   paper_trail
   paranoia (~> 2.2)
