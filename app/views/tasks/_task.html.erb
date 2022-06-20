@@ -25,6 +25,6 @@
       <% end %>
     <% end %>
     
-    <%= link_to "Show" , task , {class: "btn btn-primary" }%>
+    <%= link_to "Show" , task , {class: "btn btn-primary" } if policy(task).show? %>
   </td>
 </tr>
