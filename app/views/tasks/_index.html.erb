@@ -1,5 +1,8 @@
-<% owner||= nil %>
+<% owner||= nil; search ||= false %>
 <%= turbo_frame_tag "task_list", target: "_top" do %>
+
+    <% unless search %>
+      
     <h6 class="m-0 font-weight-bold text-primary">
         <% show_for = for_entity.id == current_user.entity_id ? nil : for_entity %>
         <%= link_to "Show All" , tasks_path(for_entity_id: show_for&.id, 
@@ -23,7 +26,7 @@
                                         class: "btn btn-sm btn-primary float-right" if for_entity || owner %>
     </h6>
 
-                
+    <% end %>         
     <div class="table-responsive">
         <%= turbo_frame_tag "new_task" do %>
         <% end %>

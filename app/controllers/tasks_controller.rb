@@ -32,11 +32,13 @@ class TasksController < ApplicationController
   end
 
   def search
+    @search = true
     query = params[:query]
     if query.present?
       @tasks = TaskIndex.filter(term: { entity_id: current_user.entity_id })
-                        .query(query_string: { fields: TaskIndex::SEARCH_FIELDS,
-                                               query:, default_operator: 'and' }).page(params[:page]).objects
+                        .or(TaskIndex.filter(term: { for_entity_id: current_user.entity_id })
+                      .query(query_string: { fields: TaskIndex::SEARCH_FIELDS,
+                                             query:, default_operator: 'and' }).page(params[:page])).objects
 
       render "index"
     else
@@ -61,7 +63,7 @@ class TasksController < ApplicationController
   # POST /tasks or /tasks.json
   def create
     @task = Task.new(task_params)
-    @task.entity_id = @task.owner ? @task.owner.entity_id : current_user.entity_id
+    @task.entity_id = @task.owner ? @task.owner.entity_id : @task.entity_id || current_user.entity_id
     @task.for_entity_id ||= current_user.entity_id
     @task.user = current_user
 

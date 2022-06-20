@@ -8,5 +8,5 @@
             {class: "btn btn-primary" } if investor %>
 </div>
 
-<%= render "/tasks/index", tasks: @tasks, owner: @owner, for_entity: @for_entity %>
+<%= render "/tasks/index", tasks: @tasks, owner: @owner, for_entity: @for_entity, search: @search %>
 <%= paginate @tasks %>

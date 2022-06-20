@@ -1,4 +1,6 @@
 class Task < ApplicationRecord
+  update_index('task') { self }
+
   belongs_to :entity
   belongs_to :for_entity, class_name: "Entity", optional: true
   belongs_to :user
