@@ -12,18 +12,15 @@ class UsersController < ApplicationController
 
   def search
     query = params[:query]
-    @users = if current_user.has_role?(:super)
-               if query.present?
-                 UserIndex.query(query_string: { fields: %i[first_name last_name email],
-                                                 query:, default_operator: 'and' })
-               end
-             elsif query.present?
-               UserIndex.filter(term: { entity_id: current_user.entity_id })
+    if query.present?
+      @users = UserIndex.filter(term: { entity_id: current_user.entity_id })
                         .query(query_string: { fields: %i[first_name last_name email],
                                                query:, default_operator: 'and' })
-             end
 
-    render "index"
+      render "index"
+    else
+      redirect_to users_path
+    end
   end
 
   # GET /users/1 or /users/1.json
@@ -105,6 +102,6 @@ class UsersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def user_params
-    params.require(:user).permit(:first_name, :last_name, :phone, :whatsapp_enabled, :sale_notification)
+    params.require(:user).permit(:first_name, :last_name, :phone, :whatsapp_enabled, :sale_notification, permissions: [])
   end
 end

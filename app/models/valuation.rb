@@ -17,7 +17,6 @@ class Valuation < ApplicationRecord
   # Customize form
   belongs_to :form_type, optional: true
   serialize :properties, Hash
-  
 
   monetize :pre_money_valuation_cents, :per_share_value_cents,
            with_currency: ->(s) { s.entity.currency }

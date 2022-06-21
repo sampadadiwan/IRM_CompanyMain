@@ -39,7 +39,7 @@ class InvestorsController < ApplicationController
   # GET /investors/1/edit
   def edit
     authorize @investor
-    setup_custom_fields(@investor)    
+    setup_custom_fields(@investor)
   end
 
   # POST /investors or /investors.json

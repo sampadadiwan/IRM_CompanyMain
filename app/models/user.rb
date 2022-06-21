@@ -47,6 +47,7 @@ class User < ApplicationRecord
   update_index('user') { self }
 
   rolify
+  flag :permissions, %i[read_investor write_investor read_document write_document read_investment write_investment read_deal write_deal read_option_pool write_option_pool read_holding write_holding read_funding_round write_funding_round read_secondary_sale write_secondary_sale read_offer write_offer read_interest write_interest read_user write_user]
 
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
@@ -97,6 +98,7 @@ class User < ApplicationRecord
     end
 
     self.active = true
+    self.permissions = User.permissions.keys
   end
 
   # There may be pending investor access given before the user is created.

@@ -80,7 +80,7 @@ class DealsController < ApplicationController
   end
 
   # GET /deals/1/edit
-  def edit 
+  def edit
     setup_custom_fields(@deal)
   end
 
