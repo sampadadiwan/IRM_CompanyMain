@@ -34,6 +34,7 @@ class Folder < ApplicationRecord
   after_destroy :touch_root
 
   scope :for, ->(user) { where("folders.entity_id=?", user.entity_id).order("full_path asc") }
+  scope :for_entity, ->(entity) { where("folders.entity_id=?", entity.id).order("full_path asc") }
 
   def set_defaults
     if parent

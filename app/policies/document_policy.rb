@@ -20,7 +20,7 @@ class DocumentPolicy < ApplicationPolicy
     else
       (user.entity.enable_documents &&
         Document.for_investor(user, record.entity)
-                .where("documents.id=?", record.id).first.present?) || allow?(:read)
+                .where("documents.id=?", record.id).first.present?) || allow_external?(:read)
     end
   end
 
@@ -33,7 +33,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def update?
-    create? || allow?(:write)
+    create? || allow_external?(:write)
   end
 
   def edit?

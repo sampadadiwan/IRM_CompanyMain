@@ -38,7 +38,7 @@ class ApplicationPolicy
     false
   end
 
-  def allow?(action)
+  def allow_external?(action)
     Permission.allow(record, user).set?(action)
   end
 

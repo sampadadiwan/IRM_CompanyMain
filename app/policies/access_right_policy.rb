@@ -26,7 +26,7 @@ class AccessRightPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    create? || Pundit.policy(user, record.owner).update?
   end
 
   def start_deal?
@@ -34,10 +34,10 @@ class AccessRightPolicy < ApplicationPolicy
   end
 
   def edit?
-    create?
+    update?
   end
 
   def destroy?
-    create?
+    update?
   end
 end
