@@ -38,6 +38,10 @@ class ApplicationPolicy
     false
   end
 
+  def allow?(action)
+    Permission.allow(record, user).set?(action)
+  end
+
   class Scope
     def initialize(user, scope)
       @user = user

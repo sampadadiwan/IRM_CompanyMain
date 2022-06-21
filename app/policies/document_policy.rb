@@ -1,8 +1,9 @@
 class DocumentPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
-        scope.all
+      case user.curr_role
+      when "consultant"
+        scope.joins(:permissions).where("permissions.user_id=?", user.id)
       else
         scope.where(entity_id: user.entity_id)
       end
@@ -17,9 +18,9 @@ class DocumentPolicy < ApplicationPolicy
     if user.entity_id == record.entity_id && user.entity.enable_documents
       true
     else
-      user.entity.enable_documents &&
+      (user.entity.enable_documents &&
         Document.for_investor(user, record.entity)
-                .where("documents.id=?", record.id).first.present?
+                .where("documents.id=?", record.id).first.present?) || allow?(:read)
     end
   end
 
@@ -32,14 +33,14 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    create? || allow?(:write)
   end
 
   def edit?
-    create?
+    update?
   end
 
   def destroy?
-    create?
+    update?
   end
 end

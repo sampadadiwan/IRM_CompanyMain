@@ -58,7 +58,5 @@
 
 <div>
   <%= link_to "Edit", edit_permission_path(@permission), {class: "btn btn-primary"} %> |
-  <%= link_to "Back", :back, {class: "btn btn-primary"} %> |
-
   <%= button_to "Delete", @permission, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
 </div>

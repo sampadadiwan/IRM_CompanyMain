@@ -28,6 +28,8 @@ class Document < ApplicationRecord
   acts_as_taggable_on :tags
 
   has_many :access_rights, as: :owner, dependent: :destroy
+  has_many :permissions, as: :owner, dependent: :destroy
+
   belongs_to :entity
   belongs_to :folder
 
