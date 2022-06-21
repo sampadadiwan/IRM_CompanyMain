@@ -46,12 +46,17 @@ class Document < ApplicationRecord
   validates :name, presence: true
 
   delegate :full_path, to: :folder, prefix: :folder
+  before_validation :setup_entity
   after_create :setup_access_rights
 
   include FileUploader::Attachment(:file)
 
   def to_s
     name
+  end
+
+  def setup_entity
+    self.entity_id = folder.entity_id
   end
 
   def setup_access_rights

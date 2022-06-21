@@ -72,6 +72,11 @@ class AccessRight < ApplicationRecord
     errors.add :base, "Must specify Investor or Category" if %w[access_to_investor_id access_to_category].all? { |attr| self[attr].blank? }
   end
 
+  validate :access_is_unique
+  def access_is_unique
+    errors.add(:owner, 'Duplicate! already has this permission') if AccessRight.exists?(owner:, access_to_investor_id:, access_to_category:)
+  end
+
   def to_s
     access_to_label
   end
@@ -123,5 +128,10 @@ class AccessRight < ApplicationRecord
   after_create :send_notification
   def send_notification
     AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later
+  end
+
+  after_create :update_owner
+  def update_owner
+    owner.access_rights_changed(id) if owner.respond_to? :access_rights_changed
   end
 end

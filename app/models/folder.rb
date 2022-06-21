@@ -19,9 +19,11 @@ class Folder < ApplicationRecord
 
   belongs_to :parent, class_name: "Folder", foreign_key: :parent_folder_id, optional: true
   belongs_to :entity
+
   has_many :documents, dependent: :destroy
+  accepts_nested_attributes_for :documents, allow_destroy: true
+
   has_many :access_rights, as: :owner, dependent: :destroy
-  has_many_attached :docs, service: :amazon
 
   # Stores all the ids of folders till root from this Folder, i.e all ids from root till here
   serialize :path_ids
@@ -56,5 +58,10 @@ class Folder < ApplicationRecord
 
   def touch_root
     Folder.where(entity_id:, level: 0).first.touch
+  end
+
+  # This is triggered when the access rights change
+  def access_rights_changed(access_right_id)
+    FolderAccessJob.perform_later(id, access_right_id)
   end
 end

@@ -6,7 +6,7 @@ export function uppyInstance({ id, types, server }) {
     autoProceed: true,
     restrictions: {
       allowedFileTypes: types,
-      maxNumberOfFiles: 1,
+      // maxNumberOfFiles: 1,
     },
   })
 

@@ -8,6 +8,7 @@ import { uppyInstance, uploadedFileData } from '../uppy'
 export default class extends Controller {
   static targets = [ 'input' ]
   static values = { types: Array, server: String }
+  file_count = 0
 
   connect() {
     this.uppy = this.createUppy();
@@ -37,12 +38,17 @@ export default class extends Controller {
     
     uppy.on('upload-success', (file, response) => {
       const hiddenField = document.createElement('input')
-
       hiddenField.type = 'hidden'
-      hiddenField.name = `document[file][]`
+      this.file_count += 1
+      hiddenField.name = `folder[documents_attributes][${this.file_count}][file]`
       hiddenField.value = uploadedFileData(file, response, this.serverValue)
-
       this.element.appendChild(hiddenField)
+
+      const hiddenFieldName = document.createElement('input')
+      hiddenFieldName.type = 'hidden'
+      hiddenFieldName.name = `folder[documents_attributes][${this.file_count}][name]`
+      hiddenFieldName.value = file.name
+      this.element.appendChild(hiddenFieldName)
     })
 
     return uppy
