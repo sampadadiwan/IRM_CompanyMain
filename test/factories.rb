@@ -1,4 +1,13 @@
 FactoryBot.define do
+  factory :permission do
+    user { User.all.sample }
+    owner { Document.all.sample }
+    email { user.email }
+    permissions { [:read, :write] }
+    entity { owner.entity }
+    granted_by { owner.entity.employees.sample }
+  end
+
   factory :task do
     details { Faker::Company.catch_phrase }
     entity { Entity.startups.sample }

@@ -1,0 +1,44 @@
+<%= render "/layouts/alerts" %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Permissions</h1>
+  <%= link_to "New Permission", new_permission_path("permission[entity_id]": current_user.entity_id), {class: "btn btn-primary"}  %>
+</div>
+
+<div class="table-responsive">
+
+  <table id="permissions" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+          <th>
+          User
+        </th>
+          <th>
+          Owner
+        </th>
+          <th>
+          Email
+        </th>
+          <th>
+          Permissions
+        </th>
+          <th>
+          Entity
+        </th>
+          <th>
+          Granted By
+        </th>
+      
+        <th>
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% @permissions.each do |permission| %>
+        <%= render permission %>
+      <% end %>
+    </tbody>
+  </table>
+
+</div>

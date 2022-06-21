@@ -1,0 +1,25 @@
+<tr id="<%= dom_id permission %>">
+  <td>
+    <%= permission.user&.full_name %>
+  </td>
+  <td>
+    <%= link_to permission.owner_type, "/#{permission.owner_type.underscore.pluralize}/#{permission.owner_id}" %>
+  </td>
+  <td>
+    <%= permission.email %>
+  </td>
+  <td>
+    <%= permission.permissions.to_human %>
+  </td>
+  <td>
+    <%= permission.entity.name %>
+  </td>
+  <td>
+    <%= permission.granted_by.full_name %>
+  </td>
+  <td>
+    <%= link_to "Edit", edit_permission_path(permission) , {class: "btn btn-primary"} if policy(permission).edit? %>
+    <%= button_to "Delete", permission, method: :delete, class: "btn btn-danger", 
+        form_class: "deleteButton" %>    
+  </td>
+</tr>

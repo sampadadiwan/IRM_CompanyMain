@@ -1,0 +1,36 @@
+<%= form_with(model: permission) do |form| %>
+  <% if permission.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(permission.errors.count, "error") %> prohibited this permission from being saved:</h2>
+
+      <ul>
+        <% permission.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+    <%= form.text_field :user_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :owner_id, class: "form-control", hidden:true  %>
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :granted_by_id, class: "form-control", hidden: true  %>
+
+  <div class="form-group">
+    <%= form.label :email %>
+    <%= form.text_field :email, class: "form-control"  %>
+  </div>
+
+  <% Permission.permissions.pairs.each do |key, val| %>
+  <div class="form-group">
+    <%= form.label :permissions, key %>
+    <%= form.check_box :permissions, {name: "permission[permissions][]",  
+        val: val, id: "permissions_#{val}", class: "form-control form-checkbox"}, val, nil   %>
+  </div>
+  <% end %>
+
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_21_022553) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_21_053714) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -782,6 +782,22 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_21_022553) do
     t.index ["user_id"], name: "index_payments_on_user_id"
   end
 
+  create_table "permissions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id"
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.string "email"
+    t.integer "permissions"
+    t.bigint "entity_id", null: false
+    t.bigint "granted_by_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_permissions_on_entity_id"
+    t.index ["granted_by_id"], name: "index_permissions_on_granted_by_id"
+    t.index ["owner_type", "owner_id"], name: "index_permissions_on_owner"
+    t.index ["user_id"], name: "index_permissions_on_user_id"
+  end
+
   create_table "roles", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name"
     t.string "resource_type"
@@ -1017,6 +1033,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_21_022553) do
   add_foreign_key "option_pools", "funding_rounds"
   add_foreign_key "payments", "entities"
   add_foreign_key "payments", "users"
+  add_foreign_key "permissions", "entities"
+  add_foreign_key "permissions", "users"
+  add_foreign_key "permissions", "users", column: "granted_by_id"
   add_foreign_key "secondary_sales", "entities"
   add_foreign_key "secondary_sales", "form_types"
   add_foreign_key "taggings", "tags"
