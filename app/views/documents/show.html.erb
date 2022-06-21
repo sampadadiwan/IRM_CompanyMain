@@ -23,7 +23,7 @@
                      <td>
 
                         <% if @document.file.exists? %>
-                           <%= link_to @document.file.expiring_url(), class: "document_download_icon" do %>
+                           <%= link_to @document.file_url(), class: "document_download_icon" do %>
                               <i class="fas fa-download"></i>
                            <% end %>
                            <%= @document.name.capitalize %>

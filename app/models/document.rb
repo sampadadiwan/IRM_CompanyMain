@@ -48,16 +48,18 @@ class Document < ApplicationRecord
   delegate :full_path, to: :folder, prefix: :folder
   after_create :setup_access_rights
 
-  has_attached_file :file,
-                    bucket: proc { |attachment|
-                      attachment.instance.entity.s3_bucket.present? ? attachment.instance.owner.s3_bucket : "#{ENV['AWS_S3_BUCKET']}.#{Rails.env}"
-                    }
+  include FileUploader::Attachment(:file)
 
-  validates_attachment_content_type :file, content_type: [%r{\Aimage/.*\Z}, %r{\Avideo/.*\Z}, %r{\Aaudio/.*\Z}, %r{\Aapplication/.*\Z}]
+  # has_attached_file :file,
+  #                   bucket: proc { |attachment|
+  #                     attachment.instance.entity.s3_bucket.present? ? attachment.instance.owner.s3_bucket : "#{ENV['AWS_S3_BUCKET']}.#{Rails.env}"
+  #                   }
 
-  validates_attachment_size :file, # presence: false,
-                            less_than: 10.megabytes,
-                            message: 'must be smaller than 10mb. Use video upload if needed for large video files'
+  # validates_attachment_content_type :file, content_type: [%r{\Aimage/.*\Z}, %r{\Avideo/.*\Z}, %r{\Aaudio/.*\Z}, %r{\Aapplication/.*\Z}]
+
+  # validates_attachment_size :file, # presence: false,
+  #                           less_than: 10.megabytes,
+  #                           message: 'must be smaller than 10mb. Use video upload if needed for large video files'
 
   def to_s
     name

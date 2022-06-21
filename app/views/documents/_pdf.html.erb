@@ -1,7 +1,7 @@
 <div id="pdf_viewer" data-controller="pdf" class="card">
    
    <input id="viewer_content_type" , value="<%=@document.file.content_type%>" hidden="hidden"></input>
-   <input id="viewer_link" , value="<%=@document.file.expiring_url()%>" hidden="hidden"></input>
+   <input id="viewer_link" , value="<%=@document.file_url()%>" hidden="hidden"></input>
    <input id="viewer_watermark" , value="Private Property of <%= current_user.entity.name %>" hidden="hidden"></input>
 
    <div class="card-header">
