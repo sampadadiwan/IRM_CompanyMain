@@ -336,6 +336,7 @@ GEM
     faraday-patron (1.0.0)
     faraday-rack (1.0.0)
     faraday-retry (1.0.3)
+    fastimage (2.2.6)
     ffi (1.15.5)
     foreman (0.87.2)
     globalid (1.0.0)
@@ -509,6 +510,8 @@ GEM
       actionpack (>= 5.0)
       railties (>= 5.0)
     rexml (3.2.5)
+    roda (3.57.0)
+      rack
     rolify (6.0.0)
     roo (2.8.3)
       nokogiri (~> 1)
@@ -613,6 +616,10 @@ GEM
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.1.0)
     uniform_notifier (1.14.2)
+    uppy-s3_multipart (1.2.0)
+      aws-sdk-s3 (~> 1.0)
+      content_disposition (~> 1.0)
+      roda (>= 2.27, < 4)
     warden (1.2.9)
       rack (>= 2.0.9)
     web-console (4.2.0)
@@ -681,6 +688,7 @@ DEPENDENCIES
   exception_notification
   factory_bot_rails
   faker
+  fastimage
   foreman
   groupdate
   hightop
@@ -715,13 +723,14 @@ DEPENDENCIES
   sanitize_email
   sassc-rails
   selenium-webdriver
-  shrine (~> 3.0)
+  shrine (~> 3.3)
   sidekiq (~> 6.4)
   simplecov
   sprockets-rails
   stimulus-rails
   turbo-rails
   tzinfo-data
+  uppy-s3_multipart (~> 1.1)
   web-console
   webdrivers
   whenever

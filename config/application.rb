@@ -74,5 +74,14 @@ module InvestorRelationshipManagement
     config.active_storage.replace_on_assign_to_many = false
     config.active_storage.analyzers = []
     config.active_storage.previewers = []
+
+    # supports :s3, :s3_multipart, or :app
+    config.upload_server = if ENV["UPLOAD_SERVER"].present?
+                             ENV["UPLOAD_SERVER"].to_sym
+                           elsif Rails.env.production?
+                             :s3
+                           else
+                             :app
+                           end
   end
 end

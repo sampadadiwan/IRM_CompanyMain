@@ -65,8 +65,10 @@ gem 'administrate-field-boolean_emoji', '~> 0.3.0'
 # gem 'ajax-datatables-rails', git: "git@github.com:jbox-web/ajax-datatables-rails.git"
 
 # For custom buckets in S3 per client
-gem "marcel"
-gem "shrine", "~> 3.0"
+gem 'fastimage'
+gem 'marcel'
+gem 'shrine', '~> 3.3'
+gem 'uppy-s3_multipart', '~> 1.1'
 
 gem 'cocoon'
 gem "paranoia", "~> 2.2"

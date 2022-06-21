@@ -36,22 +36,34 @@
     <small class="text-muted">Comma separated list of tags to classify the document</small>
   </div>
 
-  <div class="form-group">
-    <input type="radio" id="doc_type" checked="true" name="upload_type" class="upload_type">
-    <label for="html">Document</label>
-    <input type="radio" id="video_type" name="upload_type" class="upload_type">
-    <label for="css">Video</label>
-  </div>
 
+  <div data-controller="single-upload" data-single-upload-types-value="<%= FileUploader::ALLOWED_TYPES.to_json %>" data-single-upload-server-value="<%= upload_server %>">
+    <div class="mb-3">
+ 
+      <%= form.label :file, class: "form-label" %>
 
-  <div class="field" class="form-group" id="document_upload">
-    <%= form.label :file, "Document" %>
-    <%= form.file_field :file, class: "form-control", placeholder: "Upload document" %>
-  </div>
+      <!-- for storing cover photo uploaded file data -->
+      <%= form.hidden_field :file,
+        value: document.cached_file_data,
+        data: { single_upload_target: "result" },
+        id: nil %>
 
-  <div class="field" class="form-group" id="video_upload" >
-    <%= form.label :video %>
-    <%= form.file_field :video, class: "form-control", direct_upload: true, placeholder: "Upload video" %>
+      <!-- will be replaced by Uppy -->
+      <%= form.file_field :file,
+        class: "form-control",
+        data: { single_upload_target: "input" } %>
+    </div>
+
+    <div class="UppyInput-Progress"></div>
+
+    <div class="d-inline-block mt-1 mb-3">
+      <!-- static link to the thumbnail generated on attachment -->
+      <% image_src = document.file_url ? document.file_url : nil %>
+      <%= image_tag image_src,
+        width: 300,
+        class: "img-thumbnail file-upload-preview",
+        data: { single_upload_target: "preview" }  %>
+    </div>
   </div>
 
   <div class="form-group">
@@ -78,7 +90,6 @@
   </div>
 <% end %>
 
-<div data-controller="directuploads"></div>
 
   </div>
   </div>

@@ -14,7 +14,7 @@
               preload="false"
               data-setup="{}"
            >
-              <source src="<%= @document.video.present? ? @document.video.url : @document.file.expiring_url %>" />
+              <source src="<%=  @document.file_url %>" />
               <p class="vjs-no-js">
                  To view this video please enable JavaScript, and consider upgrading to a
                  web browser that

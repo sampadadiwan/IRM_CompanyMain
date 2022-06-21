@@ -50,17 +50,6 @@ class Document < ApplicationRecord
 
   include FileUploader::Attachment(:file)
 
-  # has_attached_file :file,
-  #                   bucket: proc { |attachment|
-  #                     attachment.instance.entity.s3_bucket.present? ? attachment.instance.owner.s3_bucket : "#{ENV['AWS_S3_BUCKET']}.#{Rails.env}"
-  #                   }
-
-  # validates_attachment_content_type :file, content_type: [%r{\Aimage/.*\Z}, %r{\Avideo/.*\Z}, %r{\Aaudio/.*\Z}, %r{\Aapplication/.*\Z}]
-
-  # validates_attachment_size :file, # presence: false,
-  #                           less_than: 10.megabytes,
-  #                           message: 'must be smaller than 10mb. Use video upload if needed for large video files'
-
   def to_s
     name
   end
@@ -106,6 +95,10 @@ class Document < ApplicationRecord
   end
 
   def video?
-    file_content_type&.include?('video')
+    file.mime_type&.include?('video')
+  end
+
+  def image?
+    file.mime_type&.include?('image')
   end
 end

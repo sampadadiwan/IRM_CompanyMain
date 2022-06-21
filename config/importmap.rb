@@ -16,3 +16,4 @@ pin "chartkick", to: "chartkick.js"
 
 pin "@client-side-validations/client-side-validations/src", to: "/js/client_side_validations.js"
 pin "@nathanvda/cocoon", to: "https://ga.jspm.io/npm:@nathanvda/cocoon@1.2.14/cocoon.js"
+pin "nanoid", to: "https://ga.jspm.io/npm:nanoid@4.0.0/index.browser.js"

@@ -22,7 +22,7 @@
                      </td>
                      <td>
 
-                        <% if @document.file.exists? %>
+                        <% if @document.file %>
                            <%= link_to @document.file_url(), class: "document_download_icon" do %>
                               <i class="fas fa-download"></i>
                            <% end %>
