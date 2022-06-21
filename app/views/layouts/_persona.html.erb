@@ -1,6 +1,6 @@
 <%= form_with(model: nil, method: :get, url: set_persona_users_path, id: "persona_form") do |form| %>
   <% 
-    personas = [["", ""]]
+    personas = []
 
     if current_user.has_cached_role?(:startup) 
       ["My Company", :startup] 
@@ -16,7 +16,12 @@
 
     if current_user.has_cached_role?(:consultant) 
       personas << ["Consultant", :consultant] 
+      if personas.length == 1 && current_user.roles.count > 1
+        personas << ["Default", current_user.roles.first.name.to_sym] 
+      end
     end
+
+    
   %>
   <div class="form-group" data-controller="persona">
     <% selected = params[:persona].present? ? params[:persona] : current_user.curr_role.to_sym %>

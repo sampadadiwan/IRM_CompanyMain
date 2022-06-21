@@ -38,7 +38,7 @@ class DealDoc < ApplicationRecord
   has_attached_file :file,
                     s3_permissions: nil,
                     bucket: proc { |attachment|
-                      attachment.instance.deal.entity.s3_bucket.presence || ENV["AWS_S3_BUCKET"]
+                      attachment.instance.deal.entity.s3_bucket.presence || "#{ENV['AWS_S3_BUCKET']}.#{Rails.env}"
                     }
 
   validates_attachment_content_type :file, content_type: [%r{\Aimage/.*\Z}, %r{\Avideo/.*\Z}, %r{\Aaudio/.*\Z}, %r{\Aapplication/.*\Z}]

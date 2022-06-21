@@ -50,7 +50,7 @@ class Document < ApplicationRecord
 
   has_attached_file :file,
                     bucket: proc { |attachment|
-                      attachment.instance.entity.s3_bucket.present? ? attachment.instance.owner.s3_bucket : ENV["AWS_S3_BUCKET"]
+                      attachment.instance.entity.s3_bucket.present? ? attachment.instance.owner.s3_bucket : "#{ENV['AWS_S3_BUCKET']}.#{Rails.env}"
                     }
 
   validates_attachment_content_type :file, content_type: [%r{\Aimage/.*\Z}, %r{\Avideo/.*\Z}, %r{\Aaudio/.*\Z}, %r{\Aapplication/.*\Z}]
