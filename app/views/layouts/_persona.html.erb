@@ -1,11 +1,21 @@
 <%= form_with(model: nil, method: :get, url: set_persona_users_path, id: "persona_form") do |form| %>
   <% 
-  personas = [ ["My Company", :startup] ]
+    personas = [["", ""]]
+
+    if current_user.has_cached_role?(:startup) 
+      ["My Company", :startup] 
+    end
+
     if current_user.has_cached_role?(:investor) 
       personas << ["My Investments",:investor] 
     end
+
     if current_user.has_cached_role?(:holding) 
       personas << ["My Holdings", :holding] 
+    end
+
+    if current_user.has_cached_role?(:consultant) 
+      personas << ["Consultant", :consultant] 
     end
   %>
   <div class="form-group" data-controller="persona">

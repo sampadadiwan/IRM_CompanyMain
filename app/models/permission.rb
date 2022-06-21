@@ -13,4 +13,9 @@ class Permission < ApplicationRecord
   def self.allow(owner, user)
     Permission.where(user_id: user.id, owner_id: owner.id, owner_type: owner.class.name).first&.permissions
   end
+
+  after_create :add_role
+  def add_role
+    user&.add_role(:consultant)
+  end
 end

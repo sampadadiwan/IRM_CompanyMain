@@ -81,6 +81,7 @@ class User < ApplicationRecord
     if entity
       if entity.entity_type == "Startup"
         add_role :startup
+        add_role :holding
         self.curr_role = :startup
       elsif entity.entity_type == "Holding"
         add_role :holding
