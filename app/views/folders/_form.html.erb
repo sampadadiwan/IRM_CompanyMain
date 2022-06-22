@@ -29,7 +29,10 @@
 
   <div class="mb-3" data-controller="multiple-upload" 
           data-multiple-upload-types-value="<%= FileUploader::ALLOWED_TYPES.to_json %>" 
-          data-multiple-upload-server-value="<%= upload_server %>">
+          data-multiple-upload-server-value="<%= upload_server %>"
+          data-multiple-upload-drop-here-value="Folder Documents"
+          data-multiple-upload-parent-model-value="folder">
+          
     <!-- will be replaced by Uppy -->
     <%= form.label :documents, "Select Files", class: "form-label" %>
     <%= form.file_field :documents,

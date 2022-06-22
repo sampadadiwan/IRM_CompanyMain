@@ -116,36 +116,37 @@
             <div class="card">
                 <div class="card-header"> 3. Sale Documents </div>
                 <div class="card-body">
-
-                    <div class="field" class="form-group" data-controller="directuploads" >
-                        <%= form.label :public_docs, "Public Documents" %>
-                        <%= form.file_field :public_docs, class: "form-control", direct_upload: true, multiple:true %>
-                        <small class="text-muted"> Upload multiple documents that will be visible to buyers on the secondaries platform. </small>
-
+                    <%= form.label :documents, "Buyer Documents", class: "form-label" %>
+                    <div class="mb-3" data-controller="multiple-upload" 
+                            data-multiple-upload-types-value="<%= FileUploader::ALLOWED_TYPES.to_json %>" 
+                            data-multiple-upload-server-value="<%= upload_server %>"
+                            data-multiple-upload-drop-here-value="Buyer Documents",
+                            data-multiple-upload-owner-tag-value="Buyer" 
+                            data-multiple-upload-parent-model-value="secondary_sale">
+                        <!-- will be replaced by Uppy -->
+                        <%= form.label :buyer_docs, "Select Files", class: "form-label" %>
+                        <%= form.file_field :buyer_docs,
+                            multiple: true,
+                            class: "form-control",
+                            data: { multiple_upload_target: "input" } %>
                     </div>
 
-                    <div class="field" class="form-group" data-controller="directuploads" >
-                        <%= form.label :private_docs, "Shortlisted Buyer Documents" %>
-                        <%= form.file_field :private_docs, class: "form-control", direct_upload: true, multiple:true %>
-                        <small class="text-muted"> Upload multiple documents that will be visible only to shortlisted buyers. </small>
-
+                    <%= form.label :documents, "Seller Documents", class: "form-label" %>
+                    <div class="mb-3" data-controller="multiple-upload" 
+                            data-multiple-upload-types-value="<%= FileUploader::ALLOWED_TYPES.to_json %>" 
+                            data-multiple-upload-server-value="<%= upload_server %>"
+                            data-multiple-upload-drop-here-value="Seller Documents"
+                            data-multiple-upload-owner-tag-value="Seller"
+                            data-multiple-upload-parent-model-value="secondary_sale">
+                        <!-- will be replaced by Uppy -->
+                        <%= form.label :seller_docs, "Select Files", class: "form-label" %>
+                        <%= form.file_field :seller_docs,
+                            multiple: true,
+                            class: "form-control",
+                            data: { multiple_upload_target: "input" } %>
                     </div>
 
-                    <div class="field" class="form-group" data-controller="directuploads" >
-                        <%= form.label :buyer_instructions %>
-                        <%= form.file_field :buyer_instructions, class: "form-control", direct_upload: true, multiple:true %>
-                        <small class="text-muted"> Upload documents that outline the process for the buyers. </small>
-
-                    </div>
-
-                    <div class="field" class="form-group" data-controller="directuploads" >
-                        <%= form.label :seller_instructions %>
-                        <%= form.file_field :seller_instructions, class: "form-control", direct_upload: true, multiple:true %>
-                        <small class="text-muted"> Upload documents that outline the process for the sellers. </small>
-
-                    </div>
-
-
+                    <input type="text" id="file_count" hidden="hidden" />
                     
                     <div class="form-group">
                         <%= form.submit "Save", {class: "btn btn-primary btn-lg"}%>

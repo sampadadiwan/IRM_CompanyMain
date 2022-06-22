@@ -13,6 +13,14 @@ class FileUploader < Shrine
     id     = record.id
     prefix = derivative || "original"
 
-    "#{entity}/#{table}/#{id}/#{prefix}-#{super}"
+    if %w[SecondarySale Deal].include? record.owner_type
+      "#{entity}/#{record.owner_type}/#{record.owner_id}/#{table}/#{id}/#{prefix}-#{super}"
+    elsif %w[Offer Interest].include? record.owner_type
+      "#{entity}/SecondarySale/#{record.owner.secodary_sale_id}/#{record.owner_type}/#{record.owner_id}/#{table}/#{id}/#{prefix}-#{super}"
+    elsif ["DealInvestor"].include? record.owner_type
+      "#{entity}/Deal/#{record.owner.deal_id}/#{record.owner_type}/#{record.owner_id}/#{table}/#{id}/#{prefix}-#{super}"
+    else
+      "#{entity}/#{table}/#{id}/#{prefix}-#{super}"
+    end
   end
 end

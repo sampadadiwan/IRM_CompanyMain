@@ -49,6 +49,7 @@ class SecondarySale < ApplicationRecord
   has_one_attached :spa, service: :amazon
 
   has_many :documents, as: :owner, dependent: :destroy
+  accepts_nested_attributes_for :documents, allow_destroy: true
 
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy

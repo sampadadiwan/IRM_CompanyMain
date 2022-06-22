@@ -23,9 +23,12 @@ class DocumentsController < ApplicationController
       @show_steps = true
     end
 
-    @documents = @documents.order(id: :desc)
+    @documents = @documents.where(owner_id: params[:owner_id]) if params[:owner_id].present?
+    @documents = @documents.where(owner_type: params[:owner_type]) if params[:owner_type].present?
+    @documents = @documents.where(owner_tag: params[:owner_tag]) if params[:owner_tag].present?
     @documents = @documents.where(folder_id: params[:folder_id]) if params[:folder_id].present?
-    @documents = @documents.joins(:folder).includes(:folder, tags: :taggings).page params[:page]
+    @documents = @documents.order(id: :desc)
+    @documents = @documents.includes(:folder, tags: :taggings).page params[:page]
   end
 
   def investor_documents

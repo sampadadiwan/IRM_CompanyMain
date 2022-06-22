@@ -4,6 +4,7 @@
   </td>  
   <td class="hideMobP">
     <%= raw document.tags.map{|tag| link_to(tag.name, search_documents_path(query: tag.name))}.join(", ") %>
+    <%= document.owner_tag %>
   </td>  
   <td class="hideMobP">
     <%= display_boolean(document.download) %>
