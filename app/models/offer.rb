@@ -191,4 +191,14 @@ class Offer < ApplicationRecord
   def notify_approval
     OfferMailer.with(offer_id: id).notify_approval.deliver_later
   end
+
+  after_create :setup_folder
+  def setup_folder
+    parent = Folder.where(entity_id:, name: "Offers", owner: secondary_sale).first
+    Folder.create(entity_id:, parent:, name: user.full_name.to_s, folder_type: :system, owner: self)
+  end
+
+  def owner_folder
+    Folder.where(entity_id:, owner: self).first
+  end
 end

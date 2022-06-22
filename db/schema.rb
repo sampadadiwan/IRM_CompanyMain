@@ -366,8 +366,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_22_033102) do
     t.integer "documents_count", default: 0, null: false
     t.string "path_ids"
     t.integer "folder_type", default: 0
-    t.integer "owner_id", default: 0
+    t.string "owner_type"
+    t.bigint "owner_id"
     t.index ["entity_id"], name: "index_folders_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_folders_on_owner"
     t.index ["parent_folder_id"], name: "index_folders_on_parent_folder_id"
   end
 

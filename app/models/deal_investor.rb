@@ -63,6 +63,7 @@ class DealInvestor < ApplicationRecord
   end
 
   after_create :setup_folder
+  after_create :setup_folder
   after_save :create_activities_later, if: proc { |di| di.deal.started? }
   def create_activities_later
     GenerateDealActivitiesJob.perform_later(id, "DealInvestor")
@@ -133,11 +134,11 @@ class DealInvestor < ApplicationRecord
   end
 
   def setup_folder
-    parent = Folder.where(entity_id:, level: 2, name: "Deal Investor").first
-    Folder.create(entity_id:, parent:, name:, folder_type: :system, owner_id: id)
+    parent = Folder.where(entity_id:, name: "Deal Investors", owner: deal).first
+    Folder.create(entity_id:, parent:, name: investor_name, folder_type: :system, owner: self)
   end
 
   def owner_folder
-    Folder.where(entity_id:, level: 3, name:, owner_id: id).first
+    Folder.where(entity_id:, owner: self).first
   end
 end

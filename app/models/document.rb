@@ -64,6 +64,10 @@ class Document < ApplicationRecord
     Folder.search
   end
 
+  def setup_folder
+    self.folder = owner.setup_folder if folder.nil? && owner
+  end
+
   def owner_folder
     case owner_type
     when "Deal"

@@ -89,7 +89,7 @@ namespace :irm do
   desc "generates fake Documents for testing"
   task generateFakeDocuments: :environment do
     dnames = "Fact Sheet,Cap Table,Latest Financials,Conversion Stats,Deal Sheet".split(",")
-    files = ["undraw_profile.svg", "undraw_profile_1.svg", "undraw_profile_2.svg", "undraw_profile_3.svg", "undraw_rocket.svg"]
+    files = ["holdings.xlsx", "signature.png", "investor_access.xlsx", "Offer_1_SPA.pdf"]
     begin
       Entity.startups.each do |e|
         folders = ["Finances", "Metrics", "Investor Notes", "Employee ESOPs Docs"]
@@ -121,9 +121,9 @@ namespace :irm do
         end
 
 
-        (0..4).each do |i|
-          doc = Document.create!(entity: e, name: dnames[i], text: Faker::Company.catch_phrase, folder: e.folders.sample,
-                                 file: File.new("public/img/#{files[i]}", "r"))
+        (0..3).each do |i|
+          doc = Document.create!(entity: e, name: dnames[i], text: Faker::Company.catch_phrase, 
+                folder: e.folders.sample, file: File.new("public/sample_uploads/#{files[i]}", "r"))
 
           5.times do
             inv = e.investors.sample

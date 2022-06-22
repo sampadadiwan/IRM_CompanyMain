@@ -90,11 +90,13 @@ class Deal < ApplicationRecord
   after_create :setup_folder
   def setup_folder
     parent = Folder.where(entity_id:, level: 1, name: "Deals").first
-    deal_folder = Folder.create(entity_id:, parent:, name:, folder_type: :system, owner_id: id)
-    Folder.create(entity_id:, parent: deal_folder, name: "Deal Investors", folder_type: :system, owner_id: id)
+    deal_folder = Folder.create(entity_id:, parent:, name:, folder_type: :system, owner: self)
+    Folder.create(entity_id:, parent: deal_folder, name: "Deal Investors", folder_type: :system, owner: self)
+
+    deal_folder
   end
 
   def owner_folder
-    Folder.where(entity_id:, level: 2, name:, owner_id: id).first
+    Folder.where(entity_id:, owner: self).first
   end
 end

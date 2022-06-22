@@ -22,6 +22,7 @@ class Folder < ApplicationRecord
 
   belongs_to :parent, class_name: "Folder", foreign_key: :parent_folder_id, optional: true
   belongs_to :entity
+  belongs_to :owner, polymorphic: true, optional: true
 
   has_many :documents, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
