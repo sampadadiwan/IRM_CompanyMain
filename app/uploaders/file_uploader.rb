@@ -14,7 +14,7 @@ class FileUploader < Shrine
     prefix = derivative || "original"
 
     trailing = "#{table.titleize}/#{id}/#{prefix}-#{super}"
-    owner_path = record.respond_to?(:owner) && record.owner ? "#{record.owner_type.titleize}/#{record.owner_id}/#{trailing}" : nil
+    owner_path = record.respond_to?(:owner) && record.owner ? "#{record.owner_type.pluralize.titleize}/#{record.owner_id}/#{trailing}" : nil
 
     get_path(entity, record, owner_path, trailing)
   end
