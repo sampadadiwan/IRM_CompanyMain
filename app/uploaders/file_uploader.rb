@@ -16,8 +16,10 @@ class FileUploader < Shrine
     if %w[SecondarySale Deal].include? record.owner_type
       "#{entity}/#{record.owner_type}/#{record.owner_id}/#{table}/#{id}/#{prefix}-#{super}"
     elsif %w[Offer Interest].include? record.owner_type
+      # Put it inside the SecondarySale folder
       "#{entity}/SecondarySale/#{record.owner.secodary_sale_id}/#{record.owner_type}/#{record.owner_id}/#{table}/#{id}/#{prefix}-#{super}"
     elsif ["DealInvestor"].include? record.owner_type
+      # Put it inside the Deal folder
       "#{entity}/Deal/#{record.owner.deal_id}/#{record.owner_type}/#{record.owner_id}/#{table}/#{id}/#{prefix}-#{super}"
     else
       "#{entity}/#{table}/#{id}/#{prefix}-#{super}"

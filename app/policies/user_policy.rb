@@ -3,7 +3,7 @@ class UserPolicy < ApplicationPolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      elsif user.has_cached_role?(:holding)
+      elsif user.curr_role.to_sym == :holding
         scope.where(id: user.id)
       else
         scope.where(entity_id: user.entity_id)
