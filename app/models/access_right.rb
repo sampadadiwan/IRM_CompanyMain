@@ -130,7 +130,7 @@ class AccessRight < ApplicationRecord
     AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later
   end
 
-  after_create :update_owner
+  after_create :update_owner, if: :cascade
   def update_owner
     owner.access_rights_changed(id) if owner.respond_to? :access_rights_changed
   end

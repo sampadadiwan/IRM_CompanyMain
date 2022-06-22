@@ -70,6 +70,13 @@
       </div>
     <% end %>
 
+    <% if access_right.access_type == "Folder" %>
+      <div class="form-group">
+        <%= form.label :cascade, "Apply to files and sub folders" %>
+        <%= form.check_box :cascade, class: "form-control form-checkbox"  %>
+      </div>
+    <% end %>
+
     <div class="form-group">
       <%= form.submit "Save", {class: "btn btn-primary", data: {action: "click->access#checkRequiredFilled"}}%>
       <a class="btn btn-danger", data-action="click->access#close">Close</a>
