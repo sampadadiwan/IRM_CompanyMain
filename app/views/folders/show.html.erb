@@ -1,42 +1,47 @@
 <%= render "/layouts/alerts" %>
 
-<table class="table table-bordered dataTable">
+  <table class="table table-bordered dataTable">
 
-          <tr>
-        <td>
-          Name
-        </td>
-        <td>
-          <%= @folder.name %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Parent Folder
-        </td>
-        <td>
-          <%= @folder.parent&.full_path %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Full Path
-        </td>
-        <td>
-          <%= @folder.full_path %>
-        </td>    
-      </tr>
-        
-  
-</table>
+    <tr>
+      <td>
+        Name
+      </td>
+      <td>
+        <%= @folder.name %>
+        <%= link_to "View Files" , documents_path(folder_id: @folder.id), class: "badge badge-primary" %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Parent Folder
+      </td>
+      <td>
+        <%= @folder.parent&.full_path %>
+        <%= link_to "View Folder" , folder_path(id: @folder.parent.id), class: "badge badge-success" if @folder.parent %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Full Path
+      </td>
+      <td>
+        <%= @folder.full_path %>
+      </td>
+    </tr>
 
 
-<div>
-  <%= link_to "Edit", edit_folder_path(@folder), {class: "btn btn-primary"} if @folder.level != 0 %> |
-  <%= link_to "Create Sub Folder", new_folder_path("folder[entity_id]": current_user.entity_id, "folder[parent_folder_id]": @folder.id), 
-        {class: "btn btn-success"}%> |
+  </table>
 
-  <%= button_to "Delete", @folder, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
-</div>
 
-<%= render "folders/folder_details", folder: @folder %>
+  <div>
+    <%= link_to "Bulk Upload" , edit_folder_path(@folder), {class: "btn btn-primary" } if @folder.level !=0 %> 
+    <%= link_to "Create Sub Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
+        "folder[parent_folder_id]": @folder.id), 
+        {class: "btn btn-success"} %> 
+
+    <%= button_to "Delete" , @folder, method: :delete, class: "btn btn-danger" , 
+        form_class: "deleteButton" , 
+        data: {action: "click->confirm#popup" , turbo:false} %>
+  </div>
+
+  <%= render "folders/folder_details" , folder: @folder %>

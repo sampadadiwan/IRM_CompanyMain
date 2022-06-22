@@ -45,6 +45,10 @@
                      </td>
                      <td>
                         <%= @document&.folder.full_path %>
+                        <%= link_to "View Files", documents_path(folder_id: @document.folder_id), 
+                              class: "badge badge-primary" %>
+                        <%= link_to "View Folder", folder_path(id: @document.folder_id),
+                              class: "badge badge-success" %>                    
                      </tr>
                   <tr>
                      <td>

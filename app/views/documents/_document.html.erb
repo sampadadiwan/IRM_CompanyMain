@@ -3,7 +3,7 @@
       <%= link_to document.name, document_path(document.id) %>
   </td>  
   <td>
-    <%= document&.folder_full_path %>
+    <%= link_to document.folder_full_path, folder_path(document.folder) if document.folder %>    
   </td>
   <td class="hideMobP">
     <%= raw document.tags.map{|tag| link_to(tag.name, search_documents_path(query: tag.name))}.join(", ") %>
