@@ -39,7 +39,8 @@ class ApplicationPolicy
   end
 
   def allow_external?(action)
-    Permission.allow(record, user).set?(action)
+    extenal = Permission.allow(record, user)
+    extenal ? extenal.set?(action) : false
   end
 
   class Scope

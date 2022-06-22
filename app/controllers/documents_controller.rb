@@ -25,7 +25,7 @@ class DocumentsController < ApplicationController
 
     @documents = @documents.order(id: :desc)
     @documents = @documents.where(folder_id: params[:folder_id]) if params[:folder_id].present?
-    @documents = @documents.joins(:folder).includes(:folder, :tags).page params[:page]
+    @documents = @documents.joins(:folder).includes(:folder, tags: :taggings).page params[:page]
   end
 
   def investor_documents

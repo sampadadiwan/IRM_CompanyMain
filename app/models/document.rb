@@ -33,6 +33,7 @@ class Document < ApplicationRecord
   belongs_to :entity
   belongs_to :folder
   belongs_to :owner, polymorphic: true, optional: true
+  flag :owner_flags, %i[sale_private, sale_public, spa, signature]
 
   counter_culture :entity
   counter_culture :folder
@@ -60,27 +61,8 @@ class Document < ApplicationRecord
     self.entity_id = folder.entity_id
   end
 
-  def find_parent
-    Folder.search
-  end
-
   def setup_folder
     self.folder = owner.owner_folder if folder.nil? && owner
-  end
-
-  def owner_folder
-    case owner_type
-    when "Deal"
-      "/Deals/#{owner_id}"
-    when "DealInvestor"
-      "/Deals/#{owner.deal.id}/Deal Investors/#{owner.id}"
-    when "SecondarySale"
-      "/Secondary Sales/#{owner_id}"
-    when "Offer"
-      "/Secondary Sales/#{owner.secondary_sale.id}/Offers/#{owner.id}"
-    when "Interest"
-      "/Secondary Sales/#{owner.secondary_sale.id}/Interests/#{owner.id}"
-    end
   end
 
   def setup_access_rights

@@ -1,8 +1,10 @@
 <%= render "/layouts/steps", steps: ["Create Folders", "Upload Docs", "Setup Access Rights"].freeze if show_steps %>
 
 <div class="row">
+    <!-- Show hide the folder view based on action -->
+    <% doc_index_class = (params[:action] == "search") ? "col-lg-12 mb-4" : "col-lg-9 mb-4" %>
 
-
+    <% if params[:action] != "search" %>
     <div class="col-lg-3 mb-4">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
@@ -20,7 +22,8 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-9 mb-4">
+    <% end %>
+    <div class="<%= doc_index_class %>">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <span class="m-0 font-weight-bold text-primary">Documents</span>

@@ -13,7 +13,8 @@
   
     <div id="docs-tab" class="tab-pane fade  in show active">
       <div id="deal_docs" class="associated_entity">
-        <%= render "/documents/index", owner: deal_investor, entity: deal_investor.entity, documents: deal_investor.documents.includes(:tags=>:taggings) %>
+        <% sql = "#{deal_investor.documents.to_sql} UNION #{deal_investor.deal.documents.to_sql}" %>
+        <%= render "/documents/index", owner: deal_investor, entity: deal_investor.entity, documents: Document.find_by_sql(sql) %>
       </div>     
     </div>
 
