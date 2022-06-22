@@ -33,7 +33,7 @@ class Document < ApplicationRecord
   belongs_to :entity
   belongs_to :folder
   belongs_to :owner, polymorphic: true, optional: true
-
+  NESTED_ATTRIBUTES = %i[id name file tags owner_tag].freeze
   counter_culture :entity
   counter_culture :folder
 

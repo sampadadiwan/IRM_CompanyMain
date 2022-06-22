@@ -30,9 +30,12 @@ class OptionPool < ApplicationRecord
   has_many :vesting_schedules, inverse_of: :option_pool, dependent: :destroy
   accepts_nested_attributes_for :vesting_schedules, reject_if: :all_blank, allow_destroy: true
 
-  has_many_attached :attachments, service: :amazon
-  has_many_attached :excercise_instructions, service: :amazon
-  has_one_attached :certificate_signature, service: :amazon
+  has_many :folders, as: :owner, dependent: :destroy
+  has_many :documents, as: :owner, dependent: :destroy
+  accepts_nested_attributes_for :documents, allow_destroy: true
+  # has_one_attached :certificate_signature, service: :amazon
+  include FileUploader::Attachment(:certificate_signature)
+
   has_rich_text :details
 
   # Customize form
@@ -42,7 +45,6 @@ class OptionPool < ApplicationRecord
   validates :name, :start_date, :number_of_options, :excercise_price, presence: true
   validates :number_of_options, :excercise_price, numericality: { greater_than: 0 }
 
-  validates :excercise_instructions, presence: true, on: :create unless Rails.env.test?
   validate :check_vesting_schedules
 
   monetize :excercise_price_cents, with_currency: ->(i) { i.entity.currency }
@@ -80,5 +82,21 @@ class OptionPool < ApplicationRecord
 
   def trust_quantity
     number_of_options - excercised_quantity
+  end
+
+  after_create :setup_folder
+  def setup_folder
+    parent = Folder.where(entity_id:, level: 1, name: "Option Pools").first
+    root_folder = Folder.create(entity_id:, parent:, name:, folder_type: :system)
+    Folder.create(entity_id:, parent: root_folder, name: "Holdings", folder_type: :system, owner: self)
+    Folder.create(entity_id:, parent: root_folder, name: "Excercises", folder_type: :system, owner: self)
+    # Move the docs to the right folder post creation
+    documents.update(folder_id: root_folder.id)
+  end
+
+  def owner_folder
+    # Since the initial docs are created before the rootfolder is created
+    # store them in the root folder. Move them to the right folder post creation
+    Folder.where(entity_id:, owner: self).first || Folder.where(entity_id:, level: 1, name: "Option Pools").first
   end
 end

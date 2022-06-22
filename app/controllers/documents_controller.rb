@@ -19,7 +19,8 @@ class DocumentsController < ApplicationController
     else
       @entity = current_user.entity
       @documents = policy_scope(Document)
-      @folders, _map = Folder.build_full_tree(Folder.where(entity_id: @entity.id).order(parent_folder_id: :asc))
+      @folders, _map = Folder.build_full_tree(Folder.not_system.where(entity_id: @entity.id)
+                             .order(parent_folder_id: :asc))
       @show_steps = true
     end
 

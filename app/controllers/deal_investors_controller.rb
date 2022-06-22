@@ -18,20 +18,14 @@ class DealInvestorsController < ApplicationController
 
     query = params[:query]
     if query.present?
-      @deal_investors = if current_user.has_role?(:super)
+      @deal_investors = DealInvestorIndex.filter(term: { entity_id: @entity.id })
+                                         .query(query_string: { fields: DealInvestorIndex::SEARCH_FIELDS,
+                                                                query:, default_operator: 'and' }).objects
 
-                          DealInvestorIndex.query(query_string: { fields: DealInvestorIndex::SEARCH_FIELDS,
-                                                                  query:, default_operator: 'and' }).objects
-
-                        else
-                          DealInvestorIndex.filter(term: { entity_id: @entity.id })
-                                           .query(query_string: { fields: DealInvestorIndex::SEARCH_FIELDS,
-                                                                  query:, default_operator: 'and' }).objects
-                        end
-
+      render "index"
+    else
+      redirect_to deal_investors_path
     end
-
-    render "index"
   end
 
   # GET /deal_investors/1 or /deal_investors/1.json

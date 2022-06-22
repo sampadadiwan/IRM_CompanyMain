@@ -58,30 +58,13 @@
         <%= @option_pool.excercise_period_months %> Months
       </td>
     </tr>
-    <tr>
-      <td>
-        Option Scheme Documents
-      </td>
-      <td>
-        <%= render "/layouts/attachments" , attachments: @option_pool.attachments if @option_pool.attachments.present? %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        Excercise Instructions
-      </td>
-      <td>
-        <%= render "/layouts/attachments" , attachments: @option_pool.excercise_instructions if @option_pool.excercise_instructions.present? %>
-      </td>
-    </tr>
-
+    
     <tr class="collapse multi-collapse">
       <td>
         ESOP Grant Certificate Signature
       </td>
       <td>
-        <%= render "/layouts/attachments" , attachments: [@option_pool.certificate_signature] if @option_pool.certificate_signature.present? %>
+        <%= image_tag @option_pool.certificate_signature_url if @option_pool.certificate_signature.present? %>
       </td>
     </tr>
 

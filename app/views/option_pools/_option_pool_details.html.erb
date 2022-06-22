@@ -7,6 +7,9 @@
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#excercised-tab">
         Excercised
       </a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab">Documents</a>
+
     </nav>
   
     <div class="tab-content" data-controller="datatable">
@@ -22,6 +25,15 @@
             <div id="excercises" class="associated_entity">
                 <%= render "/excercises/index" , excercises: @option_pool.excercises.includes(:entity, :option_pool, :user), secondary_sale: nil %>
             </div>
+        </div>
+        <div id="docs-tab" class="tab-pane fade">
+            <div id="deal_docs" class="associated_entity">
+              <% 
+                documents = @option_pool.documents.includes(:folder, tags: :taggings) 
+              %>
+              <%= render "/documents/index", owner: @option_pool, entity: @option_pool.entity, 
+                  documents:  %>
+            </div>     
         </div>
   
     </div>

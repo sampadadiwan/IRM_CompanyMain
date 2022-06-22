@@ -129,7 +129,7 @@
     </div>
 </div>
 <div class="row">
-    <% if  @document.video.present? || @document.video? %>
+    <% if @document.video? %>
       <%= render "documents/video" %>
     <% elsif ENV['PDF_TRON'] == 'true' %>
        <%= render "documents/pdf" %>

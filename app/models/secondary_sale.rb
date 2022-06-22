@@ -148,11 +148,14 @@ class SecondarySale < ApplicationRecord
     sale_folder = Folder.create(entity_id:, parent:, name:, folder_type: :system, owner: self)
     Folder.create(entity_id:, parent: sale_folder, name: "Offers", folder_type: :system, owner: self)
     Folder.create(entity_id:, parent: sale_folder, name: "Interests", folder_type: :system, owner: self)
-    sale_folder
+    # Move the docs to the right folder post creation
+    documents.update(folder_id: sale_folder.id)
   end
 
   def owner_folder
-    Folder.where(entity_id:, owner: self).first
+    # Since the initial docs are created before the rootfolder is created
+    # store them in the root folder. Move them to the right folder post creation
+    Folder.where(entity_id:, owner: self).first || Folder.where(entity_id:, level: 1, name: "Secondary Sales").first
   end
 
   def document_tags

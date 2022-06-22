@@ -198,8 +198,7 @@ namespace :irm do
     Entity.startups.each do |e|
       (1..4).each do |p|
         pool = FactoryBot.build(:option_pool, entity: e, approved: false, name: "Pool #{p}")
-        pool.excercise_instructions.attach(io: File.open("#{Rails.root}/public/sample_uploads/Instructions.txt"), filename: 'Instructions.txt', content_type: 'application/txt')
-
+        
         pool.certificate_signature.attach(io: File.open("#{Rails.root}/public/sample_uploads/signature.png"), filename: 'signature.png')
 
         (1..4).each do |i|

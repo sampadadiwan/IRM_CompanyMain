@@ -43,7 +43,6 @@
               <div class="card-body">
   
                 <h1>Please read the Excercise Instructions before you proceed.</h1>
-                <%= render "/layouts/attachments" , attachments: excercise.option_pool.excercise_instructions, allow_delete: "No" if excercise.option_pool.excercise_instructions.present? %>
 
                 <button class="btn btn-primary nextBtn btn-lg pull-right" type="button">Next</button>
             </div>

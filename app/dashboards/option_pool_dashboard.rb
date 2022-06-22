@@ -14,8 +14,6 @@ class OptionPoolDashboard < Administrate::BaseDashboard
     holdings: Field::HasMany,
     excercises: Field::HasMany,
     vesting_schedules: Field::HasMany,
-    attachments_attachments: Field::HasMany,
-    excercise_instructions_attachments: Field::HasMany,
     certificate_signature_attachment: Field::HasOne,
     id: Field::Number,
     name: Field::String,

@@ -20,23 +20,23 @@ class UserPolicy < ApplicationPolicy
   end
 
   def show?
-    user.has_cached_role?(:super) || user.id == record.id || user.entity_id == record.entity_id
+    user.id == record.id || user.entity_id == record.entity_id
   end
 
   def create?
-    user.has_cached_role?(:super) || user.entity_id == record.entity_id
+    user.entity_id == record.entity_id
   end
 
   def new?
-    user.has_cached_role?(:super) || user.entity_id == record.entity_id
+    create?
   end
 
   def update?
-    user.has_cached_role?(:super) || user.id == record.id
+    create?
   end
 
   def edit?
-    user.has_cached_role?(:super) || user.id == record.id
+    update?
   end
 
   def destroy?

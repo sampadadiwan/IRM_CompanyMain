@@ -4,6 +4,7 @@ class FoldersController < ApplicationController
   # GET /folders or /folders.json
   def index
     @folders = policy_scope(Folder).order("full_path").includes(:parent)
+    @folders = @folders.not_system if params[:all].blank?
   end
 
   # GET /folders/1 or /folders/1.json
@@ -68,6 +69,7 @@ class FoldersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def folder_params
-    params.require(:folder).permit(:name, :parent_folder_id, :full_path, :level, :entity_id, docs: [], documents_attributes: %i[id name file tags owner_tag])
+    params.require(:folder).permit(:name, :parent_folder_id, :full_path, :level, :entity_id, docs: [],
+                                                                                             documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

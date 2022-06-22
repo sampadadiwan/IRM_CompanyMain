@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_22_091303) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_22_165721) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -772,6 +772,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_22_091303) do
     t.boolean "manual_vesting", default: false
     t.text "properties"
     t.bigint "form_type_id"
+    t.text "certificate_signature_data"
     t.index ["entity_id"], name: "index_option_pools_on_entity_id"
     t.index ["form_type_id"], name: "index_option_pools_on_form_type_id"
     t.index ["funding_round_id"], name: "index_option_pools_on_funding_round_id"
