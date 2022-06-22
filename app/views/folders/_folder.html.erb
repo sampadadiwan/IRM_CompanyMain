@@ -4,6 +4,8 @@
     <%= link_to folder.name, documents_path(folder_id: folder.id) %>
     <% if folder.system? %>
         </br><span class="badge badge-warning">System</span>
+    <% else %>
+        </br><span class="badge badge-success">Regular</span>
     <% end %>
 </td>  
 <td>

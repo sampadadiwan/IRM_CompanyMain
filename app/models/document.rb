@@ -47,7 +47,7 @@ class Document < ApplicationRecord
   validates :name, presence: true
 
   delegate :full_path, to: :folder, prefix: :folder
-  before_validation :setup_entity, :setup_folder
+  before_validation :setup_folder, :setup_entity
   after_create :setup_access_rights
 
   include FileUploader::Attachment(:file)
@@ -65,7 +65,7 @@ class Document < ApplicationRecord
   end
 
   def setup_folder
-    self.folder = owner.setup_folder if folder.nil? && owner
+    self.folder = owner.owner_folder if folder.nil? && owner
   end
 
   def owner_folder
