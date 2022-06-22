@@ -12,6 +12,8 @@ class SetupFolders
   end
 
   def setup_root_folder(entity)
-    Folder.create(name: "/", entity_id: entity.id, level: 0)
+    root = Folder.create(name: "/", entity_id: entity.id, level: 0, folder_type: :system)
+    Folder.create(name: "Deals", entity_id: entity.id, parent: root, folder_type: :system)
+    Folder.create(name: "Secondary Sales", entity_id: entity.id, parent: root, folder_type: :system)
   end
 end

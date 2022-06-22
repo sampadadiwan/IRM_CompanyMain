@@ -32,6 +32,7 @@ class Document < ApplicationRecord
 
   belongs_to :entity
   belongs_to :folder
+  belongs_to :owner, polymorphic: true, optional: true
 
   counter_culture :entity
   counter_culture :folder
@@ -46,7 +47,7 @@ class Document < ApplicationRecord
   validates :name, presence: true
 
   delegate :full_path, to: :folder, prefix: :folder
-  before_validation :setup_entity
+  before_validation :setup_entity, :setup_folder
   after_create :setup_access_rights
 
   include FileUploader::Attachment(:file)
@@ -57,6 +58,25 @@ class Document < ApplicationRecord
 
   def setup_entity
     self.entity_id = folder.entity_id
+  end
+
+  def find_parent
+    Folder.search
+  end
+
+  def owner_folder
+    case owner_type
+    when "Deal"
+      "/Deals/#{owner_id}"
+    when "DealInvestor"
+      "/Deals/#{owner.deal.id}/Deal Investors/#{owner.id}"
+    when "SecondarySale"
+      "/Secondary Sales/#{owner_id}"
+    when "Offer"
+      "/Secondary Sales/#{owner.secondary_sale.id}/Offers/#{owner.id}"
+    when "Interest"
+      "/Secondary Sales/#{owner.secondary_sale.id}/Interests/#{owner.id}"
+    end
   end
 
   def setup_access_rights

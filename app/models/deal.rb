@@ -39,7 +39,7 @@ class Deal < ApplicationRecord
 
   has_many :deal_activities, dependent: :destroy
 
-  has_many :deal_docs, dependent: :destroy
+  has_many :documents, as: :owner, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
 
   # Customize form
@@ -85,5 +85,16 @@ class Deal < ApplicationRecord
 
   def activity_names
     DealActivity.templates(self).collect(&:title)
+  end
+
+  after_create :setup_folder
+  def setup_folder
+    parent = Folder.where(entity_id:, level: 1, name: "Deals").first
+    deal_folder = Folder.create(entity_id:, parent:, name:, folder_type: :system, owner_id: id)
+    Folder.create(entity_id:, parent: deal_folder, name: "Deal Investors", folder_type: :system, owner_id: id)
+  end
+
+  def owner_folder
+    Folder.where(entity_id:, level: 2, name:, owner_id: id).first
   end
 end

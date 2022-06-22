@@ -62,6 +62,7 @@ class DealInvestor < ApplicationRecord
     self.investor_name = investor.investor_name
   end
 
+  after_create :setup_folder
   after_save :create_activities_later, if: proc { |di| di.deal.started? }
   def create_activities_later
     GenerateDealActivitiesJob.perform_later(id, "DealInvestor")
@@ -129,5 +130,14 @@ class DealInvestor < ApplicationRecord
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
       .where("investor_accesses.entity_id = deals.entity_id")
+  end
+
+  def setup_folder
+    parent = Folder.where(entity_id:, level: 2, name: "Deal Investor").first
+    Folder.create(entity_id:, parent:, name:, folder_type: :system, owner_id: id)
+  end
+
+  def owner_folder
+    Folder.where(entity_id:, level: 3, name:, owner_id: id).first
   end
 end

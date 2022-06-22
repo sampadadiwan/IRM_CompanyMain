@@ -70,7 +70,15 @@
                      </td>
                      <td>
                         <%= link_to @document.entity.name, @document.entity %>
+                     </td>
+                  </tr>
 
+                  <tr>
+                     <td>
+                        Owner
+                     </td>
+                     <td>
+                        <%= link_to @document.owner_type, @document.owner if @document.owner %>
                      </td>
                   </tr>
 

@@ -3,7 +3,7 @@
     personas = []
 
     if current_user.has_cached_role?(:startup) 
-      ["My Company", :startup] 
+      personas << ["My Company", :startup] 
     end
 
     if current_user.has_cached_role?(:investor) 

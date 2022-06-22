@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_22_015707) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_22_033102) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -35,8 +35,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_22_015707) do
     t.bigint "entity_id", null: false
     t.string "access_to_category", limit: 20
     t.datetime "deleted_at"
-    t.virtual "gai", type: :integer, null: false, unsigned: true, as: "ifnull(`access_to_investor_id`,0)"
-    t.virtual "gac", type: :string, limit: 20, null: false, as: "ifnull(`access_to_category`,_utf8mb4'X')"
     t.boolean "cascade", default: false
     t.index ["access_to_investor_id"], name: "index_access_rights_on_access_to_investor_id"
     t.index ["deleted_at"], name: "index_access_rights_on_deleted_at"
@@ -277,10 +275,13 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_22_015707) do
     t.boolean "download", default: false
     t.boolean "printing", default: false
     t.text "file_data"
+    t.string "owner_type"
+    t.bigint "owner_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
     t.index ["folder_id"], name: "index_documents_on_folder_id"
     t.index ["form_type_id"], name: "index_documents_on_form_type_id"
+    t.index ["owner_type", "owner_id"], name: "index_documents_on_owner"
   end
 
   create_table "entities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -364,6 +365,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_22_015707) do
     t.bigint "entity_id", null: false
     t.integer "documents_count", default: 0, null: false
     t.string "path_ids"
+    t.integer "folder_type", default: 0
+    t.integer "owner_id", default: 0
     t.index ["entity_id"], name: "index_folders_on_entity_id"
     t.index ["parent_folder_id"], name: "index_folders_on_parent_folder_id"
   end

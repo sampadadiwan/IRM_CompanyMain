@@ -2,6 +2,9 @@
 <tr id="<%= dom_id folder %>">
 <td>
     <%= link_to folder.name, documents_path(folder_id: folder.id) %>
+    <% if folder.system? %>
+        </br><span class="badge badge-warning">System</span>
+    <% end %>
 </td>  
 <td>
     <%= folder.parent&.full_path %>
@@ -11,7 +14,7 @@
 </td>  
 <td>
   <%= link_to "Show", folder , {class: "btn btn-primary"}%>
-  <%= link_to "Edit", edit_folder_path(folder) , {class: "btn btn-primary"} if folder.level != 0 %>
+  <%= link_to "Edit", edit_folder_path(folder) , {class: "btn btn-primary"} if policy(folder).update? %>
   <%= link_to "Create Sub Folder", new_folder_path("folder[entity_id]": current_user.entity_id, "folder[parent_folder_id]": folder.id), 
         {class: "btn btn-success"}%>
 

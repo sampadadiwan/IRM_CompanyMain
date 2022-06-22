@@ -138,4 +138,16 @@ class SecondarySale < ApplicationRecord
   def to_s
     name
   end
+
+  after_create :setup_folder
+  def setup_folder
+    parent = Folder.where(entity_id:, level: 1, name: "Secondary Sales").first
+    sale_folder = Folder.create(entity_id:, parent:, name:, folder_type: :system, owner_id: id)
+    Folder.create(entity_id:, parent: sale_folder, name: "Offers", folder_type: :system, owner_id: id)
+    Folder.create(entity_id:, parent: sale_folder, name: "Interests", folder_type: :system, owner_id: id)
+  end
+
+  def owner_folder
+    Folder.where(entity_id:, level: 2, name:, owner_id: id).first
+  end
 end

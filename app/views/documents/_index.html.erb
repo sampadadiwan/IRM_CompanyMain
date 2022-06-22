@@ -5,7 +5,10 @@
     <%= params[:folder_id].present? ? "in " + Folder.find(params[:folder_id]).full_path : "" %>
   </h1>
   <%= link_to "New Document", 
-      new_document_path("document[entity_id]":current_user.entity_id, "document[folder_id]": params[:folder_id]), 
+      new_document_path("document[entity_id]": owner&.entity_id || current_user.entity_id, 
+      "document[owner_id]": owner&.id,
+      "document[owner_type]": owner&.class&.name,
+      "document[folder_id]": params[:folder_id]), 
       {class: "btn btn-primary"} if current_user.entity_id == entity.id %>
 
 </div>

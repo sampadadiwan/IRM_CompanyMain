@@ -16,6 +16,9 @@
 
 class Folder < ApplicationRecord
   include TreeBuilder
+  update_index('folder') { self }
+
+  enum :folder_type, %i[regular system]
 
   belongs_to :parent, class_name: "Folder", foreign_key: :parent_folder_id, optional: true
   belongs_to :entity
@@ -43,10 +46,12 @@ class Folder < ApplicationRecord
       self.level = parent.level + 1
       self.full_path = level == 1 ? "#{parent.full_path}#{name}" : "#{parent.full_path}/#{name}"
       self.path_ids = parent.path_ids + [parent.id]
+      self.folder_type ||= :regular
     else
       self.level = 0
       self.full_path = "/"
       self.path_ids = []
+      self.folder_type = :system
     end
   end
 
@@ -63,5 +68,11 @@ class Folder < ApplicationRecord
   # This is triggered when the access rights change
   def access_rights_changed(access_right_id)
     FolderAccessJob.perform_later(id, access_right_id)
+  end
+
+  def self.search(query, entity_id)
+    FolderIndex.filter(term: { entity_id: })
+               .query(query_string: { fields: FolderIndex::SEARCH_FIELDS,
+                                      query:, default_operator: 'and' }).objects
   end
 end

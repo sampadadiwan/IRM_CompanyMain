@@ -21,6 +21,8 @@
   <div class="form-group">
     <%= form.label :name %>
     <%= form.text_field :name, class: "form-control"  %>
+    <%= form.text_field :owner_id, class: "form-control", hidden:true  %>
+    <%= form.text_field :owner_type, class: "form-control", hidden:true  %>
   </div>
 
   <div class="form-group">
@@ -58,7 +60,7 @@
 
     <div class="d-inline-block mt-1 mb-3">
       <!-- static link to the thumbnail generated on attachment -->
-      <% image_src = document.file_url ? document.file_url : nil %>
+      <% image_src = document.file_url ? document.file_url : "" %>
       <%= image_tag image_src,
         width: 300,
         class: "img-thumbnail file-upload-preview",

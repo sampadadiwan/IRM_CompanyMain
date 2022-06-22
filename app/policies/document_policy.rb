@@ -18,9 +18,9 @@ class DocumentPolicy < ApplicationPolicy
     if user.entity_id == record.entity_id && user.entity.enable_documents
       true
     else
-      (user.entity.enable_documents &&
-        Document.for_investor(user, record.entity)
-                .where("documents.id=?", record.id).first.present?) || allow_external?(:read)
+      (user.entity.enable_documents && show_investor?) ||
+        Pundit.policy(user, record.owner).show? ||
+        allow_external?(:read)
     end
   end
 
@@ -33,7 +33,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def update?
-    create? || allow_external?(:write)
+    create? || Pundit.policy(user, record.owner).update? || allow_external?(:write)
   end
 
   def edit?
@@ -43,4 +43,11 @@ class DocumentPolicy < ApplicationPolicy
   def destroy?
     update?
   end
+
+  def show_investor?
+    Document.for_investor(user, record.entity)
+            .where("documents.id=?", record.id).first.present?
+  end
+
+  def owner_policy; end
 end

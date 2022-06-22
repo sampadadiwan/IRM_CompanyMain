@@ -22,14 +22,14 @@ class FolderPolicy < ApplicationPolicy
   end
 
   def update?
-    create? && record.full_path != "/"
+    create? && !record.system?
   end
 
   def edit?
-    create? && record.full_path != "/"
+    update?
   end
 
   def destroy?
-    create? && record.full_path != "/"
+    update?
   end
 end
