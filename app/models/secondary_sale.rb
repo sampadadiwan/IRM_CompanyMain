@@ -48,6 +48,8 @@ class SecondarySale < ApplicationRecord
   has_one_attached :final_allocation, service: :amazon
   has_one_attached :spa, service: :amazon
 
+  has_many :documents, as: :owner, dependent: :destroy
+
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy
 
@@ -150,5 +152,9 @@ class SecondarySale < ApplicationRecord
 
   def owner_folder
     Folder.where(entity_id:, owner: self).first
+  end
+
+  def document_tags
+    %w[Buyer Seller]
   end
 end

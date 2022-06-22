@@ -49,20 +49,24 @@
                               class: "badge badge-primary" %>
                         <%= link_to "View Folder", folder_path(id: @document.folder_id),
                               class: "badge badge-success" %>                    
-                     </tr>
+                     </td>
                   <tr>
                      <td>
                         Tags
                      </td>
                      <td>
                         <%= raw @document.tags.map{|tag| link_to(tag.name, search_documents_path(query: tag.name))}.join(", ") %>
-                     </tr>
+
+                        <%= @document.owner_tag %>
+                     </td>
+                  </tr>
                   <tr>
                      <td>
                         Created
                      </td>
                      <td>
                         <%= l @document.created_at, format: :default %>
+                     </td>
                   </tr>
                   <tr>
                      <td>
@@ -111,8 +115,7 @@
                         Details
                      </td>
                      <td>
-                        <%= @document.text %>
-                        
+                        <%= @document.text %>                        
                      </td>
                   </tr>
                   <% end %>

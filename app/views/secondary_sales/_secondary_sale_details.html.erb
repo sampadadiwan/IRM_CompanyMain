@@ -5,6 +5,7 @@
     offers_active = false
     interests_active = false
     access_right_active = false
+    document_tag = nil
   %>
 
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist" data-controller="tabdetails">
@@ -17,18 +18,21 @@
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData">Interests</a>
     
     <% elsif policy(secondary_sale).seller? %>
-      <% holdings_active = true %>
+      <% holdings_active = true; document_tag="Seller" %>
       <input hidden=true value="#holdings-tab" id="clickOnLoad" />
       
       <a class="nav-link <%= holdings_active ? 'active' : '' %>" data-bs-toggle="pill" data-toggle="tab" href="#holdings-tab" data-action="click->tabdetails#loadData">My Holdings</a>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#offerings-tab" data-action="click->tabdetails#loadData">My Offers</a>      
 
     <% elsif policy(secondary_sale).show_interest? %>
-      <% interests_active = true %>
+      <% interests_active = true;document_tag="Buyer" %>
       <input hidden=true value="#interests-tab" id="clickOnLoad" />
       
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData">Interests</a>      
     <% end %>
+
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab">Documents</a>
+
   </nav>
 
   <div class="tab-content">
@@ -43,10 +47,24 @@
           <%= render "/access_rights/index", access_rights: AccessRight.for_secondary_sale(secondary_sale).includes(:investor, :owner), access_right: access_right %>
         </div>
       </div>
+
+      <div id="docs-tab" class="tab-pane fade">
+        <div id="deal_docs" class="associated_entity">
+          <% 
+            documents = secondary_sale.documents.includes(:folder, tags: :taggings) 
+            documents = documents.where(owner_tag: document_tag) if document_tag.present?
+          %>
+          <%= render "/documents/index", owner: secondary_sale, entity: secondary_sale.entity, 
+              documents:  %>
+        </div>     
+      </div>
+
       <div id="offerings-tab" class="tab-pane fade">
         <div id="offerings" class="associated_entity">
-          <% approved = current_user.has_cached_role?(:holding) ? nil : false %>
-          <%= link_to offers_path(secondary_sale_id: secondary_sale.id, show_entity: false, show_secondary_sale: false, approved: approved), class: "load_data_link", data: { turbo_frame: 'offers_frame' } do %>
+          <% approved = current_user.entity_id == secondary_sale.entity_id ? false : nil %>
+          <%= link_to offers_path(secondary_sale_id: secondary_sale.id, show_entity: false, 
+              show_secondary_sale: false, approved: approved), 
+              class: "load_data_link", data: { turbo_frame: 'offers_frame' } do %>
             <span>Loading...</span>
           <% end %>
           

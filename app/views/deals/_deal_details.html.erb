@@ -34,7 +34,7 @@
       <div id="docs-tab" class="tab-pane fade in show active">
         <div id="deal_docs" class="associated_entity">
           <%= render "/documents/index", owner: deal, entity: deal.entity, 
-              documents: deal.documents.includes(:tags) %>
+              documents: deal.documents.includes(:folder, tags: :taggings) %>
         </div>     
       </div>
       <div id="activities-tab" class="tab-pane fade">

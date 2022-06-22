@@ -33,7 +33,6 @@ class Document < ApplicationRecord
   belongs_to :entity
   belongs_to :folder
   belongs_to :owner, polymorphic: true, optional: true
-  flag :owner_flags, %i[sale_private, sale_public, spa, signature]
 
   counter_culture :entity
   counter_culture :folder

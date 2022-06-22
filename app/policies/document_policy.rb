@@ -19,7 +19,7 @@ class DocumentPolicy < ApplicationPolicy
       true
     else
       (user.entity.enable_documents && show_investor?) ||
-      (record.owner && Pundit.policy(user, record.owner).show?) ||
+        (record.owner && Pundit.policy(user, record.owner).show?) ||
         allow_external?(:read)
     end
   end
@@ -33,9 +33,9 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def update?
-    create? || 
-    (record.owner && Pundit.policy(user, record.owner).update?) || 
-    allow_external?(:write)
+    create? ||
+      (record.owner && Pundit.policy(user, record.owner).update?) ||
+      allow_external?(:write)
   end
 
   def edit?

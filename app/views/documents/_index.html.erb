@@ -1,48 +1,51 @@
-
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">
     Documents
     <%= params[:folder_id].present? ? "in " + Folder.find(params[:folder_id]).full_path : "" %>
   </h1>
-  <%= link_to "New Document", 
-      new_document_path("document[entity_id]": owner&.entity_id || current_user.entity_id, 
-      "document[owner_id]": owner&.id,
-      "document[owner_type]": owner&.class&.name,
-      "document[folder_id]": params[:folder_id]), 
-      {class: "btn btn-primary"} if current_user.entity_id == entity.id %>
+  <%= link_to "New Document" , new_document_path(
+                                  "document[entity_id]": owner&.entity_id ||
+                                  current_user.entity_id, 
+                                  "document[owner_id]": owner&.id, 
+                                  "document[owner_type]": owner&.class&.name, 
+                                  "document[folder_id]": params[:folder_id]), 
+              {class: "btn btn-primary" } if current_user.entity_id==entity.id %>
 
 </div>
 
 <div class="table-responsive">
 
-  <table id="documents" class="table table-bordered table-striped dataTable ">
+  <table id="documents" class="table table-bordered table-striped dataTable jqDataTable">
 
-    <tr>
-      <th>
-        Name
-      </th>
-      <th class="hideMobP">
-        Tags
-      </th>
-      <th class="hideMobP">
-        Download
-      </th>
-      <th class="hideMobP">
-        Print
-      </th>
-      <th class="hideMobP">
-        Created On
-      </th>
-      <th>
-        Folder
-      </th>
-      
-    </tr>
+    <thead>
+      <tr>
+        <th>
+          Name
+        </th>
+        <th class="hideMobP">
+          Tags
+        </th>
+        <th class="hideMobP">
+          Download
+        </th>
+        <th class="hideMobP">
+          Print
+        </th>
+        <th class="hideMobP">
+          Created On
+        </th>
+        <th>
+          Folder
+        </th>
 
-    <% documents.each do |document| %>
-      <%= render partial: "documents/document", locals: {document: document} %>
-    <% end %>
+      </tr>
+    </thead>
+    <tbody>
+      <% documents.each do |document| %>
+        <%= render partial: "documents/document" , locals: {document: document} %>
+      <% end %>
+    </tbody>
   </table>
 
-  
+
 </div>
