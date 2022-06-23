@@ -24,5 +24,81 @@ Given('investor has access right {string} in the document') do |arg1|
     puts @access_right.to_json  
 end
   
+Given('I am at the documents page') do
+  visit(documents_path)
+end
+
+When('I create a new document {string}') do |args|
+  @document = Document.new
+  key_values(@document, args)
+  @document.tag_list = "capybara,testing"
+
+  click_on("New Document")
+  fill_in("document_name", with: @document.name)
+  fill_in("document_tag_list", with: @document.tag_list.join(","))
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
+  check('document_download') if @document.download
+  check('document_printing') if @document.printing
+  select("Test Folder", from: "document_folder_id") if @document.folder_id
+
+
+  sleep(3)
+  click_on("Save")
+
+end
+
+Then('an document should be created') do
+  @created_doc = Document.last
+  puts "\n####Document####\n"
+  puts @created_doc.to_json  
+
+  @created_doc.name.should == @document.name
+  @created_doc.download.should == @document.download
+  @created_doc.printing.should == @document.printing
+  @created_doc.tag_list.should == @document.tag_list
+  @created_doc.entity_id.should == @user.entity_id
+  @document = @created_doc
+end
+
+Given('the entity has a folder {string}') do |args|
+  @folder = Folder.new(parent: Folder.first, entity: @user.entity)
+  key_values(@folder, args)
+  @folder.save!
+end
+
+Given('the folder has access rights {string}') do |arg1|
+  @access_right = AccessRight.new(owner: @folder, entity: @user.entity)
+  key_values(@access_right, arg1)
+  puts @access_right.to_json
   
+  @access_right.save
+  puts "\n####Access Right####\n"
+  puts @access_right.to_json  
+end
+
+Then('the document should have the same access rights as the folder') do
+  puts "\n####Document Access Right####\n"
+  puts @document.access_rights.to_json  
+
+  @document.access_rights.count.should == @folder.access_rights.count
+  @document.access_rights.each_with_index do |dar, idx|
+    far = @folder.access_rights[idx]
+    far.access_to_investor_id.should == dar.access_to_investor_id
+    far.access_to_category.should == dar.access_to_category
+    far.entity_id.should == dar.entity_id    
+  end
+end
+
+
+Then('I should see the document details on the details page') do
+  page.should have_content(@document.name)
+  page.should have_content(@document.tag_list)
+end
+
+Then('I should see the document in all documents page') do
+  visit(documents_path)
+  page.should have_content(@document.name)
+  page.should have_content(@document.tag_list)
+end
+
   
