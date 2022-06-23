@@ -20,7 +20,7 @@
         <%= access_right.metadata %>
     </td>  
     <% end %>
-    <% if show_for == "Yes" %>
+    <% if show_for == "Yes" && access_right.owner %>
     <td>
         <%= link_to access_right.owner.name, access_right.owner %>
     </td>  

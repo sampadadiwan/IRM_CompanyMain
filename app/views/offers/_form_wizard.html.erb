@@ -105,20 +105,30 @@
                         <%= form.label :address %>
                         <%= form.text_area :address, class: "form-control", required: true  %>
                     </div>
-                    <div class="field" class="form-group" data-controller="directuploads" >
-                        <%= form.label :address_proof %>
-                        <%= form.file_field :address_proof, class: "form-control", direct_upload: true %>
+                    
+                    <div class="form-group">
+
+                        <%= render "layouts/single_upload", form: form, field_label: "Upload Address Proof", 
+                                                for_model: "offer", field_name: "address_proof", 
+                                                model: offer %>
+                    
+                        <small class="text-muted"> Upload any document which can serve as Address Proof. </small>
                     </div>
+
 
                     <div class="form-group">
                         <%= form.label :PAN, "PAN" %>
                         <%= form.text_field :PAN, class: "form-control", required: true  %>
                     </div>
-                    <div class="field" class="form-group" data-controller="directuploads" >
-                        <%= form.label :id_proof %>
-                        <%= form.file_field :id_proof, class: "form-control", direct_upload: true %>
-                    </div>
 
+                    <div class="form-group">
+
+                        <%= render "layouts/single_upload", form: form, field_label: "Upload ID Proof", 
+                                                for_model: "offer", field_name: "id_proof", 
+                                                model: offer %>
+                    
+                        <small class="text-muted"> Upload any document which can serve as ID Proof. </small>
+                    </div>
 
                     <div class="form-group">
                         <%= form.label :bank_account_number %>
@@ -148,16 +158,22 @@
                 <div class="card-header"> 3. Additional Documents </div>
                 <div class="card-body">
 
-                    <div class="field" class="form-group" data-controller="directuploads" >
-                        <%= form.label :docs, "Documents" %>
-                        <%= form.file_field :docs, class: "form-control", direct_upload: true, multiple:true %>
-                        <small class="text-muted"> Upload <%= offer.secondary_sale.seller_doc_list || "Required Documents." %>  </small>
+                    <div class="form-group">
+
+                        <%= form.label :documents, "Option Pool Documents", class: "form-label" %>
+                        <%= render "layouts/multi_upload", form: form, title: "Offer Documents", 
+                                                for_model: "offer" %>
+                    
+                        <small class="text-muted"> Upload bank statements, tax documents and shareholding documents. </small>
+                    
                     </div>
+                  
+                    <div class="form-group">
 
-
-                    <div class="field" class="form-group" data-controller="directuploads" >
-                        <%= form.label :signature %>
-                        <%= form.file_field :signature, class: "form-control", direct_upload: true, multiple:true %>
+                        <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image", 
+                                                for_model: "offer", field_name: "signature", 
+                                                model: offer %>
+                    
                         <small class="text-muted"> Upload signature. </small>
                     </div>
 

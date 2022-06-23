@@ -4,6 +4,8 @@
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#faqs-tab">
         FAQ</a>
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab">
+        Documents</a>
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#chat-tab" 
         data-action="click->tabdetails#loadData">Chat</a>
   </nav>
@@ -13,6 +15,13 @@
       <div id="faqs-tab" class="tab-pane fade in show active">
         <div id="faqs" class="associated_entity">
           <%= render "/offers/faq", offer: @offer %>
+        </div>     
+      </div>
+
+      <div id="docs-tab" class="tab-pane fade">
+        <div id="deal_docs" class="associated_entity">
+          <% documents = @offer.documents.includes(:folder, tags: :taggings) %>
+          <%= render "/documents/index", owner: @offer, entity: @offer.entity, documents:  %>
         </div>     
       </div>
 

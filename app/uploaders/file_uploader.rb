@@ -27,7 +27,7 @@ class FileUploader < Shrine
         "#{entity}/#{owner_path}"
       elsif %w[Offer Interest].include? record.owner_type
         # Put it inside the SecondarySale folder
-        "#{entity}/SecondarySale/#{record.owner.secodary_sale_id}/#{owner_path}"
+        "#{entity}/SecondarySale/#{record.owner.secondary_sale_id}/#{owner_path}"
       elsif ["DealInvestor"].include? record.owner_type
         # Put it inside the Deal folder
         "#{entity}/Deal/#{record.owner.deal_id}/#{owner_path}"

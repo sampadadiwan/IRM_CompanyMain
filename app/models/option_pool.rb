@@ -33,7 +33,6 @@ class OptionPool < ApplicationRecord
   has_many :folders, as: :owner, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
-  # has_one_attached :certificate_signature, service: :amazon
   include FileUploader::Attachment(:certificate_signature)
 
   has_rich_text :details

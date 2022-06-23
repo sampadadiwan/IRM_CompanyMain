@@ -61,13 +61,13 @@ class Offer < ApplicationRecord
   belongs_to :buyer, class_name: "Entity", optional: true
 
   has_many :messages, as: :owner, dependent: :destroy
-  has_one_attached :id_proof, service: :amazon
-  has_one_attached :address_proof, service: :amazon
 
-  has_many_attached :docs, service: :amazon
-  has_many_attached :signature, service: :amazon
-  has_many_attached :seller_docs, service: :amazon
-  has_one_attached  :spa, service: :amazon
+  has_many :documents, as: :owner, dependent: :destroy
+  accepts_nested_attributes_for :documents, allow_destroy: true
+  include FileUploader::Attachment(:signature)
+  include FileUploader::Attachment(:spa)
+  include FileUploader::Attachment(:id_proof)
+  include FileUploader::Attachment(:address_proof)
 
   # Customize form
   belongs_to :form_type, optional: true

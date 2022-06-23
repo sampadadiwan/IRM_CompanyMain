@@ -74,48 +74,12 @@
             <div class="card-body">
 
               <%= form.label :documents, "Option Pool Documents", class: "form-label" %>
-              <div class="mb-3" data-controller="multiple-upload" 
-                      data-multiple-upload-types-value="<%= FileUploader::ALLOWED_TYPES.to_json %>" 
-                      data-multiple-upload-server-value="<%= upload_server %>"
-                      data-multiple-upload-drop-here-value="Option Pool Documents"
-                      data-multiple-upload-parent-model-value="option_pool">
-                  <!-- will be replaced by Uppy -->
-                  <%= form.label :documents, "Select Files", class: "form-label" %>
-                  <%= form.file_field :documents,
-                      multiple: true,
-                      class: "form-control",
-                      data: { multiple_upload_target: "input" } %>
-              </div>
+              <%= render "layouts/multi_upload", form: form, title: "Option Pool Documents", 
+                          for_model: "option_pool" %>
 
-              <div data-controller="single-upload" data-single-upload-types-value="<%= FileUploader::ALLOWED_TYPES.to_json %>" data-single-upload-server-value="<%= upload_server %>">
-                <div class="mb-3">
-             
-                  <%= form.label :certificate_signature, class: "form-label" %>
-            
-                  <!-- for storing cover photo uploaded file data -->
-                  <%= form.hidden_field :certificate_signature,
-                    value: option_pool.cached_certificate_signature_data,
-                    data: { single_upload_target: "result" },
-                    id: nil %>
-            
-                  <!-- will be replaced by Uppy -->
-                  <%= form.file_field :certificate_signature,
-                    class: "form-control",
-                    data: { single_upload_target: "input" } %>
-                </div>
-            
-                <div class="UppyInput-Progress"></div>
-            
-                <div class="d-inline-block mt-1 mb-3">
-                  <!-- static link to the thumbnail generated on attachment -->
-                  <% image_src = option_pool.certificate_signature_url ? option_pool.certificate_signature_url : "" %>
-                  <%= image_tag image_src,
-                    width: 300,
-                    class: "img-thumbnail file-upload-preview",
-                    data: { single_upload_target: "preview" }  %>
-                </div>
-              </div>
-
+              <%= render "layouts/single_upload", form: form, field_label: "Upload Certificate Signature", 
+                          for_model: "option_pool", field_name: "certificate_signature", 
+                          model: option_pool %>
 
               <button class="btn btn-primary nextBtn btn-lg pull-right" type="button">Next</button>
             </div>

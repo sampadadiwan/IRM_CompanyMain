@@ -44,7 +44,7 @@ Shrine.plugin :validation
 Shrine.plugin :determine_mime_type, analyzer: :marcel
 Shrine.plugin :presign_endpoint
 Shrine.plugin :uppy_s3_multipart # load the plugin
-Shrine.plugin :instrumentation # adds instrumentation
+# Shrine.plugin :instrumentation # adds instrumentation
 Shrine.plugin :backgrounding # load the plugin globally
 
 Shrine::Attacher.destroy_block do

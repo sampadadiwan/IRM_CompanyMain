@@ -72,18 +72,18 @@
   </div>
 
 
-  <div class="field" class="form-group" data-controller="directuploads" >
-    <%= form.label :docs, "Documents" %>
-    <%= form.file_field :docs, class: "form-control", direct_upload: true, multiple:true %>
-    <small class="text-muted"> Upload bank statements, tax documents and shareholding documents. </small>
-  </div>
+  <%= form.label :documents, "Option Pool Documents", class: "form-label" %>
+  <%= render "layouts/multi_upload", form: form, title: "Offer Documents", 
+                          for_model: "offer" %>
+
+  <small class="text-muted"> Upload bank statements, tax documents and shareholding documents. </small>
 
 
-  <div class="field" class="form-group" data-controller="directuploads" >
-    <%= form.label :signature %>
-    <%= form.file_field :signature, class: "form-control", direct_upload: true, multiple:true %>
-    <small class="text-muted"> Upload signature. </small>
-  </div>
+  <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image", 
+                          for_model: "offer", field_name: "signature", 
+                          model: offer %>
+
+  <small class="text-muted"> Upload signature. </small>
 
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-primary"}%>

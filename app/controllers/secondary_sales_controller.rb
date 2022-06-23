@@ -144,7 +144,7 @@ class SecondarySalesController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_secondary_sale
-    @secondary_sale = SecondarySale.with_attached_public_docs.find(params[:id])
+    @secondary_sale = SecondarySale.find(params[:id])
     authorize @secondary_sale
   end
 
