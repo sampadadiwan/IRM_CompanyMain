@@ -1,4 +1,11 @@
 <%= render "/layouts/alerts" %>
-<%= render "documents/tree_view", documents: @documents, entity: @entity, 
-            folders: @folders, show_steps: @show_steps, owner: nil %>
+
+<% if params[:no_folders].present? %>
+    <%= turbo_frame_tag "documents_frame", target: "_top" do %>
+        <%= render "documents/index", documents: @documents, entity: @entity, owner: @owner %>
+    <% end %>
+<% else %>
+    <%= render "documents/tree_view", documents: @documents, entity: @entity, 
+            folders: @folders, show_steps: @show_steps, owner: @owner %>
+<% end %>
 

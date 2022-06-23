@@ -4,8 +4,11 @@
 %>
 <div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
-      
-      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab">Deal Docs</a>
+
+      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#access-tab">Access Rights</a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
+         data-action="click->tabdetails#loadData">Deal Docs</a>
       
       <% if show_deal == "Yes" %>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#deal-tab">Deal</a>
@@ -19,7 +22,6 @@
       <a  class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#activities-tab" 
           data-action="click->tabdetails#loadData">Deal Steps</a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-tab">Access Rights</a>
       
     </nav>
     
@@ -31,10 +33,16 @@
           <%= render "/deals/show", deal: deal %>
         </div>
       </div>
-      <div id="docs-tab" class="tab-pane fade in show active">
+      <div id="docs-tab" class="tab-pane fade">
         <div id="deal_docs" class="associated_entity">
-          <%= render "/documents/index", owner: deal, entity: deal.entity, 
-              documents: deal.documents.includes(:folder, tags: :taggings) %>
+          <%= link_to documents_path(owner_id: deal.id, owner_type: "Deal", 
+                                     entity_id: deal.entity_id, no_folders: true), 
+                                     class: "load_data_link", 
+                                     data: { turbo_frame: 'documents_frame' } do %>
+              <span>Loading...</span>
+          <% end %>
+          <%= turbo_frame_tag "documents_frame", target: "_top" do %>
+          <% end %>
         </div>     
       </div>
       <div id="activities-tab" class="tab-pane fade">
@@ -62,7 +70,7 @@
         </div>  
       </div>
 
-      <div id="access-tab" class="tab-pane fade">
+      <div id="access-tab" class="tab-pane fade in show active">
         <div id="access_rights" class="associated_entity">
 
           <%  access_right = AccessRight.new(

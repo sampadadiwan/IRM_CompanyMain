@@ -2,8 +2,7 @@ module WithFolder
   extend ActiveSupport::Concern
 
   def parent_folder
-    @parent ||= Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
-    @parent
+    Folder.where(entity_id:, level: 1, name: parent_folder_name).first
   end
 
   def owner_folder
@@ -15,8 +14,9 @@ module WithFolder
   included do
     after_create :setup_folder
   end
+
   def setup_folder
-    main_folder = Folder.create(entity_id:, parent: parent_folder, name:, folder_type: :system, owner: self)
+    main_folder = Folder.create(entity_id:, parent: parent_folder, name: main_folder_name, folder_type: :system, owner: self)
     # Ensure subfolders are created
     sub_folder_names.each do |name|
       Folder.create(entity_id:, parent: main_folder, name:, folder_type: :system, owner: self)
@@ -28,5 +28,13 @@ module WithFolder
   # Override
   def sub_folder_names
     []
+  end
+
+  def main_folder_name
+    name
+  end
+
+  def parent_folder_name
+    self.class.name.pluralize.titleize
   end
 end

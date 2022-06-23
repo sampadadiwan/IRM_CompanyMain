@@ -12,10 +12,7 @@ class DocumentsController < ApplicationController
   # GET /documents or /documents.json
   def index
     if params[:entity_id].present?
-      @entity = Entity.find(params[:entity_id])
-      @documents = Document.for_investor(current_user, @entity)
-      @folders, _map = Folder.build_full_tree(Folder.joins(:documents).merge(@documents).order(parent_folder_id: :asc).distinct)
-      @show_steps = false
+      entity_documents
     else
       @entity = current_user.entity
       @documents = policy_scope(Document)
@@ -24,8 +21,6 @@ class DocumentsController < ApplicationController
       @show_steps = true
     end
 
-    @documents = @documents.where(owner_id: params[:owner_id]) if params[:owner_id].present?
-    @documents = @documents.where(owner_type: params[:owner_type]) if params[:owner_type].present?
     @documents = @documents.where(owner_tag: params[:owner_tag]) if params[:owner_tag].present?
     @documents = @documents.where(folder_id: params[:folder_id]) if params[:folder_id].present?
     @documents = @documents.order(id: :desc)
@@ -119,6 +114,27 @@ class DocumentsController < ApplicationController
   def set_document
     @document = Document.find(params[:id])
     authorize @document
+  end
+
+  def entity_documents
+    # We are trying to get documents that belong to some entity
+    @entity = Entity.find(params[:entity_id])
+    @owner = nil
+    if params[:owner_type].present? && params[:owner_id].present?
+      # Show all the documents for the owner for that entity
+      @owner = params[:owner_type].constantize.find(params[:owner_id])
+      if policy(@owner).show?
+        @documents = Document.where(owner_id: params[:owner_id], entity_id: @entity.id)
+        @documents = @documents.where(owner_type: params[:owner_type])
+      else
+        @documents = Document.none
+      end
+    else
+      # Show all the documents for the investor for that entity
+      @documents = Document.for_investor(current_user, @entity)
+    end
+    @folders, _map = Folder.build_full_tree(Folder.joins(:documents).merge(@documents).order(parent_folder_id: :asc).distinct)
+    @show_steps = false
   end
 
   # Only allow a list of trusted parameters through.

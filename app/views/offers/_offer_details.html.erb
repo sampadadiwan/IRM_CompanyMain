@@ -4,8 +4,8 @@
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#faqs-tab">
         FAQ</a>
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab">
-        Documents</a>
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
+        data-action="click->tabdetails#loadData">Documents</a>
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#chat-tab" 
         data-action="click->tabdetails#loadData">Chat</a>
   </nav>
@@ -20,8 +20,14 @@
 
       <div id="docs-tab" class="tab-pane fade">
         <div id="deal_docs" class="associated_entity">
-          <% documents = @offer.documents.includes(:folder, tags: :taggings) %>
-          <%= render "/documents/index", owner: @offer, entity: @offer.entity, documents:  %>
+          <%= link_to documents_path(owner_id: offer.id, owner_type: "Offer", 
+                                     entity_id: offer.entity_id, no_folders: true), 
+                                     class: "load_data_link", 
+                                     data: { turbo_frame: 'documents_frame' } do %>
+              <span>Loading...</span>
+          <% end %>
+          <%= turbo_frame_tag "documents_frame", target: "_top" do %>
+          <% end %>
         </div>     
       </div>
 

@@ -21,7 +21,7 @@
 #
 
 class Interest < ApplicationRecord
-  include WithFolder
+  # include WithFolder
 
   belongs_to :user
   belongs_to :secondary_sale
@@ -92,5 +92,13 @@ class Interest < ApplicationRecord
 
   def allocation_delta
     allocation_quantity - offer_quantity
+  end
+
+  def main_folder_name
+    entity.name
+  end
+
+  def parent_folder_name
+    "Secondary Sales"
   end
 end

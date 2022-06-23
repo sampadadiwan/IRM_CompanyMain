@@ -72,8 +72,12 @@ class DealInvestor < ApplicationRecord
     investor_name
   end
 
-  def name
+  def main_folder_name
     investor_name
+  end
+
+  def parent_folder_name
+    "Deals"
   end
 
   def short_name

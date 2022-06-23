@@ -193,4 +193,12 @@ class Offer < ApplicationRecord
   def notify_approval
     OfferMailer.with(offer_id: id).notify_approval.deliver_later
   end
+
+  def main_folder_name
+    user.full_name
+  end
+
+  def parent_folder_name
+    "Secondary Sales"
+  end
 end
