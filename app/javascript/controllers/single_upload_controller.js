@@ -1,6 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-// import { FileInput, Informer, ProgressBar, ThumbnailGenerator } from '@uppy'
-import { uppyInstance, uploadedFileData } from '../uppy'
+import { uppyInstance, uploadedFileData } from 'custom/uppy'
 const { FileInput } = Uppy
 const { Informer } = Uppy
 const { StatusBar } = Uppy
