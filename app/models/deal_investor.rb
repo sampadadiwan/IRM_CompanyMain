@@ -26,6 +26,7 @@
 
 class DealInvestor < ApplicationRecord
   # include Trackable
+  include WithFolder
 
   monetize :secondary_investment_cents, with_currency: ->(i) { i.deal.currency }
   monetize :primary_amount_cents, with_currency: ->(i) { i.deal.currency }
@@ -62,14 +63,16 @@ class DealInvestor < ApplicationRecord
     self.investor_name = investor.investor_name
   end
 
-  after_create :setup_folder
-  after_create :setup_folder
   after_save :create_activities_later, if: proc { |di| di.deal.started? }
   def create_activities_later
     GenerateDealActivitiesJob.perform_later(id, "DealInvestor")
   end
 
   def to_s
+    investor_name
+  end
+
+  def name
     investor_name
   end
 
@@ -131,14 +134,5 @@ class DealInvestor < ApplicationRecord
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
       .where("investor_accesses.entity_id = deals.entity_id")
-  end
-
-  def setup_folder
-    parent = Folder.where(entity_id:, name: "Deal Investors", owner: deal).first
-    Folder.create(entity_id:, parent:, name: investor_name, folder_type: :system, owner: self)
-  end
-
-  def owner_folder
-    Folder.where(entity_id:, owner: self).first
   end
 end

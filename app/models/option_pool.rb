@@ -20,6 +20,7 @@
 #
 
 class OptionPool < ApplicationRecord
+  include WithFolder
   audited
 
   belongs_to :entity
@@ -83,19 +84,7 @@ class OptionPool < ApplicationRecord
     number_of_options - excercised_quantity
   end
 
-  after_create :setup_folder
-  def setup_folder
-    parent = Folder.where(entity_id:, level: 1, name: "Option Pools").first
-    root_folder = Folder.create(entity_id:, parent:, name:, folder_type: :system)
-    Folder.create(entity_id:, parent: root_folder, name: "Holdings", folder_type: :system, owner: self)
-    Folder.create(entity_id:, parent: root_folder, name: "Excercises", folder_type: :system, owner: self)
-    # Move the docs to the right folder post creation
-    documents.update(folder_id: root_folder.id)
-  end
-
-  def owner_folder
-    # Since the initial docs are created before the rootfolder is created
-    # store them in the root folder. Move them to the right folder post creation
-    Folder.where(entity_id:, owner: self).first || Folder.where(entity_id:, level: 1, name: "Option Pools").first
+  def sub_folder_names
+    ["Excerices"]
   end
 end

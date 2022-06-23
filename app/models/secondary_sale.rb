@@ -32,6 +32,7 @@
 class SecondarySale < ApplicationRecord
   include Trackable
   include ActivityTrackable
+  include WithFolder
 
   # Make all models searchable
   update_index('secondary_sale') { self }
@@ -136,20 +137,8 @@ class SecondarySale < ApplicationRecord
     name
   end
 
-  after_create :setup_folder
-  def setup_folder
-    parent = Folder.where(entity_id:, level: 1, name: "Secondary Sales").first
-    sale_folder = Folder.create(entity_id:, parent:, name:, folder_type: :system, owner: self)
-    Folder.create(entity_id:, parent: sale_folder, name: "Offers", folder_type: :system, owner: self)
-    Folder.create(entity_id:, parent: sale_folder, name: "Interests", folder_type: :system, owner: self)
-    # Move the docs to the right folder post creation
-    documents.update(folder_id: sale_folder.id)
-  end
-
-  def owner_folder
-    # Since the initial docs are created before the rootfolder is created
-    # store them in the root folder. Move them to the right folder post creation
-    Folder.where(entity_id:, owner: self).first || Folder.where(entity_id:, level: 1, name: "Secondary Sales").first
+  def sub_folder_names
+    %w[Offers Interests]
   end
 
   def document_tags

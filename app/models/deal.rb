@@ -21,6 +21,7 @@
 
 class Deal < ApplicationRecord
   include Trackable
+  include WithFolder
   # include ActivityTrackable
   # include Impressionable
 
@@ -87,16 +88,7 @@ class Deal < ApplicationRecord
     DealActivity.templates(self).collect(&:title)
   end
 
-  after_create :setup_folder
-  def setup_folder
-    parent = Folder.where(entity_id:, level: 1, name: "Deals").first
-    deal_folder = Folder.create(entity_id:, parent:, name:, folder_type: :system, owner: self)
-    Folder.create(entity_id:, parent: deal_folder, name: "Deal Investors", folder_type: :system, owner: self)
-
-    deal_folder
-  end
-
-  def owner_folder
-    Folder.where(entity_id:, owner: self).first
+  def sub_folder_names
+    ["Deal Investors"]
   end
 end

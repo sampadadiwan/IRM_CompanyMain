@@ -199,7 +199,12 @@ namespace :irm do
       (1..4).each do |p|
         pool = FactoryBot.build(:option_pool, entity: e, approved: false, name: "Pool #{p}")
         
-        pool.certificate_signature.attach(io: File.open("#{Rails.root}/public/sample_uploads/signature.png"), filename: 'signature.png')
+        uploader = FileUploader.new(:store)
+        file = File.new("#{Rails.root}/public/sample_uploads/signature.png")
+        uploaded_file = uploader.upload(file)
+
+        pool.certificate_signature_data = uploaded_file.to_json
+        pool.save
 
         (1..4).each do |i|
           # 10 + 20 + 30 + 40
