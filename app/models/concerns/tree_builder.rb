@@ -25,7 +25,7 @@ module TreeBuilder
         end
       end
 
-      # puts "########### #{tree}"
+      Rails.logger.debug { "########### #{tree}" }
       [tree, map]
     end
 

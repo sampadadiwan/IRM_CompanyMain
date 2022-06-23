@@ -1,7 +1,9 @@
 <div class="associated_entity">
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#folders-tab">Child Folders</a>
     </nav>
+    
   
   
     <div class="tab-content" data-controller="datatable">
@@ -16,6 +18,22 @@
             <%= render "/access_rights/index", access_rights: folder.access_rights.includes(:investor, :owner), access_right: access_right %>
           </div>
         </div>
-    </div>
+    
+        <div id="folders-tab" class="tab-pane fade">
+          <div id="folders" class="associated_entity">
+            <% 
+              curr_folders = []
+              curr_folders << folder
+              folder.folders.each do |f|
+                curr_folders << f
+              end
+              folders, _map = Folder.build_tree(curr_folders) 
+            %>
+            <%= render "documents/tree_view", documents: folder.documents.page().per(100), 
+                        entity: folder.entity, folders: folders, show_steps: false %>
+          </div>
+        </div>
+
+    </div>  
 
 </div>

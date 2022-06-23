@@ -31,7 +31,7 @@ export default class extends Controller {
       .use(Dashboard, {
         target: this.inputTarget.parentNode,
         inline: true,
-        height: 300,
+        height: 250,
         replaceTargetContent: true,
         locale: {
           strings: {
