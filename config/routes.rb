@@ -77,7 +77,6 @@ Rails.application.routes.draw do
   resources :access_rights do
     get 'search', on: :collection
   end
-  resources :deal_docs
   resources :notifications
 
   resources :messages do
@@ -109,7 +108,6 @@ Rails.application.routes.draw do
     resources :deals
     resources :deal_investors
     resources :deal_activities
-    resources :deal_docs
     resources :holdings
     resources :offers
     resources :interests

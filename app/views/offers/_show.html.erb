@@ -207,23 +207,14 @@
             <td colspan="2" class="bg-primary"></td>
         </tr>
 
-        <tr>
-            <td>
-            Documents
-            </td>
-            <td>
-            <%= render "/layouts/attachments" , attachments: @offer.docs %>
-            </td>
-        </tr>
 
         <tr>
             <td>
-            Signature
+              Signature
             </td>
             <td>
-            <%= render "/layouts/attachments" , attachments: @offer.signature %>
-            <%= image_tag image_url(rails_blob_path(@offer.signature[0])), 
-            style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if @offer.signature.present? %>
+              <%= image_tag @offer.signature_url, 
+                style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if @offer.signature.present? %>
             </td>
         </tr>
 

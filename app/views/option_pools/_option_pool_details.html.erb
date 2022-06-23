@@ -27,7 +27,7 @@
             </div>
         </div>
         <div id="docs-tab" class="tab-pane fade">
-            <div id="deal_docs" class="associated_entity">
+            <div id="docs" class="associated_entity">
               <% 
                 documents = @option_pool.documents.includes(:folder, tags: :taggings) 
               %>

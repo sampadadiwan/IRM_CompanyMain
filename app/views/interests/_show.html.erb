@@ -210,20 +210,6 @@
         </td>
       </tr>
 
-      <% if current_user %>
-    
-      <tr>
-        <td>
-        Documents
-        </td>
-        <td>
-        <%= render "/layouts/attachments" , attachments: interest.buyer_docs %>
-        </td>
-      </tr>
-
-      
-      <% end %>
-
       
       <% if interest.secondary_sale.spa.present? || interest.spa.present? %>
 

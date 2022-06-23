@@ -12,7 +12,6 @@ class DealInvestorDashboard < Administrate::BaseDashboard
     investor: Field::BelongsTo,
     entity: Field::BelongsTo,
     deal_activities: Field::HasMany,
-    deal_docs: Field::HasMany,
     id: Field::Number,
     status: Field::String,
     primary_amount: ObfuscatedField,
@@ -49,7 +48,6 @@ class DealInvestorDashboard < Administrate::BaseDashboard
     created_at
     updated_at
     deal_activities
-    deal_docs
   ].freeze
 
   # FORM_ATTRIBUTES

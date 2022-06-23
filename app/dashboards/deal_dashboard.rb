@@ -12,7 +12,6 @@ class DealDashboard < Administrate::BaseDashboard
     deal_investors: Field::HasMany,
     investors: Field::HasMany,
     deal_activities: Field::HasMany,
-    deal_docs: Field::HasMany,
     access_rights: Field::HasMany,
     id: Field::Number,
     name: Field::String,
@@ -51,7 +50,6 @@ class DealDashboard < Administrate::BaseDashboard
     end_date
     deal_investors
     deal_activities
-    deal_docs
     access_rights
   ].freeze
 

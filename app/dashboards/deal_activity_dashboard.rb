@@ -11,7 +11,6 @@ class DealActivityDashboard < Administrate::BaseDashboard
     deal: Field::BelongsTo,
     deal_investor: Field::BelongsTo,
     entity: Field::BelongsTo,
-    deal_docs: Field::HasMany,
     id: Field::Number,
     by_date: Field::Date,
     status: Field::String,
@@ -53,7 +52,6 @@ class DealActivityDashboard < Administrate::BaseDashboard
     deal
     deal_investor
     entity
-    deal_docs
 
   ].freeze
 

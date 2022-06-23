@@ -44,7 +44,7 @@ When('I create a new document {string}') do |args|
 
   sleep(2)
   click_on("Save")
-  sleep(4)
+  sleep(8)
   
 end
 

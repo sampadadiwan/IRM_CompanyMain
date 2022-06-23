@@ -6,7 +6,6 @@
             </span>
             <div class="dropdown-menu">
                 <%= link_to "View Investor", deal_investor_path(id: deal_investor.id), class: "dropdown-item" %>
-                <%= link_to "View Docs", deal_docs_path(deal_investor_id: deal_investor.id, deal_id: deal_investor.deal_id), class: "dropdown-item" %>
                 <%= link_to "View Tasks", messages_path(owner_id: deal_investor.id, owner_type: "DealInvestor",
                          investor_id: deal_investor.investor_id, deal_id: deal_investor.deal_id), class: "dropdown-item" %>
                 <%= link_to "View Steps", deal_activities_path(deal_investor_id: deal_investor.id, deal_id: deal_investor.deal_id), class: "dropdown-item" %>

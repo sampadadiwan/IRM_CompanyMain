@@ -33,8 +33,6 @@ class DealActivity < ApplicationRecord
   belongs_to :deal_investor, optional: true
   belongs_to :entity
 
-  has_many :deal_docs, dependent: :destroy
-
   delegate :investor_name, to: :deal_investor, allow_nil: true
   delegate :name, to: :entity, prefix: :entity
   delegate :name, to: :deal, prefix: :deal
