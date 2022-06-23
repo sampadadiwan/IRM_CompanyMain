@@ -22,16 +22,19 @@
       <input hidden=true value="#holdings-tab" id="clickOnLoad" />
       
       <a class="nav-link <%= holdings_active ? 'active' : '' %>" data-bs-toggle="pill" data-toggle="tab" href="#holdings-tab" data-action="click->tabdetails#loadData">My Holdings</a>
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#offerings-tab" data-action="click->tabdetails#loadData">My Offers</a>      
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#offerings-tab" 
+          data-action="click->tabdetails#loadData">My Offers</a>      
 
     <% elsif policy(secondary_sale).show_interest? %>
       <% interests_active = true;document_tag="Buyer" %>
       <input hidden=true value="#interests-tab" id="clickOnLoad" />
       
-      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData">Interests</a>      
+      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#interests-tab"    
+          data-action="click->tabdetails#loadData">Interests</a>      
     <% end %>
 
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab">Documents</a>
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
+        data-action="click->tabdetails#loadData">Documents</a>
 
   </nav>
 
@@ -50,14 +53,20 @@
 
       <div id="docs-tab" class="tab-pane fade">
         <div id="deal_docs" class="associated_entity">
-          <% 
-            documents = secondary_sale.documents.includes(:folder, tags: :taggings) 
-            documents = documents.where(owner_tag: document_tag) if document_tag.present?
-          %>
-          <%= render "/documents/index", owner: secondary_sale, entity: secondary_sale.entity, 
-              documents:  %>
+          <% documents = secondary_sale.documents.includes(:folder, tags: :taggings) %>
+
+          <%= link_to documents_path(owner_id: secondary_sale.id, owner_type: "SecondarySale", 
+                                     owner_tag: document_tag,
+                                     entity_id: secondary_sale.entity_id, no_folders: true), 
+                                     class: "load_data_link", 
+                                     data: { turbo_frame: 'documents_frame' } do %>
+              <span>Loading...</span>
+          <% end %>
+          <%= turbo_frame_tag "documents_frame", target: "_top" do %>
+          <% end %>
         </div>     
       </div>
+
 
       <div id="offerings-tab" class="tab-pane fade">
         <div id="offerings" class="associated_entity">

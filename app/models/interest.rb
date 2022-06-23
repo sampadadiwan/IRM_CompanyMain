@@ -21,7 +21,7 @@
 #
 
 class Interest < ApplicationRecord
-  # include WithFolder
+  include WithFolder
 
   belongs_to :user
   belongs_to :secondary_sale
@@ -31,8 +31,9 @@ class Interest < ApplicationRecord
   has_many :tasks, as: :owner, dependent: :destroy
   has_many :messages, as: :owner, dependent: :destroy
 
-  has_one_attached  :spa, service: :amazon
-  has_many_attached :buyer_docs, service: :amazon
+  include FileUploader::Attachment(:spa)
+  has_many :documents, as: :owner, dependent: :destroy
+  accepts_nested_attributes_for :documents, allow_destroy: true
 
   # Customize form
   belongs_to :form_type, optional: true

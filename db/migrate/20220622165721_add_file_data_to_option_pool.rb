@@ -5,5 +5,6 @@ class AddFileDataToOptionPool < ActiveRecord::Migration[7.0]
     add_column :offers, :spa_data, :text
     add_column :offers, :id_proof_data, :text
     add_column :offers, :address_proof_data, :text
+    add_column :interests, :spa_data, :text
   end
 end

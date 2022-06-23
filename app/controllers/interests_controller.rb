@@ -145,6 +145,6 @@ class InterestsController < ApplicationController
                                      :allocation_quantity, :comments,
                                      :interest_entity_id, :secondary_sale_id, :buyer_entity_name,
                                      :address, :contact_name, :email, :PAN, :final_agreement,
-                                     buyer_docs: [], properties: {})
+                                     documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

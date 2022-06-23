@@ -571,6 +571,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_22_165721) do
     t.integer "offer_quantity", default: 0
     t.boolean "verified", default: false
     t.text "comments"
+    t.text "spa_data"
     t.index ["entity_id"], name: "index_interests_on_entity_id"
     t.index ["form_type_id"], name: "index_interests_on_form_type_id"
     t.index ["interest_entity_id"], name: "index_interests_on_interest_entity_id"
