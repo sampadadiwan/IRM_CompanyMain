@@ -84,7 +84,8 @@ class OptionPool < ApplicationRecord
     number_of_options - excercised_quantity
   end
 
-  def sub_folder_names
-    ["Excerices"]
+  def setup_folder_details
+    parent_folder = Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
+    setup_folder(parent_folder, name, ["Excerices"])
   end
 end

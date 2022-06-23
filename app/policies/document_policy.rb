@@ -19,13 +19,14 @@ class DocumentPolicy < ApplicationPolicy
       true
     else
       (user.entity.enable_documents && show_investor?) ||
-        (record.owner && Pundit.policy(user, record.owner).show?) ||
+        (record.owner && owner_policy.show?) ||
         allow_external?(:read)
     end
   end
 
   def create?
-    (user.entity_id == record.entity_id && user.entity.enable_documents)
+    (user.entity_id == record.entity_id && user.entity.enable_documents) ||
+      (record.owner && owner_policy.update?)
   end
 
   def new?
@@ -34,7 +35,7 @@ class DocumentPolicy < ApplicationPolicy
 
   def update?
     create? ||
-      (record.owner && Pundit.policy(user, record.owner).update?) ||
+      (record.owner && owner_policy.update?) ||
       allow_external?(:write)
   end
 
@@ -51,5 +52,7 @@ class DocumentPolicy < ApplicationPolicy
             .where("documents.id=?", record.id).first.present?
   end
 
-  def owner_policy; end
+  def owner_policy
+    Pundit.policy(user, record.owner)
+  end
 end

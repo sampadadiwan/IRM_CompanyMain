@@ -139,4 +139,9 @@ class DealInvestor < ApplicationRecord
       .merge(InvestorAccess.approved_for_user(user))
       .where("investor_accesses.entity_id = deals.entity_id")
   end
+
+  def setup_folder_details
+    parent_folder = deal.document_folder.folders.where(name: "Deal Investors").first
+    setup_folder(parent_folder, investor_name, [])
+  end
 end

@@ -194,11 +194,8 @@ class Offer < ApplicationRecord
     OfferMailer.with(offer_id: id).notify_approval.deliver_later
   end
 
-  def main_folder_name
-    user.full_name
-  end
-
-  def parent_folder_name
-    "Secondary Sales"
+  def setup_folder_details
+    parent_folder = secondary_sale.document_folder.folders.where(name: "Offers").first
+    setup_folder(parent_folder, user.full_name, [])
   end
 end

@@ -21,6 +21,7 @@ class Folder < ApplicationRecord
   enum :folder_type, %i[regular system]
 
   belongs_to :parent, class_name: "Folder", foreign_key: :parent_folder_id, optional: true
+  has_many :folders, foreign_key: :parent_folder_id, dependent: :destroy
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true
 

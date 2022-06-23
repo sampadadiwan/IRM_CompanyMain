@@ -137,8 +137,9 @@ class SecondarySale < ApplicationRecord
     name
   end
 
-  def sub_folder_names
-    %w[Offers Interests]
+  def setup_folder_details
+    parent_folder = Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
+    setup_folder(parent_folder, name, %w[Offers Interests])
   end
 
   def document_tags

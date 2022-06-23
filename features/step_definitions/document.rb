@@ -42,9 +42,10 @@ When('I create a new document {string}') do |args|
   select("Test Folder", from: "document_folder_id") if @document.folder_id
 
 
-  sleep(3)
+  sleep(2)
   click_on("Save")
-
+  sleep(4)
+  
 end
 
 Then('an document should be created') do
@@ -56,7 +57,11 @@ Then('an document should be created') do
   @created_doc.download.should == @document.download
   @created_doc.printing.should == @document.printing
   @created_doc.tag_list.should == @document.tag_list
-  @created_doc.entity_id.should == @user.entity_id
+  if @document.owner
+    @created_doc.entity_id.should == @document.owner.entity_id
+  else
+    @created_doc.entity_id.should == @user.entity_id
+  end
   @document = @created_doc
 end
 
@@ -93,12 +98,30 @@ end
 Then('I should see the document details on the details page') do
   page.should have_content(@document.name)
   page.should have_content(@document.tag_list)
+  page.should have_content(@document.folder.full_path)
 end
 
 Then('I should see the document in all documents page') do
   visit(documents_path)
   page.should have_content(@document.name)
   page.should have_content(@document.tag_list)
+  page.should have_content(@document.folder.full_path)
 end
 
-  
+Then('the deal document details must be setup right') do
+  @document.owner.should == @deal
+  @document.folder.name.should == @deal.name
+  @document.folder.full_path.should == "/Deals/#{@deal.name}"
+end
+
+Given('I visit the deal investor details page') do
+  @deal_investor = @deal.deal_investors.first
+  visit( deal_investor_path(@deal_investor) )
+end
+
+When('the deal investor document details must be setup right') do
+  @document.owner.should == @deal_investor
+  @document.folder.name.should == @deal_investor.investor_name
+  @document.folder.full_path.should == "/Deals/#{@deal.name}/Deal Investors/#{@deal_investor.investor_name}"
+end
+

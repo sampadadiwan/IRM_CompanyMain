@@ -61,7 +61,7 @@ class Document < ApplicationRecord
   end
 
   def setup_folder
-    self.folder = owner.owner_folder if folder.nil? && owner
+    self.folder = owner.document_folder if folder.nil? && owner
   end
 
   def setup_access_rights

@@ -95,11 +95,8 @@ class Interest < ApplicationRecord
     allocation_quantity - offer_quantity
   end
 
-  def main_folder_name
-    entity.name
-  end
-
-  def parent_folder_name
-    "Secondary Sales"
+  def setup_folder_details
+    parent_folder = secondary_sale.document_folder.folders.where(name: "Interests").first
+    setup_folder(parent_folder, interest_entity.name, [])
   end
 end
