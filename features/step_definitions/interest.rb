@@ -71,6 +71,12 @@
 
   end
   
+
+  When('I visit the interest details page') do
+    @interest ||= Interest.last
+    visit(interest_path(@interest))
+  end
+  
   
   Then('I should see the interest details') do
     sleep(1)

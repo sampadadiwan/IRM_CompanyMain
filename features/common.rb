@@ -139,7 +139,11 @@ When(/^I click "([^"]*)" in the side panel$/) do |arg1|
   sleep(1)
 end
 
-
+When('I click the tab {string}') do |args|
+  within(".nav") do
+    click_on(args)
+  end
+end
 
 Then('when I click the {string} button') do |arg1|
   click_on(arg1)    

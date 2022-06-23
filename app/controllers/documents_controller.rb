@@ -1,11 +1,9 @@
 class DocumentsController < ApplicationController
+  include ActiveStorage::SetCurrent
+
   before_action :set_document, only: %w[show update destroy edit]
   after_action :verify_authorized, except: %i[index search investor_documents]
   after_action :verify_policy_scoped, only: []
-
-  before_action do
-    ActiveStorage::Current.host = request.base_url
-  end
 
   impressionist actions: [:show]
 

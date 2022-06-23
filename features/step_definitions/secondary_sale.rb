@@ -22,6 +22,10 @@
     click_on("Save") 
     sleep(1)  
   end
+
+  When('I visit the sale details page') do
+    visit(secondary_sale_path(@sale))
+  end
   
   Then('an sale should be created') do
     @sale = SecondarySale.last

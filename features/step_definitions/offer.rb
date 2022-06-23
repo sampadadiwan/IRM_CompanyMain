@@ -111,6 +111,12 @@
       Then when I submit the offer
     )
   end
+
+  When('I visit the offer details page') do
+    @offer ||= Offer.first
+    visit(offer_path(@offer))
+  end
+  
   
   Then('I should see the offer details') do
     expect(page).to have_content(@user.full_name)
