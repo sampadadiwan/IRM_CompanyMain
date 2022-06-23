@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 const { Dashboard, GoogleDrive, Dropbox } = Uppy
 
-import { uppyInstance, uploadedFileData } from '../uppy'
+import { uppyInstance, uploadedFileData } from 'uppy'
 
 export default class extends Controller {
   static targets = [ 'input' ]
