@@ -76,7 +76,7 @@ Metrics/PerceivedComplexity:
     - 'app/controllers/tasks_controller.rb'
 Metrics/ClassLength:
   Description: 'Avoid classes longer than 100 lines of code.'
-  Max: 150
+  Max: 170
   Enabled: true
 
 Metrics/ModuleLength:

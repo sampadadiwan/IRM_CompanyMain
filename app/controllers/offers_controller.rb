@@ -133,6 +133,9 @@ class OffersController < ApplicationController
     @offer.entity_id = @offer.secondary_sale.entity_id
 
     authorize @offer
+    params[:offer][:documents_attributes].each do |_id, doc_attribute|
+      doc_attribute.merge!(user_id: current_user.id)
+    end
 
     respond_to do |format|
       if @offer.save
@@ -147,6 +150,10 @@ class OffersController < ApplicationController
 
   # PATCH/PUT /offers/1 or /offers/1.json
   def update
+    params[:offer][:documents_attributes].each do |_id, doc_attribute|
+      doc_attribute.merge!(user_id: current_user.id)
+    end
+
     respond_to do |format|
       if @offer.update(offer_params)
         format.html { redirect_to offer_url(@offer), notice: "Offer was successfully updated." }

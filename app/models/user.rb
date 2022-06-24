@@ -99,7 +99,7 @@ class User < ApplicationRecord
     end
 
     self.active = true
-    self.permissions = User.permissions.keys
+    # self.permissions = User.permissions.keys
   end
 
   # There may be pending investor access given before the user is created.

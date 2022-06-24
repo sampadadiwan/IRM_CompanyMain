@@ -72,6 +72,7 @@ class DocumentsController < ApplicationController
   def create
     @document = Document.new(document_params)
     @document.entity_id = current_user.entity_id
+    @document.user_id = current_user.id
     authorize @document
 
     respond_to do |format|

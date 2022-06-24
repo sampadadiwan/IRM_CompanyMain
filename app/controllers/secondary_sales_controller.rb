@@ -106,6 +106,10 @@ class SecondarySalesController < ApplicationController
     @secondary_sale.entity_id = current_user.entity_id
     authorize @secondary_sale
 
+    params[:secondary_sale][:documents_attributes].each do |_id, doc_attribute|
+      doc_attribute.merge!(user_id: current_user.id)
+    end
+
     respond_to do |format|
       if @secondary_sale.save
         format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "Secondary sale was successfully created." }
@@ -119,6 +123,10 @@ class SecondarySalesController < ApplicationController
 
   # PATCH/PUT /secondary_sales/1 or /secondary_sales/1.json
   def update
+    params[:secondary_sale][:documents_attributes].each do |_id, doc_attribute|
+      doc_attribute.merge!(user_id: current_user.id)
+    end
+
     respond_to do |format|
       if @secondary_sale.update(secondary_sale_params)
         format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "Secondary sale was successfully updated." }

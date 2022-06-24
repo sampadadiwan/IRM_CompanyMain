@@ -25,6 +25,10 @@ class FoldersController < ApplicationController
     @folder.entity_id = current_user.entity_id
     authorize @folder
 
+    params[:folder][:documents_attributes].each do |doc_attribute|
+      doc_attribute.merge!(user_id: current_user.id)
+    end
+
     respond_to do |format|
       if @folder.save
         format.html { redirect_to folder_url(@folder), notice: "Folder was successfully created." }
@@ -38,6 +42,10 @@ class FoldersController < ApplicationController
 
   # PATCH/PUT /folders/1 or /folders/1.json
   def update
+    params[:folder][:documents_attributes].each do |doc_attribute|
+      doc_attribute.merge!(user_id: current_user.id)
+    end
+
     respond_to do |format|
       if @folder.update(folder_params)
         format.html { redirect_to folder_url(@folder), notice: "Folder was successfully updated." }

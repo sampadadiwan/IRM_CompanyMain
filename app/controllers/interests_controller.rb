@@ -43,6 +43,10 @@ class InterestsController < ApplicationController
     @interest.entity_id = @interest.secondary_sale.entity_id
     authorize @interest
 
+    params[:interest][:documents_attributes].each do |_id, doc_attribute|
+      doc_attribute.merge!(user_id: current_user.id)
+    end
+
     respond_to do |format|
       if @interest.save
         format.html { redirect_to interest_url(@interest), notice: "Interest was successfully created." }
@@ -56,6 +60,10 @@ class InterestsController < ApplicationController
 
   # PATCH/PUT /interests/1 or /interests/1.json
   def update
+    params[:interest][:documents_attributes].each do |_id, doc_attribute|
+      doc_attribute.merge!(user_id: current_user.id)
+    end
+
     respond_to do |format|
       if @interest.update(interest_params)
         format.html { redirect_to interest_url(@interest), notice: "Interest was successfully updated." }

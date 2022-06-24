@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_06_24_145108) do
+ActiveRecord::Schema[7.0].define(version: 2022_06_24_153540) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -279,11 +279,13 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_24_145108) do
     t.bigint "owner_id"
     t.string "owner_tag", limit: 20
     t.boolean "orignal", default: false
+    t.bigint "user_id", null: false
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
     t.index ["folder_id"], name: "index_documents_on_folder_id"
     t.index ["form_type_id"], name: "index_documents_on_form_type_id"
     t.index ["owner_type", "owner_id"], name: "index_documents_on_owner"
+    t.index ["user_id"], name: "index_documents_on_user_id"
   end
 
   create_table "entities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1008,6 +1010,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_24_145108) do
   add_foreign_key "deals", "form_types"
   add_foreign_key "documents", "folders"
   add_foreign_key "documents", "form_types"
+  add_foreign_key "documents", "users"
   add_foreign_key "excercises", "entities"
   add_foreign_key "excercises", "holdings"
   add_foreign_key "excercises", "option_pools"

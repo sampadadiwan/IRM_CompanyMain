@@ -11,19 +11,13 @@ class ExcercisesController < ApplicationController
     @entity = current_user.entity
     query = params[:query]
     if query.present?
-      @excercises = if current_user.has_role?(:super)
-
-                      ExcerciseIndex.query(query_string: { fields: ExcerciseIndex::SEARCH_FIELDS,
-                                                           query:, default_operator: 'and' }).objects
-
-                    else
-                      ExcerciseIndex.filter(term: { entity_id: @entity.id })
-                                    .query(query_string: { fields: ExcerciseIndex::SEARCH_FIELDS,
-                                                           query:, default_operator: 'and' }).objects
-                    end
-
+      @excercises = ExcerciseIndex.filter(term: { entity_id: @entity.id })
+                                  .query(query_string: { fields: ExcerciseIndex::SEARCH_FIELDS,
+                                                         query:, default_operator: 'and' }).objects
+      render "index"
+    else
+      redirect_to excercises_path
     end
-    render "index"
   end
 
   # GET /excercises/1 or /excercises/1.json

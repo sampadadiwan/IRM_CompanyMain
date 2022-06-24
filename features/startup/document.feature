@@ -28,8 +28,8 @@ Scenario Outline: Create new document
 
   Examples:
   	|user	    |entity               |document                   |access_rights	|
-  	|  	        |entity_type=Startup  |name=Q1 Summary;folder_id=1|access_type=Folder;access_to_category=Lead Investor|
-    |  	        |entity_type=Startup  |name=Strategy;folder_id=1  |access_type=Folder;access_to_category=Board|
+  	|  	      |entity_type=Startup  |name=Q1 Summary;folder_id=1|access_type=Folder;access_to_category=Lead Investor|
+    |  	      |entity_type=Startup  |name=Strategy;folder_id=1  |access_type=Folder;access_to_category=Board|
 
 Scenario Outline: Add deal document
   Given Im logged in as a user "<user>" for an entity "<entity>"
