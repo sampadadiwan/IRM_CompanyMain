@@ -6,6 +6,6 @@
     <% end %>
 <% else %>
     <%= render "documents/tree_view", documents: @documents, entity: @entity, 
-            folders: @folders, show_steps: @show_steps, owner: @owner %>
+            folders: @folders, show_steps: @show_steps, owner: @owner, no_folders: @no_folders %>
 <% end %>
 

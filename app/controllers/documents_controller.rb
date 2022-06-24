@@ -34,6 +34,7 @@ class DocumentsController < ApplicationController
     @folders, _map = Folder.build_full_tree(Folder.joins(:documents).merge(@documents).distinct)
     @documents = @documents.order(id: :desc).page params[:page]
 
+    @no_folders = false
     render "index"
   end
 
@@ -45,6 +46,7 @@ class DocumentsController < ApplicationController
                                 .query(query_string: { fields: DocumentIndex::SEARCH_FIELDS,
                                                        query:, default_operator: 'and' }).objects
 
+      @no_folders = true
       render "index"
     else
       redirect_to documents_path

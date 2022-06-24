@@ -1,10 +1,11 @@
+<% no_folders ||= false %>
 <%= render "/layouts/steps", steps: ["Create Folders", "Upload Docs", "Setup Access Rights"].freeze if show_steps %>
 
 <div class="row">
     <!-- Show hide the folder view based on action -->
-    <% doc_index_class = (params[:action] == "search") ? "col-lg-12 mb-4" : "col-lg-9 mb-4" %>
+    <% doc_index_class = (no_folders) ? "col-lg-12 mb-4" : "col-lg-9 mb-4" %>
 
-    <% if params[:action] != "search" %>
+    <% unless no_folders %>
     <div class="col-lg-3 mb-4">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
