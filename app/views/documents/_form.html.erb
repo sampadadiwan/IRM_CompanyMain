@@ -28,7 +28,7 @@
   <% if document.owner == nil %>
     <div class="form-group">
       <%= form.label :folder %>
-      <%= form.select :folder_id, Folder.for_entity(document.entity).map{|f| [f.full_path, f.id]} ,{}, class: "form-control select2"  %>
+      <%= form.select :folder_id, Folder.not_system.for_entity(document.entity).map{|f| [f.full_path, f.id]} ,{}, class: "form-control select2"  %>
       <small class="text-muted"><%= link_to "Create New Folder", new_folder_path("folder[entity_id]": current_user.entity_id) %></small>
     </div>
   <% elsif document.owner.respond_to?(:document_tags) %>
