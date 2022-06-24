@@ -122,7 +122,8 @@ namespace :irm do
 
 
         (0..3).each do |i|
-          doc = Document.create!(entity: e, name: dnames[i], text: Faker::Company.catch_phrase, 
+          doc = Document.create!(entity: e, name: dnames[i], 
+                text: Faker::Company.catch_phrase, user: e.employees.sample,
                 folder: e.folders.sample, file: File.new("public/sample_uploads/#{files[i]}", "r"))
 
           5.times do

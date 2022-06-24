@@ -106,6 +106,15 @@
 
                      </td>
                   </tr>
+
+                  <tr>
+                     <td>
+                        Uploaded By
+                     </td>
+                     <td>
+                        <%= @document.user.full_name  %> | <%= @document.user.email  %>                                                  
+                     </td>
+                  </tr>
                   
                   <% if @document.text.present? %>
                   <tr>
