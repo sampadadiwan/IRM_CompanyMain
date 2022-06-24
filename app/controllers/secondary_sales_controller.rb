@@ -106,9 +106,7 @@ class SecondarySalesController < ApplicationController
     @secondary_sale.entity_id = current_user.entity_id
     authorize @secondary_sale
 
-    params[:secondary_sale][:documents_attributes].each do |_id, doc_attribute|
-      doc_attribute.merge!(user_id: current_user.id)
-    end
+    setup_doc_user(@secondary_sale)
 
     respond_to do |format|
       if @secondary_sale.save
@@ -123,9 +121,8 @@ class SecondarySalesController < ApplicationController
 
   # PATCH/PUT /secondary_sales/1 or /secondary_sales/1.json
   def update
-    params[:secondary_sale][:documents_attributes].each do |_id, doc_attribute|
-      doc_attribute.merge!(user_id: current_user.id)
-    end
+
+    setup_doc_user(@secondary_sale)
 
     respond_to do |format|
       if @secondary_sale.update(secondary_sale_params)

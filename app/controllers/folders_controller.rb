@@ -25,9 +25,7 @@ class FoldersController < ApplicationController
     @folder.entity_id = current_user.entity_id
     authorize @folder
 
-    params[:folder][:documents_attributes].each do |doc_attribute|
-      doc_attribute.merge!(user_id: current_user.id)
-    end
+    setup_doc_user(@folder)
 
     respond_to do |format|
       if @folder.save
@@ -42,9 +40,7 @@ class FoldersController < ApplicationController
 
   # PATCH/PUT /folders/1 or /folders/1.json
   def update
-    params[:folder][:documents_attributes].each do |doc_attribute|
-      doc_attribute.merge!(user_id: current_user.id)
-    end
+    setup_doc_user(@folder)
 
     respond_to do |format|
       if @folder.update(folder_params)

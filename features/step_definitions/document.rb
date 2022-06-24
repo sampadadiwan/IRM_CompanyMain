@@ -1,5 +1,5 @@
   Given('given there is a document {string} for the entity') do |arg|
-    @document = FactoryBot.build(:document, entity: @entity)
+    @document = FactoryBot.build(:document, entity: @entity, user: @entity.employees.sample)
     key_values(@document, arg)
     @document.save!
     puts "\n####Document####\n"

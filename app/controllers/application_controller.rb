@@ -54,4 +54,13 @@ class ApplicationController < ActionController::Base
     form_type = FormType.where(entity_id: current_user.entity_id, name: model.class.name).first
     model.form_type = form_type
   end
+
+  def setup_doc_user(model)
+    sym = model.class.name.underscore.to_sym
+    if params[sym][:documents_attributes].present?
+      params[sym][:documents_attributes].each do |_id, doc_attribute|
+        doc_attribute.merge!(user_id: current_user.id)
+      end
+    end
+  end
 end

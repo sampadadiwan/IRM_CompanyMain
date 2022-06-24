@@ -33,9 +33,8 @@ class OptionPoolsController < ApplicationController
     @option_pool.excercise_price_cents = option_pool_params[:excercise_price].to_f * 100
 
     authorize(@option_pool)
-    params[:option_pool][:documents_attributes].each do |_id, doc_attribute|
-      doc_attribute.merge!(user_id: current_user.id)
-    end
+
+    setup_doc_user(@option_pool)
 
     @option_pool = CreateOptionPool.call(option_pool: @option_pool).option_pool
 
@@ -53,9 +52,7 @@ class OptionPoolsController < ApplicationController
 
   # PATCH/PUT /option_pools/1 or /option_pools/1.json
   def update
-    params[:option_pool][:documents_attributes].each do |_id, doc_attribute|
-      doc_attribute.merge!(user_id: current_user.id)
-    end
+    setup_doc_user(@option_pool)
 
     respond_to do |format|
       if @option_pool.update(option_pool_params)
