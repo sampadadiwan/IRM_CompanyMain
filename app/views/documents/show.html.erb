@@ -84,10 +84,8 @@
                         Allow Download
                      </td>
                      <td>
-                        <span class="badge <%= @document.download ? 'bg-success' : 'bg-warning' %>">
-                           <%= @document.download ? "Yes" : "No" %>
-                           <input type="text" id="download_document" hidden="hidden" value="<%= @document.download%>" />
-                        </span>
+                        <%= display_boolean @document.download  %>                                                  
+                        <input type="text" id="download_document" hidden="hidden" value="<%= @document.download%>" />
                      </td>
                   </tr>
                   <tr>
@@ -95,10 +93,17 @@
                         Allow Printing
                      </td>
                      <td>
-                        <span class="badge <%= @document.printing ? 'bg-success' : 'bg-warning' %>">
-                           <%= @document.printing ? "Yes" : "No" %>
-                           <input type="text" id="printing_document" hidden="hidden" value="<%= @document.printing%>" />
-                        </span>
+                        <%= display_boolean @document.printing  %>                                                  
+                        <input type="text" id="printing_document" hidden="hidden" value="<%= @document.printing%>" />
+                     </td>
+                  </tr>
+                  <tr>
+                     <td>
+                        Allow Original Format Download
+                     </td>
+                     <td>
+                        <%= display_boolean @document.orignal  %>                                                  
+
                      </td>
                   </tr>
                   
@@ -124,7 +129,7 @@
 <div class="row">
     <% if @document.video? %>
       <%= render "documents/video" %>
-    <% elsif ENV['PDF_TRON'] == 'true' %>
+    <% elsif ENV['PDF_TRON'] == 'true' && !@document.orignal %>
        <%= render "documents/pdf" %>
     <% end %>
 </div>
