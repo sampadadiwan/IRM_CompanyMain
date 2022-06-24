@@ -29,6 +29,8 @@ Given('I am at the documents page') do
 end
 
 When('I create a new document {string}') do |args|
+  Folder.create!(name: "Test Folder", parent: Folder.first, folder_type: :regular, entity_id: Folder.first.entity_id)
+
   @document = Document.new
   key_values(@document, args)
   @document.tag_list = "capybara,testing"
