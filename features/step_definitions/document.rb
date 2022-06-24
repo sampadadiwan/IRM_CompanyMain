@@ -9,10 +9,19 @@
   Given('I should have access to the document') do
     Pundit.policy(@user, @document).show?.should == true
   end
+
+  Given('I should not have access to the document') do
+    Pundit.policy(@user, @document).show?.should == true
+  end
   
   Then('another user has {string} access to the document') do |arg|
     Pundit.policy(@another_user, @document).show?.to_s.should == arg
-end
+  end
+
+  Then('employee investor has {string} access to the document') do |arg|
+    Pundit.policy(@employee_investor, @document).show?.to_s.should == arg
+  end
+
 
 Given('investor has access right {string} in the document') do |arg1|
     @access_right = AccessRight.new(owner: @document, entity: @entity)
@@ -147,3 +156,29 @@ When('the deal investor document details must be setup right') do
   @document.folder.full_path.should == "/Deals/#{@deal.name}/Deal Investors/#{@deal_investor.investor_name}"
 end
 
+
+Given('given there is a document {string} for the deal') do |args|
+  @document = Document.new(entity: @deal.entity, name: "Test", 
+    text: Faker::Company.catch_phrase, user: @user, owner: @deal,
+    folder: @deal.entity.folders.sample, file: File.new("public/sample_uploads/Instructions.txt", "r"))
+
+  key_values(@document, args)
+  @document.save!  
+
+  puts "\n####Document####\n"
+  puts @document.to_json  
+
+end
+
+Given('given there is a document {string} for the sale') do |args|
+  @document = Document.new(entity: @sale.entity, name: "Test", 
+    text: Faker::Company.catch_phrase, user: @user, owner: @sale,
+    folder: @sale.entity.folders.sample, file: File.new("public/sample_uploads/Instructions.txt", "r"))
+
+  key_values(@document, args)
+  @document.save!
+
+  puts "\n####Document####\n"
+  puts @document.to_json  
+
+end

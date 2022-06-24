@@ -9,6 +9,8 @@ Scenario Outline: Access Sale as an employee
   And I should have "destroy" access to the sale "true"
   And I should have "offer" access to the sale "false"
   And I should have "show_interest" access to the sale "false"
+  And given there is a document "name=Test" for the sale 
+  And I should have access to the document  
 
   Examples:
   	|user	    |entity               |sale             |
@@ -23,6 +25,8 @@ Scenario Outline: Access sale as Other User
   And another user should have "show" access to the sale "false"
   And I should have "offer" access to the sale "false"
   And I should have "show_interest" access to the sale "false"
+  And given there is a document "name=Test" for the sale 
+  And another user has "false" access to the document 
 
   Examples:
   	|user	    |entity               |sale             |
@@ -36,6 +40,8 @@ Scenario Outline: Access externally visible sale as Other User
   And another user should have "show" access to the sale "true"
   And another user should have "offer" access to the sale "false"
   And another user should have "show_interest" access to the sale "true"
+  And given there is a document "name=Test" for the sale 
+  And another user has "true" access to the document 
 
   Examples:
   	|user	    |entity               |sale             |
@@ -51,6 +57,8 @@ Scenario Outline: Access sale as Holding User
   And employee investor should have "show" access to the sale "true"
   And employee investor should have "offer" access to the sale "true"
   And employee investor should have "show_interest" access to the sale "false"
+  And given there is a document "name=Test" for the sale 
+  And employee investor has "true" access to the document 
 
   Examples:
   	|user	    |entity               |sale             |
@@ -65,6 +73,8 @@ Scenario Outline: Access externally visible sale as Investor User
   And employee investor should have "show" access to the sale "true"
   And employee investor should have "offer" access to the sale "false"
   And employee investor should have "show_interest" access to the sale "true"
+  And given there is a document "name=Test" for the sale 
+  And employee investor has "true" access to the document 
 
   Examples:
   	|user	    |entity               |sale             |

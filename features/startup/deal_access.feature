@@ -5,6 +5,8 @@ Scenario Outline: Access Deal employee
   Given there is a user "<user>" for an entity "<entity>"
   And given there is a deal "<deal>" for the entity 
   And I should have access to the deal
+  And given there is a document "name=Test" for the deal 
+  And I should have access to the document  
 
   Examples:
   	|user	    |entity               |deal                     |
@@ -17,6 +19,8 @@ Scenario Outline: Access Deal as Other User
   And given there is a deal "<deal>" for the entity 
   Given there is another user "first_name=Investor" for another entity "entity_type=VC"
   And another user "false" have access to the deal
+  And given there is a document "name=Test" for the deal 
+  And another user has "false" access to the document 
 
   Examples:
   	|user	    |entity               |deal                     |
@@ -31,6 +35,8 @@ Scenario Outline: Access Deal as Investor without access
   And another entity is an investor "category=Lead Investor" in entity
   And another entity is a deal_investor "status=Active" in the deal
   Then another user "false" have access to the deal
+  And given there is a document "name=Test" for the deal 
+  And another user has "false" access to the document 
 
   Examples:
   	|user	    |entity               |deal                     |
@@ -47,6 +53,8 @@ Scenario Outline: Access Deal as Investor with access
   And investor has access right "<access_right>" in the deal
   And another user has investor access "<investor_access>" in the investor
   Then another user "<should>" have access to the deal 
+  And given there is a document "name=Test" for the deal 
+  And another user has "<should>" access to the document 
 
   Examples:
   	|should	    |entity               |deal                     | access_right                                      | investor_access |

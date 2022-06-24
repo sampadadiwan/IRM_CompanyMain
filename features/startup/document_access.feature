@@ -86,3 +86,5 @@ Scenario Outline: Access Document as Investor without access right
   	|should	    |entity               |document                     | investor_access     |
   	|false      |entity_type=Startup  |name=Test | approved=1 |
     |false      |entity_type=Startup  |name=Test | approved=1 |
+
+
