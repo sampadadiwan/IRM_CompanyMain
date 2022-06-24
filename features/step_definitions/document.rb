@@ -38,7 +38,7 @@ Given('I am at the documents page') do
 end
 
 When('I create a new document {string}') do |args|
-  Folder.create!(name: "Test Folder", parent: Folder.first, folder_type: :regular, entity_id: Folder.first.entity_id)
+  @folder = Folder.last || Folder.create!(name: "Test Folder", parent: Folder.first, folder_type: :regular, entity_id: Folder.first.entity_id)
 
   @document = Document.new
   key_values(@document, args)
@@ -95,6 +95,7 @@ end
 Then('the document should have the same access rights as the folder') do
   puts "\n####Document Access Right####\n"
   puts @document.access_rights.to_json  
+  puts @folder.to_json
 
   @document.access_rights.count.should == @folder.access_rights.count
   @document.access_rights.each_with_index do |dar, idx|

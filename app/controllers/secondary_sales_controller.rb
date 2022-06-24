@@ -121,7 +121,6 @@ class SecondarySalesController < ApplicationController
 
   # PATCH/PUT /secondary_sales/1 or /secondary_sales/1.json
   def update
-
     setup_doc_user(@secondary_sale)
 
     respond_to do |format|
