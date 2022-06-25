@@ -3,6 +3,7 @@ Feature: Document
 
 Scenario Outline: Create new document
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the entity has a folder "name=Test Folder"
   And I am at the documents page
   When I create a new document "<document>"
   Then I should see the "Document was successfully created"

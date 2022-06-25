@@ -44,7 +44,7 @@
     <p class="line">Digital Signature</p>
 
     <p class="line">
-      <%= image_tag image_url(rails_blob_path(@holding.option_pool.certificate_signature)), 
+      <%= image_tag image_url(@holding.option_pool.certificate_signature_url), 
           style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if @holding.option_pool.certificate_signature.present? %>
     </p>
 
