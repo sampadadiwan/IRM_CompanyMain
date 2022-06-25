@@ -86,3 +86,23 @@ Scenario Outline: View Deal Stages in a deal
   	|user	      |deal_investor              |entity               |deal                             |msg	|
   	|  	        |primary_amount_cents=10000 |entity_type=Startup  |name=Series A;amount_cents=10000 |Deal investor was successfully created|
     |  	        |primary_amount_cents=12000 |entity_type=Startup  |name=Series B;amount_cents=12000 |Deal investor was successfully created|
+
+
+Scenario Outline: Create new deal investor document
+  Given there is a user "<user>" for an entity "<entity>"
+  Given there is an existing investor "name=Sequoia" with "1" users
+  And there exists a deal "<deal>" for my startup
+  Given there is a deal investor with name "Sequoia"
+  Given Im logged in as an investor
+  When I view the deal investor details
+  Then I should see the deal investor details on the details page
+  When I create a new document "name=TestDoc"
+  And an document should be created
+  And the deal investor document details must be setup right
+  When I view the deal investor details
+  And I should see the document details on the details page
+
+  Examples:
+  	|user	      |deal_investor              |entity               |deal                             |msg	|
+  	|  	        |primary_amount_cents=10000 |entity_type=Startup  |name=Series A;amount_cents=10000 |Deal investor was successfully created|
+    |  	        |primary_amount_cents=12000 |entity_type=Startup  |name=Series B;amount_cents=12000 |Deal investor was successfully created|

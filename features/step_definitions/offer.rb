@@ -11,6 +11,16 @@
     )
 
   end
+
+  Given('Im logged in as an investor') do
+
+    @user = @investor_user
+    steps %(
+        And I am at the login page
+        When I fill and submit the login page
+    )
+
+  end
   
   Given('there is a holding {string} for each employee investor') do |args|
     @investor_entity.employees.each do |emp|
@@ -137,6 +147,8 @@
     within("tr#approved") do
         expect(page).to have_content(@offer.approved ? "Yes" : "No")
     end
+
+    @offer = Offer.last
   end
 
   Then('when the offer sale is finalized') do

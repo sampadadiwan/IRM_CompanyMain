@@ -26,7 +26,8 @@ class DocumentPolicy < ApplicationPolicy
 
   def create?
     (user.entity_id == record.entity_id && user.entity.enable_documents) ||
-      (record.owner && owner_policy.update?)
+      (record.owner && owner_policy.update?) ||
+      (record.owner && record.owner_type == "DealInvestor" && owner_policy.show?)
   end
 
   def new?

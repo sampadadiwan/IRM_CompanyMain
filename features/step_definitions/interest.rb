@@ -115,6 +115,8 @@
       expect(page).to have_content(@created_interest.email)
       expect(page).to have_content(@created_interest.PAN)
     end
+
+    @interest = @created_interest
   end
   
 

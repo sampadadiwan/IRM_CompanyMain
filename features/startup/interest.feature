@@ -20,6 +20,14 @@ Scenario Outline: Create new interest
   And when the interest sale is finalized
   And I edit the interest ""
   Then I should see the interest details
+  When I click "Documents"
+  When I create a new document "name=TestDoc"
+  And an document should be created
+  And the interest document details must be setup right
+  And I visit the interest details page
+  When I click "Documents"
+  And I should see the document details on the details page
+
   
   
 Examples:

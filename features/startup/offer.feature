@@ -36,8 +36,14 @@ Scenario Outline: Place an offer
   And when the offer sale is finalized
   And I edit the offer "<offer>"
   Then I should see the offer details
-  
-  
+  When I click "Documents"
+  When I create a new document "name=TestDoc"
+  And an document should be created
+  And the offer document details must be setup right
+  When I visit the offer details page
+  When I click "Documents"
+  And I should see the document details on the details page
+
 Examples:
     |user	    |entity               |sale                                                         |offer	             | total_quantity |
     |  	        |entity_type=Startup  |name=Grand Sale;visible_externally=true;percent_allowed=100  |quantity=100        | 100            |

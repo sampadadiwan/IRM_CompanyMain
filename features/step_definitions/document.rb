@@ -68,8 +68,9 @@ Then('an document should be created') do
   @created_doc.download.should == @document.download
   @created_doc.printing.should == @document.printing
   @created_doc.tag_list.should == @document.tag_list
-  if @document.owner
-    @created_doc.entity_id.should == @document.owner.entity_id
+  @created_doc.user_id.should == @user.id
+  if @created_doc.owner != nil
+    @created_doc.entity_id.should == @created_doc.owner.entity_id
   else
     @created_doc.entity_id.should == @user.entity_id
   end
@@ -125,6 +126,7 @@ Then('the deal document details must be setup right') do
   @document.folder.name.should == @deal.name
   @document.folder.full_path.should == "/Deals/#{@deal.name}"
 end
+
 
 Then('the sale document details must be setup right') do
   @document.owner.should == @sale

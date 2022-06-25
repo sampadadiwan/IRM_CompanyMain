@@ -103,6 +103,16 @@ include InvestmentsHelper
     @deal_activity.completed.should == true
   end
   
+
+  Given('there is a deal investor with name {string}') do |name|
+    inv = Investor.find_by(investor_name: name)
+    @deal_investor = FactoryBot.create(:deal_investor, investor: inv, entity_id: inv.entity_id, deal: @deal)
+  end
+  
+  When('I view the deal investor details') do
+    visit(deal_investor_path(@deal_investor))
+  end
+  
   
   
   

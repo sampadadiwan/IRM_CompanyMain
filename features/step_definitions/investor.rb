@@ -70,6 +70,20 @@ Given('there is an existing investor {string}') do |arg1|
   puts @investor.to_json
 end
 
+
+Given('there is an existing investor {string} with {string} users') do |arg1, count|
+  steps %(
+        Given there is an existing investor entity "#{arg1}"
+    )
+  @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id)
+  (1..count.to_i).each do
+    @investor_user = FactoryBot.create(:user, entity: @investor_entity)
+  end
+
+  puts "\n####Investor####\n"
+  puts @investor.to_json
+end
+
 Given('there are {string} existing investor {string}') do |count, arg1|
   (1..count.to_i).each do 
     steps %(
