@@ -8,7 +8,7 @@ class HoldingDashboard < Administrate::BaseDashboard
   # which determines how the attribute is displayed
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
-    audits: Field::HasMany,
+    # audits: Field::HasMany,
     excercises: Field::HasMany,
     user: Field::BelongsTo,
     entity: Field::BelongsTo,
@@ -59,7 +59,6 @@ class HoldingDashboard < Administrate::BaseDashboard
     lapsed
     emp_ack
     excercises
-    audits
   ].freeze
 
   # FORM_ATTRIBUTES

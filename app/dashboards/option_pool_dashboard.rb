@@ -8,7 +8,7 @@ class OptionPoolDashboard < Administrate::BaseDashboard
   # which determines how the attribute is displayed
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
-    audits: Field::HasMany,
+    # audits: Field::HasMany,
     entity: Field::BelongsTo,
     funding_round: Field::BelongsTo,
     holdings: Field::HasMany,
@@ -64,7 +64,6 @@ class OptionPoolDashboard < Administrate::BaseDashboard
     approved
     holdings
     excercises
-    audits
   ].freeze
 
   # FORM_ATTRIBUTES

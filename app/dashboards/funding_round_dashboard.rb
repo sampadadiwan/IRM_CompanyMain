@@ -8,7 +8,7 @@ class FundingRoundDashboard < Administrate::BaseDashboard
   # which determines how the attribute is displayed
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
-    audits: Field::HasMany,
+    # audits: Field::HasMany,
     entity: Field::BelongsTo,
     investments: Field::HasMany,
     id: Field::Number,
@@ -55,7 +55,6 @@ class FundingRoundDashboard < Administrate::BaseDashboard
     closed_on
     deleted_at
     investments
-    audits
   ].freeze
 
   # FORM_ATTRIBUTES

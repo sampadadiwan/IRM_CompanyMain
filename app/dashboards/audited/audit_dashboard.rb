@@ -82,7 +82,7 @@ module Audited
     #   }.freeze
     COLLECTION_FILTERS = {}.freeze
 
-    # Overwrite this method to customize how audits are displayed
+    # Overwrite this method to customize how # audits are displayed
     # across all pages of the admin dashboard.
     #
     def display_resource(audit)

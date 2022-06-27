@@ -13,11 +13,9 @@ end
 
 every :reboot do
   bundle "sidekiq"
-  # runner "ElasticImporterJob.new.perform"
   bundle "puma -C /home/ubuntu/IRM/shared/puma.rb"
-  # runner "Money.default_bank.save_rates('tmp/exchange_rates.xml')"
 end
 
-every 1.hour do
-  # runner "Money.default_bank.save_rates('tmp/exchange_rates.xml')"
-end
+# every 1.hour do
+#   # runner "Money.default_bank.save_rates('tmp/exchange_rates.xml')"
+# end

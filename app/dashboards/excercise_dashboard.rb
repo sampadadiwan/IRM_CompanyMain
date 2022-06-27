@@ -8,7 +8,7 @@ class ExcerciseDashboard < Administrate::BaseDashboard
   # which determines how the attribute is displayed
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
-    audits: Field::HasMany,
+    # audits: Field::HasMany,
     entity: Field::BelongsTo,
     holding: Field::BelongsTo,
     created_holding: Field::HasOne,
@@ -55,7 +55,6 @@ class ExcerciseDashboard < Administrate::BaseDashboard
     tax_rate
 
     created_holding
-    audits
 
   ].freeze
 
