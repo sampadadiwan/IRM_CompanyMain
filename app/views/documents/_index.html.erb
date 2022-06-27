@@ -25,15 +25,19 @@
         <th class="hideMobP">
           Tags
         </th>
-        <th class="hideMobP">
-          Download
-        </th>
-        <th class="hideMobP">
-          Print
-        </th>
-        <th class="hideMobP">
-          Created On
-        </th>
+
+        <% if current_user.entity_id == entity.id %>
+          <th class="hideMobP">
+            Download
+          </th>
+          <th class="hideMobP">
+            Print
+          </th>
+          <th class="hideMobP">
+            Original Format
+          </th>
+        <% end %>
+        
         <th>
           Folder
         </th>

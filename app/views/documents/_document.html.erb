@@ -6,15 +6,19 @@
     <%= raw document.tags.map{|tag| link_to(tag.name, search_documents_path(query: tag.name))}.join(", ") %>
     <%= document.owner_tag %>
   </td>  
-  <td class="hideMobP">
-    <%= display_boolean(document.download) %>
-  </td>
-  <td class="hideMobP">
-    <%= display_boolean(document.printing) %>
-  </td>
-  <td class="hideMobP">
-    <%= document.created_at.is_a?(Time) ? l(document.created_at) : l(Time.parse(document.created_at)) %>
-  </td>  
+
+  <% if current_user.entity_id == document.entity_id %>
+    <td class="hideMobP">
+      <%= display_boolean(document.download) %>
+    </td>
+    <td class="hideMobP">
+      <%= display_boolean(document.printing) %>
+    </td>
+    <td class="hideMobP">
+      <%= display_boolean(document.orignal) %>
+    </td>
+  <% end %>  
+  
   <td>
     <%= document.folder_full_path %>  
     <% if document.entity_id == current_user.entity_id %>  

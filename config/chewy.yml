@@ -7,7 +7,7 @@ staging:
   host: 'https://vpc-dev-ova53iydsngksohawtxyruvnwu.ap-south-1.es.amazonaws.com'
   prefix: 'staging'
 production:
-  host: 'https://vpc-prod-3aqab5wbjl24x33dexacfhqo44.ap-south-1.es.amazonaws.com'
+  host: 'https://vpc-prod-3aqab5wbjl24x33dexacfhqo44.ap-south-1.es.amazonaws.com/'
   prefix: 'production'
 development:
   host: 'localhost:9200'
