@@ -14,7 +14,9 @@ module InvestorRelationshipManagement
     config.i18n.default_locale = :en
     config.active_support.key_generator_hash_digest_class = OpenSSL::Digest::SHA1
 
-    config.autoload_paths += Dir[Rails.root.join('app/jobs/**/'), Rails.root.join('app/models/**/'), Rails.root.join('app/dashboards/**/'), Rails.root.join('app/datatables/**/')]
+    config.autoload_paths += Dir[Rails.root.join('app/jobs/**/'), Rails.root.join('app/models/**/'), Rails.root.join('app/dashboards/**/')]
+
+    # config.eager_load_paths += DirRails.root.join('app/jobs/**/'), Rails.root.join('app/models/**/'), Rails.root.join('app/dashboards/**/')]
 
     # Configuration for the application, engines, and railties goes here.
     #
