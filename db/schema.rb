@@ -605,7 +605,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_06_24_153540) do
     t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "price_cents", precision: 20, scale: 2
     t.bigint "funding_round_id"
-    t.decimal "liquidation_preference", precision: 4, scale: 2
+    t.decimal "liquidation_preference", precision: 10, scale: 2
     t.bigint "aggregate_investment_id"
     t.string "spv", limit: 50
     t.index ["aggregate_investment_id"], name: "index_investments_on_aggregate_investment_id"

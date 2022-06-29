@@ -106,10 +106,10 @@ class Document < ApplicationRecord
   end
 
   def video?
-    file.mime_type&.include?('video')
+    file&.mime_type&.include?('video')
   end
 
   def image?
-    file.mime_type&.include?('image')
+    file&.mime_type&.include?('image')
   end
 end
