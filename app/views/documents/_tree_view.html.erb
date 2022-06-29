@@ -31,7 +31,7 @@
                 <%= link_to "All Documents", documents_path(entity_id:params[:entity_id]), class: "btn btn-sm btn-primary float-right"  %>               
             </div>
             <div class="card-body">
-                <%= render "documents/index", documents: documents, entity: @entity, owner: nil %>
+                <%= render "documents/index", documents: documents, entity: entity, owner: nil %>
                 <%= paginate documents %>
             </div>
         </div>

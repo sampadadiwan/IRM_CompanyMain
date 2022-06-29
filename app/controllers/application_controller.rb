@@ -62,5 +62,13 @@ class ApplicationController < ActionController::Base
         doc_attribute.merge!(user_id: current_user.id)
       end
     end
+
+    # For some reason the code above does not work for new records
+    # hack for now
+    if model.new_record?
+      model.documents.each do |doc|
+        doc.user_id = current_user.id
+      end
+    end
   end
 end
