@@ -116,6 +116,7 @@ class Entity < ApplicationRecord
   def scrub_defaults
     self.investor_categories = investor_categories.split(",").map(&:strip).join(",") if investor_categories
     self.instrument_types = instrument_types.split(",").map(&:strip).join(",") if instrument_types
+    self.currency ||= "INR"
   end
 
   def self.for_investor(user)

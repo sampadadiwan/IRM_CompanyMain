@@ -19,6 +19,7 @@ class EntityDashboard < Administrate::BaseDashboard
     updated_at: Field::DateTime,
     active: Field::BooleanEmoji,
     entity_type: Field::Select.with_options(collection: Entity::TYPES),
+    currency: Field::Select.with_options(collection: ENV["CURRENCY"]),
     created_by: Field::Number,
     investor_categories: Field::String,
     instrument_types: Field::String,
@@ -55,6 +56,7 @@ class EntityDashboard < Administrate::BaseDashboard
     created_at
     updated_at
     active
+    currency
     entity_type
     created_by
     investor_categories
@@ -75,6 +77,7 @@ class EntityDashboard < Administrate::BaseDashboard
   FORM_ATTRIBUTES = %i[
     name
     url
+    currency
     category
     active
     entity_type
