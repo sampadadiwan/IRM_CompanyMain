@@ -23,9 +23,9 @@
     </div>
     <div class="divTableCell">  
         Docs:
-        <%= render "/layouts/attachments" , attachments: offer.docs %>
+        <%#= render "/layouts/attachments" , attachments: offer.docs %>
         Signature:
-        <%= render "/layouts/attachments" , attachments: offer.signature if offer.signature.present? %>
+        <%#= render "/layouts/attachments" , attachments: offer.signature if offer.signature.present? %>
     </div>
 
     <div class="divTableCell"><%= money_to_currency(offer.allocation_amount, params) %></div>
