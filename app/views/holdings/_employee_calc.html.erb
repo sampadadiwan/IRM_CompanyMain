@@ -2,14 +2,20 @@
 
 <%= turbo_frame_tag "employee_calc" do %>
   <%  price_growth, tax_rate, estimated_taxes, estimated_profit, 
-      cost_neutral_sale, last_valuation = 
+      cost_neutral_sale, last_valuation, esop_value = 
       HoldingSummary.new(params, current_user).employee_summary %>
 
     <form id="employee_calc_form" action="/holdings/employee_calc" method="post">
 
       <div class="card">
         <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Calculator</h6>
+          <span>
+            <span class="m-0 font-weight-bold text-primary">Calculator</span>
+            <span class="form-group float-right">
+              <%= select_tag('all_or_vested', options_for_select(["All", "Vested"], "#{params[:all_or_vested]}"), 
+                  class: "float-right form-control") %>
+            </span>
+          </span>
         </div>
         <div class="card-body">
           <table class="table table-bordered dataTable">
@@ -18,7 +24,7 @@
               <td>Total Value Of Excercising</td>
               <% total_value=policy_scope(Holding).options.inject(0){|sum,o| sum + o.value } %>
                 <td>
-                  <%= money_to_currency total_value, params %>
+                  <%= money_to_currency esop_value, params %>
                 </td>
             </tr>
             <tr>
