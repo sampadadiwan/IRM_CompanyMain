@@ -6,4 +6,7 @@
     <%= turbo_stream.replace('toasts', partial: "layouts/success_toast", 
         locals: { message: "Granted access to: #{access_right.to_s} for #{access_right.access_type}" }) %>
 
+    <%= turbo_stream.replace('new_access_right', partial: "layouts/success_toast", 
+        locals: { message: "Granted access to: #{access_right.to_s} for #{access_right.access_type}" }) %>
+
 <% end %>

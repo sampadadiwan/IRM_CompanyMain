@@ -4,7 +4,7 @@ export default class extends Controller {
   connect() {
 
     let options = {
-      stateSave: true,
+      stateSave: false,
       retrieve: true,
       language: {
         search: '',

@@ -4,7 +4,7 @@ export default class extends Controller {
   connect() {
 
       let table = $('.jqDataTable').DataTable({        
-        stateSave: true,
+        stateSave: false,
         retrieve: true,
         language: {
           search: '',
