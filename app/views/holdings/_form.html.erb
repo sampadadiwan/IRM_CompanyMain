@@ -65,7 +65,8 @@
 
 
     <div class="form-group">
-      <%= form.label :grant_date %>
+      <%= form.label :grant_date, "Grant Date", class: "option_pool_group" %>
+      <%= form.label :grant_date, "Issuance Date", class: "funding_round_group" %>
       <%= form.date_field :grant_date, class: "form-control"  %>
     </div>
 

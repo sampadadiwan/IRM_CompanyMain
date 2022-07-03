@@ -140,6 +140,7 @@ class Holding < ApplicationRecord
       self.quantity = orig_grant_quantity - sold_quantity
     end
 
+    self.grant_date ||= Time.zone.today
     self.value_cents = quantity * price_cents
   end
 

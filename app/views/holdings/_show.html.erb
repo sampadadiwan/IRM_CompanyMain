@@ -50,7 +50,7 @@
     </tr>
     <tr>
       <td>
-        Grant Quantity
+        <%= @holding.investment_instrument == "Options" ? "Grant Quantity" : "Issued Quantity" %>
       </td>
       <td>
         <%= custom_format_number @holding.orig_grant_quantity, params %>
@@ -89,6 +89,15 @@
       </td>
     </tr>
     
+    <tr>
+      <td>
+        <%= @holding.investment_instrument == "Options" ? "Grant Date" : "Issuance Date" %>
+      </td>
+      <td>
+        <%= l @holding.grant_date if @holding.grant_date %>
+      </td>
+    </tr>
+    
     <% if @holding.investment_instrument == "Options" %>
 
       <tr>
@@ -116,14 +125,7 @@
           <%= link_to  @holding.option_pool.name, @holding.option_pool if @holding.option_pool %>
         </td>
       </tr>
-      <tr>
-        <td>
-          Grant Date
-        </td>
-        <td>
-          <%= l @holding.grant_date if @holding.grant_date %>
-        </td>
-      </tr>
+      
       <tr>
         <td>
           Vested Quantity
