@@ -10,6 +10,9 @@ class SaveInvestment
     ActiveRecord::Base.transaction do
       organizer.call
     end
+  rescue StandardError => e
+    Rails.logger.error e.message
+    Rails.logger.error context.investment.to_json
   end
 
   # Ensure that the percentages are recomputed

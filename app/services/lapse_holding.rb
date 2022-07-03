@@ -10,6 +10,9 @@ class LapseHolding
     ActiveRecord::Base.transaction do
       organizer.call
     end
+  rescue StandardError => e
+    Rails.logger.error e.message
+    Rails.logger.error context.holding.to_json
   end
 
   after do

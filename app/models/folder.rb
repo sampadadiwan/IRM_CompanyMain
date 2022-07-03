@@ -15,7 +15,9 @@
 #
 
 class Folder < ApplicationRecord
+  acts_as_paranoid
   include TreeBuilder
+
   update_index('folder') { self }
 
   enum :folder_type, %i[regular system]

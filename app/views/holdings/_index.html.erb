@@ -1,5 +1,8 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <% title ||= "Holdings" %>
+    <% 
+        title ||= "Holdings" 
+        import_upload ||= false
+    %>
     <h1 class="h3 mb-0 text-gray-800"><%=title%></h1>
     <span>
         <!-- We have to show the employee investors screen from which we can add holdings -->
@@ -14,7 +17,7 @@
                 "import_upload[import_type]": "Holding", 
                 "import_upload[entity_id]": current_user.entity_id,
                 "sample_upload": "HOLDINGS_SAMPLE"), 
-                { class: "btn btn-primary"} if investor  %> 
+                { class: "btn btn-primary"} if investor && import_upload %> 
 
 
             <% if @option_pool && policy(@option_pool).approve_all_holdings? %>

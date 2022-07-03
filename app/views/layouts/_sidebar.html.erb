@@ -91,6 +91,9 @@
 
                 <div id="investorMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
                     <div class="bg-white py-2 collapse-inner rounded">
+                        <a class="collapse-item" 
+                        href="/investors/new?investor[entity_id]=<%=current_user.entity_id%>">
+                            New Investor</a>
                         <a class="collapse-item" href="/investors">View Investors</a>
                         <a class="collapse-item" href="/notes">Notes</a>
                         <a class="collapse-item" href="/investor_accesses?approved=false">Pending Approvals</a>
@@ -112,6 +115,9 @@
 
                 <div id="investmentMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
                     <div class="bg-white py-2 collapse-inner rounded">
+                        <a class="collapse-item" 
+                        href="/investments/new?investment[entity_id]=<%=current_user.entity_id%>">
+                            New Investment</a>
                         <a class="collapse-item" href="/aggregate_investments">Shareholding</a>
                         <a class="collapse-item" href="/investments">Details View</a>
                         <a class="collapse-item" href="/funding_rounds">Funding Rounds</a>

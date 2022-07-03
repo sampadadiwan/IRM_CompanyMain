@@ -18,7 +18,7 @@
             <div id="holdings" class="associated_entity">             
                 <%= render "/holdings/index" , 
                     holdings: @option_pool.holdings.includes(:entity, :funding_round,:user),
-                    secondary_sale: nil, only_options: true %>
+                    secondary_sale: nil, only_options: true, import_upload: @option_pool.approved %>
             </div>
         </div>
         <div id="excercised-tab" class="tab-pane fade">
