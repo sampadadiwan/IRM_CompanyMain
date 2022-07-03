@@ -15,6 +15,7 @@
 #  created_at     :datetime         not null
 #  updated_at     :datetime         not null
 #  tax_rate       :decimal(5, 2)    default("0.00")
+#  approved_on    :date
 #
 
 require "test_helper"

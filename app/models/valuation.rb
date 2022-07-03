@@ -9,6 +9,7 @@
 #  per_share_value_cents     :decimal(15, 2)   default("0.00")
 #  created_at                :datetime         not null
 #  updated_at                :datetime         not null
+#  form_type_id              :integer
 #
 
 class Valuation < ApplicationRecord

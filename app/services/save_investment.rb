@@ -13,6 +13,7 @@ class SaveInvestment
   rescue StandardError => e
     Rails.logger.error e.message
     Rails.logger.error context.investment.to_json
+    raise e
   end
 
   # Ensure that the percentages are recomputed

@@ -12,6 +12,10 @@
 #  entity_id        :integer          not null
 #  documents_count  :integer          default("0"), not null
 #  path_ids         :string(255)
+#  folder_type      :integer          default("0")
+#  owner_type       :string(255)
+#  owner_id         :integer
+#  deleted_at       :datetime
 #
 
 class Folder < ApplicationRecord

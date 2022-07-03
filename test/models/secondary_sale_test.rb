@@ -27,6 +27,12 @@
 #  allocation_interest_amount_cents :decimal(20, 2)   default("0.00")
 #  allocation_status                :string(10)
 #  price_type                       :string(15)
+#  finalized                        :boolean          default("0")
+#  seller_doc_list                  :text(65535)
+#  seller_transaction_fees_pct      :decimal(5, 2)
+#  properties                       :text(65535)
+#  form_type_id                     :integer
+#  lock_allocations                 :boolean          default("0")
 #
 
 require "test_helper"

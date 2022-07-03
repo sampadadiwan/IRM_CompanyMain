@@ -3,7 +3,7 @@
 # Table name: interests
 #
 #  id                      :integer          not null, primary key
-#  entity_id         :integer
+#  entity_id               :integer
 #  quantity                :integer
 #  price                   :decimal(10, )
 #  user_id                 :integer          not null
@@ -18,6 +18,19 @@
 #  allocation_quantity     :integer          default("0")
 #  allocation_amount_cents :decimal(20, 2)   default("0.00")
 #  allocation_percentage   :decimal(5, 2)    default("0.00")
+#  finalized               :boolean          default("0")
+#  buyer_entity_name       :string(100)
+#  address                 :text(65535)
+#  contact_name            :string(50)
+#  email                   :string(40)
+#  PAN                     :string(15)
+#  final_agreement         :boolean          default("0")
+#  properties              :text(65535)
+#  form_type_id            :integer
+#  offer_quantity          :integer          default("0")
+#  verified                :boolean          default("0")
+#  comments                :text(65535)
+#  spa_data                :text(65535)
 #
 
 class Interest < ApplicationRecord

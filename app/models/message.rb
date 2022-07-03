@@ -2,12 +2,14 @@
 #
 # Table name: messages
 #
-#  id               :integer          not null, primary key
-#  user_id          :integer          not null
-#  deal_investor_id :integer          not null
-#  created_at       :datetime         not null
-#  updated_at       :datetime         not null
-#  entity_id        :integer          not null
+#  id          :integer          not null, primary key
+#  user_id     :integer          not null
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#  entity_id   :integer          not null
+#  owner_type  :string(255)      not null
+#  owner_id    :integer          not null
+#  investor_id :integer
 #
 
 class Message < ApplicationRecord

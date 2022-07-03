@@ -4,7 +4,7 @@
 #
 #  id                               :integer          not null, primary key
 #  investor_entity_id               :integer
-#  entity_id               :integer
+#  entity_id                        :integer
 #  category                         :string(100)
 #  created_at                       :datetime         not null
 #  updated_at                       :datetime         not null
@@ -16,6 +16,8 @@
 #  is_holdings_entity               :boolean          default("0")
 #  is_trust                         :boolean          default("0")
 #  city                             :string(50)
+#  properties                       :text(65535)
+#  form_type_id                     :integer
 #
 
 require "test_helper"

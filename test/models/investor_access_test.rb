@@ -12,6 +12,8 @@
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null
 #  deleted_at  :datetime
+#  first_name  :string(20)
+#  last_name   :string(20)
 #
 
 require "test_helper"

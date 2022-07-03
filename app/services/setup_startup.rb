@@ -9,5 +9,6 @@ class SetupStartup
   rescue StandardError => e
     Rails.logger.error e.message
     Rails.logger.error context.entity.to_json
+    raise e
   end
 end

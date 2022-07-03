@@ -13,5 +13,6 @@ class ApproveOptionPool
   rescue StandardError => e
     Rails.logger.error e.message
     Rails.logger.error context.option_pool.to_json
+    raise e
   end
 end

@@ -17,6 +17,8 @@
 #  archived          :boolean          default("0")
 #  currency          :string(10)
 #  units             :string(15)
+#  properties        :text(65535)
+#  form_type_id      :integer
 #
 
 class Deal < ApplicationRecord

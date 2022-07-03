@@ -29,6 +29,7 @@
 #  whatsapp_enabled       :boolean          default("0")
 #  sale_notification      :boolean          default("0")
 #  curr_role              :string(20)
+#  permissions            :integer          default("0"), not null
 #
 
 require "test_helper"

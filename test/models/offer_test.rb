@@ -32,6 +32,17 @@
 #  allocation_quantity     :integer          default("0")
 #  allocation_amount_cents :decimal(20, 2)   default("0.00")
 #  allocation_percentage   :decimal(5, 2)    default("0.00")
+#  acquirer_name           :string(255)
+#  verified                :boolean          default("0")
+#  comments                :text(65535)
+#  final_agreement         :boolean          default("0")
+#  interest_id             :integer
+#  properties              :text(65535)
+#  form_type_id            :integer
+#  signature_data          :text(65535)
+#  spa_data                :text(65535)
+#  id_proof_data           :text(65535)
+#  address_proof_data      :text(65535)
 #
 
 require "test_helper"

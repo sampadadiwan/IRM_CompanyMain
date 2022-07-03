@@ -14,6 +14,7 @@
 #  entity_id             :integer          not null
 #  access_to_category    :string(20)
 #  deleted_at            :datetime
+#  cascade               :boolean          default("0")
 #
 
 require "test_helper"

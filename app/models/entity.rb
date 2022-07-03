@@ -40,6 +40,7 @@
 #  equity                 :integer          default("0")
 #  preferred              :integer          default("0")
 #  options                :integer          default("0")
+#  percentage_in_progress :boolean          default("0")
 #
 
 class Entity < ApplicationRecord

@@ -13,7 +13,6 @@
 #  full_diluted_percentage :decimal(5, 2)    default("0.00")
 #  created_at              :datetime         not null
 #  updated_at              :datetime         not null
-#  scenario_id             :integer          not null
 #
 
 class AggregateInvestment < ApplicationRecord

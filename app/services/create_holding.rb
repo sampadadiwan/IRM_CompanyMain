@@ -13,5 +13,6 @@ class CreateHolding
   rescue StandardError => e
     Rails.logger.error e.message
     Rails.logger.error context.holding.to_json
+    raise e
   end
 end
