@@ -4,14 +4,28 @@ export default class extends Controller {
     connect() {
         console.log("Tree view controller");
         
-        // var toggler = document.getElementsByClassName("caret");
-        // var i;
-
-        // for (i = 0; i < toggler.length; i++) {
-        //     toggler[i].addEventListener("click", function () {
-        //         this.parentElement.querySelector(".nested").classList.toggle("active");
-        //         this.classList.toggle("caret-down");
-        //     });
-        // }
+        $('#jstree').jstree({
+            "core" : {
+              "themes" : {
+                "variant" : "large"
+              }
+            },
+            "checkbox" : {
+              "keep_selected_style" : false
+            },
+            "plugins" : [ "wholerow", "checkbox" ]
+          });
+          
+          $("#tree_view").jstree({ "plugins" : ["themes","html_data","ui"] });
+          $("#tree_view li").on("click", "a", 
+              function() {
+                  document.location.href = this;
+              }
+          );
+      
+          $("#tree_view").jstree("open_all")
+          
+       
+          console.log("jstree initialized");
     }
 }

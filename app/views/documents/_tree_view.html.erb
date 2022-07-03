@@ -16,7 +16,7 @@
                 <% end %>
             </div>
             <div class="card-body">
-                <div id="tree_view" class="tree_view">
+                <div id="tree_view" class="tree_view" data-controller="treeview">
                     <% entity_id = params[:entity_id].present? ? params[:entity_id] : current_user.entity_id %>
                     <%= render "folders/tree_view", folders: folders , parent: folders.values[0][:details] if folders.present? %>
                 </div>
