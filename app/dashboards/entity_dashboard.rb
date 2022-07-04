@@ -19,7 +19,7 @@ class EntityDashboard < Administrate::BaseDashboard
     updated_at: Field::DateTime,
     active: Field::BooleanEmoji,
     entity_type: Field::Select.with_options(collection: Entity::TYPES),
-    currency: Field::Select.with_options(collection: ENV["CURRENCY"]),
+    currency: Field::Select.with_options(collection: ENV["CURRENCY"].split(",")),
     created_by: Field::Number,
     investor_categories: Field::String,
     instrument_types: Field::String,
