@@ -58,6 +58,7 @@ namespace :deploy do
       upload!("/data/work/IRM/.env", release_path.to_s, recursive: false)
       upload!("/data/work/IRM/.env.local", release_path.to_s, recursive: false)
       upload!("/data/work/IRM/.env.staging", release_path.to_s, recursive: false) if fetch(:stage) == :staging
+      upload!("/data/work/IRM/.env.sandbox", release_path.to_s, recursive: false) if fetch(:stage) == :sandbox
       upload!("/data/work/IRM/.env.production", release_path.to_s, recursive: false) if fetch(:stage) == :production
     end
   end
