@@ -61,5 +61,9 @@ staging:
   <<: *default_settings
   app_name: AltConnects (Staging)
 
+sandbox:
+  <<: *default_settings
+  app_name: AltConnects (Sandbox)
+
 production:
   <<: *default_settings

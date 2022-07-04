@@ -29,6 +29,7 @@ staging:
   
 sandbox:
   <<: *default
+  host: <%= ENV.fetch("DB_HOST") %>
   database: IRM_sandbox
 
 # Warning: The database defined as "test" will be erased and
