@@ -117,8 +117,18 @@ class Holding < ApplicationRecord
 
   def vesting_schedule
     schedule = []
-    option_pool.vesting_schedules.each do |pvs|
-      schedule << [grant_date + pvs.months_from_grant.month, pvs.vesting_percent, (orig_grant_quantity * pvs.vesting_percent / 100.0).round(0)]
+    vqty = 0
+    count = option_pool.vesting_schedules.count
+    option_pool.vesting_schedules.each_with_index do |pvs, idx|
+      # The last one needs to be adjusted for any leftover quantity as the
+      # vesting_percent may not yield round numbers
+      qty = if idx == (count - 1)
+              (orig_grant_quantity - vqty)
+            else
+              (orig_grant_quantity * pvs.vesting_percent / 100.0).floor(0)
+            end
+      vqty += qty
+      schedule << [grant_date + pvs.months_from_grant.month, pvs.vesting_percent, qty]
     end
     schedule
   end
