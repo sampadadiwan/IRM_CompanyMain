@@ -4,10 +4,10 @@ test:
   host: 'localhost:9200'
   prefix: 'test'
 staging:
-  host: 'https://vpc-dev-ova53iydsngksohawtxyruvnwu.ap-south-1.es.amazonaws.com'
+  host: '3.111.119.22:9200'
   prefix: 'staging'
 production:
-  host: 'https://vpc-prod-3aqab5wbjl24x33dexacfhqo44.ap-south-1.es.amazonaws.com/'
+  host: '3.111.119.22:9200'
   prefix: 'production'
 development:
   host: 'localhost:9200'
