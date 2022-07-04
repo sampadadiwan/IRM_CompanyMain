@@ -27,6 +27,9 @@ staging:
   <<: *default
   database: IRM_staging
   
+sandbox:
+  <<: *default
+  database: IRM_sandbox
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
