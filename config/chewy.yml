@@ -4,13 +4,13 @@ test:
   host: 'localhost:9200'
   prefix: 'test'
 staging:
-  host: '3.111.119.22:9200'
+  host: '<%= ENV["ELASTIC_SEARCH_URL"] %>'
   prefix: 'staging'
 sandbox:
-  host: '3.111.119.22:9200'
+  host: '<%= ENV["ELASTIC_SEARCH_URL"] %>'
   prefix: 'staging'
 production:
-  host: '3.109.142.99:9200'
+  host: '<%= ENV["ELASTIC_SEARCH_URL"] %>'
   prefix: 'production'
 development:
   host: 'localhost:9200'
