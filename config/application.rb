@@ -59,20 +59,6 @@ module InvestorRelationshipManagement
 
     end
 
-    # Configs for upload to S3
-    config.paperclip_defaults = {
-      storage: :s3,
-      s3_permissions: :private,
-      url: '/system/:class/:document_directory/:id/:basename.:extension',
-      s3_region: ENV["AWS_S3_REGION"],
-      s3_credentials: {
-        s3_region: ENV["AWS_S3_REGION"],
-        s3_host_name: ENV["AWS_S3_HOST_NAME"],
-        access_key_id: ENV["AWS_ACCESS_KEY_ID"],
-        secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"]
-      }
-    }
-
     config.active_storage.replace_on_assign_to_many = false
     config.active_storage.analyzers = []
     config.active_storage.previewers = []
