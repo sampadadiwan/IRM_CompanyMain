@@ -22,6 +22,11 @@
     <%= form.rich_text_area :details, class: "form-control"  %>
   </div>
 
+  <div class="form-group">
+    <%= form.label :due_date %>
+    <%= form.date_field :due_date, class: "form-control"  %>
+  </div>
+  
   <%= custom_form_fields(task, form) %>
 
 
@@ -29,13 +34,30 @@
     show_completed ||= false  
     if show_completed 
   %>
+
+    
+
     <div class="form-group">
       <%= form.label :completed %>
       <%= form.check_box :completed, class: "form-control form-checkbox"  %>
     </div>
+
+
   <% end %>
 
-  <div class="form-group">
+  <% unless true || task.new_record? %>
+  <div id='reminders' class="">   
+    <div class="form-divider"></div>
+    <h1>Send Reminders Before: </h1>           
+    <%= form.fields_for :reminders do |reminder| %>
+      <%= render '/reminders/reminders', :f => reminder %>
+    <% end %>
+  </div>
+  <% end %>
+
+  <div class="form-group">    
+    <%= link_to_add_association 'Add Reminder', form, :reminders , 
+        class: "btn btn-success" unless task.new_record? %>
     <%= form.submit "Save", {class: "btn btn-primary"}%>
   </div>
 <% end %>

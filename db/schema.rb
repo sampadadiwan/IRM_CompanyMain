@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_07_03_072643) do
+ActiveRecord::Schema[7.0].define(version: 2022_07_06_115929) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -819,6 +819,19 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_03_072643) do
     t.index ["user_id"], name: "index_permissions_on_user_id"
   end
 
+  create_table "reminders", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.string "unit", limit: 10
+    t.integer "count"
+    t.boolean "sent", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_reminders_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_reminders_on_owner"
+  end
+
   create_table "roles", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name"
     t.string "resource_type"
@@ -910,6 +923,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_03_072643) do
     t.string "owner_type"
     t.bigint "owner_id"
     t.bigint "form_type_id"
+    t.date "due_date"
     t.index ["entity_id"], name: "index_tasks_on_entity_id"
     t.index ["for_entity_id"], name: "index_tasks_on_for_entity_id"
     t.index ["form_type_id"], name: "index_tasks_on_form_type_id"
@@ -1058,6 +1072,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_03_072643) do
   add_foreign_key "permissions", "entities"
   add_foreign_key "permissions", "users"
   add_foreign_key "permissions", "users", column: "granted_by_id"
+  add_foreign_key "reminders", "entities"
   add_foreign_key "secondary_sales", "entities"
   add_foreign_key "secondary_sales", "form_types"
   add_foreign_key "taggings", "tags"

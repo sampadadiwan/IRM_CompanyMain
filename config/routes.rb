@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :reminders
   resources :permissions
   resources :tasks do
     get 'search', on: :collection

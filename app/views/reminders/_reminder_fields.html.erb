@@ -1,0 +1,17 @@
+<div class='nested-fields form-row'>
+
+    <div class="form-group">
+      <%= f.label :count, "&nbsp;".html_safe %>
+      <%= f.number_field :count, class: "form-control"  %>
+    </div>  
+    <div class="form-group">
+      <%= f.label :unit, "&nbsp;".html_safe %>
+      <%= f.select :unit, ["Days", "Hours"], {}, class: "form-control select"  %>
+    </div>    
+  
+    <div class="form-group">
+      <%= f.label :remove, "&nbsp;".html_safe  %>
+      <%= link_to_remove_association "Remove", f, class: "btn btn-sm btn-danger" %>
+    </div>
+    
+  </div>

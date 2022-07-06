@@ -1,0 +1,14 @@
+<tr id="<%= dom_id reminder %>">
+  <td>
+    <%= reminder.unit %>
+  </td>
+  <td>
+    <%= reminder.count %>
+  </td>
+  <td>
+    <%= display_boolean(reminder.sent) %>
+  </td>
+  <td>
+    <%= link_to "Show" , reminder , {class: "btn btn-primary" }%>
+  </td>
+</tr>

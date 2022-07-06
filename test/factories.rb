@@ -1,4 +1,12 @@
 FactoryBot.define do
+  factory :reminder do
+    entity { nil }
+    owner { nil }
+    unit { "MyString" }
+    count { 1 }
+    sent { false }
+  end
+
   factory :permission do
     user { User.all.sample }
     owner { Document.all.sample }

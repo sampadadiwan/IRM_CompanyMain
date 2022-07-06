@@ -9,6 +9,13 @@
     <%= task.for_entity.name %>
   </td>
   <td>
+    <%= l task.due_date if task.due_date %>
+    <% if !task.completed && task.due_date && task.due_date > Time.zone.today %>
+      <br>
+      <span class="badge badge-danger"> Delayed </span>
+    <% end %>
+  </td>
+  <td>
     <%= display_boolean(task.completed) %>
   </td>
   <td>

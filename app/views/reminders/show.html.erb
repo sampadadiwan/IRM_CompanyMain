@@ -1,0 +1,47 @@
+<%= render "/layouts/alerts" %>
+
+  <table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        For
+      </td>
+      <td>
+        <%= link_to @reminder.owner_type, @reminder.owner %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Unit
+      </td>
+      <td>
+        <%= @reminder.unit %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Count
+      </td>
+      <td>
+        <%= @reminder.count %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Sent
+      </td>
+      <td>
+        <%= display_boolean @reminder.sent %>
+      </td>
+    </tr>
+
+
+  </table>
+
+
+  <div>
+    <%= link_to "Edit" , edit_reminder_path(@reminder), {class: "btn btn-primary" } %> |
+
+    <%= button_to "Delete" , @reminder, method: :delete, class: "btn btn-danger" , form_class: "deleteButton" ,
+      data: {action: "click->confirm#delete" , turbo:false} %>
+  </div>

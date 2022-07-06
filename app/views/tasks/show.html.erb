@@ -31,9 +31,19 @@
         Owner
       </td>
       <td>
-        <%= @task.owner_id %>
+        <%= link_to @task.owner_type, @task.owner if @task.owner %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Due Date
+      </td>
+      <td>
+        <%= l @task.due_date if @task.due_date %>
+      </td>
+    </tr>
+
     <tr>
       <td>
         Completed
@@ -63,3 +73,8 @@
           {action: "click->confirm#delete" , turbo:false} %>
     <% end %>
   </div>
+
+  <div class="associated_entity">
+    <%#= render "/reminders/index", reminders: @task.reminders %>
+  </div>
+  

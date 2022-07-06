@@ -23,6 +23,9 @@ class Task < ApplicationRecord
   belongs_to :user
   belongs_to :owner, polymorphic: true, optional: true
 
+  has_many :reminders, as: :owner, dependent: :destroy
+  accepts_nested_attributes_for :reminders, allow_destroy: true
+
   # Customize form
   belongs_to :form_type, optional: true
   serialize :properties, Hash
