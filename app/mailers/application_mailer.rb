@@ -1,4 +1,4 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: "support@altconnects.com"
+  default from: ENV["SUPPORT_EMAIL"]
   layout "mailer"
 end

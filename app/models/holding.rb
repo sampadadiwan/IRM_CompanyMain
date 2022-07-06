@@ -155,7 +155,7 @@ class Holding < ApplicationRecord
   end
 
   def compute_vested_quantity
-    (orig_grant_quantity * allowed_percentage / 100).round(0)
+    (orig_grant_quantity * allowed_percentage / 100).floor(0)
   end
 
   def lapse_date

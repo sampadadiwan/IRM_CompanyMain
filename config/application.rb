@@ -41,7 +41,7 @@ module InvestorRelationshipManagement
 
     config.action_mailer.smtp_settings = {
       address: "email-smtp.ap-south-1.amazonaws.com",
-      domain: "altconnects.com",
+      domain: ENV["DOMAIN"],
       port: 587,
       user_name: ENV["SES_SMTP_USERNAME"],
       password: ENV["SES_SMTP_PASSWORD"],

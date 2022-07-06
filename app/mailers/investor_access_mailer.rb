@@ -7,7 +7,7 @@ class InvestorAccessMailer < ApplicationMailer
          cc: ENV['SUPPORT_EMAIL'],
          subject: subj)
 
-    msg = "Access Granted to #{@investor_access.entity_name} to AltConnects. Please login to view details."
+    msg = "Access Granted to #{@investor_access.entity_name} to #{ENV['DOMAIN']}. Please login to view details."
     WhatsappSenderJob.new.perform(msg, @investor_access.user) if @investor_access.user
   end
 end
