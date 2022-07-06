@@ -13,12 +13,27 @@ class HoldingsController < ApplicationController
       @holdings = @holdings.where(entity_id: @secondary_sale.entity_id)
     end
 
+    if params[:option_pool_id]
+      @option_pool = OptionPool.find(params[:option_pool_id])
+      @holdings = @holdings.where(option_pool_id: @option_pool.id)
+    end
+
     @holdings = @holdings.where(entity_id: params[:entity_id]) if params[:entity_id].present?
     @holdings = @holdings.where(funding_round_id: params[:funding_round_id]) if params[:funding_round_id].present?
     @holdings = @holdings.where(holding_type: params[:holding_type]) if params[:holding_type].present?
     @holdings = @holdings.where(investment_instrument: params[:investment_instrument]) if params[:investment_instrument].present?
 
-    @holdings = @holdings.page params[:page]
+    @holdings = @holdings.page params[:page] unless request.format.xlsx?
+
+    respond_to do |format|
+      format.xlsx do
+        response.headers[
+          'Content-Disposition'
+        ] = "attachment; filename=holdings.xlsx"
+      end
+      format.html { render :index }
+      format.json { render :index }
+    end
   end
 
   def search

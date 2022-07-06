@@ -221,4 +221,16 @@ class Holding < ApplicationRecord
     qty = lapsed_breakdown.inject(0) { |sum, e| sum + e.lapsed_quantity }
     [qty, first_expiry_date]
   end
+
+  def display_status
+    if cancelled
+      if cancelled_quantity == orig_grant_quantity
+        "Cancelled"
+      else
+        "Partial Cancel"
+      end
+    elsif approved
+      "Approved"
+    end
+  end
 end

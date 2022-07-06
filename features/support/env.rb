@@ -71,32 +71,16 @@ end
 Capybara.server_host = "localhost"
 Capybara.app_host = 'http://localhost:3000'
 
-
-Capybara.register_driver :https_chrome do |app|
-  options = Selenium::WebDriver::Chrome::Options.new
-  options.add_argument('--allow-insecure-localhost')
-  options.add_argument('--ignore-certificate-errors')
-
-  Capybara::Selenium::Driver.new(
-    app,
-    browser: :chrome,
-    capabilities: [options]
-  )
+Capybara.register_driver :selenium do |app|
+  Capybara::Selenium::Driver.new(app, browser: :chrome)
 end
 
-Capybara.register_driver :headless_https_chrome do |app|
-  options = Selenium::WebDriver::Chrome::Options.new
-  options.add_argument('--headless')
-  options.add_argument('--allow-insecure-localhost')
-  options.add_argument('--ignore-certificate-errors')
+Capybara.javascript_driver = :selenium_chrome_headless #:chrome #
 
-  Capybara::Selenium::Driver.new(
-    app,
-    browser: :chrome,
-    capabilities: [options]
-  )
+Capybara.configure do |config|
+  config.default_max_wait_time = 10 # seconds
+  config.default_driver        = :selenium_chrome_headless #:selenium #
 end
-
 
 module IRMUtils
   def key_values(entity, args)

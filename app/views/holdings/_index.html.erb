@@ -33,6 +33,13 @@
                     data: {turbo:false}  %>
 
             <% end %>
+
+            <% if @option_pool %>
+                <%= link_to "Download Excel", holdings_path(format: "xlsx", option_pool_id: @option_pool.id),
+                    class: "btn btn-success" %>
+            <% else %>
+                <%= link_to "Download Excel", holdings_path(format: "xlsx"), class: "btn btn-success" %>
+            <% end %>
         </span>
     </span>
 </div>
