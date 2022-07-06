@@ -48,6 +48,7 @@ class OptionPool < ApplicationRecord
   include FileUploader::Attachment(:certificate_signature)
 
   has_rich_text :details
+  has_rich_text :grant_letter
 
   # Customize form
   belongs_to :form_type, optional: true

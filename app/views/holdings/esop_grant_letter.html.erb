@@ -13,10 +13,15 @@
     
     <p class="line">Dear <%= @holding.user.full_name %></p>
     
-    <p class="line">Thank you for being an invaluable part of <%= @holding.entity.name %>.</p>
-    
-    
-    <p class="line">We are delighted to confirm the grant of <%= @holding.orig_grant_quantity %> as part of <%= @holding.entity.name %>’s <%= @holding.option_pool.name %> .</p>
+
+    <% if @holding.option_pool.grant_letter.present? %>
+      <div class="trix-content">
+        <%= @holding.option_pool.grant_letter %>
+      </div>
+    <% else %>
+      <p class="line">Thank you for being an invaluable part of <%= @holding.entity.name %>.</p>
+      <p class="line">We are delighted to confirm the grant of <%= @holding.orig_grant_quantity %> as part of <%= @holding.entity.name %>’s <%= @holding.option_pool.name %> .</p>
+    <% end %>
     
     <p class="line">The options granted to you will be exercisable as per the below schedule at a price of <%= money_to_currency @holding.price %>.</p>
     

@@ -81,6 +81,11 @@
                           for_model: "option_pool", field_name: "certificate_signature", 
                           model: option_pool %>
 
+
+              <div class="form-group">
+                <%= form.label :grant_letter %>
+                <%= form.rich_text_area :grant_letter, class: "form-control large_rich_text_area", required: true  %>
+              </div>
               <button class="btn btn-primary nextBtn btn-lg pull-right" type="button">Next</button>
             </div>
         </div>
