@@ -47,6 +47,9 @@ class Excercise < ApplicationRecord
   validate :lapsed_holding, on: :create
   validate :validate_quantity, on: :update
 
+  scope :approved, -> { where(approved: true) }
+  scope :not_approved, -> { where(approved: false) }
+
   before_save :compute
   after_create :notify_excercise
 

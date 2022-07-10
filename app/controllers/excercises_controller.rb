@@ -5,6 +5,7 @@ class ExcercisesController < ApplicationController
   def index
     @excercises = policy_scope(Excercise).includes(:holding, :user, :option_pool)
     @excercises = @excercises.where(option_pool_id: params[:option_pool_id]) if params[:option_pool_id].present?
+    @excercises = @excercises.where(approved: params[:approved]) if params[:approved].present?
   end
 
   def search
