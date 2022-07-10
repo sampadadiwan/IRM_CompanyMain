@@ -63,9 +63,11 @@
                 <th>
                     Employee ID
                 </th>
+                <% unless only_options.present? %>
                 <th>
                     Instrument
                 </th>
+                <% end %>
                 <th class="hideMobP">
                     Quantity
                 </th>
@@ -83,24 +85,18 @@
                         Net Avail For Excercise
                     </th>
                     <th class="hideMobP">
-                        Lapsed
-                    </th>
-                    <th class="hideMobP">
                         Net Unvested
                     </th>
                     <th class="hideMobP">
                         Grant Date
-                    </th>  
+                    </th>
                     <th class="hideMobP">
-                        Months Elapsed
-                    </th>                                        
+                        Manual Vesting
+                    </th>  
                 <% end %>
 
                 <th class="hideMobP">
                     Price
-                </th>
-                <th>
-                    Value
                 </th>
                 <th>
                 </th>
