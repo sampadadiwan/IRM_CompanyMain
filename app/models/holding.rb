@@ -69,6 +69,7 @@ class Holding < ApplicationRecord
   # If this holding was crated by excercising an option
   belongs_to :created_from_excercise, class_name: "Excercise", optional: true
   has_one :aggregated_investment, through: :investment
+  has_rich_text :note
 
   # Customize form
   belongs_to :form_type, optional: true

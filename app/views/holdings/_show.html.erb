@@ -294,6 +294,15 @@
       
     <% end %>
     
+    <tr>
+      <td>
+        Note
+      </td>
+      <td>
+        <%= @holding.note %>
+      </td>
+    </tr>
+
     <%= display_custom_fields(@holding) if current_user %>
 
 </table>

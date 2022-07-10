@@ -28,7 +28,7 @@ class ExcercisePolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    create? && !record.approved
   end
 
   def edit?
