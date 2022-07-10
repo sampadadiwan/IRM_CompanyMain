@@ -44,6 +44,7 @@ class Deal < ApplicationRecord
 
   has_many :documents, as: :owner, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
+  has_many :tasks, as: :owner, dependent: :destroy
 
   # Customize form
   belongs_to :form_type, optional: true
