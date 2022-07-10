@@ -79,6 +79,8 @@ class Holding < ApplicationRecord
 
   validates :quantity, :holding_type, presence: true
   validate :allocation_allowed, if: -> { investment_instrument == 'Options' }
+  validates :vested_quantity, numericality: { less_than_or_equal_to: :orig_grant_quantity }
+  validates :vested_quantity, numericality: { greater_than_or_equal_to: :excercised_quantity }
 
   def allocation_allowed
     errors.add(:option_pool, "Option pool required") if option_pool.nil?
