@@ -12,6 +12,7 @@ class TasksController < ApplicationController
       if policy(@owner).show?
         @tasks = Task.where(owner_id: params[:owner_id])
         @tasks = @tasks.where(owner_type: params[:owner_type])
+        @tasks = @tasks.where(for_entity_id: [current_user.entity_id, nil])
       end
     elsif params[:entity_id].present?
       # This is the tasks for a specific entity, usually by investor
