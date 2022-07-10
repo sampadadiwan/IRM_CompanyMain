@@ -5,8 +5,10 @@ class ExcerciseMailer < ApplicationMailer
   def notify_excercise
     @excercise = Excercise.find params[:excercise_id]
     emails = @excercise.user.email
+    approvers = @excercise.entity.employees.joins(:roles).where("roles.name=?", :approver).pluck(:email).join(",")
+
     mail(to: emails,
-         cc: ENV['SUPPORT_EMAIL'],
+         cc: approvers,
          subject: "New Excercise of Option by #{@excercise.user.full_name} ")
   end
 
