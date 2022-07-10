@@ -49,7 +49,6 @@ class Document < ApplicationRecord
   counter_culture :folder
 
   has_rich_text :text
-  has_one_attached :video, service: :amazon
 
   # Customize form
   belongs_to :form_type, optional: true
