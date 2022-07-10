@@ -29,7 +29,7 @@ class HealthCheckController < ApplicationController
       if Folder.search("Test", 1)
         format.json { render json: "Ok", status: :ok }
       else
-        raise "DB not reachable"
+        raise "ES not reachable"
       end
     end
   end
