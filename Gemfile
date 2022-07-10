@@ -87,6 +87,9 @@ gem 'counter_culture', '~> 2.0'
 gem 'impressionist'
 gem 'roo'
 
+gem 'draper'
+gem "view_component"
+
 gem 'client_side_validations'
 gem 'rack-attack'
 

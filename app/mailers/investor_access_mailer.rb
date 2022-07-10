@@ -1,4 +1,6 @@
 class InvestorAccessMailer < ApplicationMailer
+  helper ApplicationHelper
+  
   def notify_access
     @investor_access = InvestorAccess.includes(:user).find params[:investor_access_id]
 

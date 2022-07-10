@@ -29,7 +29,7 @@ class Excercise < ApplicationRecord
   belongs_to :user
   belongs_to :option_pool
 
-  has_one_attached :payment_proof, service: :amazon
+  has_many_attached :payment_proof, service: :amazon
 
   monetize :price_cents, :amount_cents, with_currency: ->(e) { e.entity.currency }
 

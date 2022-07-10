@@ -29,7 +29,7 @@
     </div>
   <% end %>
 
-  <%= render "/layouts/steps", steps: ["Holding Quantity: #{excercise.holding.quantity}", "Vesting Percent allowed: #{excercise.holding.allowed_percentage} %", "Max Excercisable Quantity: #{excercise.holding.net_avail_to_excercise_quantity}", "Input Your Tax Rate", "Excercise Your Option", "Wait For Approval"].freeze %>
+  <%= render "/layouts/steps", steps: ["Holding Quantity: #{excercise.holding.quantity}", "Vesting Percent allowed: #{excercise.holding.allowed_percentage} %", "Max Excercisable Quantity: #{excercise.holding.net_avail_to_excercise_quantity}", "Attach Payment Proofs", "Excercise Your Option", "Wait For Approval"].freeze %>
 
 
   <%= form.number_field :holding_id, class: "form-control", hidden: true  %>
@@ -89,7 +89,7 @@
 
               <div class="field" class="form-group" data-controller="directuploads" >
                 <%= form.label :payment_proof %>
-                <%= form.file_field :payment_proof, class: "form-control", direct_upload: true, multiple:false %>
+                <%= form.file_field :payment_proof, class: "form-control", direct_upload: true, multiple:true %>
                 <small class="text-muted"> Upload proof of payment as per the instructions. </small>
               </div>
 

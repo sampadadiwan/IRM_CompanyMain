@@ -1,5 +1,6 @@
 class ExcerciseMailer < ApplicationMailer
   helper EmailCurrencyHelper
+  helper ApplicationHelper
 
   def notify_excercise
     @excercise = Excercise.find params[:excercise_id]

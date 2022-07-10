@@ -63,7 +63,7 @@
                 Payment Proof
             </td>
             <td>
-                <%= render "/layouts/attachments" , attachments: [excercise.payment_proof] if excercise.payment_proof.present? %>
+                <%= render "/layouts/attachments" , attachments: excercise.payment_proof if excercise.payment_proof.present? %>
             </td>
         </tr>
     <% end %>
