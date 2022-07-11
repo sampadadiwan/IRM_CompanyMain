@@ -3,7 +3,10 @@
     Documents
     <%= params[:folder_id].present? ? "in " + Folder.find(params[:folder_id]).full_path : "" %>
   </h1>
+
+  <% external = owner && owner.entity_id != current_user.entity_id %>
   <%= link_to "New Document" , new_document_path(
+                                  external: external,
                                   "document[entity_id]": owner&.entity_id ||
                                   current_user.entity_id, 
                                   "document[owner_id]": owner&.id, 

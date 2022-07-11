@@ -1,5 +1,5 @@
 class HealthCheckController < ApplicationController
-  before_action :authenticate_user!, :except => %i[redis_check db_check elastic_check]
+  before_action :authenticate_user!, except: %i[redis_check db_check elastic_check]
   skip_after_action :verify_authorized, only: %i[redis_check db_check elastic_check]
 
   def redis_check

@@ -63,8 +63,12 @@ class SecondarySale < ApplicationRecord
            :allocation_offer_amount_cents, :allocation_interest_amount_cents,
            with_currency: ->(s) { s.entity.currency }
 
-  validates :name, :start_date, :end_date, :min_price, :percent_allowed, presence: true
-  validates :final_price, numericality: { greater_than: 0 }, if: proc { |s| s.finalized }
+  validates :name, :start_date, :end_date, :percent_allowed, presence: true
+  validates :final_price, numericality: { greater_than: 0 },
+                          if: -> { price_type == 'Fixed Price' || finalized }
+  validates :final_price, presence: true, if: -> { price_type == 'Fixed Price' }
+  validates :min_price, :max_price, presence: true, if: -> { price_type == 'Price Range' }
+  validates :max_price, numericality: { greater_than: :min_price }, if: -> { price_type == 'Price Range' }
 
   scope :for, lambda { |user|
                 joins(:access_rights)

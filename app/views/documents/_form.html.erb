@@ -75,30 +75,32 @@
     </div>
   </div>
 
-
+  <% if params[:external] == "true" %>
+    <%= form.text_field :orignal, class: "form-control", hidden:true, value: true  %>
+  <% else %>
   <div data-controller="docform">
-  <div class="form-group nonpdf">
-    <%= form.label :orignal, "Allow Orignal Format Download" %>
-    <%= form.check_box :orignal, class: "form-control form-checkbox", 
-              data: {action: "click->docform#onOrignalChange"} %>
-    <small class="text-muted">Allow orignal format to be downloaded (No conversion or watermarking)</small>
-  </div>
+    <div class="form-group nonpdf">
+      <%= form.label :orignal, "Allow Orignal Format Download" %>
+      <%= form.check_box :orignal, class: "form-control form-checkbox", 
+                data: {action: "click->docform#onOrignalChange"} %>
+      <small class="text-muted">Allow orignal format to be downloaded (No conversion or watermarking)</small>
+    </div>
 
-  <div class="form-group pdfopts">
-    <%= form.label :download, "Allow Download" %>
-    <%= form.check_box :download, class: "form-control form-checkbox",
-            data: {action: "click->docform#onPdfOptChange"}  %>
-    <small class="text-muted">Enable users to download this document</small>
-  </div>
+    <div class="form-group pdfopts">
+      <%= form.label :download, "Allow Download" %>
+      <%= form.check_box :download, class: "form-control form-checkbox",
+              data: {action: "click->docform#onPdfOptChange"}  %>
+      <small class="text-muted">Enable users to download this document</small>
+    </div>
 
-  <div class="form-group pdfopts">
-    <%= form.label :printing, "Allow Printing" %>
-    <%= form.check_box :printing, class: "form-control form-checkbox",
-            data: {action: "click->docform#onPdfOptChange"} %>
-    <small class="text-muted">Enable users to print this document</small>
+    <div class="form-group pdfopts">
+      <%= form.label :printing, "Allow Printing" %>
+      <%= form.check_box :printing, class: "form-control form-checkbox",
+              data: {action: "click->docform#onPdfOptChange"} %>
+      <small class="text-muted">Enable users to print this document</small>
+    </div>
   </div>
-  </div>
-
+  <% end %>
 
   <%= custom_form_fields(document, form) %>
 
