@@ -8,10 +8,10 @@
     </td>
   <% else %>
     <td>
-      <%= Pundit.policy(current_user, interest).unscramble? ? interest.interest_entity.name : ENV["OBFUSCATION"] %>
+      <%= policy(interest).unscramble? ? interest.interest_entity.name : ENV["OBFUSCATION"] %>
     </td>
     <td>
-      <%= Pundit.policy(current_user, interest).unscramble? ? interest.user.full_name : ENV["OBFUSCATION"] %>
+      <%= policy(interest).unscramble? ? interest.user.full_name : ENV["OBFUSCATION"] %>
     </td>
     <td>
       <%= interest.interest_entity.entity_type %>
@@ -38,14 +38,10 @@
   
 
   <td id="short_listed">
-    <span class="badge <%= interest.short_listed? ? 'bg-success' : 'bg-warning' %>">
-      <%= interest.short_listed? ? "Yes" : "No" %>
-    </span>
+    <%= display_boolean interest.short_listed %>
   </td>
   <td id="escrow_deposited">
-    <span class="badge <%= interest.escrow_deposited? ? 'bg-success' : 'bg-warning' %>">
-      <%= interest.escrow_deposited? ? "Yes" : "No" %>
-    </span>
+    <%= display_boolean interest.escrow_deposited %>
   </td>
   
   <td>

@@ -28,11 +28,13 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def buyer?
-    SecondarySale.for(user).where("access_rights.metadata=?", "Buyer").where(id: record.id).present?
+    # SecondarySale.for(user).where("access_rights.metadata=?", "Buyer").where(id: record.id).present?
+    record.buyer?(user)
   end
 
   def seller?
-    SecondarySale.for(user).where("access_rights.metadata=?", "Seller").where(id: record.id).present?
+    # SecondarySale.for(user).where("access_rights.metadata=?", "Seller").where(id: record.id).present?
+    record.seller?(user)
   end
 
   def show_interest?

@@ -155,4 +155,12 @@ class SecondarySale < ApplicationRecord
   def document_tags
     %w[Buyer Seller]
   end
+
+  def buyer?(user)
+    SecondarySale.for(user).where("access_rights.metadata=?", "Buyer").where(id:).present?
+  end
+
+  def seller?(user)
+    SecondarySale.for(user).where("access_rights.metadata=?", "Seller").where(id:).present?
+  end
 end

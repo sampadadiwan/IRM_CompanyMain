@@ -23,7 +23,9 @@ class InterestPolicy < ApplicationPolicy
   end
 
   def unscramble?
-    (record.escrow_deposited? && user.entity_id == record.entity_id) || user.entity_id == record.interest_entity_id
+    (record.escrow_deposited? && user.entity_id == record.entity_id) || # Escrow is deposited
+      user.entity_id == record.interest_entity_id || # Interest is by this entity
+      record.secondary_sale.buyer?(record.user) # Is a seller added by the startup for this sale
   end
 
   def create?
