@@ -70,17 +70,17 @@
                             <%= render "/layouts/persona" %>
                         <% end %>
 
-                        <div class="topbar-divider "></div>
+                        <div class="topbar-divider d-none d-sm-block"></div>
 
-                        <li class="nav-item dropdown no-arrow">
+                        <li class="nav-item dropdown no-arrow d-none d-sm-block">
                             <a role="button" class="nav-link dropdown-toggle" href="https://caphive.com/document-FAQ/" target="_blank">
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">FAQs</span>
                             </a>
                         </li>
 
-                        <div class="topbar-divider "></div>
+                        <div class="topbar-divider d-none d-sm-block"></div>
 
-                        <li class="nav-item dropdown no-arrow">
+                        <li class="nav-item dropdown no-arrow d-none d-sm-block">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 
@@ -89,7 +89,9 @@
                                         <%= image_tag image_url(rails_blob_path(current_user.entity.logo)), 
                                             class: "top_bar_logo" %>
                                     <% else %>
-                                        <span class="mr-2 d-none d-lg-inline text-gray-600 small"><%= current_user.entity.name  %></span>                                
+                                        <span class="mr-2 d-lg-inline text-gray-600 small">
+                                            <%= current_user.entity.name  %>
+                                        </span>                                
                                     <% end %>
                                 <% end %>
                                 
