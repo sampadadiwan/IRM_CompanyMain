@@ -157,7 +157,8 @@ class SecondarySalesController < ApplicationController
     params.require(:secondary_sale).permit(:name, :entity_id, :start_date, :end_date, :final_price, :form_type_id,
                                            :percent_allowed, :min_price, :max_price, :active, :price_type,
                                            :seller_doc_list, :finalized, :spa, :final_allocation, :spa_template,
-                                           :offer_end_date, seller_instructions: [], private_docs: [], public_docs: [], buyer_instructions: [], properties: {},
-                                                            documents_attributes: Document::NESTED_ATTRIBUTES)
+                                           :offer_end_date, :support_email,
+                                           seller_instructions: [], private_docs: [], public_docs: [], buyer_instructions: [], properties: {},
+                                           documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

@@ -8,6 +8,22 @@
           <%= secondary_sale.entity.name %>
         </td>
     </tr>
+
+    <tr>
+      <td>
+        Support Email
+      </td>
+      <td>
+        <a href="mailto:<%=secondary_sale.support_email%>" target="_blank">
+          <%= secondary_sale.support_email %>
+        </a>
+        <br>
+        <div class="badge badge-success">
+          Send your queries here
+        </div> 
+      </td>
+    </tr>
+
     <tr>
       <td>
         Name
@@ -38,7 +54,7 @@
         Offer End Date
       </td>
       <td>
-        <%= l secondary_sale.offer_end_date %>
+        <%= l secondary_sale.offer_end_date if secondary_sale.offer_end_date %>
       </td>
     </tr>
 
@@ -104,7 +120,7 @@
         Active
       </td>
       <td>
-        <%= secondary_sale.active? ? "Yes" : "No" %>
+        <%= display_boolean secondary_sale.active? %>
       </td>
     </tr>
 
@@ -191,7 +207,9 @@
           Offer Allocation Percentage
         </td>
         <td>
-          <%= [(secondary_sale.allocation_percentage * 100.00).round(2), 100].min %> %
+          <span class="badge <%= secondary_sale.allocation_percentage > 1 ? 'badge-success' : 'badge-warning' %>">
+            <%= [(secondary_sale.allocation_percentage * 100.00).round(2), 100].min %> %
+          </span>
         </td>
       </tr>
 

@@ -877,6 +877,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_12_150556) do
     t.bigint "form_type_id"
     t.boolean "lock_allocations", default: false
     t.date "offer_end_date"
+    t.string "support_email"
     t.index ["deleted_at"], name: "index_secondary_sales_on_deleted_at"
     t.index ["entity_id"], name: "index_secondary_sales_on_entity_id"
     t.index ["form_type_id"], name: "index_secondary_sales_on_form_type_id"
