@@ -82,7 +82,13 @@
                       msg: "Send email to all sellers notifying that the sale is open", 
                       method: :patch }  %>   
 
-
+          <%= button_to "Send Offer Reminder : To Sellers", 
+              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_closing_offers"),    
+              class: "dropdown-item", 
+              data: { action: "click->confirm#popup", 
+                      msg: "Send email to all sellers notifying that the offer date is approaching", 
+                      method: :patch }  %>   
+        
           <%= button_to "Send Sale Open : To Buyers", 
               send_notification_secondary_sale_path(@secondary_sale, notification: "notify_open_for_interests"),    
               class: "dropdown-item", 
@@ -90,13 +96,13 @@
                       msg: "Send email to all buyers notifying that the sale is open for interests", 
                       method: :patch }  %>   
 
-          <%= button_to "Send Offer Reminder : To Sellers", 
-              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_closing_offers"),    
+          <%= button_to "Send Interest Reminder : To Buyers", 
+              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_closing_interests"),    
               class: "dropdown-item", 
               data: { action: "click->confirm#popup", 
-                      msg: "Send email to all sellers notifying that the offer date is approaching", 
+                      msg: "Send email to all buyers notifying that they need to enter their interest", 
                       method: :patch }  %>   
-
+                  
 
           <%= button_to "Allocation Notification : To All", 
               send_notification_secondary_sale_path(@secondary_sale,     notification: "notify_allocation"),    

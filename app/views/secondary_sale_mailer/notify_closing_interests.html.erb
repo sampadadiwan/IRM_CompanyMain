@@ -1,0 +1,25 @@
+
+<h3>Dear User</h3>
+
+<p>
+    The secondary sale <%= @secondary_sale.name %> by <%= @secondary_sale.entity.name %>  
+    will be closed for new interests soon. If you have not placed an indication of interest in the sale yet, 
+    then this is your chance.     
+</p>
+
+
+<p>
+    <%= render "/secondary_sale_mailer/sale", secondary_sale: @secondary_sale, current_user: nil %>
+</p>
+
+<p class="btn btn-primary"><%= link_to 'View Sale', secondary_sale_url(@secondary_sale) %></p>
+
+<h3>Next Steps</h3>
+<p>
+    <ul>
+        <li>Login and enter an interest.</li>
+        <li>Wait for the interest to be short listed.</li>
+        <li>Wait for notification that the purchase has gone through</li>
+    </ul>
+</p>
+
