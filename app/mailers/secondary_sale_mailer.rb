@@ -36,7 +36,6 @@ class SecondarySaleMailer < ApplicationMailer
          subject: "Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}, reminder to enter your interest")
   end
 
-
   def notify_open_for_offers
     @secondary_sale = SecondarySale.find(params[:id])
 
