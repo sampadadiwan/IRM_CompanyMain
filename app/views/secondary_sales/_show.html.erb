@@ -179,10 +179,10 @@
 
       <tr>
         <td>
-          Interest Allocation Percentage
+          Offer Allocation Percentage
         </td>
         <td>
-          <%= (secondary_sale.allocation_percentage * 100.00).round(2) %> %
+          <%= [(secondary_sale.allocation_percentage * 100.00).round(2), 100].min %> %
         </td>
       </tr>
 

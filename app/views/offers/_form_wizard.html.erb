@@ -160,11 +160,11 @@
 
                     <div class="form-group">
 
-                        <%= form.label :documents, "Option Pool Documents", class: "form-label" %>
+                        <%= form.label :documents, "Additional Offer Documents", class: "form-label" %>
                         <%= render "layouts/multi_upload", form: form, title: "Offer Documents", 
                                                 for_model: "offer" %>
                     
-                        <small class="text-muted"> Upload bank statements, tax documents and shareholding documents. </small>
+                        <small class="text-muted"> <%= offer.secondary_sale.seller_doc_list %> </small>
                     
                     </div>
                   

@@ -79,10 +79,10 @@
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                    Interest Allocation Percentage
+                                    Offer Allocation Percentage
                                 </div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                    <%= secondary_sale.allocation_percentage * 100 %>
+                                    <%= [secondary_sale.allocation_percentage * 100, 100].min %>
                                 </div>
                             </div>
                             <div class="col-auto">
