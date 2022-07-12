@@ -24,10 +24,6 @@
                                                     {class: "btn btn-success #{download_disabled}"  } do %> 
                     <i class="fa-lg fa-regular fa-file-excel"></i> Download
             <% end %>
-
-            <%= button_to "Allocation Notification", send_notification_secondary_sale_path(@secondary_sale, notification: "notify_allocation"),    
-                        class: "btn btn-success", 
-                        data: {action: "click->confirm#popup", msg: "Send email to all participants notifying that the allocation is complete", method: :patch } if policy(@secondary_sale).notify_allocations? %> 
         
             &nbsp;&nbsp;&nbsp;
       
