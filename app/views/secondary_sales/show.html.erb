@@ -44,6 +44,9 @@
 
     <% end %>
 
+                                    
+
+
     <%  if policy(@secondary_sale).view_allocations? %>
     <div class="btn-group">
       <div class="dropdown">
@@ -58,6 +61,49 @@
           <%= link_to "Interest Allocations",
               interests_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
               {class: "dropdown-item" } %> 
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%  if policy(@secondary_sale).update? %>
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" 
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Notifications
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          
+          <%= button_to "Send Sale Open : To Sellers", 
+              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_open_for_offers"),    
+              class: "dropdown-item", 
+              data: { action: "click->confirm#popup", 
+                      msg: "Send email to all sellers notifying that the sale is open", 
+                      method: :patch }  %>   
+
+
+          <%= button_to "Send Sale Open : To Buyers", 
+              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_open_for_interests"),    
+              class: "dropdown-item", 
+              data: { action: "click->confirm#popup", 
+                      msg: "Send email to all buyers notifying that the sale is open for interests", 
+                      method: :patch }  %>   
+
+          <%= button_to "Send Offer Reminder : To Sellers", 
+              send_notification_secondary_sale_path(@secondary_sale, notification: "notify_closing_offers"),    
+              class: "dropdown-item", 
+              data: { action: "click->confirm#popup", 
+                      msg: "Send email to all sellers notifying that the offer date is approaching", 
+                      method: :patch }  %>   
+
+
+          <%= button_to "Allocation Notification : To All", 
+              send_notification_secondary_sale_path(@secondary_sale,     notification: "notify_allocation"),    
+              class: "dropdown-item", 
+              data: {action: "click->confirm#popup", 
+              msg: "Send email to all participants notifying that the allocation is complete", method: :patch } if policy(@secondary_sale).notify_allocations? %> 
+          
         </div>
       </div>
     </div>

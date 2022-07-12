@@ -1,6 +1,6 @@
 class SecondarySalesController < ApplicationController
   before_action :set_secondary_sale, only: %i[show edit update destroy make_visible download allocate
-                                              notify_allocation spa_upload lock_allocations ]
+                                              send_notification spa_upload lock_allocations ]
 
   after_action :verify_policy_scoped, only: []
 
@@ -92,10 +92,10 @@ class SecondarySalesController < ApplicationController
     end
   end
 
-  def notify_allocation
-    @secondary_sale.notify_allocation
+  def send_notification
+    @secondary_sale.send(params[:notification])
     respond_to do |format|
-      format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "Allocation notification sent successfully." }
+      format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "Notification sent successfully." }
       format.json { render :show, status: :ok, location: @secondary_sale }
     end
   end
