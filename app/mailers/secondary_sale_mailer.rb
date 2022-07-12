@@ -26,6 +26,18 @@ class SecondarySaleMailer < ApplicationMailer
          subject: "Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}, open for offers")
   end
 
+  def notify_closing_offers
+    @secondary_sale = SecondarySale.find(params[:id])
+
+    # Get all emails of investors & holding company employees
+    open_for_offers_emails = @secondary_sale.access_rights.collect(&:investor_emails).flatten +
+                             @secondary_sale.access_rights.collect(&:holding_employees_emails).flatten
+
+    mail(to: ENV['SUPPORT_EMAIL'],
+         bcc: open_for_offers_emails.join(','),
+         subject: "Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}, reminder to enter your offer")
+  end
+
   def notify_allocation
     @secondary_sale = SecondarySale.find(params[:id])
 

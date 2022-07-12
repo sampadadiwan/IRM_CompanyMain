@@ -117,6 +117,10 @@ class SecondarySale < ApplicationRecord
     SecondarySaleMailer.with(id:).notify_open_for_offers.deliver_later
   end
 
+  def notify_closing_offers
+    SecondarySaleMailer.with(id:).notify_closing_offers.deliver_later
+  end
+
   def notify_allocation
     SecondarySaleMailer.with(id:).notify_allocation.deliver_later
   end
