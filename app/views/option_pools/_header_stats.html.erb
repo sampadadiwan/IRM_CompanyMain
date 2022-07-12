@@ -79,7 +79,7 @@
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                    <%= link_to "Pending Approval", excercises_path(option_pool_id: option_pool.id,approved: false) %>
+                                    <%= link_to "Pending Approval", excercises_path(option_pool_id: option_pool.id,approved: false), class: "text-warning" %>
                                 </div>
                                 <div class="h5 mb-0 font-weight-bold text-gray-800">
                                     <%= custom_format_number option_pool.excercises.not_approved.count, params %>

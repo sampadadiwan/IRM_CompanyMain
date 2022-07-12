@@ -167,10 +167,21 @@
       </tr>
       <tr>
         <td>
-          Total Interest Quantity
+          Shortlisted Interest Quantity
         </td>
         <td>
-          <%= custom_format_number secondary_sale.total_interest_quantity, params %>
+          
+          <ul>
+            <li>
+              Total: <%= custom_format_number secondary_sale.total_interest_quantity, params %>
+            </li>
+            <% price_qty = secondary_sale.interests.short_listed.group(:price).sum(:quantity).sort.to_h %>
+            <% price_qty.each do |price, qty| %>
+              <li>
+                <%= qty %> @ <%= price %> 
+              </li>
+            <% end %>
+          </ul>
         </td>
       </tr>
 
