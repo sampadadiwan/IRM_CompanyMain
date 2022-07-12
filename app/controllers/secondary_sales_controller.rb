@@ -158,6 +158,6 @@ class SecondarySalesController < ApplicationController
                                            :percent_allowed, :min_price, :max_price, :active, :price_type,
                                            :seller_doc_list, :finalized, :spa, :final_allocation, :spa_template,
                                            :offer_end_date, seller_instructions: [], private_docs: [], public_docs: [], buyer_instructions: [], properties: {},
-                                           documents_attributes: Document::NESTED_ATTRIBUTES)
+                                                            documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end
