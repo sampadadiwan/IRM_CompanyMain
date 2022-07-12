@@ -3,14 +3,14 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
 
   connect() {
-    this.onChange(null);
     console.log("Sale price javascript loaded");
+    this.onChange(null);    
   }
 
   onChange(event) {
-    console.log("onChange");
-    console.log("change");
+    
     let selected = $("#secondary_sale_price_type").val();
+    console.log(`onChange ${selected}`);
     switch (selected) {
       case "Price Range":
         if($('#secondary_sale_id').val()) {
