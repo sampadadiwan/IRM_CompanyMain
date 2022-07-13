@@ -33,9 +33,10 @@
     <div class="divTableCell"><%= offer.allocation_quantity %></div>
     <div class="divTableCell"><%= offer.interest.interest_entity.name if offer.interest %></div>
     <div class="divTableCell">
-        <span class="badge <%= offer.verified ? 'bg-success' : 'bg-warning' %>">
-            <%= offer.verified ?  "Yes" : "No" %>
-        </span>
+        <%= display_boolean offer.final_agreement %>        
+    </div>
+    <div class="divTableCell">
+        <%= display_boolean offer.verified %>        
     </div>
     <div class="divTableCell"><%= offer.comments %></div>
     <div class="divTableCell">
