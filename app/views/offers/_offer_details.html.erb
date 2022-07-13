@@ -2,47 +2,20 @@
 
   
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
-    <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#faqs-tab">
-        FAQ</a>
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
+    <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
         data-action="click->tabdetails#loadData">Documents</a>
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#chat-tab" 
-        data-action="click->tabdetails#loadData">Chat</a>
   </nav>
 
   <div class="tab-content" data-controller="datatable">
 
-      <div id="faqs-tab" class="tab-pane fade in show active">
-        <div id="faqs" class="associated_entity">
-          <%= render "/offers/faq", offer: @offer %>
-        </div>     
-      </div>
 
-      <div id="docs-tab" class="tab-pane fade">
+      <div id="docs-tab" class="tab-pane fade in show active">
         <div id="docs" class="associated_entity">
-          <%= link_to documents_path(owner_id: offer.id, owner_type: "Offer", 
-                                     entity_id: offer.entity_id, no_folders: true), 
-                                     class: "load_data_link", 
-                                     data: { turbo_frame: 'documents_frame' } do %>
-              <span>Loading...</span>
-          <% end %>
-          <%= turbo_frame_tag "documents_frame", target: "_top" do %>
-          <% end %>
+          <%= render "/documents/index", documents: @offer.documents, owner: @offer, entity: @offer.entity %>
         </div>     
       </div>
 
-      <div id="chat-tab" class="tab-pane fade">
-        <div id="messages" class="associated_entity">
-          <%= link_to messages_path(owner_id: offer.id, owner_type: "Offer"), 
-              class: "load_data_link", data: { turbo_frame: 'messages_frame' } do %>
-            <span>Loading...</span>
-          <% end %>
-          <%= turbo_frame_tag "messages_frame", target: "_top" do %>
-          <% end %>
-        </div>  
-      </div>
       
-
   </div>
 
 </div>

@@ -154,26 +154,10 @@
       </tr>
       <tr>
         <td>
-          Address Proof
-        </td>
-        <td>
-          <%= render "/layouts/attachments" , attachments: [@offer.address_proof] if @offer.address_proof.present? %>
-        </td>
-      </tr>
-      <tr>
-        <td>
           PAN
         </td>
         <td>
           <%= @offer.PAN %>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          ID Proof
-        </td>
-        <td>
-          <%= render "/layouts/attachments" , attachments: [@offer.id_proof] if @offer.id_proof.present? %>
         </td>
       </tr>
       <tr>
@@ -223,9 +207,7 @@
             I agree to enter into the SPA
             </td>
             <td>
-            <span class="badge <%= @offer.final_agreement ? 'bg-success' : 'bg-warning' %>">
-                <%= @offer.final_agreement ? "Yes" : "No" %>
-            </span>
+                <%= display_boolean @offer.final_agreement %>
             </td>
         </tr>
 
@@ -241,7 +223,10 @@
                 SPA
             </td>
             <td>
-                <% spa = @offer.secondary_sale.spa.present? ? @offer.secondary_sale.spa : @offer.spa %>
+                <% 
+                  spa = @offer.spa 
+                  spa ||= @offer.secondary_sale.spa 
+                %>
                 <%= render "/layouts/attachments" , attachments: [spa], allow_delete: "No" %>
             </td>
             </tr>

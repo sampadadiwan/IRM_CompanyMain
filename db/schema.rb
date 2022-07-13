@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_07_12_150556) do
+ActiveRecord::Schema[7.0].define(version: 2022_07_13_022743) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -747,6 +747,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_12_150556) do
     t.text "spa_data"
     t.text "id_proof_data"
     t.text "address_proof_data"
+    t.text "docs_uploaded_check"
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
     t.index ["entity_id"], name: "index_offers_on_entity_id"
     t.index ["form_type_id"], name: "index_offers_on_form_type_id"

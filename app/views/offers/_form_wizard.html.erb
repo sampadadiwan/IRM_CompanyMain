@@ -43,6 +43,14 @@
                     <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
                 </div>
 
+                <% if offer.approved %>
+                    <div class="form-group">
+                        <div class="form-label alert alert-info">Please read the SPA template to understand the terms and conditions of the sale</div>
+                        <%= render "/layouts/attachments" , attachments: [offer.secondary_sale.spa], allow_delete: "No" if offer.secondary_sale.spa.present? %>
+                    </div>
+                <% end %>
+
+
                 <div class="form-group">
                     <%= form.label :secondary_sale %>
                     <%= form.text_field :secondary_sale_name, class: "form-control", disabled: true, value: offer.secondary_sale.name  %>
@@ -69,7 +77,7 @@
                 </div>
 
                 <div class="form-group">
-                    <% if offer.secondary_sale.lock_allocations %>
+                    <% if offer.approved %>
                         <button class="btn btn-primary nextBtn btn-lg pull-right" type="button">Next</button>
                     <% else %>
                         <%= form.submit "Save", {class: "btn btn-primary btn-lg"}%>
@@ -81,7 +89,7 @@
     </div>
   </div>
 
-  <% if offer.secondary_sale.lock_allocations %>
+  <% if offer.approved %>
 
     <div class="row setup-content" id="step-2">
         <div class="col-md-12">
@@ -106,14 +114,7 @@
                         <%= form.text_area :address, class: "form-control", required: true  %>
                     </div>
                     
-                    <div class="form-group">
-
-                        <%= render "layouts/single_upload", form: form, field_label: "Upload Address Proof", 
-                                                for_model: "offer", field_name: "address_proof", 
-                                                model: offer %>
                     
-                        <small class="text-muted"> Upload any document which can serve as Address Proof. </small>
-                    </div>
 
 
                     <div class="form-group">
@@ -121,14 +122,7 @@
                         <%= form.text_field :PAN, class: "form-control", required: true  %>
                     </div>
 
-                    <div class="form-group">
-
-                        <%= render "layouts/single_upload", form: form, field_label: "Upload ID Proof", 
-                                                for_model: "offer", field_name: "id_proof", 
-                                                model: offer %>
                     
-                        <small class="text-muted"> Upload any document which can serve as ID Proof. </small>
-                    </div>
 
                     <div class="form-group">
                         <%= form.label :bank_account_number %>
@@ -160,13 +154,32 @@
 
                     <div class="form-group">
 
-                        <%= form.label :documents, "Additional Offer Documents", class: "form-label" %>
+                        <% label = offer.secondary_sale.seller_doc_list ? offer.secondary_sale.seller_doc_list : "Additional Documents" %>
+                        <%= form.label :documents, label, class: "form-label" %>
                         <%= render "layouts/multi_upload", form: form, title: "Offer Documents", 
                                                 for_model: "offer" %>
                     
-                        <small class="text-muted"> <%= offer.secondary_sale.seller_doc_list %> </small>
+                        <small class="text-muted"> Upload documents here </small>
                     
                     </div>
+
+                    <% if offer.secondary_sale.seller_doc_list.present? %>
+                        
+                        <label class="form-label">Confirm Uploaded Documents</label>
+                        <div class="docs_uploaded_check">                        
+                        <% offer.secondary_sale.seller_doc_list.split(",").each_with_index do |doc_name, idx| %>
+        
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" 
+                                id="duc_<%=idx%>"
+                                name="offer[docs_uploaded_check][<%=doc_name.strip%>]" 
+                                value="1"
+                                <%= offer.docs_uploaded_check[doc_name.strip].present? ? 'checked' : nil %>>
+                                <label class="form-check-label" for="duc_<%=idx%>"><%= doc_name %></label>
+                            </div>
+                        <% end %>
+                        </div>
+                    <% end %>
                   
                     <div class="form-group">
 

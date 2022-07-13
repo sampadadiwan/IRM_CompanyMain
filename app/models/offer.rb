@@ -79,12 +79,11 @@ class Offer < ApplicationRecord
   accepts_nested_attributes_for :documents, allow_destroy: true
   include FileUploader::Attachment(:signature)
   include FileUploader::Attachment(:spa)
-  include FileUploader::Attachment(:id_proof)
-  include FileUploader::Attachment(:address_proof)
 
   # Customize form
   belongs_to :form_type, optional: true
   serialize :properties, Hash
+  serialize :docs_uploaded_check, Hash
 
   delegate :quantity, to: :holding, prefix: :holding
 
@@ -124,6 +123,7 @@ class Offer < ApplicationRecord
 
     self.amount_cents = quantity * final_price * 100 if final_price.positive?
     self.allocation_amount_cents = allocation_quantity * final_price * 100 if final_price.positive?
+    self.docs_uploaded_check ||= {}
   end
 
   def check_quantity
