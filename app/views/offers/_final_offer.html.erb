@@ -14,7 +14,6 @@
     <div class="divTableCell"><%= offer.percentage %></div>
     <div class="divTableCell">
         <%= offer.PAN %>
-        <%= render "/layouts/attachments" , attachments: [offer.id_proof] if offer.id_proof.present? %>
     </div>
     <div class="divTableCell">
         Name: <%= offer.bank_name %> <br>
@@ -23,9 +22,7 @@
     </div>
     <div class="divTableCell">  
         Docs:
-        <%#= render "/layouts/attachments" , attachments: offer.docs %>
         Signature:
-        <%#= render "/layouts/attachments" , attachments: offer.signature if offer.signature.present? %>
     </div>
 
     <div class="divTableCell"><%= money_to_currency(offer.allocation_amount, params) %></div>

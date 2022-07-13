@@ -113,11 +113,13 @@ FactoryBot.define do
     name { "Sale-#{Time.zone.today}" }
     entity { nil }
     start_date { Time.zone.today }
+    offer_end_date { start_date + 1.week }
     end_date { start_date + (2 + rand(10)).days }
     percent_allowed { (1 + rand(9)) * 10 }
     min_price { (1 + rand(9)) * 1000 }
     max_price { min_price + (1 + rand(9)) * 1000 }
     active { true }
+    support_email {"support@nowhere.com"}
   end
 
   factory :holding do
