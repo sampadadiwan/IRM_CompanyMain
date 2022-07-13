@@ -17,6 +17,7 @@ Scenario Outline: Create new interest
   Then I should see the interest details
   And I am at the sales details page
   Then I should see the interest details
+  And when the interest is shortlisted
   And when the interest sale is finalized
   And I edit the interest ""
   Then I should see the interest details

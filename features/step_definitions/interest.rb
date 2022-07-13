@@ -36,6 +36,12 @@
     @created_interest.secondary_sale.save!
     @created_interest.reload
   end
+
+  Then('when the interest is shortlisted') do
+    @created_interest.short_listed = true
+    @created_interest.save
+  end
+  
   
   Then('I edit the interest {string}') do |args|
     visit (edit_interest_url(@created_interest))

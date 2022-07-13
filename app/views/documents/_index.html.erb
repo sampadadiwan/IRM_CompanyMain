@@ -4,7 +4,10 @@
     <%= params[:folder_id].present? ? "in " + Folder.find(params[:folder_id]).full_path : "" %>
   </h1>
 
-  <% msg ||= nil; if msg %>
+  <% 
+    msg ||= nil
+    if msg 
+  %>
     <span class="alert alert-info"><%= msg %></span>
   <% end %>
 

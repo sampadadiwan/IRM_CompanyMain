@@ -108,7 +108,7 @@
               send_notification_secondary_sale_path(@secondary_sale,     notification: "notify_allocation"),    
               class: "dropdown-item", 
               data: {action: "click->confirm#popup", 
-              msg: "Send email to all participants notifying that the allocation is complete", method: :patch } if policy(@secondary_sale).notify_allocations? %> 
+              msg: "Send email to all participants notifying that the allocation is complete & documents need to be uploaded", method: :patch } if policy(@secondary_sale).notify_allocations? %> 
           
         </div>
       </div>

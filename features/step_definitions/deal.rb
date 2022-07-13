@@ -177,8 +177,10 @@ end
 
 Then('I should not see the deals of the startup') do
   DealInvestor.all.each do |di|
-    expect(page).to have_no_content(di.deal_name)
-    expect(page).to have_no_content(di.investor_name)
+    within("#deal_investors") do
+      expect(page).to have_no_content(di.deal_name)
+      expect(page).to have_no_content(di.investor_name)
+    end
   end
 end
 
