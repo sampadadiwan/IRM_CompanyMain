@@ -130,7 +130,8 @@ class SecondarySale < ApplicationRecord
   end
 
   def notify_allocation
-    SecondarySaleMailer.with(id:).notify_allocation.deliver_later
+    SecondarySaleMailer.with(id:).notify_allocation_offers.deliver_later
+    SecondarySaleMailer.with(id:).notify_allocation_interests.deliver_later
   end
 
   def clearing_price

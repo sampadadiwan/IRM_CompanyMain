@@ -124,6 +124,26 @@
       </td>
     </tr>
 
+    <% if current_user.entity_id == secondary_sale.entity_id %>
+    <tr>
+      <td>
+        Buyer Doc List
+      </td>
+      <td>
+        <%= secondary_sale.buyer_doc_list %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Seller Doc List
+      </td>
+      <td>
+        <%= secondary_sale.seller_doc_list %>
+      </td>
+    </tr>
+
+    <% end %>
+
     <% if current_user.entity_id == secondary_sale.entity_id && secondary_sale.allocation_status.present? %>
 
       <tr>

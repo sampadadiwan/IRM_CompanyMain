@@ -17,8 +17,15 @@
   <%= form.text_field :secondary_sale_id, class: "form-control", hidden: true  %>
 
 
-  <% if interest.secondary_sale.lock_allocations %>
+  <% if interest.short_listed %>
     
+    <div class="form-group">
+      <div class="form-label alert alert-info">
+        Please read the SPA template to understand the terms and conditions of the sale
+      </div>
+      <%= render "/layouts/attachments" , attachments: [interest.secondary_sale.spa], 
+          allow_delete: "No" if interest.secondary_sale.spa.present? %>
+    </div>
     <div class="form-group">
       <%= form.label :buyer_entity_name %>
       <%= form.text_field :buyer_entity_name, class: "form-control"  %>

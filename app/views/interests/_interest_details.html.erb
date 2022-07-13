@@ -2,21 +2,22 @@
 
   
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
-    <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#faqs-tab">
-        FAQ</a>
+    <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
+        data-action="click->tabdetails#loadData">Documents</a>
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#chat-tab" 
         data-action="click->tabdetails#loadData">Chat</a>
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
-        data-action="click->tabdetails#loadData">Documents</a>
   </nav>
 
   <div class="tab-content" data-controller="datatable">
 
-      <div id="faqs-tab" class="tab-pane fade in show active">
-        <div id="faqs" class="associated_entity">
-          <%= render "/interests/faq", interest: @interest %>
+      <div id="docs-tab" class="tab-pane fade in show active">
+        <div id="docs" class="associated_entity">
+          <%= render "/documents/index", documents: interest.documents, owner: interest, 
+              entity: interest.entity, msg: "Please upload #{interest.secondary_sale.buyer_doc_list}" %>
         </div>     
       </div>
+      
+
 
       <div id="chat-tab" class="tab-pane fade">
         <div id="messages" class="associated_entity">
@@ -29,19 +30,6 @@
         </div>  
       </div>
 
-      <div id="docs-tab" class="tab-pane fade">
-        <div id="docs" class="associated_entity">
-          <%= link_to documents_path(owner_id: interest.id, owner_type: "Interest", 
-                                     entity_id: interest.entity_id, no_folders: true), 
-                                     class: "load_data_link", 
-                                     data: { turbo_frame: 'documents_frame' } do %>
-              <span>Loading...</span>
-          <% end %>
-          <%= turbo_frame_tag "documents_frame", target: "_top" do %>
-          <% end %>
-        </div>     
-      </div>
-      
 
   </div>
 

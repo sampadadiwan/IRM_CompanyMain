@@ -1,15 +1,20 @@
-<h3>Dear User</h3>
+<h3>Dear Buyer</h3>
 
 <p>
     The allocation process for the secondary sale <%= @secondary_sale.name %> has been completed. Please ensure that all the required documentation is has been uploaded by you, to finalize the sale.   
 </p>
 
+<% if @secondary_sale.buyer_doc_list %>
+<p>
+    You will be required to upload the following documents: <%= @secondary_sale.buyer_doc_list %>
+</p>
+<% end %>
 
 <p>
     <%= render "/secondary_sale_mailer/sale", secondary_sale: @secondary_sale, current_user: nil %>
 </p>
 
-<p class="btn btn-primary"><%= link_to 'View Sale', secondary_sale_url(@secondary_sale) %></p>
+<p class="btn btn-primary"><%= link_to 'View Sale & Upload Docs', secondary_sale_url(@secondary_sale, tab: "interests-tab") %></p>
 
 <h3>Next Steps</h3>
 <p>

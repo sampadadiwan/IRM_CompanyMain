@@ -1,6 +1,6 @@
 <%= render "/layouts/alerts" %>
 
-<% if policy(@offer).update? && @offer.secondary_sale.lock_allocations %>
+<% if policy(@offer).update? && @offer.approved %>
     <%= render "/layouts/steps", steps: ["Review your offer details below", 
             "Please #{link_to 'Add', edit_offer_path(@offer)} the required documentation & details to finalize the sale".html_safe, 
             "You will need the follwing docs #{@offer.secondary_sale.seller_doc_list}",
@@ -12,7 +12,8 @@
 
   <div>
     <% if policy(@offer).update? %>
-      <%= link_to "Edit" , edit_offer_path(@offer), {class: "btn btn-primary" } %>
+      <%= link_to "Edit" , edit_offer_path(@offer), {class: "btn btn-primary" } if !@offer.approved %>
+      <%= link_to "Complete Offer Details", edit_offer_path(@offer) , {class: "btn btn-warning" } if @offer.approved %>    
     <% end %>
 
     <% label = @offer.approved ?  "UnApprove" : "Approve" %>

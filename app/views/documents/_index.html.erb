@@ -4,6 +4,10 @@
     <%= params[:folder_id].present? ? "in " + Folder.find(params[:folder_id]).full_path : "" %>
   </h1>
 
+  <% msg ||= nil; if msg %>
+    <span class="alert alert-info"><%= msg %></span>
+  <% end %>
+
   <% external = owner && owner.entity_id != current_user.entity_id %>
   <%= link_to "New Document" , new_document_path(
                                   external: external,
