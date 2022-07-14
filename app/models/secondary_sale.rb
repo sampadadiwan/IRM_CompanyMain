@@ -94,9 +94,7 @@ class SecondarySale < ApplicationRecord
   # Run allocation if the sale is finalized and price is changed
   before_save :allocate_sale, if: :finalized
   def allocate_sale
-    if self.finalized && self.final_price_changed?
-      AllocationJob.perform_later(self.id)
-    end
+    AllocationJob.perform_later(id) if finalized && final_price_changed?
   end
 
   def self.for_investor(user, entity)
@@ -117,8 +115,6 @@ class SecondarySale < ApplicationRecord
   def active?
     start_date <= Time.zone.today && end_date >= Time.zone.today
   end
-
-  
 
   def clearing_price
     interests = self.interests.short_listed

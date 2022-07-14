@@ -1,34 +1,32 @@
 <tr id="<%= dom_id interest %>">
-  <% if secondary_sale && secondary_sale.entity_id != current_user.entity_id %>
-    <td>
-      <%= interest.secondary_sale.name %>
-    </td>
-    <td>
-      <%= interest.entity.name %>
-    </td>
-  <% else %>
-    <td>
-      <%= policy(interest).unscramble? ? interest.interest_entity.name : ENV["OBFUSCATION"] %>
-    </td>
-    <td>
-      <%= policy(interest).unscramble? ? interest.user.full_name : ENV["OBFUSCATION"] %>
-    </td>
-    <td>
-      <%= interest.interest_entity.entity_type %>
-    </td>    
-  <% end %>
+  <td>
+    <%= policy(interest).unscramble? ? interest.interest_entity.name : ENV["OBFUSCATION"] %>
+  </td>
+  <td>
+    <%= policy(interest).unscramble? ? interest.user.full_name : ENV["OBFUSCATION"] %>
+  </td>
+  <td>
+    <%= interest.interest_entity.entity_type %>
+  </td>    
   <td>
     <%= interest.quantity %>
   </td>
   <td>
     <%= number_to_currency interest.price %>
   </td>
+
+  <% if secondary_sale && secondary_sale.entity_id == current_user.entity_id %>    
+    <td>
+      <%= custom_format_number interest.allocation_quantity, params %>
+    </td>
+    <td>
+      <%= interest.allocation_percentage %>%
+    </td>
+  <% end %>
   <td>
-    <%= custom_format_number interest.allocation_quantity, params %>
+    <%= custom_format_number interest.offer_quantity, params %>
   </td>
-  <td>
-    <%= interest.allocation_percentage %>%
-  </td>
+  
   <td>
     <%= custom_format_number interest.final_price, params %>
   </td>

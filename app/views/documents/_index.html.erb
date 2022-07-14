@@ -6,7 +6,7 @@
 
   <% 
     msg ||= nil
-    if msg 
+    if msg.present?
   %>
     <span class="alert alert-info"><%= msg %></span>
   <% end %>

@@ -3,8 +3,8 @@ class InterestsController < ApplicationController
 
   # GET /interests or /interests.json
   def index
-    @interests = policy_scope(Interest).includes(:interest_entity, :user)
-
+    @interests = policy_scope(Interest).includes(:entity, :interest_entity, :user)
+    @secondary_sale = nil
     if params[:secondary_sale_id].present?
       @interests = @interests.where(secondary_sale_id: params[:secondary_sale_id])
       @interests = @interests.order(allocation_quantity: :desc)

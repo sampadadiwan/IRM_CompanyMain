@@ -112,4 +112,8 @@ class Interest < ApplicationRecord
     parent_folder = secondary_sale.document_folder.folders.where(name: "Interests").first
     setup_folder(parent_folder, interest_entity.name, [])
   end
+
+  def offer_amount
+    Money.new(offer_quantity * final_price * 100, entity.currency)
+  end
 end
