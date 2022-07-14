@@ -20,11 +20,7 @@
         Account: <%= offer.bank_account_number %> <br>
         Routing Info: <%= offer.bank_routing_info %>
     </div>
-    <div class="divTableCell">  
-        Docs:
-        Signature:
-    </div>
-
+    
     <div class="divTableCell"><%= money_to_currency(offer.allocation_amount, params) %></div>
     <div class="divTableCell"><%= offer.allocation_percentage %></div>
     <div class="divTableCell"><%= offer.allocation_quantity %></div>
