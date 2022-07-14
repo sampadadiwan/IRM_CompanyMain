@@ -25,6 +25,9 @@
             <%= form.select :interest_id, @offer.secondary_sale.interests.short_listed.escrow_deposited.map{|i| [i.interest_entity.name, i.id]}, {}, class: "form-control"  %>
         </div>
         <div class="divTableCell">
+            <%= display_boolean @offer.final_agreement %>        
+        </div>
+        <div class="divTableCell">
             <%= form.check_box :verified, class: "form-control"  %>
         </div>
         <div class="divTableCell">
