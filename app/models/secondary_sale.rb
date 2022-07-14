@@ -39,6 +39,7 @@ class SecondarySale < ApplicationRecord
   include Trackable
   include ActivityTrackable
   include WithFolder
+  include SecondarySaleNotifiers
 
   # Make all models searchable
   update_index('secondary_sale') { self }
@@ -90,6 +91,14 @@ class SecondarySale < ApplicationRecord
     end
   end
 
+  # Run allocation if the sale is finalized and price is changed
+  before_save :allocate_sale, if: :finalized
+  def allocate_sale
+    if self.finalized && self.final_price_changed?
+      AllocationJob.perform_later(self.id)
+    end
+  end
+
   def self.for_investor(user, entity)
     SecondarySale
       # Ensure the access rghts for Document
@@ -109,30 +118,7 @@ class SecondarySale < ApplicationRecord
     start_date <= Time.zone.today && end_date >= Time.zone.today
   end
 
-  def notify_advisors
-    SecondarySaleMailer.with(id:).notify_advisors.deliver_later
-  end
-
-  def notify_open_for_interests
-    SecondarySaleMailer.with(id:).notify_open_for_interests.deliver_later
-  end
-
-  def notify_open_for_offers
-    SecondarySaleMailer.with(id:).notify_open_for_offers.deliver_later
-  end
-
-  def notify_closing_offers
-    SecondarySaleMailer.with(id:).notify_closing_offers.deliver_later
-  end
-
-  def notify_closing_interests
-    SecondarySaleMailer.with(id:).notify_closing_interests.deliver_later
-  end
-
-  def notify_allocation
-    SecondarySaleMailer.with(id:).notify_allocation_offers.deliver_later
-    SecondarySaleMailer.with(id:).notify_allocation_interests.deliver_later
-  end
+  
 
   def clearing_price
     interests = self.interests.short_listed
