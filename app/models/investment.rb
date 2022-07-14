@@ -58,7 +58,7 @@ class Investment < ApplicationRecord
 
   belongs_to :aggregate_investment, optional: true
 
-  belongs_to :entity, class_name: "Entity"
+  belongs_to :entity, touch: true
   delegate :name, to: :entity, prefix: :investee
 
   has_many :holdings, dependent: :destroy

@@ -18,7 +18,7 @@
 class AggregateInvestment < ApplicationRecord
   audited
 
-  belongs_to :entity
+  belongs_to :entity, touch: true
 
   has_many :investments, dependent: :destroy
 

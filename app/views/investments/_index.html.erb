@@ -31,32 +31,35 @@
   </span>
 </div>
 
+<% cache_if((current_user.entity_id == entity.id), [@entity, title]) do %>
+  <div class="table-responsive">
 
-<div class="table-responsive">
+    <table id='<%= "investments-#{title}" %>' class="table table-bordered dataTable jqDataTable">
 
-  <table id='<%= "investments-#{title}" %>' class="table table-bordered dataTable jqDataTable">
+      <%= render "investments/index_header", title: title, entity: entity %>
 
-    <%= render "investments/index_header", title: title, entity: entity %>
-    <tbody>
-      <% investments.each do |investment| %>
-        <%= render investment, title: title %>
-      <% end %>
-    </tbody>
+      <tbody>
+        <% investments.each do |investment| %>
+          <%= render investment, title: title %>
+        <% end %>
+      </tbody>
 
-  </table>
+    </table>
 
-</div>
+  </div>
 
 
-<% if title == "Equity" %>
+  <% if title == "Equity" %>
 
-<div class="text-center">
-  <small class="text-muted">
-    This is where you see your individual investments. 
-    To see investments aggregated by investor click on the 'Aggregated View' button.
+    <div class="text-center">
+      <small class="text-muted">
+        This is where you see your individual investments. 
+        To see investments aggregated by investor click on the 'Aggregated View' button.
 
-    To see the holdings for Employees and Founders, click on the drill down + sign in the first column
-  </small>
-</div>
+        To see the holdings for Employees and Founders, click on the drill down + sign in the first column
+      </small>
+    </div>
+
+  <% end %>
 
 <% end %>

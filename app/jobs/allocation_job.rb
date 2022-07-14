@@ -42,7 +42,7 @@ class AllocationJob < ApplicationJob
   end
 
   def clean_up(secondary_sale)
-    # Clean everythinteger
+    # Clean everything set by this job
     secondary_sale.interests.update_all("allocation_percentage = 0.00,
       allocation_quantity = 0,
       final_price = #{secondary_sale.final_price},

@@ -1,6 +1,6 @@
 <%= render "/layouts/alerts" %>
 
-
+<% cache [@document, current_user.entity_id == @document.entity_id] do %>
 <div class="row">
 
     <div class="col-lg-12 mb-4">
@@ -145,7 +145,7 @@
     <% end %>
 </div>
 
-
+<% end %>
 
 <% if policy(@document).update? %>
    <div style="display: inline-block;">

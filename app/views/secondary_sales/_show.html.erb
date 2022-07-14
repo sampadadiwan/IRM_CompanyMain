@@ -37,7 +37,22 @@
         Total Offered
       </td>
       <td>
-        <%= custom_format_number secondary_sale.total_offered_quantity, params %>
+        <% cache(secondary_sale) do %>
+          <table class="table-bordered">
+            <tr>
+              <th>Funding Round</th><th>Quantity</th>
+            </tr>
+            <% secondary_sale.offers_by_funding_round.each do |fr, qty| %>
+                <tr>
+                  <td><%= fr %></td> <td><%= qty %></td>
+                </tr>
+            <% end %>
+            <tr>
+              <td><b>Total</b></td> 
+              <td><b><%= custom_format_number secondary_sale.total_offered_quantity, params %></b></td>
+            </tr>
+          </table>
+        <% end %>
       </td>
     </tr>
     
@@ -190,18 +205,19 @@
           Shortlisted Interest Quantity
         </td>
         <td>
-          
-          <ul>
-            <li>
-              Total: <%= custom_format_number secondary_sale.total_interest_quantity, params %>
-            </li>
-            <% price_qty = secondary_sale.interests.short_listed.group(:price).sum(:quantity).sort.to_h %>
-            <% price_qty.each do |price, qty| %>
+          <% cache(secondary_sale) do %>
+            <ul>
               <li>
-                <%= qty %> @ <%= price %> 
+                Total: <%= custom_format_number secondary_sale.total_interest_quantity, params %>
               </li>
-            <% end %>
-          </ul>
+              <% price_qty = secondary_sale.interests.short_listed.group(:price).sum(:quantity).sort.to_h %>
+              <% price_qty.each do |price, qty| %>
+                <li>
+                  <%= qty %> @ <%= price %> 
+                </li>
+              <% end %>
+            </ul>
+          <% end %>
         </td>
       </tr>
 

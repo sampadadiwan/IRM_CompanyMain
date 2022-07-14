@@ -40,15 +40,18 @@
 
   <div class="tab-content">
       <div id="access-rights-tab" class="tab-pane fade <%= access_right_active ? 'in show active' : '' %>">
-        <div id="access_rights" class="associated_entity" data-controller="datatable">
-          <% access_right = AccessRight.new(
-              owner_id: secondary_sale.id, 
-              access_type: "SecondarySale", 
-              owner_type: "SecondarySale", 
-              entity_id: secondary_sale.entity_id) %>
-              
-          <%= render "/access_rights/index", access_rights: AccessRight.for_secondary_sale(secondary_sale).includes(:investor, :owner), access_right: access_right %>
-        </div>
+
+        <% cache(secondary_sale) do %>
+          <div id="access_rights" class="associated_entity" data-controller="datatable">
+            <% access_right = AccessRight.new(
+                owner_id: secondary_sale.id, 
+                access_type: "SecondarySale", 
+                owner_type: "SecondarySale", 
+                entity_id: secondary_sale.entity_id) %>
+                
+            <%= render "/access_rights/index", access_rights: AccessRight.for_secondary_sale(secondary_sale).includes(:investor, :owner), access_right: access_right %>
+          </div>
+        <% end %>
       </div>
 
       <div id="docs-tab" class="tab-pane fade">

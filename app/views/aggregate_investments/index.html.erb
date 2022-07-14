@@ -36,59 +36,61 @@
 
   </div>
 
-  <div class="table-responsive" data-controller="agginvestments">
+  <% cache_if((current_user.entity_id == @entity.id), @entity) do %>
+    <div class="table-responsive" data-controller="agginvestments">
 
-    <table id="aggregate_investments" class="table table-bordered dataTable jqDataTable">
+      <table id="aggregate_investments" class="table table-bordered dataTable jqDataTable">
 
-      <thead>
-        <tr>
+        <thead>
+          <tr>
 
-          <% if current_user.entity_id == @entity.id %>
-            <th></th>
+            <% if current_user.entity_id == @entity.id %>
+              <th></th>
+            <% end %>
+            <th>
+              Category
+            </th>
+            <th>
+              Investor
+            </th>
+            <th>
+              Equity
+            </th>
+            <th>
+              Preferred
+            </th>
+            <th>
+              Total
+            </th>
+
+            <th>
+              Percentage
+            </th>
+
+            <th>
+              Options
+            </th>
+            <th>
+              Full Diluted
+            </th>
+            <th>
+              Full Diluted Percentage
+            </th>
+
+            <th>
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% @aggregate_investments.each do |aggregate_investment| %>
+            <%= render aggregate_investment %>
           <% end %>
-          <th>
-            Category
-          </th>
-          <th>
-            Investor
-          </th>
-          <th>
-            Equity
-          </th>
-          <th>
-            Preferred
-          </th>
-          <th>
-            Total
-          </th>
+        </tbody>
+      </table>
 
-          <th>
-            Percentage
-          </th>
-
-          <th>
-            Options
-          </th>
-          <th>
-            Full Diluted
-          </th>
-          <th>
-            Full Diluted Percentage
-          </th>
-
-          <th>
-          </th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <% @aggregate_investments.each do |aggregate_investment| %>
-          <%= render aggregate_investment %>
-        <% end %>
-      </tbody>
-    </table>
-
-  </div>
+    </div>
+  <% end %>
 
 <div class="text-center">
   <small class="text-muted">

@@ -10,7 +10,7 @@ class OffersController < ApplicationController
     @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
     @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
     @offers = @offers.where(secondary_sale_id: params[:secondary_sale_id]) if params[:secondary_sale_id].present?
-    @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest)
+    @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest, holding: :funding_round)
     @offers = @offers.page(params[:page])
 
     render "index"

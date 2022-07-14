@@ -51,7 +51,7 @@ class Offer < ApplicationRecord
   belongs_to :user
   belongs_to :investor
   belongs_to :entity
-  belongs_to :secondary_sale
+  belongs_to :secondary_sale, touch: true
 
   counter_culture :interest,
                   column_name: proc { |o| o.approved ? 'offer_quantity' : nil },
@@ -86,6 +86,7 @@ class Offer < ApplicationRecord
   serialize :docs_uploaded_check, Hash
 
   delegate :quantity, to: :holding, prefix: :holding
+  delegate :funding_round, to: :holding
 
   scope :approved, -> { where(approved: true) }
   scope :pending_approval, -> { where(approved: false) }

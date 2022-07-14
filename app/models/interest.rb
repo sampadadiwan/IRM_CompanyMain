@@ -37,7 +37,7 @@ class Interest < ApplicationRecord
   include WithFolder
 
   belongs_to :user
-  belongs_to :secondary_sale
+  belongs_to :secondary_sale, touch: true
   belongs_to :interest_entity, class_name: "Entity"
   belongs_to :entity, class_name: "Entity"
   has_many :offers, dependent: :destroy

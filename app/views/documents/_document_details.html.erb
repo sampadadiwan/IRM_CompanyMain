@@ -22,15 +22,17 @@
 
         <% if policy(document).update? %>
           <div id="access-rights-tab" class="tab-pane fade">
-            <div id="access_rights" class="associated_entity">
-              <%  access_right = AccessRight.new(
-                  owner_id: document.id, 
-                  access_type: "Document", 
-                  owner_type: "Document", 
-                  entity_id: document.entity_id) %> 
+            <% cache(document) do %>
+              <div id="access_rights" class="associated_entity">
+                <%  access_right = AccessRight.new(
+                    owner_id: document.id, 
+                    access_type: "Document", 
+                    owner_type: "Document", 
+                    entity_id: document.entity_id) %> 
 
-              <%= render "/access_rights/index", access_rights: document.access_rights.includes(:investor, :owner), access_right: access_right %>
-            </div>
+                <%= render "/access_rights/index", access_rights: document.access_rights.includes(:investor, :owner), access_right: access_right %>
+              </div>
+            <% end %>
           </div>
         <% end %>        
 
