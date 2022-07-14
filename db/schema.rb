@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_07_13_051729) do
+ActiveRecord::Schema[7.0].define(version: 2022_07_14_163442) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -577,8 +577,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_13_051729) do
     t.boolean "verified", default: false
     t.text "comments"
     t.text "spa_data"
+    t.bigint "funding_round_id"
     t.index ["entity_id"], name: "index_interests_on_entity_id"
     t.index ["form_type_id"], name: "index_interests_on_form_type_id"
+    t.index ["funding_round_id"], name: "index_interests_on_funding_round_id"
     t.index ["interest_entity_id"], name: "index_interests_on_interest_entity_id"
     t.index ["secondary_sale_id"], name: "index_interests_on_secondary_sale_id"
     t.index ["user_id"], name: "index_interests_on_user_id"
@@ -748,6 +750,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_13_051729) do
     t.text "id_proof_data"
     t.text "address_proof_data"
     t.text "docs_uploaded_check"
+    t.boolean "auto_match", default: true
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
     t.index ["entity_id"], name: "index_offers_on_entity_id"
     t.index ["form_type_id"], name: "index_offers_on_form_type_id"
@@ -880,6 +883,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_13_051729) do
     t.date "offer_end_date"
     t.string "support_email"
     t.text "buyer_doc_list"
+    t.string "sale_type", limit: 10, default: "Regular"
     t.index ["deleted_at"], name: "index_secondary_sales_on_deleted_at"
     t.index ["entity_id"], name: "index_secondary_sales_on_entity_id"
     t.index ["form_type_id"], name: "index_secondary_sales_on_form_type_id"
@@ -1053,6 +1057,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_13_051729) do
   add_foreign_key "import_uploads", "entities"
   add_foreign_key "import_uploads", "users"
   add_foreign_key "interests", "form_types"
+  add_foreign_key "interests", "funding_rounds"
   add_foreign_key "interests", "secondary_sales"
   add_foreign_key "interests", "users"
   add_foreign_key "investments", "aggregate_investments"

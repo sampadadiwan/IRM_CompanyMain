@@ -1,3 +1,4 @@
+<% cache [secondary_sale, current_user && current_user.entity_id == secondary_sale.entity_id] do %>
 
   <table class="table table-bordered dataTable">
     <tr>
@@ -37,7 +38,7 @@
         Total Offered
       </td>
       <td>
-        <% cache(secondary_sale) do %>
+        <% if secondary_sale.sale_type == "Tranche" %>
           <table class="table-bordered">
             <tr>
               <th>Funding Round</th><th>Quantity</th>
@@ -52,6 +53,8 @@
               <td><b><%= custom_format_number secondary_sale.total_offered_quantity, params %></b></td>
             </tr>
           </table>
+        <% else %>
+          <%= custom_format_number secondary_sale.total_offered_quantity, params %>
         <% end %>
       </td>
     </tr>
@@ -205,7 +208,6 @@
           Shortlisted Interest Quantity
         </td>
         <td>
-          <% cache(secondary_sale) do %>
             <ul>
               <li>
                 Total: <%= custom_format_number secondary_sale.total_interest_quantity, params %>
@@ -217,7 +219,6 @@
                 </li>
               <% end %>
             </ul>
-          <% end %>
         </td>
       </tr>
 
@@ -280,3 +281,5 @@
     <%= display_custom_fields(secondary_sale) if current_user %>
 
   </table>
+
+<% end %>

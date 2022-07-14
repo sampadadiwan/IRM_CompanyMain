@@ -26,7 +26,8 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     updated_at: Field::DateTime,
     total_offered_quantity: ObfuscatedField,
     visible_externally: Field::BooleanEmoji,
-    seller_transaction_fees_pct: Field::Number
+    seller_transaction_fees_pct: Field::Number,
+    sale_type: Field::Select.with_options(collection: SecondarySale::SALE_TYPES)
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -45,6 +46,7 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     percent_allowed
     total_offered_quantity
     visible_externally
+    sale_type
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -52,6 +54,7 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
   SHOW_PAGE_ATTRIBUTES = %i[
     id
     name
+    sale_type
     start_date
     end_date
     percent_allowed
@@ -74,6 +77,7 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
     name
+    sale_type
     start_date
     end_date
     percent_allowed

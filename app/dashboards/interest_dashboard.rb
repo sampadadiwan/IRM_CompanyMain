@@ -18,7 +18,8 @@ class InterestDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     short_listed: Field::BooleanEmoji,
-    escrow_deposited: Field::BooleanEmoji
+    escrow_deposited: Field::BooleanEmoji,
+    interest_id: Field::Number
   }.freeze
 
   # COLLECTION_ATTRIBUTES

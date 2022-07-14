@@ -59,7 +59,7 @@ class Holding < ApplicationRecord
 
   belongs_to :investor
   # This is only for options
-  belongs_to :option_pool, optional: true
+  belongs_to :option_pool, optional: true, touch: true
 
   has_many :offers, dependent: :destroy
   has_many :excercises, dependent: :destroy

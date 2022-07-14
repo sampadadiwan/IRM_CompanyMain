@@ -39,7 +39,8 @@ class Interest < ApplicationRecord
   belongs_to :user
   belongs_to :secondary_sale, touch: true
   belongs_to :interest_entity, class_name: "Entity"
-  belongs_to :entity, class_name: "Entity"
+  belongs_to :entity, touch: true
+
   has_many :offers, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
   has_many :messages, as: :owner, dependent: :destroy

@@ -20,6 +20,7 @@ class OfferDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     approved: Field::BooleanEmoji,
+    auto_match: Field::BooleanEmoji,
     granted_by_user_id: Field::Number
   }.freeze
 
@@ -33,6 +34,7 @@ class OfferDashboard < Administrate::BaseDashboard
     entity
     secondary_sale
     quantity
+    auto_match
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -50,6 +52,7 @@ class OfferDashboard < Administrate::BaseDashboard
     created_at
     updated_at
     approved
+    auto_match
     granted_by_user_id
   ].freeze
 
@@ -66,6 +69,7 @@ class OfferDashboard < Administrate::BaseDashboard
     percentage
     notes
     approved
+    auto_match
     granted_by_user_id
   ].freeze
 

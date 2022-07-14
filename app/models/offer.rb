@@ -50,7 +50,7 @@ class Offer < ApplicationRecord
 
   belongs_to :user
   belongs_to :investor
-  belongs_to :entity
+  belongs_to :entity, touch: true
   belongs_to :secondary_sale, touch: true
 
   counter_culture :interest,
@@ -91,6 +91,7 @@ class Offer < ApplicationRecord
   scope :approved, -> { where(approved: true) }
   scope :pending_approval, -> { where(approved: false) }
   scope :verified, -> { where(verified: true) }
+  scope :auto_match, -> { where(auto_match: true) }
   scope :pending_verification, -> { where(verified: false) }
 
   validates :first_name, :last_name, :address, :PAN, :bank_account_number, :bank_name, :bank_routing_info, presence: true, if: proc { |o| o.secondary_sale.finalized }
