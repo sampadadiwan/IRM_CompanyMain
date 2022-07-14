@@ -25,6 +25,7 @@ development:
 
 staging:
   <<: *default
+  host: <%= ENV.fetch("DB_HOST") %>
   database: IRM_staging
   
 sandbox:
