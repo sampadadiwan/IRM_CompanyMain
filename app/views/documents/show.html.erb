@@ -23,7 +23,7 @@
                      <td>
 
                         <% if @document.file %>
-                           <%= link_to @document.file_url(), class: "document_download_icon" do %>
+                           <%= link_to @document.file_url(), class: "document_download_icon", target: "_blank" do %>
                               <i class="fas fa-download"></i>
                            <% end %>
                            <%= @document.name.capitalize.titleize %>

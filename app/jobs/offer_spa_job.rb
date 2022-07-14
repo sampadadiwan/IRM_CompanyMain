@@ -5,17 +5,18 @@ class OfferSpaJob < ApplicationJob
   # These are then uploaded to a specifc bucket in S3
   # We then run this job
   def perform(secondary_sale_id, bucket, prefix)
-    client = Aws::S3::Client.new
-    resp = client.list_objects_v2({ bucket:, prefix: })
+    s3_client = Aws::S3::Client.new
+    resp = s3_client.list_objects_v2({ bucket:, prefix: })
 
     resp.contents.each do |obj|
-      # Get the offer based on the file name
-      offer_id = obj.key.split(".").first.to_i
-      Rails.logger.info "Finding Offer with id #{offer_id}"
-      offer = Offer.where(secondary_sale_id:, id: offer_id).first
-
+      offer = get_offer(obj, secondary_sale_id)
       if offer
-        attach_blob(offer, obj)
+        begin
+          download(obj, s3_client, bucket)
+          new_document(obj, offer)
+        ensure
+          cleanup(obj)
+        end
       else
         Rails.logger.info "Offer not found for #{obj.key}"
       end
@@ -24,18 +25,32 @@ class OfferSpaJob < ApplicationJob
     end
   end
 
-  def attach_blob(offer, obj)
-    # Create an ActiveStorage Blob
-    blob = ActiveStorage::Blob.create_before_direct_upload!(filename: obj.key,
-                                                            byte_size: obj.size,
-                                                            checksum: obj.etag.delete('"'),
-                                                            content_type: "application/pdf")
-    blob.update_attribute(:key, obj.key)
+  def get_offer(obj, secondary_sale_id)
+    # Get the offer based on the file name
+    offer_id = obj.key.split("_")[1].to_i
+    Rails.logger.info "Finding Offer with id #{offer_id}"
+    Offer.where(secondary_sale_id:, id: offer_id).first
+  end
 
-    # Attach the blob to the offer
-    offer.spa = blob.signed_id
-    offer.save
+  def download(obj, s3_client, bucket)
+    s3_client.get_object(
+      response_target: "tmp/#{obj.key}",
+      bucket:,
+      key: obj.key
+    )
+    Rails.logger.info "Downloaded file tmp/#{obj.key}"
+  end
 
-    Rails.logger.info "#{obj.key} is now attached to Offer #{offer.id}"
+  def new_document(obj, offer)
+    Document.create!(name: obj.key, orignal: true, owner: offer,
+                     user_id: offer.user_id,
+                     file: File.open("tmp/#{obj.key}", binmode: true))
+
+    Rails.logger.info "Attached tmp/#{obj.key} to Offer #{offer.id}"
+  end
+
+  def cleanup(obj)
+    Rails.logger.info "Cleanup file tmp/#{obj.key}"
+    FileUtils.rm_rf("tmp/#{obj.key}", secure: true)
   end
 end

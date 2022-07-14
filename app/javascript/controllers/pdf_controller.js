@@ -29,7 +29,6 @@ export default class extends Controller {
             // initialDoc: 'https://pdftron.s3.amazonaws.com/downloads/pl/demo-annotated.pdf',
         }, document.getElementById('viewer'))
             .then(instance => {
-
                 instance.UI.disableElements(['ribbons']);
                 instance.UI.disableElements(['toolsHeader']);
                 instance.UI.openElements([ 'menuOverlay' ]);
@@ -49,7 +48,7 @@ export default class extends Controller {
                 });
 
                 instance.UI.setFitMode(instance.FitMode.FitPage);
-
+                
                 $("#viewer_label").hide();
                 $("#viewer").show();
         
@@ -81,6 +80,8 @@ export default class extends Controller {
                 });
 
                 $(".document_download_icon").hide();
+                console.log(`In full screen ${instance.UI.isFullscreen()}`);
+
             });
     }
 

@@ -1,6 +1,11 @@
 <tr id="document_<%= document.id %>">
   <td>
       <%= link_to document.name, document_path(document.id) %>
+      <% if document.orignal %>
+          <%= link_to document.file_url(), class: "document_download_icon", target: "_blank" do %>
+            <i class="fas fa-download"></i>
+          <% end %>          
+      <% end %>
   </td>  
   <td class="hideMobP">
     <%= raw document.tags.map{|tag| link_to(tag.name, search_documents_path(query: tag.name))}.join(", ") %>
