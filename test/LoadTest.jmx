@@ -29,10 +29,10 @@
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">10</stringProp>
+          <stringProp name="LoopController.loops">50</stringProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">10</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">2</stringProp>
+        <stringProp name="ThreadGroup.num_threads">30</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">4</stringProp>
         <longProp name="ThreadGroup.start_time">1500093971000</longProp>
         <longProp name="ThreadGroup.end_time">1500093971000</longProp>
         <boolProp name="ThreadGroup.scheduler">false</boolProp>
@@ -48,8 +48,8 @@
         </CookieManager>
         <hashTree/>
         <UniformRandomTimer guiclass="UniformRandomTimerGui" testclass="UniformRandomTimer" testname="Uniform Random Timer" enabled="true">
-          <stringProp name="ConstantTimer.delay">1000</stringProp>
-          <stringProp name="RandomTimer.range">3000</stringProp>
+          <stringProp name="ConstantTimer.delay">500</stringProp>
+          <stringProp name="RandomTimer.range">2000</stringProp>
         </UniformRandomTimer>
         <hashTree/>
         <RecordingController guiclass="RecordController" testclass="RecordingController" testname="Login" enabled="true"/>
@@ -89,6 +89,11 @@
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
             <stringProp name="TestPlan.comments">user[email]=startup${UserCounter}@gmail.com&amp;user[password]=password</stringProp>
           </HTTPSamplerProxy>
+          <hashTree/>
+          <GaussianRandomTimer guiclass="GaussianRandomTimerGui" testclass="GaussianRandomTimer" testname="Gaussian Random Timer" enabled="true">
+            <stringProp name="ConstantTimer.delay">900</stringProp>
+            <stringProp name="RandomTimer.range">4000.0</stringProp>
+          </GaussianRandomTimer>
           <hashTree/>
         </hashTree>
         <GenericController guiclass="LogicControllerGui" testclass="GenericController" testname="View Index" enabled="true"/>
