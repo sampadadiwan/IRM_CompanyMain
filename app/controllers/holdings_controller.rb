@@ -44,8 +44,10 @@ class HoldingsController < ApplicationController
                               .query(query_string: { fields: HoldingIndex::SEARCH_FIELDS,
                                                      query:, default_operator: 'and' }).objects
 
+      render "index"
+    else
+      redirect_to :index
     end
-    render "index"
   end
 
   # GET /holdings/1 or /holdings/1.json

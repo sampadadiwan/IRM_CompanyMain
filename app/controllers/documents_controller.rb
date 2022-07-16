@@ -14,8 +14,8 @@ class DocumentsController < ApplicationController
     else
       @entity = current_user.entity
       @documents = policy_scope(Document)
-      @folders, _map = Folder.build_full_tree(Folder.not_system.where(entity_id: @entity.id)
-                             .order(parent_folder_id: :asc))
+      @folders = Folder.not_system.where(entity_id: @entity.id)
+                       .order(parent_folder_id: :asc)
       @show_steps = true
     end
 
@@ -31,7 +31,7 @@ class DocumentsController < ApplicationController
       @documents = Document.for_investor(current_user, @entity)
     end
 
-    @folders, _map = Folder.build_full_tree(Folder.joins(:documents).merge(@documents).distinct)
+    @folders = Folder.joins(:documents).merge(@documents).distinct
     @documents = @documents.order(id: :desc).page params[:page]
 
     @no_folders = false
@@ -134,7 +134,7 @@ class DocumentsController < ApplicationController
       # Show all the documents for the investor for that entity
       @documents = Document.for_investor(current_user, @entity)
     end
-    @folders, _map = Folder.build_full_tree(Folder.joins(:documents).merge(@documents).order(parent_folder_id: :asc).distinct)
+    @folders = Folder.joins(:documents).merge(@documents).order(parent_folder_id: :asc).distinct
     @show_steps = false
   end
 

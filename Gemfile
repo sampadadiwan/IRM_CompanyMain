@@ -88,7 +88,8 @@ gem 'impressionist'
 gem 'roo'
 
 # gem 'draper'
-# gem "view_component"
+gem 'google-apis-drive_v3'
+gem "view_component"
 
 gem 'client_side_validations'
 gem 'rack-attack'
