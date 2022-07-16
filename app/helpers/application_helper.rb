@@ -1,6 +1,6 @@
 module ApplicationHelper
   def display_boolean(field)
-    render partial: "/layouts/display_boolean", locals: { field: }
+    render(DisplayBooleanComponent.new(bool: field))
   end
 
   def upload_server
