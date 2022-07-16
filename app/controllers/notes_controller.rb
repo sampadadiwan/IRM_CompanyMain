@@ -10,11 +10,6 @@ class NotesController < ApplicationController
 
     @notes = @notes.with_all_rich_text.includes(:user, :investor)
                    .order("notes.id desc").page params[:page]
-
-    respond_to do |format|
-      format.html
-      format.json { render json: NoteDatatable.new(params, current_user:) }
-    end
   end
 
   def search
