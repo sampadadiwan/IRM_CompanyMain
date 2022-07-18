@@ -503,3 +503,14 @@ ul.vesting_schedule {
   margin-top: 2px;
   margin-bottom: 15px;
 }
+
+.center-div {
+  margin: 10px 0px;
+  form {
+    margin: auto;
+    .form-group {
+      margin: auto;
+      float: left;
+    }
+  }
+}

@@ -89,6 +89,7 @@ gem 'roo'
 
 # gem 'draper'
 gem 'google-apis-drive_v3'
+gem 'ransack'
 gem "view_component"
 
 gem 'client_side_validations'

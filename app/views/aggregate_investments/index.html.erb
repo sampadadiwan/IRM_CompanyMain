@@ -5,7 +5,7 @@
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Shareholding</h1>
-    
+
     <span>
 
     <%#= render "investments/currency_form" %>
@@ -32,11 +32,19 @@
       <%= link_to "Details View", investor_investments_investments_path(entity_id: @entity.id), {class: "btn btn-primary"} %>
     <% end %>
 
+    <a class="btn btn-primary" data-toggle="collapse" href="#aiFilterForm" role="button" aria-expanded="false" aria-controls="collapseExample">
+      Show Filter
+    </a>
+  
+
     </span>
 
   </div>
 
-  <% cache_if((current_user.entity_id == @entity.id), @entity) do %>
+  <% cache_if((params[:q].blank? && current_user.entity_id == @entity.id), @entity) do %>
+
+    <%= render "/aggregate_investments/filter" %>
+
     <div class="table-responsive" data-controller="agginvestments">
 
       <table id="aggregate_investments" class="table table-bordered dataTable jqDataTable">
