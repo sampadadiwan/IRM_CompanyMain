@@ -511,6 +511,10 @@ ul.vesting_schedule {
     .form-group {
       margin: auto;
       float: left;
+      input {
+        max-width: 180px;
+        margin-left: 5px;
+      }
     }
   }
 }
