@@ -20,7 +20,7 @@
 
     <div id="responses-tab" class="tab-pane fade in show active">
       <div id="approval_responses" class="associated_entity">
-        <% cache([approval, "ApprovalResponses"]) do %>
+        <% cache_if(current_user.entity_id == approval.entity_id, [approval, "ApprovalResponses"]) do %>
           <%= render "approval_responses/index", 
               approval_responses: policy_scope(approval.approval_responses).includes(:response_entity, :response_user), 
               approval: approval %>
