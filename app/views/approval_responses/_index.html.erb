@@ -1,0 +1,36 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Approval Responses</h1>
+    <% approval ||= nil %>
+    <%= link_to "New Approval Response", new_approval_response_path("approval_response[approval_id]": approval.id), {class: "btn btn-primary"} if approval  %>
+  </div>
+  
+  <div class="table-responsive" data-controller="datatable">
+  
+    <table id="approval_responses" class="table table-bordered dataTable">
+  
+      <thead>
+        <tr>
+          <th>
+            Entity
+          </th>
+          <th>
+            Approved By
+          </th>
+          <th>
+            Status
+          </th>
+      
+          <th>
+          </th>
+        </tr>
+      </thead>
+  
+      
+      <tbody>
+      <% approval_responses.each do |approval_response| %>
+        <%= render approval_response %>
+      <% end %>
+      </tbody>
+    </table>
+  
+  </div>

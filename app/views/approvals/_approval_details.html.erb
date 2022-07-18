@@ -6,6 +6,9 @@
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
          data-action="click->tabdetails#loadData">Documents</a>
       
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#responses-tab"
+         data-action="">Responses</a>
+      
     </nav>
     
   
@@ -37,6 +40,14 @@
           <%= render "access_rights/index", access_rights: approval.access_rights.includes(:investor, :owner), access_right: access_right %>
         </div>  
       </div>
+
+      <div id="responses-tab" class="tab-pane fade">
+        <div id="approval_responses" class="associated_entity">
+
+          <%= render "approval_responses/index", approval_responses: approval.approval_responses.includes(:response_entity, :response_user), approval: approval %>
+        </div>  
+      </div>
+
 
   </div>
   

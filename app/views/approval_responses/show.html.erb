@@ -1,0 +1,49 @@
+<%= render "/layouts/alerts" %>
+
+  <table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Response Entity
+      </td>
+      <td>
+        <%= @approval_response.response_entity.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Approved By
+      </td>
+      <td>
+        <%= @approval_response.response_user.full_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Status
+      </td>
+      <td>
+        <%= @approval_response.status %>
+      </td>
+    </tr>
+    </tr>
+    <tr>
+      <td>
+        Details
+      </td>
+      <td>
+        <%= @approval_response.details %>
+      </td>
+    </tr>
+
+  </table>
+
+
+  <div>
+    <% if policy(@approval_response).update? %>
+      <%= link_to "Edit" , edit_approval_response_path(@approval_response), {class: "btn btn-primary" } %> |
+
+      <%= button_to "Delete" , @approval_response, method: :delete, class: "btn btn-danger" ,
+        form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
+    <% end %>
+  </div>

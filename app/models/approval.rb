@@ -5,6 +5,7 @@ class Approval < ApplicationRecord
   has_rich_text :agreements_reference
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
+  has_many :approval_responses, dependent: :destroy
 
   def name
     title

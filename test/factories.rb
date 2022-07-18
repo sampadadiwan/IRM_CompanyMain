@@ -1,4 +1,10 @@
 FactoryBot.define do
+  factory :approval_response do
+    entity { nil }
+    approval { nil }
+    status { "MyString" }
+  end
+
   factory :approval do
     title { "MyString" }
     agreements_reference { "MyString" }

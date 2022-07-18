@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_07_18_040726) do
+ActiveRecord::Schema[7.0].define(version: 2022_07_18_050832) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -140,6 +140,20 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_18_040726) do
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_aggregate_investments_on_entity_id"
     t.index ["investor_id"], name: "index_aggregate_investments_on_investor_id"
+  end
+
+  create_table "approval_responses", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "response_entity_id", null: false
+    t.bigint "response_user_id", null: false
+    t.bigint "approval_id", null: false
+    t.string "status", limit: 10
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["approval_id"], name: "index_approval_responses_on_approval_id"
+    t.index ["entity_id"], name: "index_approval_responses_on_entity_id"
+    t.index ["response_entity_id"], name: "index_approval_responses_on_response_entity_id"
+    t.index ["response_user_id"], name: "index_approval_responses_on_response_user_id"
   end
 
   create_table "approvals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1031,6 +1045,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_18_040726) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "aggregate_investments", "entities"
   add_foreign_key "aggregate_investments", "investors"
+  add_foreign_key "approval_responses", "approvals"
+  add_foreign_key "approval_responses", "entities"
+  add_foreign_key "approval_responses", "entities", column: "response_entity_id"
+  add_foreign_key "approval_responses", "users", column: "response_user_id"
   add_foreign_key "approvals", "entities"
   add_foreign_key "deal_activities", "deal_investors"
   add_foreign_key "deal_activities", "deals"

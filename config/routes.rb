@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :approval_responses
   resources :approvals
   get "/health_check/redis_check", to: "health_check#redis_check"
   get "/health_check/db_check", to: "health_check#db_check"
