@@ -23,7 +23,7 @@ class FileUploader < Shrine
 
   def get_path(entity, record, owner_path, trailing)
     if owner_path
-      if %w[SecondarySale Deal OptionPool Holding].include? record.owner_type
+      if %w[SecondarySale Deal OptionPool Holding Approval].include? record.owner_type
         "#{entity}/#{owner_path}"
       elsif %w[Offer Interest].include? record.owner_type
         # Put it inside the SecondarySale folder

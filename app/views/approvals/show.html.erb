@@ -1,50 +1,6 @@
 <%= render "/layouts/alerts" %>
+<%= render "/approvals/show", approval: @approval %>
 
-<table class="table table-bordered dataTable">
-
-          <tr>
-        <td>
-          Title
-        </td>
-        <td>
-          <%= @approval.title %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Agreements Reference
-        </td>
-        <td>
-          <%= @approval.agreements_reference %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Entity
-        </td>
-        <td>
-          <%= @approval.entity.name %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Approved Count
-        </td>
-        <td>
-          <%= @approval.approved_count %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Rejected Count
-        </td>
-        <td>
-          <%= @approval.rejected_count %>
-        </td>    
-      </tr>
-    
-  
-</table>
 
 
 <div>
@@ -53,3 +9,6 @@
     <%= button_to "Delete", @approval, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 </div>
+
+
+<%= render "/approvals/approval_details", approval: @approval %>
