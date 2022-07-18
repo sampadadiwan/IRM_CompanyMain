@@ -14,7 +14,8 @@ class ApprovalPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id)
+    (user.entity_id == record.entity_id) ||
+      Approval.for_investor(user).where(id: record.id).present?
   end
 
   def create?

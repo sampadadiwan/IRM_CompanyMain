@@ -6,7 +6,13 @@
 <div>
   <% if policy(@approval).update? %>
     <%= link_to "Edit", edit_approval_path(@approval), {class: "btn btn-primary"} %> |
-    <%= button_to "Delete", @approval, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <%= button_to "Delete", @approval, method: :delete, class: "btn btn-danger", form_class: "deleteButton", 
+          data: {action: "click->confirm#popup", turbo:false}  %>
+  <% else %>
+    <%= link_to "Approve", new_approval_response_path("approval_response[approval_id]": @approval.id, "approval_response[status]": "Approved"),
+           {class: "btn btn-success"} %>
+    <%= link_to "Reject", new_approval_response_path("approval_response[approval_id]": @approval.id, "approval_response[status]": "Rejected"),
+           {class: "btn btn-danger"} %>
   <% end %>
 </div>
 

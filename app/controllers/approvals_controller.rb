@@ -1,9 +1,14 @@
 class ApprovalsController < ApplicationController
   before_action :set_approval, only: %i[show edit update destroy]
+  after_action :verify_policy_scoped, only: %i[]
 
   # GET /approvals or /approvals.json
   def index
-    @approvals = policy_scope(Approval)
+    @approvals = if current_user.curr_role == "startup"
+                   policy_scope(Approval)
+                 else
+                   Approval.for_investor(current_user)
+                 end
   end
 
   # GET /approvals/1 or /approvals/1.json

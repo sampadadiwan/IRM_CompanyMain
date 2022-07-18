@@ -3,8 +3,10 @@ class ApprovalResponsePolicy < ApplicationPolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
+      elsif user.curr_role == "startup"
+        scope.where(entity_id: user.entity_id)
       else
-        scope.where(entity_id: user.entity_id).or(scope.where(response_entity_id: user.entity_id))
+        scope.where(response_entity_id: user.entity_id)
       end
     end
   end

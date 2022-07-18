@@ -1,19 +1,33 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
 
-      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#access-tab">Access Rights</a>
-
+      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#responses-tab"
+         data-action="">Responses</a>      
+      
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
          data-action="click->tabdetails#loadData">Documents</a>
       
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#responses-tab"
-         data-action="">Responses</a>
-      
+      <% if policy(approval).update? %>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-tab">
+            Access Rights</a>
+      <% end %>
+
     </nav>
     
   
   
   <div class="tab-content">
+
+    <div id="responses-tab" class="tab-pane fade in show active">
+      <div id="approval_responses" class="associated_entity">
+        <% cache(approval) do %>
+          <%= render "approval_responses/index", 
+              approval_responses: policy_scope(approval.approval_responses).includes(:response_entity, :response_user), 
+              approval: approval %>
+
+        <% end %>
+      </div>  
+    </div>
 
     <div id="docs-tab" class="tab-pane fade">
         <div id="docs" class="associated_entity">
@@ -28,26 +42,24 @@
         </div>     
       </div>
 
-      <div id="access-tab" class="tab-pane fade in show active">
+      <div id="access-tab" class="tab-pane fade">
         <div id="access_rights" class="associated_entity">
+          <% cache(approval) do %>
 
-          <%  access_right = AccessRight.new(
-            owner_id: approval.id, 
-            access_type: "Approval", 
-            owner_type: "Approval", 
-            entity_id: approval.entity_id) %> 
+            <%  access_right = AccessRight.new(
+              owner_id: approval.id, 
+              access_type: "Approval", 
+              owner_type: "Approval", 
+              entity_id: approval.entity_id) %> 
 
-          <%= render "access_rights/index", access_rights: approval.access_rights.includes(:investor, :owner), access_right: access_right %>
+            <%= render "access_rights/index", access_rights: approval.access_rights.includes(:investor, :owner), 
+                        access_right: access_right %>
+
+          <% end %>
         </div>  
       </div>
 
-      <div id="responses-tab" class="tab-pane fade">
-        <div id="approval_responses" class="associated_entity">
-
-          <%= render "approval_responses/index", approval_responses: approval.approval_responses.includes(:response_entity, :response_user), approval: approval %>
-        </div>  
-      </div>
-
+      
 
   </div>
   
