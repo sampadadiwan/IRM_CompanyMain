@@ -1,0 +1,27 @@
+<%= form_with(model: approval) do |form| %>
+  <% if approval.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(approval.errors.count, "error") %> prohibited this approval from being saved:</h2>
+
+      <ul>
+        <% approval.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :title %>
+    <%= form.text_field :title, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :agreements_reference %>
+    <%= form.rich_text_area :agreements_reference, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

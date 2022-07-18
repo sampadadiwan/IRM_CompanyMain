@@ -1,4 +1,12 @@
 FactoryBot.define do
+  factory :approval do
+    title { "MyString" }
+    agreements_reference { "MyString" }
+    entity { nil }
+    approved_count { 1 }
+    rejected_count { 1 }
+  end
+
   factory :reminder do
     entity { nil }
     owner { nil }

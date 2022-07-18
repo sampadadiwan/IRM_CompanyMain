@@ -1,4 +1,4 @@
-class NotePolicy < ApplicationPolicy
+class ApprovalPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
       if user.has_cached_role?(:super)
