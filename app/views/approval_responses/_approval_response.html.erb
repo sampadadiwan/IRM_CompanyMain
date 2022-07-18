@@ -7,7 +7,8 @@
     <%= approval_response.response_user.full_name %>
   </td>
   <td>
-    <%= approval_response.status %>
+    <%= render DisplayBooleanComponent.new(bool: approval_response.status == "Approved").
+        with_content(approval_response.status) if approval_response.status %>
   </td>
   <td>
     <%= link_to "Show" , approval_response , {class: "btn btn-primary" }%>
