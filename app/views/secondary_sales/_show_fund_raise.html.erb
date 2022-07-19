@@ -1,0 +1,124 @@
+<% cache [secondary_sale, current_user && current_user.entity_id == secondary_sale.entity_id] do %>
+
+  <table class="table table-bordered dataTable">
+    <tr>
+        <td>
+          Entity
+        </td>
+        <td>
+          <%= secondary_sale.entity.name %>
+        </td>
+    </tr>
+
+    <tr>
+      <td>
+        Support Email
+      </td>
+      <td>
+        <a href="mailto:<%=secondary_sale.support_email%>" target="_blank">
+          <%= secondary_sale.support_email %>
+        </a>
+        <br>
+        <div class="badge badge-success">
+          Send your queries here
+        </div> 
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Name
+      </td>
+      <td>
+        <%= secondary_sale.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Total Offered
+      </td>
+      <td>
+          <%= custom_format_number secondary_sale.total_offered_quantity, params %>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        Start Date
+      </td>
+      <td>
+        <%= l secondary_sale.start_date %>
+      </td>
+    </tr>
+
+
+    <tr>
+      <td>
+        End Date
+      </td>
+      <td>
+        <%= l secondary_sale.end_date %>
+      </td>
+    </tr>
+
+
+    <tr>
+      <td>
+        Price Type
+      </td>
+      <td>
+        <%= secondary_sale.price_type %>
+      </td>
+    </tr>
+
+    <% if secondary_sale.price_type == "Price Range" %>
+      <tr>
+        <td>
+          Min Price
+        </td>
+        <td>
+          <%= custom_format_number secondary_sale.min_price, params %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Max Price
+        </td>
+        <td>
+          <%= custom_format_number secondary_sale.max_price, params %>
+        </td>
+      </tr>
+    <% end %>
+
+    <tr>
+      <td>
+        Final Price
+      </td>
+      <td>
+        <%= custom_format_number secondary_sale.final_price, params %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Active
+      </td>
+      <td>
+        <%= display_boolean secondary_sale.active? %>
+      </td>
+    </tr>
+
+      <tr>
+        <td>
+          Buyer Doc List
+        </td>
+        <td>
+          <%= secondary_sale.buyer_doc_list %>
+        </td>
+      </tr>
+
+    <%= display_custom_fields(secondary_sale) if current_user %>
+
+  </table>
+
+<% end %>

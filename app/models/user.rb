@@ -94,6 +94,9 @@ class User < ApplicationRecord
       elsif ["Advisor", "Family Office"].include?(entity.entity_type)
         add_role :secondary_buyer
         self.curr_role = :secondary_buyer
+      elsif entity.entity_type == "Angel Network"
+        add_role :angel
+        self.curr_role = :angel
       end
     else
       self.curr_role ||= :user

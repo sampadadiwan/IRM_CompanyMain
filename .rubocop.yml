@@ -37,6 +37,8 @@ Rails/SkipsModelValidations:
   Exclude:
     - 'app/models/folder.rb'
     - 'app/jobs/allocation_job.rb'
+    - 'app/jobs/fund_raise_allocation_job.rb'
+    - 'app/jobs/allocation_base.rb'
     - 'app/jobs/investment_percentage_holding_job.rb'
     - 'app/interactors/create_audit_trail.rb'
     - 'app/models/entity.rb'

@@ -14,7 +14,12 @@
       <input hidden=true value="#access-rights-tab" id="clickOnLoad" />
 
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#offerings-tab" data-action="click->tabdetails#loadData">Pending Offers</a>
+      
+      <% if secondary_sale.sale_type != "FundRaise" %>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#offerings-tab"   
+            data-action="click->tabdetails#loadData">Pending Offers</a>
+      <% end %>
+
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData">Interests</a>
     
     <% elsif policy(secondary_sale).seller? %>
