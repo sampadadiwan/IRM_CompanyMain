@@ -16,6 +16,11 @@ class InvestmentOpportunity < ApplicationRecord
 
   has_rich_text :details
 
+  validates :company_name, :fund_raise_amount_cents, :min_ticket_size_cents,
+            :valuation_cents, :currency, :last_date, presence: true
+
+  validates :fund_raise_amount, :min_ticket_size, :valuation, numericality: { greater_than: 0 }
+
   include FileUploader::Attachment(:logo)
   include FileUploader::Attachment(:video)
 
