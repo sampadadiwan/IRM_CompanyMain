@@ -1,5 +1,9 @@
 Rails.application.routes.draw do
-  resources :expression_of_interests
+  resources :expression_of_interests do
+    patch 'approve', on: :member
+    get 'search', on: :collection
+  end
+
   resources :investment_opportunities do
     get 'search', on: :collection
   end

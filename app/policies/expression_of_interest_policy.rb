@@ -38,4 +38,8 @@ class ExpressionOfInterestPolicy < ApplicationPolicy
   def destroy?
     update?
   end
+
+  def approve?
+    record.entity_id == user.entity_id
+  end
 end

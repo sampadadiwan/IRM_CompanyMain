@@ -1,5 +1,5 @@
 class ExpressionOfInterestsController < ApplicationController
-  before_action :set_expression_of_interest, only: %i[show edit update destroy]
+  before_action :set_expression_of_interest, only: %i[show edit update destroy approve]
 
   # GET /expression_of_interests or /expression_of_interests.json
   def index
@@ -50,6 +50,20 @@ class ExpressionOfInterestsController < ApplicationController
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @expression_of_interest.errors, status: :unprocessable_entity }
       end
+    end
+  end
+
+  def approve
+    @expression_of_interest.approved = !@expression_of_interest.approved
+    @expression_of_interest.save
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace(@expression_of_interest)
+        ]
+      end
+      format.html { redirect_to expression_of_interest_url(@expression_of_interest), notice: "EOI was successfully approved." }
+      format.json { @expression_of_interest.to_json }
     end
   end
 
