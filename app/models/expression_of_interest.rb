@@ -33,4 +33,9 @@ class ExpressionOfInterest < ApplicationRecord
   def update_percentage
     self.allocation_percentage = (100.0 * allocation_amount_cents / amount_cents)
   end
+
+  before_save :notify_approved
+  def notify_approved
+    ExpressionOfInterestMailer.with(id:).notify_approved.deliver_later if approved && approved_changed?
+  end
 end

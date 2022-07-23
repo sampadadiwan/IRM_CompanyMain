@@ -1,0 +1,23 @@
+
+<h3>Dear User</h3>
+
+<p>
+    Your Expression Of Interest in <%= @expression_of_interest.investment_opportunity.name %> has been approved.
+</p>
+
+
+<p>
+    <%= render "/expression_of_interest_mailer/expression_of_interest", expression_of_interest: @expression_of_interest, current_user: nil %>
+</p>
+
+<p class="btn btn-primary"><%= link_to 'View EOI', expression_of_interest_url(@expression_of_interest) %></p>
+
+<h3>Next Steps</h3>
+<p>
+    <ul>
+        <li>Wait for notification that the allocation has been done</li>
+        <li>Upload the required documents</li>
+        <li>Complete the required payment</li>
+    </ul>
+</p>
+
