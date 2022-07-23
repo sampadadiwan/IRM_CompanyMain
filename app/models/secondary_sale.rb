@@ -47,7 +47,6 @@ class SecondarySale < ApplicationRecord
   SALE_TYPES = %w[Regular Tranche FundRaise].freeze
 
   belongs_to :entity
-  has_many :access_rights, as: :owner, dependent: :destroy
 
   has_one_attached :final_allocation, service: :amazon
   has_one_attached :spa, service: :amazon

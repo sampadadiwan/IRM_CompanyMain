@@ -88,7 +88,7 @@ class Entity < ApplicationRecord
 
   monetize :total_investments, as: "total", with_model_currency: :currency
 
-  TYPES = ["VC", "Startup", "Holding", "Advisor", "Family Office", "Angel Network"].freeze
+  TYPES = ["VC", "Startup", "Holding", "Advisor", "Family Office", "Investment Fund"].freeze
   SECONDARY_BUYERS = ["VC", "Advisor", "Family Office"].freeze
 
   FUNDING_UNITS = %w[Lakhs Crores].freeze

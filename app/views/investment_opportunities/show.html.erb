@@ -1,0 +1,80 @@
+<%= render "/layouts/alerts" %>
+
+  <table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Company Name
+      </td>
+      <td>
+        <%= @investment_opportunity.company_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Logo
+      </td>
+      <td>
+        <%= image_tag @investment_opportunity.logo_url, 
+          style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if @investment_opportunity.logo.present? %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Fund Raise Amount
+      </td>
+      <td>
+        <%= money_to_currency @investment_opportunity.fund_raise_amount, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Valuation
+      </td>
+      <td>
+        <%= money_to_currency @investment_opportunity.valuation, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Min Ticket Size
+      </td>
+      <td>
+        <%= money_to_currency @investment_opportunity.min_ticket_size, params  %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Last Date
+      </td>
+      <td>
+        <%= l @investment_opportunity.last_date %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Currency
+      </td>
+      <td>
+        <%= @investment_opportunity.currency %>
+      </td>
+    </tr>
+
+
+  </table>
+
+  <%= render "layouts/video", 
+      url: @investment_opportunity.video_url if @investment_opportunity.video_url.present? %>
+
+
+  <div>
+    <% if policy(@investment_opportunity).update? %>
+
+    <%= link_to "Edit" , edit_investment_opportunity_path(@investment_opportunity), {class: "btn btn-primary" } %> |
+    <%= button_to "Delete" , @investment_opportunity, method: :delete, class: "btn btn-danger" ,
+          form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
+
+    <% end %>
+  </div>
+
+  <%= render "investment_opportunities/details", investment_opportunity: @investment_opportunity %>

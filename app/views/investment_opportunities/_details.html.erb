@@ -1,0 +1,39 @@
+<div class="associated_entity" data-controller="tabs tabdetails">
+
+  
+    <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
+      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
+          data-action="click->tabdetails#loadData">Documents</a>
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab" 
+          data-action="click->tabdetails#loadData">Access Rights</a>
+    </nav>
+  
+    <div class="tab-content" data-controller="datatable">
+  
+        <div id="docs-tab" class="tab-pane fade in show active">
+          <div id="docs" class="associated_entity">
+            <%= render "/documents/index", documents: investment_opportunity.documents, 
+                owner: investment_opportunity, entity: investment_opportunity.entity %>
+          </div>     
+        </div>
+        
+        <div id="access-rights-tab" class="tab-pane fade">
+
+            <% cache(investment_opportunity) do %>
+              <div id="access_rights" class="associated_entity" data-controller="datatable">
+                <% access_right = AccessRight.new(
+                    owner_id: investment_opportunity.id, 
+                    access_type: "InvestmentOpportunity", 
+                    owner_type: "InvestmentOpportunity", 
+                    entity_id: investment_opportunity.entity_id) %>
+                    
+                <%= render "/access_rights/index", access_rights: investment_opportunity.access_rights.includes(:investor, :owner), access_right: access_right %>
+              </div>
+            <% end %>
+        </div>
+  
+  
+    </div>
+  
+</div>
+  

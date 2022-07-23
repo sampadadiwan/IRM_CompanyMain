@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_07_18_050832) do
+ActiveRecord::Schema[7.0].define(version: 2022_07_23_070415) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -28,7 +28,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_18_050832) do
     t.bigint "owner_id", null: false
     t.string "access_to_email", limit: 30
     t.integer "access_to_investor_id"
-    t.string "access_type", limit: 15
+    t.string "access_type", limit: 20
     t.string "metadata"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -610,6 +610,21 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_18_050832) do
     t.index ["user_id"], name: "index_interests_on_user_id"
   end
 
+  create_table "investment_opportunities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "company_name", limit: 100
+    t.decimal "fund_raise_amount_cents", precision: 15, scale: 2, default: "0.0"
+    t.decimal "valuation_cents", precision: 15, scale: 2, default: "0.0"
+    t.decimal "min_ticket_size_cents", precision: 15, scale: 2, default: "0.0"
+    t.date "last_date"
+    t.string "currency", limit: 10
+    t.text "logo_data"
+    t.text "video_data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_investment_opportunities_on_entity_id"
+  end
+
   create_table "investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "investment_type", limit: 100
     t.integer "investor_id"
@@ -1089,6 +1104,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_18_050832) do
   add_foreign_key "interests", "funding_rounds"
   add_foreign_key "interests", "secondary_sales"
   add_foreign_key "interests", "users"
+  add_foreign_key "investment_opportunities", "entities"
   add_foreign_key "investments", "aggregate_investments"
   add_foreign_key "investments", "funding_rounds"
   add_foreign_key "investors", "form_types"

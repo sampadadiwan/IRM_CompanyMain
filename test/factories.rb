@@ -1,4 +1,14 @@
 FactoryBot.define do
+  factory :investment_opportunity do
+    entity { nil }
+    company_name { "MyString" }
+    fund_raise_amount { "9.99" }
+    valuation { "9.99" }
+    min_ticket_size { "9.99" }
+    last_date { "2022-07-23" }
+    currency { "MyString" }
+  end
+
   factory :approval_response do
     entity { nil }
     approval { nil }

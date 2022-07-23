@@ -1,0 +1,69 @@
+<%= form_with(model: investment_opportunity) do |form| %>
+  <% if investment_opportunity.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(investment_opportunity.errors.count, "error") %> prohibited this investment_opportunity from being saved:</h2>
+
+      <ul>
+        <% investment_opportunity.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :company_name %>
+    <%= form.text_field :company_name, class: "form-control"  %>
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+  </div>
+
+
+  <div class="form-group">
+
+    <%= render "layouts/single_upload", form: form, field_label: "Upload Logo", 
+                            for_model: "investment_opportunity", field_name: "logo", 
+                            model: investment_opportunity %>
+
+    <small class="text-muted"> Upload Logo. </small>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :fund_raise_amount %>
+    <%= form.text_field :fund_raise_amount, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :valuation %>
+    <%= form.text_field :valuation, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :min_ticket_size %>
+    <%= form.text_field :min_ticket_size, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :last_date %>
+    <%= form.date_field :last_date, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :currency %>
+    <%= form.text_field :currency, class: "form-control"  %>
+  </div>
+
+
+  <div class="form-group">
+
+    <%= render "layouts/single_upload", form: form, field_label: "Upload Video", 
+                            for_model: "investment_opportunity", field_name: "video", 
+                            model: investment_opportunity %>
+
+    <small class="text-muted"> Upload Video. </small>
+  </div>
+
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

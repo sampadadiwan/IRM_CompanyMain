@@ -1,0 +1,2 @@
+module InvestmentOpportunitiesHelper
+end
