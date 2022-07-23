@@ -1,6 +1,8 @@
 class InvestmentOpportunity < ApplicationRecord
   include WithFolder
 
+  acts_as_taggable_on :tags
+
   belongs_to :entity
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
@@ -9,6 +11,8 @@ class InvestmentOpportunity < ApplicationRecord
   # Customize form
   belongs_to :form_type, optional: true
   serialize :properties, Hash
+
+  has_rich_text :details
 
   include FileUploader::Attachment(:logo)
   include FileUploader::Attachment(:video)

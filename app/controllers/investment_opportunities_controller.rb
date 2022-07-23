@@ -6,6 +6,19 @@ class InvestmentOpportunitiesController < ApplicationController
     @investment_opportunities = policy_scope(InvestmentOpportunity)
   end
 
+  def search
+    query = params[:query]
+    if query.present?
+      @investors = InvestmentOpportunityIndex.filter(term: { entity_id: current_user.entity_id })
+                                             .query(query_string: { fields: InvestmentOpportunityIndex::SEARCH_FIELDS,
+                                                                    query:, default_operator: 'and' }).objects
+
+      render "index"
+    else
+      redirect_to investment_opportunities_path
+    end
+  end
+
   # GET /investment_opportunities/1 or /investment_opportunities/1.json
   def show; end
 
@@ -16,10 +29,13 @@ class InvestmentOpportunitiesController < ApplicationController
     @investment_opportunity.currency = current_user.entity.currency
     @investment_opportunity.last_date = Time.zone.today + 1.month
     authorize @investment_opportunity
+    setup_custom_fields(@investment_opportunity)
   end
 
   # GET /investment_opportunities/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@investment_opportunity)
+  end
 
   # POST /investment_opportunities or /investment_opportunities.json
   def create
@@ -71,6 +87,6 @@ class InvestmentOpportunitiesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investment_opportunity_params
-    params.require(:investment_opportunity).permit(:entity_id, :company_name, :fund_raise_amount, :valuation, :min_ticket_size, :last_date, :currency, :logo, :video)
+    params.require(:investment_opportunity).permit(:entity_id, :company_name, :fund_raise_amount, :valuation, :min_ticket_size, :last_date, :currency, :logo, :video, :tag_list, :details)
   end
 end

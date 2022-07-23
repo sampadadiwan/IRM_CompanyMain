@@ -1,21 +1,21 @@
 <tr id="<%= dom_id investment_opportunity %>">
   <td>
-    <%= investment_opportunity.entity_id %>
-  </td>
-  <td>
     <%= investment_opportunity.company_name %>
   </td>
   <td>
-    <%= investment_opportunity.fund_raise_amount %>
+    <%= raw investment_opportunity.tags.map{|tag| link_to(tag.name, search_investment_opportunities_path(query: tag.name))}.join(", ") %>
   </td>
   <td>
-    <%= investment_opportunity.valuation %>
+    <%= money_to_currency investment_opportunity.fund_raise_amount, params %>
   </td>
   <td>
-    <%= investment_opportunity.min_ticket_size %>
+    <%= money_to_currency investment_opportunity.valuation, params %>
   </td>
   <td>
-    <%= investment_opportunity.last_date %>
+    <%= money_to_currency investment_opportunity.min_ticket_size, params %>
+  </td>
+  <td>
+    <%= l investment_opportunity.last_date %>
   </td>
   <td>
     <%= investment_opportunity.currency %>
