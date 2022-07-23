@@ -33,4 +33,22 @@ class InvestmentOpportunity < ApplicationRecord
     parent_folder = Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
     setup_folder(parent_folder, company_name, [])
   end
+
+  def self.for_investor(user, entity)
+    InvestmentOpportunity
+      # Ensure the access rghts for Document
+      .joins(:access_rights)
+      .merge(AccessRight.access_filter)
+      .joins(entity: :investors)
+      # Ensure that the user is an investor and tis investor has been given access rights
+      .where("entities.id=?", entity.id)
+      .where("investors.investor_entity_id=?", user.entity_id)
+      # Ensure this user has investor access
+      .joins(entity: :investor_accesses)
+      .merge(InvestorAccess.approved_for_user(user))
+  end
+
+  def notify_open_for_interests
+    InvestmentOpportunityMailer.with(id:).notify_open_for_interests.deliver_later
+  end
 end

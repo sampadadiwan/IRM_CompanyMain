@@ -1,0 +1,71 @@
+
+  <table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Company Name
+      </td>
+      <td>
+        <%= @investment_opportunity.company_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Logo
+      </td>
+      <td>
+        <%= image_tag @investment_opportunity.logo_url, 
+          style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if @investment_opportunity.logo.present? %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Tags
+      </td>
+      <td>
+        <%= raw @investment_opportunity.tags.map{|tag| link_to(tag.name, search_investment_opportunities_url(query: tag.name))}.join(", ") %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Fund Raise Amount
+      </td>
+      <td>
+        <%= money_to_currency @investment_opportunity.fund_raise_amount, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Valuation
+      </td>
+      <td>
+        <%= money_to_currency @investment_opportunity.valuation, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Min Ticket Size
+      </td>
+      <td>
+        <%= money_to_currency @investment_opportunity.min_ticket_size, params  %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Last Date
+      </td>
+      <td>
+        <%= l @investment_opportunity.last_date %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Currency
+      </td>
+      <td>
+        <%= @investment_opportunity.currency %>
+      </td>
+    </tr>
+
+
+  </table>
