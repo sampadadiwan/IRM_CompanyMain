@@ -44,7 +44,7 @@ class SecondarySale < ApplicationRecord
   # Make all models searchable
   update_index('secondary_sale') { self }
 
-  SALE_TYPES = %w[Regular Tranche FundRaise].freeze
+  SALE_TYPES = %w[Regular Tranche].freeze
 
   belongs_to :entity
 

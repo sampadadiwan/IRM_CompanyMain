@@ -65,11 +65,7 @@ class SecondarySalesController < ApplicationController
   end
 
   def allocate
-    if @secondary_sale.sale_type == "FundRaise"
-      FundRaiseAllocationJob.perform_later(@secondary_sale.id)
-    else
-      AllocationJob.perform_later(@secondary_sale.id)
-    end
+    AllocationJob.perform_later(@secondary_sale.id)
 
     respond_to do |format|
       format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "Allocation in progress, checkback in a few minutes. Please use the Dowload button once allocation is complete." }
