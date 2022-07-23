@@ -35,6 +35,21 @@
         <%= money_to_currency @investment_opportunity.fund_raise_amount, params %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Approved EOI Amount
+      </td>
+      <td>
+        <%= money_to_currency @investment_opportunity.eoi_amount, params %>
+        <div class="progress">
+          <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= @investment_opportunity.percentage_raised %>%" aria-valuenow="<%=@investment_opportunity.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
+            <%= @investment_opportunity.percentage_raised %> %
+          </div>
+        </div>
+      </td>
+    </tr>
+
     <tr>
       <td>
         Valuation

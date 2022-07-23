@@ -16,6 +16,7 @@
   <div class="form-group">
     <%= form.label :amount %>
     <%= form.number_field :amount, class: "form-control"  %>
+    <small class="text-muted">Min ticket size is <%= money_to_currency(expression_of_interest.investment_opportunity.min_ticket_size, params) %></small> 
   </div>
 
 

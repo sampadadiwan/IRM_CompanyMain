@@ -20,7 +20,7 @@ class InvestmentOpportunity < ApplicationRecord
   include FileUploader::Attachment(:video)
 
   monetize :fund_raise_amount_cents, :valuation_cents,
-           :min_ticket_size_cents
+           :min_ticket_size_cents, :eoi_amount_cents
 
   before_create :set_currency
   def set_currency
@@ -52,5 +52,9 @@ class InvestmentOpportunity < ApplicationRecord
 
   def notify_open_for_interests
     InvestmentOpportunityMailer.with(id:).notify_open_for_interests.deliver_later
+  end
+
+  def percentage_raised
+    eoi_amount_cents * 100.0 / fund_raise_amount_cents
   end
 end

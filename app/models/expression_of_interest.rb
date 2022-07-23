@@ -7,6 +7,22 @@ class ExpressionOfInterest < ApplicationRecord
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
 
+  validate :check_amount
+  counter_culture :investment_opportunity,
+                  column_name: proc { |o| o.approved ? 'eoi_amount_cents' : nil },
+                  delta_column: 'amount_cents'
+
   monetize :amount_cents, :allocation_amount_cents,
            with_currency: ->(s) { s.investment_opportunity.currency }
+
+  def check_amount
+    errors.add(:amount, "Should be greater than #{investment_opportunity.min_ticket_size}") if amount < investment_opportunity.min_ticket_size
+
+    errors.add(:amount, "Should be less than #{investment_opportunity.fund_raise_amount}") if amount > investment_opportunity.fund_raise_amount
+  end
+
+  before_save :update_approval
+  def update_approval
+    self.approved = false if amount_cents_changed?
+  end
 end
