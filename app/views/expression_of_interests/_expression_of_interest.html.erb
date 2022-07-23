@@ -1,0 +1,28 @@
+
+
+<tr id="<%= dom_id expression_of_interest %>">
+  <td>
+    <%= expression_of_interest.user.full_name %>
+  </td>
+  <td>
+    <%= expression_of_interest.eoi_entity.name %>
+  </td>
+  <td>
+    <%= money_to_currency expression_of_interest.amount, params %>
+  </td>
+  <td>
+    <%= display_boolean expression_of_interest.approved %>
+  </td>
+  <td>
+    <%= display_boolean expression_of_interest.verified %>
+  </td>
+  <td>
+    <%= expression_of_interest.allocation_percentage %> %
+  </td>
+  <td>
+    <%= money_to_currency expression_of_interest.allocation_amount, params %>
+  </td>
+  <td>
+    <%= link_to "Show" , expression_of_interest , {class: "btn btn-primary" }%>
+  </td>
+</tr>

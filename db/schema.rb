@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_07_23_073401) do
+ActiveRecord::Schema[7.0].define(version: 2022_07_23_091145) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -381,6 +381,24 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_23_073401) do
     t.index ["holding_id"], name: "index_excercises_on_holding_id"
     t.index ["option_pool_id"], name: "index_excercises_on_option_pool_id"
     t.index ["user_id"], name: "index_excercises_on_user_id"
+  end
+
+  create_table "expression_of_interests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "eoi_entity_id", null: false
+    t.bigint "investment_opportunity_id", null: false
+    t.decimal "amount_cents", precision: 15, scale: 2, default: "0.0"
+    t.boolean "approved", default: false
+    t.boolean "verified", default: false
+    t.decimal "allocation_percentage", precision: 5, scale: 2, default: "0.0"
+    t.decimal "allocation_amount_cents", precision: 15, scale: 2, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_expression_of_interests_on_entity_id"
+    t.index ["eoi_entity_id"], name: "index_expression_of_interests_on_eoi_entity_id"
+    t.index ["investment_opportunity_id"], name: "index_expression_of_interests_on_investment_opportunity_id"
+    t.index ["user_id"], name: "index_expression_of_interests_on_user_id"
   end
 
   create_table "folders", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1085,6 +1103,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_23_073401) do
   add_foreign_key "excercises", "holdings"
   add_foreign_key "excercises", "option_pools"
   add_foreign_key "excercises", "users"
+  add_foreign_key "expression_of_interests", "entities"
+  add_foreign_key "expression_of_interests", "entities", column: "eoi_entity_id"
+  add_foreign_key "expression_of_interests", "investment_opportunities"
+  add_foreign_key "expression_of_interests", "users"
   add_foreign_key "folders", "entities"
   add_foreign_key "form_custom_fields", "form_types"
   add_foreign_key "form_types", "entities"

@@ -1,4 +1,16 @@
 FactoryBot.define do
+  factory :expression_of_interest do
+    entity { nil }
+    user { nil }
+    eoi_entity { nil }
+    investment_opportunity { nil }
+    amount_cents { "9.99" }
+    approved { false }
+    verified { false }
+    allocation_percentage { "9.99" }
+    allocation_amount_cents { "9.99" }
+  end
+
   factory :investment_opportunity do
     entity { nil }
     company_name { "MyString" }

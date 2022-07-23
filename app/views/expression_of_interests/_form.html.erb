@@ -1,0 +1,25 @@
+<%= form_with(model: expression_of_interest) do |form| %>
+  <% if expression_of_interest.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(expression_of_interest.errors.count, "error") %> prohibited this expression_of_interest from being saved:</h2>
+
+      <ul>
+        <% expression_of_interest.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form.text_field :investment_opportunity_id, class: "form-control", hidden: true  %>
+
+  <div class="form-group">
+    <%= form.label :amount %>
+    <%= form.number_field :amount, class: "form-control"  %>
+  </div>
+
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

@@ -1,0 +1,91 @@
+<%= render "/layouts/alerts" %>
+
+  <table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Investment Fund
+      </td>
+      <td>
+        <%= @expression_of_interest.entity.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        User
+      </td>
+      <td>
+        <%= @expression_of_interest.user.full_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Eoi Entity
+      </td>
+      <td>
+        <%= @expression_of_interest.eoi_entity.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Investment Opportunity
+      </td>
+      <td>
+        <%= link_to @expression_of_interest.investment_opportunity.company_name,
+          @expression_of_interest.investment_opportunity %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Amount
+      </td>
+      <td>
+        <%= money_to_currency @expression_of_interest.amount, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Approved
+      </td>
+      <td>
+        <%= display_boolean @expression_of_interest.approved %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Verified
+      </td>
+      <td>
+        <%= display_boolean @expression_of_interest.verified %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Allocation Percentage
+      </td>
+      <td>
+        <%= @expression_of_interest.allocation_percentage %> %
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Allocation Amount
+      </td>
+      <td>
+        <%= money_to_currency @expression_of_interest.allocation_amount, params %>
+      </td>
+    </tr>
+
+
+  </table>
+
+
+  <div>
+    <% if policy(@expression_of_interest).update? %>
+      <%= link_to "Edit" , edit_expression_of_interest_path(@expression_of_interest), {class: "btn btn-primary" } %> 
+      <%= button_to "Delete" , @expression_of_interest, method: :delete, class: "btn btn-danger" ,
+          form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
+    <% end %>
+  </div>
+
+  <%= render "expression_of_interests/details", expression_of_interest: @expression_of_interest %>

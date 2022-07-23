@@ -8,6 +8,8 @@ class InvestmentOpportunity < ApplicationRecord
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
 
+  has_many :expression_of_interests, dependent: :destroy
+
   # Customize form
   belongs_to :form_type, optional: true
   serialize :properties, Hash

@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :expression_of_interests
   resources :investment_opportunities do
     get 'search', on: :collection
   end
