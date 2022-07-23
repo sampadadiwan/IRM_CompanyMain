@@ -459,6 +459,9 @@ ul.vesting_schedule {
 
 .progress {
   max-width: 300px;
+  .progress_value {
+    margin-top: 8px;
+  }
 }
 
 .top_bar_logo {
