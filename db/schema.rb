@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_07_23_104306) do
+ActiveRecord::Schema[7.0].define(version: 2022_07_23_164157) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -644,6 +644,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_23_104306) do
     t.decimal "eoi_amount_cents", precision: 15, scale: 2, default: "0.0"
     t.boolean "lock_allocations", default: false
     t.boolean "lock_eoi", default: false
+    t.text "buyer_docs_list"
     t.index ["entity_id"], name: "index_investment_opportunities_on_entity_id"
     t.index ["form_type_id"], name: "index_investment_opportunities_on_form_type_id"
   end
