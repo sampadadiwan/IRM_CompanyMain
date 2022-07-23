@@ -36,4 +36,16 @@ class InvestmentOpportunityPolicy < ApplicationPolicy
   def destroy?
     update?
   end
+
+  def allocate?
+    update?
+  end
+
+  def toggle?
+    update?
+  end
+
+  def send_notification?
+    update?
+  end
 end

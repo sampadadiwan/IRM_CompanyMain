@@ -1,5 +1,5 @@
 class InvestmentOpportunitiesController < ApplicationController
-  before_action :set_investment_opportunity, only: %i[show edit update destroy]
+  before_action :set_investment_opportunity, only: %i[show edit update destroy toggle allocate send_notification]
 
   # GET /investment_opportunities or /investment_opportunities.json
   def index
@@ -64,6 +64,34 @@ class InvestmentOpportunitiesController < ApplicationController
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @investment_opportunity.errors, status: :unprocessable_entity }
       end
+    end
+  end
+
+  def allocate
+    InvestmentOpportunityJob.perform_later(@investment_opportunity.id)
+
+    respond_to do |format|
+      format.html { redirect_to investment_opportunity_url(@investment_opportunity), notice: "Allocation in progress, checkback in a few minutes." }
+      format.json { render :show, status: :ok, location: @investment_opportunity }
+    end
+  end
+
+  def toggle
+    @investment_opportunity.lock_eoi = !@investment_opportunity.lock_eoi if params[:lock_eoi]
+    @investment_opportunity.lock_allocations = !@investment_opportunity.lock_allocations if params[:lock_allocations]
+    @investment_opportunity.save
+
+    respond_to do |format|
+      format.html { redirect_to investment_opportunity_url(@investment_opportunity), notice: "Investment opportunity was successfully updated." }
+      format.json { render :show, status: :ok, location: @investment_opportunity }
+    end
+  end
+
+  def send_notification
+    @investment_opportunity.send(params[:notification])
+    respond_to do |format|
+      format.html { redirect_to investment_opportunity_url(@investment_opportunity), notice: "Notification sent successfully." }
+      format.json { render :show, status: :ok, location: @investment_opportunity }
     end
   end
 

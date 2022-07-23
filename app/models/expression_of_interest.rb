@@ -3,6 +3,7 @@ class ExpressionOfInterest < ApplicationRecord
   belongs_to :user
   belongs_to :eoi_entity, class_name: "Entity"
   belongs_to :investment_opportunity
+  has_rich_text :details
 
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
@@ -15,6 +16,8 @@ class ExpressionOfInterest < ApplicationRecord
   monetize :amount_cents, :allocation_amount_cents,
            with_currency: ->(s) { s.investment_opportunity.currency }
 
+  scope :approved, -> { where(approved: true) }
+
   def check_amount
     errors.add(:amount, "Should be greater than #{investment_opportunity.min_ticket_size}") if amount < investment_opportunity.min_ticket_size
 
@@ -24,5 +27,10 @@ class ExpressionOfInterest < ApplicationRecord
   before_save :update_approval
   def update_approval
     self.approved = false if amount_cents_changed?
+  end
+
+  before_save :update_percentage
+  def update_percentage
+    self.allocation_percentage = (100.0 * allocation_amount_cents / amount_cents)
   end
 end

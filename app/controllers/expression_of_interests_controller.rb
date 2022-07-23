@@ -88,6 +88,8 @@ class ExpressionOfInterestsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def expression_of_interest_params
-    params.require(:expression_of_interest).permit(:entity_id, :user_id, :eoi_entity_id, :investment_opportunity_id, :amount, :approved, :verified, :allocation_percentage, :allocation_amount)
+    params.require(:expression_of_interest).permit(:entity_id, :user_id, :eoi_entity_id,
+                                                   :investment_opportunity_id, :amount, :approved, :verified, :allocation_percentage,
+                                                   :allocation_amount, :details)
   end
 end

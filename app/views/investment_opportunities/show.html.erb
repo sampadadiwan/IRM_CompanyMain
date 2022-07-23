@@ -83,6 +83,24 @@
       </td>
     </tr>
 
+    <tr>
+      <td>
+        EOI Locked
+      </td>
+      <td>
+        <%= display_boolean @investment_opportunity.lock_eoi %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Allocations Locked
+      </td>
+      <td>
+        <%= display_boolean @investment_opportunity.lock_allocations %>
+      </td>
+    </tr>
+
 
   </table>
 
@@ -93,9 +111,50 @@
   <div>
     <% if policy(@investment_opportunity).update? %>
 
-    <%= link_to "Edit" , edit_investment_opportunity_path(@investment_opportunity), {class: "btn btn-primary" } %> |
+    <%= link_to "Edit" , edit_investment_opportunity_path(@investment_opportunity), {class: "btn btn-primary" } %> 
     <%= button_to "Delete" , @investment_opportunity, method: :delete, class: "btn btn-danger" ,
-          form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
+          form_class: "deleteButton", data: {action: "click->confirm#popup" , turbo:false} %>
+
+
+    &nbsp;&nbsp;&nbsp;
+    <%= button_to "Allocate" , allocate_investment_opportunity_path(@investment_opportunity), 
+        {class: "btn btn-success", form_class: "deleteButton", 
+        data: {action: "click->confirm#popup",  
+        msg: "Kick off allocation process? This will take some time to complete, please be patient.", 
+        method: "post"} } %> 
+
+    <% 
+      lock_eoi_label = @investment_opportunity.lock_eoi ? "Unlock EOIs" : "Lock EOIs" 
+      lock_eoi_msg = @investment_opportunity.lock_eoi ? "This will enable new EOIs to be placed." : "This will disallow new EOIs from being placed."       
+    %>
+    <%= button_to lock_eoi_label , toggle_investment_opportunity_path(@investment_opportunity, lock_eoi: true), {class: "btn btn-danger", method: :patch, data: {action: "click->confirm#popup", msg: "#{lock_eoi_label}. #{lock_eoi_msg} Are you sure?", method: "patch"} } %> 
+
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" 
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Notifications
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          
+          <%= button_to "Send Investment Opportunity Open : To LPs", 
+              send_notification_investment_opportunity_path(@investment_opportunity, notification: "notify_open_for_interests"),    
+              class: "dropdown-item", 
+              data: { action: "click->confirm#popup", 
+                      msg: "Send email to all LPs notifying that the investment opportunity is open", 
+                      method: :patch }  %>   
+
+          <%= button_to "Send Investment Opportunity Allocated : To LPs", 
+              send_notification_investment_opportunity_path(@investment_opportunity, notification: "notify_allocation"),    
+              class: "dropdown-item", 
+              data: { action: "click->confirm#popup", 
+                      msg: "Send email to all LPs notifying that the investment opportunity is now allocated", 
+                      method: :patch }  %>   
+   
+          
+        </div>
+      </div>
+    </div>
 
     <% end %>
   </div>

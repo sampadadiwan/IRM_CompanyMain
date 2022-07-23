@@ -5,7 +5,10 @@ Rails.application.routes.draw do
   end
 
   resources :investment_opportunities do
+    patch 'toggle', on: :member
+    post 'allocate', on: :member
     get 'search', on: :collection
+    patch 'send_notification', on: :member
   end
 
   resources :approval_responses

@@ -59,7 +59,11 @@ class InvestmentOpportunity < ApplicationRecord
     InvestmentOpportunityMailer.with(id:).notify_open_for_interests.deliver_later
   end
 
+  def notify_allocation
+    InvestmentOpportunityMailer.with(id:).notify_allocation.deliver_later
+  end
+
   def percentage_raised
-    eoi_amount_cents * 100.0 / fund_raise_amount_cents
+    ((eoi_amount_cents * 100.0) / fund_raise_amount_cents).round(2)
   end
 end
