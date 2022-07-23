@@ -1,4 +1,6 @@
 class ExpressionOfInterest < ApplicationRecord
+  include WithFolder
+
   belongs_to :entity
   belongs_to :user
   belongs_to :eoi_entity, class_name: "Entity"
@@ -37,5 +39,10 @@ class ExpressionOfInterest < ApplicationRecord
   before_save :notify_approved
   def notify_approved
     ExpressionOfInterestMailer.with(id:).notify_approved.deliver_later if approved && approved_changed?
+  end
+
+  def setup_folder_details
+    parent_folder = investment_opportunity.document_folder.folders.where(name: "EOI").first
+    setup_folder(parent_folder, eoi_entity.name, [])
   end
 end

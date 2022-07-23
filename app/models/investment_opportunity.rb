@@ -25,7 +25,7 @@ class InvestmentOpportunity < ApplicationRecord
   include FileUploader::Attachment(:video)
 
   monetize :fund_raise_amount_cents, :valuation_cents,
-           :min_ticket_size_cents, :eoi_amount_cents
+           :min_ticket_size_cents, :eoi_amount_cents, with_currency: ->(s) { s.currency }
 
   before_create :set_currency
   def set_currency
@@ -38,17 +38,17 @@ class InvestmentOpportunity < ApplicationRecord
 
   def setup_folder_details
     parent_folder = Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
-    setup_folder(parent_folder, company_name, [])
+    setup_folder(parent_folder, company_name, ["EOI"])
   end
 
-  def self.for_investor(user, entity)
+  def self.for_investor(user)
     InvestmentOpportunity
       # Ensure the access rghts for Document
       .joins(:access_rights)
       .merge(AccessRight.access_filter)
       .joins(entity: :investors)
       # Ensure that the user is an investor and tis investor has been given access rights
-      .where("entities.id=?", entity.id)
+      # .where("entities.id=?", entity.id)
       .where("investors.investor_entity_id=?", user.entity_id)
       # Ensure this user has investor access
       .joins(entity: :investor_accesses)

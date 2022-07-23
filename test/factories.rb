@@ -12,13 +12,13 @@ FactoryBot.define do
   end
 
   factory :investment_opportunity do
-    entity { nil }
-    company_name { "MyString" }
-    fund_raise_amount { "9.99" }
-    valuation { "9.99" }
-    min_ticket_size { "9.99" }
-    last_date { "2022-07-23" }
-    currency { "MyString" }
+    entity { Entity.funds.sample }
+    company_name { Faker::Company.name }
+    fund_raise_amount { 10e7 }
+    valuation { 10e9 }
+    min_ticket_size { 10e5 }
+    last_date { Date.today + 1.month }
+    currency { entity.currency }
   end
 
   factory :approval_response do

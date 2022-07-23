@@ -50,16 +50,15 @@
 
 <div style=" display: inline-block;">
           <%= link_to "Edit" , edit_investor_path(@investor), {class: "btn btn-primary" } %> |
-            <%= link_to "View Notes" , notes_path(investor_id: @investor.id), class: "btn btn-success" %> |
-              <%= link_to "Add Note" , new_note_path("note[investor_id]": @investor.id), class: "btn btn-success" %> |
-                <%= button_to "Delete" , @investor, method: :delete, class: "btn btn-danger" ,
-                  form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo: false} %>
-                  </div>
+          <%= link_to "View Notes" , notes_path(investor_id: @investor.id), class: "btn btn-success" %> |
+          <%= link_to "Add Note" , new_note_path("note[investor_id]": @investor.id), class: "btn btn-success" %> |
+          <%= button_to "Delete" , @investor, method: :delete, class: "btn btn-danger" ,
+              form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo: false} %>
+</div>
 
 
-                  <div id="access_rights" class="associated_entity">
-                    <%= render "/layouts/steps" , steps: ["Setup Investor Details", "Grant Access Rights"
-                      , "Add Investor Users" , "Add/View Investments" , "Add/View Notes" ].freeze %>
+<div id="access_rights" class="associated_entity">
+  <%= render "/layouts/steps" , steps: ["Setup Investor Details", "Grant Access Rights", "Add Investor Users" , "Add/View Investments" , "Add/View Notes" ].freeze %>
 
-                      <%= render "investors/investor_details" , investor: @investor %>
-                  </div>
+  <%= render "investors/investor_details" , investor: @investor %>
+</div>

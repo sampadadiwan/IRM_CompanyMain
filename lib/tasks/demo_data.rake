@@ -26,6 +26,16 @@ namespace :irm do
       end
     end
 
+    fund_names = ["IAN"]
+    fund_names.each do |name|
+      e = FactoryBot.create(:entity, entity_type: "Investment Fund", name: name)
+      puts "Entity #{e.name}"
+      (1..2).each do |j|
+        user = FactoryBot.create(:user, entity: e, first_name: "FM#{j}")
+        puts user.to_json
+      end
+    end
+
 
     vc_names = ["Sequoia Capital", "Accel", "Blume Ventures", "Tiger Global Management", "Kalaari Capital"] 
                 # "Drip Ventures", "Matrix Partners", "Nexus Venture Partners", "Indian Angel Network", "Omidyar Network India"]
@@ -156,6 +166,20 @@ namespace :irm do
         end
       end
     end
+
+    Entity.funds.each do |e|
+      i = nil
+      
+      round = FactoryBot.create(:funding_round, entity: e)
+      Entity.vcs.each do |vc|
+        inv = FactoryBot.create(:investor, entity: e, investor_entity: vc, tag_list: [tags.sample, tags.sample].join(","))
+        puts "Investor #{inv.id}"
+        inv.investor_entity.employees.each do |user|
+          InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
+        end
+      end
+    end
+
   rescue Exception => e
     puts e.backtrace.join("\n")
     raise e

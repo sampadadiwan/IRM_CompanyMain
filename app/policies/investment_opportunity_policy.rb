@@ -3,8 +3,10 @@ class InvestmentOpportunityPolicy < ApplicationPolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      else
+      elsif user.curr_role == "fund_manager"
         scope.where(entity_id: user.entity_id)
+      else
+        InvestmentOpportunity.for_investor(user)
       end
     end
   end
@@ -14,7 +16,8 @@ class InvestmentOpportunityPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id)
+    (user.entity_id == record.entity_id) ||
+      InvestmentOpportunity.for_investor(user).where(id: record.id).present?
   end
 
   def create?

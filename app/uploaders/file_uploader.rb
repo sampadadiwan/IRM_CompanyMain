@@ -25,6 +25,9 @@ class FileUploader < Shrine
     if owner_path
       if %w[SecondarySale Deal OptionPool Holding Approval InvestmentOpportunity].include? record.owner_type
         "#{entity}/#{owner_path}"
+      elsif %w[ExpressionOfInterest].include? record.owner_type
+        # Put it inside the SecondarySale folder
+        "#{entity}/InvestmentOpportunity/#{record.owner.investment_opportunity_id}/#{owner_path}"
       elsif %w[Offer Interest].include? record.owner_type
         # Put it inside the SecondarySale folder
         "#{entity}/SecondarySale/#{record.owner.secondary_sale_id}/#{owner_path}"

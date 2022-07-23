@@ -4,8 +4,11 @@
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
+
+      <% if current_user.curr_role == "fund_manager" %>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab" 
           data-action="click->tabdetails#loadData">Access Rights</a>
+      <% end %>
 
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#eoi-tab" 
           data-action="click->tabdetails#loadData">Interests</a>
@@ -20,20 +23,22 @@
           </div>     
         </div>
         
-        <div id="access-rights-tab" class="tab-pane fade">
+        <% if current_user.curr_role == "fund_manager" %>
+          <div id="access-rights-tab" class="tab-pane fade">
 
-            <% cache(investment_opportunity) do %>
-              <div id="access_rights" class="associated_entity" data-controller="datatable">
-                <% access_right = AccessRight.new(
-                    owner_id: investment_opportunity.id, 
-                    access_type: "InvestmentOpportunity", 
-                    owner_type: "InvestmentOpportunity", 
-                    entity_id: investment_opportunity.entity_id) %>
-                    
-                <%= render "/access_rights/index", access_rights: investment_opportunity.access_rights.includes(:investor, :owner), access_right: access_right %>
-              </div>
-            <% end %>
-        </div>
+              <% cache(investment_opportunity) do %>
+                <div id="access_rights" class="associated_entity">
+                  <% access_right = AccessRight.new(
+                      owner_id: investment_opportunity.id, 
+                      access_type: "InvestmentOpportunity", 
+                      owner_type: "InvestmentOpportunity", 
+                      entity_id: investment_opportunity.entity_id) %>
+                      
+                  <%= render "/access_rights/index", access_rights: investment_opportunity.access_rights.includes(:investor, :owner), access_right: access_right %>
+                </div>
+              <% end %>
+          </div>
+        <% end %>
   
 
         <div id="eoi-tab" class="tab-pane fade">

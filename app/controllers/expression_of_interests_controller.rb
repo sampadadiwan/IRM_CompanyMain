@@ -14,6 +14,7 @@ class ExpressionOfInterestsController < ApplicationController
   def new
     @expression_of_interest = ExpressionOfInterest.new(expression_of_interest_params)
     @expression_of_interest.eoi_entity_id = current_user.entity_id
+    @expression_of_interest.investment_opportunity = @expression_of_interest.investment_opportunity
     @expression_of_interest.amount = @expression_of_interest.investment_opportunity.min_ticket_size
     authorize @expression_of_interest
   end

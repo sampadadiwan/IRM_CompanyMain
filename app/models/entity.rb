@@ -98,6 +98,7 @@ class Entity < ApplicationRecord
   scope :vcs, -> { where(entity_type: "VC") }
   scope :startups, -> { where(entity_type: "Startup") }
   scope :advisors, -> { where(entity_type: "Advisor") }
+  scope :funds, -> { where(entity_type: "Investment Fund") }
   scope :user_investor_entities, ->(user) { where('access_rights.access_to': user.email).includes(:access_rights) }
 
   before_save :check_url, :scrub_defaults
@@ -109,6 +110,8 @@ class Entity < ApplicationRecord
   end
 
   after_create ->(entity) { SetupStartup.call(entity:) if entity.entity_type == "Startup" }
+  # IFs also need folders - so setup here
+  after_create ->(entity) { SetupFolders.call(entity:) if entity.entity_type == "Investment Fund" }
 
   def to_s
     name

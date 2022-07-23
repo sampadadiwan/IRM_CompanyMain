@@ -83,6 +83,47 @@
 
             <% end %>
 
+            <% if current_user && current_user.curr_role.to_sym == :fund_manager %>
+                <!-- Divider -->
+                <hr class="sidebar-divider">
+
+            
+                <!-- Nav Item - Pages Collapse Menu -->
+                <li class="nav-item">                
+                    <a class="nav-link" href="/investors" data-toggle="collapse" data-target="#investorMenus">
+                        <i class="fas fa-fw fa-user-tie"></i>
+                        <span>Investors</span>
+                    </a>
+
+                    <div id="investorMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
+                        <div class="bg-white py-2 collapse-inner rounded">
+                            <a class="collapse-item" 
+                            href="/investors/new?investor[entity_id]=<%=current_user.entity_id%>">
+                                New Investor</a>
+                            <a class="collapse-item" href="/investors">View Investors</a>
+                            <a class="collapse-item" href="/approvals">Approvals</a>
+                            <a class="collapse-item" href="/notes">Notes</a>
+                            <a class="collapse-item" href="/investor_accesses?approved=false">Pending Access</a>
+                        </div>
+                    </div>
+
+                </li>
+                <li class="nav-item"> 
+                    <a class="nav-link collapsed" href="/documents">
+                        <i class="fas fa-fw fa-folder"></i>
+                        <span>Documents</span>
+                    </a>
+                </li>
+
+                <li class="nav-item"> 
+                    <a class="nav-link collapsed" href="/investment_opportunities">
+                        <i class="fas fa-fw fa-folder"></i>
+                        <span>Investment Opportunities</span>
+                    </a>
+                </li>
+
+            <% end %>
+
             <% if current_user && current_user.curr_role.to_sym == :startup %>
             <!-- Divider -->
             <hr class="sidebar-divider">
