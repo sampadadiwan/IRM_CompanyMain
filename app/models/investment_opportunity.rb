@@ -24,13 +24,13 @@ class InvestmentOpportunity < ApplicationRecord
   include FileUploader::Attachment(:logo)
   include FileUploader::Attachment(:video)
 
-  monetize :fund_raise_amount_cents, :valuation_cents,
-           :min_ticket_size_cents, :eoi_amount_cents, with_currency: ->(s) { s.currency }
-
-  before_create :set_currency
+  before_validation :set_currency
   def set_currency
     self.currency ||= entity.currency
   end
+
+  monetize :fund_raise_amount_cents, :valuation_cents,
+           :min_ticket_size_cents, :eoi_amount_cents, with_model_currency: :currency
 
   def name
     company_name
