@@ -30,6 +30,7 @@ class SetupHoldingForInvestment
                                     category: holding.holding_type, entity_id: holding.entity.id,
                                     investor_id: employee_investor.id, employee_holdings: true,
                                     quantity: 0, price_cents: holding.price_cents,
+                                    investment_date: holding.grant_date,
                                     currency: holding.entity.currency, funding_round: holding.funding_round,
                                     notes: "Holdings Investment")
 

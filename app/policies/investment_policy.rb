@@ -3,8 +3,10 @@ class InvestmentPolicy < ApplicationPolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      else
+      elsif user.curr_role == "startup"
         scope.where(entity_id: user.entity_id)
+      else
+        scope.for_investor_all(user)
       end
     end
   end

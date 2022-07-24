@@ -195,7 +195,9 @@ namespace :irm do
         (1..3).each do
           round = FactoryBot.create(:funding_round, entity: e) if rand(10) < 2 
           instrument = ["Equity", "Preferred"][rand(2)]
-          i = FactoryBot.build(:investment, entity: e, investor: inv, investment_instrument: instrument, funding_round: round, notes: "generateFakeInvestments")
+          i = FactoryBot.build(:investment, entity: e, investor: inv, investment_instrument: instrument, 
+            funding_round: round, notes: "generateFakeInvestments", 
+            investment_date: (Date.today - rand(6).years - rand(12).months))
           i = SaveInvestment.call(investment: i).investment
           puts "Investment #{i.to_json}"
         end

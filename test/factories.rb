@@ -259,6 +259,7 @@ FactoryBot.define do
     spv { "SPV-#{rand(1-10)}" }
     liquidation_preference { rand(1.0..2.0).round(1) } 
     current_value {}
+    investment_date { Date.today - rand(6).years - rand(12). months}
   end
 
   factory :user do

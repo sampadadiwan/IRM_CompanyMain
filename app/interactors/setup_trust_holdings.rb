@@ -27,6 +27,7 @@ class SetupTrustHoldings
       Rails.logger.debug "Creating Investment for Trust for Option Pool"
       investment = Investment.new(entity_id: option_pool.entity_id,
                                   category: "Trust",
+                                  investment_date: Time.zone.today,
                                   quantity: option_pool.number_of_options,
                                   price_cents: option_pool.excercise_price_cents,
                                   investment_instrument: "Options", investor_id: trust_investor.id,

@@ -75,6 +75,7 @@ class CapTableFromSaleJob < ApplicationJob
 
     Investment.new(investment_instrument: instrument,
                    category: investor.category,
+                   investment_date: Time.zone.today,
                    entity_id: investor.entity_id,
                    investor_id: investor.id, employee_holdings: false,
                    quantity:,

@@ -66,7 +66,7 @@
         <% end %>
       </div>
 
-      <div class="form-group col-md-2">
+      <div class="form-group col-md-1">
         <%= form.label :price %>
         <%= form.number_field :price, class: "form-control required", name: "investment[price][]"  %>
       </div>
@@ -77,9 +77,14 @@
         <%= form.number_field :liquidation_preference, step: :any, class: "form-control", name: "investment[liquidation_preference][]"  %>
       </div>
 
-      <div class="form-group col-md-2">
+      <div class="form-group col-md-1">
         <%= form.label :spv, "Investor SPV" %>
         <%= form.text_field :spv, class: "form-control", name: "investment[spv][]"  %>
+      </div>
+
+      <div class="form-group col-md-1">
+        <%= form.label :investment_date %>
+        <%= form.date_field :investment_date, class: "form-control", name: "investment[investment_date][]"  %>
       </div>
 
       <div class="form-group col-md-1">

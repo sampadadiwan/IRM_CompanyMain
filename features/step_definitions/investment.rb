@@ -25,6 +25,9 @@ Given('I create an investment {string}') do |arg1|
   fill_in('investment_price', with: @investment.price)
   fill_in('investment_liquidation_preference', with: @investment.liquidation_preference)
   fill_in('investment_spv', with: @investment.spv)
+  fill_in('investment_investment_date', with: @investment.investment_date.strftime("%d/%m/%Y"))
+
+  sleep(1)
   click_on("Save")
 end
 
@@ -43,6 +46,7 @@ Then('when I edit the investment {string}') do |arg1|
   fill_in('investment_price', with: @edit_investment.price)
   fill_in('investment_liquidation_preference', with: @investment.liquidation_preference)
   fill_in('investment_spv', with: @investment.spv)
+  fill_in('investment_investment_date', with: @investment.investment_date.strftime("%d/%m/%Y"))
 
   click_on("Save")
   sleep(1)

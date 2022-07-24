@@ -10,11 +10,11 @@ class InvestorSummary
     @investor = Investor.for(@user, @entity).first
   end
 
-  def holdings
-    investor_holdings ||= @investor.holdings.eq_and_pref.where(entity_id: @entity.id)
-                                   .includes(funding_round: :entity, entity: :valuations)
+  def investments
+    investor_investments ||= @investor.investments.equity_or_pref.where(entity_id: @entity.id)
+                                      .includes(:funding_round, entity: :valuations)
 
-    investor_holdings
+    investor_investments
   end
 
   def estimated_profits(price_growth)
@@ -22,9 +22,9 @@ class InvestorSummary
     total_holding_value = Money.new(0, @entity.currency)
     per_share_value = @entity.valuations.last.per_share_value
 
-    holdings.each do |holding|
-      exit_value += (per_share_value * price_growth * holding.quantity)
-      total_holding_value += holding.value
+    investments.each do |inv|
+      exit_value += (per_share_value * price_growth * inv.quantity)
+      total_holding_value += inv.amount
     end
 
     profits = exit_value - total_holding_value
@@ -80,7 +80,7 @@ class InvestorSummary
   end
 
   def projected_profits
-    # This sets which holdings the employee is seeing
+    # This sets which investments the employee is seeing
     [2, 3, 4, 5, 6, 7, 8, 9, 10].map do |price_growth|
       _exit_value, _total_value_cents, estimated_profit = estimated_profits(price_growth)
       [price_growth, estimated_profit.cents / 100]
@@ -91,8 +91,8 @@ class InvestorSummary
     Rails.logger.debug { "compute_xirr exit_value: #{exit_value}" }
     cf = Xirr::Cashflow.new
 
-    holdings.each do |holding|
-      cf << Xirr::Transaction.new(-1 * holding.value, date: holding.created_at)
+    investments.each do |inv|
+      cf << Xirr::Transaction.new(-1 * inv.amount, date: inv.investment_date)
     end
 
     cf << Xirr::Transaction.new(exit_value, date: Time.zone.today)

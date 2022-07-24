@@ -39,7 +39,6 @@ class Investment < ApplicationRecord
   # Make all models searchable
   update_index('investment') { self }
 
-  validates :quantity, :price, presence: true
   # "Equity,Preferred,Debt,Options"
   INSTRUMENT_TYPES = ENV["INSTRUMENT_TYPES"].split(",")
 
@@ -62,6 +61,8 @@ class Investment < ApplicationRecord
   delegate :name, to: :entity, prefix: :investee
 
   has_many :holdings, dependent: :destroy
+  validates :investment_date, :quantity, :investment_instrument, :price, presence: true
+
   validate :validate_option_pool, if: -> { investment_instrument == 'Options' }
 
   # Handled by money-rails gem
@@ -99,6 +100,18 @@ class Investment < ApplicationRecord
     self.investment_type = funding_round.name
     self.investment_instrument = investment_instrument.strip
     self.employee_holdings = true if investment_type == "Employee Holdings"
+  end
+
+  def self.for_investor_all(current_user)
+    Investment
+      # Ensure the access rights for Investment
+      .joins(:investor)
+      # .merge(AccessRight.access_filter)
+      # Ensure that the user is an investor and tis investor has been given access rights
+      .where("investors.investor_entity_id=?", current_user.entity_id)
+      # Ensure this user has investor access
+      .joins(entity: :investor_accesses)
+      .merge(InvestorAccess.approved_for_user(current_user))
   end
 
   def self.for_investor(current_user, entity)
