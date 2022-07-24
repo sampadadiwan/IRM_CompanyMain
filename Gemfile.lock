@@ -19,6 +19,14 @@ GIT
       sidekiq (>= 6.0)
 
 GIT
+  remote: https://github.com/thimmaiah/xirr
+  revision: 59c72577347b7bd9c23197bb9de8eca4da4097f9
+  specs:
+    xirr (0.6.1)
+      RubyInline (~> 3)
+      activesupport (~> 7.0)
+
+GIT
   remote: https://github.com/varvet/pundit.git
   revision: 856d74d55d79a87102cbaa2df64d87c94dc7e3bc
   specs:
@@ -28,6 +36,9 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
+    RubyInline (3.12.6)
+      ZenTest (~> 4.3)
+    ZenTest (4.12.1)
     actioncable (7.0.2.4)
       actionpack (= 7.0.2.4)
       activesupport (= 7.0.2.4)
@@ -788,6 +799,7 @@ DEPENDENCIES
   whenever
   wicked_pdf
   wkhtmltopdf-binary-edge
+  xirr!
 
 RUBY VERSION
    ruby 3.1.2p20

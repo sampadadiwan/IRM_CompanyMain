@@ -54,7 +54,7 @@ gem 'hightop'
 
 gem 'eu_central_bank'
 gem 'money-rails', '~>1.12'
-# gem 'xirr'
+gem 'xirr', git: "https://github.com/thimmaiah/xirr"
 # gem 'prometheus_exporter'
 
 gem 'wicked_pdf'

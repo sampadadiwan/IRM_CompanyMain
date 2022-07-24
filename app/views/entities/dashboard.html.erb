@@ -1,13 +1,18 @@
 <%= render "/layouts/alerts" %>
 
 <% if current_user.entity %>
-    <% if current_user.curr_role.to_sym == :startup %>
-        <%= render "cxo_dashboard" %>
-    <% elsif current_user.curr_role.to_sym == :investor %>
-        <%= render "vc_dashboard" %>
-    <% elsif current_user.curr_role == "holding" %>
-        <%= render "holding_dashboard" %>
-    <% elsif current_user.entity.entity_type == "Holding" %>
-        <%= render "advisor_dashboard" %>
+
+    <% if params[:dashboard].present? %>
+        <%= render params[:dashboard] %>
+    <% else %>   
+        <% if current_user.curr_role.to_sym == :startup %>
+            <%= render "cxo_dashboard" %>
+        <% elsif current_user.curr_role.to_sym == :investor %>
+            <%= render "vc_dashboard" %>
+        <% elsif current_user.curr_role == "holding" %>
+            <%= render "holding_dashboard" %>
+        <% elsif current_user.entity.entity_type == "Holding" %>
+            <%= render "advisor_dashboard" %>
+        <% end %>
     <% end %>
 <% end %>

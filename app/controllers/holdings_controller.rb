@@ -1,6 +1,6 @@
 class HoldingsController < ApplicationController
   before_action :set_holding, only: %i[show edit update destroy cancel approve esop_grant_letter emp_ack]
-  after_action :verify_authorized, except: %i[employee_calc index search]
+  after_action :verify_authorized, except: %i[investor_calc employee_calc index search]
 
   # GET /holdings or /holdings.json
   def index
@@ -119,6 +119,7 @@ class HoldingsController < ApplicationController
   end
 
   def employee_calc; end
+  def investor_calc; end
 
   def cancel
     result = CancelHolding.call(holding: @holding, all_or_unvested: params[:type])
