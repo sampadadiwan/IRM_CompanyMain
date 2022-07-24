@@ -1,18 +1,19 @@
 <% 
     entity_id = params[:entity_id].presence 
     entity = Entity.find(entity_id)
+    investments = policy_scope(Investment).where(entity_id: entity_id)
 %>
 
-<%= render "/entities/investor_dashboard_stats", entity: entity %>
+<%= render "/entities/investor_dashboard_stats", entity: entity, investments: investments %>
 
 <div data-controller="datatable">
-    <div class="col-lg-12 mb-4">
+    <div class="mb-4">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">Investments</h6>
             </div>
             <div class="card-body">
-                <%= render "/investments/index", investments: policy_scope(Investment).where(entity_id: entity_id), title: "Investments", entity: entity %>
+                <%= render "/investments/index", investments: investments, title: "Investments", entity: entity %>
             </div>
         </div>
     </div>

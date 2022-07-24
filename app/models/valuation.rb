@@ -21,4 +21,10 @@ class Valuation < ApplicationRecord
 
   monetize :pre_money_valuation_cents, :per_share_value_cents,
            with_currency: ->(s) { s.entity.currency }
+
+  after_save :update_entity
+  def update_entity
+    entity.per_share_value_cents = per_share_value_cents
+    entity.save
+  end
 end

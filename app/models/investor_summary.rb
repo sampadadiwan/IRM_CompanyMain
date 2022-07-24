@@ -20,7 +20,7 @@ class InvestorSummary
   def estimated_profits(price_growth)
     exit_value = 0
     total_holding_value = Money.new(0, @entity.currency)
-    per_share_value = @entity.valuations.last.per_share_value
+    per_share_value = @entity.per_share_value
 
     investments.each do |inv|
       exit_value += (per_share_value * price_growth * inv.quantity)

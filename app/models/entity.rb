@@ -87,6 +87,7 @@ class Entity < ApplicationRecord
   has_one_attached :logo, service: :amazon
 
   monetize :total_investments, as: "total", with_model_currency: :currency
+  monetize :per_share_value_cents, with_model_currency: :currency
 
   TYPES = ["VC", "Startup", "Holding", "Advisor", "Family Office", "Investment Fund"].freeze
   SECONDARY_BUYERS = ["VC", "Advisor", "Family Office"].freeze

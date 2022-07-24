@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_07_24_111227) do
+ActiveRecord::Schema[7.0].define(version: 2022_07_24_131340) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -351,6 +351,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_24_111227) do
     t.integer "preferred", default: 0
     t.integer "options", default: 0
     t.boolean "percentage_in_progress", default: false
+    t.decimal "per_share_value_cents", precision: 15, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
