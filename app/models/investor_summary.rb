@@ -99,7 +99,7 @@ class InvestorSummary
 
     Rails.logger.debug { "compute_xirr cf: #{cf}" }
     Rails.logger.debug { "compute_xirr irr: #{cf.xirr}" }
-    cf.xirr
+    cf.xirr * 100
   end
 
   def self.test_xirr
