@@ -101,4 +101,14 @@ class InvestorSummary
     Rails.logger.debug { "compute_xirr irr: #{cf.xirr}" }
     cf.xirr
   end
+
+  def self.test_xirr
+    cf = Xirr::Cashflow.new
+    cf << Xirr::Transaction.new(-50, date: '2020-1-1'.to_date)
+    cf << Xirr::Transaction.new(-10, date: '2020-9-1'.to_date)
+    cf << Xirr::Transaction.new(-12, date: '2021-1-1'.to_date)
+    cf << Xirr::Transaction.new(-13.5, date: '2021-6-1'.to_date)
+    cf << Xirr::Transaction.new(142.2, date: '2022-12-31'.to_date)
+    cf.xirr
+  end
 end

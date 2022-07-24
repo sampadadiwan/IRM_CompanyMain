@@ -16,7 +16,7 @@
             <%= link_to "Investments", investments_path(entity_id: entity.id) , {class: "btn btn-success"}%>
         <% else %>
             <%= link_to "Documents", documents_path(entity_id: entity.id) , {class: "btn btn-primary"}%>
-            <%= link_to "Investments", investor_investments_aggregate_investments_path(entity_id: entity.id) , 
+            <%= link_to "Investments", dashboard_entities_path(entity_id: entity.id, dashboard: "investor_dashboard") , 
                     {id: "investments_entity_#{entity.id}", class: "btn btn-success"}%>
             <%= link_to "Tasks", tasks_path(entity_id: entity.id) , 
                     {id: "tasks_#{entity.id}", class: "btn btn-success"}%>

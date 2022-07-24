@@ -10,7 +10,7 @@
                 <h6 class="m-0 font-weight-bold text-primary">Holdings</h6>
             </div>
             <div class="card-body">
-                <%= render "/holdings/index", holdings: policy_scope(Holding).where(entity_id: entity_id), secondary_sale: nil %>
+                <%= render "/holdings/index", holdings: policy_scope(Holding).where(entity_id: entity_id), secondary_sale: nil, investor_view: true %>
             </div>
         </div>
     </div>

@@ -2,6 +2,7 @@
     <% 
         title ||= "Holdings" 
         import_upload ||= false
+        investor_view ||= false
     %>
     <h1 class="h3 mb-0 text-gray-800"><%=title%></h1>
     <span>
@@ -60,13 +61,15 @@
                 <th>
                     Investor
                 </th>
-                <th>
-                    Employee ID
-                </th>
+                <% unless investor_view %>
+                    <th>
+                        Employee ID
+                    </th>
+                <% end %>
                 <% unless only_options.present? %>
-                <th>
-                    Instrument
-                </th>
+                    <th>
+                        Instrument
+                    </th>
                 <% end %>
                 <th class="hideMobP">
                     Quantity
@@ -92,7 +95,10 @@
                     </th>
                     <th class="hideMobP">
                         Manual Vesting
-                    </th>  
+                    </th> 
+                
+                <% else %>
+                    <th class="hideMobP"> Date </th>
                 <% end %>
 
                 <th class="hideMobP">
@@ -105,7 +111,8 @@
 
         <tbody>
             <% holdings.each do |holding| %>
-                <%= render "/holdings/holding", holding: holding, secondary_sale: secondary_sale, only_options: only_options %>
+                <%= render "/holdings/holding", holding: holding, secondary_sale: secondary_sale, 
+                    only_options: only_options, investor_view: investor_view %>
             <% end %>
         </tbody>
     </table>

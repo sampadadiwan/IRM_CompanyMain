@@ -1,3 +1,4 @@
+<% investor_view ||= false %>
 <tr id="holding_<%= holding.id %>">
   <td class="hideMobP">
     <%= current_user.entity_id == holding.entity_id ?  
@@ -9,9 +10,12 @@
   <td>
     <%= holding.user ? holding.user.full_name : holding.investor.investor_name %>
   </td>
-  <td>
-    <%= holding.employee_id %>
-  </td>
+
+  <% unless investor_view %>
+    <td>
+      <%= holding.employee_id %>
+    </td>
+  <% end %>
   
   <% unless only_options.present? %>
   <td>
@@ -60,6 +64,10 @@
     </td>
     <td>
       <%= display_boolean holding.manual_vesting %>
+    </td>
+  <% else %>
+    <td class="hideMobP">
+      <%= l holding.created_at %>
     </td>
   <% end %>
 

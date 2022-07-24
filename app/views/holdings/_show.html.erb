@@ -23,15 +23,17 @@
         <% end %>
       </td>
     </tr>
-    <tr>
-      <td>
-        Employee ID
-      </td>
-      <td>
-        <%= @holding.employee_id %>
-      </td>
-    </tr>
 
+    <% if @holding.user %>
+      <tr>
+        <td>
+          Employee ID
+        </td>
+        <td>
+          <%= @holding.employee_id %>
+        </td>
+      </tr>
+    <% end %>
     <tr>
       <td>
         Entity
