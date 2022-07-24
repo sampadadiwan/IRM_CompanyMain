@@ -10,20 +10,27 @@ class InvestorSummary
     @investor = Investor.for(@user, @entity).first
   end
 
+  def holdings
+    investor_holdings ||= @investor.holdings.eq_and_pref.where(entity_id: @entity.id)
+                                   .includes(funding_round: :entity, entity: :valuations)
+
+    investor_holdings
+  end
+
   def estimated_profits(price_growth)
-    profits = Money.new(0, @entity.currency)
-
-    @holdings ||= @investor.holdings.eq_and_pref.where(entity_id: @entity.id).includes(funding_round: :entity, entity: :valuations)
-
+    exit_value = 0
+    total_holding_value = Money.new(0, @entity.currency)
     per_share_value = @entity.valuations.last.per_share_value
 
-    @holdings.each do |holding|
-      profits += (per_share_value * price_growth * holding.quantity) - holding.value
+    holdings.each do |holding|
+      exit_value += (per_share_value * price_growth * holding.quantity)
+      total_holding_value += holding.value
     end
 
-    Rails.logger.debug { "estimated_profits = #{profits}" }
+    profits = exit_value - total_holding_value
+    Rails.logger.debug { "estimated_profits : exit_value = #{exit_value}" }
 
-    profits
+    [exit_value, total_holding_value, profits]
   end
 
   def investor_summary
@@ -34,14 +41,14 @@ class InvestorSummary
     tax_rate = @params[:tax_rate] ? @params[:tax_rate].to_f : 30
 
     if last_valuation
-      estimated_taxes, estimated_profit, cost_neutral_sale, last_valuation, holding_value =
+      estimated_taxes, estimated_profit, cost_neutral_sale, last_valuation, holding_value, xirr =
         from_last_valuation(last_valuation)
     else
-      estimated_taxes, estimated_profit, cost_neutral_sale, last_valuation, holding_value =
+      estimated_taxes, estimated_profit, cost_neutral_sale, last_valuation, holding_value, xirr =
         no_valuation
     end
 
-    [price_growth, tax_rate, estimated_taxes, estimated_profit, cost_neutral_sale, last_valuation, holding_value]
+    [price_growth, tax_rate, estimated_taxes, estimated_profit, cost_neutral_sale, last_valuation, holding_value, xirr]
   end
 
   def from_last_valuation(last_valuation)
@@ -50,15 +57,15 @@ class InvestorSummary
     # Get the tax rate from the UI
     tax_rate = @params[:tax_rate] ? @params[:tax_rate].to_f : 30
 
-    estimated_profit = estimated_profits(price_growth)
+    exit_value, total_value_cents, estimated_profit = estimated_profits(price_growth)
     estimated_taxes = estimated_profit * tax_rate / 100
-    holdings = @investor.holdings.eq_and_pref.where(entity_id: @entity.id)
-    total_value_cents = holdings.sum(:value_cents)
 
     holding_value = Money.new(total_value_cents, @entity.currency)
 
     cost_neutral_sale = (estimated_taxes + holding_value) / (last_valuation * price_growth)
-    [estimated_taxes, estimated_profit, cost_neutral_sale, last_valuation, holding_value]
+    xirr = compute_xirr(exit_value)
+
+    [estimated_taxes, estimated_profit, cost_neutral_sale, last_valuation, holding_value, xirr]
   end
 
   def no_valuation
@@ -67,14 +74,31 @@ class InvestorSummary
     cost_neutral_sale = 0
     last_valuation = Money.new(0, @entity.currency)
     holding_value = Money.new(0, @entity.currency)
+    xirr = 0
 
-    [estimated_taxes, estimated_profit, cost_neutral_sale, last_valuation, holding_value]
+    [estimated_taxes, estimated_profit, cost_neutral_sale, last_valuation, holding_value, xirr]
   end
 
   def projected_profits
     # This sets which holdings the employee is seeing
     [2, 3, 4, 5, 6, 7, 8, 9, 10].map do |price_growth|
-      [price_growth, estimated_profits(price_growth).cents / 100]
+      _exit_value, _total_value_cents, estimated_profit = estimated_profits(price_growth)
+      [price_growth, estimated_profit.cents / 100]
     end
+  end
+
+  def compute_xirr(exit_value)
+    Rails.logger.debug { "compute_xirr exit_value: #{exit_value}" }
+    cf = Xirr::Cashflow.new
+
+    holdings.each do |holding|
+      cf << Xirr::Transaction.new(-1 * holding.value, date: holding.created_at)
+    end
+
+    cf << Xirr::Transaction.new(exit_value, date: Time.zone.today)
+
+    Rails.logger.debug { "compute_xirr cf: #{cf}" }
+    Rails.logger.debug { "compute_xirr irr: #{cf.xirr}" }
+    cf.xirr
   end
 end

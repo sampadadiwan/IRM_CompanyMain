@@ -2,7 +2,7 @@
 
 <%= turbo_frame_tag "investor_calc" do %>
   <%  price_growth, tax_rate, estimated_taxes, estimated_profit, 
-      cost_neutral_sale, last_valuation, holding_value = 
+      cost_neutral_sale, last_valuation, holding_value, xirr = 
       InvestorSummary.new(params, current_user).investor_summary %>
 
     <form id="investor_calc_form" action="/holdings/investor_calc" method="post">
@@ -62,6 +62,14 @@
                 <%= cost_neutral_sale.round(0 ) %>
               </td>
             </tr>
+
+            <tr>
+              <td>Xirr</td>
+              <td>
+                <%= xirr %>
+              </td>
+            </tr>
+
           </table>
           <input type="submit" name="commit" value="Calculate" class="btn btn-primary float-right"
             data-disable-with="Calculate">
