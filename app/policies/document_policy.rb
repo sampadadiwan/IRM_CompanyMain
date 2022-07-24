@@ -27,6 +27,7 @@ class DocumentPolicy < ApplicationPolicy
   def create?
     (user.entity_id == record.entity_id && user.entity.enable_documents) ||
       (record.owner && owner_policy.update?) ||
+      # The DealInvestor is the only case where other users can attach documents to the DealInvestor which is not created by them
       (record.owner && record.owner_type == "DealInvestor" && owner_policy.show?)
   end
 

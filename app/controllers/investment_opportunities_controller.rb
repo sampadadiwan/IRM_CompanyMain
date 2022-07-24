@@ -4,6 +4,7 @@ class InvestmentOpportunitiesController < ApplicationController
   # GET /investment_opportunities or /investment_opportunities.json
   def index
     @investment_opportunities = policy_scope(InvestmentOpportunity)
+    @investment_opportunities = @investment_opportunities.where(entity_id: params[:entity_id]) if params[:entity_id].present?
   end
 
   def search
