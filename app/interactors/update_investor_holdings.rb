@@ -22,16 +22,20 @@ class UpdateInvestorHoldings
       holding = investment.holdings.first
       if holding
         # Since there is only 1 holding per Investor Investment
-        # Just assign the quantityand price
-        holding.update(orig_grant_quantity: investment.quantity, investment_instrument: investment.investment_instrument, price: investment.price, audit_comment: "Updated by UpdateInvestorHoldings")
+        # Just assign the quantity and price
+        holding.update(orig_grant_quantity: investment.quantity,
+                       investment_instrument: investment.investment_instrument,
+                       price: investment.price,
+                       audit_comment: "Updated by UpdateInvestorHoldings")
       else
         holding = Holding.new(entity: investment.entity, investment_id: investment.id,
                               investor_id: investment.investor_id, funding_round_id: investment.funding_round_id,
                               option_pool: investment.funding_round.option_pool,
-                              grant_date: Time.zone.today, holding_type: "Investor",
+                              grant_date: investment.investment_date, holding_type: "Investor",
                               investment_instrument: investment.investment_instrument,
                               orig_grant_quantity: investment.quantity,
-                              price_cents: investment.price_cents, value_cents: investment.amount_cents, approved: true)
+                              price_cents: investment.price_cents,
+                              value_cents: investment.amount_cents, approved: true)
 
         audit_comment = "#{context.audit_comment} : Update Investor Holding"
         CreateHolding.call(holding:, audit_comment:)

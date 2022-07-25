@@ -73,15 +73,15 @@ module HoldingCounters
 
   def call_counter_cache?
     investment &&
-      INVESTMENT_FOR.include?(holding_type) &&
-      EQUITY_LIKE.include?(investment_instrument) &&
-      approved
+      INVESTMENT_FOR.include?(holding_type) && # Only for Employees & Founders
+      EQUITY_LIKE.include?(investment_instrument) && # Only for Equity and Pref
+      approved # Only for approved holdings
   end
 
   def update_option_pool?
     investment &&
-      INVESTMENT_FOR.include?(holding_type) &&
+      INVESTMENT_FOR.include?(holding_type) && # Only for Employees & Founders
       investment_instrument == "Options" &&
-      approved
+      approved # Only for approved options
   end
 end

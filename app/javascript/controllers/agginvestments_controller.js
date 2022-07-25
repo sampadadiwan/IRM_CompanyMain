@@ -56,6 +56,7 @@ export default class extends Controller {
                 '<td>'+row.funding_round+'</td>'+
                 '<td>'+row.investor_name+'</td>'+
                 '<td>'+row.investment_instrument+'</td>'+                
+                '<td>'+row.investment_date+'</td>'+
                 '<td>'+row.quantity+'</td>'+
                 '<td>'+row.percentage_holding+'</td>'+
                 '<td>'+row.diluted_percentage+'</td>'+
@@ -79,6 +80,7 @@ export default class extends Controller {
             '<th>Funding Round</th>'+
             '<th>Investor</th>'+
             '<th>Instrument</th>'+
+            '<th>Investment Date</th>'+
             '<th>Quantity</th>'+
             '<th>Percent Holding</th>'+
             '<th>Fully Diluted</th>'+

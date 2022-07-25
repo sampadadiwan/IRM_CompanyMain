@@ -58,6 +58,7 @@ export default class extends Controller {
                 '<td>'+row.funding_round_name+'</td>'+
                 '<td>'+row.holder_name+'</td>'+
                 '<td>'+row.investment_instrument+'</td>'+
+                '<td>'+row.investment_date+'</td>'+
                 '<td>'+row.quantity+'</td>'+
                 '<td>'+row.price+'</td>'+
                 '<td>'+row.value+'</td>'+
@@ -78,6 +79,7 @@ export default class extends Controller {
             '<th>Funding Round</th>'+
             '<th>Name</th>'+
             '<th>Instrument</th>'+
+            '<th>Investment Date</th>'+
             '<th>Quantity</th>'+
             '<th>Price</th>'+
             '<th>Value</th>'+
