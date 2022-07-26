@@ -153,6 +153,7 @@ Rails.application.routes.draw do
   resources :investments do
     get 'search', on: :collection
     get 'investor_investments', on: :collection
+    post 'recompute_percentage', on: :collection
   end
 
   resources :documents do

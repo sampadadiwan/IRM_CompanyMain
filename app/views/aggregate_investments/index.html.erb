@@ -15,6 +15,7 @@
       <%= link_to "Scenarios", simple_simulator_aggregate_investments_path, {class: "btn btn-primary", data: {toggle: "tooltip", title: "Plan Scenarios"} } %>
 
       <%= link_to "Details View", investments_path, {class: "btn btn-primary"} %>
+      <%= button_to "Recompute Percentage", recompute_percentage_investments_path, {class: "btn btn-primary"} %>
 
 
       <%= link_to "New Investment", new_investment_path("investment[entity_id]": current_user.entity_id), 

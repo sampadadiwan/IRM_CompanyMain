@@ -2,7 +2,7 @@ class InvestmentsController < ApplicationController
   include InvestmentConcern
 
   before_action :set_investment, only: %w[show update destroy edit]
-  after_action :verify_authorized, except: %i[index search investor_investments]
+  after_action :verify_authorized, except: %i[index search investor_investments recompute_percentage]
 
   # GET /investments or /investments.json
   def index
@@ -133,6 +133,15 @@ class InvestmentsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to investments_url, notice: "Investment was successfully deleted." }
       format.json { head :no_content }
+    end
+  end
+
+  def recompute_percentage
+    InvestmentPercentageHoldingJob.perform_later(current_user.entity_id)
+    respond_to do |format|
+      format.html do
+        redirect_back fallback_location: aggregate_investments_path, notice: "Percentage calculations kicked off."
+      end
     end
   end
 

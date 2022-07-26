@@ -15,7 +15,9 @@ class NewHoldingFromExcercise
   def create_holding(excercise)
     # Generate the equity holding to update the cap table
     holding = Holding.new(user_id: excercise.user_id, entity_id: excercise.entity_id,
-                          orig_grant_quantity: excercise.quantity, price_cents: excercise.price_cents,
+                          orig_grant_quantity: excercise.quantity,
+                          grant_date: Time.zone.today,
+                          price_cents: excercise.price_cents,
                           investment_instrument: "Equity", investor_id: excercise.holding.investor_id,
                           holding_type: excercise.holding.holding_type,
                           funding_round_id: excercise.option_pool.funding_round_id,
