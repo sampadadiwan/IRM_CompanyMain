@@ -6,7 +6,8 @@ class InvestmentOpportunityMailer < ApplicationMailer
     @investment_opportunity = InvestmentOpportunity.find(params[:id])
 
     # Get all emails of investors & holding company employees
-    open_for_offers_emails = @investment_opportunity.access_rights.collect(&:investor_emails).flatten
+    open_for_offers_emails = sandbox_email(@investment_opportunity,
+                                           @investment_opportunity.access_rights.collect(&:investor_emails).flatten)
 
     mail(to: ENV['SUPPORT_EMAIL'],
          bcc: open_for_offers_emails.join(','),
@@ -17,7 +18,8 @@ class InvestmentOpportunityMailer < ApplicationMailer
     @investment_opportunity = InvestmentOpportunity.find(params[:id])
 
     # Get all emails of investors & holding company employees
-    open_for_offers_emails = @investment_opportunity.access_rights.collect(&:investor_emails).flatten
+    open_for_offers_emails = sandbox_email(@investment_opportunity,
+                                           @investment_opportunity.access_rights.collect(&:investor_emails).flatten)
 
     mail(to: ENV['SUPPORT_EMAIL'],
          bcc: open_for_offers_emails.join(','),

@@ -3,9 +3,10 @@ class InvestorAccessMailer < ApplicationMailer
 
   def notify_access
     @investor_access = InvestorAccess.includes(:user).find params[:investor_access_id]
+    email = sandbox_email(@investor_access, @investor_access.email)
 
     subj = "Access Granted to #{@investor_access.entity_name}"
-    mail(to: @investor_access.email,
+    mail(to: email,
          cc: ENV['SUPPORT_EMAIL'],
          subject: subj)
 

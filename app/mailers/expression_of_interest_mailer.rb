@@ -6,7 +6,7 @@ class ExpressionOfInterestMailer < ApplicationMailer
     @expression_of_interest = ExpressionOfInterest.find(params[:id])
 
     # Get all emails of investors & holding company employees
-    emails = @expression_of_interest.user.email
+    emails = sandbox_email(@expression_of_interest, @expression_of_interest.user.email)
 
     mail(to: emails,
          bcc: ENV['SUPPORT_EMAIL'],

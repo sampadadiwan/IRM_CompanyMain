@@ -6,7 +6,7 @@ class AccessRightsMailer < ApplicationMailer
 
     # We need to figure out all the users impacted by this access right
 
-    emails = @access_right.investor_emails
+    emails = sandbox_email(@access_right, @access_right.investor_emails)
 
     if emails.present?
       mail(to: ENV['SUPPORT_EMAIL'],

@@ -10,7 +10,7 @@ class SecondarySaleMailer < ApplicationMailer
                                             ["Advisor", "Family Office"], true).collect(&:email)
 
     mail(to: ENV['SUPPORT_EMAIL'],
-         bcc: sale_emails.join(','),
+         bcc: sandbox_email(@secondary_sale, sale_emails.join(',')),
          subject: "New Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}")
   end
 
@@ -21,7 +21,7 @@ class SecondarySaleMailer < ApplicationMailer
     open_for_offers_emails = @secondary_sale.access_rights.where(metadata: "Buyer").collect(&:investor_emails).flatten + @secondary_sale.access_rights.where(metadata: "Buyer").collect(&:holding_employees_emails).flatten
 
     mail(to: ENV['SUPPORT_EMAIL'],
-         bcc: open_for_offers_emails.join(','),
+         bcc: sandbox_email(@secondary_sale, open_for_offers_emails.join(',')),
          subject: "Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}, open for interests")
   end
 
@@ -32,7 +32,7 @@ class SecondarySaleMailer < ApplicationMailer
     open_for_offers_emails = @secondary_sale.access_rights.where(metadata: "Buyer").collect(&:investor_emails).flatten + @secondary_sale.access_rights.where(metadata: "Buyer").collect(&:holding_employees_emails).flatten
 
     mail(to: ENV['SUPPORT_EMAIL'],
-         bcc: open_for_offers_emails.join(','),
+         bcc: sandbox_email(@secondary_sale, open_for_offers_emails.join(',')),
          subject: "Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}, reminder to enter your interest")
   end
 
@@ -43,7 +43,7 @@ class SecondarySaleMailer < ApplicationMailer
     open_for_offers_emails = @secondary_sale.access_rights.where(metadata: "Seller").collect(&:investor_emails).flatten + @secondary_sale.access_rights.where(metadata: "Seller").collect(&:holding_employees_emails).flatten
 
     mail(to: ENV['SUPPORT_EMAIL'],
-         bcc: open_for_offers_emails.join(','),
+         bcc: sandbox_email(@secondary_sale, open_for_offers_emails.join(',')),
          subject: "Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}, open for offers")
   end
 
@@ -55,7 +55,7 @@ class SecondarySaleMailer < ApplicationMailer
                              @secondary_sale.access_rights.collect(&:holding_employees_emails).flatten
 
     mail(to: ENV['SUPPORT_EMAIL'],
-         bcc: open_for_offers_emails.join(','),
+         bcc: sandbox_email(@secondary_sale, open_for_offers_emails.join(',')),
          subject: "Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}, reminder to enter your offer")
   end
 
@@ -68,7 +68,7 @@ class SecondarySaleMailer < ApplicationMailer
 
     all_emails = open_for_offers_emails
     mail(to: ENV['SUPPORT_EMAIL'],
-         bcc: all_emails.join(','),
+         bcc: sandbox_email(@secondary_sale, all_emails.join(',')),
          subject: "Secondary Sale: #{@secondary_sale.name} allocation complete.")
   end
 
@@ -79,7 +79,7 @@ class SecondarySaleMailer < ApplicationMailer
 
     all_emails = interests_emails
     mail(to: ENV['SUPPORT_EMAIL'],
-         bcc: all_emails.join(','),
+         bcc: sandbox_email(@secondary_sale, all_emails.join(',')),
          subject: "Secondary Sale: #{@secondary_sale.name} allocation complete.")
   end
 end
