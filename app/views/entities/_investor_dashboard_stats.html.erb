@@ -29,7 +29,8 @@
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                             Total Quantity</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            <% total_quantity = investments.inject(0){|sum, i| sum + i.quantity } %>
+                            <% zero_money = Money.new(0, entity.currency) %>
+                            <% total_quantity = investments.inject(zero_money){|sum, i| sum + i.quantity } %>
                             <%= total_quantity %>
                         </div>
                     </div>
@@ -53,7 +54,7 @@
                         <div class="row no-gutters align-items-center">
                             <div class="col-auto">
                                 <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">
-                                    <% total_cost = investments.inject(0){|sum, i| sum + i.amount}%>
+                                    <% total_cost = investments.inject(zero_money){|sum, i| sum + i.amount}%>
                                     <%= money_to_currency(total_cost, params) %>
                                 </div>
                             </div>
@@ -77,7 +78,7 @@
                             Average Price
                         </div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            <%= money_to_currency total_cost/total_quantity, params %>
+                            <%= total_quantity > 0 ? money_to_currency(total_cost/total_quantity, params) : 0 %>
                         </div>
                     </div>
                     <div class="col-auto">
