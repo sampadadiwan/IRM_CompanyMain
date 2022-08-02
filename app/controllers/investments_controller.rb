@@ -77,6 +77,7 @@ class InvestmentsController < ApplicationController
   # GET /investments/new
   def new
     @investment = Investment.new(investment_params)
+    @investment.price = @investment.funding_round.price if @investment.funding_round
     authorize @investment
   end
 
@@ -157,6 +158,7 @@ class InvestmentsController < ApplicationController
     params.require(:investment).permit(:funding_round_id, :investor_id, :price, :notes,
                                        :entity_id, :investor_type, :investment_instrument, :quantity,
                                        :category, :initial_value, :current_value, :spv,
-                                       :status, :liquidation_preference, :investment_date)
+                                       :status, :liquidation_preference, :investment_date,
+                                       :liq_pref_type, :anti_dilution)
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_07_26_043752) do
+ActiveRecord::Schema[7.0].define(version: 2022_08_02_065202) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -462,6 +462,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_26_043752) do
     t.integer "equity", default: 0
     t.integer "preferred", default: 0
     t.integer "options", default: 0
+    t.string "liq_pref_type", limit: 25
+    t.string "anti_dilution", limit: 50
+    t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_funding_rounds_on_deleted_at"
     t.index ["entity_id"], name: "index_funding_rounds_on_entity_id"
   end
@@ -679,6 +682,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_26_043752) do
     t.bigint "aggregate_investment_id"
     t.string "spv", limit: 50
     t.date "investment_date"
+    t.string "liq_pref_type", limit: 25
+    t.string "anti_dilution", limit: 50
     t.index ["aggregate_investment_id"], name: "index_investments_on_aggregate_investment_id"
     t.index ["deleted_at"], name: "index_investments_on_deleted_at"
     t.index ["entity_id"], name: "index_investments_on_entity_id"
@@ -980,7 +985,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_07_26_043752) do
   end
 
   create_table "tags", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.string "name", collation: "utf8_bin"
+    t.string "name", collation: "utf8mb3_bin"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "taggings_count", default: 0

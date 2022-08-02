@@ -95,6 +95,31 @@
       </td>
     </tr>
 
+    <tr>
+      <td>
+        Price
+      </td>
+      <td>
+        <%= money_to_currency @funding_round.price, params, true %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Liquidation Preference Type
+      </td>
+      <td>
+        <%=  @funding_round.liq_pref_type %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Anti Dilution
+      </td>
+      <td>
+        <%= @funding_round.anti_dilution %>
+      </td>
+    </tr>
+
 
   </table>
 

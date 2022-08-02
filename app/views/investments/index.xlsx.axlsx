@@ -3,12 +3,12 @@ wb = xlsx_package.workbook
 wb.add_worksheet(name: "Investments") do |sheet|
   # Create the header row
   sheet.add_row ["Category", "Funding Round", "Investor", "Instrument", "Quantity", "Percentage",
-                 "Fully Diluted", "Price", "Amount"]
+                 "Fully Diluted", "Price", "Amount", "Liq Pref Type", "Anti Dilution"]
   # Create entries for each item
   @investments.each do |inv|
     sheet.add_row [inv.category, inv.funding_round.name, inv.investor.investor_name,
                    inv.investment_instrument, custom_format_number(inv.quantity, params), inv.percentage_holding,
                    inv.diluted_percentage, money_to_currency(inv.price, params, true),
-                   money_to_currency(inv.amount, params)]
+                   money_to_currency(inv.amount, params), inv.liq_pref_type, inv.anti_dilution]
   end
 end

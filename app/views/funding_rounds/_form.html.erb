@@ -25,6 +25,22 @@
   </div>
 
   <div class="form-group">
+    <%= form.label :price %>
+    <%= form.number_field :price, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :liq_pref_type %>
+    <%= form.select :liq_pref_type, ["Non-participating", "Participating"], {include_blank: true}, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :anti_dilution %>
+    <%= form.select :anti_dilution, ["Weighted average - Broad based", "Weighted average - Narrow based", "Full anti dilution"], {include_blank: true}, class: "form-control"  %>
+  </div>
+
+
+  <div class="form-group">
     <%= form.label :closed_on, "Closed On Date" %>
     <%= form.date_field :closed_on, class: "form-control"  %>
   </div>

@@ -25,7 +25,7 @@ class FundingRound < ApplicationRecord
   include Trackable
   include ActivityTrackable
 
-  monetize  :pre_money_valuation_cents,
+  monetize  :pre_money_valuation_cents, :price_cents,
             :amount_raised_cents, :post_money_valuation_cents,
             with_model_currency: :currency
 

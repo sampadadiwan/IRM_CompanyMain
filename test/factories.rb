@@ -111,6 +111,9 @@ FactoryBot.define do
     entity { Entity.all.sample }
     currency { entity.currency }
     closed_on {Date.today - rand(12).months}
+    price { rand(3..10) * 1000 }
+    liq_pref_type { ["Non-participating", "Participating", nil][rand(3)] }
+    anti_dilution { ["Weighted average - Broad based", "Weighted average - Narrow based", "Full anti dilution", nil][rand(4)] }
   end
 
   factory :payment do
@@ -253,7 +256,7 @@ FactoryBot.define do
     investment_instrument { Investment::INSTRUMENT_TYPES[rand(Investment::INSTRUMENT_TYPES.length)] }
     category { ["Lead Investor", "Co-Investor"][rand(2)] }
     quantity { (rand(3..10) * 10000) }
-    price { rand(3..10) * 1000}
+    price { rand(3..10) * 1000 }
     spv { "SPV-#{rand(1-10)}" }
     liquidation_preference { rand(1.0..2.0).round(1) } 
     current_value {}

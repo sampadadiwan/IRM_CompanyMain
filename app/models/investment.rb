@@ -100,6 +100,10 @@ class Investment < ApplicationRecord
     self.investment_type = funding_round.name
     self.investment_instrument = investment_instrument.strip
     self.employee_holdings = true if investment_type == "Employee Holdings"
+
+    # pull this from the funding round if not set.
+    self.anti_dilution ||= funding_round.anti_dilution
+    self.liq_pref_type ||= funding_round.liq_pref_type
   end
 
   def self.for_investor_all(current_user)
