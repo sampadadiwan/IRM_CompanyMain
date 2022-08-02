@@ -4,7 +4,7 @@ class ApprovalsController < ApplicationController
 
   # GET /approvals or /approvals.json
   def index
-    @approvals = if current_user.curr_role == "startup"
+    @approvals = if %w[startup fund_manager].index(current_user.curr_role)
                    policy_scope(Approval)
                  else
                    Approval.for_investor(current_user)

@@ -26,7 +26,7 @@ namespace :irm do
       end
     end
 
-    fund_names = ["IAN"]
+    fund_names = ["IAN", "Atrium Angels"]
     fund_names.each do |name|
       e = FactoryBot.create(:entity, entity_type: "Investment Fund", name: name)
       puts "Entity #{e.name}"

@@ -12,5 +12,6 @@
   </td>
   <td>
     <%= link_to "Show" , approval_response , {class: "btn btn-primary" }%>
+    <%= link_to "Edit" , edit_approval_response_path(approval_response) , {class: "btn btn-success" } if policy(approval_response).update? %>
   </td>
 </tr>

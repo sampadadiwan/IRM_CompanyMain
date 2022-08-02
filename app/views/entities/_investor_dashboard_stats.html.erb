@@ -29,7 +29,7 @@
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                             Total Quantity</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            <% zero_money = Money.new(0, entity.currency) %>
+                            <% zero_money = investments.count > 0 ? 0 : Money.new(0, entity.currency) %>
                             <% total_quantity = investments.inject(zero_money){|sum, i| sum + i.quantity } %>
                             <%= total_quantity %>
                         </div>

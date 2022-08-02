@@ -13,6 +13,8 @@ class EntityDashboard < Administrate::BaseDashboard
     investments: Field::HasMany,
     id: Field::Number,
     name: Field::String,
+    sandbox: Field::BooleanEmoji,
+    sandbox_emails: Field::String,
     url: Field::String,
     category: Field::String,
     created_at: Field::DateTime,
@@ -43,7 +45,7 @@ class EntityDashboard < Administrate::BaseDashboard
     url
     entity_type
     category
-    trial
+    sandbox
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -56,6 +58,8 @@ class EntityDashboard < Administrate::BaseDashboard
     created_at
     updated_at
     active
+    sandbox
+    sandbox_emails
     currency
     entity_type
     created_by
@@ -80,6 +84,8 @@ class EntityDashboard < Administrate::BaseDashboard
     currency
     category
     active
+    sandbox
+    sandbox_emails
     entity_type
     investor_categories
     instrument_types

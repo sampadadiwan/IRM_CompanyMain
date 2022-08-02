@@ -1,14 +1,12 @@
 FactoryBot.define do
   factory :expression_of_interest do
-    entity { nil }
-    user { nil }
-    eoi_entity { nil }
-    investment_opportunity { nil }
-    amount_cents { "9.99" }
+    investment_opportunity { InvestmentOpportunity.all.sample }
+    entity { investment_opportunity.entity }
+    eoi_entity { entity.investors.sample.investor_entity }
+    user { eoi_entity.employees.sample }
+    amount_cents { 10e6 * rand(50..100) }
     approved { false }
     verified { false }
-    allocation_percentage { "9.99" }
-    allocation_amount_cents { "9.99" }
   end
 
   factory :investment_opportunity do
