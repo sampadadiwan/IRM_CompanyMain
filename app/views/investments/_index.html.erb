@@ -31,7 +31,8 @@
   </span>
 </div>
 
-<% cache_if((current_user.entity_id == entity.id), [@entity, title]) do %>
+<% cookies[:currency_units] = params[:units] if params[:units].present? %>
+<% cache_if((current_user.entity_id == entity.id), [@entity, title, cookies[:currency_units]]) do %>
   <div class="table-responsive">
 
     <table id='<%= "investments-#{title}" %>' class="table table-bordered dataTable jqDataTable">

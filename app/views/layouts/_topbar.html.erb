@@ -1,4 +1,6 @@
-                 <!-- Topbar -->
+<% cache([current_user, current_user.entity, current_user.curr_role]) do %>
+
+                <!-- Topbar -->
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
 
                     <!-- Sidebar Toggle (Topbar) -->
@@ -85,14 +87,14 @@
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 
                                 <% if current_user && current_user.entity %>
-                                    <% if current_user.entity.logo.present? %>
-                                        <%= image_tag image_url(rails_blob_path(current_user.entity.logo)), 
-                                            class: "top_bar_logo" %>
-                                    <% else %>
-                                        <span class="mr-2 d-lg-inline text-gray-600 small">
-                                            <%= current_user.entity.name  %>
-                                        </span>                                
-                                    <% end %>
+                                        <% if current_user.entity.logo.present? %>
+                                            <%= image_tag image_url(rails_blob_path(current_user.entity.logo)), 
+                                                class: "top_bar_logo" %>
+                                        <% else %>
+                                            <span class="mr-2 d-lg-inline text-gray-600 small">
+                                                <%= current_user.entity.name  %>
+                                            </span>                                
+                                        <% end %>                                    
                                 <% end %>
                                 
                             </a>
@@ -151,3 +153,4 @@
 
                 </nav>
                 <!-- End of Topbar -->
+<% end %>
