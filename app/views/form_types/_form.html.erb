@@ -1,4 +1,4 @@
-<%= form_with(model: form_type) do |form| %>
+<%= form_with(model: form_type, validate: true) do |form| %>
   <% if form_type.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(form_type.errors.count, "error") %> prohibited this form_type from being saved:</h2>
@@ -14,7 +14,7 @@
   <div data-controller="customfield">
     <div class="form-group">
       <%= form.label :name, "Form Name" %>
-      <%= form.select :name, ["Investor", "SecondarySale", "Deal", "Offer", "Interest", "Document", "OptionPool", "Task", "Valuation"], {}, class: "form-control"  %>
+      <%= form.select :name, ["Investor", "SecondarySale", "Deal", "Offer", "Interest", "Document", "OptionPool", "Task", "Valuation", "Holding"].sort, {}, class: "form-control"  %>
     </div>
 
     <h1>Custom Fields</h1>

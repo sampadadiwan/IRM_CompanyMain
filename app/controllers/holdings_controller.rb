@@ -68,15 +68,16 @@ class HoldingsController < ApplicationController
     @holding.entity_id = current_user.entity_id
     @holding.holding_type = @holding.investor.category
 
-    # Custom form fields
-    form_type = FormType.where(entity_id: current_user.entity_id, name: "Holding").first
-    @holding.form_type = form_type
-
     authorize @holding
+
+    # Custom form fields
+    setup_custom_fields(@holding)
   end
 
   # GET /holdings/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@holding)
+  end
 
   # POST /holdings or /holdings.json
   def create

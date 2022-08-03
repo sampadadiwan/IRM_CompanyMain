@@ -1,6 +1,8 @@
 class ImportHolding
   include Interactor
-
+  STANDARD_HEADERS = ["Funding Round or Option Pool", "Employee ID", "Email",
+                      "First Name", "Last Name", "Founder or Employee", "Instrument", "Quantity",
+                      "Price", "Grant Date (mm/dd/yyyy)"].freeze
   def call
     if context.import_upload.present? && context.import_file.present?
       process_holdings(context.import_file, context.import_upload)
@@ -11,6 +13,8 @@ class ImportHolding
 
   def process_holdings(_file, import_upload)
     headers = context.headers
+    custom_field_headers = headers - STANDARD_HEADERS
+
     data = context.data
 
     # Parse the XL rows
@@ -20,7 +24,7 @@ class ImportHolding
           # skip header row
           next if idx.zero?
 
-          process_row(headers, row, import_upload)
+          process_row(headers, custom_field_headers, row, import_upload)
           # add row to results sheet
           sheet.add_row(row)
           # To indicate progress
@@ -32,12 +36,12 @@ class ImportHolding
     File.write("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
   end
 
-  def process_row(headers, row, import_upload)
+  def process_row(headers, custom_field_headers, row, import_upload)
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
 
     begin
-      if save_holding(user_data, import_upload)
+      if save_holding(user_data, import_upload, custom_field_headers)
         import_upload.processed_row_count += 1
         row << "Success"
       else
@@ -50,7 +54,7 @@ class ImportHolding
     end
   end
 
-  def save_holding(user_data, import_upload)
+  def save_holding(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing holdings #{user_data}" }
 
     # Find the Founder or Employee Investor for the entity
@@ -82,11 +86,22 @@ class ImportHolding
     holding = Holding.new(user:, investor:, holding_type: user_data["Founder or Employee"],
                           entity_id: import_upload.owner_id, orig_grant_quantity: user_data["Quantity"],
                           price_cents:, employee_id: user_data["Employee ID"],
-                          investment_instrument: user_data["Instrument"],
-                          funding_round: fr, option_pool: ep,
+                          investment_instrument: user_data["Instrument"], funding_round: fr, option_pool: ep,
                           import_upload_id: import_upload.id, grant_date:, approved: false)
 
+    setup_custom_fields(user_data, holding, custom_field_headers)
+
     CreateHolding.call(holding:).holding
+  end
+
+  def setup_custom_fields(user_data, holding, custom_field_headers)
+    # Were any custom fields passed in ? Set them up
+    if custom_field_headers.length.positive?
+      holding.properties ||= {}
+      custom_field_headers.each do |cfh|
+        holding.properties[cfh.underscore] = user_data[cfh]
+      end
+    end
   end
 
   def get_fr_ep(user_data, import_upload)

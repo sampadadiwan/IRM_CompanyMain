@@ -77,7 +77,7 @@ class Holding < ApplicationRecord
 
   monetize :price_cents, :value_cents, with_currency: ->(i) { i.entity.currency }
 
-  validates :quantity, :holding_type, presence: true
+  validates :funding_round, :investment_instrument, :quantity, :holding_type, presence: true
   validate :allocation_allowed, if: -> { investment_instrument == 'Options' }
   validates :vested_quantity, numericality: { less_than_or_equal_to: :orig_grant_quantity }
   validates :vested_quantity, numericality: { greater_than_or_equal_to: :excercised_quantity }
