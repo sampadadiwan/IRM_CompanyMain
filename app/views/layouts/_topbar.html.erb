@@ -1,4 +1,4 @@
-<% cache([current_user, current_user.entity, current_user.curr_role]) do %>
+<% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role]) do %>
 
                 <!-- Topbar -->
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
