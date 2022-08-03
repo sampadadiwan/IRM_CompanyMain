@@ -15,28 +15,50 @@
       <%= link_to "Scenarios", simple_simulator_aggregate_investments_path, {class: "btn btn-primary", data: {toggle: "tooltip", title: "Plan Scenarios"} } %>
 
       <%= link_to "Details View", investments_path, {class: "btn btn-primary"} %>
-      <%= button_to "Recompute Percentage", recompute_percentage_investments_path, {class: "btn btn-primary"} %>
 
 
       <%= link_to "New Investment", new_investment_path("investment[entity_id]": current_user.entity_id), 
         {class: "btn btn-primary"} %>
 
-      <%= link_to "Funding Rounds", funding_rounds_path, {class: "btn btn-primary"} %>
-      <%= link_to aggregate_investments_path(format: :xlsx), {class: "btn btn-success"} do %>
-        <i class="fa-lg fa-regular fa-file-excel"></i> Download
-      <% end %>
+      
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-primary dropdown-toggle" type="button" 
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Actions
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-      <%= link_to investments_path(charts: true), {class: "btn btn-success"} do %>
-        <i class="fas fa-chart-line"></i> Graphs
-      <% end %>
+            <%= button_to recompute_percentage_investments_path, {class: "dropdown-item"} do %>
+            <i class="fa-lg fas fa-cogs"></i> Recompute Percentage
+            <% end %>
+            <%= link_to funding_rounds_path, {class: "dropdown-item"} do %>
+              <i class="fa-lg fa-regular fa-dollar"></i> View Funding Rounds
+            <% end %>
+
+            <%= link_to aggregate_investments_path(format: :xlsx), {class: "dropdown-item"} do %>
+              <i class="fa-lg fa-regular fa-file-excel"></i> Download Data
+            <% end %>
+
+            <%= link_to investments_path(charts: true), {class: "dropdown-item"} do %>
+              <i class="fas fa-chart-line"></i> View Graphs
+            <% end %>
+
+            <a class="dropdown-item" data-toggle="collapse" href="#aiFilterForm"   
+                aria-expanded="false" aria-controls="collapseExample">
+                <i class="fas fa-filter"></i> Show Filter
+            </a>
+          
+          </div>
+        </div>
+      </div>
+
     <% else %>
       <%= link_to "Details View", investor_investments_investments_path(entity_id: @entity.id), {class: "btn btn-primary"} %>
     <% end %>
 
-    <a class="btn btn-primary" data-toggle="collapse" href="#aiFilterForm" role="button" aria-expanded="false" aria-controls="collapseExample">
-      Show Filter
-    </a>
-  
+    
+   
 
     </span>
 
