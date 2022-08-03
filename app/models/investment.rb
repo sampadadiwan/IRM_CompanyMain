@@ -153,4 +153,29 @@ class Investment < ApplicationRecord
 
     investments
   end
+
+  def self.write_xl(entity_id)
+    investments = Investment.where(entity_id:).includes(:funding_round, :investor)
+    open_book = Spreadsheet.open('test.xls')
+    new_row_index = 100
+
+    header = ["Category", "Funding Round", "Investor", "Instrument", "Investment Date", "Quantity", "Percentage",
+              "Fully Diluted", "Price", "Amount", "Liquidation Pref", "Liq Pref Type", "Anti Dilution"]
+    open_book.worksheet(0).row(new_row_index).concat header
+
+    investments.each do |inv|
+      new_row_index += 1
+      open_book.worksheet(0).row(new_row_index).concat [inv.category, inv.funding_round.name,
+                                                        inv.investor.investor_name,
+                                                        inv.investment_instrument, inv.investment_date, inv.quantity, inv.percentage_holding,
+                                                        inv.diluted_percentage, inv.price,
+                                                        inv.amount, inv.liquidation_preference, inv.liq_pref_type, inv.anti_dilution]
+
+      Rails.logger.debug { "Wrote row #{new_row_index}" }
+    end
+
+    open_book.write('test_new.xls')
+
+    nil
+  end
 end

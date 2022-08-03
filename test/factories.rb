@@ -112,8 +112,8 @@ FactoryBot.define do
     currency { entity.currency }
     closed_on {Date.today - rand(12).months}
     price { rand(3..10) * 1000 }
-    liq_pref_type { ["Non-participating", "Participating", nil][rand(3)] }
-    anti_dilution { ["Weighted average - Broad based", "Weighted average - Narrow based", "Full anti dilution", nil][rand(4)] }
+    liq_pref_type { ["Non-participating", "Participating", ""][rand(3)] }
+    anti_dilution { ["Weighted average - Broad based", "Weighted average - Narrow based", "Full anti dilution", ""][rand(4)] }
   end
 
   factory :payment do

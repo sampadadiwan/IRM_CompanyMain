@@ -56,3 +56,5 @@ yarn-debug.log*
 /config/credentials/development.key
 
 /config/credentials/sandbox.key
+test_new.xls
+test.xls
