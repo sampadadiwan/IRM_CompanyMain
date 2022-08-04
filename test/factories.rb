@@ -18,7 +18,7 @@ FactoryBot.define do
     min_ticket_size { 10e5 }
     last_date { Date.today + 1.month }
     currency { entity.currency }
-    tag_list { [IO_TAGS.sample, IO_TAGS.sample] }
+    tag_list { [IO_TAGS.sample, IO_TAGS.sample].join(",") }
   end
 
   factory :approval_response do

@@ -1,22 +1,53 @@
-<% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role]) do %>
 
                 <!-- Topbar -->
-                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+    <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
 
-                    <!-- Sidebar Toggle (Topbar) -->
-                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
-                        <i class="fa fa-bars"></i>
+        <!-- Sidebar Toggle (Topbar) -->
+        <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+            <i class="fa fa-bars"></i>
+        </button>
+
+        <!-- Topbar Search -->
+        <% if @search_controller %>
+
+        <form action="/<%=@search_controller%>/search"
+            class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
+            <div class="input-group">
+                <input name="query" type="text" class="form-control bg-light border-0 small" 
+                    placeholder="Search for..." value="<%= params[:query]%>"
+                    aria-label="Search" aria-describedby="basic-addon2">
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="button">
+                        <i class="fas fa-search fa-sm"></i>
                     </button>
+                </div>
+            </div>
+        </form>
+        <% end %>
 
-                    <!-- Topbar Search -->
-                    <% if @search_controller %>
 
-                    <form action="/<%=@search_controller%>/search"
-                        class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
+        
+
+        <!-- Topbar Navbar -->
+        <ul class="navbar-nav ml-auto">
+
+
+            <% if @search_controller %>
+            <!-- Nav Item - Search Dropdown (Visible Only XS) -->
+            <li class="nav-item dropdown no-arrow d-sm-none">
+                <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-search fa-fw"></i>
+                </a>
+                <!-- Dropdown - Messages -->
+                <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
+                    aria-labelledby="searchDropdown">
+
+                    <form class="form-inline mr-auto w-100 navbar-search">
                         <div class="input-group">
-                            <input name="query" type="text" class="form-control bg-light border-0 small" 
-                                placeholder="Search for..." value="<%= params[:query]%>"
-                                aria-label="Search" aria-describedby="basic-addon2">
+                            <input type="text" class="form-control bg-light border-0 small"
+                                placeholder="Search for..." aria-label="Search"
+                                aria-describedby="basic-addon2">
                             <div class="input-group-append">
                                 <button class="btn btn-primary" type="button">
                                     <i class="fas fa-search fa-sm"></i>
@@ -24,133 +55,104 @@
                             </div>
                         </div>
                     </form>
-                    <% end %>
 
 
+                </div>
+            </li>
+
+            <% end %>
+
+
+            <% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role]) do %>
+
+                <% if current_user && current_user.has_cached_role?(:startup) && 
+                    (   
+                        current_user.has_cached_role?(:investor) || 
+                        current_user.has_cached_role?(:holding) 
+                    ) || (current_user && current_user.has_cached_role?(:consultant))  %>
+                    <div class="topbar-divider "></div>
+                    <%= render "/layouts/persona" %>
+                <% end %>
+
+                <div class="topbar-divider d-none d-sm-block"></div>
+
+                <li class="nav-item dropdown no-arrow d-none d-sm-block">
+                    <a role="button" class="nav-link dropdown-toggle" href="https://caphive.com/document-FAQ/" target="_blank">
+                        <span class="mr-2 d-none d-lg-inline text-gray-600 small">FAQs</span>
+                    </a>
+                </li>
+
+                <div class="topbar-divider d-none d-sm-block"></div>
+
+                <li class="nav-item dropdown no-arrow d-none d-sm-block">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        
+                        <% if current_user && current_user.entity %>
+                                <% if current_user.entity.logo.present? %>
+                                    <%= image_tag image_url(rails_blob_path(current_user.entity.logo)), 
+                                        class: "top_bar_logo" %>
+                                <% else %>
+                                    <span class="mr-2 d-lg-inline text-gray-600 small">
+                                        <%= current_user.entity.name  %>
+                                    </span>                                
+                                <% end %>                                    
+                        <% end %>
+                        
+                    </a>
+                    <!-- Dropdown - User Information -->
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                        aria-labelledby="userDropdown">
+                        <a class="dropdown-item" href="/notifications">
+                            <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                            Activity Timeline
+                        </a>
+                        <a class="dropdown-item" href="<%= entity_path(id: current_user.entity_id) if current_user && current_user.entity_id %>">
+                            <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
+                            Entity Details
+                        </a>
+
+                        <a class="dropdown-item" href="<%= users_path %>">
+                            <i class="fas fa-users fa-sm fa-fw mr-2 text-gray-400"></i>
+                            Entity Users
+                        </a>
+
+                        <a class="dropdown-item" href="<%= access_rights_path %>">
+                            <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
+                            Investor Access Rights
+                        </a>
+                    </div>
+                </li>
+
+
+                <div class="topbar-divider "></div>
+                        
+                <!-- Nav Item - User Information -->
+                <li class="nav-item dropdown no-arrow">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="mr-2 d-none d-lg-inline text-gray-600 small"><%= current_user.name if current_user %></span>
+                        <img class="img-profile rounded-circle"
+                            src="/img/undraw_profile.svg">
+                    </a>
+                    <!-- Dropdown - User Information -->
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                        aria-labelledby="userDropdown">
+                        <a class="dropdown-item" href="<%= user_path(current_user) if current_user %>">
+                            <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                            Profile
+                        </a>
                     
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                            <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                            Logout
+                        </a>
+                    </div>
+                </li>
 
-                    <!-- Topbar Navbar -->
-                    <ul class="navbar-nav ml-auto">
-
-
-                        <% if @search_controller %>
-                        <!-- Nav Item - Search Dropdown (Visible Only XS) -->
-                        <li class="nav-item dropdown no-arrow d-sm-none">
-                            <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-search fa-fw"></i>
-                            </a>
-                            <!-- Dropdown - Messages -->
-                            <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
-                                aria-labelledby="searchDropdown">
-
-                                <form class="form-inline mr-auto w-100 navbar-search">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control bg-light border-0 small"
-                                            placeholder="Search for..." aria-label="Search"
-                                            aria-describedby="basic-addon2">
-                                        <div class="input-group-append">
-                                            <button class="btn btn-primary" type="button">
-                                                <i class="fas fa-search fa-sm"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </form>
-
-
-                            </div>
-                        </li>
-
-                        <% end %>
-
-                        <% if current_user && current_user.has_cached_role?(:startup) && 
-                            (   
-                                current_user.has_cached_role?(:investor) || 
-                                current_user.has_cached_role?(:holding) 
-                            ) || (current_user && current_user.has_cached_role?(:consultant))  %>
-                            <div class="topbar-divider "></div>
-                            <%= render "/layouts/persona" %>
-                        <% end %>
-
-                        <div class="topbar-divider d-none d-sm-block"></div>
-
-                        <li class="nav-item dropdown no-arrow d-none d-sm-block">
-                            <a role="button" class="nav-link dropdown-toggle" href="https://caphive.com/document-FAQ/" target="_blank">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">FAQs</span>
-                            </a>
-                        </li>
-
-                        <div class="topbar-divider d-none d-sm-block"></div>
-
-                        <li class="nav-item dropdown no-arrow d-none d-sm-block">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                
-                                <% if current_user && current_user.entity %>
-                                        <% if current_user.entity.logo.present? %>
-                                            <%= image_tag image_url(rails_blob_path(current_user.entity.logo)), 
-                                                class: "top_bar_logo" %>
-                                        <% else %>
-                                            <span class="mr-2 d-lg-inline text-gray-600 small">
-                                                <%= current_user.entity.name  %>
-                                            </span>                                
-                                        <% end %>                                    
-                                <% end %>
-                                
-                            </a>
-                            <!-- Dropdown - User Information -->
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="/notifications">
-                                    <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Activity Timeline
-                                </a>
-                                <a class="dropdown-item" href="<%= entity_path(id: current_user.entity_id) if current_user && current_user.entity_id %>">
-                                    <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Entity Details
-                                </a>
-
-                                <a class="dropdown-item" href="<%= users_path %>">
-                                    <i class="fas fa-users fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Entity Users
-                                </a>
-
-                                <a class="dropdown-item" href="<%= access_rights_path %>">
-                                    <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Investor Access Rights
-                                </a>
-                            </div>
-                        </li>
-
-
-                        <div class="topbar-divider "></div>
-                                
-                        <!-- Nav Item - User Information -->
-                        <li class="nav-item dropdown no-arrow">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><%= current_user.name if current_user %></span>
-                                <img class="img-profile rounded-circle"
-                                    src="/img/undraw_profile.svg">
-                            </a>
-                            <!-- Dropdown - User Information -->
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="<%= user_path(current_user) if current_user %>">
-                                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Profile
-                                </a>
-                         
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
-                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Logout
-                                </a>
-                            </div>
-                        </li>
-
-                    </ul>
-
-                </nav>
-                <!-- End of Topbar -->
-<% end %>
+            <% end %> <!-- End cache -->
+        </ul>
+        
+    </nav>
+    <!-- End of Topbar -->

@@ -21,7 +21,7 @@ class ApplicationController < ActionController::Base
   end
 
   SEARCH_CONTROLLERS = %w[notes access_rights entities holdings excercises investors
-                          holding_audit_trails offers documents tasks].freeze
+                          holding_audit_trails offers documents tasks investment_opportunities].freeze
 
   def set_search_controller
     @search_controller = SEARCH_CONTROLLERS.include?(params[:controller]) ? params[:controller] : nil
