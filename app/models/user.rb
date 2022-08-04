@@ -87,11 +87,11 @@ class User < ApplicationRecord
       elsif entity.entity_type == "Holding"
         add_role :holding
         self.curr_role = :holding
-      elsif entity.entity_type == "VC" || InvestorAccess.where(user_id: id).first.present?
+      elsif ["VC", "Family Office"].include?(entity.entity_type) || InvestorAccess.where(user_id: id).first.present?
         add_role :secondary_buyer
         add_role :investor
         self.curr_role ||= :investor
-      elsif ["Advisor", "Family Office"].include?(entity.entity_type)
+      elsif ["Advisor"].include?(entity.entity_type)
         add_role :secondary_buyer
         self.curr_role = :secondary_buyer
       elsif entity.entity_type == "Investment Fund"
