@@ -5,44 +5,56 @@
   <%= link_to "New Investment Opportunity", new_investment_opportunity_path, {class: "btn btn-primary"}  %>
 </div>
 
-<div class="table-responsive" data-controller="datatable">
+<% if params[:view] != "row" %>
 
-  <table id="investment_opportunities" class="table table-bordered dataTable">
-
-    <thead>
-      <tr>
-        <th>
-          Company Name
-        </th>
-        <th>
-          Tags
-        </th>
-        <th>
-          Fund Raise Amount
-        </th>
-        <th>
-          Valuation
-        </th>
-        <th>
-          Min Ticket Size
-        </th>
-        <th>
-          Last Date
-        </th>
-        <th>
-          Currency
-        </th>
-    
-        <th>
-        </th>
-      </tr>
-    </thead>
-
-    <tbody>
+  <div class="row">
     <% @investment_opportunities.each do |investment_opportunity| %>
-      <%= render investment_opportunity %>
+      <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity %>
     <% end %>
-    </tbody>
-  </table>
+  </div>
 
-</div>
+<% else %>
+
+  <div class="table-responsive" data-controller="datatable">
+
+    <table id="investment_opportunities" class="table table-bordered dataTable">
+
+      <thead>
+        <tr>
+          <th>
+            Company Name
+          </th>
+          <th>
+            Tags
+          </th>
+          <th>
+            Fund Raise Amount
+          </th>
+          <th>
+            Valuation
+          </th>
+          <th>
+            Min Ticket Size
+          </th>
+          <th>
+            Last Date
+          </th>
+          <th>
+            Currency
+          </th>
+      
+          <th>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+      <% @investment_opportunities.each do |investment_opportunity| %>
+          <%= render investment_opportunity %>
+      <% end %>
+      </tbody>
+    </table>
+
+  </div>
+
+<% end %>

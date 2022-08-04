@@ -1,13 +1,73 @@
-<div class="project_card col-lg-3">
+<div class="io_card col-lg-3">
 
     <div class="card">
         <!-- <img src="..." class="card-img-top" alt="..."> -->
         <div class="card-body">
             <h5 class="card-title">
-                <%= project.name %>
+                <%= link_to investment_opportunity.company_name, investment_opportunity %>
             </h5>
             <div class="card-text">
+                <table class="table table-bordered dataTable">
+
+                    <% if investment_opportunity.logo.present? %>
+                    <tr>
+                       <td colspan="2" class="io_logo">
+                            <%= image_tag investment_opportunity.logo_url %>
+                        </td>
+                    </tr>
+                    <% end %>
+
+                    <tr>
+                      <td>
+                        Tags
+                      </td>
+                      <td>
+                        <%= raw investment_opportunity.tags.map{|tag| link_to(tag.name, search_investment_opportunities_path(query: tag.name))}.join(", ") %>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Fund Raise Amount
+                      </td>
+                      <td>
+                        <%= money_to_currency investment_opportunity.fund_raise_amount, params %>
+                        <div class="progress">
+                          <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= investment_opportunity.percentage_raised %>%" aria-valuenow="<%=investment_opportunity.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
+                            <%= investment_opportunity.percentage_raised %> %
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                
+                
+                    <tr>
+                      <td>
+                        Valuation
+                      </td>
+                      <td>
+                        <%= money_to_currency investment_opportunity.valuation, params %>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Min Ticket Size
+                      </td>
+                      <td>
+                        <%= money_to_currency investment_opportunity.min_ticket_size, params  %>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        Last Date
+                      </td>
+                      <td>
+                        <%= l investment_opportunity.last_date %>
+                      </td>
+                    </tr>
+                    
+                  </table>
             </div>
+            <%= link_to "Show" , investment_opportunity , {class: "btn btn-primary" }%>
         </div>
     </div>
 </div>

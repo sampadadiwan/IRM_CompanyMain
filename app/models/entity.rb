@@ -99,6 +99,7 @@ class Entity < ApplicationRecord
   scope :vcs, -> { where(entity_type: "VC") }
   scope :startups, -> { where(entity_type: "Startup") }
   scope :advisors, -> { where(entity_type: "Advisor") }
+  scope :family_offices, -> { where(entity_type: "Family Office") }
   scope :funds, -> { where(entity_type: "Investment Fund") }
   scope :user_investor_entities, ->(user) { where('access_rights.access_to': user.email).includes(:access_rights) }
 

@@ -48,6 +48,18 @@ namespace :irm do
       end
     end
 
+
+    family_offices = "Waterfield Advisors,Sekhsaria family office,Metta investors,Delta Ventures,Bansal family office,Arun Gupta,Ram Sharma,DSQ,Sync Invest,Tamarind investments,Maheshwari Family Office,Q10 LLP,Mac Invest,Alpha Funds,Rahul Singh,Youwecan,MSD investments,Copter Invest,VK Invest,S10 Ventures".split(",")
+    
+    family_offices.each do |name|
+      e = FactoryBot.create(:entity, entity_type: "Family Office", name: name)
+      puts "Entity #{e.name}"
+      (1..2).each do |j|
+        user = FactoryBot.create(:user, entity: e, first_name: "Emp#{j}")
+        puts user.to_json
+      end
+    end
+    
     user = FactoryBot.create(:user, entity: nil, first_name: "Super", last_name: "Admin", email: "admin@altx.com", curr_role: :super)
     user.add_role(:super)
   rescue Exception => e
@@ -170,9 +182,10 @@ namespace :irm do
     Entity.funds.each do |e|
       i = nil
       
+      
       round = FactoryBot.create(:funding_round, entity: e)
-      Entity.vcs.each do |vc|
-        inv = FactoryBot.create(:investor, entity: e, investor_entity: vc, tag_list: [tags.sample, tags.sample].join(","))
+      Entity.family_offices.each do |fo|
+        inv = FactoryBot.create(:investor, entity: e, investor_entity: fo, tag_list: [tags.sample, tags.sample].join(","))
         puts "Investor #{inv.id}"
         inv.investor_entity.employees.each do |user|
           InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)

@@ -9,6 +9,7 @@ FactoryBot.define do
     verified { false }
   end
 
+  IO_TAGS = ["Fintech", "Seed", "Pre Series A", "Bridge", "SAAS", "AgriTech", "eCommerce", "Health Tech"]
   factory :investment_opportunity do
     entity { Entity.funds.sample }
     company_name { Faker::Company.name }
@@ -17,6 +18,7 @@ FactoryBot.define do
     min_ticket_size { 10e5 }
     last_date { Date.today + 1.month }
     currency { entity.currency }
+    tag_list { [IO_TAGS.sample, IO_TAGS.sample] }
   end
 
   factory :approval_response do
