@@ -1,6 +1,8 @@
 class InvestmentOpportunity < ApplicationRecord
   include WithFolder
 
+  update_index('investment_opportunity') { self }
+
   acts_as_taggable_on :tags
 
   belongs_to :entity

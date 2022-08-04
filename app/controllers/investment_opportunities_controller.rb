@@ -10,9 +10,9 @@ class InvestmentOpportunitiesController < ApplicationController
   def search
     query = params[:query]
     if query.present?
-      @investors = InvestmentOpportunityIndex.filter(term: { entity_id: current_user.entity_id })
-                                             .query(query_string: { fields: InvestmentOpportunityIndex::SEARCH_FIELDS,
-                                                                    query:, default_operator: 'and' }).objects
+      @investment_opportunities = InvestmentOpportunityIndex.filter(term: { entity_id: current_user.entity_id })
+                                                            .query(query_string: { fields: InvestmentOpportunityIndex::SEARCH_FIELDS,
+                                                                                   query:, default_operator: 'and' }).objects
 
       render "index"
     else
