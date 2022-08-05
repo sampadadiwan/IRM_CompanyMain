@@ -1,5 +1,5 @@
 class InvestmentOpportunitiesController < ApplicationController
-  before_action :set_investment_opportunity, only: %i[show edit update destroy toggle allocate send_notification]
+  before_action :set_investment_opportunity, only: %i[show edit update destroy toggle allocate send_notification finalize_allocation]
 
   # GET /investment_opportunities or /investment_opportunities.json
   def index
@@ -104,6 +104,16 @@ class InvestmentOpportunitiesController < ApplicationController
       format.html { redirect_to investment_opportunities_url, notice: "Investment opportunity was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
+
+  def finalize_allocation
+    @expression_of_interests = policy_scope(@investment_opportunity.expression_of_interests)
+
+    @expression_of_interests = @expression_of_interests.where(approved: params[:approved] == "true") if params[:approved].present?
+    @expression_of_interests = @expression_of_interests.where(verified: params[:verified]) if params[:verified].present?
+    @expression_of_interests = @expression_of_interests.includes(:user, :eoi_entity, :investment_opportunity, :entity).page(params[:page])
+
+    render "finalize_allocation"
   end
 
   private

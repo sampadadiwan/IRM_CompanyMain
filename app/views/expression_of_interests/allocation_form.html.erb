@@ -1,0 +1,35 @@
+<%= turbo_frame_tag "tf_#{dom_id(@expression_of_interest)}" do %>
+
+    <%= form_with(model: @expression_of_interest, url: allocate_expression_of_interest_path(@expression_of_interest), method: "PATCH", validate: true, 
+        class: "allocation_form divTableRow #{cycle('even', 'odd')}") do |form| %>
+
+        <div class="divTableCell">
+            <%= @expression_of_interest.user&.full_name %> <br>
+            <%= link_to @expression_of_interest.user.email, "mailto:#{@expression_of_interest.user.email}?body=Dear #{@expression_of_interest.user.full_name}. View your expression_of_interest at #{expression_of_interest_url(@expression_of_interest)}", target: "_blank" if @expression_of_interest.user %> 
+        </div>
+    
+        <div class="divTableCell"><%= @expression_of_interest.eoi_entity.name %></div>    
+    
+        <div class="divTableCell"><%= money_to_currency @expression_of_interest.amount, params %></div>
+        <div class="divTableCell">
+            <%= form.check_box :approved, class: "form-control"  %>
+        </div>
+        <div class="divTableCell">
+            <%= form.check_box :verified, class: "form-control"  %>
+        </div>
+        
+        <div class="divTableCell"><%= @expression_of_interest.allocation_percentage %></div>    
+        <div class="divTableCell">
+            <%= form.number_field :allocation_amount, class: "form-control"  %>
+        </div>
+    
+        <div class="divTableCell">
+            <%= form.text_field :comment, class: "form-control"  %>
+        </div>
+
+        <div class="divTableCell">
+            <%= form.submit "Save", {class: "btn btn-primary"}%>
+        </div>
+    <% end %>
+
+<% end %>

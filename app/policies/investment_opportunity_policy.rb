@@ -51,4 +51,8 @@ class InvestmentOpportunityPolicy < ApplicationPolicy
   def send_notification?
     update?
   end
+
+  def finalize_allocation?
+    update?
+  end
 end

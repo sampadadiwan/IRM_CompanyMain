@@ -42,4 +42,12 @@ class ExpressionOfInterestPolicy < ApplicationPolicy
   def approve?
     record.entity_id == user.entity_id
   end
+
+  def allocate?
+    record.entity_id == user.entity_id
+  end
+
+  def allocation_form?
+    record.entity_id == user.entity_id
+  end
 end

@@ -1,6 +1,8 @@
 Rails.application.routes.draw do
   resources :expression_of_interests do
     patch 'approve', on: :member
+    patch 'allocate', on: :member
+    get   'allocation_form', on: :member
     get 'search', on: :collection
   end
 
@@ -9,6 +11,7 @@ Rails.application.routes.draw do
     post 'allocate', on: :member
     get 'search', on: :collection
     patch 'send_notification', on: :member
+    get 'finalize_allocation', on: :member
   end
 
   resources :approval_responses

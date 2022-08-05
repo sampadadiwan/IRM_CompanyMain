@@ -1,5 +1,5 @@
 class ExpressionOfInterestsController < ApplicationController
-  before_action :set_expression_of_interest, only: %i[show edit update destroy approve]
+  before_action :set_expression_of_interest, only: %i[show edit update destroy approve allocation_form allocate]
 
   # GET /expression_of_interests or /expression_of_interests.json
   def index
@@ -79,6 +79,30 @@ class ExpressionOfInterestsController < ApplicationController
     end
   end
 
+  def allocation_form; end
+
+  def allocate
+    @expression_of_interest.allocation_amount = expression_of_interest_params[:allocation_amount]
+    @expression_of_interest.comment = expression_of_interest_params[:comment]
+    @expression_of_interest.verified = expression_of_interest_params[:verified]
+    @expression_of_interest.approved = expression_of_interest_params[:approved]
+
+    respond_to do |format|
+      if @expression_of_interest.save
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.replace("tf_expression_of_interest_#{@expression_of_interest.id}", partial: "expression_of_interests/final_expression_of_interest", locals: { expression_of_interest: @expression_of_interest })
+          ]
+        end
+        format.html { redirect_to expression_of_interest_url(@expression_of_interest), notice: "EOI was successfully updated." }
+        format.json { render :show, status: :ok, location: @expression_of_interest }
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @expression_of_interest.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.
@@ -90,7 +114,7 @@ class ExpressionOfInterestsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def expression_of_interest_params
     params.require(:expression_of_interest).permit(:entity_id, :user_id, :eoi_entity_id,
-                                                   :investment_opportunity_id, :amount, :approved, :verified, :allocation_percentage,
+                                                   :investment_opportunity_id, :amount, :approved, :verified, :allocation_percentage, :comment,
                                                    :allocation_amount, :details)
   end
 end

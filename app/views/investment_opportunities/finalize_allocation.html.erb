@@ -1,0 +1,53 @@
+<%= render "/investment_opportunities/stats", investment_opportunity: @investment_opportunity %>
+
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Finalize Interest Allocations</h1>
+
+    <span>
+        
+        <%= link_to "All Interests", finalize_allocation_investment_opportunity_path(@investment_opportunity), 
+                {class: "btn btn-primary" }  %> 
+        <%= link_to "Verified", finalize_allocation_investment_opportunity_path(@investment_opportunity, verified: true), 
+                {class: "btn btn-success" }  %> 
+        <%= link_to "Un-Verified", finalize_allocation_investment_opportunity_path(@investment_opportunity, verified: false), 
+                {class: "btn btn-warning" }  %> 
+                
+        <form class="d-sm-inline-block form-inline navbar-search" action="<%= search_expression_of_interests_path %>">
+            <div class="input-group">
+                <input name="query" type="text" class="form-control border-0 small" placeholder="Search for..." value="<%= params[:query] %>" aria-label="Search" aria-describedby="basic-addon2">
+                <input type="hidden" name="investment_opportunity_id" value="<%= @investment_opportunity.id %>">
+                <input type="hidden" name="finalize_allocation" value="true">
+            </div>
+        
+        </form>        
+    </span>
+</div>
+
+<div class="table-responsive">
+
+<div class="divTable minimalistBlack">
+    <div class="divTableHeading datatable jqDataTable">
+        <div class="divTableRow thead">
+            <div class="divTableHead">User</div>
+            <div class="divTableHead">EOI Entity</div>
+            <div class="divTableHead">Amount</div>
+            <div class="divTableHead">Approved</div>
+            <div class="divTableHead">Verified</div>
+            <div class="divTableHead">Allocation %</div>
+            <div class="divTableHead">Allocation Amount</div>
+            <div class="divTableHead">Comments</div>
+            <div class="divTableHead">Action</div>
+        </div>
+    </div>
+    <div class="divTableBody tbody">
+        <% @expression_of_interests.each do |expression_of_interest| %>
+            <%= render "expression_of_interests/final_expression_of_interest", expression_of_interest: expression_of_interest %>
+        <% end %>        
+    </div>
+    
+</div>
+
+<%= paginate @expression_of_interests %>
+
+</div>

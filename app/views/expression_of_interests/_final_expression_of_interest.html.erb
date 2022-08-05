@@ -1,0 +1,27 @@
+<%= turbo_frame_tag "tf_#{dom_id(expression_of_interest)}", class: "divTableRow #{cycle('even', 'odd')}" do %>
+
+
+    <div class="divTableCell">
+        <%= expression_of_interest.user ? expression_of_interest.user&.full_name : expression_of_interest.investor&.investor_name %> <br>
+        <%= link_to expression_of_interest.user.email, "mailto:#{expression_of_interest.user.email}?body=Dear #{expression_of_interest.user.full_name}. View your expression_of_interest at #{expression_of_interest_url(expression_of_interest)}", target: "_blank" if expression_of_interest.user %> 
+    </div>
+
+    <div class="divTableCell"><%= expression_of_interest.eoi_entity.name %></div>    
+
+    <div class="divTableCell"><%= money_to_currency expression_of_interest.amount, params %></div>
+    <div class="divTableCell"><%= display_boolean expression_of_interest.approved %></div>
+    <div class="divTableCell"><%= display_boolean expression_of_interest.verified %></div>
+    
+    <div class="divTableCell"><%= expression_of_interest.allocation_percentage %></div>    
+    <div class="divTableCell"><%= money_to_currency(expression_of_interest.allocation_amount, params) %></div>
+
+    <div class="divTableCell"><%= expression_of_interest.comment %></div>
+
+    <div class="divTableCell">
+        <%= link_to "Show", expression_of_interest, class: "btn btn-primary", target: '_top' %>
+        <%= link_to "Edit", allocation_form_expression_of_interest_path(expression_of_interest), 
+                data: { turbo_frame: "tf_#{dom_id(expression_of_interest)}" }, 
+                class: "btn btn-success" if policy(expression_of_interest).allocation_form? %>
+    </div>
+
+<% end %>
