@@ -126,17 +126,39 @@
 
 
     &nbsp;&nbsp;&nbsp;
-    <%= button_to "Allocate" , allocate_investment_opportunity_path(@investment_opportunity), 
-        {class: "btn btn-success", form_class: "deleteButton", 
-        data: {action: "click->confirm#popup",  
-        msg: "Kick off allocation process? This will take some time to complete, please be patient.", 
-        method: "post"} } %> 
 
-    <% 
-      lock_eoi_label = @investment_opportunity.lock_eoi ? "Unlock EOIs" : "Lock EOIs" 
-      lock_eoi_msg = @investment_opportunity.lock_eoi ? "This will enable new EOIs to be placed." : "This will disallow new EOIs from being placed."       
-    %>
-    <%= button_to lock_eoi_label , toggle_investment_opportunity_path(@investment_opportunity, lock_eoi: true), {class: "btn btn-danger", method: :patch, data: {action: "click->confirm#popup", msg: "#{lock_eoi_label}. #{lock_eoi_msg} Are you sure?", method: "patch"} } %> 
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" 
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Allocation
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          
+
+          <% 
+            lock_eoi_label = @investment_opportunity.lock_eoi ? "Unlock EOIs" : "Lock EOIs" 
+            lock_eoi_msg = @investment_opportunity.lock_eoi ? "This will enable new EOIs to be placed." : "This will disallow new EOIs from being placed."       
+          %>
+          <%= button_to lock_eoi_label , toggle_investment_opportunity_path(@investment_opportunity, 
+              lock_eoi: true), {class: "dropdown-item", method: :patch, 
+              data: {action: "click->confirm#popup", msg: "#{lock_eoi_label}. #{lock_eoi_msg} Are you sure?", method: "patch"} } %> 
+              
+          <%= button_to "Allocate" , allocate_investment_opportunity_path(@investment_opportunity), 
+              {class: "dropdown-item", form_class: "deleteButton", 
+              data: {action: "click->confirm#popup",  
+              msg: "Kick off allocation process? This will take some time to complete, please be patient.", 
+              method: "post"} } %> 
+
+          <%= link_to "View Allocations", finalize_allocation_investment_opportunity_path(@investment_opportunity),
+              class: "dropdown-item" %>
+    
+                    
+        </div>
+      </div>
+    </div>
+
+    
 
     <div class="btn-group">
       <div class="dropdown">
