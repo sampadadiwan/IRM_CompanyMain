@@ -8,9 +8,15 @@ class DocumentDashboard < Administrate::BaseDashboard
   # which determines how the attribute is displayed
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
-    entity: Field::Polymorphic,
+    entity: Field::BelongsTo.with_options(
+      searchable: true,
+      searchable_fields: ['name']
+    ),
     access_rights: Field::HasMany,
-    folder: Field::BelongsTo,
+    folder: Field::BelongsTo.with_options(
+      searchable: true,
+      searchable_fields: ['name']
+    ),
     rich_text_text: RichTextAreaField,
     id: Field::Number,
     name: ObfuscatedField,

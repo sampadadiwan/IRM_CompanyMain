@@ -9,7 +9,10 @@ class FundingRoundDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     # audits: Field::HasMany,
-    entity: Field::BelongsTo,
+    entity: Field::BelongsTo.with_options(
+      searchable: true,
+      searchable_fields: ['name']
+    ),
     investments: Field::HasMany,
     id: Field::Number,
     name: Field::String,

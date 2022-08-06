@@ -8,7 +8,10 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
   # which determines how the attribute is displayed
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
-    entity: Field::BelongsTo,
+    entity: Field::BelongsTo.with_options(
+      searchable: true,
+      searchable_fields: ['name']
+    ),
     access_rights: Field::HasMany,
     public_docs_attachments: Field::HasMany,
     public_docs_blobs: Field::HasMany,

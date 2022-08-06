@@ -3,7 +3,7 @@
 
     <div class="divTableCell">
         <%= expression_of_interest.user ? expression_of_interest.user&.full_name : expression_of_interest.investor&.investor_name %> <br>
-        <%= link_to expression_of_interest.user.email, "mailto:#{expression_of_interest.user.email}?body=Dear #{expression_of_interest.user.full_name}. View your expression_of_interest at #{expression_of_interest_url(expression_of_interest)}", target: "_blank" if expression_of_interest.user %> 
+        <%= link_to expression_of_interest.user.email, "mailto:#{expression_of_interest.user.email}?body=Dear #{expression_of_interest.user.full_name}. View your Expression of Interest at #{expression_of_interest_url(expression_of_interest)}", target: "_blank" if expression_of_interest.user %> 
     </div>
 
     <div class="divTableCell"><%= expression_of_interest.eoi_entity.name %></div>    

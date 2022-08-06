@@ -9,7 +9,10 @@ class InvestorDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     investor_entity: Field::BelongsTo,
-    entity: Field::BelongsTo,
+    entity: Field::BelongsTo.with_options(
+      searchable: true,
+      searchable_fields: ['name']
+    ),
     access_rights: Field::HasMany,
     id: Field::Number,
     category: Field::String,
