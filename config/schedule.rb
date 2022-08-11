@@ -9,6 +9,7 @@ every 1.day, at: '02:01 am' do
   runner "VestedJob.new.perform"
   runner "ClearMessagesCountJob.new.perform"
   runner "Entity.recompute_all"
+  runner "InvestmentSnapshotJob.new.perform"
 end
 
 every :reboot do
