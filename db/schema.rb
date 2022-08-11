@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_08_11_081037) do
+ActiveRecord::Schema[7.0].define(version: 2022_08_11_082750) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -354,6 +354,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_11_081037) do
     t.decimal "per_share_value_cents", precision: 15, scale: 2, default: "0.0"
     t.text "sandbox_emails"
     t.boolean "sandbox", default: false
+    t.integer "snapshot_frequency_months", default: 0
+    t.date "last_snapshot_on", default: "2022-08-11"
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
@@ -663,27 +665,27 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_11_081037) do
     t.bigint "entity_id", null: false
     t.string "status", limit: 20
     t.string "investment_instrument", limit: 100
-    t.integer "quantity"
-    t.decimal "initial_value", precision: 10
-    t.decimal "current_value", precision: 10
+    t.integer "quantity", default: 0
+    t.decimal "initial_value", precision: 20, scale: 2, default: "0.0"
+    t.decimal "current_value", precision: 20, scale: 2, default: "0.0"
     t.string "category", limit: 100
     t.datetime "deleted_at"
-    t.decimal "percentage_holding", precision: 10
-    t.boolean "employee_holdings"
-    t.integer "diluted_quantity"
-    t.decimal "diluted_percentage", precision: 10
+    t.decimal "percentage_holding", precision: 5, scale: 2, default: "0.0"
+    t.boolean "employee_holdings", default: false
+    t.integer "diluted_quantity", default: 0
+    t.decimal "diluted_percentage", precision: 5, scale: 2, default: "0.0"
     t.string "currency", limit: 10
     t.string "units", limit: 15
-    t.decimal "amount_cents", precision: 10
-    t.decimal "price_cents", precision: 10
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "funding_round_id", null: false
-    t.decimal "liquidation_preference", precision: 10
+    t.decimal "liquidation_preference", precision: 10, scale: 2
     t.string "spv", limit: 50
     t.date "investment_date"
     t.string "liq_pref_type", limit: 25
     t.string "anti_dilution", limit: 50
     t.date "as_of"
-    t.string "tag", limit: 10
+    t.string "tag", limit: 20
     t.bigint "investment_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
