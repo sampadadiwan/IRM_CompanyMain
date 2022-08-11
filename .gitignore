@@ -59,3 +59,5 @@ yarn-debug.log*
 test_new.xls
 test.xls
 .~lock.*
+credentials.json
+token.yaml

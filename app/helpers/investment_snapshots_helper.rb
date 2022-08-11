@@ -1,0 +1,2 @@
+module InvestmentSnapshotsHelper
+end

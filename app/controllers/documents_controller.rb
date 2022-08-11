@@ -2,7 +2,7 @@ class DocumentsController < ApplicationController
   include ActiveStorage::SetCurrent
 
   before_action :set_document, only: %w[show update destroy edit]
-  after_action :verify_authorized, except: %i[index search investor_documents]
+  after_action :verify_authorized, except: %i[index search investor_documents oauth2callback]
   after_action :verify_policy_scoped, only: []
 
   impressionist actions: [:show]
@@ -23,6 +23,10 @@ class DocumentsController < ApplicationController
     @documents = @documents.where(folder_id: params[:folder_id]) if params[:folder_id].present?
     @documents = @documents.order(id: :desc)
     @documents = @documents.includes(:folder, tags: :taggings).page params[:page]
+  end
+
+  def oauth2callback
+    redirect_to dashboard_entities_path
   end
 
   def investor_documents

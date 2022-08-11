@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_08_05_055053) do
+ActiveRecord::Schema[7.0].define(version: 2022_08_11_081037) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -656,6 +656,43 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_05_055053) do
     t.index ["form_type_id"], name: "index_investment_opportunities_on_form_type_id"
   end
 
+  create_table "investment_snapshots", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "investment_type", limit: 100
+    t.bigint "investor_id", null: false
+    t.string "investor_type", limit: 100
+    t.bigint "entity_id", null: false
+    t.string "status", limit: 20
+    t.string "investment_instrument", limit: 100
+    t.integer "quantity"
+    t.decimal "initial_value", precision: 10
+    t.decimal "current_value", precision: 10
+    t.string "category", limit: 100
+    t.datetime "deleted_at"
+    t.decimal "percentage_holding", precision: 10
+    t.boolean "employee_holdings"
+    t.integer "diluted_quantity"
+    t.decimal "diluted_percentage", precision: 10
+    t.string "currency", limit: 10
+    t.string "units", limit: 15
+    t.decimal "amount_cents", precision: 10
+    t.decimal "price_cents", precision: 10
+    t.bigint "funding_round_id", null: false
+    t.decimal "liquidation_preference", precision: 10
+    t.string "spv", limit: 50
+    t.date "investment_date"
+    t.string "liq_pref_type", limit: 25
+    t.string "anti_dilution", limit: 50
+    t.date "as_of"
+    t.string "tag", limit: 10
+    t.bigint "investment_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_investment_snapshots_on_entity_id"
+    t.index ["funding_round_id"], name: "index_investment_snapshots_on_funding_round_id"
+    t.index ["investment_id"], name: "index_investment_snapshots_on_investment_id"
+    t.index ["investor_id"], name: "index_investment_snapshots_on_investor_id"
+  end
+
   create_table "investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "investment_type", limit: 100
     t.integer "investor_id"
@@ -1144,6 +1181,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_05_055053) do
   add_foreign_key "interests", "users"
   add_foreign_key "investment_opportunities", "entities"
   add_foreign_key "investment_opportunities", "form_types"
+  add_foreign_key "investment_snapshots", "entities"
+  add_foreign_key "investment_snapshots", "funding_rounds"
+  add_foreign_key "investment_snapshots", "investments"
+  add_foreign_key "investment_snapshots", "investors"
   add_foreign_key "investments", "aggregate_investments"
   add_foreign_key "investments", "funding_rounds"
   add_foreign_key "investors", "form_types"

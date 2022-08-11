@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :investment_snapshots
   resources :expression_of_interests do
     patch 'approve', on: :member
     patch 'allocate', on: :member
@@ -190,6 +191,7 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "entities#dashboard"
+  get '/oauth2callback', to: 'entities#dashboard'
 
   require 'sidekiq/web'
   authenticate :user do

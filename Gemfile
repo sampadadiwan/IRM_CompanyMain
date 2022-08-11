@@ -90,7 +90,9 @@ gem 'roo'
 gem 'spreadsheet' # To write exiting XLs with formulas
 
 # gem 'draper'
+gem 'google-api-client'
 gem 'google-apis-drive_v3'
+
 gem 'ransack'
 gem "view_component"
 

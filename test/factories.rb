@@ -1,4 +1,5 @@
 FactoryBot.define do
+  
   factory :expression_of_interest do
     investment_opportunity { InvestmentOpportunity.all.sample }
     entity { investment_opportunity.entity }

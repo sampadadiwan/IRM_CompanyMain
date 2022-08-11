@@ -1,0 +1,61 @@
+<tr id="<%= dom_id investment_snapshot %>">
+
+  <% if current_user.entity_id == investment_snapshot.entity_id %>
+      <% if investment_snapshot.investor.is_holdings_entity %>
+          <td class="dt-control" data-instrument="<%=investment_snapshot.investment_snapshot_instrument%>" 
+              data-entity="<%=investment_snapshot.entity_id%>"
+              data-funding_round="<%=investment_snapshot.funding_round_id%>"
+              data-category="<%=investment_snapshot.category%>"></td>
+      <% else %>
+          <td class=""></td>
+      <% end %>
+  <% end %>
+  
+  <td>
+      <%= investment_snapshot.category %>
+  </td>
+  <td>
+      <%= investment_snapshot.funding_round ? link_to(investment_snapshot.investment_snapshot_type, investment_snapshot.funding_round) : investment_snapshot.investment_snapshot_type %>
+      
+  </td>  
+  <td>
+      <%= link_to(investment_snapshot.investor.investor_name, investment_snapshot.investor) %>
+  </td> 
+  <td>
+      <%= l investment_snapshot.investment_snapshot_date %>
+  </td> 
+  
+  
+    <td>
+        <%= investment_snapshot.investment_snapshot_instrument %>
+    </td>  
+    <td>
+        <%= custom_format_number investment_snapshot.quantity, params %>
+        
+    </td>  
+
+    <td>
+        <% if investment_snapshot.percentage_holding %>
+            <%= investment_snapshot.percentage_holding %>% 
+        <% end %>
+    </td>
+    <td>
+        <% if investment_snapshot.percentage_holding %>
+            <%= investment_snapshot.diluted_percentage %>% 
+        <% end %>
+    </td>
+
+    
+    <td>
+        <%= money_to_currency(investment_snapshot.price, params, true)  %>
+    </td>
+    <td>
+        <%= money_to_currency(investment_snapshot.amount, params)  %>
+    </td>
+      
+    <td>
+      <%= link_to "Show", investment_snapshot , {class: "btn btn-primary"}%>
+    </td>
+
+</tr>
+  
