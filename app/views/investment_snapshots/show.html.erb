@@ -230,10 +230,3 @@
   
 </table>
 
-
-<div>
-  <%= link_to "Edit", edit_investment_snapshot_path(@investment_snapshot), {class: "btn btn-primary"} %> |
-  <%= link_to "Back", :back, {class: "btn btn-primary"} %> |
-
-  <%= button_to "Delete", @investment_snapshot, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
-</div>
