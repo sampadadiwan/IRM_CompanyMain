@@ -38,8 +38,8 @@ class ApplicationPolicy
     false
   end
 
-  def allow_external?(action)
-    extenal = Permission.allow(record, user)
+  def allow_external?(action, role = nil)
+    extenal = Permission.allow(record, user, role)
     extenal ? extenal.set?(action) : false
   end
 

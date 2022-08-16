@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_08_16_042615) do
+ActiveRecord::Schema[7.0].define(version: 2022_08_16_123950) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -930,6 +930,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_16_042615) do
     t.bigint "granted_by_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "role", limit: 20
     t.index ["entity_id"], name: "index_permissions_on_entity_id"
     t.index ["granted_by_id"], name: "index_permissions_on_granted_by_id"
     t.index ["owner_type", "owner_id"], name: "index_permissions_on_owner"
