@@ -23,4 +23,4 @@
     <%= link_to "Secondary Sale" , secondary_sale_path(@offer.secondary_sale), {class: "btn btn-primary" } %>
   </div>
 
-  <%= render "offers/offer_details", offer: @offer %> 
+  <%= render "offers/offer_details", offer: @offer if @offer.approved %> 
