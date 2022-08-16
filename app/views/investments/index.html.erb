@@ -1,10 +1,14 @@
 <%= render "/layouts/alerts" %>
-
+<% history ||= nil %>
 <%= turbo_frame_tag "investments_frame", target: "_top" do %>
 
 <% if params[:charts].present? %>
     <div class="associated_entity">
         <%= render "investments/cap_table_charts", entity: @entity, investments: @investments %>
+    </div>
+<% elsif history.present? %>
+    <div class="associated_entity">
+        <%= render "investments/versions", entity: @entity, versions: @versions, title: "History" %>
     </div>
 <% else %>
     <div data-controller="investments">

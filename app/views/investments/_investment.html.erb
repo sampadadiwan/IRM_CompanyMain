@@ -1,3 +1,4 @@
+<% version ||= nil %>
 <tr id="<%= dom_id investment %>">
 
 <% if current_user.entity_id == investment.entity_id %>
@@ -64,6 +65,6 @@
     
 <% end  %>
 <td>
-  <%= link_to "Show", investment , {class: "btn btn-primary"}%>
+  <%= link_to "Show", investment_path(investment, version_id: version&.id) , {class: "btn btn-primary"}%>
 </td>
 </tr>

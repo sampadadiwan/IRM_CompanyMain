@@ -25,6 +25,10 @@ class InvestmentPolicy < ApplicationPolicy
     end
   end
 
+  def history?
+    show?
+  end
+
   def create?
     (user.entity_id == record.entity_id && user.entity.enable_investments)
   end

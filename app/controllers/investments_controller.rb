@@ -1,7 +1,7 @@
 class InvestmentsController < ApplicationController
   include InvestmentConcern
 
-  before_action :set_investment, only: %w[show update destroy edit]
+  before_action :set_investment, only: %w[show update destroy edit history]
   after_action :verify_authorized, except: %i[index search investor_investments recompute_percentage]
 
   # GET /investments or /investments.json
@@ -42,6 +42,12 @@ class InvestmentsController < ApplicationController
     render "index"
   end
 
+  def history
+    @entity = @investment.entity
+    @versions = @investment.versions
+    render "index", locals: { history: true }
+  end
+
   def search
     @entity = current_user.entity
 
@@ -65,7 +71,10 @@ class InvestmentsController < ApplicationController
 
   # GET /investments/1 or /investments/1.json
   def show
-    authorize @investment
+    if params[:version_id].present?
+      @version = @investment.versions.where(id: params[:version_id]).first
+      @investment = @version.reify
+    end
     respond_to do |format|
       format.html
       format.pdf do
@@ -82,9 +91,7 @@ class InvestmentsController < ApplicationController
   end
 
   # GET /investments/1/edit
-  def edit
-    authorize @investment
-  end
+  def edit; end
 
   # POST /investments or /investments.json
   def create
@@ -111,7 +118,6 @@ class InvestmentsController < ApplicationController
 
   # PATCH/PUT /investments/1 or /investments/1.json
   def update
-    authorize @investment
     @investment.assign_attributes(investment_params)
     @investment = SaveInvestment.call(investment: @investment).investment
 
@@ -128,7 +134,6 @@ class InvestmentsController < ApplicationController
 
   # DELETE /investments/1 or /investments/1.json
   def destroy
-    authorize @investment
     @investment.destroy
 
     respond_to do |format|
@@ -151,6 +156,7 @@ class InvestmentsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_investment
     @investment = Investment.find(params[:id])
+    authorize @investment
   end
 
   # Only allow a list of trusted parameters through.

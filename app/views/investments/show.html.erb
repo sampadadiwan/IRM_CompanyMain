@@ -137,9 +137,10 @@
    <% end %>
 </table>
 
-<% if current_user.entity_id == @investment.entity_id %>
+<% if current_user.entity_id == @investment.entity_id && params[:version_id].blank? %>
 
    <div>
+      <%= link_to "History", history_investment_path(@investment), {class: "btn btn-primary"} %> |
       <%= link_to "Edit", edit_investment_path(@investment), {class: "btn btn-primary"} unless @investment.employee_holdings %> |
       <%= link_to "Back", investments_path, {class: "btn btn-primary"} %> |
 
