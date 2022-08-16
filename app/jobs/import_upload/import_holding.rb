@@ -85,7 +85,7 @@ class ImportHolding
 
     holding = Holding.new(user:, investor:, holding_type: user_data["Founder or Employee"],
                           entity_id: import_upload.owner_id, orig_grant_quantity: user_data["Quantity"],
-                          price_cents:, employee_id: user_data["Employee ID"],
+                          price_cents:, employee_id: user_data["Employee ID"], department: user_data["Department"],
                           investment_instrument: user_data["Instrument"], funding_round: fr, option_pool: ep,
                           import_upload_id: import_upload.id, grant_date:, approved: false)
 
