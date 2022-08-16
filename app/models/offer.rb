@@ -213,6 +213,6 @@ class Offer < ApplicationRecord
   end
 
   def document_list
-    secondary_sale.seller_doc_list.split(",")
+    secondary_sale.seller_doc_list&.split(",")
   end
 end

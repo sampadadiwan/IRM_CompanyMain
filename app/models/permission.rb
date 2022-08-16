@@ -30,6 +30,12 @@ class Permission < ApplicationRecord
     Permission.where(user_id: user.id, owner_id: owner.id, owner_type: owner.class.name).first&.permissions
   end
 
+  before_save :set_user
+  def set_user
+    u = User.find_by(email:)
+    self.user = u
+  end
+
   after_create :add_role
   def add_role
     user&.add_role(:consultant)

@@ -23,6 +23,8 @@ class PermissionsController < ApplicationController
   def create
     @permission = Permission.new(permission_params)
     @permission.entity_id = current_user.entity_id
+    @permission.granted_by_id = current_user.id
+
     authorize(@permission)
     respond_to do |format|
       if @permission.save
@@ -38,6 +40,9 @@ class PermissionsController < ApplicationController
   # PATCH/PUT /permissions/1 or /permissions/1.json
   def update
     @permission.entity_id = current_user.entity_id
+    @permission.entity_id = current_user.entity_id
+    @permission.granted_by_id = current_user.id
+
     respond_to do |format|
       if @permission.update(permission_params)
         format.html { redirect_to permission_url(@permission), notice: "Permission was successfully updated." }

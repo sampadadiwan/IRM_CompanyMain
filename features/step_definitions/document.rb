@@ -42,11 +42,12 @@ When('I create a new document {string}') do |args|
 
   @document = Document.new
   key_values(@document, args)
-  @document.tag_list = "capybara,testing"
+  # @document.tag_list = "capybara,testing"
 
   click_on("New Document")
   fill_in("document_name", with: @document.name)
-  fill_in("document_tag_list", with: @document.tag_list.join(","))
+
+  fill_in("document_tag_list", with: @document.tag_list.join(",")) if @document.tag_list.present?
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
   check('document_download') if @document.download
   check('document_printing') if @document.printing

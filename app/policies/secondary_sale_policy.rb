@@ -52,7 +52,8 @@ class SecondarySalePolicy < ApplicationPolicy
     else
       record.active? &&
         (SecondarySale.for(user).where(id: record.id).present? ||
-        external_sale?)
+        external_sale? ||
+        allow_external?(:read))
     end
   end
 

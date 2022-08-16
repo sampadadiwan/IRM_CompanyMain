@@ -119,6 +119,6 @@ class Interest < ApplicationRecord
   end
 
   def document_list
-    secondary_sale.buyer_doc_list.split(",")
+    secondary_sale.buyer_doc_list&.split(",")
   end
 end

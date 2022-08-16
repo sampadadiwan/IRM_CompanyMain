@@ -28,7 +28,7 @@
             link_to(investment.investor.investor_name, investment.investor) : investment.investor.investor_name %>
 </td> 
 <td>
-    <%= l investment.investment_date %>
+    <%= l investment.investment_date if investment.investment_date %>
 </td> 
 
 <% if !params[:prospective] %>

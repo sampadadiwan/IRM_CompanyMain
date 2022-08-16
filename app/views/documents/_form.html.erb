@@ -20,7 +20,7 @@
 
   <div class="form-group">
     <%= form.label :name %>
-    <% if document.owner != nil && document.owner.respond_to?(:document_list) %>
+    <% if document.owner != nil && document.owner.respond_to?(:document_list) && document.owner.document_list %>
       <%= form.select :name, document.owner.document_list ,{}, class: "form-control"  %>    
     <% else %>
       <%= form.text_field :name, class: "form-control"  %>
