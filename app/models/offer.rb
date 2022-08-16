@@ -211,4 +211,8 @@ class Offer < ApplicationRecord
     parent_folder = secondary_sale.document_folder.folders.where(name: "Offers").first
     setup_folder(parent_folder, user.full_name, [])
   end
+
+  def document_list
+    secondary_sale.seller_doc_list.split(",")
+  end
 end

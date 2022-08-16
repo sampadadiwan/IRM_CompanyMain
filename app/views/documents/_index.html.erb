@@ -17,7 +17,8 @@
     doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
   %>
 
-  <%= link_to "New Document", new_document_path(external: external, document: doc_attributes, 
+  <%= link_to "New Document", new_document_path(external: external, 
+              document: doc_attributes, 
               "document[folder_id]": params[:folder_id]), 
               {class: "btn btn-primary" }  if policy(document).create? %>
 

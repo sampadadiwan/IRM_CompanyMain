@@ -20,17 +20,30 @@
 
   <div class="form-group">
     <%= form.label :name %>
-    <%= form.text_field :name, class: "form-control"  %>
+    <% if document.owner != nil && document.owner.respond_to?(:document_list) %>
+      <%= form.select :name, document.owner.document_list ,{}, class: "form-control"  %>    
+    <% else %>
+      <%= form.text_field :name, class: "form-control"  %>
+    <% end %>
+    
     <%= form.text_field :owner_id, class: "form-control", hidden:true  %>
     <%= form.text_field :owner_type, class: "form-control", hidden:true  %>
   </div>
 
   <% if document.owner == nil %>
+
     <div class="form-group">
       <%= form.label :folder %>
       <%= form.select :folder_id, Folder.not_system.for_entity(document.entity).map{|f| [f.full_path, f.id]} ,{}, class: "form-control select2"  %>
       <small class="text-muted"><%= link_to "Create New Folder", new_folder_path("folder[entity_id]": current_user.entity_id) %></small>
     </div>
+
+    <div class="form-group">
+      <%= form.label :tags %>
+      <%= form.text_field :tag_list, class: "form-control"  %>
+      <small class="text-muted">Comma separated list of tags to classify the document</small>
+    </div>
+  
   <% elsif document.owner.respond_to?(:document_tags) %>
     <div class="form-group">
       <%= form.label :owner_tag, "Document For" %>
@@ -39,11 +52,6 @@
   <% end %>
 
 
-  <div class="form-group">
-    <%= form.label :tags %>
-    <%= form.text_field :tag_list, class: "form-control"  %>
-    <small class="text-muted">Comma separated list of tags to classify the document</small>
-  </div>
 
 
   <div data-controller="single-upload" data-single-upload-types-value="<%= FileUploader::ALLOWED_TYPES.to_json %>" data-single-upload-server-value="<%= upload_server %>">

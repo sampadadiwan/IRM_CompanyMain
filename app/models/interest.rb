@@ -117,4 +117,8 @@ class Interest < ApplicationRecord
   def offer_amount
     Money.new(offer_quantity * final_price * 100, entity.currency)
   end
+
+  def document_list
+    secondary_sale.buyer_doc_list.split(",")
+  end
 end
