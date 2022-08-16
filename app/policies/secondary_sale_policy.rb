@@ -27,13 +27,15 @@ class SecondarySalePolicy < ApplicationPolicy
     (user.has_cached_role?(:secondary_buyer) && record.visible_externally)
   end
 
+  def owner?
+    user.entity_id == record.entity_id
+  end
+
   def buyer?
-    # SecondarySale.for(user).where("access_rights.metadata=?", "Buyer").where(id: record.id).present?
     record.buyer?(user)
   end
 
   def seller?
-    # SecondarySale.for(user).where("access_rights.metadata=?", "Seller").where(id: record.id).present?
     record.seller?(user)
   end
 

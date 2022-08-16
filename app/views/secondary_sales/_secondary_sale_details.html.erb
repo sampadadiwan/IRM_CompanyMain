@@ -9,7 +9,7 @@
   %>
 
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist" data-controller="tabdetails">
-    <% if current_user.entity_id == secondary_sale.entity_id %>
+    <% if policy(secondary_sale).owner? %>
       <% access_right_active = true %>
       <input hidden=true value="#access-rights-tab" id="clickOnLoad" />
 

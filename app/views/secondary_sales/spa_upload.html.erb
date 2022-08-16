@@ -32,19 +32,6 @@
     <small class="text-muted"> Upload SPA for audit and to close out the sale. </small>
   </div>
 
-  <div class="form-group fixed_price_group">
-    <%= form.label :seller_doc_list, "Seller Documents" %>
-    <%= form.text_field :seller_doc_list, class: "form-control", placeholder: "PAN, Tax Certificate,Share Certificate / DEMAT Certificate"  %>
-    <small class="text-muted"> Comma separated list of documents needed from each seller. </small>
-  </div>
-
-  <div class="form-group fixed_price_group">
-    <%= form.label :buyer_doc_list, "Buyer Documents" %>
-    <%= form.text_field :buyer_doc_list, class: "form-control", placeholder: "PAN, Tax Certificate,Share Certificate / DEMAT Certificate"  %>
-    <small class="text-muted"> Comma separated list of documents needed from each buyer. </small>
-  </div>
-
-
   <div class="form-group">
     <%= form.submit "Save", class: "btn btn-lg btn-primary",
         data: { action: "click->confirm#popup", turbo:false, method: "post", "submit-form": "#spa_upload",
