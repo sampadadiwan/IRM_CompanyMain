@@ -5,13 +5,6 @@
   </h1>
 
   <% 
-    msg ||= nil
-    if msg.present?
-  %>
-    <span class="alert alert-info"><%= msg %></span>
-  <% end %>
-
-  <% 
     external = owner && owner.entity_id != current_user.entity_id 
     document = Document.new(entity_id: owner&.entity_id || current_user.entity_id, owner: owner)
     doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
@@ -64,3 +57,13 @@
 
 
 </div>
+
+
+<% 
+msg ||= nil
+if msg.present?
+%>
+  <div class="text-center">
+    <span class="alert alert-info"><%= msg %></span>
+  </div>
+<% end %>

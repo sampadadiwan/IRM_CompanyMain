@@ -16,27 +16,21 @@ class OffersController < ApplicationController
     render "index"
   end
 
-  def finalize_allocation
-    @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
-    if @secondary_sale.entity_id == current_user.entity_id
-      @offers = policy_scope(Offer)
-      @offers = @offers.where(secondary_sale_id: params[:secondary_sale_id])
+  def search_term
+    if params[:secondary_sale_id].present?
+      @secondary_sale_id = params[:secondary_sale_id].to_i
+      @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+
+      term = { secondary_sale_id: @secondary_sale_id } if @secondary_sale.entity_id == current_user.entity_id
+    elsif params[:interest_id].present?
+      @interest = Interest.find(params[:interest_id])
+      authorize @interest, :show?
+      term = { interest_id: @interest.id }
     else
-      # This is a shortlisted interest. Show offers allocated to it
-      @interest = @secondary_sale.interests.short_listed.where(interest_entity_id: current_user.entity_id).first
-      @offers = if @interest
-                  @interest.offers
-                else
-                  # Default to policy
-                  policy_scope(Offer)
-                end
+      term = { entity_id: @entity.id }
     end
 
-    @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
-    @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
-    @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest).page(params[:page])
-
-    render "finalize_allocation"
+    term
   end
 
   def search
@@ -45,26 +39,21 @@ class OffersController < ApplicationController
 
     if query.present?
 
-      if params[:secondary_sale_id].present?
-        @secondary_sale_id = params[:secondary_sale_id].to_i
-        @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
-
-        if @secondary_sale.entity_id == current_user.entity_id
-          term = { secondary_sale_id: @secondary_sale_id }
-        else
-          # This is a shortlisted interest. Show offers allocated to it
-          @interest = @secondary_sale.interests.short_listed.where(interest_entity_id: current_user.entity_id).first
-          term = { interest_id: @interest.id }
-        end
-      else
-        term = { entity_id: @entity.id }
-      end
-
-      @offers = OfferIndex.filter(term:)
+      @offers = OfferIndex.filter(term: search_term)
                           .query(query_string: { fields: OfferIndex::SEARCH_FIELDS,
                                                  query:, default_operator: 'and' }).page(params[:page]).objects
 
-      render params[:finalize_allocation].present? ? "finalize_allocation" : "index"
+      if params[:finalize_allocation].present?
+        if params[:secondary_sale_id].present?
+          render "/offers/finalize_allocation"
+        elsif params[:interest_id].present?
+          render "/interests/matched_offers"
+        else
+          render "index"
+        end
+      else
+        render "index"
+      end
 
     else
       redirect_to offers_path(request.parameters)
