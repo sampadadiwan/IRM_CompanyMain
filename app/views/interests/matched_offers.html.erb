@@ -1,0 +1,29 @@
+<%= render "/secondary_sales/stats", secondary_sale: @interest.secondary_sale %>
+
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Matched Offers: <%= link_to @interest.secondary_sale.name, @interest.secondary_sale %></h1>
+
+    <span>
+        
+            <%= link_to "All Offers", matched_offers_interest_path(@interest), 
+            {class: "btn btn-primary" }  %> 
+            <%= link_to "Verified", matched_offers_interest_path(@interest, verified: true), {class: "btn btn-success" }  %> 
+            <%= link_to "Un-Verified", matched_offers_interest_path(@interest, verified: false), {class: "btn btn-warning" }  %> 
+                    
+            &nbsp;&nbsp;&nbsp;
+
+        
+        
+        <form class="d-sm-inline-block form-inline navbar-search" action="<%= search_offers_path %>">
+            <div class="input-group">
+                <input name="query" type="text" class="form-control border-0 small" placeholder="Search for..." value="<%= params[:query] %>" aria-label="Search" aria-describedby="basic-addon2">
+                <input type="hidden" name="interest_id" value="<%= @interest.id %>">
+                <input type="hidden" name="finalize_allocation" value="true">
+            </div>
+        
+        </form>        
+    </span>
+</div>
+
+<%= render "offers/finalize_allocation", offers: @offers %>

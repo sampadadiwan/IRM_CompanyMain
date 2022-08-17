@@ -12,7 +12,7 @@
             <% end %>
         
             <%= link_to "Offer Allocations",
-                finalize_allocation_offers_path(secondary_sale_id: @secondary_sale.id), 
+                finalize_offer_allocation_secondary_sale_path(@secondary_sale), 
                 {class: "btn btn-success" } if policy(@secondary_sale).view_allocations? %> 
               
             <% label = @secondary_sale.lock_allocations ? 'Unlock Allocations' : 'Lock Allocations' %>

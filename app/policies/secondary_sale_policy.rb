@@ -28,7 +28,24 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def owner?
-    user.entity_id == record.entity_id
+    user.entity_id == record.entity_id ||
+      allow_external?(:read, :startup)
+  end
+
+  def offers?
+    owner?
+  end
+
+  def interests?
+    owner?
+  end
+
+  def finalize_offer_allocation?
+    owner?
+  end
+
+  def finalize_interest_allocation?
+    owner?
   end
 
   def buyer?

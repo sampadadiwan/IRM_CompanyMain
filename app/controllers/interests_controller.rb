@@ -1,5 +1,6 @@
 class InterestsController < ApplicationController
-  before_action :set_interest, only: %i[show edit update destroy short_list finalize allocate allocation_form]
+  before_action :set_interest, only: %i[show edit update destroy short_list finalize allocate
+                                        allocation_form matched_offers ]
 
   # GET /interests or /interests.json
   def index
@@ -13,7 +14,14 @@ class InterestsController < ApplicationController
 
     @interests = @interests.page(params[:page]).per(params[:per_page] || 10)
 
-    render params[:finalize_allocation].present? ? "finalize_allocation" : "index"
+    render "index"
+  end
+
+  def matched_offers
+    @offers = @interest.offers
+    @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
+    @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
+    @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest).page(params[:page])
   end
 
   # GET /interests/1 or /interests/1.json

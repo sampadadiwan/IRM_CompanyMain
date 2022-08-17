@@ -6,18 +6,16 @@
 
     <span>
         
-        <%= link_to "All Offers", finalize_allocation_offers_path(secondary_sale_id: @secondary_sale.id), 
-                {class: "btn btn-primary" }  %> 
-        <%= link_to "Verified", finalize_allocation_offers_path( secondary_sale_id: @secondary_sale.id, 
-                                                verified: true), 
-                {class: "btn btn-success" }  %> 
-        <%= link_to "Un-Verified", finalize_allocation_offers_path( secondary_sale_id: @secondary_sale.id, 
-                                                verified: false), 
-                {class: "btn btn-warning" }  %> 
-                
-        &nbsp;&nbsp;&nbsp;
+        <% if policy(@secondary_sale).update? %>
 
-        <% if @secondary_sale %>
+            <%= link_to "All Offers", finalize_offer_allocation_secondary_sale_path(@secondary_sale), 
+            {class: "btn btn-primary" }  %> 
+            <%= link_to "Verified", finalize_offer_allocation_secondary_sale_path(@secondary_sale, verified: true), {class: "btn btn-success" }  %> 
+            <%= link_to "Un-Verified", finalize_offer_allocation_secondary_sale_path(@secondary_sale, verified: false), {class: "btn btn-warning" }  %> 
+                    
+            &nbsp;&nbsp;&nbsp;
+
+        
             <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
 
             <%= link_to download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
@@ -28,7 +26,7 @@
             &nbsp;&nbsp;&nbsp;
       
             <%= link_to "Interest Allocations",
-              interests_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
+            finalize_interest_allocation_secondary_sale_path(@secondary_sale), 
               {class: "btn btn-success" } if policy(@secondary_sale).view_allocations? %> 
               
             <% label = @secondary_sale.lock_allocations ? 'Unlock Allocations' : 'Lock Allocations' %>
@@ -47,35 +45,4 @@
     </span>
 </div>
 
-<div class="table-responsive">
-
-<div class="divTable minimalistBlack">
-    <div class="divTableHeading datatable jqDataTable">
-        <div class="divTableRow thead">
-            <div class="divTableHead">Approved</div>
-            <div class="divTableHead">User</div>
-            <div class="divTableHead">Quantity</div>
-            <div class="divTableHead">Holding %</div>
-            <div class="divTableHead">PAN</div>
-            <div class="divTableHead">Bank</div>
-            <div class="divTableHead">Allocation Amount</div>
-            <div class="divTableHead">Allocation %</div>
-            <div class="divTableHead">Allocation Quantity</div>
-            <div class="divTableHead">Aquirer</div>
-            <div class="divTableHead">Accepted SPA</div> 
-            <div class="divTableHead">Verifed</div>            
-            <div class="divTableHead">Comments</div>
-            <div class="divTableHead">Action</div>
-        </div>
-    </div>
-    <div class="divTableBody tbody">
-        <% @offers.each do |offer| %>
-            <%= render "offers/final_offer", offer: offer %>
-        <% end %>        
-    </div>
-    
-</div>
-
-<%= paginate @offers %>
-
-</div>
+<%= render "offers/finalize_allocation", offers: @offers %>

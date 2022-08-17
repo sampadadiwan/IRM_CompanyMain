@@ -57,7 +57,6 @@ Rails.application.routes.draw do
     patch 'allocate', on: :member
     get   'allocation_form', on: :member
     get 'search', on: :collection
-    get 'finalize_allocation', on: :collection
   end
 
   resources :interests do
@@ -65,6 +64,7 @@ Rails.application.routes.draw do
     patch 'finalize', on: :member
     patch 'allocate', on: :member
     get   'allocation_form', on: :member
+    get 'matched_offers', on: :member
   end
 
   resources :secondary_sales do
@@ -75,6 +75,10 @@ Rails.application.routes.draw do
     patch 'send_notification', on: :member
     get 'spa_upload', on: :member
     get 'lock_allocations', on: :member
+    get 'offers', on: :member
+    get 'interests', on: :member
+    get 'finalize_offer_allocation', on: :member
+    get 'finalize_interest_allocation', on: :member
   end
 
   resources :holdings do

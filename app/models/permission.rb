@@ -27,7 +27,11 @@ class Permission < ApplicationRecord
   end
 
   def self.allow(owner, user, role)
-    Permission.where(user_id: user.id, owner_id: owner.id, owner_type: owner.class.name, role:).first&.permissions
+    if role
+      Permission.where(user_id: user.id, owner_id: owner.id, owner_type: owner.class.name, role:).first&.permissions
+    else
+      Permission.where(user_id: user.id, owner_id: owner.id, owner_type: owner.class.name).first&.permissions
+    end
   end
 
   before_save :set_user

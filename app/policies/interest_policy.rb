@@ -40,6 +40,10 @@ class InterestPolicy < ApplicationPolicy
     create? && !record.finalized
   end
 
+  def matched_offers?
+    create?
+  end
+
   def edit?
     update?
   end

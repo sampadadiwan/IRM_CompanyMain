@@ -35,10 +35,6 @@ class OfferPolicy < ApplicationPolicy
     end
   end
 
-  def finalize_allocation?
-    true
-  end
-
   def approve?
     user.has_cached_role?(:approver) && (user.entity_id == record.entity_id)
   end

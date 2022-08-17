@@ -1,12 +1,41 @@
 class SecondarySalesController < ApplicationController
   before_action :set_secondary_sale, only: %i[show edit update destroy make_visible download allocate
-                                              send_notification spa_upload lock_allocations ]
+                                              send_notification spa_upload lock_allocations offers interests
+                                              finalize_offer_allocation finalize_interest_allocation ]
 
   after_action :verify_policy_scoped, only: []
 
   # GET /secondary_sales or /secondary_sales.json
   def index
     @secondary_sales = policy_scope(SecondarySale)
+  end
+
+  def offers
+    @offers = @secondary_sale.offers
+    @offers = @offers.page(params[:page])
+    render "/offers/index"
+  end
+
+  def interests
+    @interests = @secondary_sale.interests
+    @interests = @interests.page(params[:page])
+    render "/interests/index"
+  end
+
+  def finalize_offer_allocation
+    @offers = @secondary_sale.offers
+
+    @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
+    @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
+    @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest).page(params[:page])
+
+    render "/offers/finalize_allocation"
+  end
+
+  def finalize_interest_allocation
+    @interests = @secondary_sale.interests.order(allocation_quantity: :desc)
+    @interests = @interests.page(params[:page])
+    render "/interests/finalize_allocation"
   end
 
   def search
