@@ -101,6 +101,9 @@ class User < ApplicationRecord
       elsif ["Investment Fund"].include?(entity.entity_type)
         add_role :fund_manager
         self.curr_role = :fund_manager
+      else
+        add_role :consultant
+        self.curr_role = :consultant
       end
     else
       self.curr_role ||= :user

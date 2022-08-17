@@ -36,6 +36,16 @@ namespace :irm do
       end
     end
 
+    cons_names = ["Legal Eagles", "Awesome Accounting"]
+    cons_names.each do |name|
+      e = FactoryBot.create(:entity, entity_type: "Consulting", name: name)
+      puts "Entity #{e.name}"
+      (1..2).each do |j|
+        user = FactoryBot.create(:user, entity: e, first_name: "Consultant#{j}")
+        puts user.to_json
+      end
+    end
+
 
     vc_names = ["Sequoia Capital", "Accel", "Blume Ventures", "Tiger Global Management", "Kalaari Capital"] 
                 # "Drip Ventures", "Matrix Partners", "Nexus Venture Partners", "Indian Angel Network", "Omidyar Network India"]
