@@ -11,13 +11,18 @@ class SecondarySalesController < ApplicationController
   end
 
   def offers
-    @offers = @secondary_sale.offers
+    @offers = @secondary_sale.offers.includes(:user, :investor, :secondary_sale, :entity,
+                                              :interest, holding: :funding_round)
+
+    @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
+    @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
+
     @offers = @offers.page(params[:page])
     render "/offers/index"
   end
 
   def interests
-    @interests = @secondary_sale.interests
+    @interests = @secondary_sale.interests.includes(:entity, :interest_entity, :user)
     @interests = @interests.page(params[:page])
     render "/interests/index"
   end

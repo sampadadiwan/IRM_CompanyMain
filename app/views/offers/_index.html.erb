@@ -2,8 +2,8 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Offers</h1>
     <span>
-        <%= link_to "All Offers", offers_path(secondary_sale_id: params[:secondary_sale_id]), 
-                                  class: "btn btn-primary" %>
+        <%= link_to "All Offers", offers_secondary_sale_path(@secondary_sale), 
+                                  class: "btn btn-primary" if @secondary_sale %>
 
 
     </span>

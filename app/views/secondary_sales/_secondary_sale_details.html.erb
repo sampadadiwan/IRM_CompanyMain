@@ -77,7 +77,7 @@
       <div id="offerings-tab" class="tab-pane fade">
         <div id="offerings" class="associated_entity">
           <% approved = current_user.entity_id == secondary_sale.entity_id ? false : nil %>
-          <%= link_to offers_path(secondary_sale_id: secondary_sale.id, show_entity: false, 
+          <%= link_to offers_secondary_sale_path(id: secondary_sale.id, show_entity: false, 
               show_secondary_sale: false, approved: approved), 
               class: "load_data_link", data: { turbo_frame: 'offers_frame' } do %>
             <span>Loading...</span>
@@ -90,7 +90,7 @@
 
       <div id="interests-tab" class="tab-pane fade <%= interests_active ? 'in show active' : '' %>">
         <div id="interests" class="associated_entity">
-          <%= link_to interests_path(secondary_sale_id: secondary_sale.id), class: "load_data_link", data: { turbo_frame: 'interests_frame' } do %>
+          <%= link_to interests_secondary_sale_path(secondary_sale), class: "load_data_link", data: { turbo_frame: 'interests_frame' } do %>
             <span>Loading...</span>
            <% end %>
       
