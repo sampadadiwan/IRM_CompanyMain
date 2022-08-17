@@ -73,6 +73,8 @@ Style/OptionalBooleanParameter:
 Metrics/CyclomaticComplexity:
   Max: 10
   Enabled: true
+  Exclude:
+    - 'app/models/user.rb'
 Metrics/PerceivedComplexity:
   Exclude:
     - 'app/models/user.rb'
@@ -100,6 +102,7 @@ Metrics/MethodLength:
   Enabled: true
   Exclude:
     - 'app/controllers/access_rights_controller.rb'
+    - 'app/models/user.rb'
   
 Metrics/BlockLength:
   CountComments: false

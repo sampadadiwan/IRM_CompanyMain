@@ -6,7 +6,7 @@ class SecondarySalePolicy < ApplicationPolicy
       elsif user.curr_role.to_sym == :startup
         scope.where(entity_id: user.entity_id)
       elsif %i[holding investor].include?(user.curr_role.to_sym)
-        scope.for(user).or(scope.where(visible_externally: true)).distinct
+        scope.for(user).distinct
       elsif user.curr_role.to_sym == :secondary_buyer
         scope.where(visible_externally: true)
       else
