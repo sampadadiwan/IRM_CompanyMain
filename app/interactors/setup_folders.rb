@@ -12,16 +12,22 @@ class SetupFolders
   end
 
   def setup_root_folder(entity)
-    root = Folder.create(name: "/", entity_id: entity.id, level: 0, folder_type: :system)
+    root = entity.root_folder.presence ||
+           Folder.create(name: "/", entity_id: entity.id, level: 0, folder_type: :system)
     case entity.entity_type
     when "Startup"
-      Folder.create(name: "Deals", entity_id: entity.id, parent: root, folder_type: :system)
-      Folder.create(name: "Approvals", entity_id: entity.id, parent: root, folder_type: :system)
-      Folder.create(name: "Secondary Sales", entity_id: entity.id, parent: root, folder_type: :system)
-      Folder.create(name: "Option Pools", entity_id: entity.id, parent: root, folder_type: :system)
+      create_if_not_exist("Deals", entity, root, :system)
+      create_if_not_exist("Approvals", entity, root, :system)
+      create_if_not_exist("Secondary Sales", entity, root, :system)
+      create_if_not_exist("Option Pools", entity, root, :system)
     when "Investment Fund"
-      Folder.create(name: "Investment Opportunities", entity_id: entity.id, parent: root, folder_type: :system)
-      Folder.create(name: "Funds", entity_id: entity.id, parent: root, folder_type: :system)
+      create_if_not_exist("Investment Opportunities", entity, root, :system)
+      create_if_not_exist("Funds", entity, root, :system)
     end
+  end
+
+  def create_if_not_exist(name, entity, parent, folder_type)
+    existing = Folder.where(name:, entity_id: entity.id, parent_folder_id: parent.id, folder_type:).first
+    Folder.create(name:, entity_id: entity.id, parent_folder_id: parent.id, folder_type:) unless existing
   end
 end

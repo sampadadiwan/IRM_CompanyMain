@@ -147,4 +147,8 @@ class Entity < ApplicationRecord
     end
     nil
   end
+
+  def root_folder
+    folders.where(level: 0).first
+  end
 end
