@@ -1,0 +1,21 @@
+<tr id="<%= dom_id capital_commitment %>">
+  <td>
+    <%= capital_commitment.entity.name %>
+  </td>
+  <td>
+    <%= link_to capital_commitment.investor.investor_name, capital_commitment.investor %>
+  </td>
+  <td>
+    <%= link_to capital_commitment.fund.name, capital_commitment.fund %>
+  </td>
+  <td>
+    <%= money_to_currency capital_commitment.committed_amount, params %>
+  </td>
+  <td>
+    <%= money_to_currency capital_commitment.collected_amount, params %>
+  </td>
+  
+  <td>
+    <%= link_to "Show" , capital_commitment , {class: "btn btn-primary" }%>
+  </td>
+</tr>

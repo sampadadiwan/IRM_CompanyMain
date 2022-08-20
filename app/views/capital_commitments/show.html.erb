@@ -1,0 +1,64 @@
+<%= render "/layouts/alerts" %>
+
+  <table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= @capital_commitment.entity.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Investor
+      </td>
+      <td>
+        <%= link_to @capital_commitment.investor.investor_name, @capital_commitment.investor %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Fund
+      </td>
+      <td>
+        <%= link_to @capital_commitment.fund.name, @capital_commitment.fund %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Committed Amount
+      </td>
+      <td>
+        <%= money_to_currency @capital_commitment.committed_amount, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Collected Amount
+      </td>
+      <td>
+        <%= money_to_currency @capital_commitment.collected_amount, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Notes
+      </td>
+      <td>
+        <%= @capital_commitment.notes.html_safe %>
+      </td>
+    </tr>
+
+
+  </table>
+
+
+  <div>
+    <% if policy(@capital_commitment).update? %>
+      <%= link_to "Edit" , edit_capital_commitment_path(@capital_commitment), {class: "btn btn-primary" } %> |
+      <%= button_to "Delete" , @capital_commitment, method: :delete, class: "btn btn-danger" ,
+            form_class: "deleteButton" , data: {action: "click->confirm#delete" , turbo:false} %>
+    <% end %>
+  </div>

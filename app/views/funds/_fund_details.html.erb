@@ -4,6 +4,9 @@
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#commitments-tab"
+          data-action="click->tabdetails#loadData">Commitments</a>
     </nav>
   
     <div class="tab-content" data-controller="datatable">
@@ -12,6 +15,12 @@
           <div id="docs" class="associated_entity">
             <%= render "/documents/index", documents: fund.documents, owner: fund, 
                 entity: fund.entity %>
+          </div>     
+        </div>
+
+        <div id="commitments-tab" class="tab-pane fade in">
+          <div id="commitments" class="associated_entity">
+            <%= render "/capital_commitments/index", capital_commitments: fund.capital_commitments, fund: fund %>
           </div>     
         </div>
   

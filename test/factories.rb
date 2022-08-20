@@ -1,4 +1,13 @@
 FactoryBot.define do
+  factory :capital_commitment do
+    entity { nil }
+    investor { nil }
+    fund { nil }
+    committed_amount { "9.99" }
+    collected_amount { "9.99" }
+    notes { "MyText" }
+  end
+
   factory :fund do
     name { "MyString" }
     committed_amount { "9.99" }

@@ -1,0 +1,41 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Capital Commitments</h1>
+    <%= link_to "New Capital Commitment", new_capital_commitment_path("capital_commitment[fund_id]": fund.id, "capital_commitment[entity_id]": fund.entity_id),  {class: "btn btn-primary" } if fund %>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+
+    <table id="capital_commitments" class="table table-bordered dataTable">
+
+        <thead>
+            <tr>
+                <th>
+                    Entity
+                </th>
+                <th>
+                    Investor
+                </th>
+                <th>
+                    Fund
+                </th>
+                <th>
+                    Committed Amount
+                </th>
+                <th>
+                    Collected Amount
+                </th>
+
+
+                <th>
+                </th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <% capital_commitments.each do |capital_commitment| %>
+                <%= render capital_commitment %>
+            <% end %>
+        </tbody>
+    </table>
+
+</div>
