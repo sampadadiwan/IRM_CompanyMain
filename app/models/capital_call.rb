@@ -1,4 +1,6 @@
 class CapitalCall < ApplicationRecord
+  include WithFolder
+
   belongs_to :entity
   belongs_to :fund
 
@@ -11,4 +13,9 @@ class CapitalCall < ApplicationRecord
   monetize :due_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 
   after_create ->(cc) { CapitalCallJob.perform_later(cc.id) }
+
+  def setup_folder_details
+    parent_folder = fund.document_folder.folders.where(name: "Capital Calls").first
+    setup_folder(parent_folder, name, [])
+  end
 end

@@ -3,7 +3,7 @@
     <%= link_to "New Capital Commitment", new_capital_commitment_path("capital_commitment[fund_id]": params[:fund_id]),  {class: "btn btn-primary" } if params[:fund_id] %>
 </div>
 
-<div class="table-responsive">
+<div class="table-responsive" data-controller="datatable">
 
     <table id="capital_commitments" class="table table-bordered dataTable jqDataTable">
 

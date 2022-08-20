@@ -463,7 +463,7 @@ namespace :irm do
     raise e
   end
 
-  task :generateAll => [:generateFakeEntities, :generateFakeInvestors, :generateFakeInvestments, :generateFakeDeals, :generateFakeValuations,:generateFakeHoldings, :generateFakeDocuments, :generateFakeNotes, :generateFakeSales, :generateFakeOffers, :generateFakeBlankEntities] do
+  task :generateAll => [:generateFakeEntities, :generateFakeInvestors, :generateFakeInvestments, :generateFakeDeals, :generateFakeValuations,:generateFakeHoldings, :generateFakeDocuments, :generateFakeNotes, :generateFakeSales, :generateFakeOffers, :generateFakeBlankEntities, :generateFakeFunds] do
     puts "Generating all Fake Data"
     Sidekiq.redis(&:flushdb)
   end
