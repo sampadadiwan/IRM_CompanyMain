@@ -9,4 +9,6 @@ class CapitalCall < ApplicationRecord
   validates :percentage_called, numericality: { in: 0..100 }
 
   monetize :due_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
+
+  after_create ->(cc) { CapitalCallJob.perform_later(cc.id) }
 end

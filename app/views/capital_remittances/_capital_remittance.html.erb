@@ -13,8 +13,8 @@
   </td>
   <td>
     <%= money_to_currency (capital_remittance.due_amount - capital_remittance.collected_amount), params %>
-    <div>
-      <small class="text-muted">
+    <div class="hideMobP">
+      <small class="text-muted hideMobP">
       <%= money_to_currency capital_remittance.capital_commitment.committed_amount, params %> x 
       <%= capital_remittance.capital_call.percentage_called %> % -
       <%= money_to_currency capital_remittance.collected_amount, params %>

@@ -73,9 +73,6 @@
 
   <div>
     <% if policy(@capital_remittance).update? %>
-      <%= link_to "Edit" , edit_capital_remittance_path(@capital_remittance), {class: "btn btn-primary" } %> |
-      <%= button_to "Delete" , @capital_remittance, method: :delete, class: "btn btn-danger" ,
-            form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
-    
+      <%= link_to "Edit" , edit_capital_remittance_path(@capital_remittance), {class: "btn btn-primary" } %>      
     <% end %>
   </div>

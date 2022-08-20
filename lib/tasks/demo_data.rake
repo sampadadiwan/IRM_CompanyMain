@@ -453,12 +453,8 @@ namespace :irm do
         end
 
 
-        (1..5).each do 
-          call = FactoryBot.create(:capital_call, fund: )
-          
-          (1..5).each do
-            FactoryBot.create(:capital_remittance, capital_call: call )
-          end
+        (1..3).each do 
+          call = FactoryBot.create(:capital_call, fund: )          
         end
       end
     end
