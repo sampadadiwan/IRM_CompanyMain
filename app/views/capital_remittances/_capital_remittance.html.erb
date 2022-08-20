@@ -1,0 +1,23 @@
+<tr id="<%= dom_id capital_remittance %>">
+  <td>
+    <%= link_to capital_remittance.fund.name, capital_remittance.fund %>
+  </td>
+  <td>
+    <%= link_to capital_remittance.capital_call.name, capital_remittance.capital_call %>
+  </td>
+  <td>
+    <%= link_to capital_remittance.investor.investor_name, capital_remittance.investor %>
+  </td>
+  <td>
+    <%= capital_remittance.status %>
+  </td>
+  <td>
+    <%= money_to_currency capital_remittance.due_amount, params %>
+  </td>
+  <td>
+    <%= money_to_currency capital_remittance.collected_amount, params %>
+  </td>
+  <td>
+    <%= link_to "Show" , capital_remittance , {class: "btn btn-primary" }%>
+  </td>
+</tr>

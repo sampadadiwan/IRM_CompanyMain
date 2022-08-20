@@ -59,6 +59,8 @@
     <% if policy(@capital_commitment).update? %>
       <%= link_to "Edit" , edit_capital_commitment_path(@capital_commitment), {class: "btn btn-primary" } %> |
       <%= button_to "Delete" , @capital_commitment, method: :delete, class: "btn btn-danger" ,
-            form_class: "deleteButton" , data: {action: "click->confirm#delete" , turbo:false} %>
+            form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
     <% end %>
   </div>
+
+  

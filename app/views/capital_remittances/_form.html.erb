@@ -1,0 +1,46 @@
+<%= form_with(model: capital_remittance) do |form| %>
+  <% if capital_remittance.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(capital_remittance.errors.count, "error") %> prohibited this capital_remittance from being saved:</h2>
+
+      <ul>
+        <% capital_remittance.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :capital_call_id, class: "form-control", hidden: true  %>
+
+  <div class="form-group">
+    <%= form.label :investor_id %>
+    <%= form.select :investor_id, capital_remittance.entity.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :status %>
+    <%= form.select :status, ["Pending", "Paid"], {}, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :due_amount %>
+    <%= form.text_field :due_amount, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :collected_amount %>
+    <%= form.text_field :collected_amount, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :notes %>
+    <%= form.text_area :notes, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

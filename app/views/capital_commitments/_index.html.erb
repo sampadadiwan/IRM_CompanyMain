@@ -1,6 +1,6 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Commitments</h1>
-    <%= link_to "New Capital Commitment", new_capital_commitment_path("capital_commitment[fund_id]": fund.id, "capital_commitment[entity_id]": fund.entity_id),  {class: "btn btn-primary" } if fund %>
+    <%= link_to "New Capital Commitment", new_capital_commitment_path("capital_commitment[fund_id]": params[:fund_id]),  {class: "btn btn-primary" } if params[:fund_id] %>
 </div>
 
 <div class="table-responsive">

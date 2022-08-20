@@ -1,4 +1,15 @@
 FactoryBot.define do
+  factory :capital_remittance do
+    entity { nil }
+    fund { nil }
+    capital_call { nil }
+    investor { nil }
+    status { "MyString" }
+    due_amount { "9.99" }
+    collected_amount { "9.99" }
+    notes { "MyText" }
+  end
+
   factory :capital_call do
     entity { nil }
     fund { nil }

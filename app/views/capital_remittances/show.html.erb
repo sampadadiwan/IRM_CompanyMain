@@ -1,0 +1,81 @@
+<%= render "/layouts/alerts" %>
+
+  <table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= @capital_remittance.entity.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Fund
+      </td>
+      <td>
+        <%= link_to @capital_remittance.fund.name, @capital_remittance.fund %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Capital Call
+      </td>
+      <td>
+        <%= link_to @capital_remittance.capital_call.name, @capital_remittance.capital_call %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Investor
+      </td>
+      <td>
+        <%= link_to @capital_remittance.investor.investor_name, @capital_remittance.investor %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Status
+      </td>
+      <td>
+        <%= @capital_remittance.status %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Due Amount
+      </td>
+      <td>
+        <%= money_to_currency @capital_remittance.due_amount, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Collected Amount
+      </td>
+      <td>
+        <%= money_to_currency @capital_remittance.collected_amount, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Notes
+      </td>
+      <td>
+        <%= @capital_remittance.notes&.html_safe %>
+      </td>
+    </tr>
+
+
+  </table>
+
+
+  <div>
+    <% if policy(@capital_remittance).update? %>
+      <%= link_to "Edit" , edit_capital_remittance_path(@capital_remittance), {class: "btn btn-primary" } %> |
+      <%= button_to "Delete" , @capital_remittance, method: :delete, class: "btn btn-danger" ,
+            form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
+    
+    <% end %>
+  </div>

@@ -1,24 +1,25 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Capital Calls</h1>
-    <%= link_to "New Capital Call" , new_capital_call_path("capital_call[fund_id]": params[:fund_id]), {class: "btn btn-primary" } if params[:fund_id] %>
+    <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
+    <%= link_to "New Capital Remittance" , new_capital_remittance_path("capital_remittance[capital_call_id]": params[:capital_call_id]), {class: "btn btn-primary" } if params[:capital_call_id] %>
 </div>
 
 <div class="table-responsive">
 
-    <table id="capital_calls" class="table table-bordered dataTable jqDataTable">
+    <table id="capital_remittances" class="table table-bordered dataTable jqDataTable">
         <thead>
             <tr>
+
                 <th>
                     Fund
                 </th>
                 <th>
-                    Name
+                    Capital Call
                 </th>
                 <th>
-                    Percentage Called
+                    Investor
                 </th>
                 <th>
-                    Due Date
+                    Status
                 </th>
                 <th>
                     Due Amount
@@ -33,8 +34,8 @@
         </thead>
 
         <tbody>
-            <% capital_calls.each do |capital_call| %>
-                <%= render capital_call %>
+            <% capital_remittances.each do |capital_remittance| %>
+                <%= render capital_remittance %>
             <% end %>
         </tbody>
     </table>

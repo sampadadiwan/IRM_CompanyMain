@@ -13,6 +13,7 @@ class CapitalCommitmentsController < ApplicationController
   # GET /capital_commitments/new
   def new
     @capital_commitment = CapitalCommitment.new(capital_commitment_params)
+    @capital_commitment.entity_id = @capital_commitment.fund.entity_id
     authorize @capital_commitment
   end
 
@@ -22,6 +23,7 @@ class CapitalCommitmentsController < ApplicationController
   # POST /capital_commitments or /capital_commitments.json
   def create
     @capital_commitment = CapitalCommitment.new(capital_commitment_params)
+    @capital_commitment.entity_id = @capital_commitment.fund.entity_id
     authorize @capital_commitment
     respond_to do |format|
       if @capital_commitment.save

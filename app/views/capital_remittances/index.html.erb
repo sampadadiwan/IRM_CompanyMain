@@ -1,0 +1,5 @@
+<%= render "/layouts/alerts" %>
+
+<%= turbo_frame_tag "capital_remittances_frame", target: "_top" do %>
+    <%= render "/capital_remittances/index", capital_remittances: @capital_remittances, capital_call: nil %>
+<% end %>
