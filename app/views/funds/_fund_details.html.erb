@@ -5,6 +5,9 @@
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab"
+          data-action="click->tabdetails#loadData">Access Rights</a>
+
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#commitments-tab"
           data-action="click->tabdetails#loadData">Commitments</a>
 
@@ -21,15 +24,40 @@
           </div>     
         </div>
 
+        <div id="access-rights-tab" class="tab-pane fade in">
+
+          <% cache(fund) do %>
+            <div id="access_rights" class="associated_entity" data-controller="datatable">
+              <% access_right = AccessRight.new(
+                  owner_id: fund.id, 
+                  access_type: "Fund", 
+                  owner_type: "Fund", 
+                  entity_id: fund.entity_id) %>
+                  
+              <%= render "/access_rights/index", access_rights: fund.access_rights.includes(:investor, :owner), access_right: access_right %>
+            </div>
+          <% end %>
+        </div>
+
         <div id="commitments-tab" class="tab-pane fade in">
           <div id="commitments" class="associated_entity">
-            <%= render "/capital_commitments/index", capital_commitments: fund.capital_commitments, fund: fund %>
+            <%= link_to capital_commitments_path(fund_id: fund.id), class: "load_data_link", data: { turbo_frame: 'capital_commitments_frame' } do %>
+              <span>Loading...</span>
+            <% end %>
+        
+            <%= turbo_frame_tag "capital_commitments_frame", target: "_top" do %>
+            <% end %>
           </div>     
         </div>
 
         <div id="capital-calls-tab" class="tab-pane fade in">
           <div id="capital-calls" class="associated_entity">
-            <%= render "/capital_calls/index", capital_calls: fund.capital_calls, fund: fund %>
+            <%= link_to capital_calls_path(fund_id: fund.id), class: "load_data_link", data: { turbo_frame: 'capital_calls_frame' } do %>
+              <span>Loading...</span>
+            <% end %>
+        
+            <%= turbo_frame_tag "capital_calls_frame", target: "_top" do %>
+            <% end %>
           </div>     
         </div>
   

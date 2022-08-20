@@ -5,6 +5,7 @@ class Fund < ApplicationRecord
   has_many :documents, as: :owner, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
   has_many :capital_calls, dependent: :destroy
+  has_many :access_rights, as: :owner, dependent: :destroy
 
   monetize :committed_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 

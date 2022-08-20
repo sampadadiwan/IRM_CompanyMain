@@ -1,4 +1,4 @@
 <%= render "/layouts/alerts" %>
-
-<%= render "/capital_calls/index", capital_calls: @capital_calls, fund: nil %>
- 
+<%= turbo_frame_tag "capital_calls_frame", target: "_top" do %>
+    <%= render "/capital_calls/index", capital_calls: @capital_calls, fund: nil %>
+ <% end %>

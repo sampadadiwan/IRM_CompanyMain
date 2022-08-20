@@ -3,7 +3,8 @@ class CapitalCallsController < ApplicationController
 
   # GET /capital_calls or /capital_calls.json
   def index
-    @capital_calls = policy_scope(CapitalCall)
+    @capital_calls = policy_scope(CapitalCall).includes(:fund)
+    @capital_calls = @capital_calls.where(fund_id: params[:fund_id]) if params[:fund_id]
   end
 
   # GET /capital_calls/1 or /capital_calls/1.json
