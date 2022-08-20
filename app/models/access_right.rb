@@ -135,4 +135,12 @@ class AccessRight < ApplicationRecord
   def update_owner
     owner.access_rights_changed(id) if owner.respond_to? :access_rights_changed
   end
+
+  def investors
+    if access_to_category.present?
+      entity.investors.where(category: access_to_category)
+    else
+      [investor]
+    end
+  end
 end

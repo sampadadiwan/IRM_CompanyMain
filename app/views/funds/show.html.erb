@@ -25,7 +25,7 @@
         Committed Amount
       </td>
       <td>
-        <%= @fund.committed_amount %>
+        <%= money_to_currency @fund.committed_amount, params %>
       </td>
     </tr>
     
@@ -34,7 +34,7 @@
         Collected Amount
       </td>
       <td>
-        <%= @fund.collected_amount %>
+        <%= money_to_currency @fund.collected_amount, params %>
       </td>
     </tr>
     <tr>

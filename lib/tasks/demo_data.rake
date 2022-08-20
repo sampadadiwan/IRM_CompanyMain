@@ -441,6 +441,31 @@ namespace :irm do
     raise e
   end
 
+  desc "generates fake funds"
+  task generateFakeFunds: :environment do
+    i = 1
+    Entity.funds.each do |e|
+      3.times do
+        fund = FactoryBot.create(:fund, entity: e)
+        e.investors.sample(5).each do |inv|
+          AccessRight.create(owner: fund, access_type: "Fund", entity: e, investor: inv)
+          commitment = FactoryBot.create(:capital_commitment, investor: inv, fund: )
+        end
+
+
+        (1..5).each do 
+          call = FactoryBot.create(:capital_call, fund: )
+          
+          (1..5).each do
+            FactoryBot.create(:capital_remittance, capital_call: call )
+          end
+        end
+      end
+    end
+  rescue Exception => e
+    puts e.backtrace.join("\n")
+    raise e
+  end
 
   task :generateAll => [:generateFakeEntities, :generateFakeInvestors, :generateFakeInvestments, :generateFakeDeals, :generateFakeValuations,:generateFakeHoldings, :generateFakeDocuments, :generateFakeNotes, :generateFakeSales, :generateFakeOffers, :generateFakeBlankEntities] do
     puts "Generating all Fake Data"

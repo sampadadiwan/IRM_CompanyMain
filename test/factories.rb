@@ -1,40 +1,36 @@
 FactoryBot.define do
   factory :capital_remittance do
-    entity { nil }
-    fund { nil }
-    capital_call { nil }
-    investor { nil }
-    status { "MyString" }
-    due_amount { "9.99" }
-    collected_amount { "9.99" }
-    notes { "MyText" }
+    capital_call { CapitalCall.all.sample }
+    fund { capital_call.fund }
+    entity { fund.entity }
+    investor { fund.investors.sample }
+    status { ["Pending", "Paid"].sample }
+    collected_amount { 10000 * rand(10..20) }
+    notes { Faker::Company.catch_phrase  }
   end
 
   factory :capital_call do
-    entity { nil }
-    fund { nil }
-    name { "MyString" }
-    percentage_called { "9.99" }
-    due_date { "2022-08-20" }
-    notes { "MyText" }
+    fund { Fund.all.sample }
+    entity { fund.entity }
+    due_date { Time.zone.today + 3.weeks }
+    name { "Capital Call #{rand(1..10)}" }
+    percentage_called { rand(1..4) * 10 }
+    notes { Faker::Company.catch_phrase }
   end
 
   factory :capital_commitment do
-    entity { nil }
-    investor { nil }
-    fund { nil }
-    committed_amount { "9.99" }
-    collected_amount { "9.99" }
-    notes { "MyText" }
+    fund { Fund.all.sample }
+    entity { fund.entity }
+    investor { fund.investors.sample }
+    committed_amount { 100000 * rand(10..30)}
+    notes { Faker::Company.catch_phrase }
   end
 
   factory :fund do
-    name { "MyString" }
-    committed_amount { "9.99" }
-    details { "MyText" }
-    collected_amount { "9.99" }
-    entity { nil }
-    tag_list { "MyString" }
+    name { ["Tech", "Agri", "Fin Tech", "SAAS", "Macro"].sample + " Fund" }
+    details { Faker::Company.catch_phrase }
+    entity { Entity.funds.sample }
+    tag_list {  }
   end
 
   

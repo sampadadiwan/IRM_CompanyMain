@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_08_20_125834) do
+ActiveRecord::Schema[7.0].define(version: 2022_08_20_133600) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -228,7 +228,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_20_125834) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "capital_commitment_id"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
+    t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_capital_remittances_on_entity_id"
     t.index ["fund_id"], name: "index_capital_remittances_on_fund_id"
     t.index ["investor_id"], name: "index_capital_remittances_on_investor_id"
@@ -1205,6 +1207,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_20_125834) do
   add_foreign_key "capital_commitments", "funds"
   add_foreign_key "capital_commitments", "investors"
   add_foreign_key "capital_remittances", "capital_calls"
+  add_foreign_key "capital_remittances", "capital_commitments"
   add_foreign_key "capital_remittances", "entities"
   add_foreign_key "capital_remittances", "funds"
   add_foreign_key "capital_remittances", "investors"

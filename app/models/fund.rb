@@ -3,6 +3,7 @@ class Fund < ApplicationRecord
 
   belongs_to :entity
   has_many :documents, as: :owner, dependent: :destroy
+  has_many :capital_remittances, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
   has_many :capital_calls, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
@@ -14,5 +15,13 @@ class Fund < ApplicationRecord
   def setup_folder_details
     parent_folder = Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
     setup_folder(parent_folder, name, [])
+  end
+
+  def investors
+    investor_list = []
+    access_rights.includes(:investor).find_each do |ar|
+      investor_list += ar.investors
+    end
+    investor_list.uniq
   end
 end
