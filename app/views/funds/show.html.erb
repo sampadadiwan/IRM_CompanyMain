@@ -37,6 +37,16 @@
         <%= money_to_currency @fund.collected_amount, params %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Capital Call Due Amount
+      </td>
+      <td>
+        <%= money_to_currency @fund.due_amount, params %>
+      </td>
+    </tr>
+
     <tr>
       <td>
         Entity

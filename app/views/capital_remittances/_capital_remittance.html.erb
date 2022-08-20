@@ -12,12 +12,20 @@
     <%= capital_remittance.status %>
   </td>
   <td>
-    <%= money_to_currency capital_remittance.due_amount, params %>
+    <%= money_to_currency (capital_remittance.due_amount - capital_remittance.collected_amount), params %>
+    <div>
+      <small class="text-muted">
+      <%= money_to_currency capital_remittance.capital_commitment.committed_amount, params %> x 
+      <%= capital_remittance.capital_call.percentage_called %> % -
+      <%= money_to_currency capital_remittance.collected_amount, params %>
+      </small>
+    </div>
   </td>
   <td>
     <%= money_to_currency capital_remittance.collected_amount, params %>
   </td>
   <td>
     <%= link_to "Show" , capital_remittance , {class: "btn btn-primary" }%>
+    <%= link_to "Edit" , edit_capital_remittance_path(capital_remittance) , {class: "btn btn-success" } if policy(capital_remittance).update? %>
   </td>
 </tr>

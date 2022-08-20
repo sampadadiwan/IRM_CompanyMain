@@ -24,7 +24,11 @@ class CapitalRemittance < ApplicationRecord
   counter_culture :fund, column_name: proc { |o| o.status == 'Paid' ? 'collected_amount_cents' : nil },
                          delta_column: 'collected_amount_cents'
 
-  def due
-    capital_commitment ? capital_call.percentage_called * capital_commitment.committed_amount / 100 : 0
+  counter_culture :fund, column_name: proc { |o| o.status == 'Pending' ? 'due_amount_cents' : nil },
+                         delta_column: 'due_amount_cents'
+
+  before_create :set_due_amount
+  def set_due_amount
+    self.due_amount = capital_commitment ? capital_call.percentage_called * capital_commitment.committed_amount / 100 : Money(0, entity.currency)
   end
 end
