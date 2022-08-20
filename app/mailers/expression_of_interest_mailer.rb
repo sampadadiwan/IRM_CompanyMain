@@ -8,7 +8,8 @@ class ExpressionOfInterestMailer < ApplicationMailer
     # Get all emails of investors & holding company employees
     emails = sandbox_email(@expression_of_interest, @expression_of_interest.user.email)
 
-    mail(to: emails,
+    mail(from: from_email(@@expression_of_interest.entity),
+         to: emails,
          bcc: ENV['SUPPORT_EMAIL'],
          subject: "Expression Of Interest received for: #{@expression_of_interest.investment_opportunity.company_name}")
   end

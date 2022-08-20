@@ -6,7 +6,7 @@ class InvestorAccessMailer < ApplicationMailer
     email = sandbox_email(@investor_access, @investor_access.email)
 
     subj = "Access Granted to #{@investor_access.entity_name}"
-    mail(to: email,
+    mail(from: from_email(@investor_access.entity), to: email,
          cc: ENV['SUPPORT_EMAIL'],
          subject: subj)
 

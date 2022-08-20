@@ -10,7 +10,7 @@ class HoldingMailer < ApplicationMailer
     @label ||= @holding.lapsed ? "Lapsed" : "Updated"
 
     subject = "Your #{@holding.investment_instrument} have been #{@label}"
-    mail(to: emails,
+    mail(from: from_email(@holding.entity), to: emails,
          cc: ENV['SUPPORT_EMAIL'],
          subject:)
   end
@@ -19,7 +19,7 @@ class HoldingMailer < ApplicationMailer
     @holding = Holding.find params[:holding_id]
     emails = sandbox_email(@holding, @holding.user.email)
     subject = "Your #{@holding.investment_instrument} have been approved"
-    mail(to: emails,
+    mail(from: from_email(@holding.entity), to: emails,
          cc: ENV['SUPPORT_EMAIL'],
          subject:)
   end
@@ -28,7 +28,7 @@ class HoldingMailer < ApplicationMailer
     @holding = Holding.find params[:holding_id]
     emails = sandbox_email(@holding, @holding.user.email)
     subject = "Your #{@holding.investment_instrument} have lapsed"
-    mail(to: emails,
+    mail(from: from_email(@holding.entity), to: emails,
          cc: ENV['SUPPORT_EMAIL'],
          subject:)
   end
@@ -37,7 +37,7 @@ class HoldingMailer < ApplicationMailer
     @holding = Holding.find params[:holding_id]
     emails = sandbox_email(@holding, @holding.user.email)
     subject = "Your #{@holding.investment_instrument} will lapse in #{@holding.days_to_lapse} days"
-    mail(to: emails,
+    mail(from: from_email(@holding.entity), to: emails,
          cc: ENV['SUPPORT_EMAIL'],
          subject:)
   end

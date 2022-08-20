@@ -5,4 +5,8 @@ class ApplicationMailer < ActionMailer::Base
   def sandbox_email(model, emails)
     model.entity.sandbox ? model.entity.sandbox_emails : emails
   end
+
+  def from_email(entity)
+    entity.from_email.presence || ENV["SUPPORT_EMAIL"]
+  end
 end

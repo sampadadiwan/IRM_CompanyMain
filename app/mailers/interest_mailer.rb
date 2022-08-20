@@ -5,7 +5,7 @@ class InterestMailer < ApplicationMailer
   def notify_interest
     @interest = Interest.find params[:interest_id]
     emails = sandbox_email(@interest, @interest.entity.employees.collect(&:email))
-    mail(to: emails,
+    mail(from: from_email(@interest.entity), to: emails,
          cc: ENV['SUPPORT_EMAIL'],
          subject: "Interest for #{@interest.secondary_sale.name} ")
   end
@@ -13,7 +13,7 @@ class InterestMailer < ApplicationMailer
   def notify_shortlist
     @interest = Interest.find params[:interest_id]
     emails = sandbox_email(@interest, @interest.user.email)
-    mail(to: emails,
+    mail(from: from_email(@interest.entity), to: emails,
          cc: ENV['SUPPORT_EMAIL'],
          subject: "Interest Shortlisted for #{@interest.secondary_sale.name} ")
 
@@ -24,7 +24,7 @@ class InterestMailer < ApplicationMailer
   def notify_finalized
     @interest = Interest.find params[:interest_id]
     emails = sandbox_email(@interest, @interest.user.email)
-    mail(to: emails,
+    mail(from: from_email(@interest.entity), to: emails,
          cc: ENV['SUPPORT_EMAIL'],
          subject: "Interest Finalized for #{@interest.secondary_sale.name} ")
 

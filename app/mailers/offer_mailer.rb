@@ -6,7 +6,7 @@ class OfferMailer < ApplicationMailer
     @offer = Offer.find params[:offer_id]
     emails = sandbox_email(@offer, @offer.user.email)
     subject = "Your offer has been approved"
-    mail(to: emails,
+    mail(from: from_email(@offer.entity), to: emails,
          cc: ENV['SUPPORT_EMAIL'],
          subject:)
   end

@@ -9,7 +9,7 @@ class InvestmentOpportunityMailer < ApplicationMailer
     open_for_offers_emails = sandbox_email(@investment_opportunity,
                                            @investment_opportunity.access_rights.collect(&:investor_emails).flatten)
 
-    mail(to: ENV['SUPPORT_EMAIL'],
+    mail(from: from_email(@investment_opportunity.entity), to: ENV['SUPPORT_EMAIL'],
          bcc: open_for_offers_emails.join(','),
          subject: "Investment Opportunity: #{@investment_opportunity.company_name} by #{@investment_opportunity.entity.name}, open for interests")
   end
@@ -21,7 +21,7 @@ class InvestmentOpportunityMailer < ApplicationMailer
     open_for_offers_emails = sandbox_email(@investment_opportunity,
                                            @investment_opportunity.access_rights.collect(&:investor_emails).flatten)
 
-    mail(to: ENV['SUPPORT_EMAIL'],
+    mail(from: from_email(@investment_opportunity.entity), to: ENV['SUPPORT_EMAIL'],
          bcc: open_for_offers_emails.join(','),
          subject: "Investment Opportunity: #{@investment_opportunity.company_name} by #{@investment_opportunity.entity.name}, has been allocated")
   end
