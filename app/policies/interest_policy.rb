@@ -13,9 +13,17 @@ class InterestPolicy < ApplicationPolicy
     true
   end
 
+  def owner?
+    user.entity_id == record.interest_entity_id ||
+      allow_external?(:read)
+  end
+
   def show?
-    user.has_cached_role?(:super) || (user.entity_id == record.interest_entity_id) ||
-      (user.entity_id == record.entity_id)
+    user.has_cached_role?(:super) ||
+      (user.entity_id == record.interest_entity_id) ||
+      (user.entity_id == record.entity_id) ||
+      sale_policy.owner? ||
+      owner?
   end
 
   def short_list?
@@ -41,7 +49,9 @@ class InterestPolicy < ApplicationPolicy
   end
 
   def matched_offers?
-    create?
+    create? ||
+      sale_policy.owner? ||
+      owner?
   end
 
   def edit?
@@ -57,10 +67,15 @@ class InterestPolicy < ApplicationPolicy
   end
 
   def allocation_form?
-    SecondarySalePolicy.new(user, record.secondary_sale).update?
+    sale_policy.update?
   end
 
   def allocate?
-    SecondarySalePolicy.new(user, record.secondary_sale).update?
+    sale_policy.update?
+  end
+
+  def sale_policy
+    sale_policy ||= SecondarySalePolicy.new(user, record.secondary_sale)
+    sale_policy
   end
 end

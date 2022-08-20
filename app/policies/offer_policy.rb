@@ -20,7 +20,10 @@ class OfferPolicy < ApplicationPolicy
   end
 
   def show?
-    create? || (record.interest && record.interest.interest_entity_id == user.entity_id)
+    create? ||
+      (record.interest && record.interest.interest_entity_id == user.entity_id) ||
+      sale_policy.owner? ||
+      interest_policy.owner?
   end
 
   def create?
@@ -48,11 +51,11 @@ class OfferPolicy < ApplicationPolicy
   end
 
   def allocation_form?
-    SecondarySalePolicy.new(user, record.secondary_sale).create?
+    sale_policy.owner?
   end
 
   def allocate?
-    SecondarySalePolicy.new(user, record.secondary_sale).create?
+    sale_policy.owner?
   end
 
   def edit?
@@ -61,5 +64,15 @@ class OfferPolicy < ApplicationPolicy
 
   def destroy?
     update?
+  end
+
+  def sale_policy
+    sale_policy ||= SecondarySalePolicy.new(user, record.secondary_sale)
+    sale_policy
+  end
+
+  def interest_policy
+    interest_policy ||= InterestPolicy.new(user, record.interest)
+    interest_policy
   end
 end

@@ -33,11 +33,11 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def offers?
-    owner?
+    owner? || seller?
   end
 
   def interests?
-    owner?
+    owner? || show_interest?
   end
 
   def finalize_offer_allocation?
@@ -121,7 +121,8 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def view_allocations?
-    create?
+    create? ||
+      owner?
   end
 
   def edit?
