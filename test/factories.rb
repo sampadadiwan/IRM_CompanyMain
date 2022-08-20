@@ -1,4 +1,13 @@
 FactoryBot.define do
+  factory :fund do
+    name { "MyString" }
+    committed_amount { "9.99" }
+    details { "MyText" }
+    collected_amount { "9.99" }
+    entity { nil }
+    tag_list { "MyString" }
+  end
+
   
   factory :expression_of_interest do
     investment_opportunity { InvestmentOpportunity.all.sample }

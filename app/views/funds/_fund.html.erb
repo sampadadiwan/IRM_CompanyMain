@@ -1,0 +1,17 @@
+<tr id="<%= dom_id fund %>">
+  <td>
+    <%= fund.name %>
+  </td>
+  <td>
+    <%= money_to_currency fund.committed_amount, params %>
+  </td>
+  <td>
+    <%= money_to_currency fund.collected_amount, params %>
+  </td>
+  <td>
+    <%= fund.tag_list %>
+  </td>
+  <td>
+    <%= link_to "Show" , fund , {class: "btn btn-primary" }%>
+  </td>
+</tr>

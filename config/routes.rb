@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :funds
   resources :investment_snapshots
   resources :expression_of_interests do
     patch 'approve', on: :member
