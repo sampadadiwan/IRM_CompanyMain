@@ -1,0 +1,2 @@
+module CapitalCallsHelper
+end

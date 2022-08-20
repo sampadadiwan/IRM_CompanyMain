@@ -1,4 +1,4 @@
-<%= form_with(model: fund) do |form| %>
+<%= form_with(model: fund, validate: true) do |form| %>
   <% if fund.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(fund.errors.count, "error") %> prohibited this fund from being saved:</h2>

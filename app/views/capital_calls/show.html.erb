@@ -1,0 +1,81 @@
+<%= render "/layouts/alerts" %>
+
+  <table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= @capital_call.entity.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Fund
+      </td>
+      <td>
+        <%= link_to @capital_call.fund.name, @capital_call.fund %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Name
+      </td>
+      <td>
+        <%= @capital_call.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Percentage Called
+      </td>
+      <td>
+        <%= @capital_call.percentage_called %> %
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Due Date
+      </td>
+      <td>
+        <%= l @capital_call.due_date %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Due Amount
+      </td>
+      <td>
+        <%= money_to_currency @capital_call.due_amount, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Collected Amount
+      </td>
+      <td>
+        <%= money_to_currency @capital_call.collected_amount, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Notes
+      </td>
+      <td>
+        <%= @capital_call.notes.html_safe %>
+      </td>
+    </tr>
+
+
+  </table>
+
+
+  <div>
+    <% if policy(@capital_call).update? %>
+      <%= link_to "Edit" , edit_capital_call_path(@capital_call), {class: "btn btn-primary" } %> |
+      <%= button_to "Delete" , @capital_call, method: :delete, class: "btn btn-danger", 
+          form_class: "deleteButton", data: {action: "click->confirm#delete" , turbo:false} %>
+    
+    <% end %>
+  </div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_08_20_102600) do
+ActiveRecord::Schema[7.0].define(version: 2022_08_20_114223) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -186,6 +186,21 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_20_102600) do
     t.index ["created_at"], name: "index_audits_on_created_at"
     t.index ["request_uuid"], name: "index_audits_on_request_uuid"
     t.index ["user_id", "user_type"], name: "user_index"
+  end
+
+  create_table "capital_calls", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.string "name"
+    t.decimal "percentage_called", precision: 5, scale: 2, default: "0.0"
+    t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "due_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.date "due_date"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_capital_calls_on_entity_id"
+    t.index ["fund_id"], name: "index_capital_calls_on_fund_id"
   end
 
   create_table "capital_commitments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1167,6 +1182,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_20_102600) do
   add_foreign_key "approval_responses", "entities", column: "response_entity_id"
   add_foreign_key "approval_responses", "users", column: "response_user_id"
   add_foreign_key "approvals", "entities"
+  add_foreign_key "capital_calls", "entities"
+  add_foreign_key "capital_calls", "funds"
   add_foreign_key "capital_commitments", "entities"
   add_foreign_key "capital_commitments", "funds"
   add_foreign_key "capital_commitments", "investors"

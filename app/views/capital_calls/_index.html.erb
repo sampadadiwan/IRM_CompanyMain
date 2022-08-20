@@ -1,0 +1,42 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Capital Calls</h1>
+    <%= link_to "New Capital Call" , new_capital_call_path("capital_call[fund_id]": fund.id), {class: "btn btn-primary" } if fund %>
+</div>
+
+<div class="table-responsive">
+
+    <table id="capital_calls" class="table table-bordered dataTable jqDataTable">
+        <thead>
+            <tr>
+                <th>
+                    Fund
+                </th>
+                <th>
+                    Name
+                </th>
+                <th>
+                    Percentage Called
+                </th>
+                <th>
+                    Due Date
+                </th>
+                <th>
+                    Due Amount
+                </th>
+                <th>
+                    Collected Amount
+                </th>
+                
+                <th>
+                </th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <% capital_calls.each do |capital_call| %>
+                <%= render capital_call %>
+            <% end %>
+        </tbody>
+    </table>
+
+</div>

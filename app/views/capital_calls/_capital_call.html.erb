@@ -1,0 +1,23 @@
+<tr id="<%= dom_id capital_call %>">
+  <td>
+    <%= capital_call.fund.name %>
+  </td>
+  <td>
+    <%= capital_call.name %>
+  </td>
+  <td>
+    <%= capital_call.percentage_called %> %
+  </td>
+  <td>
+    <%= l capital_call.due_date %>
+  </td>
+  <td>
+    <%= money_to_currency capital_call.due_amount, params %> 
+  </td>
+  <td>
+    <%= money_to_currency capital_call.collected_amount, params %> 
+  </td>
+  <td>
+    <%= link_to "Show" , capital_call , {class: "btn btn-primary" }%>
+  </td>
+</tr>

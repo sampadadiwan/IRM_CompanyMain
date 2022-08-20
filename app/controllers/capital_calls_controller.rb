@@ -1,0 +1,74 @@
+class CapitalCallsController < ApplicationController
+  before_action :set_capital_call, only: %i[show edit update destroy]
+
+  # GET /capital_calls or /capital_calls.json
+  def index
+    @capital_calls = policy_scope(CapitalCall)
+  end
+
+  # GET /capital_calls/1 or /capital_calls/1.json
+  def show; end
+
+  # GET /capital_calls/new
+  def new
+    @capital_call = CapitalCall.new(capital_call_params)
+    @capital_call.entity_id = @capital_call.fund.entity_id
+    @capital_call.due_date = Time.zone.today + 2.weeks
+    authorize @capital_call
+  end
+
+  # GET /capital_calls/1/edit
+  def edit; end
+
+  # POST /capital_calls or /capital_calls.json
+  def create
+    @capital_call = CapitalCall.new(capital_call_params)
+    authorize @capital_call
+
+    respond_to do |format|
+      if @capital_call.save
+        format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was successfully created." }
+        format.json { render :show, status: :created, location: @capital_call }
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: @capital_call.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # PATCH/PUT /capital_calls/1 or /capital_calls/1.json
+  def update
+    respond_to do |format|
+      if @capital_call.update(capital_call_params)
+        format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was successfully updated." }
+        format.json { render :show, status: :ok, location: @capital_call }
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @capital_call.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # DELETE /capital_calls/1 or /capital_calls/1.json
+  def destroy
+    @capital_call.destroy
+
+    respond_to do |format|
+      format.html { redirect_to capital_calls_url, notice: "Capital call was successfully destroyed." }
+      format.json { head :no_content }
+    end
+  end
+
+  private
+
+  # Use callbacks to share common setup or constraints between actions.
+  def set_capital_call
+    @capital_call = CapitalCall.find(params[:id])
+    authorize @capital_call
+  end
+
+  # Only allow a list of trusted parameters through.
+  def capital_call_params
+    params.require(:capital_call).permit(:entity_id, :fund_id, :name, :percentage_called, :due_date, :notes)
+  end
+end

@@ -7,6 +7,9 @@
 
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#commitments-tab"
           data-action="click->tabdetails#loadData">Commitments</a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-calls-tab"
+          data-action="click->tabdetails#loadData">Capital Calls</a>
     </nav>
   
     <div class="tab-content" data-controller="datatable">
@@ -21,6 +24,12 @@
         <div id="commitments-tab" class="tab-pane fade in">
           <div id="commitments" class="associated_entity">
             <%= render "/capital_commitments/index", capital_commitments: fund.capital_commitments, fund: fund %>
+          </div>     
+        </div>
+
+        <div id="capital-calls-tab" class="tab-pane fade in">
+          <div id="capital-calls" class="associated_entity">
+            <%= render "/capital_calls/index", capital_calls: fund.capital_calls, fund: fund %>
           </div>     
         </div>
   

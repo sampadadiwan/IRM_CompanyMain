@@ -1,4 +1,13 @@
 FactoryBot.define do
+  factory :capital_call do
+    entity { nil }
+    fund { nil }
+    name { "MyString" }
+    percentage_called { "9.99" }
+    due_date { "2022-08-20" }
+    notes { "MyText" }
+  end
+
   factory :capital_commitment do
     entity { nil }
     investor { nil }
