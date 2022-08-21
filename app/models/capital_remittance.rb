@@ -5,6 +5,9 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :capital_commitment
   belongs_to :investor
 
+  has_many_attached :payment_proof, service: :amazon
+
+
   scope :paid, -> { where(status: "Paid") }
   scope :pending, -> { where(status: "Pending") }
 

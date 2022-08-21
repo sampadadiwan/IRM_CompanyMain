@@ -59,6 +59,16 @@
         <%= money_to_currency @capital_remittance.collected_amount, params %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+          Payment Proof
+      </td>
+      <td>
+          <%= render "/layouts/attachments" , attachments: @capital_remittance.payment_proof if @capital_remittance.payment_proof.present? %>
+      </td>
+  </tr>
+
     <tr>
       <td>
         Notes

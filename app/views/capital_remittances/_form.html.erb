@@ -35,6 +35,12 @@
     <%= form.text_field :collected_amount, class: "form-control"  %>
   </div>
 
+  <div class="field" class="form-group" data-controller="directuploads" >
+    <%= form.label :payment_proof %>
+    <%= form.file_field :payment_proof, class: "form-control", direct_upload: true, multiple:true %>
+    <small class="text-muted"> Upload proof of payment as per the instructions. </small>
+  </div>
+
   <div class="form-group">
     <%= form.label :notes %>
     <%= form.text_area :notes, class: "form-control"  %>
