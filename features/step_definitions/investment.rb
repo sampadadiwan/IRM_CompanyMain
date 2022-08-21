@@ -427,7 +427,6 @@ Then('I should be able to see the investments for each entity') do
   Entity.for_investor(@user).each do |entity|
     entity.investments.joins(:investor).where("investors.investor_entity_id": @user.entity_id).each do |inv|  
       visit(investor_entities_entities_path)
-      sleep(1)
       find("#investments_entity_#{entity.id}").click
       @investment = inv
       find("#show_investment_#{inv.id}").click  
@@ -445,14 +444,13 @@ Then('I should be able to see only my investments for each entity') do
     entity.investments.each do |inv|
       visit(investor_entities_entities_path)
       find("#investments_entity_#{entity.id}").click
-      click_on("Details View")
 
       @investment = inv
       if @investment.investor_entity_id == @entity.id
-      steps %(
-        Then I should see the investment details   
-        Then I should see the investment details on the details page    
-      )
+        find("#show_investment_#{inv.id}").click  
+        steps %(
+          Then I should see the investment details on the details page    
+        )
       else
         expect(page).to have_no_content(@investment.investor.investor_name)
       end
