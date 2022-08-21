@@ -12,10 +12,18 @@
     <%= l capital_call.due_date %>
   </td>
   <td>
-    <%= money_to_currency capital_call.due_amount, params %> 
+    <%= money_to_currency capital_call.call_amount, params %> 
   </td>
   <td>
     <%= money_to_currency capital_call.collected_amount, params %> 
+    <div class="progress">
+      <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_call.percentage_raised %>%" aria-valuenow="<%=capital_call.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
+        <%= capital_call.percentage_raised %> %
+      </div>
+    </div>
+  </td>
+  <td>
+    <%= money_to_currency capital_call.due_amount, params %>     
   </td>
   <td>
     <%= link_to "Show" , capital_call , {class: "btn btn-primary" }%>

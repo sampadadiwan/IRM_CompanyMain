@@ -9,10 +9,11 @@
     <%= link_to capital_remittance.investor.investor_name, capital_remittance.investor %>
   </td>
   <td>
-    <%= capital_remittance.status %>
+    <%= render DisplayBooleanComponent.new(bool: capital_remittance.status == "Paid").
+        with_content(capital_remittance.status) if capital_remittance.status %>
   </td>
   <td>
-    <%= money_to_currency (capital_remittance.due_amount - capital_remittance.collected_amount), params %>
+    <%= money_to_currency (capital_remittance.due_amount), params %>
     <div class="hideMobP">
       <small class="text-muted hideMobP">
       <%= money_to_currency capital_remittance.capital_commitment.committed_amount, params %> x 

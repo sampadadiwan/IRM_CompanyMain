@@ -5,30 +5,43 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :capital_commitment
   belongs_to :investor
 
-  monetize :due_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
+  monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 
   before_validation :set_capital_commitment
   def set_capital_commitment
     self.capital_commitment = fund.capital_commitments.where(investor_id:).first
   end
 
-  counter_culture :capital_call, column_name: proc { |o| o.status == 'Paid' ? 'collected_amount_cents' : nil },
+  counter_culture :capital_call, column_name: 'collected_amount_cents',
                                  delta_column: 'collected_amount_cents'
 
-  counter_culture :capital_call, column_name: proc { |o| o.status == 'Pending' ? 'due_amount_cents' : nil },
-                                 delta_column: 'due_amount_cents'
+  counter_culture :capital_call, column_name: 'call_amount_cents',
+                                 delta_column: 'call_amount_cents'
 
-  counter_culture :capital_commitment, column_name: proc { |o| o.status == 'Paid' ? 'collected_amount_cents' : nil },
+  counter_culture :capital_commitment, column_name: 'collected_amount_cents',
                                        delta_column: 'collected_amount_cents'
 
-  counter_culture :fund, column_name: proc { |o| o.status == 'Paid' ? 'collected_amount_cents' : nil },
+  counter_culture :fund, column_name: 'collected_amount_cents',
                          delta_column: 'collected_amount_cents'
 
-  counter_culture :fund, column_name: proc { |o| o.status == 'Pending' ? 'due_amount_cents' : nil },
-                         delta_column: 'due_amount_cents'
+  counter_culture :fund, column_name: 'call_amount_cents',
+                         delta_column: 'call_amount_cents'
 
-  before_create :set_due_amount
-  def set_due_amount
-    self.due_amount = capital_commitment ? capital_call.percentage_called * capital_commitment.committed_amount / 100 : Money(0, entity.currency)
+  before_save :set_status
+  before_create :set_call_amount
+  def set_call_amount
+    self.call_amount = capital_commitment ? capital_call.percentage_called * capital_commitment.committed_amount / 100 : Money(0, entity.currency)
+  end
+
+  def set_status
+    self.status = if call_amount_cents == collected_amount_cents
+                    "Paid"
+                  else
+                    "Pending"
+                  end
+  end
+
+  def due_amount
+    call_amount - collected_amount
   end
 end

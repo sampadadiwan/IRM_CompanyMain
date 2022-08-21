@@ -23,7 +23,7 @@
         Capital Call
       </td>
       <td>
-        <%= link_to @capital_remittance.capital_call.name, @capital_remittance.capital_call %>
+        <%= link_to @capital_remittance.capital_call.name, capital_call_path(@capital_remittance.capital_call, tab: "remittances-tab") %>
       </td>
     </tr>
     <tr>
@@ -39,15 +39,16 @@
         Status
       </td>
       <td>
-        <%= @capital_remittance.status %>
+        <%= render DisplayBooleanComponent.new(bool: @capital_remittance.status == "Paid").
+        with_content(@capital_remittance.status) if @capital_remittance.status %>
       </td>
     </tr>
     <tr>
       <td>
-        Due Amount
+        Call Amount
       </td>
       <td>
-        <%= money_to_currency @capital_remittance.due_amount, params %>
+        <%= money_to_currency @capital_remittance.call_amount, params %>
       </td>
     </tr>
     <tr>

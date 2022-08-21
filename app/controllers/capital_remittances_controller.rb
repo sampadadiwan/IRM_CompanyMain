@@ -17,7 +17,7 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittance.entity_id = @capital_remittance.capital_call.entity_id
     @capital_remittance.fund_id = @capital_remittance.capital_call.fund_id
 
-    @capital_remittance.due_amount = @capital_remittance.due
+    @capital_remittance.call_amount = @capital_remittance.due
     authorize @capital_remittance
   end
 
@@ -72,6 +72,6 @@ class CapitalRemittancesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_remittance_params
-    params.require(:capital_remittance).permit(:entity_id, :fund_id, :capital_call_id, :investor_id, :status, :due_amount, :collected_amount, :notes)
+    params.require(:capital_remittance).permit(:entity_id, :fund_id, :capital_call_id, :investor_id, :status, :call_amount, :collected_amount, :notes)
   end
 end
