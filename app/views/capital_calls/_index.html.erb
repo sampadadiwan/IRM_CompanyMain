@@ -1,6 +1,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Calls</h1>
-    <%= link_to "New Capital Call" , new_capital_call_path("capital_call[fund_id]": params[:fund_id]), {class: "btn btn-primary" } if params[:fund_id] %>
+    <%= link_to "New Capital Call" , new_capital_call_path("capital_call[fund_id]": params[:fund_id]), {class: "btn btn-primary"} if params[:fund_id] %>
+
 </div>
 
 <div class="table-responsive" data-controller="datatable">

@@ -1,5 +1,5 @@
 class CapitalCallsController < ApplicationController
-  before_action :set_capital_call, only: %i[show edit update destroy]
+  before_action :set_capital_call, only: %i[show edit update destroy reminder]
 
   # GET /capital_calls or /capital_calls.json
   def index
@@ -58,6 +58,11 @@ class CapitalCallsController < ApplicationController
       format.html { redirect_to capital_calls_url, notice: "Capital call was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
+
+  def reminder
+    @capital_call.reminder_capital_call
+    redirect_to capital_call_url(@capital_call), notice: "Reminder sent for capital call."
   end
 
   private

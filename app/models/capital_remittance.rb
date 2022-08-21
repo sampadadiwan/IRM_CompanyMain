@@ -5,6 +5,9 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :capital_commitment
   belongs_to :investor
 
+  scope :paid, -> { where(status: "Paid") }
+  scope :pending, -> { where(status: "Pending") }
+
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 
   before_validation :set_capital_commitment

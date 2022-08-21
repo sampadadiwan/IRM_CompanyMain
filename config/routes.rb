@@ -1,6 +1,10 @@
 Rails.application.routes.draw do
   resources :capital_remittances
-  resources :capital_calls
+  resources :capital_calls do
+    get 'search', on: :collection
+    post 'reminder', on: :member
+  end
+
   resources :capital_commitments
   resources :funds
   resources :investment_snapshots

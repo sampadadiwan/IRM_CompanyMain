@@ -26,4 +26,13 @@ class CapitalCall < ApplicationRecord
   def percentage_raised
     (collected_amount_cents * 100.0 / call_amount_cents).round(2)
   end
+
+  after_create :notify_capital_call
+  def notify_capital_call
+    FundMailer.with(id:).notify_capital_call.deliver_later
+  end
+
+  def reminder_capital_call
+    FundMailer.with(id:).reminder_capital_call.deliver_later
+  end
 end

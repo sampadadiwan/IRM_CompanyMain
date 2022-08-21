@@ -36,4 +36,8 @@ class CapitalCallPolicy < ApplicationPolicy
   def destroy?
     update?
   end
+
+  def reminder?
+    update?
+  end
 end

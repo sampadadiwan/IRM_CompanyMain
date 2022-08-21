@@ -1,6 +1,14 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
-    <%= link_to "New Capital Remittance" , new_capital_remittance_path("capital_remittance[capital_call_id]": params[:capital_call_id]), {class: "btn btn-primary" } if params[:capital_call_id] %>
+    <span>
+    <% if params[:capital_call_id] %>
+        <% capital_call = CapitalCall.find(params[:capital_call_id]) %>
+        <%#= link_to "New Capital Remittance" , new_capital_remittance_path("capital_remittance[capital_call_id]": params[:capital_call_id]), {class: "btn btn-primary" } if policy(capital_call).update? %>
+
+        <%= button_to "Capital Call Reminder", reminder_capital_call_path(id: params[:capital_call_id]), class: "btn btn-primary", data: {action: "click->confirm#popup", turbo:false, msg: "Send reminder for pending payments?", method: "post"} if policy(capital_call).reminder? %>
+
+    <% end %>
+    </span>
 </div>
 
 <div class="table-responsive" data-controller="datatable">

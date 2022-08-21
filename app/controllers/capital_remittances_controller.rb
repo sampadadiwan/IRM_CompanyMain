@@ -17,7 +17,7 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittance.entity_id = @capital_remittance.capital_call.entity_id
     @capital_remittance.fund_id = @capital_remittance.capital_call.fund_id
 
-    @capital_remittance.call_amount = @capital_remittance.due
+    @capital_remittance.call_amount = @capital_remittance.due_amount
     authorize @capital_remittance
   end
 

@@ -87,4 +87,8 @@ class Investor < ApplicationRecord
   def to_s
     "#{investor_name} : #{category}"
   end
+
+  def emails
+    investor_accesses.approved.collect(&:email)
+  end
 end
