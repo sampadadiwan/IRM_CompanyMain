@@ -42,6 +42,6 @@
         <%= money_to_currency(investment.amount, params) %>
     </td>
     <td>
-        <%= link_to "Show" , investment , {class: "btn btn-primary" }%>
+        <%= link_to "Show" , investment , {class: "btn btn-primary", id: "show_investment_#{investment.id}"}%>
     </td>
 </tr>

@@ -1,7 +1,7 @@
 <% 
     entity_id = params[:entity_id].presence 
     entity = Entity.find(entity_id)
-    investments = policy_scope(Investment).where(entity_id: entity_id)
+    investments = policy_scope(Investment).where(entity_id: entity_id).distinct
 %>
 
 <%= render "/entities/investor_dashboard_stats", entity: entity, investments: investments %>
