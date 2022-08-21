@@ -7,7 +7,6 @@ class CapitalRemittance < ApplicationRecord
 
   has_many_attached :payment_proof, service: :amazon
 
-
   scope :paid, -> { where(status: "Paid") }
   scope :pending, -> { where(status: "Pending") }
 

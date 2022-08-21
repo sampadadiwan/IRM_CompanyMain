@@ -9,29 +9,33 @@
         <!-- We have to show the employee investors screen from which we can add holdings -->
         <% investor=current_user&.entity.investors.where(is_holdings_entity: true).first %>
         <span>
-            <%= link_to "New Holding" , investor_path(investor, tab: "investors-tab" ), {class: "btn btn-primary" } if investor %>
-
+            <% if current_user.curr_role == "startup" %>
             
-            <%= link_to "Upload Holdings", 
-            new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
-                "import_upload[owner_type]": "Entity", 
-                "import_upload[import_type]": "Holding", 
-                "import_upload[entity_id]": current_user.entity_id,
-                "sample_upload": "HOLDINGS_SAMPLE"), 
-                { class: "btn btn-primary"} if investor && import_upload %> 
+                <%= link_to "New Holding" , investor_path(investor, tab: "investors-tab" ), {class: "btn btn-primary" } if investor %>
+
+                
+                <%= link_to "Upload Holdings", 
+                new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
+                    "import_upload[owner_type]": "Entity", 
+                    "import_upload[import_type]": "Holding", 
+                    "import_upload[entity_id]": current_user.entity_id,
+                    "sample_upload": "HOLDINGS_SAMPLE"), 
+                    { class: "btn btn-primary"} if investor && import_upload %> 
 
 
-            <% if @option_pool && policy(@option_pool).approve_all_holdings? %>
-                <%= button_to "Approve All Holdings" , 
-                    approve_all_holdings_holdings_path(option_pool_id: @option_pool.id), 
-                    method: :post, class: "btn btn-success" , form_class: "deleteButton", 
-                    data: {turbo:false}  %>
+                <% if @option_pool && policy(@option_pool).approve_all_holdings? %>
+                    <%= button_to "Approve All Holdings" , 
+                        approve_all_holdings_holdings_path(option_pool_id: @option_pool.id), 
+                        method: :post, class: "btn btn-success" , form_class: "deleteButton", 
+                        data: {turbo:false}  %>
 
-            <% elsif policy(current_user.entity).approve_all_holdings? %>
-                <%= button_to "Approve All Holdings" , 
-                    approve_all_holdings_holdings_path(), 
-                    method: :post, class: "btn btn-success" , form_class: "deleteButton", 
-                    data: {turbo:false}  %>
+                <% elsif policy(current_user.entity).approve_all_holdings? %>
+                    <%= button_to "Approve All Holdings" , 
+                        approve_all_holdings_holdings_path(), 
+                        method: :post, class: "btn btn-success" , form_class: "deleteButton", 
+                        data: {turbo:false}  %>
+
+                <% end %>
 
             <% end %>
 
