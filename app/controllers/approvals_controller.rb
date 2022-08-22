@@ -1,5 +1,5 @@
 class ApprovalsController < ApplicationController
-  before_action :set_approval, only: %i[show edit update destroy]
+  before_action :set_approval, only: %i[show edit update destroy approve]
   after_action :verify_policy_scoped, only: %i[]
 
   # GET /approvals or /approvals.json
@@ -59,6 +59,15 @@ class ApprovalsController < ApplicationController
 
     respond_to do |format|
       format.html { redirect_to approvals_url, notice: "Approval was successfully destroyed." }
+      format.json { head :no_content }
+    end
+  end
+
+  def approve
+    @approval.approved = true
+    @approval.save
+    respond_to do |format|
+      format.html { redirect_to approval_url(@approval), notice: "Successfully approved." }
       format.json { head :no_content }
     end
   end

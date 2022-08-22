@@ -37,4 +37,8 @@ class ApprovalPolicy < ApplicationPolicy
   def destroy?
     update?
   end
+
+  def approve?
+    update?
+  end
 end

@@ -53,8 +53,16 @@ class Approval < ApplicationRecord
     investor_list.uniq
   end
 
-  after_create :send_notification
+  after_save :send_notification
   def send_notification
-    ApprovalMailer.with(id:).notify_new_approval.deliver_later
+    if saved_change_to_approved? && approved
+      generate_responses
+      ApprovalMailer.with(id:).notify_new_approval.deliver_later
+    end
+  end
+
+  def access_rights_changed(access_right_id)
+    generate_responses
+    ApprovalMailer.with(id:, access_right_id:).notify_new_approval.deliver_later
   end
 end

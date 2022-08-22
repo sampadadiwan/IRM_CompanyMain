@@ -1,20 +1,21 @@
 <%= render "/layouts/alerts" %>
-<%= render "/approvals/show", approval: @approval %>
-
+<% cache(@approval) do %>
+  <%= render "/approvals/show", approval: @approval %>
+<% end %>
 
 
 <div>
   <% if policy(@approval).update? %>
     <%= link_to "Edit", edit_approval_path(@approval), {class: "btn btn-primary"} %> |
     <%= button_to "Delete", @approval, method: :delete, class: "btn btn-danger", form_class: "deleteButton", 
-          data: {action: "click->confirm#popup", turbo:false}  %>
-  <% elsif(@approval.approval_responses.where(response_entity_id: current_user.entity_id).count == 0) %>
-    <%= link_to "Approve", new_approval_response_path("approval_response[approval_id]": @approval.id, "approval_response[status]": "Approved"),
-           {class: "btn btn-success"} %>
-    <%= link_to "Reject", new_approval_response_path("approval_response[approval_id]": @approval.id, "approval_response[status]": "Rejected"),
-           {class: "btn btn-danger"} %>
+          data: {action: "click->confirm#popup", turbo:false}  %> |
+    
   <% end %>
+  <%= button_to "Approve", approve_approval_path(@approval), method: :patch, class: "btn btn-success", 
+        form_class: "deleteButton", 
+        data: {action: "click->confirm#popup", msg: "Approve and send notificatons to investors?", turbo:true, method: :patch} if policy(@approval).approve? && !@approval.approved && @approval.access_rights.count > 0  %>
 </div>
 
-
-<%= render "/approvals/approval_details", approval: @approval %>
+<% cache([@approval, "Details"]) do %>
+  <%= render "/approvals/approval_details", approval: @approval %>
+<% end %>

@@ -4,9 +4,9 @@
     <%= link_to "New Approval Response", new_approval_response_path("approval_response[approval_id]": approval.id), {class: "btn btn-primary"} if approval  %>
   </div>
   
-  <div class="table-responsive" data-controller="datatable">
+  <div class="table-responsive">
   
-    <table id="approval_responses" class="table table-bordered dataTable">
+    <table id="approval_responses" class="table table-bordered dataTable jqDataTable">
   
       <thead>
         <tr>
