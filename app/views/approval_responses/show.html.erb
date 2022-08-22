@@ -1,51 +1,7 @@
 <%= render "/layouts/alerts" %>
 
-  <table class="table table-bordered dataTable">
-
-    <tr>
-      <td>
-        Approval
-      </td>
-      <td>
-        <%= link_to @approval_response.approval.title, @approval_response.approval %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Response Entity
-      </td>
-      <td>
-        <%= @approval_response.response_entity.name %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Approved By
-      </td>
-      <td>
-        <%= @approval_response.response_user&.full_name %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Status
-      </td>
-      <td>
-        <%= @approval_response.status %>
-      </td>
-    </tr>
-    </tr>
-    <tr>
-      <td>
-        Details
-      </td>
-      <td>
-        <%= @approval_response.details %>
-      </td>
-    </tr>
-
-  </table>
-
+<%= render "/approval_responses/show", approval_response: @approval_response %>
+  
 
   <div>
     <% if policy(@approval_response).update? %>
