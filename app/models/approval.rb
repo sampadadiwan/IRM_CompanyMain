@@ -28,4 +28,33 @@ class Approval < ApplicationRecord
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
   end
+
+  def generate_responses
+    investors.each do |inv|
+      existing = approval_responses.select { |resp| resp.response_entity_id == inv.investor_entity_id }
+
+      if existing.present?
+        logger.debug "Skipping ApprovalResponse creation, already exists #{existing}"
+      else
+        ApprovalResponse.create(entity_id:,
+                                investor_id: inv.id, response_entity_id: inv.investor_entity_id,
+                                response_user_id: nil, approval_id: id, status: "Pending")
+        logger.debug "Creating pending ApprovalResponse for #{inv.investor_name}"
+      end
+    end
+    nil
+  end
+
+  def investors
+    investor_list = []
+    access_rights.includes(:investor).find_each do |ar|
+      investor_list += ar.investors
+    end
+    investor_list.uniq
+  end
+
+  after_create :send_notification
+  def send_notification
+    ApprovalMailer.with(id:).notify_new_approval.deliver_later
+  end
 end

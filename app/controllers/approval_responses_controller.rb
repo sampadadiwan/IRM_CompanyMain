@@ -1,5 +1,5 @@
 class ApprovalResponsesController < ApplicationController
-  before_action :set_approval_response, only: %i[show edit update destroy]
+  before_action :set_approval_response, only: %i[show edit update destroy approve]
 
   # GET /approval_responses or /approval_responses.json
   def index
@@ -24,9 +24,10 @@ class ApprovalResponsesController < ApplicationController
   # POST /approval_responses or /approval_responses.json
   def create
     @approval_response = ApprovalResponse.new(approval_response_params)
-    @approval_response.response_entity_id = current_user.entity_id
-    @approval_response.response_user_id = current_user.id
+    @approval_response.response_entity_id = @approval_response.investor.investor_entity_id
     @approval_response.entity_id = @approval_response.approval.entity_id
+    @approval_response.status = "Pending"
+
     authorize @approval_response
 
     respond_to do |format|
@@ -51,6 +52,13 @@ class ApprovalResponsesController < ApplicationController
         format.json { render json: @approval_response.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  def approve
+    @approval_response.status = params[:status]
+    @approval_response.response_user_id = current_user.id
+    @approval_response.save!
+    redirect_to approval_responses_url, notice: "Successfully #{params[:status]}."
   end
 
   # DELETE /approval_responses/1 or /approval_responses/1.json

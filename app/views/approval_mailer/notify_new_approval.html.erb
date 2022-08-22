@@ -1,0 +1,11 @@
+<h3>Dear Investor</h3>
+
+<p>
+    <%= @approval.entity.name %> has requested approval for <%= @approval.name %>. 
+</p>
+
+<p>
+    <%= render "/approvals/show", approval: @approval, current_user: nil %>
+</p>
+
+<p class="btn btn-primary"><%= link_to 'View Approval', approval_url(@approval) %></p>

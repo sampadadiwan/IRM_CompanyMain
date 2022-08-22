@@ -20,7 +20,7 @@ class ApprovalResponsePolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.response_entity_id)
+    (user.entity_id == record.entity_id)
   end
 
   def new?
@@ -28,7 +28,7 @@ class ApprovalResponsePolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    (user.entity_id == record.response_entity_id)
   end
 
   def edit?
@@ -36,6 +36,10 @@ class ApprovalResponsePolicy < ApplicationPolicy
   end
 
   def destroy?
-    update?
+    false
+  end
+
+  def approve?
+    (user.entity_id == record.response_entity_id)
   end
 end

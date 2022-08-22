@@ -1,10 +1,10 @@
 
 <tr id="<%= dom_id approval_response %>">
   <td>
-    <%= approval_response.response_entity.name %>
+    <%= link_to approval_response.investor.investor_name, approval_response.investor %>
   </td>
   <td>
-    <%= approval_response.response_user.full_name %>
+    <%= approval_response.response_user&.full_name %>
   </td>
   <td>
     <%= render DisplayBooleanComponent.new(bool: approval_response.status == "Approved").
@@ -12,6 +12,7 @@
   </td>
   <td>
     <%= link_to "Show" , approval_response , {class: "btn btn-primary" }%>
-    <%= link_to "Edit" , edit_approval_response_path(approval_response) , {class: "btn btn-success" } if policy(approval_response).update? %>
+    <%= button_to "Approve" , approve_approval_response_path(approval_response, status: "Approved") , {class: "btn btn-success", method: :patch } if policy(approval_response).approve? %>
+    <%= button_to "Reject" , approve_approval_response_path(approval_response, status: "Rejected") , {class: "btn btn-danger", method: :patch } if policy(approval_response).approve? %>
   </td>
 </tr>

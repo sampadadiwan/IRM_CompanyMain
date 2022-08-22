@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_08_21_020708) do
+ActiveRecord::Schema[7.0].define(version: 2022_08_22_024749) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -145,13 +145,15 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_21_020708) do
   create_table "approval_responses", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "response_entity_id", null: false
-    t.bigint "response_user_id", null: false
+    t.bigint "response_user_id"
     t.bigint "approval_id", null: false
     t.string "status", limit: 10
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "investor_id", null: false
     t.index ["approval_id"], name: "index_approval_responses_on_approval_id"
     t.index ["entity_id"], name: "index_approval_responses_on_entity_id"
+    t.index ["investor_id"], name: "index_approval_responses_on_investor_id"
     t.index ["response_entity_id"], name: "index_approval_responses_on_response_entity_id"
     t.index ["response_user_id"], name: "index_approval_responses_on_response_user_id"
   end
@@ -163,6 +165,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_21_020708) do
     t.integer "rejected_count", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "pending_count", default: 0
     t.index ["entity_id"], name: "index_approvals_on_entity_id"
   end
 
@@ -1200,6 +1203,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_21_020708) do
   add_foreign_key "approval_responses", "approvals"
   add_foreign_key "approval_responses", "entities"
   add_foreign_key "approval_responses", "entities", column: "response_entity_id"
+  add_foreign_key "approval_responses", "investors"
   add_foreign_key "approval_responses", "users", column: "response_user_id"
   add_foreign_key "approvals", "entities"
   add_foreign_key "capital_calls", "entities"

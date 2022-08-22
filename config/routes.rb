@@ -23,8 +23,11 @@ Rails.application.routes.draw do
     get 'finalize_allocation', on: :member
   end
 
-  resources :approval_responses
+  resources :approval_responses do
+    patch 'approve', on: :member
+  end
   resources :approvals
+
   get "/health_check/redis_check", to: "health_check#redis_check"
   get "/health_check/db_check", to: "health_check#db_check"
   get "/health_check/elastic_check", to: "health_check#elastic_check"
