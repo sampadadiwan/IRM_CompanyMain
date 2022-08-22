@@ -7,6 +7,9 @@ class Approval < ApplicationRecord
   has_many :documents, as: :owner, dependent: :destroy
   has_many :approval_responses, dependent: :destroy
 
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   def name
     title
   end

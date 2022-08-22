@@ -41,6 +41,8 @@
     <small class="text-muted"> Upload proof of payment as per the instructions. </small>
   </div>
 
+  <%= custom_form_fields(capital_remittance, form) %>
+
   <div class="form-group">
     <%= form.label :notes %>
     <%= form.text_area :notes, class: "form-control"  %>

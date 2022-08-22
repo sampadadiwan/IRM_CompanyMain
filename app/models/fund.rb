@@ -8,6 +8,9 @@ class Fund < ApplicationRecord
   has_many :capital_calls, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
 
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   monetize :call_amount_cents, :committed_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 
   validates :name, presence: true

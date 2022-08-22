@@ -19,10 +19,13 @@ class ApprovalsController < ApplicationController
     @approval = Approval.new
     @approval.entity_id = current_user.entity_id
     authorize @approval
+    setup_custom_fields(@approval)
   end
 
   # GET /approvals/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@approval)
+  end
 
   # POST /approvals or /approvals.json
   def create
@@ -82,6 +85,7 @@ class ApprovalsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def approval_params
-    params.require(:approval).permit(:title, :agreements_reference, :entity_id, :approved_count, :rejected_count)
+    params.require(:approval).permit(:title, :agreements_reference, :entity_id, :approved_count,
+                                     :rejected_count, properties: {})
   end
 end

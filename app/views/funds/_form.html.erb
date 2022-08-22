@@ -29,6 +29,8 @@
     <%= form.text_field :tag_list, class: "form-control"  %>
   </div>
 
+  <%= custom_form_fields(fund, form) %>
+
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-primary"}%>
   </div>

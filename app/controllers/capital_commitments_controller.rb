@@ -15,10 +15,13 @@ class CapitalCommitmentsController < ApplicationController
     @capital_commitment = CapitalCommitment.new(capital_commitment_params)
     @capital_commitment.entity_id = @capital_commitment.fund.entity_id
     authorize @capital_commitment
+    setup_custom_fields(@capital_commitment)
   end
 
   # GET /capital_commitments/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@capital_commitment)
+  end
 
   # POST /capital_commitments or /capital_commitments.json
   def create
@@ -69,6 +72,6 @@ class CapitalCommitmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_commitment_params
-    params.require(:capital_commitment).permit(:entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :notes)
+    params.require(:capital_commitment).permit(:entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :notes, properties: {})
   end
 end

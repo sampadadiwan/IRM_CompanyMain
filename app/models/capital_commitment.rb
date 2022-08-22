@@ -4,6 +4,9 @@ class CapitalCommitment < ApplicationRecord
   belongs_to :fund
   has_many :capital_remittances, dependent: :destroy
 
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   monetize :committed_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 
   validates :committed_amount_cents, numericality: { greater_than: 0 }

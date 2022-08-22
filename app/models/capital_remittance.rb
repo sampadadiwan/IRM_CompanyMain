@@ -5,6 +5,9 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :capital_commitment
   belongs_to :investor
 
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   has_many_attached :payment_proof, service: :amazon
 
   scope :paid, -> { where(status: "Paid") }

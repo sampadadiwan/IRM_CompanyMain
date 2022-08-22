@@ -4,6 +4,9 @@ class CapitalCall < ApplicationRecord
   belongs_to :entity
   belongs_to :fund
 
+  belongs_to :form_type, optional: true
+  serialize :properties, Hash
+
   has_many :capital_remittances, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
 

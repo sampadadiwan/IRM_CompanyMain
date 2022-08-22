@@ -13,11 +13,14 @@ class FundsController < ApplicationController
   def new
     @fund = Fund.new
     @fund.entity_id = current_user.entity_id
+    setup_custom_fields(@fund)
     authorize(@fund)
   end
 
   # GET /funds/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@fund)
+  end
 
   # POST /funds or /funds.json
   def create
@@ -69,6 +72,6 @@ class FundsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def fund_params
-    params.require(:fund).permit(:name, :committed_amount, :details, :collected_amount, :entity_id, :tag_list)
+    params.require(:fund).permit(:name, :committed_amount, :details, :collected_amount, :entity_id, :tag_list, properties: {})
   end
 end

@@ -29,6 +29,8 @@
     <%= form.date_field :due_date, class: "form-control"  %>
   </div>
 
+  <%= custom_form_fields(capital_call, form) %>
+
   <div class="form-group">
     <%= form.label :notes %>
     <%= form.rich_text_area :notes, class: "form-control"  %>

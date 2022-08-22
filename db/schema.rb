@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_08_22_041121) do
+ActiveRecord::Schema[7.0].define(version: 2022_08_22_092523) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -167,7 +167,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_22_041121) do
     t.datetime "updated_at", null: false
     t.integer "pending_count", default: 0
     t.boolean "approved", default: false
+    t.text "properties"
+    t.bigint "form_type_id"
     t.index ["entity_id"], name: "index_approvals_on_entity_id"
+    t.index ["form_type_id"], name: "index_approvals_on_form_type_id"
   end
 
   create_table "audits", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -203,7 +206,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_22_041121) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "properties"
+    t.bigint "form_type_id"
     t.index ["entity_id"], name: "index_capital_calls_on_entity_id"
+    t.index ["form_type_id"], name: "index_capital_calls_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_calls_on_fund_id"
   end
 
@@ -216,7 +222,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_22_041121) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "properties"
+    t.bigint "form_type_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
+    t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"
     t.index ["investor_id"], name: "index_capital_commitments_on_investor_id"
   end
@@ -233,9 +242,12 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_22_041121) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "capital_commitment_id"
+    t.text "properties"
+    t.bigint "form_type_id"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_capital_remittances_on_entity_id"
+    t.index ["form_type_id"], name: "index_capital_remittances_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_remittances_on_fund_id"
     t.index ["investor_id"], name: "index_capital_remittances_on_investor_id"
   end
@@ -535,7 +547,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_22_041121) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.text "properties"
+    t.bigint "form_type_id"
     t.index ["entity_id"], name: "index_funds_on_entity_id"
+    t.index ["form_type_id"], name: "index_funds_on_form_type_id"
   end
 
   create_table "holding_actions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -721,6 +736,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_22_041121) do
     t.boolean "lock_allocations", default: false
     t.boolean "lock_eoi", default: false
     t.text "buyer_docs_list"
+    t.text "properties"
     t.index ["entity_id"], name: "index_investment_opportunities_on_entity_id"
     t.index ["form_type_id"], name: "index_investment_opportunities_on_form_type_id"
   end

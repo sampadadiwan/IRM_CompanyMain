@@ -16,6 +16,8 @@
     <%= form.text_field :title, class: "form-control"  %>
   </div>
 
+  <%= custom_form_fields(approval, form) %>
+
   <div class="form-group">
     <%= form.label :agreements_reference %>
     <%= form.rich_text_area :agreements_reference, class: "form-control"  %>

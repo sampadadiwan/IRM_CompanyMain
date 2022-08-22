@@ -19,10 +19,13 @@ class CapitalRemittancesController < ApplicationController
 
     @capital_remittance.call_amount = @capital_remittance.due_amount
     authorize @capital_remittance
+    setup_custom_fields(@capital_remittance)
   end
 
   # GET /capital_remittances/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@capital_remittance)
+  end
 
   # POST /capital_remittances or /capital_remittances.json
   def create
@@ -72,6 +75,6 @@ class CapitalRemittancesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_remittance_params
-    params.require(:capital_remittance).permit(:entity_id, :fund_id, :capital_call_id, :investor_id, :status, :call_amount, :collected_amount, :notes, payment_proof: [])
+    params.require(:capital_remittance).permit(:entity_id, :fund_id, :capital_call_id, :investor_id, :status, :call_amount, :collected_amount, :notes, payment_proof: [], properties: {})
   end
 end
