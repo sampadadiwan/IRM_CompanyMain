@@ -16,7 +16,7 @@
   
   <div class="form-group">
     <%= form.label :investor_id %>
-    <%= form.select :investor_id, capital_commitment.entity.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control"  %>
+    <%= form.select :investor_id, capital_commitment.fund.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control"  %>
   </div>
 
   
