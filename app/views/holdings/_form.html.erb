@@ -52,6 +52,12 @@
         {include_blank: true}, {class: "form-control", data: {action: "change->esop#onChange"} } %>
     </div>
 
+    <div class="form-group option_pool_group" >
+      <%= form.label :option_type %>
+      <%= form.select :option_type, Holding::OPTION_TYPES, {}, {class: "form-control"} %>
+      <small class="text-muted">Type of option being offered</small> 
+    </div>
+
     <div class="form-group funding_round_group" >
       <%= form.label :funding_round %>
       <%= form.select :funding_round_id, current_user.entity.funding_rounds.open.collect {|u| [u.name, u.id]}, 

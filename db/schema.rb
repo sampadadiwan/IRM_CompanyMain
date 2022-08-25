@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_08_22_092523) do
+ActiveRecord::Schema[7.0].define(version: 2022_08_25_094153) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -626,6 +626,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_08_22_092523) do
     t.text "properties"
     t.bigint "form_type_id"
     t.string "department", limit: 25
+    t.string "option_type", limit: 12
+    t.boolean "option_dilutes", default: true
     t.index ["created_from_excercise_id"], name: "index_holdings_on_created_from_excercise_id"
     t.index ["entity_id"], name: "index_holdings_on_entity_id"
     t.index ["form_type_id"], name: "index_holdings_on_form_type_id"

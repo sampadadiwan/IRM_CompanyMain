@@ -74,9 +74,8 @@ class ImportHolding
 
     # create the Investor Access
     if InvestorAccess.where(email: user_data['Email'], investor_id: investor.id).first.blank?
-      InvestorAccess.create(email: user_data["Email"], approved: true,
-                            entity_id: import_upload.owner_id, investor_id: investor.id,
-                            granted_by: import_upload.user_id)
+      InvestorAccess.create(email: user_data["Email"], approved: true, entity_id: import_upload.owner_id,
+                            investor_id: investor.id, granted_by: import_upload.user_id)
 
     end
 
@@ -87,7 +86,8 @@ class ImportHolding
                           entity_id: import_upload.owner_id, orig_grant_quantity: user_data["Quantity"],
                           price_cents:, employee_id: user_data["Employee ID"], department: user_data["Department"],
                           investment_instrument: user_data["Instrument"], funding_round: fr, option_pool: ep,
-                          import_upload_id: import_upload.id, grant_date:, approved: false)
+                          import_upload_id: import_upload.id, grant_date:, approved: false,
+                          option_type: user_data["Option Type"])
 
     setup_custom_fields(user_data, holding, custom_field_headers)
 

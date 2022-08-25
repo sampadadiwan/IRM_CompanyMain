@@ -50,6 +50,8 @@ class Holding < ApplicationRecord
   include HoldingCounters
   include HoldingScopes
 
+  OPTION_TYPES = ["Regular", "Phantom", "Equity SAR"].freeze
+
   update_index('holding') { self }
 
   belongs_to :user, optional: true
@@ -137,6 +139,7 @@ class Holding < ApplicationRecord
   end
 
   before_save :update_quantity
+  before_save :update_option_dilutes, if: -> { investment_instrument == 'Options' }
 
   def update_quantity
     if investment_instrument == 'Options'
@@ -155,6 +158,11 @@ class Holding < ApplicationRecord
 
     self.grant_date ||= Time.zone.today
     self.value_cents = quantity * price_cents
+  end
+
+  def update_option_dilutes
+    self.option_type ||= "Regular"
+    self.option_dilutes = false if ["Phantom", "Cash SAR"].include?(self.option_type)
   end
 
   def compute_vested_quantity

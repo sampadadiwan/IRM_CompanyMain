@@ -6,9 +6,9 @@
 
 <div>
   <% if policy(@approval).update? %>
-    <%= link_to "Edit", edit_approval_path(@approval), {class: "btn btn-primary"} %> |
+    <%= link_to "Edit", edit_approval_path(@approval), {class: "btn btn-primary"} %> 
     <%= button_to "Delete", @approval, method: :delete, class: "btn btn-danger", form_class: "deleteButton", 
-          data: {action: "click->confirm#popup", turbo:false}  %> |
+          data: {action: "click->confirm#popup", turbo:false}  %> 
     
   <% end %>
   <%= button_to "Approve", approve_approval_path(@approval), method: :patch, class: "btn btn-success", 

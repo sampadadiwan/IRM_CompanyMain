@@ -75,7 +75,8 @@ module HoldingCounters
     investment &&
       INVESTMENT_FOR.include?(holding_type) && # Only for Employees & Founders
       EQUITY_LIKE.include?(investment_instrument) && # Only for Equity and Pref
-      approved # Only for approved holdings
+      approved && # Only for approved holdings
+      (investment_instrument != "Options" || option_dilutes) # Options which dont dilute should not be added to the cap table
   end
 
   def update_option_pool?
