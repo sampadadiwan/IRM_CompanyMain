@@ -169,4 +169,8 @@ class SecondarySale < ApplicationRecord
   def display_quantity
     self.show_quantity == "Indicative" ? indicative_quantity : total_offered_quantity
   end
+
+  def display_amounts
+    self.price_type == "Fixed Price" ? [Money.new(display_quantity * final_price, entity.currency)] : [Money.new(display_quantity * min_price, entity.currency), Money.new(display_quantity * max_price, entity.currency)]
+  end
 end

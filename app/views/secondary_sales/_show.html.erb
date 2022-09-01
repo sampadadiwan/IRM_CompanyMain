@@ -40,6 +40,12 @@
       </td>
       <td>
         <%= custom_format_number secondary_sale.display_quantity, params %>
+        <div>
+          <% secondary_sale.display_amounts.each_with_index do |amount, idx| %>
+            <%= money_to_currency amount, params %> 
+            <%= "-" if idx == 0 && secondary_sale.display_amounts.length > 1 %>
+          <% end %>
+        </div>
       </td>
     <% else %>
     <tr>
@@ -65,6 +71,13 @@
         <% else %>
           <%= custom_format_number secondary_sale.total_offered_quantity, params %>
         <% end %>
+
+        <div>
+          <% secondary_sale.display_amounts.each_with_index do |amount, idx| %>
+            <%= money_to_currency amount, params %> 
+            <%= "-" if idx == 0 && secondary_sale.display_amounts.length > 1 %>
+          <% end %>
+        </div>
       </td>
     </tr>
     <% end %>
@@ -134,6 +147,7 @@
       </tr>
     <% end %>
 
+    <% if secondary_sale.final_price > 0 %>
     <tr>
       <td>
         Final Price
@@ -142,6 +156,7 @@
         <%= custom_format_number secondary_sale.final_price, params %>
       </td>
     </tr>
+    <% end %>
 
     <tr>
       <td>
