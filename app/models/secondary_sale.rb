@@ -91,6 +91,7 @@ class SecondarySale < ApplicationRecord
       self.min_price = final_price
       self.max_price = final_price
     end
+    self.show_quantity ||= "Actual"
   end
 
   # Run allocation if the sale is finalized and price is changed
@@ -163,5 +164,9 @@ class SecondarySale < ApplicationRecord
 
   def offers_by_funding_round
     offers.joins(holding: :funding_round).group("funding_rounds.name").sum(:quantity).sort.to_h
+  end
+
+  def display_quantity
+    self.show_quantity == "Indicative" ? indicative_quantity : total_offered_quantity
   end
 end

@@ -20,7 +20,6 @@ class DocumentDashboard < Administrate::BaseDashboard
     rich_text_text: RichTextAreaField,
     id: Field::Number,
     name: ObfuscatedField,
-    visible_to: Field::String,
     text: Field::String,
     created_at: Field::DateTime,
     updated_at: Field::DateTime

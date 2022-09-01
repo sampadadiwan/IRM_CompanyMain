@@ -33,6 +33,15 @@
         <%= secondary_sale.name %>
       </td>
     </tr>
+
+    <% if secondary_sale.show_quantity == "Indicative" %>
+      <td>
+        Total Offered
+      </td>
+      <td>
+        <%= custom_format_number secondary_sale.display_quantity, params %>
+      </td>
+    <% else %>
     <tr>
       <td>
         Total Offered
@@ -58,6 +67,7 @@
         <% end %>
       </td>
     </tr>
+    <% end %>
     
     <tr>
       <td>

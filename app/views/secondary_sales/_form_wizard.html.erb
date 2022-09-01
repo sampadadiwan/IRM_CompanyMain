@@ -120,6 +120,19 @@
                         <small class="text-muted"> The final price at which the sale will be done. </small>
                     </div>
 
+                    <div class="form-group">
+                        <%= form.label :show_quantity %>
+                        <%= form.select :show_quantity, ["Indicative", "Actual"], {}, class: "form-control", data: {action: "saleprice#onShowQuantityChange"}  %>
+                        <small class="text-muted"> Quantity to show buyers of this sale. </small>
+                    </div>
+
+                    <div class="form-group indicative_quantity_group">
+                        <%= form.label :indicative_quantity %>
+                        <%= form.number_field :indicative_quantity, class: "form-control "  %>
+                        <small class="text-muted"> Indicative quantity to show buyers. </small>
+                    </div>
+
+
                     <button class="btn btn-primary nextBtn btn-lg pull-right" type="button">Next</button>
             
                 </div>    

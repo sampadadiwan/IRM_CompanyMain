@@ -31,6 +31,23 @@ export default class extends Controller {
     }
   }
 
+  onShowQuantityChange(event) {
+    
+    let selected = $("#secondary_sale_show_quantity").val();
+    console.log(`onShowQuantityChange ${selected}`);
+    switch (selected) {
+      case "Indicative":
+        $(".indicative_quantity_group").show();
+
+        break;
+      case "Actual":
+        $(".indicative_quantity_group").hide();
+
+        break;
+      default:
+    }
+  }
+
 
 
   // Prevent form from submitting if required fields are not filled
