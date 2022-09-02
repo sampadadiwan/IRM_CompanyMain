@@ -33,6 +33,41 @@
         <%= secondary_sale.name %>
       </td>
     </tr>
+    <tr>
+      <td>
+        Start Date
+      </td>
+      <td>
+        <%= l secondary_sale.start_date %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Offer End Date
+      </td>
+      <td>
+        <%= l secondary_sale.offer_end_date if secondary_sale.offer_end_date %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        End Date
+      </td>
+      <td>
+        <%= l secondary_sale.end_date %>
+      </td>
+    </tr>
+    <% unless Pundit.policy(current_user, secondary_sale).show_interest? %>
+      <tr id="percent_allowed">
+        <td>
+          Percent Allowed
+        </td>
+        <td>
+          <%= secondary_sale.percent_allowed %> %
+        </td>
+      </tr>
+    <% end %>
 
     <% if secondary_sale.show_quantity == "Indicative" %>
       <td>
@@ -82,41 +117,7 @@
     </tr>
     <% end %>
     
-    <tr>
-      <td>
-        Start Date
-      </td>
-      <td>
-        <%= l secondary_sale.start_date %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Offer End Date
-      </td>
-      <td>
-        <%= l secondary_sale.offer_end_date if secondary_sale.offer_end_date %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        End Date
-      </td>
-      <td>
-        <%= l secondary_sale.end_date %>
-      </td>
-    </tr>
-    <% unless Pundit.policy(current_user, secondary_sale).show_interest? %>
-      <tr id="percent_allowed">
-        <td>
-          Percent Allowed
-        </td>
-        <td>
-          <%= secondary_sale.percent_allowed %> %
-        </td>
-      </tr>
-    <% end %>
+    
 
 
     <tr>

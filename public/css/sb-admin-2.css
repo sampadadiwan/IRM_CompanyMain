@@ -10863,21 +10863,21 @@ a:focus {
   background: url("/img/logo_big.png");
   background-position: center;
   background-repeat: no-repeat;
-  /* background-size: cover; */
+  background-size: contain;
 }
 
 .bg-register-image {
   background: url("/img/logo_big.png");
   background-position: center;
   background-repeat: no-repeat;
-  /* background-size: cover; */
+  background-size: contain;
 }
 
 .bg-password-image {
   background: url("/img/logo_big.png");
   background-position: center;
   background-repeat: no-repeat;
-  /* background-size: cover; */
+  background-size: contain;
 }
 
 form.user .custom-checkbox.small label {
