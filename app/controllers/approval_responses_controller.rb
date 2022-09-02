@@ -58,7 +58,7 @@ class ApprovalResponsesController < ApplicationController
     @approval_response.status = params[:status]
     @approval_response.response_user_id = current_user.id
     @approval_response.save!
-    redirect_to approval_responses_url, notice: "Successfully #{params[:status]}."
+    redirect_to approval_url(@approval_response.approval), notice: "Successfully #{params[:status]}."
   end
 
   # DELETE /approval_responses/1 or /approval_responses/1.json
