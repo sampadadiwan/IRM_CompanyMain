@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_03_054346) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_03_064550) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -422,6 +422,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_03_054346) do
     t.integer "snapshot_frequency_months", default: 0
     t.date "last_snapshot_on", default: "2022-08-11"
     t.string "from_email", limit: 100
+    t.boolean "enable_funds", default: false
+    t.boolean "enable_inv_opportunities", default: false
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"

@@ -31,7 +31,9 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_deals: Field::BooleanEmoji,
     enable_investments: Field::BooleanEmoji,
     enable_holdings: Field::BooleanEmoji,
-    enable_secondary_sale: Field::BooleanEmoji
+    enable_secondary_sale: Field::BooleanEmoji,
+    enable_funds: Field::BooleanEmoji,
+    enable_inv_opportunities: Field::BooleanEmoji
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -72,6 +74,8 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_investments
     enable_holdings
     enable_secondary_sale
+    enable_funds
+    enable_inv_opportunities
     employees
   ].freeze
 
@@ -96,6 +100,8 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_investments
     enable_holdings
     enable_secondary_sale
+    enable_funds
+    enable_inv_opportunities
   ].freeze
 
   # COLLECTION_FILTERS
