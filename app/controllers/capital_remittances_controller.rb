@@ -5,6 +5,8 @@ class CapitalRemittancesController < ApplicationController
   def index
     @capital_remittances = policy_scope(CapitalRemittance).includes(:fund, :investor, :capital_call)
     @capital_remittances = @capital_remittances.where(fund_id: params[:fund_id]) if params[:fund_id]
+    @capital_remittances = @capital_remittances.where(status: params[:status]) if params[:status]
+    @capital_remittances = @capital_remittances.where(verified: params[:verified] == "true") if params[:verified]
     @capital_remittances = @capital_remittances.where(capital_call_id: params[:capital_call_id]) if params[:capital_call_id]
   end
 
