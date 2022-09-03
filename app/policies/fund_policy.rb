@@ -23,6 +23,10 @@ class FundPolicy < ApplicationPolicy
       )
   end
 
+  def timeline?
+    update?
+  end
+
   def create?
     (user.entity_id == record.entity_id) && user.entity.enable_funds
   end

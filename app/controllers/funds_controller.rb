@@ -1,5 +1,5 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show edit update destroy]
+  before_action :set_fund, only: %i[show edit update destroy timeline]
 
   # GET /funds or /funds.json
   def index
@@ -60,6 +60,11 @@ class FundsController < ApplicationController
       format.html { redirect_to funds_url, notice: "Fund was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
+
+  def timeline
+    @activities = PublicActivity::Activity.where(owner: @fund)
+                                          .includes(:trackable, :owner).order(id: :desc).page(params[:page])
   end
 
   private

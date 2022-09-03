@@ -1,4 +1,7 @@
 class CapitalRemittance < ApplicationRecord
+  include ActivityTrackable
+  tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
+
   belongs_to :entity
   belongs_to :fund
   belongs_to :capital_call
@@ -53,5 +56,9 @@ class CapitalRemittance < ApplicationRecord
 
   def due_amount
     call_amount - collected_amount
+  end
+
+  def to_s
+    "#{investor.investor_name}: #{due_amount}: #{status}"
   end
 end

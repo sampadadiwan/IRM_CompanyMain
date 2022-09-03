@@ -8,7 +8,10 @@ Rails.application.routes.draw do
   end
 
   resources :capital_commitments
-  resources :funds
+  resources :funds do
+    get   'timeline', on: :member
+  end
+
   resources :investment_snapshots
   resources :expression_of_interests do
     patch 'approve', on: :member

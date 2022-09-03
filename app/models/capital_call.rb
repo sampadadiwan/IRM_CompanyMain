@@ -1,5 +1,7 @@
 class CapitalCall < ApplicationRecord
   include WithFolder
+  include ActivityTrackable
+  tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
   belongs_to :entity
   belongs_to :fund
@@ -20,6 +22,10 @@ class CapitalCall < ApplicationRecord
   def setup_folder_details
     parent_folder = fund.document_folder.folders.where(name: "Capital Calls").first
     setup_folder(parent_folder, name, [])
+  end
+
+  def to_s
+    "#{name}: #{percentage_called}%"
   end
 
   def due_amount

@@ -72,3 +72,28 @@ en:
     create: 'Investor access was given'
     update: 'Investor access was updated'
     destroy: 'Investor access was removed'
+
+
+  fund:
+    create: 'Fund was created'
+    update: 'Fund was updated'
+    destroy: 'Fund was deleted'
+    started: 'Fund was started'
+
+  capital_call:
+    create: 'Capital Call was created'
+    update: 'Capital Call was updated'
+    destroy: 'Capital Call was deleted'
+    started: 'Capital Call was started'
+
+  capital_commitment:
+    create: 'Capital Commitment was created'
+    update: 'Capital Commitment was updated'
+    destroy: 'Capital Commitment was deleted'
+    started: 'Capital Commitment was started'
+
+  capital_remittance:
+    create: 'Capital Remittance was created'
+    update: 'Capital Remittance was updated'
+    destroy: 'Capital Remittance was deleted'
+    started: 'Capital Remittance was started'            

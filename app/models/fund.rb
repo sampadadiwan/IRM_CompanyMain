@@ -1,5 +1,7 @@
 class Fund < ApplicationRecord
   include WithFolder
+  include ActivityTrackable
+  tracked owner: proc { |_controller, model| model }, entity_id: proc { |_controller, model| model.entity_id }
 
   belongs_to :entity, touch: true
   has_many :documents, as: :owner, dependent: :destroy
@@ -40,5 +42,9 @@ class Fund < ApplicationRecord
       # Ensure this user has investor access
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
+  end
+
+  def to_s
+    name
   end
 end

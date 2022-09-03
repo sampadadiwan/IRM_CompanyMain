@@ -1,4 +1,7 @@
 class CapitalCommitment < ApplicationRecord
+  include ActivityTrackable
+  tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
+
   belongs_to :entity
   belongs_to :investor
   belongs_to :fund
@@ -20,5 +23,9 @@ class CapitalCommitment < ApplicationRecord
     fund.capital_calls.each do |cc|
       CapitalCallJob.perform_later(cc.id)
     end
+  end
+
+  def to_s
+    "#{investor.investor_name}: #{committed_amount}"
   end
 end
