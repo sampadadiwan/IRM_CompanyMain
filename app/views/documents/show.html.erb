@@ -79,34 +79,35 @@
                      </td>
                   </tr>
 
-                  <% if current_user.entity_id == @document.entity_id %>
-                     <tr>
-                        <td>
-                           Allow Download
-                        </td>
-                        <td>
-                           <%= display_boolean @document.download  %>                                                  
-                           <input type="text" id="download_document" hidden="hidden" value="<%= @document.download%>" />
-                        </td>
-                     </tr>
-                     <tr>
-                        <td>
-                           Allow Printing
-                        </td>
-                        <td>
-                           <%= display_boolean @document.printing  %>                                                  
-                           <input type="text" id="printing_document" hidden="hidden" value="<%= @document.printing%>" />
-                        </td>
-                     </tr>
-                     <tr>
-                        <td>
-                           Allow Original Format Download
-                        </td>
-                        <td>
-                           <%= display_boolean @document.orignal  %>                                                  
+                  <input type="text" id="download_document" hidden="hidden" value="<%= @document.download%>" />
+                  <input type="text" id="printing_document" hidden="hidden" value="<%= @document.printing%>" />
 
-                        </td>
-                     </tr>
+                  <% if current_user.entity_id == @document.entity_id %>
+                  <tr>
+                     <td>
+                        Allow Download
+                     </td>
+                     <td>
+                     <%= display_boolean @document.download %>                                                  
+                     </td>
+                  </tr>
+                  <tr>
+                     <td>
+                        Allow Printing
+                     </td>
+                     <td>
+                        <%= display_boolean @document.printing %>                                                                             
+                     </td>
+                  </tr>
+                  <tr>
+                     <td>
+                        Allow Original Format Download
+                     </td>
+                     <td>
+                        <%= display_boolean @document.orignal  %>                                                  
+
+                     </td>
+                  </tr>
                   <% end %>
 
                   <tr>

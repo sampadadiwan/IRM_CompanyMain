@@ -12,16 +12,19 @@ class InvestmentOpportunityPolicy < ApplicationPolicy
   end
 
   def index?
-    true
+    user.entity.enable_inv_opportunities
   end
 
   def show?
-    (user.entity_id == record.entity_id) ||
-      InvestmentOpportunity.for_investor(user).where(id: record.id).present?
+    user.entity.enable_inv_opportunities &&
+      (
+        (user.entity_id == record.entity_id) ||
+        InvestmentOpportunity.for_investor(user).where(id: record.id).present?
+      )
   end
 
   def create?
-    (user.entity_id == record.entity_id)
+    (user.entity_id == record.entity_id) && user.entity.enable_inv_opportunities
   end
 
   def new?

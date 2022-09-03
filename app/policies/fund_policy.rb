@@ -12,16 +12,19 @@ class FundPolicy < ApplicationPolicy
   end
 
   def index?
-    true
+    user.entity.enable_funds
   end
 
   def show?
-    (user.entity_id == record.entity_id) ||
-      Fund.for_investor(user).where("funds.id=?", record.id)
+    user.entity.enable_funds &&
+      (
+        (user.entity_id == record.entity_id) ||
+        Fund.for_investor(user).where("funds.id=?", record.id)
+      )
   end
 
   def create?
-    (user.entity_id == record.entity_id)
+    (user.entity_id == record.entity_id) && user.entity.enable_funds
   end
 
   def new?
