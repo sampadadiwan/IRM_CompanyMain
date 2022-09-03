@@ -5,7 +5,7 @@ class InvestmentOpportunity < ApplicationRecord
 
   acts_as_taggable_on :tags
 
-  belongs_to :entity
+  belongs_to :entity, touch: true
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true

@@ -29,7 +29,7 @@ class Investor < ApplicationRecord
   acts_as_taggable_on :tags
 
   belongs_to :investor_entity, class_name: "Entity"
-  belongs_to :entity, class_name: "Entity"
+  belongs_to :entity, touch: true
   counter_culture :entity
 
   has_many :investor_accesses, dependent: :destroy

@@ -84,6 +84,9 @@ class Entity < ApplicationRecord
   has_many :investments, dependent: :destroy
   has_many :aggregate_investments, dependent: :destroy
 
+  has_many :funds, dependent: :destroy
+  has_many :investment_opportunities, dependent: :destroy
+
   has_one_attached :logo, service: :amazon
 
   monetize :total_investments, as: "total", with_model_currency: :currency

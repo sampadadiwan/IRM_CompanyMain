@@ -62,7 +62,7 @@ namespace :irm do
     family_offices = "Waterfield Advisors,Sekhsaria family office,Metta investors,Delta Ventures,Bansal family office,Arun Gupta,Ram Sharma,DSQ,Sync Invest,Tamarind investments,Maheshwari Family Office,Q10 LLP,Mac Invest,Alpha Funds,Rahul Singh,Youwecan,MSD investments,Copter Invest,VK Invest,S10 Ventures".split(",")
     
     family_offices.each do |name|
-      e = FactoryBot.create(:entity, entity_type: "Family Office", name: name)
+      e = FactoryBot.create(:entity, entity_type: "Family Office", name: name, enable_funds: true, enable_inv_opportunities: true)
       puts "Entity #{e.name}"
       (1..2).each do |j|
         user = FactoryBot.create(:user, entity: e, first_name: "Emp#{j}")

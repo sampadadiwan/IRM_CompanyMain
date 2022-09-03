@@ -1,7 +1,7 @@
 class Fund < ApplicationRecord
   include WithFolder
 
-  belongs_to :entity
+  belongs_to :entity, touch: true
   has_many :documents, as: :owner, dependent: :destroy
   has_many :capital_remittances, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy

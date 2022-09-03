@@ -47,38 +47,6 @@
                     </a>
 
                 </li>
-
-                <% if current_user.entity.enable_funds %>
-                <li class="nav-item">                
-                    <a class="nav-link" href="/funds" data-toggle="collapse" data-target="#fundMenus">
-                        <i class="fas fa-lg fa-fw fa-dollar"></i>
-                        <span>Funds</span>
-                    </a>
-
-                
-                    <div id="fundMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
-                        <div class="bg-white py-2 collapse-inner rounded">
-                            <a class="collapse-item" href="/funds">View Funds</a>
-                            <a class="collapse-item" href="/capital_commitments">Capital Commitments</a>
-                            <a class="collapse-item" href="/capital_calls">Capital Calls</a>
-                            <a class="collapse-item" href="/capital_remittances">Capital Remittances</a>
-                        </div>
-                    </div>
-
-                </li>
-                <% end %>
-
-                <% if current_user.entity.enable_inv_opportunities %>
-                <li class="nav-item"> 
-                    <a class="nav-link collapsed" href="/investment_opportunities">
-                        <i class="fas fa-lg fa-fw fa-funnel-dollar"></i>
-                        <span>Investment Opportunities</span>
-                    </a>
-                </li>
-                <% end %>
-
-                
-
                 
             <% end %>
 
@@ -293,6 +261,36 @@
                 <hr class="sidebar-divider my-0">
             </li>
 
+            <% end %>
+
+
+            <% if current_user && current_user&.entity&.enable_funds %>
+            <li class="nav-item">                
+                <a class="nav-link" href="/funds" data-toggle="collapse" data-target="#fundMenus">
+                    <i class="fas fa-lg fa-fw fa-dollar"></i>
+                    <span>Funds</span>
+                </a>
+
+            
+                <div id="fundMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <a class="collapse-item" href="/funds">View Funds</a>
+                        <a class="collapse-item" href="/capital_commitments">Capital Commitments</a>
+                        <a class="collapse-item" href="/capital_calls">Capital Calls</a>
+                        <a class="collapse-item" href="/capital_remittances">Capital Remittances</a>
+                    </div>
+                </div>
+
+            </li>
+            <% end %>
+
+            <% if current_user && current_user&.entity&.enable_inv_opportunities %>
+            <li class="nav-item"> 
+                <a class="nav-link collapsed" href="/investment_opportunities">
+                    <i class="fas fa-lg fa-fw fa-funnel-dollar"></i>
+                    <span>Investment Opportunities</span>
+                </a>
+            </li>
             <% end %>
 
             <!-- Divider -->

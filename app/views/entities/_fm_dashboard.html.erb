@@ -1,0 +1,12 @@
+<% cache([current_user.entity, "FMDashBoard"]) do %>
+    <%= render "entities/fm_dashboard_stats" %>
+
+    <div class="associated_entity">
+        <%= render "/funds/index",  
+            funds: current_user.entity.funds if current_user.entity.enable_funds %>
+    </div>
+    <div class="associated_entity" >
+        <%= render "/investment_opportunities/index",  
+            investment_opportunities: current_user.entity.investment_opportunities if current_user.entity.enable_inv_opportunities %>
+    </div>
+<% end %>

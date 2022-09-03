@@ -9,6 +9,8 @@
             <%= render "cxo_dashboard" %>
         <% elsif current_user.curr_role.to_sym == :investor %>
             <%= render "vc_dashboard" %>
+        <% elsif current_user.curr_role.to_sym == :fund_manager %>
+            <%= render "fm_dashboard" %>
         <% elsif current_user.curr_role == "holding" %>
             <%= render "holding_dashboard" %>
         <% elsif current_user.entity.entity_type == "Holding" %>
