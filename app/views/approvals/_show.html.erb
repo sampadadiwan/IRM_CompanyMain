@@ -32,6 +32,7 @@
             <%= approval.entity.name %>
         </td>
     </tr>
+    <% if current_user.entity_id == approval.entity_id %>
     <tr>
         <td>
             Approved Count
@@ -56,6 +57,7 @@
             <%= approval.pending_count %>
         </td>
     </tr>
+    <% end %>
 
     <%= display_custom_fields(@approval) if current_user %>
 

@@ -1,5 +1,7 @@
 Rails.application.routes.draw do
-  resources :capital_remittances
+  resources :capital_remittances do
+    patch 'verify', on: :member
+  end
   resources :capital_calls do
     get 'search', on: :collection
     post 'reminder', on: :member

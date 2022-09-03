@@ -27,4 +27,18 @@ class Fund < ApplicationRecord
     end
     investor_list.uniq
   end
+
+  def self.for_investor(user)
+    Fund
+      # Ensure the access rghts for Document
+      .joins(:access_rights)
+      .merge(AccessRight.access_filter)
+      .joins(entity: :investors)
+      # Ensure that the user is an investor and tis investor has been given access rights
+      # .where("entities.id=?", entity.id)
+      .where("investors.investor_entity_id=?", user.entity_id)
+      # Ensure this user has investor access
+      .joins(entity: :investor_accesses)
+      .merge(InvestorAccess.approved_for_user(user))
+  end
 end

@@ -5,9 +5,11 @@
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
+      <% if policy(fund).update? %>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab"
           data-action="click->tabdetails#loadData">Access Rights</a>
-
+      <% end %>
+      
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#commitments-tab"
           data-action="click->tabdetails#loadData">Commitments</a>
 
@@ -26,7 +28,7 @@
 
         <div id="access-rights-tab" class="tab-pane fade in">
 
-          <% cache(fund) do %>
+          <% cache([fund, "AccessRights"]) do %>
             <div id="access_rights" class="associated_entity" data-controller="datatable">
               <% access_right = AccessRight.new(
                   owner_id: fund.id, 

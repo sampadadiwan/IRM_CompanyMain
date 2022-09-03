@@ -13,6 +13,9 @@
         with_content(capital_remittance.status) if capital_remittance.status %>
   </td>
   <td>
+    <%= display_boolean(capital_remittance.verified) %>
+  </td>
+  <td>
     <%= money_to_currency (capital_remittance.due_amount), params %>
     <div class="hideMobP">
       <small class="text-muted hideMobP">
@@ -27,6 +30,18 @@
   </td>
   <td>
     <%= link_to "Show" , capital_remittance , {class: "btn btn-primary" }%>
-    <%= link_to "Edit" , edit_capital_remittance_path(capital_remittance) , {class: "btn btn-success" } if policy(capital_remittance).update? %>
+    
+    <% if policy(capital_remittance).update? %>
+      <% if capital_remittance.entity_id == current_user.entity_id %>
+        <% label = capital_remittance.verified ? "Unverify" : "Verify" %> 
+        <% msg = capital_remittance.verified ? "Mark as Unverified?" : "Mark as Verified?" %> 
+        <%= button_to label, verify_capital_remittance_path(capital_remittance), method: :patch, 
+            class: "btn btn-success", form_class: "deleteButton", 
+            data: {action: "click->confirm#popup", msg: msg, turbo:false, method: :patch} if policy(capital_remittance).verify? && capital_remittance.status=="Paid" %>      
+      <% else %>
+        <%= link_to "Paid", edit_capital_remittance_path(capital_remittance, status: "Paid"), {class: "btn btn-success" } %>      
+      <% end %>
+    <% end %>
+
   </td>
 </tr>

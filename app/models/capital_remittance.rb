@@ -20,16 +20,16 @@ class CapitalRemittance < ApplicationRecord
     self.capital_commitment = fund.capital_commitments.where(investor_id:).first
   end
 
-  counter_culture :capital_call, column_name: 'collected_amount_cents',
+  counter_culture :capital_call, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                                  delta_column: 'collected_amount_cents'
 
   counter_culture :capital_call, column_name: 'call_amount_cents',
                                  delta_column: 'call_amount_cents'
 
-  counter_culture :capital_commitment, column_name: 'collected_amount_cents',
+  counter_culture :capital_commitment, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                                        delta_column: 'collected_amount_cents'
 
-  counter_culture :fund, column_name: 'collected_amount_cents',
+  counter_culture :fund, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                          delta_column: 'collected_amount_cents'
 
   counter_culture :fund, column_name: 'call_amount_cents',
@@ -38,7 +38,9 @@ class CapitalRemittance < ApplicationRecord
   before_save :set_status
   before_create :set_call_amount
   def set_call_amount
-    self.call_amount = capital_commitment ? capital_call.percentage_called * capital_commitment.committed_amount / 100 : Money(0, entity.currency)
+    self.call_amount_cents = capital_commitment ? capital_call.percentage_called * capital_commitment.committed_amount_cents / 100.0 : 0
+
+    set_status
   end
 
   def set_status

@@ -3,8 +3,10 @@ class FundPolicy < ApplicationPolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      else
+      elsif user.has_cached_role?(:fund_manager)
         scope.where(entity_id: user.entity_id)
+      else
+        Fund.for_investor(user)
       end
     end
   end
@@ -14,7 +16,8 @@ class FundPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id)
+    (user.entity_id == record.entity_id) ||
+      Fund.for_investor(user).where("funds.id=?", record.id)
   end
 
   def create?

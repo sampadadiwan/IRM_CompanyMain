@@ -3,8 +3,10 @@ class CapitalRemittancePolicy < ApplicationPolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      else
+      elsif user.has_cached_role?(:fund_manager)
         scope.where(entity_id: user.entity_id)
+      else
+        scope.joins(:investor).where('investors.investor_entity_id': user.entity_id)
       end
     end
   end
@@ -14,7 +16,8 @@ class CapitalRemittancePolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id)
+    (user.entity_id == record.entity_id) ||
+      (user.entity_id == record.investor.investor_entity_id)
   end
 
   def create?
@@ -25,8 +28,13 @@ class CapitalRemittancePolicy < ApplicationPolicy
     create?
   end
 
-  def update?
+  def verify?
     create?
+  end
+
+  def update?
+    create? ||
+      (user.entity_id == record.investor.investor_entity_id)
   end
 
   def edit?

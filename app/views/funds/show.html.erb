@@ -78,4 +78,6 @@
     <% end %>
   </div>
 
-  <%= render "/funds/fund_details", fund: @fund %>
+  <% cache_if(current_user.entity_id == @fund.entity_id, [@fund, "FundDetails"]) do %>
+    <%= render "/funds/fund_details", fund: @fund %>
+  <% end %>

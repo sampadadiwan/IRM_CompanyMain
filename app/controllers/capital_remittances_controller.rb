@@ -1,5 +1,5 @@
 class CapitalRemittancesController < ApplicationController
-  before_action :set_capital_remittance, only: %i[show edit update destroy]
+  before_action :set_capital_remittance, only: %i[show edit update destroy verify]
 
   # GET /capital_remittances or /capital_remittances.json
   def index
@@ -24,6 +24,7 @@ class CapitalRemittancesController < ApplicationController
 
   # GET /capital_remittances/1/edit
   def edit
+    @capital_remittance.status = params[:status] if params[:status]
     setup_custom_fields(@capital_remittance)
   end
 
@@ -65,6 +66,12 @@ class CapitalRemittancesController < ApplicationController
     end
   end
 
+  def verify
+    @capital_remittance.verified = !@capital_remittance.verified
+    @capital_remittance.save!
+    redirect_to capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: "Successfully updated."
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.
@@ -75,6 +82,6 @@ class CapitalRemittancesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_remittance_params
-    params.require(:capital_remittance).permit(:entity_id, :fund_id, :capital_call_id, :investor_id, :status, :call_amount, :collected_amount, :notes, payment_proof: [], properties: {})
+    params.require(:capital_remittance).permit(:entity_id, :fund_id, :capital_call_id, :investor_id, :status, :call_amount, :collected_amount, :notes, :verified, payment_proof: [], properties: {})
   end
 end
