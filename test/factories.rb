@@ -1,4 +1,15 @@
 FactoryBot.define do
+  factory :capital_distribution_payment do
+    fund { nil }
+    entity { nil }
+    capital_distribution { nil }
+    investor { nil }
+    form_type { nil }
+    amount { "9.99" }
+    payment_date { "2022-09-04" }
+    properties { "MyText" }
+  end
+
 
   factory :capital_distribution do
     fund { nil }

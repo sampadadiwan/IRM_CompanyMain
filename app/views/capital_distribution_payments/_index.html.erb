@@ -1,0 +1,34 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Capital Distribution Payments</h1>
+    <%= link_to "New Capital Distribution Payment" , new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id), {class: "btn btn-primary" } if capital_distribution %>
+  </div>
+
+  <div class="table-responsive">
+
+    <table id="capital_distribution_payments" class="table table-bordered dataTable jqDataTable">
+
+      <thead>
+        <tr>
+          <th>
+            Investor
+          </th>
+          <th>
+            Amount
+          </th>
+          <th>
+            Payment Date
+          </th>
+
+          <th>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% capital_distribution_payments.each do |capital_distribution_payment| %>
+          <%= render capital_distribution_payment %>
+        <% end %>
+      </tbody>
+    </table>
+
+  </div>

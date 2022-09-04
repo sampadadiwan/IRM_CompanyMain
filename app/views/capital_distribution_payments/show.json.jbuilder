@@ -1,0 +1,1 @@
+json.partial! "capital_distribution_payments/capital_distribution_payment", capital_distribution_payment: @capital_distribution_payment

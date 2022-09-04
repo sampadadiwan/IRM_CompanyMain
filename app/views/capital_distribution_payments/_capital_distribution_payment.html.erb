@@ -1,0 +1,14 @@
+<tr id="<%= dom_id capital_distribution_payment %>">
+  <td>
+    <%= link_to capital_distribution_payment.investor.investor_name, capital_distribution_payment.investor %>
+  </td>
+  <td>
+    <%= money_to_currency capital_distribution_payment.amount, params %>
+  </td>
+  <td>
+    <%= l capital_distribution_payment.payment_date %>
+  </td>
+  <td>
+    <%= link_to "Show" , capital_distribution_payment , {class: "btn btn-primary" }%>
+  </td>
+</tr>

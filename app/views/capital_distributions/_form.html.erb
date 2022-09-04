@@ -16,6 +16,11 @@
     <%= form.text_field :form_type_id, class: "form-control", hidden: true  %>
 
   <div class="form-group">
+    <%= form.label :title %>
+    <%= form.text_field :title, class: "form-control"  %>
+  </div>
+    
+  <div class="form-group">
     <%= form.label :gross_amount %>
     <%= form.number_field :gross_amount, class: "form-control"  %>
   </div>
@@ -28,6 +33,11 @@
   <div class="form-group">
     <%= form.label :distribution_date %>
     <%= form.date_field :distribution_date, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :completed %>
+    <%= form.check_box :completed, class: "form-control form-checkbox"  %>
   </div>
 
   <div class="form-group">

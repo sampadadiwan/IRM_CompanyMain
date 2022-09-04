@@ -1,0 +1,44 @@
+<%= form_with(model: capital_distribution_payment) do |form| %>
+  <% if capital_distribution_payment.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(capital_distribution_payment.errors.count, "error") %> prohibited this capital_distribution_payment from being saved:</h2>
+
+      <ul>
+        <% capital_distribution_payment.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+  
+    <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :capital_distribution_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :form_type_id, class: "form-control", hidden: true  %>
+
+  
+  <div class="form-group">
+    <%= form.label :investor_id %>
+    <%= form.select :investor_id, capital_distribution_payment.fund.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control" %>
+  </div>
+
+
+  <div class="form-group">
+    <%= form.label :amount %>
+    <%= form.text_field :amount, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :payment_date %>
+    <%= form.date_field :payment_date, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :completed %>
+    <%= form.check_box :completed, class: "form-control form-checkbox"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

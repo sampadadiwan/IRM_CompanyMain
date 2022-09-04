@@ -4,6 +4,24 @@
 
     <tr>
       <td>
+        Title
+      </td>
+      <td>
+        <%= @capital_distribution.title %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Completed
+      </td>
+      <td>
+        <%= display_boolean @capital_distribution.completed %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
         Fund
       </td>
       <td>
@@ -58,3 +76,5 @@
 
     <% end %>
   </div>
+
+  <%= render "/capital_distributions/details", capital_distribution: @capital_distribution %>

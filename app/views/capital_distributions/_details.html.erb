@@ -1,0 +1,20 @@
+<div class="associated_entity" data-controller="tabs tabdetails">
+
+  
+    <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
+      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#payments-tab">Payments</a>
+
+    </nav>
+  
+    <div class="tab-content" data-controller="datatable">
+  
+        <div id="payments-tab" class="tab-pane fade in show active">
+          <div id="payments" class="associated_entity">
+            <%= render "/capital_distribution_payments/index", capital_distribution_payments: capital_distribution.capital_distribution_payments, capital_distribution: capital_distribution %>
+          </div>     
+        </div>
+  
+    </div>
+  
+  </div>
+  
