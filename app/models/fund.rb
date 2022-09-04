@@ -17,6 +17,11 @@ class Fund < ApplicationRecord
 
   validates :name, presence: true
 
+  after_create :setup_funding_round
+  def setup_funding_round
+    FundingRound.create(name:, entity_id:, status: "Open", currency: entity.currency)
+  end
+
   def setup_folder_details
     parent_folder = Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
     setup_folder(parent_folder, name, ["Capital Calls"])

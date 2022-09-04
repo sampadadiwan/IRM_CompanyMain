@@ -34,6 +34,11 @@ class InvestmentOpportunity < ApplicationRecord
   monetize :fund_raise_amount_cents, :valuation_cents,
            :min_ticket_size_cents, :eoi_amount_cents, with_model_currency: :currency
 
+  after_create :setup_funding_round
+  def setup_funding_round
+    FundingRound.create(name:, entity_id:, status: "Open", currency: entity.currency)
+  end
+
   def name
     company_name
   end
