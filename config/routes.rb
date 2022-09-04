@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :capital_distributions
   resources :capital_remittances do
     patch 'verify', on: :member
   end

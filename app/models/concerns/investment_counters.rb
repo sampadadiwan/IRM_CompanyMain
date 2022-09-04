@@ -1,7 +1,7 @@
 module InvestmentCounters
   extend ActiveSupport::Concern
 
-  EQUITY_LIKE = %w[Equity Preferred Options].freeze
+  EQUITY_LIKE = %w[Equity Preferred Options Units].freeze
 
   included do
     # Counter Cache for funding_round.amount_raised_cents

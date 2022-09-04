@@ -1,4 +1,13 @@
 FactoryBot.define do
+
+  factory :capital_distribution do
+    fund { nil }
+    entity { nil }
+    gross_amount { "9.99" }
+    carry { "9.99" }
+    distribution_date { "2022-09-04" }
+  end
+
   factory :capital_remittance do
     capital_call { CapitalCall.all.sample }
     fund { capital_call.fund }

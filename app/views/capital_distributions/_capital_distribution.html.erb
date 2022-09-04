@@ -1,0 +1,18 @@
+<tr id="<%= dom_id capital_distribution %>">
+  <td>
+    <%= capital_distribution.fund.name %>
+  </td>
+  <td>
+    <%= money_to_currency capital_distribution.gross_amount, params %>
+  </td>
+  <td>
+    <%= money_to_currency capital_distribution.carry, params %>
+  </td>
+  <td>
+    <%= capital_distribution.distribution_date %>
+  </td>
+  <td>
+    <%= link_to "Show" , capital_distribution , {class: "btn btn-primary" }%>
+    <%= link_to "Edit" , edit_capital_distribution_path(capital_distribution) , {class: "btn btn-success" } if policy(capital_distribution).update? %>
+  </td>
+</tr>

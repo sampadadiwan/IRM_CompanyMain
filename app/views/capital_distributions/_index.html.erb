@@ -1,0 +1,36 @@
+
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Capital Distributions</h1>
+    <%= link_to "New Capital Distribution" , new_capital_distribution_path("capital_distribution[fund_id]": params[:fund_id]), {class: "btn btn-primary" } if params[:fund_id].present? %>
+  </div>
+
+  <div class="table-responsive">
+
+    <table id="capital_distributions" class="table table-bordered dataTable jqDataTable">
+      <thead>
+        <tr>
+          <th>
+            Fund
+          </th>
+          <th>
+            Gross Amount
+          </th>
+          <th>
+            Carry
+          </th>
+          <th>
+            Distribution Date
+          </th>
+
+          <th>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <% capital_distributions.each do |capital_distribution| %>
+          <%= render capital_distribution %>
+        <% end %>
+      </tbody>
+    </table>
+
+  </div>

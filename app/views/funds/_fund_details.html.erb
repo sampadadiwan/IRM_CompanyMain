@@ -15,6 +15,9 @@
 
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-calls-tab"
           data-action="click->tabdetails#loadData">Capital Calls</a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-distributions-tab"
+          data-action="click->tabdetails#loadData">Capital Distributions</a>
     </nav>
   
     <div class="tab-content" data-controller="datatable">
@@ -59,6 +62,18 @@
             <% end %>
         
             <%= turbo_frame_tag "capital_calls_frame", target: "_top" do %>
+            <% end %>
+          </div>     
+        </div>
+
+
+        <div id="capital-distributions-tab" class="tab-pane fade in">
+          <div id="capital-distributions" class="associated_entity">
+            <%= link_to capital_distributions_path(fund_id: fund.id), class: "load_data_link", data: { turbo_frame: 'capital_distributions_frame' } do %>
+              <span>Loading...</span>
+            <% end %>
+        
+            <%= turbo_frame_tag "capital_distributions_frame", target: "_top" do %>
             <% end %>
           </div>     
         </div>

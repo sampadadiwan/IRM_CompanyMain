@@ -1,0 +1,36 @@
+<%= form_with(model: capital_distribution) do |form| %>
+  <% if capital_distribution.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(capital_distribution.errors.count, "error") %> prohibited this capital_distribution from being saved:</h2>
+
+      <ul>
+        <% capital_distribution.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+    <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :form_type_id, class: "form-control", hidden: true  %>
+
+  <div class="form-group">
+    <%= form.label :gross_amount %>
+    <%= form.number_field :gross_amount, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :carry %>
+    <%= form.number_field :carry, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :distribution_date %>
+    <%= form.date_field :distribution_date, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

@@ -1,0 +1,60 @@
+<%= render "/layouts/alerts" %>
+
+  <table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Fund
+      </td>
+      <td>
+        <%= link_to @capital_distribution.fund.name, fund_path(@capital_distribution.fund, tab: "capital-distributions-tab") %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= @capital_distribution.entity.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Gross Amount
+      </td>
+      <td>
+        <%= money_to_currency @capital_distribution.gross_amount, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Carry
+      </td>
+      <td>
+        <%= money_to_currency @capital_distribution.carry, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Distribution Date
+      </td>
+      <td>
+        <%= l @capital_distribution.distribution_date %>
+      </td>
+    </tr>
+    
+
+
+  </table>
+
+
+  <div>
+    <% if policy(@capital_distribution).update? %>
+
+      <%= link_to "Edit" , edit_capital_distribution_path(@capital_distribution), {class: "btn btn-primary" } %> |
+      
+      <%= button_to "Delete" , @capital_distribution, method: :delete, class: "btn btn-danger" ,
+        form_class: "deleteButton" , data: {action: "click->confirm#delete" , turbo:false} %>
+
+    <% end %>
+  </div>
