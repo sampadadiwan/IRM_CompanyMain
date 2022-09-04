@@ -15,6 +15,7 @@ class EntityDashboard < Administrate::BaseDashboard
     name: Field::String,
     sandbox: Field::BooleanEmoji,
     sandbox_emails: Field::String,
+    from_email: Field::String,
     url: Field::String,
     category: Field::String,
     created_at: Field::DateTime,
@@ -62,6 +63,7 @@ class EntityDashboard < Administrate::BaseDashboard
     active
     sandbox
     sandbox_emails
+    from_email
     currency
     entity_type
     created_by
@@ -90,6 +92,7 @@ class EntityDashboard < Administrate::BaseDashboard
     active
     sandbox
     sandbox_emails
+    from_email
     entity_type
     investor_categories
     instrument_types

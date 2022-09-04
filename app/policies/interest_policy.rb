@@ -27,7 +27,7 @@ class InterestPolicy < ApplicationPolicy
   end
 
   def short_list?
-    (user.entity_id == record.entity_id)
+    user.has_cached_role?(:approver) && (user.entity_id == record.entity_id)
   end
 
   def unscramble?
