@@ -8,7 +8,7 @@ class CapitalDistribution < ApplicationRecord
 
   has_many :capital_distribution_payments, dependent: :destroy
 
-  monetize :carry_cents, :gross_amount_cents, with_currency: ->(i) { i.entity.currency }
+  monetize :carry_cents, :gross_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.entity.currency }
 
   def self.for_investor(user)
     CapitalDistribution

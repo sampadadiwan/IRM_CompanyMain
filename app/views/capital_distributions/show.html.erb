@@ -60,6 +60,15 @@
         <%= l @capital_distribution.distribution_date %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Payments Distributed
+      </td>
+      <td>
+        <%= money_to_currency @capital_distribution.distribution_amount, params %>
+      </td>
+    </tr>
     
 
 

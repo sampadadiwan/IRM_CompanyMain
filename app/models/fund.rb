@@ -13,7 +13,7 @@ class Fund < ApplicationRecord
   belongs_to :form_type, optional: true
   serialize :properties, Hash
 
-  monetize :call_amount_cents, :committed_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
+  monetize :call_amount_cents, :committed_amount_cents, :collected_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.entity.currency }
 
   validates :name, presence: true
 
