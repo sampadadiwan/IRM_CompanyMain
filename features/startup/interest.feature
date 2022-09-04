@@ -39,6 +39,7 @@ Examples:
 
 Scenario Outline: Create new interest and check obfuscation
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "approver"
   Given there are "2" employee investors
   Given there is a sale "<sale>"
   Given there is a FundingRound "name=Series A"
