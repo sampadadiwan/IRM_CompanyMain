@@ -4,6 +4,7 @@ class Fund < ApplicationRecord
   tracked owner: proc { |_controller, model| model }, entity_id: proc { |_controller, model| model.entity_id }
 
   belongs_to :entity, touch: true
+  belongs_to :funding_round
   has_many :documents, as: :owner, dependent: :destroy
   has_many :capital_remittances, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
@@ -17,9 +18,9 @@ class Fund < ApplicationRecord
 
   validates :name, presence: true
 
-  after_create :setup_funding_round
+  before_validation :setup_funding_round
   def setup_funding_round
-    FundingRound.create(name:, entity_id:, status: "Open", currency: entity.currency)
+    self.funding_round = FundingRound.new(name:, entity_id:, status: "Open", currency: entity.currency)
   end
 
   def setup_folder_details

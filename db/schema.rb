@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_05_022936) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_05_043216) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -265,6 +265,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_05_022936) do
     t.string "title"
     t.boolean "completed", default: false
     t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "net_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["entity_id"], name: "index_capital_distributions_on_entity_id"
     t.index ["form_type_id"], name: "index_capital_distributions_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_distributions_on_fund_id"
@@ -594,8 +595,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_05_022936) do
     t.text "properties"
     t.bigint "form_type_id"
     t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "funding_round_id", null: false
     t.index ["entity_id"], name: "index_funds_on_entity_id"
     t.index ["form_type_id"], name: "index_funds_on_form_type_id"
+    t.index ["funding_round_id"], name: "index_funds_on_funding_round_id"
   end
 
   create_table "holding_actions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -784,8 +787,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_05_022936) do
     t.boolean "lock_eoi", default: false
     t.text "buyer_docs_list"
     t.text "properties"
+    t.bigint "funding_round_id", null: false
     t.index ["entity_id"], name: "index_investment_opportunities_on_entity_id"
     t.index ["form_type_id"], name: "index_investment_opportunities_on_form_type_id"
+    t.index ["funding_round_id"], name: "index_investment_opportunities_on_funding_round_id"
   end
 
   create_table "investment_snapshots", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1318,6 +1323,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_05_022936) do
   add_foreign_key "form_types", "entities"
   add_foreign_key "funding_rounds", "entities"
   add_foreign_key "funds", "entities"
+  add_foreign_key "funds", "funding_rounds"
   add_foreign_key "holding_actions", "entities"
   add_foreign_key "holding_actions", "holdings"
   add_foreign_key "holding_actions", "users"
@@ -1337,6 +1343,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_05_022936) do
   add_foreign_key "interests", "users"
   add_foreign_key "investment_opportunities", "entities"
   add_foreign_key "investment_opportunities", "form_types"
+  add_foreign_key "investment_opportunities", "funding_rounds"
   add_foreign_key "investment_snapshots", "entities"
   add_foreign_key "investment_snapshots", "funding_rounds"
   add_foreign_key "investment_snapshots", "investments"

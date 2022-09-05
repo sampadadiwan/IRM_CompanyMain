@@ -6,6 +6,8 @@ class InvestmentOpportunity < ApplicationRecord
   acts_as_taggable_on :tags
 
   belongs_to :entity, touch: true
+  belongs_to :funding_round
+
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
@@ -34,9 +36,9 @@ class InvestmentOpportunity < ApplicationRecord
   monetize :fund_raise_amount_cents, :valuation_cents,
            :min_ticket_size_cents, :eoi_amount_cents, with_model_currency: :currency
 
-  after_create :setup_funding_round
+  before_validation :setup_funding_round
   def setup_funding_round
-    FundingRound.create(name:, entity_id:, status: "Open", currency: entity.currency)
+    self.funding_Round = FundingRound.new(name:, entity_id:, status: "Open", currency: entity.currency)
   end
 
   def name

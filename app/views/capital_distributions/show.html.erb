@@ -52,6 +52,17 @@
         <%= money_to_currency @capital_distribution.carry, params %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Net Amount
+      </td>
+      <td>
+        <%= money_to_currency @capital_distribution.net_amount, params %>
+      </td>
+    </tr>
+    
+
     <tr>
       <td>
         Distribution Date

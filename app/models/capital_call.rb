@@ -45,10 +45,8 @@ class CapitalCall < ApplicationRecord
     FundMailer.with(id:).reminder_capital_call.deliver_later
   end
 
-  def self.for_investor(user)
-    CapitalCall
-      # Ensure the access rghts for Document
-      .joins(fund: :access_rights)
+  scope :for_investor, lambda { |user|
+    joins(fund: :access_rights)
       .merge(AccessRight.access_filter)
       .joins(entity: :investors)
       # Ensure that the user is an investor and tis investor has been given access rights
@@ -57,5 +55,5 @@ class CapitalCall < ApplicationRecord
       # Ensure this user has investor access
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
-  end
+  }
 end

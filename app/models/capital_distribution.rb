@@ -8,12 +8,17 @@ class CapitalDistribution < ApplicationRecord
 
   has_many :capital_distribution_payments, dependent: :destroy
 
-  monetize :carry_cents, :gross_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.entity.currency }
+  monetize :net_amount_cents, :carry_cents, :gross_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.entity.currency }
 
-  def self.for_investor(user)
-    CapitalDistribution
-      # Ensure the access rghts for Document
-      .joins(fund: :access_rights)
+  before_save :compute_net_amount
+  def compute_net_amount
+    self.net_amount_cents = gross_amount_cents - carry_cents
+  end
+
+  after_create ->(cd) { CapitalDistributionJob.perform_later(cd.id) }
+
+  scope :for_investor, lambda { |user|
+    joins(fund: :access_rights)
       .merge(AccessRight.access_filter)
       .joins(entity: :investors)
       # Ensure that the user is an investor and tis investor has been given access rights
@@ -22,5 +27,5 @@ class CapitalDistribution < ApplicationRecord
       # Ensure this user has investor access
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
-  end
+  }
 end

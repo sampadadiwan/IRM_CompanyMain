@@ -6,7 +6,7 @@ class CapitalDistributionPolicy < ApplicationPolicy
       elsif user.has_cached_role?(:fund_manager)
         scope.where(entity_id: user.entity_id)
       else
-        CapitalDistribution.for_investor(user)
+        scope.for_investor(user)
       end
     end
   end

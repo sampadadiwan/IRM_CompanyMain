@@ -10,7 +10,9 @@
   
         <div id="payments-tab" class="tab-pane fade in show active">
           <div id="payments" class="associated_entity">
-            <%= render "/capital_distribution_payments/index", capital_distribution_payments: capital_distribution.capital_distribution_payments, capital_distribution: capital_distribution %>
+            <%= render "/capital_distribution_payments/index", 
+                capital_distribution_payments: policy_scope(capital_distribution.capital_distribution_payments), 
+                capital_distribution: capital_distribution %>
           </div>     
         </div>
   
