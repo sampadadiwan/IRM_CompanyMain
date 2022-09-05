@@ -13,11 +13,19 @@
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#commitments-tab"
           data-action="click->tabdetails#loadData">Commitments</a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-calls-tab"
-          data-action="click->tabdetails#loadData">Capital Calls</a>
+      <% if policy(fund).update? %>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-calls-tab"
+            data-action="click->tabdetails#loadData">Capital Calls</a>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-distributions-tab"
+            data-action="click->tabdetails#loadData">Capital Distributions</a>
+      <% else %>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-remittances-tab"
+            data-action="click->tabdetails#loadData">Remittances</a>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-distribution-payments-tab"
+            data-action="click->tabdetails#loadData">Capital Distributions</a>
+      <% end %>
 
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-distributions-tab"
-          data-action="click->tabdetails#loadData">Capital Distributions</a>
+      
     </nav>
   
     <div class="tab-content" data-controller="datatable">
@@ -66,6 +74,17 @@
           </div>     
         </div>
 
+        <div id="capital-remittances-tab" class="tab-pane fade in">
+          <div id="capital-remittances" class="associated_entity">
+            <%= link_to capital_remittances_path(fund_id: fund.id), class: "load_data_link", data: { turbo_frame: 'capital_remittances_frame' } do %>
+              <span>Loading...</span>
+            <% end %>
+        
+            <%= turbo_frame_tag "capital_remittances_frame", target: "_top" do %>
+            <% end %>
+          </div>     
+        </div>
+
 
         <div id="capital-distributions-tab" class="tab-pane fade in">
           <div id="capital-distributions" class="associated_entity">
@@ -74,6 +93,18 @@
             <% end %>
         
             <%= turbo_frame_tag "capital_distributions_frame", target: "_top" do %>
+            <% end %>
+          </div>     
+        </div>
+
+
+        <div id="capital-distribution-payments-tab" class="tab-pane fade in">
+          <div id="capital-distribution-payments" class="associated_entity">
+            <%= link_to capital_distribution_payments_path(fund_id: fund.id), class: "load_data_link", data: { turbo_frame: 'capital_distribution_payments_frame' } do %>
+              <span>Loading...</span>
+            <% end %>
+        
+            <%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top" do %>
             <% end %>
           </div>     
         </div>
