@@ -14,13 +14,21 @@ class CreateAggregateInvestment
   def create_aggregate_investment(investment)
     if Investment::EQUITY_LIKE.include?(investment.investment_instrument)
 
+      funding_round_id = if investment.investment_instrument == "Units"
+                           # Funding round applies only to Investment Funds aggregate investments.
+                           # This is because in investment funds, the investors may be invested across multiple Funds
+                           # Aggregation is done per investor per Fund, unlike Startup where aggregation is done per investor only
+                           investment.funding_round_id
+                         end
+
       ai = AggregateInvestment.where(investor_id: investment.investor_id,
-                                     entity_id: investment.entity_id).first
+                                     entity_id: investment.entity_id, funding_round_id:).first
 
       investment.aggregate_investment = ai.presence ||
                                         AggregateInvestment.create!(investor_id: investment.investor_id,
                                                                     entity_id: investment.entity_id,
-                                                                    audit_comment: context.audit_comment)
+                                                                    audit_comment: context.audit_comment,
+                                                                    funding_round_id:)
 
       create_audit_trail(investment)
     end

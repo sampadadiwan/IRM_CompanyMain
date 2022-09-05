@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_04_123730) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_05_022936) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -138,7 +138,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_04_123730) do
     t.decimal "full_diluted_percentage", precision: 5, scale: 2, default: "0.0"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "funding_round_id"
+    t.integer "units", default: 0
     t.index ["entity_id"], name: "index_aggregate_investments_on_entity_id"
+    t.index ["funding_round_id"], name: "index_aggregate_investments_on_funding_round_id"
     t.index ["investor_id"], name: "index_aggregate_investments_on_investor_id"
   end
 
@@ -443,7 +446,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_04_123730) do
     t.boolean "enable_secondary_sale", default: false
     t.integer "parent_entity_id"
     t.string "currency", limit: 10
-    t.string "units", limit: 15
     t.date "trial_end_date"
     t.boolean "trial", default: false
     t.integer "tasks_count"
@@ -461,6 +463,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_04_123730) do
     t.string "from_email", limit: 100
     t.boolean "enable_funds", default: false
     t.boolean "enable_inv_opportunities", default: false
+    t.integer "units", default: 0
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
@@ -573,6 +576,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_04_123730) do
     t.string "liq_pref_type", limit: 25
     t.string "anti_dilution", limit: 50
     t.decimal "price_cents", precision: 20, scale: 2, default: "0.0"
+    t.integer "units", default: 0
     t.index ["deleted_at"], name: "index_funding_rounds_on_deleted_at"
     t.index ["entity_id"], name: "index_funding_rounds_on_entity_id"
   end
@@ -1261,6 +1265,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_04_123730) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "aggregate_investments", "entities"
+  add_foreign_key "aggregate_investments", "funding_rounds"
   add_foreign_key "aggregate_investments", "investors"
   add_foreign_key "approval_responses", "approvals"
   add_foreign_key "approval_responses", "entities"

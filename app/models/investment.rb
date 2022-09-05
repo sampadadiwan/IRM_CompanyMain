@@ -99,7 +99,6 @@ class Investment < ApplicationRecord
       self.amount = quantity * price
     end
     self.currency = entity.currency
-    self.units = entity.units
     self.investment_type = funding_round.name
     self.investment_instrument = investment_instrument.strip
     self.employee_holdings = true if investment_type == "Employee Holdings"

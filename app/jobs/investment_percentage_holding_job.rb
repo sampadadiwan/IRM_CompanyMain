@@ -31,8 +31,22 @@ class InvestmentPercentageHoldingJob < ApplicationJob
   private
 
   def update_investment_percentage(entity)
-    equity_investments = entity.investments.equity_or_pref
-    esop_investments = entity.investments.options_or_esop
+    if entity.entity_type == "Investment Fund"
+      # We have to compute the percentage holding per fund
+      entity.funding_rounds.each do |funding_round|
+        equity_investments = funding_round.investments.equity_or_pref
+        esop_investments = funding_round.investments.options_or_esop
+        update_investments(equity_investments, esop_investments)
+      end
+    else
+      # We have to compute the percentage holding for the entire startups investments
+      equity_investments = entity.investments.equity_or_pref
+      esop_investments = entity.investments.options_or_esop
+      update_investments(equity_investments, esop_investments)
+    end
+  end
+
+  def update_investments(equity_investments, esop_investments)
     equity_quantity = equity_investments.sum(:quantity)
     esop_quantity = esop_investments.sum(:quantity)
 
@@ -48,15 +62,27 @@ class InvestmentPercentageHoldingJob < ApplicationJob
   end
 
   def update_aggregate_percentage(entity)
-    all = entity.aggregate_investments
-    equity = all.sum(:equity)
-    preferred = all.sum(:preferred)
-    options = all.sum(:options)
+    if entity.entity_type == "Investment Fund"
+      entity.funding_rounds.each do |funding_round|
+        fund_agg_inv = funding_round.aggregate_investments
+        update_aggregate(fund_agg_inv)
+      end
+    else
+      all = entity.aggregate_investments
+      update_aggregate(all)
+    end
+  end
 
-    eq = (equity + preferred).positive? ? (equity + preferred) : 1
-    eq_op = (equity + preferred + options).positive? ? (equity + preferred + options) : 1
+  def update_aggregate(agg_investments)
+    equity = agg_investments.sum(:equity)
+    preferred = agg_investments.sum(:preferred)
+    options = agg_investments.sum(:options)
+    units = agg_investments.sum(:units)
 
-    all.update_all("percentage = 100*(equity+preferred)/#{eq},
-                    full_diluted_percentage = 100*(equity+preferred+options)/#{eq_op}")
+    eq = (equity + preferred + units).positive? ? (equity + preferred + units) : 1
+    eq_op = (equity + preferred + units + options).positive? ? (equity + preferred + units + options) : 1
+
+    agg_investments.update_all("percentage = 100*(equity+preferred+units)/#{eq},
+                    full_diluted_percentage = 100*(equity+preferred+units+options)/#{eq_op}")
   end
 end

@@ -12,14 +12,6 @@
     </tr>
     <tr>
       <td>
-        Shareholder
-      </td>
-      <td>
-        <%= @aggregate_investment.investor.category %>
-      </td>
-    </tr>
-    <tr>
-      <td>
         Investor
       </td>
       <td>
@@ -28,6 +20,24 @@
           @aggregate_investment.investor_name %>
       </td>
     </tr>
+    <tr>
+      <td>
+        Investor Category
+      </td>
+      <td>
+        <%= @aggregate_investment.investor.category %>
+      </td>
+    </tr>
+    <% if @aggregate_investment.entity.entity_type == "Investment Fund" %>
+    <tr>
+      <td>
+        Units
+      </td>
+      <td>
+        <%= custom_format_number @aggregate_investment.units, params %>
+      </td>
+    </tr>
+    <% else %>
     <tr>
       <td>
         Equity
@@ -68,6 +78,8 @@
         <%= @aggregate_investment.full_diluted_percentage %>
       </td>
     </tr>
+    <% end %>
+
 
 
   </table>

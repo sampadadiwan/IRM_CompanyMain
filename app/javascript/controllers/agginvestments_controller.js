@@ -27,6 +27,7 @@ export default class extends Controller {
     $('#aggregate_investments tbody').on('click', 'td.dt-control', function (event) {
       let entity = $(this).data('entity');
       let investor_id = $(this).data('investor');
+      let funding_round_id = $(this).data('funding-round');
       var tr = $(this).closest('tr');
       var row = t1.row(tr);
 
@@ -39,7 +40,7 @@ export default class extends Controller {
       else {
 
         $.ajax({
-          url: `/investments.json?entity_id=${entity}&investor_id=${investor_id}&equity_like=true`
+          url: `/investments.json?entity_id=${entity}&investor_id=${investor_id}&funding_round_id=${funding_round_id}&equity_like=true`
         }).then(function(data) {
             console.log(data);
             row.child(format(data)).show();

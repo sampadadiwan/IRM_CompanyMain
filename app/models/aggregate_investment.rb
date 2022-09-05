@@ -22,6 +22,11 @@ class AggregateInvestment < ApplicationRecord
 
   has_many :investments, dependent: :destroy
 
+  # Funding round applies only to Investment Funds aggregate investments.
+  # This is because in investment funds, the investors may be invested across multiple Funds
+  # Aggregation is done per investor per Fund, unlike Startup where aggregation is done per investor only
+  belongs_to :funding_round, optional: true
+
   belongs_to :investor
   delegate :investor_name, to: :investor
 

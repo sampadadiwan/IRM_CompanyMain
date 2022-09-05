@@ -84,30 +84,42 @@
             <th>
               Investor
             </th>
-            <th>
-              Equity
-            </th>
-            <th>
-              Preferred
-            </th>
-            <th>
-              Total
-            </th>
+            <% if @entity.entity_type == "Investment Fund" %>
+              <th>
+                Funding Round
+              </th>
+              <th>
+                Units
+              </th>
+              <th>
+                Percentage
+              </th>
 
-            <th>
-              Percentage
-            </th>
+            <% else %>
+              <th>
+                Equity
+              </th>
+              <th>
+                Preferred
+              </th>
+              <th>
+                Total
+              </th>
 
-            <th>
-              Options
-            </th>
-            <th>
-              Full Diluted
-            </th>
-            <th>
-              Full Diluted Percentage
-            </th>
+              <th>
+                Percentage
+              </th>
 
+              <th>
+                Options
+              </th>
+              <th>
+                Full Diluted
+              </th>
+              <th>
+                Full Diluted Percentage
+              </th>
+            <% end %>
             <th>
             </th>
           </tr>

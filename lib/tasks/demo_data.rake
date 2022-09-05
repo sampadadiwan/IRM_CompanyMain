@@ -59,7 +59,7 @@ namespace :irm do
     end
 
 
-    family_offices = "Waterfield Advisors,Sekhsaria family office,Metta investors,Delta Ventures,Bansal family office,Arun Gupta,Ram Sharma,DSQ,Sync Invest,Tamarind investments,Maheshwari Family Office,Q10 LLP,Mac Invest,Alpha Funds,Rahul Singh,Youwecan,MSD investments,Copter Invest,VK Invest,S10 Ventures".split(",")
+    family_offices = "Waterfield Advisors,Sekhsaria family office,Metta investors,Delta Ventures,Bansal family office,Arun Gupta".split(",") #,Ram Sharma,DSQ,Sync Invest,Tamarind investments,Maheshwari Family Office,Q10 LLP,Mac Invest,Alpha Funds,Rahul Singh,Youwecan,MSD investments,Copter Invest,VK Invest,S10 Ventures".split(",")
     
     family_offices.each do |name|
       e = FactoryBot.create(:entity, entity_type: "Family Office", name: name, enable_funds: true, enable_inv_opportunities: true)
@@ -228,7 +228,7 @@ namespace :irm do
     
       5.times do
         inv = e.investors.sample
-        AccessRight.create(owner: e, access_type: "Investment", metadata: "All",
+        AccessRight.create(owner: e, access_type: "Investment", metadata: "Self",
                            entity: e, access_to_category: Investor::INVESTOR_CATEGORIES[rand(Investor::INVESTOR_CATEGORIES.length)])
       end
 
@@ -241,6 +241,40 @@ namespace :irm do
     puts e.backtrace.join("\n")
     raise e
   end
+
+  desc "generates fake Investments for testing"
+  task generateFakeFundInvestments: :environment do
+    Entity.funds.each do |e|
+      i = nil
+      round = e.funding_rounds.sample
+      e.investors.each do |inv|
+        (1..3).each do
+          round = e.funding_rounds.sample
+          instrument = "Units"
+          i = FactoryBot.build(:investment, entity: e, investor: inv, investment_instrument: instrument, 
+            funding_round: round, notes: "generateFakeInvestments", 
+            investment_date: (Date.today - rand(6).years - rand(12).months))
+          i = SaveInvestment.call(investment: i).investment
+          puts "Investment #{i.to_json}"
+        end
+      end
+    
+      5.times do
+        inv = e.investors.sample
+        AccessRight.create(owner: e, access_type: "Investment", metadata: "Self",
+                           entity: e, access_to_category: Investor::INVESTOR_CATEGORIES[rand(Investor::INVESTOR_CATEGORIES.length)])
+      end
+
+      InvestmentPercentageHoldingJob.new.perform(e.id)
+    end
+
+    # AggregateInvestment.all.each.map(&:update_percentage_holdings)
+    
+  rescue Exception => e
+    puts e.backtrace.join("\n")
+    raise e
+  end
+
 
   desc "generates fake Holdings for testing"
   task generateFakeHoldings: :environment do
