@@ -13,7 +13,7 @@
             <%= render "fm_dashboard" %>
         <% elsif current_user.curr_role == "holding" %>
             <%= render "holding_dashboard" %>
-        <% elsif current_user.entity.entity_type == "Holding" %>
+        <% elsif current_user.entity.entity_type == "Family Office" %>
             <%= render "advisor_dashboard" %>
         <% end %>
     <% end %>

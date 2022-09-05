@@ -1,0 +1,3 @@
+<%= render "/entities/advisor_stats" %>
+<% @entities = Entity.for_investor(current_user) %>
+<%= render "/entities/index", entities: @entities, vc_view: true %>

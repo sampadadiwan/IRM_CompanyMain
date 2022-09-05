@@ -21,7 +21,10 @@
             <%= link_to "Tasks", tasks_path(entity_id: entity.id) , 
                     {id: "tasks_#{entity.id}", class: "btn btn-success"}%>
             <%= link_to "Investment Opportunities", investment_opportunities_path(entity_id: entity.id) , 
-                    {id: "tasks_#{entity.id}", class: "btn btn-success"} if entity.entity_type == "Investment Fund" %>
+                    {id: "io_#{entity.id}", class: "btn btn-success"} if entity.entity_type == "Investment Fund" && entity.enable_inv_opportunities %>
+
+            <%= link_to "Funds", funds_path(entity_id: entity.id) , 
+                    {id: "funds_#{entity.id}", class: "btn btn-success"} if entity.entity_type == "Investment Fund" && entity.enable_funds %>
         <% end %>
     </td>  
 

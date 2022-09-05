@@ -80,6 +80,13 @@ class Investor < ApplicationRecord
     if investor_entity_id.blank?
       e = Entity.where(name: investor_name).first
       e ||= Entity.create(name: investor_name, entity_type: "VC")
+
+      # We need to enable features if the entity creating the investor has them turned on
+      # Ex. an Investment Fund creates and investor, who should have funds enabled
+      e.enable_funds = investor.entity.enable_funds if investor.entity.enable_funds
+      e.enable_inv_opportunities = investor.enable_inv_opportunities if investor.enable_inv_opportunities
+      e.save
+
       self.investor_entity = e
     end
   end
