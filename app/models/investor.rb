@@ -33,7 +33,6 @@ class Investor < ApplicationRecord
   counter_culture :entity
 
   has_many :investor_accesses, dependent: :destroy
-  has_many :investments, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
 
   has_many :access_rights, foreign_key: :access_to_investor_id, dependent: :destroy
@@ -41,6 +40,13 @@ class Investor < ApplicationRecord
   has_many :deals, through: :deal_investors
   has_many :holdings, dependent: :destroy
   has_many :notes, dependent: :destroy
+
+  has_many :capital_commitments, dependent: :destroy
+  has_many :approval_responses, dependent: :destroy
+  has_many :capital_distribution_payments, dependent: :destroy
+  has_many :capital_remittances, dependent: :destroy
+
+  has_many :investments, dependent: :destroy
   has_many :aggregate_investments, dependent: :destroy
 
   # Customize form
@@ -83,8 +89,8 @@ class Investor < ApplicationRecord
 
       # We need to enable features if the entity creating the investor has them turned on
       # Ex. an Investment Fund creates and investor, who should have funds enabled
-      e.enable_funds = investor.entity.enable_funds if investor.entity.enable_funds
-      e.enable_inv_opportunities = investor.enable_inv_opportunities if investor.enable_inv_opportunities
+      e.enable_funds = entity.enable_funds if entity.enable_funds
+      e.enable_inv_opportunities = entity.enable_inv_opportunities if entity.enable_inv_opportunities
       e.save
 
       self.investor_entity = e
