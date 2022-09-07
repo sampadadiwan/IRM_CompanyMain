@@ -83,7 +83,7 @@ class DocumentsController < ApplicationController
       if @document.save
         format.html do
           if @document.owner
-            redirect_to [@document.owner], notice: "Document was successfully created."
+            redirect_to [@document.owner, { tab: "documents-tab" }], notice: "Document was successfully created."
           else
             redirect_to document_url(@document), notice: "Document was successfully created."
           end

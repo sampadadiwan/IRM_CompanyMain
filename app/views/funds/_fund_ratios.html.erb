@@ -1,0 +1,47 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Fund Ratios</h1>
+  </div>
+
+  <div class="table-responsive">
+
+    <table id="funds" class="table table-bordered dataTable jqDataTable">
+      <thead>
+        <tr>
+          <th>
+            Ratio
+          </th>
+          <th>
+            Value
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+            <td>Fund IRR</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>DPI (Distribution to Paid In Ratio) </td>
+            <td>
+            <%= fund.dpi %>
+            </td>
+        </tr>
+        <tr>
+            <td>RVPI (Residual to Paid In Ratio) </td>
+            <td><%= fund.rvpi %></td>
+        </tr>
+        <tr>
+            <td>TVPI (DPI + RVPI)</td>
+            <td><%= fund.tvpi %></td>
+        </tr>
+
+        <tr>
+            <td>MOIC</td>
+            <td>
+                <%= fund.moic %>
+            </td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>

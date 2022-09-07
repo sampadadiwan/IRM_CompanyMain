@@ -53,4 +53,23 @@ class Fund < ApplicationRecord
   def to_s
     name
   end
+
+  def rvpi
+    valuation = entity.valuations.last
+    (valuation.pre_money_valuation_cents / collected_amount_cents).round(2) if valuation
+  end
+
+  def dpi
+    (distribution_amount_cents / collected_amount_cents).round(2) if collected_amount_cents.positive?
+  end
+
+  def tvpi
+    dpi + rvpi if rvpi && dpi
+  end
+
+  def moic
+    # (self.tvpi / self.collected_amount_cents).round(2) if self.tvpi && self.collected_amount_cents > 0
+  end
+
+  def xirr; end
 end
