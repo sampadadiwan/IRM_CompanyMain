@@ -3,7 +3,7 @@ class CapitalDistributionsController < ApplicationController
 
   # GET /capital_distributions or /capital_distributions.json
   def index
-    @capital_distributions = policy_scope(CapitalDistribution)
+    @capital_distributions = policy_scope(CapitalDistribution).includes(:fund)
     @capital_distributions = @capital_distributions.where(fund_id: params[:fund_id]) if params[:fund_id].present?
   end
 
