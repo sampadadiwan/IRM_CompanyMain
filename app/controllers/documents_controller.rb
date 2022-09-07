@@ -81,7 +81,13 @@ class DocumentsController < ApplicationController
 
     respond_to do |format|
       if @document.save
-        format.html { redirect_to document_url(@document), notice: "Document was successfully created." }
+        format.html do
+          if @document.owner
+            redirect_to [@document.owner], notice: "Document was successfully created."
+          else
+            redirect_to document_url(@document), notice: "Document was successfully created."
+          end
+        end
         format.json { render :show, status: :created, location: @document }
       else
         format.html { render :new, status: :unprocessable_entity }

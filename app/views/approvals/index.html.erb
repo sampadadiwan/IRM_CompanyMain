@@ -16,15 +16,18 @@
         <th>
           Agreements Reference
         </th>
-        <th>
-          Approved 
-        </th>
-        <th>
-          Rejected 
-        </th>
-        <th>
-          Pending 
-        </th>
+
+        <% if ["Startup", "Investment Fund"].include?(current_user.entity.entity_type) %>
+          <th>
+            Approved 
+          </th>
+          <th>
+            Rejected 
+          </th>
+          <th>
+            Pending 
+          </th>
+        <% end %>
     
         <th>
         </th>

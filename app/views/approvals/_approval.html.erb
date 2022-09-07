@@ -6,15 +6,19 @@
   <td>
     <%= approval.agreements_reference %>
   </td>
-  <td>
-    <%= approval.approved_count %>
-  </td>
-  <td>
-    <%= approval.rejected_count %>
-  </td>
-  <td>
-    <%= approval.pending_count %>
-  </td>
+
+  <% if policy(approval).update? %>
+    <td>
+      <%= approval.approved_count %>
+    </td>
+    <td>
+      <%= approval.rejected_count %>
+    </td>
+    <td>
+      <%= approval.pending_count %>
+    </td>
+  <% end %>
+
   <td>
     <%= link_to "Show" , approval , {class: "btn btn-primary" }%>
   </td>

@@ -44,7 +44,7 @@ class Document < ApplicationRecord
 
   belongs_to :entity, touch: true
   belongs_to :folder
-  belongs_to :owner, polymorphic: true, optional: true
+  belongs_to :owner, polymorphic: true, optional: true, touch: true
 
   NESTED_ATTRIBUTES = %i[id name file tags owner_tag user_id].freeze
   counter_culture :entity

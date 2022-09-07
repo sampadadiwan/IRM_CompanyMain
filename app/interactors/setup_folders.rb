@@ -23,6 +23,7 @@ class SetupFolders
     when "Investment Fund"
       create_if_not_exist("Investment Opportunities", entity, root, :system)
       create_if_not_exist("Funds", entity, root, :system)
+      create_if_not_exist("Approvals", entity, root, :system)
     end
   end
 
