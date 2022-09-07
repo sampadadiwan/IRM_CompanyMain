@@ -4,6 +4,7 @@ class ValuationsController < ApplicationController
   # GET /valuations or /valuations.json
   def index
     @valuations = policy_scope(Valuation).includes(:entity)
+    @valuations = @valuations.where(owner_id: params[:owner_id], owner_type: params[:owner_type]) if params[:owner_id].present? && params[:owner_type].present?
   end
 
   # GET /valuations/1 or /valuations/1.json
@@ -11,7 +12,7 @@ class ValuationsController < ApplicationController
 
   # GET /valuations/new
   def new
-    @valuation = Valuation.new
+    @valuation = Valuation.new(valuation_params)
     @valuation.entity_id = current_user.entity_id
     @valuation.valuation_date = Time.zone.today
     authorize @valuation
@@ -76,6 +77,7 @@ class ValuationsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def valuation_params
     params.require(:valuation).permit(:entity_id, :valuation_date, :pre_money_valuation,
+                                      :owner_id, :owner_type,
                                       :form_type_id, :per_share_value, reports: [], properties: {})
   end
 end

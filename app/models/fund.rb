@@ -6,8 +6,10 @@ class Fund < ApplicationRecord
   belongs_to :entity, touch: true
   belongs_to :funding_round
   has_many :documents, as: :owner, dependent: :destroy
+  has_many :valuations, as: :owner, dependent: :destroy
   has_many :capital_remittances, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
+  has_many :capital_distributions, dependent: :destroy
   has_many :capital_calls, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
 
@@ -55,7 +57,7 @@ class Fund < ApplicationRecord
   end
 
   def rvpi
-    valuation = entity.valuations.last
+    valuation = valuations.last
     (valuation.pre_money_valuation_cents / collected_amount_cents).round(2) if valuation
   end
 
@@ -71,5 +73,26 @@ class Fund < ApplicationRecord
     # (self.tvpi / self.collected_amount_cents).round(2) if self.tvpi && self.collected_amount_cents > 0
   end
 
-  def xirr; end
+  def xirr
+    last_valuation = valuations.last
+    if last_valuation
+
+      cf = Xirr::Cashflow.new
+
+      capital_calls.each do |capital_call|
+        cf << Xirr::Transaction.new(-1 * capital_call.collected_amount_cents, date: capital_call.due_date)
+      end
+
+      capital_distributions.each do |capital_distribution|
+        cf << Xirr::Transaction.new(capital_distribution.net_amount_cents, date: capital_distribution.distribution_date)
+      end
+
+      cf << Xirr::Transaction.new(last_valuation.pre_money_valuation_cents, date: last_valuation.valuation_date)
+
+      Rails.logger.debug { "fund.xirr cf: #{cf}" }
+      Rails.logger.debug { "fund.xirr irr: #{cf.xirr}" }
+      cf.xirr * 100
+
+    end
+  end
 end

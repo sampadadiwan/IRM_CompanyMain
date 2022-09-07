@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_05_043216) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_07_084109) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1240,8 +1240,11 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_05_043216) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "form_type_id"
+    t.string "owner_type"
+    t.bigint "owner_id"
     t.index ["entity_id"], name: "index_valuations_on_entity_id"
     t.index ["form_type_id"], name: "index_valuations_on_form_type_id"
+    t.index ["owner_type", "owner_id"], name: "index_valuations_on_owner"
   end
 
   create_table "versions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|

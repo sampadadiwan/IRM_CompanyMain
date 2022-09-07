@@ -33,7 +33,7 @@ class CapitalCall < ApplicationRecord
   end
 
   def percentage_raised
-    (collected_amount_cents * 100.0 / call_amount_cents).round(2)
+    call_amount_cents.positive? ? (collected_amount_cents * 100.0 / call_amount_cents).round(2) : 0
   end
 
   after_create :notify_capital_call

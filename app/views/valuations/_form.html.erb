@@ -11,6 +11,9 @@
     </div>
   <% end %>
 
+  <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+
   <div class="form-group">
     <%= form.label :valuation_date %>
     <%= form.date_field :valuation_date, class: "form-control"  %>

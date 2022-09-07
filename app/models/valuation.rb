@@ -14,6 +14,8 @@
 
 class Valuation < ApplicationRecord
   belongs_to :entity
+  belongs_to :owner, polymorphic: true, optional: true, touch: true
+
   has_many_attached :reports, service: :amazon
   # Customize form
   belongs_to :form_type, optional: true

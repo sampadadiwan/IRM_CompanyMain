@@ -1,54 +1,70 @@
 <%= render "/layouts/alerts" %>
 
-<table class="table table-bordered dataTable">
+  <table class="table table-bordered dataTable">
 
-          <tr>
-        <td>
-          Entity
-        </td>
-        <td>
-          <%= @valuation.entity.name %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Valuation Date
-        </td>
-        <td>
-          <%= l @valuation.valuation_date %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Valuation
-        </td>
-        <td>
-          <%= @valuation.pre_money_valuation %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Per Share Value
-        </td>
-        <td>
-          <%= @valuation.per_share_value %>
-        </td>    
-      </tr>
-      <tr>
-        <td>
-          Valuation Reports
-        </td>
-        <td>
-          <%= render "/layouts/attachments" , attachments: @valuation.reports if @valuation.reports.present? %>
-        </td>
-      </tr>
-    
-      <%= display_custom_fields(@valuation) %>
+    <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @valuation.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Valuation Date
+    </td>
+    <td>
+      <%= l @valuation.valuation_date %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Valuation
+    </td>
+    <td>
+      <%= @valuation.pre_money_valuation %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Per Share Value
+    </td>
+    <td>
+      <%= @valuation.per_share_value %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Valuation Reports
+    </td>
+    <td>
+      <%= render "/layouts/attachments" , attachments: @valuation.reports if @valuation.reports.present? %>
+    </td>
+  </tr>
+
+  <% if @valuation.owner %>
+  <tr>
+    <td>
+      Owner
+    </td>
+    <td>
+      <%= link_to @valuation.owner_type, @valuation.owner %>
+    </td>
+  </tr>
+  <% end %>
+
+  <%= display_custom_fields(@valuation) %>
 
 </table>
 
 
 <div>
-  <%= link_to "Edit", edit_valuation_path(@valuation), {class: "btn btn-primary"} %> |
-  <%= button_to "Delete", @valuation, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <% if policy(@valuation).update? %>
+
+    <%= link_to "Edit" , edit_valuation_path(@valuation), {class: "btn btn-primary" } %> |
+    <%= button_to "Delete" , @valuation, method: :delete, class: "btn btn-danger" , 
+        form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
+
+  <% end %>
 </div>
