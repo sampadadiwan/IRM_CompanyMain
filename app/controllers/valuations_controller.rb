@@ -35,7 +35,7 @@ class ValuationsController < ApplicationController
     respond_to do |format|
       if @valuation.save
         if @valuation.owner
-          format.html { redirect_to [@valuation.owner, tab: "valuations-tab"], notice: "Valuation was successfully created." }
+          format.html { redirect_to [@valuation.owner, { tab: "valuations-tab" }], notice: "Valuation was successfully created." }
         else
           format.html { redirect_to valuation_url(@valuation), notice: "Valuation was successfully created." }
         end
