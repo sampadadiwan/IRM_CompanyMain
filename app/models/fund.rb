@@ -91,7 +91,7 @@ class Fund < ApplicationRecord
 
       Rails.logger.debug { "fund.xirr cf: #{cf}" }
       Rails.logger.debug { "fund.xirr irr: #{cf.xirr}" }
-      cf.xirr * 100
+      (cf.xirr * 100).round(2)
 
     end
   end

@@ -4,7 +4,7 @@ class CapitalCommitment < ApplicationRecord
 
   belongs_to :entity
   belongs_to :investor
-  belongs_to :fund
+  belongs_to :fund, touch: true
   has_many :capital_remittances, dependent: :destroy
 
   belongs_to :form_type, optional: true

@@ -2,7 +2,7 @@ class CapitalDistribution < ApplicationRecord
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
-  belongs_to :fund
+  belongs_to :fund, touch: true
   belongs_to :entity
   belongs_to :form_type, optional: true
 
