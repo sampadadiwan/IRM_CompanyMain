@@ -12,7 +12,7 @@
                     <% if investment_opportunity.logo.present? %>
                     <tr>
                        <td colspan="2" class="io_logo">
-                            <%= image_tag investment_opportunity.logo_url %>
+                            <%= image_tag investment_opportunity.logo.url(expires_in: 60*60*24*7) %>
                         </td>
                     </tr>
                     <% end %>

@@ -38,7 +38,7 @@ class InvestmentOpportunity < ApplicationRecord
 
   before_validation :setup_funding_round
   def setup_funding_round
-    self.funding_Round = FundingRound.new(name:, entity_id:, status: "Open", currency: entity.currency)
+    self.funding_round = FundingRound.new(name:, entity_id:, status: "Open", currency: entity.currency)
   end
 
   def name
