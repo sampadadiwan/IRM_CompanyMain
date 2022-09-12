@@ -21,7 +21,7 @@
 
 <% if aggregate_investment.entity.entity_type == "Investment Fund" %>
   <td>
-    <%= aggregate_investment.funding_round.name %>
+    <%= aggregate_investment&.funding_round&.name %>
   </td> 
   <td class="units">
     <%= custom_format_number aggregate_investment.units, params %>
