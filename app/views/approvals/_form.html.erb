@@ -22,13 +22,6 @@
     <small class="text-muted">Date after which responses are not allowed</small>
   </div>
 
-  <div class="form-group">
-    <%= form.label :approved %>
-    <%= form.check_box :approved, class: "form-control form-checkbox"  %>
-    <small class="text-muted">
-      Check this box only after all investors are added, and the approval notifications should be sent
-    </small>
-  </div>
 
   <%= custom_form_fields(approval, form) %>
 

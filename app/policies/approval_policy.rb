@@ -40,7 +40,7 @@ class ApprovalPolicy < ApplicationPolicy
   end
 
   def approve?
-    update? && !record.approved && record.access_rights.count.positive?
+    user.has_cached_role?(:approver) && update? && !record.approved && record.access_rights.count.positive?
   end
 
   def send_reminder?
