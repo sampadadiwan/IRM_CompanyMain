@@ -53,11 +53,11 @@ class Interest < ApplicationRecord
   belongs_to :form_type, optional: true
   serialize :properties, Hash
 
-  validates :quantity, comparison: { less_than_or_equal_to: :total_offered_quantity }
+  validates :quantity, comparison: { less_than_or_equal_to: :display_quantity }
   validates :price, comparison: { less_than_or_equal_to: :max_price } if proc { |i| i.secondary_sale.price_type == 'Price Range' }
   validates :price, comparison: { greater_than_or_equal_to: :min_price }
 
-  delegate :total_offered_quantity, to: :secondary_sale
+  delegate :display_quantity, to: :secondary_sale
   delegate :min_price, to: :secondary_sale
   delegate :max_price, to: :secondary_sale
   delegate :email, to: :user, prefix: true
