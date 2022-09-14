@@ -1,5 +1,9 @@
 <%= render "/layouts/alerts" %>
-<% cache(@approval) do %>
+
+<% cache([@approval, current_user.entity_id == @approval.entity_id]) do %>
+  <%= render "/layouts/steps", steps: ["Setup Approval", "Add Access Rights", "Approve / Finalize the Approval", 
+            "Receive / Track Responses", "Send Reminders"].freeze if current_user.entity_id == @approval.entity_id %>
+
   <%= render "/approvals/show", approval: @approval %>
 <% end %>
 
@@ -13,7 +17,11 @@
   <% end %>
   <%= button_to "Approve", approve_approval_path(@approval), method: :patch, class: "btn btn-success", 
         form_class: "deleteButton", 
-        data: {action: "click->confirm#popup", msg: "Approve and send notificatons to investors?", turbo:true, method: :patch} if policy(@approval).approve? && !@approval.approved && @approval.access_rights.count > 0  %>
+        data: {action: "click->confirm#popup", msg: "Approve and send notificatons to investors?", turbo:true, method: :patch} if policy(@approval).approve?  %>
+
+  <%= button_to "Send Reminder", send_reminder_approval_path(@approval), method: :patch, class: "btn btn-success", 
+        form_class: "deleteButton", 
+        data: {action: "click->confirm#popup", msg: "Send notificatons to pending investors?", turbo:true, method: :patch} if policy(@approval).send_reminder?  %>
 </div>
 
 <% cache_if(current_user.entity_id == @approval.entity_id, [@approval, "Details"]) do %>

@@ -6,9 +6,13 @@ class Approval < ApplicationRecord
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
   has_many :approval_responses, dependent: :destroy
+  has_many :investors, through: :approval_responses
+  has_many :pending_investors, -> { where('approval_responses.status': "Pending") }, through: :approval_responses, class_name: "Investor", source: :investor
 
   belongs_to :form_type, optional: true
   serialize :properties, Hash
+
+  validates :title, :due_date, presence: true
 
   def name
     title

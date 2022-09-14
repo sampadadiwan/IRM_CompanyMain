@@ -1,4 +1,4 @@
-<%= form_with(model: approval) do |form| %>
+<%= form_with(model: approval, validate: true) do |form| %>
   <% if approval.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(approval.errors.count, "error") %> prohibited this approval from being saved:</h2>
@@ -14,6 +14,20 @@
   <div class="form-group">
     <%= form.label :title %>
     <%= form.text_field :title, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :due_date %>
+    <%= form.date_field :due_date, class: "form-control"  %>
+    <small class="text-muted">Date after which responses are not allowed</small>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :approved %>
+    <%= form.check_box :approved, class: "form-control form-checkbox"  %>
+    <small class="text-muted">
+      Check this box only after all investors are added, and the approval notifications should be sent
+    </small>
   </div>
 
   <%= custom_form_fields(approval, form) %>

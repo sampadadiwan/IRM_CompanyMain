@@ -1,5 +1,5 @@
 class ApprovalsController < ApplicationController
-  before_action :set_approval, only: %i[show edit update destroy approve]
+  before_action :set_approval, only: %i[show edit update destroy approve send_reminder]
   after_action :verify_policy_scoped, only: %i[]
 
   # GET /approvals or /approvals.json
@@ -18,6 +18,7 @@ class ApprovalsController < ApplicationController
   def new
     @approval = Approval.new
     @approval.entity_id = current_user.entity_id
+    @approval.due_date = Time.zone.today + 7.days
     authorize @approval
     setup_custom_fields(@approval)
   end
@@ -75,6 +76,14 @@ class ApprovalsController < ApplicationController
     end
   end
 
+  def send_reminder
+    ApprovalMailer.with(id: @approval.id).notify_new_approval.deliver_later
+    respond_to do |format|
+      format.html { redirect_to approval_url(@approval), notice: "Successfully sent reminder." }
+      format.json { head :no_content }
+    end
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.
@@ -86,6 +95,6 @@ class ApprovalsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def approval_params
     params.require(:approval).permit(:title, :agreements_reference, :entity_id, :approved_count,
-                                     :rejected_count, properties: {})
+                                     :approved, :due_date, :rejected_count, properties: {})
   end
 end

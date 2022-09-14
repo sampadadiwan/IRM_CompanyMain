@@ -35,6 +35,7 @@ Rails.application.routes.draw do
   end
   resources :approvals do
     patch 'approve', on: :member
+    patch 'send_reminder', on: :member
   end
 
   get "/health_check/redis_check", to: "health_check#redis_check"

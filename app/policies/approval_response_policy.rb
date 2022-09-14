@@ -28,7 +28,7 @@ class ApprovalResponsePolicy < ApplicationPolicy
   end
 
   def update?
-    (user.entity_id == record.response_entity_id)
+    (user.entity_id == record.response_entity_id) && (record.approval.due_date >= Time.zone.today)
   end
 
   def edit?
@@ -40,6 +40,6 @@ class ApprovalResponsePolicy < ApplicationPolicy
   end
 
   def approve?
-    (user.entity_id == record.response_entity_id)
+    update?
   end
 end

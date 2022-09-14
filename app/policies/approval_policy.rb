@@ -28,7 +28,7 @@ class ApprovalPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    create? && record.due_date >= Time.zone.today
   end
 
   def edit?
@@ -40,6 +40,10 @@ class ApprovalPolicy < ApplicationPolicy
   end
 
   def approve?
-    update?
+    update? && !record.approved && record.access_rights.count.positive?
+  end
+
+  def send_reminder?
+    update? && record.approved
   end
 end

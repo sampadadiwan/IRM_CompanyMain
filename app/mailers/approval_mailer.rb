@@ -4,15 +4,15 @@ class ApprovalMailer < ApplicationMailer
   def notify_new_approval
     @approval = Approval.find params[:id]
 
-    if params[:investor_id].present?
+    if params[:access_right_id].present?
       # Get all emails of investor
-      access_right = Investor.find(params[:access_right_id])
+      access_right = AccessRight.find(params[:access_right_id])
       investor_emails = sandbox_email(@approval,
                                       access_right.investor_emails.flatten)
     else
       # Get all emails of investors
       investor_emails = sandbox_email(@approval,
-                                      @approval.access_rights.collect(&:investor_emails).flatten)
+                                      @approval.pending_investors.collect(&:emails).flatten)
     end
 
     mail(from: from_email(@approval.entity),

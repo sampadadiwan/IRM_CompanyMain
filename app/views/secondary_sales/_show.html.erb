@@ -69,25 +69,12 @@
       </tr>
     <% end %>
 
-    <% if secondary_sale.show_quantity == "Indicative" %>
-      <td>
-        Total Offered
-      </td>
-      <td>
-        <%= custom_format_number secondary_sale.display_quantity, params %>
-        <div>
-          <% secondary_sale.display_amounts.each_with_index do |amount, idx| %>
-            <%= money_to_currency amount, params %> 
-            <%= "-" if idx == 0 && secondary_sale.display_amounts.length > 1 %>
-          <% end %>
-        </div>
-      </td>
-    <% else %>
     <tr>
       <td>
         Total Offered
       </td>
       <td>
+        
         <% if secondary_sale.sale_type == "Tranche" %>
           <table class="table-bordered">
             <tr>
@@ -104,8 +91,9 @@
             </tr>
           </table>
         <% else %>
-          <%= custom_format_number secondary_sale.total_offered_quantity, params %>
+          <%= custom_format_number secondary_sale.display_quantity, params %>
         <% end %>
+
 
         <div>
           <% secondary_sale.display_amounts.each_with_index do |amount, idx| %>
@@ -115,9 +103,6 @@
         </div>
       </td>
     </tr>
-    <% end %>
-    
-    
 
 
     <tr>
