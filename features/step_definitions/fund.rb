@@ -62,10 +62,9 @@
     click_on("New Capital Commitment")
     select(investor_name, from: "capital_commitment_investor_id")
     fill_in('capital_commitment_committed_amount', with: amount)
-
     click_on "Save"
 
-    sleep(1)
+    sleep(2)
   end
   
   Then('the fund total committed amount must be {string}') do |amount|
@@ -75,7 +74,7 @@
   
   Given('there are capital commitments of {string} from each investor') do |args|
     @fund.investors.each do |inv|
-        commitment = FactoryBot.build(:capital_commitment, fund: @fund)
+        commitment = FactoryBot.build(:capital_commitment, fund: @fund, investor: inv)
         key_values(commitment, args)
         commitment.save
         puts "\n####CapitalCommitment####\n"
@@ -97,7 +96,7 @@
     fill_in('capital_call_due_date', with: @capital_call.due_date)
     
     click_on "Save"
-    sleep(1)
+    sleep(2)
 
   end
 
@@ -111,6 +110,8 @@
   
   Then('I should see the remittances') do
     @capital_call.reload
+    @fund.capital_commitments.count.should == 2
+    @capital_call.capital_remittances.count.should == 2
 
     visit(capital_call_url(@capital_call))
     click_on "Remittances"
@@ -141,9 +142,11 @@
 
     @capital_call.capital_remittances.each do |remittance|
       visit(capital_call_url(@capital_call))
-      click_on "Remittances"
+      sleep(2)
+      click_on "Remittances"      
       within("#capital_remittance_#{remittance.id}") do
         click_on "Paid"
+        sleep(1)
       end
       fill_in('capital_remittance_collected_amount', with: remittance.due_amount)
       click_on "Save"
@@ -155,15 +158,23 @@
 
     @capital_call.capital_remittances.each do |remittance|
       visit(capital_call_url(@capital_call))
-      click_on "Remittances"
+      sleep(2)
+      click_on "Remittances"      
       within("#capital_remittance_#{remittance.id}") do
         click_on "Verify"
+        sleep(1)
       end
-      sleep(1)
       click_on "Proceed"
       sleep(1)
     end
   end
+
+
+Then('the capital call collected amount should be {string}') do |arg|
+  @capital_call.reload
+  @capital_call.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.entity.currency)
+end
+
   
   
   

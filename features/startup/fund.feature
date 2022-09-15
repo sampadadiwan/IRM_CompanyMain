@@ -46,10 +46,13 @@ Scenario Outline: Create new capital call
   Then I should see the capital call details
   Then the corresponding remittances should be created
   Then I should see the remittances
+  And the capital call collected amount should be "0"
   When I mark the remittances as paid
   Then I should see the remittances
+  And the capital call collected amount should be "0"
   When I mark the remittances as verified
   Then I should see the remittances
+  And the capital call collected amount should be "400000"
   
   Examples:
   	|user	    |entity                                 |fund                 |msg	|
