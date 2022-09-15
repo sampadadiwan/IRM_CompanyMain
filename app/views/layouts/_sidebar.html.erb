@@ -209,11 +209,20 @@
                     <span>Deals</span>
                 </a>
             </li>
-            <li class="nav-item">                
-                <a class="nav-link" href="/tasks">
+
+            <li class="nav-item"> 
+                <a class="nav-link" href="/aggregate_investments" data-toggle="collapse" data-target="#taskMenus">
                     <i class="fas fa-lg fa-fw fa-check"></i>
                     <span>Tasks</span>
-                </a>               
+                </a>
+
+                <div id="taskMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <a class="collapse-item" href="/tasks">All Tasks</a>
+                        <a class="collapse-item" href="/tasks?assigned_to_id=<%=current_user.id%>">Assigned To Me</a>
+                    </div>
+                </div>
+
             </li>
 
             <!-- Divider -->

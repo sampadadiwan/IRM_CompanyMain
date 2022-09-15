@@ -21,6 +21,7 @@ class Task < ApplicationRecord
   belongs_to :entity
   belongs_to :for_entity, class_name: "Entity", optional: true
   belongs_to :user
+  belongs_to :assigned_to, class_name: "User", optional: true
   belongs_to :owner, polymorphic: true, optional: true
 
   has_many :reminders, as: :owner, dependent: :destroy

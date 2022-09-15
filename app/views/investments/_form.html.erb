@@ -50,14 +50,14 @@
   <div class="investment_row_container">
   <div class="card investment_row" id="investment_row" >
     <div class="card-body form-row" >
-      <div class="form-group col-md-3">
+      <div class="form-group col-md-2">
         <%= form.label :investment_instrument %>
         <%= form.select :investment_instrument, Investment.INSTRUMENT_TYPES(current_user.entity) , 
           {include_blank: true}, {class: "form-control required", name: "investment[investment_instrument][]"} %>
       </div>
 
       
-      <div class="form-group col-md-2">
+      <div class="form-group col-md-1">
         <%= form.label :quantity %>
         <% if investment.category == "Employee" %>  
           <%= form.number_field :quantity, class: "form-control", disabled: true  %>

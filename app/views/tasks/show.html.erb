@@ -61,6 +61,15 @@
       </td>
     </tr>
 
+    <tr>
+      <td>
+        Assigned To
+      </td>
+      <td>
+        <%= @task.assigned_to.full_name if @task.assigned_to %>
+      </td>
+    </tr>
+
     <%= display_custom_fields(@task) %>
 
   </table>
