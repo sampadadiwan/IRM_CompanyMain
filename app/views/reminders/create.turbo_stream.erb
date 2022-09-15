@@ -1,0 +1,9 @@
+
+    <%= turbo_stream.prepend('reminders_table_body', 
+        partial: "reminders/reminder", locals: { reminder: @reminder }) %>
+
+    <%= turbo_stream.replace('toasts', partial: "layouts/success_toast", 
+        locals: { message: "Added Reminder: #{@reminder.note}" }) %>
+    
+
+    <%= turbo_stream.replace('new_reminder', partial: "reminders/blank" ) %>

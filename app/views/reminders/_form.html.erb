@@ -1,35 +1,52 @@
-<%= form_with(model: reminder) do |form| %>
-  <% if reminder.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(reminder.errors.count, "error") %> prohibited this reminder from being saved:</h2>
+<%= turbo_frame_tag "new_reminder" do %>
 
-      <ul>
-        <% reminder.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
+<div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
 
-  <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+<div class="dynamic_form card shadow mb-4" data-controller="access">
+  <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Set Reminder</h6>
+  </div>
+  <div class="card-body">
 
-  <div class="form-group">
-    <%= form.label :note %>
-    <%= form.text_field :note, class: "form-control"  %>
+
+    <%= form_with(model: reminder, validate: true) do |form| %>
+      <% if reminder.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(reminder.errors.count, "error") %> prohibited this reminder from being saved:</h2>
+
+          <ul>
+            <% reminder.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+
+      <div class="form-group">
+        <%= form.label :note %>
+        <%= form.text_field :note, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :email %>
+        <%= form.text_field :email, class: "form-control"  %>
+        <small class="text-muted">Comma separated emails to send reminder to.</small>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :due_date %>
+        <%= form.date_field :due_date, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.submit "Save", {class: "btn btn-primary"}%>
+        <a class="btn btn-danger", data-action="click->access#close">Close</a>
+      </div>
+    <% end %>
+
   </div>
 
-  <div class="form-group">
-    <%= form.label :email %>
-    <%= form.text_field :email, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :due_date %>
-    <%= form.date_field :due_date, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-primary"}%>
-  </div>
 <% end %>

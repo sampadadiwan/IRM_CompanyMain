@@ -1,3 +1,5 @@
 <%= render "/layouts/alerts" %>
 
-<%= render "/reminders/index", reminders: @reminders %>
+<%= turbo_frame_tag "reminders_list", target: "_top" do %>
+    <%= render "/reminders/index", reminders: @reminders %>
+<% end %>

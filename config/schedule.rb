@@ -14,6 +14,10 @@ every 1.day, at: '02:01 am' do
   rake "db:backup"
 end
 
+every 1.day, at: '23:30 am' do
+  runner "ReminderJob.new.perform"
+end
+
 every :reboot do
   bundle "sidekiq"
   bundle "puma -C /home/ubuntu/IRM/shared/puma.rb"

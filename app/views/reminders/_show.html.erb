@@ -18,14 +18,6 @@
     </tr>
     <tr>
       <td>
-        Email
-      </td>
-      <td>
-        <%= reminder.email %>
-      </td>
-    </tr>
-    <tr>
-      <td>
         Due Date
       </td>
       <td>
@@ -33,14 +25,26 @@
       </td>
     </tr>
 
-    <tr>
-      <td>
-        Sent
-      </td>
-      <td>
-        <%= display_boolean reminder.sent %>
-      </td>
-    </tr>
+    <% if current_user %>
+    
+      <tr>
+        <td>
+          Email
+        </td>
+        <td>
+          <%= reminder.email %>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>
+          Sent
+        </td>
+        <td>
+          <%= display_boolean reminder.sent %>
+        </td>
+      </tr>
 
+    <% end %>
 
   </table>

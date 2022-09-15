@@ -1,6 +1,15 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Reminders</h1>
+    <%= link_to "New Reminder", new_reminder_path("reminder[owner_id]": params[:owner_id],
+        "reminder[owner_type]": params[:owner_type]), 
+        { data: { turbo_frame: 'new_reminder' },
+        method: :get,
+        class: "btn btn-primary" } if params[:owner_id].present? && params[:owner_type].present? %>
 </div>
+
+
+<%= turbo_frame_tag "new_reminder" do %>
+<% end %>
 
 <div class="table-responsive" data-controller="datatable">
 
@@ -24,7 +33,7 @@
                 </th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="reminders_table_body">
             <% reminders.each do |reminder| %>
                 <%= render reminder %>
             <% end %>
