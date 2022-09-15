@@ -121,5 +121,33 @@
     end
   end
   
+
+  Then('I should see my approval response') do
+    @approval.approval_responses.each do |response|
+      within("#approval_response_#{response.id}") do
+        expect(page).to have_content(response.investor.investor_name)
+        expect(page).to have_content(response.status)
+      end
+    end
+
+  end
+
+
+  Then('the approval response is {string}') do |arg|
+    sleep(1)
+    @approval.reload
+    @approval_response = @approval.approval_responses.first
+    @approval_response.status.should == arg
+  end
+  
+  Then('the approved count of the approval is {string}') do |arg|
+    @approval.approved_count.should == arg.to_i
+  end
+  
+  Then('the rejected count of the approval is {string}') do |arg|
+    @approval.rejected_count.should == arg.to_i
+  end
+  
+  
   
   

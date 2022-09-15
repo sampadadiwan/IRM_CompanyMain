@@ -37,6 +37,7 @@ Scenario Outline: Grant Access Rights to approval
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "approver"
   Given there is an existing investor "name=Accel" with "2" users
+  Given there is an existing investor "name=Sequoia" with "2" users
   Given there is an approval "<approval>" for the entity
   Given the investors are added to the approval  
   When I visit the approval details page
@@ -44,6 +45,31 @@ Scenario Outline: Grant Access Rights to approval
   When the approval is approved
   Then the investor gets the approval notification
 
+  Examples:
+  	|user	    |entity               |approval                 |msg	|
+  	|  	        |entity_type=Startup  |title=Test approval      |Approval was successfully created|
+    |  	        |entity_type=Startup  |title=Merger Approval    |Approval was successfully created|
+
+
+
+Scenario Outline: Provide approval response
+  Given there is a user "<user>" for an entity "<entity>"
+  Given the user has role "approver"
+  Given there is an existing investor "name=Accel" with "2" users
+  Given there is an approval "<approval>" for the entity
+  Given the investors are added to the approval  
+  Given Im logged in as an investor
+  When I visit the approval details page
+  Then I should see my approval response  
+  When I click "Approve"
+  Then the approval response is "Approved"
+  And the approved count of the approval is "1"
+  And the rejected count of the approval is "0"
+  When I click "Reject"
+  Then the approval response is "Rejected"
+  And the approved count of the approval is "0"
+  And the rejected count of the approval is "1"
+  
   Examples:
   	|user	    |entity               |approval                 |msg	|
   	|  	        |entity_type=Startup  |title=Test approval      |Approval was successfully created|
