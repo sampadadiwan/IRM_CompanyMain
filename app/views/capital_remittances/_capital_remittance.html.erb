@@ -8,11 +8,11 @@
   <td>
     <%= link_to capital_remittance.investor.investor_name, capital_remittance.investor %>
   </td>
-  <td>
+  <td class="status">
     <%= render DisplayBooleanComponent.new(bool: capital_remittance.status == "Paid").
         with_content(capital_remittance.status) if capital_remittance.status %>
   </td>
-  <td>
+  <td class="verified">
     <%= display_boolean(capital_remittance.verified) %>
   </td>
   <td>
@@ -38,9 +38,10 @@
         <%= button_to label, verify_capital_remittance_path(capital_remittance), method: :patch, 
             class: "btn btn-success", form_class: "deleteButton", 
             data: {action: "click->confirm#popup", msg: msg, turbo:false, method: :patch} if policy(capital_remittance).verify? && capital_remittance.status=="Paid" %>      
-      <% else %>
-        <%= link_to "Paid", edit_capital_remittance_path(capital_remittance, status: "Paid"), {class: "btn btn-success" } %>      
+              
       <% end %>
+
+      <%= link_to "Paid", edit_capital_remittance_path(capital_remittance, status: "Paid"), {class: "btn btn-success" } if policy(capital_remittance).update? %>
     <% end %>
 
   </td>

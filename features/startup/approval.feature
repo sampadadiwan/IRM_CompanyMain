@@ -51,6 +51,23 @@ Scenario Outline: Grant Access Rights to approval
     |  	        |entity_type=Startup  |title=Merger Approval    |Approval was successfully created|
 
 
+Scenario Outline: Grant Access Rights to approval after approved
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "approver"
+  Given there is an existing investor "name=Accel" with "2" users
+  Given there is an existing investor "name=Sequoia" with "2" users
+  Given there is an approval "<approval>" for the entity
+  Given the investors are added to the approval  
+  When I visit the approval details page
+  Then the approval responses are generated with status "Pending"  
+  Then the investor gets the approval notification
+
+  Examples:
+  	|user	    |entity               |approval                                 |msg	|
+  	|  	        |entity_type=Startup  |title=Test approval;approved=true      |Approval was successfully created|
+    |  	        |entity_type=Startup  |title=Merger Approval;approved=true    |Approval was successfully created|
+
+
 
 Scenario Outline: Provide approval response
   Given there is a user "<user>" for an entity "<entity>"
