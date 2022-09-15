@@ -45,6 +45,15 @@
           </td>
         </tr>
 
+        <tr>
+          <td>
+            Department
+          </td>
+          <td>
+            <%=@user.dept %>
+          </td>
+        </tr>
+
         <% if Entity::SECONDARY_BUYERS.include? @user.entity&.entity_type %>
           <tr>
             <td>
