@@ -54,12 +54,15 @@ class Interest < ApplicationRecord
   serialize :properties, Hash
 
   validates :quantity, comparison: { less_than_or_equal_to: :display_quantity }
-  validates :price, comparison: { less_than_or_equal_to: :max_price } if proc { |i| i.secondary_sale.price_type == 'Price Range' }
-  validates :price, comparison: { greater_than_or_equal_to: :min_price }
+  validates :price, comparison: { less_than_or_equal_to: :max_price }, if: -> { secondary_sale.price_type == 'Price Range' }
+  validates :price, comparison: { greater_than_or_equal_to: :min_price }, if: -> { secondary_sale.price_type == 'Price Range' }
+
+  validates :price, comparison: { equal_to: :final_price }, if: -> { secondary_sale.price_type == 'Fixed Price' }
 
   delegate :display_quantity, to: :secondary_sale
   delegate :min_price, to: :secondary_sale
   delegate :max_price, to: :secondary_sale
+  delegate :final_price, to: :secondary_sale
   delegate :email, to: :user, prefix: true
 
   scope :short_listed, -> { where(short_listed: true) }
@@ -72,9 +75,9 @@ class Interest < ApplicationRecord
   validates :quantity, :price, presence: true
   validates :buyer_entity_name, :address, :PAN, :contact_name, :email, presence: true, if: proc { |i| i.secondary_sale.finalized }
 
-  before_save :notify_shortlist, if: :short_listed
-  before_save :notify_finalized, if: :finalized
   after_create :notify_interest
+  after_save :notify_shortlist, if: :short_listed
+  after_save :notify_finalized, if: :finalized
 
   monetize :amount_cents, :allocation_amount_cents, with_currency: ->(i) { i.entity.currency }
 

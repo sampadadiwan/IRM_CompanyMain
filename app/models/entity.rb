@@ -139,7 +139,13 @@ class Entity < ApplicationRecord
 
   def recompute_investment_percentages(force: false)
     count = Entity.where(id:, percentage_in_progress: false).update_all(percentage_in_progress: true)
-    InvestmentPercentageHoldingJob.set(wait: 1.minute).perform_later(id) if count.positive? || force
+    if count.positive? || force
+      if Rails.env.test?
+        InvestmentPercentageHoldingJob.perform_later(id)
+      else
+        InvestmentPercentageHoldingJob.set(wait: 1.minute).perform_later(id)
+      end
+    end
   rescue ActiveRecord::StaleObjectError => e
     Rails.logger.info "StaleObjectError: #{e.message}"
   end
