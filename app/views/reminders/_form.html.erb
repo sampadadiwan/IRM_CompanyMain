@@ -11,19 +11,22 @@
     </div>
   <% end %>
 
+  <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+
   <div class="form-group">
-    <%= form.label :unit %>
-    <%= form.select :unit, ["Days", "Hours"], {}, class: "form-control"  %>
+    <%= form.label :note %>
+    <%= form.text_field :note, class: "form-control"  %>
   </div>
 
   <div class="form-group">
-    <%= form.label :count %>
-    <%= form.number_field :count, class: "form-control"  %>
+    <%= form.label :email %>
+    <%= form.text_field :email, class: "form-control"  %>
   </div>
 
   <div class="form-group">
-    <%= form.label :sent %>
-    <%= form.check_box :sent, class: "form-control form-checkbox"  %>
+    <%= form.label :due_date %>
+    <%= form.date_field :due_date, class: "form-control"  %>
   </div>
 
   <div class="form-group">

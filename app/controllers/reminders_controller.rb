@@ -11,7 +11,10 @@ class RemindersController < ApplicationController
 
   # GET /reminders/new
   def new
-    @reminder = Reminder.new
+    @reminder = Reminder.new(reminder_params)
+    @reminder.entity_id = current_user.entity_id
+    @reminder.due_date = Time.zone.today + 7.days
+    authorize @reminder
   end
 
   # GET /reminders/1/edit
@@ -20,6 +23,8 @@ class RemindersController < ApplicationController
   # POST /reminders or /reminders.json
   def create
     @reminder = Reminder.new(reminder_params)
+    @reminder.entity_id = current_user.entity_id
+    authorize @reminder
 
     respond_to do |format|
       if @reminder.save
@@ -65,6 +70,6 @@ class RemindersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def reminder_params
-    params.require(:reminder).permit(:entity_id, :owner_id, :owner_type, :unit, :count, :sent)
+    params.require(:reminder).permit(:entity_id, :owner_id, :owner_type, :note, :email, :due_date, :sent)
   end
 end

@@ -1,9 +1,12 @@
 <tr id="<%= dom_id reminder %>">
   <td>
-    <%= reminder.unit %>
+    <%= reminder.note %>
   </td>
   <td>
-    <%= reminder.count %>
+    <%= reminder.email %>
+  </td>
+  <td>
+    <%= l reminder.due_date %>
   </td>
   <td>
     <%= display_boolean(reminder.sent) %>

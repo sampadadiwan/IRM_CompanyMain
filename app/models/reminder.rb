@@ -1,11 +1,12 @@
 class Reminder < ApplicationRecord
   belongs_to :entity
   belongs_to :owner, polymorphic: true
-  NESTED_ATTRIBUTES = %i[id unit count _destroy].freeze
+  NESTED_ATTRIBUTES = %i[id note due_date email _destroy].freeze
 
-  before_validation :setup_entity
+  scope :unsent, -> { where(sent: false) }
+  scope :due_today, -> { where("due_date <= ?", Time.zone.today) }
 
-  def setup_entity
-    self.entity_id = owner.entity_id
+  def send_reminder
+    ReminderMailer.with(id:).send_reminder.deliver_later
   end
 end
