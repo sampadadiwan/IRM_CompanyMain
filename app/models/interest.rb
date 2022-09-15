@@ -94,11 +94,11 @@ class Interest < ApplicationRecord
   end
 
   def notify_shortlist
-    InterestMailer.with(interest_id: id).notify_shortlist.deliver_later if short_listed_changed?
+    InterestMailer.with(interest_id: id).notify_shortlist.deliver_later if short_listed && saved_change_to_short_listed?
   end
 
   def notify_finalized
-    InterestMailer.with(interest_id: id).notify_finalized.deliver_later if finalized_changed?
+    InterestMailer.with(interest_id: id).notify_finalized.deliver_later if finalized && saved_change_to_finlaized?
   end
 
   def set_defaults
