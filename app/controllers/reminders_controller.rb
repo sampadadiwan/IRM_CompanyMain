@@ -20,6 +20,8 @@ class RemindersController < ApplicationController
     @reminder = Reminder.new(reminder_params)
     @reminder.entity_id = current_user.entity_id
     @reminder.due_date = Time.zone.today + 7.days
+    @reminder.email = current_user.email
+
     authorize @reminder
   end
 
