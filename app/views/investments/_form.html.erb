@@ -47,21 +47,17 @@
   
   </div>
 
-  <div class="investment_row_container">
+  <div class="investment_row_container" data-controller="investmentrow">
   <div class="card investment_row" id="investment_row" >
     <div class="card-body form-row" >
       <div class="form-group col-md-1">
         <%= form.label :investment_instrument, "Instrument" %>
         <%= form.select :investment_instrument, Investment.INSTRUMENT_TYPES(current_user.entity) , 
-          {include_blank: true}, {class: "form-control required", name: "investment[investment_instrument][]"} %>
+          {include_blank: true}, 
+          {"data-action": "change->investmentrow#onChange", 
+            class: "form-control required", name: "investment[investment_instrument][]"} %>
       </div>
 
-
-      <div class="form-group col-md-2 preferred_conversion_group">
-        <%= form.label :preferred_conversion, "Conversion Factor" %>
-        <%= form.text_field :preferred_conversion, class: "form-control", name: "investment[preferred_conversion][]"  %>
-      </div>
-      
       <div class="form-group col-md-1">
         <%= form.label :quantity %>
         <% if investment.category == "Employee" %>  
@@ -91,6 +87,12 @@
         <%= form.label :investment_date %>
         <%= form.date_field :investment_date, class: "form-control", name: "investment[investment_date][]"  %>
       </div>
+
+      <div class="form-group col-md-1 preferred_conversion_group">
+        <%= form.label :preferred_conversion, "Conversion" %>
+        <%= form.text_field :preferred_conversion, class: "form-control", name: "investment[preferred_conversion][]"  %>
+      </div>
+      
 
       <div class="form-group col-md-1">
         <label>&nbsp;</label>
