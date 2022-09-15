@@ -4,17 +4,17 @@
     <%= approval.title %>
   </td>
   <td>
-    <%= approval.agreements_reference %>
+    <%= l approval.due_date %>
   </td>
 
   <% if policy(approval).update? %>
-    <td>
+    <td class="approved_count">
       <%= approval.approved_count %>
     </td>
-    <td>
+    <td class="rejected_count">
       <%= approval.rejected_count %>
     </td>
-    <td>
+    <td class="pending_count">
       <%= approval.pending_count %>
     </td>
   <% end %>

@@ -14,6 +14,8 @@ class ApprovalResponse < ApplicationRecord
 
   validate :already_exists, on: :create
 
+  scope :pending, -> { where("approval_responses.status=?", "Pending") }
+
   def already_exists
     errors.add(:approval, "Approval Response for this investor and approval already exists. Please delete of edit the existing response") if approval.approval_responses.where(response_entity_id:).count.positive?
   end

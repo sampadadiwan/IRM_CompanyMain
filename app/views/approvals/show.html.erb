@@ -1,7 +1,7 @@
 <%= render "/layouts/alerts" %>
 
 <% cache([@approval, current_user.entity_id == @approval.entity_id]) do %>
-  <%= render "/layouts/steps", steps: ["Setup Approval", "Add Access Rights", "Approve / Finalize the Approval", 
+  <%= render "/layouts/steps", steps: ["Setup Approval", "Add Access Rights", "Add Related Documents", "Approve / Finalize the Approval", 
             "Receive / Track Responses", "Send Reminders"].freeze if current_user.entity_id == @approval.entity_id %>
 
   <%= render "/approvals/show", approval: @approval %>

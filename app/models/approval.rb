@@ -6,7 +6,7 @@ class Approval < ApplicationRecord
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
   has_many :approval_responses, dependent: :destroy
-  has_many :investors, through: :approval_responses
+  has_many :approval_investors, through: :approval_responses, class_name: "Investor", source: :investor
   has_many :pending_investors, -> { where('approval_responses.status': "Pending") }, through: :approval_responses, class_name: "Investor", source: :investor
 
   belongs_to :form_type, optional: true
@@ -52,15 +52,14 @@ class Approval < ApplicationRecord
     nil
   end
 
-  after_save :send_notification
+  after_commit :send_notification
   def send_notification
-    if saved_change_to_approved? && approved
-      generate_responses
-      ApprovalMailer.with(id:).notify_new_approval.deliver_later
-    end
+    generate_responses
+    ApprovalMailer.with(id:).notify_new_approval.deliver_later if saved_change_to_approved?
   end
 
   def access_rights_changed(access_right_id)
+    logger.debug "Added new Access Rights for Approval #{id}"
     generate_responses
     ApprovalMailer.with(id:, access_right_id:).notify_new_approval.deliver_later
   end

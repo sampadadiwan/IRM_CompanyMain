@@ -76,18 +76,13 @@ FactoryBot.define do
     tag_list { [IO_TAGS.sample, IO_TAGS.sample].join(",") }
   end
 
-  factory :approval_response do
-    entity { nil }
-    approval { nil }
-    status { "MyString" }
-  end
-
   factory :approval do
-    title { "MyString" }
-    agreements_reference { "MyString" }
-    entity { nil }
-    approved_count { 1 }
-    rejected_count { 1 }
+    title { Faker::Company.buzzword }
+    due_date { Time.zone.today + 7.days }
+    agreements_reference { Faker::Company.catch_phrase }
+    entity { Entity.startups.sample }
+    approved_count { 0 }
+    rejected_count { 0 }
   end
 
   factory :reminder do

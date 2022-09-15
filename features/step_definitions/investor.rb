@@ -78,6 +78,11 @@ Given('there is an existing investor {string} with {string} users') do |arg1, co
   @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id)
   (1..count.to_i).each do
     @investor_user = FactoryBot.create(:user, entity: @investor_entity)
+    @investor_access = InvestorAccess.create!(investor: @investor, user: @investor_user, 
+                                            entity_id: @investor.entity_id,
+                                            first_name: @investor_user.first_name,
+                                            last_name: @investor_user.last_name,                              
+                                            email: @investor_user.email, approved: true)
   end
 
   puts "\n####Investor####\n"

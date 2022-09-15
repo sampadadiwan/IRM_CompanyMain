@@ -1,4 +1,4 @@
-<table class="table table-bordered dataTable">
+<table id="<%= dom_id approval %>" class="table table-bordered dataTable">
 
     <tr>
         <td>
@@ -45,7 +45,7 @@
         <td>
             Approved Count
         </td>
-        <td>
+        <td class="approved_count">
             <%= approval.approved_count %>
         </td>
     </tr>
@@ -53,7 +53,7 @@
         <td>
             Rejected Count
         </td>
-        <td>
+        <td class="rejected_count">
             <%= approval.rejected_count %>
         </td>
     </tr>
@@ -61,7 +61,7 @@
         <td>
             Pending Count
         </td>
-        <td>
+        <td class="pending_count">
             <%= approval.pending_count %>
         </td>
     </tr>
