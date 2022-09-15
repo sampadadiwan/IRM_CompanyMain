@@ -165,6 +165,6 @@ class InvestmentsController < ApplicationController
                                        :entity_id, :investor_type, :investment_instrument, :quantity,
                                        :category, :initial_value, :current_value, :spv,
                                        :status, :liquidation_preference, :investment_date,
-                                       :liq_pref_type, :anti_dilution)
+                                       :liq_pref_type, :anti_dilution, :preferred_conversion)
   end
 end

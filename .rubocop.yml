@@ -111,6 +111,7 @@ Metrics/BlockLength:
     - 'app/views/secondary_sales/download.xlsx.axlsx'
     - 'app/jobs/import_upload_job.rb'
     - 'app/jobs/investment_percentage_holding_job.rb'
+    - 'app/controllers/concerns/investment_concern.rb'
   IgnoredMethods:
     - context
     - describe

@@ -48,6 +48,18 @@
          <%= @investment.investment_instrument %>
       </td>
    </tr>
+
+   <% if @investment.investment_instrument == "Preferred" %>
+   <tr>
+      <td>
+         Preferred Conversion
+      </td>
+      <td>
+         <%= @investment.preferred_conversion %>
+      </td>
+   </tr>
+   <% end %>
+
    <tr>
       <td>
          Quantity

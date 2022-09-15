@@ -54,6 +54,13 @@
       <%= form.select :investment_instrument, Investment.INSTRUMENT_TYPES(current_user.entity) , 
         {include_blank: true}, {class: "form-control"} %>
     </div>
+
+    <% if investment.investment_instrument == "Preferred" %>
+    <div class="form-group">
+      <%= form.label :preferred_conversion %>
+      <%= form.text_field :preferred_conversion, {class: "form-control"} %>
+    </div>
+    <% end %>
   
     
     <div class="form-group">
