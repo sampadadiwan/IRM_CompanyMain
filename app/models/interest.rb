@@ -90,15 +90,15 @@ class Interest < ApplicationRecord
                   delta_column: 'amount_cents'
 
   def notify_interest
-    InterestMailer.with(interest_id: id).notify_interest.deliver_later
+    InterestMailer.with(interest_id: id).notify_interest.deliver_later unless secondary_sale.no_interest_emails
   end
 
   def notify_shortlist
-    InterestMailer.with(interest_id: id).notify_shortlist.deliver_later if short_listed && saved_change_to_short_listed?
+    InterestMailer.with(interest_id: id).notify_shortlist.deliver_later if short_listed && saved_change_to_short_listed? && !secondary_sale.no_interest_emails
   end
 
   def notify_finalized
-    InterestMailer.with(interest_id: id).notify_finalized.deliver_later if finalized && saved_change_to_finlaized?
+    InterestMailer.with(interest_id: id).notify_finalized.deliver_later if finalized && saved_change_to_finalized? && !secondary_sale.no_interest_emails
   end
 
   def set_defaults

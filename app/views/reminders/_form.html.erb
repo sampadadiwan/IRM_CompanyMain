@@ -7,8 +7,6 @@
       <h6 class="m-0 font-weight-bold text-primary">Set Reminder</h6>
   </div>
   <div class="card-body">
-
-
     <%= form_with(model: reminder, validate: true) do |form| %>
       <% if reminder.errors.any? %>
         <div class="alert alert-danger">
@@ -48,5 +46,6 @@
     <% end %>
 
   </div>
+</div>
 
 <% end %>

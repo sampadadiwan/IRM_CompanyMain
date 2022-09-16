@@ -204,7 +204,7 @@ class Offer < ApplicationRecord
   end
 
   def notify_approval
-    OfferMailer.with(offer_id: id).notify_approval.deliver_later
+    OfferMailer.with(offer_id: id).notify_approval.deliver_later unless secondary_sale.no_offer_emails
   end
 
   def setup_folder_details

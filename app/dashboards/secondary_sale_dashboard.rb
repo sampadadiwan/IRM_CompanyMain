@@ -25,6 +25,8 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     min_price: ObfuscatedField,
     max_price: ObfuscatedField,
     active: Field::BooleanEmoji,
+    no_offer_emails: Field::BooleanEmoji,
+    no_interest_emails: Field::BooleanEmoji,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     total_offered_quantity: ObfuscatedField,
@@ -64,6 +66,8 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     min_price
     max_price
     active
+    no_offer_emails
+    no_interest_emails
     created_at
     updated_at
     total_offered_quantity
@@ -87,6 +91,8 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     min_price
     max_price
     visible_externally
+    no_offer_emails
+    no_interest_emails
   ].freeze
 
   # COLLECTION_FILTERS
