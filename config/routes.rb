@@ -164,6 +164,14 @@ Rails.application.routes.draw do
     resources :funding_rounds
     resources :option_pools
     resources :excercises
+    resources :funds
+    resources :valuations
+    resources :capital_calls
+    resources :capital_commitments
+    resources :capital_distributions
+    resources :capital_remittances
+    resources :capital_distribution_payments
+
     # namespace :audited do
     #   resources :audits
     # end
