@@ -49,6 +49,8 @@ class Interest < ApplicationRecord
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
 
+  has_rich_text :details
+
   # Customize form
   belongs_to :form_type, optional: true
   serialize :properties, Hash
