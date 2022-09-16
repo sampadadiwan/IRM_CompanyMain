@@ -249,6 +249,9 @@ end
 
 Given('when I make an offer for my holdings') do
   h = Holding.first
+  puts "\n####Offer for Holding####\n"
+  puts h.to_json
+
   within("#holding_#{h.id}") do
     click_on("Offer")   
   end

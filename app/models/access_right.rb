@@ -93,14 +93,13 @@ class AccessRight < ApplicationRecord
   def investor_emails
     emails = []
 
-    if access_to_investor_id.present? && !investor.is_holdings_entity
+    if access_to_investor_id.present?
       # Get all the investor -> investor access that are approved, and get the email addresses
-      emails = investor.investor_accesses.approved.collect(&:email)
+      emails = investor.investor_accesses.approved.collect(&:email) unless investor.is_holdings_entity
     elsif access_to_category.present?
       # Get all the investors with this category -> investor access that are approved, and get the email addresses
-      investors = Investor.where(entity_id:, category: access_to_category)
-      investors.each do |investor|
-        emails += investor.investor_accesses.approved.collect(&:email)
+      Investor.where(entity_id:, category: access_to_category).find_each do |investor|
+        emails += investor.investor_accesses.approved.collect(&:email) unless investor.is_holdings_entity
       end
     end
 

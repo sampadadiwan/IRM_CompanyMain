@@ -88,7 +88,7 @@
 
       <% elsif  holding.investment_instrument != "Options" && 
                 holding.active_secondary_sale && 
-                Pundit.policy(current_user, holding.active_secondary_sale).offer? %>
+                policy(holding.active_secondary_sale).offer? %>
         <!-- We are in the holdings -->
         <%= link_to "Secondary Sale" , secondary_sale_path(holding.active_secondary_sale) , 
               {class: "btn btn-success" }   %>
