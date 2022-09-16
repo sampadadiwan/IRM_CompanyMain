@@ -45,7 +45,9 @@ class InterestPolicy < ApplicationPolicy
   end
 
   def update?
-    create? && !record.finalized
+    (create? ||
+     (user.entity_id == record.entity_id && record.secondary_sale.manage_interests)
+    ) && !record.finalized
   end
 
   def matched_offers?

@@ -47,7 +47,8 @@ class OfferPolicy < ApplicationPolicy
   end
 
   def update?
-    user.id == record.user_id # && !record.approved
+    user.id == record.user_id ||
+      (user.entity_id == record.entity_id && record.secondary_sale.manage_offers) # && !record.approved
   end
 
   def allocation_form?

@@ -30,8 +30,8 @@ class InterestsController < ApplicationController
   # GET /interests/new
   def new
     @interest = Interest.new(interest_params)
-    @interest.user_id = current_user.id
-    @interest.interest_entity_id = current_user.entity_id
+    @interest.user_id ||= current_user.id
+    @interest.interest_entity_id ||= current_user.entity_id
     @interest.entity_id = @interest.secondary_sale.entity_id
     @interest.price = @interest.secondary_sale.final_price if @interest.secondary_sale.price_type == "Fixed Price"
     setup_custom_fields(@interest)
@@ -46,8 +46,8 @@ class InterestsController < ApplicationController
   # POST /interests or /interests.json
   def create
     @interest = Interest.new(interest_params)
-    @interest.user_id = current_user.id
-    @interest.interest_entity_id = current_user.entity_id
+    @interest.user_id ||= current_user.id
+    @interest.interest_entity_id ||= current_user.entity_id
     @interest.entity_id = @interest.secondary_sale.entity_id
     authorize @interest
 

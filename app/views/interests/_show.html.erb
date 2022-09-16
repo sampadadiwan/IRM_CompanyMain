@@ -148,26 +148,10 @@
 
     <% end %>
 
-    <% if interest.secondary_sale.lock_allocations || params[:debug].present? %>
+    <% if interest.buyer_entity_name.present? %>
 
       <tr>
         <td colspan="2" class="bg-primary"></td>
-      </tr>
-      <tr>
-        <td>
-          Allocation Quantity
-        </td>
-        <td>
-          <%= interest.allocation_quantity %> 
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Allocation %
-        </td>
-        <td>
-          <%= interest.allocation_percentage %> %
-        </td>
       </tr>
       <tr>
         <td>

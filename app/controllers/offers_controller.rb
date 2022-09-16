@@ -66,9 +66,9 @@ class OffersController < ApplicationController
   # GET /offers/new
   def new
     @offer = Offer.new(offer_params)
-    @offer.user_id = current_user.id
-    @offer.first_name = current_user.first_name
-    @offer.last_name = current_user.last_name
+    @offer.user_id = @offer.holding.user.id
+    @offer.first_name = @offer.holding.user.first_name
+    @offer.last_name = @offer.holding.user.last_name
     @offer.entity_id = @offer.secondary_sale.entity_id
     @offer.quantity = @offer.allowed_quantity
     setup_custom_fields(@offer)
@@ -119,7 +119,7 @@ class OffersController < ApplicationController
   # POST /offers or /offers.json
   def create
     @offer = Offer.new(offer_params)
-    @offer.user_id = current_user.id
+    @offer.user_id = @offer.holding.user.id
     @offer.entity_id = @offer.secondary_sale.entity_id
 
     authorize @offer

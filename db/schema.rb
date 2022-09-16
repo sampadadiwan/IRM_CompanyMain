@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_16_052004) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_16_053609) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1139,6 +1139,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_16_052004) do
     t.string "show_quantity", limit: 10
     t.boolean "no_offer_emails", default: false
     t.boolean "no_interest_emails", default: false
+    t.boolean "manage_offers", default: false
+    t.boolean "manage_interests", default: false
     t.index ["deleted_at"], name: "index_secondary_sales_on_deleted_at"
     t.index ["entity_id"], name: "index_secondary_sales_on_entity_id"
     t.index ["form_type_id"], name: "index_secondary_sales_on_form_type_id"
