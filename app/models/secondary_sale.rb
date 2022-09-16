@@ -154,6 +154,14 @@ class SecondarySale < ApplicationRecord
     %w[Buyer Seller]
   end
 
+  def buyer_investors
+    investor_list = []
+    access_rights.where("access_rights.metadata=?", "Buyer").includes(:investor).find_each do |ar|
+      investor_list += ar.investors
+    end
+    investor_list.uniq
+  end
+
   def buyer?(user)
     SecondarySale.for(user).where("access_rights.metadata=?", "Buyer").where(id:).present?
   end
@@ -168,6 +176,10 @@ class SecondarySale < ApplicationRecord
 
   def display_quantity
     self.show_quantity == "Indicative" ? indicative_quantity : total_offered_quantity
+  end
+
+  def display_price
+    self.price_type == "Fixed Price" ? final_price.to_s : "#{min_price} - #{max_price}"
   end
 
   def display_amounts

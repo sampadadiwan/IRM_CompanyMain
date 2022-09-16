@@ -13,7 +13,6 @@
 
   <%= form.number_field :entity_id, class: "form-control", hidden: true  %>
   <%= form.text_field :user_id, class: "form-control", hidden: true  %>
-  <%= form.number_field :interest_entity_id, class: "form-control", hidden: true  %>
   <%= form.text_field :secondary_sale_id, class: "form-control", hidden: true  %>
 
 
@@ -67,15 +66,33 @@
 
 
   <% else %>
+    <% if current_user.entity_id == interest.entity_id %>
+      <div class="form-group">
+        <%= form.label :interest_entity_id, "Buyer" %>
+        <%= form.select :interest_entity_id, interest.secondary_sale.buyer_investors.map{|i| [i.investor_name, i.investor_entity_id]}, {}, class: "form-control" %>
+      </div>  
 
+      <div class="form-group">
+        <%= form.label :escrow_deposited %>
+        <%= form.check_box :escrow_deposited, class: "form-control form-checkbox"  %>
+      </div>
+
+    <% else %>
+      <%= form.text_field :interest_entity_id, class: "form-control", hidden: true  %>    
+    <% end %>
+    
     <div class="form-group">
       <%= form.label :quantity %>
       <%= form.number_field :quantity, class: "form-control"  %>
+      <small class="text-muted">Sale quantity: <%= interest.secondary_sale.display_quantity %></small>
     </div>
 
     <div class="form-group">
       <%= form.label :price %>
       <%= form.number_field :price, class: "form-control"  %>
+      <small class="text-muted">
+            <%= interest.secondary_sale.display_price %>       
+      </small>
     </div>
 
   <% end %>
