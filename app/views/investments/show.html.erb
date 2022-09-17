@@ -152,19 +152,24 @@
 <% if current_user.entity_id == @investment.entity_id && params[:version_id].blank? %>
 
    <div>
-      <%= link_to "History", history_investment_path(@investment), {class: "btn btn-primary"} %> |
-      <%= link_to "Edit", edit_investment_path(@investment), {class: "btn btn-primary"} unless @investment.employee_holdings %> |
-      <%= link_to "Back", investments_path, {class: "btn btn-primary"} %> |
+      <%= link_to "History", history_investment_path(@investment), {class: "btn btn-primary"} %> 
+      <%= link_to "Edit", edit_investment_path(@investment), {class: "btn btn-primary"} unless @investment.employee_holdings %> 
+
+      <%= link_to "Back", investments_path, {class: "btn btn-primary"} %> 
 
       <% if current_user.entity_id == @investment.entity_id %>
       <%= link_to "New Investment", 
             new_investment_path("investment[entity_id]": current_user.entity_id,
             "investment[investment_instrument]": @investment.investment_instrument), 
-            {class: "btn btn-primary"}  %> |
+            {class: "btn btn-primary"}  %> 
 
       <% end %>                                                      
 
-      <%= button_to "Delete", @investment, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+      <%= link_to "Transfer", new_share_transfer_path("share_transfer[from_investment_id]": @investment.id), 
+            class: "btn btn-success" if policy(@investment).update?  %>
+
+      <%= button_to "Delete", @investment, method: :delete, class: "btn btn-danger", 
+            form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@investment).destroy?  %>
    </div>
 
 <% end %>

@@ -1,4 +1,18 @@
 FactoryBot.define do
+  factory :share_transfer do
+    entity { nil }
+    from_investor { nil }
+    from_user { nil }
+    from_investment { nil }
+    to_investor { nil }
+    to_user { nil }
+    to_investment { nil }
+    quantity { 1 }
+    price { "9.99" }
+    transfer_date { "2022-09-17" }
+    transfered_by { nil }
+  end
+
   factory :capital_distribution_payment do
     fund { nil }
     entity { nil }

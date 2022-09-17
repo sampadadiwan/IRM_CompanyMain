@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_17_031702) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_17_105828) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1148,6 +1148,30 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_17_031702) do
     t.index ["form_type_id"], name: "index_secondary_sales_on_form_type_id"
   end
 
+  create_table "share_transfers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "from_investor_id"
+    t.bigint "from_user_id"
+    t.bigint "from_investment_id"
+    t.bigint "to_investor_id", null: false
+    t.bigint "to_user_id"
+    t.bigint "to_investment_id", null: false
+    t.integer "quantity"
+    t.decimal "price", precision: 20, scale: 2, default: "0.0"
+    t.date "transfer_date"
+    t.bigint "transfered_by_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_share_transfers_on_entity_id"
+    t.index ["from_investment_id"], name: "index_share_transfers_on_from_investment_id"
+    t.index ["from_investor_id"], name: "index_share_transfers_on_from_investor_id"
+    t.index ["from_user_id"], name: "index_share_transfers_on_from_user_id"
+    t.index ["to_investment_id"], name: "index_share_transfers_on_to_investment_id"
+    t.index ["to_investor_id"], name: "index_share_transfers_on_to_investor_id"
+    t.index ["to_user_id"], name: "index_share_transfers_on_to_user_id"
+    t.index ["transfered_by_id"], name: "index_share_transfers_on_transfered_by_id"
+  end
+
   create_table "taggings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "tag_id"
     t.string "taggable_type"
@@ -1386,6 +1410,14 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_17_031702) do
   add_foreign_key "reminders", "entities"
   add_foreign_key "secondary_sales", "entities"
   add_foreign_key "secondary_sales", "form_types"
+  add_foreign_key "share_transfers", "entities"
+  add_foreign_key "share_transfers", "investments", column: "from_investment_id"
+  add_foreign_key "share_transfers", "investments", column: "to_investment_id"
+  add_foreign_key "share_transfers", "investors", column: "from_investor_id"
+  add_foreign_key "share_transfers", "investors", column: "to_investor_id"
+  add_foreign_key "share_transfers", "users", column: "from_user_id"
+  add_foreign_key "share_transfers", "users", column: "to_user_id"
+  add_foreign_key "share_transfers", "users", column: "transfered_by_id"
   add_foreign_key "taggings", "tags"
   add_foreign_key "tasks", "entities"
   add_foreign_key "tasks", "form_types"

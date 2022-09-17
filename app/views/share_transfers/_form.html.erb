@@ -1,0 +1,47 @@
+<%= form_with(model: share_transfer) do |form| %>
+  <% if share_transfer.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(share_transfer.errors.count, "error") %> prohibited this share_transfer from being saved:</h2>
+
+      <ul>
+        <% share_transfer.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :from_investor_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :from_user_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :from_investment_id, class: "form-control", hidden: true  %>
+
+  <div class="form-group">
+    <%= form.label :from_investor %>
+    <%= form.text_field :from_investor, class: "form-control", value: share_transfer.from_investor.investor_name, disabled: true  %>
+  </div>
+  <div class="form-group">
+    <%= form.label :to_investor_id %>
+    <%= form.select :to_investor_id, share_transfer.entity.investors.map{|i| [i.investor_name, i.id]}, {}, class: "form-control"  %>
+  </div>
+
+
+  <div class="form-group">
+    <%= form.label :quantity %>
+    <%= form.number_field :quantity, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :price %>
+    <%= form.text_field :price, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :transfer_date %>
+    <%= form.date_field :transfer_date, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

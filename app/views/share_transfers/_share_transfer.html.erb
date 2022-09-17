@@ -1,0 +1,40 @@
+
+
+<tr id="<%= dom_id share_transfer %>">
+  <td>
+    <%= share_transfer.entity.name %>
+  </td>
+  <td>
+    <%= share_transfer.from_investor&.investor_name %>
+  </td>
+  <td>
+    <%= share_transfer.from_user&.full_name %>
+  </td>
+  <td>
+    <%= share_transfer.from_investment_id %>
+  </td>
+  <td>
+    <%= share_transfer.to_investor.investor_name %>
+  </td>
+  <td>
+    <%= share_transfer.to_user&.full_name %>
+  </td>
+  <td>
+    <%= share_transfer.to_investment_id %>
+  </td>
+  <td>
+    <%= share_transfer.quantity %>
+  </td>
+  <td>
+    <%= share_transfer.price %>
+  </td>
+  <td>
+    <%= l share_transfer.transfer_date %>
+  </td>
+  <td>
+    <%= share_transfer.transfered_by.full_name %>
+  </td>
+  <td>
+    <%= link_to "Show" , share_transfer , {class: "btn btn-primary" }%>
+  </td>
+</tr>

@@ -1,9 +1,9 @@
-class PreferredConvert
+class DoShareTransfer
   include Interactor::Organizer
-  organize CreateEquity, UpdatePreferred, CreateAuditTrail
+  organize TransferCreateToInvestment, TransferUpdateFromInvestment, CreateShareTransfer
 
   before do |_organizer|
-    context.audit_comment = "Convert Preferred to Equity"
+    context.audit_comment = "Transfer from #{context.share_transfer.from_investor.investor_name} to #{context.share_transfer.to_investor.investor_name}"
   end
 
   around do |organizer|
