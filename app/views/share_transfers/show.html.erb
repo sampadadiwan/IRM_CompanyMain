@@ -32,7 +32,7 @@
         </td>
         <td>
           <%= link_to "Investment #{@share_transfer.from_investment_id}", 
-              investment_path(investment_id: @share_transfer.from_investment_id) %>
+              investment_path(id: @share_transfer.from_investment_id) %>
         </td>    
       </tr>
           <tr>
@@ -57,7 +57,7 @@
         </td>
         <td>
           <%= link_to "Investment #{@share_transfer.to_investment_id}", 
-              investment_path(investment_id: @share_transfer.to_investment_id) %>
+              investment_path(id: @share_transfer.to_investment_id) %>
         </td>    
       </tr>
           <tr>

@@ -15,7 +15,5 @@ class TransferUpdateFromInvestment
   def update_from_investment(share_transfer)
     share_transfer.from_investment.quantity -= share_transfer.quantity
     SaveInvestment.call(investment: share_transfer.from_investment)
-
-    Rails.logger.debug share_transfer.from_investment.errors.full_messages
   end
 end

@@ -20,6 +20,7 @@ class TransferCreateToInvestment
     to_investment.investment_instrument = from_investment.investment_instrument
     to_investment.category = from_investment.category
     to_investment.entity_id = from_investment.entity_id
+    to_investment.preferred_conversion = from_investment.preferred_conversion
 
     to_investment.investor_id = share_transfer.to_investor_id
     to_investment.quantity = share_transfer.quantity
@@ -29,7 +30,6 @@ class TransferCreateToInvestment
     to_investment.funding_round = from_investment.funding_round
 
     SaveInvestment.call(investment: to_investment)
-
-    Rails.logger.debug to_investment.errors.full_messages
+    
   end
 end

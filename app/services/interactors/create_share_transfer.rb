@@ -13,6 +13,6 @@ class CreateShareTransfer
   end
 
   def create_share_transfer(share_transfer)
-    share_transfer.save
+    share_transfer.save!
   end
 end
