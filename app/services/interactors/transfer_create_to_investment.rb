@@ -30,6 +30,5 @@ class TransferCreateToInvestment
     to_investment.funding_round = from_investment.funding_round
 
     SaveInvestment.call(investment: to_investment)
-    
   end
 end
