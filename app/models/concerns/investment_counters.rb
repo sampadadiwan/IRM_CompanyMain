@@ -26,5 +26,9 @@ module InvestmentCounters
     counter_culture :aggregate_investment,
                     column_name: proc { |i| EQUITY_LIKE.include?(i.investment_instrument) ? i.investment_instrument.downcase : nil },
                     delta_column: 'quantity'
+
+    counter_culture :aggregate_investment,
+                    column_name: proc { |i| i.investment_instrument == "Preferred" ? 'preferred_converted_qty' : nil },
+                    delta_column: 'preferred_converted_qty'
   end
 end

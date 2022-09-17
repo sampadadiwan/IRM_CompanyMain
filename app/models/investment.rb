@@ -106,6 +106,8 @@ class Investment < ApplicationRecord
     # pull this from the funding round if not set.
     self.anti_dilution ||= funding_round.anti_dilution
     self.liq_pref_type ||= funding_round.liq_pref_type
+    self.preferred_conversion ||= 1
+    self.preferred_converted_qty = quantity * self.preferred_conversion
   end
 
   def self.for_investor_all(current_user)

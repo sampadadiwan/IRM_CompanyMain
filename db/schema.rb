@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_16_053609) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_17_031702) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -140,6 +140,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_16_053609) do
     t.datetime "updated_at", null: false
     t.bigint "funding_round_id"
     t.integer "units", default: 0
+    t.integer "preferred_converted_qty", default: 0
     t.index ["entity_id"], name: "index_aggregate_investments_on_entity_id"
     t.index ["funding_round_id"], name: "index_aggregate_investments_on_funding_round_id"
     t.index ["investor_id"], name: "index_aggregate_investments_on_investor_id"
@@ -861,6 +862,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_16_053609) do
     t.string "liq_pref_type", limit: 25
     t.string "anti_dilution", limit: 50
     t.integer "preferred_conversion"
+    t.integer "preferred_converted_qty", default: 0
     t.index ["aggregate_investment_id"], name: "index_investments_on_aggregate_investment_id"
     t.index ["deleted_at"], name: "index_investments_on_deleted_at"
     t.index ["entity_id"], name: "index_investments_on_entity_id"

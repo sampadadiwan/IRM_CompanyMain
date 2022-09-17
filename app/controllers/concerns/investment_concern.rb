@@ -18,11 +18,7 @@ module InvestmentConcern
       @investment.spv = spv
       @investment.liquidation_preference = liquidation_preference
       @investment.investment_date = investment_date
-      if preferred_conversion.present?
-        @investment.preferred_conversion = preferred_conversion
-      elsif instrument == "Preferred"
-        @investment.preferred_conversion = 1
-      end
+      @investment.preferred_conversion = preferred_conversion.presence || 1
       # If the investment is in preferred and the conversion is not specified, then default it to 1
 
       authorize @investment

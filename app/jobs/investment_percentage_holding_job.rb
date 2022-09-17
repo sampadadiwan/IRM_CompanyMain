@@ -34,30 +34,43 @@ class InvestmentPercentageHoldingJob < ApplicationJob
     if entity.entity_type == "Investment Fund"
       # We have to compute the percentage holding per fund
       entity.funding_rounds.each do |funding_round|
-        equity_investments = funding_round.investments.equity_or_pref
+        equity_investments = funding_round.investments.equity
+        preferred_investments = funding_round.investments.preferred
         esop_investments = funding_round.investments.options_or_esop
-        update_investments(equity_investments, esop_investments)
+        update_investments(equity_investments, preferred_investments, esop_investments)
       end
     else
       # We have to compute the percentage holding for the entire startups investments
-      equity_investments = entity.investments.equity_or_pref
+      equity_investments = entity.investments.equity
+      preferred_investments = entity.investments.preferred
       esop_investments = entity.investments.options_or_esop
-      update_investments(equity_investments, esop_investments)
+      update_investments(equity_investments, preferred_investments, esop_investments)
     end
   end
 
-  def update_investments(equity_investments, esop_investments)
+  def update_investments(equity_investments, preferred_investments, esop_investments)
     equity_quantity = equity_investments.sum(:quantity)
+    preferred_quantity = preferred_investments.sum(:preferred_converted_qty)
     esop_quantity = esop_investments.sum(:quantity)
 
+    total_equity = equity_quantity + preferred_quantity
+    total_quantity = equity_quantity + preferred_quantity + esop_quantity
+
+    logger.debug "total_equity = #{total_equity}, total_quantity = #{total_quantity} "
+
     equity_investments.update_all(
-      "percentage_holding = quantity * 100.0 / #{equity_quantity},
-         diluted_percentage = quantity * 100.0 / (#{equity_quantity + esop_quantity})"
+      "percentage_holding = quantity * 100.0 / #{total_equity},
+         diluted_percentage = quantity * 100.0 / (#{total_quantity})"
+    )
+
+    preferred_investments.update_all(
+      "percentage_holding = preferred_converted_qty * 100.0 / #{total_equity},
+         diluted_percentage = preferred_converted_qty * 100.0 / (#{total_quantity})"
     )
 
     esop_investments.update_all(
       "percentage_holding = 0,
-       diluted_percentage = quantity * 100.0 / (#{equity_quantity + esop_quantity})"
+       diluted_percentage = quantity * 100.0 / (#{total_quantity})"
     )
   end
 
@@ -75,14 +88,15 @@ class InvestmentPercentageHoldingJob < ApplicationJob
 
   def update_aggregate(agg_investments)
     equity = agg_investments.sum(:equity)
-    preferred = agg_investments.sum(:preferred)
+    # Note that for preferred we always use the preferred_converted_qty and not the quantity
+    preferred_converted_qty = agg_investments.sum(:preferred_converted_qty)
     options = agg_investments.sum(:options)
     units = agg_investments.sum(:units)
 
-    eq = (equity + preferred + units).positive? ? (equity + preferred + units) : 1
-    eq_op = (equity + preferred + units + options).positive? ? (equity + preferred + units + options) : 1
+    eq = (equity + preferred_converted_qty + units).positive? ? (equity + preferred_converted_qty + units) : 1
+    eq_op = (equity + preferred_converted_qty + units + options).positive? ? (equity + preferred_converted_qty + units + options) : 1
 
-    agg_investments.update_all("percentage = 100*(equity+preferred+units)/#{eq},
-                    full_diluted_percentage = 100*(equity+preferred+units+options)/#{eq_op}")
+    agg_investments.update_all("percentage = 100*(equity+preferred_converted_qty+units)/#{eq},
+                    full_diluted_percentage = 100*(equity+preferred_converted_qty+units+options)/#{eq_op}")
   end
 end

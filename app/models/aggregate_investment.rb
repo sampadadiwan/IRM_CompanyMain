@@ -67,10 +67,10 @@ class AggregateInvestment < ApplicationRecord
   end
 
   def total_equity
-    equity + preferred
+    equity + preferred_converted_qty
   end
 
   def fully_diluted
-    equity + preferred + options
+    equity + preferred_converted_qty + options
   end
 end
