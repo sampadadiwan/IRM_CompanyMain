@@ -5,7 +5,7 @@ module HoldingScopes
     scope :equity, -> { where(investment_instrument: "Equity") }
     scope :preferred, -> { where(investment_instrument: "Preferred") }
     scope :options, -> { where(investment_instrument: "Options") }
-
+    scope :not_phantom_options, -> { where("investment_instrument= 'Options' and option_type <> 'Phantom'") }
     # scope :investor, -> { where(holding_type: "Investor") }
     # scope :employee, -> { where(holding_type: "Employee") }
     # scope :founder, -> { where(holding_type: "Founder") }

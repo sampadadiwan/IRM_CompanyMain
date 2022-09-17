@@ -220,17 +220,23 @@ end
 
 Then('when the holdings are approved') do
   Holding.all.each do |h|
-    ApproveHolding.call(holding: h)
+    ApproveHolding.call(holding: h) if h.holding_type != "Investor"
   end
 end
 
 
 Then('Investments is updated with the holdings') do
-  #ap Investment.all
   Holding.not_investors.each do |h|
-    h.investment.quantity.should ==  h.investment.holdings.sum(:quantity)
-    h.investment.amount_cents.should ==  h.investment.holdings.sum(:value_cents)
-    h.investment.price_cents.should == h.investment.holdings.sum(:value_cents) / h.investment.holdings.sum(:quantity)
+    
+    
+    holdings =  h.investment.investment_instrument == "Options" ? h.investment.holdings.not_phantom_options : h.investment.holdings
+
+    # ap h.investment
+    # ap holdings
+
+    h.investment.quantity.should ==  holdings.sum(:quantity)
+    h.investment.amount_cents.should ==  holdings.sum(:value_cents)
+    h.investment.price_cents.should == holdings.sum(:value_cents) / holdings.sum(:quantity)
   end
 end
 
@@ -308,6 +314,7 @@ Given('the aggregate investments must be created') do
                                    entity_id: agg.entity_id)
     agg.equity.should == investments.equity.sum(:quantity)
     agg.preferred.should == investments.preferred.sum(:quantity)
+    agg.preferred_converted_qty.should == investments.preferred.sum(:preferred_converted_qty)
     agg.options.should == investments.options.sum(:quantity)
 
     
@@ -470,7 +477,10 @@ Given('Given I upload a holdings file') do
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('import_upload_import_file', File.absolute_path('./public/sample_uploads/holdings.xlsx'))
   click_on("Save")
-  sleep(10)
+
+  sleep(2)
+  ImportUploadJob.perform_now(ImportUpload.last.id)    
+  sleep(5)
 end
 
 Then('There should be {string} holdings created') do |count|

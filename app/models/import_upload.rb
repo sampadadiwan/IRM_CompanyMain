@@ -36,7 +36,7 @@ class ImportUpload < ApplicationRecord
 
   after_create :run_import_job
   def run_import_job
-    ImportUploadJob.set(wait_until: 2.seconds).perform_later(id)
+    ImportUploadJob.set(wait_until: 2.seconds).perform_later(id) unless Rails.env.test?
   end
 
   def percent_completed
