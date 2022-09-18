@@ -484,20 +484,24 @@ namespace :irm do
         e.investors.sample(5).each do |inv|
           AccessRight.create(owner: fund, access_type: "Fund", entity: e, investor: inv)
           commitment = FactoryBot.create(:capital_commitment, investor: inv, fund: )
+          
         end
 
 
         (1..3).each do 
-          call = FactoryBot.create(:capital_call, fund: )          
+          call = FactoryBot.create(:capital_call, fund: ) 
+                   
         end
       end
+
+      sleep(3)
     end
   rescue Exception => e
     puts e.backtrace.join("\n")
     raise e
   end
 
-  task :generateAll => [:generateFakeEntities, :generateFakeInvestors, :generateFakeInvestments, :generateFakeDeals, :generateFakeValuations,:generateFakeHoldings, :generateFakeDocuments, :generateFakeNotes, :generateFakeSales, :generateFakeOffers, :generateFakeBlankEntities, :generateFakeFunds] do
+  task :generateAll => [:generateFakeEntities, :generateFakeInvestors, :generateFakeInvestments, :generateFakeDeals, :generateFakeValuations,:generateFakeHoldings, :generateFakeDocuments, :generateFakeNotes, :generateFakeSales, :generateFakeOffers, :generateFakeBlankEntities] do
     puts "Generating all Fake Data"
     Sidekiq.redis(&:flushdb)
   end

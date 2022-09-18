@@ -42,7 +42,9 @@ class HoldingsController < ApplicationController
     if query.present?
       @holdings = HoldingIndex.filter(term: { entity_id: @entity.id })
                               .query(query_string: { fields: HoldingIndex::SEARCH_FIELDS,
-                                                     query:, default_operator: 'and' }).objects
+                                                     query:, default_operator: 'and' })
+
+      @holdings = @holdings.page(params[:page]).objects
 
       render "index"
     else

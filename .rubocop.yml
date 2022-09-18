@@ -112,6 +112,7 @@ Metrics/BlockLength:
     - 'app/jobs/import_upload_job.rb'
     - 'app/jobs/investment_percentage_holding_job.rb'
     - 'app/controllers/concerns/investment_concern.rb'
+    - 'app/jobs/capital_distribution_job.rb'
   IgnoredMethods:
     - context
     - describe
