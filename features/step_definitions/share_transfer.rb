@@ -1,7 +1,9 @@
 
   When('a share transfer is done for quantity {string}') do |qty|
+    
     @from_investment = Investment.first
     @orig_from_investment_qty = @from_investment.quantity
+    @inital_funding_round = @from_investment.funding_round.dup
 
     @to_investor = Investor.last
 
@@ -87,6 +89,7 @@
 When('a share conversion is done for quantity {string}') do |qty|
   @from_investment = Investment.first
   @orig_from_investment_qty = @from_investment.quantity
+  @inital_funding_round = @from_investment.funding_round.dup
 
   @to_investor = Investor.last
 
@@ -95,3 +98,10 @@ When('a share conversion is done for quantity {string}') do |qty|
 
   DoShareTransfer.call(share_transfer: @share_transfer)
 end
+
+Then('share transfer should not effect the funding round') do
+  @from_investment.funding_round.pre_money_valuation_cents.should == @inital_funding_round.pre_money_valuation_cents
+  @from_investment.funding_round.post_money_valuation_cents.should == @inital_funding_round.post_money_valuation_cents
+  @from_investment.funding_round.amount_raised_cents.should == @inital_funding_round.amount_raised_cents
+end
+

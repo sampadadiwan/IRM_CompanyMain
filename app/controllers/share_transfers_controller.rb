@@ -33,10 +33,10 @@ class ShareTransfersController < ApplicationController
     @share_transfer.transfered_by = current_user
     authorize(@share_transfer)
 
-    DoShareTransfer.call(share_transfer: @share_transfer)
+    result = DoShareTransfer.call(share_transfer: @share_transfer)
 
     respond_to do |format|
-      if @share_transfer.errors.any?
+      if result.failure? && !@share_transfer.valid?
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @share_transfer.errors, status: :unprocessable_entity }
       else

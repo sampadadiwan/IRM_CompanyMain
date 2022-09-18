@@ -14,6 +14,7 @@ Scenario Outline: Share Transfer betw Investors
   And the share transfer should result in the from investment quantity reduced
   And share transfer should result in the aggregate investments being created
   And share transfer should result in the holdings being created     
+  And share transfer should not effect the funding round
 
   Examples:
   	|user	  |entity               |investment                                     | quantity  |
@@ -31,7 +32,8 @@ Scenario Outline: Share Conversion rom Pref to Equity
   And share transfer should result in a new investment
   And the share transfer should result in the from investment quantity reduced
   And share transfer should result in the aggregate investments being created
-  And share transfer should result in the holdings being created     
+  And share transfer should result in the holdings being created   
+  And share transfer should not effect the funding round  
 
   Examples:
   	|entity               |investment                                                         | quantity  |

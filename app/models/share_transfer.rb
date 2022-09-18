@@ -13,4 +13,6 @@ class ShareTransfer < ApplicationRecord
   belongs_to :to_investment, class_name: "Investment"
 
   validates :transfer_date, :price, :quantity, presence: true
+  validates :quantity, comparison: { less_than_or_equal_to: :from_investment_quantity }
+  delegate :quantity, to: :from_investment, prefix: true
 end

@@ -4,11 +4,12 @@ class TransferCreateToInvestment
   def call
     Rails.logger.debug "Interactor: TransferCreateToInvestment called"
 
-    if context.share_transfer.present?
+    share_transfer = context.share_transfer
+    if share_transfer.present? && share_transfer.quantity <= share_transfer.from_investment.quantity
       create_to_investment(context.share_transfer)
     else
-      Rails.logger.debug "No share_transfer specified"
-      context.fail!(message: "No share_transfer specified")
+      Rails.logger.debug "No valid share_transfer specified"
+      context.fail!(message: "No valid share_transfer specified")
     end
   end
 
