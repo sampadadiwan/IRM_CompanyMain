@@ -21,13 +21,13 @@ class TransferCreateToInvestment
     to_investment.category = from_investment.category
     to_investment.entity_id = from_investment.entity_id
     to_investment.preferred_conversion = from_investment.preferred_conversion
+    to_investment.currency = from_investment.currency
+    to_investment.funding_round = from_investment.funding_round
 
     to_investment.investor_id = share_transfer.to_investor_id
     to_investment.quantity = share_transfer.quantity
     to_investment.price = share_transfer.price
     to_investment.investment_date = share_transfer.transfer_date
-    to_investment.currency = from_investment.currency
-    to_investment.funding_round = from_investment.funding_round
 
     SaveInvestment.call(investment: to_investment)
   end

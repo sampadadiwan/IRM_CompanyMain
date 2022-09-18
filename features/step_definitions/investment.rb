@@ -109,6 +109,7 @@ Given('given there is a investment {string} for the entity') do |arg1|
   @investment = SaveInvestment.call(investment: @investment).investment
 
   puts "\n####Investment####\n"
+  puts @investment.errors.full_messages
   puts @investment.to_json
 end
 
