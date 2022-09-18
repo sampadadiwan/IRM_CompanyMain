@@ -141,7 +141,7 @@
             Notes
          </td>
          <td>
-            <%= @investment.notes %>
+            <%=  @investment.notes&.html_safe %>
          </td>
       </tr>
    <% end %>

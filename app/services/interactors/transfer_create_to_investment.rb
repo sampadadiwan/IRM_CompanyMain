@@ -23,7 +23,6 @@ class TransferCreateToInvestment
     to_investment.funding_round = from_investment.funding_round
 
     to_investment.investment_date = share_transfer.transfer_date
-
     # If this is a conversion from Preferred to Equity
     if share_transfer.transfer_type == "Conversion" && from_investment.investment_instrument == "Preferred"
       setup_conversion(share_transfer)
@@ -31,7 +30,12 @@ class TransferCreateToInvestment
       setup_transfer(share_transfer)
     end
 
-    Rails.logger.debug to_investment.to_json
+    msg = " #{share_transfer.transfer_type} of #{share_transfer.to_quantity} from #{share_transfer.from_investor.investor_name}"
+    if to_investment.notes.present?
+      to_investment.notes += msg
+    else
+      to_investment.notes = msg
+    end
 
     SaveInvestment.call(investment: to_investment)
   end
