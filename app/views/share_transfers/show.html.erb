@@ -97,9 +97,3 @@
 </table>
 
 
-<div>
-  <%= link_to "Edit", edit_share_transfer_path(@share_transfer), {class: "btn btn-primary"} %> |
-  <%= link_to "Back", :back, {class: "btn btn-primary"} %> |
-
-  <%= button_to "Delete", @share_transfer, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
-</div>
