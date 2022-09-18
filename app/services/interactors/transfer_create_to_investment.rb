@@ -5,7 +5,7 @@ class TransferCreateToInvestment
     Rails.logger.debug "Interactor: TransferCreateToInvestment called"
 
     share_transfer = context.share_transfer
-    if share_transfer.present? && share_transfer.quantity <= share_transfer.from_investment.quantity
+    if share_transfer.present? && share_transfer.pre_validation
       create_to_investment(context.share_transfer)
     else
       Rails.logger.debug "No valid share_transfer specified"

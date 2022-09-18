@@ -5,7 +5,7 @@ class TransferUpdateFromInvestment
     Rails.logger.debug "Interactor: TransferUpdateFromInvestment called"
 
     share_transfer = context.share_transfer
-    if share_transfer.present? && share_transfer.quantity <= share_transfer.from_investment.quantity
+    if share_transfer.present? && share_transfer.pre_validation
       update_from_investment(context.share_transfer)
     else
       Rails.logger.debug "No valid share_transfer specified"
