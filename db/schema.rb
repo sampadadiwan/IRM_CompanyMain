@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_17_105828) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_18_033425) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1162,6 +1162,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_17_105828) do
     t.bigint "transfered_by_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "transfer_type", limit: 10
+    t.integer "to_quantity", default: 0
     t.index ["entity_id"], name: "index_share_transfers_on_entity_id"
     t.index ["from_investment_id"], name: "index_share_transfers_on_from_investment_id"
     t.index ["from_investor_id"], name: "index_share_transfers_on_from_investor_id"
