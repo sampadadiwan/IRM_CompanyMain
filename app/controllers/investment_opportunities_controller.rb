@@ -5,6 +5,8 @@ class InvestmentOpportunitiesController < ApplicationController
   def index
     @investment_opportunities = policy_scope(InvestmentOpportunity)
     @investment_opportunities = @investment_opportunities.where(entity_id: params[:entity_id]) if params[:entity_id].present?
+
+    @investment_opportunities = @investment_opportunities.page(params[:page])
   end
 
   def search
@@ -12,8 +14,9 @@ class InvestmentOpportunitiesController < ApplicationController
     if query.present?
       @investment_opportunities = InvestmentOpportunityIndex.filter(term: { entity_id: current_user.entity_id })
                                                             .query(query_string: { fields: InvestmentOpportunityIndex::SEARCH_FIELDS,
-                                                                                   query:, default_operator: 'and' }).objects
+                                                                                   query:, default_operator: 'and' })
 
+      @investment_opportunities = @investment_opportunities.page(params[:page]).objects
       render "index"
     else
       redirect_to investment_opportunities_path

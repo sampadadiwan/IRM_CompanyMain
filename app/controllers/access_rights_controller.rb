@@ -20,14 +20,15 @@ class AccessRightsController < ApplicationController
       @access_rights = if current_user.has_role?(:super)
 
                          AccessRightIndex.query(query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
-                                                                query:, default_operator: 'and' }).objects
+                                                                query:, default_operator: 'and' })
 
                        else
                          AccessRightIndex.filter(term: { entity_id: @entity.id })
                                          .query(query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
-                                                                query:, default_operator: 'and' }).objects
+                                                                query:, default_operator: 'and' })
                        end
 
+      @access_rights = @access_rights.page(params[:page]).objects
     end
     render "index"
   end

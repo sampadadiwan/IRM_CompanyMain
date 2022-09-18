@@ -17,7 +17,7 @@ class NotesController < ApplicationController
     if query.present?
       @notes = NoteIndex.filter(term: { entity_id: current_user.entity_id })
                         .query(query_string: { fields: NoteIndex::SEARCH_FIELDS,
-                                               query:, default_operator: 'and' })
+                                               query:, default_operator: 'and' }).page params[:page]
 
       render "index"
     else

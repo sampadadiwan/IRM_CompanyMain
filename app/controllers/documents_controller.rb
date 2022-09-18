@@ -48,8 +48,9 @@ class DocumentsController < ApplicationController
     if query.present?
       @documents = DocumentIndex.filter(term: { entity_id: @entity.id })
                                 .query(query_string: { fields: DocumentIndex::SEARCH_FIELDS,
-                                                       query:, default_operator: 'and' }).objects
+                                                       query:, default_operator: 'and' })
 
+      @documents = @documents.order(id: :desc).page(params[:page]).objects
       @no_folders = true
       render "index"
     else

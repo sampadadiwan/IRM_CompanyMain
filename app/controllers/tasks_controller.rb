@@ -41,8 +41,9 @@ class TasksController < ApplicationController
       @tasks = TaskIndex.filter(term: { entity_id: current_user.entity_id })
                         .or(TaskIndex.filter(term: { for_entity_id: current_user.entity_id })
                       .query(query_string: { fields: TaskIndex::SEARCH_FIELDS,
-                                             query:, default_operator: 'and' }).page(params[:page])).objects
+                                             query:, default_operator: 'and' }).page(params[:page]))
 
+      @tasks = @tasks.page(params[:page]).objects
       render "index"
     else
       redirect_to tasks_path(request.parameters)
