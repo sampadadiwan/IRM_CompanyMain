@@ -14,6 +14,8 @@ class ShareTransfersController < ApplicationController
     @share_transfer = ShareTransfer.new(share_transfer_params)
     @share_transfer.entity_id = current_user.entity_id
     @share_transfer.transfer_date = Time.zone.today
+    @share_transfer.transfer_type ||= "Transfer"
+
     if @share_transfer.from_investment.present?
       authorize(@share_transfer.from_investment, :update?)
       @share_transfer.from_investor = @share_transfer.from_investment.investor
@@ -77,6 +79,8 @@ class ShareTransfersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def share_transfer_params
-    params.require(:share_transfer).permit(:entity_id, :from_investor_id, :from_user_id, :from_investment_id, :to_investor_id, :to_user_id, :to_investment_id, :quantity, :price, :transfer_date, :transfered_by_id)
+    params.require(:share_transfer).permit(:entity_id, :from_investor_id, :from_user_id, :from_investment_id,
+                                           :to_investor_id, :to_user_id, :to_investment_id, :quantity,
+                                           :price, :transfer_date, :transfered_by_id, :transfer_type)
   end
 end

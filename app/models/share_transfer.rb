@@ -1,4 +1,6 @@
 class ShareTransfer < ApplicationRecord
+  TYPES = %w[Transfer Conversion].freeze
+
   belongs_to :entity
   belongs_to :transfered_by, class_name: "User"
 
