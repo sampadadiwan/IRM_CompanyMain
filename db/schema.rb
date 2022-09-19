@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_18_050924) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_19_072936) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -678,6 +678,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_18_050924) do
     t.string "department", limit: 25
     t.string "option_type", limit: 12
     t.boolean "option_dilutes", default: true
+    t.integer "preferred_conversion", default: 1
     t.index ["created_from_excercise_id"], name: "index_holdings_on_created_from_excercise_id"
     t.index ["entity_id"], name: "index_holdings_on_entity_id"
     t.index ["form_type_id"], name: "index_holdings_on_form_type_id"
@@ -1152,11 +1153,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_18_050924) do
   create_table "share_transfers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "from_investor_id"
-    t.bigint "from_user_id"
     t.bigint "from_investment_id"
-    t.bigint "to_investor_id", null: false
-    t.bigint "to_user_id"
-    t.bigint "to_investment_id", null: false
+    t.bigint "to_investor_id"
+    t.bigint "to_investment_id"
     t.integer "quantity"
     t.decimal "price", precision: 20, scale: 2, default: "0.0"
     t.date "transfer_date"
@@ -1165,10 +1164,16 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_18_050924) do
     t.datetime "updated_at", null: false
     t.string "transfer_type", limit: 10
     t.integer "to_quantity", default: 0
+    t.bigint "from_holding_id"
+    t.bigint "to_holding_id"
+    t.bigint "to_user_id"
+    t.bigint "from_user_id"
     t.index ["entity_id"], name: "index_share_transfers_on_entity_id"
+    t.index ["from_holding_id"], name: "index_share_transfers_on_from_holding_id"
     t.index ["from_investment_id"], name: "index_share_transfers_on_from_investment_id"
     t.index ["from_investor_id"], name: "index_share_transfers_on_from_investor_id"
     t.index ["from_user_id"], name: "index_share_transfers_on_from_user_id"
+    t.index ["to_holding_id"], name: "index_share_transfers_on_to_holding_id"
     t.index ["to_investment_id"], name: "index_share_transfers_on_to_investment_id"
     t.index ["to_investor_id"], name: "index_share_transfers_on_to_investor_id"
     t.index ["to_user_id"], name: "index_share_transfers_on_to_user_id"
@@ -1414,6 +1419,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_18_050924) do
   add_foreign_key "secondary_sales", "entities"
   add_foreign_key "secondary_sales", "form_types"
   add_foreign_key "share_transfers", "entities"
+  add_foreign_key "share_transfers", "holdings", column: "from_holding_id"
+  add_foreign_key "share_transfers", "holdings", column: "to_holding_id"
   add_foreign_key "share_transfers", "investments", column: "from_investment_id"
   add_foreign_key "share_transfers", "investments", column: "to_investment_id"
   add_foreign_key "share_transfers", "investors", column: "from_investor_id"

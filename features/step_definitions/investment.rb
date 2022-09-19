@@ -191,6 +191,23 @@ Given('Given I create a holding for each employee with quantity {string}') do |a
   end
 end
 
+
+Given('Given there are holdings for each employee {string}') do |args|
+  @holdings_investor.investor_entity.employees.each do |user|
+    h = Holding.new(user_id: user.id, entity_id: @holdings_investor.entity_id, 
+              investor: @holdings_investor, price_cents: 10000, 
+              funding_round: @funding_round, grant_date: Time.zone.today, 
+              holding_type: "Employee")
+
+    key_values(h, args)
+    h.save
+
+    puts "\n####Employee Holding####\n"
+    puts h.to_json
+  end
+end
+
+
 Then('There should be a corresponding holdings created for each employee') do
 
   puts Holding.all.to_json

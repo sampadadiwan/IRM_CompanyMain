@@ -79,8 +79,8 @@ class ShareTransfersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def share_transfer_params
-    params.require(:share_transfer).permit(:entity_id, :from_investor_id, :from_user_id, :from_investment_id,
-                                           :to_investor_id, :to_user_id, :to_investment_id, :quantity,
+    params.require(:share_transfer).permit(:entity_id, :from_investor_id, :from_holding_id, :from_investment_id,
+                                           :to_investor_id, :to_holding_id, :to_investment_id, :quantity,
                                            :price, :transfer_date, :transfered_by_id, :transfer_type)
   end
 end
