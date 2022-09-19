@@ -9,15 +9,10 @@
   </td>
   <td>
     <%= share_transfer.from_investor&.investor_name %>
-  </td>
-  <td>
-    <%= share_transfer.from_investment_id %>
+    <%= share_transfer.from_holding&.user&.full_name %>
   </td>
   <td>
     <%= share_transfer.to_investor.investor_name %>
-  </td>
-  <td>
-    <%= share_transfer.to_investment_id %>
   </td>
   <td>
     <%= share_transfer.quantity %>

@@ -24,6 +24,15 @@
       <%= link_to "Edit" , edit_holding_path(@holding), {class: "btn btn-primary" } if policy(@holding).edit? %> 
 
       <%= button_to "Approve" , approve_holding_path(@holding), method: :patch, class: "btn btn-success" , form_class: "deleteButton", data: {turbo:false} if policy(@holding).approve? && !@holding.approved %>
+
+
+      <%= link_to "Transfer", new_share_transfer_path("share_transfer[from_holding_id]": @holding.id), 
+            class: "btn btn-success" if policy(@holding).transfer?  %>
+
+      <%= link_to "Convert", new_share_transfer_path("share_transfer[from_holding_id]": @holding.id,
+            "share_transfer[transfer_type]": "Conversion"), 
+            class: "btn btn-success" if policy(@holding).convert?  %>
+
     <% end %>
 
     <% if policy(@holding).cancel? %>

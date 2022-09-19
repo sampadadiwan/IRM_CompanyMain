@@ -33,7 +33,11 @@ class ShareTransfersController < ApplicationController
     @share_transfer.transfered_by = current_user
     authorize(@share_transfer)
 
-    result = DoShareTransfer.call(share_transfer: @share_transfer)
+    if @share_transfer.from_investment
+      result = DoShareTransfer.call(share_transfer: @share_transfer)
+    elsif @share_transfer.from_holding
+      result = DoHoldingTransfer.call(share_transfer: @share_transfer)
+    end
 
     respond_to do |format|
       if result.failure? && !@share_transfer.valid?

@@ -45,6 +45,14 @@ class InvestmentPolicy < ApplicationPolicy
     create? && !record.employee_holdings
   end
 
+  def transfer?
+    edit?
+  end
+
+  def convert?
+    edit? && record.investment_instrument == "Preferred"
+  end
+
   def destroy?
     create?
   end

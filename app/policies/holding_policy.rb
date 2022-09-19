@@ -52,6 +52,14 @@ class HoldingPolicy < ApplicationPolicy
     update? && (!record.approved || record.manual_vesting)
   end
 
+  def transfer?
+    update? && record.approved
+  end
+
+  def convert?
+    update? && record.approved && record.investment_instrument == "Preferred"
+  end
+
   def destroy?
     false
   end

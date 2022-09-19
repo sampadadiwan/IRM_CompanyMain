@@ -20,6 +20,7 @@
       </td>
     </tr>
 
+    <% if @share_transfer.from_investment %>
     <tr>
       <td>
         From Investor
@@ -45,7 +46,38 @@
         <%= @share_transfer.quantity %>
       </td>
     </tr>
+    <% end %>
+
+    <% if @share_transfer.from_holding %>
+    <tr>
+      <td>
+        From User
+      </td>
+      <td>
+        <%= @share_transfer.from_holding.user.full_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        From Holding
+      </td>
+      <td>
+        <%= link_to "Holding #{@share_transfer.from_holding_id}" , holding_path(id:
+          @share_transfer.from_holding_id) %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        From Quantity
+      </td>
+      <td>
+        <%= @share_transfer.quantity %>
+      </td>
+    </tr>
+    <% end %>
+
     
+    <% if @share_transfer.to_investment %>
     <tr>
       <td>
         To Investor
@@ -71,6 +103,8 @@
         <%= @share_transfer.to_quantity %>
       </td>
     </tr>
+    <% end %>
+
     <tr>
       <td>
         Price
