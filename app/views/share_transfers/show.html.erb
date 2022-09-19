@@ -105,6 +105,36 @@
     </tr>
     <% end %>
 
+    <% if @share_transfer.to_holding %>
+    ent %>
+    <tr>
+      <td>
+        To User
+      </td>
+      <td>
+        <%= @share_transfer.to_user.full_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        To Holding
+      </td>
+      <td>
+        <%= link_to "Holding #{@share_transfer.to_holding_id}" , holding_path(id:
+          @share_transfer.to_holding_id) %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        To Quantity
+      </td>
+      <td>
+        <%= @share_transfer.to_quantity %>
+      </td>
+    </tr>
+    <% end %>
+
+
     <tr>
       <td>
         Price

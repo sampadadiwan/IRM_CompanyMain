@@ -60,6 +60,18 @@
         <%= @holding.investment_instrument %>
       </td>
     </tr>
+
+    <% if @holding.investment_instrument == "Preferred" %>
+    <tr>
+      <td>
+        Preferred Conversion
+      </td>
+      <td>
+        <%= @holding.preferred_conversion %>
+      </td>
+    </tr>
+    <% end %>
+
     <tr>
       <td>
         <%= @holding.investment_instrument == "Options" ? "Grant Quantity" : "Issued Quantity" %>

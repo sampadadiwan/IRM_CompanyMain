@@ -32,17 +32,23 @@ class TransferCreateToHolding
 
   def setup_conversion(share_transfer)
     from_holding = share_transfer.from_holding
-    to_investment = share_transfer.build_to_holding
+    share_transfer.to_holding = share_transfer.from_holding.dup
+    to_holding = share_transfer.to_holding
 
-    to_investment.quantity = share_transfer.quantity * from_holding.preferred_conversion
-    to_investment.investment_instrument = "Equity"
-    to_investment.price_cents = (from_holding.price_cents / from_holding.preferred_conversion).round(0)
-    to_investment.preferred_conversion = 1
+    to_holding.orig_grant_quantity = share_transfer.quantity * from_holding.preferred_conversion
+    to_holding.investment_instrument = "Equity"
+    to_holding.price_cents = (from_holding.price_cents / from_holding.preferred_conversion).round(0)
+    to_holding.preferred_conversion = 1
+    to_holding.investment_id = nil
 
     share_transfer.to_quantity = share_transfer.quantity * from_holding.preferred_conversion
-    share_transfer.price = to_investment.price_cents / 100
+    share_transfer.price = to_holding.price_cents / 100
+    share_transfer.to_user_id = to_holding.user_id
 
-    CreateHolding.call(holding:).holding
+    # puts to_holding.to_json
+
+    to_holding = CreateHolding.call(holding: to_holding).holding
+    ApproveHolding.call(holding: to_holding)
   end
 
   def setup_transfer(share_transfer)

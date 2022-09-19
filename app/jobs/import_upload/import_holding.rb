@@ -87,7 +87,7 @@ class ImportHolding
                           price_cents:, employee_id: user_data["Employee ID"], department: user_data["Department"],
                           investment_instrument: user_data["Instrument"], funding_round: fr, option_pool: ep,
                           import_upload_id: import_upload.id, grant_date:, approved: false,
-                          option_type: user_data["Option Type"])
+                          option_type: user_data["Option Type"], preferred_conversion: user_data["Preferred Conversion"])
 
     setup_custom_fields(user_data, holding, custom_field_headers)
 

@@ -12,7 +12,8 @@
     <%= share_transfer.from_holding&.user&.full_name %>
   </td>
   <td>
-    <%= share_transfer.to_investor.investor_name %>
+    <%= share_transfer.to_investor&.investor_name %>
+    <%= share_transfer.to_holding&.user&.full_name %>
   </td>
   <td>
     <%= share_transfer.quantity %>

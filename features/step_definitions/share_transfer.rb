@@ -35,18 +35,40 @@
     puts "\n####Share Transfer####\n"
     puts @share_transfer.to_json
 
-    @to_investment = Investment.last
     
     @share_transfer.id.should_not == nil
     @share_transfer.entity_id.should == @entity.id
     
-    @share_transfer.to_investment_id.should == @to_investment.id
-    @share_transfer.to_investor_id.should == @to_investor.id
+    if @share_transfer.to_investor
+      @to_investment = Investment.last
+      @share_transfer.to_investment_id.should == @to_investment.id
+      @share_transfer.to_investor_id.should == @to_investor.id
+    else
+      @to_holding = Holding.last
+      @share_transfer.to_holding_id.should == @to_holding.id
+      @share_transfer.to_user_id.should == @to_holding.user_id
+    end
 
     @share_transfer.from_holding_id.should == @from_holding.id
     @share_transfer.from_user_id.should == @from_holding.user_id
 
   end
+
+  Then('holding conversion should result in a new holding') do
+    @to_holding = Holding.last
+
+    puts "\n####To Holding####\n"
+    puts @to_holding.to_json
+
+    @to_holding.quantity.should == @share_transfer.quantity * @from_holding.preferred_conversion
+    @to_holding.price.should == @from_holding.price / @from_holding.preferred_conversion
+    @to_holding.user_id.should == @from_holding.user_id
+    @to_holding.funding_round_id.should == @from_holding.funding_round_id
+    @to_holding.investor_id.should == @from_holding.investor_id
+    @to_holding.investment_instrument.should == "Equity"
+    @to_holding.preferred_conversion.should == 1
+  end
+  
   
   Then('share transfer should result in a new investment') do
 
@@ -159,6 +181,21 @@ When('a share conversion is done for quantity {string}') do |qty|
   DoShareTransfer.call(share_transfer: @share_transfer)
 end
 
+When('a holding conversion is done for quantity {string}') do |qty|
+  @from_holding = @holdings_investor.holdings.first
+  puts "\n####From Holding####\n"
+  puts @from_holding.to_json
+
+  @orig_from_holding_qty = @from_holding.quantity
+  @inital_funding_round = @from_holding.funding_round.dup
+
+  @share_transfer = ShareTransfer.new(entity_id: @entity.id, from_holding: @from_holding, quantity: qty.to_i,  transfer_date: Date.today, transfered_by_id: User.first.id, transfer_type: "Conversion")
+      
+
+  DoHoldingTransfer.call(share_transfer: @share_transfer)
+end
+
+
 Then('share transfer should not effect the funding round') do
   @from_investment.funding_round.pre_money_valuation_cents.should == @inital_funding_round.pre_money_valuation_cents
   @from_investment.funding_round.post_money_valuation_cents.should == @inital_funding_round.post_money_valuation_cents
@@ -166,13 +203,13 @@ Then('share transfer should not effect the funding round') do
 end
 
 Then('holding transfer should not effect the funding round') do
-  @from_holding.funding_round.pre_money_valuation_cents.should == @inital_funding_round.pre_money_valuation_cents
-  @from_holding.funding_round.post_money_valuation_cents.should == @inital_funding_round.post_money_valuation_cents
-  @from_holding.funding_round.amount_raised_cents.should == @inital_funding_round.amount_raised_cents
+  @from_holding.funding_round.pre_money_valuation_cents.should be_within(20).of(@inital_funding_round.pre_money_valuation_cents)
+  @from_holding.funding_round.post_money_valuation_cents.should be_within(20).of(@inital_funding_round.post_money_valuation_cents)
+  @from_holding.funding_round.amount_raised_cents.should be_within(20).of(@inital_funding_round.amount_raised_cents)
 end
 
 
-When('a share transfer is done from the employee to the investor for quantity {string}') do |qty|
+When('a holding transfer is done from the employee to the investor for quantity {string}') do |qty|
   @from_holding = @holdings_investor.holdings.first
   puts "\n####From Holding####\n"
   puts @from_holding.to_json
