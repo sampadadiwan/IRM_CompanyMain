@@ -54,9 +54,7 @@ class ImportHolding
     end
   end
 
-  def save_holding(user_data, import_upload, custom_field_headers)
-    Rails.logger.debug { "Processing holdings #{user_data}" }
-
+  def save_user(user_data, import_upload, _custom_field_headers)
     # Find the Founder or Employee Investor for the entity
     investor = Investor.where(entity_id: import_upload.owner_id,
                               is_holdings_entity: true, category: user_data["Founder or Employee"]).first
@@ -65,11 +63,16 @@ class ImportHolding
     user = User.find_by(email: user_data['Email'])
     unless user
       password = (0...8).map { rand(65..90).chr }.join
-      user = User.create!(email: user_data["Email"], password:,
-                          first_name: user_data["First Name"],
-                          last_name: user_data["Last Name"], active: true, system_created: true,
-                          entity_id: investor.investor_entity_id)
 
+      user = User.new(email: user_data["Email"], password:,
+                      first_name: user_data["First Name"],
+                      last_name: user_data["Last Name"], active: true, system_created: true,
+                      entity_id: investor.investor_entity_id)
+
+      if user_data["Send Confirmation Email"] == "No"
+        user.skip_confirmation!
+        user.save
+      end
     end
 
     # create the Investor Access
@@ -78,6 +81,14 @@ class ImportHolding
                             investor_id: investor.id, granted_by: import_upload.user_id)
 
     end
+
+    [user, investor]
+  end
+
+  def save_holding(user_data, import_upload, custom_field_headers)
+    Rails.logger.debug { "Processing holdings #{user_data}" }
+
+    user, investor = save_user(user_data, import_upload, custom_field_headers)
 
     fr, ep, grant_date = get_fr_ep(user_data, import_upload)
     price_cents = ep ? ep.excercise_price_cents : user_data["Price"].to_f * 100
