@@ -78,12 +78,21 @@
 
   <small class="text-muted"> Upload bank statements, tax documents and shareholding documents. </small>
 
+  <div class="form-group">
+    <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image", 
+                            for_model: "offer", field_name: "signature", 
+                            model: offer %>
 
-  <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image", 
-                          for_model: "offer", field_name: "signature", 
-                          model: offer %>
+    <small class="text-muted"> Upload signature. </small>
+  </div>
 
-  <small class="text-muted"> Upload signature. </small>
+  <div class="form-group">
+    <%= render "layouts/single_upload", form: form, field_label: "Upload PAN Card", 
+                            for_model: "offer", field_name: "pan_card", 
+                            model: offer %>
+
+    <small class="text-muted"> Upload PAN card. </small>
+  </div>
 
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-primary"}%>

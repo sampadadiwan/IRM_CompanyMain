@@ -101,6 +101,9 @@ gem "view_component"
 gem 'client_side_validations'
 gem 'rack-attack'
 
+# for making external API calls
+gem 'httparty'
+
 # Use Kredis to get higher-level data types in Redis [https://github.com/rails/kredis]
 # gem "kredis"
 

@@ -772,6 +772,7 @@ DEPENDENCIES
   google-apis-drive_v3
   groupdate
   hightop
+  httparty
   image_processing (~> 1.2)
   importmap-rails
   impressionist

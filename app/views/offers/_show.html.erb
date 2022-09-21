@@ -157,9 +157,29 @@
           PAN
         </td>
         <td>
-          <%= @offer.PAN %>
+          <%= @offer.PAN %>          
         </td>
       </tr>
+
+      <tr>
+        <td>
+          Pan Card
+        </td>
+        <td>
+          <%= link_to "Pan Card", @offer.pan_card_url if @offer.pan_card.present? %>
+          <br>
+          <% if @offer.pan_card.present? %>
+            <% if @offer.pan_verified %>
+              <span class="badge badge-success">Verified</span>
+            <% else %>
+              <span class="badge badge-danger"><%= @offer.pan_verification_status %></span>
+            <% end %>
+          <% else %>
+            <span class="badge badge-warning">Not Uploaded</span>
+          <% end %>
+        </td>
+      </tr>
+
       <tr>
         <td>
           Bank Account Number

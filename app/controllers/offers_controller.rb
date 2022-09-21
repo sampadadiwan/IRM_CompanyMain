@@ -180,7 +180,7 @@ class OffersController < ApplicationController
                                   :holding_id, :quantity, :percentage, :notes, :first_name, :last_name,
                                   :middle_name, :PAN, :address, :bank_account_number, :bank_name,
                                   :comments, :verified, :final_agreement, :interest_id, :form_type_id,
-                                  :allocation_quantity, :acquirer_name, :bank_routing_info, :id_proof, :address_proof, :spa, :signature, docs_uploaded_check: {},
-                                                                                                                                         documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+                                  :allocation_quantity, :acquirer_name, :bank_routing_info, :id_proof, :address_proof, :spa, :signature, :pan_card, docs_uploaded_check: {},
+                                                                                                                                                    documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end
