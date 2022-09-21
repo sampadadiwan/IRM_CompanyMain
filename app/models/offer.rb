@@ -175,4 +175,9 @@ class Offer < ApplicationRecord
   def validate_pan_card
     VerifyOfferPanJob.perform_later(id) if saved_change_to_PAN? || saved_change_to_first_name? || saved_change_to_last_name? || saved_change_to_middle_name? || saved_change_to_pan_card_data?
   end
+
+  after_save :validate_bank
+  def validate_bank
+    VerifyOfferBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code?
+  end
 end

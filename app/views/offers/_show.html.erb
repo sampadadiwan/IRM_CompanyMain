@@ -170,10 +170,20 @@
           <br>
           <% if @offer.pan_card.present? %>
             <% if @offer.pan_verified %>
-              <span class="badge badge-success">Verified</span>
+              <span class="badge badge-success" type="button" 
+                    data-toggle="collapse" data-target=".pan_verification_response">
+                Verified
+              </span>
             <% else %>
-              <span class="badge badge-danger"><%= @offer.pan_verification_status %></span>
+              <span class="badge badge-danger" type="button" 
+                    data-toggle="collapse" data-target=".pan_verification_response">
+                  <%= @offer.pan_verification_status %>
+              </span>              
             <% end %>
+            <br>
+            <small class="text-muted collapse pan_verification_response">
+              <%= @offer.pan_verification_response %>
+            </small>
           <% else %>
             <span class="badge badge-warning">Not Uploaded</span>
           <% end %>
@@ -186,6 +196,36 @@
         </td>
         <td>
           <%= @offer.bank_account_number %>
+
+          <br>
+          <% if @offer.bank_account_number.present? && @offer.ifsc_code.present? %>
+            <% if @offer.bank_verified %>
+              <span class="badge badge-success" type="button" 
+                    data-toggle="collapse" data-target=".bank_verification_response">
+                Verified
+              </span>
+            <% else %>
+              <span class="badge badge-danger" type="button" 
+                    data-toggle="collapse" data-target=".bank_verification_response">
+                <%= @offer.bank_verification_response ? "Invalid" : "Pending Verification" %>
+              </span>
+              
+            <% end %>
+
+            <br>
+            <small class="text-muted collapse bank_verification_response">
+              <%= @offer.bank_verification_response %>
+            </small>
+          <% end %>
+
+        </td>
+      </tr>
+      <tr>
+        <td>
+          IFSC Code
+        </td>
+        <td>
+          <%= @offer.ifsc_code %>
         </td>
       </tr>
       <tr>

@@ -4,9 +4,7 @@ class VerifyOfferPanJob < ApplicationJob
   def perform(offer_id)
     Chewy.strategy(:sidekiq) do
       @offer = Offer.find(offer_id)
-
       verify
-
       @offer.save
     end
   end

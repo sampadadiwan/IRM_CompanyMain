@@ -128,14 +128,21 @@
                         <%= form.label :bank_account_number %>
                         <%= form.text_field :bank_account_number, class: "form-control", required: true  %>
                     </div>
+
+                    <div class="form-group">
+                        <%= form.label :ifsc_code %>
+                        <%= form.text_field :ifsc_code, class: "form-control", required: true  %>
+                    </div>
+
                     <div class="form-group">
                         <%= form.label :bank_name %>
                         <%= form.text_field :bank_name, class: "form-control", required: true  %>
                     </div>
+                    
                     <div class="form-group">
                         <%= form.label :bank_routing_info %>
                         <%= form.text_area :bank_routing_info, class: "form-control", required: true  %>
-                        <small class="text-muted">IFSC code, Branch etc</small>
+                        <small class="text-muted">Branch etc</small>
                     </div>
 
                     <%= custom_form_fields(offer, form) %>
