@@ -208,6 +208,7 @@
               <span class="badge badge-danger" type="button" 
                     data-toggle="collapse" data-target=".bank_verification_response">
                 <%= @offer.bank_verification_response ? "Invalid" : "Pending Verification" %>
+                <%= @offer.bank_verification_status %>
               </span>
               
             <% end %>

@@ -17,10 +17,10 @@ class VerifyOfferBankJob < ApplicationJob
       init_offer(response)
 
       if response["status"] == "completed"
-        @offer.bank_verified = true
+        check_details(response)
       else
         @offer.bank_verified = false
-        @offer.bank_verification_status = response["message"]
+        @offer.bank_verification_status = "Account not found"
       end
     else
       @offer.bank_verification_status = "No PAN card uploaded"
@@ -29,9 +29,23 @@ class VerifyOfferBankJob < ApplicationJob
 
   def init_offer(response)
     Rails.logger.debug response
-    @offer.bank_verification_response = nil
     @offer.bank_verification_status = nil
     @offer.bank_verified = false
     @offer.bank_verification_response = response["result"]
+  end
+
+  def check_details(_response)
+    name_at_bank = @offer.bank_verification_response["name_at_bank"].split
+    Rails.logger.debug { "name_at_bank = #{name_at_bank}" }
+    @offer.bank_verified = false
+
+    given_names = [@offer.first_name.downcase, @offer.middle_name.downcase, @offer.last_name.downcase]
+
+    name_at_bank.each do |name|
+      Rails.logger.debug { "Matching #{name} with #{@offer.first_name} #{@offer.middle_name} #{@offer.last_name}" }
+      @offer.bank_verified = true if given_names.include?(name.downcase)
+    end
+
+    @offer.bank_verification_status = "Name does not match" unless @offer.bank_verified
   end
 end

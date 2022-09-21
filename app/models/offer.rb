@@ -38,6 +38,7 @@ class Offer < ApplicationRecord
   belongs_to :form_type, optional: true
   serialize :properties, Hash
   serialize :pan_verification_response, Hash
+  serialize :bank_verification_response, Hash
   serialize :docs_uploaded_check, Hash
 
   delegate :quantity, to: :holding, prefix: :holding
@@ -81,6 +82,8 @@ class Offer < ApplicationRecord
     self.amount_cents = quantity * final_price * 100 if final_price.positive?
     self.allocation_amount_cents = allocation_quantity * final_price * 100 if final_price.positive?
     self.docs_uploaded_check ||= {}
+    self.bank_verification_response ||= {}
+    self.pan_verification_response ||= {}
   end
 
   def check_quantity
@@ -178,6 +181,6 @@ class Offer < ApplicationRecord
 
   after_save :validate_bank
   def validate_bank
-    VerifyOfferBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code?
+    VerifyOfferBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_first_name? || saved_change_to_last_name? || saved_change_to_middle_name?
   end
 end
