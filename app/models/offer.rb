@@ -170,4 +170,9 @@ class Offer < ApplicationRecord
   def document_list
     secondary_sale.seller_doc_list&.split(",")
   end
+
+  after_save :validate_pan_card
+  def validate_pan_card
+    VerifyOfferPanJob.perform_later(id) if saved_change_to_PAN? || saved_change_to_first_name? || saved_change_to_last_name? || saved_change_to_middle_name? || saved_change_to_pan_card_data?
+  end
 end

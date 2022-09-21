@@ -2,10 +2,22 @@ class VerifyOfferPanJob < ApplicationJob
   queue_as :default
 
   def perform(offer_id)
-    @offer = Offer.find(offer_id)
+    Chewy.strategy(:sidekiq) do
+      @offer = Offer.find(offer_id)
 
+      verify
+
+      @offer.save
+    end
+  end
+
+  private
+
+  def verify
     if @offer.pan_card
       response = KycVerify.new.verify_pan_card(@offer.pan_card.url(expires_in: 60))
+      init_offer(response)
+
       if response["status"] == "completed"
         @offer.pan_verified = true
         @offer.pan_verification_response = response["result"]
@@ -18,8 +30,13 @@ class VerifyOfferPanJob < ApplicationJob
     else
       @offer.pan_verification_status = "No PAN card uploaded"
     end
+  end
 
-    @offer.save
+  def init_offer(response)
+    logger.debug response
+    @offer.pan_verification_response = nil
+    @offer.pan_verification_status = nil
+    @offer.pan_verified = false
   end
 
   def check_details(response)
