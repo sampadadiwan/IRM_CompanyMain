@@ -35,13 +35,13 @@ AllCops:
 
 Rails/SkipsModelValidations:
   Exclude:
-    - 'app/models/folder.rb'
+    - 'app/packs/core/folders/models/folder.rb'
     - 'app/jobs/allocation_job.rb'
     - 'app/jobs/fund_raise_allocation_job.rb'
     - 'app/jobs/allocation_base.rb'
     - 'app/jobs/investment_percentage_holding_job.rb'
     - 'app/services/interactors/create_audit_trail.rb'
-    - 'app/models/entity.rb'
+    - 'app/packs/core/entities/models/entity.rb'
     - 'app/jobs/offer_spa_job.rb'
     - 'app/jobs/investment_opportunity_job.rb'
 Rails/HasAndBelongsToMany:
@@ -50,7 +50,7 @@ Rails/HasAndBelongsToMany:
 Naming/MethodName:
   Exclude:
     - 'app/models/investment.rb'
-    - 'app/models/investor.rb'
+    - 'app/packs/core/investors/models/investor.rb'
 Naming/AccessorMethodName:
   Exclude:
     - 'app/datatables/note_datatable.rb'
@@ -74,11 +74,11 @@ Metrics/CyclomaticComplexity:
   Max: 10
   Enabled: true
   Exclude:
-    - 'app/models/user.rb'
+    - 'app/packs/core/users/models/user.rb'
 Metrics/PerceivedComplexity:
   Exclude:
-    - 'app/models/user.rb'
-    - 'app/controllers/tasks_controller.rb'
+    - 'app/packs/core/users/models/user.rb'
+    - 'app/packs/core/tasks/controllers/tasks_controller.rb'
     - 'app/uploaders/file_uploader.rb'
 Metrics/ClassLength:
   Description: 'Avoid classes longer than 100 lines of code.'
@@ -102,7 +102,7 @@ Metrics/MethodLength:
   Enabled: true
   Exclude:
     - 'app/controllers/access_rights_controller.rb'
-    - 'app/models/user.rb'
+    - 'app/packs/core/users/models/user.rb'
   
 Metrics/BlockLength:
   CountComments: false
