@@ -26,28 +26,28 @@ module InvestorRelationshipManagement
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("indices")
 
-    core_view_paths = %w[access_rights documents entities folders notes permissions reminders tasks users investors investor_accesses valuations form_types form_custom_fields]
+    core_view_paths = %w[access_rights documents entities folders notes permissions reminders tasks users investors investor_accesses valuations form_types form_custom_fields approvals payments nudges]
 
     core_view_paths.each do |view_path|
-      config.paths['app/views'].unshift(Rails.root.join("/app/packs/core/#{view_path}/views"))
+      config.paths['app/views'].unshift("#{Rails.root}/app/packs/core/#{view_path}/views")
     end
 
     funds_view_paths = %w[funds capital_calls capital_commitments capital_distributions capital_distribution_payments capital_remittances investment_opportunities]
 
     funds_view_paths.each do |view_path|
-      config.paths['app/views'].unshift(Rails.root.join("/app/packs/funds/#{view_path}/views"))
+      config.paths['app/views'].unshift("#{Rails.root}/app/packs/funds/#{view_path}/views")
     end
 
     secondaries_view_paths = %w[secondary_sales offers interests]
 
     secondaries_view_paths.each do |view_path|
-      config.paths['app/views'].unshift(Rails.root.join("/app/packs/secondaries/#{view_path}/views"))
+      config.paths['app/views'].unshift("#{Rails.root}/app/packs/secondaries/#{view_path}/views")
     end
 
     startup_view_paths = %w[investments aggregate_investments option_pools excercises deals funding_rounds]
 
     startup_view_paths.each do |view_path|
-      config.paths['app/views'].unshift(Rails.root.join("/app/packs/secondaries/#{view_path}/views"))
+      config.paths['app/views'].unshift("#{Rails.root}/app/packs/startups/#{view_path}/views")
     end
 
     config.to_prepare do
