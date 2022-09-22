@@ -26,6 +26,8 @@ module InvestorRelationshipManagement
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("indices")
 
+    config.paths['app/views'].unshift("#{Rails.root}/app/packs/misc/views")
+
     core_view_paths = %w[access_rights documents entities folders notes permissions reminders tasks users investors investor_accesses valuations form_types form_custom_fields approvals payments nudges impoer_uploads misc]
 
     core_view_paths.each do |view_path|
