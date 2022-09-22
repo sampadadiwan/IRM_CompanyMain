@@ -210,6 +210,7 @@ FactoryBot.define do
     bank_routing_info {Faker::Bank.routing_number}
     first_name {Faker::Name.first_name}
     last_name {Faker::Name.last_name}
+    ifsc_code {Faker::Bank.swift_bic}
   end
 
   factory :secondary_sale do
