@@ -39,11 +39,11 @@ Rails/FilePath:
 Rails/SkipsModelValidations:
   Exclude:
     - 'app/packs/core/folders/models/folder.rb'
-    - 'app/jobs/fund_raise_allocation_job.rb'
+    - 'app/packs/secondaries/secondary_sales/jobs/fund_raise_allocation_job.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/allocation_job.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/allocation_base.rb'
     - 'app/packs/startups/investments/jobs/investment_percentage_holding_job.rb'
-    - 'app/services/interactors/create_audit_trail.rb'
+    - 'app/packs/startups/investments/services/interactors/create_audit_trail.rb'
     - 'app/packs/core/entities/models/entity.rb'
     - 'app/jobs/offer_spa_job.rb'
     - 'app/packs/funds/investment_opportunities/jobs/investment_opportunity_job.rb'
@@ -71,7 +71,7 @@ Rails/OutputSafety:
 Style/OptionalBooleanParameter:
   Exclude:
     - 'app/packs/startups/investments/helpers/investments_helper.rb'
-    - 'app/mailers/email_currency_helper.rb'
+    - 'app/packs/core/misc/mailers/email_currency_helper.rb'
 # Metrics Cops
 Metrics/CyclomaticComplexity:
   Max: 10
@@ -112,7 +112,7 @@ Metrics/BlockLength:
   Max: 15
   Exclude:
     - 'app/packs/secondaries/secondary_sales/views/secondary_sales/download.xlsx.axlsx'
-    - 'app/jobs/import_upload_job.rb'
+    - 'app/packs/misc/import_uploads/import_upload_job.rb'
     - 'app/packs/startups/investments/jobs/investment_percentage_holding_job.rb'
     - 'app/controllers/concerns/investment_concern.rb'
     - 'app/packs/funds/capital_distributions/jobs/capital_distribution_job.rb'

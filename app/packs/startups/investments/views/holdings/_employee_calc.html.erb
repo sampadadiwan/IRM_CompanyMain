@@ -1,4 +1,4 @@
-<% if policy_scope(Holding).options.count > 0 && %>
+<% if policy_scope(Holding).options.count > 0 %>
 
 <%= turbo_frame_tag "employee_calc" do %>
   <%  price_growth, tax_rate, estimated_taxes, estimated_profit, 

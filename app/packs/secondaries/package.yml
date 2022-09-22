@@ -1,0 +1,9 @@
+metadata:
+      stewards:
+      - "@Shopify/sales"
+      slack_channels:
+      - "#sales"
+      enforce_privacy: true  # will make everything private that is not in
+      dependencies:
+        - app/packs/core
+        - app/packs/secondaries
