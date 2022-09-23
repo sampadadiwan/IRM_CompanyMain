@@ -54,7 +54,7 @@ gem 'hightop'
 
 gem 'eu_central_bank'
 gem 'money-rails', '~>1.12'
-gem 'razorpay'
+# gem 'razorpay'
 
 gem 'xirr', git: "https://github.com/thimmaiah/xirr"
 # gem 'prometheus_exporter'
@@ -92,8 +92,8 @@ gem 'roo'
 gem 'spreadsheet' # To write exiting XLs with formulas
 
 # gem 'draper'
-gem 'google-api-client'
-gem 'google-apis-drive_v3'
+# gem 'google-api-client'
+# gem 'google-apis-drive_v3'
 
 gem 'ransack'
 gem "view_component"
@@ -103,9 +103,6 @@ gem 'rack-attack'
 
 # for making external API calls
 gem 'httparty'
-
-gem 'packwerk'
-gem 'stimpack'
 
 # Use Kredis to get higher-level data types in Redis [https://github.com/rails/kredis]
 # gem "kredis"
@@ -136,10 +133,14 @@ group :development, :test do
 end
 
 gem 'awesome_print'
-gem 'factory_bot_rails'
-gem "faker"
+group :development, :staging, :test do
+  gem 'factory_bot_rails'
+  gem "faker"
+end
 
 group :development do
+  gem 'packwerk'
+  gem 'stimpack'
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem 'annotate'
   gem 'bullet'
@@ -154,9 +155,9 @@ group :development do
   # Add speed badges [https://github.com/MiniProfiler/rack-mini-profiler]
   gem "rack-mini-profiler"
   # For memory profiling
-  gem 'memory_profiler'
+  # gem 'memory_profiler'
   # For call-stack profiling flamegraphs
-  gem 'stackprof'
+  # gem 'stackprof'
 
   # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
   # gem "spring"
