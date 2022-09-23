@@ -1,0 +1,104 @@
+        <!-- Nav Item - Pages Collapse Menu -->
+    <li class="nav-item">                
+        <a class="nav-link" href="/investors" data-toggle="collapse" data-target="#investorMenus">
+            <i class="fas fa-lg fa-fw fa-user-tie"></i>
+            <span>Investors</span>
+        </a>
+
+        <div id="investorMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <a class="collapse-item" 
+                href="/investors/new?investor[entity_id]=<%=current_user.entity_id%>">
+                    New Investor</a>
+                <a class="collapse-item" href="/investors">View Investors</a>
+                <a class="collapse-item" href="/approvals">Approvals</a>
+                <a class="collapse-item" href="/notes">Notes</a>
+                <a class="collapse-item" href="/investor_accesses?approved=false">Pending Access</a>
+            </div>
+        </div>
+
+    </li>
+    <li class="nav-item"> 
+        <a class="nav-link collapsed" href="/documents">
+            <i class="fas fa-lg fa-fw fa-folder"></i>
+            <span>Documents</span>
+        </a>
+    </li>
+
+    <% if current_user.entity.enable_captable %>
+
+        <li class="nav-item"> 
+            <a class="nav-link" href="/aggregate_investments" data-toggle="collapse" data-target="#investmentMenus">
+                <i class="fas fa-lg fa-fw fa-money-bill"></i>
+                <span>Cap Table</span>
+            </a>
+
+            <div id="investmentMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" 
+                    href="/investments/new?investment[entity_id]=<%=current_user.entity_id%>">
+                        New Investment</a>
+                    <a class="collapse-item" href="/aggregate_investments">Shareholding</a>
+                    <a class="collapse-item" href="/investments">Details View</a>
+                    <a class="collapse-item" href="/share_transfers">Share Transfers</a>
+                    <a class="collapse-item" href="/funding_rounds">Funding Rounds</a>
+                    <a class="collapse-item" href="/valuations">Valuations</a>
+                    <a class="collapse-item" href="/aggregate_investments/simple_simulator">Scenarios</a>
+                    
+                </div>
+            </div>
+
+        </li>
+
+    <% end %>
+
+    <% if current_user.entity.enable_options %>
+        <!-- Nav Item - Pages Collapse Menu -->
+        <li class="nav-item">                
+            <a class="nav-link" href="/option_pools">
+                <i class="fas fa-lg fa-fw fa-trophy"></i>
+                <span>Option Pools</span>
+            </a>
+        </li>
+    <% end %>
+
+    <!-- Divider -->
+    <hr class="sidebar-divider">
+    <% if current_user.entity.enable_deals %>
+        <!-- Nav Item - Pages Collapse Menu -->
+        <li class="nav-item">                
+            <a class="nav-link" href="/deals">
+                <i class="fas fa-lg fa-fw fa-briefcase"></i>
+                <span>Deals</span>
+            </a>
+        </li>
+    <% end %>
+    
+    
+    <!-- Nav Item - Pages Collapse Menu -->
+    <li class="nav-item">
+        <a class="nav-link" href="/holdings"  data-toggle="collapse" data-target="#holdingsMenus">
+            <i class="fas fa-lg fa-fw fa-file-alt"></i>
+            <span>Holdings</span>
+        </a>
+        <div id="holdingsMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <a class="collapse-item" href="/holdings">Holdings</a>
+                <a class="collapse-item" href="/excercises">Excercises</a>
+            </div>
+        </div>
+        
+    </li>
+
+    <% if current_user.entity.enable_secondary_sale %>
+    
+        <li class="nav-item">                
+            <a class="nav-link" href="/secondary_sales">
+                <i class="fas fa-lg fa-fw fa-bolt"></i>
+                <span>Secondary Sales</span>
+            </a>
+
+            <hr class="sidebar-divider my-0">
+        </li>
+
+    <% end %>
