@@ -54,7 +54,7 @@ class SecondarySalePolicy < ApplicationPolicy
 
   def seller?
     record.seller?(user) ||
-      (user.entity_id == record.entity_id && record.user_id == user.id)
+      (user.entity_id == record.entity_id)
   end
 
   def show_interest?
