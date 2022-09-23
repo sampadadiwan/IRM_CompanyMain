@@ -1,4 +1,4 @@
-<% cache [secondary_sale, current_user && current_user.entity_id == secondary_sale.entity_id] do %>
+<% cache [secondary_sale, current_user, current_user.entity_id == secondary_sale.entity_id] do %>
 
   <table class="table table-bordered dataTable">
     <tr>
@@ -171,6 +171,35 @@
       </td>
     </tr>
 
+
+    <tr>
+      <td>
+        Actual Offered Quantity
+      </td>
+      <td>
+        <%= custom_format_number secondary_sale.total_offered_quantity, params %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Shortlisted Interest Quantity
+      </td>
+      <td>
+          <ul>
+            <li>
+              Total: <%= custom_format_number secondary_sale.total_interest_quantity, params %>
+            </li>
+            <% price_qty = secondary_sale.interests.short_listed.group(:price).sum(:quantity).sort.to_h %>
+            <% price_qty.each do |price, qty| %>
+              <li>
+                <%= qty %> @ <%= price %> 
+              </li>
+            <% end %>
+          </ul>
+      </td>
+    </tr>
+
     <% end %>
 
     <% if current_user.entity_id == secondary_sale.entity_id && secondary_sale.allocation_status.present? %>
@@ -188,14 +217,6 @@
         </td>
       </tr>
 
-      <tr>
-        <td>
-          Total Offered Quantity
-        </td>
-        <td>
-          <%= custom_format_number secondary_sale.total_offered_quantity, params %>
-        </td>
-      </tr>
 
       <tr>
         <td>
@@ -214,24 +235,7 @@
           <%= money_to_currency secondary_sale.allocation_offer_amount, params %>
         </td>
       </tr>
-      <tr>
-        <td>
-          Shortlisted Interest Quantity
-        </td>
-        <td>
-            <ul>
-              <li>
-                Total: <%= custom_format_number secondary_sale.total_interest_quantity, params %>
-              </li>
-              <% price_qty = secondary_sale.interests.short_listed.group(:price).sum(:quantity).sort.to_h %>
-              <% price_qty.each do |price, qty| %>
-                <li>
-                  <%= qty %> @ <%= price %> 
-                </li>
-              <% end %>
-            </ul>
-        </td>
-      </tr>
+      
 
       <tr>
         <td>
