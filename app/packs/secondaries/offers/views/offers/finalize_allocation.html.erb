@@ -12,8 +12,13 @@
             {class: "btn btn-primary" }  %> 
             <%= link_to "Verified", finalize_offer_allocation_secondary_sale_path(@secondary_sale, verified: true), {class: "btn btn-success" }  %> 
             <%= link_to "Un-Verified", finalize_offer_allocation_secondary_sale_path(@secondary_sale, verified: false), {class: "btn btn-warning" }  %> 
+            
+            |
+
+            <%= link_to "Un-Matched", finalize_offer_allocation_secondary_sale_path(@secondary_sale, matched: false), {class: "btn btn-warning" }  %> 
+            <%= link_to "Matched", finalize_offer_allocation_secondary_sale_path(@secondary_sale, matched: true), {class: "btn btn-success" }  %> 
                     
-            &nbsp;&nbsp;&nbsp;
+            |
 
         
             <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
@@ -23,7 +28,7 @@
                     <i class="fa-lg fa-regular fa-file-excel"></i> Download
             <% end %>
         
-            &nbsp;&nbsp;&nbsp;
+            |
       
             <%= link_to "Interest Allocations",
             finalize_interest_allocation_secondary_sale_path(@secondary_sale), 
