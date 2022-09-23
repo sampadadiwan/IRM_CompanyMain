@@ -3,6 +3,10 @@
   
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#payments-tab">Payments</a>
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#reminders-tab" 
+            data-action="click->tabdetails#loadData">
+            Reminders
+          </a>
 
     </nav>
   
@@ -13,6 +17,19 @@
             <%= render "/capital_distribution_payments/index", 
                 capital_distribution_payments: policy_scope(capital_distribution.capital_distribution_payments), 
                 capital_distribution: capital_distribution %>
+          </div>     
+        </div>
+
+        <div id="reminders-tab" class="tab-pane fade">
+          <div id="reminders" class="associated_entity">
+            <%= link_to reminders_path( owner_id: capital_distribution.id, 
+                                    owner_type: "CapitalDistribution", sent: false), 
+                                    class: "load_data_link", 
+                                    data: { turbo_frame: 'reminders_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "reminders_list", target: "_top" do %>
+            <% end %>
           </div>     
         </div>
   
