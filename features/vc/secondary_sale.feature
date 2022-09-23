@@ -29,19 +29,19 @@ Scenario Outline: View sale - externally visible, but no access
   	|  	        |entity_type=Startup  |name=Grand Sale;visible_externally=true  |Secondary sale was successfully created|
     |  	        |entity_type=Startup  |name=Winter Sale;visible_externally=true |Secondary sale was successfully created|
 
-Scenario Outline: View sale - externally visible, with access
-  Given there is a user "<user>" for an entity "<entity>"
+Scenario Outline: View sale - with access
+  Given there is a user "first_name=Emp1" for an entity "<entity>"
   Given there is a sale "<sale>"
   Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=VC"
   Given my firm is an investor in the startup
-  And the investor has "Buyer" access rights to the sale
+  And the investor has "<access>" access rights to the sale
   And I should see the sale in all sales page
   And I should see the sale details on the details page
 
   Examples:
-  	|user	    |entity               |sale                                     |msg	|
-  	|  	        |entity_type=Startup  |name=Grand Sale;visible_externally=true  |Secondary sale was successfully created|
-    |  	        |entity_type=Startup  |name=Winter Sale;visible_externally=true |Secondary sale was successfully created|
+  	|access	    |entity               |sale                                     |msg	|
+  	|Buyer      |entity_type=Startup  |name=Grand Sale;visible_externally=false  |Secondary sale was successfully created|
+    |Seller     |entity_type=Startup  |name=Winter Sale;visible_externally=true |Secondary sale was successfully created|
 
 
 Scenario Outline: View sale - make offer
