@@ -28,7 +28,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def owner?
-    user.entity_id == record.entity_id ||
+    (user.entity_id == record.entity_id && user.curr_role == "startup") ||
       allow_external?(:read, :startup)
   end
 
