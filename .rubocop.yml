@@ -82,7 +82,7 @@ Metrics/PerceivedComplexity:
   Exclude:
     - 'app/packs/core/users/models/user.rb'
     - 'app/packs/core/tasks/controllers/tasks_controller.rb'
-    - 'app/uploaders/file_uploader.rb'
+    - 'app/packs/core/uploaders/file_uploader.rb'
 Metrics/ClassLength:
   Description: 'Avoid classes longer than 100 lines of code.'
   Max: 170
