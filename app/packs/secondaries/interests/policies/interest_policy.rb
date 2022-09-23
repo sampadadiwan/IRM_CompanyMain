@@ -51,7 +51,7 @@ class InterestPolicy < ApplicationPolicy
   end
 
   def accept_spa?
-    update? && !record.final_agreement
+    update? && record.short_listed && !record.final_agreement
   end
 
   def matched_offers?

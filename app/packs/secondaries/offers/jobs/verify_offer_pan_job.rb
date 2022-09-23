@@ -13,7 +13,7 @@ class VerifyOfferPanJob < ApplicationJob
 
   def verify
     if @offer.pan_card
-      response = KycVerify.new.verify_pan_card(@offer.pan_card.url(expires_in: 60))
+      response = KycVerify.new.verify_pan_card(@offer.pan_card.url(expires_in: 60 * 3))
       init_offer(response)
 
       if response["status"] == "completed"

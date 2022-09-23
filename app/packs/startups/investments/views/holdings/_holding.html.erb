@@ -86,7 +86,8 @@
                               "offer[holding_id]": holding.id, "offer[investor_id]": holding.investor_id) , 
               {class: "btn btn-success" } if ["Equity", "Preferred"].include?(holding.investment_instrument) %>
 
-      <% elsif  holding.investment_instrument != "Options" && 
+      <% elsif  current_user.id == holding.user_id &&
+                holding.investment_instrument != "Options" && 
                 holding.active_secondary_sale && 
                 policy(holding.active_secondary_sale).offer? %>
         <!-- We are in the holdings -->

@@ -43,7 +43,7 @@ class OfferPolicy < ApplicationPolicy
   end
 
   def accept_spa?
-    update? && !record.final_agreement
+    update? && record.approved && !record.final_agreement
   end
 
   def new?

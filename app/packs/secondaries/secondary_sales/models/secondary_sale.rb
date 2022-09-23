@@ -130,8 +130,7 @@ class SecondarySale < ApplicationRecord
   end
 
   def seller?(user)
-    user.entity_id == entity_id ||
-      SecondarySale.for(user).where("access_rights.metadata=?", "Seller").where(id:).present?
+    SecondarySale.for(user).where("access_rights.metadata=?", "Seller").where(id:).present?
   end
 
   def offers_by_funding_round
