@@ -79,8 +79,8 @@
   <td>
     <%= link_to "Show" , holding , {class: "btn btn-primary" }%>
     
-    <% if current_user.entity_id != holding.entity_id %>
-      <% if secondary_sale && Pundit.policy(current_user, secondary_sale).offer? %>
+    <% if true || current_user.entity_id != holding.entity_id %>
+      <% if secondary_sale && policy(secondary_sale).offer? %>
         <!-- We are in the secondary_sale page -->
         <%= link_to "Offer" , new_offer_path("offer[secondary_sale_id]": secondary_sale.id, 
                               "offer[holding_id]": holding.id, "offer[investor_id]": holding.investor_id) , 
