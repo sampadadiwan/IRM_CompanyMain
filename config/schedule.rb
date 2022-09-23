@@ -10,7 +10,9 @@ every 1.day, at: '02:01 am' do
   runner "ClearMessagesCountJob.new.perform"
   runner "Entity.recompute_all"
   runner "InvestmentSnapshotJob.new.perform"
+end
 
+every 2.hours do
   rake "db:backup"
 end
 

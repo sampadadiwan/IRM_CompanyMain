@@ -6,7 +6,7 @@ namespace :db do  desc "Backup database to AWS-S3"
       db_config = ActiveRecord::Base.configurations.configs_for(env_name: Rails.env)
   
       # process backup
-      `mysqldump -u #{ENV['DB_USER']} -p#{ENV['DB_PASS']} -h#{ENV['DB_HOST']} -i -c -q IRM_#{Rails.env} > tmp/#{backup_filename}`
+      `mysqldump -u #{ENV['DB_USER']} -p#{ENV['DB_PASS']} -h#{ENV['DB_HOST']} -i -c -q --lock-tables=false IRM_#{Rails.env} > tmp/#{backup_filename}`
       `gzip -9 tmp/#{backup_filename}`
       puts "Created backup: tmp/#{backup_filename}"
   
@@ -44,7 +44,7 @@ namespace :db do  desc "Backup database to AWS-S3"
       # Removing old backups
       puts "Deleting old backups"
       bucket.objects.each do |obj|
-        if (obj.last_modified < (Date.today - 2.weeks))
+        if (obj.last_modified < (Date.today - 1.weeks))
           puts "Deleting DB backup from S3: #{obj.key}"
           obj.delete
         end
