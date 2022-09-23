@@ -122,8 +122,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def view_allocations?
-    create? ||
-      owner?
+    create? || owner?
   end
 
   def edit?
