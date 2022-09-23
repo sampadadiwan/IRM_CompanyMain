@@ -20,6 +20,10 @@
     <%= button_to label , approve_offer_path(@offer), method: :patch, class: "btn btn-success" , 
       form_class: "deleteButton" if Pundit.policy(current_user, @offer).approve? %>
 
+    <%= button_to "Accept SPA" , accept_spa_offer_path(@offer), method: :patch, class: "btn btn-success" , 
+      form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+      msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(@offer).accept_spa? %>
+
     <%= link_to "Secondary Sale" , secondary_sale_path(@offer.secondary_sale), {class: "btn btn-primary" } %>
   </div>
 

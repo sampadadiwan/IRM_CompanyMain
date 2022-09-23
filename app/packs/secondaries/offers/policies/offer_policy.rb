@@ -42,6 +42,10 @@ class OfferPolicy < ApplicationPolicy
     user.has_cached_role?(:approver) && (user.entity_id == record.entity_id)
   end
 
+  def accept_spa?
+    update? && !record.final_agreement
+  end
+
   def new?
     create?
   end

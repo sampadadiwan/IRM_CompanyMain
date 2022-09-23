@@ -1,5 +1,5 @@
 class OffersController < ApplicationController
-  before_action :set_offer, only: %i[show edit update destroy approve allocate allocation_form]
+  before_action :set_offer, only: %i[show edit update destroy approve allocate allocation_form accept_spa]
   after_action :verify_authorized, except: %i[index search finalize_allocation]
 
   # GET /offers or /offers.json
@@ -83,6 +83,15 @@ class OffersController < ApplicationController
     @offer.save!
     respond_to do |format|
       format.html { redirect_to offer_url(@offer), notice: "Offer was successfully #{label}." }
+      format.json { @offer.to_json }
+    end
+  end
+
+  def accept_spa
+    @offer.final_agreement = true
+    @offer.save!
+    respond_to do |format|
+      format.html { redirect_to offer_url(@offer), notice: "Offer was successfully updated." }
       format.json { @offer.to_json }
     end
   end

@@ -1,6 +1,6 @@
 class InterestsController < ApplicationController
   before_action :set_interest, only: %i[show edit update destroy short_list finalize allocate
-                                        allocation_form matched_offers ]
+                                        allocation_form matched_offers accept_spa]
 
   # GET /interests or /interests.json
   def index
@@ -115,6 +115,26 @@ class InterestsController < ApplicationController
       end
       format.html { redirect_to interest_url(@interest), notice: "Interest was successfully shortlisted." }
       format.json { @interest.to_json }
+    end
+  end
+
+  def accept_spa
+    @interest.final_agreement = true
+
+    respond_to do |format|
+      if @interest.save
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.replace(@interest, partial: "interests/interest",
+                                            locals: { interest: @interest, secondary_sale: @interest.secondary_sale })
+          ]
+        end
+        format.html { redirect_to interest_url(@interest), notice: "Interest was successfully updated." }
+        format.json { @interest.to_json }
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @interest.errors, status: :unprocessable_entity }
+      end
     end
   end
 

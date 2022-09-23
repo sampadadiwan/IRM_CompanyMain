@@ -105,11 +105,11 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def send_notification?
-    update? && !record.lock_allocations
+    create?
   end
 
   def notify_allocations?
-    update? && !record.lock_allocations
+    create?
   end
 
   def download?

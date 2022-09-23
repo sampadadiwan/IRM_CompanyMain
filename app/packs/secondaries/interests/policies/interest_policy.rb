@@ -50,6 +50,10 @@ class InterestPolicy < ApplicationPolicy
     ) && !record.finalized
   end
 
+  def accept_spa?
+    update? && !record.final_agreement
+  end
+
   def matched_offers?
     create? ||
       sale_policy.owner? ||

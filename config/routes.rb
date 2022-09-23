@@ -1,4 +1,39 @@
 Rails.application.routes.draw do
+  namespace :admin do
+    resources :investors
+    resources :users
+    resources :entities
+    resources :documents
+    resources :investments
+    resources :access_rights
+    resources :deals
+    resources :deal_investors
+    resources :deal_activities
+    resources :holdings
+    resources :offers
+    resources :interests
+    resources :folders
+    resources :investor_accesses
+    resources :secondary_sales
+    resources :roles
+    resources :funding_rounds
+    resources :option_pools
+    resources :excercises
+    resources :funds
+    resources :valuations
+    resources :capital_calls
+    resources :capital_commitments
+    resources :capital_distributions
+    resources :capital_remittances
+    resources :capital_distribution_payments
+
+    # namespace :audited do
+    #   resources :audits
+    # end
+
+    root to: "investors#index"
+  end
+
   resources :share_transfers
   resources :capital_distribution_payments
   resources :capital_distributions
@@ -76,12 +111,14 @@ Rails.application.routes.draw do
 
   resources :offers do
     patch 'approve', on: :member
+    patch 'accept_spa', on: :member
     patch 'allocate', on: :member
     get   'allocation_form', on: :member
     get 'search', on: :collection
   end
 
   resources :interests do
+    patch 'accept_spa', on: :member
     patch 'short_list', on: :member
     patch 'finalize', on: :member
     patch 'allocate', on: :member
@@ -143,41 +180,6 @@ Rails.application.routes.draw do
     post 'start_deal', on: :member
     post 'recreate_activities', on: :member
     get 'investor_deals', on: :collection
-  end
-
-  namespace :admin do
-    resources :investors
-    resources :users
-    resources :entities
-    resources :documents
-    resources :investments
-    resources :access_rights
-    resources :deals
-    resources :deal_investors
-    resources :deal_activities
-    resources :holdings
-    resources :offers
-    resources :interests
-    resources :folders
-    resources :investor_accesses
-    resources :secondary_sales
-    resources :roles
-    resources :funding_rounds
-    resources :option_pools
-    resources :excercises
-    resources :funds
-    resources :valuations
-    resources :capital_calls
-    resources :capital_commitments
-    resources :capital_distributions
-    resources :capital_remittances
-    resources :capital_distribution_payments
-
-    # namespace :audited do
-    #   resources :audits
-    # end
-
-    root to: "investors#index"
   end
 
   resources :notes do

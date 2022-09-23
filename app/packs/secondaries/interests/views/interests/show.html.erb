@@ -22,6 +22,12 @@
         class: "btn btn-danger", form_class: "deleteButton",
         data: {action: "click->confirm#popup", turbo:false, msg: popupMsg, method: "patch"} if policy(@interest).finalize? %>
 
+
+    <%= button_to "Accept SPA" , accept_spa_interest_path(@interest), 
+        method: :patch, class: "btn btn-success" , 
+        form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+        msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(@interest).accept_spa? %>
+
     <%= link_to "Matched Offers", matched_offers_interest_path(@interest), 
         {class: "btn btn-primary" }  %> 
   </div>
