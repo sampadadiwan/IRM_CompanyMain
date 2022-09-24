@@ -32,7 +32,7 @@ class UserPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    user.id == record.id || user.entity_id == record.entity_id
   end
 
   def edit?
