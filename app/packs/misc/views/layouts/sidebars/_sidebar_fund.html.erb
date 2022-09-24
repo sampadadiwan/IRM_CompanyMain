@@ -1,50 +1,55 @@
 
     <!-- Nav Item - Pages Collapse Menu -->
-    <li class="nav-item">                
-        <a class="nav-link" href="/investors" data-toggle="collapse" data-target="#investorMenus">
-            <i class="fas fa-lg fa-fw fa-user-tie"></i>
-            <span>Investors</span>
-        </a>
+    <% if current_user.enable_investors %>
+        <li class="nav-item">                
+            <a class="nav-link" href="/investors" data-toggle="collapse" data-target="#investorMenus">
+                <i class="fas fa-lg fa-fw fa-user-tie"></i>
+                <span>Investors</span>
+            </a>
 
-        <div id="investorMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <a class="collapse-item" 
-                href="/investors/new?investor[entity_id]=<%=current_user.entity_id%>">
-                    New Investor</a>
-                <a class="collapse-item" href="/investors">View Investors</a>
-                <a class="collapse-item" href="/approvals">Approvals</a>
-                <a class="collapse-item" href="/notes">Notes</a>
-                <a class="collapse-item" href="/investor_accesses?approved=false">Pending Access</a>
+            <div id="investorMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" 
+                    href="/investors/new?investor[entity_id]=<%=current_user.entity_id%>">
+                        New Investor</a>
+                    <a class="collapse-item" href="/investors">View Investors</a>
+                    <a class="collapse-item" href="/approvals">Approvals</a>
+                    <a class="collapse-item" href="/notes">Notes</a>
+                    <a class="collapse-item" href="/investor_accesses?approved=false">Pending Access</a>
+                </div>
             </div>
-        </div>
 
-    </li>
+        </li>
+    <% end %>
 
-    
-    <li class="nav-item"> 
-        <a class="nav-link collapsed" href="/documents">
-            <i class="fas fa-lg fa-fw fa-folder"></i>
-            <span>Documents</span>
-        </a>
-    </li>
+    <% if current_user.enable_documents %>
+        <li class="nav-item"> 
+            <a class="nav-link collapsed" href="/documents">
+                <i class="fas fa-lg fa-fw fa-folder"></i>
+                <span>Documents</span>
+            </a>
+        </li>
+    <% end %>
 
 
-    <li class="nav-item"> 
-        <a class="nav-link" href="/aggregate_investments" data-toggle="collapse" data-target="#investmentMenus">
-            <i class="fas fa-lg fa-fw fa-money-bill"></i>
-            <span>Investments</span>
-        </a>
+    <% if current_user.enable_investments %>
+        <li class="nav-item"> 
+            <a class="nav-link" href="/aggregate_investments" data-toggle="collapse" data-target="#investmentMenus">
+                <i class="fas fa-lg fa-fw fa-money-bill"></i>
+                <span>Investments</span>
+            </a>
 
-        <div id="investmentMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <a class="collapse-item" 
-                href="/investments/new?investment[entity_id]=<%=current_user.entity_id%>">
-                    New Investment</a>
-                <a class="collapse-item" href="/aggregate_investments">Shareholding</a>
-                <a class="collapse-item" href="/investments">Details View</a>
-                <a class="collapse-item" href="/funding_rounds">Funding Rounds</a>
-                
+            <div id="investmentMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" 
+                    href="/investments/new?investment[entity_id]=<%=current_user.entity_id%>">
+                        New Investment</a>
+                    <a class="collapse-item" href="/aggregate_investments">Shareholding</a>
+                    <a class="collapse-item" href="/investments">Details View</a>
+                    <a class="collapse-item" href="/funding_rounds">Funding Rounds</a>
+                    
+                </div>
             </div>
-        </div>
 
-    </li>
+        </li>
+    <% end %>

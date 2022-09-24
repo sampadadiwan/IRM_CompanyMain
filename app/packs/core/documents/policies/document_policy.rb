@@ -11,21 +11,21 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def index?
-    user.entity.enable_documents
+    user.enable_documents
   end
 
   def show?
-    if user.entity_id == record.entity_id && user.entity.enable_documents
+    if user.entity_id == record.entity_id && user.enable_documents
       true
     else
-      (user.entity.enable_documents && show_investor?) ||
+      (user.enable_documents && show_investor?) ||
         (record.owner && owner_policy.show?) ||
         allow_external?(:read)
     end
   end
 
   def create?
-    (user.entity_id == record.entity_id && user.entity.enable_documents) ||
+    (user.entity_id == record.entity_id && user.enable_documents) ||
       (record.owner && owner_policy.update?) ||
       # The DealInvestor is the only case where other users can attach documents to the DealInvestor which is not created by them
       (record.owner && record.owner_type == "DealInvestor" && owner_policy.show?)

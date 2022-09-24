@@ -12,21 +12,21 @@ class DealPolicy < ApplicationPolicy
   end
 
   def index?
-    user.entity.enable_deals
+    user.enable_deals
   end
 
   def show?
-    if user.has_cached_role?(:super) || (user.entity_id == record.entity_id && user.entity.enable_deals)
+    if user.has_cached_role?(:super) || (user.entity_id == record.entity_id && user.enable_deals)
       true
     else
       false
-      # user.entity.enable_deals &&
+      # user.enable_deals &&
       #   Deal.for_investor(user).where("deals.id=?", record.id).first.present?
     end
   end
 
   def create?
-    user.has_cached_role?(:super) || (user.entity_id == record.entity_id && user.entity.enable_deals)
+    user.has_cached_role?(:super) || (user.entity_id == record.entity_id && user.enable_deals)
   end
 
   def new?

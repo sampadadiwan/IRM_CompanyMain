@@ -3,10 +3,10 @@
 
     <div class="associated_entity">
         <%= render "/funds/index",  
-            funds: current_user.entity.funds if current_user.entity.enable_funds %>
+            funds: current_user.entity.funds if current_user.enable_funds %>
     </div>
     <div class="associated_entity" >
         <%= render "/investment_opportunities/index",  
-            investment_opportunities: current_user.entity.investment_opportunities if current_user.entity.enable_inv_opportunities %>
+            investment_opportunities: current_user.entity.investment_opportunities if current_user.enable_inv_opportunities %>
     </div>
 <% end %>

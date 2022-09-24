@@ -10,7 +10,7 @@ class InvestmentSnapshotPolicy < ApplicationPolicy
   end
 
   def index?
-    user.entity.enable_investments
+    user.enable_investments
   end
 
   def show?

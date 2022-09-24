@@ -1,31 +1,37 @@
-        <!-- Nav Item - Pages Collapse Menu -->
-    <li class="nav-item">                
-        <a class="nav-link" href="/investors" data-toggle="collapse" data-target="#investorMenus">
-            <i class="fas fa-lg fa-fw fa-user-tie"></i>
-            <span>Investors</span>
-        </a>
 
-        <div id="investorMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <a class="collapse-item" 
-                href="/investors/new?investor[entity_id]=<%=current_user.entity_id%>">
-                    New Investor</a>
-                <a class="collapse-item" href="/investors">View Investors</a>
-                <a class="collapse-item" href="/approvals">Approvals</a>
-                <a class="collapse-item" href="/notes">Notes</a>
-                <a class="collapse-item" href="/investor_accesses?approved=false">Pending Access</a>
+    <!-- Nav Item - Pages Collapse Menu -->
+    <% if current_user.enable_documents %>
+        <li class="nav-item">                
+            <a class="nav-link" href="/investors" data-toggle="collapse" data-target="#investorMenus">
+                <i class="fas fa-lg fa-fw fa-user-tie"></i>
+                <span>Investors</span>
+            </a>
+
+            <div id="investorMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" 
+                    href="/investors/new?investor[entity_id]=<%=current_user.entity_id%>">
+                        New Investor</a>
+                    <a class="collapse-item" href="/investors">View Investors</a>
+                    <a class="collapse-item" href="/approvals">Approvals</a>
+                    <a class="collapse-item" href="/notes">Notes</a>
+                    <a class="collapse-item" href="/investor_accesses?approved=false">Pending Access</a>
+                </div>
             </div>
-        </div>
 
-    </li>
-    <li class="nav-item"> 
-        <a class="nav-link collapsed" href="/documents">
-            <i class="fas fa-lg fa-fw fa-folder"></i>
-            <span>Documents</span>
-        </a>
-    </li>
+        </li>
+    <% end %>
+    
+    <% if current_user.enable_documents %>
+        <li class="nav-item"> 
+            <a class="nav-link collapsed" href="/documents">
+                <i class="fas fa-lg fa-fw fa-folder"></i>
+                <span>Documents</span>
+            </a>
+        </li>
+    <% end %>
 
-    <% if current_user.entity.enable_captable %>
+    <% if current_user.enable_captable %>
 
         <li class="nav-item"> 
             <a class="nav-link" href="/aggregate_investments" data-toggle="collapse" data-target="#investmentMenus">
@@ -52,7 +58,7 @@
 
     <% end %>
 
-    <% if current_user.entity.enable_options %>
+    <% if current_user.enable_options %>
         <!-- Nav Item - Pages Collapse Menu -->
         <li class="nav-item">                
             <a class="nav-link" href="/option_pools">
@@ -64,7 +70,7 @@
 
     <!-- Divider -->
     <hr class="sidebar-divider">
-    <% if current_user.entity.enable_deals %>
+    <% if current_user.enable_deals %>
         <!-- Nav Item - Pages Collapse Menu -->
         <li class="nav-item">                
             <a class="nav-link" href="/deals">
@@ -90,7 +96,7 @@
         
     </li>
 
-    <% if current_user.entity.enable_secondary_sale %>
+    <% if current_user.enable_secondary_sale %>
     
         <li class="nav-item">                
             <a class="nav-link" href="/secondary_sales">

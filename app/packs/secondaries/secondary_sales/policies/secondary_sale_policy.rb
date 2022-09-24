@@ -16,7 +16,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def index?
-    user.entity.enable_secondary_sale
+    user.enable_secondary_sale
   end
 
   def offer?
@@ -67,7 +67,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def show?
-    if user.entity_id == record.entity_id && user.entity.enable_secondary_sale
+    if user.entity_id == record.entity_id && user.enable_secondary_sale
       true
     else
       record.active? &&
@@ -78,7 +78,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id && user.entity.enable_secondary_sale)
+    (user.entity_id == record.entity_id && user.enable_secondary_sale)
   end
 
   def new?

@@ -339,6 +339,7 @@ FactoryBot.define do
     phone { Faker::PhoneNumber.cell_phone }
     confirmed_at { Time.zone.now }
     accept_terms {true}
+    permissions {User.permissions.keys}
   end
 
   factory :entity do

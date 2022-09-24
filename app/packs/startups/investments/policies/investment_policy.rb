@@ -12,14 +12,14 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def index?
-    user.entity.enable_investments
+    user.enable_investments
   end
 
   def show?
-    if user.entity_id == record.entity_id && user.entity.enable_investments
+    if user.entity_id == record.entity_id && user.enable_investments
       true
     else
-      user.entity.enable_investments &&
+      user.enable_investments &&
         Investment.for_investor(user, record.entity)
                   .where("investments.id=?", record.id).first.present?
     end
@@ -30,7 +30,7 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id && user.entity.enable_investments)
+    (user.entity_id == record.entity_id && user.enable_investments)
   end
 
   def new?

@@ -7,6 +7,7 @@ class SecondarySalesController < ApplicationController
 
   # GET /secondary_sales or /secondary_sales.json
   def index
+    authorize(SecondarySale)
     @secondary_sales = policy_scope(SecondarySale)
   end
 

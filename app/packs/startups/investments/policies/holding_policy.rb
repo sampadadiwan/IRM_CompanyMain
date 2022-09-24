@@ -13,12 +13,12 @@ class HoldingPolicy < ApplicationPolicy
   end
 
   def index?
-    user.entity.enable_holdings
+    user.enable_holdings
   end
 
   def show?
     user.has_cached_role?(:super) ||
-      (user.entity.enable_holdings && user.entity_id == record.entity_id && user.has_cached_role?(:startup)) ||
+      (user.enable_holdings && user.entity_id == record.entity_id && user.has_cached_role?(:startup)) ||
       (user.id == record.user_id && user.has_cached_role?(:holding)) ||
       (user.entity_id == record.investor.investor_entity_id && user.has_cached_role?(:investor))
   end
@@ -33,7 +33,7 @@ class HoldingPolicy < ApplicationPolicy
   end
 
   def create?
-    user.has_cached_role?(:super) || (user.entity_id == record.entity_id && user.entity.enable_holdings)
+    user.has_cached_role?(:super) || (user.entity_id == record.entity_id && user.enable_holdings)
   end
 
   def new?

@@ -4,6 +4,7 @@ class HoldingsController < ApplicationController
 
   # GET /holdings or /holdings.json
   def index
+    authorize(Holding)
     @holdings = policy_scope(Holding).order(quantity: :desc)
     @holdings = @holdings.includes(:user, :entity, :investor, :funding_round)
 

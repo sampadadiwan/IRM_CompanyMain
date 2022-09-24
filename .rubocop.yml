@@ -101,10 +101,9 @@ Metrics/ParameterLists:
 Metrics/MethodLength:
   Description: 'Avoid methods longer than 5 lines of code.'
   StyleGuide: '<https://github.com/bbatsov/ruby-style-guide#short-methods>'
-  Max: 25
+  Max: 30
   Enabled: true
   Exclude:
-    - 'app/controllers/access_rights_controller.rb'
     - 'app/packs/core/users/models/user.rb'
   
 Metrics/BlockLength:
