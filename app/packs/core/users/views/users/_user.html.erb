@@ -11,4 +11,8 @@
     <%= user.entity_name %>
   </td>
 
+  <td>
+    <%= link_to "Show", user, {class: "btn btn-primary" } if policy(user).show? %>
+    <%= link_to "Edit", edit_user_path(user), {class: "btn btn-success" } if policy(user).edit? %>
+  </td>
 </tr>
