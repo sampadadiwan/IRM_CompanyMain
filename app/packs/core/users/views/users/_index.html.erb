@@ -1,6 +1,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Users</h1>
-  <%= link_to "New User" , new_user_path(entity_id: current_user.entity_id), {class: "btn btn-primary" } %>
+  <%= link_to "New User" , new_user_path(entity_id: current_user.entity_id), 
+      {class: "btn btn-primary" } if policy(User).new? %>
 </div>
 
 <table id="users" class="table table-bordered table-striped dataTable jqDataTable">

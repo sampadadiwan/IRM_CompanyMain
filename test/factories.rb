@@ -352,6 +352,9 @@ FactoryBot.define do
     enable_investments {true}
     enable_holdings {true}
     enable_secondary_sale {true}
+    enable_captable {true}
+    enable_funds {true}
+    enable_inv_opportunities {true}
     currency { ENV["CURRENCY"].split(",")[rand(3)] }
     units { ENV["CURRENCY_UNITS"].split(",")[rand(3)] }
 

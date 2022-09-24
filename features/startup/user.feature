@@ -3,6 +3,7 @@ Feature: User
 
 Scenario Outline: Create new user
   Given Im logged in as a user "" for an entity "<entity>"
+  And the user has role "company_admin"
   And I am at the users page
   When I create a new user "<user>"
   Then I should see the "<msg>"
