@@ -2,8 +2,11 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Offers</h1>
     <span>
-        <%= link_to "All Offers", offers_secondary_sale_path(@secondary_sale), 
+        <%= link_to "View All Offers", offers_secondary_sale_path(@secondary_sale), 
                                   class: "btn btn-primary" if @secondary_sale %>
+
+        <%= link_to "Download All", offers_secondary_sale_path(@secondary_sale, format: "xlsx"), 
+                                  class: "btn btn-success" if @secondary_sale %>
 
     </span>
 </div>
