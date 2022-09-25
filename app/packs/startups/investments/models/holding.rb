@@ -1,54 +1,8 @@
-# == Schema Information
-#
-# Table name: holdings
-#
-#  id                                :integer          not null, primary key
-#  user_id                           :integer
-#  entity_id                         :integer          not null
-#  quantity                          :integer          default("0")
-#  value_cents                       :decimal(20, 2)   default("0.00")
-#  created_at                        :datetime         not null
-#  updated_at                        :datetime         not null
-#  investment_instrument             :string(100)
-#  investor_id                       :integer          not null
-#  holding_type                      :string(15)       not null
-#  investment_id                     :integer
-#  price_cents                       :decimal(20, 2)   default("0.00")
-#  funding_round_id                  :integer          not null
-#  option_pool_id                    :integer
-#  excercised_quantity               :integer          default("0")
-#  grant_date                        :date
-#  vested_quantity                   :integer          default("0")
-#  lapsed                            :boolean          default("0")
-#  employee_id                       :string(20)
-#  import_upload_id                  :integer
-#  fully_vested                      :boolean          default("0")
-#  lapsed_quantity                   :integer          default("0")
-#  orig_grant_quantity               :integer          default("0")
-#  sold_quantity                     :integer          default("0")
-#  created_from_excercise_id         :integer
-#  cancelled                         :boolean          default("0")
-#  approved                          :boolean          default("0")
-#  approved_by_user_id               :integer
-#  emp_ack                           :boolean          default("0")
-#  emp_ack_date                      :date
-#  uncancelled_quantity              :integer          default("0")
-#  cancelled_quantity                :integer          default("0")
-#  gross_avail_to_excercise_quantity :integer          default("0")
-#  unexcercised_cancelled_quantity   :integer          default("0")
-#  net_avail_to_excercise_quantity   :integer          default("0")
-#  gross_unvested_quantity           :integer          default("0")
-#  unvested_cancelled_quantity       :integer          default("0")
-#  net_unvested_quantity             :integer          default("0")
-#  manual_vesting                    :boolean          default("0")
-#  properties                        :text(65535)
-#  form_type_id                      :integer
-#
-
 class Holding < ApplicationRecord
   audited
   include HoldingCounters
   include HoldingScopes
+  include OptionCalculations
 
   OPTION_TYPES = ["Regular", "Phantom", "Equity SAR"].freeze
 
@@ -120,117 +74,18 @@ class Holding < ApplicationRecord
     HoldingMailer.with(holding_id: id).notify_lapse_upcoming.deliver_later
   end
 
-  def vesting_schedule
-    schedule = []
-    vqty = 0
-    count = option_pool.vesting_schedules.count
-    option_pool.vesting_schedules.each_with_index do |pvs, idx|
-      # The last one needs to be adjusted for any leftover quantity as the
-      # vesting_percent may not yield round numbers
-      qty = if idx == (count - 1)
-              (orig_grant_quantity - vqty)
-            else
-              (orig_grant_quantity * pvs.vesting_percent / 100.0).floor(0)
-            end
-      vqty += qty
-      schedule << [grant_date + pvs.months_from_grant.month, pvs.vesting_percent, qty]
-    end
-    schedule
-  end
-
   before_save :update_quantity
   before_save :update_option_dilutes, if: -> { investment_instrument == 'Options' }
 
   def update_quantity
     if investment_instrument == 'Options'
-      self.cancelled_quantity = unexcercised_cancelled_quantity + unvested_cancelled_quantity
-      self.uncancelled_quantity = orig_grant_quantity - cancelled_quantity - lapsed_quantity
-
-      self.gross_avail_to_excercise_quantity = vested_quantity - excercised_quantity - lapsed_quantity
-      self.net_avail_to_excercise_quantity = gross_avail_to_excercise_quantity - unexcercised_cancelled_quantity
-      self.gross_unvested_quantity = orig_grant_quantity - vested_quantity
-      self.net_unvested_quantity = gross_unvested_quantity - unvested_cancelled_quantity
-
-      self.quantity = net_unvested_quantity + net_avail_to_excercise_quantity
+      update_option_quantity
     else
       self.quantity = orig_grant_quantity - sold_quantity
     end
 
     self.grant_date ||= Time.zone.today
     self.value_cents = quantity * price_cents
-  end
-
-  def update_option_dilutes
-    self.option_type ||= "Regular"
-    self.option_dilutes = false if ["Phantom", "Cash SAR"].include?(self.option_type)
-  end
-
-  def compute_vested_quantity
-    (orig_grant_quantity * allowed_percentage / 100).floor(0)
-  end
-
-  def lapse_date
-    _lapsed_quantity, date = compute_lapsed_quantity
-    date
-  end
-
-  def days_to_lapse
-    lapse_date ? (lapse_date - Time.zone.today).to_i : -1
-  end
-
-  def lapsed?
-    lapse_date ? Time.zone.today > lapse_date : false
-  end
-
-  def lapse
-    lapsed_quantity, _date = compute_lapsed_quantity
-    update(lapsed: true, lapsed_quantity:, audit_comment: "Holding lapsed") if lapsed?
-  end
-
-  def allowed_percentage
-    option_pool.get_allowed_percentage(grant_date)
-  end
-
-  def excercisable?
-    investment_instrument == "Options" &&
-      vested_quantity.positive? &&
-      !cancelled &&
-      !lapsed
-  end
-
-  def vesting_breakdown
-    schedules = option_pool.vesting_schedules.order(months_from_grant: :asc)
-    vesting_breakdown = Struct.new(:vesting_date, :quantity, :lapsed_quantity, :excercised_quantity, :expiry_date)
-    schedules.map do |vs|
-      vesting_breakdown.new(grant_date + vs.months_from_grant.months,
-                            (orig_grant_quantity * vs.vesting_percent) / 100, 0, 0)
-    end
-  end
-
-  def compute_lapsed_quantity
-    lapsed_breakdown = []
-    first_expiry_date = nil
-
-    vesting_breakdown.each do |struct|
-      # excercise_period_months after the vesting date - the option expires
-      struct.expiry_date = struct.vesting_date + option_pool.excercise_period_months.months
-
-      if struct.expiry_date < Time.zone.today
-        # But did we excercise it?
-        struct.excercised_quantity = excercises.where("approved_on > ? and approved_on < ?",
-                                                      struct.vesting_date, struct.expiry_date).sum(:quantity)
-        # This has expired
-        struct.lapsed_quantity += struct.quantity - struct.excercised_quantity
-
-        first_expiry_date ||= struct.expiry_date if struct.lapsed_quantity.positive?
-      end
-
-      lapsed_breakdown << struct
-    end
-
-    Rails.logger.debug lapsed_breakdown
-    qty = lapsed_breakdown.inject(0) { |sum, e| sum + e.lapsed_quantity }
-    [qty, first_expiry_date]
   end
 
   def display_status
