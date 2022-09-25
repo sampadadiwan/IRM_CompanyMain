@@ -82,4 +82,28 @@ class SecondarySaleMailer < ApplicationMailer
          bcc: sandbox_email(@secondary_sale, all_emails.join(',')),
          subject: "Secondary Sale: #{@secondary_sale.name} allocation complete.")
   end
+
+  def notify_spa_offers
+    @secondary_sale = SecondarySale.find(params[:id])
+
+    # Get all emails of investors & holding company employees
+    open_for_offers_emails = @secondary_sale.access_rights.collect(&:investor_emails).flatten +
+                             @secondary_sale.access_rights.collect(&:holding_employees_emails).flatten
+
+    all_emails = open_for_offers_emails
+    mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
+         bcc: sandbox_email(@secondary_sale, all_emails.join(',')),
+         subject: "Secondary Sale: #{@secondary_sale.name}, please accept uploaded SPA.")
+  end
+
+  def notify_spa_interests
+    @secondary_sale = SecondarySale.find(params[:id])
+
+    interests_emails = @secondary_sale.interests.short_listed.includes(:user).collect(&:user_email).flatten
+
+    all_emails = interests_emails
+    mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
+         bcc: sandbox_email(@secondary_sale, all_emails.join(',')),
+         subject: "Secondary Sale: #{@secondary_sale.name}, please accept uploaded SPA.")
+  end
 end
