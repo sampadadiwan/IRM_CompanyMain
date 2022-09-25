@@ -13,7 +13,15 @@ class OffersController < ApplicationController
     @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest, holding: :funding_round)
     @offers = @offers.page(params[:page])
 
-    render "index"
+    respond_to do |format|
+      format.xlsx do
+        response.headers[
+          'Content-Disposition'
+        ] = "attachment; filename=offers.xlsx"
+      end
+      format.html { render :index }
+      format.json { render :index }
+    end
   end
 
   def search_term
