@@ -62,10 +62,10 @@ export default class extends Controller {
                 documentViewer.setWatermark({
                     // Draw diagonal watermark in middle of the document
                     diagonal: {
-                        fontSize: 25, // or even smaller size
+                        fontSize: 20, // or even smaller size
                         fontFamily: 'sans-serif',
-                        color: 'red',
-                        opacity: 40, // from 0 to 100
+                        color: 'grey',
+                        opacity: 18, // from 0 to 100
                         text: viewer_watermark
                     },
 
@@ -73,7 +73,7 @@ export default class extends Controller {
                     header: {
                         fontSize: 8,
                         fontFamily: 'sans-serif',
-                        color: 'red',
+                        color: 'grey',
                         opacity: 40,
                         // left: 'left watermark',
                         center: viewer_watermark,
