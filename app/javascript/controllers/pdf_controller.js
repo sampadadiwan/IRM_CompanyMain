@@ -28,8 +28,7 @@ export default class extends Controller {
     viewPDF(viewer_link, viewer_watermark) {
         WebViewer({
             licenseKey: 'CapHive Private Limited (altconnects.com):OEM:CapHive::B+:AMS(20230928):70A55F8D0437F80AF360B13AC982537860613F8D8776BD3B95853BA45A955E6D54F2B6F5C7',
-            path: '/lib', // path to the PDFTron 'lib' folder on your server
-            // initialDoc: 'https://pdftron.s3.amazonaws.com/downloads/pl/demo-annotated.pdf',
+            path: '/lib', 
         }, document.getElementById('viewer'))
             .then(instance => {
                 instance.UI.disableElements(['ribbons']);
@@ -98,16 +97,16 @@ export default class extends Controller {
 
     officeToPDF(viewer_link, viewer_watermark) {
         
-        // this.convertOfficeToPDF(viewer_link, `converted.pdf`, viewer_watermark);
+        this.convertOfficeToPDF(viewer_link, `converted.pdf`, viewer_watermark);
 
-        PDFNet.initialize()
-            .then(() =>  {
-                this.convertOfficeToPDF(viewer_link, `converted.pdf`, viewer_watermark)                
-             })            
-            .catch(err => {
-                console.log('An error was encountered! :(', err);
-                $(".document_download_icon").show();
-            });
+        // PDFNet.initialize()
+        //     .then(() =>  {
+        //         this.convertOfficeToPDF(viewer_link, `converted.pdf`, viewer_watermark)                
+        //      })            
+        //     .catch(err => {
+        //         console.log('An error was encountered! :(', err);
+        //         $(".document_download_icon").show();
+        //     });
     }
 
     convertOfficeToPDF(inputUrl, outputName, viewer_watermark, l) {
