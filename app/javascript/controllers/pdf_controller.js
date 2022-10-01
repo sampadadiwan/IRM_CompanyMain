@@ -64,7 +64,7 @@ export default class extends Controller {
                     diagonal: {
                         fontSize: 20, // or even smaller size
                         fontFamily: 'sans-serif',
-                        color: 'grey',
+                        color: 'red',
                         opacity: 18, // from 0 to 100
                         text: viewer_watermark
                     },
@@ -73,7 +73,7 @@ export default class extends Controller {
                     header: {
                         fontSize: 8,
                         fontFamily: 'sans-serif',
-                        color: 'grey',
+                        color: 'red',
                         opacity: 40,
                         // left: 'left watermark',
                         center: viewer_watermark,
