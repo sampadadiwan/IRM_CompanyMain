@@ -21,10 +21,13 @@ export default class extends Controller {
             this.officeToPDF(viewer_link, viewer_watermark);
         }
 
+        this.init();
+
     }
 
     viewPDF(viewer_link, viewer_watermark) {
         WebViewer({
+            licenseKey: 'CapHive Private Limited (altconnects.com):OEM:CapHive::B+:AMS(20230928):70A55F8D0437F80AF360B13AC982537860613F8D8776BD3B95853BA45A955E6D54F2B6F5C7',
             path: '/lib', // path to the PDFTron 'lib' folder on your server
             // initialDoc: 'https://pdftron.s3.amazonaws.com/downloads/pl/demo-annotated.pdf',
         }, document.getElementById('viewer'))
@@ -85,8 +88,18 @@ export default class extends Controller {
             });
     }
 
+    init() {
+        PDFNet.runWithCleanup(this.initCompleted, "CapHive Private Limited (altconnects.com):OEM:CapHive::B+:AMS(20230928):70A55F8D0437F80AF360B13AC982537860613F8D8776BD3B95853BA45A955E6D54F2B6F5C7");
+    }
+
+    initCompleted() {
+        console.log("initCompleted");
+    }
+
     officeToPDF(viewer_link, viewer_watermark) {
         
+        // this.convertOfficeToPDF(viewer_link, `converted.pdf`, viewer_watermark);
+
         PDFNet.initialize()
             .then(() =>  {
                 this.convertOfficeToPDF(viewer_link, `converted.pdf`, viewer_watermark)                
