@@ -56,7 +56,7 @@
     </div>
   <% end %>
 
-  <% if true || current_user.has_cached_role?(:company_admin) %>
+  <% if current_user.has_cached_role?(:company_admin) %>
     <% User.permissions.pairs.each do |key, val| %>
       <div class="form-group">
         <%= form.label :permissions, key %>
