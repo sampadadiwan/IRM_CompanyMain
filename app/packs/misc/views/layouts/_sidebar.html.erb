@@ -75,7 +75,7 @@
             <% end %>
 
 
-            <% if current_user && current_user&.entity&.enable_funds %>
+            <% if current_user && current_user.enable_funds %>
                 <li class="nav-item">                
                     <a class="nav-link" href="/funds" data-toggle="collapse" data-target="#fundMenus">
                         <i class="fas fa-lg fa-fw fa-dollar"></i>
@@ -95,7 +95,7 @@
                 </li>
             <% end %>
 
-            <% if current_user && current_user&.entity&.enable_inv_opportunities %>
+            <% if current_user && current_user.enable_inv_opportunities %>
                 <li class="nav-item"> 
                     <a class="nav-link collapsed" href="/investment_opportunities">
                         <i class="fas fa-lg fa-fw fa-funnel-dollar"></i>
