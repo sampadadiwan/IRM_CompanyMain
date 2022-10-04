@@ -2,7 +2,7 @@
    
    <input id="viewer_content_type" , value="<%=@document.file.content_type%>" hidden="hidden"></input>
    <input id="viewer_link" , value="<%=@document.file_url()%>" hidden="hidden"></input>
-   <input id="viewer_watermark" , value="Private Property of <%= current_user.entity.name %>" hidden="hidden"></input>
+   <input id="viewer_watermark" , value="Exclusively for <%= current_user.entity ? current_user.entity.name : current_user.full_name %>" hidden="hidden"></input>
 
    <div class="card-header">
       <h6 class="m-0 font-weight-bold text-primary">Viewing: <%= @document.name %></h6>
