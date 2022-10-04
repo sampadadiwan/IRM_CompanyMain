@@ -28,4 +28,9 @@ class CapitalDistribution < ApplicationRecord
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
   }
+
+
+  def to_s
+    self.title
+  end
 end

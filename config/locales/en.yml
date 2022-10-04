@@ -97,3 +97,9 @@ en:
     update: 'Capital Remittance was updated'
     destroy: 'Capital Remittance was deleted'
     started: 'Capital Remittance was started'            
+
+  capital_distribution:
+    create: 'Capital Distribution was created'
+    update: 'Capital Distribution was updated'
+    destroy: 'Capital Distribution was deleted'
+    started: 'Capital Distribution was started' 
