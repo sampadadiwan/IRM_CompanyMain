@@ -29,8 +29,7 @@ class CapitalDistribution < ApplicationRecord
       .merge(InvestorAccess.approved_for_user(user))
   }
 
-
   def to_s
-    self.title
+    title
   end
 end

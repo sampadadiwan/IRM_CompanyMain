@@ -115,9 +115,19 @@ class Entity < ApplicationRecord
                                             !(logo_url.starts_with?("http") || logo_url.starts_with?("https"))
   end
 
-  after_create ->(entity) { SetupStartup.call(entity:) if entity.entity_type == "Startup" }
-  # IFs also need folders - so setup here
-  after_create ->(entity) { SetupFolders.call(entity:) if entity.entity_type == "Investment Fund" }
+  after_create lambda { |_entity|
+    EntityMailer.with(id:).notify_created.deliver_later
+  }
+
+  after_save :run_post_process, if: :saved_change_to_entity_type?
+  def run_post_process
+    case entity_type
+    when "Startup"
+      SetupStartup.call(entity: self)
+    when "Investment Fund"
+      SetupFolders.call(entity: self)
+    end
+  end
 
   def to_s
     name

@@ -59,7 +59,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def to_s
-    if self.status == "Paid"
+    if status == "Paid"
       "#{investor.investor_name}: #{collected_amount} : #{status}"
     else
       "#{investor.investor_name}: #{due_amount} : #{status}"

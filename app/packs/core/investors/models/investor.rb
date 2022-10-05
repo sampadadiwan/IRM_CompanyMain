@@ -87,14 +87,25 @@ class Investor < ApplicationRecord
       e = Entity.where(name: investor_name).first
       e ||= Entity.create(name: investor_name, entity_type: "VC")
 
-      # We need to enable features if the entity creating the investor has them turned on
-      # Ex. an Investment Fund creates and investor, who should have funds enabled
-      e.enable_funds = entity.enable_funds if entity.enable_funds
-      e.enable_inv_opportunities = entity.enable_inv_opportunities if entity.enable_inv_opportunities
+      setup_permissions(e)
       e.save
 
       self.investor_entity = e
     end
+  end
+
+  def setup_permissions(investor_entity)
+    # We need to enable features if the entity creating the investor has them turned on
+    # Ex. an Investment Fund creates and investor, who should have funds enabled
+    investor_entity.enable_documents = entity.enable_documents if entity.enable_documents
+    investor_entity.enable_investments = entity.enable_investments if entity.enable_investments
+    investor_entity.enable_holdings = entity.enable_holdings if entity.enable_holdings
+    investor_entity.enable_secondary_sale = entity.enable_secondary_sale if entity.enable_secondary_sale
+    investor_entity.enable_options = entity.enable_options if entity.enable_options
+    investor_entity.enable_captable = entity.enable_captable if entity.enable_captable
+
+    investor_entity.enable_funds = entity.enable_funds if entity.enable_funds
+    investor_entity.enable_inv_opportunities = entity.enable_inv_opportunities if entity.enable_inv_opportunities
   end
 
   def to_s
