@@ -11,8 +11,16 @@ class ImportInvestorAccess
 
   def save_investor_access(user_data, import_upload)
     # next if user exists
-    if InvestorAccess.exists?(email: user_data['Email'], investor_id: import_upload.owner_id)
-      Rails.logger.debug { "InvestorAccess with email #{user_data['Email']} already exists for investor #{import_upload.owner_id}" }
+
+    if user_data['Investor'].present?
+      investor = Investor.find_by(investor_name: user_data['Investor'])
+      return false unless investor
+    else
+      investor = import_upload.owner
+    end
+
+    if InvestorAccess.exists?(email: user_data['Email'], investor_id: investor.id)
+      Rails.logger.debug { "InvestorAccess with email #{user_data['Email']} already exists for investor #{investor.id}" }
       return false
     end
 
@@ -20,7 +28,7 @@ class ImportInvestorAccess
     approved = user_data["Approved"] ? user_data["Approved"].strip == "Yes" : false
     ia = InvestorAccess.new(first_name: user_data["First Name"], last_name: user_data["Last Name"],
                             email: user_data["Email"], approved:,
-                            entity_id: import_upload.entity_id, investor_id: import_upload.owner_id,
+                            entity_id: import_upload.entity_id, investor_id: investor.id,
                             granted_by: import_upload.user_id)
 
     Rails.logger.debug { "Saving InvestorAccess with email '#{ia.email}'" }

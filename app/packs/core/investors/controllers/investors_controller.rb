@@ -9,6 +9,16 @@ class InvestorsController < ApplicationController
 
     @investors = @investors.order("investors.id desc")
                            .includes(:tags)
+
+    respond_to do |format|
+      format.xlsx do
+        response.headers[
+          'Content-Disposition'
+        ] = "attachment; filename=investors.xlsx"
+      end
+      format.html { render :index }
+      format.json { render :index }
+    end
   end
 
   def search

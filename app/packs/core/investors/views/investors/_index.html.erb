@@ -8,8 +8,19 @@
     <span>
     <%= link_to "New Investor" , new_investor_path("investor[entity_id]": current_user.entity_id),
       {class: "btn btn-primary" } %>
+
+    <%= link_to "Download" , investors_path(format: "xlsx"),
+      {class: "btn btn-success" } %>
+
+      <%= link_to "Upload", 
+      new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
+          "import_upload[owner_type]": "Entity", 
+          "import_upload[import_type]": "Investor", 
+          "import_upload[entity_id]": current_user.entity_id,
+          "sample_upload": "INVESTORS_SAMPLE"), 
+          { class: "btn btn-primary"}  %> 
     
-    <%= link_to "All Notes" , notes_path, {class: "btn btn-primary" } %>
+    <%= link_to "All Notes" , notes_path, {class: "btn btn-success" } %>
 
     </span>
 </div>

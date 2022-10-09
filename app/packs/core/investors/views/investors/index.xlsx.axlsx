@@ -1,0 +1,10 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "Investors") do |sheet|
+  # Create the header row
+  sheet.add_row %w[Name Tags Category City]
+  # Create entries for each item
+  @investors.each do |inv|
+    sheet.add_row [inv.investor_name, inv.tag_list, inv.category, inv.city]
+  end
+end

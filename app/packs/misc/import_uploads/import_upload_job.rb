@@ -13,6 +13,8 @@ class ImportUploadJob < ApplicationJob
         case import_upload.import_type
         when "InvestorAccess"
           ImportInvestorAccessService.call(import_file: file, import_upload:)
+        when "Investor"
+          ImportInvestorService.call(import_file: file, import_upload:)
         when "Holding"
           ImportHoldingService.call(import_file: file, import_upload:)
         when "Offer"
