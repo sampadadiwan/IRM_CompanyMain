@@ -1,0 +1,20 @@
+        <% if model.bank_account_number.present? && model.ifsc_code.present? %>
+            <% if model.bank_verified %>
+              <span class="badge badge-success" type="button" 
+                    data-toggle="collapse" data-target=".bank_verification_response">
+                Verified
+              </span>
+            <% else %>
+              <span class="badge badge-danger" type="button" 
+                    data-toggle="collapse" data-target=".bank_verification_response">
+                <%= model.bank_verification_response ? "Invalid" : "Pending Verification" %>
+                <%= model.bank_verification_status %>
+              </span>
+              
+            <% end %>
+
+            <br>
+            <small class="text-muted collapse bank_verification_response">
+              <%= model.bank_verification_response %>
+            </small>
+        <% end %>

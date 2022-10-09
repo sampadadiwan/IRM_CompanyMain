@@ -36,6 +36,7 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_funds: Field::BooleanEmoji,
     enable_options: Field::BooleanEmoji,
     enable_captable: Field::BooleanEmoji,
+    enable_investor_kyc: Field::BooleanEmoji,
     enable_inv_opportunities: Field::BooleanEmoji
   }.freeze
 
@@ -82,6 +83,7 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_inv_opportunities
     enable_options
     enable_captable
+    enable_investor_kyc
     employees
   ].freeze
 
@@ -111,6 +113,7 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_inv_opportunities
     enable_options
     enable_captable
+    enable_investor_kyc
   ].freeze
 
   # COLLECTION_FILTERS

@@ -1,21 +1,3 @@
-# == Schema Information
-#
-# Table name: investor_accesses
-#
-#  id          :integer          not null, primary key
-#  investor_id :integer
-#  user_id     :integer
-#  email       :string(255)
-#  approved    :boolean
-#  granted_by  :integer
-#  entity_id   :integer
-#  created_at  :datetime         not null
-#  updated_at  :datetime         not null
-#  deleted_at  :datetime
-#  first_name  :string(20)
-#  last_name   :string(20)
-#
-
 class InvestorAccess < ApplicationRecord
   include Trackable
   include ActivityTrackable
@@ -82,5 +64,9 @@ class InvestorAccess < ApplicationRecord
 
   def send_notification_if_changed
     send_notification if id.present? && approved_changed?
+  end
+
+  def notify_kyc_required
+    InvestorKycMailer.with(investor_access_id: id).notify_kyc_required.deliver_later if URI::MailTo::EMAIL_REGEXP.match?(email)
   end
 end

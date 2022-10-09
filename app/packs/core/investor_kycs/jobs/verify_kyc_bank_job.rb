@@ -1,9 +1,9 @@
-class VerifyOfferBankJob < VerifyBankJob
+class VerifyKycBankJob < VerifyBankJob
   queue_as :default
 
-  def perform(offer_id)
+  def perform(id)
     Chewy.strategy(:sidekiq) do
-      @model = Offer.find(offer_id)
+      @model = InvestorKyc.find(id)
       verify
       @model.save
     end

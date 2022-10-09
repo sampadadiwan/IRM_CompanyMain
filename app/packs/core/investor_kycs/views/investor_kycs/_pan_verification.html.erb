@@ -1,0 +1,19 @@
+        <% if model.pan_card.present? %>
+            <% if model.pan_verified %>
+              <span class="badge badge-success" type="button" 
+                    data-toggle="collapse" data-target=".pan_verification_response">
+                Verified
+              </span>
+            <% else %>
+              <span class="badge badge-danger" type="button" 
+                    data-toggle="collapse" data-target=".pan_verification_response">
+                  <%= model.pan_verification_status %>
+              </span>              
+            <% end %>
+            <br>
+            <small class="text-muted collapse pan_verification_response">
+              <%= model.pan_verification_response %>
+            </small>
+        <% else %>
+            <span class="badge badge-warning">Not Uploaded</span>
+        <% end %>

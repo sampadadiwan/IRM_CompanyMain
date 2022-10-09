@@ -63,8 +63,8 @@
       <td>
         Pan Verified
       </td>
-      <td>
-        <%= display_boolean @investor_kyc.pan_verified %>
+      <td>        
+          <%= render "investor_kycs/pan_verification", model: @investor_kyc %>
       </td>
     </tr>
 
@@ -97,7 +97,7 @@
         Bank Verified
       </td>
       <td>
-        <%= display_boolean @investor_kyc.bank_verified %>
+        <%= render "investor_kycs/bank_verification", model: @investor_kyc %>
       </td>
     </tr>
 
