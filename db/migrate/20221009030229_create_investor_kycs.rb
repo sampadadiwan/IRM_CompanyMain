@@ -25,5 +25,14 @@ class CreateInvestorKycs < ActiveRecord::Migration[7.0]
 
       t.timestamps
     end
+
+    Entity.all.each do |e|
+      SetupFolders.call(entity: e)
+    end
+
+    Investor.all.each do |i|
+      i.setup_folder_details
+    end
+
   end
 end
