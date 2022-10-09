@@ -470,7 +470,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_09_072326) do
     t.boolean "enable_options", default: false
     t.boolean "enable_captable", default: false
     t.boolean "enable_investor_kyc", default: false
-    t.string "sub_domain", limit: 25
+    t.string "sub_domain"
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"

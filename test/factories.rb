@@ -379,7 +379,7 @@ FactoryBot.define do
     enable_inv_opportunities {true}
     currency { ENV["CURRENCY"].split(",")[rand(3)] }
     units { ENV["CURRENCY_UNITS"].split(",")[rand(3)] }
-
+    sub_domain { rand(2) > 0 ? name.parameterize : nil }
   end
 end
 
