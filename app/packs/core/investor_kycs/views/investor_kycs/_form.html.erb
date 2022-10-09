@@ -1,0 +1,88 @@
+<%= form_with(model: investor_kyc) do |form| %>
+  <% if investor_kyc.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(investor_kyc.errors.count, "error") %> prohibited this investor_kyc from being saved:</h2>
+
+      <ul>
+        <% investor_kyc.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+    
+  <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+
+  <% if investor_kyc.user_id %>
+    <%= form.text_field :user_id, class: "form-control", hidden: true  %>
+  <% else %>
+    <div class="form-group">
+      <%= form.label :user %>
+      <%= form.select :user_id, investor_kyc.investor.investor_accesses.includes(:user).collect(&:user).map{|u| [u.full_name, u.id]}, {}, class: "form-control form-select"  %>
+    </div>
+  <% end %>
+  
+  <div class="form-group">
+    <%= form.label :first_name %>
+    <%= form.text_field :first_name, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :middle_name %>
+    <%= form.text_field :middle_name, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :last_name %>
+    <%= form.text_field :last_name, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :PAN %>
+    <%= form.text_field :PAN, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= render "layouts/single_upload", form: form, field_label: "Upload PAN Card", 
+                            for_model: "investor_kyc", field_name: "pan_card", 
+                            model: investor_kyc %>
+
+  </div>
+
+  <div class="form-group">
+    <%= form.label :pan_verified %>
+    <%= form.check_box :pan_verified, class: "form-control form-checkbox"  %>
+  </div>
+
+
+  <div class="form-group">
+    <%= form.label :address %>
+    <%= form.text_area :address, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :bank_account_number %>
+    <%= form.text_field :bank_account_number, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :ifsc_code %>
+    <%= form.text_field :ifsc_code, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :bank_verified %>
+    <%= form.check_box :bank_verified, class: "form-control form-checkbox"  %>
+  </div>
+
+
+  <div class="form-group">
+    <%= form.label :comments %>
+    <%= form.text_area :comments, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

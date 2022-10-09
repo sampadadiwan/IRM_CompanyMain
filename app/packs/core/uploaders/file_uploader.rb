@@ -23,10 +23,10 @@ class FileUploader < Shrine
 
   def get_path(entity, record, owner_path, trailing)
     if owner_path
-      if %w[SecondarySale Deal OptionPool Holding Approval InvestmentOpportunity Fund].include? record.owner_type
+      if %w[SecondarySale Deal OptionPool Holding Approval InvestmentOpportunity Fund Investor].include? record.owner_type
         "#{entity}/#{owner_path}"
       elsif %w[ExpressionOfInterest].include? record.owner_type
-        # Put it inside the SecondarySale folder
+        # Put it inside the IO folder
         "#{entity}/InvestmentOpportunity/#{record.owner.investment_opportunity_id}/#{owner_path}"
       elsif %w[Offer Interest].include? record.owner_type
         # Put it inside the SecondarySale folder
@@ -34,6 +34,9 @@ class FileUploader < Shrine
       elsif ["DealInvestor"].include? record.owner_type
         # Put it inside the Deal folder
         "#{entity}/Deal/#{record.owner.deal_id}/#{owner_path}"
+      elsif ["InvestorKyc"].include? record.owner_type
+        # Put it inside the Deal folder
+        "#{entity}/Investor/#{record.owner.investor_id}/#{owner_path}"
       elsif ["Excercise"].include? record.owner_type
         # Put it inside the Deal folder
         "#{entity}/OptionPool/#{record.owner.option_pool_id}/#{owner_path}"

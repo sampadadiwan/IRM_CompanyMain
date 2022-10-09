@@ -1,0 +1,53 @@
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Investor Kycs</h1>
+    <%= link_to "New Investor Kyc" , new_investor_kyc_path("investor_kyc[investor_id]": @investor.id, "investor_kyc[entity_id]": @investor.entity_id), {class: "btn btn-primary" } if @investor %>
+  </div>
+
+  <div class="table-responsive">
+
+    <table id="investor_kycs" class="table table-bordered dataTable jqDataTable">
+
+      <thead>
+        <tr>
+          <th>
+            Investor
+          </th>
+          <th>
+            First Name
+          </th>
+          <th>
+            Last Name
+          </th>
+          <th>
+            Pan
+          </th>
+          <th>
+            Pan Verified
+          </th>
+          <th>
+            Address
+          </th>
+          <th>
+            Bank Account Number
+          </th>
+          <th>
+            Ifsc Code
+          </th>
+          <th>
+            Bank Verified
+          </th>
+          
+
+          <th>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% investor_kycs.each do |investor_kyc| %>
+          <%= render investor_kyc %>
+        <% end %>
+      </tbody>
+    </table>
+
+  </div>

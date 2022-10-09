@@ -1,4 +1,26 @@
 FactoryBot.define do
+  factory :investor_kyc do
+    investor { nil }
+    entity { nil }
+    user { nil }
+    first_name { "MyString" }
+    middle_name { "MyString" }
+    last_name { "MyString" }
+    PAN { "MyString" }
+    address { "MyText" }
+    bank_account_number { "MyString" }
+    ifsc_code { "MyString" }
+    bank_verified { false }
+    bank_verification_response { "MyText" }
+    bank_verification_status { "MyString" }
+    signature_data { "MyText" }
+    pan_card_data { "MyText" }
+    pan_verified { false }
+    pan_verification_response { "MyText" }
+    pan_verification_status { "MyString" }
+    comments { "MyText" }
+  end
+
   factory :share_transfer do
     entity { nil }
     from_investor { nil }

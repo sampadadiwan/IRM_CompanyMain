@@ -22,6 +22,7 @@
 
 class Investor < ApplicationRecord
   # include Trackable
+  include WithFolder
   update_index('investor') { self }
 
   # encrypts :investor_name, deterministic: true
@@ -41,6 +42,10 @@ class Investor < ApplicationRecord
   has_many :holdings, dependent: :destroy
   has_many :notes, dependent: :destroy
 
+  has_many :documents, as: :owner, dependent: :destroy
+  accepts_nested_attributes_for :documents, allow_destroy: true
+
+  has_many :investor_kycs, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
   has_many :approval_responses, dependent: :destroy
   has_many :capital_distribution_payments, dependent: :destroy
@@ -114,5 +119,10 @@ class Investor < ApplicationRecord
 
   def emails
     investor_accesses.approved.collect(&:email)
+  end
+
+  def setup_folder_details
+    parent_folder = Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
+    setup_folder(parent_folder, investor_name, %w[KYC])
   end
 end

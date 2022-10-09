@@ -50,7 +50,7 @@ class Offer < ApplicationRecord
   scope :auto_match, -> { where(auto_match: true) }
   scope :pending_verification, -> { where(verified: false) }
 
-  validates :first_name, :last_name, :address, :PAN, :bank_account_number, :bank_name, :bank_routing_info, presence: true, if: proc { |o| o.secondary_sale.finalized }
+  validates :first_name, :last_name, :address, :PAN, :bank_account_number, :ifsc_code, presence: true, if: proc { |o| o.secondary_sale.finalized }
 
   validates :address_proof, :id_proof, :signature, presence: true if Rails.env.production?
 

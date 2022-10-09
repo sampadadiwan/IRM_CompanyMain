@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :investor_kycs
   namespace :admin do
     resources :investors
     resources :users

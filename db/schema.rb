@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_23_121124) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_09_030229) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -893,6 +893,36 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_23_121124) do
     t.index ["user_id"], name: "index_investor_accesses_on_user_id"
   end
 
+  create_table "investor_kycs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "investor_id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "form_type_id"
+    t.string "first_name", limit: 50
+    t.string "middle_name", limit: 50
+    t.string "last_name", limit: 50
+    t.string "PAN", limit: 15
+    t.text "address"
+    t.string "bank_account_number", limit: 40
+    t.string "ifsc_code", limit: 20
+    t.boolean "bank_verified", default: false
+    t.text "bank_verification_response"
+    t.string "bank_verification_status"
+    t.text "signature_data"
+    t.text "pan_card_data"
+    t.boolean "pan_verified", default: false
+    t.text "pan_verification_response"
+    t.string "pan_verification_status"
+    t.text "comments"
+    t.text "properties"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
+    t.index ["form_type_id"], name: "index_investor_kycs_on_form_type_id"
+    t.index ["investor_id"], name: "index_investor_kycs_on_investor_id"
+    t.index ["user_id"], name: "index_investor_kycs_on_user_id"
+  end
+
   create_table "investors", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "investor_entity_id"
     t.integer "entity_id"
@@ -1022,6 +1052,27 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_23_121124) do
     t.index ["investor_id"], name: "index_offers_on_investor_id"
     t.index ["secondary_sale_id"], name: "index_offers_on_secondary_sale_id"
     t.index ["user_id"], name: "index_offers_on_user_id"
+  end
+
+  create_table "option_details", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "option_id", null: false
+    t.integer "excercised_quantity", default: 0
+    t.integer "vested_quantity", default: 0
+    t.boolean "lapsed", default: false
+    t.boolean "fully_vested", default: false
+    t.integer "lapsed_quantity", default: 0
+    t.integer "gross_avail_to_excercise_quantity", default: 0
+    t.integer "unexcercised_cancelled_quantity", default: 0
+    t.integer "net_avail_to_excercise_quantity", default: 0
+    t.integer "gross_unvested_quantity", default: 0
+    t.integer "unvested_cancelled_quantity", default: 0
+    t.integer "net_unvested_quantity", default: 0
+    t.boolean "manual_vesting", default: false
+    t.string "option_type", limit: 30
+    t.boolean "option_dilutes", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["option_id"], name: "index_option_details_on_option_id"
   end
 
   create_table "option_pools", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1406,6 +1457,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_23_121124) do
   add_foreign_key "investment_snapshots", "investors"
   add_foreign_key "investments", "aggregate_investments"
   add_foreign_key "investments", "funding_rounds"
+  add_foreign_key "investor_kycs", "entities"
+  add_foreign_key "investor_kycs", "form_types"
+  add_foreign_key "investor_kycs", "investors"
+  add_foreign_key "investor_kycs", "users"
   add_foreign_key "investors", "form_types"
   add_foreign_key "messages", "investors"
   add_foreign_key "messages", "users"
@@ -1417,6 +1472,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_23_121124) do
   add_foreign_key "offers", "interests"
   add_foreign_key "offers", "secondary_sales"
   add_foreign_key "offers", "users"
+  add_foreign_key "option_details", "holdings", column: "option_id"
   add_foreign_key "option_pools", "entities"
   add_foreign_key "option_pools", "form_types"
   add_foreign_key "option_pools", "funding_rounds"

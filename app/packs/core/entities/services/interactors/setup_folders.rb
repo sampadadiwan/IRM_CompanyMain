@@ -16,6 +16,7 @@ class SetupFolders
            Folder.create(name: "/", entity_id: entity.id, level: 0, folder_type: :system)
     case entity.entity_type
     when "Startup"
+      create_if_not_exist("Investors", entity, root, :system)
       create_if_not_exist("Deals", entity, root, :system)
       create_if_not_exist("Approvals", entity, root, :system)
       create_if_not_exist("Secondary Sales", entity, root, :system)

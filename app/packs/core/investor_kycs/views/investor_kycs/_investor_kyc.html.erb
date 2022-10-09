@@ -1,0 +1,33 @@
+<tr id="<%= dom_id investor_kyc %>">
+  <td>
+    <%= investor_kyc.investor.investor_name %>
+  </td>
+  <td>
+    <%= investor_kyc.first_name %>
+  </td>
+  <td>
+    <%= investor_kyc.last_name %>
+  </td>
+  <td>
+    <%= investor_kyc.PAN %>
+  </td>
+  <td>
+    <%= display_boolean investor_kyc.pan_verified %>
+  </td>
+  <td>
+    <%= investor_kyc.address %>
+  </td>
+  <td>
+    <%= investor_kyc.bank_account_number %>
+  </td>
+  <td>
+    <%= investor_kyc.ifsc_code %>
+  </td>
+  <td>
+    <%= display_boolean investor_kyc.bank_verified %>
+  </td>
+  
+  <td>
+    <%= link_to "Show" , investor_kyc , {class: "btn btn-primary" }%>
+  </td>
+</tr>

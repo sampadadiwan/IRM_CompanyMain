@@ -1,0 +1,6 @@
+<%= render "/layouts/alerts" %>
+
+<%= turbo_frame_tag "investor_kycs_list", target: "_top" do %>
+  <%= render "investor_kycs/index", investor_kycs: @investor_kycs %>
+<% end %>
+  
