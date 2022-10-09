@@ -102,8 +102,8 @@
       fill_in("offer_address", with: @offer.address)
       fill_in("offer_bank_account_number", with: @offer.bank_account_number)
       fill_in("offer_ifsc_code", with: @offer.ifsc_code)
-      fill_in("offer_bank_name", with: @offer.bank_name)
-      fill_in("offer_bank_routing_info", with: @offer.bank_routing_info)
+      # fill_in("offer_bank_name", with: @offer.bank_name)
+      # fill_in("offer_bank_routing_info", with: @offer.bank_routing_info)
       click_on("Next")
     end
 
@@ -141,8 +141,8 @@
       expect(page).to have_content(@offer.PAN)
       expect(page).to have_content(@offer.address)
       expect(page).to have_content(@offer.bank_account_number)
-      expect(page).to have_content(@offer.bank_name)
-      expect(page).to have_content(@offer.bank_routing_info)
+      # expect(page).to have_content(@offer.bank_name)
+      # expect(page).to have_content(@offer.bank_routing_info)
     end
 
     within("tr#approved") do

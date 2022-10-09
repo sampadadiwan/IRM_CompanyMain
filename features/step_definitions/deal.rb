@@ -156,8 +156,15 @@ Given('there are {string} exisiting deals {string} with another firm in the star
     (1..count.to_i).each do 
       deal = FactoryBot.build(:deal, entity: startup)
       deal = CreateDeal.call(deal: deal).deal
-      di = FactoryBot.create(:deal_investor, investor: @investor, entity: startup, deal: deal)
-    end
+      
+      begin
+        di = FactoryBot.create(:deal_investor, investor: @investor, entity: startup, deal: deal)
+      rescue Exception => e
+        puts deal.entity.folders.collect(&:full_path)  
+        puts deal.to_json
+        raise e
+      end
+    end 
   end
 end
 

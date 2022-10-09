@@ -81,7 +81,7 @@ Scenario Outline: Express Interest
 
   Examples:
 |user	      |entity                   |sale                                     |
-  	|  	        |entity_type=startup  |name=Grand Sale;visible_externally=false  |
-    |  	        |entity_type=startup  |name=Winter Sale;visible_externally=false |
+  	|  	        |entity_type=Startup  |name=Grand Sale;visible_externally=false  |
+    |  	        |entity_type=Startup  |name=Winter Sale;visible_externally=false |
 
 
