@@ -22,6 +22,7 @@ class SetupFolders
       create_if_not_exist("Secondary Sales", entity, root, :system)
       create_if_not_exist("Option Pools", entity, root, :system)
     when "Investment Fund"
+      create_if_not_exist("Investors", entity, root, :system)
       create_if_not_exist("Investment Opportunities", entity, root, :system)
       create_if_not_exist("Funds", entity, root, :system)
       create_if_not_exist("Approvals", entity, root, :system)
