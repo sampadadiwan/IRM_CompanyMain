@@ -7,6 +7,7 @@ class ApplicationController < ActionController::Base
   after_action :verify_authorized, except: %i[index search], unless: :devise_controller?
   after_action :verify_policy_scoped, only: [:index]
 
+  before_action :set_current_entity
   before_action :authenticate_user!
   before_action :set_search_controller
   before_action :configure_permitted_parameters, if: :devise_controller?
@@ -69,6 +70,13 @@ class ApplicationController < ActionController::Base
       model.documents.each do |doc|
         doc.user_id = current_user.id
       end
+    end
+  end
+
+  def set_current_entity
+    if request.subdomain.present?
+      @current_entity = Entity.where(sub_domain: request.subdomain).first
+      redirect_to(ENV['BASE_URL'], allow_other_host: true) unless @current_entity
     end
   end
 end

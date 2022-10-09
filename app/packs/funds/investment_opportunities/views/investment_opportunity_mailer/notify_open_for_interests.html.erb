@@ -12,7 +12,7 @@
     <%= render "/investment_opportunity_mailer/investment_opportunity", investment_opportunity: @investment_opportunity, current_user: nil %>
 </p>
 
-<p class="btn btn-primary"><%= link_to 'View Opportunity', investment_opportunity_url(@investment_opportunity) %></p>
+<p class="btn btn-primary"><%= link_to 'View Opportunity', investment_opportunity_url(@investment_opportunity, subdomain: @investment_opportunity.entity.sub_domain) %></p>
 
 <h3>Next Steps</h3>
 <p>

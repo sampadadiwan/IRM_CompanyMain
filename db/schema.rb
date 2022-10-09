@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_09_045928) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_09_072326) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -470,9 +470,11 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_09_045928) do
     t.boolean "enable_options", default: false
     t.boolean "enable_captable", default: false
     t.boolean "enable_investor_kyc", default: false
+    t.string "sub_domain", limit: 25
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
+    t.index ["sub_domain"], name: "index_entities_on_sub_domain", unique: true
   end
 
   create_table "exception_tracks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

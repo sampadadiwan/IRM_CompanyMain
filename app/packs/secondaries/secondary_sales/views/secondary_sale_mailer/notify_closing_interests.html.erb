@@ -12,7 +12,7 @@
     <%= render "/secondary_sale_mailer/sale", secondary_sale: @secondary_sale, current_user: nil %>
 </p>
 
-<p class="btn btn-primary"><%= link_to 'View Sale', secondary_sale_url(@secondary_sale) %></p>
+<p class="btn btn-primary"><%= link_to 'View Sale', secondary_sale_url(@secondary_sale, subdomain: @secondary_sale.entity.sub_domain) %></p>
 
 <h3>Next Steps</h3>
 <p>

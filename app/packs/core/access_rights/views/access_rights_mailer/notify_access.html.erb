@@ -2,6 +2,6 @@
 <p>
 
     You have been granted access to the <%= @access_right.access_type %> '<%= link_to @access_right.owner.name, @access_right.owner %>' by <%= @access_right.entity.name %>.
-    <p class="btn btn-primary"><%= link_to "View #{@access_right.access_type}", @access_right.owner %></p>
+    <p class="btn btn-primary"><%= link_to "View #{@access_right.access_type}", [@access_right.owner, subdomain: @access_right.entity.sub_domain] %></p>
 
 </p>

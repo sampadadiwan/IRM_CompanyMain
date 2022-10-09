@@ -139,9 +139,9 @@ group :development, :staging, :test do
 end
 
 group :development do
-  gem "strong_migrations"
   gem 'packwerk'
   gem 'stimpack'
+  gem "strong_migrations"
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem 'annotate'
   gem 'bullet'

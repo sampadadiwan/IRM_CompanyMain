@@ -8,4 +8,4 @@
     <%= render "/approval_responses/show", approval_response: @approval_response, current_user: nil %>
 </p>
 
-<p class="btn btn-primary"><%= link_to 'View Approval Response', approval_response_url(@approval_response) %></p>
+<p class="btn btn-primary"><%= link_to 'View Approval Response', approval_response_url(@approval_response, subdomain: @approval_response.entity.sub_domain) %></p>

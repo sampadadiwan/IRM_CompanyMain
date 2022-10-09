@@ -4,6 +4,6 @@
 
     You have been requested to complete your KYC for <%= @investor_access.entity.name %>. Please keep your ID, tax, bank statements and other documents handy.
 
-    <p class="btn btn-primary"><%= link_to  "Login to Access", new_investor_kyc_url("investor_kyc[investor_id]": @investor_access.investor_id, "investor_kyc[entity_id]": @investor_access.entity_id, "investor_kyc[user_id]": @investor_access.user_id ) %></p>
+    <p class="btn btn-primary"><%= link_to  "Login to Access", new_investor_kyc_url("investor_kyc[investor_id]": @investor_access.investor_id, "investor_kyc[entity_id]": @investor_access.entity_id, "investor_kyc[user_id]": @investor_access.user_id, subdomain: @investor_kyc.entity.sub_domain) %></p>
 
 </p>

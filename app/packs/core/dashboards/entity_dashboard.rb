@@ -13,6 +13,7 @@ class EntityDashboard < Administrate::BaseDashboard
     investments: Field::HasMany,
     id: Field::Number,
     name: Field::String,
+    sub_domain: Field::String,
     sandbox: Field::BooleanEmoji,
     sandbox_emails: Field::String,
     from_email: Field::String,

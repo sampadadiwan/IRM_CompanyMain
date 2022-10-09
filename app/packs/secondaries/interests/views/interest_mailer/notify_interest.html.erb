@@ -8,4 +8,4 @@
     <%= render "/interests/show", interest: @interest, current_user: nil %>
 </p>
 
-<p class="btn btn-primary"><%= link_to 'View Interest', interest_url(@interest) %></p>
+<p class="btn btn-primary"><%= link_to 'View Interest', interest_url(@interest, subdomain: @interest.entity.sub_domain) %></p>
