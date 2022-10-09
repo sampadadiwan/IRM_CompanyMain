@@ -74,7 +74,7 @@ class ApplicationController < ActionController::Base
   end
 
   def set_current_entity
-    if request.subdomain.present?
+    if request.subdomain.present? && !ENV['HOST'].starts_with?(request.subdomain)
       @current_entity = Entity.where(sub_domain: request.subdomain).first
       redirect_to(ENV['BASE_URL'], allow_other_host: true) unless @current_entity
     end
