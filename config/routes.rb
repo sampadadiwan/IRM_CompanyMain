@@ -156,6 +156,7 @@ Rails.application.routes.draw do
   resources :investor_accesses do
     get 'search', on: :collection
     patch 'approve', on: :member
+    patch 'notify_kyc_required', on: :member
     post 'request_access', on: :collection
     post 'upload', on: :collection
   end

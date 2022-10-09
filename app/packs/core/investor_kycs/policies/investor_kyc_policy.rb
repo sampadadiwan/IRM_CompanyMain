@@ -1,7 +1,11 @@
 class InvestorKycPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      scope.where(entity_id: user.entity_id)
+      if user.curr_role.to_sym == :startup
+        scope.where(entity_id: user.entity_id)
+      else
+        scope.where(user_id: user.id)
+      end
     end
   end
 
