@@ -60,6 +60,7 @@ class EntityDashboard < Administrate::BaseDashboard
   SHOW_PAGE_ATTRIBUTES = %i[
     id
     name
+    sub_domain
     url
     category
     created_at
@@ -93,6 +94,7 @@ class EntityDashboard < Administrate::BaseDashboard
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
     name
+    sub_domain
     url
     currency
     category
