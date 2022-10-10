@@ -1,6 +1,8 @@
 class ImportInvestor
   include Interactor
 
+  STANDARD_HEADERS = %w[Name Category Tags City].freeze
+
   def call
     if context.import_upload.present? && context.import_file.present?
       process_investor(context.import_file, context.import_upload)
@@ -9,7 +11,7 @@ class ImportInvestor
     end
   end
 
-  def save_investor(user_data, import_upload)
+  def save_investor(user_data, import_upload, custom_field_headers)
     if Investor.exists?(investor_name: user_data['Name'], entity_id: import_upload.entity_id)
       Rails.logger.debug { "Investor with name #{user_data['Name']} already exists for entity #{import_upload.entity_id}" }
       return false
@@ -20,12 +22,26 @@ class ImportInvestor
                       category: user_data["Category"], city: user_data["City"],
                       entity_id: import_upload.entity_id)
 
+    setup_custom_fields(user_data, ia, custom_field_headers)
+
     Rails.logger.debug { "Saving Investor with name '#{ia.investor_name}'" }
     ia.save
   end
 
+  def setup_custom_fields(user_data, model, custom_field_headers)
+    # Were any custom fields passed in ? Set them up
+    if custom_field_headers.length.positive?
+      model.properties ||= {}
+      custom_field_headers.each do |cfh|
+        model.properties[cfh.underscore] = user_data[cfh]
+      end
+    end
+  end
+
   def process_investor(_file, import_upload)
     headers = context.headers
+    custom_field_headers = headers - STANDARD_HEADERS
+
     data = context.data
     # Parse the XL rows
 
@@ -35,7 +51,7 @@ class ImportInvestor
       # create hash from headers and cells
       user_data = [headers, row].transpose.to_h
 
-      if save_investor(user_data, import_upload)
+      if save_investor(user_data, import_upload, custom_field_headers)
         import_upload.processed_row_count += 1
       else
         import_upload.failed_row_count += 1
