@@ -117,6 +117,7 @@ Metrics/BlockLength:
     - 'app/controllers/concerns/investment_concern.rb'
     - 'app/packs/funds/capital_distributions/jobs/capital_distribution_job.rb'
     - 'app/packs/secondaries/offers/models/offer_spa_generator.rb'
+    - 'app/packs/secondaries/secondary_sales/jobs/spa_job.rb'
   IgnoredMethods:
     - context
     - describe

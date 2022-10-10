@@ -41,10 +41,7 @@ class OfferSpaGenerator
     report.generate("tmp/Offer-#{offer.id}.odt")
     system("libreoffice --headless --convert-to pdf tmp/Offer-#{offer.id}.odt --outdir tmp")
 
-    if offer.signature
-        File.delete(signature)
-    end
-    
+    File.delete(signature) if offer.signature
   end
 
   def attach(offer)

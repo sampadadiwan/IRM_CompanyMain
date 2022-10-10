@@ -10,6 +10,9 @@ class AllocationJob < AllocationBase
           update_offers(secondary_sale)
           update_sale(secondary_sale)
           secondary_sale.allocation_status = "Completed"
+
+          # Post the allocation, we need to upload the SPAs for verified offers
+          SpaJob.perform_later(secondary_sale.id)
         rescue StandardError => e
           ExceptionNotifier.notify_exception(e)
           logger.error e.backtrace.join("\n")

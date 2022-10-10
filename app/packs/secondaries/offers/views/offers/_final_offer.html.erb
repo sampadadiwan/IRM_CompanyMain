@@ -36,7 +36,9 @@
     <div class="divTableCell"><%= offer.allocation_quantity %></div>
     <div class="divTableCell"><%= offer.interest.interest_entity.name if offer.interest %></div>
     <div class="divTableCell">
-        <%= display_boolean offer.final_agreement %>        
+        <%= display_boolean offer.final_agreement %>   
+        <br>
+        <%= link_to "SPA", offer.spa.url, target: "_blank", class: "small" if offer.spa %>     
     </div>
     <div class="divTableCell">
         <%= display_boolean offer.verified %>        

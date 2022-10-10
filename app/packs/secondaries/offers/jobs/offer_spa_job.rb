@@ -1,3 +1,5 @@
+# Unused
+# TODO delete later
 class OfferSpaJob < ApplicationJob
   queue_as :default
 
