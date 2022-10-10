@@ -30,6 +30,8 @@ wb.styles do |s|
 end
 
 wb.add_worksheet(name: "Offers") do |sheet|
+  form_type, custom_field_names, custom_headers = get_form_type("Offer")
+
   # Create the header row
   sheet.add_row ["", "User", "Investor", "Quantity", "Holdings Percentage", "Final Price", "Allocation Percentage",
                  "Allocation Quantity", "Allocation Amount", "Approved",
@@ -37,10 +39,12 @@ wb.add_worksheet(name: "Offers") do |sheet|
                  "Bank Account", "IFSC Code",
                  "Acquirer", "Aquirer PAN", "Aquirer Entity Name",
                  "Acquirer Address", "Aquirer Contact", "Contact Email",
-                 "Verified", "Comments", "SPA File Name"]
+                 "Verified", "Comments", "SPA File Name"] + custom_headers
 
   # Create entries for each offer
   @secondary_sale.offers.approved.includes(:user, :entity, investor: :investor_entity).each do |o|
+    custom_field_values = get_custom_values(o, form_type, custom_field_names)
+
     row = sheet.add_row ["Link", o.user&.full_name, o.investor&.investor_name,
                          custom_format_number(o.quantity, params), o.percentage, o.final_price,
                          o.allocation_percentage,
@@ -49,20 +53,23 @@ wb.add_worksheet(name: "Offers") do |sheet|
                          o.bank_account_number, o.ifsc_code,
                          o.interest&.interest_entity&.name, o.interest&.PAN, o.interest&.buyer_entity_name,
                          o.interest&.address, o.interest&.contact_name, o.interest&.email,
-                         o.verified, o.comments, "#{o.id}.pdf"]
+                         o.verified, o.comments, "#{o.id}.pdf"] + custom_field_values
 
     sheet.add_hyperlink location: offer_url(o), ref: row.cells.first
   end
 end
 
 wb.add_worksheet(name: "Interests") do |sheet|
+  form_type, custom_field_names, custom_headers = get_form_type("Interest")
   # Create the header row
   sheet.add_row ["", "User", "Investor", "Quantity", "Price", "Final Price",
                  "Allocation Percentage", "Allocation Quantity", "Allocation Amount",
-                 "Short Listed", "Escrow Deposited"]
+                 "Short Listed", "Escrow Deposited"] + custom_headers
 
   # Create entries for each offer
   @secondary_sale.interests.short_listed.includes(:user, :interest_entity).each do |o|
+    custom_field_values = get_custom_values(o, form_type, custom_field_names)
+
     user_name, entity_name = if o.escrow_deposited
                                [o.user.full_name, o.interest_entity.name]
                              else
@@ -73,7 +80,7 @@ wb.add_worksheet(name: "Interests") do |sheet|
                          custom_format_number(o.quantity, params), custom_format_number(o.price, params),
                          o.final_price, o.allocation_percentage,
                          o.allocation_quantity, money_to_currency(o.allocation_amount, params),
-                         o.short_listed, o.escrow_deposited]
+                         o.short_listed, o.escrow_deposited] + custom_field_values
 
     sheet.add_hyperlink location: interest_url(o), ref: row.cells.first
   end
