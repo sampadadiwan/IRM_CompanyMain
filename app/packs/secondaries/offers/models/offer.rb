@@ -112,10 +112,6 @@ class Offer < ApplicationRecord
     (total_holdings_quantity * secondary_sale.percent_allowed / 100).round
   end
 
-  include Rails.application.routes.url_helpers
-  include ActionView::Helpers::UrlHelper
-  include ActionView::Helpers
-
   def break_offer(allocation_qtys)
     Rails.logger.debug { "breaking offer #{id} into #{allocation_qtys} pieces" }
 
@@ -157,5 +153,10 @@ class Offer < ApplicationRecord
   after_save :validate_bank
   def validate_bank
     VerifyOfferBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_first_name? || saved_change_to_last_name? || saved_change_to_middle_name?
+  end
+
+  after_save :generate_spa
+  def generate_spa
+    OfferSpaJob.perform_later(id) if saved_change_to_verified? && verified
   end
 end
