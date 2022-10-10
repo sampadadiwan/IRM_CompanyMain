@@ -9,6 +9,8 @@ class ApprovalsController < ApplicationController
                  else
                    Approval.for_investor(current_user)
                  end
+
+    @approvals = @approvals.includes(:entity)
   end
 
   # GET /approvals/1 or /approvals/1.json
