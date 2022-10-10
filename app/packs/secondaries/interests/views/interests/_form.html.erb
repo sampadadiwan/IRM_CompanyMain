@@ -19,12 +19,6 @@
   <% if interest.short_listed %>
     
     <div class="form-group">
-      <div class="form-label alert alert-info">
-        Please read the SPA template to understand the terms and conditions of the sale
-      </div>
-      <%= link_to "Download SPA", interest.spa.url, target: "_blank" if interest.spa.present? %>
-    </div>
-    <div class="form-group">
       <%= form.label :buyer_entity_name %>
       <%= form.text_field :buyer_entity_name, class: "form-control"  %>
     </div>
@@ -59,8 +53,12 @@
     </div>  
 
     <div class="form-group">
-      <%= form.label :final_agreement, "I agree to enter into the SPA" %>
+      <%= form.label :final_agreement, "I agree to enter into the SPAs" %>
       <%= form.check_box :final_agreement, class: "form-control form-checkbox"  %>
+      <small class="text-muted"> 
+        SPAs are visible in the 
+        <%= link_to "Matched Offers", matched_offers_interest_path(@interest), target: "_blank" %>  
+      </small>
     </div>
 
 

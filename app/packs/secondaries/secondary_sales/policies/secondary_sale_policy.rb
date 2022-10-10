@@ -93,6 +93,10 @@ class SecondarySalePolicy < ApplicationPolicy
     update?
   end
 
+  def generate_spa?
+    update?
+  end
+
   def finalize_allocation?
     update? && record.allocation_percentage.positive?
   end
