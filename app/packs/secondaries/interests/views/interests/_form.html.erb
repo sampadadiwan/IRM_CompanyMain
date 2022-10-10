@@ -42,6 +42,14 @@
       <%= form.label :PAN %>
       <%= form.text_field :PAN, class: "form-control"  %>
     </div>
+
+    <div class="form-group">
+
+      <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image", 
+                              for_model: "interest", field_name: "signature", 
+                              model: interest %>
+  
+    </div>
     
     <div class="form-group">
 

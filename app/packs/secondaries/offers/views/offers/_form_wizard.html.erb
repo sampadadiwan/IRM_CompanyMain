@@ -43,10 +43,12 @@
                     <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
                 </div>
 
-                <% if offer.approved %>
+                <% if offer.spa.present? %>
                     <div class="form-group">
-                        <div class="form-label alert alert-info">Please read the SPA template to understand the terms and conditions of the sale</div>
-                        <%= render "/layouts/attachments" , attachments: [offer.secondary_sale.spa], allow_delete: "No" if offer.secondary_sale.spa.present? %>
+                        <div class="form-label alert alert-info">
+                            Please read the <%= link_to "SPA", offer.spa.url, target: "_blank", class: "btn btn-sm btn-primary" %> to understand the terms and conditions of the sale
+                        </div>
+                        
                     </div>
                 <% end %>
 

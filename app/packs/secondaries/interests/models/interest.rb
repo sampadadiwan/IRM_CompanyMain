@@ -11,6 +11,8 @@ class Interest < ApplicationRecord
   has_many :messages, as: :owner, dependent: :destroy
 
   include FileUploader::Attachment(:spa)
+  include FileUploader::Attachment(:signature)
+
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
 
