@@ -466,6 +466,10 @@ GEM
     nio4r (2.5.8)
     nokogiri (1.13.6-x86_64-linux)
       racc (~> 1.4)
+    odf-report (0.7.3)
+      mime-types
+      nokogiri (>= 1.10.0)
+      rubyzip (>= 1.3.0)
     orm_adapter (0.5.0)
     overcommit (0.58.0)
       childprocess (>= 0.6.3, < 5)
@@ -757,6 +761,7 @@ DEPENDENCIES
   money-rails (~> 1.12)
   mysql2 (~> 0.5)
   newrelic_rpm
+  odf-report
   overcommit (~> 0.58.0)
   packwerk
   paper_trail

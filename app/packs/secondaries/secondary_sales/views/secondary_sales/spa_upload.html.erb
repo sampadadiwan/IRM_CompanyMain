@@ -21,10 +21,12 @@
   </div>
 
 
-  <div class="field" class="form-group" data-controller="directuploads" >
-    <%= form.label :spa, "Share Purchase Agreement" %>
-    <%= form.file_field :spa, class: "form-control", direct_upload: true, multiple:false %>
-    <small class="text-muted"> Upload SPA for audit and to close out the sale. </small>
+  <div class="field" class="form-group">
+    <%= render "layouts/single_upload", form: form, field_label: "Upload SPA", 
+                              for_model: "secondary_sale", field_name: "spa", 
+                              model: @secondary_sale %>
+  
+    <small class="text-muted"> Upload SPA master for the sale. </small>
   </div>
 
   <div class="form-group">
@@ -32,8 +34,7 @@
         data: { action: "click->confirm#popup", turbo:false, method: "post", "submit-form": "#spa_upload",
                 msg: "This will freeze the final price for the sale. Post this You will need to start verifying the offers and finalizing the allocations."} %>
 
-    <%= link_to "Review Allocations",offers_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), 
-                {class: "btn btn-lg btn-success" } if policy(@secondary_sale).view_allocations? %> 
+    <%= link_to "Review Allocations",offers_path(secondary_sale_id: @secondary_sale.id, finalize_allocation: true), {class: "btn btn-lg btn-success" } if policy(@secondary_sale).view_allocations? %> 
   
   </div>
 <% end %>

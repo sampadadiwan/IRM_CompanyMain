@@ -11,8 +11,7 @@ class SecondarySale < ApplicationRecord
 
   belongs_to :entity
 
-  has_one_attached :final_allocation, service: :amazon
-  has_one_attached :spa, service: :amazon
+  include FileUploader::Attachment(:spa)
 
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true

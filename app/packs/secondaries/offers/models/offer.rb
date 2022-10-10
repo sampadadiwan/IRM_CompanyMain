@@ -116,31 +116,6 @@ class Offer < ApplicationRecord
   include ActionView::Helpers::UrlHelper
   include ActionView::Helpers
 
-  def generate_spa_pdf(cleanup: true)
-    if secondary_sale.spa_template.present?
-
-      # Build a template out of the SPA template
-      offer = self
-      template = HTMLEntities.new.decode(secondary_sale.spa_template.body.to_html)
-      html = ERB.new(template).result(binding)
-
-      # Create a PDF out of it
-      pdf = WickedPdf.new.pdf_from_string(html)
-      file_name = "Offer_#{id}_SPA.pdf"
-      save_path = Rails.root.join('tmp', file_name)
-      File.open(save_path, 'wb') do |file|
-        file << pdf
-      end
-
-      # Attach it to the offer
-      spa.attach(io: File.open("tmp/#{file_name}"), filename: "file_name-#{Time.zone.now.strftime('%F %T')}")
-
-      # Cleanup
-      File.delete("tmp/#{file_name}") if File.exist?("tmp/#{file_name}") && cleanup
-
-    end
-  end
-
   def break_offer(allocation_qtys)
     Rails.logger.debug { "breaking offer #{id} into #{allocation_qtys} pieces" }
 
@@ -153,7 +128,7 @@ class Offer < ApplicationRecord
     Offer.transaction do
       # Update the peices with the quantites
       dup_offers.each_with_index do |dup_offer, i|
-        diff =  dup_offer.allocation_quantity - allocation_qtys[i]
+        diff = dup_offer.allocation_quantity - allocation_qtys[i]
         dup_offer.allocation_quantity = allocation_qtys[i]
         dup_offer.quantity -= diff
         dup_offer.save!

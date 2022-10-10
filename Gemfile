@@ -59,6 +59,7 @@ gem 'money-rails', '~>1.12'
 gem 'xirr', git: "https://github.com/thimmaiah/xirr"
 # gem 'prometheus_exporter'
 
+gem 'odf-report'
 gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary-edge'
 

@@ -230,11 +230,7 @@
                 SPA
             </td>
             <td>
-                <% 
-                  spa = @offer.spa 
-                  spa ||= @offer.secondary_sale.spa 
-                %>
-                <%= render "/layouts/attachments" , attachments: [spa], allow_delete: "No" %>
+                <%= link_to "Download SPA", @offer.spa.url, target: "_blank", class: "btn btn-sm btn-success" if @offer.spa %>
             </td>
             </tr>
 
