@@ -22,8 +22,7 @@
       <div class="form-label alert alert-info">
         Please read the SPA template to understand the terms and conditions of the sale
       </div>
-      <%= render "/layouts/attachments" , attachments: [interest.secondary_sale.spa], 
-          allow_delete: "No" if interest.secondary_sale.spa.present? %>
+      <%= link_to "Download SPA", interest.spa.url, target: "_blank" if interest.spa.present? %>
     </div>
     <div class="form-group">
       <%= form.label :buyer_entity_name %>

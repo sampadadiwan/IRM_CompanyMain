@@ -214,8 +214,7 @@
             SPA
           </td>
           <td>
-            <% spa = interest.secondary_sale.spa.present? ? interest.secondary_sale.spa : interest.spa %>
-            <%= render "/layouts/attachments" , attachments: [spa], allow_delete: "No" %>
+            <%= link_to "Download SPA", interest.spa.url, target: "_blank", class: "btn btn-sm btn-primary" if interest.spa.present? %>
           </td>
         </tr>
 
