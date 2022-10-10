@@ -11,7 +11,8 @@ class OffersController < ApplicationController
     @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
     @offers = @offers.where(secondary_sale_id: params[:secondary_sale_id]) if params[:secondary_sale_id].present?
     @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest, holding: :funding_round)
-    @offers = @offers.page(params[:page])
+
+    @offers = @offers.page(params[:page]) unless request.format.xlsx?
 
     respond_to do |format|
       format.xlsx do

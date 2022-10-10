@@ -19,7 +19,7 @@ class SecondarySalesController < ApplicationController
     @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
     @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
 
-    @offers = @offers.page(params[:page])
+    @offers = @offers.page(params[:page]) unless request.format.xlsx?
     render "/offers/index"
   end
 

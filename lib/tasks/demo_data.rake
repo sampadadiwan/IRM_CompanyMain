@@ -447,7 +447,7 @@ namespace :irm do
         price = rand(2) > 0 ? sale.min_price : sale.max_price
         short_listed = rand(4) > 0
         escrow_deposited = rand(2) > 0
-        interest = Interest.create(entity_id: sale.entity_id, 
+        interest = FactoryBot.create(:interest, entity_id: sale.entity_id, 
             interest_entity_id: advisor.id, secondary_sale: sale,
             quantity: qty, price: price, user_id: advisor.employees.first.id, 
             short_listed: short_listed, escrow_deposited: escrow_deposited)

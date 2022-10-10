@@ -34,8 +34,10 @@ wb.add_worksheet(name: "Offers") do |sheet|
   sheet.add_row ["", "User", "Investor", "Quantity", "Holdings Percentage", "Final Price", "Allocation Percentage",
                  "Allocation Quantity", "Allocation Amount", "Approved",
                  "First Name", "Middle Name", "Last Name", "PAN", "Address",
-                 "Bank Account", "Bank Name",
-                 "Bank Routing", "Acquirer", "Verified", "Comments", "SPA File Name"]
+                 "Bank Account", "IFSC Code",
+                 "Acquirer", "Aquirer PAN", "Aquirer Entity Name",
+                 "Acquirer Address", "Aquirer Contact", "Contact Email",
+                 "Verified", "Comments", "SPA File Name"]
 
   # Create entries for each offer
   @secondary_sale.offers.approved.includes(:user, :entity, investor: :investor_entity).each do |o|
@@ -44,7 +46,10 @@ wb.add_worksheet(name: "Offers") do |sheet|
                          o.allocation_percentage,
                          o.allocation_quantity, money_to_currency(o.allocation_amount, params), o.approved,
                          o.first_name, o.middle_name, o.last_name, o.PAN, o.address,
-                         o.bank_account_number, o.bank_name, o.bank_routing_info, o.interest&.interest_entity&.name, o.verified, o.comments, "#{o.id}.pdf"]
+                         o.bank_account_number, o.ifsc_code,
+                         o.interest&.interest_entity&.name, o.interest&.PAN, o.interest&.buyer_entity_name,
+                         o.interest&.address, o.interest&.contact_name, o.interest&.email,
+                         o.verified, o.comments, "#{o.id}.pdf"]
 
     sheet.add_hyperlink location: offer_url(o), ref: row.cells.first
   end
