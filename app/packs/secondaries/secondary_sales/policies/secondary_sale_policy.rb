@@ -94,7 +94,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def generate_spa?
-    update?
+    update? && record.spa
   end
 
   def finalize_allocation?

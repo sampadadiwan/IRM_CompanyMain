@@ -433,6 +433,8 @@ namespace :irm do
 
           offer.quantity = offer.allowed_quantity
           offer.approved = rand(4) > 0
+          offer.signature = File.open("public/sample_uploads/signature.png", "rb")
+
           offer.save
           puts offer.to_json
 
@@ -447,11 +449,13 @@ namespace :irm do
         price = rand(2) > 0 ? sale.min_price : sale.max_price
         short_listed = rand(4) > 0
         escrow_deposited = rand(2) > 0
-        interest = FactoryBot.create(:interest, entity_id: sale.entity_id, 
+        interest = FactoryBot.build(:interest, entity_id: sale.entity_id, 
             interest_entity_id: advisor.id, secondary_sale: sale,
             quantity: qty, price: price, user_id: advisor.employees.first.id, 
             short_listed: short_listed, escrow_deposited: escrow_deposited)
         
+        interest.signature = File.open("public/sample_uploads/signature2.png", "rb")
+        interest.save
         puts interest.to_json
       end
       

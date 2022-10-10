@@ -10,23 +10,27 @@ class SpaJob < ApplicationJob
       # Find the sale
       secondary_sale = SecondarySale.find(secondary_sale_id)
 
-      # Downlad the SPA from the sale
-      file = secondary_sale.spa.download
-      sleep(2)
-      master_spa_path = file.path
+      if secondary_sale.spa
+        # Downlad the SPA from the sale
+        file = secondary_sale.spa.download
+        sleep(2)
+        master_spa_path = file.path
+        # For each verified offer, generate the SPA
+        secondary_sale.offers.verified.each do |offer|
+          OfferSpaGenerator.new(offer, master_spa_path)
+          succeeded += 1
+        rescue StandardError => e
+          logger.error "Error creating offer SPA for offer id #{offer.id}"
+          logger.error e.backtrace
+          failed += 1
+        end
 
-      # For each verified offer, generate the SPA
-      secondary_sale.offers.verified.each do |offer|
-        OfferSpaGenerator.new(offer, master_spa_path)
-        succeeded += 1
-      rescue StandardError => e
-        logger.error "Error creating offer SPA for offer id #{offer.id}"
-        logger.error e.backtrace
-        failed += 1
+        # cleanup
+        File.delete(master_spa_path)
+      else
+        logger.debug "SpaJob: No master SPA uploaded. Not generating SPA"
       end
 
-      # cleanup
-      File.delete(master_spa_path)
       logger.debug "SpaJob: succeeded #{succeeded}, failed #{failed}"
     end
   end
