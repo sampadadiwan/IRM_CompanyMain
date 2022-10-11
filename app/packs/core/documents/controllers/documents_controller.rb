@@ -3,7 +3,7 @@ class DocumentsController < ApplicationController
 
   include ActiveStorage::SetCurrent
 
-  before_action :set_document, only: %w[show update destroy edit]
+  before_action :set_document, only: %w[show update destroy edit sign]
   after_action :verify_authorized, except: %i[index search investor_documents oauth2callback]
   after_action :verify_policy_scoped, only: []
 
@@ -74,6 +74,8 @@ class DocumentsController < ApplicationController
   def edit
     setup_custom_fields(@document)
   end
+
+  def sign; end
 
   # POST /documents or /documents.json
   def create
@@ -153,7 +155,7 @@ class DocumentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def document_params
-    params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id,
+    params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id, :signature_enabled,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag,
                                      :tag_list, :folder_id, :file, properties: {})
   end

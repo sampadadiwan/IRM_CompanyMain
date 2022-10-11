@@ -84,6 +84,14 @@
                   <% if current_user.entity_id == @document.entity_id %>
                   <tr>
                      <td>
+                        Signature Enabled
+                     </td>
+                     <td>
+                     <%= display_boolean @document.signature_enabled %>                                                  
+                     </td>
+                  </tr>
+                  <tr>
+                     <td>
                         Allow Download
                      </td>
                      <td>

@@ -24,6 +24,10 @@ class DocumentPolicy < ApplicationPolicy
     end
   end
 
+  def sign?
+    record.signature_enabled && show?
+  end
+
   def create?
     (user.entity_id == record.entity_id && user.enable_documents) ||
       (record.owner && owner_policy.update?) ||

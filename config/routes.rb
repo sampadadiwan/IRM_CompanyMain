@@ -201,6 +201,7 @@ Rails.application.routes.draw do
   end
 
   resources :documents do
+    patch 'sign', on: :member
     get 'search', on: :collection
     get 'investor_documents', on: :collection
   end
