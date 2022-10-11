@@ -11,6 +11,8 @@ class User < ApplicationRecord
   has_many :interests, dependent: :destroy
   has_many :excercises, dependent: :destroy
 
+  include FileUploader::Attachment(:signature)
+
   # Make all models searchable
   update_index('user') { self }
 

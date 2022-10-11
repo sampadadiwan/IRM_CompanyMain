@@ -47,6 +47,16 @@
 
         <tr>
           <td>
+            Signature
+          </td>
+          <td>
+            <%= image_tag @user.signature_url, 
+              style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if @user.signature.present? %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
             Department
           </td>
           <td>

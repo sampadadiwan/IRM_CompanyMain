@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_10_135712) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_11_051245) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1326,6 +1326,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_10_135712) do
     t.string "curr_role", limit: 20
     t.bigint "permissions", default: 0, null: false
     t.string "dept", limit: 20
+    t.text "signature_data"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
