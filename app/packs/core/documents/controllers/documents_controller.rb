@@ -75,7 +75,14 @@ class DocumentsController < ApplicationController
     setup_custom_fields(@document)
   end
 
-  def sign; end
+  def sign
+    if current_user.signature
+      DocumentSignJob.perform_later(@document.id, current_user.id)
+      redirect_to document_url(@document), notice: "Document was successfully sent for signing using your attached signature."
+    else
+      redirect_to edit_user_url(current_user), alert: "Please upload your signature image."
+    end
+  end
 
   # POST /documents or /documents.json
   def create

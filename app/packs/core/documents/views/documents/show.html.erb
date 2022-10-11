@@ -28,9 +28,23 @@
                            <%= @document.name.capitalize.titleize %>
 
                         <% end %>
+
+                        
                         
                      </td>
                   </tr>
+
+                  <% if @document.from_template_id %>
+                     <tr>
+                        <td>
+                           Created from template
+                        </td>
+                        <td>
+                           <%= link_to @document.from_template.name.capitalize.titleize, @document.from_template %>
+                        </td>
+                     </tr>
+                  <% end %>
+
                   <tr>
                      <td>
                         Folder
@@ -160,6 +174,9 @@
       <%= link_to "All Documents", documents_path, {class: "btn btn-success"} %> |
       <%= button_to "Delete", @document, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %> 
    </div>
+
+   <%= button_to "Sign", sign_document_path(@document), method: :patch, class: "btn btn-success", form_class: "deleteButton", data: {action: "click->confirm#popup", msg: "You confirm that you have read the document and are ready to sign the document. Proceed?", method: :patch} if policy(@document).sign?  %> 
+
 <% end %>
 
 <%= render "documents/document_details", document: @document %>

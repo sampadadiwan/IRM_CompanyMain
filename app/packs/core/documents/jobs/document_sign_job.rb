@@ -26,7 +26,7 @@ class DocumentSignJob < ApplicationJob
 
     signed_document = Document.new(document.attributes.slice("entity_id", "name", "folder_id", "download", "printing", "owner_type", "owner_id", "user_id"))
 
-    signed_document.name = document.name + " - Signed: #{user.full_name}"
+    signed_document.name = document.name + " | Signed by #{user.full_name}"
     signed_document.file = File.open(file_name, "rb")
     signed_document.signed_by = user
     signed_document.from_template = document
