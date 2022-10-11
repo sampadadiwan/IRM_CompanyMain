@@ -29,20 +29,18 @@
 
     &nbsp;&nbsp;&nbsp;
     
-    <% if policy(@secondary_sale).update? %>      
-      <%= button_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), method: :patch, class: 
+    <%= button_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), method: :patch, class: 
           "btn btn-success", 
           data: { action: "click->confirm#popup", turbo:false, method: "patch",
-                  msg: "This will kick off the allocation process, which will take a few mins."}  %> 
+                  msg: "This will kick off the allocation process, which will take a few mins."}  if policy(@secondary_sale).allocate? %> 
+
+    
 
     <%= button_to "Generate SPA" , generate_spa_secondary_sale_path(@secondary_sale), method: :patch, class: 
-          "btn btn-success", 
-          data: { action: "click->confirm#popup", turbo:false, method: "patch",
-                  msg: "This will kick off the SPA generation process, which will take a few mins."} if policy(@secondary_sale).generate_spa?  %> 
-
-    <% end %>
-
-                                    
+    "btn btn-success", 
+    data: { action: "click->confirm#popup", turbo:false, method: "patch",
+            msg: "This will kick off the SPA generation process, which will take a few mins."} if policy(@secondary_sale).generate_spa?  %> 
+                              
 
 
     <%  if policy(@secondary_sale).view_allocations? %>

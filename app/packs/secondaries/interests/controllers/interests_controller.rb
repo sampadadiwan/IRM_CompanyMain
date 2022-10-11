@@ -174,7 +174,7 @@ class InterestsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def interest_params
     params.require(:interest).permit(:entity_id, :quantity, :price, :user_id, :verified,
-                                     :allocation_quantity, :comments, :escrow_deposited, :details,
+                                     :comments, :escrow_deposited, :details,
                                      :interest_entity_id, :secondary_sale_id, :buyer_entity_name,
                                      :address, :contact_name, :email, :PAN, :final_agreement, :signature,
                                      documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})

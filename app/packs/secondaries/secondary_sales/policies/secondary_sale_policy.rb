@@ -94,7 +94,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def generate_spa?
-    update? && record.spa
+    create? && record.spa
   end
 
   def finalize_allocation?
@@ -122,7 +122,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def allocate?
-    update?
+    create?
   end
 
   def view_allocations?
