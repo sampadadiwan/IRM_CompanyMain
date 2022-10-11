@@ -30,12 +30,29 @@ class FundDocGenerator
 
       # Can we have more than one LP signer ?
       capital_commitment_signature = add_signature(r, :investorsignature, user.signature)
+
+      investor_kyc = InvestorKyc.where(investor_id: capital_commitment.investor_id,
+                                       entity_id: capital_commitment.entity_id, user_id: user.id).first
+
+      generate_kyc_fields(r, investor_kyc)
     end
 
     report.generate("tmp/CapitalCommitment-#{capital_commitment.id}.odt")
     system("libreoffice --headless --convert-to pdf tmp/CapitalCommitment-#{capital_commitment.id}.odt --outdir tmp")
 
     File.delete(capital_commitment_signature) if capital_commitment_signature
+  end
+
+  def generate_kyc_fields(report, investor_kyc)
+    if investor_kyc
+      report.add_field :userfirstname, investor_kyc.first_name
+      report.add_field :usermiddlename, investor_kyc.middle_name
+      report.add_field :userlastname, investor_kyc.last_name
+      report.add_field :userpan, investor_kyc.PAN
+      report.add_field :useraddress, investor_kyc.address
+      report.add_field :userbankaccountnumber, investor_kyc.bank_account_number
+      report.add_field :userifsccode, investor_kyc.ifsc_code
+    end
   end
 
   def get_odt_file(file_path)
