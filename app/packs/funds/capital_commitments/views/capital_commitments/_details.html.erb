@@ -1,0 +1,20 @@
+<div class="associated_entity" data-controller="tabs tabdetails">
+
+    <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
+      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
+          data-action="click->tabdetails#loadData">Documents</a>
+    </nav>
+  
+    <div class="tab-content" data-controller="datatable">
+  
+        <div id="docs-tab" class="tab-pane fade in show active">
+          <div id="docs" class="associated_entity">
+            <%= render "/documents/index", documents: capital_commitment.documents, 
+                owner: capital_commitment, entity: capital_commitment.entity %>
+          </div>     
+        </div>  
+  
+    </div>
+  
+</div>
+  

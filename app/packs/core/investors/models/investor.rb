@@ -11,7 +11,13 @@ class Investor < ApplicationRecord
   belongs_to :entity, touch: true
   counter_culture :entity
 
+  # The InvestorAccess attached to this investor
   has_many :investor_accesses, dependent: :destroy
+  has_many :approved_investor_accesses, -> { where approved: true }, class_name: 'InvestorAccess'
+  # The users linked to the InvestorAccess
+  has_many :users, through: :investor_accesses
+  has_many :approved_users, through: :approved_investor_accesses, source: :user
+
   has_many :tasks, as: :owner, dependent: :destroy
 
   has_many :access_rights, foreign_key: :access_to_investor_id, dependent: :destroy

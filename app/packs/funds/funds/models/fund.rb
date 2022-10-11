@@ -110,4 +110,8 @@ class Fund < ApplicationRecord
       end
     end
   end
+
+  def document_tags
+    ["Template", "Fund Document"]
+  end
 end
