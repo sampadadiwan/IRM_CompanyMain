@@ -45,6 +45,17 @@
                      </tr>
                   <% end %>
 
+                  <% if @document.signed_by_id %>
+                     <tr>
+                        <td>
+                           Signed By
+                        </td>
+                        <td>
+                           <%= @document.signed_by.full_name %>
+                        </td>
+                     </tr>
+                  <% end %>
+
                   <tr>
                      <td>
                         Folder
@@ -170,13 +181,12 @@
 
 <% if policy(@document).update? %>
    <div style="display: inline-block;">
-      <%= link_to "Edit", edit_document_path(@document), {class: "btn btn-primary"} %> |
-      <%= link_to "All Documents", documents_path, {class: "btn btn-success"} %> |
+      <%= link_to "Edit", edit_document_path(@document), {class: "btn btn-primary"} %> 
+      <%= link_to "All Documents", documents_path, {class: "btn btn-success"} %> 
       <%= button_to "Delete", @document, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %> 
    </div>
-
-   <%= button_to "Sign", sign_document_path(@document), method: :patch, class: "btn btn-success", form_class: "deleteButton", data: {action: "click->confirm#popup", msg: "You confirm that you have read the document and are ready to sign the document. Proceed?", method: :patch} if policy(@document).sign?  %> 
-
 <% end %>
+
+<%= button_to "Sign", sign_document_path(@document), method: :patch, class: "btn btn-success", form_class: "deleteButton", data: {action: "click->confirm#popup", msg: "You confirm that you have read the document and are ready to sign the document. Proceed?", method: :patch} if policy(@document).sign?  %>
 
 <%= render "documents/document_details", document: @document %>

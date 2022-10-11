@@ -33,6 +33,10 @@ class DocumentSignJob < ApplicationJob
     signed_document.save
 
     File.delete(file_name)
+
+    # We also need to give permissons to this user investor to the signed document
+    investor = Investor.for(user, document.entity).first
+    AccessRight.create!(owner: signed_document, entity_id: document.entity_id, access_to_investor_id: investor.id, access_type: "Document")
   end
 
   def cleanup(document, user); end
