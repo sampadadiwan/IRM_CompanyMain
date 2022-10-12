@@ -17,31 +17,30 @@ class OfferSpaGenerator
     interest_signature = nil
 
     report = ODFReport::Report.new(master_spa_path) do |r|
-      r.add_field :effectivedate, Time.zone.today
-      r.add_field :offerquantity, offer.quantity
+      r.add_field :effective_date, Time.zone.today
+      r.add_field :offer_quantity, offer.quantity
+      r.add_field :company_name, offer.entity.name
 
-      r.add_field :allocationqty, offer.allocation_quantity
-      r.add_field :shareprice, offer.secondary_sale.final_price
-      r.add_field :allocationamount, offer.allocation_amount
+      r.add_field :allocation_quantity, offer.allocation_quantity
+      r.add_field :share_price, offer.secondary_sale.final_price
+      r.add_field :allocation_amount, offer.allocation_amount.to_s
 
-      r.add_field :sellername, [offer.first_name, offer.middle_name, offer.last_name].compact.join(" ")
-      r.add_field :selleraddress, offer.address
-      r.add_field :sellerpan, offer.PAN
-      r.add_field :selleremail, offer.user.email
-      r.add_field :sellerbankaccount, offer.bank_account_number
-      r.add_field :sellerifsccode, offer.ifsc_code
+      r.add_field :seller_name, [offer.first_name, offer.middle_name, offer.last_name].compact.join(" ")
+      r.add_field :seller_address, offer.address
+      r.add_field :seller_pan, offer.PAN
+      r.add_field :seller_email, offer.user.email
+      r.add_field :seller_bank_account, offer.bank_account_number
+      r.add_field :seller_ifsc_code, offer.ifsc_code
 
-      offer_signature = add_signature(r, :sellersignature, offer.signature)
+      offer_signature = add_signature(r, :seller_signature, offer.signature)
 
-      r.add_field :buyername, offer.interest&.buyer_entity_name
-      r.add_field :buyeraddress, offer.interest&.address
-      r.add_field :buyeremail, offer.interest&.email
-      r.add_field :buyerpan, offer.interest&.PAN
-      r.add_field :buyercontact, offer.interest&.contact_name
+      r.add_field :buyer_name, offer.interest&.buyer_entity_name
+      r.add_field :buyer_address, offer.interest&.address
+      r.add_field :buyer_email, offer.interest&.email
+      r.add_field :buyer_pan, offer.interest&.PAN
+      r.add_field :buyer_contact, offer.interest&.contact_name
 
-      interest_signature = add_signature(r, :buyersignature, offer.interest&.signature)
-
-      r.add_field :companyname, offer.entity.name
+      interest_signature = add_signature(r, :buyer_signature, offer.interest&.signature)
     end
 
     report.generate("tmp/Offer-#{offer.id}.odt")

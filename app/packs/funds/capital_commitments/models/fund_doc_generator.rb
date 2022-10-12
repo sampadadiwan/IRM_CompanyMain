@@ -21,15 +21,15 @@ class FundDocGenerator
     odt_file_path = get_odt_file(fund_doc_template_path)
 
     report = ODFReport::Report.new(odt_file_path) do |r|
-      r.add_field :companyname, capital_commitment.entity.name
-      r.add_field :fundname, capital_commitment.fund.name
-      r.add_field :funddetails, capital_commitment.fund.details
+      r.add_field :company_name, capital_commitment.entity.name
+      r.add_field :fund_name, capital_commitment.fund.name
+      r.add_field :fund_details, capital_commitment.fund.details
 
-      r.add_field :investorname, capital_commitment.investor.investor_name
-      r.add_field :committedamount, capital_commitment.committed_amount.to_s
+      r.add_field :investor_name, capital_commitment.investor.investor_name
+      r.add_field :committed_amount, capital_commitment.committed_amount.to_s
 
       # Can we have more than one LP signer ?
-      capital_commitment_signature = add_signature(r, :investorsignature, user.signature)
+      capital_commitment_signature = add_signature(r, :investor_signature, user.signature)
 
       investor_kyc = InvestorKyc.where(investor_id: capital_commitment.investor_id,
                                        entity_id: capital_commitment.entity_id, user_id: user.id).first
@@ -45,13 +45,13 @@ class FundDocGenerator
 
   def generate_kyc_fields(report, investor_kyc)
     if investor_kyc
-      report.add_field :userfirstname, investor_kyc.first_name
-      report.add_field :usermiddlename, investor_kyc.middle_name
-      report.add_field :userlastname, investor_kyc.last_name
-      report.add_field :userpan, investor_kyc.PAN
-      report.add_field :useraddress, investor_kyc.address
-      report.add_field :userbankaccountnumber, investor_kyc.bank_account_number
-      report.add_field :userifsccode, investor_kyc.ifsc_code
+      report.add_field :user_first_name, investor_kyc.first_name
+      report.add_field :user_middle_name, investor_kyc.middle_name
+      report.add_field :user_last_name, investor_kyc.last_name
+      report.add_field :user_pan, investor_kyc.PAN
+      report.add_field :user_address, investor_kyc.address
+      report.add_field :user_bank_account_number, investor_kyc.bank_account_number
+      report.add_field :user_ifsc_code, investor_kyc.ifsc_code
     end
   end
 
