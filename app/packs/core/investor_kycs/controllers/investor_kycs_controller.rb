@@ -75,6 +75,6 @@ class InvestorKycsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_kyc_params
-    params.require(:investor_kyc).permit(:investor_id, :entity_id, :user_id, :first_name, :middle_name, :last_name, :PAN, :pan_card, :signature, :address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :bank_verification_status, :pan_verified, :pan_verification_response, :pan_verification_status, :comments, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:investor_kyc).permit(:investor_id, :entity_id, :user_id, :first_name, :middle_name, :last_name, :PAN, :pan_card, :signature, :address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :bank_verification_status, :pan_verified, :pan_verification_response, :pan_verification_status, :comments, :verified, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

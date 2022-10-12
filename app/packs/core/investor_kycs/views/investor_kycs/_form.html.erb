@@ -74,12 +74,20 @@
   </div>
 
   <% if current_user.entity_id == investor_kyc.entity_id %>
-  <div class="form-group">
-    <%= form.label :bank_verified %>
-    <%= form.check_box :bank_verified, class: "form-control form-checkbox"  %>
-  </div>
+
+    <div class="form-group">
+      <%= form.label :bank_verified %>
+      <%= form.check_box :bank_verified, class: "form-control form-checkbox"  %>
+    </div>
+    <div class="form-group">
+      <%= form.label :verified, "KYC Verified" %>
+      <%= form.check_box :verified, class: "form-control form-checkbox"  %>
+      <small>Check if you have confirmed all the details in the KYC and mark as verified</small>
+    </div>
+
   <% end %>
 
+  
   <%= custom_form_fields(investor_kyc, form) %>
 
   <div class="form-group">

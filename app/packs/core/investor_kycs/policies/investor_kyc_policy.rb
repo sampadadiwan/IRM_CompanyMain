@@ -1,7 +1,7 @@
 class InvestorKycPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.curr_role.to_sym == :startup
+      if %i[startup fund_manager].include? user.curr_role.to_sym
         scope.where(entity_id: user.entity_id)
       else
         scope.where(user_id: user.id)
