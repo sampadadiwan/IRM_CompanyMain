@@ -72,8 +72,7 @@ class DocumentsController < ApplicationController
   end
 
   def signed_accept
-    @document.signed_by_accept = true
-    @document.save
+    @document.signed_accept
     redirect_to document_url(@document), notice: "Document was successfully marked as accepted by you."
   end
 
