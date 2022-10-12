@@ -46,7 +46,10 @@ Rails.application.routes.draw do
     post 'reminder', on: :member
   end
 
-  resources :capital_commitments
+  resources :capital_commitments do
+    patch 'generate_documentation', on: :member
+  end
+
   resources :funds do
     get   'timeline', on: :member
   end

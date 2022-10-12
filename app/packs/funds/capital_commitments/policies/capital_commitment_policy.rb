@@ -32,6 +32,10 @@ class CapitalCommitmentPolicy < ApplicationPolicy
     create?
   end
 
+  def generate_documentation?
+    update?
+  end
+
   def edit?
     update?
   end

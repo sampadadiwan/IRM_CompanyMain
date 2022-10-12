@@ -1,5 +1,5 @@
 class CapitalCommitmentsController < ApplicationController
-  before_action :set_capital_commitment, only: %i[show edit update destroy]
+  before_action :set_capital_commitment, only: %i[show edit update destroy generate_documentation]
 
   # GET /capital_commitments or /capital_commitments.json
   def index
@@ -9,6 +9,11 @@ class CapitalCommitmentsController < ApplicationController
 
   # GET /capital_commitments/1 or /capital_commitments/1.json
   def show; end
+
+  def generate_documentation
+    CapitalCommitmentDocJob.perform_later(@capital_commitment.id)
+    redirect_to capital_commitment_url(@capital_commitment), notice: "Documentation generation started, please check back in a few mins."
+  end
 
   # GET /capital_commitments/new
   def new

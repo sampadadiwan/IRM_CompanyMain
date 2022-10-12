@@ -59,10 +59,17 @@
 
   <div>
     <% if policy(@capital_commitment).update? %>
-      <%= link_to "Edit" , edit_capital_commitment_path(@capital_commitment), {class: "btn btn-primary" } %> |
+      <%= link_to "Edit" , edit_capital_commitment_path(@capital_commitment), {class: "btn btn-primary" } %> 
       <%= button_to "Delete" , @capital_commitment, method: :delete, class: "btn btn-danger" ,
             form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
     <% end %>
+
+    <%= button_to "Generate Documentation", 
+        generate_documentation_capital_commitment_path(@capital_commitment), 
+        method: :patch, class: "btn btn-success" , 
+        form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+        msg: "Generate documentation for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"} if policy(@capital_commitment).generate_documentation? %>
+
   </div>
 
   

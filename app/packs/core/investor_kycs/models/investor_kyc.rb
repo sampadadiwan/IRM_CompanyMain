@@ -5,6 +5,8 @@ class InvestorKyc < ApplicationRecord
   belongs_to :entity
   belongs_to :user
 
+  scope :verified, -> { where(verified: true) }
+
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
 
