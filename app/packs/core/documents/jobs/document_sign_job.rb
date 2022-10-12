@@ -1,5 +1,6 @@
 class DocumentSignJob < ApplicationJob
   queue_as :default
+  attr_accessor :working_dir
 
   def perform(document_id, user_id)
     document = Document.find(document_id).freeze
@@ -7,10 +8,16 @@ class DocumentSignJob < ApplicationJob
 
     if document.signature_enabled && user.signature
       Chewy.strategy(:sidekiq) do
-        file_path = download_file(document)
-        convert(file_path, document, user)
-        upload(document, user)
-        cleanup(document, user)
+        # Download and then delete the tempfile after processing
+        # https://shrinerb.com/docs/retrieving-uploads#downloading
+        document.file.download do |tempfile|
+          file_path = tempfile.path
+          create_working_dir(document, user)
+          convert(file_path, document, user)
+          upload(document, user)
+        ensure
+          cleanup
+        end
       end
     else
       logger.error "Document #{document_id} is not signature enabled" unless document.signature_enabled
@@ -20,8 +27,21 @@ class DocumentSignJob < ApplicationJob
 
   private
 
+  def working_dir_path(document, user)
+    "tmp/document_sign_job/#{document.id}-#{user.id}"
+  end
+
+  def create_working_dir(document, user)
+    @working_dir = working_dir_path(document, user)
+    FileUtils.mkdir_p @working_dir
+  end
+
+  def cleanup
+    FileUtils.rm_rf(@working_dir)
+  end
+
   def upload(document, user)
-    file_name = "tmp/Document-#{document.id}-#{user.id}.signed.pdf"
+    file_name = "#{@working_dir}/Document-#{document.id}-#{user.id}.signed.pdf"
     Rails.logger.debug { "Uploading new signed file #{file_name}" }
 
     signed_document = Document.new(document.attributes.slice("entity_id", "name", "folder_id", "download", "printing", "owner_type", "owner_id", "user_id"))
@@ -32,8 +52,6 @@ class DocumentSignJob < ApplicationJob
     signed_document.from_template = document
     signed_document.save
 
-    File.delete(file_name)
-
     # We also need to give permissons to this user investor to the signed document
     investor = Investor.for(user, document.entity).first
     if investor
@@ -43,13 +61,6 @@ class DocumentSignJob < ApplicationJob
 
     # Send email to user to accept the signed document
     DocumentMailer.with(id: signed_document.id).notify_signed.deliver_later
-  end
-
-  def cleanup(document, user); end
-
-  def download_file(document)
-    file = document.file.download
-    file.path
   end
 
   # file_path is a docx template file with a placeholder singature image named investorsignature
@@ -64,22 +75,20 @@ class DocumentSignJob < ApplicationJob
     report = ODFReport::Report.new(odt_file_path) do |r|
       user_signature = add_signature(r, :investor_signature, user.signature)
     end
-    report.generate("tmp/#{file_name}.signed.odt")
+    report.generate("#{@working_dir}/#{file_name}.signed.odt")
 
     # Convert the signed odt to pdf
-    Rails.logger.debug { "Converting tmp/#{file_name}.signed.odt to pdf" }
-    system("libreoffice --headless --convert-to pdf tmp/#{file_name}.signed.odt --outdir tmp")
+    Rails.logger.debug { "Converting #{@working_dir}/#{file_name}.signed.odt to pdf" }
+    system("libreoffice --headless --convert-to pdf #{@working_dir}/#{file_name}.signed.odt --outdir #{@working_dir}")
 
     Rails.logger.debug "Deleting tmp files"
     File.delete(user_signature) if user_signature
-    File.delete(odt_file_path) if odt_file_path
-    File.delete(file_path) if odt_file_path
   end
 
   def get_odt_file(file_path)
     Rails.logger.debug { "Converting #{file_path} to odt" }
-    system("libreoffice --headless --convert-to odt #{file_path} --outdir tmp")
-    "tmp/#{File.basename(file_path, '.*')}.odt"
+    system("libreoffice --headless --convert-to odt #{file_path} --outdir #{@working_dir}")
+    "#{@working_dir}/#{File.basename(file_path, '.*')}.odt"
   end
 
   def add_signature(report, field_name, signature)

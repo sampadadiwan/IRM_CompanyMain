@@ -1,17 +1,33 @@
 class FundDocGenerator
+  attr_accessor :working_dir
+
   # capital_commitment - we want to generate the document for this CapitalCommitment
   # fund document template - the document are we using as  template for generation
   # user - The investor user, whose kyc data and signature will be used
   def initialize(capital_commitment, fund_doc_template, user)
-    fund_doc_template_path = download_fund_doc_template(fund_doc_template)
-    generate(capital_commitment, fund_doc_template_path, user)
-    upload(fund_doc_template, user, capital_commitment)
-    cleanup(capital_commitment)
+    fund_doc_template.file.download do |tempfile|
+      fund_doc_template_path = tempfile.path
+      create_working_dir(capital_commitment)
+      generate(capital_commitment, fund_doc_template_path, user)
+      upload(fund_doc_template, user, capital_commitment)
+    ensure
+      cleanup
+    end
   end
 
-  def download_fund_doc_template(fund_doc_template)
-    file = fund_doc_template.file.download
-    file.path
+  private
+
+  def working_dir_path(capital_commitment)
+    "tmp/fund_doc_generator/#{capital_commitment.id}"
+  end
+
+  def create_working_dir(capital_commitment)
+    @working_dir = working_dir_path(capital_commitment)
+    FileUtils.mkdir_p @working_dir
+  end
+
+  def cleanup
+    FileUtils.rm_rf(@working_dir)
   end
 
   # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
@@ -37,8 +53,8 @@ class FundDocGenerator
       generate_kyc_fields(r, investor_kyc)
     end
 
-    report.generate("tmp/CapitalCommitment-#{capital_commitment.id}.odt")
-    system("libreoffice --headless --convert-to pdf tmp/CapitalCommitment-#{capital_commitment.id}.odt --outdir tmp")
+    report.generate("#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.odt")
+    system("libreoffice --headless --convert-to pdf #{@working_dir}/CapitalCommitment-#{capital_commitment.id}.odt --outdir #{@working_dir}")
 
     File.delete(capital_commitment_signature) if capital_commitment_signature
   end
@@ -57,8 +73,8 @@ class FundDocGenerator
 
   def get_odt_file(file_path)
     Rails.logger.debug { "Converting #{file_path} to odt" }
-    system("libreoffice --headless --convert-to odt #{file_path} --outdir tmp")
-    "tmp/#{File.basename(file_path, '.*')}.odt"
+    system("libreoffice --headless --convert-to odt #{file_path} --outdir #{@working_dir}")
+    "#{@working_dir}/#{File.basename(file_path, '.*')}.odt"
   end
 
   def add_signature(report, field_name, signature)
@@ -71,7 +87,7 @@ class FundDocGenerator
   end
 
   def upload(document, user, capital_commitment)
-    file_name = "tmp/CapitalCommitment-#{capital_commitment.id}.pdf"
+    file_name = "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf"
     Rails.logger.debug { "Uploading new signed file #{file_name}" }
 
     signed_document = Document.new(document.attributes.slice("entity_id", "name", "folder_id", "download", "printing", "user_id"))
@@ -83,12 +99,5 @@ class FundDocGenerator
     signed_document.owner = capital_commitment
 
     signed_document.save
-
-    File.delete(file_name)
-  end
-
-  def cleanup(capital_commitment)
-    File.delete("tmp/CapitalCommitment-#{capital_commitment.id}.odt")
-    # File.delete("tmp/CapitalCommitment-#{capital_commitment.id}.pdf")
   end
 end

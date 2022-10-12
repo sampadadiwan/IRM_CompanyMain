@@ -1,9 +1,28 @@
 class OfferSpaGenerator
+  attr_accessor :working_dir
+
   def initialize(offer, master_spa_path = nil)
+    create_working_dir(offer)
     master_spa_path ||= download_master_spa(offer)
     generate(offer, master_spa_path)
     attach(offer)
-    cleanup(offer)
+  ensure
+    cleanup
+  end
+
+  private
+
+  def working_dir_path(offer)
+    "tmp/offer_spa_generator/#{offer.id}"
+  end
+
+  def create_working_dir(offer)
+    @working_dir = working_dir_path(offer)
+    FileUtils.mkdir_p @working_dir
+  end
+
+  def cleanup
+    FileUtils.rm_rf(@working_dir)
   end
 
   def download_master_spa(offer)
@@ -11,12 +30,20 @@ class OfferSpaGenerator
     file.path
   end
 
+  def get_odt_file(file_path)
+    Rails.logger.debug { "Converting #{file_path} to odt" }
+    system("libreoffice --headless --convert-to odt #{file_path} --outdir #{@working_dir}")
+    "#{@working_dir}/#{File.basename(file_path, '.*')}.odt"
+  end
+
   # master_spa_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
   def generate(offer, master_spa_path)
     offer_signature = nil
     interest_signature = nil
 
-    report = ODFReport::Report.new(master_spa_path) do |r|
+    odt_file_path = get_odt_file(master_spa_path)
+
+    report = ODFReport::Report.new(odt_file_path) do |r|
       r.add_field :effective_date, Time.zone.today
       r.add_field :offer_quantity, offer.quantity
       r.add_field :company_name, offer.entity.name
@@ -43,8 +70,8 @@ class OfferSpaGenerator
       interest_signature = add_signature(r, :buyer_signature, offer.interest&.signature)
     end
 
-    report.generate("tmp/Offer-#{offer.id}.odt")
-    system("libreoffice --headless --convert-to pdf tmp/Offer-#{offer.id}.odt --outdir tmp")
+    report.generate("#{@working_dir}/Offer-#{offer.id}.odt")
+    system("libreoffice --headless --convert-to pdf #{@working_dir}/Offer-#{offer.id}.odt --outdir #{@working_dir}")
 
     File.delete(offer_signature) if offer_signature
     File.delete(interest_signature) if interest_signature
@@ -60,12 +87,7 @@ class OfferSpaGenerator
   end
 
   def attach(offer)
-    offer.spa = File.open("tmp/Offer-#{offer.id}.pdf", "rb")
+    offer.spa = File.open("#{@working_dir}/Offer-#{offer.id}.pdf", "rb")
     offer.save
-  end
-
-  def cleanup(offer)
-    File.delete("tmp/Offer-#{offer.id}.odt")
-    File.delete("tmp/Offer-#{offer.id}.pdf")
   end
 end
