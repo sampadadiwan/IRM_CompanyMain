@@ -104,6 +104,12 @@ class Document < ApplicationRecord
     DocumentMailer.with(id:).notify_signed_accepted.deliver_later
   end
 
+  after_create :notify_signed, if: :signed_by_id
+  def notify_signed
+    # Send email to user to accept the signed document
+    DocumentMailer.with(id:).notify_signed.deliver_later
+  end
+
   def access_rights_changed(access_right_id)
     DocumentMailer.with(access_right_id:).notify_signature_required.deliver_later
   end
