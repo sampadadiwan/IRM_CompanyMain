@@ -28,11 +28,16 @@ class DocumentPolicy < ApplicationPolicy
     record.signature_enabled && show?
   end
 
+  def signed_accept?
+    record.signed_by_id == user.id && !record.signed_by_accept
+  end
+
   def create?
     (user.entity_id == record.entity_id && user.enable_documents) ||
       (record.owner && owner_policy.update?) ||
-      # The DealInvestor is the only case where other users can attach documents to the DealInvestor which is not created by them
-      (record.owner && record.owner_type == "DealInvestor" && owner_policy.show?)
+      # The DealInvestor/CapitalCommitment are cases where other users can attach documents to the document owner which is not created by them
+      (record.owner && record.owner_type == "DealInvestor" && owner_policy.show?) ||
+      (record.owner && record.owner_type == "CapitalCommitment" && owner_policy.show?)
   end
 
   def new?
@@ -40,9 +45,11 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def update?
-    create? ||
+    (
+      create? ||
       (record.owner && owner_policy.update?) ||
       allow_external?(:write)
+    ) && !record.signed_by_accept # Ensure signed and accepted documents cannot be changed
   end
 
   def edit?
@@ -50,7 +57,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def destroy?
-    update?
+    update? && record.entity_id == user.entity_id
   end
 
   def show_investor?

@@ -36,7 +36,13 @@ class DocumentSignJob < ApplicationJob
 
     # We also need to give permissons to this user investor to the signed document
     investor = Investor.for(user, document.entity).first
-    AccessRight.create!(owner: signed_document, entity_id: document.entity_id, access_to_investor_id: investor.id, access_type: "Document")
+    if investor
+      AccessRight.create!(owner: signed_document, entity_id: document.entity_id,
+                          access_to_investor_id: investor.id, access_type: "Document")
+    end
+
+    # Send email to user to accept the signed document
+    DocumentMailer.with(id: signed_document.id).notify_signed.deliver_later
   end
 
   def cleanup(document, user); end
@@ -56,7 +62,7 @@ class DocumentSignJob < ApplicationJob
     Rails.logger.debug { "Signing document #{odt_file_path}" }
     user_signature = nil
     report = ODFReport::Report.new(odt_file_path) do |r|
-      user_signature = add_signature(r, :investorsignature, user.signature)
+      user_signature = add_signature(r, :investor_signature, user.signature)
     end
     report.generate("tmp/#{file_name}.signed.odt")
 

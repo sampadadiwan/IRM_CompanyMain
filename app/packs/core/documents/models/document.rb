@@ -96,4 +96,15 @@ class Document < ApplicationRecord
   def image?
     file&.mime_type&.include?('image')
   end
+
+  def signed_accept
+    self.signed_by_accept = true
+    save
+    # Send email confirming the document was saved
+    DocumentMailer.with(id:).notify_signed_accepted.deliver_later
+  end
+
+  def access_rights_changed(access_right_id)
+    DocumentMailer.with(access_right_id:).notify_signature_required.deliver_later
+  end
 end

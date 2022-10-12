@@ -1,0 +1,16 @@
+Dear User
+
+<p>
+    The firm <%= @document.entity.name %> has requested your acceptance of the document <%= @document.name %> signed by you. 
+
+    <ul>
+        <li>
+            Please click the button below and read through the document
+        </li>
+        <li>
+            Please click on the "Accept" button in the document
+        </li>
+    </ul>
+</p>
+
+<p class="btn btn-primary"><%= link_to 'View Document', document_url(@document, subdomain: @document.entity.sub_domain) %></p>

@@ -1,5 +1,17 @@
 <%= render "/layouts/alerts" %>
 
+<% if policy(@document).signed_accept? %>
+   <div class="alert alert-danger">
+      Please read through the document and accept it by clicking on the Accept button.
+   </div>
+<% end %>
+
+<% if policy(@document).sign? %>
+   <div class="alert alert-danger">
+      Please read through the document and sign it by clicking on the Sign button.
+   </div>
+<% end %>
+
 <div class="row">
 
     <div class="col-lg-12 mb-4">
@@ -52,6 +64,11 @@
                         </td>
                         <td>
                            <%= @document.signed_by.full_name %>
+                           <% if @document.signed_by_accept %>
+                              <span class="badge badge-success">Accepted</span>
+                           <% else %>
+                              <span class="badge badge-warning">Not Accepted</span>
+                           <% end %>
                         </td>
                      </tr>
                   <% end %>
@@ -183,10 +200,12 @@
    <div style="display: inline-block;">
       <%= link_to "Edit", edit_document_path(@document), {class: "btn btn-primary"} %> 
       <%= link_to "All Documents", documents_path, {class: "btn btn-success"} %> 
-      <%= button_to "Delete", @document, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %> 
+      <%= button_to "Delete", @document, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@document).destroy? %> 
    </div>
 <% end %>
 
 <%= button_to "Sign", sign_document_path(@document), method: :patch, class: "btn btn-success", form_class: "deleteButton", data: {action: "click->confirm#popup", msg: "You confirm that you have read the document and are ready to sign the document. Proceed?", method: :patch} if policy(@document).sign?  %>
+
+<%= button_to "Accept", signed_accept_document_path(@document), method: :patch, class: "btn btn-success", form_class: "deleteButton", data: {action: "click->confirm#popup", msg: "You confirm that you have read the document and accept the contents of the document. Proceed?", method: :patch} if policy(@document).signed_accept?  %>
 
 <%= render "documents/document_details", document: @document %>

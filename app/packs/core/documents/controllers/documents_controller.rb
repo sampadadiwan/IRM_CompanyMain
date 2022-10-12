@@ -3,8 +3,8 @@ class DocumentsController < ApplicationController
 
   include ActiveStorage::SetCurrent
 
-  before_action :set_document, only: %w[show update destroy edit sign]
-  after_action :verify_authorized, except: %i[index search investor_documents oauth2callback]
+  before_action :set_document, only: %w[show update destroy edit sign signed_accept]
+  after_action :verify_authorized, except: %i[index search investor_documents]
   after_action :verify_policy_scoped, only: []
 
   impressionist actions: [:show]
@@ -25,10 +25,6 @@ class DocumentsController < ApplicationController
     @documents = @documents.where(folder_id: params[:folder_id]) if params[:folder_id].present?
     @documents = @documents.order(id: :desc)
     @documents = @documents.includes(:folder, tags: :taggings).page params[:page]
-  end
-
-  def oauth2callback
-    redirect_to dashboard_entities_path
   end
 
   def investor_documents
@@ -75,10 +71,16 @@ class DocumentsController < ApplicationController
     setup_custom_fields(@document)
   end
 
+  def signed_accept
+    @document.signed_by_accept = true
+    @document.save
+    redirect_to document_url(@document), notice: "Document was successfully marked as accepted by you."
+  end
+
   def sign
     if current_user.signature
       DocumentSignJob.perform_later(@document.id, current_user.id)
-      redirect_to document_url(@document), notice: "Document was successfully sent for signing using your attached signature."
+      redirect_to root_url, notice: "Document was successfully sent for signing using your attached signature."
     else
       redirect_to edit_user_url(current_user), alert: "Please upload your signature image."
     end

@@ -1,0 +1,7 @@
+Dear User
+
+<p>
+    Thank you for accepting the document <%= @document.name %> from <%= @document.entity.name %>. Your acceptance has been recorded.
+</p>
+
+<p class="btn btn-primary"><%= link_to 'View Document', document_url(@document, subdomain: @document.entity.sub_domain) %></p>

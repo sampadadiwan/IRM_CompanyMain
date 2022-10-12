@@ -1,0 +1,16 @@
+Dear User
+
+<p>
+    The firm <%= @document.entity.name %> has requested your verification of and signature on the document <%= @document.name %>. 
+
+    <ul>
+        <li>
+            Please click the button below and read through the document
+        </li>
+        <li>
+            Please click on the "Sign" button in the document
+        </li>
+    </ul>
+</p>
+
+<p class="btn btn-primary"><%= link_to 'View Document', document_url(@document, subdomain: @document.entity.sub_domain) %></p>
