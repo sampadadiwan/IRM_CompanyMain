@@ -157,6 +157,6 @@ class Offer < ApplicationRecord
 
   after_save :generate_spa
   def generate_spa
-    OfferSpaJob.perform_later(id) if saved_change_to_verified? && verified
+    OfferSpaJob.perform_later(id) if secondary_sale.spa && saved_change_to_verified? && verified
   end
 end

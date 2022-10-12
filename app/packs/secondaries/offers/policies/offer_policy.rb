@@ -54,7 +54,7 @@ class OfferPolicy < ApplicationPolicy
     (
       (user.id == record.user_id) ||
       (user.entity_id == record.entity_id && record.secondary_sale.manage_offers) # && !record.approved
-    ) && !record.secondary_sale.lock_allocations
+    ) && !record.verified # && !record.secondary_sale.lock_allocations
   end
 
   def allocation_form?
