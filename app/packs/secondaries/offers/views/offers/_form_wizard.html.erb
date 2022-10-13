@@ -43,16 +43,6 @@
                     <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
                 </div>
 
-                <% if offer.spa.present? %>
-                    <div class="form-group">
-                        <div class="form-label alert alert-info">
-                            Please read the <%= link_to "SPA", offer.spa.url, target: "_blank", class: "btn btn-sm btn-primary" %> to understand the terms and conditions of the sale
-                        </div>
-                        
-                    </div>
-                <% end %>
-
-
                 <div class="form-group">
                     <%= form.label :secondary_sale %>
                     <%= form.text_field :secondary_sale_name, class: "form-control", disabled: true, value: offer.secondary_sale.name  %>
@@ -194,10 +184,10 @@
                     
                     </div>
 
-                    <div class="form-group">
+                    <!-- <div class="form-group">
                         <%= form.label :final_agreement, "I agree to enter into the SPA" %>
                         <%= form.check_box :final_agreement, class: "form-control form-checkbox"  %>
-                    </div>
+                    </div> -->
 
                     <div class="form-group">
                         <%= form.submit "Save", {class: "btn btn-primary btn-lg"}%>

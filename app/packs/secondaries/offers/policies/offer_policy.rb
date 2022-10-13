@@ -43,7 +43,7 @@ class OfferPolicy < ApplicationPolicy
   end
 
   def accept_spa?
-    update? && record.approved && !record.final_agreement
+    record.holding.user_id == user.id && record.verified && !record.final_agreement
   end
 
   def new?
