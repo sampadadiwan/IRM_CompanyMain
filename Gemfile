@@ -141,6 +141,7 @@ end
 
 group :development do
   gem 'packwerk'
+  gem 'pry-byebug'
   gem 'stimpack'
   gem "strong_migrations"
   # Use console on exceptions pages [https://github.com/rails/web-console]
