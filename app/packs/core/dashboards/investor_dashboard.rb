@@ -50,7 +50,6 @@ class InvestorDashboard < Administrate::BaseDashboard
   # an array of attributes that will be displayed
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
-    investor_name
     investor_entity
     entity
     category

@@ -3,7 +3,7 @@
 
     <div class="associated_entity">
         <%= render "/funds/index",  
-            funds: current_user.entity.funds if current_user.enable_funds %>
+            funds: current_user.entity.funds.includes(:entity) if current_user.enable_funds %>
     </div>
     <div class="associated_entity" >
         <%= render "/investment_opportunities/index",  

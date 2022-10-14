@@ -84,7 +84,7 @@
     </small>
   </div>
 
-  <% if Entity::SECONDARY_BUYERS.include? user.entity.entity_type %>
+  <% if Entity::SECONDARY_BUYERS.include? user.entity&.entity_type %>
   <div class="form-group">
     <%= form.label :sale_notification, "Receive secondary sale notifications" %>
     <%= form.check_box :sale_notification, class: "form-control form-checkbox" %>

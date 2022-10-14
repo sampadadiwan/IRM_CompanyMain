@@ -1,0 +1,12 @@
+<% if @current_entity %>
+    <% if @current_entity.logo.url %>
+        <%= image_tag(@current_entity.logo.url, class: "logo") %>
+    <% else %>
+        <div class="h1">Welcome to <%= @current_entity.name %></div>        
+    <% end %>
+    <div>
+        <small    ll class="text-muted">Powered by CapHive</small>
+    </div>
+<% else %>
+    <%= image_tag("/img/logo_big.png", class: "devise-logo") %>
+<% end %>

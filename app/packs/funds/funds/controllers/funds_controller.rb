@@ -3,7 +3,7 @@ class FundsController < ApplicationController
 
   # GET /funds or /funds.json
   def index
-    @funds = policy_scope(Fund)
+    @funds = policy_scope(Fund).includes(:entity)
   end
 
   # GET /funds/1 or /funds/1.json
