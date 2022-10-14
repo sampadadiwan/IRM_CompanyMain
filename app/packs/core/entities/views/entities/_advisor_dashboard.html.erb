@@ -1,3 +1,12 @@
 <%= render "/entities/advisor_stats" %>
+
+<% if current_user.entity.enable_funds %>
+<div class="associated_entity">
+    <%= render "/funds/index", funds: @current_entity ? policy_scope(@current_entity.funds) : policy_scope(Fund) %>
+</div>
+<% end %>
+
 <% @entities = Entity.for_investor(current_user) %>
-<%= render "/entities/index", entities: @entities, vc_view: true %>
+<div class="associated_entity">
+    <%= render "/entities/index", entities: @entities, vc_view: true %>
+</div>

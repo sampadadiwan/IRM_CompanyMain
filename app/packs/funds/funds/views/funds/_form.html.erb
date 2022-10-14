@@ -29,6 +29,16 @@
     <%= form.text_field :tag_list, class: "form-control"  %>
   </div>
 
+  <div class="form-group">
+    <%= form.label :show_valuations, "Show fund valuations to LPs" %>
+    <%= form.check_box :show_valuations, class: "form-control form-checkbox"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :show_fund_ratios, "Show fund ratios to LPs" %>
+    <%= form.check_box :show_fund_ratios, class: "form-control form-checkbox"  %>
+  </div>
+
   <%= custom_form_fields(fund, form) %>
 
   <div class="form-group">

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_12_054321) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_14_080651) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -609,6 +609,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_12_054321) do
     t.bigint "form_type_id"
     t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "funding_round_id", null: false
+    t.boolean "show_valuations", default: false
+    t.boolean "show_fund_ratios", default: false
     t.index ["entity_id"], name: "index_funds_on_entity_id"
     t.index ["form_type_id"], name: "index_funds_on_form_type_id"
     t.index ["funding_round_id"], name: "index_funds_on_funding_round_id"

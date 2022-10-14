@@ -25,15 +25,23 @@
 
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#valuations-tab"
             data-action="click->tabdetails#loadData">Valuations</a>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-ratios-tab"
+            data-action="click->tabdetails#loadData">Fund Ratios</a>
       <% else %>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-remittances-tab"
             data-action="click->tabdetails#loadData">Capital Calls</a>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-distribution-payments-tab"
             data-action="click->tabdetails#loadData">Capital Distributions</a>
+        <% if fund.show_valuations %>
+          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#valuations-tab"
+              data-action="click->tabdetails#loadData">Valuations</a>
+        <% end %>
+        <% if fund.show_fund_ratios %>
+          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-ratios-tab"
+              data-action="click->tabdetails#loadData">Fund Ratios</a>
+        <% end %>
       <% end %>
 
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-ratios-tab"
-          data-action="click->tabdetails#loadData">Fund Ratios</a>
 
     </nav>
   

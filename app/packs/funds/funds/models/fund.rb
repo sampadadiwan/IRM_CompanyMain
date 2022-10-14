@@ -38,10 +38,9 @@ class Fund < ApplicationRecord
     investor_list.uniq
   end
 
-  def self.for_investor(user)
-    Fund
-      # Ensure the access rghts for Document
-      .joins(:access_rights)
+  scope :for_investor, lambda { |user|
+    # Ensure the access rghts for Document
+    joins(:access_rights)
       .merge(AccessRight.access_filter)
       .joins(entity: :investors)
       # Ensure that the user is an investor and tis investor has been given access rights
@@ -50,7 +49,7 @@ class Fund < ApplicationRecord
       # Ensure this user has investor access
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
-  end
+  }
 
   def to_s
     name

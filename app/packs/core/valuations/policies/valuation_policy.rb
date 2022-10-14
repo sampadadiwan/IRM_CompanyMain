@@ -1,10 +1,10 @@
 class ValuationPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
-        scope.all
-      else
+      if user.curr_role == "startup" || user.curr_role == "fund_manager"
         scope.where(entity_id: user.entity_id)
+      else
+        scope.none
       end
     end
   end
@@ -14,11 +14,12 @@ class ValuationPolicy < ApplicationPolicy
   end
 
   def show?
-    user.has_cached_role?(:super) || (user.entity_id == record.entity_id)
+    (user.entity_id == record.entity_id) ||
+      (record.owner && owner_policy.show?)
   end
 
   def create?
-    user.has_cached_role?(:super) || (user.entity_id == record.entity_id)
+    (user.entity_id == record.entity_id)
   end
 
   def new?
@@ -35,5 +36,9 @@ class ValuationPolicy < ApplicationPolicy
 
   def destroy?
     create?
+  end
+
+  def owner_policy
+    Pundit.policy(user, record.owner)
   end
 end

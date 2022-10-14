@@ -76,6 +76,24 @@
 
     <%= display_custom_fields(@fund) if current_user %>
 
+    <% if policy(@fund).update? %>
+      <tr>
+        <td>
+          Show Valuations to LPs 
+        </td>
+        <td>
+          <%= display_boolean @fund.show_valuations %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Show Fund Ratios to LPs
+        </td>
+        <td>
+          <%= display_boolean @fund.show_fund_ratios %>
+        </td>
+      </tr>
+    <% end %>
   </table>
 
 

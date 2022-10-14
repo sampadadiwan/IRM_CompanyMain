@@ -1,10 +1,19 @@
 class ValuationsController < ApplicationController
   before_action :set_valuation, only: %i[show edit update destroy]
+  skip_after_action :verify_policy_scoped, only: :index
 
   # GET /valuations or /valuations.json
   def index
-    @valuations = policy_scope(Valuation).includes(:entity)
-    @valuations = @valuations.where(owner_id: params[:owner_id], owner_type: params[:owner_type]) if params[:owner_id].present? && params[:owner_type].present?
+    if params[:owner_id].present? && params[:owner_type].present?
+      # Ensure user is authorized to see the owner
+      owner = Object.const_get(params[:owner_type]).send(:find, params[:owner_id])
+      authorize(owner, :show?)
+      @valuations = owner.valuations
+    else
+      @valuations = policy_scope(Valuation)
+    end
+
+    @valuations = @valuations.includes(:entity)
   end
 
   # GET /valuations/1 or /valuations/1.json
