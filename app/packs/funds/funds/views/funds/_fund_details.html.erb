@@ -49,7 +49,10 @@
   
         <div id="docs-tab" class="tab-pane fade in show active">
           <div id="docs" class="associated_entity">
-            <%= render "/documents/index", documents: fund.documents, owner: fund, 
+
+            <% documents = policy(fund).update? ? fund.documents : fund.documents.where.not(owner_tag: "Template")  %>
+
+            <%= render "/documents/index", documents: documents, owner: fund, 
                 entity: fund.entity %>
           </div>     
         </div>
