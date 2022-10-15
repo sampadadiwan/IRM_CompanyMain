@@ -4,7 +4,7 @@ export default class extends Controller {
   connect() {
 
       let table = {};
-
+      console.log("DataTable 2.0");
       $.each( $('.jqDataTable'), function( key, value ) {
         // console.log( key + ": " + value );
         if ( $.fn.dataTable.isDataTable( value ) ) {
