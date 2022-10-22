@@ -46,7 +46,7 @@ class InterestPolicy < ApplicationPolicy
 
   def update?
     (create? ||
-      user.entity_id == record.user.entity_id ||
+      user.entity_id == record.interest_entity_id ||
      (user.entity_id == record.entity_id && record.secondary_sale.manage_interests)
     ) && !record.finalized
   end
