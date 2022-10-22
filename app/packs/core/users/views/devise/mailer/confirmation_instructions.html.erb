@@ -1,5 +1,12 @@
 <p>Welcome <%= @email %>!</p>
 
-<p>You can confirm your account email through the link below:</p>
+<p>
+    <% ia = InvestorAccess.where(email: @email).last %>
+    <% if ia %>
+        Your account at CapHive was created by <%= ia.entity.name %>.
+    <% end %>
+
+    You can confirm your account email through the link below:
+</p>
 
 <p class="btn btn-primary"><%= link_to 'Confirm my account', confirmation_url(@resource, confirmation_token: @token) %></p>

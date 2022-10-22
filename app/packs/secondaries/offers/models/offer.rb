@@ -112,26 +112,6 @@ class Offer < ApplicationRecord
     (total_holdings_quantity * secondary_sale.percent_allowed / 100).round
   end
 
-  def break_offer(allocation_qtys)
-    Rails.logger.debug { "breaking offer #{id} into #{allocation_qtys} pieces" }
-
-    # Duplicate the offer
-    dup_offers = [self]
-    (1..allocation_qtys.length - 1).each do |_i|
-      dup_offers << dup
-    end
-
-    Offer.transaction do
-      # Update the peices with the quantites
-      dup_offers.each_with_index do |dup_offer, i|
-        diff = dup_offer.allocation_quantity - allocation_qtys[i]
-        dup_offer.allocation_quantity = allocation_qtys[i]
-        dup_offer.quantity -= diff
-        dup_offer.save!
-      end
-    end
-  end
-
   def notify_approval
     OfferMailer.with(offer_id: id).notify_approval.deliver_later unless secondary_sale.no_offer_emails
   end
