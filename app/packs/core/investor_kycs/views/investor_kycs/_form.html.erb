@@ -73,6 +73,15 @@
     <%= form.text_field :ifsc_code, class: "form-control"  %>
   </div>
 
+  <% unless investor_kyc.user && investor_kyc.user.signature.present? %>
+    <div class="form-group">
+      <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image", 
+                              for_model: "investor_kyc", field_name: "signature", 
+                              model: investor_kyc %>
+
+    </div>
+  <% end %>
+
   <% if current_user.entity_id == investor_kyc.entity_id %>
 
     <div class="form-group">

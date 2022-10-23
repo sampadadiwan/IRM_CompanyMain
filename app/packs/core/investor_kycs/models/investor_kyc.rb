@@ -24,13 +24,21 @@ class InvestorKyc < ApplicationRecord
     setup_folder(parent_folder, user.full_name, [])
   end
 
-  after_save :validate_pan_card
+  after_commit :validate_pan_card
   def validate_pan_card
     VerifyKycPanJob.perform_later(id) if saved_change_to_PAN? || saved_change_to_first_name? || saved_change_to_last_name? || saved_change_to_middle_name? || saved_change_to_pan_card_data?
   end
 
-  after_save :validate_bank
+  after_commit :validate_bank
   def validate_bank
     VerifyKycBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_first_name? || saved_change_to_last_name? || saved_change_to_middle_name?
+  end
+
+  after_commit :update_user_signature
+  def update_user_signature
+    if signature.present? && user.signature.blank?
+      user.signature = signature
+      user.save
+    end
   end
 end
