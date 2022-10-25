@@ -7,6 +7,7 @@ class ApplicationMailer < ActionMailer::Base
   end
 
   def from_email(entity)
-    entity.from_email.presence || ENV["SUPPORT_EMAIL"]
+    @current_entity = entity
+    @current_entity.from_email.presence || ENV["SUPPORT_EMAIL"]
   end
 end

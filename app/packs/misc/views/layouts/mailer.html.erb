@@ -1,9 +1,11 @@
+<% @current_entity ||= nil %>
+
 <!doctype html>
 <html>
   <head>
     <meta name="viewport" content="width=device-width" />
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>CapHive</title>
+    <title><%= @current_entity ? @current_entity.name : "CapHive" %></title>
     <style>
       /* -------------------------------------
           GLOBAL RESETS
@@ -346,7 +348,7 @@
     </style>
   </head>
   <body class="">
-    <span class="preheader">Message from <%= ENV['DOMAIN'] %>.</span>
+    <span class="preheader">Message from <%= @current_entity ? @current_entity.name : ENV['DOMAIN'] %>.</span>
     <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="body">
       <tr>
         <td>&nbsp;</td>
@@ -358,7 +360,7 @@
               <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                 <tr>
                   <td class="content-block">
-                    <span class="title apple-link">CapHive</span>
+                    <span class="title apple-link"><%= @current_entity ? @current_entity.name : "CapHive" %></span>
                   </td>
                 </tr>
               </table>

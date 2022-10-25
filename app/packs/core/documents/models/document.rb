@@ -111,6 +111,6 @@ class Document < ApplicationRecord
   end
 
   def access_rights_changed(access_right_id)
-    DocumentMailer.with(access_right_id:).notify_signature_required.deliver_later
+    DocumentMailer.with(access_right_id:).notify_signature_required.deliver_later if signature_enabled
   end
 end
