@@ -10,7 +10,7 @@
     <%= l approval.due_date %>
   </td>
 
-  <% if policy(approval).update? %>
+  <% if policy(approval).create? %>
     <td class="approved_count">
       <%= approval.approved_count %>
     </td>
