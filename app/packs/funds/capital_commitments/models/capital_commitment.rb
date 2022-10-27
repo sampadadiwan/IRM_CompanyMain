@@ -1,4 +1,5 @@
 class CapitalCommitment < ApplicationRecord
+  include WithFolder
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
@@ -30,5 +31,10 @@ class CapitalCommitment < ApplicationRecord
 
   def to_s
     "#{investor.investor_name}: #{committed_amount}"
+  end
+
+  def setup_folder_details
+    parent_folder = fund.document_folder.folders.where(name: "Commitments").first
+    setup_folder(parent_folder, investor.investor_name, [])
   end
 end

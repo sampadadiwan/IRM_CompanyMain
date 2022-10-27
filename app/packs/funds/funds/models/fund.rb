@@ -27,7 +27,7 @@ class Fund < ApplicationRecord
 
   def setup_folder_details
     parent_folder = Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
-    setup_folder(parent_folder, name, ["Capital Calls"])
+    setup_folder(parent_folder, name, ["Capital Calls", "Commitments"])
   end
 
   def investors
