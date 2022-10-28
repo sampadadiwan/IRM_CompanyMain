@@ -129,4 +129,8 @@ class Entity < ApplicationRecord
   def accountant?(user)
     investors.where("investors.category=? and investors.investor_entity_id=?", 'Accountant', user.entity_id).first.present?
   end
+
+  scope :accountant_for, lambda { |user|
+    joins(:investors).where("investors.investor_entity_id=? and investors.category=?", user.entity_id, "Accountant")
+  }
 end

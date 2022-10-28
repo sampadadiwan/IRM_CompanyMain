@@ -19,7 +19,15 @@ class InvestorKycsController < ApplicationController
   def search
     query = params[:query]
     if query.present?
-      @investor_kycs = InvestorKycIndex.filter(term: { entity_id: current_user.entity_id })
+
+      entity_ids = if current_user.curr_role == "accountant"
+                     # Accountants can search for KYC across all the entities that they are accountants for
+                     Entity.accountant_for(current_user).collect(&:id)
+                   else
+                     [current_user.entity_id]
+                   end
+
+      @investor_kycs = InvestorKycIndex.filter(terms: { entity_id: entity_ids })
                                        .query(query_string: { fields: InvestorKycIndex::SEARCH_FIELDS,
                                                               query:, default_operator: 'and' })
                                        .page(params[:page])
