@@ -44,6 +44,10 @@ class FundDocGenerator
       r.add_field :investor_name, capital_commitment.investor.investor_name
       r.add_field :committed_amount, capital_commitment.committed_amount.to_s
 
+      capital_commitment.properties.each do |k, v|
+        r.add_field "commitment_#{k}", v
+      end
+
       # Can we have more than one LP signer ?
       capital_commitment_signature = add_signature(r, :investor_signature, user.signature)
 
@@ -68,6 +72,10 @@ class FundDocGenerator
       report.add_field :user_address, investor_kyc.address
       report.add_field :user_bank_account_number, investor_kyc.bank_account_number
       report.add_field :user_ifsc_code, investor_kyc.ifsc_code
+
+      investor_kyc.properties.each do |k, v|
+        report.add_field "kyc_#{k}", v
+      end
     end
   end
 
