@@ -14,7 +14,11 @@ class InvestorKycMailer < ApplicationMailer
 
   def notify_kyc_updated
     @investor_kyc = InvestorKyc.find(params[:id])
-    email = sandbox_email(@investor_kyc, @investor_kyc.user.email)
+    @investor_accesses = @investor_kyc.entity.investor_accesses.joins(:investor).where("investors.category='Accountant'")
+
+    to_emails = [@investor_kyc.user.email] + @investor_accesses.collect(&:email)
+
+    email = sandbox_email(@investor_kyc, to_emails)
 
     subj = "KYC updated for #{@investor_kyc.user.full_name}"
     mail(from: from_email(@investor_kyc.entity),
