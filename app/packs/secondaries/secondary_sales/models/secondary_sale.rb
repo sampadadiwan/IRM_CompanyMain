@@ -132,6 +132,10 @@ class SecondarySale < ApplicationRecord
     SecondarySale.for(user).where("access_rights.metadata=?", "Seller").where(id:).present?
   end
 
+  def advisor?(user)
+    SecondarySale.for(user).where("access_rights.metadata=?", "Advisor").where(id:).present?
+  end
+
   def offers_by_funding_round
     offers.joins(holding: :funding_round).group("funding_rounds.name").sum(:quantity).sort.to_h
   end

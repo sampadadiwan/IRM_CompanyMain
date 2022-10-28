@@ -5,7 +5,7 @@ class SecondarySalePolicy < ApplicationPolicy
         scope.all
       elsif user.curr_role.to_sym == :startup
         scope.where(entity_id: user.entity_id)
-      elsif %i[holding investor].include?(user.curr_role.to_sym)
+      elsif %i[holding investor advisor].include?(user.curr_role.to_sym)
         scope.for(user).distinct
       elsif user.curr_role.to_sym == :secondary_buyer
         scope.where(visible_externally: true)
@@ -29,6 +29,7 @@ class SecondarySalePolicy < ApplicationPolicy
 
   def owner?
     (user.entity_id == record.entity_id && user.curr_role == "startup") ||
+      record.advisor?(user) ||
       allow_external?(:read, :startup)
   end
 
