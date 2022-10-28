@@ -21,6 +21,7 @@ class ElasticImporterJob < ApplicationJob
     FundIndex.import
     CapitalCommitmentIndex.import
     CapitalRemittanceIndex.import
+    InvestorKycIndex.import
   end
 
   def reset
@@ -43,5 +44,6 @@ class ElasticImporterJob < ApplicationJob
     FundIndex.reset
     CapitalCommitmentIndex.reset
     CapitalRemittanceIndex.reset
+    InvestorKycIndex.reset
   end
 end

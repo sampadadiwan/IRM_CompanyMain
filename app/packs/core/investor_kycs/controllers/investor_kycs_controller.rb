@@ -16,6 +16,21 @@ class InvestorKycsController < ApplicationController
     @investor_kycs = @investor_kycs.includes(:investor, :entity)
   end
 
+  def search
+    query = params[:query]
+    if query.present?
+      @investor_kycs = InvestorKycIndex.filter(term: { entity_id: current_user.entity_id })
+                                       .query(query_string: { fields: InvestorKycIndex::SEARCH_FIELDS,
+                                                              query:, default_operator: 'and' })
+                                       .page(params[:page])
+                                       .objects
+
+      render "index"
+    else
+      redirect_to investor_kycs_path(request.parameters)
+    end
+  end
+
   # GET /investor_kycs/1 or /investor_kycs/1.json
   def show; end
 

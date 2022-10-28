@@ -1,5 +1,4 @@
 Rails.application.routes.draw do
-  resources :investor_kycs
   namespace :admin do
     resources :investors
     resources :users
@@ -76,6 +75,10 @@ Rails.application.routes.draw do
   resources :approvals do
     patch 'approve', on: :member
     patch 'send_reminder', on: :member
+  end
+
+  resources :investor_kycs do
+    get 'search', on: :collection
   end
 
   get "/health_check/redis_check", to: "health_check#redis_check"

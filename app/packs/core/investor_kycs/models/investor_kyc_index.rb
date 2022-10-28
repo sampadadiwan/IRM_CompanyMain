@@ -1,0 +1,15 @@
+class InvestorKycIndex < Chewy::Index
+  SEARCH_FIELDS = %i[first_name last_name middle_name investor_name entity_name PAN bank_account_number].freeze
+
+  index_scope InvestorKyc.includes(:entity, :user, :investor)
+
+  field :first_name
+  field :last_name
+  field :middle_name
+  field :PAN
+  field :bank_account_number
+  field :verified
+  field :entity_name, value: ->(kyc) { kyc.entity.name if kyc.entity }
+  field :investor_name, value: ->(kyc) { kyc.investor.investor_name if kyc.investor }
+  field :entity_id
+end

@@ -1,4 +1,7 @@
 class InvestorKyc < ApplicationRecord
+  # Make all models searchable
+  update_index('investor_kyc') { self }
+
   include WithFolder
 
   belongs_to :investor
