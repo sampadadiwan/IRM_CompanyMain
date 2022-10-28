@@ -63,7 +63,7 @@ class Investor < ApplicationRecord
   INVESTOR_CATEGORIES = ENV["INVESTOR_CATEGORIES"].split(",") << "Prospective"
 
   def self.INVESTOR_CATEGORIES(entity = nil)
-    Investment.INVESTOR_CATEGORIES(entity) + ["Prospective"]
+    Investment.INVESTOR_CATEGORIES(entity) + %w[Prospective Accountant]
   end
 
   before_validation :update_name

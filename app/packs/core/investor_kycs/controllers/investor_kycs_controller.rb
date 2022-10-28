@@ -12,6 +12,8 @@ class InvestorKycsController < ApplicationController
     end
 
     @investor_kycs = @investor_kycs.where(verified: params[:verified] == "true") if params[:verified].present?
+
+    @investor_kycs = @investor_kycs.includes(:investor, :entity)
   end
 
   # GET /investor_kycs/1 or /investor_kycs/1.json

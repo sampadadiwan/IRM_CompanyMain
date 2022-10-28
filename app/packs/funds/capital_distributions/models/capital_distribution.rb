@@ -32,4 +32,11 @@ class CapitalDistribution < ApplicationRecord
   def to_s
     title
   end
+
+  scope :for_accountant, lambda { |user|
+    # Ensure the access rghts for Document
+    joins(fund: :access_rights).merge(AccessRight.access_filter)
+                               .where("access_rights.metadata=?", "Accountant").joins(entity: :investors)
+                               .where("investors.investor_entity_id=?", user.entity_id)
+  }
 end

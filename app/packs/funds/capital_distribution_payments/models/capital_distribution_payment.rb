@@ -24,4 +24,11 @@ class CapitalDistributionPayment < ApplicationRecord
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
   }
+
+  scope :for_accountant, lambda { |user|
+    # Ensure the access rghts for Document
+    joins(fund: :access_rights).merge(AccessRight.access_filter)
+                               .where("access_rights.metadata=?", "Accountant").joins(entity: :investors)
+                               .where("investors.investor_entity_id=?", user.entity_id)
+  }
 end

@@ -17,7 +17,7 @@
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#commitments-tab"
           data-action="click->tabdetails#loadData">Commitments</a>
 
-      <% if policy(fund).update? %>
+      <% if policy(fund).update? || fund.accountant?(current_user) %>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-calls-tab"
             data-action="click->tabdetails#loadData">Capital Calls</a>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-distributions-tab"

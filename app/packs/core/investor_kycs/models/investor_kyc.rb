@@ -46,4 +46,10 @@ class InvestorKyc < ApplicationRecord
   def notify_kyc_updated
     InvestorKycMailer.with(id:).notify_kyc_updated.deliver_later
   end
+
+  scope :for_accountant, lambda { |user|
+    # Ensure the access rghts for Document
+    joins(entity: :investors)
+      .where("investors.category=? and investors.investor_entity_id=?", 'Accountant', user.entity_id)
+  }
 end

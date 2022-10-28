@@ -51,6 +51,10 @@ class Fund < ApplicationRecord
       .merge(InvestorAccess.approved_for_user(user))
   }
 
+  def accountant?(user)
+    Fund.for_investor(user).where("funds.id=?", id).where("access_rights.metadata='Accountant'").exists?
+  end
+
   def to_s
     name
   end
