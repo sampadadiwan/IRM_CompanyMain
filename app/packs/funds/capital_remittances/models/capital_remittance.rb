@@ -66,10 +66,10 @@ class CapitalRemittance < ApplicationRecord
     end
   end
 
-  scope :for_accountant, lambda { |user|
+  scope :for_advisor, lambda { |user|
     # Ensure the access rghts for Document
     joins(fund: :access_rights).merge(AccessRight.access_filter)
-                               .where("access_rights.metadata=?", "Accountant").joins(entity: :investors)
+                               .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
                                .where("investors.investor_entity_id=?", user.entity_id)
   }
 end

@@ -126,11 +126,11 @@ class Entity < ApplicationRecord
     folders.where(level: 0).first
   end
 
-  def accountant?(user)
-    investors.where("investors.category=? and investors.investor_entity_id=?", 'Accountant', user.entity_id).first.present?
+  def advisor?(user)
+    investors.where("investors.category=? and investors.investor_entity_id=?", 'Advisor', user.entity_id).first.present?
   end
 
-  scope :accountant_for, lambda { |user|
-    joins(:investors).where("investors.investor_entity_id=? and investors.category=?", user.entity_id, "Accountant")
+  scope :advisor_for, lambda { |user|
+    joins(:investors).where("investors.investor_entity_id=? and investors.category=?", user.entity_id, "Advisor")
   }
 end

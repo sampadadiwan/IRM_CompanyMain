@@ -5,8 +5,8 @@ class CapitalDistributionPaymentPolicy < ApplicationPolicy
         scope.all
       elsif user.has_cached_role?(:fund_manager)
         scope.where(entity_id: user.entity_id)
-      elsif user.has_cached_role?(:accountant)
-        scope.for_accountant(user)
+      elsif user.has_cached_role?(:advisor)
+        scope.for_advisor(user)
       else
         scope.joins(:investor).where('investors.investor_entity_id': user.entity_id)
       end
@@ -20,7 +20,7 @@ class CapitalDistributionPaymentPolicy < ApplicationPolicy
   def show?
     (user.entity_id == record.entity_id) ||
       (user.entity_id == record.investor.investor_entity_id) ||
-      record.fund.accountant?(user)
+      record.fund.advisor?(user)
   end
 
   def create?

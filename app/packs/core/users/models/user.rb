@@ -48,9 +48,9 @@ class User < ApplicationRecord
 
   def setup_defaults
     if entity
-      if entity.entity_type == "Accountant"
-        add_role :accountant
-        self.curr_role = :accountant
+      if entity.entity_type == "Advisor"
+        add_role :advisor
+        self.curr_role = :advisor
       elsif entity.entity_type == "Startup"
         add_role :startup
         add_role :holding
@@ -98,7 +98,7 @@ class User < ApplicationRecord
     # Add this role so we can identify which users have holdings
     add_role :holding if entity && (entity.entity_type == "Holding")
     add_role :secondary_buyer if entity && (entity.entity_type == "VC")
-    add_role :accountant if entity && (entity.entity_type == "Accountant")
+    add_role :advisor if entity && (entity.entity_type == "Advisor")
     save
   end
 

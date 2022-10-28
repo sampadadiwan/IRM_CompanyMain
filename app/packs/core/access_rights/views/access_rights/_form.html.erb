@@ -72,8 +72,8 @@
 
     <% if access_right.access_type == "Fund" %>
       <div class="form-group">
-        <%= form.label :metadata, "Select Investor or Accountant" %>
-        <%= form.select :metadata, ["Investor", "Accountant"], {}, class: "form-control"  %>
+        <%= form.label :metadata, "Select Investor or Advisor" %>
+        <%= form.select :metadata, ["Investor", "Advisor"], {}, class: "form-control"  %>
       </div>
     <% end %>
 

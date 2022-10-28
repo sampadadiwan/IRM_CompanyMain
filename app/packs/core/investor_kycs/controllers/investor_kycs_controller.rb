@@ -20,9 +20,9 @@ class InvestorKycsController < ApplicationController
     query = params[:query]
     if query.present?
 
-      entity_ids = if current_user.curr_role == "accountant"
-                     # Accountants can search for KYC across all the entities that they are accountants for
-                     Entity.accountant_for(current_user).collect(&:id)
+      entity_ids = if current_user.curr_role == "advisor"
+                     # Advisors can search for KYC across all the entities that they are advisors for
+                     Entity.advisor_for(current_user).collect(&:id)
                    else
                      [current_user.entity_id]
                    end
