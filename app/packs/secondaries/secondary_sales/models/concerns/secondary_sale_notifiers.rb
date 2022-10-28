@@ -1,8 +1,8 @@
 module SecondarySaleNotifiers
   extend ActiveSupport::Concern
 
-  def notify_advisors
-    SecondarySaleMailer.with(id:).notify_advisors.deliver_later
+  def notify_investment_advisors
+    SecondarySaleMailer.with(id:).notify_investment_advisors.deliver_later
   end
 
   def notify_open_for_interests

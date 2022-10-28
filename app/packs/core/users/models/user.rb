@@ -62,7 +62,7 @@ class User < ApplicationRecord
         add_role :secondary_buyer
         add_role :investor
         self.curr_role ||= :investor
-      elsif ["Advisor"].include?(entity.entity_type)
+      elsif ["Investment Advisor"].include?(entity.entity_type)
         add_role :secondary_buyer
         self.curr_role = :secondary_buyer
       elsif ["Family Office"].include?(entity.entity_type)

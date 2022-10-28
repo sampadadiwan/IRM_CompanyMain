@@ -18,7 +18,7 @@ namespace :irm do
 
     wm_names = ["Ambit", "Citi"]
     wm_names.each do |name|
-      e = FactoryBot.create(:entity, entity_type: "Advisor", name: name)
+      e = FactoryBot.create(:entity, entity_type: "Investment Advisor", name: name)
       puts "Entity #{e.name}"
       (1..2).each do |j|
         user = FactoryBot.create(:user, entity: e, first_name: "Emp#{j}")

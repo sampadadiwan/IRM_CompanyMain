@@ -2,12 +2,12 @@ class SecondarySaleMailer < ApplicationMailer
   helper EmailCurrencyHelper
   helper ApplicationHelper
 
-  def notify_advisors
+  def notify_investment_advisors
     @secondary_sale = SecondarySale.find(params[:id])
 
     # Should we send emails to all advisors ? Or all second
     sale_emails = User.joins(:entity).where('entities.entity_type in (?) or users.sale_notification=?',
-                                            ["Advisor", "Family Office"], true).collect(&:email)
+                                            ["Investment Advisor", "Family Office"], true).collect(&:email)
 
     mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
          bcc: sandbox_email(@secondary_sale, sale_emails.join(',')),

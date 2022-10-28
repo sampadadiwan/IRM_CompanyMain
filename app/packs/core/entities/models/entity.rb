@@ -47,8 +47,8 @@ class Entity < ApplicationRecord
   monetize :total_investments, as: "total", with_model_currency: :currency
   monetize :per_share_value_cents, with_model_currency: :currency
 
-  TYPES = ["VC", "Startup", "Holding", "Advisor", "Family Office", "Investment Fund", "Consulting"].freeze
-  SECONDARY_BUYERS = ["VC", "Advisor", "Family Office"].freeze
+  TYPES = ["VC", "Startup", "Holding", "Investment Advisor", "Family Office", "Investment Fund", "Consulting", "Advisor"].freeze
+  SECONDARY_BUYERS = ["VC", "Investment Advisor", "Family Office"].freeze
 
   FUNDING_UNITS = %w[Lakhs Crores].freeze
   PLANS = ENV['PLANS'].split(",")
@@ -58,6 +58,7 @@ class Entity < ApplicationRecord
   scope :consulting, -> { where(entity_type: "Consulting") }
   scope :startups, -> { where(entity_type: "Startup") }
   scope :advisors, -> { where(entity_type: "Advisor") }
+  scope :investment_advisors, -> { where(entity_type: "Investment Advisor") }
   scope :family_offices, -> { where(entity_type: "Family Office") }
   scope :funds, -> { where(entity_type: "Investment Fund") }
   scope :user_investor_entities, ->(user) { where('access_rights.access_to': user.email).includes(:access_rights) }

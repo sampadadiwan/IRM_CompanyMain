@@ -10,8 +10,7 @@
       <%= link_to "Edit" , edit_secondary_sale_path(@secondary_sale), {class: "btn btn-primary" } %> 
 
       <% label = @secondary_sale.visible_externally ? "Hide Externally" : "Make Visible Externally" %>
-      <% popupMsg = @secondary_sale.visible_externally ? "This will hide the Sale from external advisors" : 
-                    "This will allow external advisors to view this sale and place interests for buying." %>
+      <% popupMsg = @secondary_sale.visible_externally ? "This will hide the Sale from external investment advisors" : "This will allow external investment advisors to view this sale and place interests for buying." %>
 
       <%= button_to label , make_visible_secondary_sale_path(@secondary_sale), method: :patch, 
           class: "btn btn-success" , 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_14_080651) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_28_101715) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -435,7 +435,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_14_080651) do
     t.datetime "updated_at", null: false
     t.text "logo_url"
     t.boolean "active", default: true
-    t.string "entity_type", limit: 15
+    t.string "entity_type", limit: 25
     t.integer "created_by"
     t.string "investor_categories"
     t.string "instrument_types"
