@@ -10,6 +10,8 @@ class InvestorKycsController < ApplicationController
       @investor = Investor.find(params[:investor_id])
       @investor_kycs = @investor_kycs.where(investor_id: params[:investor_id])
     end
+
+    @investor_kycs = @investor_kycs.where(verified: params[:verified] == "true") if params[:verified].present?
   end
 
   # GET /investor_kycs/1 or /investor_kycs/1.json

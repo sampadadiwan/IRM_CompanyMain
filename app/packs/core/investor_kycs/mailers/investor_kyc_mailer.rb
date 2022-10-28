@@ -10,7 +10,16 @@ class InvestorKycMailer < ApplicationMailer
          to: email,
          cc: ENV['SUPPORT_EMAIL'],
          subject: subj)
+  end
 
-    WhatsappSenderJob.new.perform(subj, @investor_access.user) if @investor_access.user
+  def notify_kyc_updated
+    @investor_kyc = InvestorKyc.find(params[:id])
+    email = sandbox_email(@investor_kyc, @investor_kyc.user.email)
+
+    subj = "KYC updated for #{@investor_kyc.user.full_name}"
+    mail(from: from_email(@investor_kyc.entity),
+         to: email,
+         cc: ENV['SUPPORT_EMAIL'],
+         subject: subj)
   end
 end

@@ -3,7 +3,7 @@
     <%= link_to "New Investor Kyc" , new_investor_kyc_path("investor_kyc[investor_id]": @investor.id, "investor_kyc[entity_id]": @investor.entity_id), {class: "btn btn-primary" } if @investor %>
   </div>
 
-  <div class="table-responsive">
+  <div class="table-responsive" data-controller="datatable">
 
     <table id="investor_kycs" class="table table-bordered dataTable jqDataTable">
 
@@ -35,6 +35,9 @@
           </th>
           <th>
             Bank Verified
+          </th>
+          <th>
+            KYC Verified
           </th>
           
 

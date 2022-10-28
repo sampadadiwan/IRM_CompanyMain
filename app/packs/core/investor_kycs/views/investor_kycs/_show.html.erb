@@ -1,0 +1,189 @@
+
+  <table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Investor
+      </td>
+      <td>
+        <%= link_to investor_kyc.investor.investor_name, investor_url(investor_kyc.investor, tab: "kycs-tab") %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= investor_kyc.entity.name %>
+      </td>
+    </tr>
+
+
+    <tr>
+      <td>
+        KYC Verified
+      </td>
+      <td>        
+          <%= display_boolean investor_kyc.verified %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        User
+      </td>
+      <td>
+        <%= investor_kyc.user.full_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        First Name
+      </td>
+      <td>
+        <%= investor_kyc.first_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Middle Name
+      </td>
+      <td>
+        <%= investor_kyc.middle_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Last Name
+      </td>
+      <td>
+        <%= investor_kyc.last_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Pan
+      </td>
+      <td>
+        <%= investor_kyc.pan_card.present? ? link_to(investor_kyc.PAN, investor_kyc.pan_card.url, target: "_blank") : investor_kyc.PAN   %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Pan Verified
+      </td>
+      <td>        
+          <%= render "investor_kycs/pan_verification", model: investor_kyc, current_user: current_user %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Signature
+      </td>
+      <td>
+        <%= image_tag investor_kyc.signature_url, 
+          style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if investor_kyc.signature.present? %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Address
+      </td>
+      <td>
+        <%= investor_kyc.address %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Bank Account Number
+      </td>
+      <td>
+        <%= investor_kyc.bank_account_number %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Ifsc Code
+      </td>
+      <td>
+        <%= investor_kyc.ifsc_code %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Bank Verified
+      </td>
+      <td>
+        <%= render "investor_kycs/bank_verification", model: investor_kyc, current_user: current_user %>
+      </td>
+    </tr>
+
+    <%= display_custom_fields(investor_kyc) if current_user %>
+
+    <tr>
+      <td>
+        Comments
+      </td>
+      <td>
+        <%= investor_kyc.comments %>
+      </td>
+    </tr>
+
+
+    <% if params[:debug].present? %>
+    <tr>
+      <td>
+        Bank Verification Response
+      </td>
+      <td>
+        <%= investor_kyc.bank_verification_response %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Bank Verification Status
+      </td>
+      <td>
+        <%= investor_kyc.bank_verification_status %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Signature Data
+      </td>
+      <td>
+        <%= investor_kyc.signature_data %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Pan Card Data
+      </td>
+      <td>
+        <%= investor_kyc.pan_card_data %>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        Pan Verification Response
+      </td>
+      <td>
+        <%= investor_kyc.pan_verification_response %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Pan Verification Status
+      </td>
+      <td>
+        <%= investor_kyc.pan_verification_status %>
+      </td>
+    </tr>
+
+    <% end %>
+    
+  </table>

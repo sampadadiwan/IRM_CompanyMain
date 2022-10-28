@@ -41,4 +41,9 @@ class InvestorKyc < ApplicationRecord
       user.save
     end
   end
+
+  after_save :notify_kyc_updated
+  def notify_kyc_updated
+    InvestorKycMailer.with(id:).notify_kyc_updated.deliver_later
+  end
 end
