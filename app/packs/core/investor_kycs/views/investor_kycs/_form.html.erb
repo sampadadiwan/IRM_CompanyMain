@@ -50,7 +50,7 @@
 
   </div>
 
-  <% if current_user.entity_id == investor_kyc.entity_id %>
+  <% if current_user.entity_id == investor_kyc.entity_id || policy(investor_kyc).advisor? %>
     <div class="form-group">
       <%= form.label :pan_verified %>
       <%= form.check_box :pan_verified, class: "form-control form-checkbox"  %>
@@ -82,7 +82,7 @@
     </div>
   <% end %>
 
-  <% if current_user.entity_id == investor_kyc.entity_id %>
+  <% if current_user.entity_id == investor_kyc.entity_id || policy(investor_kyc).advisor? %>
 
     <div class="form-group">
       <%= form.label :bank_verified %>

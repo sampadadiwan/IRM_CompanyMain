@@ -23,7 +23,12 @@ class InvestorKycPolicy < ApplicationPolicy
 
   def create?
     (user.entity_id == record.entity_id) ||
-      user.id == record.user_id
+      user.id == record.user_id ||
+      record.entity.advisor?(user)
+  end
+
+  def advisor?
+    record.entity.advisor?(user)
   end
 
   def new?
