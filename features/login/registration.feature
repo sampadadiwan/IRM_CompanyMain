@@ -25,6 +25,6 @@ Scenario Outline: User Registration Successfully
   	| 	    |entity_type=VC       |investor,secondary_buyer	|
     |       |entity_type=Startup  |startup   |
     | 	    |entity_type=Holding  |holding   |
-    | 	    |entity_type=Advisor  |secondary_buyer   |
+    | 	    |entity_type=Investment Advisor  |secondary_buyer   |
     | 	    |entity_type=Family Office  |secondary_buyer   |
 
