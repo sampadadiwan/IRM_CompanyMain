@@ -44,6 +44,11 @@
   </div>
 
   <div class="form-group">
+
+    <div class="alert alert-info">
+      Please upload a clear image of your PAN card
+    </div>
+
     <%= render "layouts/single_upload", form: form, field_label: "Upload PAN Card", 
                             for_model: "investor_kyc", field_name: "pan_card", 
                             model: investor_kyc %>
@@ -81,6 +86,22 @@
 
     </div>
   <% end %>
+
+  <div class="form-group">
+    <div class="alert alert-info">
+      Please upload a video where you are holding your PAN Card saying:
+      <br>
+      "My name is <%= investor_kyc.user.full_name %> and my PAN is [PAN number].  I confirm the KYC details provided by me for subscribing to the fund by <%= investor_kyc.entity.name %>. "
+      <br>
+      Kindly make sure your full face and the PAN card are clearly visible in the video.
+    </div>
+
+    <%= render "layouts/single_upload", form: form, field_label: "Upload KYC Video", 
+                            for_model: "investor_kyc", field_name: "video", 
+                            model: investor_kyc %>
+
+    
+  </div>
 
   <% if current_user.entity_id == investor_kyc.entity_id || policy(investor_kyc).advisor? %>
 

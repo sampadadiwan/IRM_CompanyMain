@@ -15,6 +15,7 @@ class InvestorKyc < ApplicationRecord
 
   include FileUploader::Attachment(:signature)
   include FileUploader::Attachment(:pan_card)
+  include FileUploader::Attachment(:video)
 
   # Customize form
   belongs_to :form_type, optional: true
