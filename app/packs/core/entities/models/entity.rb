@@ -42,7 +42,7 @@ class Entity < ApplicationRecord
   has_many :funds, dependent: :destroy
   has_many :investment_opportunities, dependent: :destroy
 
-  has_one_attached :logo, service: :amazon
+  include FileUploader::Attachment(:logo)
 
   monetize :total_investments, as: "total", with_model_currency: :currency
   monetize :per_share_value_cents, with_model_currency: :currency

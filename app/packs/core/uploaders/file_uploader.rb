@@ -8,7 +8,7 @@ class FileUploader < Shrine
   def generate_location(io, record: nil, derivative: nil, **)
     return super unless record
 
-    entity = record.entity ? record.entity.name : "Unknown"
+    entity = record.instance_of?(Entity) ? record.name : record.entity.name
     table  = record.class.table_name
     id     = record.id
     prefix = derivative || "original"

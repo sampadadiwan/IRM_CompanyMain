@@ -15,7 +15,7 @@
             </td>
             <td>
                <% if @entity.logo.present? %>
-                  <img class="entity_logo" src="<%= rails_blob_path(@entity.logo) %>">
+                  <img class="entity_logo" src="<%= (@entity.logo.url) %>">
                <% end %>
             </td>
          </tr>
