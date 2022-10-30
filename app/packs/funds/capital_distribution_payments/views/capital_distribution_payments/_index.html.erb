@@ -1,6 +1,13 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Distribution Payments</h1>
-    <%= link_to "New Capital Distribution Payment" , new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id), {class: "btn btn-primary" } if capital_distribution %>
+
+    <span>
+      <%= link_to "New Capital Distribution Payment" , new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id), {class: "btn btn-primary" } if capital_distribution %>
+
+      <%= link_to "Download" , capital_distribution_payments_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id, format: "xlsx"), {class: "btn btn-primary" } if capital_distribution %>
+
+    </span>
+
   </div>
 
   <div class="table-responsive">
