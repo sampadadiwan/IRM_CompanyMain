@@ -1,6 +1,11 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Commitments</h1>
-    <%= link_to "New Capital Commitment", new_capital_commitment_path("capital_commitment[fund_id]": params[:fund_id]),  {class: "btn btn-primary" } if params[:fund_id] %>
+
+    <span>
+        <%= link_to "New Capital Commitment", new_capital_commitment_path("capital_commitment[fund_id]": params[:fund_id]),  {class: "btn btn-primary" } if params[:fund_id] %>
+
+        <%= link_to "Download", capital_commitments_path(fund_id: params[:fund_id], format: "xlsx"),  {class: "btn btn-primary" } if params[:fund_id] %>
+    </span>
 </div>
 
 <div class="table-responsive" data-controller="datatable">
@@ -20,6 +25,9 @@
                 </th>
                 <th>
                     Committed Amount
+                </th>
+                <th>
+                    Percentage
                 </th>
                 <th>
                     Collected Amount

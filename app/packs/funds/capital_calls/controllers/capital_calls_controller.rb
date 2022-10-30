@@ -5,6 +5,16 @@ class CapitalCallsController < ApplicationController
   def index
     @capital_calls = policy_scope(CapitalCall).includes(:fund)
     @capital_calls = @capital_calls.where(fund_id: params[:fund_id]) if params[:fund_id]
+
+    respond_to do |format|
+      format.xlsx do
+        response.headers[
+          'Content-Disposition'
+        ] = "attachment; filename=capital_calls.xlsx"
+      end
+      format.html { render :index }
+      format.json { render :index }
+    end
   end
 
   # GET /capital_calls/1 or /capital_calls/1.json

@@ -47,6 +47,7 @@ Rails/SkipsModelValidations:
     - 'app/packs/core/entities/models/entity.rb'
     - 'app/jobs/offer_spa_job.rb'
     - 'app/packs/funds/investment_opportunities/jobs/investment_opportunity_job.rb'
+    - 'app/packs/funds/capital_commitments/models/capital_commitment.rb'
 Rails/HasAndBelongsToMany:
   Exclude:
     - 'app/models/role.rb'

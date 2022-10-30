@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_28_101715) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_30_075457) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -229,6 +229,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_28_101715) do
     t.datetime "updated_at", null: false
     t.text "properties"
     t.bigint "form_type_id"
+    t.decimal "percentage", precision: 5, scale: 2, default: "0.0"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
     t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"
@@ -247,6 +248,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_28_101715) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "completed", default: false
+    t.decimal "percentage", precision: 5, scale: 2, default: "0.0"
     t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
     t.index ["entity_id"], name: "index_capital_distribution_payments_on_entity_id"
     t.index ["form_type_id"], name: "index_capital_distribution_payments_on_form_type_id"

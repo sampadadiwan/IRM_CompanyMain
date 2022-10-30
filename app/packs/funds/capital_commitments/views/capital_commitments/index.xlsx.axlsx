@@ -1,0 +1,14 @@
+wb = xlsx_package.workbook
+
+form_type, custom_field_names, custom_headers = get_form_type("CapitalCommitment")
+
+wb.add_worksheet(name: "CapitalCommitment") do |sheet|
+  # Create the header row
+  sheet.add_row(%w[Investor Fund Committed Collected] + custom_headers)
+
+  # Create entries for each item
+  @capital_commitments.each do |cc|
+    custom_field_values = get_custom_values(cc, form_type, custom_field_names)
+    sheet.add_row [cc.investor.investor_name, cc.fund.name, money_to_currency(cc.committed_amount, params), money_to_currency(cc.collected_amount, params)] + custom_field_values
+  end
+end

@@ -29,6 +29,12 @@ class CapitalCommitment < ApplicationRecord
     end
   end
 
+  after_save :compute_percentage, if: :saved_change_to_committed_amount_cents?
+  def compute_percentage
+    total_committed_amount_cents = fund.capital_commitments.sum(:committed_amount_cents)
+    fund.capital_commitments.update_all("percentage=100.0*committed_amount_cents/#{total_committed_amount_cents}")
+  end
+
   def to_s
     "#{investor.investor_name}: #{committed_amount}"
   end

@@ -5,29 +5,31 @@ class CapitalDistributionJob < ApplicationJob
   def perform(capital_distribution_id)
     Chewy.strategy(:sidekiq) do
       @capital_distribution = CapitalDistribution.find(capital_distribution_id)
-      funding_round = @capital_distribution.fund.funding_round
+      fund = @capital_distribution.fund
       # Need to distriute the capital based on the percentage holding of the fund by the investor
-      funding_round.aggregate_investments.includes(:investor).each do |inv|
+      fund.capital_commitments.each do |cc|
         # Compute the amount based on the investment % in the fund
-        amount_cents = @capital_distribution.net_amount_cents * inv.percentage / 100.0
+        amount_cents = @capital_distribution.net_amount_cents * cc.percentage / 100.0
 
         # Find if the payment already exists
-        payment = CapitalDistributionPayment.where(capital_distribution_id: @capital_distribution.id, investor_id: inv.investor_id).first
+        payment = CapitalDistributionPayment.where(capital_distribution_id: @capital_distribution.id, investor_id: cc.investor_id).first
 
         if payment
           # Update the payment
           payment.amount_cents = amount_cents
+          payment.percentage = cc.percentage
           payment.save
-          logger.debug "Updated Payment of #{amount_cents} cents for #{inv.investor.investor_name} id #{payment.id}"
+          logger.debug "Updated Payment of #{amount_cents} cents for #{cc.investor.investor_name} id #{payment.id}"
         else
           # Create a new payment
           payment = CapitalDistributionPayment.create!(fund_id: @capital_distribution.fund_id,
                                                        entity_id: @capital_distribution.entity_id,
                                                        capital_distribution_id: @capital_distribution.id,
-                                                       investor_id: inv.investor_id, amount_cents:,
-                                                       payment_date: @capital_distribution.distribution_date)
+                                                       investor_id: cc.investor_id, amount_cents:,
+                                                       payment_date: @capital_distribution.distribution_date,
+                                                       percentage: cc.percentage)
 
-          logger.debug "Created Payment of #{amount_cents} cents for #{inv.investor.investor_name} id #{payment.id}"
+          logger.debug "Created Payment of #{amount_cents} cents for #{cc.investor.investor_name} id #{payment.id}"
         end
       end
     end
