@@ -493,9 +493,9 @@ Given('Given I upload a holdings file') do
   visit("/holdings")
   click_on("Upload Holdings")
   fill_in('import_upload_name', with: "Test Upload")
-  attach_file('import_upload_import_file', File.absolute_path('./public/sample_uploads/holdings.xlsx'))
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/holdings.xlsx'), make_visible: true)
+  sleep(1)
   click_on("Save")
-
   sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)    
   sleep(5)

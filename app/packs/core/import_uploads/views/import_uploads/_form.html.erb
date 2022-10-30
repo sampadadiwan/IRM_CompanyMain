@@ -23,9 +23,14 @@
 
   </div>
 
+
+  
+  
+  
   <div class="field" class="form-group" id="document_upload">
-    <%= form.label :import_file, "Import Data" %>
-    <%= form.file_field :import_file, class: "form-control", placeholder: "Upload document" %>
+    <%= render "layouts/single_upload", form: form, field_label: "Import Data", 
+                            for_model: "import_upload", field_name: "import_file", 
+                            model: import_upload %>
     <small class="text-muted"><%= link_to "Sample upload format", ImportUpload::SAMPLES[params[:sample_upload]] %> </small>
   </div>
 

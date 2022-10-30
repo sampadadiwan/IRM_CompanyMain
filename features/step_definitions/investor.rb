@@ -125,10 +125,11 @@ Given('Given I upload an investor access file for employees') do
   click_on("Employee Investors")
   click_on("Upload Employee Investors")
   fill_in('import_upload_name', with: "Test Upload")
-  attach_file('import_upload_import_file', File.absolute_path('./public/sample_uploads/investor_access.xlsx'))
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
+  sleep(1)
   click_on("Save")
   sleep(1)
-  ImportUploadJob.perform_later(ImportUpload.last.id)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 
 Then('There should be {string} investor access created') do |count|

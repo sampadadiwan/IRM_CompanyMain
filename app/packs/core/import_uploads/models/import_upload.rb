@@ -7,13 +7,8 @@ class ImportUpload < ApplicationRecord
   belongs_to :owner, polymorphic: true
   belongs_to :user
 
-  has_one_attached :import_file, service: :amazon
-  has_one_attached :import_results, service: :amazon
-
-  validates :import_file,
-            attached: true,
-            content_type: ['application/xls', 'application/xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
-            size: { less_than: 5.megabytes, message: 'must be less than 5MB in size' }
+  include FileUploader::Attachment(:import_file)
+  include FileUploader::Attachment(:import_results)
 
   after_create :run_import_job
   def run_import_job

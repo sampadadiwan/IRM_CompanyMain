@@ -16,8 +16,7 @@ class ImportPostProcess
     when "InvestorAccess"
       Rails.logger.info "Importing InvestorAccess Done"
     when "Holding"
-      result_file = File.open(result_file_name)
-      import_upload.import_results.attach(io: result_file, filename: "import_result_#{import_upload.id}.xlsx")
+      import_upload.import_results = File.open(result_file_name, "rb")
       Rails.logger.info "Importing Holding Done"
     end
 
