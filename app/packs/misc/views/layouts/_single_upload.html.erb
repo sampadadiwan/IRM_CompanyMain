@@ -18,7 +18,7 @@
         data: { single_upload_target: "input" } %>
     </div>
 
-    <div class="UppyInput-Progress"></div>
+    <div class="UppyInput-Progress <%=for_model %>_<%=field_name.to_sym%>_progress"></div>
 
     <div class="d-inline-block mt-1 mb-3">
       <!-- static link to the thumbnail generated on attachment -->

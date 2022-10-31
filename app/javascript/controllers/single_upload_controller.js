@@ -22,6 +22,9 @@ export default class extends Controller {
   }
 
   createUppy() {
+
+    console.log(`this.inputTarget.id = ${this.inputTarget.id}`);
+
     const uppy = uppyInstance({
         id: this.inputTarget.id,
         types: this.typesValue,
@@ -35,7 +38,7 @@ export default class extends Controller {
         target: this.inputTarget.parentNode,        
       })
       .use(StatusBar, {
-        target: '.UppyInput-Progress',
+        target: `.${this.inputTarget.id}_progress`,
         hideUploadButton: false,
         hideAfterFinish: false,    
       })
