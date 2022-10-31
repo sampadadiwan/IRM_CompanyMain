@@ -87,6 +87,8 @@ h1 {
   color: #d1d3f5 !important;
 }
 
+
+
 .form-checkbox {
   width: 3% !important;
 }
@@ -100,6 +102,19 @@ h1 {
 .radio_label {
   padding-right: 10px;
 }
+
+// This is so that checkbox show up nicely on mobile
+@media (min-width:320px)  { 
+  .form-checkbox {
+    width: 6% !important;
+  }
+ }
+@media (min-width:481px)  { 
+  .form-checkbox {
+    width: 3% !important;
+   }
+}
+
 
 .btn {
   margin: 1px;
