@@ -49,6 +49,7 @@ class Offer < ApplicationRecord
   scope :verified, -> { where(verified: true) }
   scope :auto_match, -> { where(auto_match: true) }
   scope :pending_verification, -> { where(verified: false) }
+  scope :matched, -> { where.not(interest_id: nil) }
 
   validates :full_name, :address, :PAN, :bank_account_number, :ifsc_code, presence: true, if: proc { |o| o.secondary_sale.finalized }
 

@@ -52,8 +52,7 @@ class SecondarySalesController < ApplicationController
   def payments
     @fees = @secondary_sale.fees
 
-    @offers = @secondary_sale.offers.approved.verified
-    @offers = @offers.where.not(interest_id: nil)
+    @offers = @secondary_sale.offers.approved.verified.matched
     @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest).order("interests.buyer_entity_name")
 
     @buyer_offers = Offer.compute_payments(@offers, @fees)
