@@ -96,8 +96,7 @@
 
     if(@offer.secondary_sale && @offer.secondary_sale.finalized)
       click_on("Next")
-      fill_in("offer_first_name", with: @offer.first_name)
-      fill_in("offer_last_name", with: @offer.last_name)
+      fill_in("offer_full_name", with: @offer.full_name)
       fill_in("offer_PAN", with: @offer.PAN)
       fill_in("offer_address", with: @offer.address)
       fill_in("offer_bank_account_number", with: @offer.bank_account_number)
@@ -136,8 +135,7 @@
     expect(page).to have_content(@offer.quantity)
 
     if(@offer.secondary_sale && @offer.secondary_sale.finalized)
-      expect(page).to have_content(@offer.first_name)
-      expect(page).to have_content(@offer.last_name)
+      expect(page).to have_content(@offer.full_name)
       expect(page).to have_content(@offer.PAN)
       expect(page).to have_content(@offer.address)
       expect(page).to have_content(@offer.bank_account_number)

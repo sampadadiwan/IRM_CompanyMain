@@ -52,7 +52,7 @@ class OfferSpaGenerator
       r.add_field :share_price, offer.secondary_sale.final_price
       r.add_field :allocation_amount, offer.allocation_amount.to_s
 
-      r.add_field :seller_name, [offer.first_name, offer.middle_name, offer.last_name].compact.join(" ")
+      r.add_field :seller_name, offer.full_name
       r.add_field :seller_address, offer.address
       r.add_field :seller_pan, offer.PAN
       r.add_field :seller_email, offer.user.email

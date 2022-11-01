@@ -50,7 +50,7 @@ class Offer < ApplicationRecord
   scope :auto_match, -> { where(auto_match: true) }
   scope :pending_verification, -> { where(verified: false) }
 
-  validates :first_name, :last_name, :address, :PAN, :bank_account_number, :ifsc_code, presence: true, if: proc { |o| o.secondary_sale.finalized }
+  validates :full_name, :address, :PAN, :bank_account_number, :ifsc_code, presence: true, if: proc { |o| o.secondary_sale.finalized }
 
   validates :address_proof, :id_proof, :signature, presence: true if Rails.env.production?
 
@@ -127,12 +127,12 @@ class Offer < ApplicationRecord
 
   after_save :validate_pan_card
   def validate_pan_card
-    VerifyOfferPanJob.perform_later(id) if saved_change_to_PAN? || saved_change_to_first_name? || saved_change_to_last_name? || saved_change_to_middle_name? || saved_change_to_pan_card_data?
+    VerifyOfferPanJob.perform_later(id) if saved_change_to_PAN? || saved_change_to_full_name? || saved_change_to_pan_card_data?
   end
 
   after_save :validate_bank
   def validate_bank
-    VerifyOfferBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_first_name? || saved_change_to_last_name? || saved_change_to_middle_name?
+    VerifyOfferBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
   end
 
   after_save :generate_spa

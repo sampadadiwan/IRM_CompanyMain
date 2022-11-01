@@ -48,8 +48,7 @@ class VerifyPanJob < ApplicationJob
       @model.pan_verified = false
     end
 
-    if name_on_card.strip != "#{@model.first_name} #{@model.middle_name} #{@model.last_name}" &&
-       name_on_card.strip != "#{@model.last_name} #{@model.middle_name} #{@model.first_name}"
+    if name_on_card.strip != @model.full_name.to_s
       @model.pan_verification_status += " Name does not match"
       @model.pan_verified = false
     end

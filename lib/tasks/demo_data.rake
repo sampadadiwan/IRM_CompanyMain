@@ -429,7 +429,7 @@ namespace :irm do
 
           offer = FactoryBot.build(:offer, holding:h, secondary_sale: sale, 
             user: h.user, investor: h.investor, entity: h.entity,
-            first_name: h.user&.first_name, last_name: h.user&.last_name)
+            full_name: h.user&.full_name)
 
           offer.quantity = offer.allowed_quantity
           offer.approved = rand(4) > 0

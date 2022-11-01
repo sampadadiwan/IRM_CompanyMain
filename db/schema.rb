@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_01_045723) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_01_060149) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1039,9 +1039,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_01_045723) do
     t.integer "granted_by_user_id"
     t.bigint "investor_id", null: false
     t.string "offer_type", limit: 15
-    t.string "first_name"
-    t.string "middle_name"
-    t.string "last_name"
     t.string "PAN", limit: 15
     t.text "address"
     t.string "bank_account_number", limit: 40
@@ -1076,6 +1073,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_01_045723) do
     t.boolean "bank_verified", default: false
     t.text "bank_verification_response"
     t.string "bank_verification_status"
+    t.string "full_name", limit: 100
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
     t.index ["entity_id"], name: "index_offers_on_entity_id"
     t.index ["form_type_id"], name: "index_offers_on_form_type_id"

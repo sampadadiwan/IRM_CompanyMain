@@ -76,8 +76,7 @@ class OffersController < ApplicationController
   def new
     @offer = Offer.new(offer_params)
     @offer.user_id = current_user.id
-    @offer.first_name = current_user.first_name
-    @offer.last_name = current_user.last_name
+    @offer.full_name = current_user.full_name
     @offer.entity_id = @offer.secondary_sale.entity_id
     @offer.quantity = @offer.allowed_quantity
     setup_custom_fields(@offer)
@@ -195,8 +194,7 @@ class OffersController < ApplicationController
   # Only allow a list of trusted parameters through.
   def offer_params
     params.require(:offer).permit(:user_id, :entity_id, :secondary_sale_id, :investor_id,
-                                  :holding_id, :quantity, :percentage, :notes, :first_name, :last_name,
-                                  :middle_name, :PAN, :address, :bank_account_number, :bank_name, :ifsc_code,
+                                  :holding_id, :quantity, :percentage, :notes, :full_name, :PAN, :address, :bank_account_number, :bank_name, :ifsc_code,
                                   :comments, :verified, :interest_id, :form_type_id, :allocation_quantity,
                                   :acquirer_name, :bank_routing_info, :id_proof, :address_proof, :spa, :signature, :pan_card, docs_uploaded_check: {}, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end

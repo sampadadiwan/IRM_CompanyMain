@@ -17,9 +17,7 @@ FactoryBot.define do
     investor { nil }
     entity { nil }
     user { nil }
-    first_name { "MyString" }
-    middle_name { "MyString" }
-    last_name { "MyString" }
+    full_name { "MyString" }
     PAN { "MyString" }
     address { "MyText" }
     bank_account_number { "MyString" }
@@ -244,8 +242,7 @@ FactoryBot.define do
     bank_account_number  {Faker::Bank.account_number}
     bank_name {Faker::Bank.name}
     bank_routing_info {Faker::Bank.routing_number}
-    first_name {Faker::Name.first_name}
-    last_name {Faker::Name.last_name}
+    full_name {Faker::Name.first_name + " " + Faker::Name.last_name}
     ifsc_code {Faker::Bank.swift_bic}
   end
 
