@@ -45,6 +45,10 @@ class SecondarySalePolicy < ApplicationPolicy
     owner?
   end
 
+  def payments?
+    owner?
+  end
+
   def finalize_interest_allocation?
     owner?
   end

@@ -1,0 +1,57 @@
+<div class="table-responsive" data-controller="datatable">
+
+    <table id="offers" class="table table-bordered dataTable">
+        <thead>
+            <tr>
+                <th>
+                    First Name
+                </th>
+                <th>
+                    Middle Name
+                </th>
+                <th>
+                    Last Name
+                </th>
+                <th>
+                    Allocation Quantity
+                </th>
+                <th>
+                    Price
+                </th>
+                <th>
+                    Allocation Amount
+                </th>
+                <th>
+                </th>
+            </tr>
+        </thead>
+    
+        <tbody>
+            <% @offers.each do |offer| %>
+                <tr>
+                    <td>
+                        <%= offer.first_name %>
+                    </td>
+                    <td>
+                        <%= offer.middle_name %>
+                    </td>
+                    <td>
+                        <%= offer.last_name %>
+                    </td>
+                    <td>
+                        <%= offer.allocation_quantity %>
+                    </td>
+                    <td>
+                        <%= offer.final_price %>
+                    </td>
+                    <td>
+                        <%= money_to_currency offer.allocation_amount, params %>
+                    </td>
+
+                </tr>
+            <% end %>
+        </tbody>
+    </table>
+    
+</div>
+    

@@ -150,6 +150,7 @@ Rails.application.routes.draw do
     get 'interests', on: :member
     get 'finalize_offer_allocation', on: :member
     get 'finalize_interest_allocation', on: :member
+    get 'payments', on: :member
   end
 
   resources :holdings do
