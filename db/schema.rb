@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_30_122427) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_01_045723) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -530,6 +530,19 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_30_122427) do
     t.index ["eoi_entity_id"], name: "index_expression_of_interests_on_eoi_entity_id"
     t.index ["investment_opportunity_id"], name: "index_expression_of_interests_on_investment_opportunity_id"
     t.index ["user_id"], name: "index_expression_of_interests_on_user_id"
+  end
+
+  create_table "fees", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "advisor_name", limit: 30
+    t.decimal "amount_cents", precision: 10, scale: 2, default: "0.0"
+    t.string "amount_label", limit: 10
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.bigint "entity_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_fees_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_fees_on_owner"
   end
 
   create_table "folders", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1394,6 +1407,17 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_30_122427) do
     t.index ["option_pool_id"], name: "index_vesting_schedules_on_option_pool_id"
   end
 
+  create_table "video_kycs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "investor_kyc_id", null: false
+    t.bigint "entity_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_video_kycs_on_entity_id"
+    t.index ["investor_kyc_id"], name: "index_video_kycs_on_investor_kyc_id"
+    t.index ["user_id"], name: "index_video_kycs_on_user_id"
+  end
+
   add_foreign_key "access_rights", "entities"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
@@ -1448,6 +1472,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_30_122427) do
   add_foreign_key "expression_of_interests", "entities", column: "eoi_entity_id"
   add_foreign_key "expression_of_interests", "investment_opportunities"
   add_foreign_key "expression_of_interests", "users"
+  add_foreign_key "fees", "entities"
   add_foreign_key "folders", "entities"
   add_foreign_key "form_custom_fields", "form_types"
   add_foreign_key "form_types", "entities"
@@ -1525,4 +1550,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_30_122427) do
   add_foreign_key "valuations", "form_types"
   add_foreign_key "vesting_schedules", "entities"
   add_foreign_key "vesting_schedules", "option_pools"
+  add_foreign_key "video_kycs", "entities"
+  add_foreign_key "video_kycs", "investor_kycs"
+  add_foreign_key "video_kycs", "users"
 end

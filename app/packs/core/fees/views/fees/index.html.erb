@@ -1,0 +1,38 @@
+<%= render "/layouts/alerts" %>
+
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Fees</h1>
+    <%= link_to "New Fee" , new_fee_path, {class: "btn btn-primary" } %>
+  </div>
+
+  <div class="table-responsive" data-controller="datatable">
+
+    <table id="fees" class="table table-bordered dataTable">
+
+      <thead>
+        <tr>
+          <th>
+            Advisor Name
+          </th>
+          <th>
+            Amount
+          </th>
+          <th>
+            Amount Label
+          </th>
+          <th>
+            Owner
+          </th>
+          <th>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @fees.each do |fee| %>
+          <%= render fee %>
+        <% end %>
+      </tbody>
+    </table>
+
+  </div>

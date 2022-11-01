@@ -1,0 +1,36 @@
+<%= form_with(model: fee, validate: true) do |form| %>
+  <% if fee.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(fee.errors.count, "error") %> prohibited this fee from being saved:</h2>
+
+      <ul>
+        <% fee.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :advisor_name %>
+    <%= form.text_field :advisor_name, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :amount %>
+    <%= form.text_field :amount, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :amount_label %>
+    <%= form.text_field :amount_label, class: "form-control"  %>
+  </div>
+
+  <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

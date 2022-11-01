@@ -1,0 +1,56 @@
+<%= render "/layouts/alerts" %>
+
+<table class="table table-bordered dataTable">
+
+          <tr>
+        <td>
+          Advisor Name
+        </td>
+        <td>
+          <%= @fee.advisor_name %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Amount
+        </td>
+        <td>
+          <%= @fee.amount %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Amount Label
+        </td>
+        <td>
+          <%= @fee.amount_label %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Owner
+        </td>
+        <td>
+          <%= link_to @fee.owner_type, @fee.owner  %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Entity
+        </td>
+        <td>
+          <%= @fee.entity.name %>
+        </td>    
+      </tr>
+    
+  
+</table>
+
+
+<div>
+
+  <% if policy(@fee).update? %>
+    <%= link_to "Edit", edit_fee_path(@fee), {class: "btn btn-primary"} %> |
+    <%= button_to "Delete", @fee, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+  <% end %>
+</div>

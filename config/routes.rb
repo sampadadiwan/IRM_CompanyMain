@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :fees
   namespace :admin do
     resources :investors
     resources :users
@@ -78,6 +79,9 @@ Rails.application.routes.draw do
   end
 
   resources :investor_kycs do
+    get 'search', on: :collection
+  end
+  resources :video_kycs do
     get 'search', on: :collection
   end
 

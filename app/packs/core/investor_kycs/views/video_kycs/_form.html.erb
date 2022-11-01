@@ -1,0 +1,29 @@
+<%= form_with(model: video_kyc) do |form| %>
+  <% if video_kyc.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(video_kyc.errors.count, "error") %> prohibited this video_kyc from being saved:</h2>
+
+      <ul>
+        <% video_kyc.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+    
+  <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :user_id, class: "form-control", hidden: true  %>
+  
+  <div data-controller="videokyc">
+
+    <h1>Record your video</h1>
+    <button id="start" class="btn btn-success">Start</button>
+    <button id="stop" class="btn btn-warning">Stop and save</button>
+    <div>
+      <video style="border: 1px solid black" id="live" width="300" height="200" autoplay muted></video>
+    </div>
+
+  </div>
+
+  <% end %>

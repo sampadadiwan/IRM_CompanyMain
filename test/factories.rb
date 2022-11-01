@@ -1,4 +1,18 @@
 FactoryBot.define do
+  factory :fee do
+    advisor_name { "MyString" }
+    amount { "9.99" }
+    amount_label { "MyString" }
+    owner { nil }
+    entity { nil }
+  end
+
+  factory :video_kyc do
+    user { nil }
+    investor_kyc { nil }
+    entity { nil }
+  end
+
   factory :investor_kyc do
     investor { nil }
     entity { nil }
