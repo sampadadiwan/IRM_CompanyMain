@@ -1,5 +1,5 @@
 class Fee < ApplicationRecord
-  belongs_to :owner, polymorphic: true
+  belongs_to :owner, polymorphic: true, touch: true
   belongs_to :entity
 
   validates :amount, :amount_label, presence: true

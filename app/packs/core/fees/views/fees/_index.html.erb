@@ -1,0 +1,36 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Fees</h1>
+    <%= link_to "New Fee" , new_fee_path("fee[owner_id]": params[:owner_id], "fee[owner_type]": params[:owner_type]), {class: "btn btn-primary" } if params[:owner_id] && params[:owner_type] %>
+  </div>
+
+  <div class="table-responsive">
+
+    <table id="fees" class="table table-bordered dataTable jqDataTable">
+
+      <thead>
+        <tr>
+          <th>
+            Advisor Name
+          </th>
+          <th>
+            Amount
+          </th>
+          <th>
+            Amount Label
+          </th>
+          <th>
+            Owner
+          </th>
+          <th>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% fees.each do |fee| %>
+          <%= render fee %>
+        <% end %>
+      </tbody>
+    </table>
+
+  </div>

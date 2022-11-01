@@ -23,7 +23,6 @@ class FeesController < ApplicationController
   def create
     @fee = Fee.new(fee_params)
     @fee.amount = fee_params[:amount]
-    @fee.entity_id = current_user.entity_id
     authorize(@fee)
 
     respond_to do |format|

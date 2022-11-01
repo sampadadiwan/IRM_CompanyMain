@@ -14,6 +14,8 @@
       <input hidden=true value="#access-rights-tab" id="clickOnLoad" />
 
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fees-tab">Fees</a>
       
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#offerings-tab"   
             data-action="click->tabdetails#loadData">Pending Offers</a>
@@ -47,7 +49,7 @@
   <div class="tab-content">
       <div id="access-rights-tab" class="tab-pane fade <%= access_right_active ? 'in show active' : '' %>">
 
-        <% cache(secondary_sale) do %>
+        <% cache([secondary_sale, "access_rights"]) do %>
           <div id="access_rights" class="associated_entity" data-controller="datatable">
             <% access_right = AccessRight.new(
                 owner_id: secondary_sale.id, 
@@ -56,6 +58,15 @@
                 entity_id: secondary_sale.entity_id) %>
                 
             <%= render "/access_rights/index", access_rights: AccessRight.for_secondary_sale(secondary_sale).includes(:investor, :owner), access_right: access_right %>
+          </div>
+        <% end %>
+      </div>
+
+
+      <div id="fees-tab" class="tab-pane fade">
+        <% cache([secondary_sale, "fees"]) do %>
+          <div id="fees" class="associated_entity">
+            <%= render "/fees/index", fees: secondary_sale.fees  %>
           </div>
         <% end %>
       </div>

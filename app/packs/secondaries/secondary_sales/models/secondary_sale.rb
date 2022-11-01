@@ -19,6 +19,7 @@ class SecondarySale < ApplicationRecord
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
+  has_many :fees, as: :owner, dependent: :destroy
 
   # Customize form for Sale
   belongs_to :form_type, optional: true

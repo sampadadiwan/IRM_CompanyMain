@@ -9,7 +9,7 @@
     <%= fee.amount_label %>
   </td>
   <td>
-    <%= fee.owner_type %>
+    <%= link_to fee.owner_type, id: fee.owner_id, controller: fee.owner_type.underscore.pluralize, action: "show" %>
   </td>
   <td>
     <%= link_to "Show" , fee , {class: "btn btn-primary" }%>
