@@ -57,6 +57,16 @@ class SecondarySalesController < ApplicationController
     @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest).order("interests.buyer_entity_name")
 
     @buyer_offers = Offer.compute_payments(@offers, @fees)
+
+    respond_to do |format|
+      format.xlsx do
+        response.headers[
+          'Content-Disposition'
+        ] = "attachment; filename=payments.xlsx"
+      end
+      format.html { render :payments }
+      format.json { render :index }
+    end
   end
 
   def search

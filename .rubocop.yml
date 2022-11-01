@@ -87,7 +87,7 @@ Metrics/PerceivedComplexity:
     - 'app/packs/core/uploaders/file_uploader.rb'
 Metrics/ClassLength:
   Description: 'Avoid classes longer than 100 lines of code.'
-  Max: 170
+  Max: 200
   Enabled: true
 
 Metrics/ModuleLength:
@@ -119,6 +119,7 @@ Metrics/BlockLength:
     - 'app/packs/funds/capital_distributions/jobs/capital_distribution_job.rb'
     - 'app/packs/secondaries/offers/models/offer_spa_generator.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/spa_job.rb'
+    - 'app/packs/secondaries/secondary_sales/views/secondary_sales/payments.xlsx.axlsx'
   IgnoredMethods:
     - context
     - describe

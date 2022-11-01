@@ -1,0 +1,36 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "Offers") do |sheet|
+  # Create the header row
+  sheet.add_row ["Full Name", "Allocation Quantity", "Price", "Allocation Amount", "Fees", "Net Amount", "Bank Account Number", "IFSC Code", "PAN", "Buyer"]
+
+  # Create entries for each offer
+  @buyer_offers.each do |buyer_entity_name, buyer_hash|
+    offers = buyer_hash[:offers]
+    offers.each do |o|
+      fees = o.compute_fees(@fees)
+      fee_amount = fees.sum { |i| i[:fee] }
+
+      sheet.add_row [o.full_name, custom_format_number(o.allocation_quantity, params),
+                     o.final_price, money_to_currency(o.allocation_amount, params), money_to_currency(fee_amount, params), money_to_currency(o.allocation_amount - fee_amount, params),
+                     o.bank_account_number, o.ifsc_code,
+                     o.PAN, buyer_entity_name]
+    end
+
+    buyer_hash[:fees].each do |advisor_name, fee|
+      sheet.add_row ["Advisor Fee: #{advisor_name}", "", "", "",
+                     "#{fee[:fee].amount} : #{fee[:fee].amount_label}",
+                     money_to_currency(fee[:fee_amount], params),
+                     fee[:fee].bank_account_number, fee[:fee].ifsc_code, "",
+                     buyer_entity_name]
+    end
+
+    sheet.add_row ["Total", "", "", "",
+                   "",
+                   money_to_currency(buyer_hash[:total_allocation_amount]),
+                   "", "", "",
+                   buyer_entity_name]
+
+    sheet.add_row [""]
+  end
+end
