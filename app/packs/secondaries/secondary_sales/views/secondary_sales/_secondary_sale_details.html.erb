@@ -66,7 +66,7 @@
       <div id="fees-tab" class="tab-pane fade">
         <% cache([secondary_sale, "fees"]) do %>
           <div id="fees" class="associated_entity">
-            <%= render "/fees/index", fees: secondary_sale.fees  %>
+            <%= render "/fees/index", fees: secondary_sale.fees, owner: secondary_sale  %>
           </div>
         <% end %>
       </div>

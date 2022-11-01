@@ -7,7 +7,7 @@
 </div>
 
 <div>
-    
+
 </div>
 <div class="table-responsive" data-controller="datatable">
 
@@ -61,7 +61,7 @@
                 <% offers.each do |offer| %>
                     <% 
                         fees = offer.compute_fees(@fees) 
-                        fee_amount = fees.map {|i| i[:fee]}.sum(0)
+                        fee_amount = fees.map {|i| i[:fee]}.sum(Money.new(0, offer.entity.currency))
                     %>
                     <tr>
                         <td>

@@ -1,6 +1,6 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Fees</h1>
-    <%= link_to "New Fee" , new_fee_path("fee[owner_id]": params[:owner_id], "fee[owner_type]": params[:owner_type]), {class: "btn btn-primary" } if params[:owner_id] && params[:owner_type] %>
+    <%= link_to "New Fee" , new_fee_path("fee[owner_id]": owner.id, "fee[owner_type]": owner.class.name), {class: "btn btn-primary" } if owner %>
   </div>
 
   <div class="table-responsive">
