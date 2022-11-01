@@ -118,6 +118,8 @@
                             
                         </td>
                         <td>
+                            <%= fee[:fee].amount %>, 
+                            <%= fee[:fee].amount_label %>
                         </td>
                         <td>
                             <%= money_to_currency fee[:fee_amount], params %>
@@ -135,7 +137,7 @@
                             <%= buyer_entity_name %>
                         </td>
                         <td>
-                            
+                            <%= link_to "Show", fee[:fee], class: "btn btn-sm btn-primary"  %> 
                         </td>
                     </tr>
                 <% end %>
