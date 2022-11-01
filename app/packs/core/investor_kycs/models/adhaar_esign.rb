@@ -35,7 +35,7 @@ class AdhaarEsign
   def prepare_data(name, email, phone, encoded_file)
     {
       flow_type: "PDF/Template",
-      user_key: ENV["IDFY_ACCOUNT_ID"],
+      user_key: "",
       verify_aadhaar_details: false,
       esign_file_details: {
         #    "esign_profile_id":"ABCDE",

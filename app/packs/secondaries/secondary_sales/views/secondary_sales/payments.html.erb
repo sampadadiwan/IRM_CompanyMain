@@ -1,3 +1,11 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        Payments for: <%= link_to @secondary_sale.name, @secondary_sale %>
+    </h1>
+
+    <%= link_to "Download", payments_secondary_sale_path(@secondary_sale, format: "xlsx"), class: "btn btn-primary" %>
+</div>
+
 <div class="table-responsive" data-controller="datatable">
 
     <table id="offers" class="table table-bordered dataTable">
@@ -50,7 +58,7 @@
                 <% offers.each do |offer| %>
                     <% 
                         fees = offer.compute_fees(@fees) 
-                        fee_amount = fees.map {|i| i[:fee]}.sum
+                        fee_amount = fees.map {|i| i[:fee]}.sum(0)
                     %>
                     <tr>
                         <td>

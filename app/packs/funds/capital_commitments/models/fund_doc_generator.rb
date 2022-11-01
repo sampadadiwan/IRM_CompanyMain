@@ -65,9 +65,7 @@ class FundDocGenerator
 
   def generate_kyc_fields(report, investor_kyc)
     if investor_kyc
-      report.add_field :user_first_name, investor_kyc.first_name
-      report.add_field :user_middle_name, investor_kyc.middle_name
-      report.add_field :user_last_name, investor_kyc.last_name
+      report.add_field :user_full_name, investor_kyc.full_name
       report.add_field :user_pan, investor_kyc.PAN
       report.add_field :user_address, investor_kyc.address
       report.add_field :user_bank_account_number, investor_kyc.bank_account_number

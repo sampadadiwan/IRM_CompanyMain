@@ -51,10 +51,14 @@
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
           <%= link_to "Offer Allocations",
-          finalize_offer_allocation_secondary_sale_path(@secondary_sale), 
+              finalize_offer_allocation_secondary_sale_path(@secondary_sale), 
               {class: "dropdown-item" } %> 
           <%= link_to "Interest Allocations",
-          finalize_interest_allocation_secondary_sale_path(@secondary_sale), 
+              finalize_interest_allocation_secondary_sale_path(@secondary_sale), 
+              {class: "dropdown-item" } %> 
+
+          <%= link_to "View Payments",
+              payments_secondary_sale_path(@secondary_sale), 
               {class: "dropdown-item" } %> 
         </div>
       </div>
