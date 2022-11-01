@@ -33,10 +33,10 @@ class VerifyBankJob < ApplicationJob
     Rails.logger.debug { "name_at_bank = #{name_at_bank}" }
     @model.bank_verified = false
 
-    given_names = [@model.first_name.downcase, @model.middle_name.downcase, @model.last_name.downcase]
+    given_names = @model.full_name.downcase.split
 
     name_at_bank.each do |name|
-      Rails.logger.debug { "Matching #{name} with #{@model.first_name} #{@model.middle_name} #{@model.last_name}" }
+      Rails.logger.debug { "Matching #{name} with #{@model.full_name}" }
       @model.bank_verified = true if given_names.include?(name.downcase)
     end
 

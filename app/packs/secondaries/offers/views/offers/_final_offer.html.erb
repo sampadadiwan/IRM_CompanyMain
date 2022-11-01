@@ -7,7 +7,7 @@
     </div>
 
     <div class="divTableCell">
-        <%= offer.user ? offer.user&.full_name : offer.investor&.investor_name %> <br>
+        <%= offer.user ? offer.full_name : offer.investor.investor_name %> <br>
         <%= link_to offer.user.email, "mailto:#{offer.user.email}?body=Dear #{offer.user.full_name}. View your offer at #{offer_url(offer)}", target: "_blank" if offer.user %> 
     </div>
     <div class="divTableCell"><%= custom_format_number(offer.quantity, params) %></div>
