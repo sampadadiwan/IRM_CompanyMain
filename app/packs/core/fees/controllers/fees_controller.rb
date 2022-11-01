@@ -69,6 +69,6 @@ class FeesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def fee_params
-    params.require(:fee).permit(:advisor_name, :amount, :amount_label, :owner_id, :owner_type, :entity_id)
+    params.require(:fee).permit(:advisor_name, :amount, :amount_label, :owner_id, :owner_type, :entity_id, :bank_account_number, :ifsc_code)
   end
 end

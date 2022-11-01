@@ -139,4 +139,42 @@ class Offer < ApplicationRecord
   def generate_spa
     OfferSpaJob.perform_later(id) if secondary_sale.spa && saved_change_to_verified? && verified
   end
+
+  def compute_fees(fees)
+    total_fees = []
+    fees.each do |fee|
+      total_fees << { name: fee.advisor_name, fee: allocation_quantity * fee.amount }
+    end
+    total_fees
+  end
+
+  def self.compute_payments(offers, fees)
+    buyer_hash = {}
+    grouped_offers = offers.group_by { |o| o.interest&.buyer_entity_name }
+
+    grouped_offers.each do |buyer_entity_name, buyer_offers|
+      buyer_hash[buyer_entity_name] ||= {}
+      # All the offers of this buyer
+      buyer_hash[buyer_entity_name][:offers] = buyer_offers
+      # Total allocation_amount for this buyer
+      buyer_hash[buyer_entity_name][:total_allocation_amount] = buyer_offers.inject(Money.new(0, offers[0].entity.currency)) { |sum, o| sum + o.allocation_amount }
+
+      # Fees for this buyer
+      buyer_hash[buyer_entity_name][:fees] = buyer_fees(buyer_offers, fees, offers[0].entity.currency)
+    end
+
+    buyer_hash
+  end
+
+  def self.buyer_fees(buyer_offers, fees, currency)
+    buyer_fees_hash = {}
+    fees_by_advisor = buyer_offers.map { |o| o.compute_fees(fees) }.flatten.group_by { |f| f[:name] }
+    fees_by_advisor.each do |advisor_name, computed_fees|
+      buyer_fees_hash[advisor_name] ||= {}
+      buyer_fees_hash[advisor_name][:fee_amount] = computed_fees.inject(Money.new(0, currency)) { |sum, f| sum + f[:fee] }
+      buyer_fees_hash[advisor_name][:fee] = fees.find { |f| f.advisor_name == advisor_name }
+    end
+
+    buyer_fees_hash
+  end
 end

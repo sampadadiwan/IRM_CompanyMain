@@ -4,13 +4,7 @@
         <thead>
             <tr>
                 <th>
-                    First Name
-                </th>
-                <th>
-                    Middle Name
-                </th>
-                <th>
-                    Last Name
+                    Full Name
                 </th>
                 <th>
                     Allocation Quantity
@@ -20,6 +14,24 @@
                 </th>
                 <th>
                     Allocation Amount
+                </th>                
+                <th>
+                    Fees
+                </th>
+                <th>
+                    Net Amount (Ex Fees)
+                </th>
+                <th>
+                    Bank Account Number
+                </th>
+                <th>
+                    IFSC Code
+                </th>
+                <th>
+                    PAN
+                </th>
+                <th>
+                    Buyer
                 </th>
                 <th>
                 </th>
@@ -27,29 +39,145 @@
         </thead>
     
         <tbody>
-            <% @offers.each do |offer| %>
+            <% @buyer_offers.each do |buyer_entity_name, buyer_hash| %>
+                <% offers = buyer_hash[:offers] %>
+                <tr>
+                    <td colspan="11" class="bg-primary text-white">
+                        <%= buyer_entity_name %>                        
+                    </td>
+                </tr>
+
+                <% offers.each do |offer| %>
+                    <% 
+                        fees = offer.compute_fees(@fees) 
+                        fee_amount = fees.map {|i| i[:fee]}.sum
+                    %>
+                    <tr>
+                        <td>
+                            <%= offer.full_name %>
+                        </td>
+                        <td>
+                            <%= offer.allocation_quantity %>
+                        </td>
+                        <td>
+                            <%= offer.final_price %>
+                        </td>
+                        <td>
+                            <%= money_to_currency offer.allocation_amount, params %>
+                        </td>
+                        <td>
+                            
+                            <%= money_to_currency(fee_amount, params) %>
+                            <ul>
+                                <% fees.each do |i| %>
+                                    <li><%= i[:name] %> : <%= money_to_currency(i[:fee], params) %></li>
+                                <% end %>
+                            </ul>
+                        </td>
+                        <td>
+                            <%= money_to_currency(offer.allocation_amount - fee_amount, params) %>
+                        </td>
+
+                        <td>
+                            <%= offer.bank_account_number %>
+                        </td>
+                        <td>
+                            <%= offer.ifsc_code %>
+                        </td>
+                        <td>
+                            <%= offer.PAN %>
+                        </td>
+                        <td>
+                            <%= offer.interest.buyer_entity_name %>
+                        </td>
+                        <td>
+                            <%= link_to "Show", offer, class: "btn btn-sm btn-primary"  %>
+                        </td>
+                    </tr>
+
+                <% end %>
+
+                <tr>
+                    <td colspan="11" class="bg-success">
+                     
+                    </td>
+                </tr>
+                
+                <% buyer_hash[:fees].each do |advisor_name, fee| %>
+                    <tr>
+                        <td>
+                            Advisor Fee: <%= advisor_name %>
+                        </td>
+                        <td>
+                            
+                        </td>
+                        <td>
+                            
+                        </td>
+                        <td>
+                            
+                        </td>
+                        <td>
+                        </td>
+                        <td>
+                            <%= money_to_currency fee[:fee_amount], params %>
+                        </td>
+                        <td>
+                            <%= fee[:fee].bank_account_number %>
+                        </td>
+                        <td>
+                            <%= fee[:fee].ifsc_code %>
+                        </td>
+                        <td>
+                            
+                        </td>
+                        <td>
+                            <%= buyer_entity_name %>
+                        </td>
+                        <td>
+                            
+                        </td>
+                    </tr>
+                <% end %>
+                
                 <tr>
                     <td>
-                        <%= offer.first_name %>
+                        Total
                     </td>
                     <td>
-                        <%= offer.middle_name %>
+                        
                     </td>
                     <td>
-                        <%= offer.last_name %>
+                        
                     </td>
                     <td>
-                        <%= offer.allocation_quantity %>
+                        
                     </td>
                     <td>
-                        <%= offer.final_price %>
                     </td>
                     <td>
-                        <%= money_to_currency offer.allocation_amount, params %>
+                        <%= money_to_currency(buyer_hash[:total_allocation_amount]) %>,
                     </td>
-
+                    <td>
+                        
+                    </td>
+                    <td>
+                        
+                    </td>
+                    <td>
+                        
+                    </td>
+                    <td>
+                        
+                    </td>
+                    <td>
+                        
+                    </td>
                 </tr>
+
+ 
             <% end %>
+
         </tbody>
     </table>
     
