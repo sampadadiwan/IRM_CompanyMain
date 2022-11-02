@@ -1,6 +1,9 @@
 class Offer < ApplicationRecord
   include WithFolder
 
+  # Make all models searchable
+  update_index('offer') { self }
+
   belongs_to :user
   belongs_to :investor
   belongs_to :entity, touch: true

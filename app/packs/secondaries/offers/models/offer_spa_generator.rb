@@ -52,21 +52,10 @@ class OfferSpaGenerator
       r.add_field :share_price, offer.secondary_sale.final_price
       r.add_field :allocation_amount, offer.allocation_amount.to_s
 
-      r.add_field :seller_name, offer.full_name
-      r.add_field :seller_address, offer.address
-      r.add_field :seller_pan, offer.PAN
-      r.add_field :seller_email, offer.user.email
-      r.add_field :seller_bank_account, offer.bank_account_number
-      r.add_field :seller_ifsc_code, offer.ifsc_code
-
+      add_seller_fields(r, offer)
       offer_signature = add_signature(r, :seller_signature, offer.signature)
 
-      r.add_field :buyer_name, offer.interest&.buyer_entity_name
-      r.add_field :buyer_address, offer.interest&.address
-      r.add_field :buyer_email, offer.interest&.email
-      r.add_field :buyer_pan, offer.interest&.PAN
-      r.add_field :buyer_contact, offer.interest&.contact_name
-
+      add_buyer_fields(r, offer)
       interest_signature = add_signature(r, :buyer_signature, offer.interest&.signature)
     end
 
@@ -84,6 +73,27 @@ class OfferSpaGenerator
       report.add_image field_name.to_sym, file.path
       file.path
     end
+  end
+
+  def add_seller_fields(report, offer)
+    report.add_field :seller_name, offer.full_name
+    report.add_field :seller_address, offer.address
+    report.add_field :seller_pan, offer.PAN
+    report.add_field :seller_email, offer.user.email
+    report.add_field :seller_bank_account, offer.bank_account_number
+    report.add_field :seller_ifsc_code, offer.ifsc_code
+    report.add_field :seller_demat, offer.demat
+    report.add_field :seller_city, offer.city
+  end
+
+  def add_buyer_fields(report, offer)
+    report.add_field :buyer_name, offer.interest&.buyer_entity_name
+    report.add_field :buyer_address, offer.interest&.address
+    report.add_field :buyer_email, offer.interest&.email
+    report.add_field :buyer_pan, offer.interest&.PAN
+    report.add_field :buyer_city, offer.interest&.city
+    report.add_field :buyer_demat, offer.interest&.demat
+    report.add_field :buyer_contact, offer.interest&.contact_name
   end
 
   def attach(offer)
