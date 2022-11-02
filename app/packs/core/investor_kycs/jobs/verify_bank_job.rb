@@ -17,7 +17,7 @@ class VerifyBankJob < ApplicationJob
         @model.bank_verification_status = "Account not found"
       end
     else
-      @model.bank_verification_status = "No PAN card uploaded"
+      @model.bank_verification_status = "No Bank Account or IFSC Code Entered"
     end
   end
 
