@@ -53,7 +53,7 @@ class Offer < ApplicationRecord
 
   validates :full_name, :address, :PAN, :bank_account_number, :ifsc_code, presence: true, if: proc { |o| o.secondary_sale.finalized }
 
-  validates :address_proof, :id_proof, :signature, presence: true if Rails.env.production?
+  # validates :address_proof, :id_proof, :signature, presence: true if Rails.env.production?
 
   validate :check_quantity
   validate :sale_active, on: :create
