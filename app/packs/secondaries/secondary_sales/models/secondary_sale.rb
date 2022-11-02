@@ -37,14 +37,25 @@ class SecondarySale < ApplicationRecord
   validates :max_price, numericality: { greater_than: :min_price }, if: -> { price_type == 'Price Range' }
 
   scope :for, lambda { |user|
-                joins(:access_rights)
-                  .merge(AccessRight.access_filter)
-                  .joins(entity: :investors)
-                  # Ensure that the user is an investor and tis investor has been given access rights
-                  .where("investors.investor_entity_id=?", user.entity_id)
-                  # Ensure this user has investor access
-                  .joins(entity: :investor_accesses)
-                  .merge(InvestorAccess.approved_for_user(user))
+                if user.entity && user.entity.is_holdings_entity
+                  # Employees dont need InvestorAccess, they have default access
+                  joins(:access_rights)
+                    .merge(AccessRight.access_filter)
+                    .joins(entity: :investors)
+                    # Ensure that the user is an investor and tis investor has been given access rights
+                    .where("investors.investor_entity_id=?", user.entity_id)
+
+                else
+                  joins(:access_rights)
+                    .merge(AccessRight.access_filter)
+                    .joins(entity: :investors)
+                    # Ensure that the user is an investor and tis investor has been given access rights
+                    .where("investors.investor_entity_id=?", user.entity_id)
+                    # Ensure this user has investor access
+                    .joins(entity: :investor_accesses)
+                    .merge(InvestorAccess.approved_for_user(user))
+
+                end
               }
 
   before_save :set_defaults

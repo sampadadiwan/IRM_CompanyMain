@@ -9,22 +9,22 @@ class AdhaarEsign
     data = File.read(file_path)
 
     # Encode the puppy
-    encoded_file = Base64.encode64(data)
+    encoded_file = Base64.strict_encode64(data)
 
     data = prepare_data(name, email, phone, encoded_file)
 
     response = HTTParty.post(
-      'https://eve.idfy.com/v3/tasks/sync/generate/esign_document',
+      'https://eve.idfystaging.com/v3/tasks/sync/generate/esign_document',
       headers: {
-        "api-key" => ENV["IDFY_API_KEY"],
-        "account-id" => ENV["IDFY_ACCOUNT_ID"],
+        "api-key" => '9f81f27e-f5e1-4eae-b3ae-131e0101ea7e', # ENV["IDFY_API_KEY"],
+        # "account-id" => ENV["IDFY_ACCOUNT_ID"],
         'Content-Type' => 'application/json'
       },
-      'data-raw': {
-        task_id: rand(5**5),
-        group_id: "KYC_ESIGN",
+      body: {
+        task_id: rand(5**5).to_s,
+        group_id: "ADHAAR_ESIGN",
         data:
-      },
+      }.to_json,
       debug_output: $stdout
     )
 
@@ -40,20 +40,20 @@ class AdhaarEsign
       verify_aadhaar_details: true,
       esign_file_details: {
         esign_profile_id: "iIxiRbr",
-        file_name: "sample pdf",
-        esign_file: encoded_file,
+        file_name: "Test.pdf",
+        esign_file: encoded_file.to_s,
         esign_allow_fill: false
       },
 
       esign_invitees: [
         {
-          esigner_name: name,
-          esigner_email: email,
-          esigner_phone: phone,
+          esigner_name: name.to_s,
+          esigner_email: email.to_s,
+          esigner_phone: phone.to_s,
           aadhaar_esign_verification: {
-            aadhaar_pincode: "",
-            aadhaar_yob: "",
-            aadhaar_gender: ""
+            aadhaar_pincode: "560035",
+            aadhaar_yob: "1975",
+            aadhaar_gender: "Male"
           }
 
         }
