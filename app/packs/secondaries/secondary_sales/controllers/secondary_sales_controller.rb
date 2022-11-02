@@ -26,7 +26,7 @@ class SecondarySalesController < ApplicationController
   def interests
     @interests = @secondary_sale.interests.includes(:entity, :interest_entity, :user)
     @interests = @interests.where(interest_entity_id: current_user.entity_id) unless policy(@secondary_sale).owner?
-    @interests = @interests.page(params[:page])
+    # @interests = @interests.page(params[:page])
     render "/interests/index"
   end
 
