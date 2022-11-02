@@ -17,9 +17,24 @@ class OfferDashboard < Administrate::BaseDashboard
     quantity: Field::Number,
     percentage: Field::String.with_options(searchable: false),
     notes: Field::Text,
+
+    full_name: Field::String,
+    PAN: Field::String,
+    address: Field::String,
+    bank_account_number: Field::String,
+    ifsc_code: Field::String,
+    demat: Field::String,
+    city: Field::String,
+
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     approved: Field::BooleanEmoji,
+    verified: Field::BooleanEmoji,
+    pan_verified: Field::BooleanEmoji,
+    pan_verification_status: Field::String,
+    bank_verified: Field::BooleanEmoji,
+    bank_verification_status: Field::String,
+    comments: Field::Text,
     auto_match: Field::BooleanEmoji,
     granted_by_user_id: Field::Number
   }.freeze
@@ -48,10 +63,25 @@ class OfferDashboard < Administrate::BaseDashboard
     id
     quantity
     percentage
+
+    full_name
+    PAN
+    pan_verified
+    pan_verification_status
+    address
+    bank_account_number
+    bank_verification_status
+    ifsc_code
+    bank_verified
+    demat
+    city
+
     notes
     created_at
     updated_at
     approved
+    verified
+
     auto_match
     granted_by_user_id
   ].freeze
@@ -67,8 +97,22 @@ class OfferDashboard < Administrate::BaseDashboard
     granter
     quantity
     percentage
+
+    full_name
+    PAN
+    pan_verified
+    pan_verification_status
+    address
+    bank_account_number
+    bank_verification_status
+    ifsc_code
+    bank_verified
+    demat
+    city
+
     notes
     approved
+    verified
     auto_match
     granted_by_user_id
   ].freeze

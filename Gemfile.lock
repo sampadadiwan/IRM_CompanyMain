@@ -134,6 +134,9 @@ GEM
       administrate (< 1.0.0)
       rack (~> 2.0, >= 2.0.8)
       rails (>= 4.2, < 8)
+    administrate-field-shrine (0.0.5)
+      administrate (> 0.5.0)
+      rails (>= 4.2)
     airbrussh (1.4.0)
       sshkit (>= 1.6.1, != 1.7.0)
     annotate (2.6.5)
@@ -718,6 +721,7 @@ DEPENDENCIES
   administrate
   administrate-field-active_storage
   administrate-field-boolean_emoji (~> 0.3.0)
+  administrate-field-shrine
   annotate
   audited (~> 5.0)
   awesome_print

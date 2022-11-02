@@ -19,6 +19,10 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     interests: Field::HasMany,
     id: Field::Number,
     name: Field::String,
+    seller_doc_list: Field::String,
+    buyer_doc_list: Field::String,
+    support_email: Field::String,
+    show_quantity: Field::String,
     start_date: Field::Date,
     end_date: Field::Date,
     percent_allowed: ObfuscatedField,
@@ -31,9 +35,13 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     manage_interests: Field::BooleanEmoji,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
-    total_offered_quantity: ObfuscatedField,
+    total_offered_quantity: Field::Number,
+    total_interest_quantity: Field::Number,
+    offer_allocation_quantity: Field::Number,
+    interest_allocation_quantity: Field::Number,
     visible_externally: Field::BooleanEmoji,
     seller_transaction_fees_pct: Field::Number,
+    lock_allocations: Field::BooleanEmoji,
     sale_type: Field::Select.with_options(collection: SecondarySale::SALE_TYPES)
   }.freeze
 
@@ -68,6 +76,10 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     min_price
     max_price
     active
+    seller_doc_list
+    buyer_doc_list
+    support_email
+    show_quantity
     no_offer_emails
     manage_offers
     no_interest_emails
@@ -75,7 +87,11 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     created_at
     updated_at
     total_offered_quantity
+    total_interest_quantity
+    offer_allocation_quantity
+    interest_allocation_quantity
     visible_externally
+    lock_allocations
     entity
     access_rights
     offers
@@ -94,7 +110,17 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     percent_allowed
     min_price
     max_price
+    seller_doc_list
+    buyer_doc_list
+    support_email
+    show_quantity
+
+    total_interest_quantity
+    offer_allocation_quantity
+    interest_allocation_quantity
     visible_externally
+    lock_allocations
+
     no_offer_emails
     manage_offers
     no_interest_emails

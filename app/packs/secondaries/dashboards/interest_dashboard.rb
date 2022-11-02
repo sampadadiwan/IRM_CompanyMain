@@ -14,12 +14,26 @@ class InterestDashboard < Administrate::BaseDashboard
     entity: Field::BelongsTo,
     id: Field::Number,
     quantity: Field::Number,
+    offer_quantity: Field::Number,
     price: Field::String.with_options(searchable: false),
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     short_listed: Field::BooleanEmoji,
     escrow_deposited: Field::BooleanEmoji,
-    interest_id: Field::Number
+    interest_id: Field::Number,
+
+    buyer_entity_name: Field::String,
+    PAN: Field::String,
+    address: Field::String,
+    bank_account_number: Field::String,
+    ifsc_code: Field::String,
+    demat: Field::String,
+    city: Field::String,
+
+    verified: Field::BooleanEmoji,
+    finalized: Field::BooleanEmoji,
+    final_agreement: Field::BooleanEmoji,
+    comments: Field::String
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -48,9 +62,24 @@ class InterestDashboard < Administrate::BaseDashboard
     interest_entity
     entity
     quantity
+    offer_quantity
     price
     short_listed
     escrow_deposited
+
+    buyer_entity_name
+    PAN
+    address
+    bank_account_number
+    ifsc_code
+    demat
+    city
+
+    verified
+    finalized
+    final_agreement
+    comments
+
     created_at
     updated_at
   ].freeze
@@ -63,6 +92,20 @@ class InterestDashboard < Administrate::BaseDashboard
     price
     short_listed
     escrow_deposited
+
+    buyer_entity_name
+    PAN
+    address
+    bank_account_number
+    ifsc_code
+    demat
+    city
+
+    verified
+    finalized
+    final_agreement
+    comments
+
   ].freeze
 
   # COLLECTION_FILTERS

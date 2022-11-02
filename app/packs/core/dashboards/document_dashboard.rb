@@ -19,8 +19,14 @@ class DocumentDashboard < Administrate::BaseDashboard
     ),
     rich_text_text: RichTextAreaField,
     id: Field::Number,
+    file: Field::Shrine,
     name: ObfuscatedField,
     text: Field::String,
+    tag_list: Field::String,
+    download: Field::BooleanEmoji,
+    printing: Field::BooleanEmoji,
+    signature_enabled: Field::BooleanEmoji,
+    signed_by_accept: Field::BooleanEmoji,
     created_at: Field::DateTime,
     updated_at: Field::DateTime
   }.freeze
@@ -33,6 +39,11 @@ class DocumentDashboard < Administrate::BaseDashboard
   COLLECTION_ATTRIBUTES = %i[
     id
     name
+    download
+    printing
+    signature_enabled
+    signed_by_accept
+    tag_list
     folder
     entity
     created_at
@@ -47,6 +58,12 @@ class DocumentDashboard < Administrate::BaseDashboard
     rich_text_text
     id
     name
+    download
+    printing
+    signature_enabled
+    signed_by_accept
+    tag_list
+    file
     created_at
     updated_at
     access_rights
@@ -58,6 +75,11 @@ class DocumentDashboard < Administrate::BaseDashboard
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
     name
+    download
+    printing
+    signature_enabled
+    signed_by_accept
+    tag_list
     rich_text_text
   ].freeze
 
