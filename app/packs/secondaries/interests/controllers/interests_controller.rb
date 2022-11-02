@@ -12,7 +12,7 @@ class InterestsController < ApplicationController
       @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
     end
 
-    @interests = @interests.page(params[:page]).per(params[:per_page] || 10)
+    # @interests = @interests.page(params[:page]).per(params[:per_page] || 10)
 
     render "index"
   end
