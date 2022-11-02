@@ -53,6 +53,8 @@
     fill_in("interest_contact_name", with: @interest.contact_name)
     fill_in("interest_email", with: @interest.email)
     fill_in("interest_PAN", with: @interest.PAN)
+    fill_in("interest_city", with: @interest.city)
+    fill_in("interest_demat", with: @interest.demat)
 
     click_on("Save")
   end

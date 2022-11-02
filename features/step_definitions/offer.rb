@@ -99,6 +99,8 @@
       fill_in("offer_full_name", with: @offer.full_name)
       fill_in("offer_PAN", with: @offer.PAN)
       fill_in("offer_address", with: @offer.address)
+      fill_in("offer_city", with: @offer.city)
+      fill_in("offer_demat", with: @offer.demat)
       fill_in("offer_bank_account_number", with: @offer.bank_account_number)
       fill_in("offer_ifsc_code", with: @offer.ifsc_code)
       # fill_in("offer_bank_name", with: @offer.bank_name)
