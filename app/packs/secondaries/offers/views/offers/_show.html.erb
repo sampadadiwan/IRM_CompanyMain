@@ -137,6 +137,17 @@
           <%= @offer.address %>
         </td>
       </tr>
+
+      <tr>
+        <td>
+          City
+        </td>
+        <td>
+          <%= @offer.city %>
+        </td>
+      </tr>
+      
+
       <tr>
         <td>
           PAN
@@ -156,6 +167,17 @@
           <%= render "investor_kycs/pan_verification", model: @offer %>
         </td>
       </tr>
+
+
+      <tr>
+        <td>
+          Demat
+        </td>
+        <td>
+          <%= @offer.demat %>
+        </td>
+      </tr>
+      
 
       <tr>
         <td>

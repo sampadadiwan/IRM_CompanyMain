@@ -230,6 +230,8 @@ FactoryBot.define do
   factory :interest do
     buyer_entity_name {Faker::Company.name}
     address {Faker::Address.street_address}
+    city {Faker::Address.city}
+    demat {Faker::Number.number(digits: 10)}
     contact_name {Faker::Name.name}
     email {Faker::Internet.email}
     PAN {Faker::Number.number(digits: 10)}
@@ -239,6 +241,8 @@ FactoryBot.define do
   factory :offer do
     PAN {(0...10).map { (65 + rand(26)).chr }.join} 
     address { Faker::Address.full_address }
+    city {Faker::Address.city}
+    demat {Faker::Number.number(digits: 10)}
     bank_account_number  {Faker::Bank.account_number}
     bank_name {Faker::Bank.name}
     bank_routing_info {Faker::Bank.routing_number}
