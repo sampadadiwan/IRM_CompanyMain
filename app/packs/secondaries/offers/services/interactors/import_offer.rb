@@ -48,6 +48,7 @@ class ImportOffer
         row << "Error"
       end
     rescue StandardError => e
+      Rails.logger.debug e.backtrace
       row << "Error #{e.message}"
       import_upload.failed_row_count += 1
     end
@@ -59,27 +60,29 @@ class ImportOffer
     Rails.logger.debug { "Processing offer #{user_data}" }
 
     # Get the holding for which the offer is being made
+    holding = Holding.joins(:user).where("users.email=? and holdings.entity_id=?",
+                                         user_data["Email"], import_upload.entity_id).first
     # Get the Secondary Sale
+    secondary_sale = import_upload.entity.secondary_sales.last
     # Make the offer
 
-    holding = Holding.new(user:, investor:, holding_type: user_data["Founder or Employee"],
-                          entity_id: import_upload.owner_id, orig_grant_quantity: user_data["Quantity"],
-                          price_cents:, employee_id: user_data["Employee ID"], department: user_data["Department"],
-                          investment_instrument: user_data["Instrument"], funding_round: fr, option_pool: ep,
-                          import_upload_id: import_upload.id, grant_date:, approved: false,
-                          option_type: user_data["Option Type"], preferred_conversion: user_data["Preferred Conversion"])
+    offer = Offer.new(PAN: user_data["PAN"], address: user_data["Address"], city: user_data["City"],
+                      demat: user_data["Demat"], quantity: user_data["Quantity"], bank_account_number: user_data["Bank Account Number"], ifsc_code: user_data["IFSC Code"],
+                      holding:, secondary_sale:, final_price: secondary_sale.final_price,
+                      user: holding.user, investor: holding.investor, entity: holding.entity,
+                      full_name: holding.user&.full_name)
 
-    setup_custom_fields(user_data, holding, custom_field_headers)
+    setup_custom_fields(user_data, offer, custom_field_headers)
 
-    CreateHolding.call(holding:).holding
+    offer.save
   end
 
-  def setup_custom_fields(user_data, holding, custom_field_headers)
+  def setup_custom_fields(user_data, offer, custom_field_headers)
     # Were any custom fields passed in ? Set them up
     if custom_field_headers.length.positive?
-      holding.properties ||= {}
+      offer.properties ||= {}
       custom_field_headers.each do |cfh|
-        holding.properties[cfh.underscore] = user_data[cfh]
+        offer.properties[cfh.underscore] = user_data[cfh]
       end
     end
   end

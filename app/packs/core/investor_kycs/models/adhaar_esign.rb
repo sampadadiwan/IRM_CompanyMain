@@ -37,7 +37,7 @@ class AdhaarEsign
     {
       flow_type: "pdf",
       user_key: "M0OG222aTkaAJo8ATSa4cJkIIpvFXvP0",
-      verify_aadhaar_details: true,
+      verify_aadhaar_details: false,
       esign_file_details: {
         esign_profile_id: "iIxiRbr",
         file_name: "Test.pdf",
@@ -51,9 +51,9 @@ class AdhaarEsign
           esigner_email: email.to_s,
           esigner_phone: phone.to_s,
           aadhaar_esign_verification: {
-            aadhaar_pincode: "560035",
-            aadhaar_yob: "1975",
-            aadhaar_gender: "Male"
+            aadhaar_pincode: "",
+            aadhaar_yob: "",
+            aadhaar_gender: ""
           }
 
         }

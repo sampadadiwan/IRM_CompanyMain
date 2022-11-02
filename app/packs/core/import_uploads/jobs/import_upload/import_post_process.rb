@@ -15,7 +15,7 @@ class ImportPostProcess
     case import_upload.import_type
     when "InvestorAccess"
       Rails.logger.info "Importing InvestorAccess Done"
-    when "Holding"
+    when "Holding", "Offer"
       import_upload.import_results = File.open(result_file_name, "rb")
       Rails.logger.info "Importing Holding Done"
     end

@@ -50,6 +50,8 @@ class ImportHolding
       end
     rescue StandardError => e
       row << "Error #{e.message}"
+      Rails.logger.debug user_data
+      Rails.logger.debug row
       import_upload.failed_row_count += 1
     end
   end
@@ -60,7 +62,7 @@ class ImportHolding
                               is_holdings_entity: true, category: user_data["Founder or Employee"]).first
 
     # Create the user if he does not exists
-    user = User.find_by(email: user_data['Email'])
+    user = User.find_by(email: user_data['Email'].strip)
     unless user
       password = (0...8).map { rand(65..90).chr }.join
 
@@ -69,10 +71,11 @@ class ImportHolding
                       last_name: user_data["Last Name"], active: true, system_created: true,
                       entity_id: investor.investor_entity_id)
 
-      if user_data["Send Confirmation Email"] == "No"
+      if user_data["Send Confirmation Email"] && user_data["Send Confirmation Email"].strip == "No"
         user.skip_confirmation!
         user.save
       end
+
     end
 
     # create the Investor Access
