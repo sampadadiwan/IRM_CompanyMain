@@ -42,7 +42,8 @@
 
     <div class="form-group" id="category_form_group">
       <%= form.label :access_to_category, "Select Investor Category" %>
-      <%= form.select :access_to_category, Investor.INVESTOR_CATEGORIES, {:include_blank=>false}, 
+      <%= form.select :access_to_category, Investor.INVESTOR_CATEGORIES(current_user.entity),
+            {:include_blank=>false}, 
             class: "form-control select2-multiple", disabled: "disabled", multiple: "multiple",
             "data-action": "change->access#addErrorCheck"  %>
     </div>

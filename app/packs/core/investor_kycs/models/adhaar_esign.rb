@@ -17,9 +17,10 @@ class AdhaarEsign
       'https://eve.idfy.com/v3/tasks/sync/generate/esign_document',
       headers: {
         "api-key" => ENV["IDFY_API_KEY"],
-        "account-id" => ENV["IDFY_ACCOUNT_ID"]
+        "account-id" => ENV["IDFY_ACCOUNT_ID"],
+        'Content-Type' => 'application/json'
       },
-      body: {
+      'data-raw': {
         task_id: rand(5**5),
         group_id: "KYC_ESIGN",
         data:
@@ -34,23 +35,16 @@ class AdhaarEsign
 
   def prepare_data(name, email, phone, encoded_file)
     {
-      flow_type: "PDF/Template",
-      user_key: "",
-      verify_aadhaar_details: false,
+      flow_type: "pdf",
+      user_key: "M0OG222aTkaAJo8ATSa4cJkIIpvFXvP0",
+      verify_aadhaar_details: true,
       esign_file_details: {
-        #    "esign_profile_id":"ABCDE",
-        file_name: "Invoice",
+        esign_profile_id: "iIxiRbr",
+        file_name: "sample pdf",
         esign_file: encoded_file,
-        esign_fields: {
-        },
-        esign_additional_files: [],
         esign_allow_fill: false
       },
-      esign_stamp_details: {
-        esign_stamp_series: "",
-        esign_series_group: "",
-        esign_stamp_value: ""
-      },
+
       esign_invitees: [
         {
           esigner_name: name,
@@ -61,7 +55,9 @@ class AdhaarEsign
             aadhaar_yob: "",
             aadhaar_gender: ""
           }
+
         }
+
       ]
     }
   end
