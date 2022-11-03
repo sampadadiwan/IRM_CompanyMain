@@ -92,12 +92,33 @@
       </tr>
       <tr>
         <td>
-          Allocation Amount
+          Gross Amount
         </td>
         <td>
           <%= money_to_currency @offer.allocation_amount, params %>
         </td>
       </tr>
+      <%
+        fees = @offer.compute_fees(@offer.secondary_sale.fees)
+        fee_amount = fees.sum(Money.new(0, @offer.entity.currency)) { |i| i[:fee] }
+      %>
+      <tr>
+        <td>
+          Fees
+        </td>
+        <td>
+          <%= money_to_currency fee_amount, params %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Net Amount
+        </td>
+        <td>
+          <%= money_to_currency (@offer.allocation_amount - fee_amount), params %>
+        </td>
+      </tr>
+
       <tr>
         <td>
           Allocation %
