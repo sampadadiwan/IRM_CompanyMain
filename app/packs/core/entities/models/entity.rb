@@ -9,7 +9,7 @@ class Entity < ApplicationRecord
   validates :name, :entity_type, presence: true
 
   has_rich_text :details
-  belongs_to :parent_entity, class_name: "Entity"
+  belongs_to :parent_entity, class_name: "Entity", optional: true
   has_many :option_pools, dependent: :destroy
   has_many :deals, dependent: :destroy
   has_many :deal_investors, dependent: :destroy
