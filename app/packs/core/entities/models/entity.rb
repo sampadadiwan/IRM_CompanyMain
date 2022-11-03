@@ -9,6 +9,7 @@ class Entity < ApplicationRecord
   validates :name, :entity_type, presence: true
 
   has_rich_text :details
+  belongs_to :parent_entity, class_name: "Entity"
   has_many :option_pools, dependent: :destroy
   has_many :deals, dependent: :destroy
   has_many :deal_investors, dependent: :destroy
@@ -134,4 +135,9 @@ class Entity < ApplicationRecord
   scope :advisor_for, lambda { |user|
     joins(:investors).where("investors.investor_entity_id=? and investors.category=?", user.entity_id, "Advisor")
   }
+
+  def active_secondary_sale
+    secondary_sales.where("secondary_sales.start_date <= ? and secondary_sales.end_date >= ?",
+                          Time.zone.today, Time.zone.today).last
+  end
 end

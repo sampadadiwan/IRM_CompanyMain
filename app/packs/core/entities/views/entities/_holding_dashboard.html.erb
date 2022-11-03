@@ -1,48 +1,83 @@
 <div data-controller="datatable">
-    <div class="col-lg-12 mb-4">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Options</h6>
-            </div>
-            <div class="card-body">
-                <%= render "/holdings/esop_summary", holdings: policy_scope(Holding).options %>
+    <% if current_user.entity.parent_entity && current_user.entity.parent_entity.active_secondary_sale %>
+        <% active_secondary_sale = current_user.entity.parent_entity.active_secondary_sale %>
+        <div class="jumbotron">
+            <h1 class="display-4">Secondary Sale is On</h1>
+            <p class="lead">
+                An active secondary sale is on at <%= current_user.entity.parent_entity.name %>. You may participate in the secondary if you are eligible and have holdings which can be offered out.
+            </p> 
+            <hr class="my-4">
+
+            <% if policy_scope(active_secondary_sale.offers).count > 0 %>
+                <p>
+                    Please complete the details of your offer.
+                </p>
+                <p class="lead">
+                    <%= link_to "View Secondary", secondary_sale_path(active_secondary_sale, 
+                        tab: "offerings-tab"), class: "btn btn-primary btn-lg" %>
+                </p>
+            <% else %>
+                <p>
+                    Please make an offer if you would like to.
+                </p>
+                <p class="lead">
+                    <%= link_to "View Secondary", secondary_sale_path(active_secondary_sale), class: "btn btn-primary btn-lg" %>
+                </p>
+            <% end %>
+        </div>
+    <% end %>
+
+    <% if policy_scope(Holding).options.count > 0 %>
+
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Options</h6>
+                </div>
+                <div class="card-body">
+                    <%= render "/holdings/esop_summary", holdings: policy_scope(Holding).options %>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="row associated_entity">
+        <div class="row associated_entity">
 
 
-        <% 
-            entity_id = params[:entity_id].presence || current_user.employee_parent_entity&.id
-            if entity_id
-                entity = Entity.find(entity_id)
-                if entity.valuations.count > 0
-        %>
+            <% 
+                entity_id = params[:entity_id].presence || current_user.employee_parent_entity&.id
+                if entity_id
+                    entity = Entity.find(entity_id)
+                    if entity.valuations.count > 0
+            %>
 
-                    <div class="col-lg-6 mb-4">
-                        <%= render "/holdings/employee_calc" %>
-                    </div>
+                        <div class="col-lg-6 mb-4">
+                            <%= render "/holdings/employee_calc" %>
+                        </div>
 
-                    <div class="col-lg-6 mb-4">
-                        <div class="card shadow mb-4">
-                            <div class="card-header py-3">
-                                <h6 class="m-0 font-weight-bold text-primary">Projected Profits</h6>
-                            </div>
-                            <div class="card-body">
-                                <%= projected_profits_chart(params, current_user, entity)  %>
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Projected Profits</h6>
+                                </div>
+                                <div class="card-body">
+                                    <%= projected_profits_chart(params, current_user, entity)  %>
+                                </div>
                             </div>
                         </div>
-                    </div>
-            
-        <% 
+                
+            <% 
+                    end 
                 end 
-            end 
-        %>
-    </div>
-    <div>
-        <div class="associated_entity">
-            <%= render "/excercises/index", excercises: policy_scope(Excercise) %>
+            %>
         </div>
-    </div>
+
+    <% end %>
+
+    <% if policy_scope(Excercise).count > 0 %>
+        <div>
+            <div class="associated_entity">
+                <%= render "/excercises/index", excercises: policy_scope(Excercise) %>
+            </div>
+        </div>
+    <% end %>
 
 </div>

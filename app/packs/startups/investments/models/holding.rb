@@ -49,10 +49,7 @@ class Holding < ApplicationRecord
     end
   end
 
-  def active_secondary_sale
-    entity.secondary_sales.where("secondary_sales.start_date <= ? and secondary_sales.end_date >= ?",
-                                 Time.zone.today, Time.zone.today).last
-  end
+  delegate :active_secondary_sale, to: :entity
 
   def holder_name
     user ? user.full_name : investor.investor_name

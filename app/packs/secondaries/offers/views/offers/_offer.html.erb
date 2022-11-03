@@ -38,9 +38,10 @@
     <%= offer.notes %>
   </td>
   <td class="approved">
-    <span class="badge <%= offer.approved ? 'bg-success' : 'bg-warning' %>">
-      <%= offer.approved ?  "Yes" : "No" %>
-    </span>
+    <%= display_boolean(offer.approved) %>
+  </td>
+  <td class="verified">
+    <%= display_boolean(offer.verified) %>
   </td>
   <td>
     <%= link_to "Show" , offer , {class: "btn btn-primary" } if policy(offer).show? %>
