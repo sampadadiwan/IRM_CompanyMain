@@ -24,7 +24,7 @@
             <%= form.number_field :allocation_quantity, class: "form-control"  %>
         </div>
         <div class="divTableCell">
-            <%= form.select :interest_id, @offer.secondary_sale.interests.short_listed.escrow_deposited.map{|i| [i.interest_entity.name, i.id]}, {}, class: "form-control"  %>
+            <%= form.select :interest_id, @offer.secondary_sale.interests.short_listed.escrow_deposited.map{|i| [ i.buyer_entity_name.present? ? i.buyer_entity_name : i.interest_entity.name, i.id]}, {}, class: "form-control"  %>
         </div>
         <div class="divTableCell">
             <%= display_boolean @offer.final_agreement %>        
