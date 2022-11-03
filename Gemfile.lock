@@ -563,6 +563,7 @@ GEM
       actionpack (>= 5.0)
       railties (>= 5.0)
     rexml (3.2.5)
+    rmagick (5.0.0)
     roda (3.57.0)
       rack
     rolify (6.0.0)
@@ -787,6 +788,7 @@ DEPENDENCIES
   rails-erd
   ransack
   redis (~> 4.0)
+  rmagick
   rolify
   roo
   rspec-rails
