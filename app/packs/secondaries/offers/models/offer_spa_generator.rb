@@ -1,8 +1,8 @@
-require 'rmagick'
+# require 'rmagick'
 
 class OfferSpaGenerator
   include EmailCurrencyHelper
-  include Magick
+  # include Magick
 
   attr_accessor :working_dir
 
@@ -97,24 +97,24 @@ class OfferSpaGenerator
       stamp_paper = offer.documents.where(name: "Stamp Paper").first
       stamp_paper_download_path << add_image(report, :stamp_paper, stamp_paper.file)
     elsif stamp_paper_count > 1
-      # Merge the stamp papers into one single stamp paper & then use that
-      Rails.logger.debug { "Multiple stamp paper found for offer #{offer.id}" }
-      stamp_papers.each do |sp|
-        # Download each of the stamp papers
-        sp_download = sp.file.download
-        sleep(1)
-        stamp_paper_download_path << sp_download.path
-      end
-      # Merge the downloaded stamp papers
-      Rails.logger.debug { "Merging images #{stamp_paper_download_path}" }
-      sp_merged_image = ImageList.new(*stamp_paper_download_path).append(true)
-      sp_merged_file_path = "/tmp/sp_merged_image_#{offer.id}.png"
-      sp_merged_image.write(sp_merged_file_path)
-      # sp_merged_image.display
-      sleep(1)
-      # Add the merged image to the report
-      report.add_image :stamp_paper, sp_merged_file_path
-      # stamp_paper_download_path << sp_merged_file_path
+      # # Merge the stamp papers into one single stamp paper & then use that
+      # Rails.logger.debug { "Multiple stamp paper found for offer #{offer.id}" }
+      # stamp_papers.each do |sp|
+      #   # Download each of the stamp papers
+      #   sp_download = sp.file.download
+      #   sleep(1)
+      #   stamp_paper_download_path << sp_download.path
+      # end
+      # # Merge the downloaded stamp papers
+      # Rails.logger.debug { "Merging images #{stamp_paper_download_path}" }
+      # sp_merged_image = ImageList.new(*stamp_paper_download_path).append(true)
+      # sp_merged_file_path = "/tmp/sp_merged_image_#{offer.id}.png"
+      # sp_merged_image.write(sp_merged_file_path)
+      # # sp_merged_image.display
+      # sleep(1)
+      # # Add the merged image to the report
+      # report.add_image :stamp_paper, sp_merged_file_path
+      # # stamp_paper_download_path << sp_merged_file_path
     else
       Rails.logger.debug { "No stamp paper for offer #{offer.id}" }
     end
