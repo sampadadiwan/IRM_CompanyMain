@@ -42,6 +42,8 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     visible_externally: Field::BooleanEmoji,
     seller_transaction_fees_pct: Field::Number,
     lock_allocations: Field::BooleanEmoji,
+    disable_pan_kyc: Field::BooleanEmoji,
+    disable_bank_kyc: Field::BooleanEmoji,
     sale_type: Field::Select.with_options(collection: SecondarySale::SALE_TYPES)
   }.freeze
 
@@ -92,6 +94,8 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     interest_allocation_quantity
     visible_externally
     lock_allocations
+    disable_pan_kyc
+    disable_bank_kyc
     entity
     access_rights
     offers
@@ -120,6 +124,8 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     interest_allocation_quantity
     visible_externally
     lock_allocations
+    disable_pan_kyc
+    disable_bank_kyc
 
     no_offer_emails
     manage_offers

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_02_122310) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_02_235103) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1243,6 +1243,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_02_122310) do
     t.boolean "manage_offers", default: false
     t.boolean "manage_interests", default: false
     t.text "spa_data"
+    t.boolean "disable_pan_kyc", default: false
+    t.boolean "disable_bank_kyc", default: false
     t.index ["deleted_at"], name: "index_secondary_sales_on_deleted_at"
     t.index ["entity_id"], name: "index_secondary_sales_on_entity_id"
     t.index ["form_type_id"], name: "index_secondary_sales_on_form_type_id"

@@ -129,12 +129,12 @@ class Offer < ApplicationRecord
     secondary_sale.seller_doc_list&.split(",")
   end
 
-  after_save :validate_pan_card
+  after_save :validate_pan_card, if: proc { |o| !o.secondary_sale.disable_pan_kyc }
   def validate_pan_card
     VerifyOfferPanJob.perform_later(id) if saved_change_to_PAN? || saved_change_to_full_name? || saved_change_to_pan_card_data?
   end
 
-  after_save :validate_bank
+  after_save :validate_bank, if: proc { |o| !o.secondary_sale.disable_bank_kyc }
   def validate_bank
     VerifyOfferBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
   end

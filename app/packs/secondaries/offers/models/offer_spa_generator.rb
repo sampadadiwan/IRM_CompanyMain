@@ -1,4 +1,5 @@
 class OfferSpaGenerator
+  include EmailCurrencyHelper
   attr_accessor :working_dir
 
   def initialize(offer, master_spa_path = nil)
@@ -50,7 +51,7 @@ class OfferSpaGenerator
 
       r.add_field :allocation_quantity, offer.allocation_quantity
       r.add_field :share_price, offer.secondary_sale.final_price
-      r.add_field :allocation_amount, offer.allocation_amount.to_s
+      r.add_field :allocation_amount, money_to_currency(offer.allocation_amount)
 
       add_seller_fields(r, offer)
       offer_signature = add_signature(r, :seller_signature, offer.signature)
@@ -84,6 +85,14 @@ class OfferSpaGenerator
     report.add_field :seller_ifsc_code, offer.ifsc_code
     report.add_field :seller_demat, offer.demat
     report.add_field :seller_city, offer.city
+
+    if offer.secondary_sale.fees
+      fees = offer.compute_fees(offer.secondary_sale.fees)
+      fee_amount = fees.sum(Money.new(0, offer.entity.currency)) { |i| i[:fee] }
+
+      report.add_field :seller_fees, fee_amount
+      report.add_field :net_allocation_amount, money_to_currency(offer.allocation_amount - fee_amount)
+    end
   end
 
   def add_buyer_fields(report, offer)
