@@ -8,7 +8,9 @@
 
     <div class="divTableCell">
         <%= interest.aquirer_name %> <br>
-        <%= link_to interest.user.email, "mailto:#{interest.user.email}?body=Dear #{interest.user.full_name}. View your interest at #{interest_url(interest)}", target: "_blank" if interest.user %> 
+        <% email = interest.email.present? ? interest.email : interest.user.email %>
+        <% user_name = interest.contact_name.present? ? interest.contact_name : interest.user.full_name %>
+        <%= link_to email, "mailto:#{email}?body=Dear #{user_name}. View your interest at #{interest_url(interest)}", target: "_blank" if interest.user %> 
     </div>
     <div class="divTableCell"><%= custom_format_number(interest.quantity, params) %></div>
     <div class="divTableCell"><%= custom_format_number(interest.price, params) %></div>
