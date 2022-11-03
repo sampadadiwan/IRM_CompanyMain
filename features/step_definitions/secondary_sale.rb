@@ -48,11 +48,10 @@
     @input_sale ||= @sale # This is for times when the sale is not created from the ui in tests
 
     expect(page).to have_content(@input_sale.name)
-    expect(page).to have_content(@input_sale.start_date.strftime("%d/%m/%Y"))
+    # expect(page).to have_content(@input_sale.start_date.strftime("%d/%m/%Y"))
     expect(page).to have_content(@input_sale.end_date.strftime("%d/%m/%Y"))
     if @user.entity_id == @sale.entity_id
       expect(page).to have_content(@input_sale.percent_allowed)
-      puts "### min_price = #{custom_format_number(@input_sale.min_price, {})}"
       expect(page).to have_content(custom_format_number(@input_sale.min_price, {}))
       expect(page).to have_content(custom_format_number(@input_sale.max_price, {}))
     end
