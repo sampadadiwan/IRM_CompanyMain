@@ -33,7 +33,7 @@
     <div class="divTableCell"><%= money_to_currency(offer.allocation_amount, params) %></div>
     <div class="divTableCell"><%= offer.allocation_percentage %></div>
     <div class="divTableCell"><%= offer.allocation_quantity %></div>
-    <div class="divTableCell"><%= offer.interest.buyer_entity_name.present? ? offer.interest.buyer_entity_name : offer.interest.interest_entity.name if offer.interest %></div>
+    <div class="divTableCell"><%= offer.interest.aquirer_name if offer.interest %></div>
     <div class="divTableCell">
         <%= display_boolean offer.final_agreement %>   
         <br>

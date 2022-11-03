@@ -7,7 +7,7 @@
     </div>
 
     <div class="divTableCell">
-        <%= interest.interest_entity.name %> <br>
+        <%= interest.aquirer_name %> <br>
         <%= link_to interest.user.email, "mailto:#{interest.user.email}?body=Dear #{interest.user.full_name}. View your interest at #{interest_url(interest)}", target: "_blank" if interest.user %> 
     </div>
     <div class="divTableCell"><%= custom_format_number(interest.quantity, params) %></div>
@@ -20,7 +20,12 @@
     <div class="divTableCell"><%= interest.allocation_percentage %></div>
     <div class="divTableCell"><%= interest.allocation_quantity %></div>
     <div class="divTableCell"><%= money_to_currency(interest.allocation_amount, params) %></div>
-    <div class="divTableCell"><%= interest.offer_quantity %></div>
+    <div class="divTableCell">
+        <%= interest.offer_quantity %>
+        <div class="text-danger small">
+            <%= (interest.offer_quantity - interest.allocation_quantity) != 0 ? "Mismatch Found" : "" %>
+        </div>
+    </div>
     <div class="divTableCell"><%= money_to_currency(interest.offer_amount, params) %></div>
     <div class="divTableCell">
         <span class="badge <%= interest.verified ? 'bg-success' : 'bg-warning' %>">

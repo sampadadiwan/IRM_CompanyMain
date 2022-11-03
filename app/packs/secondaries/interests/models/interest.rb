@@ -93,4 +93,8 @@ class Interest < ApplicationRecord
   def document_list
     secondary_sale.buyer_doc_list&.split(",")
   end
+
+  def aquirer_name
+    buyer_entity_name.presence || interest_entity.name
+  end
 end

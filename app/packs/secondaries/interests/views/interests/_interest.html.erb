@@ -1,6 +1,6 @@
 <tr id="<%= dom_id interest %>">
   <td>
-    <%= policy(interest).unscramble? ? interest.interest_entity.name : ENV["OBFUSCATION"] %>
+    <%= policy(interest).unscramble? ? interest.aquirer_name : ENV["OBFUSCATION"] %>
   </td>
   <td>
     <%= policy(interest).unscramble? ? interest.user.full_name : ENV["OBFUSCATION"] %>
