@@ -28,6 +28,12 @@ It displays a header, and renders the `_form` partial to do the heavy lifting.
       [namespace, page.resource],
       class: "button",
     ) if valid_action?(:show) && show_action?(:show, page.resource) %>
+
+    <%= link_to(
+    t("Edit Password", name: page.page_title),
+      [:edit, namespace, page.resource, password: true],
+      class: "button",
+    ) if valid_action?(:edit) && show_action?(:edit, page.resource) %>
   </div>
 </header>
 

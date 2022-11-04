@@ -130,6 +130,10 @@ class SecondarySalePolicy < ApplicationPolicy
     create?
   end
 
+  def approve_offers?
+    create?
+  end
+
   def view_allocations?
     create? || owner?
   end

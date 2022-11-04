@@ -34,7 +34,7 @@ and renders all form fields for a resource's editable attributes.
   <% end %>
 
   <% page.attributes.each do |attribute| -%>
-    <% unless page.resource.id != nil && (attribute.name == "password" || attribute.name == "password_confirmation") %>        
+    <% unless params[:password].blank? && page.resource.id != nil && (attribute.name == "password" || attribute.name == "password_confirmation") %>        
       <div class="field-unit field-unit--<%= attribute.html_class %> field-unit--<%= requireness(attribute) %>">
           <%= render_field attribute, f: f %>
       </div>

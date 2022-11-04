@@ -147,6 +147,7 @@ Rails.application.routes.draw do
     get 'spa_upload', on: :member
     get 'lock_allocations', on: :member
     get 'offers', on: :member
+    patch 'approve_offers', on: :member
     get 'interests', on: :member
     get 'finalize_offer_allocation', on: :member
     get 'finalize_interest_allocation', on: :member

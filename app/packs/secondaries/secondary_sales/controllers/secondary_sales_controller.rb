@@ -1,6 +1,6 @@
 class SecondarySalesController < ApplicationController
   before_action :set_secondary_sale, only: %i[show edit update destroy make_visible download allocate
-                                              send_notification spa_upload lock_allocations offers interests payments
+                                              send_notification spa_upload lock_allocations offers interests payments approve_offers
                                               finalize_offer_allocation finalize_interest_allocation generate_spa]
 
   after_action :verify_policy_scoped, only: []
@@ -41,6 +41,13 @@ class SecondarySalesController < ApplicationController
     @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest).page(params[:page])
 
     render "/offers/finalize_allocation"
+  end
+
+  def approve_offers
+    @offers = @secondary_sale.offers.where(approved: false)
+    @offers.update(approved: true)
+
+    redirect_to secondary_sale_url(@secondary_sale), notice: "Approved all pending offers"
   end
 
   def finalize_interest_allocation
