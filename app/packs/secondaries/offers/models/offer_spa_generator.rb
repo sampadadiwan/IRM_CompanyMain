@@ -99,26 +99,26 @@ class OfferSpaGenerator
         header_footer_download_path << file.path
         combined_pdf << CombinePDF.load(file.path)
       end
-    else
-      Rails.logger.debug { "No headers for offer #{offer.id}" }
     end
 
     # Combine the SPA
     combined_pdf << CombinePDF.load(spa_path)
 
     # Get the footers
-    footers = offer.documents.where(name: %w[Footer Signature])
-    footer_count = footers.count
+    footers = offer.documents.where(name: %w[Footer Signature]).to_a
+
+    if offer.interest
+      # Get any signatures from the matched interest
+      footers += offer.interest.documents.where(name: %w[Footer Signature]).to_a
+    end
 
     # Combine the footers
-    if footer_count.positive?
+    if footers.length.positive?
       footers.each do |footer|
         file = footer.file.download
         header_footer_download_path << file.path
         combined_pdf << CombinePDF.load(file.path)
       end
-    else
-      Rails.logger.debug { "No footers for offer #{offer.id}" }
     end
 
     # Overwrite the orig SPA with the one with header and footer
