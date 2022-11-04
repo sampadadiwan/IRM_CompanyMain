@@ -60,6 +60,8 @@ class FundDocGenerator
     report.generate("#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.odt")
     system("libreoffice --headless --convert-to pdf #{@working_dir}/CapitalCommitment-#{capital_commitment.id}.odt --outdir #{@working_dir}")
 
+    add_header_footers(capital_commitment, "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf")
+
     File.delete(capital_commitment_signature) if capital_commitment_signature
   end
 
@@ -89,6 +91,52 @@ class FundDocGenerator
       sleep(1)
       report.add_image field_name.to_sym, file.path
       file.path
+    end
+  end
+
+  def add_header_footers(capital_commitment, spa_path)
+    header_footer_download_path = []
+
+    # Get the headers
+    headers = capital_commitment.documents.where(name: ["Header", "Stamp Paper"])
+    header_count = headers.count
+
+    combined_pdf = CombinePDF.new
+
+    # Combine the headers
+    if header_count.positive?
+      headers.each do |header|
+        file = header.file.download
+        header_footer_download_path << file.path
+        combined_pdf << CombinePDF.load(file.path)
+      end
+    else
+      Rails.logger.debug { "No headers for capital_commitment #{capital_commitment.id}" }
+    end
+
+    # Combine the SPA
+    combined_pdf << CombinePDF.load(spa_path)
+
+    # Get the footers
+    footers = capital_commitment.documents.where(name: %w[Footer Signature])
+    footer_count = footers.count
+
+    # Combine the footers
+    if footer_count.positive?
+      footers.each do |footer|
+        file = footer.file.download
+        header_footer_download_path << file.path
+        combined_pdf << CombinePDF.load(file.path)
+      end
+    else
+      Rails.logger.debug { "No footers for capital_commitment #{capital_commitment.id}" }
+    end
+
+    # Overwrite the orig SPA with the one with header and footer
+    combined_pdf.save(spa_path)
+
+    header_footer_download_path.each do |file_path|
+      File.delete(file_path)
     end
   end
 
