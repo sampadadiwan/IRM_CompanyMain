@@ -45,7 +45,6 @@ class OfferSpaGenerator
   def generate(offer, master_spa_path)
     offer_signature = nil
     interest_signature = nil
-    header_footer_download_paths = []
 
     odt_file_path = get_odt_file(master_spa_path)
 
@@ -73,9 +72,6 @@ class OfferSpaGenerator
 
     File.delete(offer_signature) if offer_signature
     File.delete(interest_signature) if interest_signature
-    header_footer_download_paths.each do |path|
-      File.delete(path)
-    end
   end
 
   def add_image(report, field_name, image)
@@ -100,6 +96,7 @@ class OfferSpaGenerator
     if header_count.positive?
       headers.each do |header|
         file = header.file.download
+        header_footer_download_path << file.path
         combined_pdf << CombinePDF.load(file.path)
       end
     else
@@ -117,6 +114,7 @@ class OfferSpaGenerator
     if footer_count.positive?
       footers.each do |footer|
         file = footer.file.download
+        header_footer_download_path << file.path
         combined_pdf << CombinePDF.load(file.path)
       end
     else
@@ -126,7 +124,9 @@ class OfferSpaGenerator
     # Overwrite the orig SPA with the one with header and footer
     combined_pdf.save(spa_path)
 
-    header_footer_download_path
+    header_footer_download_path.each do |file_path|
+      File.delete(file_path)
+    end
   end
 
   def add_seller_fields(report, offer)
