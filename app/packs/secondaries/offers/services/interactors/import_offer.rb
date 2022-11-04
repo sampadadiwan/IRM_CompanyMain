@@ -1,4 +1,3 @@
-# TODO: Fix to really import offers
 class ImportOffer
   include Interactor
   STANDARD_HEADERS = ["User (email)", "Offer Quantity", "First Name", "Middle Name", "Last Name", "Address", "PAN", "Bank Account", "IFSC Code"].freeze
@@ -83,6 +82,36 @@ class ImportOffer
       offer.properties ||= {}
       custom_field_headers.each do |cfh|
         offer.properties[cfh.underscore] = user_data[cfh]
+      end
+    end
+  end
+
+  def adhoc_update(file_path, secondary_sale_id)
+    secondary_sale = SecondarySale.find(secondary_sale_id)
+
+    data = Roo::Spreadsheet.open(file_path) # open spreadsheet
+    headers = data.row(1) # get header row
+
+    data.each_with_index do |row, idx|
+      # skip header row
+      next if idx.zero?
+
+      user_data = [headers, row].transpose.to_h
+
+      first_name, last_name = user_data["Seller name"].split
+      u = User.joins(:offers).where('offers.entity_id': secondary_sale.entity_id,
+                                    'users.first_name': first_name.strip,
+                                    'users.last_name': last_name.strip).first
+
+      if u
+        secondary_sale.offers.where(user_id: u.id).update(
+          bank_name: user_data["Bank Name"].strip,
+          bank_account_number: user_data["Bank Account Number"].strip,
+          ifsc_code: user_data["IFSC CODE"].strip
+        )
+
+      else
+        Rails.logger.debug { "No user found for row #{idx} #{user_data} #{first_name} #{last_name}" }
       end
     end
   end
