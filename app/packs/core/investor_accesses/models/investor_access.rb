@@ -52,8 +52,13 @@ class InvestorAccess < ApplicationRecord
     self.email = email.strip
     u = User.find_by(email:)
     if u.blank?
-      u = User.create(first_name:, last_name:, email:, active: true, system_created: true,
-                      entity_id: investor.investor_entity_id, password: SecureRandom.hex(8))
+      u = User.new(first_name:, last_name:, email:, active: true, system_created: true,
+                   entity_id: investor.investor_entity_id, password: SecureRandom.hex(8))
+      unless send_confirmation
+        Rails.logger.debug { "############# Skipping Confirmation for #{u.email}" }
+        u.skip_confirmation!
+      end
+      u.save
     end
     self.user = u
   end

@@ -71,11 +71,8 @@ class ImportHolding
                       last_name: user_data["Last Name"], active: true, system_created: true,
                       entity_id: investor.investor_entity_id)
 
-      if user_data["Send Confirmation Email"] && user_data["Send Confirmation Email"].strip == "No"
-        user.skip_confirmation!
-        user.save
-      end
-
+      user.skip_confirmation! if user_data["Send Confirmation Email"] && user_data["Send Confirmation Email"].strip == "No"
+      user.save
     end
 
     # create the Investor Access

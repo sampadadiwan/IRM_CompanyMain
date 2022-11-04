@@ -29,7 +29,8 @@ class ImportInvestorAccess
     ia = InvestorAccess.new(first_name: user_data["First Name"], last_name: user_data["Last Name"],
                             email: user_data["Email"], approved:,
                             entity_id: import_upload.entity_id, investor_id: investor.id,
-                            granted_by: import_upload.user_id)
+                            granted_by: import_upload.user_id,
+                            send_confirmation: user_data["Send Confirmation Email"] == "Yes")
 
     Rails.logger.debug { "Saving InvestorAccess with email '#{ia.email}'" }
     ia.save
