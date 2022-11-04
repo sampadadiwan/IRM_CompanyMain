@@ -45,7 +45,7 @@ class OfferSpaGenerator
   def generate(offer, master_spa_path)
     offer_signature = nil
     interest_signature = nil
-    stamp_paper_download_paths = []
+    header_footer_download_paths = []
 
     odt_file_path = get_odt_file(master_spa_path)
 
@@ -63,16 +63,17 @@ class OfferSpaGenerator
 
       add_buyer_fields(r, offer)
       interest_signature = add_image(r, :buyer_signature, offer.interest&.signature)
-
-      stamp_paper_download_paths = add_stamp_paper(r, offer)
     end
 
     report.generate("#{@working_dir}/Offer-#{offer.id}.odt")
+
     system("libreoffice --headless --convert-to pdf #{@working_dir}/Offer-#{offer.id}.odt --outdir #{@working_dir}")
+
+    add_header_footers(offer, "#{@working_dir}/Offer-#{offer.id}.pdf")
 
     File.delete(offer_signature) if offer_signature
     File.delete(interest_signature) if interest_signature
-    stamp_paper_download_paths.each do |path|
+    header_footer_download_paths.each do |path|
       File.delete(path)
     end
   end
@@ -86,40 +87,46 @@ class OfferSpaGenerator
     end
   end
 
-  def add_stamp_paper(report, offer)
-    stamp_paper_download_path = []
-    stamp_papers = offer.documents.where(name: "Stamp Paper")
-    stamp_paper_count = stamp_papers.count
+  def add_header_footers(offer, spa_path)
+    header_footer_download_path = []
 
-    if stamp_paper_count == 1
-      # Use the single stamp paper
-      Rails.logger.debug { "1 stamp paper found for offer #{offer.id}" }
-      stamp_paper = offer.documents.where(name: "Stamp Paper").first
-      stamp_paper_download_path << add_image(report, :stamp_paper, stamp_paper.file)
-    elsif stamp_paper_count > 1
-      # # Merge the stamp papers into one single stamp paper & then use that
-      # Rails.logger.debug { "Multiple stamp paper found for offer #{offer.id}" }
-      # stamp_papers.each do |sp|
-      #   # Download each of the stamp papers
-      #   sp_download = sp.file.download
-      #   sleep(1)
-      #   stamp_paper_download_path << sp_download.path
-      # end
-      # # Merge the downloaded stamp papers
-      # Rails.logger.debug { "Merging images #{stamp_paper_download_path}" }
-      # sp_merged_image = ImageList.new(*stamp_paper_download_path).append(true)
-      # sp_merged_file_path = "/tmp/sp_merged_image_#{offer.id}.png"
-      # sp_merged_image.write(sp_merged_file_path)
-      # # sp_merged_image.display
-      # sleep(1)
-      # # Add the merged image to the report
-      # report.add_image :stamp_paper, sp_merged_file_path
-      # # stamp_paper_download_path << sp_merged_file_path
+    # Get the headers
+    headers = offer.documents.where(name: ["Header", "Stamp Paper"])
+    header_count = headers.count
+
+    combined_pdf = CombinePDF.new
+
+    # Combine the headers
+    if header_count.positive?
+      headers.each do |header|
+        file = header.file.download
+        combined_pdf << CombinePDF.load(file.path)
+      end
     else
-      Rails.logger.debug { "No stamp paper for offer #{offer.id}" }
+      Rails.logger.debug { "No headers for offer #{offer.id}" }
     end
 
-    stamp_paper_download_path
+    # Combine the SPA
+    combined_pdf << CombinePDF.load(spa_path)
+
+    # Get the footers
+    footers = offer.documents.where(name: %w[Footer Signature])
+    footer_count = footers.count
+
+    # Combine the footers
+    if footer_count.positive?
+      footers.each do |footer|
+        file = footer.file.download
+        combined_pdf << CombinePDF.load(file.path)
+      end
+    else
+      Rails.logger.debug { "No footers for offer #{offer.id}" }
+    end
+
+    # Overwrite the orig SPA with the one with header and footer
+    combined_pdf.save(spa_path)
+
+    header_footer_download_path
   end
 
   def add_seller_fields(report, offer)
