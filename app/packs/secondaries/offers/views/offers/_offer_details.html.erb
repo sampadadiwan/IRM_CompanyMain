@@ -12,7 +12,7 @@
       <div id="docs-tab" class="tab-pane fade in show active">
         <div id="docs" class="associated_entity">
           <% msg = @offer.secondary_sale.seller_doc_list.present? ? "Documents Required: #{@offer.secondary_sale.seller_doc_list}" : nil %>
-          <%= render "/documents/index", documents: @offer.documents, 
+          <%= render "/documents/index", documents: @offer.documents.includes(:folder, :tags), 
               owner: @offer, entity: @offer.entity, msg: msg %>
         </div>     
       </div>

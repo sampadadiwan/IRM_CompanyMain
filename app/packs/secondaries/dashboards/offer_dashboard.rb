@@ -13,6 +13,8 @@ class OfferDashboard < Administrate::BaseDashboard
     secondary_sale: Field::BelongsTo,
     holding: Field::BelongsTo,
     granter: Field::BelongsTo,
+    documents: Field::HasMany,
+
     id: Field::Number,
     quantity: Field::Number,
     percentage: Field::String.with_options(searchable: false),
@@ -84,6 +86,8 @@ class OfferDashboard < Administrate::BaseDashboard
 
     auto_match
     granted_by_user_id
+
+    documents
   ].freeze
 
   # FORM_ATTRIBUTES
