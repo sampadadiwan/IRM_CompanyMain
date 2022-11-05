@@ -10,6 +10,7 @@ class UserDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     entity: Field::BelongsTo,
     id: Field::Number,
+    sign_in_count: Field::Number,
     first_name: Field::String,
     last_name: Field::String,
     created_at: Field::DateTime,
@@ -52,6 +53,7 @@ class UserDashboard < Administrate::BaseDashboard
     email
     phone
     active
+    sign_in_count
     confirmed_at
     curr_role
     roles
