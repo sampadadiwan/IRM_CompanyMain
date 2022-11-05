@@ -138,20 +138,11 @@
                 <div class="card-header"> 3. Additional Documents </div>
                 <div class="card-body">
 
-                    <div class="form-group">
-
-                        <% label = offer.secondary_sale.seller_doc_list ? offer.secondary_sale.seller_doc_list : "Additional Documents" %>
-                        <%= form.label :documents, label, class: "form-label" %>
-                        <%= render "layouts/multi_upload", form: form, title: "Offer Documents", 
-                                                for_model: "offer" %>
                     
-                        <small class="text-muted"> Upload documents here </small>
-                    
-                    </div>
 
                     <% if offer.secondary_sale.seller_doc_list.present? %>
                         
-                        <label class="form-label">Confirm Uploaded Documents</label>
+                        <div class="alert alert-info">Please confirm you have copies of the following documents to upload. You will need to upload them post saving this offer.</div>
                         <div class="docs_uploaded_check">                        
                         <% offer.secondary_sale.seller_doc_list.split(",").each_with_index do |doc_name, idx| %>
         

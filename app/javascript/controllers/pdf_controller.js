@@ -1,6 +1,38 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
+
+    viewer_instance;
+
+    async save_signed() {
+        
+                const { documentViewer, annotationManager } = this.viewer_instance.Core;
+
+                let doc = documentViewer.getDocument();
+                let xfdfString = await annotationManager.exportAnnotations();
+                let data = await doc.getFileData({
+                    // saves the document with annotations in it
+                    xfdfString
+                });
+                let arr = new Uint8Array(data);
+                let blob = new Blob([arr], { type: 'application/pdf' });
+
+                console.log(blob);
+
+                let file = new File([blob], "signed.pdf",{type:"application/pdf", lastModified:new Date().getTime()});
+
+                let container = new DataTransfer();
+                container.items.add(file);
+
+                let fileInputElement = document.getElementById('document_file');
+
+                fileInputElement.files = container.files;
+                $("#signed_doc_form").submit();
+
+        
+    }
+    
+
     connect() {
 
         Core.setWorkerPath('/lib/core');
@@ -31,14 +63,36 @@ export default class extends Controller {
             path: '/lib', 
         }, document.getElementById('viewer'))
             .then(instance => {
-                instance.UI.disableElements(['ribbons']);
-                instance.UI.disableElements(['toolsHeader']);
+                this.viewer_instance = instance;
+                instance.UI.disableElements(['toolbarGroup-Shapes']);
+                instance.UI.disableElements(['toolbarGroup-View']);
+                instance.UI.disableElements(['toolbarGroup-Edit']);
+                instance.UI.disableElements(['toolbarGroup-Annotate']);
+                instance.UI.disableElements(['toolbarGroup-Forms']);
+                instance.UI.disableElements(['toolbarGroup-FillAndSign']);
+                
+                
+                
+
                 instance.UI.openElements([ 'menuOverlay' ]);
                 if($("#download_document").val() !== "true") { 
                     instance.UI.disableElements([ 'downloadButton' ]);
                 }
                 if($("#printing_document").val() !== "true") { 
                     instance.UI.disableElements([ 'printButton' ]);
+                }
+
+                if($("#sign_document").val() !== "true") { 
+                    instance.UI.disableElements(['ribbons']);
+                    instance.UI.disableElements(['toolsHeader']);            
+                    instance.UI.disableElements([ 'toolbarGroup-Insert' ]);
+                } else {
+                    instance.UI.openElements([ 'toolbarGroup-Insert' ]);
+                    instance.UI.setHeaderItems(function(header) {
+                        header.getHeader('toolbarGroup-Insert').delete(2);
+                        header.getHeader('toolbarGroup-Insert').delete(3);
+                        header.getHeader('toolbarGroup-Insert').delete(4);
+                    });
                 }
 
 
@@ -49,7 +103,7 @@ export default class extends Controller {
                     filename: 'myfile.pdf'
                 });
 
-                instance.UI.setFitMode(instance.FitMode.FitPage);
+                instance.UI.setFitMode(instance.FitMode.FitWidth);
                 
                 $("#viewer_label").hide();
                 $("#viewer").show();
@@ -57,7 +111,6 @@ export default class extends Controller {
 
                 const { documentViewer } = instance.Core;
                 
-
 
                 documentViewer.setWatermark({
                     // Draw diagonal watermark in middle of the document
@@ -93,6 +146,7 @@ export default class extends Controller {
 
     initCompleted() {
         console.log("initCompleted");
+        $('button[data-element="signatureToolGroupButton"]').click();
     }
 
     officeToPDF(viewer_link, viewer_watermark) {
