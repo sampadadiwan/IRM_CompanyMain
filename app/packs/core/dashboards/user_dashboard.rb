@@ -36,6 +36,7 @@ class UserDashboard < Administrate::BaseDashboard
     last_name
     email
     active
+    sign_in_count
     created_at
     entity
     curr_role
