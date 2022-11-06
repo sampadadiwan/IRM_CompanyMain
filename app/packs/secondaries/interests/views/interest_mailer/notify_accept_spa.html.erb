@@ -1,0 +1,14 @@
+<h3>Dear User</h3>
+
+<p>
+    This is to confirm that your acceptance of the Share Purchase Agreement for your interest below has been recorded. 
+</p>
+
+<p>
+    <h3>Interest Details:</h3>
+    <%= render "/interests/show", interest: @interest, current_user: nil %>
+</p>
+
+<p class="btn btn-primary">
+    <%= link_to 'View Interest', interest_url(@interest, subdomain: @interest.entity.sub_domain) %>
+</p>

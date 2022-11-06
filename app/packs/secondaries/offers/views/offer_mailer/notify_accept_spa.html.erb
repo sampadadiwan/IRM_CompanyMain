@@ -1,0 +1,13 @@
+<h3>Dear <%= @offer.user.full_name %></h3>
+
+<p>
+    This is to confirm that your acceptance of the Share Purchase Agreement for your offer below has been recorded. 
+</p>
+
+<p>
+    <%= render "/offers/show", offer: @offer, current_user: nil %>
+</p>
+
+<p class="btn btn-primary">
+    <%= link_to 'View offer', offer_url(@offer, subdomain: @offer.entity.sub_domain) %>
+</p>

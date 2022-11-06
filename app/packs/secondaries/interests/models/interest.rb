@@ -66,6 +66,11 @@ class Interest < ApplicationRecord
     InterestMailer.with(interest_id: id).notify_shortlist.deliver_later if short_listed && saved_change_to_short_listed? && !secondary_sale.no_interest_emails
   end
 
+  after_save :notify_accept_spa, if: proc { |o| o.final_agreement && o.saved_change_to_final_agreement? }
+  def notify_accept_spa
+    InterestMailer.with(interest_id: id).notify_accept_spa.deliver_later unless secondary_sale.no_interest_emails
+  end
+
   def notify_finalized
     InterestMailer.with(interest_id: id).notify_finalized.deliver_later if finalized && saved_change_to_finalized? && !secondary_sale.no_interest_emails
   end

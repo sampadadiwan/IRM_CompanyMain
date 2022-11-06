@@ -118,6 +118,11 @@ class Offer < ApplicationRecord
     OfferMailer.with(offer_id: id).notify_approval.deliver_later unless secondary_sale.no_offer_emails
   end
 
+  after_save :notify_accept_spa, if: proc { |o| o.final_agreement && o.saved_change_to_final_agreement? }
+  def notify_accept_spa
+    OfferMailer.with(offer_id: id).notify_accept_spa.deliver_later unless secondary_sale.no_offer_emails
+  end
+
   def setup_folder_details
     parent_folder = secondary_sale.document_folder.folders.where(name: "Offers").first
     setup_folder(parent_folder, user.full_name, [])

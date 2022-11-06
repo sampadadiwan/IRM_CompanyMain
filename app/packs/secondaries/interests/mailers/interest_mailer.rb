@@ -21,6 +21,17 @@ class InterestMailer < ApplicationMailer
     WhatsappSenderJob.new.perform(msg, @interest.user)
   end
 
+  def notify_accept_spa
+    @interest = Interest.find params[:interest_id]
+    sale = @interest.secondary_sale
+    email_list = [@interest.user.email, sale.support_email].join(",")
+    emails = sandbox_email(@interest, email_list)
+
+    mail(from: from_email(@interest.entity), to: emails,
+         cc: ENV['SUPPORT_EMAIL'],
+         subject: "SPA confirmation received")
+  end
+
   def notify_finalized
     @interest = Interest.find params[:interest_id]
     emails = sandbox_email(@interest, @interest.user.email)
