@@ -183,7 +183,7 @@
           Pan Card
         </td>
         <td>
-          <%= link_to "Pan Card", @offer.pan_card_url if @offer.pan_card.present? %>
+          <%= link_to "Download Pan Card", @offer.pan_card_url, target: "_blank", class: "btn btn-success" if @offer.pan_card.present? %>
           <br>
           <%= render "investor_kycs/pan_verification", model: @offer unless @offer.secondary_sale.disable_pan_kyc %>
         </td>

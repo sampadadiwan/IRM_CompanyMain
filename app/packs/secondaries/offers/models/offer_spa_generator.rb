@@ -49,7 +49,7 @@ class OfferSpaGenerator
     odt_file_path = get_odt_file(master_spa_path)
 
     report = ODFReport::Report.new(odt_file_path) do |r|
-      r.add_field :effective_date, Time.zone.today
+      r.add_field :effective_date, Time.zone.today.strftime("%d %B %Y")
       r.add_field :offer_quantity, offer.quantity
       r.add_field :company_name, offer.entity.name
 
@@ -146,16 +146,26 @@ class OfferSpaGenerator
       report.add_field :seller_fees, fee_amount
       report.add_field :net_allocation_amount, money_to_currency(offer.allocation_amount - fee_amount)
     end
+
+    offer.properties.each do |k, v|
+      report.add_field "seller_#{k}", v
+    end
   end
 
   def add_buyer_fields(report, offer)
-    report.add_field :buyer_name, offer.interest&.buyer_entity_name
-    report.add_field :buyer_address, offer.interest&.address
-    report.add_field :buyer_email, offer.interest&.email
-    report.add_field :buyer_pan, offer.interest&.PAN
-    report.add_field :buyer_city, offer.interest&.city
-    report.add_field :buyer_demat, offer.interest&.demat
-    report.add_field :buyer_contact, offer.interest&.contact_name
+    if offer.interest
+      report.add_field :buyer_name, offer.interest.buyer_entity_name
+      report.add_field :buyer_address, offer.interest.address
+      report.add_field :buyer_email, offer.interest.email
+      report.add_field :buyer_pan, offer.interest.PAN
+      report.add_field :buyer_city, offer.interest.city
+      report.add_field :buyer_demat, offer.interest.demat
+      report.add_field :buyer_contact, offer.interest.contact_name
+
+      offer.interest.properties.each do |k, v|
+        report.add_field "buyer_#{k}", v
+      end
+    end
   end
 
   def attach(offer)

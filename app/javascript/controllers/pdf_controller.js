@@ -174,5 +174,77 @@ export default class extends Controller {
         });
     }
 
+    dsc() {
+        WebViewer({
+            fullAPI: true,
+            // Other init options
+          }).then(instance => {
+            const { PDFNet, documentViewer } = instance.Core;
+          
+            documentViewer.addEventListener('documentLoaded', async () => {
+              await PDFNet.initialize();
+              const doc = await documentViewer.getDocument().getPDFDoc();
+          
+              // Run PDFNet methods with memory management
+              await PDFNet.runWithCleanup(async () => {
+          
+                // lock the document before a write operation
+                // runWithCleanup will auto unlock when complete
+                doc.lock();
+          
+                // Add an StdSignatureHandler instance to PDFDoc, making sure to keep track of it using the ID returned.
+                const sigHandlerId = await doc.addStdSignatureHandlerFromURL(cert_file_path, 'password');
+          
+                /**
+                 * Certifying a document requires a digital signature field (can optionally be
+                 * hidden), hence why the logic below either looks for an existing field in the
+                 * document, or suggests creating a field in the document
+                 */
+          
+                // Retrieve the unsigned certification signature field.
+                /**
+                 * Note: Replace certificationFieldName with the field name in the
+                 * document that is being certified
+                 */
+                const foundCertificationField = await doc.getField(certificationFieldName);
+                const certificationSigField = await PDFNet.DigitalSignatureField.createFromField(foundCertificationField);
+          
+                // Alternatively, create a new signature form field in the PDFDoc. The name argument is optional;
+                // leaving it empty causes it to be auto-generated. However, you may need the name for later.
+                // Acrobat doesn't show digsigfield in side panel if it's without a widget. Using a
+                // Rect with 0 width and 0 height, or setting the NoPrint/Invisible flags makes it invisible.
+                // const certificationSigField = await doc.createDigitalSignatureField(certificationFieldName);
+          
+                // (OPTIONAL) Add more information to the signature dictionary.
+                await certificationSigField.setLocation("Vancouver, BC");
+                await certificationSigField.setReason("Document certification.");
+                await certificationSigField.setContactInfo("www.pdftron.com");
+          
+                // (OPTIONAL) Add an appearance to the signature field.
+                const img = await PDFNet.Image.createFromURL(doc, appearance_img_path);
+                const certifySignatureWidget = await PDFNet.SignatureWidget.createWithDigitalSignatureField(
+                  doc,
+                  await PDFNet.Rect.init(0, 100, 200, 150),
+                  certificationSigField
+                 );
+                await certifySignatureWidget.createSignatureAppearance(img);
+                const page1 = await doc.getPage(1);
+                page1.annotPushBack(certifySignatureWidget);
+          
+                // Prepare the document locking permission level to be applied upon document certification.
+                certificationSigField.setDocumentPermissions(PDFNet.DigitalSignatureField.DocumentPermissions.e_no_changes_allowed);
+          
+                // Prepare the signature and signature handler for certification.
+                await certificationSigField.certifyOnNextSaveWithCustomHandler(sigHandlerId);
+          
+                // The actual certification signing will be done during the save operation.
+                const buf = await doc.saveMemoryBuffer(0);
+                const blob = new Blob([buf], { type: 'application/pdf' });
+                saveAs(blob, 'certified_doc.pdf');
+              });
+            })
+          })
+    }
+
 
 }
