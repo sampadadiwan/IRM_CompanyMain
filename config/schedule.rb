@@ -12,7 +12,7 @@ every 1.day, at: '02:01 am' do
   runner "InvestmentSnapshotJob.new.perform"
 end
 
-every 1.hours do
+every 1.hour do
   rake "db:backup"
 end
 
