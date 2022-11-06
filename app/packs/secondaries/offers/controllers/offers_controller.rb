@@ -99,7 +99,7 @@ class OffersController < ApplicationController
     @offer.final_agreement = true
     @offer.save!
     respond_to do |format|
-      format.html { redirect_to offer_url(@offer), notice: "Offer was successfully updated. Yor acceptance has been recorded" }
+      format.html { redirect_to offer_url(@offer), notice: "Offer was successfully updated. Your acceptance has been recorded" }
       format.json { @offer.to_json }
     end
   end

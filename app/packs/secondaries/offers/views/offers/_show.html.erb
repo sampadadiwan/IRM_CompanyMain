@@ -185,7 +185,7 @@
         <td>
           <%= link_to "Download Pan Card", @offer.pan_card_url, target: "_blank", class: "btn btn-success" if @offer.pan_card.present? %>
           <br>
-          <%= render "investor_kycs/pan_verification", model: @offer unless @offer.secondary_sale.disable_pan_kyc %>
+          <%= render "investor_kycs/pan_verification", model: @offer if current_user && !@offer.secondary_sale.disable_pan_kyc %>
         </td>
       </tr>
 
@@ -208,7 +208,7 @@
           <%= @offer.bank_account_number %>
 
           <br>
-          <%= render "investor_kycs/bank_verification", model: @offer unless @offer.secondary_sale.disable_bank_kyc %>
+          <%= render "investor_kycs/bank_verification", model: @offer if current_user && !@offer.secondary_sale.disable_bank_kyc %>
         </td>
       </tr>
       <tr>
