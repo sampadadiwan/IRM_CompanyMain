@@ -97,6 +97,7 @@ class OffersController < ApplicationController
 
   def accept_spa
     @offer.final_agreement = true
+    @offer.final_agreement_user_id = current_user.id
     @offer.save!
     respond_to do |format|
       format.html { redirect_to offer_url(@offer), notice: "Offer was successfully updated. Your acceptance has been recorded" }

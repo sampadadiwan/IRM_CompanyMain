@@ -245,6 +245,11 @@
           </td>
           <td>
               <%= display_boolean @offer.final_agreement %>
+              <% if @offer.final_agreement_user %>
+                <div>
+                  <small class="text-grey">Accepted By: <%= @offer.final_agreement_user.full_name %></small>
+                </div>
+              <% end %>
           </td>
       </tr>
 

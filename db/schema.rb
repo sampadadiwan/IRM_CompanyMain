@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_07_054112) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_07_164409) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1111,8 +1111,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_07_054112) do
     t.string "full_name", limit: 100
     t.string "demat", limit: 20
     t.string "city", limit: 20
+    t.bigint "final_agreement_user_id"
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
     t.index ["entity_id"], name: "index_offers_on_entity_id"
+    t.index ["final_agreement_user_id"], name: "index_offers_on_final_agreement_user_id"
     t.index ["form_type_id"], name: "index_offers_on_form_type_id"
     t.index ["holding_id"], name: "index_offers_on_holding_id"
     t.index ["interest_id"], name: "index_offers_on_interest_id"
@@ -1562,6 +1564,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_07_054112) do
   add_foreign_key "offers", "interests"
   add_foreign_key "offers", "secondary_sales"
   add_foreign_key "offers", "users"
+  add_foreign_key "offers", "users", column: "final_agreement_user_id"
   add_foreign_key "option_details", "holdings", column: "option_id"
   add_foreign_key "option_pools", "entities"
   add_foreign_key "option_pools", "form_types"

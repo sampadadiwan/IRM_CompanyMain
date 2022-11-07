@@ -5,6 +5,7 @@ class Offer < ApplicationRecord
   update_index('offer') { self }
 
   belongs_to :user
+  belongs_to :final_agreement_user, class_name: "User", optional: true
   belongs_to :investor
   belongs_to :entity, touch: true
   belongs_to :secondary_sale, touch: true
