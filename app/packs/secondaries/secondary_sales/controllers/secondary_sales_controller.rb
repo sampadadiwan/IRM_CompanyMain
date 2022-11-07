@@ -20,7 +20,12 @@ class SecondarySalesController < ApplicationController
     @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
 
     @offers = @offers.page(params[:page]) unless request.format.xlsx?
-    render "/offers/index"
+
+    if params[:report]
+      render "/offers/#{params[:report]}"
+    else
+      render "/offers/index"
+    end
   end
 
   def interests

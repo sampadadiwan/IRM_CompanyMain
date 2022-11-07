@@ -8,11 +8,26 @@
         
         <% if policy(@secondary_sale).update? %>
 
-            <%= link_to "All Offers", finalize_offer_allocation_secondary_sale_path(@secondary_sale), 
-            {class: "btn btn-primary" }  %> 
-            <%= link_to "Verified", finalize_offer_allocation_secondary_sale_path(@secondary_sale, verified: true), {class: "btn btn-success" }  %> 
-            <%= link_to "Un-Verified", finalize_offer_allocation_secondary_sale_path(@secondary_sale, verified: false), {class: "btn btn-warning" }  %> 
-            
+        <div class="btn-group">
+            <div class="dropdown">
+              <button class="btn btn-primary dropdown-toggle" type="button" 
+                      data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Offers
+              </button>
+              <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          
+                    <%= link_to "All Offers", finalize_offer_allocation_secondary_sale_path(@secondary_sale), 
+                    {class: "dropdown-item" }  %> 
+
+                    <%= link_to "Completion Report", offers_secondary_sale_path(@secondary_sale, report: "completion_report"), class: "dropdown-item" if @secondary_sale %>
+
+                    <%= link_to "Verified", finalize_offer_allocation_secondary_sale_path(@secondary_sale, verified: true), {class: "dropdown-item" }  %> 
+
+                    <%= link_to "Un-Verified", finalize_offer_allocation_secondary_sale_path(@secondary_sale, verified: false), {class: "dropdown-item" }  %> 
+                    
+                </div>
+            </div>
+        </div>
             |
 
             <%= link_to "Un-Matched", finalize_offer_allocation_secondary_sale_path(@secondary_sale, matched: false), {class: "btn btn-warning" }  %> 

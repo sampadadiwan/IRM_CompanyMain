@@ -1,0 +1,62 @@
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Offer Completion Report</h1>
+    <%= link_to "Download Report", offers_secondary_sale_path(@secondary_sale, format: "xlsx", report: "completion_report"), 
+                                  class: "btn btn-success" if @secondary_sale %>
+    </span>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+
+    <table id="offers" class="table table-bordered dataTable">
+        <thead>
+            <tr>
+                <th>
+                    Offer ID
+                </th>
+                <th>
+                    User
+                </th>
+                <th>
+                    Email
+                </th>
+                <th>
+                    Sign In Count
+                </th>
+
+                <th>
+                    Verified
+                </th>
+
+                <th>
+                    Signature Uploaded
+                </th>
+                <th>
+                    PAN Uploaded
+                </th>
+                <th>
+                    Documents Uploaded
+                </th>
+            </tr>
+        </thead>
+    
+        <tbody>
+            <% @offers.includes(:user, :documents).each do |o| %>
+            <tr>
+                <td><%= o.id %></td>
+                <td><%= o.user ? o.user.full_name : o.investor.investor_name %></td>
+                <td><%= o.user&.email %></td>
+                <td><%= o.user&.sign_in_count %></td>
+                <td><%= display_boolean o.verified %></td>
+                <td><%= display_boolean o.signature.present? %></td>
+                <td><%= display_boolean o.pan_card.present? %></td>
+                <td><%= o.documents.collect(&:name).join(", ") %></td>
+            </tr>
+            <% end %>
+        </tbody>
+    </table>
+    
+</div>
+
+
+<%=paginate @offers %>

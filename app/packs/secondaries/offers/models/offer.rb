@@ -194,4 +194,20 @@ class Offer < ApplicationRecord
 
     buyer_fees_hash
   end
+
+  def self.offer_report(sale_id)
+    csv = []
+
+    s = SecondarySale.find(sale_id)
+    s.offers.joins(:user).distinct.each do |o|
+      sig = o.signature.present? ? 'Yes' : 'No'
+      pan = o.pan_card.present? ? 'Yes' : 'No'
+      docs = o.documents.collect(&:name).join(", ")
+      csv << [o.id, o.user.full_name, o.user.email, o.user.sign_in_count, sig, pan, docs].join(",")
+    end
+
+    File.write("OfferCompletion.csv", csv.join("\n"))
+
+    csv
+  end
 end
