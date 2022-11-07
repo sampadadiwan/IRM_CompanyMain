@@ -1,0 +1,82 @@
+<%= render "/layouts/alerts" %>
+
+  <table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= @investor_notice.entity.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Owner
+      </td>
+      <td>
+        <%= link_to @investor_notice.owner_type, @investor_notice.owner %>
+      </td>
+    </tr>
+
+
+    <tr>
+      <td>
+        Access Rights MetaData
+      </td>
+      <td>
+        <%= @investor_notice.access_rights_metadata %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Start Date
+      </td>
+      <td>
+        <%= l @investor_notice.start_date %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        End Date
+      </td>
+      <td>
+        <%= l @investor_notice.end_date %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Active
+      </td>
+      <td>
+        <%= @investor_notice.active %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Details
+      </td>
+      <td>
+        <%= @investor_notice.details %>
+      </td>
+    </tr>
+
+
+  </table>
+
+  
+  <div>
+    <%= link_to "Edit" , edit_investor_notice_path(@investor_notice), {class: "btn btn-primary" } %> 
+      
+    <%= button_to "Delete" , @investor_notice, method: :delete, class: "btn btn-danger" , form_class: "deleteButton", data: {action: "click->confirm#delete" , turbo:false} %>
+  </div>
+
+
+  <div class="card associated_entity">
+    <div class="card-header">Preview</div>
+    <div class="card-body">
+      <%= render "investor_notices/preview", investor_notice: @investor_notice %>
+    </div>
+  </div>

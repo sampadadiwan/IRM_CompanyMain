@@ -1,5 +1,5 @@
 <% if @current_entity %>
-    <% if @current_entity.logo.url %>
+    <% if @current_entity.logo.present? %>
         <%= image_tag(@current_entity.logo.url, class: "logo") %>
     <% else %>
         <div class="h1">Welcome to <%= @current_entity.name %></div>        

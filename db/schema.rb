@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_04_011558) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_07_025026) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -960,6 +960,22 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_04_011558) do
     t.index ["user_id"], name: "index_investor_kycs_on_user_id"
   end
 
+  create_table "investor_notices", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.date "start_date"
+    t.text "title"
+    t.string "link"
+    t.string "access_rights_metadata"
+    t.date "end_date"
+    t.boolean "active"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_investor_notices_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_investor_notices_on_owner"
+  end
+
   create_table "investors", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "investor_entity_id"
     t.integer "entity_id"
@@ -1516,6 +1532,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_04_011558) do
   add_foreign_key "investor_kycs", "form_types"
   add_foreign_key "investor_kycs", "investors"
   add_foreign_key "investor_kycs", "users"
+  add_foreign_key "investor_notices", "entities"
   add_foreign_key "investors", "form_types"
   add_foreign_key "messages", "investors"
   add_foreign_key "messages", "users"

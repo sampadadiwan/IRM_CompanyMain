@@ -1,0 +1,42 @@
+<%= render "/layouts/alerts" %>
+
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Investor Notices</h1>
+    <%= link_to "New Investor Notice" , new_investor_notice_path, {class: "btn btn-primary" } %>
+  </div>
+
+  <div class="table-responsive" data-controller="datatable">
+
+    <table id="investor_notices" class="table table-bordered dataTable">
+
+      <thead>
+        <tr>
+          <th>
+            Owner
+          </th>
+          <th>
+            Title
+          </th>
+          <th>
+            Start Date
+          </th>
+          <th>
+            End Date
+          </th>
+          <th>
+            Active
+          </th>
+
+          <th>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @investor_notices.each do |investor_notice| %>
+          <%= render investor_notice %>
+        <% end %>
+      </tbody>
+    </table>
+
+  </div>

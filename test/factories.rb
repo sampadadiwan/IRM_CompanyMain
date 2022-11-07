@@ -1,4 +1,13 @@
 FactoryBot.define do
+  factory :investor_notice do
+    entity { nil }
+    investor { nil }
+    investor_entity_id { nil }
+    start_date { "2022-11-07" }
+    end_date { "2022-11-07" }
+    active { false }
+  end
+
   factory :fee do
     advisor_name { "MyString" }
     amount { "9.99" }

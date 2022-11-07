@@ -1,0 +1,56 @@
+<%= form_with(model: investor_notice) do |form| %>
+  <% if investor_notice.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(investor_notice.errors.count, "error") %> prohibited this investor_notice from being saved:</h2>
+
+      <ul>
+        <% investor_notice.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+
+  <div class="form-group">
+    <%= form.label :start_date %>
+    <%= form.date_field :start_date, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :end_date %>
+    <%= form.date_field :end_date, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :title %>
+    <%= form.text_field :title, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :link %>
+    <%= form.text_field :link, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :access_rights_metadata %>
+    <%= form.text_field :access_rights_metadata, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :details %>
+    <%= form.rich_text_area :details, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :active %>
+    <%= form.check_box :active, class: "form-control form-checkbox"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

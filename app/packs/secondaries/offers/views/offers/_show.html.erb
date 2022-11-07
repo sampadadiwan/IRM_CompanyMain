@@ -237,34 +237,37 @@
             </td>
         </tr>
 
-        <tr>
-            <td>
-            I agree to enter into the SPA
-            </td>
-            <td>
-                <%= display_boolean @offer.final_agreement %>
-            </td>
-        </tr>
+      <% end %>
+
+      <tr>
+          <td>
+          I agree to enter into the SPA
+          </td>
+          <td>
+              <%= display_boolean @offer.final_agreement %>
+          </td>
+      </tr>
 
 
-        
-        <% if @offer.secondary_sale.spa.present? || @offer.spa.present? %>
+      
+      <% if @offer.secondary_sale.spa.present? || @offer.spa.present? %>
 
-            <tr>
-            <td colspan="2" class="bg-primary"></td>
-            </tr>      
-            <tr>
-            <td>
-                SPA
-            </td>
-            <td>
-                <%= link_to "Download SPA", @offer.spa.url, target: "_blank", class: "btn btn-sm btn-success" if @offer.spa %>
-            </td>
-            </tr>
-
-        <% end %>
+          <tr>
+          <td colspan="2" class="bg-primary"></td>
+          </tr>      
+          <tr>
+          <td>
+              SPA
+          </td>
+          <td>
+              <%= link_to "Download SPA", @offer.spa.url(expires_in: 60*60*24*7), target: "_blank", class: "btn btn-sm btn-success" if @offer.spa %>
+              <span><%= "(Link expires in 7 days)" unless current_user %></span>
+          </td>
+          </tr>
 
       <% end %>
+
+      
 
     <% end %>
 
