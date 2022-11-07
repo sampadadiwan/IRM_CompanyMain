@@ -1,5 +1,6 @@
+<% allowed_types ||= FileUploader::ALLOWED_TYPES %>
 <div data-controller="single-upload" 
-    data-single-upload-types-value="<%= FileUploader::ALLOWED_TYPES.to_json %>" 
+    data-single-upload-types-value="<%= allowed_types.to_json %>" 
     data-single-upload-server-value="<%= upload_server %>">
 
     <div class="mb-3">
