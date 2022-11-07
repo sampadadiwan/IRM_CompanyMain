@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :investor_notice_entries
   resources :investor_notices
   resources :fees
   namespace :admin do

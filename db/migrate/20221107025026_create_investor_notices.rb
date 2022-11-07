@@ -8,7 +8,7 @@ class CreateInvestorNotices < ActiveRecord::Migration[7.0]
       t.string :link
       t.string :access_rights_metadata
       t.date :end_date
-      t.boolean :active
+      t.boolean :active, default: false
 
       t.timestamps
     end

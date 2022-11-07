@@ -1,0 +1,46 @@
+<%= render "/layouts/alerts" %>
+
+  <table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Investor Notice
+      </td>
+      <td>
+        <%= @investor_notice_entry.investor_notice.title %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= @investor_notice_entry.entity.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Investor
+      </td>
+      <td>
+        <%= @investor_notice_entry.investor.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Active
+      </td>
+      <td>
+        <%= display_boolean @investor_notice_entry.active %>
+      </td>
+    </tr>
+
+
+  </table>
+
+
+  <div>
+    <%= link_to "Edit" , edit_investor_notice_entry_path(@investor_notice_entry), {class: "btn btn-primary" } %> 
+    <%= button_to "Delete" , @investor_notice_entry, method: :delete, class: "btn btn-danger" ,
+          form_class: "deleteButton" , data: {action: "click->confirm#delete" , turbo:false} %>
+  </div>

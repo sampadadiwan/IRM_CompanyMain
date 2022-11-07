@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_07_025026) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_07_054112) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -960,6 +960,20 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_07_025026) do
     t.index ["user_id"], name: "index_investor_kycs_on_user_id"
   end
 
+  create_table "investor_notice_entries", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "investor_notice_id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "investor_id", null: false
+    t.bigint "investor_entity_id_id", null: false
+    t.boolean "active", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_investor_notice_entries_on_entity_id"
+    t.index ["investor_entity_id_id"], name: "index_investor_notice_entries_on_investor_entity_id_id"
+    t.index ["investor_id"], name: "index_investor_notice_entries_on_investor_id"
+    t.index ["investor_notice_id"], name: "index_investor_notice_entries_on_investor_notice_id"
+  end
+
   create_table "investor_notices", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "owner_type"
@@ -1532,6 +1546,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_07_025026) do
   add_foreign_key "investor_kycs", "form_types"
   add_foreign_key "investor_kycs", "investors"
   add_foreign_key "investor_kycs", "users"
+  add_foreign_key "investor_notice_entries", "entities"
+  add_foreign_key "investor_notice_entries", "entities", column: "investor_entity_id_id"
+  add_foreign_key "investor_notice_entries", "investor_notices"
+  add_foreign_key "investor_notice_entries", "investors"
   add_foreign_key "investor_notices", "entities"
   add_foreign_key "investors", "form_types"
   add_foreign_key "messages", "investors"

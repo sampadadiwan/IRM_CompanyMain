@@ -1,4 +1,12 @@
 FactoryBot.define do
+  factory :investor_notice_entry do
+    investor_notice { nil }
+    entity { nil }
+    investor { nil }
+    investor_entity_id { nil }
+    active { false }
+  end
+
   factory :investor_notice do
     entity { nil }
     investor { nil }
