@@ -99,7 +99,7 @@ class AccessRight < ApplicationRecord
     elsif access_to_category.present?
       # Get all the investors with this category -> investor access that are approved, and get the email addresses
       Investor.where(entity_id:, category: access_to_category, is_holdings_entity: false).find_each do |investor|
-        emails += investor.investor_accesses.approved.collect(&:email) 
+        emails += investor.investor_accesses.approved.collect(&:email)
       end
     end
 
@@ -116,7 +116,7 @@ class AccessRight < ApplicationRecord
     elsif access_to_category.present?
       # Get all the investors with this category -> investor access that are approved, and get the email addresses
       Investor.where(entity_id:, category: access_to_category, is_holdings_entity: true).find_each do |investor|
-        emails += investor.investor_entity.employees.collect(&:email) 
+        emails += investor.investor_entity.employees.collect(&:email)
       end
     end
 
