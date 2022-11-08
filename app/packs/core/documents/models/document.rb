@@ -29,7 +29,7 @@ class Document < ApplicationRecord
   belongs_to :form_type, optional: true
   serialize :properties, Hash
 
-  validates :name, presence: true
+  validates :name, :file, presence: true
 
   delegate :full_path, to: :folder, prefix: :folder
   before_validation :setup_folder, :setup_entity
