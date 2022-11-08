@@ -9,6 +9,7 @@ class OfferSpaGenerator
   def initialize(offer, master_spa_path = nil)
     create_working_dir(offer)
     master_spa_path ||= download_master_spa(offer)
+    cleanup_old_spa(offer)
     generate(offer, master_spa_path)
     attach(offer)
   ensure
@@ -16,6 +17,13 @@ class OfferSpaGenerator
   end
 
   private
+
+  def cleanup_old_spa(offer)
+    if offer.spa
+      offer.spa = nil
+      offer.save
+    end
+  end
 
   def working_dir_path(offer)
     "tmp/offer_spa_generator/#{offer.id}"
