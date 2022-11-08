@@ -70,8 +70,8 @@ class OfferSpaGenerator
 
     add_header_footers(offer, "#{@working_dir}/Offer-#{offer.id}.pdf")
 
-    File.delete(offer_signature) if offer_signature
-    File.delete(interest_signature) if interest_signature
+    File.delete(offer_signature) if offer_signature && File.exist?(offer_signature)
+    File.delete(interest_signature) if interest_signature && File.exist?(interest_signature)
   end
 
   def add_image(report, field_name, image)
@@ -125,7 +125,7 @@ class OfferSpaGenerator
     combined_pdf.save(spa_path)
 
     header_footer_download_path.each do |file_path|
-      File.delete(file_path)
+      File.delete(file_path) if File.exist?(file_path)
     end
   end
 
