@@ -112,13 +112,13 @@
               send_notification_secondary_sale_path(@secondary_sale, notification: "notify_spa_sellers"),    
               class: "dropdown-item", 
               data: {action: "click->confirm#popup", 
-              msg: "Send email to all participants notifying that the SPA needs to be accepted", method: :patch } if policy(@secondary_sale).notify_allocations? %> 
+              msg: "Send email to all veriied sellers notifying that the SPA needs to be accepted", method: :patch } if policy(@secondary_sale).notify_allocations? %> 
           
           <%= button_to "Confirm SPA Notification : To Buyers", 
               send_notification_secondary_sale_path(@secondary_sale, notification: "notify_spa_buyers"),    
               class: "dropdown-item", 
               data: {action: "click->confirm#popup", 
-              msg: "Send email to all participants notifying that the SPA needs to be accepted", method: :patch } if policy(@secondary_sale).notify_allocations? %> 
+              msg: "Send email to all buyers notifying that the SPA needs to be accepted", method: :patch } if policy(@secondary_sale).notify_allocations? %> 
 
         </div>
       </div>
