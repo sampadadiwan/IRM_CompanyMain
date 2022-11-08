@@ -26,8 +26,16 @@ module SecondarySaleNotifiers
     SecondarySaleMailer.with(id:).notify_allocation_interests.deliver_later
   end
 
-  def notify_spa
+  def notify_spa_all
     SecondarySaleMailer.with(id:).notify_spa_offers.deliver_later
     SecondarySaleMailer.with(id:).notify_spa_interests.deliver_later
+  end
+
+  def notify_spa_buyers
+    SecondarySaleMailer.with(id:).notify_spa_interests.deliver_later
+  end
+
+  def notify_spa_sellers
+    SecondarySaleMailer.with(id:).notify_spa_offers.deliver_later
   end
 end
