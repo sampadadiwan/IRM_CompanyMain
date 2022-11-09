@@ -1,11 +1,7 @@
 <h3>Dear Seller</h3>
 
 <p>
-    The Share Purchase Agreement (SPA) for your sale has been uploaded to the offer you made. Please read and confirm the SPA, so that the sale can be concluded.
-</p>
-
-<p>
-    <%= render "/secondary_sale_mailer/sale", secondary_sale: @secondary_sale, current_user: nil %>
+    The Share Purchase Agreement (SPA) for your sale has been uploaded to the offer you placed. Please read and confirm the SPA, so that the sale can be concluded.
 </p>
 
 <p class="btn btn-primary"><%= link_to 'View Sale & Accept SPA', secondary_sale_url(@secondary_sale, tab: "offerings-tab", subdomain: @secondary_sale.entity.sub_domain) %></p>
