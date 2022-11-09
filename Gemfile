@@ -93,10 +93,6 @@ gem 'impressionist'
 gem 'roo'
 gem 'spreadsheet' # To write exiting XLs with formulas
 
-# gem 'draper'
-# gem 'google-api-client'
-# gem 'google-apis-drive_v3'
-
 gem 'ransack'
 gem "view_component"
 
@@ -106,20 +102,11 @@ gem 'rack-attack'
 # for making external API calls
 gem 'httparty'
 
-# Use Kredis to get higher-level data types in Redis [https://github.com/rails/kredis]
-# gem "kredis"
-
-# Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
-# gem "bcrypt", "~> 3.1.7"
-
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[mingw mswin x64_mingw jruby]
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
-
-# Use Sass to process CSS
-# gem "sassc-rails"
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 1.2"
@@ -188,7 +175,6 @@ group :test do
   gem "selenium-webdriver"
   gem 'simplecov', require: false, group: :test
   gem "webdrivers"
-  # gem 'elasticsearch-extensions'
 end
 
 gem "marginalia", "~> 1.11"
