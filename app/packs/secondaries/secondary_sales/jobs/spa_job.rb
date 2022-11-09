@@ -22,6 +22,10 @@ class SpaJob < ApplicationJob
         rescue StandardError => e
           logger.error "Error creating offer SPA for offer id #{offer.id}"
           logger.error e.backtrace
+          ExceptionNotifier.notify_exception(
+            e,
+            data: { message: "Error generating SPA for offer #{offer.id}" }
+          )
           failed += 1
         end
 
