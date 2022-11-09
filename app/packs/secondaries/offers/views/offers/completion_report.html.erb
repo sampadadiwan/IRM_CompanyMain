@@ -53,8 +53,13 @@
                     <%= image_tag o.signature_url, 
                     style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if o.signature.present? %>
                 </td>
-                <td><%= display_boolean o.pan_card.present? %></td>
-                <td><%= o.documents.collect(&:name).join(", ") %></td>
+                <td>
+                    <%= display_boolean o.pan_card.present? %>
+                    <%= link_to o.PAN, o.pan_card.url, target: "_blank" if o.pan_card.present? %>
+                </td>
+                <td>
+                    <%= o.documents.collect(&:name).join(", ") %>
+                </td>
             </tr>
             <% end %>
         </tbody>
