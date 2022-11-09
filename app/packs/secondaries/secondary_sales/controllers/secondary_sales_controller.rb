@@ -13,7 +13,7 @@ class SecondarySalesController < ApplicationController
 
   def offers
     @offers = @secondary_sale.offers.includes(:user, :investor, :secondary_sale, :entity,
-                                              :interest, holding: :funding_round)
+                                              :interest)
 
     @offers = @offers.where(user_id: current_user.id) unless policy(@secondary_sale).owner?
     @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
