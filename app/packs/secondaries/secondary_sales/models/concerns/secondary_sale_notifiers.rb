@@ -36,6 +36,10 @@ module SecondarySaleNotifiers
   end
 
   def notify_spa_sellers
-    SecondarySaleMailer.with(id:).notify_spa_offers.deliver_later
+    # Get all emails of investors & holding company employees
+    all_emails = offers.includes(:user).verified.collect(&:user).collect(&:email)
+    all_emails.each_slice(10) do |list|
+      SecondarySaleMailer.with(id:, list:).notify_spa_offers.deliver_later
+    end
   end
 end

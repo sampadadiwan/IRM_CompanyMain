@@ -83,13 +83,12 @@ class SecondarySaleMailer < ApplicationMailer
 
   def notify_spa_offers
     @secondary_sale = SecondarySale.find(params[:id])
+    list = params[:list]
 
-    # Get all emails of investors & holding company employees
-    all_emails = @secondary_sale.offers.includes(:user).verified.collect(&:user).collect(&:email)
-    Rails.logger.debug { "notify_spa_offers: Sending mail to #{all_emails} in bcc" }
+    Rails.logger.debug { "notify_spa_offers: Sending mail to #{list} in bcc" }
 
     mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
-         bcc: sandbox_email(@secondary_sale, all_emails.join(',')),
+         bcc: sandbox_email(@secondary_sale, list.join(',')),
          subject: "Secondary Sale: #{@secondary_sale.name}, please accept uploaded SPA.")
   end
 
