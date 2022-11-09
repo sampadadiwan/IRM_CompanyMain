@@ -94,10 +94,8 @@ class SecondarySaleMailer < ApplicationMailer
 
   def notify_spa_interests
     @secondary_sale = SecondarySale.find(params[:id])
+    all_emails = params[:list]
 
-    interests_emails = @secondary_sale.interests.short_listed.collect(&:email).flatten
-
-    all_emails = interests_emails
     Rails.logger.debug { "notify_spa_interests: Sending mail to #{all_emails} in bcc" }
 
     mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],

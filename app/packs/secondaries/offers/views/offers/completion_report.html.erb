@@ -8,7 +8,9 @@
         |
         <%= link_to "Un-Verified", offers_secondary_sale_path(@secondary_sale, verified: false, report: "completion_report"), class: "btn btn-warning btn-sm"  %>
         <%= link_to "No Signature", offers_secondary_sale_path(@secondary_sale, signature: false, report: "completion_report"), class: "btn btn-warning btn-sm"  %>
+        |
         <%= link_to "No PAN Card", offers_secondary_sale_path(@secondary_sale, pan_card: false, report: "completion_report"), class: "btn btn-warning btn-sm"  %>
+        <%= link_to "SPA Not Accepted", offers_secondary_sale_path(@secondary_sale, final_agreement: false, report: "completion_report"), class: "btn btn-warning btn-sm"  %>
         |
         <%= link_to "All", offers_secondary_sale_path(@secondary_sale, report: "completion_report"), class: "btn btn-success btn-sm"  %>
 
@@ -45,6 +47,9 @@
                     PAN Uploaded
                 </th>
                 <th>
+                    SPA Accepted
+                </th>
+                <th>
                     Documents Uploaded
                 </th>
             </tr>
@@ -67,6 +72,7 @@
                     <%= display_boolean o.pan_card.present? %>
                     <%= link_to o.PAN, o.pan_card.url, target: "_blank" if o.pan_card.present? %>
                 </td>
+                <td><%= display_boolean o.final_agreement %></td>
                 <td>
                     <%= o.documents.collect(&:name).join(", ") %>
                 </td>
