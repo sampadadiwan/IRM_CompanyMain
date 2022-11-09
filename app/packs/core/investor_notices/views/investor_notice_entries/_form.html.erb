@@ -12,8 +12,7 @@
   <% end %>
 
   <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
-
+  
   <div class="form-group">
     <%= form.label :investor_notice_id %>
     <%= form.text_field :investor_notice, class: "form-control", disabled: true, value: investor_notice_entry.investor_notice.title  %>
@@ -21,8 +20,13 @@
   </div>
   
   <div class="form-group">
+    <%= form.label :investor_id %>
+    <%= form.select :investor_id, investor_notice_entry.investor_notice.investors.map{|i| [i.investor_name, i.id]}, {}, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
     <%= form.label :active %>
-    <%= form.check_box :active, class: "form-control"  %>
+    <%= form.check_box :active, class: "form-control form-checkbox"  %>
   </div>
 
   <div class="form-group">

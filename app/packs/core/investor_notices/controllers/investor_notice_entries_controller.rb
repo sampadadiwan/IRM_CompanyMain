@@ -12,6 +12,7 @@ class InvestorNoticeEntriesController < ApplicationController
   # GET /investor_notice_entries/new
   def new
     @investor_notice_entry = InvestorNoticeEntry.new(investor_notice_entry_params)
+    @investor_notice_entry.entity_id = @investor_notice_entry.investor_notice.entity_id
     authorize(@investor_notice_entry)
   end
 
@@ -52,7 +53,13 @@ class InvestorNoticeEntriesController < ApplicationController
     @investor_notice_entry.destroy
 
     respond_to do |format|
-      format.html { redirect_to investor_notice_entries_url, notice: "Investor notice entry was successfully destroyed." }
+      format.html { redirect_to investor_notice_url(@investor_notice_entry.investor_notice), notice: "Investor notice entry was successfully destroyed." }
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.remove(@investor_notice_entry)
+        ]
+      end
+
       format.json { head :no_content }
     end
   end

@@ -43,7 +43,7 @@
         <tbody>
             <% @offers.includes(:user, :documents).each do |o| %>
             <tr>
-                <td><%= o.id %></td>
+                <td><%= link_to o.id, o %></td>
                 <td><%= o.user ? o.user.full_name : o.investor.investor_name %></td>
                 <td><%= o.user&.email %></td>
                 <td><%= o.user&.sign_in_count %></td>
