@@ -80,7 +80,7 @@ class InterestsController < ApplicationController
   end
 
   def allocate
-    # @interest.allocation_quantity = interest_params[:allocation_quantity]
+    @interest.allocation_quantity = interest_params[:allocation_quantity]
     @interest.comments = interest_params[:comments]
     @interest.verified = interest_params[:verified]
 

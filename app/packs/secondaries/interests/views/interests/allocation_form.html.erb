@@ -21,7 +21,9 @@ class: "allocation_form divTableRow #{cycle('even', 'odd')}") do |form| %>
     </div>
 
     <div class="divTableCell"><%= @interest.allocation_percentage %></div>
-    <div class="divTableCell"><%= @interest.allocation_quantity %></div>
+    <div class="divTableCell">
+        <%= form.text_field :allocation_quantity, class: "form-control"  %>
+    </div>
     <div class="divTableCell"><%= money_to_currency(@interest.allocation_amount, params) %></div>
     <div class="divTableCell"><%= @interest.offer_quantity %></div>
     <div class="divTableCell"><%= money_to_currency(@interest.offer_amount, params) %></div>
