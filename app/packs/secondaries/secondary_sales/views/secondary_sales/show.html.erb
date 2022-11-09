@@ -60,6 +60,11 @@
           <%= link_to "View Payments",
               payments_secondary_sale_path(@secondary_sale), 
               {class: "dropdown-item" } %> 
+
+          <%= link_to "Completion Report", 
+              offers_secondary_sale_path(@secondary_sale, report: "completion_report"), 
+              class: "dropdown-item" %>
+
         </div>
       </div>
     </div>

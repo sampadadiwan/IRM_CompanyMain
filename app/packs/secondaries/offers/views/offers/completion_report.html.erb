@@ -1,8 +1,18 @@
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Offer Completion Report</h1>
-    <%= link_to "Download Report", offers_secondary_sale_path(@secondary_sale, format: "xlsx", report: "completion_report"), 
-                                  class: "btn btn-success" if @secondary_sale %>
+    <h1 class="h3 mb-0 text-gray-800">Offer Completion Report: <%= link_to @secondary_sale.name, @secondary_sale %></h1>
+
+    <span>
+    <% if @secondary_sale %>
+        <%= link_to "Download Report", offers_secondary_sale_path(@secondary_sale, format: "xlsx", report: "completion_report"), class: "btn btn-success btn-sm"  %>
+        |
+        <%= link_to "Un-Verified", offers_secondary_sale_path(@secondary_sale, verified: false, report: "completion_report"), class: "btn btn-warning btn-sm"  %>
+        <%= link_to "No Signature", offers_secondary_sale_path(@secondary_sale, signature: false, report: "completion_report"), class: "btn btn-warning btn-sm"  %>
+        <%= link_to "No PAN Card", offers_secondary_sale_path(@secondary_sale, pan_card: false, report: "completion_report"), class: "btn btn-warning btn-sm"  %>
+        |
+        <%= link_to "All", offers_secondary_sale_path(@secondary_sale, report: "completion_report"), class: "btn btn-success btn-sm"  %>
+
+    <% end %>
     </span>
 </div>
 

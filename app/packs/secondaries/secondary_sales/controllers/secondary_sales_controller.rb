@@ -18,6 +18,8 @@ class SecondarySalesController < ApplicationController
     @offers = @offers.where(user_id: current_user.id) unless policy(@secondary_sale).owner?
     @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
     @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
+    @offers = @offers.where(signature_data: nil) if params[:signature] == 'false'
+    @offers = @offers.where(pan_card_data: nil) if params[:pan_card] == 'false'
 
     @offers = @offers.page(params[:page]) unless request.format.xlsx?
 
@@ -64,7 +66,9 @@ class SecondarySalesController < ApplicationController
   def payments
     @fees = @secondary_sale.fees
 
-    @offers = @secondary_sale.offers.approved.verified.matched
+    @offers = @secondary_sale.offers.approved.matched
+    @offers = @offers.verified if params[:verified] == 'true'
+
     @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest).order("interests.buyer_entity_name")
 
     @buyer_offers = Offer.compute_payments(@offers, @fees)

@@ -3,7 +3,12 @@
         Payments for: <%= link_to @secondary_sale.name, @secondary_sale %>
     </h1>
 
-    <%= link_to "Download", payments_secondary_sale_path(@secondary_sale, format: "xlsx"), class: "btn btn-primary" %>
+    <span>
+        <%= link_to "Download", payments_secondary_sale_path(@secondary_sale, format: "xlsx"), 
+            class: "btn btn-primary" %>
+        <%= link_to "Verified Offers", payments_secondary_sale_path(@secondary_sale, verified: true), 
+            class: "btn btn-primary" %>
+    </span>
 </div>
 
 <div>
@@ -44,6 +49,10 @@
                 <th>
                     Buyer
                 </th>
+
+                <th>
+                    Verified
+                </th>
                 <th>
                 </th>
             </tr>
@@ -53,7 +62,7 @@
             <% @buyer_offers.each do |buyer_entity_name, buyer_hash| %>
                 <% offers = buyer_hash[:offers] %>
                 <tr>
-                    <td colspan="11" class="bg-primary text-white">
+                    <td colspan="12" class="bg-primary text-white">
                         <%= buyer_entity_name %>                        
                     </td>
                 </tr>
@@ -101,6 +110,11 @@
                         <td>
                             <%= offer.interest.buyer_entity_name %>
                         </td>
+
+                        <td>
+                            <%= display_boolean offer.verified %>
+                        </td>
+
                         <td>
                             <%= link_to "Show", offer, class: "btn btn-sm btn-primary"  %>
                         </td>
@@ -109,7 +123,7 @@
                 <% end %>
 
                 <tr>
-                    <td colspan="11" class="bg-success">
+                    <td colspan="12" class="bg-success">
                      
                     </td>
                 </tr>
@@ -147,6 +161,7 @@
                         <td>
                             <%= buyer_entity_name %>
                         </td>
+                        <td></td>
                         <td>
                             <%= link_to "Show", fee[:fee], class: "btn btn-sm btn-primary"  %> 
                         </td>
@@ -170,6 +185,9 @@
                     </td>
                     <td>
                         <%= money_to_currency(buyer_hash[:total_allocation_amount]) %>,
+                    </td>
+                    <td>
+                        
                     </td>
                     <td>
                         
