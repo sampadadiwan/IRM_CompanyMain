@@ -19,6 +19,7 @@ class InvestorNotice < ApplicationRecord
                                     active: true)
       end
     end
+    nil
   end
 
   def access_rights
@@ -29,5 +30,9 @@ class InvestorNotice < ApplicationRecord
 
   def investors
     access_rights.collect(&:investors).flatten
+  end
+
+  def self.notices(investor_entity_id)
+    InvestorNotice.joins(:investor_notice_entries).where("investor_notices.active=?", true).where("investor_notice_entries.investor_entity_id=? and investor_notice_entries.active=?", investor_entity_id, true)
   end
 end

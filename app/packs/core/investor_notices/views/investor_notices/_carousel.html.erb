@@ -1,0 +1,9 @@
+<div id="carouselExampleSlidesOnly" class="carousel slide" data-ride="carousel">
+    <div class="carousel-inner">
+        <% InvestorNotice.notices(investor_entity_id).each do |investor_notice| %>
+            <div class="carousel-item active">
+                <%= render "/investor_notices/preview", investor_notice: investor_notice %>
+            </div>
+        <% end %>
+    </div>
+</div>

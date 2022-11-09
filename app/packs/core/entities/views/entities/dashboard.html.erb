@@ -1,5 +1,7 @@
 <%= render "/layouts/alerts" %>
 
+<%= render "/investor_notices/carousel", investor_entity_id: current_user.entity_id %>
+
 <% if current_user.entity %>
 
     <% if params[:dashboard].present? %>
