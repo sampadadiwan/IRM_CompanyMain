@@ -21,11 +21,23 @@
                                  model: @document %>
 
          </div>
-
-         <input type="file" id="dscfile" name="dscfile">
-         <input type="password" id="pwd" name="pwd">
-         <button class="btn btn-primary" data-action="click->pdf#readDscFile">Read DSC</button>
       <% end %>
-      <button class="btn btn-primary" data-action="click->pdf#save_signed">Save Signed Document</button>
+      <button class="btn btn-primary" data-action="click->pdf#add_dsc_field">Add DSC Field</button>
+      <table>
+         <tr>
+            <td>
+               <input type="file" id="dscfile" name="dscfile">
+               <input type="password" id="pwd" name="pwd">
+               <button class="btn btn-primary" data-action="click->pdf#readDscFile">Sign with DSC</button>
+       
+            </td>
+            <td>
+               Or 
+               
+               <button class="btn btn-primary" data-action="click->pdf#save_signed">Save Signed Document</button>
+            </td>
+         </tr>
+      </table>
+
    <% end %>
 </div>

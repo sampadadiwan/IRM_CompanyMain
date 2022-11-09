@@ -158,9 +158,11 @@ group :development do
   gem "better_errors"
   gem "binding_of_caller"
 
-  gem 'rails-erd'
+  # gem 'rails-erd'
+
   # Add speed badges [https://github.com/MiniProfiler/rack-mini-profiler]
-  gem "rack-mini-profiler"
+  # gem "rack-mini-profiler"
+
   # For memory profiling
   # gem 'memory_profiler'
   # For call-stack profiling flamegraphs

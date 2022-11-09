@@ -235,7 +235,6 @@ GEM
       elasticsearch (>= 7.12.0, < 7.14.0)
       elasticsearch-dsl
     childprocess (4.1.0)
-    choice (0.2.0)
     chronic (0.10.2)
     client_side_validations (20.0.2)
       js_regex (~> 3.1)
@@ -513,8 +512,6 @@ GEM
     rack (2.2.3.1)
     rack-attack (6.6.0)
       rack (>= 1.0, < 3)
-    rack-mini-profiler (3.0.0)
-      rack (>= 1.2.0)
     rack-test (1.1.0)
       rack (>= 1.0, < 3)
     rails (7.0.2.4)
@@ -534,11 +531,6 @@ GEM
     rails-dom-testing (2.0.3)
       activesupport (>= 4.2.0)
       nokogiri (>= 1.6)
-    rails-erd (1.6.1)
-      activerecord (>= 4.2)
-      activesupport (>= 4.2)
-      choice (~> 0.2.0)
-      ruby-graphviz (~> 1.2)
     rails-html-sanitizer (1.4.2)
       loofah (~> 2.3)
     railties (7.0.2.4)
@@ -609,8 +601,6 @@ GEM
       rubocop (>= 1.7.0, < 2.0)
     rubocop-rspec (2.8.0)
       rubocop (~> 1.19)
-    ruby-graphviz (1.2.5)
-      rexml
     ruby-ole (1.2.12.2)
     ruby-progressbar (1.11.0)
     ruby-rc4 (0.1.5)
@@ -787,9 +777,7 @@ DEPENDENCIES
   puma (~> 5.0)
   pundit!
   rack-attack
-  rack-mini-profiler
   rails (~> 7.0.0)
-  rails-erd
   ransack
   redis (~> 4.0)
   rolify

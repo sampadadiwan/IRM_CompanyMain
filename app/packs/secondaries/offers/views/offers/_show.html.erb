@@ -133,7 +133,7 @@
           Aquirer
         </td>
         <td>
-          <%= @offer.interest&.aquirer_name %> 
+          <%= link_to @offer.interest.aquirer_name, @offer.interest if @offer.interest %> 
         </td>
       </tr>
 

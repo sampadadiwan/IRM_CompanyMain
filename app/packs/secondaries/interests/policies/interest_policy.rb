@@ -18,12 +18,17 @@ class InterestPolicy < ApplicationPolicy
       allow_external?(:read)
   end
 
+  def matched_offer?
+    Offer.where(interest_id: record.id, user_id: user.id).present?
+  end
+
   def show?
     user.has_cached_role?(:super) ||
       (user.entity_id == record.interest_entity_id) ||
       (user.entity_id == record.entity_id) ||
       sale_policy.owner? ||
-      owner?
+      owner? ||
+      matched_offer? # The matched offers user can see the interest
   end
 
   def short_list?

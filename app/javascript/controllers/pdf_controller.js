@@ -69,7 +69,7 @@ export default class extends Controller {
             let arraybuffer = base64ToArrayBuffer(base64String);
             console.log(arraybuffer);
 
-            createSignatureField(viewer_instance);
+            // createSignatureField(viewer_instance);
             toDsc(arraybuffer, viewer_instance, saveBlob);
         };
         reader.onerror = function (error) {
@@ -90,7 +90,7 @@ export default class extends Controller {
         let viewer_content_type = $("#viewer_content_type").val();
 
         // Hide the direct download link
-        $(".document_download_icon").hide();
+        // $(".document_download_icon").hide();
         $("#viewer").hide();
 
         console.log(`pdf_controller connected: ${viewer_link}`);
@@ -129,7 +129,6 @@ export default class extends Controller {
 
 
 
-                instance.UI.openElements(['menuOverlay']);
                 if ($("#download_document").val() !== "true") {
                     instance.UI.disableElements(['downloadButton']);
                 }
@@ -149,30 +148,8 @@ export default class extends Controller {
                 $("#viewer_label").hide();
                 $("#viewer").show();
 
+                
 
-                documentViewer.setWatermark({
-                    // Draw diagonal watermark in middle of the document
-                    diagonal: {
-                        fontSize: 20, // or even smaller size
-                        fontFamily: 'sans-serif',
-                        color: 'grey',
-                        opacity: 40, // from 0 to 100
-                        text: viewer_watermark
-                    },
-
-                    // Draw header watermark
-                    header: {
-                        fontSize: 8,
-                        fontFamily: 'sans-serif',
-                        color: 'grey',
-                        opacity: 45,
-                        // left: 'left watermark',
-                        center: viewer_watermark,
-                        right: ''
-                    }
-                });
-
-                $(".document_download_icon").hide();
                 console.log(`In full screen ${instance.UI.isFullscreen()}`);
 
                 if ($("#sign_document").val() !== "true") {
@@ -182,14 +159,42 @@ export default class extends Controller {
                     instance.UI.disableElements(['toolsHeader']);
                     instance.UI.disableElements(['toolbarGroup-Insert']);
 
+                    instance.UI.openElements(['menuOverlay']);
+
+                    $(".document_download_icon").hide();
+
+                    documentViewer.setWatermark({
+                        // Draw diagonal watermark in middle of the document
+                        diagonal: {
+                            fontSize: 20, // or even smaller size
+                            fontFamily: 'sans-serif',
+                            color: 'grey',
+                            opacity: 40, // from 0 to 100
+                            text: viewer_watermark
+                        },
+    
+                        // Draw header watermark
+                        header: {
+                            fontSize: 8,
+                            fontFamily: 'sans-serif',
+                            color: 'grey',
+                            opacity: 45,
+                            // left: 'left watermark',
+                            center: viewer_watermark,
+                            right: ''
+                        }
+                    });
+
                 } else {
                     console.log(`############# Signing is turned on`);
+                    instance.UI.setToolbarGroup('toolbarGroup-Insert');
                     instance.UI.openElements(['toolbarGroup-Insert']);
                     instance.UI.setHeaderItems(function (header) {
                         header.getHeader('toolbarGroup-Insert').delete(2);
                         header.getHeader('toolbarGroup-Insert').delete(3);
                         header.getHeader('toolbarGroup-Insert').delete(4);
                     });
+                                        
                 }
 
 
@@ -219,6 +224,10 @@ export default class extends Controller {
         });
     }
 
+    add_dsc_field() {
+        this.createSignatureField(this.viewer_instance);
+        this.save_signed();
+    }
 
     async createSignatureField(viewer_instance) {
         const { PDFNet, documentViewer } = viewer_instance.Core;
@@ -235,8 +244,11 @@ export default class extends Controller {
 
             const certificationSigField = await doc.createDigitalSignatureField(certificationFieldName);
             console.log(certificationSigField);
+            console.log('created certificationSigField for pdf');
         });
     }
+
+    
     async dsc(dsc_signature_buffer, viewer_instance, saveBlob) {
 
         console.log("dsc called");
@@ -292,7 +304,7 @@ export default class extends Controller {
             // await certificationSigField.setReason("Document certification.");
             // await certificationSigField.setContactInfo("www.pdftron.com");
             // Prepare the document locking permission level to be applied upon document certification.
-            // certificationSigField.setDocumentPermissions(PDFNet.DigitalSignatureField.DocumentPermissions.e_no_changes_allowed);
+            certificationSigField.setDocumentPermissions(PDFNet.DigitalSignatureField.DocumentPermissions.e_no_changes_allowed);
 
             console.log('added location to certificationSigField');
             // (OPTIONAL) Add an appearance to the signature field.
@@ -313,7 +325,7 @@ export default class extends Controller {
 
 
             // Prepare the signature and signature handler for certification.
-            await certificationSigField.certifyOnNextSaveWithCustomHandler(sigHandlerId);
+            await certificationSigField.signOnNextSaveWithCustomHandler(sigHandlerId);
 
             // The actual certification signing will be done during the save operation.
             const buf = await doc.saveMemoryBuffer(0);

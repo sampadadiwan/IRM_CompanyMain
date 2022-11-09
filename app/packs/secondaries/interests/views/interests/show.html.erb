@@ -28,7 +28,7 @@
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch, turbo: false, msg: "I confirm that I accept all the SPAs with respect to the matched offer(s)."} if policy(@interest).accept_spa? %>
 
     <%= link_to "Matched Offers", matched_offers_interest_path(@interest), 
-        {class: "btn btn-primary" }  %> 
+        {class: "btn btn-primary" } if current_user && @interest.entity_id == current_user.entity_id %> 
   </div>
 
   <%= render "interests/interest_details", interest: @interest if @interest.short_listed %>
