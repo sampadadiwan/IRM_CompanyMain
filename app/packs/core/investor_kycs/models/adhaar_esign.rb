@@ -31,7 +31,49 @@ class AdhaarEsign
     Rails.logger.debug response
   end
 
+  def retrieve_signed(esign_doc_id)
+    response = HTTParty.post(
+      'https://eve.idfystaging.com/v3/tasks/sync/generate/esign_retrieve',
+      headers: {
+        "api-key" => '9f81f27e-f5e1-4eae-b3ae-131e0101ea7e', # ENV["IDFY_API_KEY"],
+        # "account-id" => ENV["IDFY_ACCOUNT_ID"],
+        'Content-Type' => 'application/json'
+      },
+      body: {
+        task_id: rand(5**5).to_s,
+        group_id: "ESIGN_RETRIEVE",
+        data: {
+          user_key: "M0OG222aTkaAJo8ATSa4cJkIIpvFXvP0",
+          esign_doc_id: esign_doc_id.to_s
+        }
+      }.to_json,
+      debug_output: $stdout
+    )
+
+    Rails.logger.debug response
+    if response.success?
+      save_esign_file(response, esign_doc_id)
+    else
+      Rails.logger.debug { "Response code = #{response.code}, Response message = #{response.message}" }
+    end
+    response
+  end
+
   private
+
+  def save_esign_file(response, esign_doc_id)
+    body = JSON.parse response.body
+    esign_file = body["result"]["source_output"]["file_details"]["esign_file"]
+
+    doc_response = HTTParty.get(esign_file[0])
+    if doc_response.success?
+      raw_file_data = Base64.decode64(doc_response.body)
+      File.binwrite("tmp/#{esign_doc_id}.pdf", raw_file_data)
+      Rails.logger.debug { "Wrote signed file to tmp/#{esign_doc_id}.pdf" }
+    else
+      Rails.logger.debug { "Document Response code = #{doc_response.code}, Response message = #{doc_response.message}" }
+    end
+  end
 
   def prepare_data(name, email, phone, encoded_file)
     {
