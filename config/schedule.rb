@@ -18,6 +18,7 @@ end
 
 every 1.day, at: '23:30 am' do
   runner "ReminderJob.new.perform"
+  runner "InvestorNoticeJob.new.perform"
 end
 
 every :reboot do
