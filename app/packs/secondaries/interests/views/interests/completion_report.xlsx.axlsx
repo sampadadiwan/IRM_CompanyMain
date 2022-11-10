@@ -1,0 +1,15 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "Interests") do |sheet|
+  # Create the header row
+  sheet.add_row(["ID", "User", "Email", "Sign In Count", "Shortlisted", "Signature Uploaded", "SPA Accepted", "Documents"])
+
+  # Create entries for each item
+  @interests.includes(:documents).each do |o|
+    short_listed = o.short_listed ? 'Yes' : 'No'
+    sig = o.signature.present? ? 'Yes' : 'No'
+    docs = o.documents.collect(&:name).join(", ")
+    spa = o.final_agreement ? 'Yes' : 'No'
+    sheet.add_row([o.id, o.buyer_entity_name, o.email, o.user&.sign_in_count, short_listed, sig, spa, docs])
+  end
+end
