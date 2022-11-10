@@ -35,6 +35,10 @@ class CapitalDistributionPolicy < ApplicationPolicy
     create?
   end
 
+  def approve?
+    create? && user.has_cached_role?(:approver)
+  end
+
   def edit?
     update?
   end

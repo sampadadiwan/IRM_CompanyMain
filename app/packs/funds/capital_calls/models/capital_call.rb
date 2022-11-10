@@ -7,6 +7,7 @@ class CapitalCall < ApplicationRecord
   belongs_to :fund, touch: true
 
   belongs_to :form_type, optional: true
+  belongs_to :approved_by_user, class_name: "User", optional: true
   serialize :properties, Hash
 
   has_many :capital_remittances, dependent: :destroy

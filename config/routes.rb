@@ -39,13 +39,16 @@ Rails.application.routes.draw do
 
   resources :share_transfers
   resources :capital_distribution_payments
-  resources :capital_distributions
+  resources :capital_distributions do
+    post 'approve', on: :member
+  end
   resources :capital_remittances do
     patch 'verify', on: :member
   end
   resources :capital_calls do
     get 'search', on: :collection
     post 'reminder', on: :member
+    post 'approve', on: :member
   end
 
   resources :capital_commitments do

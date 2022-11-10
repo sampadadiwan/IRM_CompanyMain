@@ -41,15 +41,25 @@
       </td>
     </tr>
 
+
+
     <% if current_user %>
 
         <tr>
-        <td>
-            Call Amount
-        </td>
-        <td>
-            <%= money_to_currency @capital_call.call_amount, params %>
-        </td>
+          <td>
+            Approved
+          </td>
+          <td>
+            <%= display_boolean @capital_call.approved %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+              Call Amount
+          </td>
+          <td>
+              <%= money_to_currency @capital_call.call_amount, params %>
+          </td>
         </tr>
         <tr>
         <td>

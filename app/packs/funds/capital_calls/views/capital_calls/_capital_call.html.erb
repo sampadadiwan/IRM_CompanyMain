@@ -26,6 +26,9 @@
     <%= money_to_currency capital_call.due_amount, params %>     
   </td>
   <td>
+    <%= display_boolean capital_call.approved %>
+  </td>
+  <td>
     <%= link_to "Show" , capital_call , {class: "btn btn-primary" }%>
   </td>
 </tr>

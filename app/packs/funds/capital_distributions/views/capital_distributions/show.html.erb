@@ -74,6 +74,15 @@
 
     <tr>
       <td>
+        Approved
+      </td>
+      <td>
+        <%= display_boolean @capital_distribution.approved %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
         Payments Distributed
       </td>
       <td>
@@ -89,12 +98,17 @@
   <div>
     <% if policy(@capital_distribution).update? %>
 
-      <%= link_to "Edit" , edit_capital_distribution_path(@capital_distribution), {class: "btn btn-primary" } %> |
+      <%= link_to "Edit" , edit_capital_distribution_path(@capital_distribution), {class: "btn btn-primary" } %> 
       
       <%= button_to "Delete" , @capital_distribution, method: :delete, class: "btn btn-danger" ,
         form_class: "deleteButton" , data: {action: "click->confirm#delete" , turbo:false} %>
 
     <% end %>
+
+    <%= button_to "Approve" , approve_capital_distribution_path(@capital_distribution), method: :post, 
+        class: "btn btn-success", form_class: "deleteButton", 
+        data: {action: "click->confirm#popup", turbo:false, method: :post, msg: "This will generate all the notifications to your clients"} if policy(@capital_distribution).approve? %>
+
   </div>
 
   <%= render "/capital_distributions/details", capital_distribution: @capital_distribution %>

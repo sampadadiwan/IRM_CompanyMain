@@ -1,5 +1,5 @@
 class CapitalCallsController < ApplicationController
-  before_action :set_capital_call, only: %i[show edit update destroy reminder]
+  before_action :set_capital_call, only: %i[show edit update destroy reminder approve]
 
   # GET /capital_calls or /capital_calls.json
   def index
@@ -70,6 +70,21 @@ class CapitalCallsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to capital_calls_url, notice: "Capital call was successfully destroyed." }
       format.json { head :no_content }
+    end
+  end
+
+  def approve
+    @capital_call.approved = true
+    @capital_call.approved_by_user = current_user
+
+    respond_to do |format|
+      if @capital_call.save
+        format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was successfully approved." }
+        format.json { render :show, status: :created, location: @capital_call }
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: @capital_call.errors, status: :unprocessable_entity }
+      end
     end
   end
 

@@ -1,5 +1,5 @@
 class CapitalDistributionsController < ApplicationController
-  before_action :set_capital_distribution, only: %i[show edit update destroy]
+  before_action :set_capital_distribution, only: %i[show edit update destroy approve]
 
   # GET /capital_distributions or /capital_distributions.json
   def index
@@ -65,6 +65,21 @@ class CapitalDistributionsController < ApplicationController
     respond_to do |format|
       format.html { redirect_to capital_distributions_url, notice: "Capital distribution was successfully destroyed." }
       format.json { head :no_content }
+    end
+  end
+
+  def approve
+    @capital_distribution.approved = true
+    @capital_distribution.approved_by_user = current_user
+
+    respond_to do |format|
+      if @capital_distribution.save
+        format.html { redirect_to capital_distribution_url(@capital_distribution), notice: "Capital distribution was successfully approved." }
+        format.json { render :show, status: :created, location: @capital_distribution }
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: @capital_distribution.errors, status: :unprocessable_entity }
+      end
     end
   end
 

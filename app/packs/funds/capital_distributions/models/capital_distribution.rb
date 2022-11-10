@@ -5,6 +5,7 @@ class CapitalDistribution < ApplicationRecord
   belongs_to :fund, touch: true
   belongs_to :entity
   belongs_to :form_type, optional: true
+  belongs_to :approved_by_user, class_name: "User", optional: true
 
   has_many :capital_distribution_payments, dependent: :destroy
 
