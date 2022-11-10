@@ -9,10 +9,13 @@
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#investors-tab">
       <%= label %>
     </a>
+
+    <% if investor.entity.enable_investments %>
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#investments-tab" 
           data-action="click->tabdetails#loadData">
         Investments
     </a>
+    <% end %>
 
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#notes-tab" 
           data-action="click->tabdetails#loadData">
