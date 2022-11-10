@@ -35,6 +35,7 @@ class Interest < ApplicationRecord
   delegate :email, to: :user, prefix: true
 
   scope :short_listed, -> { where(short_listed: true) }
+  scope :not_final_agreement, -> { where(final_agreement: false) }
   scope :escrow_deposited, -> { where(escrow_deposited: true) }
   scope :priced_above, ->(price) { where("price >= ?", price) }
   scope :eligible, ->(secondary_sale) { short_listed.priced_above(secondary_sale.final_price) }

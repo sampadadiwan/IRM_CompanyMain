@@ -32,15 +32,15 @@ module SecondarySaleNotifiers
   end
 
   def notify_spa_buyers
-    all_emails = interests.short_listed.collect(&:email).flatten
+    all_emails = interests.short_listed.not_final_agreement.collect(&:email).flatten
     all_emails.each_slice(10) do |list|
       SecondarySaleMailer.with(id:, list:).notify_spa_interests.deliver_later
     end
   end
 
   def notify_spa_sellers
-    # Get all emails of investors & holding company employees
-    all_emails = offers.includes(:user).verified.collect(&:user).collect(&:email)
+    # Send email to only those who are verified but not confirmed SPA
+    all_emails = offers.includes(:user).verified.not_final_agreement.collect(&:user).collect(&:email)
     all_emails.each_slice(10) do |list|
       SecondarySaleMailer.with(id:, list:).notify_spa_offers.deliver_later
     end
