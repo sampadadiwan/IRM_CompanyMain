@@ -4,8 +4,11 @@
     <div class="lead">
         <%= investor_notice.details %>
     </div>
+    
+    <% if investor_notice.link.present? %>
     <hr class="my-4">
     <p class="lead">
-      <a class="btn btn-primary btn-lg" href="<%= investor_notice.link %>" role="button">Learn more</a>
+      <a class="btn btn-primary btn-lg" href="<%= investor_notice.link %>" role="button"><%= investor_notice.btn_label %></a>
     </p>
+    <% end %>
 </div>

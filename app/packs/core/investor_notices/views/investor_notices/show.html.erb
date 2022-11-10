@@ -19,6 +19,14 @@
       </td>
     </tr>
 
+    <tr>
+      <td>
+        Title
+      </td>
+      <td>
+        <%= @investor_notice.title %>
+      </td>
+    </tr>
 
     <tr>
       <td>
@@ -63,6 +71,24 @@
       </td>
     </tr>
 
+    <tr>
+      <td>
+        Link
+      </td>
+      <td>
+        <%= @investor_notice.link %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Button Label
+      </td>
+      <td>
+        <%= @investor_notice.btn_label %>
+      </td>
+    </tr>
+
 
   </table>
 
@@ -86,5 +112,5 @@
 
 
   <div class="associated_entity">
-    <%= render "investor_notice_entries/index", investor_notice_entries: @investor_notice.investor_notice_entries %>
+    <%= render "investor_notice_entries/index", investor_notice_entries: @investor_notice.investor_notice_entries.includes(:investor) %>
   </div>

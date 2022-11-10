@@ -11,10 +11,19 @@
     </div>
   <% end %>
 
-  <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+  
   <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
 
+  <div class="form-group">
+    <%= form.label :owner_id, "Owner ID" %>
+    <%= form.text_field :owner_id, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :owner_type %>
+    <%= form.text_field :owner_type, class: "form-control" %>  
+  </div>
+  
   <div class="form-group">
     <%= form.label :start_date %>
     <%= form.date_field :start_date, class: "form-control"  %>
@@ -33,6 +42,11 @@
   <div class="form-group">
     <%= form.label :link %>
     <%= form.text_field :link, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :btn_label, "Button Label" %>
+    <%= form.text_field :btn_label, class: "form-control"  %>
   </div>
 
   <div class="form-group">

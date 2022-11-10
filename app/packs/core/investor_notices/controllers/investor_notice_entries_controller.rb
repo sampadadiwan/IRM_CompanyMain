@@ -22,6 +22,7 @@ class InvestorNoticeEntriesController < ApplicationController
   # POST /investor_notice_entries or /investor_notice_entries.json
   def create
     @investor_notice_entry = InvestorNoticeEntry.new(investor_notice_entry_params)
+    @investor_notice_entry.investor_entity_id = @investor_notice_entry.investor.investor_entity_id
     authorize(@investor_notice_entry)
 
     respond_to do |format|

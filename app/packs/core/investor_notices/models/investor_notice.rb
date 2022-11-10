@@ -5,7 +5,7 @@ class InvestorNotice < ApplicationRecord
 
   has_rich_text :details
 
-  after_save :generate_investor_notice_entries
+  after_save :generate_investor_notice_entries, if: proc { |notice| notice.owner_type != "Entity" }
 
   def generate_investor_notice_entries
     access_rights.each do |ar|
@@ -29,7 +29,11 @@ class InvestorNotice < ApplicationRecord
   end
 
   def investors
-    access_rights.collect(&:investors).flatten
+    if owner_type == "Entity"
+      owner.investors
+    else
+      access_rights.collect(&:investors).flatten
+    end
   end
 
   def self.notices(investor_entity_id)
