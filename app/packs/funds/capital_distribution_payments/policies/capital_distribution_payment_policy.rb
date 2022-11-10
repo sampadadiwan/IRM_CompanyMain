@@ -8,7 +8,7 @@ class CapitalDistributionPaymentPolicy < ApplicationPolicy
       elsif user.has_cached_role?(:advisor)
         scope.for_advisor(user)
       else
-        scope.joins(:investor).where('investors.investor_entity_id': user.entity_id)
+        scope.joins(:investor, :capital_distribution).where('capital_distributions.approved = ? and investors.investor_entity_id=?', true, user.entity_id)
       end
     end
   end

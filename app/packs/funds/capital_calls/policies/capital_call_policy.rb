@@ -36,7 +36,7 @@ class CapitalCallPolicy < ApplicationPolicy
   end
 
   def approve?
-    create? && user.has_cached_role?(:approver)
+    !record.approved && create? && user.has_cached_role?(:approver)
   end
 
   def edit?

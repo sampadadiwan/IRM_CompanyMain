@@ -21,7 +21,7 @@ class CapitalCall < ApplicationRecord
   after_create ->(cc) { CapitalCallJob.perform_later(cc.id) }
   after_save :send_notification, if: :approved
   def send_notification
-    CapitalCallJob.perform_later(cc.id) if saved_change_to_approved?
+    CapitalCallJob.perform_later(id) if saved_change_to_approved?
   end
 
   def setup_folder_details
