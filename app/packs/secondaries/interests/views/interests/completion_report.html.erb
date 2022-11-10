@@ -1,0 +1,82 @@
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Interest Completion Report: <%= link_to @secondary_sale.name, @secondary_sale %></h1>
+
+    <span>
+    <% if @secondary_sale %>
+        <%= link_to "Download Report", interests_secondary_sale_path(@secondary_sale, format: "xlsx", report: "completion_report"), class: "btn btn-success btn-sm"  %>
+        |
+        <%= link_to "Not Shortlisted", interests_secondary_sale_path(@secondary_sale, short_listed: false, report: "completion_report"), class: "btn btn-warning btn-sm"  %>
+        <%= link_to "No Signature", interests_secondary_sale_path(@secondary_sale, signature: false, report: "completion_report"), class: "btn btn-warning btn-sm"  %>
+        |
+        
+        <%= link_to "SPA Not Accepted", interests_secondary_sale_path(@secondary_sale, final_agreement: false, report: "completion_report"), class: "btn btn-warning btn-sm"  %>
+        |
+        <%= link_to "All", interests_secondary_sale_path(@secondary_sale, report: "completion_report"), class: "btn btn-success btn-sm"  %>
+
+    <% end %>
+    </span>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+
+    <table id="interests" class="table table-bordered dataTable">
+        <thead>
+            <tr>
+                <th>
+                    Interest ID
+                </th>
+                <th>
+                    Buyer Entity Name
+                </th>
+                <th>
+                    Email
+                </th>
+                <th>
+                    Sign In Count
+                </th>
+
+                <th>
+                    Shortlisted
+                </th>
+
+                <th>
+                    Signature Uploaded
+                </th>
+                <th>
+                    SPA Accepted
+                </th>
+                <th>
+                    Documents Uploaded
+                </th>
+            </tr>
+        </thead>
+    
+        <tbody>
+            <% @interests.includes(:user, :documents).each do |o| %>
+            <tr>
+                <td><%= link_to o.id, o %></td>
+                <td><%= o.buyer_entity_name %></td>
+                <td><%= o.email %></td>
+                <td><%= o.user&.sign_in_count %></td>
+                <td><%= display_boolean o.short_listed %></td>
+                <td>
+                    <%= display_boolean o.signature.present? %>
+                    <br>
+                    <%= image_tag o.signature_url, 
+                    style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if o.signature.present? %>
+                </td>
+                <td>
+                    <%= display_boolean o.final_agreement %>                    
+                </td>
+                <td>
+                    <%= o.documents.collect(&:name).join(", ") %>
+                </td>
+            </tr>
+            <% end %>
+        </tbody>
+    </table>
+    
+</div>
+
+

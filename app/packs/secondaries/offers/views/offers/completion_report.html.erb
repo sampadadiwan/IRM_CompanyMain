@@ -72,7 +72,10 @@
                     <%= display_boolean o.pan_card.present? %>
                     <%= link_to o.PAN, o.pan_card.url, target: "_blank" if o.pan_card.present? %>
                 </td>
-                <td><%= display_boolean o.final_agreement %></td>
+                <td>
+                    <%= display_boolean o.final_agreement %>
+                    <%= link_to "SPA", o.spa.url if o.spa %>
+                </td>
                 <td>
                     <%= o.documents.collect(&:name).join(", ") %>
                 </td>

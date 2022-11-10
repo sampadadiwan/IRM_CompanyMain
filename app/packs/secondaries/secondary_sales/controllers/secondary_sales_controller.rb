@@ -34,8 +34,18 @@ class SecondarySalesController < ApplicationController
   def interests
     @interests = @secondary_sale.interests.includes(:entity, :interest_entity, :user)
     @interests = @interests.where(interest_entity_id: current_user.entity_id) unless policy(@secondary_sale).owner?
+
+    @interests = @interests.where(short_listed: params[:short_listed]) if params[:short_listed].present?
+    @interests = @interests.where(signature_data: nil) if params[:signature] == 'false'
+    @interests = @interests.where(final_agreement: false) if params[:final_agreement] == 'false'
+
     # @interests = @interests.page(params[:page])
-    render "/interests/index"
+
+    if params[:report]
+      render "/interests/#{params[:report]}"
+    else
+      render "/interests/index"
+    end
   end
 
   def finalize_offer_allocation
