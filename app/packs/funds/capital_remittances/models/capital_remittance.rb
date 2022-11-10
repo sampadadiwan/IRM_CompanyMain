@@ -46,6 +46,10 @@ class CapitalRemittance < ApplicationRecord
     set_status
   end
 
+  def send_notification
+    CapitalRemittancesMailer.with(id:).send_notification.deliver_later if capital_call.approved
+  end
+
   def set_status
     self.status = if call_amount_cents == collected_amount_cents
                     "Paid"

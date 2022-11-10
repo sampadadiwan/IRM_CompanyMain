@@ -1,0 +1,98 @@
+<table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= capital_remittance.entity.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Fund
+      </td>
+      <td>
+        <%= link_to capital_remittance.fund.name, capital_remittance.fund %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Capital Call
+      </td>
+      <td>
+        <%= link_to capital_remittance.capital_call.name, capital_call_url(capital_remittance.capital_call, tab: "remittances-tab") %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Investor
+      </td>
+      <td>
+        <%= link_to capital_remittance.investor.investor_name, capital_remittance.investor %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Status
+      </td>
+      <td>
+        <%= render DisplayBooleanComponent.new(bool: capital_remittance.status == "Paid").
+        with_content(capital_remittance.status) if capital_remittance.status %>
+      </td>
+    </tr>
+
+    
+    <tr>
+      <td>
+        Call Amount
+      </td>
+      <td>
+        <%= money_to_currency capital_remittance.call_amount, params %>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        Collected Amount
+      </td>
+      <td>
+        <%= money_to_currency capital_remittance.collected_amount, params %>
+      </td>
+    </tr>
+
+    <% if current_user %>
+    
+      <tr>
+        <td>
+          Verified
+        </td>
+        <td>
+          <%= display_boolean(capital_remittance.verified) %>
+        </td>
+      </tr>
+
+      
+      <tr>
+        <td>
+            Payment Proof
+        </td>
+        <td>
+            <%= render "/layouts/attachments" , attachments: capital_remittance.payment_proof if capital_remittance.payment_proof.present? %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Notes
+        </td>
+        <td>
+          <%= capital_remittance.notes&.html_safe %>
+        </td>
+      </tr>
+
+    <% end %>
+
+    <%= display_custom_fields(capital_remittance) if current_user %>
+
+  </table>

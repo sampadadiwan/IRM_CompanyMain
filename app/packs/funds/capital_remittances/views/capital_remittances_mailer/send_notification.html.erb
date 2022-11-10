@@ -1,0 +1,11 @@
+<h3>Dear <%= @capital_remittance.investor.investor_name %></h3>
+
+<p>
+    A capital call has been made by the fund <%= @capital_remittance.fund.name %> run by <%= @capital_remittance.entity.name %>
+</p>
+
+<p>
+    <%= render "/capital_remittances/show", capital_remittance: @capital_remittance, current_user: nil, params: {} %>
+</p>
+
+<p class="btn btn-primary"><%= link_to 'View Call', capital_remittance_url(@capital_remittance, subdomain: @capital_remittance.entity.sub_domain) %></p>

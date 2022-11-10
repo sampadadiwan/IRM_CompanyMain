@@ -19,6 +19,10 @@ class CapitalCall < ApplicationRecord
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 
   after_create ->(cc) { CapitalCallJob.perform_later(cc.id) }
+  after_save :send_notification, if: :approved
+  def send_notification
+    CapitalCallJob.perform_later(cc.id) if approved_changed?
+  end
 
   def setup_folder_details
     parent_folder = fund.document_folder.folders.where(name: "Capital Calls").first
