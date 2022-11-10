@@ -50,6 +50,9 @@
                     SPA Accepted
                 </th>
                 <th>
+                    Stamp Paper Affixed
+                </th>
+                <th>
                     Documents Uploaded
                 </th>
             </tr>
@@ -75,6 +78,9 @@
                 <td>
                     <%= display_boolean o.final_agreement %>
                     <%= link_to "SPA", o.spa.url if o.spa %>
+                </td>
+                <td>
+                    <%= display_boolean (o.documents.any?{|d| d.name == "Stamp Paper"}) %>
                 </td>
                 <td>
                     <%= o.documents.collect(&:name).join(", ") %>

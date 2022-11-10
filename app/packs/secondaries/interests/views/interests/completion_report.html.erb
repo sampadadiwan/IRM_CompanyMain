@@ -61,7 +61,8 @@
                 <td><%= o.user&.sign_in_count %></td>
                 <td><%= display_boolean o.short_listed %></td>
                 <td>
-                    <%= display_boolean o.signature.present? %>
+                    <% signature_present =  o.signature.present? || o.documents.any?{|d| d.name == "Signature"} %>
+                    <%= display_boolean signature_present %>
                     <br>
                     <%= image_tag o.signature_url, 
                     style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if o.signature.present? %>
