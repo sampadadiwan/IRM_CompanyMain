@@ -1,0 +1,62 @@
+<table class="table table-bordered dataTable">
+
+    <tr>
+      <td>
+        Fund
+      </td>
+      <td>
+        <%= link_to capital_distribution_payment.fund.name, capital_distribution_payment.fund %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= capital_distribution_payment.entity.name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Capital Distribution
+      </td>
+      <td>
+        <%= link_to capital_distribution_payment.capital_distribution.title, capital_distribution_payment.capital_distribution %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Investor
+      </td>
+      <td>
+        <%= capital_distribution_payment.investor.investor_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Amount
+      </td>
+      <td>
+        <%= money_to_currency capital_distribution_payment.amount, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Payment Date
+      </td>
+      <td>
+        <%= l capital_distribution_payment.payment_date %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Completed
+      </td>
+      <td>
+        <%= display_boolean capital_distribution_payment.completed %>
+      </td>
+    </tr>
+
+
+  </table>

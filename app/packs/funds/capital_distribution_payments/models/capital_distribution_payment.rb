@@ -31,4 +31,9 @@ class CapitalDistributionPayment < ApplicationRecord
                                .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
                                .where("investors.investor_entity_id=?", user.entity_id)
   }
+
+  after_save :send_notification, if: :completed
+  def send_notification
+    CapitalDistributionPaymentsMailer.with(id:).send_notification.deliver_later if saved_change_to_completed? && capital_distribution.approved
+  end
 end
