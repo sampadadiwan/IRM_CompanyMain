@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_09_083611) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_10_034838) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -113,6 +113,23 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_09_083611) do
     t.index ["recipient_type", "recipient_id"], name: "index_activities_on_recipient"
     t.index ["trackable_id", "trackable_type"], name: "index_activities_on_trackable_id_and_trackable_type"
     t.index ["trackable_type", "trackable_id"], name: "index_activities_on_trackable"
+  end
+
+  create_table "adhaar_esigns", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "document_id", null: false
+    t.bigint "user_id", null: false
+    t.text "esign_url"
+    t.string "esign_doc_id", limit: 20
+    t.text "signed_file_url"
+    t.boolean "is_signed", default: false
+    t.text "esign_document_reponse"
+    t.text "esign_retrieve_reponse"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_id"], name: "index_adhaar_esigns_on_document_id"
+    t.index ["entity_id"], name: "index_adhaar_esigns_on_entity_id"
+    t.index ["user_id"], name: "index_adhaar_esigns_on_user_id"
   end
 
   create_table "admin_users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -418,6 +435,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_09_083611) do
     t.bigint "signed_by_id"
     t.bigint "from_template_id"
     t.boolean "signed_by_accept", default: false
+    t.boolean "adhaar_esign_enabled", default: false
+    t.boolean "adhaar_esign_completed", default: false
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
     t.index ["folder_id"], name: "index_documents_on_folder_id"
@@ -1460,6 +1479,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_09_083611) do
   add_foreign_key "access_rights", "entities"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "adhaar_esigns", "documents"
+  add_foreign_key "adhaar_esigns", "entities"
+  add_foreign_key "adhaar_esigns", "users"
   add_foreign_key "aggregate_investments", "entities"
   add_foreign_key "aggregate_investments", "funding_rounds"
   add_foreign_key "aggregate_investments", "investors"

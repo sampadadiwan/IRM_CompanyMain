@@ -11,6 +11,7 @@ class Document < ApplicationRecord
   has_many :permissions, as: :owner, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
   belongs_to :user
+  has_one :adhaar_esign
 
   belongs_to :entity, touch: true
   belongs_to :folder
@@ -34,6 +35,7 @@ class Document < ApplicationRecord
   delegate :full_path, to: :folder, prefix: :folder
   before_validation :setup_folder, :setup_entity
   after_create :setup_access_rights
+  after_create :setup_adhaar_esign, if: :adhaar_esign_enabled
 
   include FileUploader::Attachment(:file)
 
@@ -56,6 +58,10 @@ class Document < ApplicationRecord
       doc_ar.access_type = 'Document'
       doc_ar.save
     end
+  end
+
+  def setup_adhaar_esign
+    # AdhaarEsign.create(entity_id:, document_id: self.id)
   end
 
   def self.documents_for(current_user, entity)

@@ -1,4 +1,14 @@
 FactoryBot.define do
+  factory :adhaar_esign do
+    entity { nil }
+    document { nil }
+    esign_url { "MyText" }
+    esign_doc_id { "MyString" }
+    signed_file_url { "MyText" }
+    is_signed { false }
+    reponse { "MyText" }
+  end
+
   factory :investor_notice_entry do
     investor_notice { nil }
     entity { nil }
