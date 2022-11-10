@@ -40,9 +40,9 @@
 
 
   <div class="form-group">
-    <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image", 
+    <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image (jpg or png only)", 
                             for_model: "user", field_name: "signature", 
-                            model: user %>
+                            model: user, allowed_types: ['image/*'].freeze %>
 
   </div>
 

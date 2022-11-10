@@ -39,9 +39,9 @@
       Please upload a clear image of your PAN card
     </div>
 
-    <%= render "layouts/single_upload", form: form, field_label: "Upload PAN Card", 
+    <%= render "layouts/single_upload", form: form, field_label: "Upload PAN Card (jpg or png only)", 
                             for_model: "investor_kyc", field_name: "pan_card", 
-                            model: investor_kyc %>
+                            model: investor_kyc, allowed_types: ['image/*'].freeze %>
 
   </div>
 
@@ -70,9 +70,9 @@
 
   <% unless investor_kyc.user && investor_kyc.user.signature.present? %>
     <div class="form-group">
-      <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image", 
+      <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image (jpg or png only)", 
                               for_model: "investor_kyc", field_name: "signature", 
-                              model: investor_kyc %>
+                              model: investor_kyc, allowed_types: ['image/*'].freeze  %>
 
     </div>
   <% end %>
@@ -82,15 +82,15 @@
       Please upload a video where you are holding your PAN Card saying:
       
       <div class="alert alert-success">
-      "My name is <%= investor_kyc.user.full_name %> and my PAN is [PAN number].  I confirm the KYC details provided by me for subscribing to the fund by <%= investor_kyc.entity.name %> 
+      "My name is <%= investor_kyc&.user&.full_name %> and my PAN is [PAN number].  I confirm the KYC details provided by me for subscribing to the fund by <%= investor_kyc.entity.name %> 
       on <%= Time.zone.today.to_formatted_s(:long) %>"
       </div>
       Kindly make sure your full face and the PAN card are clearly visible in the video.
     </div>
 
-    <%= render "layouts/single_upload", form: form, field_label: "Upload KYC Video", 
+    <%= render "layouts/single_upload", form: form, field_label: "Upload KYC Video (mp4 only)", 
                             for_model: "investor_kyc", field_name: "video", 
-                            model: investor_kyc %>
+                            model: investor_kyc, allowed_types: ['video/*'].freeze %>
 
     
   </div>

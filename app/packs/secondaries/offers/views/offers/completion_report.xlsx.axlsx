@@ -2,7 +2,7 @@ wb = xlsx_package.workbook
 
 wb.add_worksheet(name: "Offers") do |sheet|
   # Create the header row
-  sheet.add_row(["ID", "User", "Email", "Sign In Count", "Verified", "Signature Uploaded", "PAN Uploaded", "Documents"])
+  sheet.add_row(["ID", "User", "Email", "Sign In Count", "Verified", "Signature Uploaded", "PAN Uploaded", "SPA Accepted", "Documents"])
 
   # Create entries for each item
   @offers.includes(:user, :documents).each do |o|
@@ -10,7 +10,7 @@ wb.add_worksheet(name: "Offers") do |sheet|
     sig = o.signature.present? ? 'Yes' : 'No'
     pan = o.pan_card.present? ? 'Yes' : 'No'
     docs = o.documents.collect(&:name).join(", ")
-
-    sheet.add_row([o.id, o.user&.full_name, o.user&.email, o.user&.sign_in_count, verified, sig, pan, docs])
+    spa = o.final_agreement ? 'Yes' : 'No'
+    sheet.add_row([o.id, o.user&.full_name, o.user&.email, o.user&.sign_in_count, verified, sig, pan, spa, docs])
   end
 end
