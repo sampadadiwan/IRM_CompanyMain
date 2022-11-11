@@ -21,19 +21,7 @@ class DocumentMailer < ApplicationMailer
 
     email = sandbox_email(@document, @document.signed_by.email)
 
-    subj = "Signature for #{@document.name} needs to be accepted"
-    mail(from: from_email(@document.entity),
-         to: email,
-         cc: ENV['SUPPORT_EMAIL'],
-         subject: subj)
-  end
-
-  def notify_signed_accepted
-    @document = Document.find params[:id]
-
-    email = sandbox_email(@document, @document.signed_by.email)
-
-    subj = "#{@document.name} has been accepted"
+    subj = "Signature on document #{@document.name} recorded"
     mail(from: from_email(@document.entity),
          to: email,
          cc: ENV['SUPPORT_EMAIL'],

@@ -76,7 +76,13 @@
       <%= form.label :signature_enabled, "Allow Signature" %>
       <%= form.check_box :signature_enabled, class: "form-control form-checkbox",
               data: {action: "click->docform#onPdfOptChange"}  %>
-      <small class="text-muted">Enable users to sign this document using their signature image.</small>
+      <small class="text-muted">Enable users to sign this document.</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :signature_type %>
+      <%= form.select :signature_type, JSON.parse(ENV['DOC_SIGNATURE_TYPES']), {}, class: "form-control" %>
+      <small class="text-muted">Select the mode for signing.</small>
     </div>
 
 

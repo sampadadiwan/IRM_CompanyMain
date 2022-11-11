@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_10_105346) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_11_025931) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -441,8 +441,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_10_105346) do
     t.bigint "signed_by_id"
     t.bigint "from_template_id"
     t.boolean "signed_by_accept", default: false
-    t.boolean "adhaar_esign_enabled", default: false
-    t.boolean "adhaar_esign_completed", default: false
+    t.string "signature_type", limit: 20
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
     t.index ["folder_id"], name: "index_documents_on_folder_id"

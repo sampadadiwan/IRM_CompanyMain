@@ -141,15 +141,21 @@ export default class extends Controller {
                     });
 
                 } else {
-                    console.log(`############# Signing is turned on`);
-                    instance.UI.setToolbarGroup('toolbarGroup-Insert');
-                    instance.UI.openElements(['toolbarGroup-Insert']);
-                    instance.UI.setHeaderItems(function (header) {
-                        header.getHeader('toolbarGroup-Insert').delete(2);
-                        header.getHeader('toolbarGroup-Insert').delete(3);
-                        header.getHeader('toolbarGroup-Insert').delete(4);
-                    });
-                                        
+                    if($("#signature_type").val() == "Signature Image") {
+                        console.log(`############# Signing is turned on`);
+                        instance.UI.setToolbarGroup('toolbarGroup-Insert');
+                        instance.UI.openElements(['toolbarGroup-Insert']);
+                        instance.UI.setHeaderItems(function (header) {
+                            header.getHeader('toolbarGroup-Insert').delete(2);
+                            header.getHeader('toolbarGroup-Insert').delete(3);
+                            header.getHeader('toolbarGroup-Insert').delete(4);
+                        });
+                    } else {
+                        instance.UI.disableElements(['ribbons']);
+                        instance.UI.disableElements(['toolsHeader']);
+                        instance.UI.disableElements(['toolbarGroup-Insert']);
+                    }
+                                                            
                 }
 
 

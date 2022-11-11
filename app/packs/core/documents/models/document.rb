@@ -2,6 +2,10 @@ class Document < ApplicationRecord
   include Trackable
   include Impressionable
 
+  SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
+
+  enum :signature_type, SIGNATURE_TYPES, prefix: true
+
   # Make all models searchable
   update_index('document') { self }
 
@@ -35,7 +39,6 @@ class Document < ApplicationRecord
   delegate :full_path, to: :folder, prefix: :folder
   before_validation :setup_folder, :setup_entity
   after_create :setup_access_rights
-  after_create :setup_adhaar_esign, if: :adhaar_esign_enabled
 
   include FileUploader::Attachment(:file)
 
@@ -58,10 +61,6 @@ class Document < ApplicationRecord
       doc_ar.access_type = 'Document'
       doc_ar.save
     end
-  end
-
-  def setup_adhaar_esign
-    # AdhaarEsign.create(entity_id:, document_id: self.id)
   end
 
   def self.documents_for(current_user, entity)
@@ -103,17 +102,14 @@ class Document < ApplicationRecord
     file&.mime_type&.include?('image')
   end
 
-  def signed_accept
-    self.signed_by_accept = true
-    save
-    # Send email confirming the document was saved
-    DocumentMailer.with(id:).notify_signed_accepted.deliver_later
+  def display_signature_type
+    Document.signature_types[signature_type]
   end
 
-  after_create :notify_signed, if: :signed_by_id
+  after_save :notify_signed
   def notify_signed
     # Send email to user to accept the signed document
-    DocumentMailer.with(id:).notify_signed.deliver_later
+    DocumentMailer.with(id:).notify_signed.deliver_later if signed_by_id && saved_change_to_signed_by_id?
   end
 
   def access_rights_changed(access_right_id)

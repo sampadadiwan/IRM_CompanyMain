@@ -1,14 +1,9 @@
 <%= render "/layouts/alerts" %>
 
-<% if policy(@document).signed_accept? %>
-   <div class="alert alert-danger">
-      Please read through the document and accept it by clicking on the Accept button.
-   </div>
-<% end %>
 
 <% if policy(@document).sign? %>
-   <div class="alert alert-danger">
-      Please read through the document and sign it by clicking on the Sign button.
+   <div class="alert alert-info">
+      Please read through the document, Click the "Add New Signature" in the pdf menu bar, place your signature and sign it by clicking on the "Save Signed Document" button.
    </div>
 <% end %>
 
@@ -123,6 +118,7 @@
                   <input type="text" id="download_document" hidden="hidden" value="<%= @document.download %>" />
                   <input type="text" id="printing_document" hidden="hidden" value="<%= @document.printing %>" />
                   <input type="text" id="sign_document" hidden="hidden" value="<%= @document.signature_enabled %>" />
+                  <input type="text" id="signature_type" hidden="hidden" value="<%= @document.display_signature_type %>" />
 
                   <% if current_user.entity_id == @document.entity_id %>
                   <tr>
@@ -130,7 +126,10 @@
                         Signature Enabled
                      </td>
                      <td>
-                     <%= display_boolean @document.signature_enabled %>                                                  
+                     <%= display_boolean @document.signature_enabled %> 
+                     <% if @document.signature_type %>
+                        (<%= @document.display_signature_type %>)
+                     <% end %>
                      </td>
                   </tr>
                   <tr>
@@ -188,14 +187,6 @@
         </div>
     </div>
 </div>
-<div class="row">
-    <% if @document.video? %>
-      <%= render "layouts/video", url: @document.file_url %>
-    <% elsif ENV['PDF_TRON'] == 'true' && @document.file.present? && !@document.orignal %>
-       <%= render "documents/pdf" %>
-    <% end %>
-</div>
-
 
 <% if policy(@document).update? %>
    <div style="display: inline-block;">      
@@ -205,8 +196,13 @@
    </div>
 <% end %>
 
-<!-- <%= button_to "Sign", sign_document_path(@document), method: :patch, class: "btn btn-success", form_class: "deleteButton", data: {action: "click->confirm#popup", msg: "You confirm that you have read the document and are ready to sign the document. Proceed?", method: :patch} if policy(@document).sign?  %>
+<div class="row">
+   <% if @document.video? %>
+     <%= render "layouts/video", url: @document.file_url %>
+   <% elsif ENV['PDF_TRON'] == 'true' && @document.file.present? && !@document.orignal %>
+      <%= render "documents/pdf" %>
+   <% end %>
+</div>
 
-<%= button_to "Accept", signed_accept_document_path(@document), method: :patch, class: "btn btn-success", form_class: "deleteButton", data: {action: "click->confirm#popup", msg: "You confirm that you have read the document and accept the contents of the document. Proceed?", method: :patch} if policy(@document).signed_accept?  %> -->
 
 <%= render "documents/document_details", document: @document %>

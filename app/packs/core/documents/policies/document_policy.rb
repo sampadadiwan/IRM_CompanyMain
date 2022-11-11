@@ -25,11 +25,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def sign?
-    record.signature_enabled && show?
-  end
-
-  def signed_accept?
-    record.signed_by_id == user.id && !record.signed_by_accept
+    record.signature_enabled && record.signed_by_id.blank? && show?
   end
 
   def create?
@@ -49,7 +45,7 @@ class DocumentPolicy < ApplicationPolicy
       create? ||
       (record.owner && owner_policy.update?) ||
       allow_external?(:write)
-    ) && !record.signed_by_accept # Ensure signed and accepted documents cannot be changed
+    ) && !record.signed_by_id # Ensure signed and accepted documents cannot be changed
   end
 
   def edit?

@@ -41,7 +41,6 @@
     
     <%= button_to "Sign", sign_document_path(document), method: :patch, class: "btn btn-success", form_class: "deleteButton", data: {action: "click->confirm#popup", msg: "You confirm that you have read the document and are ready to sign the document. Proceed?", method: :patch} if policy(document).sign?  %>
 
-    <%= button_to "Accept", signed_accept_document_path(document), method: :patch, class: "btn btn-success", form_class: "deleteButton", data: {action: "click->confirm#popup", msg: "You confirm that you have read the document and accept the contents of the document. Proceed?", method: :patch} if policy(document).signed_accept?  %>
   </td>
 
 </tr>

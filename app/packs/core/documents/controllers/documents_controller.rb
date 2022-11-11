@@ -3,7 +3,7 @@ class DocumentsController < ApplicationController
 
   include ActiveStorage::SetCurrent
 
-  before_action :set_document, only: %w[show update destroy edit sign signed_accept]
+  before_action :set_document, only: %w[show update destroy edit sign]
   after_action :verify_authorized, except: %i[index search investor_documents]
   after_action :verify_policy_scoped, only: []
 
@@ -71,11 +71,6 @@ class DocumentsController < ApplicationController
     setup_custom_fields(@document)
   end
 
-  def signed_accept
-    @document.signed_accept
-    redirect_to document_url(@document), notice: "Document was successfully marked as accepted by you."
-  end
-
   def sign
     if current_user.signature
       DocumentSignJob.perform_later(@document.id, current_user.id)
@@ -111,6 +106,7 @@ class DocumentsController < ApplicationController
 
   # PATCH/PUT /documents/1 or /documents/1.json
   def update
+    @document.signed_by_id = current_user.id if @document.signed_by_id
     respond_to do |format|
       if @document.update(document_params)
         format.html { redirect_to document_url(@document), notice: "Document was successfully updated." }
@@ -163,7 +159,8 @@ class DocumentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def document_params
-    params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id, :signature_enabled,
+    params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id,
+                                     :signature_enabled, :signature_type, :signed_by_id,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag,
                                      :tag_list, :folder_id, :file, properties: {})
   end
