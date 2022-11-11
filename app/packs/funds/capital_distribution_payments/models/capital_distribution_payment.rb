@@ -7,14 +7,17 @@ class CapitalDistributionPayment < ApplicationRecord
 
   monetize :amount_cents, with_currency: ->(i) { i.entity.currency }
 
-  counter_culture :fund, column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil },
-                         delta_column: 'amount_cents'
+  counter_culture :fund,
+                  column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil },
+                  delta_column: 'amount_cents'
 
-  counter_culture :capital_distribution, column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil },
-                                         delta_column: 'amount_cents'
+  counter_culture :capital_distribution,
+                  column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil }, delta_column: 'amount_cents'
 
-  # def self.for_investor(user)
-  # end
+  scope :for_employee, lambda { |user|
+    joins(fund: :access_rights).where("funds.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
+  }
+
   scope :for_investor, lambda { |user|
     # Ensure the access rghts for Document
     joins(:investor, fund: :access_rights)

@@ -50,6 +50,10 @@ class CapitalCall < ApplicationRecord
     FundMailer.with(id:).reminder_capital_call.deliver_later
   end
 
+  scope :for_employee, lambda { |user|
+    joins(fund: :access_rights).where("funds.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
+  }
+
   scope :for_investor, lambda { |user|
     joins(fund: :access_rights)
       .merge(AccessRight.access_filter)

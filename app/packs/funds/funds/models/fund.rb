@@ -38,6 +38,10 @@ class Fund < ApplicationRecord
     investor_list.uniq
   end
 
+  scope :for_employee, lambda { |user|
+    joins(:access_rights).where("funds.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
+  }
+
   scope :for_investor, lambda { |user|
     # Ensure the access rghts for Document
     joins(:access_rights)

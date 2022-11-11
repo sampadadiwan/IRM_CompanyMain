@@ -6,11 +6,11 @@ class CapitalCallPolicy < ApplicationPolicy
       elsif user.has_cached_role?(:fund_manager) && user.has_cached_role?(:company_admin)
         scope.where(entity_id: user.entity_id)
       elsif user.has_cached_role?(:fund_manager)
-        scope.joins(fund: :access_rights).where("funds.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
+        scope.for_employee(user)
       elsif user.has_cached_role?(:advisor)
         scope.for_advisor(user)
       else
-        CapitalCall.for_investor(user)
+        scope.for_investor(user)
       end
     end
   end

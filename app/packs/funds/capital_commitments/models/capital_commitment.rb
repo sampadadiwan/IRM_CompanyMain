@@ -44,6 +44,10 @@ class CapitalCommitment < ApplicationRecord
     setup_folder(parent_folder, investor.investor_name, [])
   end
 
+  scope :for_employee, lambda { |user|
+    joins(fund: :access_rights).where("funds.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
+  }
+
   scope :for_advisor, lambda { |user|
     # Ensure the access rghts for Document
     joins(fund: :access_rights).merge(AccessRight.access_filter)

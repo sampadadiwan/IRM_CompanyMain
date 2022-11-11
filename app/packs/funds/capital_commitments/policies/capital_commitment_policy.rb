@@ -6,7 +6,7 @@ class CapitalCommitmentPolicy < ApplicationPolicy
       elsif user.has_cached_role?(:fund_manager) && user.has_cached_role?(:company_admin)
         scope.where(entity_id: user.entity_id)
       elsif user.has_cached_role?(:fund_manager)
-        scope.joins(fund: :access_rights).where("funds.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
+        scope.for_employee(user)
       elsif user.has_cached_role?(:advisor)
         scope.for_advisor(user)
       else
@@ -19,8 +19,14 @@ class CapitalCommitmentPolicy < ApplicationPolicy
     true
   end
 
+  def permissioned_employee?
+    user.entity_id == record.entity_id &&
+      CapitalCommitment.for_employee(user).where("capital_commitments.id=?", record.id).present?
+  end
+
   def show?
-    (user.entity_id == record.entity_id) ||
+    (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)) ||
+      permissioned_employee? ||
       (user.entity_id == record.investor.investor_entity_id) ||
       record.fund.advisor?(user)
   end
