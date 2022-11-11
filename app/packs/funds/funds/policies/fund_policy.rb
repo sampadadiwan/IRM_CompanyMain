@@ -17,11 +17,6 @@ class FundPolicy < ApplicationPolicy
     user.enable_funds
   end
 
-  def permissioned_employee?
-    user.entity_id == record.entity_id &&
-      Fund.for_employee(user).where("funds.id=?", record.id).present?
-  end
-
   def show?
     user.enable_funds &&
       (

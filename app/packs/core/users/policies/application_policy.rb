@@ -43,6 +43,11 @@ class ApplicationPolicy
     extenal ? extenal.set?(action) : false
   end
 
+  def permissioned_employee?
+    user.entity_id == record.entity_id &&
+      record.class.for_employee(user).where("#{record.class.table_name}.id=?", record.id).present?
+  end
+
   class Scope
     def initialize(user, scope)
       @user = user

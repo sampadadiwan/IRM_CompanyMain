@@ -19,11 +19,6 @@ class CapitalDistributionPolicy < ApplicationPolicy
     true
   end
 
-  def permissioned_employee?
-    user.entity_id == record.entity_id &&
-      CapitalDistribution.for_employee(user).where("capital_distributions.id=?", record.id).present?
-  end
-
   def show?
     (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)) ||
       permissioned_employee? ||

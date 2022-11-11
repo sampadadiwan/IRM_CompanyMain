@@ -19,11 +19,6 @@ class CapitalCommitmentPolicy < ApplicationPolicy
     true
   end
 
-  def permissioned_employee?
-    user.entity_id == record.entity_id &&
-      CapitalCommitment.for_employee(user).where("capital_commitments.id=?", record.id).present?
-  end
-
   def show?
     (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)) ||
       permissioned_employee? ||
