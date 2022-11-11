@@ -4,8 +4,10 @@
     <% ia = InvestorAccess.where(email: @email).last %>
     <% if ia %>
         Your account for <%= ia.entity.name %> has been setup on CapHive.
-    <% else %>
+    <% elsif @resource.entity %>
         Your account for <%= @resource.entity.name %> was created at CapHive.
+    <% else %>
+        Your account was created at CapHive.
     <% end %>
 
     Please click the button below to access your account.
