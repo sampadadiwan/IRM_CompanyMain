@@ -1,12 +1,13 @@
-<% cache([current_user.entity, "FMDashBoard"], expires_in: 24.hour) do %>
+<% cache([current_user.entity, "FMDashBoardStats"], expires_in: 24.hour) do %>
     <%= render "entities/fm_dashboard_stats" %>
+<% end %>
 
     <div class="associated_entity">
         <%= render "/funds/index",  
-            funds: current_user.entity.funds.includes(:entity) if current_user.enable_funds %>
+            funds: policy_scope(Fund).includes(:entity) if current_user.enable_funds %>
     </div>
+
     <div class="associated_entity" >
         <%= render "/investment_opportunities/index",  
             investment_opportunities: current_user.entity.investment_opportunities if current_user.enable_inv_opportunities %>
     </div>
-<% end %>

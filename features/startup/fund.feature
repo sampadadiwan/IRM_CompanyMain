@@ -3,6 +3,7 @@ Feature: Fund
 
 Scenario Outline: Create new fund
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   And I am at the funds page
   When I create a new fund "<fund>"
   Then I should see the "<msg>"
@@ -19,6 +20,7 @@ Scenario Outline: Create new fund
 
 Scenario Outline: Create new capital commitment
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given there is an existing investor "name=Accel" with "2" users
   Given there is an existing investor "name=Sequoia" with "2" users
   Given there is a fund "<fund>" for the entity
@@ -37,6 +39,7 @@ Scenario Outline: Create new capital commitment
 
 Scenario Outline: Create new capital call
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given there is an existing investor "name=Accel" with "2" users
   Given there is an existing investor "name=Sequoia" with "2" users
   Given there is a fund "<fund>" for the entity

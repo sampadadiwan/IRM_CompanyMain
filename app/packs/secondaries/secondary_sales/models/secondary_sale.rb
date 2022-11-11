@@ -136,7 +136,6 @@ class SecondarySale < ApplicationRecord
     investor_list.uniq
   end
 
-
   def buyer?(user)
     SecondarySale.for(user).where("access_rights.metadata=?", "Buyer").where(id:).present?
   end
@@ -146,8 +145,8 @@ class SecondarySale < ApplicationRecord
   end
 
   def advisor?(user)
-    user.curr_role == :advisor && 
-    SecondarySale.for(user).where("access_rights.metadata=?", "Advisor").where(id:).present?
+    user.curr_role == :advisor &&
+      SecondarySale.for(user).where("access_rights.metadata=?", "Advisor").where(id:).present?
   end
 
   def offers_by_funding_round

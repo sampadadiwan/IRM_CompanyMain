@@ -35,7 +35,7 @@ class FundPolicy < ApplicationPolicy
   end
 
   def new?
-    create?
+    user.has_cached_role?(:company_admin)
   end
 
   def update?
