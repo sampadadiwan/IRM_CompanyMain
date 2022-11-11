@@ -25,6 +25,7 @@ class AccessRight < ApplicationRecord
   scope :deals, -> { where(access_type: "Deal") }
 
   scope :for_user, ->(user_id) { where(user_id:) }
+  scope :not_user, -> { where(user_id: nil) }
 
   scope :for, ->(owner) { where(owner_id: owner.id, owner_type: owner.class.name) }
   scope :for_access_type, ->(type) { where("access_rights.access_type=?", type) }
