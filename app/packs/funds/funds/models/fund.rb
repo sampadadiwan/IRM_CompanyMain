@@ -56,7 +56,8 @@ class Fund < ApplicationRecord
   }
 
   def advisor?(user)
-    Fund.for_investor(user).where("funds.id=?", id).where("access_rights.metadata='Advisor'").exists?
+    user.entity_id != entity_id &&
+      Fund.for_investor(user).where("funds.id=?", id).where("access_rights.metadata='Advisor'").exists?
   end
 
   def to_s

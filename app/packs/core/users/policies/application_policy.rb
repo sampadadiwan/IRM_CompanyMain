@@ -48,6 +48,11 @@ class ApplicationPolicy
       record.class.for_employee(user).where("#{record.class.table_name}.id=?", record.id).present?
   end
 
+  def permissioned_investor?
+    user.entity_id != record.entity_id &&
+      record.class.for_investor(user).where("#{record.class.table_name}.id=?", record.id).present?
+  end
+
   class Scope
     def initialize(user, scope)
       @user = user

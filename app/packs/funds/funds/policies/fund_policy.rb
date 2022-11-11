@@ -22,7 +22,7 @@ class FundPolicy < ApplicationPolicy
       (
         (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)) ||
         permissioned_employee? ||
-        (!user.has_cached_role?(:fund_manager) && Fund.for_investor(user).where("funds.id=?", record.id).present?)
+        permissioned_investor?
       )
   end
 
