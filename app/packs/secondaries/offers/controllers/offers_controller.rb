@@ -160,7 +160,7 @@ class OffersController < ApplicationController
 
     respond_to do |format|
       if @offer.update(offer_params)
-        format.html { redirect_to offer_url(@offer), notice: "Offer was successfully updated." }
+        format.html { redirect_to offer_url(@offer), notice: "Offer was successfully updated. You will be notified on next steps." }
         format.json { render :show, status: :ok, location: @offer }
       else
         format.html { render :edit, status: :unprocessable_entity }

@@ -3,10 +3,12 @@
 <p>
     <% ia = InvestorAccess.where(email: @email).last %>
     <% if ia %>
-        Your account at CapHive was created by <%= ia.entity.name %>.
+        Your account for <%= ia.entity.name %> has been setup on CapHive.
+    <% else %>
+        Your account for <%= @resource.entity.name %> was created at CapHive.
     <% end %>
 
-    You can confirm your account email through the link below:
+    Please click the button below to access your account.
 </p>
 
-<p class="btn btn-primary"><%= link_to 'Confirm my account', confirmation_url(@resource, confirmation_token: @token) %></p>
+<p class="btn btn-primary"><%= link_to 'Access Your Account', confirmation_url(@resource, confirmation_token: @token) %></p>
