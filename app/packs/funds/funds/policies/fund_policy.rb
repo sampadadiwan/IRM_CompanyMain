@@ -3,8 +3,10 @@ class FundPolicy < ApplicationPolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      elsif user.has_cached_role?(:fund_manager)
+      elsif user.has_cached_role?(:fund_manager) && user.has_cached_role?(:company_admin)
         scope.where(entity_id: user.entity_id)
+      elsif user.has_cached_role?(:fund_manager)
+        scope.joins(:access_rights).where("funds.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
       else
         scope.for_investor(user)
       end

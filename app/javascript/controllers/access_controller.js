@@ -92,6 +92,7 @@ export default class extends Controller {
     $('#access_right_access_to_category').prop('disabled', 'disabled');
     $('#access_right_access_to_category').removeClass('required');
   }
+  
   showCategory() {
     $("#category_form_group").show();
     $('#access_right_access_to_category').prop('disabled', '');
