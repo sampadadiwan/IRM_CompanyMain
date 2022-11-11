@@ -4,7 +4,7 @@ class Document < ApplicationRecord
 
   SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
 
-  enum :signature_type, SIGNATURE_TYPES, prefix: true
+  serialize :signature_type
 
   # Make all models searchable
   update_index('document') { self }
@@ -103,7 +103,7 @@ class Document < ApplicationRecord
   end
 
   def display_signature_type
-    Document.signature_types[signature_type]
+    SIGNATURE_TYPES.select { |k, _v| signature_type.include?(k.to_s) }.values.join(",")
   end
 
   after_save :notify_signed

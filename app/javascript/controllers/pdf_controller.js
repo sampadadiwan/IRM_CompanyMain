@@ -141,8 +141,8 @@ export default class extends Controller {
                     });
 
                 } else {
-                    if($("#signature_type").val() == "Signature Image") {
-                        console.log(`############# Signing is turned on`);
+                    if($("#signature_image").val() == "true") {
+                        console.log(`Signature Signing is turned on`);
                         instance.UI.setToolbarGroup('toolbarGroup-Insert');
                         instance.UI.openElements(['toolbarGroup-Insert']);
                         instance.UI.setHeaderItems(function (header) {

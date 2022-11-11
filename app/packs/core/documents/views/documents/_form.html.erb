@@ -81,7 +81,7 @@
 
     <div class="form-group">
       <%= form.label :signature_type %>
-      <%= form.select :signature_type, JSON.parse(ENV['DOC_SIGNATURE_TYPES']), {}, class: "form-control" %>
+      <%= form.select :signature_type, JSON.parse(ENV['DOC_SIGNATURE_TYPES']), {:include_blank=>false}, class: "form-control select2", multiple: true %>
       <small class="text-muted">Select the mode for signing.</small>
     </div>
 

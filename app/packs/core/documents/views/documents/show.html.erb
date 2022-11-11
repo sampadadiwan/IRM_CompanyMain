@@ -2,9 +2,15 @@
 
 
 <% if policy(@document).sign? %>
-   <div class="alert alert-info">
-      Please read through the document, Click the "Add New Signature" in the pdf menu bar, place your signature and sign it by clicking on the "Save Signed Document" button.
-   </div>
+   <% if @document.signature_type.present? %>
+      <div class="alert alert-info">
+         Please read through the document, Click the "Add New Signature" in the pdf menu bar, place your signature and sign it by clicking on the "Save Signed Document" button.
+      </div>
+   <% elsif @document.signature_type.present? %>
+      <div class="alert alert-info">
+         Please download the document, Add your digital signature to it and upload the signed document here.
+      </div>
+   <% end %>
 <% end %>
 
 <div class="row">
@@ -117,8 +123,13 @@
 
                   <input type="text" id="download_document" hidden="hidden" value="<%= @document.download %>" />
                   <input type="text" id="printing_document" hidden="hidden" value="<%= @document.printing %>" />
-                  <input type="text" id="sign_document" hidden="hidden" value="<%= @document.signature_enabled %>" />
-                  <input type="text" id="signature_type" hidden="hidden" value="<%= @document.display_signature_type %>" />
+
+                  <% if policy(@document).sign? %>
+                     <input type="text" id="sign_document" hidden="hidden" value="<%= @document.signature_enabled %>" />
+                     <% @document.signature_type.each do |st| %>
+                        <input type="text" id="signature_<%= st %>" hidden="hidden" value="true" />
+                     <% end %>
+                  <% end %>
 
                   <% if current_user.entity_id == @document.entity_id %>
                   <tr>
@@ -167,6 +178,23 @@
                         <%= @document.user.full_name  %> | <%= @document.user.email  %>                                                  
                      </td>
                   </tr>
+
+                  <% if @document.signed_by_id.present? %>
+                  <tr>
+                     <td>
+                        Signed By
+                     </td>
+                     <td>
+                        <%= @document.signed_by.full_name  %> | <%= @document.signed_by.email  %>                                  
+                        
+                        <%= link_to @document.file_url(), target: "_blank" do %>
+                           <i class="fas fa-download"></i>
+                           Download Signed: <%= @document.name.capitalize.titleize %>
+                        <% end %>
+                        
+                     </td>
+                  </tr>
+                  <% end %>
                   
                   <% if @document.text.present? %>
                   <tr>

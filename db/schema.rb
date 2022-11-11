@@ -441,7 +441,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_11_025931) do
     t.bigint "signed_by_id"
     t.bigint "from_template_id"
     t.boolean "signed_by_accept", default: false
-    t.string "signature_type", limit: 20
+    t.string "signature_type", limit: 100
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
     t.index ["folder_id"], name: "index_documents_on_folder_id"

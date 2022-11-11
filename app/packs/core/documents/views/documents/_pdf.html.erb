@@ -20,7 +20,7 @@
    <div id='viewer' class="card-body">
    </div>
 
-   <% if policy(@document).sign? && @document.signature_type_image? %>
+   <% if policy(@document).sign? && @document.signature_type.include?("image") %>
       <%= form_with(model: @document, id: "signed_doc_form" ) do |form| %>
          <div style="display:none;">
             <%= render "layouts/single_upload" , form: form, field_label: "Upload File" , for_model: "document" ,

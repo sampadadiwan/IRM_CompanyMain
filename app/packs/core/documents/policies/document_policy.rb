@@ -44,7 +44,8 @@ class DocumentPolicy < ApplicationPolicy
     (
       create? ||
       (record.owner && owner_policy.update?) ||
-      allow_external?(:write)
+      allow_external?(:write) ||
+      (show? && record.signature_type_dsc?) # for dsc we need to allow uploading of the digitally signed doc
     ) && !record.signed_by_id # Ensure signed and accepted documents cannot be changed
   end
 
