@@ -8,9 +8,9 @@ class CapitalDistributionPolicy < ApplicationPolicy
       elsif user.has_cached_role?(:fund_manager)
         scope.for_employee(user)
       elsif user.has_cached_role?(:advisor)
-        scope.for_advisor(user)
+        scope.for_advisor(user).distinct
       else
-        scope.for_investor(user)
+        scope.for_investor(user).distinct
       end
     end
   end
@@ -22,7 +22,7 @@ class CapitalDistributionPolicy < ApplicationPolicy
   def show?
     (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)) ||
       permissioned_employee? ||
-      (user.entity_id != record.entity_id && CapitalDistribution.for_investor(user).where("capital_distributions.id=?", record.id)) ||
+      permissioned_investor? ||
       record.fund.advisor?(user)
   end
 

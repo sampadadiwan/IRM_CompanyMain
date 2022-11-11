@@ -21,7 +21,7 @@ class CapitalCallPolicy < ApplicationPolicy
 
   def show?
     (user.entity_id == record.entity_id) ||
-      CapitalCall.for_investor(user).where("capital_calls.id=?", record.id) ||
+      permissioned_investor? ||
       record.fund.advisor?(user)
   end
 

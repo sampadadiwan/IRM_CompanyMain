@@ -12,7 +12,7 @@
                 "import_upload[import_type]": "Offer", 
                 "import_upload[entity_id]": current_user.entity_id,
                 "sample_upload": "OFFERS_SAMPLE"), 
-                { class: "btn btn-primary"} if @secondary_sale %> 
+                { class: "btn btn-primary"} if @secondary_sale && policy(@secondary_sale).update? %> 
 
         <%= link_to "Download All", offers_secondary_sale_path(@secondary_sale, format: "xlsx"), 
                                   class: "btn btn-success" if @secondary_sale %>
