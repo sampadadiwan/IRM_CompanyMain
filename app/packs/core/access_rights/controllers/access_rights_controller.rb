@@ -62,16 +62,12 @@ class AccessRightsController < ApplicationController
   # POST /access_rights or /access_rights.json
   def create
     @access_rights = initialize_from_params(access_right_params)
-    @access_rights.each(&:save)
+    @access_rights.each(&:save!)
     @access_rights = AccessRight.includes(:investor, :owner).where(id: @access_rights.collect(&:id))
     respond_to do |format|
       format.turbo_stream { render :create }
       format.html { redirect_to access_right_url(@access_right), notice: "Access right was successfully created." }
       format.json { render :show, status: :created, location: @access_right }
-      # else
-      #   format.html { render :new, status: :unprocessable_entity }
-      #   format.json { render json: @access_right.errors, status: :unprocessable_entity }
-      # end
     end
   end
 
@@ -117,7 +113,7 @@ class AccessRightsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def access_right_params
     params.require(:access_right).permit(:owner_id, :owner_type, :access_type, :metadata,
-                                         :entity_id, :cascade,
+                                         :entity_id, :cascade, :user_id,
                                          access_to_category: [], access_to_investor_id: [])
   end
 end

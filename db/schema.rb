@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_11_025931) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_11_091421) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -36,10 +36,12 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_11_025931) do
     t.string "access_to_category", limit: 20
     t.datetime "deleted_at"
     t.boolean "cascade", default: false
+    t.bigint "user_id"
     t.index ["access_to_investor_id"], name: "index_access_rights_on_access_to_investor_id"
     t.index ["deleted_at"], name: "index_access_rights_on_deleted_at"
     t.index ["entity_id"], name: "index_access_rights_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_access_rights_on_owner"
+    t.index ["user_id"], name: "index_access_rights_on_user_id"
   end
 
   create_table "action_text_rich_texts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1483,6 +1485,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_11_025931) do
   end
 
   add_foreign_key "access_rights", "entities"
+  add_foreign_key "access_rights", "users"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "adhaar_esigns", "documents"

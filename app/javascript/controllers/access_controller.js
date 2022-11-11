@@ -4,6 +4,8 @@ export default class extends Controller {
 
   connect() {
 
+    const hideCategory = this.hideCategory
+    const hideEmployee = this.hideEmployee
     $(document).on('turbo:frame-load', function () {
 
       console.log("Access javascript loaded");
@@ -14,10 +16,8 @@ export default class extends Controller {
         this.dispatchEvent(event);
       });
 
-      $("#category_form_group").hide();
-      $('#access_right_access_to_category').prop('disabled', 'disabled');
-      $('#access_right_access_to_investor_id').addClass('required');
-
+      hideCategory();
+      hideEmployee();
     });
 
   }
@@ -29,24 +29,22 @@ export default class extends Controller {
     switch (selected) {
       case "All Users for Specific Investor":
         // hide category & disable
-        $("#category_form_group").hide();
-        $('#access_right_access_to_category').prop('disabled', 'disabled');
-        $('#access_right_access_to_category').removeClass('required');
-
-        $("#investor_form_group").show();
-        $('#access_right_access_to_investor_id').prop('disabled', "");
-        $('#access_right_access_to_investor_id').addClass('required');
-
+        this.hideCategory();
+        this.hideEmployee();
+        this.showInvestor();
         break;
       case "All Investors of Specific Category":
         // hide category & disable
-        $("#category_form_group").show();
-        $('#access_right_access_to_category').prop('disabled', '');
-        $('#access_right_access_to_category').addClass('required');
+        this.showCategory();
+        this.hideEmployee();        
+        this.hideInvestor();
+        break;
 
-        $("#investor_form_group").hide();
-        $('#access_right_access_to_investor_id').prop('disabled', "disabled");
-        $('#access_right_access_to_investor_id').removeClass('required');
+      case "Employee":
+        // hide category & disable
+        this.hideCategory();
+        this.hideInvestor();
+        this.showEmployee();
         break;
       default:
     }
@@ -88,5 +86,48 @@ export default class extends Controller {
       }
     });
   }
+
+  hideCategory() {
+    $("#category_form_group").hide();
+    $('#access_right_access_to_category').prop('disabled', 'disabled');
+    $('#access_right_access_to_category').removeClass('required');
+  }
+  showCategory() {
+    $("#category_form_group").show();
+    $('#access_right_access_to_category').prop('disabled', '');
+    $('#access_right_access_to_category').addClass('required');
+  }
+
+  hideInvestor() {
+    $("#investor_form_group").hide();
+    $('#access_right_access_to_investor_id').prop('disabled', "disabled");
+    $('#access_right_access_to_investor_id').removeClass('required');        
+  }
+
+  showInvestor() {
+    $("#investor_form_group").show();
+    $('#access_right_access_to_investor_id').prop('disabled', "");
+    $('#access_right_access_to_investor_id').addClass('required');
+  }
+
+
+  showEmployee() {
+    $("#employee_form_group").show();
+    $('#access_right_user_id').prop('disabled', "");
+    $('#access_right_user_id').addClass('required');
+    $("#metadata_form_group").hide();        
+    $('#access_right_metadata').prop('disabled', "disabled");
+
+  }
+
+  hideEmployee() {
+    $("#employee_form_group").hide();
+    $('#access_right_user_id').prop('disabled', "disabled");
+    $('#access_right_user_id').removeClass('required');
+    $("#metadata_form_group").show();        
+    $('#access_right_metadata').prop('disabled', "");
+
+  }
+
 
 }

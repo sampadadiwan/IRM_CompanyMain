@@ -1,24 +1,5 @@
-# == Schema Information
-#
-# Table name: access_rights
-#
-#  id                    :integer          not null, primary key
-#  owner_type            :string(255)      not null
-#  owner_id              :integer          not null
-#  access_to_email       :string(30)
-#  access_to_investor_id :integer
-#  access_type           :string(15)
-#  metadata              :string(255)
-#  created_at            :datetime         not null
-#  updated_at            :datetime         not null
-#  entity_id             :integer          not null
-#  access_to_category    :string(20)
-#  deleted_at            :datetime
-#  cascade               :boolean          default("0")
-#
-
 class AccessRight < ApplicationRecord
-  include Trackable
+  # include Trackable
   include ActivityTrackable
 
   update_index('access_right') { self }
@@ -31,6 +12,9 @@ class AccessRight < ApplicationRecord
 
   belongs_to :owner, polymorphic: true, touch: true # , strict_loading: true
   belongs_to :entity
+  # If this is a user access
+  belongs_to :user, optional: true
+  # If this is a specific investor access
   belongs_to :investor, foreign_key: :access_to_investor_id, optional: true # , strict_loading: true
 
   delegate :name, to: :entity, prefix: :entity
@@ -39,6 +23,8 @@ class AccessRight < ApplicationRecord
   scope :investments, -> { where(access_type: "Investment") }
   scope :documents, -> { where(access_type: "Document") }
   scope :deals, -> { where(access_type: "Deal") }
+
+  scope :for_user, ->(user_id) { where(user_id:) }
 
   scope :for, ->(owner) { where(owner_id: owner.id, owner_type: owner.class.name) }
   scope :for_access_type, ->(type) { where("access_rights.access_type=?", type) }
@@ -70,7 +56,7 @@ class AccessRight < ApplicationRecord
   validate :any_present?
 
   def any_present?
-    errors.add :base, "Must specify Investor or Category" if %w[access_to_investor_id access_to_category].all? { |attr| self[attr].blank? }
+    errors.add :base, "Must specify Investor or Category" if %w[access_to_investor_id access_to_category user_id].all? { |attr| self[attr].blank? }
   end
 
   validate :access_is_unique
@@ -80,6 +66,18 @@ class AccessRight < ApplicationRecord
 
   def to_s
     access_to_label
+  end
+
+  def types
+    owner_class_name = owner.class.name
+    case owner_class_name
+    when "Deal"
+      AccessRight::TYPES - ["All Investors of Specific Category"]
+    when "Fund"
+      AccessRight::TYPES + ["Employee"]
+    else
+      AccessRight::TYPES
+    end
   end
 
   def access_to_label
