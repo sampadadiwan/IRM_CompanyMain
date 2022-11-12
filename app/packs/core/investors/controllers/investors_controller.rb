@@ -5,6 +5,8 @@ class InvestorsController < ApplicationController
   # GET /investors or /investors.json
   def index
     @investors = policy_scope(Investor)
+    authorize(Investor)
+
     @investors = @investors.where(category: params[:category]) if params[:category]
 
     @investors = @investors.order("investors.id desc")

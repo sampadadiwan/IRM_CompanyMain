@@ -16,6 +16,7 @@ class DocumentsController < ApplicationController
     else
       @entity = current_user.entity
       @documents = policy_scope(Document)
+      authorize(Document)
       @folders = Folder.not_system.where(entity_id: @entity.id)
                        .order(parent_folder_id: :asc)
       @show_steps = true

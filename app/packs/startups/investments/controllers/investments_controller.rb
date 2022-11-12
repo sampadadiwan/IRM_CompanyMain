@@ -9,7 +9,7 @@ class InvestmentsController < ApplicationController
     @entity = current_user.entity
 
     @investments = policy_scope(Investment).includes(:investor, :funding_round)
-
+    authorize(Investment)
     @investments = @investments.where(investor_id: params[:investor_id]) if params[:investor_id].present?
     @investments = @investments.where(funding_round_id: params[:funding_round_id]) if params[:funding_round_id].present?
     @investments = @investments.where(investment_instrument: Investment::EQUITY_LIKE) if params[:equity_like].present?

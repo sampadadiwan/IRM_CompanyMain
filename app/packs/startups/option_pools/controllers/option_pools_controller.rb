@@ -3,6 +3,7 @@ class OptionPoolsController < ApplicationController
 
   # GET /option_pools or /option_pools.json
   def index
+    authorize(OptionPool)
     @option_pools = policy_scope(OptionPool).includes(:entity)
   end
 
