@@ -3,6 +3,8 @@ class CapitalCommitment < ApplicationRecord
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
+  include FundScopes
+
   belongs_to :entity
   belongs_to :investor
   has_many :investor_kycs, through: :investor
@@ -43,15 +45,4 @@ class CapitalCommitment < ApplicationRecord
     parent_folder = fund.document_folder.folders.where(name: "Commitments").first
     setup_folder(parent_folder, investor.investor_name, [])
   end
-
-  scope :for_employee, lambda { |user|
-    joins(fund: :access_rights).where("funds.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
-  }
-
-  scope :for_advisor, lambda { |user|
-    # Ensure the access rghts for Document
-    joins(fund: :access_rights).merge(AccessRight.access_filter)
-                               .where("access_rights.metadata=?", "Advisor")
-                               .joins(entity: :investors).where("investors.investor_entity_id=?", user.entity_id)
-  }
 end

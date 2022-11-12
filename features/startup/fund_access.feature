@@ -16,7 +16,7 @@ Scenario Outline: Access fund
     
 
 
-Scenario Outline: Access fund
+Scenario Outline: Access fund & details as Employee
   Given there is a user "<user>" for an entity "<entity>"
   Given the user has role "<role>"
   Given there is an existing investor "name=Arun Gupta"
@@ -41,7 +41,7 @@ Scenario Outline: Access fund
     |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |true   |show,edit,update,destroy      |
     
 
-Scenario Outline: Access fund
+Scenario Outline: Access fund & details as Investor
   Given there is a user "<user>" for an entity "<entity>"
   Given there is an existing investor "name=Arun Gupta;entity_type=Family Office"
   Given there is an existing investor entity "entity_type=Family Office" with employee "first_name=Investor"

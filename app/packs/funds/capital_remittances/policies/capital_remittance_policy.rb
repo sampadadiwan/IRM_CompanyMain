@@ -10,7 +10,7 @@ class CapitalRemittancePolicy < ApplicationPolicy
       elsif user.has_cached_role?(:advisor)
         scope.for_advisor(user)
       else
-        scope.joins(:investor, :capital_call).where('capital_calls.approved = ? and investors.investor_entity_id = ?', true, user.entity_id)
+        scope.for_investor(user)
       end
     end
   end
@@ -21,7 +21,7 @@ class CapitalRemittancePolicy < ApplicationPolicy
 
   def show?
     permissioned_employee? ||
-      (user.entity_id == record.investor.investor_entity_id) ||
+      permissioned_investor? ||
       record.fund.advisor?(user)
   end
 
