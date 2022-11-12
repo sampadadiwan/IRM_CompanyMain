@@ -65,6 +65,7 @@ FactoryBot.define do
     gross_amount { 1000000 * rand(1..5) }
     carry { gross_amount * 0.1 }
     distribution_date { Date.today + rand(5).weeks }
+    title { "Capital Dist #{rand(1..10)}" }
   end
 
   factory :capital_remittance do

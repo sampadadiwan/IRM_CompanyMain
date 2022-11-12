@@ -353,5 +353,73 @@ Then('user {string} have {string} access to his own capital distribution payment
 end
 
 
+When('I create a new capital distribution {string}') do |args|
+  @capital_distribution = FactoryBot.build(:capital_distribution, fund: @fund)
+  key_values(@capital_distribution, args)
+  
+  visit(fund_url(@fund))
+
+  click_on "Capital Distributions"
+  click_on "New Capital Distribution"
+
+  fill_in('capital_distribution_title', with: @capital_distribution.title)
+  fill_in('capital_distribution_gross_amount', with: @capital_distribution.gross_amount)
+  fill_in('capital_distribution_carry', with: @capital_distribution.carry)
+  fill_in('capital_distribution_distribution_date', with: @capital_distribution.distribution_date)
+  
+  click_on "Save"
+  sleep(2)
+
+end
+
+Then('I should see the capital distrbution details') do
+  expect(page).to have_content(@capital_distribution.title)
+  expect(page).to have_content(money_to_currency(@capital_distribution.gross_amount))
+  expect(page).to have_content(money_to_currency(@capital_distribution.carry))
+  expect(page).to have_content(money_to_currency(@capital_distribution.net_amount))
+  expect(page).to have_content(@capital_distribution.distribution_date.strftime("%d/%m/%Y"))
+
+  @new_capital_distribution = CapitalDistribution.last
+  @new_capital_distribution.approved.should == false
+  @new_capital_distribution.distribution_amount_cents.should == 0
+  @new_capital_distribution.capital_distribution_payments.length.should == 0
+
+  @capital_distribution = @new_capital_distribution
+end
+
+
+Then('when the capital distrbution is approved') do
+  @capital_distribution.approved = true
+  @capital_distribution.approved_by_user = @user
+  @capital_distribution.save
+  sleep(1)
+  @capital_distribution.reload
+end
+
+Then('I should see the capital distrbution payments generated correctly') do
+  puts "### payments length = #{@capital_distribution.capital_distribution_payments.length}"
+  @capital_distribution.capital_distribution_payments.length.should == @fund.capital_commitments.length
+  @fund.capital_commitments.each do |cc|
+    cdp = @capital_distribution.capital_distribution_payments.where(investor_id: cc.investor_id).first
+    cdp.completed.should == false
+    cdp.amount_cents.should == cc.percentage *  @capital_distribution.net_amount_cents / 100
+  end
+end
+
+Then('I should be able to see the capital distrbution payments') do
+  visit(capital_distribution_path(@capital_distribution))
+  @capital_distribution.capital_distribution_payments.includes(:investor).each do |p|
+    within "#capital_distribution_payment_#{p.id}" do
+      expect(page).to have_content(p.investor.investor_name)
+      expect(page).to have_content(money_to_currency(p.amount))
+      expect(page).to have_content(p.payment_date.strftime("%d/%m/%Y"))
+      expect(page).to have_content(p.completed ? "Yes" : "No")
+    end
+  end
+end
+
+
+
+
 
   

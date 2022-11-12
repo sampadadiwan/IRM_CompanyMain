@@ -97,17 +97,11 @@ Scenario Outline: Create new capital distrbution
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund  
   Given there are capital commitments of "committed_amount_cents=100000000" from each investor
-  When I create a new capital call "percentage_called=20"
-  Then I should see the capital call details
-  Then the corresponding remittances should be created
-  Then I should see the remittances
-  And the capital call collected amount should be "0"
-  When I mark the remittances as paid
-  Then I should see the remittances
-  And the capital call collected amount should be "0"
-  When I mark the remittances as verified
-  Then I should see the remittances
-  And the capital call collected amount should be "400000"
+  When I create a new capital distribution "carry_cents=10000000;carry_cents=100000"
+  Then I should see the capital distrbution details
+  Then when the capital distrbution is approved
+  Then I should see the capital distrbution payments generated correctly
+  And I should be able to see the capital distrbution payments
   
   Examples:
   	|user	    |entity                                 |fund                 |msg	|
