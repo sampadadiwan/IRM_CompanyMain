@@ -20,8 +20,8 @@ class CapitalCallPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id) ||
-      permissioned_investor? ||
+    permissioned_investor? ||
+      permissioned_employee? ||
       record.fund.advisor?(user)
   end
 
@@ -34,7 +34,7 @@ class CapitalCallPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    permissioned_employee?
   end
 
   def approve?

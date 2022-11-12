@@ -10,6 +10,7 @@ class Fund < ApplicationRecord
   has_many :capital_remittances, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
   has_many :capital_distributions, dependent: :destroy
+  has_many :capital_distribution_payments, dependent: :destroy
   has_many :capital_calls, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
 

@@ -34,45 +34,18 @@ FactoryBot.define do
     entity { nil }
   end
 
-  factory :video_kyc do
-    user { nil }
-    investor_kyc { nil }
-    entity { nil }
-  end
-
+  
   factory :investor_kyc do
-    investor { nil }
-    entity { nil }
-    user { nil }
-    full_name { "MyString" }
-    PAN { "MyString" }
-    address { "MyText" }
-    bank_account_number { "MyString" }
-    ifsc_code { "MyString" }
-    bank_verified { false }
-    bank_verification_response { "MyText" }
-    bank_verification_status { "MyString" }
-    signature_data { "MyText" }
-    pan_card_data { "MyText" }
-    pan_verified { false }
-    pan_verification_response { "MyText" }
-    pan_verification_status { "MyString" }
-    comments { "MyText" }
+    entity { Entity.where(enable_investor_kyc: true).sample }
+    investor { entity.investors.sample }
+    user { investor.investor_entity.employees.sample }
+    full_name { user.full_name }
+    PAN {(0...10).map { (65 + rand(26)).chr }.join}
+    address { Faker::Address.full_address }
+    bank_account_number  {Faker::Bank.account_number}
+    ifsc_code {Faker::Bank.swift_bic}
   end
 
-  factory :share_transfer do
-    entity { nil }
-    from_investor { nil }
-    from_user { nil }
-    from_investment { nil }
-    to_investor { nil }
-    to_user { nil }
-    to_investment { nil }
-    quantity { 1 }
-    price { "9.99" }
-    transfer_date { "2022-09-17" }
-    transfered_by { nil }
-  end
 
   factory :capital_distribution_payment do
     fund { nil }
@@ -87,11 +60,11 @@ FactoryBot.define do
 
 
   factory :capital_distribution do
-    fund { nil }
-    entity { nil }
-    gross_amount { "9.99" }
-    carry { "9.99" }
-    distribution_date { "2022-09-04" }
+    fund { Fund.all.sample }
+    entity { fund.entity }
+    gross_amount { 1000000 * rand(1..5) }
+    carry { gross_amount * 0.1 }
+    distribution_date { Date.today + rand(5).weeks }
   end
 
   factory :capital_remittance do

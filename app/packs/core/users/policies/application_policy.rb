@@ -45,7 +45,10 @@ class ApplicationPolicy
 
   def permissioned_employee?
     user.entity_id == record.entity_id &&
-      record.class.for_employee(user).where("#{record.class.table_name}.id=?", record.id).present?
+      (
+        user.has_cached_role?(:company_admin) ||
+        record.class.for_employee(user).where("#{record.class.table_name}.id=?", record.id).present?
+      )
   end
 
   def permissioned_investor?

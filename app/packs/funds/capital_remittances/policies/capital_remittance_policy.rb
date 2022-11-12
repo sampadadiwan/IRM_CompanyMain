@@ -20,8 +20,7 @@ class CapitalRemittancePolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)) ||
-      permissioned_employee? ||
+    permissioned_employee? ||
       (user.entity_id == record.investor.investor_entity_id) ||
       record.fund.advisor?(user)
   end
@@ -39,8 +38,7 @@ class CapitalRemittancePolicy < ApplicationPolicy
   end
 
   def update?
-    create? ||
-      (user.entity_id == record.investor.investor_entity_id)
+    permissioned_employee?
   end
 
   def edit?

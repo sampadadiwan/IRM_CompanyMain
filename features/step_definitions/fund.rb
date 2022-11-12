@@ -23,6 +23,32 @@
 
     @fund = db_fund
   end
+
+  Given('I am {string} employee access to the fund') do |given|
+    if given == "given" || given == "yes"
+      AccessRight.create(entity_id: @fund.entity_id, owner: @fund, user_id: @user.id)
+    end
+  end
+
+  Given('another user is {string} investor access to the fund') do |given|
+    # Hack to make the tests work without rewriting many steps for another user
+    @user = @employee_investor
+    if given == "given" || given == "yes"
+      AccessRight.create(entity_id: @fund.entity_id, owner: @fund, access_to_investor_id: @investor.id)
+      ia = InvestorAccess.create(entity: @investor.entity, investor: @investor, 
+        first_name: @user.first_name, last_name: @user.last_name,
+        email: @user.email, granter: @user, approved: true )
+
+      puts "\n####Investor Access####\n"
+      puts ia.to_json
+    end
+  end
+  
+  
+  When('I am at the fund details page') do
+    visit(fund_url(@fund))
+  end
+  
   
   Then('I should see the fund details on the details page') do
     expect(page).to have_content(@fund.name)
@@ -177,5 +203,155 @@ end
 
   
   
-  
+Then('user {string} have {string} access to the fund') do |truefalse, accesses|
+  accesses.split(",").each do |access|
+    puts "##Checking access #{access} on fund #{@fund.name} for #{@user.email} as #{truefalse}"
+    Pundit.policy(@user, @fund).send("#{access}?").to_s.should == truefalse
+  end
+end
+
+Given('the fund has capital commitments from each investor') do
+  @entity.investors.each do |inv|
+    cc = FactoryBot.create(:capital_commitment, fund: @fund, investor: inv)
+    puts "\n####CapitalCommitment####\n"
+    puts cc.to_json
+  end
+
+  @fund.reload
+end
+
+Then('user {string} have {string} access to the capital commitment') do |truefalse, accesses|
+  accesses.split(",").each do |access|
+    @fund.capital_commitments.includes(:investor).each do |cc|
+      puts "##Checking access #{access} on capital_commitment from #{cc.investor.investor_name} for #{@user.email} as #{truefalse}"
+      Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+    end
+  end
+end
+
+Then('user {string} have {string} access to his own capital commitment') do |truefalse, accesses|
+  accesses.split(",").each do |access|
+    @fund.capital_commitments.includes(:investor).each do |cc|
+      puts "##Checking access #{access} on capital_commitment from #{cc.investor.investor_name} for #{@user.email} is #{Pundit.policy(@user, cc).send("#{access}?")}"
+      
+      if(cc.investor.investor_entity_id == @user.entity_id)
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+      else
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == "false"
+      end
+      
+    end
+  end
+end
+
+
+Given('the fund has {string} capital call') do |count|
+  (1..count.to_i).each do |i|
+    cc = FactoryBot.create(:capital_call, fund: @fund)
+    puts "\n####CapitalCall####\n"
+    puts cc.to_json
+  end
+
+  @fund.reload
+end
+
+Then('user {string} have {string} access to the capital calls') do |truefalse, accesses|
+  puts "##### Checking access to capital calls for funds with rights #{@fund.access_rights.to_json}"
+  accesses.split(",").each do |access|
+    @fund.capital_calls.each do |cc|
+      puts "##Checking access #{access} on capital_call from #{cc.name} for #{@user.email} as #{truefalse}"
+      Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+    end
+  end
+end
+
+
+Given('the capital calls are approved') do
+  @fund.capital_calls.each do |cc|
+    cc.approved = true
+    cc.approved_by_user = @user
+    cc.save
+  end
+end
+
+Then('user {string} have {string} access to the capital remittances') do |truefalse, accesses|
+  puts "##### Checking access to capital remittances for funds with rights #{@fund.access_rights.to_json}"
+  accesses.split(",").each do |access|
+    @fund.capital_remittances.includes(:investor).each do |cc|
+      puts "##Checking access #{access} on capital_remittance from #{cc.investor.investor_name} for #{@user.email} as #{truefalse}"
+      Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+    end
+  end
+end
+
+Then('user {string} have {string} access to his own capital remittances') do |truefalse, accesses|
+  puts "##### Checking access to capital remittances for funds with rights #{@fund.access_rights.to_json}"
+  accesses.split(",").each do |access|
+    @fund.capital_remittances.includes(:investor).each do |cc|
+      puts "##Checking access #{access} on capital_remittance from #{cc.investor.investor_name} for #{@user.email} is #{Pundit.policy(@user, cc).send("#{access}?")}"
+      if(cc.investor.investor_entity_id == @user.entity_id)
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+      else
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == "false"
+      end
+    end
+  end
+end
+
+
+Given('the fund has {string} capital distribution') do |count|
+  (1..count.to_i).each do |i|
+    cc = FactoryBot.create(:capital_distribution, fund: @fund)
+    puts "\n####CapitalDistribution####\n"
+    puts cc.to_json
+  end
+
+  @fund.reload
+end
+
+Then('user {string} have {string} access to the capital distributions') do |truefalse, accesses|
+  puts "##### Checking access to capital distributions for funds with rights #{@fund.access_rights.to_json}"
+  accesses.split(",").each do |access|
+    @fund.capital_distributions.each do |cc|
+      puts "##Checking access #{access} on capital_distribution from #{cc.title} for #{@user.email} as #{truefalse}"
+      Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+    end
+  end
+end
+
+Given('the capital distributions are approved') do
+  @fund.capital_distributions.each do |cc|
+    cc.approved = true
+    cc.approved_by_user = @user
+    cc.save
+  end
+end
+
+Then('user {string} have {string} access to the capital distribution payments') do |truefalse, accesses|
+    puts "##### Checking access to capital distribution payments for funds with rights #{@fund.access_rights.to_json}"
+    accesses.split(",").each do |access|
+      @fund.capital_distribution_payments.includes(:investor).each do |cc|
+        puts "##Checking access #{access} on capital_distribution_payments from #{cc.investor.investor_name} for #{@user.email} as #{truefalse}"
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+      end
+    end
+end
+
+
+Then('user {string} have {string} access to his own capital distribution payments') do |truefalse, accesses|
+  puts "##### Checking access to capital distribution payments for funds with rights #{@fund.access_rights.to_json}"
+  accesses.split(",").each do |access|
+    @fund.capital_distribution_payments.includes(:investor).each do |cc|
+      puts "##Checking access #{access} on capital_distribution_payments from #{cc.investor.investor_name} for #{@user.email} as #{Pundit.policy(@user, cc).send("#{access}?")}"
+      if(cc.investor.investor_entity_id == @user.entity_id)
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+      else
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == "false"
+      end
+    end
+  end
+end
+
+
+
   

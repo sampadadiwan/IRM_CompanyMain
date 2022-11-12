@@ -18,7 +18,6 @@ class CapitalCall < ApplicationRecord
 
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 
-  after_create ->(cc) { CapitalCallJob.perform_later(cc.id) }
   after_save :send_notification, if: :approved
   def send_notification
     CapitalCallJob.perform_later(id) if saved_change_to_approved?
@@ -41,7 +40,6 @@ class CapitalCall < ApplicationRecord
     call_amount_cents.positive? ? (collected_amount_cents * 100.0 / call_amount_cents).round(2) : 0
   end
 
-  after_create :notify_capital_call
   def notify_capital_call
     FundMailer.with(id:).notify_capital_call.deliver_later
   end

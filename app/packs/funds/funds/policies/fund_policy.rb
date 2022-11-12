@@ -20,7 +20,6 @@ class FundPolicy < ApplicationPolicy
   def show?
     user.enable_funds &&
       (
-        (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)) ||
         permissioned_employee? ||
         permissioned_investor?
       )
@@ -39,7 +38,7 @@ class FundPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    permissioned_employee?
   end
 
   def edit?

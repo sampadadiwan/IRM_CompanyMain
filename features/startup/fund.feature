@@ -17,6 +17,32 @@ Scenario Outline: Create new fund
     |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
 
 
+Scenario Outline: View fund with employee access
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given there is a fund "<fund>" for the entity
+  And I am "given" employee access to the fund
+  When I am at the fund details page  
+  And I should see the fund details on the details page
+  And I should see the fund in all funds page
+
+  Examples:
+  	|user	    |entity                                 |fund                 |msg	|
+  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
+    |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
+
+Scenario Outline: View fund - without employee access
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given there is a fund "<fund>" for the entity
+  And I am "no" employee access to the fund
+  When I am at the fund details page  
+  Then I should see the "<msg>"
+
+  Examples:
+  	|user	    |entity                                 |fund                 |msg	|
+  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Access Denied|
+    |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Access Denied|
+
+  
 
 Scenario Outline: Create new capital commitment
   Given Im logged in as a user "<user>" for an entity "<entity>"

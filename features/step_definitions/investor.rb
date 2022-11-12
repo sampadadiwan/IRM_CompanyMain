@@ -83,6 +83,9 @@ Given('there is an existing investor {string} with {string} users') do |arg1, co
                                             first_name: @investor_user.first_name,
                                             last_name: @investor_user.last_name,                              
                                             email: @investor_user.email, approved: true)
+  
+    puts "\n####Investor USer####\n"
+    puts @investor_user.to_json
   end
 
   puts "\n####Investor####\n"
