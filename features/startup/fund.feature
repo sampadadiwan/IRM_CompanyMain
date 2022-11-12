@@ -87,3 +87,29 @@ Scenario Outline: Create new capital call
   	|user	    |entity                                 |fund                 |msg	|
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
     |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
+
+
+Scenario Outline: Create new capital distrbution
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "name=Accel" with "2" users
+  Given there is an existing investor "name=Sequoia" with "2" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund  
+  Given there are capital commitments of "committed_amount_cents=100000000" from each investor
+  When I create a new capital call "percentage_called=20"
+  Then I should see the capital call details
+  Then the corresponding remittances should be created
+  Then I should see the remittances
+  And the capital call collected amount should be "0"
+  When I mark the remittances as paid
+  Then I should see the remittances
+  And the capital call collected amount should be "0"
+  When I mark the remittances as verified
+  Then I should see the remittances
+  And the capital call collected amount should be "400000"
+  
+  Examples:
+  	|user	    |entity                                 |fund                 |msg	|
+  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
+    |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|

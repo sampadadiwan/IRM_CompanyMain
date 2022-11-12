@@ -10,15 +10,16 @@ class InvestorPolicy < ApplicationPolicy
   end
 
   def index?
-    true
+    user.enable_investors
   end
 
   def show?
-    user.entity_id == record.entity_id || user.entity_id == record.investor_entity_id
+    user.enable_investors &&
+      (user.entity_id == record.entity_id || user.entity_id == record.investor_entity_id)
   end
 
   def create?
-    user.entity_id == record.entity_id
+    user.enable_investors && user.entity_id == record.entity_id
   end
 
   def new?
