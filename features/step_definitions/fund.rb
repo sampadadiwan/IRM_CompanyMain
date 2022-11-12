@@ -387,6 +387,14 @@ Then('I should see the capital distrbution details') do
   @capital_distribution = @new_capital_distribution
 end
 
+Then('when the capital call is approved') do
+  @capital_call.approved = true
+  @capital_call.approved_by_user = @user
+  @capital_call.save
+  sleep(1)
+  @capital_call.reload
+end
+
 
 Then('when the capital distrbution is approved') do
   @capital_distribution.approved = true
@@ -418,6 +426,14 @@ Then('I should be able to see the capital distrbution payments') do
   end
 end
 
+Then('when the capital distrbution payments are marked as paid') do
+  @capital_distribution.capital_distribution_payments.update(completed: true)
+end
+
+Then('the capital distribution must reflect the payments') do
+  @capital_distribution.reload
+  @capital_distribution.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:amount_cents)
+end
 
 
 

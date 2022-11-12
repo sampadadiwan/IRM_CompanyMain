@@ -73,6 +73,7 @@ Scenario Outline: Create new capital call
   Given there are capital commitments of "committed_amount_cents=100000000" from each investor
   When I create a new capital call "percentage_called=20"
   Then I should see the capital call details
+  Then when the capital call is approved
   Then the corresponding remittances should be created
   Then I should see the remittances
   And the capital call collected amount should be "0"
@@ -102,7 +103,8 @@ Scenario Outline: Create new capital distrbution
   Then when the capital distrbution is approved
   Then I should see the capital distrbution payments generated correctly
   And I should be able to see the capital distrbution payments
-  
+  And when the capital distrbution payments are marked as paid
+  Then the capital distribution must reflect the payments
   Examples:
   	|user	    |entity                                 |fund                 |msg	|
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
