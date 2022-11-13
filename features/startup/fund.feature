@@ -83,6 +83,7 @@ Scenario Outline: Create new capital call
   When I mark the remittances as verified
   Then I should see the remittances
   And the capital call collected amount should be "400000"
+  And the investors must receive email with subject "Capital Call"
   
   Examples:
   	|user	    |entity                                 |fund                 |msg	|
@@ -105,6 +106,8 @@ Scenario Outline: Create new capital distrbution
   And I should be able to see the capital distrbution payments
   And when the capital distrbution payments are marked as paid
   Then the capital distribution must reflect the payments
+  And the investors must receive email with subject "Capital Distribution"
+  
   Examples:
   	|user	    |entity                                 |fund                 |msg	|
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|

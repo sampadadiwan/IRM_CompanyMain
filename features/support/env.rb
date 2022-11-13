@@ -75,11 +75,11 @@ Capybara.register_driver :selenium do |app|
   Capybara::Selenium::Driver.new(app, browser: :chrome)
 end
 
-Capybara.javascript_driver = :chrome #:selenium_chrome_headless # 
+Capybara.javascript_driver = :selenium_chrome_headless # :chrome #
 
 Capybara.configure do |config|
   config.default_max_wait_time = 10 # seconds
-  config.default_driver        = :selenium #:selenium_chrome_headless # 
+  config.default_driver        = :selenium_chrome_headless # :selenium #
 end
 
 module IRMUtils

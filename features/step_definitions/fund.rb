@@ -435,6 +435,17 @@ Then('the capital distribution must reflect the payments') do
   @capital_distribution.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:amount_cents)
 end
 
+Then('the investors must receive email with subject {string}') do |subject|
+  Investor.all.each do |inv|
+    if inv.emails.present?
+      inv.emails.each do |email|
+        puts "# checking email #{subject} sent for #{email}"
+        open_email(email)
+        expect(current_email.subject).to include subject
+      end
+    end
+  end
+end
 
 
 
