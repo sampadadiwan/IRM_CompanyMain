@@ -23,9 +23,9 @@
   </div>
 
 
-  <div class="form-group">
-    <%= form.label :amount %>
-    <%= form.text_field :amount, class: "form-control"  %>
+  <div class="form-group" data-controller="currencyformat">
+    <%= form.label :amount %> <span class="formatted_currency"></span>
+    <%= form.text_field :amount, class: "form-control", data: {action: "input->currencyformat#format"} %>
   </div>
 
   <div class="form-group">

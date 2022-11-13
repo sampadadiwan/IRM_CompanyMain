@@ -30,9 +30,9 @@
     <%= form.text_field :call_amount, class: "form-control", disabled: true  %>
   </div>
 
-  <div class="form-group">
-    <%= form.label :collected_amount %>
-    <%= form.text_field :collected_amount, class: "form-control"  %>
+  <div class="form-group" data-controller="currencyformat">
+    <%= form.label :collected_amount %>  <span class="formatted_currency"></span>
+    <%= form.text_field :collected_amount, class: "form-control", data: {action: "input->currencyformat#format"}   %>
   </div>
 
   <div class="field" class="form-group" data-controller="directuploads" >

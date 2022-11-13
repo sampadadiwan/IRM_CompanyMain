@@ -11,36 +11,38 @@
     </div>
   <% end %>
 
+  <div data-controller="currencyformat">
     <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
     <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
     <%= form.text_field :form_type_id, class: "form-control", hidden: true  %>
 
-  <div class="form-group">
-    <%= form.label :title %>
-    <%= form.text_field :title, class: "form-control"  %>
-  </div>
-    
-  <div class="form-group">
-    <%= form.label :gross_amount %>
-    <%= form.number_field :gross_amount, class: "form-control"  %>
-  </div>
+    <div class="form-group">
+      <%= form.label :title %>
+      <%= form.text_field :title, class: "form-control"  %>
+    </div>
+      
+    <div class="form-group">
+      <%= form.label :gross_amount %> <span class="formatted_currency"></span>
+      <%= form.number_field :gross_amount, class: "form-control", data: {action: "input->currencyformat#format"}   %>
+    </div>
 
-  <div class="form-group">
-    <%= form.label :carry %>
-    <%= form.number_field :carry, class: "form-control"  %>
-  </div>
+    <div class="form-group">
+      <%= form.label :carry %> <span class="formatted_currency"></span>
+      <%= form.number_field :carry, class: "form-control", data: {action: "input->currencyformat#format"}   %>
+    </div>
 
-  <div class="form-group">
-    <%= form.label :distribution_date %>
-    <%= form.date_field :distribution_date, class: "form-control"  %>
-  </div>
+    <div class="form-group">
+      <%= form.label :distribution_date %>
+      <%= form.date_field :distribution_date, class: "form-control"  %>
+    </div>
 
-  <div class="form-group">
-    <%= form.label :completed %>
-    <%= form.check_box :completed, class: "form-control form-checkbox"  %>
-  </div>
+    <div class="form-group">
+      <%= form.label :completed %>
+      <%= form.check_box :completed, class: "form-control form-checkbox"  %>
+    </div>
 
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-primary"}%>
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-primary"}%>
+    </div>
   </div>
 <% end %>

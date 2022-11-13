@@ -20,9 +20,9 @@
   </div>
 
   
-  <div class="form-group">
-    <%= form.label :committed_amount %>
-    <%= form.number_field :committed_amount, class: "form-control"  %>
+  <div class="form-group" data-controller="currencyformat">
+    <%= form.label :committed_amount %> <span class="formatted_currency"></span>
+    <%= form.number_field :committed_amount, class: "form-control", data: {action: "input->currencyformat#format"}  %>
   </div>
 
   <%= custom_form_fields(capital_commitment, form) %>

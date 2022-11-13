@@ -108,9 +108,9 @@
       <%= form.text_field :interest_entity_id, class: "form-control", hidden: true  %>    
     <% end %>
     
-    <div class="form-group">
-      <%= form.label :quantity %>
-      <%= form.number_field :quantity, class: "form-control"  %>
+    <div class="form-group" data-controller="currencyformat">
+      <%= form.label :quantity %> <span class="formatted_currency"></span>
+      <%= form.number_field :quantity, class: "form-control", data: {action: "input->currencyformat#format"}  %>
       <small class="text-muted">Sale quantity: <%= interest.secondary_sale.display_quantity %></small>
     </div>
 

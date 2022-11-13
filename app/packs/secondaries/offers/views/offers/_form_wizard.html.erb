@@ -53,12 +53,12 @@
                 </div>
 
 
-                <div class="form-group">
-                    <%= form.label :quantity %>
+                <div class="form-group" data-controller="currencyformat">
+                    <%= form.label :quantity %> <span class="formatted_currency"></span>
                     <% if offer.approved %>
                         <%= form.number_field :quantity, class: "form-control", required: true, disabled: true %>
                     <% else %>
-                        <%= form.number_field :quantity, class: "form-control", required: true %>
+                        <%= form.number_field :quantity, class: "form-control", required: true, data: {action: "input->currencyformat#format"} %> 
                     <% end %>
                     <small class="text-muted"><%= offer.secondary_sale.percent_allowed %>% of your <%=offer.total_holdings_quantity%> holdings is <%= offer.allowed_quantity %> units</small>
                 </div>
