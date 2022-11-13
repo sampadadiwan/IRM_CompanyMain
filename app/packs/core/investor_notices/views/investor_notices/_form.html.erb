@@ -21,7 +21,7 @@
 
   <div class="form-group">
     <%= form.label :owner_type %>
-    <%= form.text_field :owner_type, class: "form-control" %>  
+    <%= form.select :owner_type, ["Fund", "SecondarySale", "Entity"], {}, class: "form-control" %>  
   </div>
   
   <div class="form-group">
@@ -63,6 +63,13 @@
     <%= form.label :active %>
     <%= form.check_box :active, class: "form-control form-checkbox"  %>
   </div>
+
+  <div class="form-group">
+    <%= form.label :generate, "Generate For Investors" %>
+    <%= form.check_box :generate, class: "form-control form-checkbox"  %>
+    <small>Generate Notices for all investors of the selected Owner</small>
+  </div>
+  
 
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-primary"}%>

@@ -5,21 +5,10 @@ class InvestorNotice < ApplicationRecord
 
   has_rich_text :details
 
-  after_save :generate_investor_notice_entries, if: proc { |notice| notice.owner_type != "Entity" }
+  after_save :generate_investor_notice_entries, if: proc { |notice| notice.generate && notice.saved_change_to_generate? }
 
   def generate_investor_notice_entries
-    access_rights.each do |ar|
-      ar.investors.each do |investor|
-        next if InvestorNoticeEntry.where(investor_id: investor.id, investor_notice_id: id).first.present?
-
-        InvestorNoticeEntry.create!(investor_id: investor.id,
-                                    investor_notice_id: id,
-                                    investor_entity_id: investor.investor_entity_id,
-                                    entity_id:,
-                                    active: true)
-      end
-    end
-    nil
+    InvestorNoticeJob.perform_later(id)
   end
 
   def access_rights

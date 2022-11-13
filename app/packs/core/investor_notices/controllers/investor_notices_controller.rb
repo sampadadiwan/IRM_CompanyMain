@@ -15,6 +15,8 @@ class InvestorNoticesController < ApplicationController
     @investor_notice.entity_id = current_user.entity_id
     @investor_notice.start_date = Time.zone.today
     @investor_notice.end_date = Time.zone.today + 1.week
+    @investor_notice.generate = true
+    @investor_notice.active = true
     authorize(@investor_notice)
   end
 
@@ -71,6 +73,6 @@ class InvestorNoticesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_notice_params
-    params.require(:investor_notice).permit(:entity_id, :owner_id, :owner_type, :start_date, :end_date, :active, :details, :title, :link, :access_rights_metadata, :btn_label)
+    params.require(:investor_notice).permit(:entity_id, :owner_id, :owner_type, :start_date, :end_date, :active, :details, :title, :link, :access_rights_metadata, :btn_label, :generate)
   end
 end
