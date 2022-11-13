@@ -72,7 +72,7 @@ Rails/OutputSafety:
 Style/OptionalBooleanParameter:
   Exclude:
     - 'app/packs/startups/investments/helpers/investments_helper.rb'
-    - 'app/packs/core/misc/mailers/email_currency_helper.rb'
+    - 'app/packs/core/base/mailers/email_currency_helper.rb'
 # Metrics Cops
 Metrics/CyclomaticComplexity:
   Max: 10
@@ -113,7 +113,7 @@ Metrics/BlockLength:
   Max: 15
   Exclude:
     - 'app/packs/secondaries/secondary_sales/views/secondary_sales/download.xlsx.axlsx'
-    - 'app/packs/misc/import_uploads/import_upload_job.rb'
+    - 'app/packs/misc/import_uploads/jobs/import_upload_job.rb'
     - 'app/packs/startups/investments/jobs/investment_percentage_holding_job.rb'
     - 'app/controllers/concerns/investment_concern.rb'
     - 'app/packs/funds/capital_distributions/jobs/capital_distribution_job.rb'

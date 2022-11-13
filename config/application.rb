@@ -14,7 +14,7 @@ module InvestorRelationshipManagement
     config.i18n.default_locale = :en
     config.active_support.key_generator_hash_digest_class = OpenSSL::Digest::SHA1
 
-    config.autoload_paths += Dir[Rails.root.join('app/components/**/'), Rails.root.join('app/jobs/**/'), Rails.root.join('app/models/**/'), Rails.root.join('app/dashboards/**/'), Rails.root.join('app/services/**/'), Rails.root.join('app/packs/**/')]
+    config.autoload_paths += Dir[Rails.root.join('app/components/**/'), Rails.root.join('app/packs/**/')]
 
     # config.eager_load_paths += DirRails.root.join('app/jobs/**/'), Rails.root.join('app/models/**/'), Rails.root.join('app/dashboards/**/')]
 
@@ -26,14 +26,21 @@ module InvestorRelationshipManagement
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("indices")
 
-    config.paths['app/views'].unshift("#{Rails.root}/app/packs/misc/views")
-
-    core_view_paths = %w[access_rights documents entities folders notes permissions reminders tasks users investors investor_accesses valuations form_types form_custom_fields approvals payments nudges import_uploads misc investor_kycs fees investor_notices]
+    core_view_paths = %w[access_rights documents entities folders notes permissions reminders tasks users investors investor_accesses valuations nudges base investor_kycs fees]
 
     core_view_paths.each do |view_path|
       config.paths['app/views'].unshift("#{Rails.root}/app/packs/core/#{view_path}/views")
       config.paths['app/helpers'].unshift("#{Rails.root}/app/packs/core/#{view_path}/helpers")
     end
+
+    misc_view_paths = %w[approvals form_types form_custom_fields payments investor_notices import_uploads]
+
+    misc_view_paths.each do |view_path|
+      config.paths['app/views'].unshift("#{Rails.root}/app/packs/misc/#{view_path}/views")
+      config.paths['app/helpers'].unshift("#{Rails.root}/app/packs/misc/#{view_path}/helpers")
+    end
+
+    config.paths['app/views'].unshift("#{Rails.root}/app/packs/misc/views")
 
     funds_view_paths = %w[funds capital_calls capital_commitments capital_distributions capital_distribution_payments capital_remittances investment_opportunities]
 
