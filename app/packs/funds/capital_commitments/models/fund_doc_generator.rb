@@ -42,7 +42,7 @@ class FundDocGenerator
       r.add_field :fund_details, capital_commitment.fund.details
 
       r.add_field :investor_name, capital_commitment.investor.investor_name
-      r.add_field :committed_amount, capital_commitment.committed_amount.to_s
+      r.add_field :commitment_amount, capital_commitment.committed_amount.to_s
 
       capital_commitment.properties.each do |k, v|
         r.add_field "commitment_#{k}", v
