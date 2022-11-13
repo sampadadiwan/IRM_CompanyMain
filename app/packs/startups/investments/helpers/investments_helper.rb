@@ -66,5 +66,6 @@ module InvestmentsHelper
                   end
 
     units.present? ? "#{display_val} #{units}" : display_val
+    # val = val + "(#{money.to_i.rupees.humanize})"
   end
 end

@@ -65,6 +65,9 @@ class OfferSpaGenerator
       r.add_field :share_price, offer.secondary_sale.final_price
       r.add_field :allocation_amount, money_to_currency(offer.allocation_amount)
 
+      amount_in_words = offer.entity.currency == "INR" ? offer.allocation_amount.to_i.rupees.humanize : offer.allocation_amount.to_i.to_words.humanize
+      r.add_field :allocation_amount_words, amount_in_words
+
       add_seller_fields(r, offer)
       offer_signature = add_image(r, :seller_signature, offer.signature)
 

@@ -1,4 +1,5 @@
 class FundDocGenerator
+  include EmailCurrencyHelper
   attr_accessor :working_dir
 
   # capital_commitment - we want to generate the document for this CapitalCommitment
@@ -42,7 +43,10 @@ class FundDocGenerator
       r.add_field :fund_details, capital_commitment.fund.details
 
       r.add_field :investor_name, capital_commitment.investor.investor_name
-      r.add_field :commitment_amount, capital_commitment.committed_amount.to_s
+      r.add_field :commitment_amount, money_to_currency(capital_commitment.committed_amount)
+
+      amount_in_words = capital_commitment.entity.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
+      r.add_field :commitment_amount_words, amount_in_words
 
       capital_commitment.properties.each do |k, v|
         r.add_field "commitment_#{k}", v
@@ -146,7 +150,7 @@ class FundDocGenerator
 
     signed_document = Document.new(document.attributes.slice("entity_id", "name", "folder_id", "download", "printing", "user_id"))
 
-    signed_document.name = document.name + " | Signed by #{user.full_name}"
+    signed_document.name = document.name + " | #{user.full_name}"
     signed_document.file = File.open(file_name, "rb")
     signed_document.signed_by = user
     signed_document.from_template = document

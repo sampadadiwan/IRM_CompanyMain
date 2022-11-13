@@ -608,6 +608,7 @@ GEM
       ffi (~> 1.12)
     ruby2_keywords (0.0.5)
     rubyzip (2.3.2)
+    rupees (0.1.0)
     sanitize_email (2.0.3)
     sassc (2.4.0)
       ffi (~> 1.9)
@@ -666,6 +667,7 @@ GEM
     thor (1.2.1)
     tilt (2.0.10)
     timeout (0.2.0)
+    to_words (1.1.1)
     turbo-rails (1.0.0)
       actionpack (>= 6.0.0)
       railties (>= 6.0.0)
@@ -786,6 +788,7 @@ DEPENDENCIES
   rubocop-performance
   rubocop-rails
   rubocop-rspec
+  rupees
   sanitize_email
   sassc-rails
   selenium-webdriver
@@ -797,6 +800,7 @@ DEPENDENCIES
   stimpack
   stimulus-rails
   strong_migrations
+  to_words
   turbo-rails
   tzinfo-data
   uppy-s3_multipart (~> 1.1)
