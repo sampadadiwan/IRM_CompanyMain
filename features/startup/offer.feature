@@ -86,3 +86,5 @@ Examples:
     |user	    |entity               |sale                                                         |quantity	|
     |  	        |entity_type=Startup  |name=Grand Sale;visible_externally=true;percent_allowed=100  |100        |
     |  	        |entity_type=Startup  |name=Winter Sale;visible_externally=true;percent_allowed=100 |200        |
+
+

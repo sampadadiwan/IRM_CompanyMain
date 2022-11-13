@@ -60,7 +60,7 @@
     
         <tbody>
             <% @offers.includes(:user, :documents).each do |o| %>
-            <tr>
+            <tr id=<%=dom_id(o)%> >
                 <td><%= link_to o.id, o %></td>
                 <td><%= o.user ? o.user.full_name : o.investor.investor_name %></td>
                 <td><%= o.user&.email %></td>

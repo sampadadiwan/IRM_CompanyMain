@@ -36,7 +36,7 @@ Scenario Outline: Create new sale and make visible
 
 
 Scenario Outline: Sale Allocation
-  Given there is a user "first_name=Emp1" for an entity "entity_type=Startup"
+  Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Startup"
   Given there is a sale "<sale>"
   Given there are "2" employee investors
   Given there is a FundingRound "name=Series A"
@@ -48,6 +48,8 @@ Scenario Outline: Sale Allocation
   Then the sale must be allocated correctly
   Then the offers must be allocated correctly
   Then the interests must be allocated correctly
+  And the allocations ops sheet must be visible
+  And the offers completetion page must be visible
 
   Examples:
   	|allocation_percentage |interest_count |interest                       |offer	                      |entity                     |sale                                     |

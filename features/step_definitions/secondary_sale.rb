@@ -478,3 +478,25 @@ end
 Then('the employee investments must be reduced by the sold amount') do
   Investment.where(employee_holdings: true).sum(:quantity).should == @holding_quantity
 end
+
+Then('the allocations ops sheet must be visible') do
+  visit finalize_offer_allocation_secondary_sale_path(@sale)
+  @sale.offers.each do |offer|
+    within "#tf_offer_#{offer.id}" do
+      expect(page).to have_content(offer.full_name)
+      expect(page).to have_content(custom_format_number(offer.quantity, {}))
+    end
+  end
+end
+
+Then('the offers completetion page must be visible') do
+  visit offers_secondary_sale_path(@sale, report: "completion_report")
+  @sale.offers.each do |offer|
+    within "#offer_#{offer.id}" do
+      expect(page).to have_content(offer.user.full_name)
+      expect(page).to have_content(offer.id)
+      expect(page).to have_content(offer.user.email)
+    end
+  end
+end
+
