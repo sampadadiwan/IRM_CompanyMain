@@ -27,7 +27,7 @@
     <%= link_to "Show" , capital_remittance , {class: "btn btn-primary" }%>
     
     <% if policy(capital_remittance).update? %>
-      <% if capital_remittance.entity_id == current_user.entity_id %>
+      <% if policy(capital_remittance).verify? %>
         <% label = capital_remittance.verified ? "Unverify" : "Verify" %> 
         <% msg = capital_remittance.verified ? "Mark as Unverified?" : "Mark as Verified?" %> 
         <%= button_to label, verify_capital_remittance_path(capital_remittance), method: :patch, 
