@@ -106,7 +106,7 @@ class Document < ApplicationRecord
     SIGNATURE_TYPES.select { |k, _v| signature_type.include?(k.to_s) }.values.join(",")
   end
 
-  after_save :notify_signed
+  # after_save :notify_signed
   def notify_signed
     # Send email to user to accept the signed document
     DocumentMailer.with(id:).notify_signed.deliver_later if signed_by_id && saved_change_to_signed_by_id?

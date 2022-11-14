@@ -132,7 +132,7 @@
                   <% end %>
 
                   <% if current_user.entity_id == @document.entity_id %>
-                  <tr>
+                  <!-- <tr>
                      <td>
                         Signature Enabled
                      </td>
@@ -142,7 +142,7 @@
                         (<%= @document.display_signature_type %>)
                      <% end %>
                      </td>
-                  </tr>
+                  </tr> -->
                   <tr>
                      <td>
                         Allow Download
@@ -179,7 +179,7 @@
                      </td>
                   </tr>
 
-                  <% if @document.signed_by_id.present? %>
+                  <% if false && @document.signed_by_id.present? %>
                   <tr>
                      <td>
                         Signed By
