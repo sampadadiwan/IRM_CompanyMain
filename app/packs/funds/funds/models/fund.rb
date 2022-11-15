@@ -40,7 +40,14 @@ class Fund < ApplicationRecord
   end
 
   scope :for_employee, lambda { |user|
-    joins(:access_rights).where("funds.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
+    includes(:access_rights).joins(:access_rights).where("funds.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
+  }
+
+  scope :for_advisor, lambda { |user|
+    # Ensure the access rghts for Document
+    includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter)
+                            .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
+                            .where("investors.investor_entity_id=?", user.entity_id)
   }
 
   scope :for_investor, lambda { |user|
@@ -55,11 +62,6 @@ class Fund < ApplicationRecord
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
   }
-
-  def advisor?(user)
-    user.entity_id != entity_id &&
-      Fund.for_investor(user).where("funds.id=?", id).where("access_rights.metadata='Advisor'").exists?
-  end
 
   def to_s
     name

@@ -1,4 +1,4 @@
-class CapitalRemittancePolicy < ApplicationPolicy
+class CapitalRemittancePolicy < FundBasePolicy
   class Scope < Scope
     def resolve
       if user.has_cached_role?(:super)
@@ -22,7 +22,7 @@ class CapitalRemittancePolicy < ApplicationPolicy
   def show?
     permissioned_employee? ||
       permissioned_investor? ||
-      record.fund.advisor?(user)
+      permissioned_advisor?
   end
 
   def create?
@@ -38,7 +38,8 @@ class CapitalRemittancePolicy < ApplicationPolicy
   end
 
   def update?
-    permissioned_employee?
+    permissioned_employee? ||
+      permissioned_advisor?(:update)
   end
 
   def edit?

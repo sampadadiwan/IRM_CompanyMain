@@ -10,6 +10,9 @@ class AccessRight < ApplicationRecord
   VIEWS = [ALL, SELF].freeze
   TYPES = ["All Users for Specific Investor", "All Investors of Specific Category"].freeze
 
+  # Additional permission - this is experimental and does not work yet
+  flag :permissions, %i[create read update destroy misc1 misc2 misc3 misc4]
+
   belongs_to :owner, polymorphic: true, touch: true # , strict_loading: true
   belongs_to :entity
   # If this is a user access
@@ -62,7 +65,7 @@ class AccessRight < ApplicationRecord
 
   validate :access_is_unique
   def access_is_unique
-    errors.add(:owner, 'Duplicate! already has this permission') if AccessRight.exists?(owner:, access_to_investor_id:, access_to_category:)
+    errors.add(:owner, 'Duplicate! already has this permission') if AccessRight.where("id<>?", id).exists?(owner:, access_to_investor_id:, access_to_category:)
   end
 
   def to_s

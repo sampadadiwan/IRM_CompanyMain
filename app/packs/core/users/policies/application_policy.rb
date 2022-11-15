@@ -43,19 +43,6 @@ class ApplicationPolicy
     extenal ? extenal.set?(action) : false
   end
 
-  def permissioned_employee?
-    user.entity_id == record.entity_id &&
-      (
-        user.has_cached_role?(:company_admin) ||
-        record.class.for_employee(user).where("#{record.class.table_name}.id=?", record.id).present?
-      )
-  end
-
-  def permissioned_investor?
-    user.entity_id != record.entity_id &&
-      record.class.for_investor(user).where("#{record.class.table_name}.id=?", record.id).present?
-  end
-
   class Scope
     def initialize(user, scope)
       @user = user

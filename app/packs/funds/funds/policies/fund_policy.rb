@@ -1,12 +1,14 @@
-class FundPolicy < ApplicationPolicy
+class FundPolicy < FundBasePolicy
   class Scope < Scope
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      elsif user.has_cached_role?(:fund_manager) && user.has_cached_role?(:company_admin)
+      elsif user.curr_role == "fund_manager" && user.has_cached_role?(:company_admin)
         scope.where(entity_id: user.entity_id)
-      elsif user.has_cached_role?(:fund_manager)
+      elsif user.curr_role == "fund_manager"
         scope.for_employee(user)
+      elsif user.curr_role == "advisor"
+        scope.for_advisor(user)
       else
         scope.for_investor(user)
       end
@@ -21,6 +23,7 @@ class FundPolicy < ApplicationPolicy
     user.enable_funds &&
       (
         permissioned_employee? ||
+        permissioned_advisor?  ||
         permissioned_investor?
       )
   end
@@ -30,7 +33,7 @@ class FundPolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id) && user.enable_funds
+    user.enable_funds && (user.entity_id == record.entity_id)
   end
 
   def new?
@@ -38,7 +41,8 @@ class FundPolicy < ApplicationPolicy
   end
 
   def update?
-    permissioned_employee?
+    permissioned_employee? ||
+      permissioned_advisor?(:update)
   end
 
   def edit?

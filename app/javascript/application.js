@@ -18,6 +18,14 @@ Highcharts.setOptions({
   }
 });
 
+// https://github.com/basecamp/trix/issues/624
+addEventListener("trix-initialize", event => {
+  const { toolbarElement } = event.target;
+  const inputElement = toolbarElement.querySelector("input[name=href]");
+  inputElement.type = "text";
+  inputElement.pattern = "(https?://|/).+";
+});
+
 
 $(document).on('turbo:before-cache', function() {     
   if( $('.select2-container').length > 0 ){
