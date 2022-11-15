@@ -64,11 +64,14 @@
   end
 
   Given('the access right has access {string}') do |crud|
+    puts AccessRight.all.to_json
     if @access_right
       crud.split(",").each do |p|
         @access_right.permissions.set(p.to_sym)
       end
-      @access_right.save
+      @access_right.save!
+      puts "####### AccessRight #######\n"
+      puts @access_right.to_json
     end
   end
   
@@ -250,6 +253,8 @@ Given('the fund has capital commitments from each investor') do
 end
 
 Then('user {string} have {string} access to the capital commitment') do |truefalse, accesses|
+  @fund.reload
+  puts @fund.access_rights.to_json
   accesses.split(",").each do |access|
     @fund.capital_commitments.includes(:investor).each do |cc|
       puts "##Checking access #{access} on capital_commitment from #{cc.investor.investor_name} for #{@user.email} as #{truefalse}"
