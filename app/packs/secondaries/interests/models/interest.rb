@@ -2,6 +2,7 @@ class Interest < ApplicationRecord
   include WithFolder
 
   belongs_to :user
+  belongs_to :final_agreement_user, class_name: "User", optional: true
   belongs_to :secondary_sale, touch: true
   belongs_to :interest_entity, class_name: "Entity"
   belongs_to :entity, touch: true

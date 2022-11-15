@@ -120,6 +120,7 @@ class InterestsController < ApplicationController
 
   def accept_spa
     @interest.final_agreement = true
+    @interest.final_agreement_user = current_user
 
     respond_to do |format|
       if @interest.save

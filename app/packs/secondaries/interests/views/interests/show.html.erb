@@ -18,10 +18,6 @@
 
     <% popupMsg = "This will mark your acceptance of the final price, allocated quantity and terms of the sale. No more modifications will be allowed from here on. Please ensure all documents have been uploaded before proceeding." %>
 
-    <%= button_to "Finalize" , finalize_interest_path(@interest), method: :patch, "data-turbo": false, 
-        class: "btn btn-danger", form_class: "deleteButton",
-        data: {action: "click->confirm#popup", turbo:false, msg: popupMsg, method: "patch"} if policy(@interest).finalize? %>
-
 
     <%= button_to "Accept SPA" , accept_spa_interest_path(@interest), 
         method: :patch, class: "btn btn-success" , 

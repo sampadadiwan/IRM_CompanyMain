@@ -63,7 +63,7 @@
       </td>
     </tr>
 
-    <tr id="finalized">
+    <!-- <tr id="finalized">
       <td>
         Finalized
       </td>
@@ -72,7 +72,7 @@
           <%= interest.finalized? ? "Yes" : "No" %>
         </span>
       </td>
-    </tr>
+    </tr> -->
 
     <% if current_user %>
     <tr>
@@ -275,6 +275,9 @@
           <span class="badge <%= interest.final_agreement ? 'bg-success' : 'bg-warning' %>">
             <%= interest.final_agreement ? "Yes" : "No" %>
           </span>
+          <% if interest.final_agreement_user %>
+            <small>Accepted By: <%= interest.final_agreement_user.full_name %></small>
+          <% end %>
         </td>
       </tr>
 

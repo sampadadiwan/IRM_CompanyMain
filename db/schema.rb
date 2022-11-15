@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_14_142539) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_15_074701) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -829,7 +829,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_14_142539) do
     t.string "city", limit: 20
     t.string "bank_account_number", limit: 40
     t.string "ifsc_code", limit: 20
+    t.bigint "final_agreement_user_id"
     t.index ["entity_id"], name: "index_interests_on_entity_id"
+    t.index ["final_agreement_user_id"], name: "index_interests_on_final_agreement_user_id"
     t.index ["form_type_id"], name: "index_interests_on_form_type_id"
     t.index ["funding_round_id"], name: "index_interests_on_funding_round_id"
     t.index ["interest_entity_id"], name: "index_interests_on_interest_entity_id"
@@ -1570,6 +1572,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_14_142539) do
   add_foreign_key "interests", "funding_rounds"
   add_foreign_key "interests", "secondary_sales"
   add_foreign_key "interests", "users"
+  add_foreign_key "interests", "users", column: "final_agreement_user_id"
   add_foreign_key "investment_opportunities", "entities"
   add_foreign_key "investment_opportunities", "form_types"
   add_foreign_key "investment_opportunities", "funding_rounds"
