@@ -4,11 +4,12 @@ class FundBasePolicy < ApplicationPolicy
       if user.has_cached_role?(:company_admin)
         true
       else
-        @emp_record = record.class.for_employee(user).where("#{record.class.table_name}.id=?", record.id).first
+        fund_id = record.instance_of?(Fund) ? record.id : record.fund_id
+        @fund = Fund.for_employee(user).includes(:access_rights).where("funds.id=?", fund_id).first
         if perm
-          @emp_record.access_rights[0].permissions.set?(perm)
+          @fund.present? && @fund.access_rights[0].permissions.set?(perm)
         else
-          @emp_record.present?
+          @fund.present?
         end
       end
     else
@@ -17,12 +18,15 @@ class FundBasePolicy < ApplicationPolicy
   end
 
   def permissioned_advisor?(perm = nil)
+    # binding.pry
+
     if user.entity_id != record.entity_id && user.curr_role == "advisor"
-      @pa_record ||= record.class.for_advisor(user).where("#{record.class.table_name}.id=?", record.id).first
+      fund_id = record.instance_of?(Fund) ? record.id : record.fund_id
+      @fund = Fund.for_advisor(user).includes(:access_rights).where("funds.id=?", fund_id).first
       if perm
-        @pa_record.access_rights[0].permissions.set?(perm)
+        @fund.present? && @fund.access_rights[0].permissions.set?(perm)
       else
-        @pa_record.present?
+        @fund.present?
       end
     else
       false
@@ -37,5 +41,11 @@ class FundBasePolicy < ApplicationPolicy
       @pi_record ||= record.class.for_investor(user).where("#{record.class.table_name}.id=?", record.id)
       @pi_record.present?
     end
+  end
+
+  def create?
+    (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)) ||
+      FundPolicy.new(user, record.fund).permissioned_employee?(:create) ||
+      FundPolicy.new(user, record.fund).permissioned_advisor?(:create)
   end
 end

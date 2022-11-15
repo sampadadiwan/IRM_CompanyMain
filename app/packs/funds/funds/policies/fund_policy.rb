@@ -41,7 +41,7 @@ class FundPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee? ||
+    permissioned_employee?(:update) ||
       permissioned_advisor?(:update)
   end
 
@@ -50,6 +50,7 @@ class FundPolicy < FundBasePolicy
   end
 
   def destroy?
-    update?
+    permissioned_employee?(:destroy) ||
+      permissioned_advisor?(:destroy)
   end
 end

@@ -26,7 +26,7 @@
 
   Given('I am {string} employee access to the fund') do |given|
     if given == "given" || given == "yes"
-      AccessRight.create(entity_id: @fund.entity_id, owner: @fund, user_id: @user.id)
+      @access_right = AccessRight.create(entity_id: @fund.entity_id, owner: @fund, user_id: @user.id)
     end
   end
 
@@ -34,7 +34,7 @@
     # Hack to make the tests work without rewriting many steps for another user
     @user = @employee_investor
     if given == "given" || given == "yes"
-      AccessRight.create(entity_id: @fund.entity_id, owner: @fund, access_to_investor_id: @investor.id)
+      @access_right = AccessRight.create(entity_id: @fund.entity_id, owner: @fund, access_to_investor_id: @investor.id, metadata: "Investor")
       ia = InvestorAccess.create(entity: @investor.entity, investor: @investor, 
         first_name: @user.first_name, last_name: @user.last_name,
         email: @user.email, granter: @user, approved: true )
@@ -43,6 +43,35 @@
       puts ia.to_json
     end
   end
+
+  Given('another user is {string} advisor access to the fund') do |given|
+    # Hack to make the tests work without rewriting many steps for another user
+    @user = @employee_investor
+    if given == "given" || given == "yes"
+      @access_right = AccessRight.create(entity_id: @fund.entity_id, owner: @fund, access_to_investor_id: @investor.id, metadata: "Advisor")
+
+      @user.curr_role = "advisor"
+      @user.save
+      @user.add_role :advisor
+
+      ia = InvestorAccess.create(entity: @investor.entity, investor: @investor, 
+        first_name: @user.first_name, last_name: @user.last_name,
+        email: @user.email, granter: @user, approved: true )
+
+      puts "\n####Investor Access####\n"
+      puts ia.to_json
+    end
+  end
+
+  Given('the access right has access {string}') do |crud|
+    if @access_right
+      crud.split(",").each do |p|
+        @access_right.permissions.set(p.to_sym)
+      end
+      @access_right.save
+    end
+  end
+  
   
   
   When('I am at the fund details page') do
@@ -236,6 +265,8 @@ Then('user {string} have {string} access to his own capital commitment') do |tru
       
       if(cc.investor.investor_entity_id == @user.entity_id)
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+      elsif(@user.curr_role == "advisor")
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse      
       else
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == "false"
       end
@@ -291,6 +322,8 @@ Then('user {string} have {string} access to his own capital remittances') do |tr
       puts "##Checking access #{access} on capital_remittance from #{cc.investor.investor_name} for #{@user.email} is #{Pundit.policy(@user, cc).send("#{access}?")}"
       if(cc.investor.investor_entity_id == @user.entity_id)
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+      elsif(@user.curr_role == "advisor")
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
       else
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == "false"
       end
@@ -344,6 +377,8 @@ Then('user {string} have {string} access to his own capital distribution payment
     @fund.capital_distribution_payments.includes(:investor).each do |cc|
       puts "##Checking access #{access} on capital_distribution_payments from #{cc.investor.investor_name} for #{@user.email} as #{Pundit.policy(@user, cc).send("#{access}?")}"
       if(cc.investor.investor_entity_id == @user.entity_id)
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
+      elsif(@user.curr_role == "advisor")
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
       else
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == "false"

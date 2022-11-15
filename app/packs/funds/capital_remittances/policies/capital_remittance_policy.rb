@@ -25,20 +25,16 @@ class CapitalRemittancePolicy < FundBasePolicy
       permissioned_advisor?
   end
 
-  def create?
-    (user.entity_id == record.entity_id)
-  end
-
   def new?
     create?
   end
 
   def verify?
-    create?
+    update?
   end
 
   def update?
-    permissioned_employee? ||
+    permissioned_employee?(:update) ||
       permissioned_advisor?(:update)
   end
 
@@ -47,6 +43,7 @@ class CapitalRemittancePolicy < FundBasePolicy
   end
 
   def destroy?
-    update?
+    permissioned_employee?(:destroy) ||
+      permissioned_advisor?(:destroy)
   end
 end
