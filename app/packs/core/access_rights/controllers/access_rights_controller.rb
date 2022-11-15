@@ -62,7 +62,7 @@ class AccessRightsController < ApplicationController
   # POST /access_rights or /access_rights.json
   def create
     @access_rights = initialize_from_params(access_right_params)
-    @access_rights.each(&:save!)
+    @access_rights.each(&:save)
     @access_rights = AccessRight.includes(:investor, :owner).where(id: @access_rights.collect(&:id))
     respond_to do |format|
       format.turbo_stream { render :create }

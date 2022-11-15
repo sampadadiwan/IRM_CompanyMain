@@ -20,6 +20,7 @@
     <% if show_metadata == "Yes" %>
     <td class="hideMobP">
         <%= access_right.metadata %>
+        <%= "Permissions: #{access_right.permissions}" if access_right.permissions.present?  %>
     </td>  
     <% end %>
     <% if show_for == "Yes" && access_right.owner %>
