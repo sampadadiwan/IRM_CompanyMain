@@ -11,7 +11,7 @@ class AccessRight < ApplicationRecord
   TYPES = ["All Users for Specific Investor", "All Investors of Specific Category"].freeze
 
   # Additional permission - this is experimental and does not work yet
-  flag :permissions, %i[create read update destroy misc1 misc2 misc3 misc4]
+  flag :permissions, %i[create read update destroy]
 
   belongs_to :owner, polymorphic: true, touch: true # , strict_loading: true
   belongs_to :entity

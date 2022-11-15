@@ -73,7 +73,8 @@
     <% if access_right.access_type == "Fund" %>
       <div class="form-group" id="metadata_form_group">
         <%= form.label :metadata, "Select Investor or Advisor" %>
-        <%= form.select :metadata, ["Investor", "Advisor"], {}, class: "form-control"  %>
+        <%= form.select :metadata, ["Investor", "Advisor"], {}, 
+            class: "form-control", "data-action": "change->access#investorAdvisorChange"  %>
       </div>
 
       <div class="form-group" id="employee_form_group">
@@ -89,6 +90,16 @@
       </div>
     <% end %>
 
+    <div class="form-group" id="permissions_form_group">
+      <% AccessRight.permissions.pairs.each do |key, val| %>
+          
+            <%= form.label :permissions, key %>
+            <%= form.check_box :permissions, {name: "access_right[permissions][]",  
+                val: val, id: "permissions_#{val}", class: "form-checkbox-horizontal"}, val, nil   %>
+          
+      <% end %>
+    </div>
+    
     <div class="form-group">
       <%= form.submit "Save", {class: "btn btn-primary", data: {action: "click->access#checkRequiredFilled"}}%>
       <a class="btn btn-danger", data-action="click->access#close">Close</a>

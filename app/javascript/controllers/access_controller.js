@@ -3,22 +3,35 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
 
   connect() {
+    this.init();
+  }
 
-    const hideCategory = this.hideCategory
-    const hideEmployee = this.hideEmployee
-    $(document).on('turbo:frame-load', function () {
+  init() {
+    console.log("Access javascript loaded");
+    $('.select2-multiple').select2();
 
-      console.log("Access javascript loaded");
-      $('.select2-multiple').select2();
-
-      $(".select2-multiple").on('select2:select', function () {
-        let event = new Event('change', { bubbles: true }) // fire a native event
-        this.dispatchEvent(event);
-      });
-
-      hideCategory();
-      hideEmployee();
+    $(".select2-multiple").on('select2:select', function () {
+      let event = new Event('change', { bubbles: true }) // fire a native event
+      this.dispatchEvent(event);
     });
+
+    this.hideCategory();
+    this.hideEmployee();
+    this.hidePermissons();
+  }
+
+  investorAdvisorChange(event) {
+
+    let selected = $("#access_right_metadata").val();
+    switch (selected) {
+      case "Investor":
+        this.hidePermissons();
+        break;
+      case "Advisor":
+        this.showPermissions();
+        break;
+      default:
+    }
 
   }
 
@@ -32,19 +45,25 @@ export default class extends Controller {
         this.hideCategory();
         this.hideEmployee();
         this.showInvestor();
+        this.showMetadata();
+        this.hidePermissons();
         break;
       case "All Investors of Specific Category":
         // hide category & disable
         this.showCategory();
         this.hideEmployee();        
         this.hideInvestor();
+        this.hideMetadata();
+        this.hidePermissons();
         break;
 
       case "Employee":
         // hide category & disable
         this.hideCategory();
         this.hideInvestor();
+        this.hideMetadata();
         this.showEmployee();
+        this.showPermissions();
         break;
       default:
     }
@@ -111,23 +130,34 @@ export default class extends Controller {
     $('#access_right_access_to_investor_id').addClass('required');
   }
 
+  showMetadata() {
+    $("#metadata_form_group").show();        
+    $('#access_right_metadata').prop('disabled', "");
+  }
+
+  hideMetadata() {
+    $("#metadata_form_group").hide();        
+    $('#access_right_metadata').prop('disabled', "disabled");
+  }
 
   showEmployee() {
     $("#employee_form_group").show();
     $('#access_right_user_id').prop('disabled', "");
     $('#access_right_user_id').addClass('required');
-    $("#metadata_form_group").hide();        
-    $('#access_right_metadata').prop('disabled', "disabled");
-
   }
 
   hideEmployee() {
     $("#employee_form_group").hide();
     $('#access_right_user_id').prop('disabled', "disabled");
     $('#access_right_user_id').removeClass('required');
-    $("#metadata_form_group").show();        
-    $('#access_right_metadata').prop('disabled', "");
+  }
 
+  hidePermissons() {
+    $("#permissions_form_group").hide();
+  }
+
+  showPermissions() {
+    $("#permissions_form_group").show();        
   }
 
 
