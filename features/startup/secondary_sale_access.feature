@@ -3,8 +3,10 @@ Feature: Sale Access
 
 Scenario Outline: Access Sale as an employee
   Given there is a user "<user>" for an entity "<entity>"
-  Given the user has role "company_admin"
+  Given the user has role "<role>"
   Given there is a sale "<sale>"
+  And I am "<given>" employee access to the sale
+  And the sale access right has access "<crud>"  
   And I should have "show" access to the sale "true"
   And I should have "update" access to the sale "true"
   And I should have "destroy" access to the sale "true"
@@ -20,9 +22,28 @@ Scenario Outline: Access Sale as an employee
   And I should have access to the document  
 
   Examples:
-  	|user	    |entity               |sale             |
-    |  	        |entity_type=Startup  |name=Grand Sale  |
-    |  	        |entity_type=Startup  |name=Winter Sale |
+  	|user	    |entity               |sale             | role            | given | crud  |
+    |  	        |entity_type=Startup  |name=Grand Sale  | company_admin | yes   |       |
+    |  	        |entity_type=Startup  |name=Winter Sale | company_admin | no    |       |
+
+
+Scenario Outline: Access Sale as an employee
+  Given there is a user "first_name=Test" for an entity "<entity>"
+  Given the user has role "<role>"
+  Given there is a sale "<sale>"
+  And I am "<given>" employee access to the sale
+  And the sale access right has access "<crud>"  
+  Then user "<should>" have "<access>" access to the sale
+  Examples:
+  	|entity               |sale             | role            | given | crud  | should| access |
+    |entity_type=Startup  |name=Grand Sale  | company_admin | yes   |       | true  | show,update,destroy,see_private_docs  |
+    |entity_type=Startup  |name=Grand Sale  | company_admin | yes   |       | false  | buyer,seller,offer,show_interest  |
+    |entity_type=Startup  |name=Winter Sale | company_admin | no    |       | true  | show,update,destroy,see_private_docs  |
+    |entity_type=Startup  |name=Winter Sale | company_admin | no    |       | false  | buyer,seller,offer,show_interest  |
+    |entity_type=Startup  |name=Grand Sale  | startup       | yes   |create,read,update,destroy | true  | show,update,destroy,see_private_docs  |
+    |entity_type=Startup  |name=Grand Sale  | startup       | yes   |create,read,update,destroy | false  | buyer,seller,offer,show_interest |
+    |entity_type=Startup  |name=Grand Sale  | startup       | yes   |  | false  | update,destroy,see_private_docs,buyer,seller,offer,show_interest  |
+    
 
 
 Scenario Outline: Access sale as Other User

@@ -30,8 +30,8 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def owner?
-    permissioned_employee? ||
-      permissioned_advisor?
+    permissioned_employee?(:update) ||
+      permissioned_advisor?(:update)
   end
 
   def offers?
@@ -60,7 +60,9 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def see_private_docs?
-    user.entity_id == record.entity_id || user.entity.interests_shown.short_listed.where(secondary_sale_id: record.id).present?
+    permissioned_advisor? ||
+      permissioned_investor? ||
+      user.entity.interests_shown.short_listed.where(secondary_sale_id: record.id).present?
   end
 
   def show?
@@ -136,7 +138,8 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def destroy?
-    update?
+    permissioned_employee?(:destroy) ||
+      permissioned_advisor?(:destroy)
   end
 
   def buyer?

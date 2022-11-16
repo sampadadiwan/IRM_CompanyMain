@@ -154,7 +154,7 @@ Given('employee investor has {string} access rights to the sale') do |metadata|
     entity: @entity, access_to_investor_id: @holdings_investor.id)
 
   
-  puts "\n####AccessRight xxx ####\n"
+  puts "\n####AccessRight####\n"
   puts ar.to_json
     
 end
@@ -199,7 +199,6 @@ Given('my firm is an investor in the startup') do
     email: @user.email, approved: true, 
     entity_id: @startup.id)
 
-  puts @investor.to_json
 end
 
 Given('I should not see the sale in all sales page') do
@@ -215,8 +214,6 @@ Given('the investor has {string} access rights to the sale') do |metadata|
       access_type: "SecondarySale", entity: @startup)
 
   @sale.reload
-  puts access_right.to_json
-  puts access_right.investor.to_json
 end
 
 Given('there are {string} investments {string} in the startup') do |count, args|
@@ -504,6 +501,32 @@ Then('the offers completetion page must be visible') do
       expect(page).to have_content(offer.id)
       expect(page).to have_content(offer.user.email)
     end
+  end
+end
+
+
+Given('I am {string} employee access to the sale') do |given|
+  if given == "given" || given == "yes"
+    @access_right = AccessRight.create(entity_id: @sale.entity_id, owner: @sale, user_id: @user.id)
+  end
+end
+
+Given('the sale access right has access {string}') do |crud|
+  puts AccessRight.all.to_json
+  if @access_right
+    crud.split(",").each do |p|
+      @access_right.permissions.set(p.to_sym)
+    end
+    @access_right.save!
+    puts "####### AccessRight #######\n"
+    puts @access_right.to_json
+  end
+end
+
+Then('user {string} have {string} access to the sale') do |truefalse, accesses|
+  accesses.split(",").each do |access|
+    puts "##Checking access #{access} on fund #{@sale.name} for #{@user.email} as #{truefalse}"
+    Pundit.policy(@user, @sale).send("#{access}?").to_s.should == truefalse
   end
 end
 
