@@ -75,7 +75,7 @@ Examples:
 
 Scenario Outline: Create new interest and check obfuscation
   Given Im logged in as a user "<user>" for an entity "<entity>"
-  Given the user has role "approver"
+  Given the user has role "approver,company_admin"
   Given there are "2" employee investors
   Given there is a sale "<sale>"
   Given there is a FundingRound "name=Series A"
@@ -101,6 +101,7 @@ Examples:
 
 Scenario Outline: Create new interest which is escrow approved
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given there are "2" employee investors
   Given there is a sale "<sale>"
   Given there is a FundingRound "name=Series A"

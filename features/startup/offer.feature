@@ -71,7 +71,7 @@ Examples:
 
 Scenario Outline: Approve holdings as a startup
   Given Im logged in as a user "<user>" for an entity "<entity>"
-  And the user has role "approver"
+  And the user has role "approver,company_admin"
   Given there are "2" employee investors
   Given there is a FundingRound "name=Series A"
   And there is a holding "approved=true;orig_grant_quantity=100;investment_instrument=Equity" for each employee investor

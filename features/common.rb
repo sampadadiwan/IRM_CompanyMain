@@ -85,8 +85,10 @@ Given(/^the user is logged in$/) do
   )
 end
 
-Given('the user has role {string}') do |arg|
-  @user.add_role arg.to_sym
+Given('the user has role {string}') do |roles|
+  roles.split(",").each do |role|
+    @user.add_role role.strip.to_sym
+  end
 end
 
 
