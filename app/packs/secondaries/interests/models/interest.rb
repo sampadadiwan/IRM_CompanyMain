@@ -1,5 +1,6 @@
 class Interest < ApplicationRecord
   include WithFolder
+  include SaleChildrenScopes
 
   belongs_to :user
   belongs_to :final_agreement_user, class_name: "User", optional: true

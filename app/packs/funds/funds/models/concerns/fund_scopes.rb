@@ -5,7 +5,6 @@ module FundScopes
     scope :for_employee, lambda { |user|
       joins(fund: :access_rights)
         .where("funds.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
-      # .includes(fund: :access_rights)
     }
 
     scope :for_investor, lambda { |user|

@@ -1,11 +1,13 @@
-class SecondarySalePolicy < ApplicationPolicy
+class SecondarySalePolicy < SaleBasePolicy
   class Scope < Scope
     def resolve
       if user.has_cached_role?(:super)
         scope.all
       elsif user.curr_role.to_sym == :startup
         scope.where(entity_id: user.entity_id)
-      elsif %i[holding investor advisor].include?(user.curr_role.to_sym)
+      elsif user.curr_role.to_sym == :advisor
+        scope.for_advisor(user)
+      elsif %i[holding investor].include?(user.curr_role.to_sym)
         scope.for(user).distinct
       elsif user.curr_role.to_sym == :secondary_buyer
         scope.where(visible_externally: true)
@@ -20,7 +22,7 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def offer?
-    seller?
+    permissioned_investor?(:seller)
   end
 
   def external_sale?
@@ -28,13 +30,12 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def owner?
-    (user.entity_id == record.entity_id && user.curr_role == "startup") ||
-      record.advisor?(user) ||
-      allow_external?(:read, :startup)
+    permissioned_employee? ||
+      permissioned_advisor?
   end
 
   def offers?
-    owner? || seller?
+    owner? || permissioned_investor?(:seller)
   end
 
   def interests?
@@ -53,18 +54,9 @@ class SecondarySalePolicy < ApplicationPolicy
     owner?
   end
 
-  def buyer?
-    record.buyer?(user)
-  end
-
-  def seller?
-    record.seller?(user) ||
-      (user.entity_id == record.entity_id)
-  end
-
   def show_interest?
     record.active? &&
-      (buyer? || external_sale?)
+      (permissioned_investor?(:buyer) || external_sale?)
   end
 
   def see_private_docs?
@@ -75,15 +67,15 @@ class SecondarySalePolicy < ApplicationPolicy
     if user.entity_id == record.entity_id && user.enable_secondary_sale
       true
     else
-      record.active? &&
-        (SecondarySale.for(user).where(id: record.id).present? ||
-        external_sale? ||
-        allow_external?(:read))
+      (permissioned_advisor? ||
+        permissioned_investor? ||
+        external_sale?)
     end
   end
 
   def create?
-    (user.entity_id == record.entity_id && user.enable_secondary_sale)
+    user.enable_secondary_sale &&
+      (permissioned_employee?(:create) || permissioned_advisor?(:create))
   end
 
   def new?
@@ -91,7 +83,8 @@ class SecondarySalePolicy < ApplicationPolicy
   end
 
   def update?
-    create? && !record.finalized
+    user.enable_secondary_sale && !record.finalized &&
+      (permissioned_employee?(:update) || permissioned_advisor?(:update))
   end
 
   def spa_upload?
@@ -144,5 +137,13 @@ class SecondarySalePolicy < ApplicationPolicy
 
   def destroy?
     update?
+  end
+
+  def buyer?
+    permissioned_investor?("Buyer")
+  end
+
+  def seller?
+    permissioned_investor?("Seller")
   end
 end

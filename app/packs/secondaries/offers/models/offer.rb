@@ -1,5 +1,6 @@
 class Offer < ApplicationRecord
   include WithFolder
+  include SaleChildrenScopes
 
   # Make all models searchable
   update_index('offer') { self }

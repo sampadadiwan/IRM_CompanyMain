@@ -3,6 +3,7 @@ Feature: Secondary Sale
 
 Scenario Outline: Create new sale
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   And I am at the sales page
   When I create a new sale "<sale>"
   Then I should see the "<msg>"
@@ -19,6 +20,7 @@ Scenario Outline: Create new sale
 
 Scenario Outline: Create new sale and make visible
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   And I am at the sales page
   When I create a new sale "<sale>"
   Then I should see the "<msg>"
@@ -37,6 +39,7 @@ Scenario Outline: Create new sale and make visible
 
 Scenario Outline: Sale Allocation
   Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Startup"
+  Given the user has role "company_admin"
   Given there is a sale "<sale>"
   Given there are "2" employee investors
   Given there is a FundingRound "name=Series A"
@@ -64,6 +67,7 @@ Scenario Outline: Sale Allocation
 
 Scenario Outline: Sale To Cap Table
   Given there is a user "first_name=Emp1" for an entity "entity_type=Startup"
+  Given the user has role "company_admin"
   Given there is a sale "<sale>"
   Given there are "3" employee investors
   Given there is a FundingRound "name=Series A"

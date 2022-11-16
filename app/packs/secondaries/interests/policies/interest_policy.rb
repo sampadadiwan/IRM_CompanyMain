@@ -1,8 +1,10 @@
-class InterestPolicy < ApplicationPolicy
+class InterestPolicy < SaleBasePolicy
   class Scope < Scope
     def resolve
       if user.has_cached_role?(:super)
         scope.all
+      elsif user.curr_role == "advisor"
+        scope.for_advisor(user)
       else
         scope.where("interest_entity_id=? or entity_id=?", user.entity_id, user.entity_id)
       end
@@ -38,7 +40,7 @@ class InterestPolicy < ApplicationPolicy
   def unscramble?
     (record.escrow_deposited? && user.entity_id == record.entity_id) || # Escrow is deposited
       user.entity_id == record.interest_entity_id || # Interest is by this entity
-      record.secondary_sale.buyer?(record.user) # Is a seller added by the startup for this sale
+      permissioned_investor?(:seller) # Is a seller added by the startup for this sale
   end
 
   def create?

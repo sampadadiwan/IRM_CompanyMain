@@ -211,8 +211,12 @@ Given('I should not see the sale details on the details page') do
 end
 
 Given('the investor has {string} access rights to the sale') do |metadata|
-  AccessRight.create!(owner: @sale, access_to_investor_id: @investor.id, metadata: metadata,
+  access_right = AccessRight.create!(owner: @sale, access_to_investor_id: @investor.id, metadata: metadata,
       access_type: "SecondarySale", entity: @startup)
+
+  @sale.reload
+  puts access_right.to_json
+  puts access_right.investor.to_json
 end
 
 Given('there are {string} investments {string} in the startup') do |count, args|
@@ -356,6 +360,9 @@ end
 
 
 Then('I should be able to create an interest in the sale') do
+
+  puts @user.to_json
+
   visit(secondary_sale_path(@sale))
   click_on("New Interest")
   fill_in("interest_quantity", with: @sale.total_offered_quantity)

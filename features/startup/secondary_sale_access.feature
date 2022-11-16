@@ -3,6 +3,7 @@ Feature: Sale Access
 
 Scenario Outline: Access Sale as an employee
   Given there is a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given there is a sale "<sale>"
   And I should have "show" access to the sale "true"
   And I should have "update" access to the sale "true"
@@ -11,9 +12,9 @@ Scenario Outline: Access Sale as an employee
   And I should have "finalize_interest_allocation" access to the sale "true"
   And I should have "owner" access to the sale "true"
   And I should have "buyer" access to the sale "false"
-  And I should have "seller" access to the sale "true"
+  And I should have "seller" access to the sale "false"
   And I should have "see_private_docs" access to the sale "true"  
-  And I should have "offer" access to the sale "true"
+  And I should have "offer" access to the sale "false"
   And I should have "show_interest" access to the sale "false"
   And given there is a document "name=Test" for the sale 
   And I should have access to the document  
@@ -26,6 +27,7 @@ Scenario Outline: Access Sale as an employee
 
 Scenario Outline: Access sale as Other User
   Given there is a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given there is a sale "<sale>"
   Given there is another user "first_name=Investor" for another entity "entity_type=VC"
   And another user should have "show" access to the sale "false"

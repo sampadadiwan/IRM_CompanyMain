@@ -3,6 +3,7 @@ class SecondarySale < ApplicationRecord
   include ActivityTrackable
   include WithFolder
   include SecondarySaleNotifiers
+  include SaleAccessScopes
 
   # Make all models searchable
   update_index('secondary_sale') { self }
@@ -74,21 +75,6 @@ class SecondarySale < ApplicationRecord
     AllocationJob.perform_later(id) if finalized && final_price_changed?
   end
 
-  def self.for_investor(user, entity)
-    SecondarySale
-      # Ensure the access rghts for Document
-      .joins(:access_rights)
-      .merge(AccessRight.access_filter)
-      .joins(entity: :investors)
-      # Ensure that the user is an investor and tis investor has been given access rights
-      .where("entities.id=?", entity.id)
-      .where("investors.investor_entity_id=?", user.entity_id)
-      # Ensure this user has investor access
-      .joins(entity: :investor_accesses)
-      .merge(InvestorAccess.approved_for_user(user))
-      .distinct
-  end
-
   def active?
     start_date <= Time.zone.today && end_date >= Time.zone.today
   end
@@ -136,18 +122,18 @@ class SecondarySale < ApplicationRecord
     investor_list.uniq
   end
 
-  def buyer?(user)
-    SecondarySale.for(user).where("access_rights.metadata=?", "Buyer").where(id:).present?
-  end
+  # def buyer?(user)
+  #   SecondarySale.for(user).where("access_rights.metadata=?", "Buyer").where(id:).present?
+  # end
 
-  def seller?(user)
-    SecondarySale.for(user).where("access_rights.metadata=?", "Seller").where(id:).present?
-  end
+  # def seller?(user)
+  #   SecondarySale.for(user).where("access_rights.metadata=?", "Seller").where(id:).present?
+  # end
 
-  def advisor?(user)
-    user.curr_role == :advisor &&
-      SecondarySale.for(user).where("access_rights.metadata=?", "Advisor").where(id:).present?
-  end
+  # def advisor?(user)
+  #   user.curr_role == :advisor &&
+  #     SecondarySale.for(user).where("access_rights.metadata=?", "Advisor").where(id:).present?
+  # end
 
   def offers_by_funding_round
     offers.joins(holding: :funding_round).group("funding_rounds.name").sum(:quantity).sort.to_h

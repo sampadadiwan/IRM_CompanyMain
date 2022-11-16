@@ -71,7 +71,7 @@ Scenario Outline: Express Interest
   Given there is a user "<user>" for an entity "<entity>"
   Given there is a FundingRound "name=Series A"
   Given there is a sale "<sale>"
-  Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=VC"
+  Given Im logged in as a user "first_name=Emp1;last_name=Buyer" for an entity "entity_type=VC"
   Given my firm is an investor in the startup
   And the investor has "Buyer" access rights to the sale
   And I should see the sale details on the details page
