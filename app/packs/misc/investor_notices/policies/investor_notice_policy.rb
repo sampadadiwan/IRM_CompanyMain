@@ -14,7 +14,7 @@ class InvestorNoticePolicy < ApplicationPolicy
   end
 
   def show?
-    user.entity_id == record.entity_id || user.entity_id == record.investor_entity_id
+    user.entity_id == record.entity_id
   end
 
   def create?
