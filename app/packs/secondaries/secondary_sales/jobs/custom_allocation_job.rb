@@ -33,7 +33,7 @@ class CustomAllocationJob < AllocationBase
       custom_matching_vals = interests.select(:custom_matching_vals).map(&:custom_matching_vals).uniq
 
       custom_matching_vals.each do |cmv|
-        Rails.logger.debug { "####### Checking #{cmv}" }
+        Rails.logger.debug { "Checking #{cmv}" }
         cmv_interests = interests.where(custom_matching_vals: cmv)
         cmv_offers = offers.where(custom_matching_vals: cmv)
         update_offers(cmv_interests, cmv_offers, secondary_sale, cmv)

@@ -73,7 +73,7 @@ class SecondarySale < ApplicationRecord
   # Run allocation if the sale is finalized and price is changed
   before_save :allocate_sale, if: :finalized
   def allocate_sale
-    AllocationJob.perform_later(id) if finalized && final_price_changed?
+    CustomAllocationJob.perform_later(id) if finalized && final_price_changed?
   end
 
   def active?

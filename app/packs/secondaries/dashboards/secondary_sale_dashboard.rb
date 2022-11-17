@@ -19,6 +19,7 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     interests: Field::HasMany,
     id: Field::Number,
     name: Field::String,
+    custom_matching_fields: Field::String,
     seller_doc_list: Field::String,
     buyer_doc_list: Field::String,
     support_email: Field::String,
@@ -77,6 +78,7 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     percent_allowed
     min_price
     max_price
+    custom_matching_fields
     active
     seller_doc_list
     buyer_doc_list
@@ -111,6 +113,7 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     sale_type
     start_date
     end_date
+    custom_matching_fields
     percent_allowed
     min_price
     max_price

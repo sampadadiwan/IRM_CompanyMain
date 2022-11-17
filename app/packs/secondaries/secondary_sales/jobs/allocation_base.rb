@@ -3,6 +3,8 @@ class AllocationBase < ApplicationJob
 
   def init(secondary_sale)
     secondary_sale.allocation_status = "InProgress"
+    secondary_sale.cmf_allocation_percentage = {}
+
     secondary_sale.save
 
     clean_up(secondary_sale)

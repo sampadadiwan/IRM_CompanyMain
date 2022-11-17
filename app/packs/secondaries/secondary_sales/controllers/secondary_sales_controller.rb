@@ -151,7 +151,7 @@ class SecondarySalesController < ApplicationController
   end
 
   def allocate
-    AllocationJob.perform_later(@secondary_sale.id)
+    CustomAllocationJob.perform_later(@secondary_sale.id)
 
     respond_to do |format|
       format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "Allocation in progress, checkback in a few minutes. Please use the Dowload button once allocation is complete." }
