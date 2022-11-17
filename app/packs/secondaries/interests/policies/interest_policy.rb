@@ -54,7 +54,7 @@ class InterestPolicy < SaleBasePolicy
   def update?
     (create? ||
       user.entity_id == record.interest_entity_id ||
-     (user.entity_id == record.entity_id && record.secondary_sale.manage_interests)
+     (sale_policy.update? && record.secondary_sale.manage_interests)
     ) && !record.finalized
   end
 
@@ -89,7 +89,7 @@ class InterestPolicy < SaleBasePolicy
   end
 
   def sale_policy
-    sale_policy ||= SecondarySalePolicy.new(user, record.secondary_sale)
-    sale_policy
+    @sale_policy ||= SecondarySalePolicy.new(user, record.secondary_sale)
+    @sale_policy
   end
 end

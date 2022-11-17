@@ -57,7 +57,7 @@ class OfferPolicy < SaleBasePolicy
   def update?
     (
       (user.id == record.user_id) ||
-      (user.entity_id == record.entity_id && record.secondary_sale.manage_offers) # && !record.approved
+      (sale_policy.update? && record.secondary_sale.manage_offers) # && !record.approved
     ) && !record.verified # && !record.secondary_sale.lock_allocations
   end
 
@@ -78,12 +78,12 @@ class OfferPolicy < SaleBasePolicy
   end
 
   def sale_policy
-    sale_policy ||= SecondarySalePolicy.new(user, record.secondary_sale)
-    sale_policy
+    @sale_policy ||= SecondarySalePolicy.new(user, record.secondary_sale)
+    @sale_policy
   end
 
   def interest_policy
-    interest_policy ||= InterestPolicy.new(user, record.interest)
-    interest_policy
+    @interest_policy ||= InterestPolicy.new(user, record.interest)
+    @interest_policy
   end
 end
