@@ -74,7 +74,10 @@ class Investor < ApplicationRecord
     # Ensure we have an investor entity
     if investor_entity_id.blank?
       e = Entity.where(name: investor_name).first
-      e ||= Entity.create(name: investor_name, entity_type: "VC")
+      unless e
+        entity_type = category == "Advisor" ? "Advisor" : "VC"
+        e = Entity.create(name: investor_name, entity_type:)
+      end
 
       setup_permissions(e)
       e.save

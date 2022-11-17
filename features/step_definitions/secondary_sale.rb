@@ -159,8 +159,9 @@ Given('employee investor has {string} access rights to the sale') do |metadata|
     
 end
 
+
 Given('existing investor has {string} access rights to the sale') do |metadata|
-  ar = AccessRight.create(owner: @sale, access_type: "SecondarySale", metadata: metadata,
+  @access_right = AccessRight.create!(owner: @sale, access_type: "SecondarySale", metadata: metadata,
     entity: @entity, access_to_investor_id: @investor.id)
 
   
@@ -170,8 +171,8 @@ Given('existing investor has {string} access rights to the sale') do |metadata|
               email: @employee_investor.email,  approved: true, 
               entity_id: @sale.entity_id)
 
-  puts "\n####AccessRight####\n"
-  puts ar.to_json
+  puts "\n####Investor AccessRight####\n"
+  puts @access_right.to_json
   puts "\n####InvestorAccess####\n"
   puts ia.to_json
     
@@ -210,9 +211,11 @@ Given('I should not see the sale details on the details page') do
 end
 
 Given('the investor has {string} access rights to the sale') do |metadata|
-  access_right = AccessRight.create!(owner: @sale, access_to_investor_id: @investor.id, metadata: metadata,
+  @access_right = AccessRight.create!(owner: @sale, access_to_investor_id: @investor.id, metadata: metadata,
       access_type: "SecondarySale", entity: @startup)
 
+  puts "\n####Investor AccessRight####\n"
+  puts @access_right.to_json
   @sale.reload
 end
 
@@ -505,20 +508,29 @@ Then('the offers completetion page must be visible') do
 end
 
 
+Given('the advisor has role {string}') do |roles|
+  @user = @employee_investor
+  steps %(
+    Given the user has role "#{roles}"
+  )
+end
+
+
 Given('I am {string} employee access to the sale') do |given|
   if given == "given" || given == "yes"
-    @access_right = AccessRight.create(entity_id: @sale.entity_id, owner: @sale, user_id: @user.id)
+    @access_right = AccessRight.create!(entity_id: @sale.entity_id, owner: @sale, user_id: @user.id)
+    puts "####### Employee AccessRight #######\n"
+    puts @access_right.to_json
   end
 end
 
 Given('the sale access right has access {string}') do |crud|
-  puts AccessRight.all.to_json
   if @access_right
     crud.split(",").each do |p|
       @access_right.permissions.set(p.to_sym)
     end
     @access_right.save!
-    puts "####### AccessRight #######\n"
+    puts "####### AccessRight Permissions #######\n"
     puts @access_right.to_json
   end
 end

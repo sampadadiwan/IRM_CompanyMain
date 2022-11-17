@@ -42,7 +42,21 @@ Scenario Outline: Access Sale as an employee
     |entity_type=Startup  |name=Winter Sale | company_admin | no    |       | false  | buyer,seller,offer,show_interest  |
     |entity_type=Startup  |name=Grand Sale  | startup       | yes   |create,read,update,destroy | true  | show,update,destroy,see_private_docs  |
     |entity_type=Startup  |name=Grand Sale  | startup       | yes   |create,read,update,destroy | false  | buyer,seller,offer,show_interest |
-    |entity_type=Startup  |name=Grand Sale  | startup       | yes   |  | false  | update,destroy,see_private_docs,buyer,seller,offer,show_interest  |
+    |entity_type=Startup  |name=Grand Sale  | startup       | yes   |  | false  | update,destroy,buyer,seller,offer,show_interest  |
+    
+Scenario Outline: Access Sale as an advisor
+  Given there is a user "first_name=Test" for an entity "<entity>"
+  Given there is a sale "<sale>"
+  Given there is an existing investor entity "entity_type=Advisor" with employee "first_name=Advisor"
+  And existing investor has "Advisor" access rights to the sale
+  Given the advisor has role "<role>"
+  And the sale access right has access "<crud>"  
+  Then user "<should>" have "<access>" access to the sale
+  Examples:
+  	|entity               |sale             | role            | given | crud  | should| access |
+    |entity_type=Startup  |name=Grand Sale  | advisor       | yes   |create,read,update,destroy | true  | show,update,destroy,see_private_docs  |
+    |entity_type=Startup  |name=Grand Sale  | advisor       | yes   |create,read,update,destroy | false  | buyer,seller,offer,show_interest |
+    |entity_type=Startup  |name=Grand Sale  | advisor       | yes   |  | false  | update,destroy,buyer,seller,offer,show_interest  |
     
 
 

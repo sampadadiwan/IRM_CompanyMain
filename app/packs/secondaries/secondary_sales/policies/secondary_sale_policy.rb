@@ -61,7 +61,7 @@ class SecondarySalePolicy < SaleBasePolicy
 
   def see_private_docs?
     permissioned_advisor? ||
-      permissioned_investor? ||
+      permissioned_employee? ||
       user.entity.interests_shown.short_listed.where(secondary_sale_id: record.id).present?
   end
 
