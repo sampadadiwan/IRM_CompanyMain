@@ -28,7 +28,7 @@
         <% else %>
             <span class="badge badge-danger"><%= offer.bank_verification_status %></span>
         <% end %>
-        <%= offer.properties %>
+        <%= offer.properties if params[:debug].present? %>
     </div>
     
     <div class="divTableCell"><%= money_to_currency(offer.allocation_amount, params) %></div>
@@ -36,7 +36,8 @@
     <div class="divTableCell"><%= offer.allocation_quantity %></div>
     <div class="divTableCell">
         <%= link_to offer.interest.aquirer_name, offer.interest, target: "_top" if offer.interest %>
-        <%= offer.interest.properties if offer.interest %>
+        <br>
+        <%= offer.interest.properties if offer.interest && params[:debug].present? %>
     </div>
     <div class="divTableCell">
         <%= display_boolean offer.final_agreement %>   

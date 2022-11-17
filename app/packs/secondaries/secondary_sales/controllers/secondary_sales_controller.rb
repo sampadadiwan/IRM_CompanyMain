@@ -21,6 +21,7 @@ class SecondarySalesController < ApplicationController
     @offers = @offers.where(signature_data: nil) if params[:signature] == 'false'
     @offers = @offers.where(pan_card_data: nil) if params[:pan_card] == 'false'
     @offers = @offers.where(final_agreement: false) if params[:final_agreement] == 'false'
+    @offers = @offers.where(custom_matching_vals: params[:custom_matching_vals]) if params[:custom_matching_vals].present?
 
     @offers = @offers.page(params[:page]) unless request.format.xlsx?
 

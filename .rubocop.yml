@@ -89,7 +89,7 @@ Metrics/CyclomaticComplexity:
   Exclude:
     - 'app/packs/core/users/models/user.rb'
 Metrics/PerceivedComplexity:
-  Max: 10
+  Max: 12
   Exclude:
     - 'app/packs/core/users/models/user.rb'
     - 'app/packs/core/tasks/controllers/tasks_controller.rb'
