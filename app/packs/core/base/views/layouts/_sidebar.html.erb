@@ -103,7 +103,7 @@
             <% end %>
 
 
-            <% if current_user && current_user.entity && current_user.entity.entity_type != "Holding" %>
+            <% if current_user && current_user.entity && ["Investment Fund", "Startup"].include?(current_user.entity.entity_type) %>
                 <li class="nav-item"> 
                     <a class="nav-link" href="/aggregate_investments" data-toggle="collapse" data-target="#taskMenus">
                         <i class="fas fa-lg fa-fw fa-check"></i>
