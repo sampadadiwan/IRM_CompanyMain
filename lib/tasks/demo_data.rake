@@ -12,11 +12,13 @@ namespace :irm do
       puts "Entity #{e.name}"
       (1..2).each do |j|
         user = FactoryBot.create(:user, entity: e, first_name: "Emp#{j}")
+        user.add_role :company_admin
+        user.add_role :approver
         puts user.to_json
       end
     end
 
-    wm_names = ["Ambit", "Citi"]
+    wm_names = ["Ambit", "Citi", "Sauce", "Carpediem", "Justin Capital", "TerraCore", "TerraBits"]
     wm_names.each do |name|
       e = FactoryBot.create(:entity, entity_type: "Investment Advisor", name: name)
       puts "Entity #{e.name}"
@@ -32,6 +34,8 @@ namespace :irm do
       puts "Entity #{e.name}"
       (1..2).each do |j|
         user = FactoryBot.create(:user, entity: e, first_name: "FM#{j}")
+        user.add_role :company_admin
+        user.add_role :approver
         puts user.to_json
       end
     end
@@ -54,6 +58,8 @@ namespace :irm do
       puts "Entity #{e.name}"
       (1..2).each do |j|
         user = FactoryBot.create(:user, entity: e, first_name: "Emp#{j}")
+        user.add_role :company_admin
+        user.add_role :approver
         puts user.to_json
       end
     end
@@ -434,7 +440,7 @@ namespace :irm do
           offer.quantity = offer.allowed_quantity
           offer.approved = rand(4) > 0
           offer.signature = File.open("public/sample_uploads/signature.png", "rb")
-
+          offer.properties = {"city": ["Bangalore", "Mumbai", "Chennai", "Delhi"][rand(4)], "domicile": ["India", "Foreign"][rand(2)], "dp_name": ["NSDL", "CDSL"][rand(2)] }  
           offer.save
           puts offer.to_json
 
@@ -444,7 +450,7 @@ namespace :irm do
       end
 
       sale.reload
-      Entity.advisors.each do | advisor |
+      Entity.investment_advisors.each do | advisor |
         qty = ((sale.total_offered_quantity / 100) - rand(10))*100
         price = rand(2) > 0 ? sale.min_price : sale.max_price
         short_listed = rand(4) > 0
@@ -455,7 +461,9 @@ namespace :irm do
             short_listed: short_listed, escrow_deposited: escrow_deposited)
         
         interest.signature = File.open("public/sample_uploads/signature2.png", "rb")
-        interest.save
+        interest.properties = {"city": ["Bangalore", "Mumbai", "Chennai", "Delhi"][rand(4)], "domicile": ["India", "Foreign"][rand(2)], "dp_name": ["NSDL", "CDSL"][rand(2)] }
+
+        interest.save!
         puts interest.to_json
       end
       

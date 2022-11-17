@@ -400,7 +400,7 @@ Given('there are {string} interests {string} for the sale') do |count, args|
 end
 
 Then('when the allocation is done') do
-  AllocationJob.perform_now(@sale.id)
+  CustomAllocationJob.perform_now(@sale.id)
   @sale.reload
   puts "\n####Sale Reloaded####\n"
   puts @sale.to_json
@@ -411,7 +411,7 @@ Then('the sale allocation percentage must be {string}') do |arg|
   puts @sale.interests.eligible(@sale).to_json
   # puts "\n####All Interests####\n"
   # puts @sale.interests.to_json
-  @sale.allocation_percentage.should == arg.to_f  
+  @sale.cmf_allocation_percentage[""].should == arg.to_f  
 end
 
 
@@ -430,8 +430,8 @@ end
 
 Then('the offers must be allocated correctly') do
   @sale.offers.approved.each do |offer|
-    if @sale.allocation_percentage <= 1
-      offer.allocation_percentage.should == @sale.allocation_percentage * 100
+    if @sale.cmf_allocation_percentage[offer.custom_matching_vals] <= 1
+      offer.allocation_percentage.should == @sale.cmf_allocation_percentage[offer.custom_matching_vals] * 100
     else
       offer.allocation_percentage.should == 100.0
     end 
@@ -442,10 +442,10 @@ end
 
 Then('the interests must be allocated correctly') do
   @sale.interests.short_listed.each do |interest|
-    if @sale.allocation_percentage <= 1
+    if @sale.cmf_allocation_percentage[interest.custom_matching_vals] <= 1
       interest.allocation_percentage.should == 100.0
     else
-      interest.allocation_percentage.should be_within(0.1).of(100.0 / @sale.allocation_percentage)
+      interest.allocation_percentage.should be_within(0.1).of(100.0 / @sale.cmf_allocation_percentage[interest.custom_matching_vals])
     end 
     # puts interest.to_json
     interest.allocation_quantity.should  == (interest.quantity * interest.allocation_percentage / 100).ceil

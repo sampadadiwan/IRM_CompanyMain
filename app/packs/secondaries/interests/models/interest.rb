@@ -36,6 +36,7 @@ class Interest < ApplicationRecord
   delegate :final_price, to: :secondary_sale
   delegate :email, to: :user, prefix: true
 
+  scope :cmv, ->(val) { where(custom_matching_vals: val) }
   scope :short_listed, -> { where(short_listed: true) }
   scope :not_final_agreement, -> { where(final_agreement: false) }
   scope :escrow_deposited, -> { where(escrow_deposited: true) }
@@ -83,6 +84,19 @@ class Interest < ApplicationRecord
     self.entity_id ||= secondary_sale.entity_id
     self.amount_cents = quantity * final_price * 100 if final_price.positive?
     self.allocation_amount_cents = allocation_quantity * final_price * 100 if final_price.positive?
+
+    self.custom_matching_vals = ""
+    if secondary_sale.custom_matching_fields.present?
+      secondary_sale.custom_matching_fields.split(",").each do |cmf|
+        # For each custom matching field, we extract the value from the offers
+        val = eval <<-RUBY, binding, __FILE__, __LINE__ + 1
+              self.#{cmf} # Evaluate the custom_matching_fields
+        RUBY
+        self.custom_matching_vals += "#{val}_"
+      end
+    else
+      self.custom_matching_vals = ""
+    end
   end
 
   def allocation_delta

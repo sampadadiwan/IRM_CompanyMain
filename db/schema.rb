@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_15_074701) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_17_112231) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -830,6 +830,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_15_074701) do
     t.string "bank_account_number", limit: 40
     t.string "ifsc_code", limit: 20
     t.bigint "final_agreement_user_id"
+    t.string "custom_matching_vals"
+    t.index ["custom_matching_vals"], name: "index_interests_on_custom_matching_vals"
     t.index ["entity_id"], name: "index_interests_on_entity_id"
     t.index ["final_agreement_user_id"], name: "index_interests_on_final_agreement_user_id"
     t.index ["form_type_id"], name: "index_interests_on_form_type_id"
@@ -1143,7 +1145,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_15_074701) do
     t.string "demat", limit: 20
     t.string "city", limit: 20
     t.bigint "final_agreement_user_id"
+    t.string "custom_matching_vals"
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
+    t.index ["custom_matching_vals"], name: "index_offers_on_custom_matching_vals"
     t.index ["entity_id"], name: "index_offers_on_entity_id"
     t.index ["final_agreement_user_id"], name: "index_offers_on_final_agreement_user_id"
     t.index ["form_type_id"], name: "index_offers_on_form_type_id"
@@ -1309,6 +1313,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_15_074701) do
     t.text "spa_data"
     t.boolean "disable_pan_kyc", default: false
     t.boolean "disable_bank_kyc", default: false
+    t.text "custom_matching_fields"
+    t.text "cmf_allocation_percentage"
     t.index ["deleted_at"], name: "index_secondary_sales_on_deleted_at"
     t.index ["entity_id"], name: "index_secondary_sales_on_entity_id"
     t.index ["form_type_id"], name: "index_secondary_sales_on_form_type_id"

@@ -49,6 +49,7 @@ class Offer < ApplicationRecord
   delegate :quantity, to: :holding, prefix: :holding
   delegate :funding_round, to: :holding
 
+  scope :cmv, ->(val) { where(custom_matching_vals: val) }
   scope :approved, -> { where(approved: true) }
   scope :pending_approval, -> { where(approved: false) }
   scope :verified, -> { where(verified: true) }
@@ -89,6 +90,21 @@ class Offer < ApplicationRecord
     self.docs_uploaded_check ||= {}
     self.bank_verification_response ||= {}
     self.pan_verification_response ||= {}
+
+    set_custom_matching_vals
+  end
+
+  def set_custom_matching_vals
+    self.custom_matching_vals = ""
+    if secondary_sale.custom_matching_fields.present?
+      secondary_sale.custom_matching_fields.split(",").each do |cmf|
+        # For each custom matching field, we extract the value from the offers
+        val = eval <<-RUBY, binding, __FILE__, __LINE__ + 1
+              self.#{cmf} # Evaluate the custom_matching_fields
+        RUBY
+        self.custom_matching_vals += "#{val}_"
+      end
+    end
   end
 
   def check_quantity

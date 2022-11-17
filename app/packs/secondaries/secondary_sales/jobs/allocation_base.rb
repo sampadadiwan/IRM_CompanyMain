@@ -7,15 +7,15 @@ class AllocationBase < ApplicationJob
 
     clean_up(secondary_sale)
 
-    total_offered_quantity = get_total_offered_quantity(secondary_sale)
-    total_interest_quantity = secondary_sale.interests.eligible(secondary_sale).sum(:quantity)
+    # total_offered_quantity = get_total_offered_quantity(secondary_sale)
+    # total_interest_quantity = secondary_sale.interests.eligible(secondary_sale).sum(:quantity)
 
-    secondary_sale.allocation_percentage = total_offered_quantity.positive? ? (total_interest_quantity * 1.0 / total_offered_quantity).round(4) : 0
-    Rails.logger.debug do
-      "total_offered_quantity = #{total_offered_quantity},
-            total_interest_quantity = #{total_interest_quantity},
-            secondary_sale.allocation_percentage: #{secondary_sale.allocation_percentage}"
-    end
+    # secondary_sale.allocation_percentage = total_offered_quantity.positive? ? (total_interest_quantity * 1.0 / total_offered_quantity).round(4) : 0
+    # Rails.logger.debug do
+    #   "total_offered_quantity = #{total_offered_quantity},
+    #         total_interest_quantity = #{total_interest_quantity},
+    #         secondary_sale.allocation_percentage: #{secondary_sale.allocation_percentage}"
+    # end
   end
 
   def clean_up(secondary_sale)
@@ -30,6 +30,14 @@ class AllocationBase < ApplicationJob
             final_price = #{secondary_sale.final_price},
             allocation_amount_cents = 0,
             interest_id = null")
+  end
+
+  def get_total_offered_quantity(secondary_sale)
+    secondary_sale.offers.approved.sum(:quantity)
+  end
+
+  def get_total_offered_allocation_quantity(secondary_sale)
+    secondary_sale.offers.approved.sum(:allocation_quantity)
   end
 
   def update_sale(secondary_sale)
@@ -70,7 +78,7 @@ class AllocationBase < ApplicationJob
 
         unassigned_qty = interest.allocation_quantity - assigned_qty
         # Can we assing this offer to this interest?
-        if offer.allocation_quantity <= unassigned_qty
+        if offer.allocation_quantity <= unassigned_qty && offer.allocation_quantity.positive?
           assigned_qty += offer.allocation_quantity
           offer.interest = interest
           offer.save!

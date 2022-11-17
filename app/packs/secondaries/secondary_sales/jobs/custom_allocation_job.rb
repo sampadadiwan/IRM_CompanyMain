@@ -1,4 +1,4 @@
-class AllocationJob < AllocationBase
+class CustomAllocationJob < AllocationBase
   def perform(secondary_sale_id)
     Chewy.strategy(:sidekiq) do
       secondary_sale = SecondarySale.find(secondary_sale_id)
@@ -7,7 +7,7 @@ class AllocationJob < AllocationBase
 
         begin
           init(secondary_sale)
-          update_offers(secondary_sale)
+          match(secondary_sale)
           update_sale(secondary_sale)
           secondary_sale.allocation_status = "Completed"
         rescue StandardError => e
@@ -22,20 +22,51 @@ class AllocationJob < AllocationBase
     end
   end
 
-  def update_offers(secondary_sale)
+  def match(secondary_sale)
     interests = secondary_sale.interests.eligible(secondary_sale)
-    offers = secondary_sale.offers.approved
+    interests.update_all(allocation_quantity: 0, allocation_percentage: 0)
+
+    offers = secondary_sale.offers.auto_match.approved.order(allocation_quantity: :desc)
+    offers.update_all(interest_id: nil, allocation_quantity: 0, allocation_percentage: 0)
+
+    if secondary_sale.custom_matching_fields.present?
+      custom_matching_vals = interests.select(:custom_matching_vals).map(&:custom_matching_vals).uniq
+
+      custom_matching_vals.each do |cmv|
+        Rails.logger.debug { "####### Checking #{cmv}" }
+        cmv_interests = interests.where(custom_matching_vals: cmv)
+        cmv_offers = offers.where(custom_matching_vals: cmv)
+        update_offers(cmv_interests, cmv_offers, secondary_sale, cmv)
+      end
+    else
+      update_offers(interests, offers, secondary_sale)
+    end
+  end
+
+  def update_offers(interests, offers, secondary_sale, cmv = "")
+    total_offered_quantity = offers.sum(:quantity)
+    total_interest_quantity = interests.sum(:quantity)
+
+    allocation_percentage = total_offered_quantity.positive? ? (total_interest_quantity * 1.0 / total_offered_quantity).round(4) : 0
+    Rails.logger.debug do
+      " total_offered_quantity = #{total_offered_quantity},
+        total_interest_quantity = #{total_interest_quantity},
+        allocation_percentage: #{allocation_percentage}"
+    end
 
     # We need to allocate on a pro rata basis, hence the allocation_percentage computation
-    if secondary_sale.allocation_percentage <= 1
+    if allocation_percentage <= 1
       interest_percentage = 1
       # We only can allocate  a portion of the offers
-      offer_percentage = (1.0 * secondary_sale.allocation_percentage).round(6)
+      offer_percentage = (1.0 * allocation_percentage).round(6)
     else
       offer_percentage = 1
       # We only can allocate a portion of the interests
-      interest_percentage = (1.0 / secondary_sale.allocation_percentage).round(6)
+      interest_percentage = (1.0 / allocation_percentage).round(6)
     end
+
+    secondary_sale.cmf_allocation_percentage ||= {}
+    secondary_sale.cmf_allocation_percentage[cmv] = allocation_percentage
 
     Rails.logger.debug { "allocating #{interest_percentage}% of interests and #{offer_percentage} % of offers" }
 
@@ -55,14 +86,5 @@ class AllocationJob < AllocationBase
 
     # Now match the offers to interests
     match_offers_to_interests(interests, offers)
-  end
-
-  def update_delta(interests, offers)
-    delta = interests.sum(:allocation_quantity) - offers.sum(:allocation_quantity)
-    if delta.positive?
-      # We over allocated, we cant allocate more to buyers than what sellers are selling
-      last_interest = interests.last
-      last_interest.update(allocation_quantity: last_interest.allocation_quantity - delta)
-    end
   end
 end

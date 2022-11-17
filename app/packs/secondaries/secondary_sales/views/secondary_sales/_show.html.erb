@@ -274,25 +274,18 @@
 
       <tr>
         <td>
-          Interest
+          Interest Allocation
         </td>
         <td>
-            <%= (secondary_sale.allocation_percentage * 100.00) > 100 ? "Over Sold" : "Under Sold" %> 
+            <% secondary_sale.cmf_allocation_percentage.each do |k,v| %>
+              <% if k == "" %>
+                <div><%= "#{v.round(2)} %" %> </div>
+              <% else %>
+                <div><%= "#{k} = #{v.round(2)} %" %> </div>
+              <% end %>
+            <% end %>
         </td>
       </tr>
-
-
-      <tr>
-        <td>
-          Offer Allocation Percentage
-        </td>
-        <td>
-          <span class="badge <%= secondary_sale.allocation_percentage > 1 ? 'badge-success' : 'badge-warning' %>">
-            <%= [(secondary_sale.allocation_percentage * 100.00).round(2), 100].min %> %
-          </span>
-        </td>
-      </tr>
-
       
 
       <tr>

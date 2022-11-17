@@ -28,12 +28,16 @@
         <% else %>
             <span class="badge badge-danger"><%= offer.bank_verification_status %></span>
         <% end %>
+        <%= offer.properties %>
     </div>
     
     <div class="divTableCell"><%= money_to_currency(offer.allocation_amount, params) %></div>
     <div class="divTableCell"><%= offer.allocation_percentage %></div>
     <div class="divTableCell"><%= offer.allocation_quantity %></div>
-    <div class="divTableCell"><%= link_to offer.interest.aquirer_name, offer.interest, target: "_top" if offer.interest %></div>
+    <div class="divTableCell">
+        <%= link_to offer.interest.aquirer_name, offer.interest, target: "_top" if offer.interest %>
+        <%= offer.interest.properties if offer.interest %>
+    </div>
     <div class="divTableCell">
         <%= display_boolean offer.final_agreement %>   
         <br>

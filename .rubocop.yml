@@ -48,6 +48,8 @@ Rails/SkipsModelValidations:
     - 'app/jobs/offer_spa_job.rb'
     - 'app/packs/funds/investment_opportunities/jobs/investment_opportunity_job.rb'
     - 'app/packs/funds/capital_commitments/models/capital_commitment.rb'
+    - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb'
+    - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job2.rb'
 Rails/HasAndBelongsToMany:
   Exclude:
     - 'app/models/role.rb'
@@ -73,6 +75,13 @@ Style/OptionalBooleanParameter:
   Exclude:
     - 'app/packs/startups/investments/helpers/investments_helper.rb'
     - 'app/packs/core/base/mailers/email_currency_helper.rb'
+
+Security/Eval:
+  Exclude:
+    - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job2.rb'
+    - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb'
+    - 'app/packs/secondaries/offers/models/offer.rb'
+    - 'app/packs/secondaries/interests/models/interest.rb'
 # Metrics Cops
 Metrics/CyclomaticComplexity:
   Max: 10

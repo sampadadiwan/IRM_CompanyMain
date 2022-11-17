@@ -25,6 +25,7 @@ class SecondarySale < ApplicationRecord
   # Customize form for Sale
   belongs_to :form_type, optional: true
   serialize :properties, Hash
+  serialize :cmf_allocation_percentage, Hash
 
   monetize :total_offered_amount_cents, :total_interest_amount_cents,
            :allocation_offer_amount_cents, :allocation_interest_amount_cents,
