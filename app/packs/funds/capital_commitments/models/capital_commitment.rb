@@ -8,6 +8,7 @@ class CapitalCommitment < ApplicationRecord
   belongs_to :entity
   belongs_to :investor
   has_many :investor_kycs, through: :investor
+  acts_as_list scope: :fund, column: :ppm_number
 
   belongs_to :fund, touch: true
   has_many :capital_remittances, dependent: :destroy

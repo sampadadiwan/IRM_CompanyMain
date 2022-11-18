@@ -48,9 +48,7 @@ class FundDocGenerator
       amount_in_words = capital_commitment.entity.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
       r.add_field :commitment_amount_words, amount_in_words
 
-      capital_commitment.properties.each do |k, v|
-        r.add_field "commitment_#{k}", v
-      end
+      generate_custom_fields(r, capital_commitment)
 
       # Can we have more than one LP signer ?
       capital_commitment_signature = add_signature(r, :investor_signature, user.signature)
@@ -67,6 +65,16 @@ class FundDocGenerator
     add_header_footers(capital_commitment, "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf")
 
     File.delete(capital_commitment_signature) if capital_commitment_signature
+  end
+
+  def generate_custom_fields(report, capital_commitment)
+    capital_commitment.properties.each do |k, v|
+      report.add_field "commitment_#{k}", v
+    end
+
+    capital_commitment.fund.properties.each do |k, v|
+      report.add_field "fund_#{k}", v
+    end
   end
 
   def generate_kyc_fields(report, investor_kyc)

@@ -664,6 +664,8 @@ GEM
       railties
     stimulus-rails (1.0.2)
       railties (>= 6.0.0)
+    strong_migrations (1.4.0)
+      activerecord (>= 5.2)
     strscan (3.0.1)
     sys-uname (1.2.2)
       ffi (~> 1.1)
@@ -802,6 +804,7 @@ DEPENDENCIES
   sprockets-rails
   stimpack
   stimulus-rails
+  strong_migrations
   to_words
   turbo-rails
   tzinfo-data
