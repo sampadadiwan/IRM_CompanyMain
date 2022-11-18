@@ -71,11 +71,11 @@ class FundDocGenerator
 
   def generate_kyc_fields(report, investor_kyc)
     if investor_kyc
-      report.add_field :user_full_name, investor_kyc.full_name
-      report.add_field :user_pan, investor_kyc.PAN
-      report.add_field :user_address, investor_kyc.address
-      report.add_field :user_bank_account_number, investor_kyc.bank_account_number
-      report.add_field :user_ifsc_code, investor_kyc.ifsc_code
+      report.add_field :kyc_full_name, investor_kyc.full_name
+      report.add_field :kyc_pan, investor_kyc.PAN
+      report.add_field :kyc_address, investor_kyc.address
+      report.add_field :kyc_bank_account_number, investor_kyc.bank_account_number
+      report.add_field :kyc_ifsc_code, investor_kyc.ifsc_code
 
       investor_kyc.properties.each do |k, v|
         report.add_field "kyc_#{k}", v
