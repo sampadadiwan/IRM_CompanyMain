@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_18_041439) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_18_050147) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -27,7 +27,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_18_041439) do
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
     t.string "access_to_email", limit: 30
-    t.integer "access_to_investor_id"
+    t.bigint "access_to_investor_id"
     t.string "access_type", limit: 25
     t.string "metadata"
     t.datetime "created_at", null: false
@@ -1496,6 +1496,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_18_041439) do
   end
 
   add_foreign_key "access_rights", "entities"
+  add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
   add_foreign_key "access_rights", "users"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
