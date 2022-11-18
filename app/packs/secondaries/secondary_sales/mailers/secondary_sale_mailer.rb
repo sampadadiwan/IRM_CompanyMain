@@ -85,11 +85,15 @@ class SecondarySaleMailer < ApplicationMailer
     @secondary_sale = SecondarySale.find(params[:id])
     list = params[:list]
 
-    Rails.logger.debug { "notify_spa_offers: Sending mail to #{list} in bcc" }
+    if list
 
-    mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
-         bcc: sandbox_email(@secondary_sale, list.join(',')),
-         subject: "Secondary Sale: #{@secondary_sale.name}, please accept uploaded SPA.")
+      Rails.logger.debug { "notify_spa_offers: Sending mail to #{list} in bcc" }
+
+      mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
+           bcc: sandbox_email(@secondary_sale, list.join(',')),
+           subject: "Secondary Sale: #{@secondary_sale.name}, please accept uploaded SPA.")
+
+    end
   end
 
   def notify_spa_interests
