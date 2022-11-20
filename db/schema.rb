@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_20_043831) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_20_073227) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -130,8 +130,12 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_20_043831) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "user_ids"
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.string "reason"
     t.index ["document_id"], name: "index_adhaar_esigns_on_document_id"
     t.index ["entity_id"], name: "index_adhaar_esigns_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_adhaar_esigns_on_owner"
   end
 
   create_table "admin_users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -422,10 +426,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_20_043831) do
     t.string "text", default: "--- []\n"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "file_file_name"
-    t.string "file_content_type"
-    t.bigint "file_file_size"
-    t.datetime "file_updated_at"
     t.bigint "entity_id", null: false
     t.datetime "deleted_at"
     t.bigint "folder_id", null: false
@@ -445,6 +445,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_20_043831) do
     t.bigint "from_template_id"
     t.boolean "signed_by_accept", default: false
     t.string "signature_type", limit: 100
+    t.boolean "locked", default: false
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
     t.index ["folder_id"], name: "index_documents_on_folder_id"
@@ -1315,6 +1316,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_20_043831) do
     t.boolean "disable_bank_kyc", default: false
     t.text "custom_matching_fields"
     t.text "cmf_allocation_percentage"
+    t.integer "buyer_signature_types", default: 0
+    t.integer "seller_signature_types", default: 0
     t.index ["deleted_at"], name: "index_secondary_sales_on_deleted_at"
     t.index ["entity_id"], name: "index_secondary_sales_on_entity_id"
     t.index ["form_type_id"], name: "index_secondary_sales_on_form_type_id"

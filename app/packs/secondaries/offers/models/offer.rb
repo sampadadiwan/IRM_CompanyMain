@@ -32,9 +32,11 @@ class Offer < ApplicationRecord
   belongs_to :buyer, class_name: "Entity", optional: true
 
   has_many :messages, as: :owner, dependent: :destroy
+  has_many :adhaar_esigns, as: :owner, dependent: :destroy
 
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
+
   include FileUploader::Attachment(:signature)
   include FileUploader::Attachment(:spa)
   include FileUploader::Attachment(:pan_card)
@@ -228,5 +230,40 @@ class Offer < ApplicationRecord
     File.write("OfferCompletion.csv", csv.join("\n"))
 
     csv
+  end
+
+  def spa_file_name
+    "SPA for #{user.full_name} : Offer #{id}"
+  end
+
+  def spa_signed?; end
+
+  def generate_spa_signatures_delayed
+    OfferSpaSignatureJob.perform_later(secondary_sale_id, id)
+  end
+
+  def generate_spa_signatures
+    user_ids = []
+    user_ids << user.id if secondary_sale.seller_signature_types.set?(:adhaar)
+    user_ids << interest.user.id if secondary_sale.buyer_signature_types.set?(:adhaar) && interest
+
+    if user_ids.present?
+      doc = Document.where(entity_id:, owner: self, name: spa_file_name).first
+      if doc.blank?
+        spa.download do |tempfile|
+          doc = documents.create!(name: spa_file_name, entity_id:, download: true, file: tempfile, user_id:)
+        end
+      end
+      AdhaarEsign.new.init(doc.id, user_ids.join(","), self, "Acceptance of SPA").sign
+    end
+  end
+
+  def signature_completed(signature_type, file)
+    Rails.logger.debug { "Offer #{id} signature_completed #{signature_type}" }
+    if signature_type == "adhaar"
+      doc = Document.where(entity_id:, owner: self, name: spa_file_name).first
+      doc.file = File.open(file, "rb")
+      doc.save
+    end
   end
 end

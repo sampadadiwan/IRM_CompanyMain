@@ -7,7 +7,7 @@ class DigioEsignHelper
   BASE_URL = ENV["DIGIO_BASE_URL"]
   AUTH_TOKEN = Base64.strict_encode64("#{ENV['DIGIO_CLIENT_ID']}:#{ENV['DIGIO_SECRET']}")
 
-  def sign(user_ids, file_name, file_path, reason = "Adhaar eSing of document on CapHive")
+  def sign(user_ids, file_name, file_path, reason)
     # Open the file you wish to encode
     data = File.read(file_path)
 

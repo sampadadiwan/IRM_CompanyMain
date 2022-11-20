@@ -7,7 +7,6 @@ class DocumentIndex < Chewy::Index
   field :tag_list, value: ->(i) { i.tags.map(&:name).join(", ") }
   field :entity_id
   field :entity_name, value: ->(doc) { doc.entity.name if doc.entity }
-  field :file_file_name
   field :folder_full_path
   field :folder_id
   field :properties, value: ->(doc) { doc.properties.to_json if doc.properties }

@@ -98,7 +98,7 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def finalize_allocation?
-    update? && record.allocation_percentage.positive?
+    update?
   end
 
   def make_visible?

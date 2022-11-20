@@ -220,6 +220,7 @@ Rails.application.routes.draw do
   resources :documents do
     patch 'sign', on: :member
     patch 'signed_accept', on: :member
+    get 'adhaar_esign_completed', on: :member
     get 'search', on: :collection
     get 'investor_documents', on: :collection
   end

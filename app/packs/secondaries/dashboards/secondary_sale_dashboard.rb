@@ -19,6 +19,8 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     interests: Field::HasMany,
     id: Field::Number,
     name: Field::String,
+    buyer_signature_types: Field::String,
+    seller_signature_types: Field::String,
     custom_matching_fields: Field::String,
     seller_doc_list: Field::String,
     buyer_doc_list: Field::String,
@@ -80,6 +82,8 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     max_price
     custom_matching_fields
     active
+    seller_signature_types
+    buyer_signature_types
     seller_doc_list
     buyer_doc_list
     support_email
@@ -121,6 +125,8 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     buyer_doc_list
     support_email
     show_quantity
+    seller_signature_types
+    buyer_signature_types
 
     total_interest_quantity
     offer_allocation_quantity

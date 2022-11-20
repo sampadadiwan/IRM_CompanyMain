@@ -1,21 +1,36 @@
 class AdhaarEsign < ApplicationRecord
+  self.table_name = "adhaar_esigns"
   belongs_to :entity
   belongs_to :document
-  belongs_to :user
+  belongs_to :owner, polymorphic: true, optional: true
 
-  def init(document_id, user_id)
+  def init(document_id, user_ids, owner, reason)
     self.document = Document.find(document_id)
     self.entity_id = document.entity_id
-    self.user_id = user_id
+    self.user_ids = user_ids
+    self.owner = owner
+    self.reason = reason
+    @esign_helper ||= DigioEsignHelper.new
+    self
   end
 
-  def create_esign_link
+  def redirect_url
+    base_url = ENV['NGROK_HOST'].present? ? "http://#{ENV['NGROK_HOST']}" : ENV['BASE_URL']
+    base_url + "/documents/#{id}/adhaar_esign_completed"
+  end
+
+  def sign_link(phone)
+    "https://ext.digio.in/#/gateway/login/#{esign_doc_id}/#{rand(4**4)}/#{phone}?redirect_url=#{redirect_url}&logo=https://app.caphive.com/img/logo_big.png"
+  end
+
+  def sign
+    Rails.logger.debug { "Creating signing link for users #{user_ids} for document #{document_id}" }
+    @esign_helper ||= DigioEsignHelper.new
     document.file.download do |tmp_file|
-      response = AdhaarEsignHelper.new.sign(user.full_name, user.email, user.phone, tmp_file.path)
+      response = @esign_helper.sign(user_ids, document.name, tmp_file.path, reason)
       if response.success?
         self.esign_document_reponse = response.body
-        self.esign_url = response["result"]["source_output"]["esign_details"][0]["esign_url"]
-        self.esign_doc_id = response["result"]["source_output"]["esign_doc_id"]
+        self.esign_doc_id = response["id"]
       else
         self.esign_document_reponse = response.message
       end
@@ -23,36 +38,45 @@ class AdhaarEsign < ApplicationRecord
     end
   end
 
+  def download_file_name
+    "tmp/#{esign_doc_id}.pdf"
+  end
+
   def retrieve_signed
-    response = AdhaarEsignHelper.new.retrieve_signed(esign_doc_id)
+    @esign_helper ||= DigioEsignHelper.new
+    response = @esign_helper.retrieve_signed(esign_doc_id)
+    self.esign_retrieve_reponse = response["agreement_status"]
     if response.success?
-      save_esign_file(response, esign_doc_id)
+      self.is_signed = true
+      response["signing_parties"].each do |sp|
+        self.is_signed &&= sp["status"] == "signed"
+      end
+      if self.is_signed
+        Rails.logger.debug { "#{esign_doc_id} : All parties have signed, downloading file" }
+        save_esign_file(download_file_name)
+        owner.signature_completed("adhaar", download_file_name) if owner.respond_to?(:signature_completed)
+      else
+        Rails.logger.debug { "#{esign_doc_id} : Not all parties have signed" }
+      end
     else
       Rails.logger.debug { "retrieve_signed #{esign_doc_id}, Response code = #{response.code}, Response message = #{response.message}" }
     end
+    save
     response
   end
 
-  def save_esign_file(response, esign_doc_id)
-    body = JSON.parse response.body
-    self.esign_retrieve_reponse = body
-    esign_file = body["result"]["source_output"]["file_details"]["esign_file"][0]
+  def save_esign_file(file_name)
+    @esign_helper ||= DigioEsignHelper.new
+    response = @esign_helper.download(esign_doc_id)
 
-    doc_response = HTTParty.get(esign_file)
-    if doc_response.success?
-      self.is_signed = body["result"]["source_output"]["request_details"][0]["is_signed"]
-      if is_signed
-        self.signed_file_url = esign_file
-        raw_file_data = Base64.decode64(doc_response.body)
-        File.binwrite("tmp/#{esign_doc_id}.pdf", raw_file_data)
-        Rails.logger.debug { "Wrote signed file to tmp/#{esign_doc_id}.pdf" }
-      else
-        Rails.logger.debug { "Not signed #{esign_doc_id}" }
-      end
+    if response.success?
+      raw_file_data = response.body
+      File.binwrite(file_name, raw_file_data)
+      Rails.logger.debug { "Wrote signed file to tmp/#{esign_doc_id}.pdf" }
     else
-      Rails.logger.debug { "Document Response code = #{doc_response.code}, Response message = #{doc_response.message}" }
+      Rails.logger.debug { "Document Response code = #{response.code}, Response message = #{response.message}" }
     end
 
-    save
+    response
   end
 end

@@ -40,9 +40,13 @@ module SecondarySaleNotifiers
 
   def notify_spa_sellers
     # Send email to only those who are verified but not confirmed SPA
-    all_emails = offers.includes(:user).verified.not_final_agreement.collect(&:user).collect(&:email)
+    all_offers = offers.includes(:user).verified.not_final_agreement
+    all_emails = all_offers.collect(&:user).collect(&:email)
     all_emails.each_slice(10) do |list|
       SecondarySaleMailer.with(id:, list:).notify_spa_offers.deliver_later
     end
+
+    # Trigger the Signature Job - this will cause all the adhaar signature requests to go out
+    OfferSpaSignatureJob.perform_later(id, nil)
   end
 end

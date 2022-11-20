@@ -4,7 +4,7 @@ class DocumentsController < ApplicationController
   include ActiveStorage::SetCurrent
 
   before_action :set_document, only: %w[show update destroy edit sign]
-  after_action :verify_authorized, except: %i[index search investor_documents]
+  after_action :verify_authorized, except: %i[index search investor_documents adhaar_esign_completed]
   after_action :verify_policy_scoped, only: []
 
   impressionist actions: [:show]
@@ -26,6 +26,19 @@ class DocumentsController < ApplicationController
     @documents = @documents.where(folder_id: params[:folder_id]) if params[:folder_id].present?
     @documents = @documents.order(id: :desc)
     @documents = @documents.includes(:folder, tags: :taggings).page params[:page]
+  end
+
+  # This is a one off callback from digio, once the document signing is completed
+  # The id sent back is the id of the AdhaarEsign which triggered the signing request
+  # @see AdhaarEsign
+  def adhaar_esign_completed
+    adhaar_esign = AdhaarEsign.find(params[:id])
+    if params[:status] == "success"
+      AdhaarEsignCompletedJob.perform_later(params[:id])
+      redirect_to adhaar_esign.owner, notice: "Adhaar eSign was successfull"
+    else
+      redirect_to adhaar_esign.owner, notice: "Adhaar eSign was not successfull, please retry again."
+    end
   end
 
   def investor_documents
