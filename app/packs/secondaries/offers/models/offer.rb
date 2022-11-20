@@ -237,8 +237,6 @@ class Offer < ApplicationRecord
     "SPA for #{user.full_name} : Offer #{id}"
   end
 
-  def spa_signed?; end
-
   def generate_spa_signatures_delayed
     OfferSpaSignatureJob.perform_later(secondary_sale_id, id)
   end
