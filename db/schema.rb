@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_20_031541) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_20_043831) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -121,7 +121,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_20_031541) do
   create_table "adhaar_esigns", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "document_id", null: false
-    t.bigint "user_id", null: false
     t.text "esign_url"
     t.string "esign_doc_id", limit: 100
     t.text "signed_file_url"
@@ -130,9 +129,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_20_031541) do
     t.text "esign_retrieve_reponse"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "user_ids"
     t.index ["document_id"], name: "index_adhaar_esigns_on_document_id"
     t.index ["entity_id"], name: "index_adhaar_esigns_on_entity_id"
-    t.index ["user_id"], name: "index_adhaar_esigns_on_user_id"
   end
 
   create_table "admin_users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1502,7 +1501,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_20_031541) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "adhaar_esigns", "documents"
   add_foreign_key "adhaar_esigns", "entities"
-  add_foreign_key "adhaar_esigns", "users"
   add_foreign_key "aggregate_investments", "entities"
   add_foreign_key "aggregate_investments", "funding_rounds"
   add_foreign_key "aggregate_investments", "investors"
