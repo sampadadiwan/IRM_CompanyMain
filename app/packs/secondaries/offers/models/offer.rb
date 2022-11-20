@@ -254,8 +254,11 @@ class Offer < ApplicationRecord
         spa.download do |tempfile|
           doc = documents.create!(name: spa_file_name, entity_id:, download: true, file: tempfile, user_id:)
         end
+
+        AdhaarEsign.new.init(doc.id, user_ids.join(","), self, "Acceptance of SPA").sign
+      else
+        Rails.logger.debug { "Offer #{id} already generated SPA AdhaarEsign" }
       end
-      AdhaarEsign.new.init(doc.id, user_ids.join(","), self, "Acceptance of SPA").sign
     end
   end
 
