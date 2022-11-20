@@ -23,7 +23,7 @@
 
       <% if @offer.adhaar_esigns.last.present? %>
         <% unless @offer.adhaar_esigns.last.is_signed %>
-          <%= link_to "Click here to Adhaar eSign", "#{@offer.adhaar_esigns.last.sign_link(@offer.user.phone)}", 
+          <%= link_to "Click here to Adhaar eSign", "#{@offer.adhaar_esigns.last.sign_link(@offer.user.phone)}",  target: "_blank",
               class: "btn btn-success"  if policy(@offer).accept_spa?  %>
         <% end %>
       <% else %>

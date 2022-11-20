@@ -542,3 +542,23 @@ Then('user {string} have {string} access to the sale') do |truefalse, accesses|
   end
 end
 
+
+
+Given('the sale has a SPA template') do
+  @sale.spa = File.open("public/sample_uploads/Purchase-Agreement-1.docx", "rb")
+  @sale.save
+end
+
+Then('when the offers are verified') do
+  @sale.offers.not_verified.each do |offer|
+    offer.verified = true
+    offer.save
+  end
+end
+
+Then('the SPAs must be generated for each verified offer') do
+  @sale.reload
+  @sale.offers.verified.each do |offer|
+    offer.spa_data.should_not == nil
+  end
+end

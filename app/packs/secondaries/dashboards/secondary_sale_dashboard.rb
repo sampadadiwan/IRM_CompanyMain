@@ -125,8 +125,6 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     buyer_doc_list
     support_email
     show_quantity
-    seller_signature_types
-    buyer_signature_types
 
     total_interest_quantity
     offer_allocation_quantity

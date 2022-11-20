@@ -66,9 +66,8 @@ class DigioEsignHelper
     {
       signers: prep_user_data(user_ids, reason),
       expire_in_days: 10,
-      # "display_on_page": "custom",
-      notify_signers: true,
-      send_sign_link: true,
+      notify_signers: false,
+      send_sign_link: false,
       file_name: file_name,
       file_data: encoded_file
     }

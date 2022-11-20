@@ -55,6 +55,7 @@ class Offer < ApplicationRecord
   scope :approved, -> { where(approved: true) }
   scope :pending_approval, -> { where(approved: false) }
   scope :verified, -> { where(verified: true) }
+  scope :not_verified, -> { where(verified: false) }
   scope :not_final_agreement, -> { where(final_agreement: false) }
   scope :auto_match, -> { where(auto_match: true) }
   scope :pending_verification, -> { where(verified: false) }

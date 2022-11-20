@@ -50,6 +50,7 @@ Examples:
     |  	        |entity_type=Startup  |name=Winter Sale;visible_externally=true;percent_allowed=100 |quantity=50         | 50             |
 
 
+
 Scenario Outline: Place a wrong offer 
   Given there is a user "<user>" for an entity "<entity>"
   Given there are "2" employee investors
