@@ -25,7 +25,7 @@ class AdhaarEsignsController < ApplicationController
   def completed
     if params[:status] == "success"
       AdhaarEsignCompletedJob.perform_later(@adhaar_esign.id)
-      redirect_to @adhaar_esign.owner, notice: "Adhaar eSign was successfull"
+      redirect_to @adhaar_esign.owner, notice: "Adhaar eSign was successfull. We will let you know the next steps."
     else
       redirect_to @adhaar_esign.owner, notice: "Adhaar eSign was not successfull, please retry again."
     end

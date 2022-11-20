@@ -264,6 +264,7 @@ class Offer < ApplicationRecord
     if signature_type == "adhaar"
       doc = Document.where(entity_id:, owner: self, name: spa_file_name).first
       doc.locked = true
+      doc.orignal = true
       doc.file = File.open(file, "rb")
       doc.save
       self.final_agreement = true
