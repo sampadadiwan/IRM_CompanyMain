@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_18_050147) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_20_031541) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -123,7 +123,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_18_050147) do
     t.bigint "document_id", null: false
     t.bigint "user_id", null: false
     t.text "esign_url"
-    t.string "esign_doc_id", limit: 20
+    t.string "esign_doc_id", limit: 100
     t.text "signed_file_url"
     t.boolean "is_signed", default: false
     t.text "esign_document_reponse"

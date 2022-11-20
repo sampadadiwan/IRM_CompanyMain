@@ -106,7 +106,7 @@ Metrics/ModuleLength:
 
 Metrics/ParameterLists:
   Description: 'Pass no more than four parameters into a method.'
-  Max: 4
+  Max: 5
   Enabled: true
 
 Metrics/MethodLength:
