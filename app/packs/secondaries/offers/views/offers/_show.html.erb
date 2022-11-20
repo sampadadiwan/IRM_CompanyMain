@@ -266,17 +266,7 @@
           </td>
           <td>
               <%= link_to "Download SPA", @offer.spa.url(expires_in: 60*60*24*7), target: "_blank", class: "btn btn-sm btn-success" if @offer.spa %>
-              <span><%= "(Link expires in 7 days)" unless current_user %></span>
-              
-              <% if @offer.adhaar_esigns.last.present? %>
-                <div>
-                  <% if @offer.adhaar_esigns.last.is_signed %>
-                    Adhaar eSign Completed
-                  <% else %>
-                    <%= link_to "Click here to adhaar eSign", "#{@offer.adhaar_esigns.last.sign_link(@offer.user.phone)}" %>
-                  <% end %>
-                </div>
-              <% end %>
+              <span><%= "(Link expires in 7 days)" unless current_user %></span>              
           </td>
           </tr>
 
