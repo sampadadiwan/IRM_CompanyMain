@@ -265,6 +265,8 @@ class Offer < ApplicationRecord
       doc.locked = true
       doc.file = File.open(file, "rb")
       doc.save
+      self.final_agreement = true
+      save
     end
   end
 end

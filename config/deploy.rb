@@ -59,11 +59,11 @@ namespace :deploy do
   desc "Uploads .env remote servers."
   task :upload_env do
     on roles(:app) do
-      upload!("/data/work/IRM/.env", release_path.to_s, recursive: false)
-      upload!("/data/work/IRM/.env.local", release_path.to_s, recursive: false) if fetch(:stage) != :production
-      upload!("/data/work/IRM/.env.staging", release_path.to_s, recursive: false) if fetch(:stage) == :staging
-      upload!("/data/work/IRM/.env.sandbox", release_path.to_s, recursive: false) if fetch(:stage) == :sandbox
-      upload!("/data/work/IRM/.env.production", release_path.to_s, recursive: false) if fetch(:stage) == :production
+      upload!("/home/thimmaiah/work/IRM/.env", release_path.to_s, recursive: false)
+      upload!("/home/thimmaiah/work/IRM/.env.local", release_path.to_s, recursive: false) if fetch(:stage) != :production
+      upload!("/home/thimmaiah/work/IRM/.env.staging", release_path.to_s, recursive: false) if fetch(:stage) == :staging
+      upload!("/home/thimmaiah/work/IRM/.env.sandbox", release_path.to_s, recursive: false) if fetch(:stage) == :sandbox
+      upload!("/home/thimmaiah/work/IRM/.env.production", release_path.to_s, recursive: false) if fetch(:stage) == :production
     end
   end
 

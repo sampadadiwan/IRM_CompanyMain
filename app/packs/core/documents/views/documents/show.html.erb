@@ -1,6 +1,14 @@
 <%= render "/layouts/alerts" %>
 
 
+<div class="row">
+   <% if @document.video? %>
+     <%= render "layouts/video", url: @document.file_url %>
+   <% elsif ENV['PDF_TRON'] == 'true' && @document.file.present? && !@document.orignal %>
+      <%= render "documents/pdf" %>
+   <% end %>
+</div>
+
 <% if policy(@document).sign? %>
    <% if @document.signature_type.present? %>
       <div class="alert alert-info">
@@ -224,13 +232,6 @@
    </div>
 <% end %>
 
-<div class="row">
-   <% if @document.video? %>
-     <%= render "layouts/video", url: @document.file_url %>
-   <% elsif ENV['PDF_TRON'] == 'true' && @document.file.present? && !@document.orignal %>
-      <%= render "documents/pdf" %>
-   <% end %>
-</div>
 
 
 <%= render "documents/document_details", document: @document %>
