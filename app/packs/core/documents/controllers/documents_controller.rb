@@ -28,19 +28,6 @@ class DocumentsController < ApplicationController
     @documents = @documents.includes(:folder, tags: :taggings).page params[:page]
   end
 
-  # This is a one off callback from digio, once the document signing is completed
-  # The id sent back is the id of the AdhaarEsign which triggered the signing request
-  # @see AdhaarEsign
-  def adhaar_esign_completed
-    adhaar_esign = AdhaarEsign.find(params[:id])
-    if params[:status] == "success"
-      AdhaarEsignCompletedJob.perform_later(params[:id])
-      redirect_to adhaar_esign.owner, notice: "Adhaar eSign was successfull"
-    else
-      redirect_to adhaar_esign.owner, notice: "Adhaar eSign was not successfull, please retry again."
-    end
-  end
-
   def investor_documents
     if params[:entity_id].present?
       @entity = Entity.find(params[:entity_id])

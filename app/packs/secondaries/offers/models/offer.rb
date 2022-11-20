@@ -262,6 +262,7 @@ class Offer < ApplicationRecord
     Rails.logger.debug { "Offer #{id} signature_completed #{signature_type}" }
     if signature_type == "adhaar"
       doc = Document.where(entity_id:, owner: self, name: spa_file_name).first
+      doc.locked = true
       doc.file = File.open(file, "rb")
       doc.save
     end

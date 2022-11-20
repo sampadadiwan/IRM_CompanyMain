@@ -217,10 +217,13 @@ Rails.application.routes.draw do
     post 'recompute_percentage', on: :collection
   end
 
+  resources :adhaar_esigns do
+    get 'completed', on: :member
+    get 'digio_webhook', on: :collection
+  end
   resources :documents do
     patch 'sign', on: :member
     patch 'signed_accept', on: :member
-    get 'adhaar_esign_completed', on: :member
     get 'search', on: :collection
     get 'investor_documents', on: :collection
   end

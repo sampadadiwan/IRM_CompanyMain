@@ -9,6 +9,7 @@ class OfferSpaSignatureJob < ApplicationJob
           offer = Offer.find(offer_id)
           offer.generate_spa_signatures
         else
+          # For all the offers of this sale generate_spa_signatures
           secondary_sale.offers.includes(:user).verified.not_final_agreement.each(&:generate_spa_signatures_delayed)
         end
       end

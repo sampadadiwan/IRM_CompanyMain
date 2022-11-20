@@ -1,3 +1,12 @@
+# Complex processing below
+# For an Offer the following steps are taken
+# 1. When SecondarySaleNotifiers.notify_spa_sellers is called, it triggers the AdharEsign process for all Offers
+# 2. The OfferSpaSignatureJob calls the offer.generate_spa_signatures
+# 3. This triggers the AdhaarEsign.sign method
+# 4. The user link is created and sent, and once the user completes signing, he is redirected to /documents/#{adhaar_esign_id}/adhaar_esign_completed
+# 5. That then triggers AdhaarEsignCompletedJob
+# 6. That retrives the doc and calls back the offer.signature_completed, which uploads the signed doc
+
 class AdhaarEsign < ApplicationRecord
   self.table_name = "adhaar_esigns"
   belongs_to :entity
@@ -16,7 +25,7 @@ class AdhaarEsign < ApplicationRecord
 
   def redirect_url
     base_url = ENV['NGROK_HOST'].present? ? "http://#{ENV['NGROK_HOST']}" : ENV['BASE_URL']
-    base_url + "/documents/#{id}/adhaar_esign_completed"
+    base_url + "/adhaar_esigns/#{id}/completed"
   end
 
   def sign_link(phone)
@@ -53,7 +62,9 @@ class AdhaarEsign < ApplicationRecord
       end
       if self.is_signed
         Rails.logger.debug { "#{esign_doc_id} : All parties have signed, downloading file" }
+        # Save the signed file to tmp
         save_esign_file(download_file_name)
+        # Callback to the owner that the signed doc is now awailable
         owner.signature_completed("adhaar", download_file_name) if owner.respond_to?(:signature_completed)
       else
         Rails.logger.debug { "#{esign_doc_id} : Not all parties have signed" }
