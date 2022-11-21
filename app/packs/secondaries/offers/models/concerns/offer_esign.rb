@@ -1,6 +1,18 @@
 module OfferEsign
   extend ActiveSupport::Concern
 
+  def adhaar_esign_required?
+    adhaar_esigns.last.present?
+  end
+
+  def adhaar_esign_completed?
+    adhaar_esigns.last&.is_signed
+  end
+
+  def adhaar_esign_link(phone)
+    adhaar_esigns.last&.sign_link(phone)
+  end
+
   def spa_file_name
     "SPA for #{user.full_name} : Offer #{id}"
   end
