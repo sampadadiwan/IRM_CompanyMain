@@ -73,7 +73,7 @@ class SecondarySaleMailer < ApplicationMailer
   def notify_allocation_interests
     @secondary_sale = SecondarySale.find(params[:id])
 
-    interests_emails = @secondary_sale.interests.short_listed.collect(&:email).flatten
+    interests_emails = @secondary_sale.interests.short_listed.collect(&:notification_emails).flatten
 
     all_emails = interests_emails
     mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],

@@ -32,7 +32,7 @@ module SecondarySaleNotifiers
   end
 
   def notify_spa_buyers
-    all_emails = interests.short_listed.not_final_agreement.collect(&:email).flatten
+    all_emails = interests.short_listed.not_final_agreement.collect(&:notification_emails).flatten
     all_emails.each_slice(10) do |list|
       SecondarySaleMailer.with(id:, list:).notify_spa_interests.deliver_later
     end

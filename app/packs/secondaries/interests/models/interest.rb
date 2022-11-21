@@ -119,4 +119,15 @@ class Interest < ApplicationRecord
   def aquirer_name
     buyer_entity_name.presence || interest_entity.name
   end
+
+  def notification_emails
+    # Check if this is by an investor - if so send to all in investor access
+    @investor ||= Investor.where(entity_id:, investor_entity_id: interest_entity_id).first
+    if @investor
+      @investor.emails
+    else
+      # Else send it to the interest user only
+      [user.email]
+    end
+  end
 end
