@@ -91,6 +91,6 @@ class ValuationsController < ApplicationController
   def valuation_params
     params.require(:valuation).permit(:entity_id, :valuation_date, :pre_money_valuation,
                                       :owner_id, :owner_type,
-                                      :form_type_id, :per_share_value, reports: [], properties: {})
+                                      :form_type_id, :per_share_value, :report, properties: {})
   end
 end

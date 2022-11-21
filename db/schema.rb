@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_21_110047) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_21_125046) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -320,6 +320,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_21_110047) do
     t.text "properties"
     t.bigint "form_type_id"
     t.boolean "verified", default: false
+    t.text "payment_proof_data"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_capital_remittances_on_entity_id"
@@ -535,6 +536,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_21_110047) do
     t.datetime "updated_at", null: false
     t.decimal "tax_rate", precision: 5, scale: 2, default: "0.0"
     t.date "approved_on"
+    t.text "payment_proof_data"
     t.index ["entity_id"], name: "index_excercises_on_entity_id"
     t.index ["holding_id"], name: "index_excercises_on_holding_id"
     t.index ["option_pool_id"], name: "index_excercises_on_option_pool_id"
@@ -1459,6 +1461,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_21_110047) do
     t.bigint "form_type_id"
     t.string "owner_type"
     t.bigint "owner_id"
+    t.text "report_data"
     t.index ["entity_id"], name: "index_valuations_on_entity_id"
     t.index ["form_type_id"], name: "index_valuations_on_form_type_id"
     t.index ["owner_type", "owner_id"], name: "index_valuations_on_owner"

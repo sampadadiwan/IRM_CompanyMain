@@ -39,7 +39,7 @@
       Valuation Reports
     </td>
     <td>
-      <%= render "/layouts/attachments" , attachments: @valuation.reports if @valuation.reports.present? %>
+      <%= link_to "Report", @valuation.report.url, class: "btn btn-success", target: "_blank" if @valuation.report.present? %>
     </td>
   </tr>
 

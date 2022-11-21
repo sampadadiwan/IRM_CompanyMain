@@ -1,6 +1,6 @@
 class AdhaarEsignsController < ApplicationController
   before_action :set_adhaar_esign, only: %i[show edit update destroy completed]
-  after_action :verify_authorized, except: %i[index search]
+  after_action :verify_authorized, except: %i[index search digio_webhook]
 
   # GET /adhaar_esigns or /adhaar_esigns.json
   def index
@@ -37,6 +37,7 @@ class AdhaarEsignsController < ApplicationController
 
     respond_to do |format|
       format.json { render json: [], status: :ok }
+      format.html { render inline: "ok" }
     end
   end
 

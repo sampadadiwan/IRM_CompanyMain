@@ -35,9 +35,12 @@
     <%= form.text_field :collected_amount, class: "form-control", data: {action: "input->currencyformat#format"}   %>
   </div>
 
-  <div class="field" class="form-group" data-controller="directuploads" >
-    <%= form.label :payment_proof %>
-    <%= form.file_field :payment_proof, class: "form-control", direct_upload: true, multiple:true %>
+
+  <div class="form-group">
+    
+    <%= render "layouts/single_upload", form: form, field_label: "Upload payment proof", 
+                            for_model: "capital_remittance", field_name: "payment_proof", 
+                            model: capital_remittance %>
     <small class="text-muted"> Upload proof of payment as per the instructions. </small>
   </div>
 

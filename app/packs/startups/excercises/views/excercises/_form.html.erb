@@ -87,9 +87,11 @@
             <div class="card-header"> 3. Taxes & Payment </div>
             <div class="card-body">
 
-              <div class="field" class="form-group" data-controller="directuploads" >
-                <%= form.label :payment_proof %>
-                <%= form.file_field :payment_proof, class: "form-control", direct_upload: true, multiple:true %>
+              <div class="form-group">
+                
+                <%= render "layouts/single_upload", form: form, field_label: "Upload payment proof", 
+                                        for_model: "excercise", field_name: "payment_proof", 
+                                        model: excercise %>
                 <small class="text-muted"> Upload proof of payment as per the instructions. </small>
               </div>
 

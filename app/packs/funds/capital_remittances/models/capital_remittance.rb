@@ -13,7 +13,7 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :form_type, optional: true
   serialize :properties, Hash
 
-  has_many_attached :payment_proof, service: :amazon
+  include FileUploader::Attachment(:payment_proof)
 
   scope :paid, -> { where(status: "Paid") }
   scope :pending, -> { where(status: "Pending") }

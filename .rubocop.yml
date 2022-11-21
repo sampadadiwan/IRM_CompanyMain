@@ -19,6 +19,8 @@ Rails/LexicallyScopedActionFilter:
   Enabled: false
 Style/GuardClause:
   Enabled: false
+Rails/RenderInline:
+  Enabled: false
 
 AllCops:
   # DisabledByDefault: true
