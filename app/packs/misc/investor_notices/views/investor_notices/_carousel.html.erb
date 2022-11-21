@@ -3,8 +3,13 @@
 <div id="carouselExampleControls" class="carousel slide" data-ride="carousel">
 
     <div class="carousel-inner">
-        <% active = "active" %>
-        <% InvestorNotice.notices(investor_entity_id).each do |investor_notice| %>
+        <% 
+            active = "active" 
+            notices = InvestorNotice.notices(investor_entity_id)
+            # If user has come in via a subdoamin, show that notice first
+            notices = notices.order_by(entity_id: @current_entity.id) if @current_entity
+        %>
+        <% notices.each do |investor_notice| %>
             <div class="carousel-item <%= active %>">
                 <%= render "/investor_notices/preview" , investor_notice: investor_notice %>
             </div>
