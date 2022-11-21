@@ -37,6 +37,7 @@ class Investor < ApplicationRecord
 
   has_many :investments, dependent: :destroy
   has_many :aggregate_investments, dependent: :destroy
+  has_many :investor_notice_entries, dependent: :destroy
 
   # Customize form
   belongs_to :form_type, optional: true
@@ -65,6 +66,8 @@ class Investor < ApplicationRecord
   def self.INVESTOR_CATEGORIES(entity = nil)
     Investment.INVESTOR_CATEGORIES(entity) + %w[Prospective Advisor]
   end
+
+  after_create -> { InvestorAddedJob.perform_later(id) }
 
   before_validation :update_name
   def update_name
