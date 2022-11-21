@@ -9,8 +9,8 @@ class SecondarySale < ApplicationRecord
   update_index('secondary_sale') { self }
 
   SALE_TYPES = %w[Regular Tranche].freeze
-  flag :buyer_signature_types, %i[image adhaar]
-  flag :seller_signature_types, %i[image adhaar attach]
+
+  # buyer_signature_types & seller_signature_types can be set to image,adhar,dsc
 
   belongs_to :entity
 

@@ -11,8 +11,8 @@ module OfferEsign
 
   def generate_spa_signatures
     user_ids = []
-    user_ids << user.id if secondary_sale.seller_signature_types.set?(:adhaar)
-    user_ids << interest.user.id if secondary_sale.buyer_signature_types.set?(:adhaar) && interest
+    user_ids << user.id if secondary_sale.seller_signature_types.include?("adhaar")
+    user_ids << interest.user.id if secondary_sale.buyer_signature_types.include?("adhaar") && interest
 
     if user_ids.present?
       doc = Document.where(entity_id:, owner: self, name: spa_file_name).first

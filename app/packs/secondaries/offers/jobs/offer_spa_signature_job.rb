@@ -3,7 +3,7 @@ class OfferSpaSignatureJob < ApplicationJob
 
   def perform(secondary_sale_id, offer_id)
     secondary_sale = SecondarySale.find(secondary_sale_id)
-    if secondary_sale.seller_signature_types.set?(:adhaar) || secondary_sale.buyer_signature_types.set?(:adhaar)
+    if secondary_sale.seller_signature_types.include?("adhaar") || secondary_sale.buyer_signature_types.include?("adhaar")
       Chewy.strategy(:sidekiq) do
         if offer_id
           offer = Offer.find(offer_id)
