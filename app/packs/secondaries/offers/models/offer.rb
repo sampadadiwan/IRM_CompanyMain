@@ -1,7 +1,6 @@
 class Offer < ApplicationRecord
   include WithFolder
   include SaleChildrenScopes
-  include OfferEsign
 
   # Make all models searchable
   update_index('offer') { self }
@@ -233,4 +232,17 @@ class Offer < ApplicationRecord
 
     csv
   end
+
+  def seller_signature_types
+    self[:seller_signature_types].presence || secondary_sale.seller_signature_types
+  end
+
+  def adhaar_esign_link(phone)
+    adhaar_esigns.last&.sign_link(phone)
+  end
+
+  def signature_completed(signature_type, file)
+    OfferEsignProvider.new(self).signature_completed(signature_type, file)
+  end
+
 end

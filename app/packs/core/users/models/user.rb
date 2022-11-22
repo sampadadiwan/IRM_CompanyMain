@@ -80,7 +80,7 @@ class User < ApplicationRecord
       self.curr_role ||= :user
     end
 
-    self.permissions ||= User.permissions.keys # if has_cached_role?(:company_admin)
+    self.permissions = User.permissions.keys unless self.permissions.present?
 
     self.active = true
   end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_21_125046) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_22_023819) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -834,6 +834,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_21_125046) do
     t.string "ifsc_code", limit: 20
     t.bigint "final_agreement_user_id"
     t.string "custom_matching_vals"
+    t.string "buyer_signature_types", limit: 20, default: ""
     t.index ["custom_matching_vals"], name: "index_interests_on_custom_matching_vals"
     t.index ["entity_id"], name: "index_interests_on_entity_id"
     t.index ["final_agreement_user_id"], name: "index_interests_on_final_agreement_user_id"
@@ -1149,6 +1150,11 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_21_125046) do
     t.string "city", limit: 20
     t.bigint "final_agreement_user_id"
     t.string "custom_matching_vals"
+    t.boolean "esign_required", default: false
+    t.boolean "esign_completed", default: false
+    t.string "esign_provider", limit: 10
+    t.string "esign_link"
+    t.string "seller_signature_types", limit: 20, default: ""
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
     t.index ["custom_matching_vals"], name: "index_offers_on_custom_matching_vals"
     t.index ["entity_id"], name: "index_offers_on_entity_id"

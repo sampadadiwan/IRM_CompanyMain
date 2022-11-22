@@ -21,9 +21,9 @@
       form_class: "deleteButton" if Pundit.policy(current_user, @offer).approve? %>
 
 
-      <% if @offer.adhaar_esign_required? %>
-        <% unless @offer.adhaar_esign_completed? %>
-          <%= link_to "Click here to Adhaar eSign", "#{@offer.adhaar_esign_link(current_user.phone)}",  target: "_blank",
+      <% if @offer.esign_required %>
+        <% unless @offer.esign_completed %>
+          <%= link_to "Click here to Adhaar eSign", "#{@offer.esign_link}",  target: "_blank",
               class: "btn btn-success"  if policy(@offer).accept_spa?  %>
         <% end %>
       <% else %>
