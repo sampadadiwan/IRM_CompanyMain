@@ -45,7 +45,7 @@ class InvestorAccess < ApplicationRecord
   end
 
   before_save :update_user
-  before_save :send_notification_if_changed, if: :approved
+  after_save :send_notification_if_changed, if: :approved
   after_create :send_notification, if: :approved
 
   def update_user
