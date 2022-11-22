@@ -16,6 +16,7 @@ class UserDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     email: Field::String,
+    permissions: Field::String,
     password: Field::String.with_options(searchable: false),
     password_confirmation: Field::String.with_options(searchable: false),
     phone: Field::String,
@@ -58,6 +59,7 @@ class UserDashboard < Administrate::BaseDashboard
     confirmed_at
     curr_role
     roles
+    permissions
   ].freeze
 
   # FORM_ATTRIBUTES

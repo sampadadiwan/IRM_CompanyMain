@@ -28,7 +28,7 @@ class AdhaarEsign < ApplicationRecord
     base_url + "/adhaar_esigns/#{id}/completed"
   end
 
-  def esign_link(phone)
+  def esign_link(phone = "phone_number")
     "https://ext.digio.in/#/gateway/login/#{esign_doc_id}/#{rand(4**4)}/#{phone}?redirect_url=#{redirect_url}&logo=https://app.caphive.com/img/logo_big.png"
   end
 

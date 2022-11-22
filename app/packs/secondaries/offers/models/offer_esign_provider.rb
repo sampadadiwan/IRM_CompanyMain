@@ -21,7 +21,7 @@ class OfferEsignProvider
         ae = AdhaarEsign.new.init(doc.id, user_ids.join(","), @offer, "Acceptance of SPA")
         ae.sign
         @offer.esign_required = true
-        @offer.esign_link = ae.esign_link(@offer.user.phone)
+        @offer.esign_link = ae.esign_link
         @offer.save
       else
         Rails.logger.debug { "Offer #{@offer.id} already generated SPA AdhaarEsign" }
@@ -43,5 +43,8 @@ class OfferEsignProvider
     end
   end
 
-  def sign_link(phone); end
+  def sign_link(phone)
+    # Substitute the phone number required in the link
+    esign_link["phone_number"] = phone
+  end
 end
