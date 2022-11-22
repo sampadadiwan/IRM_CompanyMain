@@ -15,6 +15,8 @@ class OfferDashboard < Administrate::BaseDashboard
     granter: Field::BelongsTo,
     documents: Field::HasMany,
 
+    seller_signature_types: Field::String,
+
     id: Field::Number,
     quantity: Field::Number,
     percentage: Field::String.with_options(searchable: false),
@@ -77,6 +79,7 @@ class OfferDashboard < Administrate::BaseDashboard
     bank_verified
     demat
     city
+    seller_signature_types
 
     notes
     created_at
@@ -113,6 +116,8 @@ class OfferDashboard < Administrate::BaseDashboard
     bank_verified
     demat
     city
+
+    seller_signature_types
 
     notes
     approved
