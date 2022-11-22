@@ -81,8 +81,8 @@ Scenario Outline: Sale Offer SPA
   Then the adhaar esign must be triggered
   Given Im logged in as an employee investor
   And I should see the esign link on the offer page
-  And when I click the esign link
-  Then I should be sent to the digio esign page
+  # And when I click the esign link
+  # Then I should be sent to the digio esign page
 
 
   Examples:

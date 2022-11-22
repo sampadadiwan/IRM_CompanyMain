@@ -130,4 +130,8 @@ class Interest < ApplicationRecord
       [user.email]
     end
   end
+
+  def buyer_signature_types
+    self[:buyer_signature_types].presence || secondary_sale&.buyer_signature_types
+  end
 end

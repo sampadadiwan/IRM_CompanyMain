@@ -21,9 +21,9 @@ class InterestDashboard < Administrate::BaseDashboard
     short_listed: Field::BooleanEmoji,
     escrow_deposited: Field::BooleanEmoji,
     interest_id: Field::Number,
-    
+
     buyer_signature_types: Field::String,
-    
+
     buyer_entity_name: Field::String,
     PAN: Field::String,
     address: Field::String,

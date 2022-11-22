@@ -5,15 +5,15 @@ class OfferSpaSignatureJob < ApplicationJob
     Chewy.strategy(:sidekiq) do
       if offer_id
         # We have an offer id, so generate the adhaar esign link and send to digio
-        perform_offer(offer_id)
+        generate_for_offer(offer_id)
       else
         # For all the offers of this sale generate_spa_signatures in the background
-        perform_sale(secondary_sale_id)
+        generate_for_sale(secondary_sale_id)
       end
     end
   end
 
-  def perform_offer(offer_id)
+  def generate_for_offer(offer_id)
     offer = Offer.find(offer_id)
     if offer.seller_signature_types.include?("adhaar") || offer.interest&.buyer_signature_types&.include?("adhaar")
       offer_esign_provider = OfferEsignProvider.new(offer)
@@ -23,7 +23,7 @@ class OfferSpaSignatureJob < ApplicationJob
     end
   end
 
-  def perform_sale(secondary_sale_id)
+  def generate_for_sale(secondary_sale_id)
     # For all the offers of this sale generate_spa_signatures in the background
     secondary_sale = SecondarySale.find(secondary_sale_id)
     if secondary_sale.seller_signature_types.include?("adhaar") || secondary_sale.buyer_signature_types.include?("adhaar")
