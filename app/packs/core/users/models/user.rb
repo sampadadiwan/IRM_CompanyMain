@@ -80,7 +80,7 @@ class User < ApplicationRecord
       self.curr_role ||= :user
     end
 
-    self.permissions = User.permissions.keys unless self.permissions.present?
+    self.permissions = User.permissions.keys if permissions.blank?
 
     self.active = true
   end

@@ -244,5 +244,4 @@ class Offer < ApplicationRecord
   def signature_completed(signature_type, file)
     OfferEsignProvider.new(self).signature_completed(signature_type, file)
   end
-
 end
