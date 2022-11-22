@@ -10,6 +10,7 @@ class User < ApplicationRecord
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy
   has_many :excercises, dependent: :destroy
+  has_many :investor_kycs, dependent: :destroy
 
   include FileUploader::Attachment(:signature)
 

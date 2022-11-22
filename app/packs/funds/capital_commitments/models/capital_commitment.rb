@@ -46,4 +46,8 @@ class CapitalCommitment < ApplicationRecord
     parent_folder = fund.document_folder.folders.where(name: "Commitments").first
     setup_folder(parent_folder, investor.investor_name, [])
   end
+
+  def investor_signature_types
+    self[:investor_signature_types].presence || fund.investor_signature_types
+  end
 end

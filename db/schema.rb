@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_22_023819) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_22_113329) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -257,6 +257,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_22_023819) do
     t.bigint "form_type_id"
     t.decimal "percentage", precision: 5, scale: 2, default: "0.0"
     t.bigint "ppm_number", default: 0
+    t.string "investor_signature_types", limit: 20
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
     t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"
@@ -659,6 +660,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_22_023819) do
     t.bigint "funding_round_id", null: false
     t.boolean "show_valuations", default: false
     t.boolean "show_fund_ratios", default: false
+    t.string "fund_signature_types", limit: 20
+    t.string "investor_signature_types", limit: 20
     t.index ["entity_id"], name: "index_funds_on_entity_id"
     t.index ["form_type_id"], name: "index_funds_on_form_type_id"
     t.index ["funding_round_id"], name: "index_funds_on_funding_round_id"
