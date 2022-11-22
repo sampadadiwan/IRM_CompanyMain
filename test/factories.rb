@@ -374,7 +374,7 @@ FactoryBot.define do
     last_name  { Faker::Name.last_name }
     email { entity ? "#{first_name.downcase}@#{entity.name.parameterize}.com" : Faker::Internet.email }
     password { "password" }
-    phone { Faker::PhoneNumber.cell_phone }
+    phone { rand(10 ** 10) }
     confirmed_at { Time.zone.now }
     accept_terms {true}
     permissions {User.permissions.keys}

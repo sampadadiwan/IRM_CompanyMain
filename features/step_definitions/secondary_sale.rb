@@ -562,3 +562,31 @@ Then('the SPAs must be generated for each verified offer') do
     offer.spa_data.should_not == nil
   end
 end
+
+
+Then('when the sellers are notified on the SPA') do
+  @sale.notify_spa_sellers
+end
+
+Then('the adhaar esign must be triggered') do
+  @sale.offers.verified.each do |o|
+    o.adhaar_esigns.last.should_not == nil
+    o.esign_required.should == true
+    o.esign_completed.should == false
+    o.esign_link.should_not == nil
+  end
+end
+
+Then('I should see the esign link on the offer page') do
+  visit(offer_path(@user.offers.first))
+end
+
+
+Given('when I click the esign link') do
+  click_on "Click here to Adhaar eSign"
+end
+
+Then('I should be sent to the digio esign page') do
+  sleep 10
+  expect(page).to have_content("Authenticate #{@user.phone}")
+end

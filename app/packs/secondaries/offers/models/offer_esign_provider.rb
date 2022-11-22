@@ -42,9 +42,4 @@ class OfferEsignProvider
       @offer.save
     end
   end
-
-  def sign_link(phone)
-    # Substitute the phone number required in the link
-    esign_link["phone_number"] = phone
-  end
 end

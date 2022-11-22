@@ -169,7 +169,7 @@
                   
                     <br>
                     
-                    <% if offer.secondary_sale.seller_signature_types.set?(:image) %>
+                    <% if offer.secondary_sale.seller_signature_types.include?("image") %>
                     <div class="form-group">
 
                         <%= render "layouts/single_upload", form: form, 

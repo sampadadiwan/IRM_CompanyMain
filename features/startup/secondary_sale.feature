@@ -65,7 +65,7 @@ Scenario Outline: Sale Allocation
     
 
 Scenario Outline: Sale Offer SPA
-  Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Startup"
+  Given there is a user "first_name=Emp1" for an entity "entity_type=Startup"
   Given the user has role "company_admin"
   Given there is a sale "<sale>"
   And the sale has a SPA template
@@ -77,12 +77,18 @@ Scenario Outline: Sale Offer SPA
   Then when the allocation is done
   Then when the offers are verified
   Then the SPAs must be generated for each verified offer
+  And when the sellers are notified on the SPA
+  Then the adhaar esign must be triggered
+  Given Im logged in as an employee investor
+  And I should see the esign link on the offer page
+  And when I click the esign link
+  Then I should be sent to the digio esign page
 
 
   Examples:
   	|allocation_percentage |interest_count |interest                       |offer	                      |entity                     |sale                                     |
-  	| .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
-    | 1.0                  |2              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
+  	| .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;seller_signature_types=adhaar;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
+    | 1.0                  |2              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;seller_signature_types=adhaar;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
 
 
 Scenario Outline: Sale To Cap Table

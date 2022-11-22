@@ -234,11 +234,13 @@ class Offer < ApplicationRecord
   end
 
   def seller_signature_types
-    self[:seller_signature_types].presence || secondary_sale.seller_signature_types
+    self[:seller_signature_types].presence || secondary_sale&.seller_signature_types
   end
 
-  def adhaar_esign_link(phone)
-    adhaar_esigns.last&.sign_link(phone)
+  def sign_link(phone)
+    # Substitute the phone number required in the link
+    esign_link["phone_number"] = phone
+    esign_link
   end
 
   def signature_completed(signature_type, file)
