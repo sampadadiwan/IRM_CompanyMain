@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=http://dev.altconnects.com/import_uploads/new?import_upload%5Bentity_id%5D=1&import_upload%5Bimport_type%5D=Investor&import_upload%5Bowner_id%5D=1&import_upload%5Bowner_type%5D=Entity&sample_upload=INVESTORS_SAMPLE
+HostUrl=http://dev.altconnects.com/sample_uploads/investors.xlsx

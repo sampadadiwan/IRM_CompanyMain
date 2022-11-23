@@ -494,7 +494,7 @@ namespace :irm do
       3.times do
         fund = FactoryBot.create(:fund, entity: e)
         e.investors.sample(5).each do |inv|
-          AccessRight.create(owner: fund, access_type: "Fund", entity: e, investor: inv)
+          AccessRight.create(owner: fund, access_type: "Fund", entity: e, investor: inv, metadata: "Investor")
           commitment = FactoryBot.create(:capital_commitment, investor: inv, fund: )
           
         end

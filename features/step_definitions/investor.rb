@@ -127,7 +127,7 @@ Given('Given I upload an investor access file for employees') do
   visit(investor_path(Investor.first))
   click_on("Employee Investors")
   click_on("Upload Employee Investors")
-  fill_in('import_upload_name', with: "Test Upload")
+  fill_in('import_upload_name', with: "Test Investor Access Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
   sleep(1)
   click_on("Save")
@@ -137,4 +137,65 @@ end
 
 Then('There should be {string} investor access created') do |count|
   InvestorAccess.count.should == count.to_i
+end
+
+
+Given('Given I upload an investors file for the startup') do
+  visit(investors_path)
+  click_on("Upload")
+  fill_in('import_upload_name', with: "Test Investor Upload")
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/investors.xlsx'), make_visible: true)
+  sleep(1)
+  click_on("Save")
+  sleep(1)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+end
+
+Then('There should be {string} investors created') do |count|
+  @entity.investors.not_holding.not_trust.count.should == count.to_i
+end
+
+Then('the investors must have the data in the sheet') do
+  file = File.open('./public/sample_uploads/investors.xlsx', "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = data.row(1) # get header row
+
+  investors = @entity.investors.not_holding.not_trust.order(id: :asc).to_a
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    inv = investors[idx-1]
+    puts "Checking import of #{inv.investor_name}"
+    inv.investor_name.should == user_data["Name"].strip
+    inv.tag_list.join(", ").should == user_data["Tags"]
+    inv.category.should == user_data["Category"]
+    inv.city.should == user_data["City"]
+    
+  end
+
+end
+
+
+Given('Given I upload an investors file for the fund') do
+  visit(investors_path)
+  click_on("Upload")
+  fill_in('import_upload_name', with: "Test Investor Upload")
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_investors.xlsx'), make_visible: true)
+  sleep(1)
+  click_on("Save")
+  sleep(1)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+end
+
+Then('the investors must be added to the fund') do
+  @fund.reload
+  # puts @fund.investors.to_json
+  investors = @entity.investors.not_holding.not_trust.to_set
+  fund_investors = @fund.investors.to_set
+  investors.length.should == fund_investors.length
+  
+  investors.should == fund_investors
+
 end

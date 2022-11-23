@@ -38,4 +38,20 @@ Scenario Outline: Import investor access
   And Given I upload an investor access file for employees
   Then I should see the "Import upload was successfully created"
   Then There should be "2" investor access created
-  
+
+Scenario Outline: Import investors
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Startup"
+  And Given I upload an investors file for the startup
+  Then I should see the "Import upload was successfully created"
+  Then There should be "6" investors created
+  And the investors must have the data in the sheet
+
+Scenario Outline: Import Fund investors
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given there is a fund "name=Tech Fund" for the entity
+  And Given I upload an investors file for the fund
+  Then I should see the "Import upload was successfully created"
+  Then There should be "6" investors created
+  And the investors must have the data in the sheet
+  And the investors must be added to the fund
+
