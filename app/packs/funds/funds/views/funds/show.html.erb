@@ -104,6 +104,14 @@
       <%= button_to "Delete" , @fund, method: :delete, class: "btn btn-danger" , form_class: "deleteButton" , data:
             {action: "click->confirm#popup" , turbo:false} if policy(@fund).destroy? %>
 
+      <%= link_to "Import Investors", 
+      new_import_upload_path("import_upload[owner_id]": @fund.id, 
+          "import_upload[owner_type]": "Fund", 
+          "import_upload[import_type]": "Investor", 
+          "import_upload[entity_id]": current_user.entity_id,
+          "sample_upload": "FUND_INVESTORS_SAMPLE"), 
+          { class: "btn btn-primary"}  %> 
+
     <% end %>
   </div>
 

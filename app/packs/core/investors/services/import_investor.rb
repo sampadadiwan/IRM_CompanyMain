@@ -13,31 +13,43 @@ class ImportInvestor
 
   def save_investor(user_data, import_upload, custom_field_headers)
     # puts "processing #{user_data}"
-    ia = Investor.where(investor_name: user_data['Name'], entity_id: import_upload.entity_id).first
-    if ia.present?
+    investor = Investor.where(investor_name: user_data['Name'], entity_id: import_upload.entity_id).first
+    if investor.present?
       Rails.logger.debug { "Investor with name #{user_data['Name']} already exists for entity #{import_upload.entity_id}" }
 
     else
 
       Rails.logger.debug user_data
-      ia = Investor.new(investor_name: user_data["Name"], tag_list: user_data["Tags"],
-                        category: user_data["Category"], city: user_data["City"],
-                        entity_id: import_upload.entity_id)
+      investor = Investor.new(investor_name: user_data["Name"], tag_list: user_data["Tags"],
+                              category: user_data["Category"], city: user_data["City"],
+                              entity_id: import_upload.entity_id)
 
-      setup_custom_fields(user_data, ia, custom_field_headers)
+      setup_custom_fields(user_data, investor, custom_field_headers)
 
-      Rails.logger.debug { "Saving Investor with name '#{ia.investor_name}'" }
-      ia.save
+      Rails.logger.debug { "Saving Investor with name '#{investor.investor_name}'" }
+      investor.save
 
     end
 
+    add_to_fund(user_data, import_upload, investor)
+  end
+
+  def add_to_fund(user_data, import_upload, investor)
+    Rails.logger.debug { "######## add_to_fund #{user_data['Fund']} #{import_upload.owner}" }
     # If fund name is present, add this investor to the fund
-    if user_data["Fund"].present?
-      # "puts ######## Fund present #{user_data["Fund"]}"
-      fund = Fund.where(entity_id: import_upload.entity_id, name: user_data["Fund"].strip).first
+    if user_data["Fund"].present? || import_upload.owner_type == "Fund"
+      if user_data["Fund"].present?
+        Rails.logger.debug { "######## Fund present #{user_data['Fund']}" }
+        fund = Fund.where(entity_id: import_upload.entity_id, name: user_data["Fund"].strip).first
+      end
+      if fund.nil? && import_upload.owner_type == "Fund"
+        fund = import_upload.owner
+        Rails.logger.debug { "######## Fund present #{fund.name}" }
+      end
+
       if fund
         # Give the investor access rights as an investor to the fund
-        AccessRight.create!(entity_id: fund.entity_id, owner: fund, investor: ia, access_type: "Fund", metadata: "Investor")
+        AccessRight.create(entity_id: fund.entity_id, owner: fund, investor:, access_type: "Fund", metadata: "Investor")
       else
         Rails.logger.debug { "Specified fund #{user_data['Fund']} not found in import_upload #{import_upload.id}" }
       end

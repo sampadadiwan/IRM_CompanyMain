@@ -1,6 +1,7 @@
 class ImportUpload < ApplicationRecord
   SAMPLES = { "IA_SAMPLE" => "/sample_uploads/investor_access.xlsx",
               "INVESTORS_SAMPLE" => "/sample_uploads/investors.xlsx",
+              "FUND_INVESTORS_SAMPLE" => "/sample_uploads/fund_investors.xlsx",
               "HOLDINGS_SAMPLE" => "/sample_uploads/holdings.xlsx",
               "OFFERS_SAMPLE" => "/sample_uploads/offers.xlsx" }.freeze
 
