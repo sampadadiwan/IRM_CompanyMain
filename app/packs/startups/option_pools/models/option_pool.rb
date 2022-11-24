@@ -1,35 +1,3 @@
-# == Schema Information
-#
-# Table name: option_pools
-#
-#  id                                :integer          not null, primary key
-#  name                              :string(255)
-#  start_date                        :date
-#  number_of_options                 :integer          default("0")
-#  excercise_price_cents             :decimal(20, 2)   default("0.00")
-#  excercise_period_months           :integer          default("0")
-#  entity_id                         :integer          not null
-#  funding_round_id                  :integer
-#  created_at                        :datetime         not null
-#  updated_at                        :datetime         not null
-#  allocated_quantity                :integer          default("0")
-#  excercised_quantity               :integer          default("0")
-#  vested_quantity                   :integer          default("0")
-#  lapsed_quantity                   :integer          default("0")
-#  approved                          :boolean          default("0")
-#  cancelled_quantity                :integer          default("0")
-#  gross_avail_to_excercise_quantity :integer          default("0")
-#  unexcercised_cancelled_quantity   :integer          default("0")
-#  net_avail_to_excercise_quantity   :integer          default("0")
-#  gross_unvested_quantity           :integer          default("0")
-#  unvested_cancelled_quantity       :integer          default("0")
-#  net_unvested_quantity             :integer          default("0")
-#  manual_vesting                    :boolean          default("0")
-#  properties                        :text(65535)
-#  form_type_id                      :integer
-#  certificate_signature_data        :text(65535)
-#
-
 class OptionPool < ApplicationRecord
   include WithFolder
   audited
@@ -45,10 +13,12 @@ class OptionPool < ApplicationRecord
   has_many :folders, as: :owner, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
+
   include FileUploader::Attachment(:certificate_signature)
+  include FileUploader::Attachment(:grant_letter)
 
   has_rich_text :details
-  has_rich_text :grant_letter
+  # has_rich_text :grant_letter
 
   # Customize form
   belongs_to :form_type, optional: true

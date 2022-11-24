@@ -91,6 +91,14 @@
       </tr>
       
       <% if @option_pool.entity_id == current_user.entity_id %>
+        <tr class="collapse multi-collapse">
+          <td>
+            Grant Letter Template
+          </td>
+          <td>
+            <%= link_to "Download Grant Letter Template", @option_pool.grant_letter.url, class: "btn btn-success", target: "_blank" if @option_pool.grant_letter.present? %>
+          </td>
+        </tr>
 
         <tr class="collapse multi-collapse">
           <td>

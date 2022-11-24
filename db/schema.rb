@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_22_113329) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_24_073723) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -592,6 +592,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_22_113329) do
     t.string "owner_type"
     t.bigint "owner_id"
     t.datetime "deleted_at"
+    t.string "ancestry"
+    t.index ["ancestry"], name: "index_folders_on_ancestry"
     t.index ["deleted_at"], name: "index_folders_on_deleted_at"
     t.index ["entity_id"], name: "index_folders_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_folders_on_owner"
@@ -743,6 +745,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_22_113329) do
     t.string "option_type", limit: 12
     t.boolean "option_dilutes", default: true
     t.integer "preferred_conversion", default: 1
+    t.text "grant_letter_data"
     t.index ["created_from_excercise_id"], name: "index_holdings_on_created_from_excercise_id"
     t.index ["entity_id"], name: "index_holdings_on_entity_id"
     t.index ["form_type_id"], name: "index_holdings_on_form_type_id"
@@ -1217,6 +1220,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_22_113329) do
     t.text "properties"
     t.bigint "form_type_id"
     t.text "certificate_signature_data"
+    t.text "grant_letter_data"
     t.index ["entity_id"], name: "index_option_pools_on_entity_id"
     t.index ["form_type_id"], name: "index_option_pools_on_form_type_id"
     t.index ["funding_round_id"], name: "index_option_pools_on_funding_round_id"

@@ -82,10 +82,14 @@
                           model: option_pool %>
 
 
-              <div class="form-group">
-                <%= form.label :grant_letter %>
-                <%= form.rich_text_area :grant_letter, class: "form-control large_rich_text_area", required: true  %>
+              <div class="field" class="form-group">
+                <%= render "layouts/single_upload", form: form, field_label: "Upload Grant Letter Template", 
+                                          for_model: "option_pool", field_name: "grant_letter", 
+                                          model: option_pool %>
+              
+                <small class="text-muted"> Upload SPA master for the sale. </small>
               </div>
+
               <button class="btn btn-primary nextBtn btn-lg pull-right" type="button">Next</button>
             </div>
         </div>

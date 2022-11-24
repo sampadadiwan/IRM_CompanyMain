@@ -48,7 +48,7 @@
     <% end %>
 
     <% if policy(@holding).esop_grant_letter? %>
-      <%= link_to "Download Grant Letter" , esop_grant_letter_holding_path(@holding, format: :pdf), {class: "btn btn-success", target: "_blank" } %> 
+      <%= link_to "Download Grant Letter" , @holding.grant_letter.url, {class: "btn btn-success", target: "_blank" } if @holding.grant_letter.url.present? %> 
     <% end %>
 
     <%= button_to "Acknowledge" , emp_ack_holding_path(@holding), method: :patch, class: "btn btn-success" , form_class: "deleteButton", data: {turbo:false} if policy(@holding).emp_ack? && !@holding.emp_ack  %>

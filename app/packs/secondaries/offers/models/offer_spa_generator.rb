@@ -1,8 +1,5 @@
-# require 'rmagick'
-
 class OfferSpaGenerator
   include EmailCurrencyHelper
-  # include Magick
 
   attr_accessor :working_dir
 

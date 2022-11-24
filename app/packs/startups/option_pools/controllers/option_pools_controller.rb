@@ -105,7 +105,7 @@ class OptionPoolsController < ApplicationController
   def option_pool_params
     params.require(:option_pool).permit(:name, :start_date, :number_of_options, :excercise_price,
                                         :excercise_period_months, :entity_id, :funding_round_id, :certificate_signature, :manual_vesting, :details, :form_type_id,
-                                        :grant_letter, properties: {},
+                                        :grant_letter, grant_letter: [], properties: {},
                                                        vesting_schedules_attributes: VestingSchedule::NESTED_ATTRIBUTES,
                                                        documents_attributes: Document::NESTED_ATTRIBUTES)
   end

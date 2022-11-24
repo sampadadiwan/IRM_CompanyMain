@@ -27,6 +27,8 @@ class Holding < ApplicationRecord
   has_one :aggregated_investment, through: :investment
   has_rich_text :note
 
+  include FileUploader::Attachment(:grant_letter)
+
   # Customize form
   belongs_to :form_type, optional: true
   serialize :properties, Hash
