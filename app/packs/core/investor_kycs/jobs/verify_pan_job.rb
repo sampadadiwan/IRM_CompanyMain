@@ -7,17 +7,16 @@ class VerifyPanJob < ApplicationJob
 
   def verify
     if @model.pan_card
-      response = KycVerify.new.verify_pan_card(@model.pan_card.url(expires_in: 60 * 3))
+      response = KycVerify.new.verify_pan_card(@model.pan_card)
       init_offer(response)
 
-      if response["status"] == "completed"
-        @model.pan_verified = true
-        @model.pan_verification_response = response["result"]
+      if response[:status] == "success" && response[:verified]
+        @model.pan_verified = response[:verified]
+        @model.pan_verification_response = response
         check_details(response)
-
       else
         @model.pan_verified = false
-        @model.pan_verification_status = response["message"]
+        @model.pan_verification_status = response[:status]
       end
     else
       @model.pan_verification_status = "No PAN card uploaded"
@@ -27,28 +26,19 @@ class VerifyPanJob < ApplicationJob
   def init_offer(response)
     logger.debug response
     @model.pan_verification_response = nil
-    @model.pan_verification_status = nil
+    @model.pan_verification_status = ""
     @model.pan_verified = false
   end
 
   def check_details(response)
-    name_on_card = @model.pan_verification_response["extraction_output"]["name_on_card"]
-    pan_type = @model.pan_verification_response["extraction_output"]["pan_type"]
-    id_number = @model.pan_verification_response["extraction_output"]["id_number"]
-
-    @model.pan_verification_status = response["message"].presence || ""
+    id_number = response[:id_no].strip
 
     if id_number.strip != @model.PAN.strip
       @model.pan_verification_status += " PAN number does not match"
       @model.pan_verified = false
     end
 
-    if pan_type.strip != "Individual"
-      @model.pan_verification_status += " PAN is not for Individual"
-      @model.pan_verified = false
-    end
-
-    if name_on_card.strip != @model.full_name.to_s
+    if response[:name_matched] != true
       @model.pan_verification_status += " Name does not match"
       @model.pan_verified = false
     end

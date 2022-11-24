@@ -7,7 +7,7 @@ class VerifyBankJob < ApplicationJob
 
   def verify
     if @model.bank_account_number && @model.ifsc_code
-      response = KycVerify.new.verify_bank(@model.bank_account_number, @model.ifsc_code)
+      response = KycVerify.new.verify_bank(@model.full_name, @model.bank_account_number, @model.ifsc_code)
       init_offer(response)
 
       if response["status"] == "completed"

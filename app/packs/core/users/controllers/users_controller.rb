@@ -48,7 +48,7 @@ class UsersController < ApplicationController
     respond_to do |format|
       if @user.update(user_params)
 
-        if user_params[:role_name]
+        if user_params[:role_name] && current_user.has_cached_role?(:company_admin)
           User::UPDATABLE_ROLES.each do |role|
             user_params[:role_name].include?(role) ? @user.add_role(role) : @user.remove_role(role)
           end

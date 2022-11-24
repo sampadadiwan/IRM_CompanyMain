@@ -1,63 +1,73 @@
 class KycVerify
+  include HTTParty
+  debug_output $stdout
+
+  BASE_URL = ENV["DIGIO_BASE_URL"]
+  AUTH_TOKEN = Base64.strict_encode64("#{ENV['DIGIO_CLIENT_ID']}:#{ENV['DIGIO_SECRET']}")
+
   def verify_pan_exists(pan)
     HTTParty.post(
-      'https://eve.idfy.com/v3/tasks/sync/verify_with_source/ind_pan',
+      "#{BASE_URL}/v3/client/kyc/fetch_id_data/PAN",
       headers: {
-        "api-key" => ENV["IDFY_API_KEY"],
-        "account-id" => ENV["IDFY_ACCOUNT_ID"]
+        "authorization" => "Basic #{AUTH_TOKEN}",
+        'Content-Type' => 'application/json'
       },
       body: {
-        task_id: rand(5**5),
-        group_id: "KYC_PAN",
-        data:
-
-            {
-              id_number: pan
-            }
-
-        # avatar: File.open('/full/path/to/avatar.jpg')
-      }
+        id_no: pan
+      }.to_json,
+      debug_output: $stdout
     )
   end
 
-  def verify_pan_card(pan_card_url)
-    HTTParty.post(
-      'https://eve.idfy.com/v3/tasks/sync/extract/ind_pan',
-      headers: {
-        "api-key" => ENV["IDFY_API_KEY"],
-        "account-id" => ENV["IDFY_ACCOUNT_ID"]
-      },
-      body: {
-        task_id: rand(5**5),
-        group_id: "KYC_PAN_EXTRACT",
-        data:
+  def verify_pan_card(file)
+    file.download do |tmp_file|
+      file_path = tmp_file.path
+      resp = HTTParty.post(
+        "#{BASE_URL}/v3/client/kyc/analyze/file/idcard",
+        headers: {
+          "authorization" => "Basic #{AUTH_TOKEN}",
+          'Content-Type' => 'multipart/form-data'
+        },
 
-            {
-              document1: pan_card_url
-            }
-
-      }
-    )
+        body: {
+          unique_request_id: rand(5**5),
+          front_part: File.new(file_path),
+          should_verify: "true"
+        }
+      )
+      generate_response(resp)
+    end
   end
 
-  def verify_bank(account_number, ifsc)
+  def generate_response(resp)
+    if resp.success?
+      {
+        status: "success",
+        fathers_name: resp["fathers_name"],
+        name: resp["name"],
+        dob: resp["dob"],
+        id_no: resp["id_no"],
+        is_pan_dob_valid: resp["pan_verification_response"]["is_pan_dob_valid"],
+        name_matched: resp["pan_verification_response"]["name_matched"],
+        verified: resp["id_card_verification_response"]["verified"]
+      }
+    else
+      { status: "failed", resp: }
+    end
+  end
+
+  def verify_bank(full_name, account_number, ifsc)
     HTTParty.post(
-      'https://eve.idfy.com/v3/tasks/sync/verify_with_source/validate_bank_account',
+      "#{BASE_URL}/client/verify/bank_account",
       headers: {
-        "api-key" => ENV["IDFY_API_KEY"],
-        "account-id" => ENV["IDFY_ACCOUNT_ID"]
+        "authorization" => "Basic #{AUTH_TOKEN}",
+        'Content-Type' => 'application/json'
       },
       body: {
-        task_id: rand(5**5),
-        group_id: "KYC_BANK_CHECK",
-        data:
-
-            {
-              bank_account_no: account_number,
-              bank_ifsc_code: ifsc
-            }
-
-      }
+        beneficiary_account_no: account_number,
+        beneficiary_ifsc: ifsc,
+        beneficiary_name: full_name
+      }.to_json
     )
   end
 end
