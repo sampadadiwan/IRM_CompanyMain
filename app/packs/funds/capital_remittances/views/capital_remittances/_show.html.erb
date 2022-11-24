@@ -24,6 +24,16 @@
         <%= link_to capital_remittance.capital_call.name, capital_call_url(capital_remittance.capital_call, tab: "remittances-tab") %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Due Date
+      </td>
+      <td>
+        <%= l capital_remittance.capital_call.due_date %>
+      </td>
+    </tr>
+
     <tr>
       <td>
         Investor
