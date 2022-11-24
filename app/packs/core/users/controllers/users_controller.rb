@@ -47,6 +47,12 @@ class UsersController < ApplicationController
     authorize @user
     respond_to do |format|
       if @user.update(user_params)
+
+        if user_params[:role_name]
+          User::UPDATABLE_ROLES.each do |role|
+            user_params[:role_name].include?(role) ? @user.add_role(role) : @user.remove_role(role)
+          end
+        end
         format.html { redirect_to user_url(@user), notice: "User was successfully updated." }
         format.json { render :show, status: :ok, location: @user }
       else
@@ -105,6 +111,6 @@ class UsersController < ApplicationController
   # Only allow a list of trusted parameters through.
   def user_params
     params.require(:user).permit(:first_name, :last_name, :phone, :whatsapp_enabled, :signature,
-                                 :dept, :sale_notification, permissions: [])
+                                 :dept, :sale_notification, role_name: [], permissions: [])
   end
 end

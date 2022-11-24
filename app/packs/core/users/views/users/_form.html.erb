@@ -65,13 +65,23 @@
   <% end %>
 
   <% if current_user.has_cached_role?(:company_admin) %>
+    
+    <% if user.id.present? %>
+      <%= form.label :roles %>
+      <%= form.select :roles, ["company_admin", "approver", "signatory"], {selected: user.roles.collect(&:name), include_hidden: false}, class: "form-control select2", multiple: true, name: "user[role_name][]" %>
+    <% end %>
+    
+    <div class="associated_entity">
     <% User.permissions.pairs.each do |key, val| %>
+
       <div class="form-group">
         <%= form.label :permissions, key %>
         <%= form.check_box :permissions, {name: "user[permissions][]",  
             val: val, id: "permissions_#{val}", class: "form-control form-checkbox"}, val, nil   %>
       </div>
     <% end %>
+    </div>
+
   <% end %>
 
   <div class="form-group">

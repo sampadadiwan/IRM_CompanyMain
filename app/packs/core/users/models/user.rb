@@ -2,6 +2,10 @@ class User < ApplicationRecord
   include PublicActivity::Model
   include UserEnabled
 
+  attr_accessor :role_name
+
+  UPDATABLE_ROLES = %w[company_admin approver signatory].freeze
+
   tracked except: :update, owner: proc { |controller, _model| controller.current_user if controller && controller.current_user },
           entity_id: proc { |controller, _model| controller.current_user.entity_id if controller && controller.current_user }
 
@@ -18,6 +22,7 @@ class User < ApplicationRecord
   update_index('user') { self }
 
   rolify
+  accepts_nested_attributes_for :roles, allow_destroy: true
 
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
