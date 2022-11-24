@@ -1,6 +1,6 @@
 <div class="esop_grant_letter">
 
-    <%= image_tag image_url(rails_blob_path(@holding.entity.logo)), 
+    <%= image_tag image_url(@holding.entity.logo.url(expires_in: 60*60*24*7)), 
         style: "float:right; margin:0px; padding:0px; max-width:200px; max-height:200px;" if @holding.entity.logo.present? %>
     <p class="line">
         <%= l @holding.grant_date %>
