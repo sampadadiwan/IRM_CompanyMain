@@ -39,12 +39,11 @@ class ImportInvestor
     # If fund name is present, add this investor to the fund
     if user_data["Fund"].present? || import_upload.owner_type == "Fund"
       if user_data["Fund"].present?
-        Rails.logger.debug { "######## Fund present #{user_data['Fund']}" }
+        Rails.logger.debug { "######## Fund present in import row #{user_data['Fund']}" }
         fund = Fund.where(entity_id: import_upload.entity_id, name: user_data["Fund"].strip).first
-      end
-      if fund.nil? && import_upload.owner_type == "Fund"
+      elsif import_upload.owner_type == "Fund"
         fund = import_upload.owner
-        Rails.logger.debug { "######## Fund present #{fund.name}" }
+        Rails.logger.debug { "######## Fund present in import upload record #{fund.name}" }
       end
 
       if fund
