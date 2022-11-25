@@ -167,7 +167,6 @@ Rails.application.routes.draw do
     patch 'approve', on: :member
     patch 'emp_ack', on: :member
     post 'approve_all_holdings', on: :collection
-    get 'esop_grant_letter', on: :member
   end
 
   resources :folders

@@ -18,7 +18,6 @@ class OptionPool < ApplicationRecord
   include FileUploader::Attachment(:grant_letter)
 
   has_rich_text :details
-  # has_rich_text :grant_letter
 
   # Customize form
   belongs_to :form_type, optional: true

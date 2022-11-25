@@ -4,7 +4,7 @@ form_type, custom_field_names, custom_headers = get_form_type("CapitalCommitment
 
 wb.add_worksheet(name: "CapitalCommitment") do |sheet|
   # Create the header row
-  sheet.add_row(%w[Investor Fund Committed Collected] + custom_headers)
+  sheet.add_row(["Investor", "Fund", "Committed Amount", "Collected"] + custom_headers)
 
   # Create entries for each item
   @capital_commitments.each do |cc|

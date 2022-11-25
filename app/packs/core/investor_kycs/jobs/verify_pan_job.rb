@@ -38,7 +38,7 @@ class VerifyPanJob < ApplicationJob
       @model.pan_verified = false
     end
 
-    if response[:name_matched] != true
+    if response[:name_matched] != true || response[:name]&.downcase != @model.full_name&.downcase
       @model.pan_verification_status += " Name does not match"
       @model.pan_verified = false
     end

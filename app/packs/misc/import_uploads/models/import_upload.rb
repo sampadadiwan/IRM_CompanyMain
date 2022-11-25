@@ -3,7 +3,8 @@ class ImportUpload < ApplicationRecord
               "INVESTORS_SAMPLE" => "/sample_uploads/investors.xlsx",
               "FUND_INVESTORS_SAMPLE" => "/sample_uploads/fund_investors.xlsx",
               "HOLDINGS_SAMPLE" => "/sample_uploads/holdings.xlsx",
-              "OFFERS_SAMPLE" => "/sample_uploads/offers.xlsx" }.freeze
+              "OFFERS_SAMPLE" => "/sample_uploads/offers.xlsx",
+              "CAPITAL_COMMITMENT_SAMPLE" => "/sample_uploads/capital_commitments.xlsx" }.freeze
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true

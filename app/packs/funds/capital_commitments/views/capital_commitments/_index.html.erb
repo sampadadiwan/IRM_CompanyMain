@@ -5,6 +5,15 @@
         <%= link_to "New Capital Commitment", new_capital_commitment_path("capital_commitment[fund_id]": params[:fund_id]),  {class: "btn btn-primary" } if params[:fund_id] %>
 
         <%= link_to "Download", capital_commitments_path(fund_id: params[:fund_id], format: "xlsx"),  {class: "btn btn-primary" } if params[:fund_id] %>
+
+        <%= link_to "Upload", 
+            new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
+            "import_upload[owner_type]": "Entity", 
+            "import_upload[import_type]": "CapitalCommittment", 
+            "import_upload[entity_id]": current_user.entity_id,
+            "sample_upload": "CAPITAL_COMMITMENT_SAMPLE"), 
+            { class: "btn btn-primary"}  %> 
+    
     </span>
 </div>
 

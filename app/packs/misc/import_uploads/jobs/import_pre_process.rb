@@ -15,6 +15,8 @@ class ImportPreProcess
 
     import_upload.status = nil
     import_upload.error_text = nil
+    import_upload.failed_row_count = 0
+    import_upload.processed_row_count = 0
     import_upload.total_rows_count = data.last_row - 1
     import_upload.save
 
