@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_26_073401) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_26_134545) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -395,6 +395,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_26_073401) do
     t.string "company_advisor", limit: 100
     t.string "investor_advisor", limit: 100
     t.string "investor_name"
+    t.string "tier", limit: 10
     t.index ["deal_id"], name: "index_deal_investors_on_deal_id"
     t.index ["deleted_at"], name: "index_deal_investors_on_deleted_at"
     t.index ["entity_id"], name: "index_deal_investors_on_entity_id"

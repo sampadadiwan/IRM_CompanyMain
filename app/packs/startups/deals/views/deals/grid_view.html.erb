@@ -1,5 +1,7 @@
 <%= render "/layouts/alerts" %>
 
+<% cache([@deal, current_user.entity, "GridView"]) do %>
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4" data-controller="nudge">
     <h1 class="h3 mb-0 text-gray-800">Deal <%= @deal.name %> : Grid View</h1>
     <span>
@@ -38,8 +40,8 @@
     </span>
 </div>
 
-<div id="deal_grid_div" class="table-responsive dropright">
-    <table id="deal_grid_view" class="table table-bordered dataTable" >
+<div id="deal_grid_div" class="table-responsive dropright" data-controller="datatable">
+    <table id="deal_grid_view" class="table table-bordered dataTable jqDataTable" >
         <thead>
             <tr>
                 <th class="sticky-col first-col">Investor</th>
@@ -54,6 +56,9 @@
                 <th>
                     Secondary
                     (<%= @deal.currency %>)
+                </th>
+                <th>
+                    Tier
                 </th>
                 <% DealActivity.templates(@deal).each do |deal_activity| %>
                     <th> <%= deal_activity.title %> </th>
@@ -74,4 +79,7 @@
     </table>
 </div>
 
+<% end %>
+
 <%= render "/deals/deal_details", deal: @deal, show_investors: "No" %>
+

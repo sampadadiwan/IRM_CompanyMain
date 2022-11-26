@@ -26,6 +26,9 @@
     <td>
         <%= money_to_currency deal_investor.secondary_investment, params %> 
     </td>
+    <td>
+        <%= deal_investor.tier %>
+    </td>
     <% if deal_investor.deal_activities.present? %>
         <% deal_investor.deal_activities.each do |activity| %>
             <td class="deal_activity_cell">

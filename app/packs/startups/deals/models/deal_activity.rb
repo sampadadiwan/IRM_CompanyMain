@@ -6,7 +6,7 @@ class DealActivity < ApplicationRecord
 
   default_scope { order(sequence: :asc) }
 
-  belongs_to :deal
+  belongs_to :deal, touch: true
   belongs_to :deal_investor, optional: true
   belongs_to :entity
   has_many :documents, as: :owner, dependent: :destroy
