@@ -142,6 +142,7 @@ end
 
 Given('Given I upload an investors file for the startup') do
   visit(investors_path)
+  click_on("Actions")
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Investor Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investors.xlsx'), make_visible: true)
@@ -180,6 +181,7 @@ end
 
 Given('Given I upload an investors file for the fund') do
   visit(investors_path)
+  click_on("Actions")
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Investor Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_investors.xlsx'), make_visible: true)
