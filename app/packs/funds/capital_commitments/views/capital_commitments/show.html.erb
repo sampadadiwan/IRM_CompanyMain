@@ -2,25 +2,6 @@
 
   <table class="table table-bordered dataTable">
 
-    <tr>
-      <td>
-        PPM Number
-      </td>
-      <td>
-        <%= @capital_commitment.ppm_number %>
-      </td>
-    </tr>
-
-    <% if @capital_commitment.folio_id.present? %>
-    <tr>
-      <td>
-        Folio Id
-      </td>
-      <td>
-        <%= @capital_commitment.folio_id %>
-      </td>
-    </tr>
-    <% end %>
 
     <tr>
       <td>
@@ -38,6 +19,16 @@
         <%= link_to @capital_commitment.investor.investor_name, @capital_commitment.investor %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Investor Signatory
+      </td>
+      <td>
+        <%= @capital_commitment.investor_signatory.full_name if @capital_commitment.investor_signatory %>
+      </td>
+    </tr>
+
     <tr>
       <td>
         Fund
@@ -62,6 +53,28 @@
         <%= money_to_currency @capital_commitment.collected_amount, params %>
       </td>
     </tr>
+        <tr>
+      <td>
+        PPM Number
+      </td>
+      <td>
+        <%= @capital_commitment.ppm_number %>
+      </td>
+    </tr>
+
+    <% if @capital_commitment.folio_id.present? %>
+    <tr>
+      <td>
+        Folio Id
+      </td>
+      <td>
+        <%= @capital_commitment.folio_id %>
+      </td>
+    </tr>
+    <% end %>
+
+    <%= display_custom_fields(@capital_commitment) if current_user %>
+
     <tr>
       <td>
         Notes
@@ -72,7 +85,6 @@
     </tr>
 
 
-    <%= display_custom_fields(@capital_commitment) if current_user %>
 
   </table>
 

@@ -13,7 +13,7 @@ class CapitalCommitment < ApplicationRecord
   belongs_to :fund, touch: true
   has_many :capital_remittances, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
-
+  belongs_to :investor_signatory, class_name: "User", optional: true
   belongs_to :form_type, optional: true
   serialize :properties, Hash
 

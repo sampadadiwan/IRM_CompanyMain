@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_26_024457) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_26_073401) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -259,10 +259,12 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_26_024457) do
     t.bigint "ppm_number", default: 0
     t.string "investor_signature_types", limit: 20
     t.string "folio_id", limit: 20
+    t.bigint "investor_signatory_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
     t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"
     t.index ["investor_id"], name: "index_capital_commitments_on_investor_id"
+    t.index ["investor_signatory_id"], name: "index_capital_commitments_on_investor_signatory_id"
   end
 
   create_table "capital_distribution_payments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -665,9 +667,13 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_26_024457) do
     t.boolean "show_fund_ratios", default: false
     t.string "fund_signature_types", limit: 20
     t.string "investor_signature_types", limit: 20
+    t.bigint "fund_signatory_id"
+    t.bigint "trustee_signatory_id"
     t.index ["entity_id"], name: "index_funds_on_entity_id"
     t.index ["form_type_id"], name: "index_funds_on_form_type_id"
+    t.index ["fund_signatory_id"], name: "index_funds_on_fund_signatory_id"
     t.index ["funding_round_id"], name: "index_funds_on_funding_round_id"
+    t.index ["trustee_signatory_id"], name: "index_funds_on_trustee_signatory_id"
   end
 
   create_table "holding_actions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1536,6 +1542,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_26_024457) do
   add_foreign_key "capital_commitments", "entities"
   add_foreign_key "capital_commitments", "funds"
   add_foreign_key "capital_commitments", "investors"
+  add_foreign_key "capital_commitments", "users", column: "investor_signatory_id"
   add_foreign_key "capital_distribution_payments", "capital_distributions"
   add_foreign_key "capital_distribution_payments", "entities"
   add_foreign_key "capital_distribution_payments", "form_types"
@@ -1581,6 +1588,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_26_024457) do
   add_foreign_key "funding_rounds", "entities"
   add_foreign_key "funds", "entities"
   add_foreign_key "funds", "funding_rounds"
+  add_foreign_key "funds", "users", column: "fund_signatory_id"
+  add_foreign_key "funds", "users", column: "trustee_signatory_id"
   add_foreign_key "holding_actions", "entities"
   add_foreign_key "holding_actions", "holdings"
   add_foreign_key "holding_actions", "users"

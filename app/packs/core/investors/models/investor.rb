@@ -61,6 +61,14 @@ class Investor < ApplicationRecord
   scope :holding, -> { where(is_holdings_entity: true) }
   scope :not_interacted, ->(no_of_days) { where(is_holdings_entity: false).where("last_interaction_date < ? ", Time.zone.today - no_of_days.days) }
 
+  scope :with_access_rights, lambda { |entity_id, metadata|
+    joins(entity: :access_rights).where(entity_id:).where("access_rights.access_to_category=investors.category or access_rights.access_to_investor_id=investors.id").where("access_rights.metadata=?", metadata)
+  }
+
+  scope :owner_access_rights, lambda { |owner, metadata|
+    joins(entity: :access_rights).where(entity_id: owner.entity_id).where("access_rights.access_to_category=investors.category or access_rights.access_to_investor_id=investors.id").where("access_rights.metadata=?", metadata).where("owner_id=? and owner_type=?", owner.id, owner.class.name)
+  }
+
   INVESTOR_CATEGORIES = ENV["INVESTOR_CATEGORIES"].split(",") << "Prospective"
 
   def self.INVESTOR_CATEGORIES(entity = nil)

@@ -18,6 +18,13 @@
     <%= form.label :investor_id %>
     <%= form.select :investor_id, capital_commitment.fund.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control"  %>
   </div>
+  
+  <% if capital_commitment.investor %>
+  <div class="form-group">
+    <%= form.label :investor_signatory_id %>
+    <%= form.select :investor_signatory_id, capital_commitment.investor.investor_entity.employees.map{|e| [e.full_name, e.id]}, {include_blank: true}, class: "form-control"  %>
+  </div>
+  <% end %>
 
   <div class="form-group">
     <%= form.label :folio_id, "Folio Id" %>

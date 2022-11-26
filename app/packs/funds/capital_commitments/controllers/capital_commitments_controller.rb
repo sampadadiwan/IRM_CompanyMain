@@ -87,6 +87,6 @@ class CapitalCommitmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_commitment_params
-    params.require(:capital_commitment).permit(:entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :notes, :folio_id, properties: {})
+    params.require(:capital_commitment).permit(:entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :notes, :folio_id, :investor_signatory_id, properties: {})
   end
 end

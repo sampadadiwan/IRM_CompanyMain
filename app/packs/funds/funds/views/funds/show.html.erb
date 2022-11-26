@@ -74,6 +74,28 @@
       </td>
     </tr>
 
+    <% if @fund.fund_signatory %>
+    <tr>
+      <td>
+        Fund Signatory
+      </td>
+      <td>
+        <%= @fund.fund_signatory.full_name %>
+      </td>
+    </tr>
+    <% end %>
+
+    <% if @fund.trustee_signatory %>
+    <tr>
+      <td>
+        Trustee Signatory
+      </td>
+      <td>
+        <%= @fund.trustee_signatory.full_name %>
+      </td>
+    </tr>
+    <% end %>
+
     <%= display_custom_fields(@fund) if current_user %>
 
     <% if policy(@fund).update? %>
