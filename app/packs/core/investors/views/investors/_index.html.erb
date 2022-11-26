@@ -9,20 +9,38 @@
     <%= link_to "New Investor" , new_investor_path("investor[entity_id]": current_user.entity_id),
       {class: "btn btn-primary" } %>
 
-    <%= link_to "Download" , investors_path(format: "xlsx"),
-      {class: "btn btn-success" } %>
-
-      <%= link_to "Upload", 
-      new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
-          "import_upload[owner_type]": "Entity", 
-          "import_upload[import_type]": "Investor", 
-          "import_upload[entity_id]": current_user.entity_id,
-          "sample_upload": "INVESTORS_SAMPLE"), 
-          { class: "btn btn-primary"}  %> 
-    
     <%= link_to "All Notes" , notes_path, {class: "btn btn-success" } %>
 
-    </span>
+
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" 
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Actions
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          <%= link_to "Download" , investors_path(format: "xlsx"),
+            {class: "dropdown-item" } %>
+
+          <%= link_to "Upload", 
+            new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
+                "import_upload[owner_type]": "Entity", 
+                "import_upload[import_type]": "Investor", 
+                "import_upload[entity_id]": current_user.entity_id,
+                "sample_upload": "INVESTORS_SAMPLE"), 
+                { class: "dropdown-item"}  %> 
+          
+          
+
+            <%= link_to "Add Investor Notice" , 
+                new_investor_notice_path( "investor_notice[owner_id]": current_user.entity_id, 
+                                          "investor_notice[owner_type]": "Entity"), {class: "dropdown-item" } %>
+      
+        </div>
+      </div>
+    </div>
+
+  </span>
 </div>
 
 <div class="table-responsive" data-controller="datatable">

@@ -14,15 +14,20 @@
   
   <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
 
-  <div class="form-group">
-    <%= form.label :owner_id, "Owner ID" %>
-    <%= form.text_field :owner_id, class: "form-control"  %>
-  </div>
+  <% if investor_notice.owner_id.present? && investor_notice.owner_type.present? %>
+    <%= form.text_field :owner_id, hidden: true  %>
+    <%= form.text_field :owner_type, hidden: true  %>
+  <% else %>
+    <div class="form-group">
+      <%= form.label :owner_id, "Owner ID" %>
+      <%= form.text_field :owner_id, class: "form-control"  %>
+    </div>
 
-  <div class="form-group">
-    <%= form.label :owner_type %>
-    <%= form.select :owner_type, ["Fund", "SecondarySale", "Entity"], {}, class: "form-control" %>  
-  </div>
+    <div class="form-group">
+      <%= form.label :owner_type %>
+      <%= form.select :owner_type, ["Fund", "SecondarySale", "Entity"], {}, class: "form-control" %>  
+    </div>
+  <% end %>
   
   <div class="form-group">
     <%= form.label :start_date %>
