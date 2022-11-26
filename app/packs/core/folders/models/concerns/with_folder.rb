@@ -1,14 +1,15 @@
 module WithFolder
   extend ActiveSupport::Concern
 
+  included do
+    after_create :setup_folder_details
+    has_many :folders, as: :owner, dependent: :destroy
+  end
+
   def document_folder
     # Since the initial docs are created before the parent_folder is created
     # store them in the root folder. Move them to the main_folder post creation
     Folder.where(entity_id:, owner: self).first || Folder.first
-  end
-
-  included do
-    after_create :setup_folder_details
   end
 
   # setup_folder_details calls setup_folder with the right params

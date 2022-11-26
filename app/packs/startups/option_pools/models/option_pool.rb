@@ -10,7 +10,6 @@ class OptionPool < ApplicationRecord
   has_many :vesting_schedules, inverse_of: :option_pool, dependent: :destroy
   accepts_nested_attributes_for :vesting_schedules, reject_if: :all_blank, allow_destroy: true
 
-  has_many :folders, as: :owner, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
 

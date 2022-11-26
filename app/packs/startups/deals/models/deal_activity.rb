@@ -1,26 +1,6 @@
-# == Schema Information
-#
-# Table name: deal_activities
-#
-#  id               :integer          not null, primary key
-#  deal_id          :integer          not null
-#  deal_investor_id :integer
-#  by_date          :date
-#  status           :string(20)
-#  completed        :boolean
-#  entity_id        :integer
-#  created_at       :datetime         not null
-#  updated_at       :datetime         not null
-#  title            :string(255)
-#  details          :text(65535)
-#  sequence         :integer
-#  days             :integer
-#  deleted_at       :datetime
-#  template_id      :integer
-#
-
 class DealActivity < ApplicationRecord
   include ActivityTrackable
+  include WithFolder
 
   acts_as_list scope: %i[deal_id deal_investor_id], column: :sequence
 
@@ -29,6 +9,7 @@ class DealActivity < ApplicationRecord
   belongs_to :deal
   belongs_to :deal_investor, optional: true
   belongs_to :entity
+  has_many :documents, as: :owner, dependent: :destroy
 
   delegate :investor_name, to: :deal_investor, allow_nil: true
   delegate :name, to: :entity, prefix: :entity
@@ -64,5 +45,10 @@ class DealActivity < ApplicationRecord
 
   def to_s
     "#{title} : #{investor_name}"
+  end
+
+  def setup_folder_details
+    parent_folder = deal.document_folder.folders.where(name: "Deal Investors").first
+    setup_folder(parent_folder, investor_name, [])
   end
 end
