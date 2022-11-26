@@ -48,17 +48,28 @@ class EsopLetterGenerator
 
   # master_grant_letter_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
   def generate(holding, master_grant_letter_path)
+    Rails.logger.debug "Generating report"
     user_signature = nil
     company_signature = nil
 
     odt_file_path = get_odt_file(master_grant_letter_path)
 
+    Rails.logger.debug "Populating template"
     report = ODFReport::Report.new(odt_file_path) do |r|
+      Rails.logger.debug "Populating holding fields"
       add_holding_fields(r, holding)
-      user_signature = add_image(r, :employee_signature, holding.user.signature)
+      # user_signature = add_image(r, :employee_signature, holding.user.signature)
 
+      Rails.logger.debug "Populating schedule table"
+      r.add_table("Table1", holding.vesting_schedule.each, header: true) do |t|
+        t.add_column(:vesting_date) { |item| item[0].strftime('%d/%m/%Y').to_s }
+        t.add_column(:vesting_details) { |item| "#{item[2]} Options, can be vested." }
+        t.add_column(:vesting_notes) { |item| "This is #{item[1]} % of your Options" }
+      end
+
+      Rails.logger.debug "Populating option fields"
       add_option_fields(r, holding)
-      company_signature = add_image(r, :employee_signature, holding.option_pool.certificate_signature)
+      # company_signature = add_image(r, :employee_signature, holding.option_pool.certificate_signature)
     end
 
     report.generate("#{@working_dir}/GrantLetter-#{holding.id}.odt")
