@@ -91,7 +91,10 @@ class Fund < ApplicationRecord
   end
 
   def advisor_users
-    User.joins(investor_accesses: :investor).where("investor_accesses.entity_id=?", entity_id)
-        .merge(Investor.owner_access_rights(self, "Advisor"))
+    investor_users("Advisor")
+  end
+
+  def investor_users(metadata)
+    User.joins(investor_accesses: :investor).where("investor_accesses.approved=? and investor_accesses.entity_id=?", true, entity_id).merge(Investor.owner_access_rights(self, metadata))
   end
 end

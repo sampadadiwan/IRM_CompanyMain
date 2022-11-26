@@ -18,7 +18,8 @@ class SecondarySaleMailer < ApplicationMailer
     @secondary_sale = SecondarySale.find(params[:id])
 
     # Get all emails of investors & holding company employees
-    open_for_offers_emails = @secondary_sale.access_rights.where(metadata: "Buyer").collect(&:investor_emails).flatten + @secondary_sale.access_rights.where(metadata: "Buyer").collect(&:holding_employees_emails).flatten
+    open_for_offers_emails = @secondary_sale.investor_users("Buyer").collect(&:email).flatten +
+                             @secondary_sale.employee_users("Buyer").collect(&:emails).flatten
 
     mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
          bcc: sandbox_email(@secondary_sale, open_for_offers_emails.join(',')),
@@ -29,7 +30,8 @@ class SecondarySaleMailer < ApplicationMailer
     @secondary_sale = SecondarySale.find(params[:id])
 
     # Get all emails of investors & holding company employees
-    open_for_offers_emails = @secondary_sale.access_rights.where(metadata: "Buyer").collect(&:investor_emails).flatten + @secondary_sale.access_rights.where(metadata: "Buyer").collect(&:holding_employees_emails).flatten
+    open_for_offers_emails = @secondary_sale.investor_users("Buyer").collect(&:emails).flatten +
+                             @secondary_sale.employee_users("Buyer").collect(&:emails).flatten
 
     mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
          bcc: sandbox_email(@secondary_sale, open_for_offers_emails.join(',')),
@@ -40,7 +42,8 @@ class SecondarySaleMailer < ApplicationMailer
     @secondary_sale = SecondarySale.find(params[:id])
 
     # Get all emails of investors & holding company employees
-    open_for_offers_emails = @secondary_sale.access_rights.where(metadata: "Seller").collect(&:investor_emails).flatten + @secondary_sale.access_rights.where(metadata: "Seller").collect(&:holding_employees_emails).flatten
+    open_for_offers_emails = @secondary_sale.investor_users("Seller").collect(&:emails).flatten +
+                             @secondary_sale.employee_users("Seller").collect(&:emails).flatten
 
     mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
          bcc: sandbox_email(@secondary_sale, open_for_offers_emails.join(',')),
@@ -51,8 +54,8 @@ class SecondarySaleMailer < ApplicationMailer
     @secondary_sale = SecondarySale.find(params[:id])
 
     # Get all emails of investors & holding company employees
-    open_for_offers_emails = @secondary_sale.access_rights.collect(&:investor_emails).flatten +
-                             @secondary_sale.access_rights.collect(&:holding_employees_emails).flatten
+    open_for_offers_emails = @secondary_sale.investor_users("Seller").collect(&:emails).flatten +
+                             @secondary_sale.employee_users("Seller").collect(&:emails).flatten
 
     mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
          bcc: sandbox_email(@secondary_sale, open_for_offers_emails.join(',')),

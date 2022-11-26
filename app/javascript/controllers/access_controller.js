@@ -53,7 +53,7 @@ export default class extends Controller {
         this.showCategory();
         this.hideEmployee();        
         this.hideInvestor();
-        this.hideMetadata();
+        this.showMetadata();
         this.hidePermissons();
         break;
 
