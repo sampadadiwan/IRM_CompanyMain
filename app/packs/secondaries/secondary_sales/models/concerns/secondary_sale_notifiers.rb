@@ -1,6 +1,8 @@
 module SecondarySaleNotifiers
   extend ActiveSupport::Concern
 
+  MAX_TO_SIZE = 30
+
   def notify_investment_advisors
     SecondarySaleMailer.with(id:).notify_investment_advisors.deliver_later
   end
@@ -10,11 +12,22 @@ module SecondarySaleNotifiers
   end
 
   def notify_open_for_offers
-    SecondarySaleMailer.with(id:).notify_open_for_offers.deliver_later
+    # Get all emails of investors & holding company employees
+    all_emails = investor_users("Seller").collect(&:email).flatten +
+                 employee_users("Seller").collect(&:email).flatten
+
+    all_emails.each_slice(MAX_TO_SIZE) do |list|
+      SecondarySaleMailer.with(id:, list:).notify_open_for_offers.deliver_later
+    end
   end
 
   def notify_closing_offers
-    SecondarySaleMailer.with(id:).notify_closing_offers.deliver_later
+    # Get all emails of investors & holding company employees
+    all_emails = investor_users("Seller").collect(&:email).flatten +
+                 employee_users("Seller").collect(&:email).flatten
+    all_emails.each_slice(MAX_TO_SIZE) do |list|
+      SecondarySaleMailer.with(id:, list:).notify_closing_offers.deliver_later
+    end
   end
 
   def notify_closing_interests
@@ -22,7 +35,13 @@ module SecondarySaleNotifiers
   end
 
   def notify_allocation
-    SecondarySaleMailer.with(id:).notify_allocation_offers.deliver_later
+    all_emails = investor_users("Seller").collect(&:email).flatten +
+                 employee_users("Seller").collect(&:email).flatten
+
+    all_emails.each_slice(MAX_TO_SIZE) do |list|
+      SecondarySaleMailer.with(id:, list:).notify_allocation_offers.deliver_later
+    end
+
     SecondarySaleMailer.with(id:).notify_allocation_interests.deliver_later
   end
 
@@ -33,7 +52,7 @@ module SecondarySaleNotifiers
 
   def notify_spa_buyers
     all_emails = interests.short_listed.not_final_agreement.collect(&:notification_emails).flatten
-    all_emails.each_slice(10) do |list|
+    all_emails.each_slice(MAX_TO_SIZE) do |list|
       SecondarySaleMailer.with(id:, list:).notify_spa_interests.deliver_later
     end
   end
@@ -45,7 +64,7 @@ module SecondarySaleNotifiers
     # Send email to only those who are verified but not confirmed SPA
     all_offers = offers.includes(:user).verified.not_final_agreement
     all_emails = all_offers.collect(&:user).collect(&:email)
-    all_emails.each_slice(10) do |list|
+    all_emails.each_slice(MAX_TO_SIZE) do |list|
       SecondarySaleMailer.with(id:, list:).notify_spa_offers.deliver_later
     end
   end
