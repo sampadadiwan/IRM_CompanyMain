@@ -48,7 +48,10 @@ class DealActivity < ApplicationRecord
   end
 
   def setup_folder_details
-    parent_folder = deal.document_folder.folders.where(name: "Deal Investors").first
-    setup_folder(parent_folder, investor_name, [])
+    # Some activities are templates, they dont have an associated investor
+    if investor_name
+      parent_folder = deal.document_folder.folders.where(name: "Deal Investors").first
+      setup_folder(parent_folder, investor_name, [])
+    end
   end
 end

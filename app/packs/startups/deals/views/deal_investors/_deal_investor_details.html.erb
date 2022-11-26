@@ -13,7 +13,10 @@
   
     <div id="docs-tab" class="tab-pane fade  in show active">
       <div id="docs" class="associated_entity">
-        <% sql = "#{deal_investor.documents.includes(:folder, tags: :taggings).to_sql} UNION #{deal_investor.deal.documents.includes(:folder, tags: :taggings).to_sql}" %>
+        <% da_ids = deal_investor.deal_activities.pluck(:id) %>
+        <% sql = "#{deal_investor.documents.includes(:folder, tags: :taggings).to_sql} 
+                  UNION #{deal_investor.deal.documents.includes(:folder, tags: :taggings).to_sql} 
+                  UNION #{Document.includes(:folder, tags: :taggings).where(owner_id: da_ids, owner_type: "DealActivity").to_sql}" %>
         <%= render "/documents/index", owner: deal_investor, entity: deal_investor.entity, documents: Document.find_by_sql(sql) %>
       </div>     
     </div>

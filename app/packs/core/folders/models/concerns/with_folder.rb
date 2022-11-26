@@ -29,7 +29,7 @@ module WithFolder
   private
 
   def create_if_not_exist(name, entity_id, parent, folder_type)
-    Rails.logger.debug { "Creating folder #{name} with parent #{parent}" }
+    Rails.logger.debug { "Creating folder #{name} with parent #{parent.name}" }
     existing = Folder.where(name:, entity_id:, parent_folder_id: parent.id, folder_type:, owner: self).first
     existing || Folder.create!(name:, entity_id:, parent_folder_id: parent.id, folder_type:, owner: self)
   end
