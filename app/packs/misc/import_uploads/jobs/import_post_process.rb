@@ -12,15 +12,11 @@ class ImportPostProcess
   def post_processing(import_upload)
     result_file_name = "/tmp/import_result_#{import_upload.id}.xlsx"
 
-    case import_upload.import_type
-    when "InvestorAccess"
-      Rails.logger.info "Importing InvestorAccess Done"
-    when "Holding", "Offer", "CapitalCommittment"
+    if File.exist?(result_file_name)
       import_upload.import_results = File.open(result_file_name, "rb")
-      Rails.logger.info "Importing Holding Done"
+      Rails.logger.info "Result file attached for import_upload #{import_upload.id}"
+      import_upload.save
+      File.delete(result_file_name) if File.exist? result_file_name
     end
-
-    import_upload.save
-    File.delete(result_file_name) if File.exist? result_file_name
   end
 end

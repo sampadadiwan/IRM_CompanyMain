@@ -1,4 +1,4 @@
-class ImportCapitalCommitment
+class ImportCapitalCommittment
   include Interactor
   STANDARD_HEADERS = ["Investor", "Fund", "Committed Amount", "Notes"].freeze
   def call
