@@ -59,15 +59,16 @@ class ImportCapitalCommitment
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
+    folio_id = user_data["Folio Id"].presence
 
     if fund && investor
 
-      if CapitalCommitment.exists?(entity_id: import_upload.entity_id, fund:, investor:)
+      if CapitalCommitment.exists?(entity_id: import_upload.entity_id, fund:, investor:, folio_id:)
         raise "Committment Already Present"
       else
 
         # Make the capital_commitment
-        capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id,
+        capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
                                                    fund:, investor:, notes: user_data["Notes"])
 
         capital_commitment.committed_amount = user_data["Committed Amount"].to_d

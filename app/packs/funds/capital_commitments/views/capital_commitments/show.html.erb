@@ -10,6 +10,18 @@
         <%= @capital_commitment.ppm_number %>
       </td>
     </tr>
+
+    <% if @capital_commitment.folio_id.present? %>
+    <tr>
+      <td>
+        Folio Id
+      </td>
+      <td>
+        <%= @capital_commitment.folio_id %>
+      </td>
+    </tr>
+    <% end %>
+
     <tr>
       <td>
         Entity
@@ -55,7 +67,7 @@
         Notes
       </td>
       <td>
-        <%= @capital_commitment.notes.html_safe %>
+        <%= @capital_commitment.notes.html_safe if @capital_commitment.notes %>
       </td>
     </tr>
 
