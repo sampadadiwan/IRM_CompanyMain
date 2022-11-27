@@ -4,6 +4,12 @@ module WithFolder
   included do
     after_create :setup_folder_details
     has_many :folders, as: :owner, dependent: :destroy
+
+    def self.upgrade_folders
+      %w[Investor InvestorKyc Fund CapitalCall CapitalCommitment InvestmentOpportunity ExpressionOfInterest Approval SecondarySale Offer Interest Deal DealInvestor DealActivity OptionPool Excercise].each do |model|
+        model.constantize.all.each(&:setup_folder_details)
+      end
+    end
   end
 
   def document_folder
