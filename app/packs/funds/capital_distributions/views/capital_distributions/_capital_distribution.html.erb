@@ -18,7 +18,7 @@
     <%= display_boolean capital_distribution.approved %>
   </td>
   <td>
-    <%= link_to "Show" , capital_distribution , {class: "btn btn-primary" }%>
+    <%= link_to "Show" , capital_distribution_path(capital_distribution, tab: "payments-tab") , {class: "btn btn-primary" }%>
     <%= link_to "Edit" , edit_capital_distribution_path(capital_distribution) , {class: "btn btn-success" } if policy(capital_distribution).update? %>
   </td>
 </tr>

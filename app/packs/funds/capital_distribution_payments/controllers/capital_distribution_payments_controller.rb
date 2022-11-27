@@ -6,6 +6,10 @@ class CapitalDistributionPaymentsController < ApplicationController
     @capital_distribution_payments = policy_scope(CapitalDistributionPayment).includes(:investor, :entity)
     @capital_distribution_payments = @capital_distribution_payments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
 
+    @capital_distribution_payments = @capital_distribution_payments.where(capital_distribution_id: params[:capital_distribution_id]) if params[:capital_distribution_id].present?
+
+    @capital_distribution_payments = @capital_distribution_payments.page(params[:page]) if params[:all].blank?
+
     respond_to do |format|
       format.xlsx do
         response.headers[

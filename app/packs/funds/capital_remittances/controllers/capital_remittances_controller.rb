@@ -8,6 +8,8 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittances = @capital_remittances.where(status: params[:status]) if params[:status]
     @capital_remittances = @capital_remittances.where(verified: params[:verified] == "true") if params[:verified]
     @capital_remittances = @capital_remittances.where(capital_call_id: params[:capital_call_id]) if params[:capital_call_id]
+
+    @capital_remittances = @capital_remittances.page(params[:page]) if params[:all].blank?
   end
 
   # GET /capital_remittances/1 or /capital_remittances/1.json

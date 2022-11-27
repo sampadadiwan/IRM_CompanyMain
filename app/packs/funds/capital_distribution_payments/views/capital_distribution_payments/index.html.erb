@@ -4,5 +4,5 @@
 
     <%= render "/capital_distribution_payments/index", 
         capital_distribution_payments: @capital_distribution_payments, capital_distribution: nil %>
- 
+    <%= paginate @capital_distribution_payments, data: {turbo_frame: 'capital_distribution_payments_frame'}   %>
 <% end %>

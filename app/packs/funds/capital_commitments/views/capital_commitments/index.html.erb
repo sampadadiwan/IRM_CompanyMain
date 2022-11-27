@@ -1,4 +1,6 @@
 <%= render "/layouts/alerts" %>
 <%= turbo_frame_tag "capital_commitments_frame", target: "_top" do %>
     <%= render "/capital_commitments/index", capital_commitments: @capital_commitments, fund: nil %>
+    <%= paginate @capital_commitments, data: {turbo_frame: 'capital_commitments_frame'}   %>
 <% end %>
+
