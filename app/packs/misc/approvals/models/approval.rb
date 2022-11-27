@@ -19,7 +19,7 @@ class Approval < ApplicationRecord
   end
 
   def setup_folder_details
-    setup_folder_from_path("/Approvals/#{title}")
+    setup_folder_from_path("/Approvals/#{title}-#{id}")
   end
 
   def self.for_investor(user)

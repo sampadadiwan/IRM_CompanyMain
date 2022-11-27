@@ -1,4 +1,4 @@
-class DealPolicy < DealBasePolicy
+class DealPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
       if user.has_cached_role?(:super)
@@ -18,11 +18,12 @@ class DealPolicy < DealBasePolicy
   end
 
   def show?
-    if user.has_cached_role?(:super) || (user.entity_id == record.entity_id && user.enable_deals)
-      true
-    else
+    (user.entity_id == record.entity_id && user.enable_deals) ||
       permissioned_advisor?
-    end
+  end
+
+  def show_detail_tabs?
+    user.entity_id == record.entity_id
   end
 
   def create?
@@ -34,7 +35,8 @@ class DealPolicy < DealBasePolicy
   end
 
   def update?
-    create?
+    create? ||
+      permissioned_advisor?(:update)
   end
 
   def start_deal?
@@ -50,6 +52,23 @@ class DealPolicy < DealBasePolicy
   end
 
   def destroy?
-    create?
+    create? ||
+      permissioned_advisor?(:destroy)
+  end
+
+  def permissioned_advisor?(perm = nil)
+    # binding.pry
+
+    if user.entity_id != record.entity_id && user.curr_role == "advisor"
+      deal_id = record.instance_of?(Deal) ? record.id : record.deal_id
+      @deal ||= Deal.for_advisor(user).includes(:access_rights).where("deals.id=?", deal_id).first
+      if perm
+        @deal.present? && @deal.access_rights[0].permissions.set?(perm)
+      else
+        @deal.present?
+      end
+    else
+      false
+    end
   end
 end

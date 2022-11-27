@@ -8,7 +8,8 @@
   <%= render "/layouts/steps", steps: ["Setup Deal Details", "Upload Deal Docs", "Add Investments", 
           "Customize Deal Steps", "Setup Access Rights", "Start Deal"].freeze %>
           
-  <%= render "/deals/deal_details", deal: @deal, show_deal: "No" %>
+  
+  <%= render "/deals/deal_details", deal: @deal, show_deal: "No"  %>
   
 <% else %>
 

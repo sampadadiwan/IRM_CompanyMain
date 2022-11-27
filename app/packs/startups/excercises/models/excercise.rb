@@ -52,6 +52,6 @@ class Excercise < ApplicationRecord
   end
 
   def setup_folder_details
-    setup_folder_from_path("#{option_pool.folder_path}/Excercises/#{user.full_name}")
+    setup_folder_from_path("#{option_pool.folder_path}/Excercises/#{user.full_name}-#{id}")
   end
 end

@@ -146,7 +146,7 @@ class Offer < ApplicationRecord
   end
 
   def setup_folder_details
-    setup_folder_from_path("#{secondary_sale.folder_path}/Offers/#{user.full_name}")
+    setup_folder_from_path("#{secondary_sale.folder_path}/Offers/#{user.full_name}-#{id}")
   end
 
   def document_list

@@ -65,7 +65,7 @@ class OptionPool < ApplicationRecord
   end
 
   def folder_path
-    "/OptionPools/#{name}"
+    "/OptionPools/#{name}-#{id}"
   end
 
   def setup_folder_details

@@ -120,7 +120,7 @@ class Investor < ApplicationRecord
   end
 
   def folder_path
-    "/Investors/#{investor_name}"
+    "/Investors/#{investor_name}-#{id}"
   end
 
   def setup_folder_details

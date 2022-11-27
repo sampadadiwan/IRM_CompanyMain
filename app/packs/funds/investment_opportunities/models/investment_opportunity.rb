@@ -46,7 +46,7 @@ class InvestmentOpportunity < ApplicationRecord
   end
 
   def folder_path
-    "/InvestmentOpportunity/#{company_name}"
+    "/InvestmentOpportunity/#{company_name}-#{id}"
   end
 
   def setup_folder_details

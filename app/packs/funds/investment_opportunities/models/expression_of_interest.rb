@@ -42,6 +42,6 @@ class ExpressionOfInterest < ApplicationRecord
   end
 
   def setup_folder_details
-    setup_folder_from_path("#{investment_opportunity.folder_path}/EOI/#{eoi_entity.name}")
+    setup_folder_from_path("#{investment_opportunity.folder_path}/EOI/#{eoi_entity.name}-#{id}")
   end
 end

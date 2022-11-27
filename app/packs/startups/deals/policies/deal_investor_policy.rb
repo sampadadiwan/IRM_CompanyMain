@@ -20,7 +20,8 @@ class DealInvestorPolicy < DealBasePolicy
   def show?
     user.has_cached_role?(:super) ||
       (user.entity_id == record.entity_id) ||
-      (user.entity_id == record.investor_entity_id)
+      (user.entity_id == record.investor_entity_id) ||
+      permissioned_advisor?
   end
 
   def create?
@@ -32,14 +33,16 @@ class DealInvestorPolicy < DealBasePolicy
   end
 
   def update?
-    create?
+    create? ||
+      permissioned_advisor?(:update)
   end
 
   def edit?
-    create?
+    update?
   end
 
   def destroy?
-    create?
+    create? ||
+      permissioned_advisor?(:destroy)
   end
 end

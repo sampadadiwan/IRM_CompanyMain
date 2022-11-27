@@ -138,6 +138,7 @@ class AccessRight < ApplicationRecord
   end
 
   after_create :update_owner
+  after_destroy :update_owner
   def update_owner
     owner.access_rights_changed(id) if owner.respond_to? :access_rights_changed
   end

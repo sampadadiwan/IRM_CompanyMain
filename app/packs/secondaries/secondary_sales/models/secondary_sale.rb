@@ -109,7 +109,7 @@ class SecondarySale < ApplicationRecord
   end
 
   def folder_path
-    "/Secondary Sales/#{name}"
+    "/Secondary Sales/#{name}-#{id}"
   end
 
   def setup_folder_details

@@ -1,6 +1,6 @@
 <%= render "/layouts/alerts" %>
 
-<% cache([@deal, current_user.entity, "GridView"]) do %>
+<% cache([@deal, current_user.entity, "GridView", params[:all]]) do %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4" data-controller="nudge">
     <h1 class="h3 mb-0 text-gray-800">Deal <%= @deal.name %> : Grid View</h1>
@@ -8,6 +8,7 @@
 
         <%= render "investments/currency_form" %>
 
+        
         <% if params[:all].blank? %>
             <%= link_to "All Investors", deal_path(id: @deal.id, grid_view: true, all:true), {class: "btn btn-primary"}  %>
         <% else %>
@@ -17,25 +18,26 @@
         <% if current_user.entity_id == @deal.entity_id %>
             <%= link_to "Add Investor", new_deal_investor_path("deal_investor[deal_id]": @deal.id, "deal_investor[entity_id]": current_user.entity_id) , {class: "btn btn-success"}%>
             <%= link_to "All Nudges", nudges_path , {class: "btn btn-primary"}%>
-        <% end %>
+        
 
-        <% if !@deal.start_date.present?  %>
-            <%= button_to "Start Deal", start_deal_deal_path(@deal), 
-            {class: "btn btn-success", form_class: "deleteButton"} %> 
-        <% end %>
+            <% if !@deal.start_date.present?  %>
+                <%= button_to "Start Deal", start_deal_deal_path(@deal), 
+                {class: "btn btn-success", form_class: "deleteButton"} %> 
+            <% end %>
 
-        <a class="btn btn-success", hidden="hidden", data-action="click->nudge#newDealMsg">Send Message</a>
-        <%= link_to new_nudge_path(), id: "new_nudge", hidden: true do %>
-            <span>Loading...</span>
-        <% end %>
-        <%= link_to deal_path(id: @deal.id, grid_view: true, all:true, format: :xlsx), {class: "btn btn-success"} do %>
-            <i class="fa-lg fa-regular fa-file-excel"></i> Download
-        <% end %>
+            <a class="btn btn-success", hidden="hidden", data-action="click->nudge#newDealMsg">Send Message</a>
+            <%= link_to new_nudge_path(), id: "new_nudge", hidden: true do %>
+                <span>Loading...</span>
+            <% end %>
+            <%= link_to deal_path(id: @deal.id, grid_view: true, all:true, format: :xlsx), {class: "btn btn-success"} do %>
+                <i class="fa-lg fa-regular fa-file-excel"></i> Download
+            <% end %>
 
-        <%= link_to deal_path(id: @deal.id, chart: true), {class: "btn btn-success"} do %>
-            <i class="fas fa-chart-line"></i> Charts
-        <% end %>
+            <%= link_to deal_path(id: @deal.id, chart: true), {class: "btn btn-success"} do %>
+                <i class="fas fa-chart-line"></i> Charts
+            <% end %>
 
+        <% end %>
 
     </span>
 </div>
@@ -63,8 +65,7 @@
                 <% DealActivity.templates(@deal).each do |deal_activity| %>
                     <th> <%= deal_activity.title %> </th>
                 <% end %>
-                <th>Company Advisor</th>
-                <th>Investor Advisor</th>
+                <th> Advisor </th>
                 
             </tr>
         </thead>
@@ -81,5 +82,5 @@
 
 <% end %>
 
-<%= render "/deals/deal_details", deal: @deal, show_investors: "No" %>
+<%= render "/deals/deal_details", deal: @deal, show_investors: "No" if policy(@deal).show_detail_tabs? %>
 

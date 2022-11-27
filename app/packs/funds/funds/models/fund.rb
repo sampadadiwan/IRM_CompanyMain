@@ -31,7 +31,7 @@ class Fund < ApplicationRecord
   end
 
   def folder_path
-    "/Funds/#{name}"
+    "/Funds/#{name}-#{id}"
   end
 
   def setup_folder_details

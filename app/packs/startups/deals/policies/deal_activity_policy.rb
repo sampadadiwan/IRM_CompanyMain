@@ -1,8 +1,10 @@
-class DealActivityPolicy < ApplicationPolicy
+class DealActivityPolicy < DealBasePolicy
   class Scope < Scope
     def resolve
       if user.has_cached_role?(:super)
         scope.all
+      elsif user.curr_role == "advisor"
+        scope.for_advisor(user)
       else
         scope.where("entity_id=?", user.entity_id)
       end
@@ -14,11 +16,9 @@ class DealActivityPolicy < ApplicationPolicy
   end
 
   def show?
-    if user.has_cached_role?(:super) || (user.entity_id == record.entity_id)
-      true
-    else
-      record.deal_investor && record.deal_investor.investor_entity_id == user.entity_id
-    end
+    (user.has_cached_role?(:super) || (user.entity_id == record.entity_id)) ||
+      (record.deal_investor && record.deal_investor.investor_entity_id == user.entity_id) ||
+      permissioned_advisor?
   end
 
   def create?

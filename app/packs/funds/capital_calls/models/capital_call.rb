@@ -26,7 +26,7 @@ class CapitalCall < ApplicationRecord
   end
 
   def setup_folder_details
-    setup_folder_from_path("#{fund.folder_path}/Capital Calls/#{name}")
+    setup_folder_from_path("#{fund.folder_path}/Capital Calls/#{name}-#{id}")
   end
 
   def to_s

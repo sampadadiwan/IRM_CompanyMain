@@ -26,7 +26,7 @@
 
   <div class="form-group">
     <%= form.label :investor_id %>
-    <%= form.select :investor_id, current_user.entity.investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, {include_blank: true}, {class: "form-control select2"} %>
+    <%= form.select :investor_id, deal_investor.entity.investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, {include_blank: true}, {class: "form-control select2"} %>
     <small class="text-muted">
       Create <%= link_to "New Investor", 
         new_investor_path("investor[entity_id]": current_user.entity_id,
@@ -63,16 +63,6 @@
     <%= form.label :secondary_investment %>
     <%= form.number_field :secondary_investment, class: "form-control"  %>
     <small class="text-muted">In <%= deal_investor.deal.currency %></small>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :company_advisor %>
-    <%= form.text_field :company_advisor, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :investor_advisor %>
-    <%= form.text_field :investor_advisor, class: "form-control"  %>
   </div>
 
   <div class="form-group">
