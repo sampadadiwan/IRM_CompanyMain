@@ -230,3 +230,34 @@ Offer.all.each do |offer|
   end
 end
 
+Given('Given I upload a offer file') do
+    Sidekiq.redis(&:flushdb)
+  
+    @existing_user_count = User.count
+    visit(secondary_sale_path(@sale))
+    click_on("Pending Offers")
+    click_on("Upload Offers")
+    fill_in('import_upload_name', with: "Test Upload")
+    attach_file('files[]', File.absolute_path('./public/sample_uploads/offers.xlsx'), make_visible: true)
+    sleep(1)
+    click_on("Save")
+    sleep(2)
+    ImportUploadJob.perform_now(ImportUpload.last.id)    
+    sleep(5)
+  
+    ImportUpload.last.failed_row_count.should == 0  
+end
+
+Then('when the offers are approved') do
+  @sale.reload
+  @sale.offers.each do |offer|
+    offer.approved = true
+    offer.granted_by_user_id = @user.id
+    offer.save
+  end
+end
+
+Then('the sale offered quantity should be {string}') do |quantity|
+  @sale.reload
+  @sale.total_offered_quantity.should == quantity.to_i
+end

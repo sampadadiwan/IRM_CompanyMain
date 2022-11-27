@@ -67,7 +67,7 @@ Examples:
 
 
 
-Scenario Outline: Allocate holdings from pool
+Scenario Outline: Import holdings to pool
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Startup"
   Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"
   And Given I upload a holdings file

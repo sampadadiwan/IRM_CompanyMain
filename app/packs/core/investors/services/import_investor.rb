@@ -60,7 +60,7 @@ class ImportInvestor
     if custom_field_headers.length.positive?
       model.properties ||= {}
       custom_field_headers.each do |cfh|
-        model.properties[cfh.underscore] = user_data[cfh]
+        model.properties[cfh.parameterize.underscore] = user_data[cfh]
       end
     end
   end

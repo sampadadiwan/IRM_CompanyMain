@@ -89,3 +89,16 @@ Examples:
     |  	        |entity_type=Startup  |name=Winter Sale;visible_externally=true;percent_allowed=100 |200        |
 
 
+
+Scenario Outline: Import offer to sale
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Startup"
+  Given the user has role "company_admin"
+  Given there is a sale "name=Summer Sale"
+  Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"
+  And Given I upload a holdings file
+  Then I should see the "Import upload was successfully created"
+  And when the holdings are approved
+  And Given I upload a offer file
+  Then I should see the "Import upload was successfully created"
+  And when the offers are approved
+  And the sale offered quantity should be "100"

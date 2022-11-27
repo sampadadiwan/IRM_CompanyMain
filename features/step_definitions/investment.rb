@@ -499,6 +499,8 @@ Given('Given I upload a holdings file') do
   sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)    
   sleep(5)
+
+  ImportUpload.last.failed_row_count.should == 0
 end
 
 Then('There should be {string} holdings created') do |count|
