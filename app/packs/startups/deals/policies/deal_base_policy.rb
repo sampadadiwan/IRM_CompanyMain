@@ -1,4 +1,6 @@
 class DealBasePolicy < ApplicationPolicy
+  attr_accessor :deal_investor
+
   def permissioned_employee?(perm = nil)
     if user.entity_id == record.entity_id
       if user.has_cached_role?(:company_admin)
