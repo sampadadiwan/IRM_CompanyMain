@@ -14,7 +14,7 @@ class FolderAccessJob < ApplicationJob
       end
 
       # Child folders too
-      Folder.where(parent_folder_id: folder.id).find_each do |f|
+      Folder.where(parent_id: folder.id).find_each do |f|
         doc_ar = ar.dup
         doc_ar.owner = f
         doc_ar.save

@@ -45,9 +45,12 @@ class InvestmentOpportunity < ApplicationRecord
     company_name
   end
 
+  def folder_path
+    "/InvestmentOpportunity/#{company_name}"
+  end
+
   def setup_folder_details
-    parent_folder = Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
-    setup_folder(parent_folder, company_name, ["EOI"])
+    setup_folder_from_path(folder_path)
   end
 
   def self.for_investor(user)

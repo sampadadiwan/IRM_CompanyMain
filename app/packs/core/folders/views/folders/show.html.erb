@@ -36,7 +36,7 @@
   <div>
     <%= link_to "Bulk Upload" , edit_folder_path(@folder), {class: "btn btn-primary" } if @folder.level !=0 %> 
     <%= link_to "Create Sub Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
-        "folder[parent_folder_id]": @folder.id), 
+        "folder[parent_id]": @folder.id), 
         {class: "btn btn-success"} %> 
 
     <%= button_to "Delete" , @folder, method: :delete, class: "btn btn-danger" , 

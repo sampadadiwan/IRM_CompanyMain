@@ -17,7 +17,7 @@ class FoldersControllerTest < ActionDispatch::IntegrationTest
 
   test "should create folder" do
     assert_difference("Folder.count") do
-      post folders_url, params: { folder: { full_path: @folder.full_path, level: @folder.level, name: @folder.name, parent_folder_id: @folder.parent_folder_id } }
+      post folders_url, params: { folder: { full_path: @folder.full_path, level: @folder.level, name: @folder.name, parent_id: @folder.parent_id } }
     end
 
     assert_redirected_to folder_url(Folder.last)
@@ -34,7 +34,7 @@ class FoldersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update folder" do
-    patch folder_url(@folder), params: { folder: { full_path: @folder.full_path, level: @folder.level, name: @folder.name, parent_folder_id: @folder.parent_folder_id } }
+    patch folder_url(@folder), params: { folder: { full_path: @folder.full_path, level: @folder.level, name: @folder.name, parent_id: @folder.parent_id } }
     assert_redirected_to folder_url(@folder)
   end
 

@@ -24,7 +24,7 @@
 
   <div class="form-group">
     <%= form.label :parent_folder %>
-    <%= form.select :parent_folder_id, Folder.for(current_user).map{|f| [f.full_path, f.id]} ,{}, class: "form-control select2"  %>
+    <%= form.select :parent_id, Folder.for(current_user).map{|f| [f.full_path, f.id]} ,{}, class: "form-control select2"  %>
   </div>
 
   <div class="mb-3" data-controller="multiple-upload" 

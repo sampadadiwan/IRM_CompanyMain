@@ -68,8 +68,11 @@ class Deal < ApplicationRecord
     DealActivity.templates(self).collect(&:title)
   end
 
+  def folder_path
+    "/Deals/#{name}"
+  end
+
   def setup_folder_details
-    parent_folder = Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
-    setup_folder(parent_folder, name, ["Deal Investors"])
+    setup_folder_from_path(folder_path)
   end
 end

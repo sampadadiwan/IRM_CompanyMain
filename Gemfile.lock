@@ -145,6 +145,8 @@ GEM
       rails (>= 4.2)
     airbrussh (1.4.0)
       sshkit (>= 1.6.1, != 1.7.0)
+    ancestry (4.2.0)
+      activerecord (>= 5.2.6)
     annotate (2.6.5)
       activerecord (>= 2.3.0)
       rake (>= 0.8.7)
@@ -721,6 +723,7 @@ DEPENDENCIES
   administrate-field-active_storage
   administrate-field-boolean_emoji (~> 0.3.0)
   administrate-field-shrine
+  ancestry
   annotate
   audited (~> 5.0)
   awesome_print

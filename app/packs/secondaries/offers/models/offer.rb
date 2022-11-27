@@ -146,8 +146,7 @@ class Offer < ApplicationRecord
   end
 
   def setup_folder_details
-    parent_folder = secondary_sale.document_folder.folders.where(name: "Offers").first
-    setup_folder(parent_folder, user.full_name, [])
+    setup_folder_from_path("#{secondary_sale.folder_path}/Offers/#{user.full_name}")
   end
 
   def document_list

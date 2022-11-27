@@ -43,8 +43,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def setup_folder_details
-    parent_folder = fund.document_folder.folders.where(name: "Commitments").first
-    setup_folder(parent_folder, investor.investor_name, [])
+    setup_folder_from_path("#{fund.folder_path}/Commitments/#{investor.investor_name}")
   end
 
   def investor_signature_types

@@ -104,8 +104,7 @@ class Interest < ApplicationRecord
   end
 
   def setup_folder_details
-    parent_folder = secondary_sale.document_folder.folders.where(name: "Interests").first
-    setup_folder(parent_folder, interest_entity.name, [])
+    setup_folder_from_path("#{secondary_sale.folder_path}/Interests/#{interest_entity.name}")
   end
 
   def offer_amount

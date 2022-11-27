@@ -13,7 +13,7 @@ class FolderDashboard < Administrate::BaseDashboard
     documents: Field::HasMany,
     id: Field::Number,
     name: Field::String,
-    parent_folder_id: Field::Number,
+    parent_id: Field::Number,
     full_path: Field::Text,
     level: Field::Number,
     created_at: Field::DateTime,
@@ -42,7 +42,7 @@ class FolderDashboard < Administrate::BaseDashboard
     entity
     id
     name
-    parent_folder_id
+    parent_id
     full_path
     level
     created_at
@@ -58,7 +58,7 @@ class FolderDashboard < Administrate::BaseDashboard
     parent
     entity
     name
-    parent_folder_id
+    parent_id
   ].freeze
 
   # COLLECTION_FILTERS

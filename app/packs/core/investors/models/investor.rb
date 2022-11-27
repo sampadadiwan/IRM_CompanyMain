@@ -119,8 +119,11 @@ class Investor < ApplicationRecord
     investor_accesses.approved.collect(&:email)
   end
 
+  def folder_path
+    "/Investors/#{investor_name}"
+  end
+
   def setup_folder_details
-    parent_folder = Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
-    setup_folder(parent_folder, investor_name, %w[KYC])
+    setup_folder_from_path(folder_path)
   end
 end

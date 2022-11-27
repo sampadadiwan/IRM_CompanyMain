@@ -115,7 +115,6 @@ class DealInvestor < ApplicationRecord
   end
 
   def setup_folder_details
-    parent_folder = deal.document_folder.folders.where(name: "Deal Investors").first
-    setup_folder(parent_folder, investor_name, [])
+    setup_folder_from_path("#{deal.folder_path}/Deal Investors/#{investor_name}")
   end
 end

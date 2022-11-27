@@ -1,13 +1,13 @@
 class Folder < ApplicationRecord
   acts_as_paranoid
-  include TreeBuilder
+  has_ancestry
 
   update_index('folder') { self }
 
   enum :folder_type, %i[regular system]
 
-  belongs_to :parent, class_name: "Folder", foreign_key: :parent_folder_id, optional: true
-  has_many :folders, foreign_key: :parent_folder_id, dependent: :destroy
+  belongs_to :parent, class_name: "Folder", optional: true
+  has_many :folders, foreign_key: :parent_id, dependent: :destroy
   belongs_to :entity, touch: true
   belongs_to :owner, polymorphic: true, optional: true
 
@@ -15,9 +15,6 @@ class Folder < ApplicationRecord
   accepts_nested_attributes_for :documents, allow_destroy: true
 
   has_many :access_rights, as: :owner, dependent: :destroy
-
-  # Stores all the ids of folders till root from this Folder, i.e all ids from root till here
-  serialize :path_ids
 
   validates :name, presence: true
 
@@ -33,18 +30,16 @@ class Folder < ApplicationRecord
     if parent
       self.level = parent.level + 1
       self.full_path = level == 1 ? "#{parent.full_path}#{name}" : "#{parent.full_path}/#{name}"
-      self.path_ids = parent.path_ids + [parent.id]
       self.folder_type ||= :regular
     else
       self.level = 0
       self.full_path = "/"
-      self.path_ids = []
       self.folder_type = :system
     end
   end
 
   def destroy_child_folders
-    Folder.where(parent_folder_id: id).find_each do |f|
+    Folder.where(parent_id: id).find_each do |f|
       f.destroy if f.level != 0
     end
   end

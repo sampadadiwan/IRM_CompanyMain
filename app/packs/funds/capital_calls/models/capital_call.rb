@@ -26,8 +26,7 @@ class CapitalCall < ApplicationRecord
   end
 
   def setup_folder_details
-    parent_folder = fund.document_folder.folders.where(name: "Capital Calls").first
-    setup_folder(parent_folder, name, [])
+    setup_folder_from_path("#{fund.folder_path}/Capital Calls/#{name}")
   end
 
   def to_s

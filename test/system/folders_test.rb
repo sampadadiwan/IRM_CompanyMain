@@ -17,7 +17,7 @@ class FoldersTest < ApplicationSystemTestCase
     fill_in "Full path", with: @folder.full_path
     fill_in "Level", with: @folder.level
     fill_in "Name", with: @folder.name
-    fill_in "Parent folder", with: @folder.parent_folder_id
+    fill_in "Parent folder", with: @folder.parent_id
     click_on "Create Folder"
 
     assert_text "Folder was successfully created"
@@ -31,7 +31,7 @@ class FoldersTest < ApplicationSystemTestCase
     fill_in "Full path", with: @folder.full_path
     fill_in "Level", with: @folder.level
     fill_in "Name", with: @folder.name
-    fill_in "Parent folder", with: @folder.parent_folder_id
+    fill_in "Parent folder", with: @folder.parent_id
     click_on "Update Folder"
 
     assert_text "Folder was successfully updated"

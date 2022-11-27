@@ -30,9 +30,12 @@ class Fund < ApplicationRecord
     self.funding_round = FundingRound.new(name:, entity_id:, status: "Open", currency: entity.currency)
   end
 
+  def folder_path
+    "/Funds/#{name}"
+  end
+
   def setup_folder_details
-    parent_folder = Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
-    setup_folder(parent_folder, name, ["Capital Calls", "Commitments"])
+    setup_folder_from_path(folder_path)
   end
 
   def investors

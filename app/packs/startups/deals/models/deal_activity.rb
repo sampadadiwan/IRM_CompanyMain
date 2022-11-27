@@ -49,9 +49,6 @@ class DealActivity < ApplicationRecord
 
   def setup_folder_details
     # Some activities are templates, they dont have an associated investor
-    if investor_name
-      parent_folder = deal.document_folder.folders.where(name: "Deal Investors").first
-      setup_folder(parent_folder, investor_name, [])
-    end
+    setup_folder_from_path("#{deal.folder_path}/Deal Investors/#{investor_name}") if investor_name
   end
 end

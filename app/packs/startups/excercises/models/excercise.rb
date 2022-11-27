@@ -1,5 +1,6 @@
 class Excercise < ApplicationRecord
   audited
+  include WithFolder
 
   update_index('entity') { self }
 
@@ -48,5 +49,9 @@ class Excercise < ApplicationRecord
 
   def notify_excercise
     ExcerciseMailer.with(excercise_id: id).notify_excercise.deliver_later
+  end
+
+  def setup_folder_details
+    setup_folder_from_path("#{option_pool.folder_path}/Excercises/#{user.full_name}")
   end
 end

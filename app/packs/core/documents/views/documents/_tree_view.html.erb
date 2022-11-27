@@ -18,8 +18,15 @@
             <div class="card-body">
                 <div id="tree_view" class="tree_view" data-controller="treeview">
                     <% entity_id = params[:entity_id].present? ? params[:entity_id] : current_user.entity_id %>
-                    <% folders, _map = Folder.build_full_tree(folders) %>
-                    <%= render "folders/tree_view", folders: folders , parent: folders.values[0][:details] if folders.present? %>
+                    <% 
+                        if entity_id == current_user.entity_id
+                            folders = @entity.root_folder.subtree.not_system.arrange 
+                        else
+                            allowed_folders = @documents.pluck(:folder_id)
+                            folders = @entity.root_folder.subtree.not_system.where(id: allowed_folders).arrange
+                        end
+                    %>
+                    <%= render "folders/tree_view", folders: folders  %>
                 </div>
             </div>
         </div>

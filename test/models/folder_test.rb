@@ -4,7 +4,7 @@
 #
 #  id               :integer          not null, primary key
 #  name             :string(255)
-#  parent_folder_id :integer
+#  parent_id :integer
 #  full_path        :text(65535)
 #  level            :integer
 #  created_at       :datetime         not null

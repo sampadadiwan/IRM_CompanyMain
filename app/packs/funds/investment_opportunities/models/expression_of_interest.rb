@@ -42,7 +42,6 @@ class ExpressionOfInterest < ApplicationRecord
   end
 
   def setup_folder_details
-    parent_folder = investment_opportunity.document_folder.folders.where(name: "EOI").first
-    setup_folder(parent_folder, eoi_entity.name, [])
+    setup_folder_from_path("#{investment_opportunity.folder_path}/EOI/#{eoi_entity.name}")
   end
 end

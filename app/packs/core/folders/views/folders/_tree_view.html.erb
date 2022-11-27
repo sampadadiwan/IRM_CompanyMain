@@ -1,22 +1,16 @@
-<ul id="<%=parent.id%>" class="">
 
-    <% folders.each do |id, folder| %>
+    <% folders.each do |folder, children| %>
+        <ul id="<%=folder.id%>" class="">
+
         <li>
             <span  class="caret">
-                <%= link_to folder[:details]&.name, documents_path(folder_id: folder[:details]&.id, entity_id: params[:entity_id])  %>
+                <%= link_to folder.name, documents_path(folder_id: folder.id, entity_id: params[:entity_id])  %>
             </span>
-            <ul class="">
-                <% folder[:children].each do |child_id, child| %>
-                    <li>
-                        <span class="caret">
-                            <%= link_to child[:details]&.name, documents_path(folder_id: child[:details]&.id, entity_id: params[:entity_id]) %>
-                        </span>
-                        <%= render "/folders/tree_view", folders: child[:children], parent: child[:details] %>
-                    </li>                    
-                <% end %>
-            </ul>
+            <%= render "/folders/tree_view", folders: children if children.present? %>                            
         </li>
+
+        </ul>
     <% end %>
 
-</ul>
+
 

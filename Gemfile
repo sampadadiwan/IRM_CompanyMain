@@ -88,6 +88,7 @@ gem 'active_flag'
 gem 'active_storage_validations'
 gem "acts_as_list"
 gem 'acts-as-taggable-on', '~> 9.0'
+gem 'ancestry'
 gem 'caxlsx'
 gem 'caxlsx_rails'
 gem 'counter_culture', '~> 2.0'

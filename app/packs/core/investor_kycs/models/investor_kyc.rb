@@ -24,8 +24,7 @@ class InvestorKyc < ApplicationRecord
   serialize :bank_verification_response, Hash
 
   def setup_folder_details
-    parent_folder = investor.document_folder.folders.where(name: "KYC").first
-    setup_folder(parent_folder, user.full_name, [])
+    setup_folder_from_path("#{investor.folder_path}/KYC/#{user.full_name}")
   end
 
   after_commit :validate_pan_card

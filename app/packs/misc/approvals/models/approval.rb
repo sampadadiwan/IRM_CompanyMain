@@ -19,8 +19,7 @@ class Approval < ApplicationRecord
   end
 
   def setup_folder_details
-    parent_folder = Folder.where(entity_id:, level: 1, name: self.class.name.pluralize.titleize).first
-    setup_folder(parent_folder, title, [])
+    setup_folder_from_path("/Approvals/#{title}")
   end
 
   def self.for_investor(user)

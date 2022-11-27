@@ -17,13 +17,14 @@ class DocumentsController < ApplicationController
       @entity = current_user.entity
       @documents = policy_scope(Document)
       authorize(Document)
-      @folders = Folder.not_system.where(entity_id: @entity.id)
-                       .order(parent_folder_id: :asc)
       @show_steps = true
     end
 
     @documents = @documents.where(owner_tag: params[:owner_tag]) if params[:owner_tag].present?
-    @documents = @documents.where(folder_id: params[:folder_id]) if params[:folder_id].present?
+    if params[:folder_id].present?
+      folder_ids = Folder.find(params[:folder_id]).descendant_ids << params[:folder_id]
+      @documents = @documents.where(folder_id: folder_ids)
+    end
     @documents = @documents.order(id: :desc)
     @documents = @documents.includes(:folder, tags: :taggings).page params[:page]
   end
@@ -34,7 +35,6 @@ class DocumentsController < ApplicationController
       @documents = Document.for_investor(current_user, @entity)
     end
 
-    @folders = Folder.joins(:documents).merge(@documents).distinct
     @documents = @documents.order(id: :desc).page params[:page]
 
     @no_folders = false
@@ -49,8 +49,8 @@ class DocumentsController < ApplicationController
                                 .query(query_string: { fields: DocumentIndex::SEARCH_FIELDS,
                                                        query:, default_operator: 'and' })
 
-      @documents = @documents.order(id: :desc).page(params[:page]).objects
-      @no_folders = true
+      @documents = @documents.page(params[:page]).objects
+      # @no_folders = true
       render "index"
     else
       redirect_to documents_path
@@ -154,7 +154,6 @@ class DocumentsController < ApplicationController
       # Show all the documents for the investor for that entity
       @documents = Document.for_investor(current_user, @entity)
     end
-    @folders = Folder.joins(:documents).merge(@documents).order(parent_folder_id: :asc).distinct
     @show_steps = false
   end
 

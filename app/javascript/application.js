@@ -33,7 +33,7 @@ $(document).on('turbo:before-cache', function() {
     $('#investor_investor_entity_id').select2('destroy');
     $('#investment_investor_id').select2('destroy');
     $('#deal_investor_investor_id').select2('destroy');
-    $('#folder_parent_folder_id').select2('destroy');
+    $('#folder_parent_id').select2('destroy');
     $('#document_folder_id').select2('destroy');    
     $('#access_right_access_to_category').select2('destroy');    
     $('#access_right_access_to_investor_id').select2('destroy');    
