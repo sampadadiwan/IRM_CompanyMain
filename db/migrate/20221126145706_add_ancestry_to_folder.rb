@@ -3,5 +3,5 @@ class AddAncestryToFolder < ActiveRecord::Migration[7.0]
     add_column :folders, :ancestry, :string
     add_index :folders, :ancestry
   end
-  Folder.build_ancestry_from_parent_ids!
+  # Folder.build_ancestry_from_parent_ids!
 end
