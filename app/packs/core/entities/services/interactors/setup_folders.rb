@@ -17,7 +17,7 @@ class SetupFolders
   end
 
   def create_if_not_exist(name, entity, parent, folder_type)
-    existing = Folder.where(name:, entity_id: entity.id, parent_id: parent.id, folder_type:).first
-    Folder.create(name:, entity_id: entity.id, parent_id: parent.id, folder_type:) unless existing
+    existing = parent.children.where(name:, entity_id: entity.id, folder_type:).first
+    parent.children.create(name:, entity_id: entity.id, folder_type:) unless existing
   end
 end

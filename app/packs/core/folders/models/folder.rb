@@ -1,13 +1,12 @@
 class Folder < ApplicationRecord
   acts_as_paranoid
-  has_ancestry
+  has_ancestry orphan_strategy: :destroy, touch: true
 
   update_index('folder') { self }
 
   enum :folder_type, %i[regular system]
 
   belongs_to :parent, class_name: "Folder", optional: true
-  has_many :folders, foreign_key: :parent_id, dependent: :destroy
   belongs_to :entity, touch: true
   belongs_to :owner, polymorphic: true, optional: true
 
@@ -19,8 +18,6 @@ class Folder < ApplicationRecord
   validates :name, presence: true
 
   before_create :set_defaults
-  after_create :touch_root
-  before_destroy :destroy_child_folders
   after_destroy :touch_root
 
   scope :for, ->(user) { where("folders.entity_id=?", user.entity_id).order("full_path asc") }
@@ -35,12 +32,6 @@ class Folder < ApplicationRecord
       self.level = 0
       self.full_path = "/"
       self.folder_type = :system
-    end
-  end
-
-  def destroy_child_folders
-    Folder.where(parent_id: id).find_each do |f|
-      f.destroy if f.level != 0
     end
   end
 

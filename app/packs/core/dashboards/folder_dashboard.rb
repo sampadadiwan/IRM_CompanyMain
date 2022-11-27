@@ -13,7 +13,6 @@ class FolderDashboard < Administrate::BaseDashboard
     documents: Field::HasMany,
     id: Field::Number,
     name: Field::String,
-    parent_id: Field::Number,
     full_path: Field::Text,
     level: Field::Number,
     created_at: Field::DateTime,
