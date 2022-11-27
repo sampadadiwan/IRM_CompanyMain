@@ -99,9 +99,9 @@ class Entity < ApplicationRecord
     self.currency ||= "INR"
   end
 
-  def self.for_investor(user)
-    Entity.joins(:investor_accesses).where("investor_accesses.user_id=?", user.id).distinct
-  end
+  scope :for_investor, lambda { |user|
+    joins(:investor_accesses).where("investor_accesses.user_id=?", user.id).distinct
+  }
 
   def trust_investor
     investors.is_trust.first

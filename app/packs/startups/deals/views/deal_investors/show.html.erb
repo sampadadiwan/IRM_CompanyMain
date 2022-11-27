@@ -5,9 +5,9 @@
 <div>
 
   <% if current_user.entity_id == @deal_investor.entity_id %>
-    <%= link_to "Add Investor", new_deal_investor_path("deal_investor[deal_id]": @deal_investor.deal_id, "deal_investor[entity_id]": @deal_investor.entity_id) , {class: "btn btn-success"}%> |
+    <%= link_to "Add Investor", new_deal_investor_path("deal_investor[deal_id]": @deal_investor.deal_id, "deal_investor[entity_id]": @deal_investor.entity_id) , {class: "btn btn-success"}%> 
   <% end %>  
-  <%= link_to "Edit", edit_deal_investor_path(@deal_investor), {class: "btn btn-primary"} if policy(@deal_investor).update? %> |
+  <%= link_to "Edit", edit_deal_investor_path(@deal_investor), {class: "btn btn-primary"} if policy(@deal_investor).update? %> 
   <%= button_to "Delete", @deal_investor, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@deal_investor).destroy?  %>
 </div>
 
