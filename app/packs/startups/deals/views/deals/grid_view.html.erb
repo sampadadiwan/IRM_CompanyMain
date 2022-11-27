@@ -69,7 +69,7 @@
             </tr>
         </thead>
         <tbody>
-            <%  @deal_investors = @deal.deal_investors.includes(:investor, :deal, :deal_activities)
+            <%  @deal_investors = policy_scope(@deal.deal_investors).includes(:investor, :deal, :deal_activities)
                 @deal_investors = @deal_investors.not_declined if params[:all].blank?
                 @deal_investors.each do |deal_investor| %>
 

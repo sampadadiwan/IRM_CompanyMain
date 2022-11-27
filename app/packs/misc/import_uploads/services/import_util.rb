@@ -1,5 +1,7 @@
 class ImportUtil
   include Interactor
+  # Just stores the last model saved in the import. @see FormType.extract_from_db
+  attr_accessor :last_saved
 
   def call
     if context.import_upload.present? && context.import_file.present?
@@ -33,6 +35,9 @@ class ImportUtil
       end
     end
 
+    # Sometimes we import custom fields. Ensure custom fields get created
+    FormType.extract_from_db(@last_saved) if @last_saved
+    # Save the results file
     File.write("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
   end
 
@@ -44,5 +49,7 @@ class ImportUtil
         model.properties[cfh.parameterize.underscore] = user_data[cfh]
       end
     end
+
+    @last_saved = model
   end
 end

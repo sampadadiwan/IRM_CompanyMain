@@ -1,4 +1,4 @@
-class DealPolicy < ApplicationPolicy
+class DealPolicy < DealBasePolicy
   class Scope < Scope
     def resolve
       if user.has_cached_role?(:super)
@@ -6,7 +6,9 @@ class DealPolicy < ApplicationPolicy
       elsif %w[startup fund_manager].include? user.curr_role
         scope.where(entity_id: user.entity_id)
       elsif user.curr_role == "investor"
-        Deal.for_investor(user)
+        scope.for_investor(user)
+      elsif user.curr_role == "advisor"
+        scope.for_advisor(user)
       end
     end
   end
@@ -19,9 +21,7 @@ class DealPolicy < ApplicationPolicy
     if user.has_cached_role?(:super) || (user.entity_id == record.entity_id && user.enable_deals)
       true
     else
-      false
-      # user.enable_deals &&
-      #   Deal.for_investor(user).where("deals.id=?", record.id).first.present?
+      permissioned_advisor?
     end
   end
 

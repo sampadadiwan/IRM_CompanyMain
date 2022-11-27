@@ -75,7 +75,7 @@ class AccessRight < ApplicationRecord
   def types
     owner_class_name = owner.class.name
     case owner_class_name
-    when "Deal"
+    when "Deal", "DealInvestor"
       AccessRight::TYPES - ["All Investors of Specific Category"]
     when "Fund", "SecondarySale"
       AccessRight::TYPES + ["Employee"]
@@ -132,7 +132,7 @@ class AccessRight < ApplicationRecord
     self.access_type = access_type.strip if access_type
   end
 
-  after_create :send_notification
+  after_commit :send_notification
   def send_notification
     AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later
   end

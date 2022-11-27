@@ -1,6 +1,8 @@
 <div class="associated_entity" data-controller="tabdetails">
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab">Documents</a>
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab"
+            data-action="click->tabdetails#loadData">Access Rights</a>
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#activities-tab" data-action="click->tabdetails#loadData">Deal Steps</a>
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#chat-tab" data-action="click->tabdetails#loadData">Chat</a>
     <% if show_tranch %>
@@ -19,6 +21,21 @@
                   UNION #{Document.includes(:folder, tags: :taggings).where(owner_id: da_ids, owner_type: "DealActivity").to_sql}" %>
         <%= render "/documents/index", owner: deal_investor, entity: deal_investor.entity, documents: Document.find_by_sql(sql) %>
       </div>     
+    </div>
+
+    <div id="access-rights-tab" class="tab-pane fade in">
+
+          <% cache([deal_investor, "AccessRights"]) do %>
+            <div id="access_rights" class="associated_entity" data-controller="datatable">
+              <% access_right = AccessRight.new(
+                  owner_id: deal_investor.id, 
+                  access_type: "DealInvestor", 
+                  owner_type: "DealInvestor", 
+                  entity_id: deal_investor.entity_id) %>
+                  
+              <%= render "/access_rights/index", access_rights: deal_investor.access_rights.includes(:investor, :owner), access_right: access_right %>
+            </div>
+          <% end %>
     </div>
 
     <div id="activities-tab" class="tab-pane fade">

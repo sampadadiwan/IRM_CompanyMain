@@ -37,7 +37,7 @@
             name: "email_or_cat", "data-action": "change->access#onChange"   %>
     </div>
 
-    <% if access_right.access_type != "Deal" %>
+    <% if ["Deal", "DealInvestor"].include? access_right.access_type %>
 
     <div class="form-group" id="category_form_group">
       <%= form.label :access_to_category, "Select Investor Category" %>
@@ -71,7 +71,7 @@
       </div>
     <% end %>
 
-    <% if access_right.access_type == "Fund" %>
+    <% if ["Fund", "Deal", "DealInvestor"].include? access_right.access_type %>
       <div class="form-group" id="metadata_form_group">
         <%= form.label :metadata, "Select Investor or Advisor" %>
         <%= form.select :metadata, ["Investor", "Advisor"], {}, 

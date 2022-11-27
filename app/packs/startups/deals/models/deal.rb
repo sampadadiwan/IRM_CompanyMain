@@ -46,10 +46,15 @@ class Deal < ApplicationRecord
     start_date != nil
   end
 
-  def self.for_investor(user)
-    Deal
-      # Ensure the access rghts for Document
-      .joins(:access_rights)
+  scope :for_advisor, lambda { |user|
+    # Ensure the access rghts for Document
+    includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter)
+                            .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
+                            .where("investors.investor_entity_id=?", user.entity_id)
+  }
+
+  scope :for_investor, lambda { |user|
+    joins(:access_rights)
       .merge(AccessRight.access_filter)
       .joins(:investors)
       # Ensure that the user is an investor and tis investor has been given access rights
@@ -57,8 +62,7 @@ class Deal < ApplicationRecord
       # Ensure this user has investor access
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
-    # .where("investor_accesses.entity_id = deals.entity_id")
-  end
+  }
 
   def to_s
     name

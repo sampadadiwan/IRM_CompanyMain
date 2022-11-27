@@ -18,6 +18,7 @@ class DealInvestor < ApplicationRecord
   has_many :messages, as: :owner, dependent: :destroy
 
   has_many :documents, as: :owner, dependent: :destroy
+  has_many :access_rights, as: :owner, dependent: :destroy
 
   delegate :name, to: :entity, prefix: :entity
   delegate :name, to: :deal, prefix: :deal
@@ -39,6 +40,10 @@ class DealInvestor < ApplicationRecord
   after_save :create_activities_later, if: proc { |di| di.deal.started? }
   def create_activities_later
     GenerateDealActivitiesJob.perform_later(id, "DealInvestor")
+  end
+
+  def name
+    investor_name
   end
 
   def to_s
@@ -99,10 +104,15 @@ class DealInvestor < ApplicationRecord
     save
   end
 
-  def self.for_investor(user)
-    DealInvestor
-      # Ensure the access rghts for Document
-      .joins(deal: :access_rights)
+  scope :for_advisor, lambda { |user|
+    # Ensure the access rghts for Document
+    includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter)
+                            .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
+                            .where("investors.investor_entity_id=?", user.entity_id)
+  }
+
+  scope :for_investor, lambda { |user|
+    joins(deal: :access_rights)
       .merge(AccessRight.access_filter)
       .joins(:investor)
       # Ensure that the user is an investor and tis investor has been given access rights
@@ -111,7 +121,7 @@ class DealInvestor < ApplicationRecord
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
       .where("investor_accesses.entity_id = deals.entity_id")
-  end
+  }
 
   def setup_folder_details
     setup_folder_from_path("#{deal.folder_path}/Deal Investors/#{investor_name}")
