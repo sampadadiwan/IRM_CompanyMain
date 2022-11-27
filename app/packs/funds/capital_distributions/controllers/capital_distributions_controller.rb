@@ -36,7 +36,7 @@ class CapitalDistributionsController < ApplicationController
     authorize @capital_distribution
     respond_to do |format|
       if @capital_distribution.save
-        format.html { redirect_to capital_distribution_url(@capital_distribution), notice: "Capital distribution was successfully created." }
+        format.html { redirect_to capital_distribution_url(@capital_distribution, tab: "payments-tab"), notice: "Capital distribution was successfully created." }
         format.json { render :show, status: :created, location: @capital_distribution }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -49,7 +49,7 @@ class CapitalDistributionsController < ApplicationController
   def update
     respond_to do |format|
       if @capital_distribution.update(capital_distribution_params)
-        format.html { redirect_to capital_distribution_url(@capital_distribution), notice: "Capital distribution was successfully updated." }
+        format.html { redirect_to capital_distribution_url(@capital_distribution, tab: "payments-tab"), notice: "Capital distribution was successfully updated." }
         format.json { render :show, status: :ok, location: @capital_distribution }
       else
         format.html { render :edit, status: :unprocessable_entity }

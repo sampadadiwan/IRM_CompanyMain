@@ -455,7 +455,7 @@ Then('I should see the capital distrbution payments generated correctly') do
 end
 
 Then('I should be able to see the capital distrbution payments') do
-  visit(capital_distribution_path(@capital_distribution))
+  visit(capital_distribution_path(@capital_distribution, tab: "payments-tab"))
   @capital_distribution.capital_distribution_payments.includes(:investor).each do |p|
     within "#capital_distribution_payment_#{p.id}" do
       expect(page).to have_content(p.investor.investor_name)
