@@ -1,6 +1,6 @@
 <%= render "/layouts/alerts" %>
 
-<% cache([@deal, current_user.entity, "GridView", params[:all]]) do %>
+<% cache([@deal, current_user.entity, "GridView", params[:all], params[:units]]) do %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4" data-controller="nudge">
     <h1 class="h3 mb-0 text-gray-800">Deal <%= @deal.name %> : Grid View</h1>

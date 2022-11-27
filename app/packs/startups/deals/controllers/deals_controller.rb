@@ -13,8 +13,6 @@ class DealsController < ApplicationController
              end
 
     @deals = @deals.where("deals.archived=?", false) if params[:include_archived].blank?
-
-    # @deals = @deals.page params[:page]
   end
 
   def search
@@ -46,9 +44,6 @@ class DealsController < ApplicationController
 
   # GET /deals/1 or /deals/1.json
   def show
-    # @deal_investors = @deal.deal_investors.order("deal_investors.primary_amount_cents desc")
-    # @deal_investors = @deal_investors.not_declined if params[:all].blank?
-
     if params[:grid_view] == "false" || @deal.start_date.nil?
       render "show"
     elsif params[:chart].present?
@@ -56,7 +51,7 @@ class DealsController < ApplicationController
     else
       respond_to do |format|
         format.xlsx do
-          @activity_names = %w[Investor Status Primary Secondary] + DealActivity.templates(@deal)
+          @activity_names = %w[Investor Status Primary Secondary Advisor] + DealActivity.templates(@deal)
           response.headers[
             'Content-Disposition'
           ] = "attachment; filename=deal.xlsx"
