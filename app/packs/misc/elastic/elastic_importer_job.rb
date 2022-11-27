@@ -21,6 +21,7 @@ class ElasticImporterJob < ApplicationJob
     FundIndex.import
     CapitalCommitmentIndex.import
     CapitalRemittanceIndex.import
+    CapitalDistributionPaymentIndex.import
     InvestorKycIndex.import
   end
 
@@ -44,6 +45,7 @@ class ElasticImporterJob < ApplicationJob
     FundIndex.reset
     CapitalCommitmentIndex.reset
     CapitalRemittanceIndex.reset
+    CapitalDistributionPaymentIndex.import
     InvestorKycIndex.reset
   end
 end
