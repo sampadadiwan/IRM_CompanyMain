@@ -131,8 +131,20 @@ class DealInvestor < ApplicationRecord
     setup_folder_from_path(folder_path)
   end
 
-  def access_rights_changed(_id)
+  def access_rights_changed(ar_id)
+    # Add the advisor name for easy access
     self.investor_advisor = Investor.owner_access_rights(self, "Advisor").pluck(:investor_name).join(",")
     save
+
+    ar = AccessRight.where(id: ar_id).first
+    if ar
+      # Ensure the advisor is also added to the deal
+      deal_access_right = ar.dup
+      deal_access_right.owner = deal
+      deal_access_right.access_type = "Deal"
+      deal_access_right.permissions = 0
+      deal_access_right.permissions.set(:read)
+      deal_access_right.save
+    end
   end
 end
