@@ -1,5 +1,4 @@
 class DealInvestor < ApplicationRecord
-  # include Trackable
   include WithFolder
 
   monetize :secondary_investment_cents, with_currency: ->(i) { i.deal.currency }

@@ -9,16 +9,18 @@ module WithFolder
   def document_folder
     # Since the initial docs are created before the parent_folder is created
     # store them in the root folder. Move them to the main_folder post creation
-    Folder.where(entity_id:, owner: self).first || Folder.first
+    Folder.where(entity_id:, owner: self).last || Folder.first
   end
 
   def setup_folder_from_path(path)
     parent = entity.root_folder
-    path.split("/").each do |folder_name|
+    path_list = path.split("/")
+    path_list.each_with_index do |folder_name, idx|
       next if folder_name.blank?
 
       folder = parent.children.where(name: folder_name).first
-      folder = parent.children.create(name: folder_name, entity_id:, folder_type: :system, owner: self) if folder.nil?
+      owner = idx == path_list.length - 1 ? self : nil
+      folder = parent.children.create(name: folder_name, entity_id:, folder_type: :system, owner:) if folder.nil?
       parent = folder
     end
   end
