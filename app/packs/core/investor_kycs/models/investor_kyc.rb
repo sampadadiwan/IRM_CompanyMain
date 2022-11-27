@@ -23,8 +23,12 @@ class InvestorKyc < ApplicationRecord
   serialize :pan_verification_response, Hash
   serialize :bank_verification_response, Hash
 
+  def folder_path
+    "#{investor.folder_path}/KYC-#{id}/#{user.full_name}"
+  end
+
   def setup_folder_details
-    setup_folder_from_path("#{investor.folder_path}/KYC-#{id}/#{user.full_name}")
+    setup_folder_from_path(folder_path)
   end
 
   after_commit :validate_pan_card

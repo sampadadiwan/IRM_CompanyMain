@@ -145,8 +145,12 @@ class Offer < ApplicationRecord
     OfferMailer.with(offer_id: id).notify_accept_spa.deliver_later unless secondary_sale.no_offer_emails
   end
 
+  def folder_path
+    "#{secondary_sale.folder_path}/Offers/#{user.full_name}-#{id}"
+  end
+
   def setup_folder_details
-    setup_folder_from_path("#{secondary_sale.folder_path}/Offers/#{user.full_name}-#{id}")
+    setup_folder_from_path(folder_path)
   end
 
   def document_list

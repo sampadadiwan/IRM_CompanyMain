@@ -156,7 +156,7 @@ end
 
 When('the deal investor document details must be setup right') do
   @document.owner.should == @deal_investor
-  @document.folder.name.should == @deal_investor.investor_name
+  @document.folder.name.should == "#{@deal_investor.investor_name}-#{@deal_investor.id}"
   @document.folder.full_path.should == "/Deals/#{@deal.name}-#{@deal.id}/Deal Investors/#{@deal_investor.investor_name}-#{@deal_investor.id}"
 end
 

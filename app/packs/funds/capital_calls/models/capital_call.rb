@@ -25,8 +25,12 @@ class CapitalCall < ApplicationRecord
     CapitalCallJob.perform_later(id) if saved_change_to_approved?
   end
 
+  def folder_path
+    "#{fund.folder_path}/Capital Calls/#{name}-#{id}"
+  end
+
   def setup_folder_details
-    setup_folder_from_path("#{fund.folder_path}/Capital Calls/#{name}-#{id}")
+    setup_folder_from_path(folder_path)
   end
 
   def to_s

@@ -103,8 +103,12 @@ class Interest < ApplicationRecord
     allocation_quantity - offer_quantity
   end
 
+  def folder_path
+    "#{secondary_sale.folder_path}/Interests/#{interest_entity.name}-#{id}"
+  end
+
   def setup_folder_details
-    setup_folder_from_path("#{secondary_sale.folder_path}/Interests/#{interest_entity.name}-#{id}")
+    setup_folder_from_path(folder_path)
   end
 
   def offer_amount

@@ -41,7 +41,11 @@ class ExpressionOfInterest < ApplicationRecord
     ExpressionOfInterestMailer.with(id:).notify_approved.deliver_later if approved && approved_changed?
   end
 
+  def folder_path
+    "#{investment_opportunity.folder_path}/EOI/#{eoi_entity.name}-#{id}"
+  end
+
   def setup_folder_details
-    setup_folder_from_path("#{investment_opportunity.folder_path}/EOI/#{eoi_entity.name}-#{id}")
+    setup_folder_from_path(folder_path)
   end
 end
