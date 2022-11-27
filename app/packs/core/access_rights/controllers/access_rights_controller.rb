@@ -6,7 +6,7 @@ class AccessRightsController < ApplicationController
 
   # GET /access_rights or /access_rights.json
   def index
-    @access_rights = policy_scope(AccessRight).includes(:owner, :investor)
+    @access_rights = policy_scope(AccessRight).includes(:owner, :investor, :user)
 
     @access_rights = @access_rights.deals.where(owner_id: params[:deal_id]) if params[:deal_id].present?
     @access_rights = @access_rights.where(owner_id: params[:owner_id]) if params[:owner_id].present?
@@ -20,20 +20,15 @@ class AccessRightsController < ApplicationController
     @entity = current_user.entity
     query = params[:query]
     if query.present?
-      @access_rights = if current_user.has_role?(:super)
-
-                         AccessRightIndex.query(query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
-                                                                query:, default_operator: 'and' })
-
-                       else
-                         AccessRightIndex.filter(term: { entity_id: @entity.id })
-                                         .query(query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
-                                                                query:, default_operator: 'and' })
-                       end
+      @access_rights = AccessRightIndex.filter(term: { entity_id: @entity.id })
+                                       .query(query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
+                                                              query:, default_operator: 'and' })
 
       @access_rights = @access_rights.page(params[:page]).objects
+      render "index"
+    else
+      redirect_to access_rights_path
     end
-    render "index"
   end
 
   # GET /access_rights/1 or /access_rights/1.json
