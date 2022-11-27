@@ -124,7 +124,13 @@ class DocumentsController < ApplicationController
     @document.destroy
 
     respond_to do |format|
-      format.html { redirect_to documents_url, notice: "Document was successfully deleted." }
+      format.html do
+        if @document.owner
+          redirect_to [@document.owner, { tab: "documents-tab" }], notice: "Document was successfully deleted."
+        else
+          redirect_to documents_url, notice: "Document was successfully deleted."
+        end
+      end
       format.json { head :no_content }
     end
   end

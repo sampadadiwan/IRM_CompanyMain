@@ -50,7 +50,7 @@
       <div id="activities-tab" class="tab-pane fade">
         <div id="deal_activities" class="associated_entity">
           
-          <%= link_to deal_activities_path(deal_id: deal.id, template: true), class: "load_data_link", 
+          <%= link_to deal_activities_path(deal_id: deal.id, template: true, all: true), class: "load_data_link", 
             data: { turbo_frame: 'deal_activities_frame' } do %>
               <span>Loading...</span>
           <% end %>

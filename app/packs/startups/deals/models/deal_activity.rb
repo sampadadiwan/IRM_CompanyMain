@@ -49,7 +49,7 @@ class DealActivity < ApplicationRecord
 
   def setup_folder_details
     # Some activities are templates, they dont have an associated investor
-    setup_folder_from_path("#{deal.folder_path}/Deal Investors/#{investor_name}-#{deal_investor_id}") if investor_name
+    setup_folder_from_path("#{deal_investor.folder_path}/Steps/#{id}") if deal_investor_id.present?
   end
 
   scope :for_advisor, lambda { |user|

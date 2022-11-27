@@ -123,8 +123,12 @@ class DealInvestor < ApplicationRecord
       .where("investor_accesses.entity_id = deals.entity_id")
   }
 
+  def folder_path
+    "#{deal.folder_path}/Deal Investors/#{investor_name}-#{id}"
+  end
+
   def setup_folder_details
-    setup_folder_from_path("#{deal.folder_path}/Deal Investors/#{investor_name}-#{id}")
+    setup_folder_from_path(folder_path)
   end
 
   def access_rights_changed(_id)

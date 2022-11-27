@@ -91,13 +91,13 @@
   
 </table>
 
-<% if current_user.entity_id == @deal_activity.entity_id %>
 
 <div>
-  <%= link_to "Edit", edit_deal_activity_path(@deal_activity), {class: "btn btn-primary"} %> |
-  <%= button_to "Delete", @deal_activity, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <%= link_to "Edit", edit_deal_activity_path(@deal_activity), 
+      {class: "btn btn-primary"} if policy(@deal_activity).update? %> |
+  <%= button_to "Delete", @deal_activity, method: :delete, class: "btn btn-danger", form_class: "deleteButton", 
+      data: {action: "click->confirm#popup", turbo:false} if policy(@deal_activity).update?  %>
 </div>
 
-<% end %>
 
 <%= render  "/deal_activities/details", deal_activity: @deal_activity %>

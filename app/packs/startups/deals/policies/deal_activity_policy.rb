@@ -30,14 +30,16 @@ class DealActivityPolicy < DealBasePolicy
   end
 
   def update?
-    create?
+    create? ||
+      permissioned_advisor?(:update)
   end
 
   def edit?
-    create?
+    update?
   end
 
   def destroy?
-    create?
+    create? ||
+      permissioned_advisor?(:destroy)
   end
 end
