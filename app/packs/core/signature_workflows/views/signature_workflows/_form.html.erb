@@ -1,0 +1,42 @@
+<%= form_with(model: signature_workflow) do |form| %>
+  <% if signature_workflow.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(signature_workflow.errors.count, "error") %> prohibited this signature_workflow from being saved:</h2>
+
+      <ul>
+        <% signature_workflow.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :owner_id %>
+    <%= form.text_field :owner_id, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :entity_id %>
+    <%= form.text_field :entity_id, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :signatory_ids %>
+    <%= form.text_field :signatory_ids, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :completed_ids %>
+    <%= form.text_field :completed_ids, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :sequential %>
+    <%= form.check_box :sequential, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

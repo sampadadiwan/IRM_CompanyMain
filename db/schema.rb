@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_28_012217) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_28_093843) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1373,6 +1373,23 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_28_012217) do
     t.index ["transfered_by_id"], name: "index_share_transfers_on_transfered_by_id"
   end
 
+  create_table "signature_workflows", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "signatory_ids"
+    t.string "completed_ids"
+    t.string "state"
+    t.string "reason"
+    t.string "status"
+    t.boolean "sequential", default: false
+    t.boolean "completed", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_signature_workflows_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_signature_workflows_on_owner"
+  end
+
   create_table "taggings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "tag_id"
     t.string "taggable_type"
@@ -1658,6 +1675,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_28_012217) do
   add_foreign_key "share_transfers", "users", column: "from_user_id"
   add_foreign_key "share_transfers", "users", column: "to_user_id"
   add_foreign_key "share_transfers", "users", column: "transfered_by_id"
+  add_foreign_key "signature_workflows", "entities"
   add_foreign_key "taggings", "tags"
   add_foreign_key "tasks", "entities"
   add_foreign_key "tasks", "form_types"

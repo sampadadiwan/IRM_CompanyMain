@@ -1,4 +1,12 @@
 FactoryBot.define do
+  factory :signature_workflow do
+    owner { nil }
+    entity { nil }
+    signatory_ids { "MyString" }
+    completed_ids { "MyString" }
+    sequential { false }
+  end
+
   factory :adhaar_esign do
     entity { nil }
     document { nil }
