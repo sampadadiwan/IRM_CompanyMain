@@ -83,6 +83,6 @@ Rails.application.configure do
     IPAddr.new("0.0.0.0/0"),        # All IPv4 addresses.
     IPAddr.new("::/0"),             # All IPv6 addresses.
     "localhost",                    # The localhost reserved domain.
-    ENV["RAILS_DEVELOPMENT_HOSTS"]  # Additional comma-separated hosts for development.
+    ENV["NGROK_HOST"]  # Additional comma-separated hosts for development.
   ]
 end

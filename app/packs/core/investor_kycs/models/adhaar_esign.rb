@@ -24,8 +24,18 @@ class AdhaarEsign < ApplicationRecord
   end
 
   def redirect_url
-    base_url = ENV['NGROK_HOST'].present? ? "http://#{ENV['NGROK_HOST']}" : ENV['BASE_URL']
+    base_url = ENV['NGROK_HOST'].present? ? "http://#{ENV['NGROK_HOST']}" : sub_domain
     base_url + "/adhaar_esigns/#{id}/completed"
+  end
+
+  # This is done cause we need to redirect back to the subdomain if it exists
+  def sub_domain
+    if entity.sub_domain.present?
+      # Hack... Hopefully http gets redirected to https
+      "http://#{entity.sub_domain.strip}.#{ENV['DOMAIN']}"
+    else
+      ENV['BASE_URL']
+    end
   end
 
   def esign_link(phone = "phone_number")
