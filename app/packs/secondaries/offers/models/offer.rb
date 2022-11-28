@@ -236,10 +236,19 @@ class Offer < ApplicationRecord
     self[:seller_signature_types].presence || secondary_sale&.seller_signature_types
   end
 
+  def signatory_ids
+    user_ids = []
+    user_ids << user.id if seller_signature_types.include?("adhaar")
+    user_ids << interest.user.id if interest.buyer_signature_types.include?("adhaar") && interest
+    user_ids
+  end
+
   def sign_link(phone)
     # Substitute the phone number required in the link
-    esign_link["phone_number"] = phone
-    esign_link
+    if esign_link.present?
+      esign_link["phone_number"] = phone
+      esign_link
+    end
   end
 
   def signature_completed(signature_type, file)

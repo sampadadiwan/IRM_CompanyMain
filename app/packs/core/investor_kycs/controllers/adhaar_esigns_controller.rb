@@ -1,6 +1,7 @@
 class AdhaarEsignsController < ApplicationController
   before_action :set_adhaar_esign, only: %i[show edit update destroy completed]
   after_action :verify_authorized, except: %i[index search digio_webhook]
+  before_action :authenticate_user!, except: %i[digio_webhook]
 
   # GET /adhaar_esigns or /adhaar_esigns.json
   def index
@@ -24,7 +25,7 @@ class AdhaarEsignsController < ApplicationController
   # @see AdhaarEsign
   def completed
     if params[:status] == "success"
-      AdhaarEsignCompletedJob.perform_later(@adhaar_esign.id)
+      AdhaarEsignCompletedJob.perform_later(@adhaar_esign.id, current_user.id)
       redirect_to @adhaar_esign.owner, notice: "Adhaar eSign was successfull. We will let you know the next steps."
     else
       redirect_to @adhaar_esign.owner, notice: "Adhaar eSign was not successfull, please retry again."

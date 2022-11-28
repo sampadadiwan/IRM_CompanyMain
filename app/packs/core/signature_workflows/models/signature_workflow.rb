@@ -6,22 +6,22 @@ class SignatureWorkflow < ApplicationRecord
   serialize :completed_ids, Array
   serialize :state, Hash
 
-  validate :owner_interface
-
-  def owner_interface
-    errors.add(:owner, "does not implement method signing_link") unless owner.respond_to?(:signing_link)
-  end
-
   def next_step
-    pending = (signatory_ids - completed_ids)
-    if pending.present?
-      send_notification(pending[0])
-      self.completed = false
+    if paused
+      Rails.logger.debug { "SignatureWorkflow #{id} is paused." }
     else
-      self.completed = true
-      Rails.logger.debug { "SignatureWorkflow #{id} is complete." }
+      pending = (signatory_ids - completed_ids)
+      if pending.present?
+        # Send notification to the next pending signatory
+        send_notification(pending[0])
+        self.completed = false
+      else
+        # No one is pending - its completed
+        self.completed = true
+        Rails.logger.debug { "SignatureWorkflow #{id} is complete." }
+      end
+      save
     end
-    save
   end
 
   def send_notification(user_id)
@@ -31,12 +31,16 @@ class SignatureWorkflow < ApplicationRecord
   end
 
   def update_notification_state(user_id)
-    # state ||= {}
     state[user_id] ||= {}
     state[user_id]["Notification"] ||= 0
     state[user_id]["Completed"] ||= false
     state[user_id]["Notification"] += 1
     self.status = "Sent #{state[user_id]['Notification'].ordinalize} notification for user #{user_id}"
+
+    if state[user_id]["Notification"] > 2
+      self.status = "Paused! User #{user_id} has not signed"
+      self.paused = true
+    end
   end
 
   def mark_completed(user_id)
@@ -53,10 +57,10 @@ class SignatureWorkflow < ApplicationRecord
   end
 
   def update_completion_state(user_id)
-    # state ||= {}
     state[user_id] ||= {}
     state[user_id]["Completed"] = true
     self.status = "Signature completed for user #{user_id}"
+    self.paused = false
     completed_ids << user_id
     self.completed_ids = completed_ids.to_set.to_a
   end
@@ -66,6 +70,7 @@ class SignatureWorkflow < ApplicationRecord
     self.state = {}
     self.status = ""
     self.completed = false
+    self.paused = false
     save
   end
 end

@@ -6,7 +6,7 @@ class SignatureWorkflowMailer < ApplicationMailer
     @user = User.find params[:user_id]
     email = sandbox_email(@signature_workflow, @user.email)
 
-    subj = "Signature required for #{@signature_workflow.reason} "
+    subj = @signature_workflow.reason
     mail(from: from_email(@signature_workflow.entity),
          to: email,
          cc: ENV['SUPPORT_EMAIL'],
@@ -18,7 +18,7 @@ class SignatureWorkflowMailer < ApplicationMailer
     @user = User.find params[:user_id]
     email = sandbox_email(@signature_workflow, @user.email)
 
-    subj = "Signature completed by user #{@user.full_name} for #{@signature_workflow.reason} "
+    subj = "Signature completed by user #{@user.full_name} for #{@signature_workflow.entity.name} "
     mail(from: from_email(@signature_workflow.entity),
          to: email,
          cc: ENV['SUPPORT_EMAIL'],

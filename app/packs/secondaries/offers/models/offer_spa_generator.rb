@@ -9,6 +9,7 @@ class OfferSpaGenerator
     cleanup_old_spa(offer)
     generate(offer, master_spa_path)
     attach(offer)
+    prepare_for_signature(offer)
   ensure
     cleanup
   end
@@ -179,5 +180,11 @@ class OfferSpaGenerator
   def attach(offer)
     offer.spa = File.open("#{@working_dir}/Offer-#{offer.id}.pdf", "rb")
     offer.save
+  end
+
+  def prepare_for_signature(offer)
+    OfferEsignProvider.new(offer).generate_spa_signatures(force: true)
+    SignatureWorkflow.create!(owner: offer, entity_id: offer.entity_id, signatory_ids: offer.signatory_ids,
+                              reason: "Signature required on SPA : #{offer.entity.name}").next_step
   end
 end

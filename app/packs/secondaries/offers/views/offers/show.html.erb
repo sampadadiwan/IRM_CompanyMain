@@ -22,9 +22,10 @@
 
 
       <% if @offer.esign_required %>
-        <% unless @offer.esign_completed %>
+        <% sign_link = @offer.sign_link(current_user.phone) %>
+        <% if !@offer.esign_completed && sign_link.present? %>
           <% target = Rails.env.test? ? "" : "_blank" %>
-          <%= link_to "Click here to Adhaar eSign", "#{@offer.sign_link(current_user.phone)}",  target: target,
+          <%= link_to "Click here to Adhaar eSign", sign_link,  target: target,
               class: "btn btn-success"  if policy(@offer).accept_spa?  %>
         <% end %>
       <% else %>
