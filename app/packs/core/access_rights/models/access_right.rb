@@ -130,6 +130,7 @@ class AccessRight < ApplicationRecord
     self.access_to_category = access_to_category.strip if access_to_category
     self.metadata = metadata.strip if metadata
     self.access_type = access_type.strip if access_type
+    self.access_type ||= owner_type
   end
 
   after_commit :send_notification

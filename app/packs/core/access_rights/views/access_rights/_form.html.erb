@@ -37,7 +37,7 @@
             name: "email_or_cat", "data-action": "change->access#onChange"   %>
     </div>
 
-    <% if ["Deal", "DealInvestor"].include? access_right.access_type %>
+    <% unless ["Deal", "DealInvestor"].include? access_right.access_type %>
 
     <div class="form-group" id="category_form_group">
       <%= form.label :access_to_category, "Select Investor Category" %>
@@ -63,7 +63,7 @@
       </div>
     <% end %>
 
-    <% if access_right.access_type == "SecondarySale" %>
+    <% if access_right.owner_type == "SecondarySale" %>
       <div class="form-group" id="metadata_form_group">
         <%= form.label :metadata, "Select Buyer or Seller" %>
         <%= form.select :metadata, ["Buyer", "Seller", "Advisor"], {}, 
@@ -71,7 +71,7 @@
       </div>
     <% end %>
 
-    <% if ["Fund", "Deal", "DealInvestor"].include? access_right.access_type %>
+    <% if ["Fund", "Deal", "DealInvestor"].include? access_right.owner_type %>
       <div class="form-group" id="metadata_form_group">
         <%= form.label :metadata, "Select Investor or Advisor" %>
         <%= form.select :metadata, ["Investor", "Advisor"], {}, 
@@ -79,7 +79,7 @@
       </div>
     <% end %>
 
-    <% if ["Fund", "SecondarySale"].include? access_right.access_type %>    
+    <% if ["Fund", "SecondarySale"].include? access_right.owner_type %>    
       <div class="form-group" id="employee_form_group">
         <%= form.label :user_id, "Select User" %>
         <%= form.select :user_id, access_right.entity.employees.map{|u| [u.full_name, u.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple"  %>
