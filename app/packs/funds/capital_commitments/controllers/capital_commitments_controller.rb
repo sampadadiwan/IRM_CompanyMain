@@ -39,7 +39,7 @@ class CapitalCommitmentsController < ApplicationController
       @capital_commitments = @capital_commitments.objects
       render "index"
     else
-      redirect_to capital_commitments_path
+      redirect_to capital_commitments_path(params.to_enum.to_h)
     end
   end
 

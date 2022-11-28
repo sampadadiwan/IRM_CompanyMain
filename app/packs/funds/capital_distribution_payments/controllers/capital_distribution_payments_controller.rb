@@ -47,7 +47,7 @@ class CapitalDistributionPaymentsController < ApplicationController
       @capital_distribution_payments = @capital_distribution_payments.objects
       render "index"
     else
-      redirect_to capital_distribution_payments_path
+      redirect_to capital_distribution_payments_path(params.to_enum.to_h)
     end
   end
 
