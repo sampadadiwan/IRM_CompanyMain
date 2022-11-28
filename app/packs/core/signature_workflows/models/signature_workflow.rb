@@ -6,6 +6,12 @@ class SignatureWorkflow < ApplicationRecord
   serialize :completed_ids, Array
   serialize :state, Hash
 
+  validate :owner_interface
+
+  def owner_interface
+    errors.add(:owner, "does not implement method signing_link") unless owner.respond_to?(:signing_link)
+  end
+
   def next_step
     pending = (signatory_ids - completed_ids)
     if pending.present?
@@ -13,6 +19,7 @@ class SignatureWorkflow < ApplicationRecord
       self.completed = false
     else
       self.completed = true
+      Rails.logger.debug { "SignatureWorkflow #{id} is complete." }
     end
     save
   end
@@ -33,12 +40,16 @@ class SignatureWorkflow < ApplicationRecord
   end
 
   def mark_completed(user_id)
-    # Send the notification & update state
-    SignatureWorkflowMailer.with(id:, user_id:).notify_signature_completed.deliver_later
-    update_completion_state(user_id)
-    save
-    # Trigger the next step
-    next_step
+    if completed
+      Rails.logger.debug { "SignatureWorkflow #{id} is complete." }
+    else
+      # Send the notification & update state
+      SignatureWorkflowMailer.with(id:, user_id:).notify_signature_completed.deliver_later
+      update_completion_state(user_id)
+      save
+      # Trigger the next step
+      next_step
+    end
   end
 
   def update_completion_state(user_id)
@@ -47,5 +58,14 @@ class SignatureWorkflow < ApplicationRecord
     state[user_id]["Completed"] = true
     self.status = "Signature completed for user #{user_id}"
     completed_ids << user_id
+    self.completed_ids = completed_ids.to_set.to_a
+  end
+
+  def reset
+    self.completed_ids = []
+    self.state = {}
+    self.status = ""
+    self.completed = false
+    save
   end
 end
