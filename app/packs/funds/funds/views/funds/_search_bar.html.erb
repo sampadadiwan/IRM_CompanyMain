@@ -1,0 +1,13 @@
+<form action="/<%=model_name.pluralize%>/search" class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search" data-turbo-frame="<%=model_name.pluralize%>_frame">
+    <div class="input-group">
+        <input name="query" type="text" class="form-control bg-light border-0 small" placeholder="Search for..." value="" aria-label="Search" aria-describedby="basic-addon2">
+        <input name="fund_id" hidden="hidden" value="<%= params[:fund_id] %>">
+        <input name="capital_call_id" hidden="hidden" value="<%= params[:capital_call_id] %>">
+        <input name="capital_distribution_id" hidden="hidden" value="<%= params[:capital_distribution_id] %>">
+        <div class="input-group-append">
+            <button class="btn btn-primary" type="submit">
+                <i class="fas fa-search fa-sm"></i>
+            </button>
+        </div>
+    </div>
+</form>

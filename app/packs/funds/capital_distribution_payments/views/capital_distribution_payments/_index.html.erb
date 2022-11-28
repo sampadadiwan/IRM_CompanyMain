@@ -6,6 +6,7 @@
 
       <%= link_to "Download" , capital_distribution_payments_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id, format: "xlsx"), {class: "btn btn-primary" } if capital_distribution %>
 
+      <%= render "/funds/search_bar", model_name: "capital_distribution_payment" %>
     </span>
 
   </div>

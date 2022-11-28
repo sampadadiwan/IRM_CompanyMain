@@ -30,6 +30,11 @@ class CapitalDistributionPaymentsController < ApplicationController
         @fund = Fund.find(params[:fund_id])
         authorize(@fund, :show?)
         term = { fund_id: @fund.id }
+      elsif params[:capital_distribution_id].present?
+        # Search in fund provided user is authorized
+        @capital_distribution = CapitalDistribution.find(params[:capital_distribution_id])
+        authorize(@capital_distribution, :show?)
+        term = { capital_distribution_id: @capital_distribution.id }
       else
         # Search in users entity only
         term = { entity_id: current_user.entity_id }

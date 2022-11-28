@@ -4,10 +4,10 @@ class CapitalRemittancesController < ApplicationController
   # GET /capital_remittances or /capital_remittances.json
   def index
     @capital_remittances = policy_scope(CapitalRemittance).includes(:fund, :investor, :capital_call, :entity, :capital_commitment)
-    @capital_remittances = @capital_remittances.where(fund_id: params[:fund_id]) if params[:fund_id]
-    @capital_remittances = @capital_remittances.where(status: params[:status]) if params[:status]
-    @capital_remittances = @capital_remittances.where(verified: params[:verified] == "true") if params[:verified]
-    @capital_remittances = @capital_remittances.where(capital_call_id: params[:capital_call_id]) if params[:capital_call_id]
+    @capital_remittances = @capital_remittances.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    @capital_remittances = @capital_remittances.where(status: params[:status]) if params[:status].present?
+    @capital_remittances = @capital_remittances.where(verified: params[:verified] == "true") if params[:verified].present?
+    @capital_remittances = @capital_remittances.where(capital_call_id: params[:capital_call_id]) if params[:capital_call_id].present?
 
     @capital_remittances = @capital_remittances.page(params[:page]) if params[:all].blank?
   end
@@ -21,6 +21,11 @@ class CapitalRemittancesController < ApplicationController
         @fund = Fund.find(params[:fund_id])
         authorize(@fund, :show?)
         term = { fund_id: @fund.id }
+      elsif params[:capital_call_id].present?
+        # Search in fund provided user is authorized
+        @capital_call = CapitalCall.find(params[:capital_call_id])
+        authorize(@capital_call, :show?)
+        term = { capital_call_id: @capital_call.id }
       else
         # Search in users entity only
         term = { entity_id: current_user.entity_id }
@@ -33,7 +38,7 @@ class CapitalRemittancesController < ApplicationController
       @capital_remittances = @capital_remittances.objects
       render "index"
     else
-      redirect_to capital_remittances_path
+      redirect_to capital_remittances_path(params.to_enum.to_h)
     end
   end
 
