@@ -1,55 +1,73 @@
 <%= render "/layouts/alerts" %>
-
 <table class="table table-bordered dataTable">
-
-          <tr>
-        <td>
-          Owner
-        </td>
-        <td>
-          <%= @signature_workflow.owner_id %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Entity
-        </td>
-        <td>
-          <%= @signature_workflow.entity_id %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Signatory Ids
-        </td>
-        <td>
-          <%= @signature_workflow.signatory_ids %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Completed Ids
-        </td>
-        <td>
-          <%= @signature_workflow.completed_ids %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Sequential
-        </td>
-        <td>
-          <%= @signature_workflow.sequential %>
-        </td>    
-      </tr>
-    
-  
+  <tr>
+    <td>
+      Owner
+    </td>
+    <td>
+      <%= @signature_workflow.owner_type %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @signature_workflow.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Reason
+    </td>
+    <td>
+      <%= @signature_workflow.reason %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Status
+    </td>
+    <td>
+      <%= @signature_workflow.status %>
+      <br>
+      <%= @signature_workflow.state %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Completed
+    </td>
+    <td>
+      <%= display_boolean @signature_workflow.completed %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Signatory Ids
+    </td>
+    <td>
+      <%= @signature_workflow.signatory_ids %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Completed Ids
+    </td>
+    <td>
+      <%= @signature_workflow.completed_ids %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Sequential
+    </td>
+    <td>
+      <%= display_boolean @signature_workflow.sequential %>
+    </td>
+  </tr>
 </table>
-
-
 <div>
-  <%= link_to "Edit", edit_signature_workflow_path(@signature_workflow), {class: "btn btn-primary"} %> |
-  <%= link_to "Back", :back, {class: "btn btn-primary"} %> |
-
+  <%= link_to "Edit", edit_signature_workflow_path(@signature_workflow), {class: "btn btn-primary"} %> 
   <%= button_to "Delete", @signature_workflow, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
 </div>

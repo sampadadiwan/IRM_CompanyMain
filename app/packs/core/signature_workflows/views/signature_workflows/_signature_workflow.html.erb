@@ -4,13 +4,19 @@
     <%= signature_workflow.owner_type %>
   </td>
   <td>
+    <%= signature_workflow.reason %>
+  </td>
+  <td>
     <%= signature_workflow.signatory_ids %>
   </td>
   <td>
     <%= signature_workflow.completed_ids %>
   </td>
   <td>
-    <%= signature_workflow.sequential %>
+    <%= signature_workflow.status %>
+  </td>
+  <td>
+    <%= display_boolean signature_workflow.completed %>
   </td>
   <td>
     <%= link_to "Show", signature_workflow , {class: "btn btn-primary"}%>

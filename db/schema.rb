@@ -1382,7 +1382,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_28_093843) do
     t.string "state"
     t.string "reason"
     t.string "status"
-    t.boolean "sequential", default: false
+    t.boolean "sequential", default: true
     t.boolean "completed", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

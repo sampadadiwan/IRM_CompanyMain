@@ -8,7 +8,7 @@ class CreateSignatureWorkflows < ActiveRecord::Migration[7.0]
       t.string :state
       t.string :reason
       t.string :status
-      t.boolean :sequential, default: false
+      t.boolean :sequential, default: true
       t.boolean :completed, default: false
 
       t.timestamps
