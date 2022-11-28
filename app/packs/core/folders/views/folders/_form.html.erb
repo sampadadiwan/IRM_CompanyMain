@@ -27,19 +27,10 @@
     <%= form.select :parent_id, Folder.for(current_user).map{|f| [f.full_path, f.id]} ,{}, class: "form-control select2"  %>
   </div>
 
-  <div class="mb-3" data-controller="multiple-upload" 
-          data-multiple-upload-types-value="<%= FileUploader::ALLOWED_TYPES.to_json %>" 
-          data-multiple-upload-server-value="<%= upload_server %>"
-          data-multiple-upload-drop-here-value="Folder Documents"
-          data-multiple-upload-parent-model-value="folder">
-          
-    <!-- will be replaced by Uppy -->
-    <%= form.label :documents, "Select Files", class: "form-label" %>
-    <%= form.file_field :documents,
-        multiple: true,
-        class: "form-control",
-        data: { multiple_upload_target: "input" } %>
-  </div>
+
+  <%= render "layouts/multi_upload", form: form, title: "Folder Documents", 
+              for_model: "folder" %>
+                    
 
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-primary"}%>

@@ -16,7 +16,7 @@ class SecondarySale < ApplicationRecord
 
   include FileUploader::Attachment(:spa)
 
-  has_many :documents, as: :owner, dependent: :destroy
+  has_many :documents, as: :owner, dependent: :destroy, :inverse_of => :owner
   accepts_nested_attributes_for :documents, allow_destroy: true
 
   has_many :offers, dependent: :destroy
@@ -124,18 +124,6 @@ class SecondarySale < ApplicationRecord
     investor_list.uniq
   end
 
-  # def buyer?(user)
-  #   SecondarySale.for(user).where("access_rights.metadata=?", "Buyer").where(id:).present?
-  # end
-
-  # def seller?(user)
-  #   SecondarySale.for(user).where("access_rights.metadata=?", "Seller").where(id:).present?
-  # end
-
-  # def advisor?(user)
-  #   user.curr_role == :advisor &&
-  #     SecondarySale.for(user).where("access_rights.metadata=?", "Advisor").where(id:).present?
-  # end
 
   def offers_by_funding_round
     offers.joins(holding: :funding_round).group("funding_rounds.name").sum(:quantity).sort.to_h

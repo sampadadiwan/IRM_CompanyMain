@@ -31,4 +31,4 @@
         {class: "btn btn-primary" } if current_user && @interest.entity_id == current_user.entity_id %> 
   </div>
 
-  <%= render "interests/interest_details", interest: @interest if @interest.short_listed %>
+  <%= render "interests/interest_details", interest: @interest %>

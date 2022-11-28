@@ -146,19 +146,9 @@
                 <div class="card-header"> 3. Sale Documents </div>
                 <div class="card-body">
                     <%= form.label :documents, "Documents Visible To Buyers", class: "form-label" %>
-                    <div class="mb-3" data-controller="multiple-upload" 
-                            data-multiple-upload-types-value="<%= FileUploader::ALLOWED_TYPES.to_json %>" 
-                            data-multiple-upload-server-value="<%= upload_server %>"
-                            data-multiple-upload-drop-here-value="Buyer Documents",
-                            data-multiple-upload-owner-tag-value="Buyer" 
-                            data-multiple-upload-parent-model-value="secondary_sale">
-                        <!-- will be replaced by Uppy -->
-                        <%= form.label :buyer_docs, "Select Files", class: "form-label" %>
-                        <%= form.file_field :buyer_docs,
-                            multiple: true,
-                            class: "form-control",
-                            data: { multiple_upload_target: "input" } %>
-                    </div>
+                    <%= render "layouts/multi_upload", form: form, title: "Buyer Documents", 
+                                                owner_tag: "Buyer", for_model: "secondary_sale" %>
+
 
                     <div class="form-group">
                         <%= form.label :buyer_doc_list, "Documents Required From Buyer" %>
@@ -168,19 +158,10 @@
 
 
                     <%= form.label :documents, "Documents Visible To Sellers", class: "form-label" %>
-                    <div class="mb-3" data-controller="multiple-upload" 
-                            data-multiple-upload-types-value="<%= FileUploader::ALLOWED_TYPES.to_json %>" 
-                            data-multiple-upload-server-value="<%= upload_server %>"
-                            data-multiple-upload-drop-here-value="Seller Documents"
-                            data-multiple-upload-owner-tag-value="Seller"
-                            data-multiple-upload-parent-model-value="secondary_sale">
-                        <!-- will be replaced by Uppy -->
-                        <%= form.label :seller_docs, "Select Files", class: "form-label" %>
-                        <%= form.file_field :seller_docs,
-                            multiple: true,
-                            class: "form-control",
-                            data: { multiple_upload_target: "input" } %>
-                    </div>
+
+                    <%= render "layouts/multi_upload", form: form, title: "Seller Documents", 
+                                                owner_tag: "Seller", for_model: "secondary_sale" %>
+                    
 
                     <div class="form-group">
                         <%= form.label :seller_doc_list, "Documents Required From Sellers" %>
