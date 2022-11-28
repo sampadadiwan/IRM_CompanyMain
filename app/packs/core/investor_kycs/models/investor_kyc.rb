@@ -27,10 +27,6 @@ class InvestorKyc < ApplicationRecord
     "#{investor.folder_path}/KYC-#{id}/#{user.full_name}"
   end
 
-  def setup_folder_details
-    setup_folder_from_path(folder_path)
-  end
-
   after_commit :validate_pan_card
   def validate_pan_card
     VerifyKycPanJob.perform_later(id) if saved_change_to_PAN? || saved_change_to_full_name? || saved_change_to_pan_card_data?

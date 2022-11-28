@@ -29,10 +29,6 @@ class CapitalCall < ApplicationRecord
     "#{fund.folder_path}/Capital Calls/#{name}-#{id}"
   end
 
-  def setup_folder_details
-    setup_folder_from_path(folder_path)
-  end
-
   def to_s
     "#{name}: #{percentage_called}%"
   end

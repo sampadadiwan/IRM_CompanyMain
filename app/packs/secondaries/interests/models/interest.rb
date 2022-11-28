@@ -107,10 +107,6 @@ class Interest < ApplicationRecord
     "#{secondary_sale.folder_path}/Interests/#{interest_entity.name}-#{id}"
   end
 
-  def setup_folder_details
-    setup_folder_from_path(folder_path)
-  end
-
   def offer_amount
     Money.new(offer_quantity * final_price * 100, entity.currency)
   end

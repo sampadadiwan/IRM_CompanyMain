@@ -127,10 +127,6 @@ class DealInvestor < ApplicationRecord
     "#{deal.folder_path}/Deal Investors/#{investor_name}-#{id}"
   end
 
-  def setup_folder_details
-    setup_folder_from_path(folder_path)
-  end
-
   def access_rights_changed(ar_id)
     # Add the advisor name for easy access
     self.investor_advisor = Investor.owner_access_rights(self, "Advisor").pluck(:investor_name).join(",")

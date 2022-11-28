@@ -51,11 +51,6 @@ class DealActivity < ApplicationRecord
     "#{deal_investor.folder_path}/Steps/#{id}"
   end
 
-  def setup_folder_details
-    # Some activities are templates, they dont have an associated investor
-    setup_folder_from_path(folder_path) if deal_investor_id.present?
-  end
-
   scope :for_advisor, lambda { |user|
     # Ensure the access rghts for Document
     joins(deal_investor: :access_rights).merge(AccessRight.access_filter)

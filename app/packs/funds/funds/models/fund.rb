@@ -34,10 +34,6 @@ class Fund < ApplicationRecord
     "/Funds/#{name}-#{id}"
   end
 
-  def setup_folder_details
-    setup_folder_from_path(folder_path)
-  end
-
   def investors
     investor_list = []
     access_rights.not_user.includes(:investor).find_each do |ar|

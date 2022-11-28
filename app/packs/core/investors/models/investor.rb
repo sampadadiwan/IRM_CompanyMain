@@ -122,8 +122,4 @@ class Investor < ApplicationRecord
   def folder_path
     "/Investors/#{investor_name}-#{id}"
   end
-
-  def setup_folder_details
-    setup_folder_from_path(folder_path)
-  end
 end

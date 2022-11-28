@@ -149,10 +149,6 @@ class Offer < ApplicationRecord
     "#{secondary_sale.folder_path}/Offers/#{user.full_name}-#{id}"
   end
 
-  def setup_folder_details
-    setup_folder_from_path(folder_path)
-  end
-
   def document_list
     secondary_sale.seller_doc_list&.split(",")
   end

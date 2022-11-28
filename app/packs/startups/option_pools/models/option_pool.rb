@@ -67,8 +67,4 @@ class OptionPool < ApplicationRecord
   def folder_path
     "/OptionPools/#{name}-#{id}"
   end
-
-  def setup_folder_details
-    setup_folder_from_path(folder_path)
-  end
 end

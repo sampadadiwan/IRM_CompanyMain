@@ -75,8 +75,4 @@ class Deal < ApplicationRecord
   def folder_path
     "/Deals/#{name}-#{id}"
   end
-
-  def setup_folder_details
-    setup_folder_from_path(folder_path)
-  end
 end

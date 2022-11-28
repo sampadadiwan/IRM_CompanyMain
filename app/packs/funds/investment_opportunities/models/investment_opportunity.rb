@@ -49,10 +49,6 @@ class InvestmentOpportunity < ApplicationRecord
     "/InvestmentOpportunity/#{company_name}-#{id}"
   end
 
-  def setup_folder_details
-    setup_folder_from_path(folder_path)
-  end
-
   def self.for_investor(user)
     InvestmentOpportunity
       # Ensure the access rghts for Document

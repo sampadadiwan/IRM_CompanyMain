@@ -112,10 +112,6 @@ class SecondarySale < ApplicationRecord
     "/Secondary Sales/#{name}-#{id}"
   end
 
-  def setup_folder_details
-    setup_folder_from_path(folder_path)
-  end
-
   def document_tags
     %w[Buyer Seller]
   end
