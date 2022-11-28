@@ -27,7 +27,7 @@ class VideoKycsController < ApplicationController
                      [current_user.entity_id]
                    end
 
-      @video_kycs = VideoKycIndex.filter(terms: { entity_id: entity_ids })
+      @video_kycs = VideoKycIndex.filter(term: { entity_id: entity_ids })
                                  .query(query_string: { fields: VideoKycIndex::SEARCH_FIELDS,
                                                         query:, default_operator: 'and' })
                                  .page(params[:page])

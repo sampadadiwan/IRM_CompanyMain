@@ -61,6 +61,9 @@ gem 'to_words'
 gem 'xirr', git: "https://github.com/thimmaiah/xirr"
 # gem 'prometheus_exporter'
 
+# For verifying digital signatures in PDFs
+# gem 'chilkat'
+
 gem 'odf-report'
 gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary-edge'

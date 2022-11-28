@@ -64,7 +64,8 @@
 
           <% cache([fund, "AccessRights"]) do %>
             <div id="access_rights" class="associated_entity" data-controller="datatable">
-              <%= link_to access_rights_path(owner_id: fund.id, owner_type: "Fund"), class: "load_data_link", data: { turbo_frame: 'access_rights_frame' } do %>
+              <%= link_to access_rights_path(owner_id: fund.id, owner_type: "Fund", entity_id: fund.entity_id), 
+                          class: "load_data_link", data: { turbo_frame: 'access_rights_frame' } do %>
                 <span>Loading...</span>
               <% end %>
           

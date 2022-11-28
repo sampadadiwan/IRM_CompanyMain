@@ -13,19 +13,15 @@ class InvestorAccessesController < ApplicationController
     @entity = current_user.entity
     query = params[:query]
     if query.present?
-      @investor_accesses = if current_user.has_role?(:super)
 
-                             InvestorAccessIndex.query(query_string: { fields: InvestorAccessIndex::SEARCH_FIELDS,
-                                                                       query:, default_operator: 'and' }).objects
+      InvestorAccessIndex.filter(term: { entity_id: @entity.id })
+                         .query(query_string: { fields: InvestorAccessIndex::SEARCH_FIELDS,
+                                                query:, default_operator: 'and' }).objects
 
-                           else
-                             InvestorAccessIndex.filter(term: { entity_id: @entity.id })
-                                                .query(query_string: { fields: InvestorAccessIndex::SEARCH_FIELDS,
-                                                                       query:, default_operator: 'and' }).objects
-                           end
-
+      render "index"
+    else
+      redirect_to investor_accesses_path
     end
-    render "index"
   end
 
   def request_access
@@ -40,10 +36,10 @@ class InvestorAccessesController < ApplicationController
 
     respond_to do |format|
       if @investor_access.save
-        format.html { redirect_to entity_url(@investor_access.entity), notice: "Investor access request successfull. You will be notified when your request is approved." }
+        format.html { redirect_to entity_path(@investor_access.entity), notice: "Investor access request successfull. You will be notified when your request is approved." }
         format.json { render :show, status: :created, location: @investor_access }
       else
-        format.html { redirect_to entity_url(@investor_access.entity), notice: "Investor access request failed. #{@investor_access.errors.full_messages}" }
+        format.html { redirect_to entity_path(@investor_access.entity), notice: "Investor access request failed. #{@investor_access.errors.full_messages}" }
         format.json { render json: @investor_access.errors, status: :unprocessable_entity }
       end
     end
@@ -74,7 +70,7 @@ class InvestorAccessesController < ApplicationController
           turbo_stream.replace(@investor_access)
         ]
       end
-      format.html { redirect_to investor_access_url(@investor_access), notice: "Investor access was successfully approved." }
+      format.html { redirect_to investor_access_path(@investor_access), notice: "Investor access was successfully approved." }
       format.json { @investor_access.to_json }
     end
   end
@@ -82,7 +78,7 @@ class InvestorAccessesController < ApplicationController
   def notify_kyc_required
     @investor_access.notify_kyc_required
     respond_to do |format|
-      format.html { redirect_to investor_access_url(@investor_access), notice: "Investor was sent a notification to complete KYC." }
+      format.html { redirect_to investor_access_path(@investor_access), notice: "Investor was sent a notification to complete KYC." }
       format.json { render :show, status: :ok, location: @investor_access }
     end
   end
@@ -100,7 +96,7 @@ class InvestorAccessesController < ApplicationController
     respond_to do |format|
       if @investor_access.save
         format.turbo_stream { render :create }
-        format.html { redirect_to investor_access_url(@investor_access), notice: "Investor access was successfully created." }
+        format.html { redirect_to investor_access_path(@investor_access), notice: "Investor access was successfully created." }
         format.json { render :show, status: :created, location: @investor_access }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -115,7 +111,7 @@ class InvestorAccessesController < ApplicationController
 
     respond_to do |format|
       if @investor_access.update(investor_access_params)
-        format.html { redirect_to investor_access_url(@investor_access), notice: "Investor access was successfully updated." }
+        format.html { redirect_to investor_access_path(@investor_access), notice: "Investor access was successfully updated." }
         format.json { render :show, status: :ok, location: @investor_access }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -134,7 +130,7 @@ class InvestorAccessesController < ApplicationController
           turbo_stream.remove(@investor_access)
         ]
       end
-      format.html { redirect_to investor_accesses_url, notice: "Investor access was successfully destroyed." }
+      format.html { redirect_to investor_accesses_path, notice: "Investor access was successfully destroyed." }
       format.json { head :no_content }
     end
   end

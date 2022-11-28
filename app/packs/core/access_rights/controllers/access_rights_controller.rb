@@ -18,16 +18,34 @@ class AccessRightsController < ApplicationController
 
   def search
     @entity = current_user.entity
+    @owner = nil
     query = params[:query]
+    if params[:owner_type].present? && params[:owner_id].present?
+      # Search in fund provided user is authorized
+      @owner = params[:owner_type].constantize.find(params[:owner_id])
+      authorize(@owner, :show?)
+      term = { owner_id: @owner.id, owner_type: params[:owner_type] }
+    else
+      # Search in users entity only
+      term = { entity_id: current_user.entity_id }
+    end
+
     if query.present?
-      @access_rights = AccessRightIndex.filter(term: { entity_id: @entity.id })
-                                       .query(query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
-                                                              query:, default_operator: 'and' })
+      @access_rights = if @owner
+                         AccessRightIndex.filter(term: { owner_id: @owner.id })
+                                         .query(match: { owner_type: params[:owner_type] })
+                                         .query(query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
+                                                                query:, default_operator: 'and' })
+                       else
+                         AccessRightIndex.filter(term:)
+                                         .query(query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
+                                                                query:, default_operator: 'and' })
+                       end
 
       @access_rights = @access_rights.page(params[:page]).objects
       render "index"
     else
-      redirect_to access_rights_path
+      redirect_to access_rights_path(params.to_enum.to_h)
     end
   end
 

@@ -7,6 +7,7 @@ class AccessRightIndex < Chewy::Index
   field :user_name, value: ->(ar) { ar.user.full_name if ar.user }
   field :entity_id
   field :owner_type
+  field :owner_id
   field :access_type
   field :metadata
   field :access_to_category

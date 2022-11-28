@@ -109,4 +109,37 @@ class Document < ApplicationRecord
   def access_rights_changed(access_right_id)
     DocumentMailer.with(access_right_id:).notify_signature_required.deliver_later if signature_enabled
   end
+
+  # def self.check_signature
+
+  #   # This example requires the Chilkat API to have been previously unlocked.
+  #   # See Global Unlock Sample for sample code.
+
+  #   pdf = Chilkat::CkPdf.new
+
+  #   # Load a PDF that has cryptographic signatures to be validated
+  #   success = pdf.LoadFile("public/sample_uploads/SignedDoc.pdf")
+  #   if success == false
+  #     Rails.logger.debug { "#{pdf.lastErrorText}\n" }
+  #     exit
+  #   end
+
+  #   # Each time we verify a signature, information about the signature is written into
+  #   # sigInfo (replacing whatever sigInfo previously contained).
+  #   sigInfo = Chilkat::CkJsonObject.new
+  #   sigInfo.put_EmitCompact(false)
+
+  #   # Iterate over each signature and validate each.
+  #   numSignatures = pdf.get_NumSignatures
+  #   validated = false
+  #   i = 0
+  #   while i < numSignatures
+  #     validated = pdf.VerifySignature(i, sigInfo)
+  #     Rails.logger.debug { "Signature #{i} validated: #{validated}\n" }
+  #     Rails.logger.debug { "#{sigInfo.emit}\n" }
+  #     i += 1
+  #   end
+
+  #   sigInfo.emit
+  # end
 end

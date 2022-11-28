@@ -243,6 +243,7 @@ GEM
       elasticsearch (>= 7.12.0, < 7.14.0)
       elasticsearch-dsl
     childprocess (4.1.0)
+    chilkat (9.5.0.93.1-x86_64-linux)
     chronic (0.10.2)
     client_side_validations (20.0.2)
       js_regex (~> 3.1)
@@ -745,6 +746,7 @@ DEPENDENCIES
   caxlsx_rails
   chartkick
   chewy
+  chilkat
   client_side_validations
   cocoon
   combine_pdf

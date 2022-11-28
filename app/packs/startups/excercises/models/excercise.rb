@@ -10,6 +10,9 @@ class Excercise < ApplicationRecord
   belongs_to :user
   belongs_to :option_pool
 
+  has_many :documents, as: :owner, dependent: :destroy
+  accepts_nested_attributes_for :documents, allow_destroy: true
+
   include FileUploader::Attachment(:payment_proof)
 
   monetize :price_cents, :amount_cents, with_currency: ->(e) { e.entity.currency }
