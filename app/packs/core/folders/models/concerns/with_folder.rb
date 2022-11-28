@@ -7,7 +7,7 @@ module WithFolder
   end
 
   # Get or Create the folder based on folder_path
-  def document_folder    
+  def document_folder
     folder = Folder.where(entity_id:, full_path: folder_path).last
     folder ||= setup_folder_from_path(folder_path)
     folder
@@ -18,21 +18,22 @@ module WithFolder
     folder = nil
     parent = entity.root_folder
     path_list = path.split("/")
-    path_list.each_with_index do |folder_name, idx|
+    path_list.each_with_index do |folder_name, _idx|
       next if folder_name.blank?
+
       # Check if it exists
-      folder = parent.children.where(entity_id: self.entity_id, name: folder_name, folder_type: :system).first_or_create
+      folder = parent.children.where(entity_id:, name: folder_name, folder_type: :system).first_or_create
       parent = folder
     end
     folder
   end
 
   # In some cases where docs are nested attributes the docs are created before the owner is created
-  # Thus the document_folder does not have owner id in the path. 
+  # Thus the document_folder does not have owner id in the path.
   # Rename the folder correctly once the owner is created
   def rename_document_folder
-    if self.documents.present?
-      folder = self.documents[0].folder
+    if documents.present?
+      folder = documents[0].folder
       folder.full_path = folder_path
       folder.name = folder_path.split("/")[-1]
       folder.save

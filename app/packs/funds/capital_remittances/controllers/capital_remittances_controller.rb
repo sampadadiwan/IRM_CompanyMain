@@ -12,6 +12,31 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittances = @capital_remittances.page(params[:page]) if params[:all].blank?
   end
 
+  def search
+    query = params[:query]
+
+    if query.present?
+      if params[:fund_id].present?
+        # Search in fund provided user is authorized
+        @fund = Fund.find(params[:fund_id])
+        authorize(@fund, :show?)
+        term = { fund_id: @fund.id }
+      else
+        # Search in users entity only
+        term = { entity_id: current_user.entity_id }
+      end
+
+      @capital_remittances = CapitalRemittanceIndex.filter(term:)
+                                                   .query(query_string: { fields: CapitalRemittanceIndex::SEARCH_FIELDS,
+                                                                          query:, default_operator: 'and' })
+
+      @capital_remittances = @capital_remittances.objects
+      render "index"
+    else
+      redirect_to capital_remittances_path
+    end
+  end
+
   # GET /capital_remittances/1 or /capital_remittances/1.json
   def show; end
 

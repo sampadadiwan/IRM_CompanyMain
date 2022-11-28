@@ -5,6 +5,8 @@ class CapitalCommitment < ApplicationRecord
 
   include FundScopes
 
+  update_index('capital_commitment') { self }
+
   belongs_to :entity
   belongs_to :investor
   has_many :investor_kycs, through: :investor

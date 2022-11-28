@@ -124,7 +124,7 @@ class SecondarySalesController < ApplicationController
     @secondary_sale.entity_id = current_user.entity_id
     @secondary_sale.start_date = Time.zone.today
     @secondary_sale.end_date = Time.zone.today + 2.weeks
-    @secondary_sale.offer_end_date = Time.zone.today + 1.weeks
+    @secondary_sale.offer_end_date = Time.zone.today + 1.week
     @secondary_sale.percent_allowed = 100
     setup_custom_fields(@secondary_sale)
     authorize @secondary_sale

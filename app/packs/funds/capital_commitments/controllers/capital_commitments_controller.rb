@@ -18,6 +18,31 @@ class CapitalCommitmentsController < ApplicationController
     end
   end
 
+  def search
+    query = params[:query]
+
+    if query.present?
+      if params[:fund_id].present?
+        # Search in fund provided user is authorized
+        @fund = Fund.find(params[:fund_id])
+        authorize(@fund, :show?)
+        term = { fund_id: @fund.id }
+      else
+        # Search in users entity only
+        term = { entity_id: current_user.entity_id }
+      end
+
+      @capital_commitments = CapitalCommitmentIndex.filter(term:)
+                                                   .query(query_string: { fields: CapitalCommitmentIndex::SEARCH_FIELDS,
+                                                                          query:, default_operator: 'and' })
+
+      @capital_commitments = @capital_commitments.objects
+      render "index"
+    else
+      redirect_to capital_commitments_path
+    end
+  end
+
   # GET /capital_commitments/1 or /capital_commitments/1.json
   def show; end
 

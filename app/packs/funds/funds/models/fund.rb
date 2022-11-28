@@ -4,6 +4,8 @@ class Fund < ApplicationRecord
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model }, entity_id: proc { |_controller, model| model.entity_id }
 
+  update_index('fund') { self }
+
   belongs_to :entity, touch: true
   belongs_to :funding_round
   belongs_to :fund_signatory, class_name: "User", optional: true

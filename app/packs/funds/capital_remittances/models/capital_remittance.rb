@@ -3,6 +3,7 @@ class CapitalRemittance < ApplicationRecord
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
   include FundScopes
+  update_index('capital_remittance') { self }
 
   belongs_to :entity
   belongs_to :fund, touch: true

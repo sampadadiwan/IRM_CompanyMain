@@ -16,7 +16,7 @@ class SecondarySale < ApplicationRecord
 
   include FileUploader::Attachment(:spa)
 
-  has_many :documents, as: :owner, dependent: :destroy, :inverse_of => :owner
+  has_many :documents, as: :owner, dependent: :destroy, inverse_of: :owner
   accepts_nested_attributes_for :documents, allow_destroy: true
 
   has_many :offers, dependent: :destroy
@@ -123,7 +123,6 @@ class SecondarySale < ApplicationRecord
     end
     investor_list.uniq
   end
-
 
   def offers_by_funding_round
     offers.joins(holding: :funding_round).group("funding_rounds.name").sum(:quantity).sort.to_h

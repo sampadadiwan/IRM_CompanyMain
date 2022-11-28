@@ -1,5 +1,6 @@
 class CapitalDistributionPayment < ApplicationRecord
   include FundScopes
+  update_index('capital_distribution_payment') { self }
 
   belongs_to :fund, touch: true
   belongs_to :entity

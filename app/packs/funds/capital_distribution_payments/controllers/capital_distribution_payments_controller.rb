@@ -21,6 +21,31 @@ class CapitalDistributionPaymentsController < ApplicationController
     end
   end
 
+  def search
+    query = params[:query]
+
+    if query.present?
+      if params[:fund_id].present?
+        # Search in fund provided user is authorized
+        @fund = Fund.find(params[:fund_id])
+        authorize(@fund, :show?)
+        term = { fund_id: @fund.id }
+      else
+        # Search in users entity only
+        term = { entity_id: current_user.entity_id }
+      end
+
+      @capital_distribution_payments = CapitalDistributionPaymentIndex.filter(term:)
+                                                                      .query(query_string: { fields: CapitalDistributionPaymentIndex::SEARCH_FIELDS,
+                                                                                             query:, default_operator: 'and' })
+
+      @capital_distribution_payments = @capital_distribution_payments.objects
+      render "index"
+    else
+      redirect_to capital_distribution_payments_path
+    end
+  end
+
   # GET /capital_distribution_payments/1 or /capital_distribution_payments/1.json
   def show; end
 
