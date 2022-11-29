@@ -24,7 +24,7 @@ class AdhaarEsign < ApplicationRecord
   end
 
   def redirect_url
-    base_url = ENV['NGROK_HOST'].present? ? "http://#{ENV['NGROK_HOST']}" : sub_domain
+    base_url = sub_domain
     base_url + "/adhaar_esigns/#{id}/completed"
   end
 

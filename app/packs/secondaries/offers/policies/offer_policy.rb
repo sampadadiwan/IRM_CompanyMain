@@ -86,4 +86,8 @@ class OfferPolicy < SaleBasePolicy
     @interest_policy ||= InterestPolicy.new(user, record.interest)
     @interest_policy
   end
+
+  def esign?
+    record.signatory_ids.include?(user.id) && record.esign_required && !record.esign_completed
+  end
 end

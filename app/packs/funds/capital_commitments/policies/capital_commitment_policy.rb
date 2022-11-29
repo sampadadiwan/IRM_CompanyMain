@@ -46,4 +46,8 @@ class CapitalCommitmentPolicy < FundBasePolicy
     permissioned_employee?(:destroy) ||
       permissioned_advisor?(:destroy)
   end
+
+  def esign?
+    record.signatory_ids.include?(user.id) && record.esign_required && !record.esign_completed
+  end
 end

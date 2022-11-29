@@ -60,7 +60,7 @@ class CapitalCommitmentEsignProvider
   def signature_completed(signature_type, file)
     Rails.logger.debug { "CapitalCommitment #{@capital_commitment.id} signature_completed #{signature_type}" }
     if signature_type == "adhaar"
-      doc = Document.where(entity_id: @capital_commitment.entity_id, owner: @capital_commitment, name: signed_file_name).first
+      doc = Document.where(entity_id: @capital_commitment.entity_id, owner: @capital_commitment, name: agreement_file_name).first
       doc.locked = true
       doc.orignal = true
       doc.file = File.open(file, "rb")
