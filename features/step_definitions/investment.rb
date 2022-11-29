@@ -164,9 +164,9 @@ Given('there are {string} employee investors') do |arg|
   @holdings_investor = @entity.investors.where(is_holdings_entity: true).first
   @investor_entity = @holdings_investor.investor_entity
   (0..arg.to_i-1).each do
-    user = FactoryBot.create(:user, entity: @investor_entity)
+    user = FactoryBot.create(:user, entity: @investor_entity, phone: "9449025878")
     ia = InvestorAccess.create!(investor:@holdings_investor, user: user, email: user.email, 
-        first_name: user.first_name, last_name: user.last_name, 
+        first_name: user.first_name, last_name: user.last_name,
         approved: true, entity_id: @holdings_investor.entity_id)
 
     puts "\n####InvestorAccess####\n"
