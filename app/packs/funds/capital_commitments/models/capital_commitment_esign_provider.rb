@@ -27,17 +27,8 @@ class CapitalCommitmentEsignProvider
           doc = @capital_commitment.documents.create!(name: signed_file_name, entity_id: @capital_commitment.entity_id, download: true, file: tempfile, user_id: @capital_commitment.user_id)
         end
         # Setup this doc for esign by user_ids
-        ae = AdhaarEsign.new.init(doc.id, user_ids.join(","), @capital_commitment, "Signature for #{agreement_file_name}")
-        if ae.sign
-          # Mark the capital_commitment with the esign link
-          @capital_commitment.esign_required = true
-          @capital_commitment.esign_link = ae.esign_link
-          @capital_commitment.save
-          # Setup a workflow to chase and track the signatories
-          SignatureWorkflow.create!(owner: @capital_commitment, entity_id: @capital_commitment.entity_id,
-                                    signatory_ids: @capital_commitment.signatory_ids,
-                                    reason: "Signature required for Capital Commitment : #{@capital_commitment.entity.name}").next_step
-        end
+        AdhaarEsign.new.init(doc.id, user_ids.join(","), @capital_commitment, "Signature required for Capital Commitment : #{@capital_commitment.entity.name}").sign
+
       else
         Rails.logger.debug { "Skipping as CapitalCommitment #{@capital_commitment.id} does not have #{agreement_file_name}" }
       end
@@ -51,9 +42,6 @@ class CapitalCommitmentEsignProvider
       # If we force the regeneration, then delete the old document with spa_file_name
       AdhaarEsign.where(document_id: doc.id).each(&:destroy)
       doc.destroy
-
-      # Remove the Signature Workflow associated with this capital_commitment
-      SignatureWorkflow.where(owner: @capital_commitment, entity_id: @capital_commitment.entity_id).each(&:destroy)
     end
   end
 

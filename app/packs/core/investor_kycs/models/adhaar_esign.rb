@@ -59,6 +59,14 @@ class AdhaarEsign < ApplicationRecord
         self.esign_document_reponse = response.body
         self.esign_doc_id = response["id"]
         success = true
+        # Update the owner
+        owner.esign_required = true
+        owner.esign_link = esign_link
+        owner.save
+
+        # Setup a workflow to chase and track the signatories
+        SignatureWorkflow.create!(owner:, entity_id: owner.entity_id,
+                                  signatory_ids: owner.signatory_ids, reason:).next_step
       else
         self.esign_document_reponse = JSON.parse(response.body)["message"]
       end
@@ -119,5 +127,11 @@ class AdhaarEsign < ApplicationRecord
   # The completion job is run as its a time consuming job to retrieve the signed doc etc
   def completed(user_id)
     AdhaarEsignCompletedJob.perform_later(id, user_id)
+  end
+
+  before_destroy :cleanup_signature_workflows
+  def cleanup_signature_workflows
+    # Remove the Signature Workflow associated with this capital_commitment
+    SignatureWorkflow.where(owner:, entity_id: owner.entity_id).each(&:destroy)
   end
 end

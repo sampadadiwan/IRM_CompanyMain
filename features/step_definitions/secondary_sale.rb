@@ -569,6 +569,7 @@ Then('when the sellers are notified on the SPA') do
 end
 
 Then('the adhaar esign must be triggered') do
+  @sale.reload
   @sale.offers.verified.each do |o|
     o.adhaar_esigns.last.should_not == nil
     o.esign_required.should == true
