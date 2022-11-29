@@ -36,7 +36,7 @@ class CapitalCommitmentEsignProvider
           # Setup a workflow to chase and track the signatories
           SignatureWorkflow.create!(owner: @capital_commitment, entity_id: @capital_commitment.entity_id,
                                     signatory_ids: @capital_commitment.signatory_ids,
-                                    reason: "Signature required on SPA : #{@capital_commitment.entity.name}").next_step
+                                    reason: "Signature required for Capital Commitment : #{@capital_commitment.entity.name}").next_step
         end
       else
         Rails.logger.debug { "Skipping as CapitalCommitment #{@capital_commitment.id} does not have #{agreement_file_name}" }

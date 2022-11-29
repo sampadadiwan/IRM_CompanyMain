@@ -25,7 +25,7 @@ class AdhaarEsignsController < ApplicationController
   # @see AdhaarEsign
   def completed
     if params[:status] == "success"
-      AdhaarEsignCompletedJob.perform_later(@adhaar_esign.id, current_user.id)
+      @adhaar_esign.completed(current_user.id)
       redirect_to @adhaar_esign.owner, notice: "Adhaar eSign was successfull. We will let you know the next steps."
     else
       redirect_to @adhaar_esign.owner, notice: "Adhaar eSign was not successfull, please retry again."
@@ -43,7 +43,7 @@ class AdhaarEsignsController < ApplicationController
       else
         user_id = nil
       end
-      AdhaarEsignCompletedJob.perform_later(@adhaar_esign.id, user_id)
+      @adhaar_esign.completed(user_id)
     else
       Rails.logger.debug { "digio_webhook: Failed adhaar_esign = #{@adhaar_esign} and params[:agreement_status] = #{params[:agreement_status]}" }
     end

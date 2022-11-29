@@ -13,6 +13,8 @@ class AdhaarEsign < ApplicationRecord
   belongs_to :document
   belongs_to :owner, polymorphic: true, optional: true
 
+  validate :ensure_owner_callback
+
   def init(document_id, user_ids, owner, reason)
     self.document = Document.find(document_id)
     self.entity_id = document.entity_id
@@ -21,6 +23,11 @@ class AdhaarEsign < ApplicationRecord
     self.reason = reason
     @esign_helper ||= DigioEsignHelper.new
     self
+  end
+
+  # The owner must implement signature_completed
+  def ensure_owner_callback
+    errors.add(:owner, "needs to implement method signature_completed('adhaar', 'download_file_name')") unless owner.respond_to?(:signature_completed)
   end
 
   def redirect_url
@@ -107,5 +114,10 @@ class AdhaarEsign < ApplicationRecord
 
   def users
     User.where(id: user_ids.split(","))
+  end
+
+  # The completion job is run as its a time consuming job to retrieve the signed doc etc
+  def completed(user_id)
+    AdhaarEsignCompletedJob.perform_later(id, user_id)
   end
 end
