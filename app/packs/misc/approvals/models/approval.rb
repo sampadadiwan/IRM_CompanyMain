@@ -58,8 +58,11 @@ class Approval < ApplicationRecord
   end
 
   def access_rights_changed(access_right_id)
-    logger.debug "Added new Access Rights for Approval #{id}"
-    generate_responses
-    ApprovalMailer.with(id:, access_right_id:).notify_new_approval.deliver_later
+    access_right = AccessRight.where(access_right_id).first
+    if access_right
+      logger.debug "Added new Access Rights for Approval #{id}"
+      generate_responses
+      ApprovalMailer.with(id:, access_right_id:).notify_new_approval.deliver_later
+    end
   end
 end
