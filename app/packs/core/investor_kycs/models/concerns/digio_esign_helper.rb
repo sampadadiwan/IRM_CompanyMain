@@ -23,7 +23,7 @@ class DigioEsignHelper
         'Content-Type' => 'application/json'
       },
       body: body.to_json,
-      debug_output: $stdout
+      debug_output: Rails.env.development? ? $stdout : nil
     )
 
     Rails.logger.debug response
@@ -37,7 +37,7 @@ class DigioEsignHelper
         "authorization" => "Basic #{AUTH_TOKEN}",
         'Content-Type' => 'application/json'
       },
-      debug_output: $stdout
+      debug_output: Rails.env.development? ? $stdout : nil
     )
 
     Rails.logger.debug response
@@ -52,7 +52,7 @@ class DigioEsignHelper
         "authorization" => "Basic #{AUTH_TOKEN}",
         'Content-Type' => 'application/json'
       },
-      debug_output: $stdout
+      debug_output: Rails.env.development? ? $stdout : nil
     )
 
     Rails.logger.debug response

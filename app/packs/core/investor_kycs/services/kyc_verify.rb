@@ -15,7 +15,7 @@ class KycVerify
       body: {
         id_no: pan
       }.to_json,
-      debug_output: $stdout
+      debug_output: Rails.env.development? ? $stdout : nil
     )
   end
 

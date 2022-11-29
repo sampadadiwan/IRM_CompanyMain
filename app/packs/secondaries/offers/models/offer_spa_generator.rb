@@ -1,5 +1,6 @@
 class OfferSpaGenerator
   include EmailCurrencyHelper
+  include DocumentGeneratorBase
 
   attr_accessor :working_dir
 
@@ -27,31 +28,13 @@ class OfferSpaGenerator
     "tmp/offer_spa_generator/#{offer.id}"
   end
 
-  def create_working_dir(offer)
-    @working_dir = working_dir_path(offer)
-    FileUtils.mkdir_p @working_dir
-  end
-
-  def cleanup
-    FileUtils.rm_rf(@working_dir)
-  end
-
   def download_master_spa(offer)
     file = offer.secondary_sale.spa.download
     file.path
   end
 
-  def get_odt_file(file_path)
-    Rails.logger.debug { "Converting #{file_path} to odt" }
-    system("libreoffice --headless --convert-to odt #{file_path} --outdir #{@working_dir}")
-    "#{@working_dir}/#{File.basename(file_path, '.*')}.odt"
-  end
-
   # master_spa_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
   def generate(offer, master_spa_path)
-    offer_signature = nil
-    interest_signature = nil
-
     odt_file_path = get_odt_file(master_spa_path)
 
     report = ODFReport::Report.new(odt_file_path) do |r|
@@ -67,10 +50,10 @@ class OfferSpaGenerator
       r.add_field :allocation_amount_words, amount_in_words
 
       add_seller_fields(r, offer)
-      offer_signature = add_image(r, :seller_signature, offer.signature)
+      add_image(r, :seller_signature, offer.signature)
 
       add_buyer_fields(r, offer)
-      interest_signature = add_image(r, :buyer_signature, offer.interest&.signature)
+      add_image(r, :buyer_signature, offer.interest&.signature)
     end
 
     report.generate("#{@working_dir}/Offer-#{offer.id}.odt")
@@ -78,64 +61,6 @@ class OfferSpaGenerator
     system("libreoffice --headless --convert-to pdf #{@working_dir}/Offer-#{offer.id}.odt --outdir #{@working_dir}")
 
     add_header_footers(offer, "#{@working_dir}/Offer-#{offer.id}.pdf")
-
-    File.delete(offer_signature) if offer_signature && File.exist?(offer_signature)
-    File.delete(interest_signature) if interest_signature && File.exist?(interest_signature)
-  end
-
-  def add_image(report, field_name, image)
-    if image
-      file = image.download
-      sleep(1)
-      report.add_image field_name.to_sym, file.path
-      file.path
-    end
-  end
-
-  def add_header_footers(offer, spa_path)
-    header_footer_download_path = []
-
-    # Get the headers
-    headers = offer.documents.where(name: ["Header", "Stamp Paper"])
-    header_count = headers.count
-
-    combined_pdf = CombinePDF.new
-
-    # Combine the headers
-    if header_count.positive?
-      headers.each do |header|
-        file = header.file.download
-        header_footer_download_path << file.path
-        combined_pdf << CombinePDF.load(file.path)
-      end
-    end
-
-    # Combine the SPA
-    combined_pdf << CombinePDF.load(spa_path)
-
-    # Get the footers
-    footers = offer.documents.where(name: %w[Footer Signature]).to_a
-
-    if offer.interest
-      # Get any signatures from the matched interest
-      footers += offer.interest.documents.where(name: %w[Footer Signature]).to_a
-    end
-
-    # Combine the footers
-    if footers.length.positive?
-      footers.each do |footer|
-        file = footer.file.download
-        header_footer_download_path << file.path
-        combined_pdf << CombinePDF.load(file.path)
-      end
-    end
-
-    # Overwrite the orig SPA with the one with header and footer
-    combined_pdf.save(spa_path)
-
-    header_footer_download_path.each do |file_path|
-      File.delete(file_path) if File.exist?(file_path)
-    end
   end
 
   def add_seller_fields(report, offer)

@@ -1,6 +1,6 @@
 class ApproveHolding
   include Interactor::Organizer
-  organize HoldingApproved, SetupHoldingForInvestment, NotifyHoldingApproval, CreateAuditTrail
+  organize HoldingApproved, SetupHoldingForInvestment, NotifyHoldingApproval, GenerateOptionGrantLetter, CreateAuditTrail
 
   around do |organizer|
     ActiveRecord::Base.transaction do

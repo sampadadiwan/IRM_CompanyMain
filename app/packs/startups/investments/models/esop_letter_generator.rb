@@ -1,5 +1,6 @@
 class EsopLetterGenerator
   include EmailCurrencyHelper
+  include DocumentGeneratorBase
 
   attr_accessor :working_dir
 
@@ -26,31 +27,14 @@ class EsopLetterGenerator
     "tmp/holding_grant_letter_generator/#{holding.id}"
   end
 
-  def create_working_dir(holding)
-    @working_dir = working_dir_path(holding)
-    FileUtils.mkdir_p @working_dir
-  end
-
-  def cleanup
-    FileUtils.rm_rf(@working_dir)
-  end
-
   def download_master_grant_letter(holding)
     file = holding.option_pool.grant_letter.download
     file.path
   end
 
-  def get_odt_file(file_path)
-    Rails.logger.debug { "Converting #{file_path} to odt" }
-    system("libreoffice --headless --convert-to odt #{file_path} --outdir #{@working_dir}")
-    "#{@working_dir}/#{File.basename(file_path, '.*')}.odt"
-  end
-
   # master_grant_letter_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
   def generate(holding, master_grant_letter_path)
     Rails.logger.debug "Generating report"
-    user_signature = nil
-    company_signature = nil
 
     odt_file_path = get_odt_file(master_grant_letter_path)
 
@@ -58,7 +42,7 @@ class EsopLetterGenerator
     report = ODFReport::Report.new(odt_file_path) do |r|
       Rails.logger.debug "Populating holding fields"
       add_holding_fields(r, holding)
-      # user_signature = add_image(r, :employee_signature, holding.user.signature)
+      add_image(r, :employee_signature, holding.user.signature)
 
       Rails.logger.debug "Populating schedule table"
       r.add_table("Table1", holding.vesting_schedule.each, header: true) do |t|
@@ -69,24 +53,12 @@ class EsopLetterGenerator
 
       Rails.logger.debug "Populating option fields"
       add_option_fields(r, holding)
-      # company_signature = add_image(r, :employee_signature, holding.option_pool.certificate_signature)
+      add_image(r, :employee_signature, holding.option_pool.certificate_signature)
     end
 
     report.generate("#{@working_dir}/GrantLetter-#{holding.id}.odt")
 
     system("libreoffice --headless --convert-to pdf #{@working_dir}/GrantLetter-#{holding.id}.odt --outdir #{@working_dir}")
-
-    File.delete(user_signature) if user_signature && File.exist?(user_signature)
-    File.delete(company_signature) if company_signature && File.exist?(company_signature)
-  end
-
-  def add_image(report, field_name, image)
-    if image
-      file = image.download
-      sleep(1)
-      report.add_image field_name.to_sym, file.path
-      file.path
-    end
   end
 
   def add_holding_fields(report, holding)

@@ -25,7 +25,7 @@ class AdhaarEsignHelper
         group_id: "ADHAAR_ESIGN",
         data:
       }.to_json,
-      debug_output: $stdout
+      debug_output: Rails.env.development? ? $stdout : nil
     )
 
     Rails.logger.debug response
@@ -48,7 +48,7 @@ class AdhaarEsignHelper
           esign_doc_id: esign_doc_id.to_s
         }
       }.to_json,
-      debug_output: $stdout
+      debug_output: Rails.env.development? ? $stdout : nil
     )
 
     Rails.logger.debug response

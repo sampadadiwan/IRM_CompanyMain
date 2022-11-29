@@ -1,4 +1,5 @@
 class DocumentSignJob < ApplicationJob
+  include DocumentGeneratorBase
   queue_as :default
   attr_accessor :working_dir
 
@@ -29,15 +30,6 @@ class DocumentSignJob < ApplicationJob
 
   def working_dir_path(document, user)
     "tmp/document_sign_job/#{document.id}-#{user.id}"
-  end
-
-  def create_working_dir(document, user)
-    @working_dir = working_dir_path(document, user)
-    FileUtils.mkdir_p @working_dir
-  end
-
-  def cleanup
-    FileUtils.rm_rf(@working_dir)
   end
 
   def upload(document, user)
@@ -83,20 +75,5 @@ class DocumentSignJob < ApplicationJob
 
     Rails.logger.debug "Deleting tmp files"
     File.delete(user_signature) if user_signature
-  end
-
-  def get_odt_file(file_path)
-    Rails.logger.debug { "Converting #{file_path} to odt" }
-    system("libreoffice --headless --convert-to odt #{file_path} --outdir #{@working_dir}")
-    "#{@working_dir}/#{File.basename(file_path, '.*')}.odt"
-  end
-
-  def add_signature(report, field_name, signature)
-    if signature
-      file = signature.download
-      sleep(1)
-      report.add_image field_name.to_sym, file.path
-      file.path
-    end
   end
 end
