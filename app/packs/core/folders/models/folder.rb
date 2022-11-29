@@ -41,8 +41,8 @@ class Folder < ApplicationRecord
 
   # This is triggered when the access rights change
   def access_rights_changed(access_right_id)
-    access_right = AccessRight.find(access_right_id)
-    FolderAccessJob.perform_later(id, access_right_id) if access_right.cascade
+    access_right = AccessRight.where(access_right_id).first
+    FolderAccessJob.perform_later(id, access_right_id) if access_right && access_right.cascade
   end
 
   def self.search(query, entity_id)
