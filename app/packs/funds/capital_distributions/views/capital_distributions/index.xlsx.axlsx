@@ -4,11 +4,11 @@ form_type, custom_field_names, custom_headers = get_form_type("CapitalDistributi
 
 wb.add_worksheet(name: "CapitalDistribution") do |sheet|
   # Create the header row
-  sheet.add_row(%w[Fund Gross Carry Date Payments] + custom_headers)
+  sheet.add_row(%w[Fund Title Gross Carry Date Payments] + custom_headers)
 
   # Create entries for each item
   @capital_distributions.each do |cc|
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
-    sheet.add_row [cc.fund.name, money_to_currency(cc.gross_amount, params), money_to_currency(cc.carry, params), cc.distribution_date, money_to_currency(cc.distribution_amount, params)] + custom_field_values
+    sheet.add_row [cc.fund.name, cc.title, money_to_currency(cc.gross_amount, params), money_to_currency(cc.carry, params), cc.distribution_date, money_to_currency(cc.distribution_amount, params)] + custom_field_values
   end
 end

@@ -5,8 +5,16 @@
     <span>
       <%= link_to "New Capital Distribution" , new_capital_distribution_path("capital_distribution[fund_id]": params[:fund_id]), {class: "btn btn-primary" } if params[:fund_id].present? %>
 
-      <%= link_to "Download" , capital_distributions_path("capital_distribution[fund_id]": params[:fund_id], format: "xlsx"), {class: "btn btn-primary" } if params[:fund_id].present? %>
+      <%= link_to "Download" , capital_distributions_path(fund_id: params[:fund_id], format: "xlsx"), {class: "btn btn-primary" } if params[:fund_id].present? %>
 
+      <%= link_to "Upload", 
+            new_import_upload_path("import_upload[owner_id]": params[:fund_id], 
+            "import_upload[owner_type]": "Fund", 
+            "import_upload[import_type]": "CapitalDistribution", 
+            "import_upload[entity_id]": current_user.entity_id,
+            "sample_upload": "CAPITAL_DISTRIBUTION_SAMPLE"), 
+            { class: "btn btn-primary"}  %> 
+    
     </span>
   </div>
 
@@ -16,7 +24,7 @@
       <thead>
         <tr>
           <th>
-            Fund
+            Title
           </th>
           <th>
             Gross Amount

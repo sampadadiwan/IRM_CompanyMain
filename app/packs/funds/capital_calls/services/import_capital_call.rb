@@ -33,7 +33,7 @@ class ImportCapitalCall < ImportUtil
     if fund
       name = user_data["Name"].strip
       if CapitalCall.exists?(entity_id: import_upload.entity_id, fund:, name:)
-        raise "Committment Already Present"
+        raise "Capital Call Already Present"
       else
 
         # Make the capital_call
