@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_29_040858) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_29_073841) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -260,6 +260,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_29_040858) do
     t.string "investor_signature_types", limit: 20
     t.string "folio_id", limit: 20
     t.bigint "investor_signatory_id"
+    t.boolean "esign_required", default: false
+    t.boolean "esign_completed", default: false
+    t.string "esign_provider", limit: 10
+    t.string "esign_link"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
     t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"

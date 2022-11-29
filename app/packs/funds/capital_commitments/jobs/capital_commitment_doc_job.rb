@@ -17,7 +17,7 @@ class CapitalCommitmentDocJob < ApplicationJob
           # Delete any existing signed documents
           @capital_commitment.documents.where(signed_by_id: kyc.user.id).each(&:destroy)
           # Generate a new signed document
-          FundDocGenerator.new(@capital_commitment, fund_doc_template, kyc.user)
+          CapitalCommitmentDocGenerator.new(@capital_commitment, fund_doc_template, kyc.user)
         end
       end
     end

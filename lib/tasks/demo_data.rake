@@ -42,10 +42,10 @@ namespace :irm do
 
     cons_names = ["Legal Eagles", "Awesome Accounting"]
     cons_names.each do |name|
-      e = FactoryBot.create(:entity, entity_type: "Consulting", name: name)
+      e = FactoryBot.create(:entity, entity_type: "Advisor", name: name)
       puts "Entity #{e.name}"
       (1..2).each do |j|
-        user = FactoryBot.create(:user, entity: e, first_name: "Consultant#{j}")
+        user = FactoryBot.create(:user, entity: e, first_name: "Advisor#{j}")
         puts user.to_json
       end
     end
@@ -193,6 +193,15 @@ namespace :irm do
           InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
         end
       end
+
+      # Add an advisor
+      advisor = Entity.advisors.sample
+      inv = FactoryBot.create(:investor, entity: e, investor_entity: advisor, tag_list: [tags.sample, tags.sample].join(","), category: "Advisor")
+      puts "Investor #{inv.id}"
+      inv.investor_entity.employees.each do |user|
+        InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
+      end
+      
     end
 
     Entity.funds.each do |e|
@@ -207,6 +216,15 @@ namespace :irm do
           InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
         end
       end
+
+      # Add an advisor
+      advisor = Entity.advisors.sample
+      inv = FactoryBot.create(:investor, entity: e, investor_entity: advisor, tag_list: [tags.sample, tags.sample].join(","), category: "Advisor")
+      puts "Investor #{inv.id}"
+      inv.investor_entity.employees.each do |user|
+        InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
+      end
+    
     end
 
   rescue Exception => e

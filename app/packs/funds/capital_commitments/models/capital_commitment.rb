@@ -48,7 +48,23 @@ class CapitalCommitment < ApplicationRecord
     "#{fund.folder_path}/Commitments/#{investor.investor_name}-#{id}"
   end
 
+  ################# eSign stuff follows ###################
+
   def investor_signature_types
     self[:investor_signature_types].presence || fund.investor_signature_types
+  end
+
+  # TODO: - Ensure signatories and signature types match up
+  def signatory_ids
+    [investor_signatory_id, fund.fund_signatory_id, fund.trustee_signatory_id].compact
+  end
+
+  def sign_link(phone)
+    # Substitute the phone number required in the link
+    esign_link.sub "phone_number", phone if esign_link.present?
+  end
+
+  def signature_completed(signature_type, file)
+    CapitalCommitmentEsignProvider.new(self).signature_completed(signature_type, file)
   end
 end

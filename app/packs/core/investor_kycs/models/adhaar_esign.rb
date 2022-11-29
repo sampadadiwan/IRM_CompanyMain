@@ -43,6 +43,7 @@ class AdhaarEsign < ApplicationRecord
   end
 
   def sign
+    success = false
     Rails.logger.debug { "Creating signing link for users #{user_ids} for document #{document_id}" }
     @esign_helper ||= DigioEsignHelper.new
     document.file.download do |tmp_file|
@@ -50,11 +51,14 @@ class AdhaarEsign < ApplicationRecord
       if response.success?
         self.esign_document_reponse = response.body
         self.esign_doc_id = response["id"]
+        success = true
       else
-        self.esign_document_reponse = response.message
+        self.esign_document_reponse = JSON.parse(response.body)["message"]
       end
       save
     end
+
+    success
   end
 
   def download_file_name

@@ -26,11 +26,12 @@ module DocumentGeneratorBase
     end
   end
 
-  def add_header_footers(offer, spa_path)
+  def add_header_footers(model, spa_path, additional_headers = nil, additional_footers = nil)
     header_footer_download_path = []
 
     # Get the headers
-    headers = offer.documents.where(name: ["Header", "Stamp Paper"])
+    headers = model.documents.where(name: ["Header", "Stamp Paper"])
+    headers += additional_headers if additional_headers.present?
     header_count = headers.count
 
     combined_pdf = CombinePDF.new
@@ -48,12 +49,8 @@ module DocumentGeneratorBase
     combined_pdf << CombinePDF.load(spa_path)
 
     # Get the footers
-    footers = offer.documents.where(name: %w[Footer Signature]).to_a
-
-    if offer.interest
-      # Get any signatures from the matched interest
-      footers += offer.interest.documents.where(name: %w[Footer Signature]).to_a
-    end
+    footers = model.documents.where(name: %w[Footer Signature]).to_a
+    footers += additional_footers if additional_footers.present?
 
     # Combine the footers
     if footers.length.positive?

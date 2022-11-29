@@ -27,15 +27,15 @@ class OfferEsignProvider
         end
         # Setup this doc for esign by user_ids
         ae = AdhaarEsign.new.init(doc.id, user_ids.join(","), @offer, "Acceptance of SPA")
-        ae.sign
-        # Mark the offer with the esign link
-        @offer.esign_required = true
-        @offer.esign_link = ae.esign_link
-        @offer.save
-        # Setup a workflow to chase and track the signatories
-        SignatureWorkflow.create!(owner: @offer, entity_id: @offer.entity_id, signatory_ids: @offer.signatory_ids,
-                                  reason: "Signature required on SPA : #{@offer.entity.name}").next_step
-
+        if ae.sign
+          # Mark the offer with the esign link
+          @offer.esign_required = true
+          @offer.esign_link = ae.esign_link
+          @offer.save
+          # Setup a workflow to chase and track the signatories
+          SignatureWorkflow.create!(owner: @offer, entity_id: @offer.entity_id, signatory_ids: @offer.signatory_ids,
+                                    reason: "Signature required on SPA : #{@offer.entity.name}").next_step
+        end
       else
         Rails.logger.debug { "Offer #{@offer.id} already generated SPA AdhaarEsign" }
       end

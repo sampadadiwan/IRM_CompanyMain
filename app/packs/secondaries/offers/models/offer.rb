@@ -216,26 +216,13 @@ class Offer < ApplicationRecord
     buyer_fees_hash
   end
 
-  def self.offer_report(sale_id)
-    csv = []
-
-    s = SecondarySale.find(sale_id)
-    s.offers.joins(:user).distinct.each do |o|
-      sig = o.signature.present? ? 'Yes' : 'No'
-      pan = o.pan_card.present? ? 'Yes' : 'No'
-      docs = o.documents.collect(&:name).join(", ")
-      csv << [o.id, o.user.full_name, o.user.email, o.user.sign_in_count, sig, pan, docs].join(",")
-    end
-
-    File.write("OfferCompletion.csv", csv.join("\n"))
-
-    csv
-  end
+  ################# eSign stuff follows ###################
 
   def seller_signature_types
     self[:seller_signature_types].presence || secondary_sale&.seller_signature_types
   end
 
+  # TODO: - who is the interest signatory?
   def signatory_ids
     user_ids = []
     user_ids << user.id if seller_signature_types.include?("adhaar")
@@ -245,10 +232,7 @@ class Offer < ApplicationRecord
 
   def sign_link(phone)
     # Substitute the phone number required in the link
-    if esign_link.present?
-      esign_link["phone_number"] = phone
-      esign_link
-    end
+    esign_link.sub "phone_number", phone if esign_link.present?
   end
 
   def signature_completed(signature_type, file)

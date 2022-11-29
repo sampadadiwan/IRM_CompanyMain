@@ -60,7 +60,14 @@ class OfferSpaGenerator
 
     system("libreoffice --headless --convert-to pdf #{@working_dir}/Offer-#{offer.id}.odt --outdir #{@working_dir}")
 
-    add_header_footers(offer, "#{@working_dir}/Offer-#{offer.id}.pdf")
+    additional_footers = nil
+    additional_headers = nil
+    if offer.interest
+      # Get any footers from the interest
+      additional_footers = offer.interest.documents.where(name: %w[Footer Signature])
+      additional_headers = offer.interest.documents.where(name: ["Header", "Stamp Paper"])
+    end
+    add_header_footers(offer, "#{@working_dir}/Offer-#{offer.id}.pdf", additional_headers, additional_footers)
   end
 
   def add_seller_fields(report, offer)
