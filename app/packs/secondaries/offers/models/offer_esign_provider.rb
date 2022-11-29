@@ -28,9 +28,14 @@ class OfferEsignProvider
         # Setup this doc for esign by user_ids
         ae = AdhaarEsign.new.init(doc.id, user_ids.join(","), @offer, "Acceptance of SPA")
         ae.sign
+        # Mark the offer with the esign link
         @offer.esign_required = true
         @offer.esign_link = ae.esign_link
         @offer.save
+        # Setup a workflow to chase and track the signatories
+        SignatureWorkflow.create!(owner: @offer, entity_id: @offer.entity_id, signatory_ids: @offer.signatory_ids,
+                                  reason: "Signature required on SPA : #{@offer.entity.name}").next_step
+
       else
         Rails.logger.debug { "Offer #{@offer.id} already generated SPA AdhaarEsign" }
       end
@@ -44,6 +49,9 @@ class OfferEsignProvider
       # If we force the regeneration, then delete the old document with spa_file_name
       AdhaarEsign.where(document_id: doc.id).each(&:destroy)
       doc.destroy
+
+      # Remove the Signature Workflow associated with this offer
+      SignatureWorkflow.where(owner: @offer, entity_id: @offer.entity_id).each(&:destroy)
     end
   end
 

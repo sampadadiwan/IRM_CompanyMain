@@ -100,4 +100,8 @@ class AdhaarEsign < ApplicationRecord
 
     response
   end
+
+  def users
+    User.where(id: user_ids.split(","))
+  end
 end

@@ -33,8 +33,20 @@ class AdhaarEsignsController < ApplicationController
   end
 
   def digio_webhook
-    @adhaar_esign = AdhaarEsign.where(esign_doc_id: params[:digio_doc_id]).first
-    AdhaarEsignCompletedJob.perform_later(@adhaar_esign.id) if @adhaar_esign && (params[:status] == "success")
+    @adhaar_esign = AdhaarEsign.where(esign_doc_id: params[:id]).first
+
+    if @adhaar_esign && params[:agreement_status] == "completed"
+      # We get sent the phone number in the last_signed_by param
+      if params[:others].present? && params[:others][:last_signed_by].present?
+        last_signed_by = params[:others][:last_signed_by]
+        user_id = @adhaar_esign.users.where(phone: last_signed_by).pick(id)
+      else
+        user_id = nil
+      end
+      AdhaarEsignCompletedJob.perform_later(@adhaar_esign.id, user_id)
+    else
+      Rails.logger.debug { "digio_webhook: Failed adhaar_esign = #{@adhaar_esign} and params[:agreement_status] = #{params[:agreement_status]}" }
+    end
 
     respond_to do |format|
       format.json { render json: [], status: :ok }

@@ -25,9 +25,19 @@ class SignatureWorkflow < ApplicationRecord
   end
 
   def send_notification(user_id)
-    # Send the notification & update state
-    SignatureWorkflowMailer.with(id:, user_id:).notify_signature_required.deliver_later
-    update_notification_state(user_id)
+    if should_notify?(user_id)
+      # Send the notification & update state
+      SignatureWorkflowMailer.with(id:, user_id:).notify_signature_required.deliver_later
+      update_notification_state(user_id)
+    else
+      Rails.logger.debug { "Skipping send_notification for #{user_id}. Already notified at #{state[user_id]['NotificationTime']}" }
+    end
+  end
+
+  def should_notify?(user_id)
+    state[user_id].blank? ||
+      state[user_id]["NotificationTime"].blank? ||
+      state[user_id]["NotificationTime"] < 6.hours.ago
   end
 
   def update_notification_state(user_id)
@@ -35,6 +45,7 @@ class SignatureWorkflow < ApplicationRecord
     state[user_id]["Notification"] ||= 0
     state[user_id]["Completed"] ||= false
     state[user_id]["Notification"] += 1
+    state[user_id]["NotificationTime"] = Time.zone.now
     self.status = "Sent #{state[user_id]['Notification'].ordinalize} notification for user #{user_id}"
 
     if state[user_id]["Notification"] > 2
