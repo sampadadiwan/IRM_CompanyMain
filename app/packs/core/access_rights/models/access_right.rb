@@ -133,7 +133,7 @@ class AccessRight < ApplicationRecord
     self.access_type ||= owner_type
   end
 
-  after_commit :send_notification
+  after_create :send_notification
   def send_notification
     AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later
   end
