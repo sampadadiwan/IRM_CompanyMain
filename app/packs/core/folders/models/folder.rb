@@ -18,6 +18,7 @@ class Folder < ApplicationRecord
   validates :name, presence: true
 
   before_create :set_defaults
+  after_create :set_parent_permissions
   # after_destroy :touch_root
 
   scope :for, ->(user) { where("folders.entity_id=?", user.entity_id).order("full_path asc") }
@@ -35,6 +36,15 @@ class Folder < ApplicationRecord
     end
   end
 
+  def set_parent_permissions
+    parent.access_rights.each do |parent_ar|
+      folder_ar = parent_ar.dup
+      folder_ar.owner = self
+      folder_ar.access_type = 'Folder'
+      folder_ar.save
+    end
+  end
+
   def touch_root
     Folder.where(entity_id:, level: 0).first.touch
   end
@@ -42,7 +52,7 @@ class Folder < ApplicationRecord
   # This is triggered when the access rights change
   def access_rights_changed(access_right_id)
     access_right = AccessRight.where(id: access_right_id).first
-    FolderAccessJob.perform_later(id, access_right_id) if access_right && access_right.cascade
+    FolderAccessJob.perform_later(id, access_right_id) if access_right&.cascade
   end
 
   def self.search(query, entity_id)
