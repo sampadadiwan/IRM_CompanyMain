@@ -5,11 +5,15 @@ class EsopLetterGenerator
   attr_accessor :working_dir
 
   def initialize(holding, master_grant_letter_path = nil)
-    create_working_dir(holding)
-    master_grant_letter_path ||= download_master_grant_letter(holding)
-    cleanup_old_grant_letter(holding)
-    generate(holding, master_grant_letter_path)
-    attach(holding)
+    if holding.option_pool.grant_letter.present?
+      create_working_dir(holding)
+      master_grant_letter_path ||= download_master_grant_letter(holding)
+      cleanup_old_grant_letter(holding)
+      generate(holding, master_grant_letter_path)
+      attach(holding)
+    else
+      raise "EsopLetterGenerator: No Grant letter template found for option_pool #{holding.option_pool.id} "
+    end
   ensure
     cleanup
   end

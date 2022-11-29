@@ -81,7 +81,9 @@ end
     @option_pool = FactoryBot.build(:option_pool)
     @option_pool.entity = @user.entity
     key_values(@option_pool, args)
-
+    
+    @option_pool.grant_letter = File.open("public/sample_uploads/GrantLetter.docx", "rb")
+    
     schedule_args.split(",").each do |arg|
       v = VestingSchedule.new(months_from_grant: arg.split(":")[0], vesting_percent: arg.split(":")[1])
       @option_pool.vesting_schedules << v
