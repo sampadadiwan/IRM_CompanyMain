@@ -6,6 +6,9 @@ class SignatureWorkflow < ApplicationRecord
   serialize :completed_ids, Array
   serialize :state, Hash
 
+  scope :not_completed, -> { where(completed: false) }
+  scope :not_paused, -> { where(paused: false) }
+
   def next_step
     if paused
       Rails.logger.debug { "SignatureWorkflow #{id} is paused." }

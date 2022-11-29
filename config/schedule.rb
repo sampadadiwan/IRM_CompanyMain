@@ -5,11 +5,12 @@ job_type :bundle, 'cd :path && :environment_variable=:environment bundle exec :t
 
 every 1.day, at: '02:01 am' do
   command "logrotate /home/ubuntu/IRM/shared/log/logrotate.conf --state /home/ubuntu/IRM/shared/log/logrotate.state --verbose"
-  # runner "ElasticImporterJob.new.perform"
-  runner "VestedJob.new.perform"
-  runner "ClearMessagesCountJob.new.perform"
+  
+  runner "ElasticImporterJob.perform_now"
+  runner "VestedJob.perform_now"
+  runner "ClearMessagesCountJob.perform_now"
   runner "Entity.recompute_all"
-  runner "InvestmentSnapshotJob.new.perform"
+  runner "InvestmentSnapshotJob.perform_now"
 end
 
 every 1.hour do
@@ -17,8 +18,9 @@ every 1.hour do
 end
 
 every 1.day, at: '23:30 am' do
-  runner "ReminderJob.new.perform"
-  runner "InvestorNoticeJob.new.perform"
+  runner "ReminderJob.perform_now"
+  runner "InvestorNoticeJob.perform_now"
+  runner "SignatureWorkflowJob.perform_now"
 end
 
 every :reboot do
