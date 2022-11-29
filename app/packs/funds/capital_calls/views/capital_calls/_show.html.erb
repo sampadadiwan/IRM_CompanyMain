@@ -93,7 +93,7 @@
         Notes
       </td>
       <td>
-        <%= @capital_call.notes.html_safe %>
+        <%= @capital_call.notes.html_safe if @capital_call.notes %>
       </td>
     </tr>
 
