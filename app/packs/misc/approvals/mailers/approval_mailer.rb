@@ -16,12 +16,13 @@ class ApprovalMailer < ApplicationMailer
                                         @approval.pending_investors.collect(&:emails).flatten.join(","))
       end
 
-      logger.debug "from email = #{from_email(@approval.entity)} #{ENV['SUPPORT_EMAIL']}"
+      if investor_emails.present?
 
-      mail(from: from_email(@approval.entity),
-           to: investor_emails,
-           subject: "Approval required by #{@approval.entity.name}: #{@approval.title}")
+        mail(from: from_email(@approval.entity),
+             to: investor_emails,
+             subject: "Approval required by #{@approval.entity.name}: #{@approval.title}")
 
+      end
     else
       logger.debug "Not sending approval mail as approval is not yet approved."
     end
@@ -36,9 +37,11 @@ class ApprovalMailer < ApplicationMailer
     employee_emails = sandbox_email(@approval_response,
                                     @approval_response.entity.employees.collect(&:email))
 
-    mail(from: from_email(@approval_response.entity),
-         to: investor_emails,
-         cc: employee_emails,
-         subject: "Approval response from #{@approval_response.investor.investor_name}: #{@approval_response.status} ")
+    if investor_emails.present?
+      mail(from: from_email(@approval_response.entity),
+           to: investor_emails,
+           cc: employee_emails,
+           subject: "Approval response from #{@approval_response.investor.investor_name}: #{@approval_response.status} ")
+    end
   end
 end
