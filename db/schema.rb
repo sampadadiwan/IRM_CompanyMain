@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_11_30_052303) do
+ActiveRecord::Schema[7.0].define(version: 2022_11_30_073709) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -238,6 +238,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_30_052303) do
     t.bigint "form_type_id"
     t.boolean "approved", default: false
     t.bigint "approved_by_user_id"
+    t.boolean "manual_generation", default: false
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["entity_id"], name: "index_capital_calls_on_entity_id"
     t.index ["form_type_id"], name: "index_capital_calls_on_form_type_id"
@@ -307,6 +308,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_11_30_052303) do
     t.decimal "net_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.boolean "approved", default: false
     t.bigint "approved_by_user_id"
+    t.boolean "manual_generation", default: false
     t.index ["approved_by_user_id"], name: "index_capital_distributions_on_approved_by_user_id"
     t.index ["entity_id"], name: "index_capital_distributions_on_entity_id"
     t.index ["form_type_id"], name: "index_capital_distributions_on_form_type_id"

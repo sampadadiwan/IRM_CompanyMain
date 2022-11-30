@@ -20,9 +20,14 @@ class CapitalCall < ApplicationRecord
 
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 
+  after_save :generate_remittances
+  def generate_remittances
+    CapitalCallJob.perform_later(id, "Generate") if !manual_generation && saved_change_to_percentage_called?
+  end
+
   after_save :send_notification, if: :approved
   def send_notification
-    CapitalCallJob.perform_later(id) if saved_change_to_approved?
+    CapitalCallJob.perform_later(id, "Notify") if saved_change_to_approved?
   end
 
   def folder_path

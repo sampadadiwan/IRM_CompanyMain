@@ -18,11 +18,15 @@ class CapitalDistribution < ApplicationRecord
     self.net_amount_cents = gross_amount_cents - carry_cents
   end
 
-  after_save :generate_payments, if: :approved
+  after_save :generate_payments
 
   def generate_payments
-    Rails.logger.debug { "generate_payments called for #{id}" }
-    CapitalDistributionJob.perform_later(id) if saved_change_to_approved?
+    if manual_generation
+      Rails.logger.debug { "Skipping generate_payments for #{id}, manual_generation is true" }
+    else
+      Rails.logger.debug { "generate_payments called for #{id}" }
+      CapitalDistributionJob.perform_later(id)
+    end
   end
 
   def to_s
