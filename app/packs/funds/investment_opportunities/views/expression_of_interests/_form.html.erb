@@ -1,4 +1,4 @@
-<%= form_with(model: expression_of_interest) do |form| %>
+<%= form_with(model: expression_of_interest, validate: true) do |form| %>
   <% if expression_of_interest.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(expression_of_interest.errors.count, "error") %> prohibited this expression_of_interest from being saved:</h2>

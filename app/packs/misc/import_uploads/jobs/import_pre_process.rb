@@ -11,8 +11,8 @@ class ImportPreProcess
 
   def pre_process(file, import_upload)
     data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-    headers = data.row(1) # get header row
-
+    headers = get_headers(data.row(1)) # data.row(1).each{|x| x.gsub!("*", "")}.each{|x| x.strip!}
+    Rails.logger.debug "## headers"
     import_upload.status = nil
     import_upload.error_text = nil
     import_upload.failed_row_count = 0
@@ -21,5 +21,13 @@ class ImportPreProcess
     import_upload.save
 
     [headers, data]
+  rescue StandardError => e
+    Rails.logger.debug e.message
+    raise e
+  end
+
+  # get header row without the mandatory *
+  def get_headers(headers)
+    headers.each { |x| x.delete!("*") }.each(&:strip!)
   end
 end

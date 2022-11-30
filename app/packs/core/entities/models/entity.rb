@@ -76,7 +76,7 @@ class Entity < ApplicationRecord
   end
 
   after_create lambda { |_entity|
-    EntityMailer.with(id:).notify_created.deliver_later
+    # EntityMailer.with(id:).notify_created.deliver_later if id.present?
   }
 
   after_save :run_post_process, if: :saved_change_to_entity_type?

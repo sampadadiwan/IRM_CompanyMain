@@ -1,4 +1,4 @@
-<%= form_with(model: capital_distribution) do |form| %>
+<%= form_with(model: capital_distribution, validate: true) do |form| %>
   <% if capital_distribution.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(capital_distribution.errors.count, "error") %> prohibited this capital_distribution from being saved:</h2>

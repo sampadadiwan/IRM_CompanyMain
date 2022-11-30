@@ -9,7 +9,7 @@ class ImportInvestor < ImportUtil
 
   def save_investor(user_data, import_upload, custom_field_headers)
     # puts "processing #{user_data}"
-    saved = false
+    saved = true
     investor = Investor.where(investor_name: user_data['Name'], entity_id: import_upload.entity_id).first
     if investor.present?
       Rails.logger.debug { "Investor with name #{user_data['Name']} already exists for entity #{import_upload.entity_id}" }
@@ -24,7 +24,7 @@ class ImportInvestor < ImportUtil
       setup_custom_fields(user_data, investor, custom_field_headers)
 
       Rails.logger.debug { "Saving Investor with name '#{investor.investor_name}'" }
-      saved = investor.save
+      saved = investor.save!
 
     end
 
@@ -46,7 +46,7 @@ class ImportInvestor < ImportUtil
 
       if fund
         # Give the investor access rights as an investor to the fund
-        AccessRight.create(entity_id: fund.entity_id, owner: fund, investor:, access_type: "Fund", metadata: "Investor")
+        AccessRight.create!(entity_id: fund.entity_id, owner: fund, investor:, access_type: "Fund", metadata: "Investor")
       else
         Rails.logger.debug { "Specified fund #{user_data['Fund']} not found in import_upload #{import_upload.id}" }
       end
@@ -57,6 +57,7 @@ class ImportInvestor < ImportUtil
     # create hash from headers and cells
 
     user_data = [headers, row].transpose.to_h
+    Rails.logger.debug { "#### user_data = #{user_data}" }
     begin
       if save_investor(user_data, import_upload, custom_field_headers)
         import_upload.processed_row_count += 1

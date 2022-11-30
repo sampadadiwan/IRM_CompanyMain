@@ -159,7 +159,7 @@ end
 Then('the investors must have the data in the sheet') do
   file = File.open('./public/sample_uploads/investors.xlsx', "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-  headers = data.row(1) # get header row
+  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
 
   investors = @entity.investors.not_holding.not_trust.order(id: :asc).to_a
   data.each_with_index do |row, idx|

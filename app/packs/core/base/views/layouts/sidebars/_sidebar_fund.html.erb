@@ -53,3 +53,10 @@
 
         </li>
     <% end %>
+
+    <% if current_user.enable_deals %>
+            <a class="nav-link" href="/deal_investors?for_investor=true">
+                <i class="fas fa-lg fa-fw fa-briefcase"></i>
+                <span>Deals</span>
+            </a>
+    <% end %>

@@ -30,7 +30,7 @@ class ImportCapitalCommittment < ImportUtil
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
-    folio_id = user_data["Folio Id"].presence
+    folio_id = user_data["Folio No"].presence
 
     if fund && investor
 
