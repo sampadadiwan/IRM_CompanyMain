@@ -488,5 +488,90 @@ Then('the investors must receive email with subject {string}') do |subject|
 end
 
 
+Given('Given I upload {string} file for {string} of the fund') do |file, tab|
+  @import_file = file
+  visit(fund_path(@fund))
+  click_on(tab)
+  click_on("Upload")
+  fill_in('import_upload_name', with: "Test Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  sleep(1)
+  click_on("Save")
+  sleep(1)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+end
 
-  
+Then('There should be {string} capital commitments created') do |count|
+  @fund.capital_commitments.count.should == count.to_i
+end
+
+Then('the capital commitments must have the data in the sheet') do
+  file = File.open("./public/sample_uploads/#{@import_file}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+
+  capital_commitments = @fund.capital_commitments.order(id: :asc).to_a
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    cc = capital_commitments[idx-1]
+    puts "Checking import of #{cc.investor.investor_name}"
+    cc.investor.investor_name.should == user_data["Investor"].strip
+    cc.fund.name.should == user_data["Fund"]
+    cc.committed_amount_cents.should == user_data["Committed Amount"].to_i * 100
+    cc.folio_id.should == user_data["Folio No"].to_s
+  end
+end  
+
+
+Then('There should be {string} capital calls created') do |count|
+  @fund.capital_calls.count.should == count.to_i
+end
+
+Then('the capital calls must have the data in the sheet') do
+  file = File.open("./public/sample_uploads/#{@import_file}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+
+  capital_calls = @fund.capital_calls.order(id: :asc).to_a
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    cc = capital_calls[idx-1]
+    puts "Checking import of #{cc.name}"
+    cc.name.should == user_data["Name"].strip
+    cc.fund.name.should == user_data["Fund"]
+    cc.percentage_called.should == user_data["Percentage Called"].to_d
+    cc.due_date.should == user_data["Due Date"]
+  end
+end
+
+
+Then('There should be {string} capital distributions created') do |count|
+  @fund.capital_distributions.count.should == count.to_i
+end
+
+Then('the capital distributions must have the data in the sheet') do
+  file = File.open("./public/sample_uploads/#{@import_file}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+
+  capital_distributions = @fund.capital_distributions.order(id: :asc).to_a
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    cc = capital_distributions[idx-1]
+    puts "Checking import of #{cc.title}"
+    cc.title.should == user_data["Title"].strip
+    cc.fund.name.should == user_data["Fund"]
+    cc.gross_amount_cents.should == user_data["Gross"].to_i * 100
+    cc.carry_cents.should == user_data["Carry"].to_i * 100
+    cc.distribution_date.should == user_data["Date"]
+  end
+end

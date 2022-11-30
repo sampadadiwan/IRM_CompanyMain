@@ -18,7 +18,7 @@ class ImportCapitalDistribution < ImportUtil
         row << "Error"
       end
     rescue StandardError => e
-      Rails.logger.debug e.backtrace
+      Rails.logger.debug Rails.env.test? ? e.message : e.backtrace
       row << "Error #{e.message}"
       import_upload.failed_row_count += 1
     end
