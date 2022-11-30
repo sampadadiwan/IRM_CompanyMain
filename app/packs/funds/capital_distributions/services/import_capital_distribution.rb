@@ -51,14 +51,4 @@ class ImportCapitalDistribution < ImportUtil
       raise "Fund not found"
     end
   end
-
-  def setup_custom_fields(user_data, capital_distribution, custom_field_headers)
-    # Were any custom fields passed in ? Set them up
-    if custom_field_headers.length.positive?
-      capital_distribution.properties ||= {}
-      custom_field_headers.each do |cfh|
-        capital_distribution.properties[cfh.parameterize.underscore] = user_data[cfh]
-      end
-    end
-  end
 end
