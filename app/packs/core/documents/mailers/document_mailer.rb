@@ -11,7 +11,6 @@ class DocumentMailer < ApplicationMailer
       subj = "Signature required by #{@document.entity.name} for #{@document.name}"
       mail(from: from_email(@document.entity),
            to: email,
-           cc: ENV['SUPPORT_EMAIL'],
            subject: subj)
     end
   end
@@ -24,7 +23,6 @@ class DocumentMailer < ApplicationMailer
     subj = "Signature on document #{@document.name} recorded"
     mail(from: from_email(@document.entity),
          to: email,
-         cc: ENV['SUPPORT_EMAIL'],
          subject: subj)
   end
 end

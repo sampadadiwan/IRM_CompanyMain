@@ -20,7 +20,6 @@ class ApprovalMailer < ApplicationMailer
 
       mail(from: from_email(@approval.entity),
            to: investor_emails,
-           cc: ENV['SUPPORT_EMAIL'],
            subject: "Approval required by #{@approval.entity.name}: #{@approval.title}")
 
     else
@@ -40,7 +39,6 @@ class ApprovalMailer < ApplicationMailer
     mail(from: from_email(@approval_response.entity),
          to: investor_emails,
          cc: employee_emails,
-         bcc: ENV['SUPPORT_EMAIL'],
          subject: "Approval response from #{@approval_response.investor.investor_name}: #{@approval_response.status} ")
   end
 end

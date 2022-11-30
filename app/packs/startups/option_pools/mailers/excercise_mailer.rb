@@ -18,7 +18,6 @@ class ExcerciseMailer < ApplicationMailer
     emails = sandbox_email(@excercise, @excercise.user.email)
     mail(from: from_email(@excercise.entity),
          to: emails,
-         cc: ENV['SUPPORT_EMAIL'],
          subject: "Approved Excercise of Option by #{@excercise.user.full_name} ")
   end
 end

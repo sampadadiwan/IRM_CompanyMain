@@ -7,7 +7,6 @@ class InvestorAccessMailer < ApplicationMailer
 
     subj = "Access Granted to #{@investor_access.entity_name}"
     mail(from: from_email(@investor_access.entity), to: email,
-         cc: ENV['SUPPORT_EMAIL'],
          subject: subj)
 
     msg = "Access Granted to #{@investor_access.entity_name} to #{ENV['DOMAIN']}. Please login to view details."

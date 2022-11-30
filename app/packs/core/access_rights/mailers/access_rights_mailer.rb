@@ -12,7 +12,6 @@ class AccessRightsMailer < ApplicationMailer
       mail(from: from_email(@access_right.entity),
            to: ENV['SUPPORT_EMAIL'],
            bcc: emails,
-           cc: ENV['SUPPORT_EMAIL'],
            subject: "Access Granted to #{@access_right.owner_type} #{@access_right.owner.name} by #{@access_right.entity.name}")
     end
   end

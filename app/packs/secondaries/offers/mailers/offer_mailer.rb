@@ -7,7 +7,6 @@ class OfferMailer < ApplicationMailer
     emails = sandbox_email(@offer, @offer.user.email)
     subject = "Your offer has been approved"
     mail(from: from_email(@offer.entity), to: emails,
-         cc: ENV['SUPPORT_EMAIL'],
          subject:)
   end
 
@@ -18,7 +17,6 @@ class OfferMailer < ApplicationMailer
     emails = sandbox_email(@offer, email_list)
     subject = "SPA confirmation received"
     mail(from: from_email(@offer.entity), to: emails,
-         cc: ENV['SUPPORT_EMAIL'],
          subject:)
   end
 end

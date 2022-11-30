@@ -4,7 +4,7 @@ class NudgeMailer < ApplicationMailer
 
     mail(from: from_email(@nudge.entity), to: sandbox_email(@nudge, @nudge.to),
          cc: sandbox_email(@nudge, @nudge.cc),
-         bcc: "#{ENV['SUPPORT_EMAIL']},#{sandbox_email(@nudge, @nudge.bcc)}",
+         bcc: sandbox_email(@nudge, @nudge.bcc).to_s,
          subject: @nudge.subject)
   end
 end

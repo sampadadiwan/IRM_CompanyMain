@@ -10,7 +10,6 @@ class ExpressionOfInterestMailer < ApplicationMailer
 
     mail(from: from_email(@expression_of_interest.entity),
          to: emails,
-         bcc: ENV['SUPPORT_EMAIL'],
          subject: "Expression Of Interest received for: #{@expression_of_interest.investment_opportunity.company_name}")
   end
 end

@@ -9,7 +9,6 @@ class SignatureWorkflowMailer < ApplicationMailer
     subj = @signature_workflow.reason
     mail(from: from_email(@signature_workflow.entity),
          to: email,
-         cc: ENV['SUPPORT_EMAIL'],
          subject: subj)
   end
 
@@ -21,7 +20,6 @@ class SignatureWorkflowMailer < ApplicationMailer
     subj = "Signature completed by user #{@user.full_name} for #{@signature_workflow.entity.name} "
     mail(from: from_email(@signature_workflow.entity),
          to: email,
-         cc: ENV['SUPPORT_EMAIL'],
          subject: subj)
   end
 end

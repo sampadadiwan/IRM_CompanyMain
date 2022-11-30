@@ -9,7 +9,6 @@ class CapitalRemittancesMailer < ApplicationMailer
     if emails.present?
       mail(from: from_email(@capital_remittance.entity),
            to: emails,
-           cc: ENV['SUPPORT_EMAIL'],
            subject: "Capital Call: #{@capital_remittance.entity.name}")
     end
   end

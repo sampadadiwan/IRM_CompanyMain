@@ -1,5 +1,5 @@
 class ImportCapitalCommittment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Committed Amount", "Notes"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Committed Amount", "Notes", "Folio No"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -50,16 +50,6 @@ class ImportCapitalCommittment < ImportUtil
       end
     else
       raise fund ? "Investor not found" : "Fund not found"
-    end
-  end
-
-  def setup_custom_fields(user_data, capital_commitment, custom_field_headers)
-    # Were any custom fields passed in ? Set them up
-    if custom_field_headers.length.positive?
-      capital_commitment.properties ||= {}
-      custom_field_headers.each do |cfh|
-        capital_commitment.properties[cfh.parameterize.underscore] = user_data[cfh]
-      end
     end
   end
 end

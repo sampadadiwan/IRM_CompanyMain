@@ -11,7 +11,6 @@ class HoldingMailer < ApplicationMailer
 
     subject = "Your #{@holding.investment_instrument} have been #{@label}"
     mail(from: from_email(@holding.entity), to: emails,
-         cc: ENV['SUPPORT_EMAIL'],
          subject:)
   end
 
@@ -20,7 +19,6 @@ class HoldingMailer < ApplicationMailer
     emails = sandbox_email(@holding, @holding.user.email)
     subject = "Your #{@holding.investment_instrument} have been approved"
     mail(from: from_email(@holding.entity), to: emails,
-         cc: ENV['SUPPORT_EMAIL'],
          subject:)
   end
 
@@ -29,7 +27,6 @@ class HoldingMailer < ApplicationMailer
     emails = sandbox_email(@holding, @holding.user.email)
     subject = "Your #{@holding.investment_instrument} have lapsed"
     mail(from: from_email(@holding.entity), to: emails,
-         cc: ENV['SUPPORT_EMAIL'],
          subject:)
   end
 
@@ -38,7 +35,6 @@ class HoldingMailer < ApplicationMailer
     emails = sandbox_email(@holding, @holding.user.email)
     subject = "Your #{@holding.investment_instrument} will lapse in #{@holding.days_to_lapse} days"
     mail(from: from_email(@holding.entity), to: emails,
-         cc: ENV['SUPPORT_EMAIL'],
          subject:)
   end
 end

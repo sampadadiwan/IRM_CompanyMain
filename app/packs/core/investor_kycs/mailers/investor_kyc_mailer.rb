@@ -8,7 +8,6 @@ class InvestorKycMailer < ApplicationMailer
     subj = "Please complete your KYC for #{@investor_access.entity_name}"
     mail(from: from_email(@investor_access.entity),
          to: email,
-         cc: ENV['SUPPORT_EMAIL'],
          subject: subj)
   end
 
@@ -23,7 +22,6 @@ class InvestorKycMailer < ApplicationMailer
     subj = "KYC updated for #{@investor_kyc.user.full_name}"
     mail(from: from_email(@investor_kyc.entity),
          to: email,
-         cc: ENV['SUPPORT_EMAIL'],
          subject: subj)
   end
 end

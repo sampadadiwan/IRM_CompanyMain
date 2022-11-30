@@ -7,7 +7,6 @@ class ReminderMailer < ApplicationMailer
     subject = "Reminder: #{@reminder.note}"
     mail(from: from_email(@reminder.entity),
          to: emails,
-         cc: ENV['SUPPORT_EMAIL'],
          subject:)
   end
 end
