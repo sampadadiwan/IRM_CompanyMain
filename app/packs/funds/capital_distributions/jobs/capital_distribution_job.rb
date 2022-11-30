@@ -27,7 +27,8 @@ class CapitalDistributionJob < ApplicationJob
                                                        capital_distribution_id: @capital_distribution.id,
                                                        investor_id: cc.investor_id, amount_cents:,
                                                        payment_date: @capital_distribution.distribution_date,
-                                                       percentage: cc.percentage)
+                                                       percentage: cc.percentage,
+                                                       completed: @capital_distribution.generate_payments_paid)
 
           logger.debug "Created Payment of #{amount_cents} cents for #{cc.investor.investor_name} id #{payment.id}"
         end

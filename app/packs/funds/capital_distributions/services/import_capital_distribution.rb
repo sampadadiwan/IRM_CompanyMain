@@ -1,5 +1,5 @@
 class ImportCapitalDistribution < ImportUtil
-  STANDARD_HEADERS = %w[Fund Title Gross Carry Date].freeze
+  STANDARD_HEADERS = ["Fund", "Title", "Gross", "Carry", "Date", "Generate Payments", "Payments Paid"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -36,10 +36,14 @@ class ImportCapitalDistribution < ImportUtil
         raise "Capital Distribution Already Present"
       else
 
+        generate_payments = user_data["Generate Payments"]&.strip&.downcase == "yes"
+        generate_payments_paid = user_data["Payments Paid"]&.strip&.downcase == "yes"
+
         # Make the capital_distribution
         capital_distribution = CapitalDistribution.new(entity_id: import_upload.entity_id, title:,
                                                        fund:, distribution_date: user_data["Date"],
-                                                       manual_generation: true)
+                                                       manual_generation: true,
+                                                       generate_payments:, generate_payments_paid:)
 
         capital_distribution.gross_amount = user_data["Gross"]
         capital_distribution.carry = user_data["Carry"]

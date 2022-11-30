@@ -46,6 +46,9 @@ class CapitalRemittance < ApplicationRecord
   def set_call_amount
     self.call_amount_cents = capital_commitment ? capital_call.percentage_called * capital_commitment.committed_amount_cents / 100.0 : 0
 
+    # When the upload is done, we get historical data, so set the collected amount
+    self.collected_amount = call_amount if capital_call.generate_remittances_verified
+
     set_status
   end
 

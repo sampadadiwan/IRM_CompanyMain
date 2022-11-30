@@ -1,5 +1,5 @@
 class ImportCapitalCall < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date"].freeze
+  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date", "Generate Remittances", "Remittances Verified"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -35,12 +35,15 @@ class ImportCapitalCall < ImportUtil
       if CapitalCall.exists?(entity_id: import_upload.entity_id, fund:, name:)
         raise "Capital Call Already Present"
       else
+        generate_remittances = user_data["Generate Remittances"]&.strip&.downcase == "yes"
+        generate_remittances_verified = user_data["Remittances Verified"]&.strip&.downcase == "yes"
 
         # Make the capital_call
         capital_call = CapitalCall.new(entity_id: import_upload.entity_id, name:,
                                        fund:, due_date: user_data["Due Date"],
                                        percentage_called: user_data["Percentage Called"],
-                                       manual_generation: true)
+                                       manual_generation: true,
+                                       generate_remittances:, generate_remittances_verified:)
 
         setup_custom_fields(user_data, capital_call, custom_field_headers)
 

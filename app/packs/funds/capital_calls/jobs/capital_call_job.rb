@@ -25,7 +25,8 @@ class CapitalCallJob < ApplicationJob
         # Note the due amount for the call is calculated automatically inside CapitalRemittance
         CapitalRemittance.create(capital_call: @capital_call, fund: @capital_call.fund,
                                  entity: @capital_call.entity, investor: cc.investor, capital_commitment: cc,
-                                 status: "Pending")
+                                 status: "Pending", verified: @capital_call.generate_remittances_verified)
+
       end
     end
   end

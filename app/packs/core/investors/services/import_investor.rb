@@ -10,15 +10,16 @@ class ImportInvestor < ImportUtil
   def save_investor(user_data, import_upload, custom_field_headers)
     # puts "processing #{user_data}"
     saved = true
-    investor = Investor.where(investor_name: user_data['Name'], entity_id: import_upload.entity_id).first
+    investor_name = user_data['Name'].strip
+    investor = Investor.where(investor_name:, entity_id: import_upload.entity_id).first
     if investor.present?
-      Rails.logger.debug { "Investor with name #{user_data['Name']} already exists for entity #{import_upload.entity_id}" }
+      Rails.logger.debug { "Investor with name investor_name already exists for entity #{import_upload.entity_id}" }
 
     else
 
       Rails.logger.debug user_data
-      investor = Investor.new(investor_name: user_data["Name"], tag_list: user_data["Tags"],
-                              category: user_data["Category"], city: user_data["City"],
+      investor = Investor.new(investor_name:, tag_list: user_data["Tags"],
+                              category: user_data["Category"].strip, city: user_data["City"],
                               entity_id: import_upload.entity_id)
 
       setup_custom_fields(user_data, investor, custom_field_headers)
