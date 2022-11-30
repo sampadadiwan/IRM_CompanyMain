@@ -2,10 +2,13 @@
     <h1 class="h3 mb-0 text-gray-800">Capital Distribution Payments</h1>
 
     <span>
-      <%= link_to "New Capital Distribution Payment" , new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id), {class: "btn btn-primary" } if capital_distribution %>
+      <% if params[:capital_distribution_id] %>
+      
+        <%= link_to "New Capital Distribution Payment" , new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": params[:capital_distribution_id]), {class: "btn btn-primary" }  %>
 
-      <%= link_to "Download" , capital_distribution_payments_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id, format: "xlsx"), {class: "btn btn-primary" } if capital_distribution %>
+        <%= link_to "Download" , capital_distribution_payments_path("capital_distribution_payment[capital_distribution_id]": params[:capital_distribution_id], format: "xlsx"), {class: "btn btn-primary" } %>
 
+      <% end %>
       <%= render "/funds/search_bar", model_name: "capital_distribution_payment" %>
     </span>
 

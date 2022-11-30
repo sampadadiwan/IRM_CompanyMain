@@ -7,15 +7,6 @@ class CapitalCommitmentsController < ApplicationController
     @capital_commitments = @capital_commitments.where(fund_id: params[:fund_id]) if params[:fund_id]
 
     @capital_commitments = @capital_commitments.page(params[:page]) if params[:all].blank?
-    respond_to do |format|
-      format.xlsx do
-        response.headers[
-          'Content-Disposition'
-        ] = "attachment; filename=capital_commitments.xlsx"
-      end
-      format.html { render :index }
-      format.json { render :index }
-    end
   end
 
   def search

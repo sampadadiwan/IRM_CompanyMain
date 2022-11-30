@@ -9,16 +9,6 @@ class CapitalDistributionPaymentsController < ApplicationController
     @capital_distribution_payments = @capital_distribution_payments.where(capital_distribution_id: params[:capital_distribution_id]) if params[:capital_distribution_id].present?
 
     @capital_distribution_payments = @capital_distribution_payments.page(params[:page]) if params[:all].blank?
-
-    respond_to do |format|
-      format.xlsx do
-        response.headers[
-          'Content-Disposition'
-        ] = "attachment; filename=payments.xlsx"
-      end
-      format.html { render :index }
-      format.json { render :index }
-    end
   end
 
   def search
