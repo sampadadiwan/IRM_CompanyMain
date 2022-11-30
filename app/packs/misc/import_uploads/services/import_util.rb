@@ -46,6 +46,7 @@ class ImportUtil
     if custom_field_headers.length.positive?
       model.properties ||= {}
       custom_field_headers.each do |cfh|
+        Rails.logger.debug { "### setup_custom_fields: processing #{cfh}" }
         model.properties[cfh.parameterize.underscore] = user_data[cfh]
       end
     end

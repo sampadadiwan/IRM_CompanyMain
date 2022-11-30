@@ -50,7 +50,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def send_notification
-    CapitalRemittancesMailer.with(id:).send_notification.deliver_later if capital_call.approved
+    CapitalRemittancesMailer.with(id:).send_notification.deliver_later if capital_call.approved && !capital_call.manual_generation
   end
 
   def set_status
