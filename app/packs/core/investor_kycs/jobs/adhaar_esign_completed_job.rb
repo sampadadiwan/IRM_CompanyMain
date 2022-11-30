@@ -2,7 +2,7 @@ class AdhaarEsignCompletedJob < ApplicationJob
   queue_as :default
 
   def perform(adhaar_esign_id, user_id = nil)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:atomic) do
       # Ensure we retrive the signed doc from Digio and upload it to our system
       ae = AdhaarEsign.find(adhaar_esign_id)
       ae.retrieve_signed

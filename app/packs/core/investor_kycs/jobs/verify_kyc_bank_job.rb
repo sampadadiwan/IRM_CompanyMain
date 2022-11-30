@@ -2,7 +2,7 @@ class VerifyKycBankJob < VerifyBankJob
   queue_as :default
 
   def perform(id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:atomic) do
       @model = InvestorKyc.find(id)
       verify
       @model.save

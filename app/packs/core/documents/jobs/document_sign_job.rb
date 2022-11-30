@@ -8,7 +8,7 @@ class DocumentSignJob < ApplicationJob
     user = User.find(user_id)
 
     if document.signature_enabled && user.signature
-      Chewy.strategy(:sidekiq) do
+      Chewy.strategy(:atomic) do
         # Download and then delete the tempfile after processing
         # https://shrinerb.com/docs/retrieving-uploads#downloading
         document.file.download do |tempfile|

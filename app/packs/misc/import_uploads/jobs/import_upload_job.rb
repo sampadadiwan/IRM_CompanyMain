@@ -2,7 +2,7 @@ class ImportUploadJob < ApplicationJob
   queue_as :default
 
   def perform(import_upload_id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:atomic) do
       import_upload = ImportUpload.find(import_upload_id)
       begin
         # Download the S3 file to tmp

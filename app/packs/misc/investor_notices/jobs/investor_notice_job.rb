@@ -2,7 +2,7 @@ class InvestorNoticeJob < ApplicationJob
   queue_as :default
 
   def perform(id = nil)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:atomic) do
       if id.present?
         investor_notice = InvestorNotice.find(id)
 

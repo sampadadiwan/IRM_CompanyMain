@@ -3,7 +3,7 @@ class CapitalDistributionJob < ApplicationJob
 
   # This job is idempotent and can be run multiple times for the same capital_distribution_id
   def perform(capital_distribution_id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:atomic) do
       @capital_distribution = CapitalDistribution.find(capital_distribution_id)
       fund = @capital_distribution.fund
       # Need to distriute the capital based on the percentage holding of the fund by the investor

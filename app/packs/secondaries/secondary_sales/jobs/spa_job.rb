@@ -2,7 +2,7 @@ class SpaJob < ApplicationJob
   queue_as :default
 
   def perform(secondary_sale_id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:atomic) do
       # Counters
       succeeded = 0
       failed = 0

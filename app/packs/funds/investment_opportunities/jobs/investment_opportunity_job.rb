@@ -2,7 +2,7 @@ class InvestmentOpportunityJob < ApplicationJob
   queue_as :default
 
   def perform(investment_opportunity_id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:atomic) do
       @investment_opportunity = InvestmentOpportunity.find(investment_opportunity_id)
 
       @investment_opportunity.expression_of_interests.update_all(allocation_amount_cents: 0, allocation_percentage: 0)

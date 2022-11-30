@@ -2,7 +2,7 @@ class OfferSpaSignatureJob < ApplicationJob
   queue_as :default
 
   def perform(secondary_sale_id, offer_id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:atomic) do
       if offer_id
         # We have an offer id, so generate the adhaar esign link and send to digio
         generate_for_offer(offer_id)
