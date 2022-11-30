@@ -39,7 +39,8 @@ class ImportCapitalCall < ImportUtil
         # Make the capital_call
         capital_call = CapitalCall.new(entity_id: import_upload.entity_id, name:,
                                        fund:, due_date: user_data["Due Date"],
-                                       percentage_called: user_data["Percentage Called"])
+                                       percentage_called: user_data["Percentage Called"],
+                                       manual_generation: true)
 
         setup_custom_fields(user_data, capital_call, custom_field_headers)
 

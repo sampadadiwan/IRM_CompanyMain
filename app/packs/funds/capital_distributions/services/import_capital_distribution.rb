@@ -38,7 +38,8 @@ class ImportCapitalDistribution < ImportUtil
 
         # Make the capital_distribution
         capital_distribution = CapitalDistribution.new(entity_id: import_upload.entity_id, title:,
-                                                       fund:, distribution_date: user_data["Date"])
+                                                       fund:, distribution_date: user_data["Date"],
+                                                       manual_generation: true)
 
         capital_distribution.gross_amount = user_data["Gross"]
         capital_distribution.carry = user_data["Carry"]
