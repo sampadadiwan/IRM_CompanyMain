@@ -5,7 +5,7 @@ class ImportUpload < ApplicationRecord
               "HOLDINGS_SAMPLE" => "/sample_uploads/holdings.xlsx",
               "OFFERS_SAMPLE" => "/sample_uploads/offers.xlsx",
               "CAPITAL_CALL_SAMPLE" => "/sample_uploads/capital_calls.xlsx",
-              "CAPITAL_REMMITANCE_SAMPLE" => "/sample_uploads/capital_remmitances.xlsx",
+              "CAPITAL_REMITTANCE_SAMPLE" => "/sample_uploads/capital_remmitances.xlsx",
               "CAPITAL_DISTRIBUTION_SAMPLE" => "/sample_uploads/capital_distributions.xlsx",
               "CAPITAL_COMMITMENT_SAMPLE" => "/sample_uploads/capital_commitments.xlsx" }.freeze
 
