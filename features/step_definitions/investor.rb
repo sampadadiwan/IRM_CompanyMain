@@ -187,7 +187,7 @@ Given('Given I upload an investors file for the fund') do
   attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_investors.xlsx'), make_visible: true)
   sleep(1)
   click_on("Save")
-  sleep(1)
+  sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 
