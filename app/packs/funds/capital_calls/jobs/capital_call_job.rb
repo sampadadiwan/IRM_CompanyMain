@@ -3,7 +3,7 @@ class CapitalCallJob < ApplicationJob
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCall
   def perform(capital_call_id, type = "Generate")
-    Chewy.strategy(:atomic) do
+    Chewy.strategy(:sidekiq) do
       case type
       when "Generate"
         generate(capital_call_id)

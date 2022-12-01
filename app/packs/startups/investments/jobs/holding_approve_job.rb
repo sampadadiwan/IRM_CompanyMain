@@ -2,7 +2,7 @@ class HoldingApproveJob < ApplicationJob
   queue_as :default
 
   def perform(type, id)
-    Chewy.strategy(:atomic) do
+    Chewy.strategy(:sidekiq) do
       Rails.logger.debug { "HoldingApproveJob: #{type} #{id}" }
 
       case type

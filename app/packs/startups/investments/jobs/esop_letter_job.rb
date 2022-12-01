@@ -2,7 +2,7 @@ class EsopLetterJob < ApplicationJob
   queue_as :default
 
   def perform(id)
-    Chewy.strategy(:atomic) do
+    Chewy.strategy(:sidekiq) do
       Rails.logger.debug { "EsopLetterJob: Holding #{id} start" }
       holding = Holding.find(id)
       EsopLetterGenerator.new(holding)

@@ -3,7 +3,7 @@ class CapitalCommitmentDocJob < ApplicationJob
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(capital_commitment_id)
-    Chewy.strategy(:atomic) do
+    Chewy.strategy(:sidekiq) do
       @capital_commitment = CapitalCommitment.find(capital_commitment_id)
       @fund = @capital_commitment.fund
       @investor = @capital_commitment.investor

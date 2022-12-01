@@ -3,7 +3,7 @@ class CapTableFromSaleJob < ApplicationJob
 
   def perform(secondary_sale_id)
     secondary_sale = SecondarySale.find(secondary_sale_id)
-    Chewy.strategy(:atomic) do
+    Chewy.strategy(:sidekiq) do
       # Ensure all the holdings which are allocated in offers are marked as sold
       update_sold_holdings(secondary_sale)
       # Ensure that the interests are converted to investments

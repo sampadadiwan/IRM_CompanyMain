@@ -2,7 +2,7 @@ class VestedJob < ApplicationJob
   queue_as :default
 
   def perform(*_args)
-    Chewy.strategy(:atomic) do
+    Chewy.strategy(:sidekiq) do
       # We need to check for vesting only in pools where excercise is not complete
       OptionPool.where("excercised_quantity < allocated_quantity").each do |pool|
         pool.holdings.not_investors.find_each(batch_size: 500) do |holding|

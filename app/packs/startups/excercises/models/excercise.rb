@@ -17,11 +17,11 @@ class Excercise < ApplicationRecord
 
   monetize :price_cents, :amount_cents, with_currency: ->(e) { e.entity.currency }
 
-  counter_culture :option_pool,
+  counter_culture :holding,
                   column_name: proc { |e| e.approved ? 'excercised_quantity' : nil },
                   delta_column: 'quantity'
 
-  counter_culture :holding,
+  counter_culture :option_pool,
                   column_name: proc { |e| e.approved ? 'excercised_quantity' : nil },
                   delta_column: 'quantity'
 

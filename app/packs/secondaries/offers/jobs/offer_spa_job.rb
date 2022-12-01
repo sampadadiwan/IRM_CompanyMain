@@ -2,7 +2,7 @@ class OfferSpaJob < ApplicationJob
   queue_as :default
 
   def perform(offer_id)
-    Chewy.strategy(:atomic) do
+    Chewy.strategy(:sidekiq) do
       offer = Offer.find(offer_id)
       OfferSpaGenerator.new(offer)
     end

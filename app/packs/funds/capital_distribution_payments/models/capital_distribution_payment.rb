@@ -11,12 +11,12 @@ class CapitalDistributionPayment < ApplicationRecord
   monetize :amount_cents, with_currency: ->(i) { i.entity.currency }
   validates :folio_id, presence: true
 
+  counter_culture :capital_distribution,
+                  column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil }, delta_column: 'amount_cents'
+
   counter_culture :fund,
                   column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil },
                   delta_column: 'amount_cents'
-
-  counter_culture :capital_distribution,
-                  column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil }, delta_column: 'amount_cents'
 
   after_save :send_notification, if: :completed
   def send_notification
