@@ -9,7 +9,7 @@ class CapitalDistribution < ApplicationRecord
   belongs_to :form_type, optional: true
   belongs_to :approved_by_user, class_name: "User", optional: true
 
-  has_many :capital_distribution_payments, dependent: :destroy
+  has_many :capital_distribution_payments, dependent: :destroy, inverse_of: :capital_distribution
 
   monetize :net_amount_cents, :carry_cents, :gross_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.entity.currency }
 
