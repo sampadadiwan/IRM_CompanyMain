@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_01_035711) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_01_055838) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -258,7 +258,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_01_035711) do
     t.datetime "updated_at", null: false
     t.text "properties"
     t.bigint "form_type_id"
-    t.decimal "percentage", precision: 7, scale: 4, default: "0.0"
+    t.decimal "percentage", precision: 11, scale: 8, default: "0.0"
     t.bigint "ppm_number", default: 0
     t.string "investor_signature_types", limit: 20
     t.string "folio_id", limit: 20
