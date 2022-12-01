@@ -41,7 +41,8 @@ class AdhaarEsignPolicy < ApplicationPolicy
     update?
   end
 
+  # Only users who are part of this eSign can complete it
   def completed?
-    true
+    record.user_ids.split(",").include? user.id
   end
 end
