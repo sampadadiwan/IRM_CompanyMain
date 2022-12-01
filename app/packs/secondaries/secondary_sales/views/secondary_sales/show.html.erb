@@ -69,6 +69,9 @@
               interests_secondary_sale_path(@secondary_sale, report: "completion_report"), 
               class: "dropdown-item" %>
 
+          <%= link_to "Add Investor Notice" , 
+                new_investor_notice_path( "investor_notice[owner_id]": @secondary_sale.id, 
+                "investor_notice[owner_type]": "SecondaSale"), {class: "dropdown-item" } %>
         </div>
       </div>
     </div>

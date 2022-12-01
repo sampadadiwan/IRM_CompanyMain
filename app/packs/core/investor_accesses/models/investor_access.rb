@@ -46,7 +46,7 @@ class InvestorAccess < ApplicationRecord
 
   before_save :update_user
   after_save :send_notification_if_changed, if: :approved
-  after_create :send_notification, if: :approved
+  after_create_commit :send_notification, if: :approved
 
   def update_user
     self.email = email.strip

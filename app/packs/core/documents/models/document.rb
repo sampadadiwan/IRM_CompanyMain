@@ -38,7 +38,7 @@ class Document < ApplicationRecord
 
   delegate :full_path, to: :folder, prefix: :folder
   before_validation :setup_folder, :setup_entity
-  after_create :setup_access_rights
+  after_create_commit :setup_access_rights
 
   include FileUploader::Attachment(:file)
 

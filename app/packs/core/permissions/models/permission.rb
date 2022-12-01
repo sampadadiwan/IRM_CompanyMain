@@ -40,7 +40,7 @@ class Permission < ApplicationRecord
     self.user = u
   end
 
-  after_create :add_role
+  after_create_commit :add_role
   def add_role
     user&.add_role(:consultant)
   end

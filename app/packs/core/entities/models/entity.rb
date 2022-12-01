@@ -75,7 +75,7 @@ class Entity < ApplicationRecord
                                             !(logo_url.starts_with?("http") || logo_url.starts_with?("https"))
   end
 
-  after_create lambda { |_entity|
+  after_create_commit lambda { |_entity|
     # EntityMailer.with(id:).notify_created.deliver_later if id.present?
   }
 

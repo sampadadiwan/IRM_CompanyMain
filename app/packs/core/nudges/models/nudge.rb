@@ -24,7 +24,7 @@ class Nudge < ApplicationRecord
 
   has_rich_text :msg_body
 
-  after_create :send_nudge
+  after_create_commit :send_nudge
   def send_nudge
     NudgeMailer.with(id:).send_nudge.deliver_later
   end

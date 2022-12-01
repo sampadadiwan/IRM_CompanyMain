@@ -21,7 +21,7 @@ class Message < ApplicationRecord
   has_rich_text :content
   # encrypts :content
   validates :content, presence: true
-  after_create :broadcast_message
+  after_create_commit :broadcast_message
 
   def broadcast_message
     broadcast_append_to "#{owner_type.underscore}_#{owner_id}",
@@ -31,7 +31,7 @@ class Message < ApplicationRecord
 
   def unread(user); end
 
-  after_create :update_message_count
+  after_create_commit :update_message_count
   def update_message_count
     if owner_type == "DealInvestor"
       deal_investor = owner

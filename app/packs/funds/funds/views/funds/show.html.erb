@@ -135,6 +135,10 @@
           { class: "btn btn-primary"}  %> 
 
     <% end %>
+
+    <%= link_to "Add Investor Notice" , 
+                new_investor_notice_path( "investor_notice[owner_id]": @fund.id, 
+                "investor_notice[owner_type]": "Fund"), {class: "btn btn-primary" } if params[:debug].present? %>
   </div>
 
   <% cache_if(current_user.entity_id == @fund.entity_id, [@fund, "FundDetails"]) do %>

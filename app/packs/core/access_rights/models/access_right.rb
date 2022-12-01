@@ -137,12 +137,16 @@ class AccessRight < ApplicationRecord
     self.access_type ||= owner_type
   end
 
-  after_create :send_notification
+  after_create_commit :send_notification
   def send_notification
-    AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later
+    if Rails.env.test?
+      AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later
+    else
+      AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later(wait_until: rand(30).seconds.from_now)
+    end
   end
 
-  after_create :update_owner
+  after_create_commit :update_owner
   after_destroy :update_owner
   def update_owner
     owner.access_rights_changed(id) if owner.respond_to? :access_rights_changed

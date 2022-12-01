@@ -48,7 +48,7 @@ class Interest < ApplicationRecord
   validates :quantity, :price, presence: true
   validates :buyer_entity_name, :address, :city, :PAN, :contact_name, :email, presence: true, if: proc { |i| i.secondary_sale.finalized }
 
-  after_create :notify_interest
+  after_create_commit :notify_interest
   after_save :notify_shortlist, if: :short_listed
   after_save :notify_finalized, if: :finalized
 

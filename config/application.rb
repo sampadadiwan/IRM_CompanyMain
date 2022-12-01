@@ -86,7 +86,7 @@ module InvestorRelationshipManagement
       enable_starttls_auto: true
     }
 
-    unless Rails.env.development?
+    unless Rails.env.development? || Rails.env.test?
       Rails.application.config.middleware.use ExceptionNotification::Rack,
                                               email: {
                                                 email_prefix: '[Error:] ',

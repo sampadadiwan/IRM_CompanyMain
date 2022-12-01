@@ -26,7 +26,7 @@ class CapitalCommitment < ApplicationRecord
 
   counter_culture :fund, column_name: 'committed_amount_cents', delta_column: 'committed_amount_cents'
 
-  after_create :create_remittance
+  after_create_commit :create_remittance
   def create_remittance
     # When the CapitalCommitment is created, ensure that for any capital calls prev created
     # The corr CapitalRemittance are created

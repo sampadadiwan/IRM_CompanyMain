@@ -35,7 +35,7 @@ class Excercise < ApplicationRecord
   scope :not_approved, -> { where(approved: false) }
 
   before_save :compute
-  after_create :notify_excercise
+  after_create_commit :notify_excercise
 
   def compute
     self.amount_cents = quantity * price_cents
