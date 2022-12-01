@@ -8,6 +8,11 @@ class DigioEsignHelper
   BASE_URL = ENV["DIGIO_BASE_URL"]
   AUTH_TOKEN = Base64.strict_encode64("#{ENV['DIGIO_CLIENT_ID']}:#{ENV['DIGIO_SECRET']}")
 
+  def initialize
+    super
+    @debug = true
+  end
+
   def sign(user_ids, file_name, file_path, reason)
     # Open the file you wish to encode
     data = File.read(file_path)
@@ -24,7 +29,7 @@ class DigioEsignHelper
         'Content-Type' => 'application/json'
       },
       body: body.to_json,
-      debug_output: debug ? $stdout : nil
+      debug_output: @debug ? $stdout : nil
     )
 
     Rails.logger.debug response
@@ -38,7 +43,7 @@ class DigioEsignHelper
         "authorization" => "Basic #{AUTH_TOKEN}",
         'Content-Type' => 'application/json'
       },
-      debug_output: debug ? $stdout : nil
+      debug_output: @debug ? $stdout : nil
     )
 
     Rails.logger.debug response
@@ -53,7 +58,7 @@ class DigioEsignHelper
         "authorization" => "Basic #{AUTH_TOKEN}",
         'Content-Type' => 'application/json'
       },
-      debug_output: debug ? $stdout : nil
+      debug_output: @debug ? $stdout : nil
     )
 
     Rails.logger.debug response

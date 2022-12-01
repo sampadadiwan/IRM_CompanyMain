@@ -238,9 +238,9 @@ class Offer < ApplicationRecord
     type ? @signatory_ids_map[type.to_sym] : @signatory_ids_map
   end
 
-  def sign_link(user)
+  def signature_link(user)
     # Substitute the phone number required in the link
-    OfferEsignProvider.new(self).sign_link(user)
+    OfferEsignProvider.new(self).signature_link(user)
   end
 
   def signature_completed(signature_type, file)

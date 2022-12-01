@@ -3,26 +3,18 @@ class OfferEsignProvider
     @offer = offer
   end
 
-  def sign_link(user)
+  def signature_link(user)
     @offer.adhaar_esign&.esign_link&.sub "phone_number", user.phone if @offer.signatory_ids(:adhaar).include?(user.id) && @offer.adhaar_esign
   end
 
-  def spa_file_name
-    "SPA for #{@offer.user.full_name} : Offer #{@offer.id}"
-  end
-
-  # Called from OfferSpaGenerator.prepare_for_signature, after the SPA has been generated
-  def generate_spa_signatures(force: false)
+  # Called from OfferSpaGenerator.trigger_signatures, after the SPA has been generated
+  def trigger_signatures(force: false)
     user_ids = @offer.signatory_ids(:adhaar)
 
     if user_ids.present?
 
-      if force
-        cleanup_prev
-        doc = nil
-      else
-        doc = Document.where(entity_id: @offer.entity_id, owner: @offer, name: spa_file_name).first
-      end
+      cleanup_prev(force)
+      doc = Document.where(entity_id: @offer.entity_id, owner: @offer, name: spa_file_name).first
 
       if doc.blank?
         # Download the orignal generated SPA file & create a doc
@@ -37,16 +29,6 @@ class OfferEsignProvider
     end
   end
 
-  def cleanup_prev
-    # Check if we already have a document with spa_file_name
-    doc = Document.where(entity_id: @offer.entity_id, owner: @offer, name: spa_file_name).first
-    if doc.present?
-      # If we force the regeneration, then delete the old document with spa_file_name
-      AdhaarEsign.where(owner: @offer).each(&:destroy)
-      doc.destroy
-    end
-  end
-
   def signature_completed(signature_type, file)
     Rails.logger.debug { "Offer #{@offer.id} signature_completed #{signature_type}" }
     if signature_type == "adhaar"
@@ -58,6 +40,24 @@ class OfferEsignProvider
       @offer.final_agreement = true
       @offer.esign_completed = true
       @offer.save
+    end
+  end
+
+  private
+
+  def spa_file_name
+    "SPA for #{@offer.user.full_name} : Offer #{@offer.id}"
+  end
+
+  def cleanup_prev(force)
+    if force
+      # Check if we already have a document with spa_file_name
+      doc = Document.where(entity_id: @offer.entity_id, owner: @offer, name: spa_file_name).first
+      if doc.present?
+        # If we force the regeneration, then delete the old document with spa_file_name
+        AdhaarEsign.where(owner: @offer).each(&:destroy)
+        doc.destroy
+      end
     end
   end
 end

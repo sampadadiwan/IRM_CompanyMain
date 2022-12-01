@@ -10,8 +10,6 @@ class OfferSpaGenerator
     cleanup_old_spa(offer)
     generate(offer, master_spa_path)
     attach(offer)
-    # TODO: - remove prepare_for_signature, it should not be generated here
-    prepare_for_signature(offer)
   ensure
     cleanup
   end
@@ -113,9 +111,5 @@ class OfferSpaGenerator
   def attach(offer)
     offer.spa = File.open("#{@working_dir}/Offer-#{offer.id}.pdf", "rb")
     offer.save
-  end
-
-  def prepare_for_signature(offer)
-    OfferEsignProvider.new(offer).generate_spa_signatures(force: true)
   end
 end

@@ -571,6 +571,8 @@ end
 Then('the adhaar esign must be triggered') do
   @sale.reload
   @sale.offers.verified.each do |o|
+    puts "####### AdhaarEsign #######\n"
+    puts o.adhaar_esigns.last.to_json
     o.adhaar_esigns.last.should_not == nil
     o.esign_required.should == true
     o.esign_completed.should == false
@@ -583,10 +585,10 @@ end
 
 
 Given('when I click the esign link') do
-  click_on "Click here to Adhaar eSign"
+  click_on "Click here to eSign"
 end
 
 Then('I should be sent to the digio esign page') do
   sleep 10
-  expect(page).to have_content("Authenticate #{@user.phone}")
+  expect(page).to have_content("Security code sent to #{@user.phone}")
 end

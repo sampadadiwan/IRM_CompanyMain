@@ -22,10 +22,10 @@
 
 
       <% if @offer.esign_required && !@offer.esign_completed %>
-        <% sign_link = @offer.sign_link(current_user) %>
-        <% if sign_link.present? %>
+        <% signature_link = @offer.signature_link(current_user) %>
+        <% if signature_link.present? %>
           <% target = Rails.env.test? ? "" : "_blank" %>
-          <%= link_to "Click here eSign", sign_link,  target: target,
+          <%= link_to "Click here to eSign", signature_link,  target: target,
               class: "btn btn-success"  if policy(@offer).accept_spa?  %>
         <% end %>
       <% else %>

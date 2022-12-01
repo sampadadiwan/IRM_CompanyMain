@@ -1,7 +1,7 @@
 # Complex processing below
 # For an Offer the following steps are taken
 # 1. When SecondarySaleNotifiers.notify_spa_sellers is called, it triggers the AdharEsign process for all Offers
-# 2. The OfferSpaSignatureJob calls the offer.generate_spa_signatures
+# 2. The OfferSpaSignatureJob calls the offer.trigger_signatures
 # 3. This triggers the AdhaarEsign.sign method
 # 4. The user link is created and sent, and once the user completes signing, he is redirected to /adhaar_esigns/#{id}/completed
 # 5. That then triggers AdhaarEsignCompletedJob
