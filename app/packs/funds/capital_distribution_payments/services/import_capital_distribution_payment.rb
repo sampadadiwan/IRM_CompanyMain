@@ -40,12 +40,13 @@ class ImportCapitalDistributionPayment < ImportUtil
         # Make the capital_distribution_payment
         capital_distribution_payment = CapitalDistributionPayment.new(entity_id: import_upload.entity_id, fund:, capital_distribution:, investor:, payment_date: user_data["Payment Date"])
 
+        capital_distribution_payment.folio_id = user_data["Folio Id"]
         capital_distribution_payment.amount = user_data["Amount"]
         capital_distribution_payment.completed = user_data["Completed"] == "Yes"
 
         setup_custom_fields(user_data, capital_distribution_payment, custom_field_headers)
 
-        capital_distribution_payment.save
+        capital_distribution_payment.save!
       end
     else
       raise "Fund not found" unless fund

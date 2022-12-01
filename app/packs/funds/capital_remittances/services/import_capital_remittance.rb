@@ -40,13 +40,14 @@ class ImportCapitalRemittance < ImportUtil
         # Make the capital_remittance
         capital_remittance = CapitalRemittance.new(entity_id: import_upload.entity_id, fund:, capital_call:, investor:, status: user_data["Status"])
 
+        capital_remittance.folio_id = user_data["Folio Id"]
         capital_remittance.call_amount = user_data["Due Amount"]
         capital_remittance.collected_amount = user_data["Collected Amount"]
         capital_remittance.verified = user_data["Verified"] == "Yes"
 
         setup_custom_fields(user_data, capital_remittance, custom_field_headers)
 
-        capital_remittance.save
+        capital_remittance.save!
       end
     else
       raise "Fund not found" unless fund
