@@ -1,5 +1,5 @@
 class AdhaarEsignCompletedJob < ApplicationJob
-  queue_as :default
+  queue_as :critical
 
   def perform(adhaar_esign_id, user_id = nil)
     Chewy.strategy(:sidekiq) do

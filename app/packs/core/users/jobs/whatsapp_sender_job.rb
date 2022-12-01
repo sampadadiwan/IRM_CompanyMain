@@ -1,5 +1,5 @@
 class WhatsappSenderJob < ApplicationJob
-  queue_as :default
+  queue_as :low
 
   def perform(msg, user)
     if user.whatsapp_enabled

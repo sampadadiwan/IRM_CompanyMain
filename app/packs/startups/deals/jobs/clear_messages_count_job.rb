@@ -1,5 +1,5 @@
 class ClearMessagesCountJob < ApplicationJob
-  queue_as :default
+  queue_as :low
 
   def perform(*_args)
     Chewy.strategy(:sidekiq) do

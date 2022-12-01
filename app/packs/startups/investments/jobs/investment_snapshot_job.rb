@@ -1,5 +1,5 @@
 class InvestmentSnapshotJob < ApplicationJob
-  queue_as :default
+  queue_as :low
 
   # This is called on the 1st of every month by cron
   def perform

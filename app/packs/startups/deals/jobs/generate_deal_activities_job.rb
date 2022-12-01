@@ -1,5 +1,5 @@
 class GenerateDealActivitiesJob < ApplicationJob
-  queue_as :default
+  queue_as :critical
 
   def perform(id, class_name)
     Chewy.strategy(:sidekiq) do

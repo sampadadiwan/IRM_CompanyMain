@@ -1,5 +1,5 @@
 class SignatureWorkflowJob < ApplicationJob
-  queue_as :default
+  queue_as :low
 
   def perform(_id = nil)
     Chewy.strategy(:sidekiq) do
