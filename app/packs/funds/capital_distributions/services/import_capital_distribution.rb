@@ -50,7 +50,7 @@ class ImportCapitalDistribution < ImportUtil
 
         setup_custom_fields(user_data, capital_distribution, custom_field_headers)
 
-        capital_distribution.save
+        capital_distribution.save!
       end
     else
       raise "Fund not found"

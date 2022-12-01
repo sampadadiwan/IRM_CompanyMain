@@ -100,6 +100,7 @@ FactoryBot.define do
     entity { fund.entity }
     investor { fund.investors.sample }
     committed_amount { 100000 * rand(10..30)}
+    folio_id {rand(10**4)}
     notes { Faker::Company.catch_phrase }
   end
 

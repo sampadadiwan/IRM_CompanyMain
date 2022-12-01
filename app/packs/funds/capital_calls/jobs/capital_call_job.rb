@@ -15,16 +15,18 @@ class CapitalCallJob < ApplicationJob
 
   def generate(capital_call_id)
     @capital_call = CapitalCall.find(capital_call_id)
-    @capital_call.fund.capital_commitments.each do |cc|
+    @capital_call.fund.capital_commitments.each do |capital_commitment|
       # Check if we alread have a CapitalRemittance for this commitment
-      cr = CapitalRemittance.where(capital_call_id: @capital_call.id, investor_id: cc.investor.id).first
+      cr = CapitalRemittance.where(capital_call_id: @capital_call.id,
+                                   investor_id: capital_commitment.investor.id,
+                                   folio_id: capital_commitment.folio_id).first
       if cr
-        logger.debug "CapitalCallJob: Skipping as CapitalRemittance exists for #{cc.investor.investor_name} for #{@capital_call.name}"
+        logger.debug "CapitalCallJob: Skipping as CapitalRemittance exists for #{capital_commitment.investor.investor_name} for #{@capital_call.name}"
       else
-        logger.debug "CapitalCallJob: Creating CapitalRemittance for #{cc.investor.investor_name} for #{@capital_call.name}"
+        logger.debug "CapitalCallJob: Creating CapitalRemittance for #{capital_commitment.investor.investor_name} for #{@capital_call.name}"
         # Note the due amount for the call is calculated automatically inside CapitalRemittance
         CapitalRemittance.create(capital_call: @capital_call, fund: @capital_call.fund,
-                                 entity: @capital_call.entity, investor: cc.investor, capital_commitment: cc,
+                                 entity: @capital_call.entity, investor: capital_commitment.investor, capital_commitment:, folio_id: capital_commitment.folio_id,
                                  status: "Pending", verified: @capital_call.generate_remittances_verified)
 
       end

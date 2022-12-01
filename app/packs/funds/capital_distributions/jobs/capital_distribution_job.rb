@@ -12,7 +12,7 @@ class CapitalDistributionJob < ApplicationJob
         amount_cents = @capital_distribution.net_amount_cents * cc.percentage / 100.0
 
         # Find if the payment already exists
-        payment = CapitalDistributionPayment.where(capital_distribution_id: @capital_distribution.id, investor_id: cc.investor_id).first
+        payment = CapitalDistributionPayment.where(capital_distribution_id: @capital_distribution.id, investor_id: cc.investor_id, folio_id: cc.folio_id).first
 
         if payment
           # Update the payment
@@ -27,7 +27,7 @@ class CapitalDistributionJob < ApplicationJob
                                                        capital_distribution_id: @capital_distribution.id,
                                                        investor_id: cc.investor_id, amount_cents:,
                                                        payment_date: @capital_distribution.distribution_date,
-                                                       percentage: cc.percentage,
+                                                       percentage: cc.percentage, folio_id: cc.folio_id,
                                                        completed: @capital_distribution.generate_payments_paid)
 
           logger.debug "Created Payment of #{amount_cents} cents for #{cc.investor.investor_name} id #{payment.id}"

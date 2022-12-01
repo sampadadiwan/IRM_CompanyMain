@@ -120,6 +120,7 @@
     click_on("New Capital Commitment")
     select(investor_name, from: "capital_commitment_investor_id")
     fill_in('capital_commitment_committed_amount', with: amount)
+    fill_in('capital_commitment_folio_id', with: rand(10**4))
     click_on "Save"
 
     sleep(2)

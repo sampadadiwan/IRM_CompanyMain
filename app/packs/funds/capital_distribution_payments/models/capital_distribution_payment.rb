@@ -9,6 +9,7 @@ class CapitalDistributionPayment < ApplicationRecord
   belongs_to :form_type, optional: true
 
   monetize :amount_cents, with_currency: ->(i) { i.entity.currency }
+  validates :folio_id, presence: true
 
   counter_culture :fund,
                   column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil },

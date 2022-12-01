@@ -22,6 +22,7 @@ class CapitalCommitment < ApplicationRecord
   monetize :committed_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 
   validates :committed_amount_cents, numericality: { greater_than: 0 }
+  validates :folio_id, presence: true
 
   counter_culture :fund, column_name: 'committed_amount_cents', delta_column: 'committed_amount_cents'
 

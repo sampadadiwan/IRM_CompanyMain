@@ -20,11 +20,12 @@ class CapitalRemittance < ApplicationRecord
   scope :pending, -> { where(status: "Pending") }
 
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
+  validates :folio_id, presence: true
 
-  before_validation :set_capital_commitment
-  def set_capital_commitment
-    self.capital_commitment = fund.capital_commitments.where(investor_id:).first
-  end
+  # before_validation :set_capital_commitment
+  # def set_capital_commitment
+  #   self.capital_commitment = fund.capital_commitments.where(investor_id:).first
+  # end
 
   counter_culture :capital_call, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                                  delta_column: 'collected_amount_cents'
