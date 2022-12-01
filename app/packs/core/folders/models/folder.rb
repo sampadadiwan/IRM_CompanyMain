@@ -18,7 +18,7 @@ class Folder < ApplicationRecord
   validates :name, presence: true
 
   before_create :set_defaults
-  after_create_commit :set_parent_permissions, if: :parent
+  after_create :set_parent_permissions, if: :parent
   # after_destroy :touch_root
 
   scope :for, ->(user) { where("folders.entity_id=?", user.entity_id).order("full_path asc") }

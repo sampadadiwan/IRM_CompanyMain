@@ -96,8 +96,9 @@ end
 
 Then('the document should have the same access rights as the folder') do
   puts "\n####Document Access Right####\n"
-  puts @document.access_rights.to_json  
-  puts @folder.to_json
+  puts @document.reload.access_rights.to_json  
+  puts "\n####Folder Access Right####\n"
+  puts @folder.reload.to_json
 
   @document.access_rights.count.should == @folder.access_rights.count
   @document.access_rights.each_with_index do |dar, idx|
