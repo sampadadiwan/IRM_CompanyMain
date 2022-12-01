@@ -43,6 +43,6 @@ class AdhaarEsignPolicy < ApplicationPolicy
 
   # Only users who are part of this eSign can complete it
   def completed?
-    record.user_ids.split(",").include? user.id
+    record.user_ids.split(",").include? user.id.to_s
   end
 end

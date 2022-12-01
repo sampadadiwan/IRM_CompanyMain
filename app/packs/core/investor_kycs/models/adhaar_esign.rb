@@ -61,12 +61,11 @@ class AdhaarEsign < ApplicationRecord
         success = true
         # Update the owner
         owner.esign_required = true
-        owner.esign_link = esign_link
         owner.save
 
         # Setup a workflow to chase and track the signatories
         SignatureWorkflow.create!(owner:, entity_id: owner.entity_id,
-                                  signatory_ids: owner.signatory_ids, reason:).next_step
+                                  signatory_ids: owner.signatory_ids(:adhaar), reason:).next_step
       else
         self.esign_document_reponse = JSON.parse(response.body)["message"]
       end
@@ -93,8 +92,7 @@ class AdhaarEsign < ApplicationRecord
         Rails.logger.debug { "#{esign_doc_id} : All parties have signed, downloading file" }
         # Save the signed file to tmp
         save_esign_file(download_file_name)
-        # Callback to the owner that the signed doc is now awailable
-        owner.signature_completed("adhaar", download_file_name) if owner.respond_to?(:signature_completed)
+
       else
         Rails.logger.debug { "#{esign_doc_id} : Not all parties have signed" }
       end

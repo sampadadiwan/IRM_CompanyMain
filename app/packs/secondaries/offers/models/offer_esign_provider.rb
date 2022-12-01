@@ -3,13 +3,17 @@ class OfferEsignProvider
     @offer = offer
   end
 
+  def sign_link(user)
+    @offer.adhaar_esign&.esign_link&.sub "phone_number", user.phone if @offer.signatory_ids(:adhaar).include?(user.id) && @offer.adhaar_esign
+  end
+
   def spa_file_name
     "SPA for #{@offer.user.full_name} : Offer #{@offer.id}"
   end
 
   # Called from OfferSpaGenerator.prepare_for_signature, after the SPA has been generated
   def generate_spa_signatures(force: false)
-    user_ids = @offer.signatory_ids
+    user_ids = @offer.signatory_ids(:adhaar)
 
     if user_ids.present?
 
@@ -34,11 +38,11 @@ class OfferEsignProvider
   end
 
   def cleanup_prev
-    # Check if we already ahve a document with spa_file_name
+    # Check if we already have a document with spa_file_name
     doc = Document.where(entity_id: @offer.entity_id, owner: @offer, name: spa_file_name).first
     if doc.present?
       # If we force the regeneration, then delete the old document with spa_file_name
-      AdhaarEsign.where(document_id: doc.id).each(&:destroy)
+      AdhaarEsign.where(owner: @offer).each(&:destroy)
       doc.destroy
     end
   end

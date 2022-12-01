@@ -10,6 +10,7 @@ class OfferSpaGenerator
     cleanup_old_spa(offer)
     generate(offer, master_spa_path)
     attach(offer)
+    # TODO: - remove prepare_for_signature, it should not be generated here
     prepare_for_signature(offer)
   ensure
     cleanup

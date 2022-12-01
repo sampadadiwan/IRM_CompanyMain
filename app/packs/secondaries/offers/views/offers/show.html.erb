@@ -21,11 +21,11 @@
       form_class: "deleteButton" if Pundit.policy(current_user, @offer).approve? %>
 
 
-      <% if @offer.esign_required %>
-        <% sign_link = @offer.sign_link(current_user.phone) %>
-        <% if !@offer.esign_completed && sign_link.present? %>
+      <% if @offer.esign_required && !@offer.esign_completed %>
+        <% sign_link = @offer.sign_link(current_user) %>
+        <% if sign_link.present? %>
           <% target = Rails.env.test? ? "" : "_blank" %>
-          <%= link_to "Click here to Adhaar eSign", sign_link,  target: target,
+          <%= link_to "Click here eSign", sign_link,  target: target,
               class: "btn btn-success"  if policy(@offer).accept_spa?  %>
         <% end %>
       <% else %>

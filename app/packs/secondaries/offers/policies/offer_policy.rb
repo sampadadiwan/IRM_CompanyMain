@@ -88,6 +88,6 @@ class OfferPolicy < SaleBasePolicy
   end
 
   def esign?
-    record.signatory_ids.include?(user.id) && record.esign_required && !record.esign_completed
+    record.signatory_ids(:adhaar).include?(user.id) && record.esign_required && !record.esign_completed
   end
 end

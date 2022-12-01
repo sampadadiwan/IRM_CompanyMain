@@ -5,11 +5,14 @@ class Offer < ApplicationRecord
   # Make all models searchable
   update_index('offer') { self }
 
+  attr_accessor :signatory_ids_map
+
   belongs_to :user
   belongs_to :final_agreement_user, class_name: "User", optional: true
   belongs_to :investor
   belongs_to :entity, touch: true
   belongs_to :secondary_sale, touch: true
+  has_one :adhaar_esign, as: :owner
 
   counter_culture :interest,
                   column_name: proc { |o| o.approved ? 'offer_quantity' : nil },
@@ -223,16 +226,21 @@ class Offer < ApplicationRecord
   end
 
   # TODO: - who is the interest signatory?
-  def signatory_ids
-    user_ids = []
-    user_ids << user.id if seller_signature_types.include?("adhaar")
-    user_ids << interest.user.id if interest.buyer_signature_types.include?("adhaar") && interest
-    user_ids
+  def signatory_ids(type)
+    if @signatory_ids_map.blank?
+      @signatory_ids_map = { adhaar: [], dsc: [] }
+      @signatory_ids_map[:adhaar] << user.id if seller_signature_types.include?("adhaar")
+      if interest
+        @signatory_ids_map[:adhaar] << interest.user.id if interest.buyer_signature_types.include?("adhaar")
+        @signatory_ids_map[:dsc] << interest.user.id if interest.buyer_signature_types.include?("dsc")
+      end
+    end
+    type ? @signatory_ids_map[type.to_sym] : @signatory_ids_map
   end
 
-  def sign_link(phone)
+  def sign_link(user)
     # Substitute the phone number required in the link
-    esign_link.sub "phone_number", phone if esign_link.present?
+    OfferEsignProvider.new(self).sign_link(user)
   end
 
   def signature_completed(signature_type, file)

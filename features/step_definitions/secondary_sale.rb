@@ -574,7 +574,6 @@ Then('the adhaar esign must be triggered') do
     o.adhaar_esigns.last.should_not == nil
     o.esign_required.should == true
     o.esign_completed.should == false
-    o.esign_link.should_not == nil
   end
 end
 
