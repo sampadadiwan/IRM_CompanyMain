@@ -45,8 +45,7 @@ class InvestorAccess < ApplicationRecord
   end
 
   before_save :update_user
-  after_save :send_notification_if_changed, if: :approved
-  after_create_commit :send_notification, if: :approved
+  after_commit :send_notification_if_changed, if: :approved
 
   def update_user
     self.email = email.strip
@@ -77,7 +76,7 @@ class InvestorAccess < ApplicationRecord
   end
 
   def send_notification_if_changed
-    send_notification if id.present? && approved_changed?
+    send_notification if id.present? && saved_change_to_approved?
   end
 
   def notify_kyc_required

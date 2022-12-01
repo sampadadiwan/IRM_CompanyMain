@@ -18,7 +18,7 @@ class CapitalDistribution < ApplicationRecord
     self.net_amount_cents = gross_amount_cents - carry_cents
   end
 
-  after_save :generate_distribution_payments
+  after_commit :generate_distribution_payments
 
   def generate_distribution_payments
     if generate_payments

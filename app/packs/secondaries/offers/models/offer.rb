@@ -143,7 +143,7 @@ class Offer < ApplicationRecord
     OfferMailer.with(offer_id: id).notify_approval.deliver_later unless secondary_sale.no_offer_emails
   end
 
-  after_save :notify_accept_spa, if: proc { |o| o.final_agreement && o.saved_change_to_final_agreement? }
+  after_commit :notify_accept_spa, if: proc { |o| o.final_agreement && o.saved_change_to_final_agreement? }
   def notify_accept_spa
     OfferMailer.with(offer_id: id).notify_accept_spa.deliver_later unless secondary_sale.no_offer_emails
   end
@@ -166,7 +166,7 @@ class Offer < ApplicationRecord
     VerifyOfferBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
   end
 
-  after_save :generate_spa
+  after_commit :generate_spa
   def generate_spa
     OfferSpaJob.perform_later(id) if secondary_sale.spa && saved_change_to_verified? && verified
   end

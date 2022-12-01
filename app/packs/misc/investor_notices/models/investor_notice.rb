@@ -5,7 +5,7 @@ class InvestorNotice < ApplicationRecord
 
   has_rich_text :details
 
-  after_save :generate_investor_notice_entries, if: proc { |notice| notice.generate && notice.saved_change_to_generate? }
+  after_commit :generate_investor_notice_entries, if: proc { |notice| notice.generate && notice.saved_change_to_generate? }
 
   def generate_investor_notice_entries
     InvestorNoticeJob.perform_later(id)

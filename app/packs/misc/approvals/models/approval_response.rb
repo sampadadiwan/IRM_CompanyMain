@@ -20,7 +20,7 @@ class ApprovalResponse < ApplicationRecord
     errors.add(:approval, "Approval Response for this investor and approval already exists. Please delete of edit the existing response") if approval.approval_responses.where(response_entity_id:).count.positive?
   end
 
-  after_save :send_notification
+  after_commit :send_notification
   def send_notification
     ApprovalMailer.with(id:).notify_approval_response.deliver_later if status != "Pending"
   end

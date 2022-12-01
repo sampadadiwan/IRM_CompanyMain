@@ -37,7 +37,7 @@ class DealInvestor < ApplicationRecord
     self.investor_name = investor.investor_name
   end
 
-  after_save :create_activities_later, if: proc { |di| di.deal.started? }
+  after_commit :create_activities_later, if: proc { |di| di.deal.started? }
   def create_activities_later
     GenerateDealActivitiesJob.perform_later(id, "DealInvestor")
   end

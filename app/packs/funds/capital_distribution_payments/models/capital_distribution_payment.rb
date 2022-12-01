@@ -18,7 +18,7 @@ class CapitalDistributionPayment < ApplicationRecord
                   column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil },
                   delta_column: 'amount_cents'
 
-  after_save :send_notification, if: :completed
+  after_commit :send_notification, if: :completed
   def send_notification
     CapitalDistributionPaymentsMailer.with(id:).send_notification.deliver_later if saved_change_to_completed? && capital_distribution.approved && !capital_distribution.manual_generation
   end

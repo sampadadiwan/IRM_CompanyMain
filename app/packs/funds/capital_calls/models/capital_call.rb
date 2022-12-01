@@ -20,19 +20,12 @@ class CapitalCall < ApplicationRecord
 
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 
-  after_save :generate_capital_remittances
+  after_commit :generate_capital_remittances
   def generate_capital_remittances
-    if generate_remittances && saved_change_to_percentage_called?
-      if Rails.env.test?
-        CapitalCallJob.perform_later(id, "Generate")
-      else
-        # Add jitter to the job
-        CapitalCallJob.set.perform_later(id, "Generate")
-      end
-    end
+    CapitalCallJob.set.perform_later(id, "Generate") if generate_remittances && saved_change_to_percentage_called?
   end
 
-  after_save :send_notification, if: :approved
+  after_commit :send_notification, if: :approved
   def send_notification
     CapitalCallJob.perform_later(id, "Notify") if !manual_generation && saved_change_to_approved?
   end

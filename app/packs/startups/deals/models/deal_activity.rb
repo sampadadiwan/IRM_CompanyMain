@@ -21,7 +21,7 @@ class DealActivity < ApplicationRecord
   scope :templates, ->(deal) { where(deal_id: deal.id).where(deal_investor_id: nil).order("sequence asc") }
 
   before_save :set_defaults
-  after_save :recreate_activities
+  after_commit :recreate_activities
 
   def set_defaults
     self.status = "Template" if deal_investor_id.nil?
