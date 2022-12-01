@@ -143,7 +143,7 @@ class AccessRight < ApplicationRecord
       AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later
     else
       # Add jitter to the emails, so we dont flood aws SES
-      AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later(wait_until: rand(30).seconds.from_now)
+      AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later(wait_until: rand(60).seconds.from_now)
     end
   end
 

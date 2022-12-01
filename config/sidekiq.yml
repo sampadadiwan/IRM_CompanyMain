@@ -12,7 +12,7 @@
 # http://www.mikeperham.com/2013/11/13/advanced-sidekiq-host-specific-queues/
 :queues:
   - [critical, 3]
-  - [serial, 3]
+  - [serial, 2]
   - [default, 2]
   - [low, 1]
   - [chewy, 1]
