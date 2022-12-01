@@ -1,5 +1,6 @@
 class CapitalDistributionJob < ApplicationJob
-  queue_as :default
+  # This job can generate multiple capital remittances, which cause deadlocks. Hence serial process these jobs
+  queue_as :serial
 
   # This job is idempotent and can be run multiple times for the same capital_distribution_id
   def perform(capital_distribution_id)

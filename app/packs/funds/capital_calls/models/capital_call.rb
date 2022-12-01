@@ -22,7 +22,14 @@ class CapitalCall < ApplicationRecord
 
   after_save :generate_capital_remittances
   def generate_capital_remittances
-    CapitalCallJob.perform_later(id, "Generate") if generate_remittances && saved_change_to_percentage_called?
+    if generate_remittances && saved_change_to_percentage_called?
+      if Rails.env.test?
+        CapitalCallJob.perform_later(id, "Generate")
+      else
+        # Add jitter to the job
+        CapitalCallJob.set.perform_later(id, "Generate")
+      end
+    end
   end
 
   after_save :send_notification, if: :approved

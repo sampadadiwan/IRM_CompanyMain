@@ -40,6 +40,7 @@ gem 'dotenv-rails'
 gem 'exception_notification'
 gem 'sassc-rails'
 gem 'sidekiq', '~> 6.4'
+gem 'sidekiq-limit_fetch'
 
 gem "aws-sdk-s3", require: false
 gem 'chewy'

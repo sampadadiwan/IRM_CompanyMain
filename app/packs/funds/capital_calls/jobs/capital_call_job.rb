@@ -1,5 +1,6 @@
 class CapitalCallJob < ApplicationJob
-  queue_as :default
+  # This job can generate multiple capital remittances, which cause deadlocks. Hence serial process these jobs
+  queue_as :serial
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCall
   def perform(capital_call_id, type = "Generate")
@@ -15,7 +16,7 @@ class CapitalCallJob < ApplicationJob
 
   def generate(capital_call_id)
     @capital_call = CapitalCall.find(capital_call_id)
-    @capital_call.fund.capital_commitments.each do |capital_commitment|
+    @capital_call.fund.capital_commitments.each_with_index do |capital_commitment, _idx|
       # Check if we alread have a CapitalRemittance for this commitment
       cr = CapitalRemittance.where(capital_call_id: @capital_call.id,
                                    investor_id: capital_commitment.investor.id,
