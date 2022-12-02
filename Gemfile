@@ -36,6 +36,7 @@ gem 'devise'
 gem "pundit", git: "https://github.com/varvet/pundit.git"
 gem "rolify"
 
+gem 'activerecord-import'
 gem 'dotenv-rails'
 gem 'exception_notification'
 gem 'sassc-rails'

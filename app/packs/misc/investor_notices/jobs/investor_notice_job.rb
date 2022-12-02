@@ -14,21 +14,28 @@ class InvestorNoticeJob < ApplicationJob
   def create_notice_entries(id)
     investor_notice = InvestorNotice.find(id)
     investor_entity_ids = []
-    investor_notice.entity.investors.each do |investor|
-      if InvestorNoticeEntry.where(investor_id: investor.id, investor_notice_id: investor_notice.id).first.present?
-        Rails.logger.debug { "InvestorNoticeJob: InvestorNoticeEntry already present for #{investor.investor_name} for notice #{investor_notice.id}" }
-      else
+    entries = []
 
-        InvestorNoticeEntry.create(investor_id: investor.id, investor_notice_id: investor_notice.id,
-                                   investor_entity_id: investor.investor_entity_id,
-                                   entity_id: investor_notice.entity_id, active: true)
+    # Generate import of only new_interest_ids
+    all_investor_ids = investor_notice.entity.investors.pluck(:id)
+    existing_investor_ids = investor_notice.investor_notice_entries.pluck(:investor_id)
+    new_investor_ids = all_investor_ids - existing_investor_ids
 
-        investor_entity_ids << investor.investor_entity_id
-      end
+    Investor.where(id: new_investor_ids).each do |investor|
+      entries << InvestorNoticeEntry.new(investor_id: investor.id, investor_notice_id: investor_notice.id,
+                                         investor_entity_id: investor.investor_entity_id,
+                                         entity_id: investor_notice.entity_id, active: true)
+
+      investor_entity_ids << investor.investor_entity_id
     end
 
-    # Bulk update the investor_entity_ids so the cache is busted
-    investor_notice.investor_notice_entries.pluck(:investor_entity_id)
-    Entity.where(id: investor_entity_ids).update_all(updated_at: Time.zone.now)
+    if entries.present?
+      Rails.logger.debug { "InvestorNoticeJob: importing #{entries.length} investor notices" }
+      InvestorNoticeEntry.import entries
+      # Bulk update the investor_entity_ids so the cache is busted
+      Entity.where(id: investor_entity_ids).update_all(updated_at: Time.zone.now)
+    else
+      Rails.logger.debug "InvestorNoticeJob: nothing to import"
+    end
   end
 end

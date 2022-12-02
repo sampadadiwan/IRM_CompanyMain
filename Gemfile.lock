@@ -105,6 +105,8 @@ GEM
     activerecord (7.0.2.4)
       activemodel (= 7.0.2.4)
       activesupport (= 7.0.2.4)
+    activerecord-import (1.4.1)
+      activerecord (>= 4.2)
     activestorage (7.0.2.4)
       actionpack (= 7.0.2.4)
       activejob (= 7.0.2.4)
@@ -719,6 +721,7 @@ PLATFORMS
 DEPENDENCIES
   active_flag
   active_storage_validations
+  activerecord-import
   acts-as-taggable-on (~> 9.0)
   acts_as_list
   administrate
