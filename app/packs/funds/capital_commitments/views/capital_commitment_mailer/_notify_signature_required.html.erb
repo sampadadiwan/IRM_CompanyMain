@@ -1,6 +1,6 @@
 <p>Dear User</p>
 
-<% fund = @signature_workflow.owner.fund %>
+<% fund = @esign.owner.fund %>
 <p>This is in regard to the capital commitment in <%= fund.name %>. For the capital commitment to be confirmed, you are required to sign the capital commitment agreement. Please use the link below to sign the agreement after reading it</p>
 
-<p class="btn btn-primary"><%= link_to  "View Fund",  [fund, subdomain: @signature_workflow.entity.sub_domain] %></p>
+<p class="btn btn-primary"><%= link_to  "View Fund",  [fund, subdomain: @esign.entity.sub_domain] %></p>

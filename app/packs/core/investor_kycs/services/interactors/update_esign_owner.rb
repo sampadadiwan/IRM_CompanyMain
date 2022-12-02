@@ -11,8 +11,8 @@ class UpdateEsignOwner
         adhaar_esign.owner.signature_completed("adhaar", adhaar_esign.download_file_name)
       end
     else
-      Rails.logger.debug "No AdhaarEsign specified"
-      context.fail!(message: "No AdhaarEsign specified")
+      Rails.logger.debug "UpdateEsignOwner: No AdhaarEsign specified"
+      context.fail!(message: "UpdateEsignOwner: No AdhaarEsign specified")
     end
   end
 end

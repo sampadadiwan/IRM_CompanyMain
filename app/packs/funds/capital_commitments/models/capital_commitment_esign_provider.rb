@@ -3,8 +3,18 @@ class CapitalCommitmentEsignProvider
     @capital_commitment = capital_commitment
   end
 
+  def generate
+    @capital_commitment.signatory_ids.each do |signature_type, user_ids|
+      user_ids.each do |user_id|
+        Esign.create(entity_id: @capital_commitment.entity_id, user_id:,
+                     signature_type:, owner: @capital_commitment,
+                     reason: "Signature required for Capital Commitment : #{@capital_commitment.entity.name}")
+      end
+    end
+  end
+
   def signature_link(user)
-    @capital_commitment.adhaar_esign&.esign_link&.sub "phone_number", user.phone if @capital_commitment.signatory_ids(:adhaar).include?(user.id) && @capital_commitment.adhaar_esign
+    @capital_commitment.esigns.where(user_id: user.id).first&.link
   end
 
   def agreement_file_name
@@ -17,7 +27,6 @@ class CapitalCommitmentEsignProvider
 
   # Called from CapitalCommitmentDocGenerator.prepare_for_signature, after the SPA has been generated
   def trigger_signatures(force: false)
-    user_ids = @capital_commitment.signatory_ids(:adhaar)
     Rails.logger.debug { "CapitalCommitmentDocGenerator: generate_doc_signatures #{user_ids}, #{force}" }
     if user_ids.present?
 
@@ -31,7 +40,7 @@ class CapitalCommitmentEsignProvider
           doc = @capital_commitment.documents.create!(name: signed_file_name, entity_id: @capital_commitment.entity_id, download: true, file: tempfile, user_id: @capital_commitment.user_id)
         end
         # Setup this doc for esign by user_ids
-        AdhaarEsign.new.init(doc.id, user_ids.join(","), @capital_commitment, "Signature required for Capital Commitment : #{@capital_commitment.entity.name}").sign
+        AdhaarEsign.new.init(doc.id, @capital_commitment).sign
 
       else
         Rails.logger.debug { "Skipping as CapitalCommitment #{@capital_commitment.id} does not have #{agreement_file_name}" }

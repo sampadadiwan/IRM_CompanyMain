@@ -33,7 +33,7 @@ module InvestorRelationshipManagement
       config.paths['app/helpers'].unshift("#{Rails.root}/app/packs/core/#{view_path}/helpers")
     end
 
-    misc_view_paths = %w[approvals form_types form_custom_fields payments investor_notices import_uploads]
+    misc_view_paths = %w[approvals form_types form_custom_fields payments investor_notices import_uploads esigns]
 
     misc_view_paths.each do |view_path|
       config.paths['app/views'].unshift("#{Rails.root}/app/packs/misc/#{view_path}/views")

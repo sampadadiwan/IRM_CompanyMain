@@ -20,6 +20,7 @@ class CapitalCommitment < ApplicationRecord
   serialize :properties, Hash
 
   has_one :adhaar_esign, as: :owner
+  has_many :esigns, as: :owner
 
   monetize :committed_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 
@@ -58,7 +59,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   # TODO: - Ensure signatories and signature types match up
-  def signatory_ids(type)
+  def signatory_ids(type = nil)
     if @signatory_ids_map.blank?
       @signatory_ids_map = { adhaar: [], dsc: [] }
       @signatory_ids_map[:adhaar] << investor_signatory_id if investor_signature_types&.include?("adhaar")

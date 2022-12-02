@@ -45,8 +45,16 @@ class AdhaarEsign < ApplicationRecord
     end
   end
 
-  def esign_link(phone = "phone_number")
+  def esign_link(phone)
     "https://ext.digio.in/#/gateway/login/#{esign_doc_id}/#{rand(4**4)}/#{phone}?redirect_url=#{redirect_url}&logo=https://app.caphive.com/img/logo_big.png" if esign_doc_id.present?
+  end
+
+  def user_ids
+    owner.esigns.for_adhaar.pluck(:user_id)
+  end
+
+  def reason
+    owner.esigns.for_adhaar.first&.reason
   end
 
   def sign
@@ -59,13 +67,15 @@ class AdhaarEsign < ApplicationRecord
         self.esign_document_reponse = response.body
         self.esign_doc_id = response["id"]
         success = true
+
         # Update the owner
-        owner.esign_required = true
-        owner.save
+        owner.esigns.for_adhaar.each do |esign|
+          esign.link = esign_link(esign.user.phone)
+          esign.save
+        end
 
         # Setup a workflow to chase and track the signatories
-        SignatureWorkflow.create!(owner:, entity_id: owner.entity_id,
-                                  signatory_ids: owner.signatory_ids(:adhaar), reason:).next_step
+        SignatureWorkflow.first_or_create(owner:, entity_id: owner.entity_id).next_step
       else
         self.esign_document_reponse = JSON.parse(response.body)["message"]
       end
@@ -123,7 +133,7 @@ class AdhaarEsign < ApplicationRecord
 
   # The completion job is run as its a time consuming job to retrieve the signed doc etc
   def completed(user_id)
-    AdhaarEsignCompletedJob.perform_later(id, user_id)
+    AdhaarEsignCompletedJob.perform_now(id, user_id)
   end
 
   before_destroy :cleanup_signature_workflows

@@ -1,0 +1,26 @@
+<tr id="<%= dom_id esign %>">
+  <td>
+    <%= esign.user.full_name %>
+  </td>
+  <td>
+    <%= link_to esign.owner_type %>
+  </td>
+  <td>
+    <%= esign.sequence_no %>
+  </td>
+  <td>
+    <%= esign.link %>
+  </td>
+  <td>
+    <%= esign.reason %>
+  </td>
+  <td>
+    <%= esign.status %>
+  </td>
+  <td>
+    <%= display_boolean esign.completed %>
+  </td>
+  <td>
+    <%= link_to "Show", esign , {class: "btn btn-primary"}%>
+  </td>
+</tr>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_01_055838) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_02_124821) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -121,7 +121,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_01_055838) do
   create_table "adhaar_esigns", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "document_id", null: false
-    t.text "esign_url"
     t.string "esign_doc_id", limit: 100
     t.text "signed_file_url"
     t.boolean "is_signed", default: false
@@ -129,10 +128,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_01_055838) do
     t.text "esign_retrieve_reponse"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "user_ids"
     t.string "owner_type"
     t.bigint "owner_id"
-    t.string "reason"
     t.index ["document_id"], name: "index_adhaar_esigns_on_document_id"
     t.index ["entity_id"], name: "index_adhaar_esigns_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_adhaar_esigns_on_owner"
@@ -530,6 +527,25 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_01_055838) do
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
     t.index ["sub_domain"], name: "index_entities_on_sub_domain", unique: true
+  end
+
+  create_table "esigns", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "user_id", null: false
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.integer "sequence_no"
+    t.string "link"
+    t.text "reason"
+    t.string "status", limit: 100
+    t.string "signature_type", limit: 10
+    t.string "string", limit: 10
+    t.boolean "completed", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_esigns_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_esigns_on_owner"
+    t.index ["user_id"], name: "index_esigns_on_user_id"
   end
 
   create_table "exception_tracks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1389,10 +1405,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_01_055838) do
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
     t.bigint "entity_id", null: false
-    t.string "signatory_ids"
-    t.string "completed_ids"
     t.text "state"
-    t.string "reason"
     t.string "status"
     t.boolean "sequential", default: false
     t.boolean "completed", default: false
@@ -1601,6 +1614,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_01_055838) do
   add_foreign_key "documents", "form_types"
   add_foreign_key "documents", "users"
   add_foreign_key "documents", "users", column: "signed_by_id"
+  add_foreign_key "esigns", "entities"
+  add_foreign_key "esigns", "users"
   add_foreign_key "excercises", "entities"
   add_foreign_key "excercises", "holdings"
   add_foreign_key "excercises", "option_pools"

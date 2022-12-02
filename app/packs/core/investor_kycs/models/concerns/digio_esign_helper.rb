@@ -10,7 +10,7 @@ class DigioEsignHelper
 
   def initialize
     super
-    @debug = false
+    @debug = true
   end
 
   def sign(user_ids, file_name, file_path, reason)

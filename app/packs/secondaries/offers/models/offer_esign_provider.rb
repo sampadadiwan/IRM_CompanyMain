@@ -3,10 +3,6 @@ class OfferEsignProvider
     @offer = offer
   end
 
-  def signature_link(user)
-    @offer.adhaar_esign&.esign_link&.sub "phone_number", user.phone if @offer.signatory_ids(:adhaar).include?(user.id) && @offer.adhaar_esign
-  end
-
   # Called from OfferSpaGenerator.trigger_signatures, after the SPA has been generated
   def trigger_signatures(force: false)
     user_ids = @offer.signatory_ids(:adhaar)

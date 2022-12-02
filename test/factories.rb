@@ -1,4 +1,15 @@
 FactoryBot.define do
+  factory :esign do
+    entity { nil }
+    user { nil }
+    owner { nil }
+    sequence_id { 1 }
+    link { "MyString" }
+    reason { "MyText" }
+    status { "MyString" }
+    completed { false }
+  end
+
   factory :signature_workflow do
     owner { nil }
     entity { nil }

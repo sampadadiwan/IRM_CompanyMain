@@ -2,18 +2,27 @@ class SignatureWorkflow < ApplicationRecord
   belongs_to :owner, polymorphic: true
   belongs_to :entity
 
-  serialize :signatory_ids, Array
-  serialize :completed_ids, Array
   serialize :state, Hash
 
   scope :not_completed, -> { where(completed: false) }
   scope :not_paused, -> { where(paused: false) }
 
+  def signatory_ids
+    owner.esigns
+  end
+
+  def completed_ids
+    owner.esigns.completed
+  end
+
+  def pending
+    owner.esigns.not_completed
+  end
+
   def next_step
     if paused
       Rails.logger.debug { "SignatureWorkflow #{id} is paused." }
     else
-      pending = (signatory_ids - completed_ids)
       if pending.present?
         # Send notification to the next pending signatory
         send_notification(pending[0])
@@ -27,13 +36,13 @@ class SignatureWorkflow < ApplicationRecord
     end
   end
 
-  def send_notification(user_id)
-    if should_notify?(user_id)
+  def send_notification(esign)
+    if should_notify?(esign.user_id)
       # Send the notification & update state
-      SignatureWorkflowMailer.with(id:, user_id:).notify_signature_required.deliver_later
-      update_notification_state(user_id)
+      SignatureWorkflowMailer.with(id:, esign_id: esign.id).notify_signature_required.deliver_later
+      update_notification_state(esign.user_id)
     else
-      Rails.logger.debug { "Skipping send_notification for #{user_id}. Already notified at #{state[user_id]['NotificationTime']}" }
+      Rails.logger.debug { "Skipping send_notification for #{esign.user_id}. Already notified at #{state[esign.user_id]['NotificationTime']}" }
     end
   end
 
@@ -55,18 +64,23 @@ class SignatureWorkflow < ApplicationRecord
       self.status = "Paused! User #{user_id} has not signed"
       self.paused = true
     end
+
+    owner.esigns.where(user_id:).update(status:)
   end
 
   def mark_completed(user_id)
     if completed
       Rails.logger.debug { "SignatureWorkflow #{id} is complete." }
-    else
+    elsif owner.esigns.where(user_id:, completed: true).present?
+      esign = owner.esigns.where(user_id:).first
       # Send the notification & update state
-      SignatureWorkflowMailer.with(id:, user_id:).notify_signature_completed.deliver_later
+      SignatureWorkflowMailer.with(id:, esign_id: esign.id).notify_signature_completed.deliver_later
       update_completion_state(user_id)
       save
       # Trigger the next step
       next_step
+    else
+      Rails.logger.debug { "SignatureWorkflow: Esign for #{user_id} is not complete in DB." }
     end
   end
 
@@ -75,16 +89,15 @@ class SignatureWorkflow < ApplicationRecord
     state[user_id]["Completed"] = true
     self.status = "Signature completed for user #{user_id}"
     self.paused = false
-    completed_ids << user_id
-    self.completed_ids = completed_ids.to_set.to_a
+    owner.esigns.where(user_id:).update(status:)
   end
 
   def reset
-    self.completed_ids = []
     self.state = {}
     self.status = ""
     self.completed = false
     self.paused = false
     save
+    owner.esigns.where(user_id:).update(status:)
   end
 end
