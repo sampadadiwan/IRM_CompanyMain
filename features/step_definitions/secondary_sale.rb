@@ -592,3 +592,25 @@ Then('I should be sent to the digio esign page') do
   sleep 10
   expect(page).to have_content("Security code sent to #{@user.phone}")
 end
+
+
+Given('that the adhaar esign has values {string}') do |args|
+  @adhaar_esign = AdhaarEsign.last
+  key_values(@adhaar_esign, args)
+  @adhaar_esign.save
+end
+
+When('the esign is completed') do
+  AdhaarEsignCompletedJob.perform_now(@adhaar_esign.id)
+end
+
+Then('the SPA should be marked as accepted and signed') do
+  @signed_offer = AdhaarEsign.last.owner
+  @signed_offer.final_agreement.should == true
+  @signed_offer.esign_completed.should == true
+end
+
+Then('the seller must receive email with subject {string}') do |subject|
+  open_email(@signed_offer.user.email)
+  expect(current_email.subject).to include subject
+end

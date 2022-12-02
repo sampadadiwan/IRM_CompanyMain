@@ -42,7 +42,7 @@ class OfferEsignProvider
         @offer.esign_completed = true
       end
       @offer.final_agreement = true
-      @offer.save
+      @offer.save!
     end
   end
 
