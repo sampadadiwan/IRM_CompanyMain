@@ -3,7 +3,7 @@ class AdhaarEsignCompletedJob < ApplicationJob
 
   def perform(adhaar_esign_id, user_id = nil)
     Chewy.strategy(:sidekiq) do
-      AdhaarEsignCompletedService.call(adhaar_esign_id, user_id)
+      AdhaarEsignCompletedService.call(adhaar_esign_id:, user_id:)
     end
   end
 end
