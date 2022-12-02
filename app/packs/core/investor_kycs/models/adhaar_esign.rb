@@ -92,7 +92,6 @@ class AdhaarEsign < ApplicationRecord
         Rails.logger.debug { "#{esign_doc_id} : All parties have signed, downloading file" }
         # Save the signed file to tmp
         save_esign_file(download_file_name)
-
       else
         Rails.logger.debug { "#{esign_doc_id} : Not all parties have signed" }
       end
@@ -110,7 +109,7 @@ class AdhaarEsign < ApplicationRecord
     if response.success?
       raw_file_data = response.body
       File.binwrite(file_name, raw_file_data)
-      Rails.logger.debug { "Wrote signed file to tmp/#{esign_doc_id}.pdf" }
+      Rails.logger.debug { "Wrote signed file to #{file_name}" }
     else
       Rails.logger.debug { "Document Response code = #{response.code}, Response message = #{response.message}" }
     end

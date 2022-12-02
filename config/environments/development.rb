@@ -78,11 +78,4 @@ Rails.application.configure do
   config.action_mailer.perform_deliveries = true
 
   config.action_dispatch.tld_length = 0
-
-  config.hosts = [
-    IPAddr.new("0.0.0.0/0"),        # All IPv4 addresses.
-    IPAddr.new("::/0"),             # All IPv6 addresses.
-    "localhost",                    # The localhost reserved domain.
-    ENV["NGROK_HOST"]  # Additional comma-separated hosts for development.
-  ]
 end

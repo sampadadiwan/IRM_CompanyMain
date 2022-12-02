@@ -26,7 +26,7 @@
         <% if signature_link.present? %>
           <% target = Rails.env.test? ? "" : "_blank" %>
           <%= link_to "Click here to eSign", signature_link,  target: target,
-              class: "btn btn-success"  if policy(@offer).accept_spa?  %>
+              class: "btn btn-success"  if policy(@offer).esign?  %>
         <% end %>
       <% else %>
         <%= button_to "Accept SPA" , accept_spa_offer_path(@offer), method: :patch, class: "btn btn-success" , 

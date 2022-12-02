@@ -32,13 +32,16 @@ class OfferEsignProvider
   def signature_completed(signature_type, file)
     Rails.logger.debug { "Offer #{@offer.id} signature_completed #{signature_type}" }
     if signature_type == "adhaar"
-      doc = Document.where(entity_id: @offer.entity_id, owner: @offer, name: spa_file_name).first
-      doc.locked = true
-      doc.orignal = true
-      doc.file = File.open(file, "rb")
-      doc.save
+      if File.exist?(file)
+        # For multi party signatures, the file may not yet be ready till the other parties have signed
+        doc = Document.where(entity_id: @offer.entity_id, owner: @offer, name: spa_file_name).first
+        doc.locked = true
+        doc.orignal = true
+        doc.file = File.open(file, "rb")
+        doc.save
+        @offer.esign_completed = true
+      end
       @offer.final_agreement = true
-      @offer.esign_completed = true
       @offer.save
     end
   end
