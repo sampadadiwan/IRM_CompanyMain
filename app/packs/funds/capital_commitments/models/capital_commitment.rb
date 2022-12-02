@@ -19,6 +19,8 @@ class CapitalCommitment < ApplicationRecord
   belongs_to :form_type, optional: true
   serialize :properties, Hash
 
+  has_one :adhaar_esign, as: :owner
+
   monetize :committed_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 
   validates :committed_amount_cents, numericality: { greater_than: 0 }
@@ -56,13 +58,20 @@ class CapitalCommitment < ApplicationRecord
   end
 
   # TODO: - Ensure signatories and signature types match up
-  def signatory_ids
-    [investor_signatory_id, fund.fund_signatory_id, fund.trustee_signatory_id].compact
+  def signatory_ids(type)
+    if @signatory_ids_map.blank?
+      @signatory_ids_map = { adhaar: [], dsc: [] }
+      @signatory_ids_map[:adhaar] << investor_signatory_id if investor_signature_types&.include?("adhaar")
+      @signatory_ids_map[:adhaar] << fund.fund_signatory_id if fund.fund_signature_types&.include?("adhaar")
+      @signatory_ids_map[:adhaar] << fund.trustee_signatory_id if fund.fund_signature_types&.include?("adhaar")
+      @signatory_ids_map[:adhaar].compact!
+    end
+    type ? @signatory_ids_map[type.to_sym] : @signatory_ids_map
   end
 
-  def sign_link(phone)
+  def signature_link(user)
     # Substitute the phone number required in the link
-    esign_link.sub "phone_number", phone if esign_link.present?
+    CapitalCommitmentEsignProvider.new(self).signature_link(user)
   end
 
   def signature_completed(signature_type, file)

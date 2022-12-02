@@ -102,6 +102,6 @@ class CapitalCommitmentDocGenerator
   end
 
   def prepare_for_signature(capital_commitment)
-    CapitalCommitmentEsignProvider.new(capital_commitment).generate_doc_signatures(force: true)
+    CapitalCommitmentEsignProvider.new(capital_commitment).trigger_signatures(force: true)
   end
 end

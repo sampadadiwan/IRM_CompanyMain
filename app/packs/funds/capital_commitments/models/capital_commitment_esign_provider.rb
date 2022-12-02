@@ -3,6 +3,10 @@ class CapitalCommitmentEsignProvider
     @capital_commitment = capital_commitment
   end
 
+  def signature_link(user)
+    @capital_commitment.adhaar_esign&.esign_link&.sub "phone_number", user.phone if @capital_commitment.signatory_ids(:adhaar).include?(user.id) && @capital_commitment.adhaar_esign
+  end
+
   def agreement_file_name
     "Capital Commitment Agreement"
   end
@@ -12,8 +16,8 @@ class CapitalCommitmentEsignProvider
   end
 
   # Called from CapitalCommitmentDocGenerator.prepare_for_signature, after the SPA has been generated
-  def generate_doc_signatures(force: false)
-    user_ids = @capital_commitment.signatory_ids
+  def trigger_signatures(force: false)
+    user_ids = @capital_commitment.signatory_ids(:adhaar)
     Rails.logger.debug { "CapitalCommitmentDocGenerator: generate_doc_signatures #{user_ids}, #{force}" }
     if user_ids.present?
 
@@ -47,7 +51,7 @@ class CapitalCommitmentEsignProvider
 
   def signature_completed(signature_type, file)
     Rails.logger.debug { "CapitalCommitment #{@capital_commitment.id} signature_completed #{signature_type}" }
-    if signature_type == "adhaar"
+    if signature_type == "adhaar" && File.exist?(file)
       doc = Document.where(entity_id: @capital_commitment.entity_id, owner: @capital_commitment, name: agreement_file_name).first
       doc.locked = true
       doc.orignal = true
