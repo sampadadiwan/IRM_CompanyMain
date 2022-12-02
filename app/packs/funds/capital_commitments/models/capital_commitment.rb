@@ -20,7 +20,8 @@ class CapitalCommitment < ApplicationRecord
   serialize :properties, Hash
 
   has_one :adhaar_esign, as: :owner
-  has_many :esigns, as: :owner
+  has_many :esigns, -> { order("sequence_no asc") }, as: :owner
+  has_many :signature_workflows, as: :owner
 
   monetize :committed_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
 

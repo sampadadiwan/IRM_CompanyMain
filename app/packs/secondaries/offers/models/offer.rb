@@ -13,6 +13,7 @@ class Offer < ApplicationRecord
   belongs_to :entity, touch: true
   belongs_to :secondary_sale, touch: true
   has_one :adhaar_esign, as: :owner
+  has_many :esings, -> { order("sequence_no asc") }, as: :owner
 
   counter_culture :interest,
                   column_name: proc { |o| o.approved ? 'offer_quantity' : nil },

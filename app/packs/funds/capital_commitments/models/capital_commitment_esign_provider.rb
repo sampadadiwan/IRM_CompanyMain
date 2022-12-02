@@ -3,16 +3,6 @@ class CapitalCommitmentEsignProvider
     @capital_commitment = capital_commitment
   end
 
-  def generate
-    @capital_commitment.signatory_ids.each do |signature_type, user_ids|
-      user_ids.each do |user_id|
-        Esign.create(entity_id: @capital_commitment.entity_id, user_id:,
-                     signature_type:, owner: @capital_commitment,
-                     reason: "Signature required for Capital Commitment : #{@capital_commitment.entity.name}")
-      end
-    end
-  end
-
   def signature_link(user)
     @capital_commitment.esigns.where(user_id: user.id).first&.link
   end
@@ -21,46 +11,32 @@ class CapitalCommitmentEsignProvider
     "Capital Commitment Agreement"
   end
 
-  def signed_file_name
-    "Signed: Capital Commitment Agreement"
-  end
+  # Do not call this twice - it will trigger the esing process again. Its not idempotent
+  # Called from CapitalCommitmentDocGenerator.trigger_signatures,
+  # after the Capital Commitment Agreement has been generated
+  def trigger_signatures(force: true)
+    Rails.logger.debug { "CapitalCommitmentEsignProvider: trigger_signatures for #{@capital_commitment.id} #{force}" }
 
-  # Called from CapitalCommitmentDocGenerator.prepare_for_signature, after the SPA has been generated
-  def trigger_signatures(force: false)
-    Rails.logger.debug { "CapitalCommitmentDocGenerator: generate_doc_signatures #{user_ids}, #{force}" }
-    if user_ids.present?
+    # Cleanup prev try
+    cleanup_prev
 
-      cleanup_prev if force
+    # Generate the required esigns
+    generate_esigns
 
-      doc = Document.where(entity_id: @capital_commitment.entity_id, owner: @capital_commitment, name: agreement_file_name).first
+    # Create the document to be passed for signing
+    fund_agreement = prepare_doc
 
-      if doc.present?
-        # Download the orignal generated SPA file & create a doc
-        doc.download do |tempfile|
-          doc = @capital_commitment.documents.create!(name: signed_file_name, entity_id: @capital_commitment.entity_id, download: true, file: tempfile, user_id: @capital_commitment.user_id)
-        end
-        # Setup this doc for esign by user_ids
-        AdhaarEsign.new.init(doc.id, @capital_commitment).sign
-
-      else
-        Rails.logger.debug { "Skipping as CapitalCommitment #{@capital_commitment.id} does not have #{agreement_file_name}" }
-      end
-    end
-  end
-
-  def cleanup_prev
-    # Check if we already ahve a document with spa_file_name
-    doc = Document.where(entity_id: @capital_commitment.entity_id, owner: @capital_commitment, name: signed_file_name).first
-    if doc.present?
-      # If we force the regeneration, then delete the old document with spa_file_name
-      AdhaarEsign.where(document_id: doc.id).each(&:destroy)
-      doc.destroy
+    if fund_agreement.present?
+      # Setup this doc for esign for this capital_commitment
+      AdhaarEsign.create!(document_id: fund_agreement.id, owner: @capital_commitment).sign
+    else
+      Rails.logger.debug { "Skipping 2 as CapitalCommitment #{@capital_commitment.id} does not have #{agreement_file_name}" }
     end
   end
 
   def signature_completed(signature_type, file)
     Rails.logger.debug { "CapitalCommitment #{@capital_commitment.id} signature_completed #{signature_type}" }
-    if signature_type == "adhaar" && File.exist?(file)
+    if File.exist?(file)
       doc = Document.where(entity_id: @capital_commitment.entity_id, owner: @capital_commitment, name: agreement_file_name).first
       doc.locked = true
       doc.orignal = true
@@ -70,5 +46,30 @@ class CapitalCommitmentEsignProvider
       @capital_commitment.esign_completed = true
       @capital_commitment.save
     end
+  end
+
+  private
+
+  # For each signatory - generate an esign row
+  def generate_esigns
+    @capital_commitment.signatory_ids.each do |signature_type, user_ids|
+      user_ids.each do |user_id|
+        Esign.create(entity_id: @capital_commitment.entity_id, user_id:,
+                     signature_type:, owner: @capital_commitment,
+                     reason: "Signature required for Capital Commitment : #{@capital_commitment.entity.name}")
+      end
+    end
+  end
+
+  # If the Capital Commitment Agreement is present, clone it and use that file for signing
+  def prepare_doc
+    @capital_commitment.documents.where(name: agreement_file_name).first
+  end
+
+  def cleanup_prev
+    # Check if we already ahve a document with spa_file_name
+    @capital_commitment.adhaar_esign&.destroy
+    @capital_commitment.esigns.each(&:destroy)
+    @capital_commitment.signature_workflows.each(&:destroy)
   end
 end

@@ -15,14 +15,10 @@ class AdhaarEsign < ApplicationRecord
 
   validate :ensure_owner_callback
 
-  def init(document_id, user_ids, owner, reason)
-    self.document = Document.find(document_id)
-    self.entity_id = document.entity_id
-    self.user_ids = user_ids
-    self.owner = owner
-    self.reason = reason
+  def initialize(params)
+    super(params)
+    self.entity_id ||= document.entity_id
     @esign_helper ||= DigioEsignHelper.new
-    self
   end
 
   # The owner must implement signature_completed
