@@ -25,6 +25,8 @@ class FundDashboard < Administrate::BaseDashboard
     details: Field::Text,
     collected_amount_cents: Field::String.with_options(searchable: false),
     tag_list: Field::String,
+    fund_signature_types: Field::String,
+    investor_signature_types: Field::String,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     call_amount_cents: Field::String.with_options(searchable: false),
@@ -47,34 +49,21 @@ class FundDashboard < Administrate::BaseDashboard
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
     entity
-    funding_round
-    documents
-    valuations
-    capital_remittances
-    capital_commitments
-    capital_distributions
-    capital_calls
-    access_rights
-    form_type
     id
     name
     committed_amount_cents
     details
     collected_amount_cents
     tag_list
+    fund_signature_types
+    investor_signature_types
     created_at
     updated_at
     call_amount_cents
     properties
     distribution_amount_cents
-  ].freeze
+    form_type
 
-  # FORM_ATTRIBUTES
-  # an array of attributes that will be displayed
-  # on the model's form (`new` and `edit`) pages.
-  FORM_ATTRIBUTES = %i[
-    activities
-    entity
     funding_round
     documents
     valuations
@@ -83,12 +72,22 @@ class FundDashboard < Administrate::BaseDashboard
     capital_distributions
     capital_calls
     access_rights
-    form_type
+
+  ].freeze
+
+  # FORM_ATTRIBUTES
+  # an array of attributes that will be displayed
+  # on the model's form (`new` and `edit`) pages.
+  FORM_ATTRIBUTES = %i[
+
     name
     committed_amount_cents
     details
     collected_amount_cents
     tag_list
+    fund_signature_types
+    investor_signature_types
+
     call_amount_cents
     properties
     distribution_amount_cents
