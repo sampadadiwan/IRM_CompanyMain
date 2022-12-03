@@ -5,6 +5,15 @@
       <%= link_to "New Investor Kyc" , new_investor_kyc_path("investor_kyc[investor_id]": @investor.id, "investor_kyc[entity_id]": @investor.entity_id), {class: "btn btn-primary" } if @investor %>
 
       <%= link_to "Download", investor_kycs_path(investor_id: @investor&.id, format: "xlsx", all: true),  {class: "btn btn-primary" }  %>
+
+      
+      <%= link_to "Upload", 
+        new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
+            "import_upload[owner_type]": "Entity", 
+            "import_upload[import_type]": "InvestorKyc", 
+            "import_upload[entity_id]": current_user.entity_id,
+            "sample_upload": "INVESTOR_KYCS_SAMPLE"), 
+            { class: "btn btn-primary"}  %> 
     </span>
   </div>
 
