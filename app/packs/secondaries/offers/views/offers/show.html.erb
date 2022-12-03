@@ -21,7 +21,10 @@
       form_class: "deleteButton" if Pundit.policy(current_user, @offer).approve? %>
 
 
-      <% if @offer.esign_required && !@offer.esign_completed %>
+      <% if @offer.esign_required && 
+            !@offer.esign_completed && 
+            params[:signature_completed].blank? %>
+            
         <% signature_link = @offer.signature_link(current_user) %>
         <% if signature_link.present? %>
           <% target = Rails.env.test? ? "" : "_blank" %>

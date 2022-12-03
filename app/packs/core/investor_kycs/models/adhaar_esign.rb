@@ -71,7 +71,8 @@ class AdhaarEsign < ApplicationRecord
         end
 
         # Setup a workflow to chase and track the signatories
-        SignatureWorkflow.first_or_create(owner:, entity_id: owner.entity_id).next_step
+        swf = SignatureWorkflow.where(owner:, entity_id: owner.entity_id).first_or_create!
+        swf.next_step
       else
         self.esign_document_reponse = JSON.parse(response.body)["message"]
       end

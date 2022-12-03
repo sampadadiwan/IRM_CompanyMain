@@ -102,7 +102,10 @@
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
         msg: "Generate documentation for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"} if policy(@capital_commitment).generate_documentation? %>
 
-    <% if @capital_commitment.esign_required && !@capital_commitment.esign_completed %>
+    <% if @capital_commitment.esign_required && 
+          !@capital_commitment.esign_completed && 
+          params[:signature_completed].blank? %>
+          
         <% signature_link = @capital_commitment.signature_link(current_user) %>
         <% if signature_link.present? %>
           <% target = Rails.env.test? ? "" : "_blank" %>
