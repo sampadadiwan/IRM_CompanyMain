@@ -1,3 +1,7 @@
+<div class="alert alert-info">
+  <%= "Only investors for this #{investor_notice.owner_type}, will see this notice." %>
+</div>
+
 <%= form_with(model: investor_notice, validate: true) do |form| %>
   <% if investor_notice.errors.any? %>
     <div class="alert alert-danger">

@@ -128,7 +128,10 @@
     </div>
   </div>
 
-
   <div class="associated_entity">
+    <div class="alert alert-info">
+      Only investors for this <%= link_to @investor_notice.owner_type, @investor_notice.owner %>, with an active entry below, will see this notice.
+    </div>
+    
     <%= render "investor_notice_entries/index", investor_notice_entries: @investor_notice.investor_notice_entries.includes(:investor) %>
   </div>
