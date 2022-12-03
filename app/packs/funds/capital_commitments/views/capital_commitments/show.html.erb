@@ -1,68 +1,62 @@
 <%= render "/layouts/alerts" %>
-
-  <table class="table table-bordered dataTable">
-
-
-    <tr>
-      <td>
-        Entity
-      </td>
-      <td>
-        <%= @capital_commitment.entity.name %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Investor
-      </td>
-      <td>
-        <%= link_to @capital_commitment.investor.investor_name, @capital_commitment.investor %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        Investor Signatory
-      </td>
-      <td>
-        <%= @capital_commitment.investor_signatory.full_name if @capital_commitment.investor_signatory %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        Fund
-      </td>
-      <td>
-        <%= link_to @capital_commitment.fund.name, @capital_commitment.fund %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Committed Amount
-      </td>
-      <td>
-        <%= money_to_currency @capital_commitment.committed_amount, params %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Collected Amount
-      </td>
-      <td>
-        <%= money_to_currency @capital_commitment.collected_amount, params %>
-      </td>
-    </tr>
-        <tr>
-      <td>
-        PPM Number
-      </td>
-      <td>
-        <%= @capital_commitment.ppm_number %>
-      </td>
-    </tr>
-
-    <% if @capital_commitment.folio_id.present? %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @capital_commitment.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Investor
+    </td>
+    <td>
+      <%= link_to @capital_commitment.investor.investor_name, @capital_commitment.investor %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Investor Signatory
+    </td>
+    <td>
+      <%= @capital_commitment.investor_signatory.full_name if @capital_commitment.investor_signatory %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Fund
+    </td>
+    <td>
+      <%= link_to @capital_commitment.fund.name, @capital_commitment.fund %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Committed Amount
+    </td>
+    <td>
+      <%= money_to_currency @capital_commitment.committed_amount, params %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Collected Amount
+    </td>
+    <td>
+      <%= money_to_currency @capital_commitment.collected_amount, params %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      PPM Number
+    </td>
+    <td>
+      <%= @capital_commitment.ppm_number %>
+    </td>
+  </tr>
+  <% if @capital_commitment.folio_id.present? %>
     <tr>
       <td>
         Folio Id
@@ -71,50 +65,45 @@
         <%= @capital_commitment.folio_id %>
       </td>
     </tr>
-    <% end %>
-
-    <%= display_custom_fields(@capital_commitment) if current_user %>
-
-    <tr>
-      <td>
-        Notes
-      </td>
-      <td>
-        <%= @capital_commitment.notes.html_safe if @capital_commitment.notes %>
-      </td>
-    </tr>
-
-
-
-  </table>
-
-
-  <div>
-    <% if policy(@capital_commitment).update? %>
-      <%= link_to "Edit" , edit_capital_commitment_path(@capital_commitment), {class: "btn btn-primary" } %> 
-      <%= button_to "Delete" , @capital_commitment, method: :delete, class: "btn btn-danger" ,
+  <% end %>
+  <%= display_custom_fields(@capital_commitment) if current_user %>
+  <tr>
+    <td>
+      Notes
+    </td>
+    <td>
+      <%= @capital_commitment.notes.html_safe if @capital_commitment.notes %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Investor Signature Type
+    </td>
+    <td>
+      <%= @capital_commitment.investor_signature_types.capitalize %>
+    </td>
+  </tr>
+</table>
+<div>
+  <% if policy(@capital_commitment).update? %>
+    <%= link_to "Edit" , edit_capital_commitment_path(@capital_commitment), {class: "btn btn-primary" } %>
+    <%= button_to "Delete" , @capital_commitment, method: :delete, class: "btn btn-danger" ,
             form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
-    <% end %>
-
-    <%= button_to "Generate Documentation", 
+  <% end %>
+  <%= button_to "Generate Documentation", 
         generate_documentation_capital_commitment_path(@capital_commitment), 
         method: :patch, class: "btn btn-success" , 
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
         msg: "Generate documentation for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"} if policy(@capital_commitment).generate_documentation? %>
-
-    <% if @capital_commitment.esign_required && 
+  <% if @capital_commitment.esign_required && 
           !@capital_commitment.esign_completed && 
           params[:signature_completed].blank? %>
-          
-        <% signature_link = @capital_commitment.signature_link(current_user) %>
-        <% if signature_link.present? %>
-          <% target = Rails.env.test? ? "" : "_blank" %>
-          <%= link_to "Click here to eSign", signature_link,  target: target,
+  <% signature_link = @capital_commitment.signature_link(current_user) %>
+  <% if signature_link.present? %>
+    <% target = Rails.env.test? ? "" : "_blank" %>
+    <%= link_to "Click here to eSign", signature_link,  target: target,
               class: "btn btn-success"  if policy(@capital_commitment).esign?  %>
-        <% end %>
-    <% end %>
-
-  </div>
-
-  
-  <%= render "capital_commitments/details", capital_commitment: @capital_commitment %>
+  <% end %>
+<% end %>
+</div>
+<%= render "capital_commitments/details", capital_commitment: @capital_commitment %>

@@ -21,6 +21,16 @@
     <%= form.select :fund_signatory_id, fund.entity.employees.map{|e| [e.full_name, e.id]}, {include_blank: true}, class: "form-control"  %>
   </div>
 
+  <div class="form-group">
+    <%= form.label :fund_signature_types %>
+    <%= form.select :fund_signature_types, ["adhaar"], {include_blank: true}, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :investor_signature_types %>
+    <%= form.select :investor_signature_types, ["adhaar"], {include_blank: true}, class: "form-control"  %>
+  </div>
+  
 
   <div class="form-group">
     <%= form.label :trustee_signatory_id %>

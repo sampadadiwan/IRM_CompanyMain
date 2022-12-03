@@ -101,6 +101,22 @@
     <% if policy(@fund).update? %>
       <tr>
         <td>
+          Investor Signature Type
+        </td>
+        <td>
+          <%= @fund.investor_signature_types.capitalize %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Fund Signature Type
+        </td>
+        <td>
+          <%= @fund.fund_signature_types.capitalize %>
+        </td>
+      </tr>
+      <tr>
+        <td>
           Show Valuations to LPs 
         </td>
         <td>
