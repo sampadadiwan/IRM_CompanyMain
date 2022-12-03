@@ -5,6 +5,8 @@ class InvestorNotice < ApplicationRecord
 
   has_rich_text :details
 
+  validates :title, :start_date, :end_date, :details, presence: true
+
   after_commit :generate_investor_notice_entries, if: proc { |notice| notice.generate && notice.saved_change_to_generate? }
 
   def generate_investor_notice_entries
