@@ -39,6 +39,7 @@ class Entity < ApplicationRecord
   has_many :folders, dependent: :destroy
 
   has_many :investor_accesses, dependent: :destroy
+  has_many :investor_kycs, dependent: :destroy
   has_many :access_rights, dependent: :destroy
   has_many :investments, dependent: :destroy
   has_many :aggregate_investments, dependent: :destroy

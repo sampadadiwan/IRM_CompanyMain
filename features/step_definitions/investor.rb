@@ -135,6 +135,20 @@ Given('Given I upload an investor access file for employees') do
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 
+Given('Given I upload an investor kyc file for employees') do
+  # Sidekiq.redis(&:flushdb)
+
+  visit(investor_kycs_path)
+  click_on("Upload")
+  fill_in('import_upload_name', with: "Test Investor Access Upload")
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_kycs.xlsx'), make_visible: true)
+  sleep(1)
+  click_on("Save")
+  sleep(1)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+end
+
+
 Then('There should be {string} investor access created') do |count|
   InvestorAccess.count.should == count.to_i
 end
@@ -200,4 +214,39 @@ Then('the investors must be added to the fund') do
   
   investors.should == fund_investors
 
+end
+
+Then('There should be {string} investor kycs created') do |count|
+  @entity.investor_kycs.count.should == count.to_i
+end
+
+Then('the investor kycs must have the data in the sheet') do
+  file = File.open("./public/sample_uploads/investor_kycs.xlsx", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+
+  investor_kycs = @entity.investor_kycs.order(id: :asc).to_a
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    cc = investor_kycs[idx-1]
+    puts "Checking import of #{cc.email}"
+    cc.email.should == user_data["email"].strip
+    cc.first_name.should == user_data["First Name"]
+    cc.last_name.should == user_data["Last Name"]
+    cc.full_name.should == user_data["Full Name"]
+    cc.address.should == user_data["Address"]
+    cc.PAN.should == user_data["PAN"]
+    cc.bank_account_number.should == user_data["Bank Account"].to_s
+    cc.ifsc_code.should == user_data["IFSC Code"].to_s
+    
+  end
+end
+
+Then('the corresponding investor kyc users must be created') do
+  InvestorKyc.includes(:user).all.each do |ik|
+    ik.email.should == ik.user.email
+  end
 end

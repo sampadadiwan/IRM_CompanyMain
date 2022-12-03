@@ -39,6 +39,16 @@ Scenario Outline: Import investor access
   Then I should see the "Import upload was successfully created"
   Then There should be "2" investor access created
 
+
+Scenario Outline: Import investor kycs
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  And Given I upload an investors file for the startup
+  And Given I upload an investor kyc file for employees
+  Then I should see the "Import upload was successfully created"
+  Then There should be "2" investor kycs created
+  And the corresponding investor kyc users must be created
+  And the investor kycs must have the data in the sheet
+
 Scenario Outline: Import investors
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Startup"
   And Given I upload an investors file for the startup
