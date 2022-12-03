@@ -9,18 +9,9 @@ class InvestorsController < ApplicationController
 
     @investors = @investors.where(category: params[:category]) if params[:category]
 
-    @investors = @investors.order("investors.id desc")
-                           .includes(:tags)
+    @investors = @investors.order("investors.id desc").includes(:tags)
 
-    respond_to do |format|
-      format.xlsx do
-        response.headers[
-          'Content-Disposition'
-        ] = "attachment; filename=investors.xlsx"
-      end
-      format.html { render :index }
-      format.json { render :index }
-    end
+    @investors = @investors.page(params[:page]) if params[:all].blank?
   end
 
   def search
