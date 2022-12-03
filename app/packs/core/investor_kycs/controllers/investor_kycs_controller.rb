@@ -14,6 +14,7 @@ class InvestorKycsController < ApplicationController
     @investor_kycs = @investor_kycs.where(verified: params[:verified] == "true") if params[:verified].present?
 
     @investor_kycs = @investor_kycs.includes(:investor, :entity)
+    @investor_kycs = @investor_kycs.page(params[:page]) if params[:all].blank?
   end
 
   def search
