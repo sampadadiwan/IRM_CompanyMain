@@ -13,7 +13,8 @@ class Offer < ApplicationRecord
   belongs_to :entity, touch: true
   belongs_to :secondary_sale, touch: true
   has_one :adhaar_esign, as: :owner
-  has_many :esings, -> { order("sequence_no asc") }, as: :owner
+  has_many :esigns, -> { order("sequence_no asc") }, as: :owner
+  has_many :signature_workflows, as: :owner
 
   counter_culture :interest,
                   column_name: proc { |o| o.approved ? 'offer_quantity' : nil },
@@ -227,7 +228,7 @@ class Offer < ApplicationRecord
   end
 
   # TODO: - who is the interest signatory?
-  def signatory_ids(type)
+  def signatory_ids(type = nil)
     if @signatory_ids_map.blank?
       @signatory_ids_map = { adhaar: [], dsc: [] }
       @signatory_ids_map[:adhaar] << user.id if seller_signature_types.include?("adhaar")

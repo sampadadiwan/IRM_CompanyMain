@@ -14,8 +14,11 @@ class CapitalCommitmentEsignProvider
   # Do not call this twice - it will trigger the esing process again. Its not idempotent
   # Called from CapitalCommitmentDocGenerator.trigger_signatures,
   # after the Capital Commitment Agreement has been generated
-  def trigger_signatures(force: true)
+  def trigger_signatures
     Rails.logger.debug { "CapitalCommitmentEsignProvider: trigger_signatures for #{@capital_commitment.id} #{force}" }
+
+    @capital_commitment.esign_required = true
+    @capital_commitment.save
 
     # Cleanup prev try
     cleanup_prev
@@ -67,7 +70,6 @@ class CapitalCommitmentEsignProvider
   end
 
   def cleanup_prev
-    # Check if we already ahve a document with spa_file_name
     @capital_commitment.adhaar_esign&.destroy
     @capital_commitment.esigns.each(&:destroy)
     @capital_commitment.signature_workflows.each(&:destroy)
