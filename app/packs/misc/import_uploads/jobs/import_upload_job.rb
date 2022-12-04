@@ -1,5 +1,5 @@
 class ImportUploadJob < ApplicationJob
-  queue_as :default
+  queue_as :serial
 
   def perform(import_upload_id)
     Chewy.strategy(:sidekiq) do
@@ -9,6 +9,8 @@ class ImportUploadJob < ApplicationJob
         import_upload.import_file.download do |file|
           "Import#{import_upload.import_type}Service".constantize.call(import_file: file, import_upload:)
         end
+      rescue ActiveRecord::Deadlocked => e
+        raise e
       rescue StandardError => e
         import_upload.status = e.message
         import_upload.error_text = e.backtrace

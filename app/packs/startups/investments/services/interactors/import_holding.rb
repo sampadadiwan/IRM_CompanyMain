@@ -19,6 +19,8 @@ class ImportHolding < ImportUtil
         import_upload.failed_row_count += 1
         row << "Error"
       end
+    rescue ActiveRecord::Deadlocked => e
+      raise e
     rescue StandardError => e
       Rails.logger.debug e.message
       row << "Error #{e.message}"

@@ -9,6 +9,7 @@ class ImportUtil
         process_rows(context.import_upload, context.headers, context.data)
       rescue StandardError => e
         Rails.logger.debug e.backtrace
+        raise e
       end
     else
       context.fail!(message: "Required inputs not present")

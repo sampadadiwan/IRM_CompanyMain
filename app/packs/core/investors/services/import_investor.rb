@@ -47,7 +47,7 @@ class ImportInvestor < ImportUtil
 
       if fund
         # Give the investor access rights as an investor to the fund
-        AccessRight.create!(entity_id: fund.entity_id, owner: fund, investor:, access_type: "Fund", metadata: "Investor")
+        AccessRight.create(entity_id: fund.entity_id, owner: fund, investor:, access_type: "Fund", metadata: "Investor")
       else
         Rails.logger.debug { "Specified fund #{user_data['Fund']} not found in import_upload #{import_upload.id}" }
       end
@@ -67,6 +67,8 @@ class ImportInvestor < ImportUtil
         import_upload.failed_row_count += 1
         row << "Error"
       end
+    rescue ActiveRecord::Deadlocked => e
+      raise e
     rescue StandardError => e
       Rails.logger.debug e.message
       row << "Error #{e.message}"

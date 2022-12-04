@@ -7,7 +7,7 @@
           Entity
         </td>
         <td>
-          <%= @esign.entity_id %>
+          <%= @esign.entity.name %>
         </td>    
       </tr>
           <tr>
@@ -15,7 +15,7 @@
           User
         </td>
         <td>
-          <%= @esign.user_id %>
+          <%= @esign.user.full_name %>
         </td>    
       </tr>
           <tr>
@@ -23,7 +23,7 @@
           Owner
         </td>
         <td>
-          <%= @esign.owner_id %>
+          <%= link_to @esign.owner_type, @esign.owner%>
         </td>    
       </tr>
           <tr>
@@ -31,7 +31,7 @@
           Sequence
         </td>
         <td>
-          <%= @esign.sequence_id %>
+          <%= @esign.sequence_no %>
         </td>    
       </tr>
           <tr>
@@ -72,8 +72,6 @@
 
 
 <div>
-  <%= link_to "Edit", edit_esign_path(@esign), {class: "btn btn-primary"} %> |
-  <%= link_to "Back", :back, {class: "btn btn-primary"} %> |
-
+  <%= link_to "Edit", edit_esign_path(@esign), {class: "btn btn-primary"} %> 
   <%= button_to "Delete", @esign, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
 </div>

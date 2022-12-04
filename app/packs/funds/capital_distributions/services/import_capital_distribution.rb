@@ -17,6 +17,8 @@ class ImportCapitalDistribution < ImportUtil
         import_upload.failed_row_count += 1
         row << "Error"
       end
+    rescue ActiveRecord::Deadlocked => e
+      raise e
     rescue StandardError => e
       Rails.logger.debug Rails.env.test? ? e.message : e.backtrace
       row << "Error #{e.message}"
