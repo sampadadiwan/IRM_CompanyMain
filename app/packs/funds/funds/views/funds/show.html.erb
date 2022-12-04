@@ -104,7 +104,7 @@
           Investor Signature Type
         </td>
         <td>
-          <%= @fund.investor_signature_types.capitalize %>
+          <%= @fund.investor_signature_types&.capitalize %>
         </td>
       </tr>
       <tr>
@@ -112,7 +112,7 @@
           Fund Signature Type
         </td>
         <td>
-          <%= @fund.fund_signature_types.capitalize %>
+          <%= @fund.fund_signature_types&.capitalize %>
         </td>
       </tr>
       <tr>
