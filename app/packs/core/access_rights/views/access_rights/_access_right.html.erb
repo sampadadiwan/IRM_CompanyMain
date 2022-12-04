@@ -23,7 +23,7 @@
         <%= "Permissions: #{access_right.permissions}" if access_right.permissions.present?  %>
     </td>  
     <% end %>
-    <% if show_for == "Yes" && access_right.owner %>
+    <% if access_right.owner %>
     <td>
         <%= link_to access_right.owner.name, access_right.owner %>
     </td>  

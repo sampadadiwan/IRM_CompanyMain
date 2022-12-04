@@ -15,7 +15,7 @@ class CapitalCommitmentEsignProvider
   # Called from CapitalCommitmentDocGenerator.trigger_signatures,
   # after the Capital Commitment Agreement has been generated
   def trigger_signatures
-    Rails.logger.debug { "CapitalCommitmentEsignProvider: trigger_signatures for #{@capital_commitment.id} #{force}" }
+    Rails.logger.debug { "CapitalCommitmentEsignProvider: trigger_signatures for #{@capital_commitment.id}" }
 
     @capital_commitment.esign_required = true
     @capital_commitment.save

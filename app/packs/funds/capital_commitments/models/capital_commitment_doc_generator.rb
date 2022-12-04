@@ -13,7 +13,6 @@ class CapitalCommitmentDocGenerator
       create_working_dir(capital_commitment)
       generate(capital_commitment, fund_doc_template_path, user)
       upload(fund_doc_template, user, capital_commitment)
-      prepare_for_signature(capital_commitment)
     ensure
       cleanup
     end
@@ -101,7 +100,4 @@ class CapitalCommitmentDocGenerator
     signed_document.save
   end
 
-  def prepare_for_signature(capital_commitment)
-    CapitalCommitmentEsignProvider.new(capital_commitment).trigger_signatures
-  end
 end

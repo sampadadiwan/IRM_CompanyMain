@@ -1,5 +1,5 @@
 class CapitalCommitmentsController < ApplicationController
-  before_action :set_capital_commitment, only: %i[show edit update destroy generate_documentation]
+  before_action :set_capital_commitment, only: %i[show edit update destroy generate_documentation generate_esign_link]
 
   # GET /capital_commitments or /capital_commitments.json
   def index
@@ -25,7 +25,7 @@ class CapitalCommitmentsController < ApplicationController
 
       @capital_commitments = CapitalCommitmentIndex.filter(term:)
                                                    .query(query_string: { fields: CapitalCommitmentIndex::SEARCH_FIELDS,
-                                                                          query:, default_operator: 'and' })
+                                                    query:, default_operator: 'and' })
 
       @capital_commitments = @capital_commitments.objects
       render "index"
@@ -40,6 +40,11 @@ class CapitalCommitmentsController < ApplicationController
   def generate_documentation
     CapitalCommitmentDocJob.perform_later(@capital_commitment.id)
     redirect_to capital_commitment_url(@capital_commitment), notice: "Documentation generation started, please check back in a few mins."
+  end
+
+  def generate_esign_link
+    CapitalCommitmentGenerateEsignJob.perform_later(@capital_commitment.id)
+    redirect_to capital_commitment_url(@capital_commitment), notice: "Esign generation started, please check back in a few mins."
   end
 
   # GET /capital_commitments/new
