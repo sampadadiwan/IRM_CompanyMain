@@ -4,7 +4,17 @@
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
         data-action="click->tabdetails#loadData">Documents</a>
+
+
+        
+    <% if params[:debug].present? %>
+          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#esigns-tab" 
+                data-action="click->tabdetails#loadData">
+              eSigns
+          </a>
+    <% end %>
   </nav>
+
 
   <div class="tab-content" data-controller="datatable">
 
@@ -15,6 +25,18 @@
           <%= render "/documents/index", documents: @offer.documents.includes(:folder, :tags), 
               owner: @offer, entity: @offer.entity, msg: msg %>
         </div>     
+      </div>
+
+      <div id="esigns-tab" class="tab-pane fade">
+          <div id="esigns" class="associated_entity">
+            <%= link_to esigns_path( owner_id: @offer.id, owner_type: "Offer"), 
+                                    class: "load_data_link", 
+                                    data: { turbo_frame: 'esigns_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "esigns_list", target: "_top" do %>
+            <% end %>
+          </div>     
       </div>
 
       

@@ -43,7 +43,7 @@
 
         <div id="esigns-tab" class="tab-pane fade">
           <div id="esigns" class="associated_entity">
-            <%= link_to esigns_path( owner_id: capital_commitment.investor_id, owner_type: "CapitalCommitment"), 
+            <%= link_to esigns_path( owner_id: capital_commitment.id, owner_type: "CapitalCommitment"), 
                                     class: "load_data_link", 
                                     data: { turbo_frame: 'esigns_list' } do %>
               <span>Loading...</span>

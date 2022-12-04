@@ -21,6 +21,13 @@
       form_class: "deleteButton" if Pundit.policy(current_user, @offer).approve? %>
 
 
+      <%= button_to "Generate Esign Link", 
+        generate_esign_link_offer_path(@offer), 
+        method: :patch, class: "btn btn-success" , 
+        form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+        msg: "Generate esign link for this Offer. This will trigger the eSign process. Proceed?"} if policy(@offer).generate_esign_link? %>
+
+
       <% if @offer.esign_required && 
             !@offer.esign_completed && 
             params[:signature_completed].blank? %>

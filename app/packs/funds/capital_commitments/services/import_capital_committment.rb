@@ -46,7 +46,7 @@ class ImportCapitalCommittment < ImportUtil
 
         setup_custom_fields(user_data, capital_commitment, custom_field_headers)
 
-        capital_commitment.save
+        capital_commitment.save!
       end
     else
       raise fund ? "Investor not found" : "Fund not found"
