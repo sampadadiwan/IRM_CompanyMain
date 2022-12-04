@@ -519,8 +519,8 @@ namespace :irm do
 
 
         (1..3).each do 
+          fund.reload
           call = FactoryBot.create(:capital_call, fund: ) 
-                   
         end
       end
 

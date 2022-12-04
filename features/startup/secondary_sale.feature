@@ -77,8 +77,7 @@ Scenario Outline: Sale Offer SPA
   Then when the allocation is done
   Then when the offers are verified
   Then the SPAs must be generated for each verified offer
-  And when the sellers are notified on the SPA
-  Then the adhaar esign must be triggered
+  When the adhaar esign is triggered
   Given Im logged in as an employee investor
   And I should see the esign link on the offer page
   And when I click the esign link

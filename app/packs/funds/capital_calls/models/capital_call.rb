@@ -19,6 +19,12 @@ class CapitalCall < ApplicationRecord
   validates :percentage_called, numericality: { in: 0..100 }
 
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
+  counter_culture :fund, column_name: 'call_amount_cents', delta_column: 'call_amount_cents'
+
+  before_save :compute_call_amount
+  def compute_call_amount
+    self.call_amount_cents = fund.committed_amount_cents * percentage_called / 100.0
+  end
 
   after_commit :generate_capital_remittances
   def generate_capital_remittances

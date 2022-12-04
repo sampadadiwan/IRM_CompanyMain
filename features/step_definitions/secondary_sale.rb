@@ -568,16 +568,12 @@ Then('when the sellers are notified on the SPA') do
   @sale.notify_spa_sellers
 end
 
-Then('the adhaar esign must be triggered') do
-  @sale.reload
-  @sale.offers.verified.each do |o|
-    puts "####### AdhaarEsign #######\n"
-    puts o.adhaar_esigns.last.to_json
-    o.adhaar_esigns.last.should_not == nil
-    o.esign_required.should == true
-    o.esign_completed.should == false
+When('the adhaar esign is triggered') do
+  @sale.offers.verified.each do |offer|
+    OfferEsignGenerateJob.perform_later(offer.id)
   end
 end
+
 
 Then('I should see the esign link on the offer page') do
   visit(offer_path(@user.offers.first))

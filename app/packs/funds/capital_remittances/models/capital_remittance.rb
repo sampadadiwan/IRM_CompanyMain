@@ -22,25 +22,14 @@ class CapitalRemittance < ApplicationRecord
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
   validates :folio_id, presence: true
 
-  # before_validation :set_capital_commitment
-  # def set_capital_commitment
-  #   self.capital_commitment = fund.capital_commitments.where(investor_id:).first
-  # end
-
   counter_culture :capital_call, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                                  delta_column: 'collected_amount_cents'
-
-  counter_culture :capital_call, column_name: 'call_amount_cents',
-                                 delta_column: 'call_amount_cents'
 
   counter_culture :capital_commitment, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                                        delta_column: 'collected_amount_cents'
 
   counter_culture :fund, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                          delta_column: 'collected_amount_cents'
-
-  counter_culture :fund, column_name: 'call_amount_cents',
-                         delta_column: 'call_amount_cents'
 
   before_save :set_status
   before_create :set_call_amount
