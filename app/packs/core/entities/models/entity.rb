@@ -85,7 +85,7 @@ class Entity < ApplicationRecord
     case entity_type
     when "Startup"
       SetupStartup.call(entity: self)
-    when "Investment Fund"
+    else
       SetupFolders.call(entity: self)
     end
   end

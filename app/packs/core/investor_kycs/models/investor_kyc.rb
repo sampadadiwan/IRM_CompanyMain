@@ -31,27 +31,29 @@ class InvestorKyc < ApplicationRecord
   # after_commit :send_notification_if_changed, if: :approved
 
   def update_user
-    self.email = email.strip
-    u = User.find_by(email:)
-    if u.blank?
-      # Setup a new user for this investor_entity_id
-      u = User.new(first_name:, last_name:, email:, active: true, system_created: true,
-                   entity_id: investor.investor_entity_id, password: SecureRandom.hex(8))
+    if user.nil?
+      self.email = email.strip
+      u = User.find_by(email:)
+      if u.blank?
+        # Setup a new user for this investor_entity_id
+        u = User.new(first_name:, last_name:, email:, active: true, system_created: true,
+                     entity_id: investor.investor_entity_id, password: SecureRandom.hex(8))
 
-      # Upload of IAs has a col to prevent confirmations, lets honour that
-      unless send_confirmation
-        Rails.logger.debug { "############# Skipping Confirmation for #{u.email}" }
-        u.skip_confirmation!
+        # Upload of IAs has a col to prevent confirmations, lets honour that
+        unless send_confirmation
+          Rails.logger.debug { "############# Skipping Confirmation for #{u.email}" }
+          u.skip_confirmation!
+        end
+
+        # Save the user
+        u.save!
+
+        # If this user was created in the process of investor access and is the only user, make him company admin
+        u.add_role :company_admin if u.entity.employees.count == 1
+
       end
-
-      # Save the user
-      u.save
-
-      # If this user was created in the process of investor access and is the only user, make him company admin
-      u.add_role :company_admin if u.entity.employees.count == 1
-
+      self.user = u
     end
-    self.user = u
   end
 
   after_commit :validate_pan_card
