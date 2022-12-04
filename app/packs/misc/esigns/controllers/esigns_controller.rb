@@ -4,6 +4,8 @@ class EsignsController < ApplicationController
   # GET /esigns or /esigns.json
   def index
     @esigns = policy_scope(Esign)
+    @esigns = @esigns.where(owner_id: params[:owner_id]) if params[:owner_id].present?
+    @esigns = @esigns.where(owner_type: params[:owner_type]) if params[:owner_type].present?
   end
 
   # GET /esigns/1 or /esigns/1.json

@@ -47,7 +47,7 @@ class ImportCapitalCall < ImportUtil
 
         setup_custom_fields(user_data, capital_call, custom_field_headers)
 
-        capital_call.save
+        capital_call.save!
       end
     else
       raise "Fund not found"

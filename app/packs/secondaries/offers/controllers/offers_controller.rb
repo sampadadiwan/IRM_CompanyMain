@@ -1,5 +1,5 @@
 class OffersController < ApplicationController
-  before_action :set_offer, only: %i[show edit update destroy approve allocate allocation_form accept_spa]
+  before_action :set_offer, only: %i[show edit update destroy approve allocate allocation_form accept_spa generate_esign_link]
   after_action :verify_authorized, except: %i[index search finalize_allocation]
 
   # GET /offers or /offers.json
@@ -103,6 +103,11 @@ class OffersController < ApplicationController
       format.html { redirect_to offer_url(@offer), notice: "Offer was successfully updated. Your acceptance has been recorded" }
       format.json { @offer.to_json }
     end
+  end
+
+  def generate_esign_link
+    OfferEsignGenerateJob.perform_later(@offer.id)
+    redirect_to offer_url(@offer), notice: "Esign generation started, please check back in a few mins."
   end
 
   # GET /offers/1/edit
