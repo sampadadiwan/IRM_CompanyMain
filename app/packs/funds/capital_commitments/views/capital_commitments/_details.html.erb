@@ -10,6 +10,13 @@
             KYC
         </a>
       <% end %>
+
+      <% if params[:debug].present? %>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#esigns-tab" 
+              data-action="click->tabdetails#loadData">
+            eSigns
+        </a>
+      <% end %>
     </nav>
   
     <div class="tab-content" data-controller="datatable">
@@ -29,6 +36,19 @@
               <span>Loading...</span>
             <% end %>
             <%= turbo_frame_tag "investor_kycs_list", target: "_top" do %>
+            <% end %>
+          </div>     
+        </div>
+
+
+        <div id="esigns-tab" class="tab-pane fade">
+          <div id="esigns" class="associated_entity">
+            <%= link_to esigns_path( owner_id: capital_commitment.investor_id, owner_type: "CapitalCommitment"), 
+                                    class: "load_data_link", 
+                                    data: { turbo_frame: 'esigns_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "esigns_list", target: "_top" do %>
             <% end %>
           </div>     
         </div>

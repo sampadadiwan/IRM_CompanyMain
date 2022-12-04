@@ -99,5 +99,4 @@ class CapitalCommitmentDocGenerator
 
     signed_document.save
   end
-
 end

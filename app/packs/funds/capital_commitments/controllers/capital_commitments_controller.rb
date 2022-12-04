@@ -25,7 +25,7 @@ class CapitalCommitmentsController < ApplicationController
 
       @capital_commitments = CapitalCommitmentIndex.filter(term:)
                                                    .query(query_string: { fields: CapitalCommitmentIndex::SEARCH_FIELDS,
-                                                    query:, default_operator: 'and' })
+                                                                          query:, default_operator: 'and' })
 
       @capital_commitments = @capital_commitments.objects
       render "index"

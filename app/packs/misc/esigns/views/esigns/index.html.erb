@@ -1,41 +1,4 @@
 <%= render "/layouts/alerts" %>
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Esigns</h1>
-  <%= link_to "New Esign", new_esign_path, {class: "btn btn-primary"}  %>
-</div>
-<div class="table-responsive" data-controller="datatable">
-  <table id="esigns" class="table table-bordered dataTable">
-    <tbody>
-      <thead>
-        <tr>
-          <th>
-            User
-          </th>
-          <th>
-            Owner
-          </th>
-          <th>
-            Sequence
-          </th>
-          <th>
-            Link
-          </th>
-          <th>
-            Reason
-          </th>
-          <th>
-            Status
-          </th>
-          <th>
-            Completed
-          </th>
-          <th>
-          </th>
-        </tr>
-      </thead>
-      <% @esigns.each do |esign| %>
-        <%= render esign %>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+<%= turbo_frame_tag "esigns_list", target: "_top" do %>
+    <%= render "/esigns/index", esigns: @esigns %>
+<% end %>
