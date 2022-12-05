@@ -4,8 +4,9 @@ class DocumentsController < ApplicationController
   include ActiveStorage::SetCurrent
 
   before_action :set_document, only: %w[show update destroy edit sign]
-  after_action :verify_authorized, except: %i[index search investor_documents adhaar_esign_completed]
-  after_action :verify_policy_scoped, only: []
+  after_action :verify_authorized, except: %i[index search investor_documents]
+  # after_action :verify_policy_scoped, only: []
+  # skip_before_action :authenticate_user!, :only => [:show]
 
   impressionist actions: [:show]
 
@@ -157,7 +158,7 @@ class DocumentsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def document_params
     params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id,
-                                     :signature_enabled, :signed_by_id,
+                                     :signature_enabled, :signed_by_id, :public_visibility,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag,
                                      :tag_list, :folder_id, :file, properties: {}, signature_type: [])
   end

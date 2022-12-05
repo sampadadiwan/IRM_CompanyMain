@@ -15,13 +15,13 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def show?
-    if user.entity_id == record.entity_id && user.enable_documents
-      true
-    else
-      (user.enable_documents && show_investor?) ||
+    record.public_visibility ||
+      (user && (
+        (user.entity_id == record.entity_id && user.enable_documents) ||
+        (user.enable_documents && show_investor?) ||
         (record.owner && owner_policy.show?) ||
         allow_external?(:read)
-    end
+      ))
   end
 
   def sign?

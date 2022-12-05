@@ -139,18 +139,8 @@
                      <% end %>
                   <% end %>
 
-                  <% if current_user.entity_id == @document.entity_id %>
-                  <!-- <tr>
-                     <td>
-                        Signature Enabled
-                     </td>
-                     <td>
-                     <%= display_boolean @document.signature_enabled %> 
-                     <% if @document.signature_type %>
-                        (<%= @document.display_signature_type %>)
-                     <% end %>
-                     </td>
-                  </tr> -->
+                  <% if current_user && current_user.entity_id == @document.entity_id %>
+
                   <tr>
                      <td>
                         Allow Download
@@ -173,6 +163,16 @@
                      </td>
                      <td>
                         <%= display_boolean @document.orignal  %>                                                  
+
+                     </td>
+                  </tr>
+
+                  <tr>
+                     <td>
+                        Public Visibility
+                     </td>
+                     <td>
+                        <%= display_boolean @document.public_visibility  %>                                                  
 
                      </td>
                   </tr>
@@ -224,7 +224,7 @@
     </div>
 </div>
 
-<% if policy(@document).update? %>
+<% if current_user && policy(@document).update? %>
    <div style="display: inline-block;">      
       <%= link_to "Edit", edit_document_path(@document), {class: "btn btn-primary"} %> 
       <%= link_to "All Documents", documents_path, {class: "btn btn-success"} %> 
@@ -234,4 +234,4 @@
 
 
 
-<%= render "documents/document_details", document: @document %>
+<%= render "documents/document_details", document: @document if current_user %>

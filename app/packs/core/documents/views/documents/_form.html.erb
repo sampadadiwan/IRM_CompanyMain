@@ -99,6 +99,12 @@
               data: {action: "click->docform#onPdfOptChange"} %>
       <small class="text-muted">Enable users to print this document</small>
     </div>
+
+    <div class="form-group pdfopts">
+      <%= form.label :public_visibility, "Allow Public Visibility" %>
+      <%= form.check_box :public_visibility, class: "form-control form-checkbox" %>
+      <small class="text-muted">Enable any user to view this document</small>
+    </div>
   </div>
   <% end %>
 

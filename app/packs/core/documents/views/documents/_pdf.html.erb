@@ -2,10 +2,13 @@
 
    <input id="viewer_content_type" , value="<%=@document.file.content_type%>" hidden="hidden"></input>
    <input id="viewer_link" , value="<%=@document.file_url()%>" hidden="hidden"></input>
+
+   <% if current_user %>
    <input id="viewer_watermark" ,
       value="Exclusively for <%= current_user.entity ? current_user.entity.name : current_user.full_name %>"
       hidden="hidden">
    </input>
+   <% end %>
 
    <div class="card-header">
       <h6 class="m-0 font-weight-bold text-primary">Viewing: <%= @document.name %>
@@ -20,22 +23,4 @@
    <div id='viewer' class="card-body">
    </div>
 
-   <% if policy(@document).sign? && @document.signature_type.include?("image") %>
-      <%= form_with(model: @document, id: "signed_doc_form" ) do |form| %>
-         <div style="display:none;">
-            <%= render "layouts/single_upload" , form: form, field_label: "Upload File" , for_model: "document" ,
-               field_name: "file" , model: @document %>            
-         </div>
-         <input type="text" id="document_signed_by_id" name="document[signed_by_id]" hidden="hidden" value="<%= current_user.id %>" />
-      <% end %>
-
-      <div class="text-center">
-         <div class="alert alert-info">
-            Click the "Add New Signature" in the pdf menu bar, place your signature and sign it by clicking on the "Save Signed Document" button.
-         </div>
-         <button class=" btn btn-primary" data-action="click->pdf#save_signed">
-            Save Signed Document
-         </button>
-      </div>
-   <% end %>
 </div>
