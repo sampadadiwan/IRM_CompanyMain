@@ -1,16 +1,7 @@
 
 <tr id="<%= dom_id signature_workflow %>">
   <td>
-    <%= signature_workflow.owner_type %>
-  </td>
-  <td>
-    <%= signature_workflow.reason %>
-  </td>
-  <td>
-    <%= signature_workflow.signatory_ids %>
-  </td>
-  <td>
-    <%= signature_workflow.completed_ids %>
+    <%= link_to signature_workflow.owner_type, signature_workflow.owner %>
   </td>
   <td>
     <%= signature_workflow.status %>

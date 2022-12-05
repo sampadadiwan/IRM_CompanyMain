@@ -3,7 +3,9 @@ class SignatureWorkflowsController < ApplicationController
 
   # GET /signature_workflows or /signature_workflows.json
   def index
-    @signature_workflows = policy_scope(SignatureWorkflow)
+    @signature_workflows = policy_scope(SignatureWorkflow).includes(:owner)
+    @signature_workflows = @signature_workflows.where(owner_id: params[:owner_id]) if params[:owner_id].present?
+    @signature_workflows = @signature_workflows.where(owner_type: params[:owner_type]) if params[:owner_type].present?
   end
 
   # GET /signature_workflows/1 or /signature_workflows/1.json

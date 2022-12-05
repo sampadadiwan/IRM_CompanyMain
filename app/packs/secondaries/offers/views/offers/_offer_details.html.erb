@@ -12,6 +12,11 @@
                 data-action="click->tabdetails#loadData">
               eSigns
           </a>
+
+          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#signature-workflows-tab" 
+                data-action="click->tabdetails#loadData">
+              Signature Workflows
+          </a>
     <% end %>
   </nav>
 
@@ -35,6 +40,19 @@
               <span>Loading...</span>
             <% end %>
             <%= turbo_frame_tag "esigns_list", target: "_top" do %>
+            <% end %>
+          </div>     
+      </div>
+
+
+      <div id="signature-workflows-tab" class="tab-pane fade">
+          <div id="signature_workflows" class="associated_entity">
+            <%= link_to signature_workflows_path( owner_id: @offer.id, owner_type: "Offer"), 
+                                    class: "load_data_link", 
+                                    data: { turbo_frame: 'signature_workflows_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "signature_workflows_list", target: "_top" do %>
             <% end %>
           </div>     
       </div>

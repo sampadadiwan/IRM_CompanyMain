@@ -1,38 +1,4 @@
 <%= render "/layouts/alerts" %>
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Signature Workflows</h1>
-  <%= link_to "New Signature Workflow", new_signature_workflow_path, {class: "btn btn-primary"}  %>
-</div>
-<div class="table-responsive" data-controller="datatable">
-  <table id="signature_workflows" class="table table-bordered dataTable">
-    <thead>
-      <tr>
-        <th>
-          Owner
-        </th>
-        <th>
-          Reason
-        </th>
-        <th>
-          Signatory Ids
-        </th>
-        <th>
-          Completed Ids
-        </th>
-        <th>
-          Status
-        </th>
-        <th>
-          Completed
-        </th>
-        <th>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @signature_workflows.each do |signature_workflow| %>
-        <%= render signature_workflow %>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+<%= turbo_frame_tag "signature_workflows_list", target: "_top" do %>
+    <%= render "/signature_workflows/index", signature_workflows: @signature_workflows %>
+<% end %>
