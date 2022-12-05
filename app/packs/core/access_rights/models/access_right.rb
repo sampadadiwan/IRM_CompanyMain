@@ -8,7 +8,7 @@ class AccessRight < ApplicationRecord
   SELF = "Self".freeze
   SUMMARY = "Summary".freeze
   VIEWS = [ALL, SELF].freeze
-  TYPES = ["All Users for Specific Investor", "All Investors of Specific Category"].freeze
+  TYPES = ["All Users for Specific Stakeholder", "All Stakeholder of Specific Category"].freeze
 
   # Additional permission - this is experimental and does not work yet
   flag :permissions, %i[create read update destroy]

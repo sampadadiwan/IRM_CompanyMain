@@ -4,15 +4,15 @@
         <li class="nav-item">                
             <a class="nav-link" href="/investors" data-toggle="collapse" data-target="#investorMenus">
                 <i class="fas fa-lg fa-fw fa-user-tie"></i>
-                <span>Investors</span>
+                <span>Stakeholders</span>
             </a>
 
             <div id="investorMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
                 <div class="bg-white py-2 collapse-inner rounded">
                     <a class="collapse-item" 
                     href="/investors/new?investor[entity_id]=<%=current_user.entity_id%>">
-                        New Investor</a>
-                    <a class="collapse-item" href="/investors">View Investors</a>
+                        New Stakeholder</a>
+                    <a class="collapse-item" href="/investors">View Stakeholders</a>
                     <a class="collapse-item" href="/approvals">Approvals</a>
                     <a class="collapse-item" href="/notes">Notes</a>
                     <a class="collapse-item" href="/investor_accesses?approved=false">Pending Access</a>

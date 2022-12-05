@@ -1,6 +1,6 @@
 <%= render "layouts/alerts" %>
 
-<%= render "/layouts/steps", steps: ["Add / Manage Notes", "Search Notes", "View Investor Notes"].freeze %>
+<%= render "/layouts/steps", steps: ["Add / Manage Notes", "Search Notes", "View Stakeholder Notes"].freeze %>
 
 <%= turbo_frame_tag "notes_frame", target: "_top" do %>
 
@@ -8,57 +8,4 @@
 <%=paginate @notes %>
 
 <% end %>
-            <!-- <div data-controller="notesdatatable">
-                <table id="notes-datatable" data-source="<%= notes_path(format: :json) %>"
-                    class="table table-bordered table-striped dataTable">
-
-                    <thead>
-                        <tr>
-                            <th>
-                                Id
-                            </th>
-                            <th>
-                                User
-                            </th>
-                            <th class="">
-                                Entity
-                            </th>
-                            <th>
-                                Investor
-                            </th>
-                            <th>
-                                Details
-                            </th>
-                            <th>
-                                On
-                            </th>
-                        </tr>
-
-                    </thead>
-                    <tbody></tbody>
-                    <tfoot>
-                        <tr>
-                            <th>
-                                Id
-                            </th>
-                            <th>
-                                User
-                            </th>
-                            <th class="">
-                                Entity
-                            </th>
-                            <th>
-                                Investor
-                            </th>
-                            <th>
-                                Details
-                            </th>
-                            <th>
-                                On
-                            </th>
-                        </tr>
-
-                    </tfoot>
-                    
-                </table>
-            </div> -->
+       

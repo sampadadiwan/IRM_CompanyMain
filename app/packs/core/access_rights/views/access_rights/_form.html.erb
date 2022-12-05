@@ -40,7 +40,7 @@
     <% unless ["Deal", "DealInvestor"].include? access_right.access_type %>
 
     <div class="form-group" id="category_form_group">
-      <%= form.label :access_to_category, "Select Investor Category" %>
+      <%= form.label :access_to_category, "Select Stakeholder Category" %>
       <%= form.select :access_to_category, Investor.INVESTOR_CATEGORIES(current_user.entity),
             {:include_blank=>false, include_hidden: false}, 
             class: "form-control select2-multiple", disabled: "disabled", multiple: "multiple",
@@ -50,7 +50,7 @@
     <% end %>
 
     <div class="form-group" id="investor_form_group">
-        <%= form.label :access_to_investor_id, "Select Investor" %>
+        <%= form.label :access_to_investor_id, "Select Stakeholder" %>
         <%= form.select :access_to_investor_id, current_user.entity.investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, 
             {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple",
             "data-action": "change->access#addErrorCheck" %>

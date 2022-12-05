@@ -40,7 +40,7 @@ export default class extends Controller {
     console.log("change");
     let selected = $("#access_right_email_or_cat").val();
     switch (selected) {
-      case "All Users for Specific Investor":
+      case "All Users for Specific Stakeholder":
         // hide category & disable
         this.hideCategory();
         this.hideEmployee();
@@ -48,7 +48,7 @@ export default class extends Controller {
         this.showMetadata();
         this.hidePermissons();
         break;
-      case "All Investors of Specific Category":
+      case "All Stakeholder of Specific Category":
         // hide category & disable
         this.showCategory();
         this.hideEmployee();        

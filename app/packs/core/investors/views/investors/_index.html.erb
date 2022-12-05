@@ -1,12 +1,12 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <% header=defined?(title) ? title : "Investors" %>
+  <% header=defined?(title) ? title : "Stakeholders" %>
 
     <h1 class="h3 mb-0 text-gray-800">
       <%= header %>
     </h1>
 
     <span>
-    <%= link_to "New Investor" , new_investor_path("investor[entity_id]": current_user.entity_id),
+    <%= link_to "New Stakeholder" , new_investor_path("investor[entity_id]": current_user.entity_id),
       {class: "btn btn-primary" } %>
 
     <%= link_to "All Notes" , notes_path, {class: "btn btn-success" } %>
@@ -32,7 +32,7 @@
           
           
 
-            <%= link_to "Add Investor Notice" , 
+            <%= link_to "Add Stakeholder Notice" , 
                 new_investor_notice_path( "investor_notice[owner_id]": current_user.entity_id, 
                                           "investor_notice[owner_type]": "Entity"), {class: "dropdown-item" } %>
       
@@ -51,7 +51,7 @@
       <thead>
         <tr>
           <th>
-            Investor
+            Stakeholder
           </th>
           <th class="hideMobP hideTab">
             Tags
