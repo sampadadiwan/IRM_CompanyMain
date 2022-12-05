@@ -5,7 +5,7 @@ class DocumentsController < ApplicationController
 
   before_action :set_document, only: %w[show update destroy edit sign]
   after_action :verify_authorized, except: %i[index search investor_documents]
-  # after_action :verify_policy_scoped, only: []
+  after_action :verify_policy_scoped, only: []
   # skip_before_action :authenticate_user!, :only => [:show]
 
   impressionist actions: [:show]
