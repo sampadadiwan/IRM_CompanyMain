@@ -23,13 +23,13 @@ class Fund < ApplicationRecord
   belongs_to :form_type, optional: true
   serialize :properties, Hash
 
-  monetize :call_amount_cents, :committed_amount_cents, :collected_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.entity.currency }
+  monetize :call_amount_cents, :committed_amount_cents, :collected_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.currency }
 
-  validates :name, presence: true
+  validates :name, :currency, presence: true
 
   before_validation :setup_funding_round
   def setup_funding_round
-    self.funding_round = FundingRound.new(name:, entity_id:, status: "Open", currency: entity.currency)
+    self.funding_round = FundingRound.new(name:, entity_id:, status: "Open", currency:)
   end
 
   def folder_path

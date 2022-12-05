@@ -11,7 +11,7 @@ class CapitalDistribution < ApplicationRecord
 
   has_many :capital_distribution_payments, dependent: :destroy, inverse_of: :capital_distribution
 
-  monetize :net_amount_cents, :carry_cents, :gross_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.entity.currency }
+  monetize :net_amount_cents, :carry_cents, :gross_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.fund.currency }
 
   before_save :compute_net_amount
   def compute_net_amount

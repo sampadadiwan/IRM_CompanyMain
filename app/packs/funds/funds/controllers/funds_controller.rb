@@ -13,6 +13,7 @@ class FundsController < ApplicationController
   def new
     @fund = Fund.new
     @fund.entity_id = current_user.entity_id
+    @fund.currency = @fund.entity.currency
     setup_custom_fields(@fund)
     authorize(@fund)
   end
@@ -79,7 +80,7 @@ class FundsController < ApplicationController
   def fund_params
     params.require(:fund).permit(:name, :committed_amount, :details, :collected_amount,
                                  :entity_id, :tag_list, :show_valuations, :show_fund_ratios,
-                                 :investor_signature_types, :fund_signature_types,
+                                 :investor_signature_types, :fund_signature_types, :currency,
                                  :fund_signatory_id, :trustee_signatory_id, properties: {})
   end
 end

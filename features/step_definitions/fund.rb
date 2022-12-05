@@ -11,6 +11,7 @@
 
     click_on("New Fund")
     fill_in('fund_name', with: @fund.name)
+    fill_in('fund_currency', with: @fund.currency)
     # fill_in('fund_details', with: @fund.details)
     find('trix-editor').click.set(@fund.details)
     click_on("Save")
@@ -231,7 +232,7 @@
 
 Then('the capital call collected amount should be {string}') do |arg|
   @capital_call.reload
-  @capital_call.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.entity.currency)
+  @capital_call.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.fund.currency)
 end
 
   

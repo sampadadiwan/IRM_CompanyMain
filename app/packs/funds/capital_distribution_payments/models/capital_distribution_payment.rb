@@ -11,7 +11,7 @@ class CapitalDistributionPayment < ApplicationRecord
   belongs_to :investor
   belongs_to :form_type, optional: true
 
-  monetize :amount_cents, with_currency: ->(i) { i.entity.currency }
+  monetize :amount_cents, with_currency: ->(i) { i.fund.currency }
   validates :folio_id, presence: true
 
   counter_culture :capital_distribution,

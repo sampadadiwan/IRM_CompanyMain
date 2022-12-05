@@ -19,7 +19,7 @@ class CapitalRemittance < ApplicationRecord
   scope :paid, -> { where(status: "Paid") }
   scope :pending, -> { where(status: "Pending") }
 
-  monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
+  monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
   validates :folio_id, presence: true
 
   counter_culture :capital_call, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },

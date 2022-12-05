@@ -18,7 +18,7 @@ class CapitalCall < ApplicationRecord
   validates :name, :due_date, :percentage_called, presence: true
   validates :percentage_called, numericality: { in: 0..100 }
 
-  monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
+  monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
   counter_culture :fund, column_name: 'call_amount_cents', delta_column: 'call_amount_cents'
 
   before_save :compute_call_amount

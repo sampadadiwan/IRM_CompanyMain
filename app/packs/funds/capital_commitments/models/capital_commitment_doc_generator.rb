@@ -39,7 +39,7 @@ class CapitalCommitmentDocGenerator
       r.add_field :investor_name, capital_commitment.investor.investor_name
       r.add_field :commitment_amount, money_to_currency(capital_commitment.committed_amount)
 
-      amount_in_words = capital_commitment.entity.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
+      amount_in_words = capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
       r.add_field :commitment_amount_words, amount_in_words
 
       generate_custom_fields(r, capital_commitment)

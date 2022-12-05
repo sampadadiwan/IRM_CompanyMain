@@ -23,7 +23,7 @@ class CapitalCommitment < ApplicationRecord
   has_many :esigns, -> { order("sequence_no asc") }, as: :owner
   has_many :signature_workflows, as: :owner
 
-  monetize :committed_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.entity.currency }
+  monetize :committed_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
 
   validates :committed_amount_cents, numericality: { greater_than: 0 }
   validates :folio_id, presence: true

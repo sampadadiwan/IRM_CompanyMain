@@ -120,6 +120,7 @@ FactoryBot.define do
     details { Faker::Company.catch_phrase }
     entity { Entity.funds.sample }
     tag_list {  }
+    currency { ["INR", "USD", "SGD"].sample }
   end
 
   

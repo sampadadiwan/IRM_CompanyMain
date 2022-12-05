@@ -2,6 +2,20 @@
 <p>
 
     You have been granted access to the <%= @access_right.access_type %> '<%= link_to @access_right.owner.name, @access_right.owner %>' by <%= @access_right.entity.name %>.
+</p>
+
+    <% 
+        details = @access_right.owner.try(:notes) 
+        details ||= @access_right.owner.try(:details) 
+        details ||= @access_right.owner.try(:text) 
+        
+        if details
+    %>
+        <%= details.is_a?(ActionText::RichText) ? details.to_plain_text : details %>
+
+    <% end %>
+
+<p>
     <p class="btn btn-primary"><%= link_to "View #{@access_right.access_type}", [@access_right.owner, subdomain: @access_right.entity.sub_domain] %></p>
 
 </p>
