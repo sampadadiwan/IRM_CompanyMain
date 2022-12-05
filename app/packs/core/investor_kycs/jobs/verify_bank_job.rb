@@ -33,11 +33,15 @@ class VerifyBankJob < ApplicationJob
     Rails.logger.debug { "name_at_bank = #{name_at_bank}" }
     @model.bank_verified = false
 
-    given_names = @model.full_name.downcase.split
+    if response["fuzzy_match_result"] && response["fuzzy_match_score"] > 50
+      @model.bank_verified = true
+    else
+      given_names = @model.full_name.downcase.split
 
-    name_at_bank.each do |name|
-      Rails.logger.debug { "Matching #{name} with #{@model.full_name}" }
-      @model.bank_verified = true if given_names.include?(name.downcase)
+      name_at_bank.each do |name|
+        Rails.logger.debug { "Matching #{name} with #{@model.full_name}" }
+        @model.bank_verified = true if given_names.include?(name.downcase)
+      end
     end
 
     @model.bank_verification_status = "Name does not match" unless @model.bank_verified

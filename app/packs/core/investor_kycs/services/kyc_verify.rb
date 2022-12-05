@@ -56,6 +56,13 @@ class KycVerify
     end
   end
 
+  #   {"id"=>"DC8GII9WMEGVJ9K",
+  #  "verified"=>true,
+  #  "verified_at"=>"2022-12-05 11:19:35",
+  #  "beneficiary_name_with_bank"=>"THIMMAIAH C",
+  #  "fuzzy_match_result"=>true,
+  #  "fuzzy_match_score"=>88}
+
   def verify_bank(full_name, account_number, ifsc)
     HTTParty.post(
       "#{BASE_URL}/client/verify/bank_account",
