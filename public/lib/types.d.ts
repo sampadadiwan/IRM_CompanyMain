@@ -40549,7 +40549,7 @@ declare type WebViewerOptions = {
      */
     fullAPI?: boolean;
     /**
-     * URL path to a document to load on startup. If an array of 2 or more documents is passed, webviewer will enable multi-tab mode.
+     * URL path to a document to load on company. If an array of 2 or more documents is passed, webviewer will enable multi-tab mode.
      */
     initialDoc?: string | string[];
     /**

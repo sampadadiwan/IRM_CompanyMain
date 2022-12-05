@@ -1,8 +1,8 @@
 
 <% if !current_user.entity_id.present? %>
     <div class="alert alert-danger" role="alert">
-        You are not associated with your startup in our database. Step 1.   
-        <a class="btn btn-primary" rel="nofollow" href="<%= new_entity_path("entity[entity_type]": "Startup") %>">Setup Startup →</a>
+        You are not associated with your company in our database. Step 1.   
+        <a class="btn btn-primary" rel="nofollow" href="<%= new_entity_path("entity[entity_type]": "Company") %>">Setup Company →</a>
     </div>
 <% end %>
 

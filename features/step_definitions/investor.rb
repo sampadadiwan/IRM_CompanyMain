@@ -3,9 +3,9 @@ Given('I am at the investor page') do
 end
 
 When('I create a new investor {string}') do |arg1|
-  @investor_entity = FactoryBot.build(:entity, entity_type: "VC")
+  @investor_entity = FactoryBot.build(:entity, entity_type: "Investor")
   key_values(@investor_entity, arg1)
-  click_on("New Investor")
+  click_on("New Stakeholder")
 
   if (Entity.vcs.count > 0)
     fill_in('investor_investor_name', with: @investor_entity.name)
@@ -102,7 +102,7 @@ end
 
 
 Given('there is an existing investor entity {string}') do |arg1|
-  @investor_entity = FactoryBot.build(:entity, entity_type: "VC")
+  @investor_entity = FactoryBot.build(:entity, entity_type: "Investor")
   key_values(@investor_entity, arg1)
   @investor_entity.save
   puts "\n####Investor Entity####\n"
@@ -111,7 +111,7 @@ Given('there is an existing investor entity {string}') do |arg1|
 end
 
 When('I create a new investor {string} for the existing investor entity') do |string|
-  click_on("New Investor")
+  click_on("New Stakeholder")
   
   fill_in('investor_investor_name', with: @investor_entity.name)
   
@@ -125,8 +125,8 @@ Given('Given I upload an investor access file for employees') do
   # Sidekiq.redis(&:flushdb)
 
   visit(investor_path(Investor.first))
-  click_on("Employee Investors")
-  click_on("Upload Employee Investors")
+  click_on("Employee Users")
+  click_on("Upload Employee Users")
   fill_in('import_upload_name', with: "Test Investor Access Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
   sleep(1)
@@ -154,7 +154,7 @@ Then('There should be {string} investor access created') do |count|
 end
 
 
-Given('Given I upload an investors file for the startup') do
+Given('Given I upload an investors file for the company') do
   visit(investors_path)
   click_on("Actions")
   click_on("Upload")

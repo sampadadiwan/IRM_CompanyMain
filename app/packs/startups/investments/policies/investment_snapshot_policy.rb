@@ -3,7 +3,7 @@ class InvestmentSnapshotPolicy < ApplicationPolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      elsif user.curr_role == "startup"
+      elsif user.curr_role == "company"
         scope.where(entity_id: user.entity_id)
       end
     end

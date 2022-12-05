@@ -40,7 +40,7 @@ class InterestPolicy < SaleBasePolicy
   def unscramble?
     (record.escrow_deposited? && user.entity_id == record.entity_id) || # Escrow is deposited
       user.entity_id == record.interest_entity_id || # Interest is by this entity
-      permissioned_investor?(:seller) # Is a seller added by the startup for this sale
+      permissioned_investor?(:seller) # Is a seller added by the company for this sale
   end
 
   def create?

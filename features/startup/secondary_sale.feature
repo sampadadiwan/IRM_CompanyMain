@@ -1,5 +1,5 @@
 Feature: Secondary Sale
-  Can create and view a sale as a startup
+  Can create and view a sale as a company
 
 Scenario Outline: Create new sale
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -13,8 +13,8 @@ Scenario Outline: Create new sale
 
   Examples:
   	|user	    |entity               |sale             |msg	|
-  	|  	        |entity_type=Startup  |name=Grand Sale  |Secondary sale was successfully created|
-    |  	        |entity_type=Startup  |name=Winter Sale |Secondary sale was successfully created|
+  	|  	        |entity_type=Company  |name=Grand Sale  |Secondary sale was successfully created|
+    |  	        |entity_type=Company  |name=Winter Sale |Secondary sale was successfully created|
 
 
 
@@ -32,13 +32,13 @@ Scenario Outline: Create new sale and make visible
 
   Examples:
   	|user	      |entity               |sale             |msg	|
-  	|  	        |entity_type=Startup  |name=Grand Sale  |Secondary sale was successfully created|
-    |  	        |entity_type=Startup  |name=Winter Sale |Secondary sale was successfully created|
+  	|  	        |entity_type=Company  |name=Grand Sale  |Secondary sale was successfully created|
+    |  	        |entity_type=Company  |name=Winter Sale |Secondary sale was successfully created|
 
 
 
 Scenario Outline: Sale Allocation
-  Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Startup"
+  Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Company"
   Given the user has role "company_admin"
   Given there is a sale "<sale>"
   Given there are "2" employee investors
@@ -65,7 +65,7 @@ Scenario Outline: Sale Allocation
     
 
 Scenario Outline: Sale Offer SPA
-  Given there is a user "first_name=Emp1" for an entity "entity_type=Startup"
+  Given there is a user "first_name=Emp1" for an entity "entity_type=Company"
   Given the user has role "company_admin"
   Given there is a sale "<sale>"
   And the sale has a SPA template
@@ -94,7 +94,7 @@ Scenario Outline: Sale Offer SPA
 
 
 Scenario Outline: Sale To Cap Table
-  Given there is a user "first_name=Emp1" for an entity "entity_type=Startup"
+  Given there is a user "first_name=Emp1" for an entity "entity_type=Company"
   Given the user has role "company_admin"
   Given there is a sale "<sale>"
   Given there are "3" employee investors

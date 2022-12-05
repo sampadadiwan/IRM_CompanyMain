@@ -1,5 +1,5 @@
 Feature: Fund Access
-  Can create and view a fund as a startup
+  Can create and view a fund as a company
 
 Scenario Outline: Access fund
   Given there is a user "<user>" for an entity "<entity>"

@@ -3,7 +3,7 @@ class ExcercisePolicy < ApplicationPolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      elsif user.has_cached_role?(:startup)
+      elsif user.has_cached_role?(:company)
         scope.where(entity_id: user.entity_id)
       else
         scope.where(user_id: user.id)

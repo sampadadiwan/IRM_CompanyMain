@@ -17,7 +17,7 @@ class CreateAggregateInvestment
       funding_round_id = if investment.investment_instrument == "Units"
                            # Funding round applies only to Investment Funds aggregate investments.
                            # This is because in investment funds, the investors may be invested across multiple Funds
-                           # Aggregation is done per investor per Fund, unlike Startup where aggregation is done per investor only
+                           # Aggregation is done per investor per Fund, unlike Company where aggregation is done per investor only
                            investment.funding_round_id
                          end
 

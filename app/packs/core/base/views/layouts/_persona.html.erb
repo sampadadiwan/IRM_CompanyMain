@@ -2,8 +2,8 @@
   <% 
     personas = []
 
-    if current_user.has_cached_role?(:startup) 
-      personas << ["My Company", :startup] 
+    if current_user.has_cached_role?(:company) 
+      personas << ["My Company", :company] 
     end
 
     if current_user.has_cached_role?(:investor) 

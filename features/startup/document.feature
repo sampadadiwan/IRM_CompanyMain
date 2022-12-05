@@ -1,5 +1,5 @@
 Feature: Document
-  Can create and view a document as a startup
+  Can create and view a document as a company
 
 Scenario Outline: Create new document
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -13,8 +13,8 @@ Scenario Outline: Create new document
 
   Examples:
   	|user	    |entity               |document                                     |
-  	|  	        |entity_type=Startup  |name=Q1 Summary;download=true;printing=false |
-    |  	        |entity_type=Startup  |name=Strategy;download=true;printing=true    |
+  	|  	        |entity_type=Company  |name=Q1 Summary;download=true;printing=false |
+    |  	        |entity_type=Company  |name=Strategy;download=true;printing=true    |
 
 
 Scenario Outline: Create new document
@@ -29,12 +29,12 @@ Scenario Outline: Create new document
 
   Examples:
   	|user	    |entity               |document                   |access_rights	|
-  	|  	      |entity_type=Startup  |name=Q1 Summary;folder_id=1|access_type=Folder;access_to_category=Lead Investor|
-    |  	      |entity_type=Startup  |name=Strategy;folder_id=1  |access_type=Folder;access_to_category=Board|
+  	|  	      |entity_type=Company  |name=Q1 Summary;folder_id=1|access_type=Folder;access_to_category=Lead Investor|
+    |  	      |entity_type=Company  |name=Strategy;folder_id=1  |access_type=Folder;access_to_category=Board|
 
 Scenario Outline: Add deal document
   Given Im logged in as a user "<user>" for an entity "<entity>"
-  And there exists a deal "<deal>" for my startup
+  And there exists a deal "<deal>" for my company
   And I visit the deal details page
   When I click "Deal Docs"
   When I create a new document "<document>"
@@ -46,12 +46,12 @@ Scenario Outline: Add deal document
 
 Examples:
   	|user	      |entity               |deal          |document	       |
-  	|  	        |entity_type=Startup  |name=Series A |name=Deal Summary|
-    |  	        |entity_type=Startup  |name=Series B |name=Deal Details|
+  	|  	        |entity_type=Company  |name=Series A |name=Deal Summary|
+    |  	        |entity_type=Company  |name=Series B |name=Deal Details|
 
 Scenario Outline: Add deal investor document
   Given Im logged in as a user "<user>" for an entity "<entity>"
-  And there exists a deal "<deal>" for my startup
+  And there exists a deal "<deal>" for my company
   And there are "1" deal_investors for the deal
   And I visit the deal investor details page
   When I create a new document "<document>"
@@ -62,8 +62,8 @@ Scenario Outline: Add deal investor document
 
 Examples:
   	|user	      |entity               |deal          |document	       |
-  	|  	        |entity_type=Startup  |name=Series A |name=Deal Summary|
-    |  	        |entity_type=Startup  |name=Series B |name=Deal Details|
+  	|  	        |entity_type=Company  |name=Series A |name=Deal Summary|
+    |  	        |entity_type=Company  |name=Series B |name=Deal Details|
 
 
 Scenario Outline: Add Sale documents
@@ -82,8 +82,8 @@ Scenario Outline: Add Sale documents
 
   Examples:
   	|user	      |entity               |sale             |document	|
-  	|  	        |entity_type=Startup  |name=Grand Sale  |name=Doc1111|
-    |  	        |entity_type=Startup  |name=Winter Sale |name=Doc2222|
+  	|  	        |entity_type=Company  |name=Grand Sale  |name=Doc1111|
+    |  	        |entity_type=Company  |name=Winter Sale |name=Doc2222|
 
 
 Scenario Outline: Add Offer documents
@@ -104,8 +104,8 @@ Scenario Outline: Add Offer documents
 
   Examples:
   	|user	      |entity               |sale             |document	|
-  	|  	        |entity_type=Startup  |name=Grand Sale  |name=Doc1111|
-    |  	        |entity_type=Startup  |name=Winter Sale |name=Doc2222|
+  	|  	        |entity_type=Company  |name=Grand Sale  |name=Doc1111|
+    |  	        |entity_type=Company  |name=Winter Sale |name=Doc2222|
 
 
 Scenario Outline: Add Interest documents
@@ -127,5 +127,5 @@ Scenario Outline: Add Interest documents
 
   Examples:
   	|user	      |entity               |sale             |document	|
-  	|  	        |entity_type=Startup  |name=Grand Sale  |name=Doc1111|
-    |  	        |entity_type=Startup  |name=Winter Sale |name=Doc2222|
+  	|  	        |entity_type=Company  |name=Grand Sale  |name=Doc1111|
+    |  	        |entity_type=Company  |name=Winter Sale |name=Doc2222|

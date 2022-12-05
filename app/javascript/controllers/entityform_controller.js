@@ -5,7 +5,7 @@ export default class extends Controller {
     $( document ).on('turbo:render', function() {
         console.log("EntityFormController");
 
-        if ($("#entity_entity_type").val() == "VC") {
+        if ($("#entity_entity_type").val() == "Investor") {
           $("#entity_founded_group").toggle();
           $("#entity_funding_amount").toggle();
           $("#entity_funding_unit").toggle();

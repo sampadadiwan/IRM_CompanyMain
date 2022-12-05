@@ -12,7 +12,7 @@
 </div>
 
 <%= render "/layouts/steps", steps: ["Setup Investor Details", "Upload Deal Docs", 
-            "View Deal Steps", "Chat / Manage Tasks"].freeze if current_user.has_cached_role?(:startup) %>
+            "View Deal Steps", "Chat / Manage Tasks"].freeze if current_user.has_cached_role?(:company) %>
 
 <%= render "deal_investors/deal_investor_details", 
   deal_investor: @deal_investor, deal: @deal_investor.deal, show_tranch: false %>

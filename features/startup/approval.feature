@@ -1,5 +1,5 @@
 Feature: Approval
-  Can create and view a approval as a startup
+  Can create and view a approval as a company
 
 Scenario Outline: Create new approval
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -12,8 +12,8 @@ Scenario Outline: Create new approval
 
   Examples:
   	|user	    |entity               |approval                 |msg	|
-  	|  	        |entity_type=Startup  |title=Test approval      |Approval was successfully created|
-    |  	        |entity_type=Startup  |title=MErger Approval    |Approval was successfully created|
+  	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created|
+    |  	        |entity_type=Company  |title=MErger Approval    |Approval was successfully created|
 
 
 
@@ -29,8 +29,8 @@ Scenario Outline: Edit approval
 
   Examples:
   	|user	    |entity               |approval                 |msg	|
-  	|  	        |entity_type=Startup  |title=Test approval      |Approval was successfully created|
-    |  	        |entity_type=Startup  |title=MErger Approval    |Approval was successfully created|
+  	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created|
+    |  	        |entity_type=Company  |title=MErger Approval    |Approval was successfully created|
 
 
 Scenario Outline: Grant Access Rights to approval
@@ -47,8 +47,8 @@ Scenario Outline: Grant Access Rights to approval
 
   Examples:
   	|user	    |entity               |approval                 |msg	|
-  	|  	        |entity_type=Startup  |title=Test approval      |Approval was successfully created|
-    |  	        |entity_type=Startup  |title=Merger Approval    |Approval was successfully created|
+  	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created|
+    |  	        |entity_type=Company  |title=Merger Approval    |Approval was successfully created|
 
 
 Scenario Outline: Grant Access Rights to approval after approved
@@ -64,8 +64,8 @@ Scenario Outline: Grant Access Rights to approval after approved
 
   Examples:
   	|user	    |entity               |approval                                 |msg	|
-  	|  	        |entity_type=Startup  |title=Test approval;approved=true      |Approval was successfully created|
-    |  	        |entity_type=Startup  |title=Merger Approval;approved=true    |Approval was successfully created|
+  	|  	        |entity_type=Company  |title=Test approval;approved=true      |Approval was successfully created|
+    |  	        |entity_type=Company  |title=Merger Approval;approved=true    |Approval was successfully created|
 
 
 
@@ -89,5 +89,5 @@ Scenario Outline: Provide approval response
   
   Examples:
   	|user	    |entity               |approval                 |msg	|
-  	|  	        |entity_type=Startup  |title=Test approval      |Approval was successfully created|
-    |  	        |entity_type=Startup  |title=Merger Approval    |Approval was successfully created|
+  	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created|
+    |  	        |entity_type=Company  |title=Merger Approval    |Approval was successfully created|

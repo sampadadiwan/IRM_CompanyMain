@@ -1,5 +1,5 @@
 Feature: Note
-  Can create and view a note as a startup
+  Can create and view a note as a company
 
 Scenario Outline: Create new note
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -13,5 +13,5 @@ Scenario Outline: Create new note
 
   Examples:
   	|user	    |entity               |investor     |msg	|
-  	|  	        |entity_type=Startup  |name=Sequoia |Note was successfully created|
-    |  	        |entity_type=Startup  |name=Bearing |Note was successfully created|
+  	|  	        |entity_type=Company  |name=Sequoia |Note was successfully created|
+    |  	        |entity_type=Company  |name=Bearing |Note was successfully created|

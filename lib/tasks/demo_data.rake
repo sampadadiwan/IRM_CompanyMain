@@ -6,9 +6,9 @@ namespace :irm do
 
   desc "generates fake Entity for testing"
   task generateFakeEntities: :environment do
-    startup_names = Rails.env == "development" ? ["Urban Company"] : ["Urban Company", "Demo Startup", "Wakefit"]#, "PayTm", "Apna", "RazorPay", "Delhivery"]
+    startup_names = Rails.env == "development" ? ["Urban Company"] : ["Urban Company", "Demo Company", "Wakefit"]#, "PayTm", "Apna", "RazorPay", "Delhivery"]
     startup_names.each do |name|
-      e = FactoryBot.create(:entity, entity_type: "Startup", name: name)
+      e = FactoryBot.create(:entity, entity_type: "Company", name: name)
       puts "Entity #{e.name}"
       (1..2).each do |j|
         user = FactoryBot.create(:user, entity: e, first_name: "Emp#{j}")
@@ -54,7 +54,7 @@ namespace :irm do
     vc_names = ["Sequoia Capital", "Accel", "Blume Ventures", "Tiger Global Management", "Kalaari Capital"] 
                 # "Drip Ventures", "Matrix Partners", "Nexus Venture Partners", "Indian Angel Network", "Omidyar Network India"]
     vc_names.each do |name|
-      e = FactoryBot.create(:entity, entity_type: "VC", name: name)
+      e = FactoryBot.create(:entity, entity_type: "Investor", name: name)
       puts "Entity #{e.name}"
       (1..2).each do |j|
         user = FactoryBot.create(:user, entity: e, first_name: "Emp#{j}")
@@ -86,9 +86,9 @@ namespace :irm do
 
   desc "generates fake Blank Entity for testing"
   task generateFakeBlankEntities: :environment do
-    # startup_names = ["Demo-Startup"]
+    # startup_names = ["Demo-Company"]
     # startup_names.each do |name|
-    #   e = FactoryBot.create(:entity, entity_type: "Startup", name: name)
+    #   e = FactoryBot.create(:entity, entity_type: "Company", name: name)
     #   puts "Entity #{e.name}"
     #   (1..1).each do |j|
     #     user = FactoryBot.create(:user, entity: e, first_name: "Emp#{j}")
@@ -107,10 +107,10 @@ namespace :irm do
     end
 
 
-    vc_names = ["Demo-VC"] 
+    vc_names = ["Demo-Investor"] 
 
     vc_names.each do |name|
-      e = FactoryBot.create(:entity, entity_type: "VC", name: name)
+      e = FactoryBot.create(:entity, entity_type: "Investor", name: name)
       puts "Entity #{e.name}"
       (1..2).each do |j|
         user = FactoryBot.create(:user, entity: e, first_name: "Emp#{j}")
@@ -496,7 +496,7 @@ namespace :irm do
     i = 1
     Entity.startups.each do |e|
       5.times do
-        FactoryBot.create(:user, entity: e, email: "startup#{i}@gmail.com")
+        FactoryBot.create(:user, entity: e, email: "company#{i}@gmail.com")
         i += 1
       end
     end

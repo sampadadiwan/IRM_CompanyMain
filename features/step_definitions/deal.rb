@@ -56,7 +56,7 @@ Given('I visit the deal details page') do
 end
 
 
-Given('there exists a deal {string} for my startup') do |arg1|
+Given('there exists a deal {string} for my company') do |arg1|
   @deal = FactoryBot.build(:deal)
   key_values(@deal, arg1)
   @deal = CreateDeal.call(deal: @deal).deal
@@ -142,23 +142,23 @@ end
 
 ############################################################################
 ############################################################################
-#######################  VC related test steps #############################  
+#######################  Investor related test steps #############################  
 ############################################################################
 ############################################################################
 
 
 
 Given('there are {string} exisiting deals {string} with another firm in the startups') do |count, args|
-  @another_entity = FactoryBot.create(:entity, entity_type: "VC", name: "Another VC Firm")
+  @another_entity = FactoryBot.create(:entity, entity_type: "Investor", name: "Another Investor Firm")
 
-  Entity.startups.each do |startup|
-    @investor = FactoryBot.create(:investor, investor_entity: @another_entity, entity: startup)
+  Entity.startups.each do |company|
+    @investor = FactoryBot.create(:investor, investor_entity: @another_entity, entity: company)
     (1..count.to_i).each do 
-      deal = FactoryBot.build(:deal, entity: startup)
+      deal = FactoryBot.build(:deal, entity: company)
       deal = CreateDeal.call(deal: deal).deal
       
       begin
-        di = FactoryBot.create(:deal_investor, investor: @investor, entity: startup, deal: deal)
+        di = FactoryBot.create(:deal_investor, investor: @investor, entity: company, deal: deal)
       rescue Exception => e
         puts deal.entity.folders.collect(&:full_path)  
         puts deal.to_json
@@ -170,10 +170,10 @@ end
 
 Given('there are {string} exisiting deals {string} with my firm in the startups') do |count, args|
 
-  Entity.startups.each do |startup|
+  Entity.startups.each do |company|
     (1..count.to_i).each do 
-      deal = FactoryBot.create(:deal, entity: startup)
-      di = FactoryBot.create(:deal_investor, investor: @investor, entity: startup, deal: deal)
+      deal = FactoryBot.create(:deal, entity: company)
+      di = FactoryBot.create(:deal_investor, investor: @investor, entity: company, deal: deal)
     end
   end
 end
@@ -182,7 +182,7 @@ Given('I am at the deal_investors page') do
   visit(deal_investors_path)
 end
 
-Then('I should not see the deals of the startup') do
+Then('I should not see the deals of the company') do
   DealInvestor.all.each do |di|
     within("#deal_investors") do
       expect(page).to have_no_content(di.deal_name)
@@ -192,7 +192,7 @@ Then('I should not see the deals of the startup') do
 end
 
 
-Then('I should see the deals of the startup') do
+Then('I should see the deals of the company') do
   DealInvestor.all.each do |di|
     expect(page).to have_content(di.deal_name)
     expect(page).to have_content(di.investor_name)

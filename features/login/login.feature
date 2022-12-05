@@ -9,10 +9,10 @@ Scenario Outline: Login Successfully
 
   Examples:
   	|user	              |entity               |msg	|
-  	|  	                |entity_type=VC       |Signed in successfully|
-    |  	                |entity_type=Startup  |Signed in successfully|
-    |accept_terms=false |entity_type=Startup  |Please accept the Terms and Conditions|
-    |system_created=true|entity_type=Startup  |Please change your password at the earliest|
+  	|  	                |entity_type=Investor       |Signed in successfully|
+    |  	                |entity_type=Company  |Signed in successfully|
+    |accept_terms=false |entity_type=Company  |Please accept the Terms and Conditions|
+    |system_created=true|entity_type=Company  |Please change your password at the earliest|
 
 Scenario Outline: Login Successfully
   Given there is a user "<user>"

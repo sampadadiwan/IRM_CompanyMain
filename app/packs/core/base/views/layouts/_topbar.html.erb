@@ -65,7 +65,7 @@
 
             <% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role]) do %>
 
-                <% if current_user && current_user.has_cached_role?(:startup) && 
+                <% if current_user && current_user.has_cached_role?(:company) && 
                     (   
                         current_user.has_cached_role?(:investor) || 
                         current_user.has_cached_role?(:holding) 

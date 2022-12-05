@@ -1,5 +1,5 @@
 Feature: Offer
-  Can create and view a offers as a startup employee
+  Can create and view a offers as a company employee
 
 Scenario Outline: See my holdings in a sale
   Given there is a user "<user>" for an entity "<entity>"
@@ -13,8 +13,8 @@ Scenario Outline: See my holdings in a sale
   Then I should see only my holdings
 Examples:
     |user	      |entity               |sale                                     |quantity	|
-    |  	        |entity_type=Startup  |name=Grand Sale;visible_externally=true  |100        |
-    |  	        |entity_type=Startup  |name=Winter Sale;visible_externally=true |200        |
+    |  	        |entity_type=Company  |name=Grand Sale;visible_externally=true  |100        |
+    |  	        |entity_type=Company  |name=Winter Sale;visible_externally=true |200        |
 
 
 
@@ -46,8 +46,8 @@ Scenario Outline: Place an offer
 
 Examples:
     |user	    |entity               |sale                                                         |offer	             | total_quantity |
-    |  	        |entity_type=Startup  |name=Grand Sale;visible_externally=true;percent_allowed=100  |quantity=100        | 100            |
-    |  	        |entity_type=Startup  |name=Winter Sale;visible_externally=true;percent_allowed=100 |quantity=50         | 50             |
+    |  	        |entity_type=Company  |name=Grand Sale;visible_externally=true;percent_allowed=100  |quantity=100        | 100            |
+    |  	        |entity_type=Company  |name=Winter Sale;visible_externally=true;percent_allowed=100 |quantity=50         | 50             |
 
 
 
@@ -65,12 +65,12 @@ Scenario Outline: Place a wrong offer
 
 Examples:
     |user	    |entity               |sale                                                        |offer	              | msg |
-    |  	      |entity_type=Startup  |name=Grand Sale;visible_externally=true;percent_allowed=50  |quantity=100;approved=false        | Over Allowed Percentage |
-    |  	      |entity_type=Startup  |name=Winter Sale;visible_externally=true;percent_allowed=50 |quantity=200;approved=false        | is > total holdings   |
+    |  	      |entity_type=Company  |name=Grand Sale;visible_externally=true;percent_allowed=50  |quantity=100;approved=false        | Over Allowed Percentage |
+    |  	      |entity_type=Company  |name=Winter Sale;visible_externally=true;percent_allowed=50 |quantity=200;approved=false        | is > total holdings   |
 
 
 
-Scenario Outline: Approve holdings as a startup
+Scenario Outline: Approve holdings as a company
   Given Im logged in as a user "<user>" for an entity "<entity>"
   And the user has role "approver,company_admin"
   Given there are "2" employee investors
@@ -85,13 +85,13 @@ Scenario Outline: Approve holdings as a startup
   And the sales total_offered_quantity should be "200"  
 Examples:
     |user	    |entity               |sale                                                         |quantity	|
-    |  	        |entity_type=Startup  |name=Grand Sale;visible_externally=true;percent_allowed=100  |100        |
-    |  	        |entity_type=Startup  |name=Winter Sale;visible_externally=true;percent_allowed=100 |200        |
+    |  	        |entity_type=Company  |name=Grand Sale;visible_externally=true;percent_allowed=100  |100        |
+    |  	        |entity_type=Company  |name=Winter Sale;visible_externally=true;percent_allowed=100 |200        |
 
 
 
 Scenario Outline: Import offer to sale
-  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Startup"
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
   Given the user has role "company_admin"
   Given there is a sale "name=Summer Sale"
   Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"

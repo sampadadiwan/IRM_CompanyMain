@@ -299,7 +299,7 @@ end
 
 Given('there is are {string} investors') do |count|
   (1..count.to_i).each do |i|
-    vc = FactoryBot.create(:entity, entity_type: "VC")
+    vc = FactoryBot.create(:entity, entity_type: "Investor")
     inv = FactoryBot.create(:investor, entity: @entity, investor_entity: vc)
   end
 end
@@ -380,7 +380,7 @@ end
 
 ############################################################################
 ############################################################################
-#######################  VC related test steps #############################  
+#######################  Investor related test steps #############################  
 ############################################################################
 ############################################################################
 
@@ -389,7 +389,7 @@ Given('there are {string} exisiting investments {string} from my firm in startup
   @funding_round ||= FactoryBot.create(:funding_round, entity: @entity)
 
   (1..count.to_i).each do |i|
-    @startup_entity = FactoryBot.create(:entity, entity_type: "Startup", name: "Startup #{i}")
+    @startup_entity = FactoryBot.create(:entity, entity_type: "Company", name: "Company #{i}")
     @startup_entity_employee = FactoryBot.create(:user, entity: @startup_entity)
     @investor = FactoryBot.create(:investor, investor_entity: @entity, entity: @startup_entity)
     (1..count.to_i).each do 
@@ -405,13 +405,13 @@ end
 Given('there are {string} exisiting investments {string} from another firm in startups') do |count, args|
   @funding_round ||= FactoryBot.create(:funding_round, entity: @entity)
 
-  @another_entity = FactoryBot.create(:entity, entity_type: "VC", name: "Another VC Firm")
+  @another_entity = FactoryBot.create(:entity, entity_type: "Investor", name: "Another Investor Firm")
   @another_entity_employee = FactoryBot.create(:user, entity: @another_entity)
 
-  Entity.startups.each do |startup|
-    @investor = FactoryBot.create(:investor, investor_entity: @another_entity, entity: startup)
+  Entity.startups.each do |company|
+    @investor = FactoryBot.create(:investor, investor_entity: @another_entity, entity: company)
     (1..count.to_i).each do 
-      @investment = FactoryBot.build(:investment, entity: startup, 
+      @investment = FactoryBot.build(:investment, entity: company, 
                         investor: @investor, funding_round: @funding_round)
       @investment = SaveInvestment.call(investment: @investment).investment
     end

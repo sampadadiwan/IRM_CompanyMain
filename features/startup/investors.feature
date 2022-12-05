@@ -1,5 +1,5 @@
 Feature: Investor
-  Can create and view an investor as a startup
+  Can create and view an investor as a company
 
 Scenario Outline: Create new investor
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -12,8 +12,8 @@ Scenario Outline: Create new investor
 
   Examples:
   	|user	      |entity               |investor     |msg	|
-  	|  	        |entity_type=Startup  |name=Sequoia |Investor was successfully created|
-    |  	        |entity_type=Startup  |name=Bearing |Investor was successfully created|
+  	|  	        |entity_type=Company  |name=Sequoia |Investor was successfully created|
+    |  	        |entity_type=Company  |name=Bearing |Investor was successfully created|
 
 
 Scenario Outline: Create new investor from exiting entity
@@ -28,13 +28,13 @@ Scenario Outline: Create new investor from exiting entity
 
   Examples:
   	|user	      |entity               |investor         |msg	|
-  	|  	        |entity_type=Startup  |name=Accel       |Investor was successfully created|
-    |  	        |entity_type=Startup  |name=Bearing     |Investor was successfully created|
-    |  	        |entity_type=Startup  |name=Kalaari     |Investor was successfully created|
+  	|  	        |entity_type=Company  |name=Accel       |Investor was successfully created|
+    |  	        |entity_type=Company  |name=Bearing     |Investor was successfully created|
+    |  	        |entity_type=Company  |name=Kalaari     |Investor was successfully created|
 
 
 Scenario Outline: Import investor access
-  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Startup"
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
   And Given I upload an investor access file for employees
   Then I should see the "Import upload was successfully created"
   Then There should be "2" investor access created
@@ -42,7 +42,7 @@ Scenario Outline: Import investor access
 
 Scenario Outline: Import investor kycs
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
-  And Given I upload an investors file for the startup
+  And Given I upload an investors file for the company
   And Given I upload an investor kyc file for employees
   Then I should see the "Import upload was successfully created"
   Then There should be "2" investor kycs created
@@ -50,8 +50,8 @@ Scenario Outline: Import investor kycs
   And the investor kycs must have the data in the sheet
 
 Scenario Outline: Import investors
-  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Startup"
-  And Given I upload an investors file for the startup
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
+  And Given I upload an investors file for the company
   Then I should see the "Import upload was successfully created"
   Then There should be "6" investors created
   And the investors must have the data in the sheet

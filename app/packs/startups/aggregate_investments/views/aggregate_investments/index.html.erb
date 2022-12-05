@@ -1,7 +1,7 @@
 <%= render "/layouts/alerts" %>
 
 <%= render "/layouts/steps", steps: ["Setup Funding Rounds", "Add Investments", "View Details", 
-                            "Permission Investors", "Setup Scenarios"].freeze if current_user.has_cached_role?(:startup) %>
+                            "Permission Investors", "Setup Scenarios"].freeze if current_user.has_cached_role?(:company) %>
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Shareholding</h1>

@@ -182,7 +182,7 @@ end
 
 ############################################################################
 ############################################################################
-#######################  VC related test steps #############################  
+#######################  Investor related test steps #############################  
 ############################################################################
 ############################################################################
 
@@ -190,15 +190,15 @@ end
 
 
 
-Given('my firm is an investor in the startup') do
-  @startup = Entity.startups.first
-  @investor = Investor.create!(entity: @startup, investor_entity: @entity, category: "Lead Investor")
+Given('my firm is an investor in the company') do
+  @company = Entity.startups.first
+  @investor = Investor.create!(entity: @company, investor_entity: @entity, category: "Lead Investor")
 
   InvestorAccess.create!(investor:@investor, user: @user, 
     first_name: @user.first_name, 
     last_name: @user.last_name,
     email: @user.email, approved: true, 
-    entity_id: @startup.id)
+    entity_id: @company.id)
 
 end
 
@@ -212,16 +212,16 @@ end
 
 Given('the investor has {string} access rights to the sale') do |metadata|
   @access_right = AccessRight.create!(owner: @sale, access_to_investor_id: @investor.id, metadata: metadata,
-      access_type: "SecondarySale", entity: @startup)
+      access_type: "SecondarySale", entity: @company)
 
   puts "\n####Investor AccessRight####\n"
   puts @access_right.to_json
   @sale.reload
 end
 
-Given('there are {string} investments {string} in the startup') do |count, args|
+Given('there are {string} investments {string} in the company') do |count, args|
   (1..count.to_i).each do 
-    i = FactoryBot.build(:investment, entity: @startup, investor: @investor, 
+    i = FactoryBot.build(:investment, entity: @company, investor: @investor, 
       funding_round: @funding_round)
     key_values(i, args)
     i = SaveInvestment.call(investment: i).investment
@@ -277,12 +277,12 @@ Then('I should see the offer') do
 
   @offer.user_id.should == @user.id
   @offer.secondary_sale_id.should == @sale.id
-  @offer.entity_id.should == @startup.id
+  @offer.entity_id.should == @company.id
   @offer.quantity.should == @sale.percent_allowed * @offer.total_holdings_quantity / 100.0
   @offer.holding_id.should == h.id
 
   expect(page).to have_content(@user.full_name)
-  expect(page).to have_content(@startup.name)
+  expect(page).to have_content(@company.name)
   expect(page).to have_content(@sale.name)
   expect(page).to have_content(@sale.percent_allowed)
   expect(page).to have_content(@offer.allowed_quantity / 100)

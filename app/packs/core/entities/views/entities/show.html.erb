@@ -51,7 +51,7 @@
                <%= @entity.details %>
             </td>
          </tr>
-         <% if @entity.entity_type == "Startup" %>
+         <% if @entity.entity_type == "Company" %>
          <tr>
             <td>
                Currency
@@ -90,7 +90,7 @@
       <div>
          <% if policy(@entity).edit? %>
             <%= link_to "Edit", edit_entity_path(@entity), {class: "btn btn-primary"} %> 
-            <%= link_to "View Payments", payments_path, {class: "btn btn-success"} if @entity.entity_type == "Startup" %> 
+            <%= link_to "View Payments", payments_path, {class: "btn btn-success"} if @entity.entity_type == "Company" %> 
          <% end %>
 
          <% 

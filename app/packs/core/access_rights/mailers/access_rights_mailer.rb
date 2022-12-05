@@ -5,14 +5,20 @@ class AccessRightsMailer < ApplicationMailer
     # We need to figure out all the users impacted by this access right
     @access_right = AccessRight.includes(:owner, :investor).find params[:access_right_id]
     # Only send to confirmed users
-    confirmed_emails = User.where(email: @access_right.investor_emails).where.not(confirmed_at: nil)
+    confirmed_emails = User.where(email: @access_right.investor_emails).where.not(confirmed_at: nil).collect(&:email).join(",")
 
-    emails = sandbox_email(@access_right, confirmed_emails)
+    if confirmed_emails.present?
+      if @access_right.access_to_category.present?
+        bcc = sandbox_email(@access_right, confirmed_emails)
+        to = ENV['SUPPORT_EMAIL']
+      else
+        to = sandbox_email(@access_right, confirmed_emails)
+        bcc = nil
+      end
 
-    if emails.present?
       mail(from: from_email(@access_right.entity),
-           to: ENV['SUPPORT_EMAIL'],
-           bcc: emails,
+           to:,
+           bcc:,
            subject: "Access Granted to #{@access_right.owner_type} #{@access_right.owner.name} by #{@access_right.entity.name}")
     end
   end

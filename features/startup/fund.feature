@@ -1,5 +1,5 @@
 Feature: Fund
-  Can create and view a fund as a startup
+  Can create and view a fund as a company
 
 Scenario Outline: Create new fund
   Given Im logged in as a user "<user>" for an entity "<entity>"

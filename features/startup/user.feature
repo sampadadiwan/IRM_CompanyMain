@@ -1,5 +1,5 @@
 Feature: User
-  Can create and view a user as a startup
+  Can create and view a user as a company
 
 Scenario Outline: Create new user
   Given Im logged in as a user "" for an entity "<entity>"
@@ -14,8 +14,8 @@ Scenario Outline: Create new user
 
   Examples:
   	|roles                      |entity                     |user                                 |msg	|
-  	|investor,secondary_buyer	  |entity_type=VC             |first_name=Mohith;email=m1@gmail.com |A message with a confirmation link has been sent to your email address.|
-    |startup   	                |entity_type=Startup        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
+  	|investor,secondary_buyer	  |entity_type=Investor             |first_name=Mohith;email=m1@gmail.com |A message with a confirmation link has been sent to your email address.|
+    |company   	                |entity_type=Company        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
     |secondary_buyer  	        |entity_type=Investment Advisor        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
     |secondary_buyer  	        |entity_type=Family Office  |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
     |holding         	          |entity_type=Holding        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|

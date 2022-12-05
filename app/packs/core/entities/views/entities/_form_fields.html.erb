@@ -30,7 +30,7 @@
     <%= form.text_field :url, class: "form-control"  %>
   </div>
 
-  <% if entity.entity_type == "Startup" %>
+  <% if entity.entity_type == "Company" %>
 
     <div class="form-group">
       <%= form.label :currency %>
@@ -55,7 +55,7 @@
   </div>
 
 
-  <% if entity.entity_type == "Startup" %>
+  <% if entity.entity_type == "Company" %>
 
     <div class="form-group">
       <%= form.label :investor_categories %>

@@ -13,6 +13,6 @@ Scenario Outline:  Options Acknowledged
 
 Examples:
     |entity               |option_pool                                      |schedule            |    
-    |entity_type=Startup  |number_of_options=10000;excercise_period_months=98|12:20,24:30,36:50  |
-    |entity_type=Startup  |number_of_options=10000;excercise_period_months=90|12:20,24:30,36:50  |    
+    |entity_type=Company  |number_of_options=10000;excercise_period_months=98|12:20,24:30,36:50  |
+    |entity_type=Company  |number_of_options=10000;excercise_period_months=90|12:20,24:30,36:50  |    
     

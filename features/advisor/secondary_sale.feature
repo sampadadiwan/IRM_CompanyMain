@@ -2,7 +2,7 @@ Feature: Secondary Sale
   Can view a sale as an Advisor
 
 Scenario Outline: View sale - not externally visible
-  Given there is a user "<user>" for an entity "entity_type=Startup"
+  Given there is a user "<user>" for an entity "entity_type=Company"
   Given there is a sale "<sale>"
   Given Im logged in as a user "first_name=Emp1" for an entity "<entity>"
   And I should not see the sale in all sales page
@@ -15,7 +15,7 @@ Scenario Outline: View sale - not externally visible
 
 
 Scenario Outline: View sale - externally visible
-  Given there is a user "<user>" for an entity "entity_type=Startup"
+  Given there is a user "<user>" for an entity "entity_type=Company"
   Given there is a sale "<sale>"
   Given Im logged in as a user "first_name=Emp1" for an entity "<entity>"
   And I should see the sale in all sales page
@@ -28,7 +28,7 @@ Scenario Outline: View sale - externally visible
 
 
 Scenario Outline: Express Interest
-  Given there is a user "<user>" for an entity "entity_type=Startup"
+  Given there is a user "<user>" for an entity "entity_type=Company"
   Given there is a sale "<sale>"
   Given Im logged in as a user "first_name=Emp1" for an entity "<entity>"
   Given there are "approved" offers for the sale

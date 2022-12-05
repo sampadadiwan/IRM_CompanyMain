@@ -7,7 +7,7 @@
     <% if params[:dashboard].present? %>
         <%= render params[:dashboard] %>
     <% else %>   
-        <% if current_user.curr_role.to_sym == :startup %>
+        <% if current_user.curr_role.to_sym == :company %>
             <%= render "cxo_dashboard" %>
         <% elsif current_user.curr_role.to_sym == :investor %>
             <%= render "vc_dashboard" %>

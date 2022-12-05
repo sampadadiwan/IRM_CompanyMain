@@ -1,5 +1,5 @@
 Feature: Investment
-  Can create and view an investment as a startup
+  Can create and view an investment as a company
 
 Scenario Outline: Create new investment Equity & Preferred
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -17,8 +17,8 @@ Scenario Outline: Create new investment Equity & Preferred
 
   Examples:
   	|user	      |entity               |investor     |investment                                   |msg	|
-  	|  	        |entity_type=Startup  |name=Sequoia |category=Lead Investor;investment_instrument=Equity;quantity=100;price_cents=1000;investor_id=4     |Investment was successfully created|
-    |  	        |entity_type=Startup  |name=Bearing |category=Co-Investor;investment_instrument=Preferred;quantity=80;price_cents=2000;investor_id=4     |Investment was successfully created|
+  	|  	        |entity_type=Company  |name=Sequoia |category=Lead Investor;investment_instrument=Equity;quantity=100;price_cents=1000;investor_id=4     |Investment was successfully created|
+    |  	        |entity_type=Company  |name=Bearing |category=Co-Investor;investment_instrument=Preferred;quantity=80;price_cents=2000;investor_id=4     |Investment was successfully created|
 
 Scenario Outline: Create new investment Option Fails
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -29,7 +29,7 @@ Scenario Outline: Create new investment Option Fails
 
   Examples:
   	|user	      |entity               |investor     |investment                                    |msg	|
-    |  	        |entity_type=Startup  |name=Bearing |category=Co-Investor;investment_instrument=Options;quantity=80;price_cents=2000;investor_id=4     |not associated with Option Pool|
+    |  	        |entity_type=Company  |name=Bearing |category=Co-Investor;investment_instrument=Options;quantity=80;price_cents=2000;investor_id=4     |not associated with Option Pool|
 
 
 Scenario Outline: Create new investment Options
@@ -48,11 +48,11 @@ Scenario Outline: Create new investment Options
   And the aggregate investments must be created
 Examples:
   	|user	      |entity               |investor     |investment                                    |msg	|
-    |  	        |entity_type=Startup  |name=Bearing |category=Co-Investor;investment_instrument=Options;quantity=80;price_cents=2000;investor_id=4     |Investment was successfully created|
+    |  	        |entity_type=Company  |name=Bearing |category=Co-Investor;investment_instrument=Options;quantity=80;price_cents=2000;investor_id=4     |Investment was successfully created|
 
 
 Scenario Outline: Create new investment
-  Given Im logged in as a user "last_name=Tester" for an entity "entity_type=Startup"
+  Given Im logged in as a user "last_name=Tester" for an entity "entity_type=Company"
   Given a esop pool "name=Pool 1;approved=true" is created with vesting schedule "12:20,24:30,36:50"
   Given there is an existing investor "name=Sequoia"
   And I am at the investments page
@@ -81,12 +81,12 @@ Scenario Outline: Edit investment
 
   Examples:
   	|user	      |entity               |investor     |investment                                                                                                             |msg	|
-  	|  	        |entity_type=Startup  |name=Sequoia |category=Lead Investor;investment_instrument=Equity;quantity=100;price_cents=1000;investor_id=4     |Investment was successfully created|
-    |  	        |entity_type=Startup  |name=Bearing |category=Co-Investor;investment_instrument=Preferred;quantity=80;price_cents=2000;investor_id=4     |Investment was successfully created|
+  	|  	        |entity_type=Company  |name=Sequoia |category=Lead Investor;investment_instrument=Equity;quantity=100;price_cents=1000;investor_id=4     |Investment was successfully created|
+    |  	        |entity_type=Company  |name=Bearing |category=Co-Investor;investment_instrument=Preferred;quantity=80;price_cents=2000;investor_id=4     |Investment was successfully created|
 
 
 Scenario Outline: Create new holding
-  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Startup"
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
   Given there are "2" employee investors
   Given there is a FundingRound "name=Series A"
   And Given I create a holding for each employee with quantity "100"
@@ -99,7 +99,7 @@ Scenario Outline: Create new holding
 
 
 Scenario Outline: Import holding
-  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Startup"
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
   Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"
   And Given I upload a holdings file
   Then I should see the "Import upload was successfully created"
@@ -114,7 +114,7 @@ Scenario Outline: Import holding
 
 
 Scenario Outline: Investments updates funding round and entity
-  Given there is a user "first_name=Test" for an entity "entity_type=Startup"
+  Given there is a user "first_name=Test" for an entity "entity_type=Company"
   Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"
   Given there is are "3" investors
   Given there is a FundingRound "name=Series A"
@@ -133,7 +133,7 @@ Scenario Outline: Investments updates funding round and entity
 
 
 Scenario Outline: Investments updates funding round and entity
-  Given there is a user "first_name=Test" for an entity "entity_type=Startup"
+  Given there is a user "first_name=Test" for an entity "entity_type=Company"
   Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"
   Given there is are "1" investors
   Given there is a FundingRound "name=Series A"

@@ -3,7 +3,7 @@ class ApprovalResponsePolicy < ApplicationPolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      elsif %w[startup fund_manager].index(user.curr_role)
+      elsif %w[company fund_manager].index(user.curr_role)
         scope.where(entity_id: user.entity_id)
       else
         scope.where(response_entity_id: user.entity_id)

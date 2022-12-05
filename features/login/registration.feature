@@ -11,9 +11,9 @@ Scenario Outline: User Registration Successfully
   Then the user should be confirmed
   Examples:
   	|user		|entity             |msg1											                                              |msg2		  |
-  	| 	    |entity_type=VC     |A message with a confirmation link has been sent to your email address.	|Signed in successfully	|
-    |       |entity_type=Startup|A message with a confirmation link has been sent to your email address. |Signed in successfully  |
-    | 	    |entity_type=VC     |A message with a confirmation link has been sent to your email address.	|Signed in successfully	|
+  	| 	    |entity_type=Investor     |A message with a confirmation link has been sent to your email address.	|Signed in successfully	|
+    |       |entity_type=Company|A message with a confirmation link has been sent to your email address. |Signed in successfully  |
+    | 	    |entity_type=Investor     |A message with a confirmation link has been sent to your email address.	|Signed in successfully	|
 
 
 
@@ -22,8 +22,8 @@ Scenario Outline: User Registration Successfully
   Then the user should have the roles "<roles>"
   Examples:
   	|user		|entity               |roles		|	
-  	| 	    |entity_type=VC       |investor,secondary_buyer	|
-    |       |entity_type=Startup  |startup   |
+  	| 	    |entity_type=Investor       |investor,secondary_buyer	|
+    |       |entity_type=Company  |company   |
     | 	    |entity_type=Holding  |holding   |
     | 	    |entity_type=Investment Advisor  |secondary_buyer   |
     | 	    |entity_type=Family Office  |secondary_buyer   |

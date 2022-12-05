@@ -9,7 +9,7 @@
         <!-- We have to show the employee investors screen from which we can add holdings -->
         <% investor=current_user&.entity.investors.where(is_holdings_entity: true).first %>
         <span>
-            <% if current_user.curr_role == "startup" %>
+            <% if current_user.curr_role == "company" %>
             
                 <%= link_to "New Holding" , investor_path(investor, tab: "investors-tab" ), {class: "btn btn-primary" } if investor %>
 

@@ -2,7 +2,7 @@ class HoldingPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
       case user.curr_role
-      when "startup"
+      when "company"
         scope.where("entity_id=?", user.entity_id)
       when "holding"
         scope.approved.where("user_id=?", user.id)
@@ -18,7 +18,7 @@ class HoldingPolicy < ApplicationPolicy
 
   def show?
     user.has_cached_role?(:super) ||
-      (user.enable_holdings && user.entity_id == record.entity_id && user.has_cached_role?(:startup)) ||
+      (user.enable_holdings && user.entity_id == record.entity_id && user.has_cached_role?(:company)) ||
       (user.id == record.user_id && user.has_cached_role?(:holding)) ||
       (user.entity_id == record.investor.investor_entity_id && user.has_cached_role?(:investor))
   end

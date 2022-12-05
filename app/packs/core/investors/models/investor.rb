@@ -86,7 +86,7 @@ class Investor < ApplicationRecord
     if investor_entity_id.blank?
       e = Entity.where(name: investor_name).first
       unless e
-        entity_type = category == "Advisor" ? "Advisor" : "VC"
+        entity_type = category == "Advisor" ? "Advisor" : "Investor"
         e = Entity.create(name: investor_name, entity_type:)
       end
 

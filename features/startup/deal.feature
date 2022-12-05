@@ -1,5 +1,5 @@
 Feature: Deal
-  Can create and view a deal as a startup
+  Can create and view a deal as a company
 
 Scenario Outline: Create new deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -12,8 +12,8 @@ Scenario Outline: Create new deal
 
   Examples:
   	|user	      |entity               |deal                             |msg	|
-  	|  	        |entity_type=Startup  |name=Series A;amount_cents=10000 |Deal was successfully created|
-    |  	        |entity_type=Startup  |name=Series B;amount_cents=12000 |Deal was successfully created|
+  	|  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully created|
+    |  	        |entity_type=Company  |name=Series B;amount_cents=12000 |Deal was successfully created|
 
 Scenario Outline: Edit deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -26,13 +26,13 @@ Scenario Outline: Edit deal
 
   Examples:
   	|user	      |entity               |deal                             |msg	|
-  	|  	        |entity_type=Startup  |name=Series A;amount_cents=10000 |Deal was successfully created|
-    |  	        |entity_type=Startup  |name=Series B;amount_cents=12000 |Deal was successfully created|
+  	|  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully created|
+    |  	        |entity_type=Company  |name=Series B;amount_cents=12000 |Deal was successfully created|
 
 
 Scenario Outline: Start deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
-  And there exists a deal "<deal>" for my startup
+  And there exists a deal "<deal>" for my company
   And I visit the deal details page
   And I should see the deal details on the details page
   And when I start the deal
@@ -41,5 +41,5 @@ Scenario Outline: Start deal
 
   Examples:
   	|user	      |entity               |deal                             |msg	|
-  	|  	        |entity_type=Startup  |name=Series A;amount_cents=10000 |Deal was successfully started|
-    |  	        |entity_type=Startup  |name=Series B;amount_cents=12000 |Deal was successfully started|
+  	|  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully started|
+    |  	        |entity_type=Company  |name=Series B;amount_cents=12000 |Deal was successfully started|

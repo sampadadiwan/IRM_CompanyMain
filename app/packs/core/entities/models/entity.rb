@@ -52,16 +52,16 @@ class Entity < ApplicationRecord
   monetize :total_investments, as: "total", with_model_currency: :currency
   monetize :per_share_value_cents, with_model_currency: :currency
 
-  TYPES = ["VC", "Startup", "Holding", "Investment Advisor", "Family Office", "Investment Fund", "Consulting", "Advisor"].freeze
-  SECONDARY_BUYERS = ["VC", "Investment Advisor", "Family Office"].freeze
+  TYPES = ["Investor", "Company", "Holding", "Investment Advisor", "Family Office", "Investment Fund", "Consulting", "Advisor"].freeze
+  SECONDARY_BUYERS = ["Investor", "Investment Advisor", "Family Office"].freeze
 
   FUNDING_UNITS = %w[Lakhs Crores].freeze
   PLANS = ENV['PLANS'].split(",")
 
   scope :holdings, -> { where(entity_type: "Holding") }
-  scope :vcs, -> { where(entity_type: "VC") }
+  scope :vcs, -> { where(entity_type: "Investor") }
   scope :consulting, -> { where(entity_type: "Consulting") }
-  scope :startups, -> { where(entity_type: "Startup") }
+  scope :startups, -> { where(entity_type: "Company") }
   scope :advisors, -> { where(entity_type: "Advisor") }
   scope :investment_advisors, -> { where(entity_type: "Investment Advisor") }
   scope :family_offices, -> { where(entity_type: "Family Office") }
@@ -83,7 +83,7 @@ class Entity < ApplicationRecord
   after_save :run_post_process, if: :saved_change_to_entity_type?
   def run_post_process
     case entity_type
-    when "Startup"
+    when "Company"
       SetupStartup.call(entity: self)
     else
       SetupFolders.call(entity: self)
