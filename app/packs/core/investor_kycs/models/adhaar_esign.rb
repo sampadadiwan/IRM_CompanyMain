@@ -42,10 +42,9 @@ class AdhaarEsign < ApplicationRecord
   end
 
   # The digio dev env runs on 444
-  BASE_URL = Rails.env.development? ? "#{ENV['DIGIO_BASE_URL']}:444" : (ENV['DIGIO_BASE_URL']).to_s
 
   def esign_link(phone)
-    "#{BASE_URL}/#/gateway/login/#{esign_doc_id}/#{rand(4**4)}/#{phone}?redirect_url=#{redirect_url}&logo=https://app.caphive.com/img/logo_big.png" if esign_doc_id.present?
+    "#{ENV['DIGIO_CLIENT_URL']}/#/gateway/login/#{esign_doc_id}/#{rand(4**4)}/#{phone}?redirect_url=#{redirect_url}&logo=https://app.caphive.com/img/logo_big.png" if esign_doc_id.present?
   end
 
   def user_ids
