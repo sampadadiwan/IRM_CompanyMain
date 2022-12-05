@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_05_081507) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_05_084836) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1466,6 +1466,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_05_081507) do
     t.bigint "form_type_id"
     t.date "due_date"
     t.integer "assigned_to_id"
+    t.string "tags", limit: 50
     t.index ["entity_id"], name: "index_tasks_on_entity_id"
     t.index ["for_entity_id"], name: "index_tasks_on_for_entity_id"
     t.index ["form_type_id"], name: "index_tasks_on_form_type_id"

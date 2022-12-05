@@ -1,6 +1,9 @@
 <tr id="<%= dom_id task %>">
   <td>
     <%= task.details.html_safe %>
+    <% task.tags&.split(",")&.each do |tag| %>
+      <small><%= link_to tag, search_tasks_path(query: tag) %></small>
+    <% end %>
   </td>
   <td>
     <%= link_to task.owner_type, "/#{task.owner_type.underscore.pluralize}/#{task.owner_id}" %>

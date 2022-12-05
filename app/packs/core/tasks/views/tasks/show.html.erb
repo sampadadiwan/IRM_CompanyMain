@@ -10,6 +10,18 @@
         <%= @task.details.html_safe %>
       </td>
     </tr>
+
+    <% if @task.tags.present? %>
+    <tr>
+      <td>
+        Tags
+      </td>
+      <td>
+        <%= @task.tags %>
+      </td>
+    </tr>
+    <% end %>
+    
     <tr>
       <td>
         Entity
