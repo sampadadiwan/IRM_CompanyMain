@@ -37,7 +37,7 @@ class User < ApplicationRecord
   validates :email, format: { with: /\A[^@\s]+@[^@\s]+\z/ }, presence: true
 
   before_create :setup_defaults
-  after_create_commit :update_investor_access
+  after_create :update_investor_access
 
   delegate :name, to: :entity, prefix: :entity
 
