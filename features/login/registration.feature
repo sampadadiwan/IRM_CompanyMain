@@ -6,6 +6,7 @@ Scenario Outline: User Registration Successfully
   And I am at the registration page
   When I fill and submit the registration page
   Then I should see the "<msg1>"
+  Then the user receives an email with "Confirmation instructions" in the subject
   Then when I click the confirmation link
   Then I should see the "Your email address has been successfully confirmed."
   Then the user should be confirmed
