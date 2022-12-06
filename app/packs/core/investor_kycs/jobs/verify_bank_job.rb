@@ -28,7 +28,7 @@ class VerifyBankJob < ApplicationJob
     @model.bank_verification_response = response["result"]
   end
 
-  def check_details(_response)
+  def check_details(response)
     name_at_bank = @model.bank_verification_response["name_at_bank"].split
     Rails.logger.debug { "name_at_bank = #{name_at_bank}" }
     @model.bank_verified = false

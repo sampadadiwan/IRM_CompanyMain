@@ -40,11 +40,17 @@ class InvestorAccess < ApplicationRecord
                          where("investor_accesses.user_id=? and investor_accesses.entity_id=? and investor_accesses.approved=?", user.id, entity.id, true)
                        }
 
+  before_validation :update_user
+  validate :ensure_entity_id
+
+  def ensure_entity_id
+    errors.add(:user, "cannot be given access. Belongs to #{user.entity.name} but is being added to #{investor.investor_entity.name}") if user && user.entity_id != investor.investor_entity_id
+  end
+
   def to_s
     email
   end
 
-  before_save :update_user
   # after_commit :send_notification_if_changed, if: :approved
 
   def update_user
