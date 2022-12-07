@@ -91,7 +91,7 @@ class CapitalCommitmentDocGenerator
 
     signed_document = Document.new(document.attributes.slice("entity_id", "name", "folder_id", "download", "printing", "user_id"))
 
-    signed_document.name = "Capital Commitment Agreement"
+    signed_document.name = document.name
     signed_document.file = File.open(file_name, "rb")
     signed_document.signed_by = user
     signed_document.from_template = document
