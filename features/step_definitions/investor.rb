@@ -233,7 +233,8 @@ Then('the investor kycs must have the data in the sheet') do
     user_data = [headers, row].transpose.to_h
     cc = investor_kycs[idx-1]
     puts "Checking import of #{cc.email}"
-    cc.email.should == user_data["email"].strip
+    cc.email.should == user_data["Email"].strip
+    cc.phone.should == user_data["Phone"].to_s.strip
     cc.first_name.should == user_data["First Name"]
     cc.last_name.should == user_data["Last Name"]
     cc.full_name.should == user_data["Full Name"]

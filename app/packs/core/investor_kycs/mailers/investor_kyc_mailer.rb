@@ -24,8 +24,8 @@ class InvestorKycMailer < ApplicationMailer
     if email.present?
       subj = "KYC updated for #{@investor_kyc.user.full_name}"
       mail(from: from_email(@investor_kyc.entity),
-          to: email,
-          subject: subj)
+           to: email,
+           subject: subj)
     end
   end
 end

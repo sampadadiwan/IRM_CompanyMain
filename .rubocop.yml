@@ -91,6 +91,7 @@ Metrics/CyclomaticComplexity:
   Enabled: true
   Exclude:
     - 'app/packs/core/users/models/user.rb'
+    - 'app/packs/core/investor_kycs/services/interactors/import_investor_kyc.rb'
 Metrics/PerceivedComplexity:
   Max: 12
   Exclude:

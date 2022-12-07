@@ -14,14 +14,14 @@ class ImportInvestorKyc < ImportUtil
 
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
 
-    raise "Investor not found" if !investor
+    raise "Investor not found" unless investor
 
     email = user_data['Email'].strip
 
     investor_kyc = InvestorKyc.where(investor_id: investor.id, entity_id: import_upload.entity_id, email:).first
 
     if investor_kyc.present?
-      Rails.logger.debug { "InvestorKyc with investor already exists for entity #{import_upload.entity_id}" }
+      Rails.logger.debug { "Skipping: InvestorKyc with investor already exists for entity #{import_upload.entity_id}" }
     else
 
       Rails.logger.debug user_data
@@ -38,7 +38,6 @@ class ImportInvestorKyc < ImportUtil
 
       setup_custom_fields(user_data, investor_kyc, custom_field_headers)
 
-      Rails.logger.debug { "Saving InvestorKyc with email '#{investor_kyc.email}'" }
       saved = investor_kyc.save!
 
     end
