@@ -1,5 +1,5 @@
 class AdhaarEsignCompletedService
   include Interactor::Organizer
 
-  organize RetrieveEsignFile, UpdateEsignOwner, UpdateEsignCompleted, NotifyEsignUsers
+  organize RetrieveEsignFile, UpdateEsignCompleted, UpdateEsignOwner,  NotifyEsignUsers
 end
