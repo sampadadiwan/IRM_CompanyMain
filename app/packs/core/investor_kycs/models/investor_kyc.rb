@@ -37,7 +37,8 @@ class InvestorKyc < ApplicationRecord
       if u.blank?
         # Setup a new user for this investor_entity_id
         u = User.new(first_name:, last_name:, email:, active: true, system_created: true,
-                     entity_id: investor.investor_entity_id, password: SecureRandom.hex(8))
+                     entity_id: investor.investor_entity_id, phone:,
+                     password: SecureRandom.hex(8))
 
         # Upload of IAs has a col to prevent confirmations, lets honour that
         unless send_confirmation

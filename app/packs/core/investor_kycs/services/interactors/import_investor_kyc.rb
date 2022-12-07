@@ -27,6 +27,7 @@ class ImportInvestorKyc < ImportUtil
                                      first_name: user_data["First Name"]&.strip,
                                      last_name: user_data["Last Name"]&.strip,
                                      email: user_data["email"]&.strip,
+                                     phone: user_data["phone"]&.strip,
                                      address: user_data["Address"]&.strip,
                                      bank_account_number: user_data["Bank Account"],
                                      ifsc_code: user_data["IFSC Code"],
