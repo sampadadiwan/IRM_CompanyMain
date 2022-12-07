@@ -29,41 +29,7 @@
       </td>
     </tr>
 
-    <tr>
-      <td>
-        Committed Amount
-      </td>
-      <td>
-        <%= money_to_currency @fund.committed_amount, params %>
-      </td>
-    </tr>
     
-    <tr>
-      <td>
-        Collected Amount
-      </td>
-      <td>
-        <%= money_to_currency @fund.collected_amount, params %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        Capital Call Amount
-      </td>
-      <td>
-        <%= money_to_currency @fund.call_amount, params %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        Payments Distributed
-      </td>
-      <td>
-        <%= money_to_currency @fund.distribution_amount, params %>
-      </td>
-    </tr>
     
 
     <tr>
@@ -103,11 +69,53 @@
         <%= @fund.trustee_signatory.full_name %>
       </td>
     </tr>
-    <% end %>
-
-    <%= display_custom_fields(@fund) if current_user %>
+    <% end %>    
 
     <% if policy(@fund).update? %>
+      <tr>
+        <td>
+          Committed Amount
+        </td>
+        <td>
+          <%= money_to_currency @fund.committed_amount, params %>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>
+          Collected Amount
+        </td>
+        <td>
+          <%= money_to_currency @fund.collected_amount, params %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Capital Call Amount
+        </td>
+        <td>
+          <%= money_to_currency @fund.call_amount, params %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Payments Distributed
+        </td>
+        <td>
+          <%= money_to_currency @fund.distribution_amount, params %>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>
+          Commitment Document List
+        </td>
+        <td>
+          <%= @fund.commitment_doc_list %>
+        </td>
+      </tr>
       <tr>
         <td>
           Investor Signature Type
@@ -141,6 +149,9 @@
         </td>
       </tr>
     <% end %>
+
+    <%= display_custom_fields(@fund) if current_user %>
+    
   </table>
 
 

@@ -102,14 +102,5 @@
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
         msg: "Generate esign link for this capital commitment. This will trigger the eSign process. Proceed?"} if policy(@capital_commitment).generate_esign_link? %>
 
-  <% if @capital_commitment.esign_required && 
-          !@capital_commitment.esign_completed && 
-          params[:signature_completed].blank? %>
-  <% signature_link = @capital_commitment.signature_link(current_user) %>
-  <% if signature_link.present? %>
-    <%= link_to "Click here to eSign", signature_link, 
-              class: "btn btn-success"  if policy(@capital_commitment).esign?  %>
-  <% end %>
-<% end %>
 </div>
 <%= render "capital_commitments/details", capital_commitment: @capital_commitment %>

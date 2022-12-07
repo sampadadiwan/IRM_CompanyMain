@@ -1,6 +1,7 @@
 class Esign < ApplicationRecord
   belongs_to :entity
   belongs_to :user
+  belongs_to :document, optional: true
   belongs_to :owner, polymorphic: true
   acts_as_list scope: :owner, column: :sequence_no
 

@@ -4,7 +4,7 @@ class OfferEsignProvider
   end
 
   def signature_link(user)
-    @offer.esigns.where(user_id: user.id).first&.link
+    @offer.esigns.where(user_id: user.id).not_completed
   end
 
   # Called from OfferSpaGenerator.trigger_signatures, after the SPA has been generated
@@ -41,15 +41,16 @@ class OfferEsignProvider
     doc
   end
 
-  def signature_completed(signature_type, file)
+  def signature_completed(signature_type, document_id, file)
     Rails.logger.debug { "Offer #{@offer.id} signature_completed #{signature_type}" }
     if signature_type == "adhaar"
       if File.exist?(file)
         # For multi party signatures, the file may not yet be ready till the other parties have signed
-        doc = Document.where(entity_id: @offer.entity_id, owner: @offer, name: spa_file_name).first
+        doc = Document.where(owner: @offer, id: document_id).first
         doc.locked = true
         doc.orignal = true
         doc.file = File.open(file, "rb")
+        doc.owner_tag = "Signed"
         doc.save
         @offer.esign_completed = true
       end
@@ -78,8 +79,8 @@ class OfferEsignProvider
   def cleanup_prev
     # Check if we already have a document with spa_file_name
     Document.where(entity_id: @offer.entity_id, owner: @offer, name: spa_file_name).each(&:destroy)
-    @offer.adhaar_esign&.destroy
     @offer.esigns.each(&:destroy)
+    @offer.adhaar_esigns.each(&:destroy)
     @offer.signature_workflows.each(&:destroy)
   end
 end

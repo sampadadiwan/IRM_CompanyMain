@@ -32,12 +32,12 @@
             !@offer.esign_completed && 
             params[:signature_completed].blank? %>
             
-        <% signature_link = @offer.signature_link(current_user) %>
-        <% if signature_link.present? %>
-          <% target = Rails.env.test? ? "" : "_blank" %>
-          <%= link_to "Click here to eSign", signature_link,  target: target,
-              class: "btn btn-success"  if policy(@offer).esign?  %>
+        
+        <% @offer.signature_link(current_user).each do |esign| %>
+          <%= link_to "eSign #{esign.document.name}", esign.link, 
+                    class: "btn btn-success" %>
         <% end %>
+
       <% else %>
         <%= button_to "Accept SPA" , accept_spa_offer_path(@offer), method: :patch, class: "btn btn-success" , 
             form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,

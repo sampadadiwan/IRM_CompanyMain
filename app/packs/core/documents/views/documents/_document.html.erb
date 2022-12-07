@@ -38,9 +38,12 @@
 
   <td>
     <%= link_to "Show", document, class: "btn btn-primary" %>
-    
-    <%= button_to "Sign", sign_document_path(document), method: :patch, class: "btn btn-success", form_class: "deleteButton", data: {action: "click->confirm#popup", msg: "You confirm that you have read the document and are ready to sign the document. Proceed?", method: :patch} if policy(document).sign?  %>
-
+    <% if document.owner_type == "CapitalCommitment" && !document.locked %>
+      <% document.owner.signature_link(current_user, document.id).each do |esign| %>
+        <%= link_to "eSign", esign.link, 
+                class: "btn btn-success" if params[:signature_completed] != esign.document_id&.to_s %>
+      <% end %>
+    <% end %>
   </td>
 
 </tr>

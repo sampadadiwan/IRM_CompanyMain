@@ -19,7 +19,7 @@ class CapitalCommitment < ApplicationRecord
   belongs_to :form_type, optional: true
   serialize :properties, Hash
 
-  has_one :adhaar_esign, as: :owner
+  has_many :adhaar_esigns, as: :owner
   has_many :esigns, -> { order("sequence_no asc") }, as: :owner
   has_many :signature_workflows, as: :owner
 
@@ -53,6 +53,10 @@ class CapitalCommitment < ApplicationRecord
     "#{fund.folder_path}/Commitments/#{investor.investor_name}-#{id}"
   end
 
+  def document_list
+    fund.commitment_doc_list&.split(",")
+  end
+
   ################# eSign stuff follows ###################
 
   def investor_signature_types
@@ -71,12 +75,12 @@ class CapitalCommitment < ApplicationRecord
     type ? @signatory_ids_map[type.to_sym] : @signatory_ids_map
   end
 
-  def signature_link(user)
+  def signature_link(user, document_id = nil)
     # Substitute the phone number required in the link
-    CapitalCommitmentEsignProvider.new(self).signature_link(user)
+    CapitalCommitmentEsignProvider.new(self).signature_link(user, document_id)
   end
 
-  def signature_completed(signature_type, file)
-    CapitalCommitmentEsignProvider.new(self).signature_completed(signature_type, file)
+  def signature_completed(signature_type, document_id, file)
+    CapitalCommitmentEsignProvider.new(self).signature_completed(signature_type, document_id, file)
   end
 end

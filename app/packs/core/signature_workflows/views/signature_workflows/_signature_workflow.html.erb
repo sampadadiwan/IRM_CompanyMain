@@ -3,6 +3,10 @@
   <td>
     <%= link_to signature_workflow.owner_type, signature_workflow.owner %>
   </td>
+
+  <td>
+    <%= signature_workflow.document.name if signature_workflow.document  %>
+  </td>
   <td>
     <%= signature_workflow.status %>
   </td>

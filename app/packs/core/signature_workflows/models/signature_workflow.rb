@@ -1,6 +1,7 @@
 class SignatureWorkflow < ApplicationRecord
   belongs_to :owner, polymorphic: true
   belongs_to :entity
+  belongs_to :document, optional: true
 
   serialize :state, Hash
 
@@ -8,15 +9,15 @@ class SignatureWorkflow < ApplicationRecord
   scope :not_paused, -> { where(paused: false) }
 
   def signatory_ids
-    owner.esigns
+    owner.esigns.where(document_id:)
   end
 
   def completed_ids
-    owner.esigns.completed
+    owner.esigns.where(document_id:).completed
   end
 
   def pending
-    owner.esigns.not_completed
+    owner.esigns.where(document_id:).not_completed
   end
 
   def next_step
@@ -71,8 +72,8 @@ class SignatureWorkflow < ApplicationRecord
   def mark_completed(user_id)
     if completed
       Rails.logger.debug { "SignatureWorkflow #{id} is complete." }
-    elsif owner.esigns.where(user_id:, completed: true).present?
-      esign = owner.esigns.where(user_id:).first
+    elsif owner.esigns.where(user_id:, document_id:, completed: true).present?
+      esign = owner.esigns.where(user_id:, document_id:).first
       # Send the notification & update state
       SignatureWorkflowMailer.with(id:, esign_id: esign.id).notify_signature_completed.deliver_later
       update_completion_state(user_id)

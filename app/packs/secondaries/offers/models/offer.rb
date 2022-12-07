@@ -12,7 +12,7 @@ class Offer < ApplicationRecord
   belongs_to :investor
   belongs_to :entity, touch: true
   belongs_to :secondary_sale, touch: true
-  has_one :adhaar_esign, as: :owner
+  has_many :adhaar_esigns, as: :owner
   has_many :esigns, -> { order("sequence_no asc") }, as: :owner
   has_many :signature_workflows, as: :owner
 
@@ -245,7 +245,7 @@ class Offer < ApplicationRecord
     OfferEsignProvider.new(self).signature_link(user)
   end
 
-  def signature_completed(signature_type, file)
-    OfferEsignProvider.new(self).signature_completed(signature_type, file)
+  def signature_completed(signature_type, document_id, file)
+    OfferEsignProvider.new(self).signature_completed(signature_type, document_id, file)
   end
 end

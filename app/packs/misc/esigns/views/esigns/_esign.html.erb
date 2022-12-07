@@ -7,6 +7,9 @@
     <%= link_to esign.owner_type %>
   </td>
   <td>
+    <%= esign.document.name if esign.document %>
+  </td>
+  <td>
     <%= esign.sequence_no %>
   </td>
   <td>

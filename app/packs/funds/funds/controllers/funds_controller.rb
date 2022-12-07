@@ -78,7 +78,7 @@ class FundsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def fund_params
-    params.require(:fund).permit(:name, :committed_amount, :details, :collected_amount,
+    params.require(:fund).permit(:name, :committed_amount, :details, :collected_amount, :commitment_doc_list,
                                  :entity_id, :tag_list, :show_valuations, :show_fund_ratios,
                                  :investor_signature_types, :fund_signature_types, :currency,
                                  :fund_signatory_id, :trustee_signatory_id, properties: {})

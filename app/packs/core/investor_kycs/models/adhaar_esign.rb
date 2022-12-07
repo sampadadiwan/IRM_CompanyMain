@@ -67,13 +67,13 @@ class AdhaarEsign < ApplicationRecord
         success = true
 
         # Update the owner
-        owner.esigns.for_adhaar.each do |esign|
+        owner.esigns.for_adhaar.where(document_id:).each do |esign|
           esign.link = esign_link(esign.user.phone)
           esign.save
         end
 
         # Setup a workflow to chase and track the signatories
-        swf = SignatureWorkflow.where(owner:, entity_id: owner.entity_id).first_or_create!
+        swf = SignatureWorkflow.where(owner:, entity_id: owner.entity_id, document_id:).first_or_create!
         swf.next_step
       else
         self.esign_document_reponse = JSON.parse(response.body)["message"]
@@ -138,6 +138,6 @@ class AdhaarEsign < ApplicationRecord
   before_destroy :cleanup_signature_workflows
   def cleanup_signature_workflows
     # Remove the Signature Workflow associated with this capital_commitment
-    SignatureWorkflow.where(owner:, entity_id: owner.entity_id).each(&:destroy)
+    SignatureWorkflow.where(owner:, entity_id: owner.entity_id, document_id:).each(&:destroy)
   end
 end

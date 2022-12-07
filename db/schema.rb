@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_05_084836) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_07_085130) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -524,6 +524,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_05_084836) do
     t.boolean "enable_investor_kyc", default: false
     t.string "sub_domain"
     t.text "logo_data"
+    t.string "kyc_doc_list", limit: 30
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
@@ -544,6 +545,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_05_084836) do
     t.boolean "completed", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "document_id"
+    t.index ["document_id"], name: "index_esigns_on_document_id"
     t.index ["entity_id"], name: "index_esigns_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_esigns_on_owner"
     t.index ["user_id"], name: "index_esigns_on_user_id"
@@ -697,6 +700,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_05_084836) do
     t.bigint "fund_signatory_id"
     t.bigint "trustee_signatory_id"
     t.string "currency", limit: 5, null: false
+    t.string "commitment_doc_list", limit: 30
     t.index ["entity_id"], name: "index_funds_on_entity_id"
     t.index ["form_type_id"], name: "index_funds_on_form_type_id"
     t.index ["fund_signatory_id"], name: "index_funds_on_fund_signatory_id"
@@ -1418,6 +1422,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_05_084836) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "paused", default: false
+    t.bigint "document_id"
+    t.index ["document_id"], name: "index_signature_workflows_on_document_id"
     t.index ["entity_id"], name: "index_signature_workflows_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_signature_workflows_on_owner"
   end
@@ -1621,6 +1627,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_05_084836) do
   add_foreign_key "documents", "form_types"
   add_foreign_key "documents", "users"
   add_foreign_key "documents", "users", column: "signed_by_id"
+  add_foreign_key "esigns", "documents"
   add_foreign_key "esigns", "entities"
   add_foreign_key "esigns", "users"
   add_foreign_key "excercises", "entities"
@@ -1710,6 +1717,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_05_084836) do
   add_foreign_key "share_transfers", "users", column: "from_user_id"
   add_foreign_key "share_transfers", "users", column: "to_user_id"
   add_foreign_key "share_transfers", "users", column: "transfered_by_id"
+  add_foreign_key "signature_workflows", "documents"
   add_foreign_key "signature_workflows", "entities"
   add_foreign_key "taggings", "tags"
   add_foreign_key "tasks", "entities"
