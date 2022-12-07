@@ -10,7 +10,7 @@ Scenario Outline: Access fund
   
   Examples:
   	|user	    |entity                                         |role           |given  |should	|access |
-  	|  	        |entity_type=Investment Fund;enable_funds=true  |company_admin  |no    |true    |show,edit,update,destroy   |
+  	|  	        |entity_type=Investment Fund;enable_funds=true  |company_admin  |no    |true    |show,edit,update   |
     |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |no    |false  |show,edit,update,destroy   |
     |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |true   |show|
     |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |false   |edit,update,destroy      |
