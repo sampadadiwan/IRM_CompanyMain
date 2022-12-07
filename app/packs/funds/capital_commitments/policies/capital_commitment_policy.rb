@@ -35,13 +35,13 @@ class CapitalCommitmentPolicy < FundBasePolicy
   end
 
   def generate_documentation?
-    update?
+    update? && !record.esign_completed
   end
 
   def generate_esign_link?
     update? &&
       record.signatory_ids(:adhaar).present? &&
-      record.esigns.count.zero?
+      record.esigns.count.zero? && !record.esign_completed
   end
 
   def edit?

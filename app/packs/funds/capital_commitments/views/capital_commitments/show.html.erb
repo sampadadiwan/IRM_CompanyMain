@@ -107,8 +107,7 @@
           params[:signature_completed].blank? %>
   <% signature_link = @capital_commitment.signature_link(current_user) %>
   <% if signature_link.present? %>
-    <% target = Rails.env.test? ? "" : "_blank" %>
-    <%= link_to "Click here to eSign", signature_link,  target: target,
+    <%= link_to "Click here to eSign", signature_link, 
               class: "btn btn-success"  if policy(@capital_commitment).esign?  %>
   <% end %>
 <% end %>
