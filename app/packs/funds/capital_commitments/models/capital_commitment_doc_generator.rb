@@ -29,7 +29,7 @@ class CapitalCommitmentDocGenerator
     odt_file_path = get_odt_file(fund_doc_template_path)
 
     report = ODFReport::Report.new(odt_file_path) do |r|
-      r.add_field :date, Time.zone.today
+      r.add_field :date, Time.zone.today.strftime("%d %B %Y")
 
       r.add_field :company_name, capital_commitment.entity.name
       r.add_field :fund_name, capital_commitment.fund.name

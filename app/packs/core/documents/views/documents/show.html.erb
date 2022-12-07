@@ -111,15 +111,7 @@
                         <%= l @document.created_at, format: :default %>
                      </td>
                   </tr>
-                  <tr>
-                     <td>
-                        Entity
-                     </td>
-                     <td>
-                        <%= link_to @document.entity.name, @document.entity %>
-                     </td>
-                  </tr>
-
+                  
                   <tr>
                      <td>
                         Belongs To
@@ -143,39 +135,16 @@
 
                   <tr>
                      <td>
-                        Allow Download
+                        Allow 
                      </td>
                      <td>
-                     <%= display_boolean @document.download %>                                                  
-                     </td>
-                  </tr>
-                  <tr>
-                     <td>
-                        Allow Printing
-                     </td>
-                     <td>
-                        <%= display_boolean @document.printing %>                                                                             
-                     </td>
-                  </tr>
-                  <tr>
-                     <td>
-                        Allow Original Format Download
-                     </td>
-                     <td>
-                        <%= display_boolean @document.orignal  %>                                                  
-
+                        Download <%= display_boolean @document.download %>     
+                        Printing <%= display_boolean @document.printing %>   
+                        Original <%= display_boolean @document.orignal  %>                                
+                        Public <%= display_boolean @document.public_visibility  %> 
                      </td>
                   </tr>
 
-                  <tr>
-                     <td>
-                        Public Visibility
-                     </td>
-                     <td>
-                        <%= display_boolean @document.public_visibility  %>                                                  
-
-                     </td>
-                  </tr>
                   <% end %>
 
                   <tr>
