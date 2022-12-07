@@ -103,6 +103,6 @@ class EntitiesController < ApplicationController
     params.require(:entity).permit(:name, :url, :category, :founded, :entity_type,
                                    :funding_amount, :funding_unit, :details, :logo_url,
                                    :investor_categories, :instrument_types, :sub_domain,
-                                   :currency, :units, :logo)
+                                   :currency, :units, :logo, :kyc_doc_list)
   end
 end

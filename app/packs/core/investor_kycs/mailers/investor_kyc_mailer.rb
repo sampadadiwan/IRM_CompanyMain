@@ -5,10 +5,12 @@ class InvestorKycMailer < ApplicationMailer
     @investor_access = InvestorAccess.includes(:user).find params[:investor_access_id]
     email = sandbox_email(@investor_access, @investor_access.email)
 
-    subj = "Please complete your KYC for #{@investor_access.entity_name}"
-    mail(from: from_email(@investor_access.entity),
-         to: email,
-         subject: subj)
+    if email.present?
+      subj = "Please complete your KYC for #{@investor_access.entity_name}"
+      mail(from: from_email(@investor_access.entity),
+           to: email,
+           subject: subj)
+    end
   end
 
   def notify_kyc_updated
@@ -19,9 +21,11 @@ class InvestorKycMailer < ApplicationMailer
 
     email = sandbox_email(@investor_kyc, to_emails)
 
-    subj = "KYC updated for #{@investor_kyc.user.full_name}"
-    mail(from: from_email(@investor_kyc.entity),
-         to: email,
-         subject: subj)
+    if email.present?
+      subj = "KYC updated for #{@investor_kyc.user.full_name}"
+      mail(from: from_email(@investor_kyc.entity),
+          to: email,
+          subject: subj)
+    end
   end
 end

@@ -128,11 +128,13 @@
     </tr>
 
 
+    <% if investor_kyc.video && current_user %>
     <tr>
       <td colspan="2">
-        <%= render "layouts/video", url: investor_kyc.video.url, title: "KYC Video" if investor_kyc.video && current_user %>
+        <%= render "layouts/video", url: investor_kyc.video.url, title: "KYC Video" %>
       </td>
     </tr>
+    <% end %>
 
 
     <% if params[:debug].present? %>

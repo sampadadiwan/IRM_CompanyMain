@@ -51,7 +51,7 @@
                <%= @entity.details %>
             </td>
          </tr>
-         <% if @entity.entity_type == "Company" %>
+         
          <tr>
             <td>
                Currency
@@ -70,7 +70,14 @@
             </td>
          </tr>
 
-         <% end %>
+         <tr>
+            <td>
+               KYC Document List
+            </td>
+            <td>
+               <%= @entity.kyc_doc_list %>
+            </td>
+         </tr>
 
 
          <tr>

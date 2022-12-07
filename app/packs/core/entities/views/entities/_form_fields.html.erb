@@ -26,6 +26,12 @@
   </div>
 
   <div class="form-group">
+    <%= form.label :kyc_doc_list %>
+    <%= form.text_field :kyc_doc_list, class: "form-control"  %>
+    <small>Comma separated list of documents to be uploaded for KYC</small>
+  </div>
+
+  <div class="form-group">
     <%= form.label :url %>
     <%= form.text_field :url, class: "form-control"  %>
   </div>

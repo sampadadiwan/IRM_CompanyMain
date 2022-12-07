@@ -63,7 +63,6 @@ class CapitalCommitment < ApplicationRecord
     self[:investor_signature_types].presence || fund.investor_signature_types
   end
 
-  # TODO: - Ensure signatories and signature types match up
   def signatory_ids(type = nil)
     if @signatory_ids_map.blank?
       @signatory_ids_map = { adhaar: [], dsc: [] }
