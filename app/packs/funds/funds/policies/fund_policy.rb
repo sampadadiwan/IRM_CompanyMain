@@ -50,7 +50,8 @@ class FundPolicy < FundBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy) ||
-      permissioned_advisor?(:destroy)
+    false
+    # permissioned_employee?(:destroy) ||
+    #   permissioned_advisor?(:destroy)
   end
 end
