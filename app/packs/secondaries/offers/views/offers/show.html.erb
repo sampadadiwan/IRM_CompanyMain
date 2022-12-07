@@ -34,7 +34,7 @@
             
         
         <% @offer.signature_link(current_user).each do |esign| %>
-          <%= link_to "eSign #{esign.document.name}", esign.link, 
+          <%= link_to "eSign SPA", esign.link, 
                     class: "btn btn-success" %>
         <% end %>
 

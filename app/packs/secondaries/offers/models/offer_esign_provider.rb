@@ -15,11 +15,11 @@ class OfferEsignProvider
     # Cleanup prev try
     cleanup_prev
 
-    # Generate the required esigns
-    generate_esigns
-
     # Create the document to be passed for signing
     spa_doc = prepare_doc
+
+    # Generate the required esigns
+    generate_esigns(spa_doc)
 
     if spa_doc.present?
       # Setup this doc for esign by user_ids
@@ -62,11 +62,11 @@ class OfferEsignProvider
   private
 
   # For each signatory - generate an esign row
-  def generate_esigns
+  def generate_esigns(spa_doc)
     @offer.signatory_ids.each do |signature_type, user_ids|
       user_ids.each do |user_id|
         Esign.create(entity_id: @offer.entity_id, user_id:,
-                     signature_type:, owner: @offer,
+                     signature_type:, owner: @offer, document_id: spa_doc.id,
                      reason: "Signature required for SPA : #{@offer.entity.name}")
       end
     end
