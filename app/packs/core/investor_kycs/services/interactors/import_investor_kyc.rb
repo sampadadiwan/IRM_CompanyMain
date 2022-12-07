@@ -31,6 +31,7 @@ class ImportInvestorKyc < ImportUtil
                                      bank_account_number: user_data["Bank Account"],
                                      ifsc_code: user_data["IFSC Code"],
                                      send_confirmation: user_data["Send Confirmation Email"] == "Yes",
+                                     verified: user_data["Verified"] == "Yes",
                                      entity_id: import_upload.entity_id)
 
       setup_custom_fields(user_data, investor_kyc, custom_field_headers)

@@ -15,7 +15,7 @@ class InvestorKycMailer < ApplicationMailer
     @investor_kyc = InvestorKyc.find(params[:id])
     @investor_accesses = @investor_kyc.entity.investor_accesses.joins(:investor).where("investors.category='Advisor'")
 
-    to_emails = [@investor_kyc.user.email] + @investor_accesses.collect(&:email)
+    to_emails = @investor_accesses.collect(&:email)
 
     email = sandbox_email(@investor_kyc, to_emails)
 
