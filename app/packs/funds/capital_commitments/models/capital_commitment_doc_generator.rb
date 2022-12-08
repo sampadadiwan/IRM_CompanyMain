@@ -8,7 +8,6 @@ class CapitalCommitmentDocGenerator
   # fund document template - the document are we using as  template for generation
   # user - The investor user, whose kyc data and signature will be used
   def initialize(capital_commitment, fund_doc_template, user)
-    
     fund_doc_template.file.download do |tempfile|
       fund_doc_template_path = tempfile.path
       create_working_dir(capital_commitment)
