@@ -46,7 +46,6 @@ Scenario Outline: Import investor kycs
   And Given I upload an investor kyc file for employees
   Then I should see the "Import upload was successfully created"
   Then There should be "2" investor kycs created
-  And the corresponding investor kyc users must be created
   And the investor kycs must have the data in the sheet
 
 Scenario Outline: Import investors

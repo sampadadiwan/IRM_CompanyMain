@@ -232,11 +232,7 @@ Then('the investor kycs must have the data in the sheet') do
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
     cc = investor_kycs[idx-1]
-    puts "Checking import of #{cc.email}"
-    cc.email.should == user_data["Email"].strip
-    cc.phone.should == user_data["Phone"].to_s.strip
-    cc.first_name.should == user_data["First Name"]
-    cc.last_name.should == user_data["Last Name"]
+    puts "Checking import of #{cc.full_name}"
     cc.full_name.should == user_data["Full Name"]
     cc.address.should == user_data["Address"]
     cc.PAN.should == user_data["PAN"]
@@ -246,8 +242,3 @@ Then('the investor kycs must have the data in the sheet') do
   end
 end
 
-Then('the corresponding investor kyc users must be created') do
-  InvestorKyc.includes(:user).all.each do |ik|
-    ik.email.should == ik.user.email
-  end
-end

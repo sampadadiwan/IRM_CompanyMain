@@ -2,6 +2,6 @@
 
 <% fund = @esign.owner.fund %>
 <% capital_commitment = @esign.owner %>
-<p>This is in regard to the capital commitment in <%= fund.name %>. For the capital commitment to be confirmed, you are required to sign the capital commitment agreement. Please use the link below to sign the agreement after reading it</p>
+<p>This is in regard to the capital commitment in <%= fund.name %>. For the capital commitment to be confirmed, you are required to sign the <%= @esign.document ? @esign.document.name : 'required documents' %>. Please use the link below to sign the document after reading it.</p>
 
 <p class="btn btn-primary"><%= link_to  "View Commitment",  [capital_commitment, subdomain: @esign.entity.sub_domain] %></p>
