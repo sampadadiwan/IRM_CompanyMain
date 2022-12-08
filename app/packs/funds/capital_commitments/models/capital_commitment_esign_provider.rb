@@ -58,8 +58,6 @@ class CapitalCommitmentEsignProvider
     end
   end
 
-  private
-
   # For each signatory - generate an esign row
   def generate_esigns
     @capital_commitment.signatory_ids.each do |signature_type, user_ids|

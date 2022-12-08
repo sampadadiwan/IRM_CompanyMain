@@ -5,6 +5,7 @@ class OfferSpaGenerator
   attr_accessor :working_dir
 
   def initialize(offer, master_spa_path = nil)
+    # Cleanup esigns first
     OfferEsignProvider.new(offer).cleanup_prev
 
     create_working_dir(offer)

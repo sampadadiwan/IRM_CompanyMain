@@ -59,8 +59,6 @@ class OfferEsignProvider
     end
   end
 
-  private
-
   # For each signatory - generate an esign row
   def generate_esigns(spa_doc)
     @offer.signatory_ids.each do |signature_type, user_ids|
