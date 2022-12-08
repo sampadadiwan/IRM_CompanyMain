@@ -2,17 +2,18 @@ class CapitalCommitmentDocGenerator
   include EmailCurrencyHelper
   include DocumentGeneratorBase
 
-  attr_accessor :working_dir
+  attr_accessor :working_dir, :fund_doc_template_name
 
   # capital_commitment - we want to generate the document for this CapitalCommitment
   # fund document template - the document are we using as  template for generation
-  # user - The investor user, whose kyc data and signature will be used
-  def initialize(capital_commitment, fund_doc_template, user)
+  def initialize(capital_commitment, fund_doc_template)
+    @fund_doc_template_name = fund_doc_template.name
+
     fund_doc_template.file.download do |tempfile|
       fund_doc_template_path = tempfile.path
       create_working_dir(capital_commitment)
-      generate(capital_commitment, fund_doc_template_path, user)
-      upload(fund_doc_template, user, capital_commitment)
+      generate(capital_commitment, fund_doc_template_path)
+      upload(fund_doc_template, capital_commitment)
     ensure
       cleanup
     end
@@ -25,7 +26,7 @@ class CapitalCommitmentDocGenerator
   end
 
   # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
-  def generate(capital_commitment, fund_doc_template_path, user)
+  def generate(capital_commitment, fund_doc_template_path)
     odt_file_path = get_odt_file(fund_doc_template_path)
 
     report = ODFReport::Report.new(odt_file_path) do |r|
@@ -44,20 +45,19 @@ class CapitalCommitmentDocGenerator
 
       generate_custom_fields(r, capital_commitment)
 
-      # Can we have more than one LP signer ?
-      add_image(r, :investor_signature, user.signature)
-
       investor_kyc = InvestorKyc.where(investor_id: capital_commitment.investor_id,
-                                       entity_id: capital_commitment.entity_id, user_id: user.id).first
+                                       entity_id: capital_commitment.entity_id).first
 
+      # Can we have more than one LP signer ?
+      add_image(r, :investor_signature, investor_kyc.signature)
       generate_kyc_fields(r, investor_kyc)
     end
 
     report.generate("#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.odt")
     system("libreoffice --headless --convert-to pdf #{@working_dir}/CapitalCommitment-#{capital_commitment.id}.odt --outdir #{@working_dir}")
 
-    additional_footers = capital_commitment.fund.documents.where(name: %w[Footer Signature])
-    additional_headers = capital_commitment.fund.documents.where(name: ["Header", "Stamp Paper"])
+    additional_footers = capital_commitment.documents.where(name: ["Footer #{@fund_doc_template_name}" "Signature #{@fund_doc_template_name}"])
+    additional_headers = capital_commitment.documents.where(name: ["Header #{@fund_doc_template_name}", "Stamp Paper #{@fund_doc_template_name}"])
     add_header_footers(capital_commitment, "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf", additional_headers, additional_footers)
   end
 
@@ -85,7 +85,7 @@ class CapitalCommitmentDocGenerator
     end
   end
 
-  def upload(document, user, capital_commitment)
+  def upload(document, capital_commitment)
     file_name = "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf"
     Rails.logger.debug { "Uploading new signed file #{file_name}" }
 
@@ -93,7 +93,6 @@ class CapitalCommitmentDocGenerator
 
     signed_document.name = document.name
     signed_document.file = File.open(file_name, "rb")
-    signed_document.signed_by = user
     signed_document.from_template = document
     signed_document.owner = capital_commitment
     signed_document.owner_tag = "Generated"

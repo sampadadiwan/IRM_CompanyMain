@@ -1,7 +1,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">
-    Documents
-    <%= params[:folder_id].present? ? "in " + Folder.find(params[:folder_id]).full_path : "" %>
+    Documents in
+    <%= params[:folder_id].present? ? link_to(Folder.find(params[:folder_id]).full_path, Folder.find(params[:folder_id])) : "" %>
   </h1>
 
   <% 

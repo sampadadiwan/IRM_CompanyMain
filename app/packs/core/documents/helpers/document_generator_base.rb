@@ -29,12 +29,28 @@ module DocumentGeneratorBase
   def add_header_footers(model, spa_path, additional_headers = nil, additional_footers = nil)
     header_footer_download_path = []
 
+    combined_pdf = CombinePDF.new
+    generate_headers(model, additional_headers, combined_pdf, header_footer_download_path)
+
+    # Combine the SPA
+    combined_pdf << CombinePDF.load(spa_path)
+
+    generate_footers(model, additional_footers, combined_pdf, header_footer_download_path)
+
+    # Overwrite the orig SPA with the one with header and footer
+    combined_pdf.save(spa_path)
+
+    header_footer_download_path.each do |file_path|
+      File.delete(file_path) if File.exist?(file_path)
+    end
+  end
+
+  def generate_headers(model, additional_headers, combined_pdf, header_footer_download_path)
     # Get the headers
     headers = model.documents.where(name: ["Header", "Stamp Paper"])
     headers += additional_headers if additional_headers.present?
     header_count = headers.count
-
-    combined_pdf = CombinePDF.new
+    Rails.logger.debug { "headers are #{headers.collect(&:name)}" }
 
     # Combine the headers
     if header_count.positive?
@@ -44,14 +60,13 @@ module DocumentGeneratorBase
         combined_pdf << CombinePDF.load(file.path)
       end
     end
+  end
 
-    # Combine the SPA
-    combined_pdf << CombinePDF.load(spa_path)
-
+  def generate_footers(model, additional_footers, combined_pdf, header_footer_download_path)
     # Get the footers
     footers = model.documents.where(name: %w[Footer Signature]).to_a
     footers += additional_footers if additional_footers.present?
-
+    Rails.logger.debug { "footers are #{footers.collect(&:name)}" }
     # Combine the footers
     if footers.length.positive?
       footers.each do |footer|
@@ -59,13 +74,6 @@ module DocumentGeneratorBase
         header_footer_download_path << file.path
         combined_pdf << CombinePDF.load(file.path)
       end
-    end
-
-    # Overwrite the orig SPA with the one with header and footer
-    combined_pdf.save(spa_path)
-
-    header_footer_download_path.each do |file_path|
-      File.delete(file_path) if File.exist?(file_path)
     end
   end
 end
