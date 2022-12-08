@@ -58,7 +58,7 @@
       <div class="info text-center alert alert-info">
         The deal steps are generated based on the templates here. Modify/Add/Reorder these templates before starting the deal.</br>
         If you want to change the templates after the deal has been started, make all required changes to the templates </br>
-        Then <%= button_to "Click Here", recreate_activities_deal_path(id: params[:deal_id]), class:"btn-primary btn-sm" %> to regenerate the deal steps.        
+        Then <%= button_to "Click Here", recreate_activities_deal_path(id: params[:deal_id]), class:"btn-primary btn-sm", data: {action: "click->confirm#popup", turbo:false, msg: "This will delete all existing deal activities and recreate them. Proceed?", method: "post"} %> to regenerate the deal steps.        
       </div>
   <% end %>
 
