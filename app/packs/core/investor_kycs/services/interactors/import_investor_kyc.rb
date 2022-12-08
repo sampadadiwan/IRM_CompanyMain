@@ -16,23 +16,18 @@ class ImportInvestorKyc < ImportUtil
 
     raise "Investor not found" unless investor
 
-    email = user_data['Email'].strip
-
-    investor_kyc = InvestorKyc.where(investor_id: investor.id, entity_id: import_upload.entity_id, email:).first
+    investor_kyc = InvestorKyc.where(investor_id: investor.id, entity_id: import_upload.entity_id).first
 
     if investor_kyc.present?
       Rails.logger.debug { "Skipping: InvestorKyc with investor already exists for entity #{import_upload.entity_id}" }
     else
 
       Rails.logger.debug user_data
-      investor_kyc = InvestorKyc.new(investor:, PAN: user_data["PAN"]&.strip, full_name: user_data["Full Name"]&.strip,
-                                     first_name: user_data["First Name"]&.strip,
-                                     last_name: user_data["Last Name"]&.strip,
-                                     email: user_data["Email"]&.strip, phone: user_data["Phone"]&.to_s&.strip,
+      investor_kyc = InvestorKyc.new(investor:, PAN: user_data["PAN"]&.strip,
+                                     full_name: user_data["Full Name"]&.strip,
                                      address: user_data["Address"]&.strip,
                                      bank_account_number: user_data["Bank Account"],
                                      ifsc_code: user_data["IFSC Code"],
-                                     send_confirmation: user_data["Send Confirmation Email"] == "Yes",
                                      verified: user_data["Verified"] == "Yes",
                                      entity_id: import_upload.entity_id)
 

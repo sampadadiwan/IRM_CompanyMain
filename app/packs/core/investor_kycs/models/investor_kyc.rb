@@ -6,7 +6,6 @@ class InvestorKyc < ApplicationRecord
 
   belongs_to :investor
   belongs_to :entity
-  belongs_to :user
 
   scope :verified, -> { where(verified: true) }
 
@@ -24,38 +23,10 @@ class InvestorKyc < ApplicationRecord
   serialize :bank_verification_response, Hash
 
   def folder_path
-    "#{investor.folder_path}/KYC-#{id}/#{user.full_name}"
+    "#{investor.folder_path}/KYC-#{id}/#{full_name}"
   end
 
-  before_validation :update_user
   # after_commit :send_notification_if_changed, if: :approved
-
-  def update_user
-    if user.nil?
-      self.email = email.strip
-      u = User.find_by(email:)
-      if u.blank?
-        # Setup a new user for this investor_entity_id
-        u = User.new(first_name:, last_name:, email:, active: true, system_created: true,
-                     entity_id: investor.investor_entity_id, phone:,
-                     password: SecureRandom.hex(8))
-
-        # Upload of IAs has a col to prevent confirmations, lets honour that
-        unless send_confirmation
-          Rails.logger.debug { "############# Skipping Confirmation for #{u.email}" }
-          u.skip_confirmation!
-        end
-
-        # Save the user
-        u.save!
-
-        # If this user was created in the process of investor access and is the only user, make him company admin
-        u.add_role :company_admin if u.entity.employees.count == 1
-
-      end
-      self.user = u
-    end
-  end
 
   after_commit :validate_pan_card
   def validate_pan_card
@@ -65,14 +36,6 @@ class InvestorKyc < ApplicationRecord
   after_commit :validate_bank
   def validate_bank
     VerifyKycBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
-  end
-
-  after_commit :update_user_signature
-  def update_user_signature
-    if signature.present? && user.signature.blank?
-      user.signature = signature
-      user.save
-    end
   end
 
   after_save :notify_kyc_updated

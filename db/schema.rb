@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_07_111437) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_08_091937) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1013,7 +1013,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_07_111437) do
   create_table "investor_kycs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "investor_id", null: false
     t.bigint "entity_id", null: false
-    t.bigint "user_id", null: false
     t.bigint "form_type_id"
     t.string "PAN", limit: 15
     t.text "address"
@@ -1034,15 +1033,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_07_111437) do
     t.boolean "verified", default: false
     t.text "video_data"
     t.string "full_name", limit: 100
-    t.string "first_name", limit: 20
-    t.string "last_name", limit: 20
-    t.string "email"
     t.boolean "send_confirmation", default: false
-    t.string "phone", limit: 12
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
     t.index ["form_type_id"], name: "index_investor_kycs_on_form_type_id"
     t.index ["investor_id"], name: "index_investor_kycs_on_investor_id"
-    t.index ["user_id"], name: "index_investor_kycs_on_user_id"
   end
 
   create_table "investor_notice_entries", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1678,7 +1672,6 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_07_111437) do
   add_foreign_key "investor_kycs", "entities"
   add_foreign_key "investor_kycs", "form_types"
   add_foreign_key "investor_kycs", "investors"
-  add_foreign_key "investor_kycs", "users"
   add_foreign_key "investor_notice_entries", "entities"
   add_foreign_key "investor_notice_entries", "entities", column: "investor_entity_id"
   add_foreign_key "investor_notice_entries", "investor_notices"
