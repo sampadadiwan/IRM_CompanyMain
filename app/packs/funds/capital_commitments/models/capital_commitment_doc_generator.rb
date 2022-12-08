@@ -56,8 +56,8 @@ class CapitalCommitmentDocGenerator
     report.generate("#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.odt")
     system("libreoffice --headless --convert-to pdf #{@working_dir}/CapitalCommitment-#{capital_commitment.id}.odt --outdir #{@working_dir}")
 
-    additional_footers = capital_commitment.documents.where(name: ["Footer #{@fund_doc_template_name}" "Signature #{@fund_doc_template_name}"])
-    additional_headers = capital_commitment.documents.where(name: ["Header #{@fund_doc_template_name}", "Stamp Paper #{@fund_doc_template_name}"])
+    additional_footers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Footer" "#{@fund_doc_template_name} Signature"])
+    additional_headers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Header", "#{@fund_doc_template_name} Stamp Paper"])
     add_header_footers(capital_commitment, "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf", additional_headers, additional_footers)
   end
 
