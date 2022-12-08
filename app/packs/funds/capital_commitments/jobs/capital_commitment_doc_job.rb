@@ -11,6 +11,9 @@ class CapitalCommitmentDocJob < ApplicationJob
 
       Rails.logger.debug { "Generating documents for #{@investor.investor_name}, for fund #{@fund.name}" }
 
+      # Ensure that any prev esigns are deleted for this capital comittment
+      CapitalCommitmentEsignProvider.new(@capital_commitment).cleanup_prev
+
       @capital_commitment.investor_kycs.verified.each do |kyc|
         @templates.each do |fund_doc_template|
           Rails.logger.debug { "Generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{kyc.user.full_name}" }
