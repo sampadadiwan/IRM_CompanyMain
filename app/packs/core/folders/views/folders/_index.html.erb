@@ -5,9 +5,9 @@
       <%= link_to "All Folders", folders_path(all:true), {class: "btn btn-success"} unless params[:all].present? %>
       <%= link_to "Hide System Folders", folders_path(), {class: "btn btn-warning"} if params[:all].present?  %>
     </span>
-  </div>
+</div>
   
-  <div data-controller="datatable">
+<div data-controller="datatable">
   
   <table id="folders" class="table table-bordered dataTable jqDataTable">
     <thead>
