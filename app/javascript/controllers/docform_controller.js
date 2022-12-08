@@ -6,6 +6,7 @@ export default class extends Controller {
     console.log("DocForm controller loaded");    
     this.onOrignalChange();
     this.onPdfOptChange();    
+    this.checkOtherName();
   }
 
   onOrignalChange(event) {
@@ -27,6 +28,22 @@ export default class extends Controller {
     }
     else  {
         $(".nonpdf").show();
+    }
+  }
+
+  checkOtherName(event) {
+
+    if($("#doc_name_select").length > 0) {
+      let selected = $("#doc_name_select").val();
+      console.log(`other_name = ${$("#other_name").val().length}`);
+
+      if (selected == "Other" || $("#other_name").val().length > 0) {
+        $("#doc_name_select").remove();
+        $("#other_name").prop("disabled", "")
+        $("#other_name").show();
+      } else {
+        $("#other_name").hide();
+      }
     }
   }
 
