@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_08_091937) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_08_094753) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -38,6 +38,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_08_091937) do
     t.boolean "cascade", default: false
     t.bigint "user_id"
     t.bigint "permissions", default: 0, null: false
+    t.boolean "notify", default: true
     t.index ["access_to_investor_id"], name: "index_access_rights_on_access_to_investor_id"
     t.index ["deleted_at"], name: "index_access_rights_on_deleted_at"
     t.index ["entity_id"], name: "index_access_rights_on_entity_id"

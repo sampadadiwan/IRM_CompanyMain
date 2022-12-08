@@ -141,10 +141,10 @@ class AccessRight < ApplicationRecord
   def send_notification
     if Rails.env.test?
       AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later
-    else
-      # Add jitter to the emails, so we dont flood aws SES
+    elsif notify
       AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later(wait_until: rand(60).seconds.from_now)
     end
+    # Add jitter to the emails, so we dont flood aws SES
   end
 
   after_create_commit :update_owner

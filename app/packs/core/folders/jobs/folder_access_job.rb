@@ -6,10 +6,11 @@ class FolderAccessJob < ApplicationJob
       # Ensure all child documents have the same access rights
       ar = AccessRight.find(access_right_id)
       folder = Folder.find(folder_id)
-      folder.documents.each do |doc|
+      folder.documents.each_with_index do |doc, _idx|
         doc_ar = ar.dup
         doc_ar.owner = doc
         doc_ar.access_type = "Document"
+        doc_ar.notify = false
         doc_ar.save
       end
 
@@ -17,6 +18,7 @@ class FolderAccessJob < ApplicationJob
       folder.children.find_each do |f|
         doc_ar = ar.dup
         doc_ar.owner = f
+        doc_ar.notify = false
         doc_ar.save
       end
     end
