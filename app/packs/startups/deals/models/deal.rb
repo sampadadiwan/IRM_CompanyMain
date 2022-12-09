@@ -31,6 +31,7 @@ class Deal < ApplicationRecord
 
   STATUS = %w[Open Closed].freeze
   ACTIVITIES = Rack::Utils.parse_nested_query(ENV["DEAL_ACTIVITIES"].tr(":", "=").tr(",", "&"))
+  FUND_ACTIVITIES = Rack::Utils.parse_nested_query(ENV["FUND_DEAL_ACTIVITIES"].tr(":", "=").tr(",", "&"))
 
   def create_activities
     deal_investors.each(&:create_activities)
