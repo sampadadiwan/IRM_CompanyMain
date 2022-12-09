@@ -132,7 +132,7 @@ class AdhaarEsign < ApplicationRecord
 
   # The completion job is run as its a time consuming job to retrieve the signed doc etc
   def completed(user_id)
-    AdhaarEsignCompletedJob.perform_now(id, user_id)
+    AdhaarEsignCompletedJob.perform_later(id, user_id)
   end
 
   before_destroy :cleanup_signature_workflows

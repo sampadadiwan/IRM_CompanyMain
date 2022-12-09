@@ -52,7 +52,7 @@ class CapitalCommitmentEsignProvider
 
       # Every document that is needed to be signed is signed, then this is complete
       if @capital_commitment.esigns.not_completed.count.zero?
-        @capital_commitment.esign_completed
+        @capital_commitment.esign_completed = true
         @capital_commitment.save
       end
     end

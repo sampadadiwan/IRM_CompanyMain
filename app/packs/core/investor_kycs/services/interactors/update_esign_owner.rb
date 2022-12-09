@@ -7,7 +7,8 @@ class UpdateEsignOwner
     if context.adhaar_esign.present?
       adhaar_esign = context.adhaar_esign
       if adhaar_esign.owner.respond_to?(:signature_completed)
-        # Callback to the owner that the signed doc is now awailable
+        # Callback to the owner that the signed doc is now available
+        adhaar_esign.owner.reload
         adhaar_esign.owner.signature_completed("adhaar", adhaar_esign.document_id, adhaar_esign.download_file_name)
       end
     else

@@ -56,6 +56,7 @@ class CapitalCommitment < ApplicationRecord
   def document_list
     # fund.commitment_doc_list&.split(",")
     docs = fund.documents.where(owner_tag: "Template").map { |d| ["#{d.name} Header", "#{d.name} Footer"] }.flatten
+    docs += fund.commitment_doc_list.split(",").map(&:strip)
     docs + ["Other"] if docs.present?
   end
 
