@@ -64,6 +64,7 @@ Rails.application.routes.draw do
 
   resources :funds do
     get   'timeline', on: :member
+    get   'last', on: :member
   end
 
   resources :investment_snapshots

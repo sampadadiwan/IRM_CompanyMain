@@ -28,6 +28,10 @@ class FundPolicy < FundBasePolicy
       )
   end
 
+  def last?
+    update?
+  end
+
   def timeline?
     update?
   end

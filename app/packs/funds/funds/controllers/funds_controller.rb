@@ -1,5 +1,5 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show edit update destroy timeline]
+  before_action :set_fund, only: %i[show edit update destroy timeline last]
 
   # GET /funds or /funds.json
   def index
@@ -21,6 +21,16 @@ class FundsController < ApplicationController
   # GET /funds/1/edit
   def edit
     setup_custom_fields(@fund)
+  end
+
+  def last
+    cc = nil
+    cc = @fund.capital_calls.order(due_date: :asc).last if params[:entry] == "CapitalCall"
+    if cc
+      redirect_to capital_call_path(id: cc.id, tab: "remittances-tab")
+    else
+      redirect_to fund_path(id: @fund.id, tab: "capital-calls-tab")
+    end
   end
 
   # POST /funds or /funds.json

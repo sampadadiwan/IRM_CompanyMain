@@ -17,6 +17,9 @@
             "sample_upload": "CAPITAL_REMITTANCE_SAMPLE"), 
             { class: "btn btn-primary"}  %> 
 
+        
+        <%= render "capital_remittances/filter", capital_call_id: params[:capital_call_id] %>
+
     <% end %>
 
     <%= render "/funds/search_bar", model_name: "capital_remittance" %>
