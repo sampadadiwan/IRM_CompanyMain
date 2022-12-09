@@ -1,0 +1,12 @@
+<% cache current_user.entity.notes.last do %>
+
+    <% if current_user.entity.notes.count > 0 %>
+        <%#= render "notes/charts", entity: current_user.entity %>
+
+        <div class="associated_entity">
+            <% notes = current_user.entity.notes.with_all_rich_text.includes(:user, :investor) %>
+            <%= render "notes/index", notes: notes.order("notes.id desc").limit(5), title: "Recent Notes" %>
+        </div>
+    <% end %>
+
+<% end %>

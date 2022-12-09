@@ -1,0 +1,61 @@
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"><%=fund.name%> Commitments</h6>
+            </div>
+            <div class="card-body">
+                <%= fund_commitment_amounts(fund)  %>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-lg-6 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"><%=fund.name%> Collected</h6>
+            </div>
+            <div class="card-body">
+                <%= fund_commitments_collected(fund)  %>
+            </div>
+        </div>
+    </div>
+    
+  
+</div>
+
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"><%=fund.name%> Inflow</h6>
+            </div>
+            <div class="card-body">
+                <%= fund_commitments_collected_by_quarter(fund)  %>
+            </div>
+        </div>
+    </div>
+
+     <div class="col-lg-6 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"><%=fund.name%> Outflow</h6>
+            </div>
+            <div class="card-body">
+                <%= fund_distributions_by_quarter(fund)  %>
+            </div>
+        </div>
+    </div>
+  
+</div>

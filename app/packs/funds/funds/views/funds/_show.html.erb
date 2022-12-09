@@ -1,0 +1,153 @@
+  <table class="table table-bordered dataTable">
+
+      <tr>
+        <td class="show_page_label">
+          Name
+        </td>
+        <td>
+          <%= fund.name %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Currency
+        </td>
+        <td>
+          <%= fund.currency %>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>
+          Details
+        </td>
+        <td>
+          <%= fund.details&.html_safe %>
+        </td>
+      </tr>
+
+      
+      
+
+      <tr>
+        <td>
+          Entity
+        </td>
+        <td>
+          <%= fund.entity.name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Tag List
+        </td>
+        <td>
+          <%= fund.tag_list %>
+        </td>
+      </tr>
+
+      <% if fund.fund_signatory %>
+      <tr>
+        <td>
+          Fund Signatory
+        </td>
+        <td>
+          <%= fund.fund_signatory.full_name %>
+        </td>
+      </tr>
+      <% end %>
+
+      <% if fund.trustee_signatory %>
+      <tr>
+        <td>
+          Trustee Signatory
+        </td>
+        <td>
+          <%= fund.trustee_signatory.full_name %>
+        </td>
+      </tr>
+      <% end %>    
+
+      <% if policy(fund).update? %>
+        <tr>
+          <td>
+            Committed Amount
+          </td>
+          <td>
+            <%= money_to_currency fund.committed_amount, params %>
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            Collected Amount
+          </td>
+          <td>
+            <%= money_to_currency fund.collected_amount, params %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Capital Call Amount
+          </td>
+          <td>
+            <%= money_to_currency fund.call_amount, params %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Payments Distributed
+          </td>
+          <td>
+            <%= money_to_currency fund.distribution_amount, params %>
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            Commitment Document List
+          </td>
+          <td>
+            <%= fund.commitment_doc_list %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Investor Signature Type
+          </td>
+          <td>
+            <%= fund.investor_signature_types&.capitalize %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Fund Signature Type
+          </td>
+          <td>
+            <%= fund.fund_signature_types&.capitalize %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Show Valuations to LPs 
+          </td>
+          <td>
+            <%= display_boolean fund.show_valuations %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Show Fund Ratios to LPs
+          </td>
+          <td>
+            <%= display_boolean fund.show_fund_ratios %>
+          </td>
+        </tr>
+      <% end %>
+
+      <%= display_custom_fields(fund) if current_user %>
+      
+    </table>

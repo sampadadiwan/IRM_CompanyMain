@@ -14,32 +14,9 @@
     <%= render "investments/charts", entity: current_user.entity %>
 <% end %>
 
-<% cache current_user.entity.notes.last do %>
+<%= render "entities/dashboard/notes" %>
+<%= render "entities/dashboard/investors" %>
+<%= render "entities/dashboard/timeline" %>
 
-    <% if current_user.entity.notes.count > 0 %>
-        <%= render "notes/charts", entity: current_user.entity %>
 
-        <div class="associated_entity">
-            <% notes = current_user.entity.notes.with_all_rich_text.includes(:user, :investor) %>
-            <%= render "notes/index", notes: notes.order("notes.id desc").limit(5), title: "Recent Notes" %>
-        </div>
-    <% end %>
-
-<% end %>
-
-<% if current_user.entity.investors.not_interacted(30).count > 0 %>
-<div class="associated_entity">
-    <% investors = current_user.entity.investors.includes(:investor_accesses, :investor_entity, :entity, tags: :taggings) %>
-    <%= render "investors/index", investors: investors.not_interacted(30).limit(5).page, title: "No Interaction in 30 Days" %>
-</div>
-<% end %>
-
-<% cache("PublicActivity#{current_user.entity_id}", expires_in: 1.hour) do %>
-    
-    <% if PublicActivity::Activity.where(entity_id: current_user.entity_id).count > 0 %>
-        <% activities = PublicActivity::Activity.where(entity_id: current_user.entity_id).includes(:trackable, :owner).order(id: :desc).limit(10) %>            
-        <%= render "notifications/timeline", activities: activities if activities %>
-    <% end %>
-
-<% end %>
 

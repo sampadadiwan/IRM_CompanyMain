@@ -3,6 +3,8 @@
 <% end %>
 
     <div class="associated_entity">
+        
+        <%= render "funds/dashboard/investor_commitments", fund: current_user.entity.funds.last %>
         <%= render "/funds/index",  
             funds: policy_scope(Fund).includes(:entity) if current_user.enable_funds %>
     </div>
@@ -11,3 +13,9 @@
         <%= render "/investment_opportunities/index",  
             investment_opportunities: current_user.entity.investment_opportunities if current_user.enable_inv_opportunities %>
     </div>
+
+
+<%= render "entities/dashboard/notes" %>
+<%= render "entities/dashboard/investors" %>
+<%= render "entities/dashboard/timeline" %>
+
