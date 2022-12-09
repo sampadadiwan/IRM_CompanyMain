@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_08_094753) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_09_043820) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -525,7 +525,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_08_094753) do
     t.boolean "enable_investor_kyc", default: false
     t.string "sub_domain"
     t.text "logo_data"
-    t.string "kyc_doc_list", limit: 30
+    t.string "kyc_doc_list", limit: 100
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
@@ -701,7 +701,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_08_094753) do
     t.bigint "fund_signatory_id"
     t.bigint "trustee_signatory_id"
     t.string "currency", limit: 5, null: false
-    t.string "commitment_doc_list", limit: 30
+    t.string "commitment_doc_list", limit: 100
     t.index ["entity_id"], name: "index_funds_on_entity_id"
     t.index ["form_type_id"], name: "index_funds_on_form_type_id"
     t.index ["fund_signatory_id"], name: "index_funds_on_fund_signatory_id"

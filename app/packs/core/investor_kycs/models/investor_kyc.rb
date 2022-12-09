@@ -26,6 +26,12 @@ class InvestorKyc < ApplicationRecord
     "#{investor.folder_path}/KYC-#{id}/#{full_name}"
   end
 
+  def document_list
+    # fund.commitment_doc_list&.split(",")
+    docs = entity.kyc_doc_list.split(",").map(&:strip) if entity.kyc_doc_list.present?
+    docs + ["Other"] if docs.present?
+  end
+
   # after_commit :send_notification_if_changed, if: :approved
 
   after_commit :validate_pan_card
