@@ -88,18 +88,18 @@ Scenario Outline: Access fund & details as Investor
   Given the fund has "2" capital call
   Then user "<should>" have "<access>" access to the capital calls
   Given the capital calls are approved
-  Then user "<should>" have "<access>" access to his own capital remittances
+  Then user "<should>" have "<inv_access>" access to his own capital remittances
   Given the fund has "2" capital distribution
   Then user "<should>" have "<access>" access to the capital distributions
   Given the capital distributions are approved
   Then user "<should>" have "<access>" access to his own capital distribution payments
   
   Examples:
-  	|user	    |entity                                         |role           |given  |should	|access |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |no    |false  |show,edit,update,destroy   |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |yes   |true   |show  |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |yes   |false   |edit,update,destroy     |
-
+  	|user	    |entity                                         |role           |given  |should	|access | inv_access |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |no    |false  |show,edit,update,destroy| show,edit,update,destroy|
+    |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |yes   |true   |show  | show|
+    |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |yes   |false   |edit,update,destroy     | |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |yes   |true   |     |edit,update |
 
 
 
