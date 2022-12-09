@@ -7,6 +7,7 @@ import "@popperjs/core"
 import "chartkick"
 import '@client-side-validations/client-side-validations/src'
 import "@nathanvda/cocoon"
+import "cleave.js"
 
 // import "Chart.bundle"
 import Highcharts from "highcharts"
@@ -27,6 +28,8 @@ addEventListener("trix-initialize", event => {
 });
 
 
+
+
 $(document).on('turbo:before-cache', function() {     
   if( $('.select2-container').length > 0 ){
     // Hack to make sure select2 does not get duplicated due to turbolinks
@@ -42,6 +45,13 @@ $(document).on('turbo:before-cache', function() {
 });
 
 $( document ).on('turbo:load', function() {
+
+  $('.numeric').toArray().forEach(function(field) {
+    var cleave = new Cleave(field, {
+      numeral: true,
+      numeralThousandsGroupStyle: 'thousand'
+    });
+  });
 
     if (document.location.hostname.search("localhost") !== 0) {
       console.log("Google Analytics Enabled");
