@@ -79,15 +79,15 @@ class DigioEsignHelper
     }
   end
 
-  def prep_user_data(user_ids, reason)
+  def prep_user_data(user_ids, _reason)
     ret = []
     users = User.where(id: user_ids.split(","))
     users.each do |u|
       ret << {
         identifier: u.phone,
         name: u.full_name,
-        sign_type: "aadhaar",
-        reason:
+        sign_type: "aadhaar"
+        # reason:
       }
     end
     ret

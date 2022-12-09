@@ -14,7 +14,8 @@ class VerifyBankJob < ApplicationJob
         check_details(response)
       else
         @model.bank_verified = false
-        @model.bank_verification_status = "Account not found"
+        @model.bank_verification_status = response["message"]
+        @model.bank_verification_status ||= "Account not found"
       end
     else
       @model.bank_verification_status = "No Bank Account or IFSC Code Entered"
