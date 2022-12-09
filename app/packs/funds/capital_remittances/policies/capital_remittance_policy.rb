@@ -34,7 +34,8 @@ class CapitalRemittancePolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) ||
+    permissioned_investor? ||
+      permissioned_employee?(:update) ||
       permissioned_advisor?(:update)
   end
 

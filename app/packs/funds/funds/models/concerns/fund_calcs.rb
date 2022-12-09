@@ -1,24 +1,24 @@
 module FundCalcs
   extend ActiveSupport::Concern
 
-  def rvpi
-    valuation = valuations.last
+  def compute_rvpi
+    valuation = valuations.order(valuation_date: :asc).last
     (valuation.pre_money_valuation_cents / collected_amount_cents).round(2) if valuation
   end
 
-  def dpi
+  def compute_dpi
     (distribution_amount_cents / collected_amount_cents).round(2) if collected_amount_cents.positive?
   end
 
-  def tvpi
+  def compute_tvpi
     dpi + rvpi if rvpi && dpi
   end
 
-  def moic
+  def compute_moic
     # (self.tvpi / self.collected_amount_cents).round(2) if self.tvpi && self.collected_amount_cents > 0
   end
 
-  def xirr
+  def compute_xirr
     last_valuation = valuations.last
     if last_valuation
 

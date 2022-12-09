@@ -1,4 +1,6 @@
 class Fund < ApplicationRecord
+  attr_accessor :update_by_fund_calc
+
   include FundCalcs
   include WithFolder
   include ActivityTrackable
@@ -30,6 +32,11 @@ class Fund < ApplicationRecord
   before_validation :setup_funding_round
   def setup_funding_round
     self.funding_round = FundingRound.new(name:, entity_id:, status: "Open", currency:)
+  end
+
+  after_commit :generate_calcs
+  def generate_calcs
+    FundCalcJob.perform_later(id) unless @update_by_fund_calc
   end
 
   def folder_path
