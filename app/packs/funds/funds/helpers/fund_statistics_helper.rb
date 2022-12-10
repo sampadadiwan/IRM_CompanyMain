@@ -62,7 +62,7 @@ module FundStatisticsHelper
 
   def fund_commitments_collected_by_quarter(fund)
     capital_calls = fund.capital_calls.where("due_date > ?", Time.zone.today - 1.year)
-    capital_calls = capital_calls.group_by { |cc| "Q#{quarter(cc.due_date.month)}" }
+    capital_calls = capital_calls.group_by { |cc| "Q#{quarter(cc.due_date)}" }
                                  .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.collected_amount_cents / 100) }] }
 
     column_chart capital_calls, library: {
@@ -77,7 +77,7 @@ module FundStatisticsHelper
 
   def fund_distributions_by_quarter(fund)
     capital_distributions = fund.capital_distributions.where("distribution_date > ?", Time.zone.today - 1.year)
-    capital_distributions = capital_distributions.group_by { |cc| "Q#{quarter(cc.distribution_date.month)}" }
+    capital_distributions = capital_distributions.group_by { |cc| "Q#{quarter(cc.distribution_date)}" }
                                                  .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.net_amount_cents / 100) }] }
 
     column_chart capital_distributions, library: {
