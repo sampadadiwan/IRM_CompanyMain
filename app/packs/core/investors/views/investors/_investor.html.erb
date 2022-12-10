@@ -3,7 +3,7 @@
     <%= link_to investor.investor_name, investor_path(investor.id) %>
 </td>  
 <td class="hideMobP hideTab">
-  <%= raw investor.tag_list&.split(",")&.collect{|tag| link_to(tag, search_investors_path(query: tag))}.join(", ") %>
+  <%= raw investor.tag_list&.split(",")&.collect{|tag| link_to(tag, search_investors_path(query: tag))}&.join(", ") %>
 </td>  
 <td>
   <%= investor.category %>

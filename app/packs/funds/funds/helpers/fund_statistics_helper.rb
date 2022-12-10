@@ -23,8 +23,12 @@ module FundStatisticsHelper
       grouped = commitments.group_by { |i| i.investor.investor_name }
                            .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.committed_amount_cents / 100) }] }
 
-      others_cents = commitments.offset(10).sum(:committed_amount_cents)
-      grouped["Others"] = others_cents / 100
+      # This is to get the sum of the other
+      # https://stackoverflow.com/questions/2623853/how-to-sum-from-an-offset-through-the-end-of-the-table
+      row = CapitalCommitment.connection.select_one("select sum(committed_amount_cents) from (#{fund.capital_commitments.offset(10).to_sql}) q")
+      others_cents = row["sum(committed_amount_cents)"]
+
+      grouped << ["Others", others_cents / 100]
     end
 
     pie_chart_with_options grouped
@@ -42,8 +46,11 @@ module FundStatisticsHelper
       grouped = commitments.group_by { |i| i.investor.investor_name }
                            .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.collected_amount_cents / 100) }] }
 
-      others_cents = commitments.offset(10).sum(:collected_amount_cents)
-      grouped["Others"] = others_cents / 100
+      # This is to get the sum of the other
+      # https://stackoverflow.com/questions/2623853/how-to-sum-from-an-offset-through-the-end-of-the-table
+      row = CapitalCommitment.connection.select_one("select sum(committed_amount_cents) from (#{fund.capital_commitments.offset(10).to_sql}) q")
+      others_cents = row["sum(committed_amount_cents)"]
+      grouped << ["Others", others_cents / 100]
     end
 
     pie_chart_with_options grouped
