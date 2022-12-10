@@ -9,7 +9,7 @@ class InvestorsController < ApplicationController
 
     @investors = @investors.where(category: params[:category]) if params[:category]
 
-    @investors = @investors.order("investors.id desc").includes(:tags)
+    @investors = @investors.order("investors.id desc")
 
     @investors = @investors.page(params[:page]) if params[:all].blank?
   end

@@ -3,10 +3,6 @@ class Investor < ApplicationRecord
   include WithFolder
   update_index('investor') { self }
 
-  # encrypts :investor_name, deterministic: true
-
-  acts_as_taggable_on :tags
-
   belongs_to :investor_entity, class_name: "Entity"
   belongs_to :entity, touch: true
   counter_culture :entity
