@@ -124,6 +124,8 @@ Scenario Outline: Import capital commitments
   Then I should see the "Import upload was successfully created"
   Then There should be "5" capital commitments created
   And the capital commitments must have the data in the sheet
+  And the capital commitments must have the percentages updated
+  And the fund must have the counter caches updated
 
 
 Scenario Outline: Import capital calls

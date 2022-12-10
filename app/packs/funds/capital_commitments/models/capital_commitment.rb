@@ -27,6 +27,7 @@ class CapitalCommitment < ApplicationRecord
 
   validates :committed_amount_cents, numericality: { greater_than: 0 }
   validates :folio_id, presence: true
+  validates_uniqueness_of :folio_id, scope: :fund_id
 
   counter_culture :fund, column_name: 'committed_amount_cents', delta_column: 'committed_amount_cents'
 

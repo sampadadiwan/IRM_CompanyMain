@@ -578,3 +578,13 @@ Then('the capital distributions must have the data in the sheet') do
     cc.distribution_date.should == user_data["Date"]
   end
 end
+
+Then('the capital commitments must have the percentages updated') do
+  CapitalCommitment.where(percentage: 0).count.should == 0
+end
+
+Then('the fund must have the counter caches updated') do
+  @fund.reload
+  @fund.collected_amount_cents.should == CapitalCommitment.all.sum(:collected_amount_cents)
+  @fund.committed_amount_cents.should == CapitalCommitment.all.sum(:committed_amount_cents)
+end

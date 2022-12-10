@@ -40,7 +40,11 @@ class ImportUtil
     FormType.extract_from_db(@last_saved) if @last_saved
     # Save the results file
     File.write("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
+
+    post_process(import_upload)
   end
+
+  def post_process(import_upload); end
 
   def setup_custom_fields(user_data, model, custom_field_headers)
     # Were any custom fields passed in ? Set them up

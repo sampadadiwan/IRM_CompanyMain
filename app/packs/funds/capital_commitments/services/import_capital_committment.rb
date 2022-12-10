@@ -1,8 +1,14 @@
 class ImportCapitalCommittment < ImportUtil
   STANDARD_HEADERS = ["Investor", "Fund", "Committed Amount", "Notes", "Folio No"].freeze
+  attr_accessor :commitments
 
   def standard_headers
     STANDARD_HEADERS
+  end
+
+  def initialize(params)
+    super(params)
+    @commitments = []
   end
 
   def process_row(headers, custom_field_headers, row, import_upload)
@@ -10,13 +16,13 @@ class ImportCapitalCommittment < ImportUtil
     user_data = [headers, row].transpose.to_h
 
     begin
-      if save_capital_commitment(user_data, import_upload, custom_field_headers)
+      status, msg = save_capital_commitment(user_data, import_upload, custom_field_headers)
+      if status
         import_upload.processed_row_count += 1
-        row << "Success"
       else
         import_upload.failed_row_count += 1
-        row << "Error"
       end
+      row << msg
     rescue ActiveRecord::Deadlocked => e
       raise e
     rescue StandardError => e
@@ -35,23 +41,42 @@ class ImportCapitalCommittment < ImportUtil
     folio_id = user_data["Folio No"].presence
 
     if fund && investor
+      # Make the capital_commitment
+      capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
+                                                 fund:, investor:, notes: user_data["Notes"])
 
-      if CapitalCommitment.exists?(entity_id: import_upload.entity_id, fund:, investor:, folio_id:)
-        raise "Committment Already Present"
+      capital_commitment.committed_amount = user_data["Committed Amount"].to_d
+
+      setup_custom_fields(user_data, capital_commitment, custom_field_headers)
+
+      if capital_commitment.valid?
+        @commitments << capital_commitment
+        [true, "Success"]
       else
-
-        # Make the capital_commitment
-        capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
-                                                   fund:, investor:, notes: user_data["Notes"])
-
-        capital_commitment.committed_amount = user_data["Committed Amount"].to_d
-
-        setup_custom_fields(user_data, capital_commitment, custom_field_headers)
-
-        capital_commitment.save!
+        [false, capital_commitment.errors.full_messages]
       end
+    elsif fund
+      [false, "Investor not found"]
     else
-      raise fund ? "Investor not found" : "Fund not found"
+      [false, "Fund not found"]
+    end
+  end
+
+  def post_process(import_upload)
+    # Import it
+    CapitalCommitment.import @commitments, on_duplicate_key_update: %i[folio_id notes committed_amount_cents]
+
+    # Sometimes we import custom fields. Ensure custom fields get created
+    @last_saved = import_upload.entity.funds.last.capital_commitments.last
+    FormType.extract_from_db(@last_saved) if @last_saved
+
+    import_upload.entity.funds.each do |fund|
+      # Compute the percentages
+      fund.capital_commitments.last&.compute_percentage
+      # Ensure the counter caches are updated
+      fund.committed_amount_cents = fund.capital_commitments.sum(:committed_amount_cents)
+      fund.collected_amount_cents = fund.capital_commitments.sum(:collected_amount_cents)
+      fund.save
     end
   end
 end
