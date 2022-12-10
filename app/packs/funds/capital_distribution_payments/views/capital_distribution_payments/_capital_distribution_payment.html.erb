@@ -3,6 +3,9 @@
     <%= link_to capital_distribution_payment.investor.investor_name, capital_distribution_payment.investor %>
   </td>
   <td>
+    <%= capital_distribution_payment.folio_id %>
+  </td>
+  <td>
     <%= money_to_currency capital_distribution_payment.amount, params %>
     <br>
     <small>

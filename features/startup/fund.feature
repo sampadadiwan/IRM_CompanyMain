@@ -138,7 +138,8 @@ Scenario Outline: Import capital calls
   Then I should see the "Import upload was successfully created"
   Then There should be "3" capital calls created
   And the capital calls must have the data in the sheet
-
+  And the remittances are generated for the capital calls
+  
 
 Scenario Outline: Import capital distributions
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"

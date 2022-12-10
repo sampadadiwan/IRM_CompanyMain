@@ -36,22 +36,7 @@ class CapitalCallJob < ApplicationJob
 
     # import the rows
     CapitalRemittance.import @remittances
-
-    ###########################################
-    # When the remittances are created - there is no collected amount, hence code below is not required
-    ###########################################
-
-    # @capital_call.reload
-    # # Ensure the counter caches are updated
-    # @capital_call.collected_amount_cents = @capital_call.capital_remittances.sum(:collected_amount_cents)
-    # @capital_call.save
-
-    # @capital_call.capital_remittances.each do |cr|
-    #   cr.capital_commitment.collected_amount_cents = cr.capital_commitment.capital_remittances.sum(:collected_amount_cents)
-    #   cr.capital_commitment.save
-    # end
-    # @capital_call.fund.collected_amount_cents = @capital_call.fund.capital_remittances.sum(:collected_amount_cents)
-    # @capital_call.fund.save
+    CapitalRemittance.counter_culture_fix_counts
   end
 
   def notify(capital_call_id)

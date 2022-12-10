@@ -24,13 +24,22 @@ class CapitalRemittance < ApplicationRecord
   validates_uniqueness_of :folio_id, scope: :capital_call_id
 
   counter_culture :capital_call, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
-                                 delta_column: 'collected_amount_cents'
+                                 delta_column: 'collected_amount_cents',
+                                 column_names: {
+                                   ["capital_remittances.verified = ?", true] => 'collected_amount_cents'
+                                 }
 
   counter_culture :capital_commitment, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
-                                       delta_column: 'collected_amount_cents'
+                                       delta_column: 'collected_amount_cents',
+                                       column_names: {
+                                         ["capital_remittances.verified = ?", true] => 'collected_amount_cents'
+                                       }
 
   counter_culture :fund, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
-                         delta_column: 'collected_amount_cents'
+                         delta_column: 'collected_amount_cents',
+                         column_names: {
+                           ["capital_remittances.verified = ?", true] => 'collected_amount_cents'
+                         }
 
   before_save :set_status
   before_create :set_call_amount

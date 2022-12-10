@@ -588,3 +588,15 @@ Then('the fund must have the counter caches updated') do
   @fund.collected_amount_cents.should == CapitalCommitment.all.sum(:collected_amount_cents)
   @fund.committed_amount_cents.should == CapitalCommitment.all.sum(:committed_amount_cents)
 end
+
+
+Then('the remittances are generated for the capital calls') do
+  Fund.all.each do |fund|
+    fund.capital_calls.each do |cc|
+      puts cc.capital_remittances.to_json
+      cc.capital_remittances.count.should == fund.capital_commitments.count 
+      cc.capital_remittances.sum(:call_amount_cents).should == cc.call_amount_cents
+      cc.capital_remittances.sum(:collected_amount_cents).should == cc.collected_amount_cents
+    end
+  end
+end
