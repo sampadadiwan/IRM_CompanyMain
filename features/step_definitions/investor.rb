@@ -184,7 +184,7 @@ Then('the investors must have the data in the sheet') do
     inv = investors[idx-1]
     puts "Checking import of #{inv.investor_name}"
     inv.investor_name.should == user_data["Name"].strip
-    inv.tag_list.join(", ").should == user_data["Tags"]
+    inv.tag_list.should == user_data["Tags"]
     inv.category.should == user_data["Category"]
     inv.city.should == user_data["City"]
     

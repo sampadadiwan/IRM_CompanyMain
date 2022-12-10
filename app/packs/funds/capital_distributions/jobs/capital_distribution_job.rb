@@ -32,6 +32,9 @@ class CapitalDistributionJob < ApplicationJob
 
       # import the rows
       CapitalDistributionPayment.import @payments
+      # Update the index
+      CapitalDistributionPaymentIndex.update_index(id: @capital_distribution.capital_distribution_payment_ids)
+      # Update the counter caches
       CapitalDistributionPayment.counter_culture_fix_counts
     end
   end

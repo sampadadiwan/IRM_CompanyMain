@@ -63,9 +63,12 @@ class ImportCapitalCommittment < ImportUtil
   end
 
   def post_process(import_upload)
+
+    
     # Import it
     CapitalCommitment.import @commitments, on_duplicate_key_update: %i[folio_id notes committed_amount_cents]
-
+    CapitalCommitmentIndex.update_index(id: import_upload.entity.investor_ids)
+    
     # Sometimes we import custom fields. Ensure custom fields get created
     @last_saved = import_upload.entity.funds.last.capital_commitments.last
     FormType.extract_from_db(@last_saved) if @last_saved

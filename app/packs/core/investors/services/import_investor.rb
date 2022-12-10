@@ -7,6 +7,12 @@ class ImportInvestor < ImportUtil
     STANDARD_HEADERS
   end
 
+  def post_process(import_upload)
+    import_upload.entity.investor_notices.each do |notice|
+      InvestorNoticeJob.perform_now(notice.id)
+    end
+  end
+
   def save_investor(user_data, import_upload, custom_field_headers)
     # puts "processing #{user_data}"
     saved = true
@@ -20,7 +26,7 @@ class ImportInvestor < ImportUtil
       Rails.logger.debug user_data
       investor = Investor.new(investor_name:, tag_list: user_data["Tags"],
                               category: user_data["Category"].strip, city: user_data["City"],
-                              entity_id: import_upload.entity_id)
+                              entity_id: import_upload.entity_id, imported: true)
 
       setup_custom_fields(user_data, investor, custom_field_headers)
 

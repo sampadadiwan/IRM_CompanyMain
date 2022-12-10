@@ -23,7 +23,7 @@
         Tags
       </td>
       <td>
-        <%= raw @investor.tag_list&.split(",")&.collect{|tag| link_to(tag, search_investors_path(query: tag))}.join(", ") %>
+        <%= raw @investor.tag_list.split(",")&.collect{|tag| link_to(tag, search_investors_path(query: tag))}.join(", ") if @investor.tag_list %>
       </td>    
     </tr>
     <tr>

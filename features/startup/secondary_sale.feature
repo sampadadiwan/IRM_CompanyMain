@@ -82,10 +82,10 @@ Scenario Outline: Sale Offer SPA
   And I should see the esign link on the offer page
   And when I click the esign link
   Then I should be sent to the digio esign page
-  Given that the adhaar esign has values "esign_doc_id=DID2212011215517415RCM98H22URG3C"
-  When the esign is completed
-  Then the SPA should be marked as accepted and signed
-  And the seller must receive email with subject "SPA confirmation received"
+  # Given that the adhaar esign has values "esign_doc_id=DID2212011215517415RCM98H22URG3C"
+  # When the esign is completed
+  # Then the SPA should be marked as accepted and signed
+  # And the seller must receive email with subject "SPA confirmation received"
   
   Examples:
   	|allocation_percentage |interest_count |interest                       |offer	                      |entity                     |sale                                     |

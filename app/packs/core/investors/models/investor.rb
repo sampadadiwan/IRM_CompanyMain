@@ -71,7 +71,7 @@ class Investor < ApplicationRecord
     Investment.INVESTOR_CATEGORIES(entity) + %w[Prospective Advisor]
   end
 
-  after_create_commit -> { InvestorAddedJob.perform_later(id) }
+  after_create_commit -> { InvestorAddedJob.perform_later(id) unless imported }
 
   before_validation :update_name
   def update_name

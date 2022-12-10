@@ -36,6 +36,9 @@ class CapitalCallJob < ApplicationJob
 
     # import the rows
     CapitalRemittance.import @remittances
+    # Update the search index
+    CapitalRemittanceIndex.update_index(id: @capital_call.capital_remittance_ids)
+    # Update the counter caches
     CapitalRemittance.counter_culture_fix_counts
   end
 
