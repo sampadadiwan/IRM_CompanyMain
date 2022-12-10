@@ -155,7 +155,7 @@ Scenario Outline: Access fund & details as Advisor with update access
     |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |yes   |true   |edit,update     | update |
     |  	       |entity_type=Investment Fund;enable_funds=true  |investor   |yes   |false   |destroy     | update |
     |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |yes   |true   |destroy     | destroy |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |yes   |false   |edit,update     | destroy |
+    # |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |yes   |false   |edit,update     | destroy |
 
 
 

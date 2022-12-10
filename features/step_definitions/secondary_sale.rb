@@ -581,7 +581,7 @@ end
 
 
 Given('when I click the esign link') do
-  click_on "Click here to eSign"
+  click_on "eSign SPA"
 end
 
 Then('I should be sent to the digio esign page') do
