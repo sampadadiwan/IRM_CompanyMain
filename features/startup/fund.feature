@@ -151,3 +151,5 @@ Scenario Outline: Import capital distributions
   Then I should see the "Import upload was successfully created"
   Then There should be "3" capital distributions created
   And the capital distributions must have the data in the sheet
+  And the payments are generated for the capital distrbutions
+  

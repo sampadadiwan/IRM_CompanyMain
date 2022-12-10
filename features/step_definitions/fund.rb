@@ -593,10 +593,20 @@ end
 Then('the remittances are generated for the capital calls') do
   Fund.all.each do |fund|
     fund.capital_calls.each do |cc|
-      puts cc.capital_remittances.to_json
+      # puts cc.capital_remittances.to_json
       cc.capital_remittances.count.should == fund.capital_commitments.count 
       cc.capital_remittances.sum(:call_amount_cents).should == cc.call_amount_cents
       cc.capital_remittances.sum(:collected_amount_cents).should == cc.collected_amount_cents
+    end
+  end
+end
+
+Then('the payments are generated for the capital distrbutions') do
+  Fund.all.each do |fund|
+    fund.capital_distributions.each do |cc|
+      # puts cc.capital_distribution_payments.to_json
+      cc.capital_distribution_payments.count.should == fund.capital_commitments.count 
+      cc.capital_distribution_payments.sum(:amount_cents).round(0).should == cc.net_amount_cents.round(0)
     end
   end
 end
