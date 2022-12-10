@@ -35,6 +35,7 @@ class CapitalCommitmentDocGenerator
       r.add_field :company_name, capital_commitment.entity.name
       r.add_field :fund_name, capital_commitment.fund.name
       r.add_field :commitment_ppm_number, capital_commitment.ppm_number
+      r.add_field :folio_id, capital_commitment.folio_id
       r.add_field :fund_details, capital_commitment.fund.details
 
       r.add_field :investor_name, capital_commitment.investor.investor_name
