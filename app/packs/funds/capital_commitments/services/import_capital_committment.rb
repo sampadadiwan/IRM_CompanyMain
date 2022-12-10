@@ -50,6 +50,8 @@ class ImportCapitalCommittment < ImportUtil
       setup_custom_fields(user_data, capital_commitment, custom_field_headers)
 
       if capital_commitment.valid?
+        capital_commitment.run_callbacks(:save) { false }
+        capital_commitment.run_callbacks(:create) { false }
         @commitments << capital_commitment
         [true, "Success"]
       else
