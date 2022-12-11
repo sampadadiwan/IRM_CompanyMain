@@ -73,6 +73,6 @@ class InvestorNoticesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_notice_params
-    params.require(:investor_notice).permit(:entity_id, :owner_id, :owner_type, :start_date, :end_date, :active, :details, :title, :link, :access_rights_metadata, :btn_label, :generate)
+    params.require(:investor_notice).permit(:entity_id, :owner_id, :owner_type, :start_date, :end_date, :active, :details, :title, :link, :access_rights_metadata, :btn_label, :generate, :category)
   end
 end

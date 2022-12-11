@@ -17,7 +17,11 @@ class InvestorNoticeJob < ApplicationJob
     entries = []
 
     # Generate import of only new_interest_ids
-    all_investor_ids = investor_notice.entity.investors.pluck(:id)
+    all_investors = investor_notice.entity.investors
+    all_investors = all_investors.where(category: investor_notice.category) if investor_notice.category.present?
+
+    all_investor_ids = all_investors.pluck(:id)
+
     existing_investor_ids = investor_notice.investor_notice_entries.pluck(:investor_id)
     new_investor_ids = all_investor_ids - existing_investor_ids
 
