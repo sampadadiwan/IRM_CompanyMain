@@ -23,7 +23,9 @@ class ImportUploadsController < ApplicationController
   def create
     @import_upload = ImportUpload.new(import_upload_params)
     @import_upload.user_id = current_user.id
-    @import_upload.entity_id = @import_upload.owner.entity_id if @import_upload.owner
+    # For Advisors we need to allow them to import data, so we do this
+    # The advisors will have ability to create on the owner - see policy
+    @import_upload.entity_id = @import_upload.owner.entity_id if @import_upload.owner && @import_upload.owner_type != "Entity"
 
     authorize @import_upload
 
