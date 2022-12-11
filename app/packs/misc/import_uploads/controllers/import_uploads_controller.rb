@@ -3,7 +3,7 @@ class ImportUploadsController < ApplicationController
 
   # GET /import_uploads or /import_uploads.json
   def index
-    @import_uploads = policy_scope(ImportUpload)
+    @import_uploads = policy_scope(ImportUpload).includes(:user, :owner)
   end
 
   # GET /import_uploads/1 or /import_uploads/1.json
@@ -13,6 +13,10 @@ class ImportUploadsController < ApplicationController
   def new
     @import_upload = ImportUpload.new(import_upload_params)
     @import_upload.user_id = current_user.id
+    # For Advisors we need to allow them to import data, so we do this
+    # The advisors will have ability to create on the owner - see policy
+    @import_upload.entity_id = @import_upload.owner.entity_id if @import_upload.owner && @import_upload.owner_type != "Entity"
+
     authorize @import_upload
   end
 
@@ -23,10 +27,6 @@ class ImportUploadsController < ApplicationController
   def create
     @import_upload = ImportUpload.new(import_upload_params)
     @import_upload.user_id = current_user.id
-    # For Advisors we need to allow them to import data, so we do this
-    # The advisors will have ability to create on the owner - see policy
-    @import_upload.entity_id = @import_upload.owner.entity_id if @import_upload.owner && @import_upload.owner_type != "Entity"
-
     authorize @import_upload
 
     respond_to do |format|
