@@ -25,7 +25,7 @@ module FundStatisticsHelper
 
       # This is to get the sum of the other
       # https://stackoverflow.com/questions/2623853/how-to-sum-from-an-offset-through-the-end-of-the-table
-      row = CapitalCommitment.connection.select_one("select sum(committed_amount_cents) from (#{fund.capital_commitments.order(committed_amount_cents: :desc).offset(11).to_sql}) q")
+      row = CapitalCommitment.connection.select_one("select sum(committed_amount_cents) from (#{fund.capital_commitments.order(committed_amount_cents: :desc).offset(10).to_sql}) q")
       others_cents = row["sum(committed_amount_cents)"]
 
       grouped << ["Others", others_cents / 100]
@@ -48,7 +48,7 @@ module FundStatisticsHelper
 
       # This is to get the sum of the other
       # https://stackoverflow.com/questions/2623853/how-to-sum-from-an-offset-through-the-end-of-the-table
-      row = CapitalCommitment.connection.select_one("select sum(committed_amount_cents) from (#{fund.capital_commitments.order(committed_amount_cents: :desc).offset(11).to_sql}) q")
+      row = CapitalCommitment.connection.select_one("select sum(committed_amount_cents) from (#{fund.capital_commitments.order(committed_amount_cents: :desc).offset(10).to_sql}) q")
       others_cents = row["sum(committed_amount_cents)"]
       grouped << ["Others", others_cents / 100]
     end
