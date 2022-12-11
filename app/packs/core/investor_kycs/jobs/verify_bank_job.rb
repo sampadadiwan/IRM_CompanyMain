@@ -10,23 +10,23 @@ class VerifyBankJob < ApplicationJob
       response = KycVerify.new.verify_bank(@model.full_name, @model.bank_account_number, @model.ifsc_code)
       init_offer(response)
 
-      if response["status"] == "completed"
+      if response["verified"]
         check_details(response)
       else
         @model.bank_verified = false
-        @model.bank_verification_status = response["message"]
-        @model.bank_verification_status ||= "Account not found"
+        @model.bank_verification_status = response["error_msg"]
       end
     else
       @model.bank_verification_status = "No Bank Account or IFSC Code Entered"
     end
   end
 
+  # {"id":"E2YKNGCI4LFPHM6","verified":true,"verified_at":"2022-12-11 18:27:39","beneficiary_name_with_bank":"THIMMAIAH C","fuzzy_match_result":true,"fuzzy_match_score":88}
   def init_offer(response)
     Rails.logger.debug response
     @model.bank_verification_status = nil
     @model.bank_verified = false
-    @model.bank_verification_response = response["result"]
+    @model.bank_verification_response = response
   end
 
   def check_details(response)
