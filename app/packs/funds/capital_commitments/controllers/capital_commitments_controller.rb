@@ -5,7 +5,8 @@ class CapitalCommitmentsController < ApplicationController
   # GET /capital_commitments or /capital_commitments.json
   def index
     @capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :investor, :fund)
-    @capital_commitments = @capital_commitments.where(fund_id: params[:fund_id]) if params[:fund_id]
+    @capital_commitments = @capital_commitments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    @capital_commitments = @capital_commitments.where(onboarding_completed: params[:onboarding_completed]) if params[:onboarding_completed].present?
 
     @capital_commitments = @capital_commitments.page(params[:page]) if params[:all].blank?
   end
@@ -114,6 +115,7 @@ class CapitalCommitmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_commitment_params
-    params.require(:capital_commitment).permit(:entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :notes, :folio_id, :investor_signatory_id, :investor_signature_types, properties: {})
+    params.require(:capital_commitment).permit(:entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :notes, :folio_id, :investor_signatory_id,
+                                               :onboarding_completed, :investor_signature_types, properties: {})
   end
 end

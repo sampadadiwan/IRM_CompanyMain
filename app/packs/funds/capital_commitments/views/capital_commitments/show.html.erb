@@ -10,12 +10,22 @@
   </tr>
   <tr>
     <td>
+      Onboarding Complete
+    </td>
+    <td>
+      <%= display_boolean @capital_commitment.onboarding_completed %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
       Investor
     </td>
     <td>
       <%= link_to @capital_commitment.investor.investor_name, @capital_commitment.investor %>
     </td>
   </tr>
+
   <tr>
     <td>
       Investor Signatory

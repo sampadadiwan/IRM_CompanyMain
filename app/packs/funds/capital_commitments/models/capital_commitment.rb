@@ -7,6 +7,9 @@ class CapitalCommitment < ApplicationRecord
 
   update_index('capital_commitment') { self }
 
+  scope :lp_onboarding_complete, -> { where(onboarding_completed: true) }
+  scope :lp_onboarding_incomplete, -> { where(onboarding_completed: false) }
+
   belongs_to :entity
   belongs_to :investor
   has_many :investor_kycs, through: :investor

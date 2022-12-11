@@ -13,4 +13,18 @@
     </td>
   </tr>
 
+  <tr>
+    <td colspan="2" class="bg-primary"></td>
+  </tr>
+
+  <tr>
+    <td colspan="2">
+        <div data-controller="datatable">
+          <%= render "/capital_commitments/index", 
+              capital_commitments: @fund.capital_commitments.lp_onboarding_incomplete.includes(:investor, :fund), toolbar: "No" %>
+        </div>
+    </td>
+  </tr>
+
+
 </table>

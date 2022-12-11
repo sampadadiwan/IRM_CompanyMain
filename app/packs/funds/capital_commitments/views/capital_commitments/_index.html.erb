@@ -1,7 +1,10 @@
+<% toolbar ||= "Yes" %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Commitments</h1>
 
+    <% if toolbar == "Yes" %>
     <span>
+
         <%= link_to "New Capital Commitment", new_capital_commitment_path("capital_commitment[fund_id]": params[:fund_id]),  {class: "btn btn-primary" } if params[:fund_id] %>
 
         <%= link_to "Download", capital_commitments_path(fund_id: params[:fund_id], format: "xlsx", all: true),  {class: "btn btn-primary" } if params[:fund_id] %>
@@ -17,6 +20,7 @@
         <%= render "/funds/search_bar", model_name: "capital_commitment" %>
 
     </span>
+    <% end %>
 </div>
 
 <div class="table-responsive">
@@ -43,7 +47,9 @@
                 <th>
                     Collected Amount
                 </th>
-
+                <th>
+                    Onboarding Completed
+                </th>
 
                 <th>
                 </th>
