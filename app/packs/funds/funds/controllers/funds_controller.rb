@@ -7,7 +7,7 @@ class FundsController < ApplicationController
   end
 
   def report
-    render params[:report]
+    render "/funds/dashboard/#{params[:report]}"
   end
 
   # GET /funds/1 or /funds/1.json

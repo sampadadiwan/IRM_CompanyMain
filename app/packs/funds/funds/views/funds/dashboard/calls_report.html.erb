@@ -1,0 +1,39 @@
+<%= render "/layouts/alerts" %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Pending Remittances</h1>
+</div>
+<table class="table table-bordered dataTable">
+
+  <tr>
+    <td>
+      Fund Name
+    </td>
+    <td>
+      <%= link_to @fund.name, @fund %>
+    </td>
+  </tr>
+
+
+  <tr>
+    <td>
+      Call Amount
+    </td>
+    <td>
+      <%= money_to_currency @fund.call_amount, params %>
+    </td>
+  </tr>
+
+  <tr>
+    <td colspan="2" class="bg-primary"></td>
+  </tr>
+
+  <tr>
+    <td colspan="2">
+        <div data-controller="datatable">
+          <%= render "/capital_remittances/index", 
+              capital_remittances: @fund.capital_remittances.pending.includes(:investor, :fund), search: "No" %>
+        </div>
+    </td>
+  </tr>
+
+</table>

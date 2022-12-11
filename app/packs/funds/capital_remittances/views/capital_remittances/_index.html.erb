@@ -1,3 +1,4 @@
+<% search ||= "Yes" %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
     <span>
@@ -22,7 +23,7 @@
 
     <% end %>
 
-    <%= render "/funds/search_bar", model_name: "capital_remittance" %>
+    <%= render "/funds/search_bar", model_name: "capital_remittance" unless search == "No" %>
 
     </span>
 </div>
