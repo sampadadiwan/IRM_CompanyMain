@@ -12,7 +12,6 @@ class ImportUploadsController < ApplicationController
   # GET /import_uploads/new
   def new
     @import_upload = ImportUpload.new(import_upload_params)
-    @import_upload.entity_id = current_user.entity_id
     @import_upload.user_id = current_user.id
     authorize @import_upload
   end
@@ -23,8 +22,9 @@ class ImportUploadsController < ApplicationController
   # POST /import_uploads or /import_uploads.json
   def create
     @import_upload = ImportUpload.new(import_upload_params)
-    @import_upload.entity_id = current_user.entity_id
     @import_upload.user_id = current_user.id
+    @import_upload.entity_id = @import_upload.owner.entity_id if @import_upload.owner
+
     authorize @import_upload
 
     respond_to do |format|
