@@ -1,9 +1,13 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show edit update destroy timeline last]
+  before_action :set_fund, only: %i[show edit update destroy timeline last report]
 
   # GET /funds or /funds.json
   def index
     @funds = policy_scope(Fund).includes(:entity)
+  end
+
+  def report
+    render params[:report]
   end
 
   # GET /funds/1 or /funds/1.json

@@ -17,7 +17,20 @@
   <div>
     <% if policy(@fund).update? %>
       <%= link_to "Edit" , edit_fund_path(@fund), {class: "btn btn-primary" } %> 
-      <%= link_to "Timeline" , timeline_fund_path(@fund), {class: "btn btn-success" } %> 
+
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-success dropdown-toggle" type="button" 
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Reports
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <%= link_to "Fund Numbers" , report_fund_path(@fund, report: "chart"), {class: "dropdown-item" } %> 
+            <%= link_to "Timeline" , timeline_fund_path(@fund), {class: "dropdown-item" } %> 
+          </div>
+        </div>
+      </div>
+      
       <%= button_to "Delete" , @fund, method: :delete, class: "btn btn-danger" , form_class: "deleteButton" , data:
             {action: "click->confirm#popup" , turbo:false} if policy(@fund).destroy? %>
 
