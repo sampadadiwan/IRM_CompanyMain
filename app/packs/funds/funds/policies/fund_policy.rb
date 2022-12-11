@@ -19,6 +19,10 @@ class FundPolicy < FundBasePolicy
     user.enable_funds
   end
 
+  def report?
+    update?
+  end
+
   def show?
     user.enable_funds &&
       (

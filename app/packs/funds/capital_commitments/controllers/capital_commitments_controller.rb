@@ -1,5 +1,6 @@
 class CapitalCommitmentsController < ApplicationController
-  before_action :set_capital_commitment, only: %i[show edit update destroy generate_documentation generate_esign_link]
+  before_action :set_capital_commitment, only: %i[show edit update destroy generate_documentation
+                                                  generate_esign_link report]
 
   # GET /capital_commitments or /capital_commitments.json
   def index
@@ -7,6 +8,10 @@ class CapitalCommitmentsController < ApplicationController
     @capital_commitments = @capital_commitments.where(fund_id: params[:fund_id]) if params[:fund_id]
 
     @capital_commitments = @capital_commitments.page(params[:page]) if params[:all].blank?
+  end
+
+  def report
+    render params[:report]
   end
 
   def search

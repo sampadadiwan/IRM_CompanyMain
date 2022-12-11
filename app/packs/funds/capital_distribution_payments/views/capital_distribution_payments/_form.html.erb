@@ -23,6 +23,11 @@
   </div>
 
 
+  <div class="form-group">
+    <%= form.label :folio_id, "Folio No" %>
+    <%= form.text_field :folio_id, class: "form-control"  %>
+  </div>
+
   <div class="form-group" data-controller="currencyformat">
     <%= form.label :amount %> <span class="formatted_currency"></span>
     <%= form.text_field :amount, class: "form-control", data: {action: "input->currencyformat#format"} %>

@@ -14,6 +14,7 @@ class CapitalCommitment < ApplicationRecord
 
   belongs_to :fund, touch: true
   has_many :capital_remittances, dependent: :destroy
+  has_many :capital_distribution_payments, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
   belongs_to :investor_signatory, class_name: "User", optional: true
   belongs_to :form_type, optional: true
@@ -23,7 +24,7 @@ class CapitalCommitment < ApplicationRecord
   has_many :esigns, -> { order("sequence_no asc") }, as: :owner
   has_many :signature_workflows, as: :owner
 
-  monetize :committed_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :committed_amount_cents, :collected_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.fund.currency }
 
   validates :committed_amount_cents, numericality: { greater_than: 0 }
   validates :folio_id, presence: true

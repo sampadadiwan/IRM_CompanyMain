@@ -29,6 +29,9 @@ class CapitalRemittance < ApplicationRecord
                                    ["capital_remittances.verified = ?", true] => 'collected_amount_cents'
                                  }
 
+  counter_culture :capital_commitment, column_name: 'call_amount_cents',
+                                       delta_column: 'call_amount_cents'
+
   counter_culture :capital_commitment, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                                        delta_column: 'collected_amount_cents',
                                        column_names: {

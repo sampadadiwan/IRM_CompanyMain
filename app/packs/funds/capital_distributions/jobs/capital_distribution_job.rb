@@ -17,6 +17,7 @@ class CapitalDistributionJob < ApplicationJob
         payment = CapitalDistributionPayment.new(fund_id: @capital_distribution.fund_id,
                                                  entity_id: @capital_distribution.entity_id,
                                                  capital_distribution_id: @capital_distribution.id,
+                                                 capital_commitment_id: cc.id,
                                                  investor_id: cc.investor_id, amount_cents:,
                                                  payment_date: @capital_distribution.distribution_date,
                                                  percentage: cc.percentage, folio_id: cc.folio_id,

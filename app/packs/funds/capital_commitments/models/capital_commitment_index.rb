@@ -1,5 +1,5 @@
 class CapitalCommitmentIndex < Chewy::Index
-  SEARCH_FIELDS = %i[entity_name investor_name fund_name].freeze
+  SEARCH_FIELDS = %i[entity_name investor_name fund_name folio_id].freeze
 
   index_scope CapitalCommitment.includes(:entity, :investor, :fund)
   field :entity_id

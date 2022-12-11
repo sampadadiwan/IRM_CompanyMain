@@ -14,6 +14,7 @@ class CapitalDistributionsController < ApplicationController
   def new
     @capital_distribution = CapitalDistribution.new(capital_distribution_params)
     @capital_distribution.entity_id = @capital_distribution.fund.entity_id
+    @capital_distribution.distribution_date = Time.zone.today
     authorize @capital_distribution
   end
 

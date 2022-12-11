@@ -19,6 +19,10 @@ class CapitalCommitmentPolicy < FundBasePolicy
     true
   end
 
+  def report?
+    update?
+  end
+
   def show?
     permissioned_employee? ||
       permissioned_investor? ||

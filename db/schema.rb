@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_10_065851) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_11_064846) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -265,6 +265,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_10_065851) do
     t.boolean "esign_completed", default: false
     t.string "esign_provider", limit: 10
     t.string "esign_link"
+    t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
     t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"
@@ -286,6 +288,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_10_065851) do
     t.boolean "completed", default: false
     t.decimal "percentage", precision: 5, scale: 2, default: "0.0"
     t.string "folio_id", limit: 20
+    t.bigint "capital_commitment_id"
+    t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
     t.index ["entity_id"], name: "index_capital_distribution_payments_on_entity_id"
     t.index ["form_type_id"], name: "index_capital_distribution_payments_on_form_type_id"
@@ -1600,6 +1604,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_10_065851) do
   add_foreign_key "capital_commitments", "funds"
   add_foreign_key "capital_commitments", "investors"
   add_foreign_key "capital_commitments", "users", column: "investor_signatory_id"
+  add_foreign_key "capital_distribution_payments", "capital_commitments"
   add_foreign_key "capital_distribution_payments", "capital_distributions"
   add_foreign_key "capital_distribution_payments", "entities"
   add_foreign_key "capital_distribution_payments", "form_types"

@@ -9,6 +9,7 @@ class CapitalDistributionPayment < ApplicationRecord
   belongs_to :entity
   belongs_to :capital_distribution, touch: true
   belongs_to :investor
+  belongs_to :capital_commitment
   belongs_to :form_type, optional: true
 
   monetize :amount_cents, with_currency: ->(i) { i.fund.currency }
@@ -28,6 +29,15 @@ class CapitalDistributionPayment < ApplicationRecord
                   column_names: {
                     ["capital_distribution_payments.completed = ?", true] => 'distribution_amount_cents'
                   }
+
+  counter_culture :capital_commitment,
+                  column_name: 'distribution_amount_cents',
+                  delta_column: 'amount_cents'
+
+  before_validation :ensure_commitment
+  def ensure_commitment
+    self.capital_commitment = fund.capital_commitments.where(investor_id:, folio_id:).first
+  end
 
   after_commit :send_notification, if: :completed
   def send_notification

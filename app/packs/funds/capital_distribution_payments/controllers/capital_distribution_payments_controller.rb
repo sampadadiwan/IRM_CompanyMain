@@ -49,6 +49,8 @@ class CapitalDistributionPaymentsController < ApplicationController
     @capital_distribution_payment = CapitalDistributionPayment.new(capital_distribution_payment_params)
     @capital_distribution_payment.entity_id = @capital_distribution_payment.capital_distribution.entity_id
     @capital_distribution_payment.fund_id = @capital_distribution_payment.capital_distribution.fund_id
+    @capital_distribution_payment.payment_date = Time.zone.today
+
     authorize(@capital_distribution_payment)
   end
 
@@ -106,6 +108,6 @@ class CapitalDistributionPaymentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_distribution_payment_params
-    params.require(:capital_distribution_payment).permit(:fund_id, :entity_id, :capital_distribution_id, :investor_id, :form_type_id, :amount, :payment_date, :completed, properties: {})
+    params.require(:capital_distribution_payment).permit(:fund_id, :entity_id, :capital_distribution_id, :investor_id, :form_type_id, :amount, :payment_date, :completed, :folio_id, properties: {})
   end
 end

@@ -1,0 +1,81 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  
+  <tr>
+    <td>
+      Investor
+    </td>
+    <td>
+      <%= @capital_commitment.investor.investor_name %>
+    </td>
+  </tr>
+
+   <tr>
+    <td>
+      Folio No
+    </td>
+    <td>
+      <%= @capital_commitment.folio_id %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Fund Name
+    </td>
+    <td>
+      <%= @capital_commitment.fund.name %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Commited Amount
+    </td>
+    <td>
+      <%= money_to_currency @capital_commitment.committed_amount, params %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Collected Amount
+    </td>
+    <td>
+      <%= money_to_currency @capital_commitment.collected_amount, params %>      
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Distributed Amount
+    </td>
+    <td>
+      <%= money_to_currency @capital_commitment.distribution_amount, params %>      
+    </td>
+  </tr>
+
+  <tr>
+    <td colspan="2" class="bg-primary"></td>
+  </tr>
+
+  <tr>
+    <td colspan="2">
+        <%= render "/capital_remittances/index", 
+            capital_remittances: @capital_commitment.capital_remittances.includes(:investor, :fund) %>
+    </td>
+  </tr>
+
+  <tr>
+    <td colspan="2" class="bg-primary"></td>
+  </tr>
+
+  
+  <tr>
+    <td colspan="2">
+        <%= render "/capital_distribution_payments/index", 
+            capital_distribution_payments: @capital_commitment.capital_distribution_payments.includes(:investor, :fund) %>
+    </td>
+  </tr>
+
+</table>

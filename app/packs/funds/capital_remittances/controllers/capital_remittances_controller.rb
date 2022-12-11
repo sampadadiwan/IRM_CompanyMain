@@ -8,6 +8,7 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittances = @capital_remittances.where(status: params[:status]) if params[:status].present?
     @capital_remittances = @capital_remittances.where(verified: params[:verified] == "true") if params[:verified].present?
     @capital_remittances = @capital_remittances.where(capital_call_id: params[:capital_call_id]) if params[:capital_call_id].present?
+    @capital_remittances = @capital_remittances.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
 
     @capital_remittances = @capital_remittances.page(params[:page]) if params[:all].blank?
   end
@@ -59,6 +60,8 @@ class CapitalRemittancesController < ApplicationController
   # GET /capital_remittances/1/edit
   def edit
     @capital_remittance.status = params[:status] if params[:status]
+    @capital_remittance.collected_amount_cents = @capital_remittance.call_amount_cents if @capital_remittance.status == "Paid" && @capital_remittance.collected_amount_cents.zero?
+
     setup_custom_fields(@capital_remittance)
   end
 

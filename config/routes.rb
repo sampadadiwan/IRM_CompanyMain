@@ -60,11 +60,13 @@ Rails.application.routes.draw do
     patch 'generate_documentation', on: :member
     patch 'generate_esign_link', on: :member
     get 'search', on: :collection
+    get 'report', on: :member
   end
 
   resources :funds do
     get   'timeline', on: :member
     get   'last', on: :member
+    get 'report', on: :member
   end
 
   resources :investment_snapshots
