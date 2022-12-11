@@ -26,11 +26,11 @@ class VerifyBankJob < ApplicationJob
     Rails.logger.debug response
     @model.bank_verification_status = nil
     @model.bank_verified = false
-    @model.bank_verification_response = response
+    @model.bank_verification_response = JSON.parse(response.body)
   end
 
   def check_details(response)
-    name_at_bank = @model.bank_verification_response["name_at_bank"].split
+    name_at_bank = @model.bank_verification_response["beneficiary_name_with_bank"].split
     Rails.logger.debug { "name_at_bank = #{name_at_bank}" }
     @model.bank_verified = false
 
