@@ -34,7 +34,7 @@ class Fund < ApplicationRecord
     self.funding_round = FundingRound.new(name:, entity_id:, status: "Open", currency:)
   end
 
-  # after_commit :generate_calcs
+  after_commit :generate_calcs
   def generate_calcs
     FundCalcJob.perform_later(id) unless @update_by_fund_calc
   end
