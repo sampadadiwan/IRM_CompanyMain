@@ -39,7 +39,7 @@ sandbox:
 test: &test
   <<: *default
   database: IRM_test
-  host: 127.0.0.1
+  host: <%= ENV.fetch("DB_HOST") %>
 
 
 # As with config/credentials.yml, you never want to store sensitive information,
