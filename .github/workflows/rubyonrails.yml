@@ -50,10 +50,8 @@ jobs:
         run: |
           sudo apt-get -y update
           sudo apt-get install -y mysql-client libmysqlclient-dev libreoffice    
-          sudo apt-get install tzdata locales -y && sudo locale-gen en_UK.UTF-8
-          sudo localectl set-locale LANG="en_UK.UTF-8"
-          export LANG="en_UK.UTF-8"
-          sudo update-locale
+          sudo locale-gen en_UK.UTF-8
+          sudo update-locale LANG=en_UK.UTF-8
 
 
       - name: Checkout Commit
