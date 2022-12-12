@@ -92,6 +92,7 @@ jobs:
           DIGIO_SECRET: ${{ secrets.DIGIO_SECRET }}
         run: |
           bundle
+          sleep 30
           bin/rails db:create
           bin/rails db:schema:load
           bundle exec cucumber features
