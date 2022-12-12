@@ -201,6 +201,10 @@ class SecondarySalesController < ApplicationController
 
   # POST /secondary_sales or /secondary_sales.json
   def create
+    puts "In controller"
+    puts secondary_sale_params
+    puts @secondary_sale.to_json
+
     @secondary_sale = SecondarySale.new(secondary_sale_params)
     @secondary_sale.entity_id = current_user.entity_id
     authorize @secondary_sale
