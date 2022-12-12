@@ -49,10 +49,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get -y update
-          sudo apt-get install -y mysql-client libmysqlclient-dev   
-          sleep 30  
-          mysql -h 127.0.0.1 -u root -proot -e 'CREATE DATABASE IF NOT EXISTS test;'
-     
+          sudo apt-get install -y mysql-client libmysqlclient-dev          
 
       - name: Checkout Commit
         uses: actions/checkout@v3
