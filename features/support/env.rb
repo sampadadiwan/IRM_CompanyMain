@@ -75,7 +75,7 @@ options = Selenium::WebDriver::Chrome::Options.new
 options.add_argument('--ignore-certificate-errors')
 options.add_argument('--disable-popup-blocking')
 options.add_argument('--disable-translate')
-options.add_argument("--lang=en-GB");
+options.add_argument("--lang=en_UK");
 
 
 Capybara.register_driver :selenium do |app|
