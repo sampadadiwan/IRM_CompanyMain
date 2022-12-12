@@ -50,7 +50,7 @@ jobs:
         run: |
           sudo apt-get -y update
           sudo apt-get install -y mysql-client libmysqlclient-dev     
-          mysql -h 127.0.0.1 -u root -proot -e 'CREATE DATABASE IF NOT EXISTS test;'
+          mysql -h localhost -p 3306 -u root -proot -e 'CREATE DATABASE IF NOT EXISTS test;'
      
 
       - name: Checkout Commit
