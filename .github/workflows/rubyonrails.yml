@@ -95,5 +95,5 @@ jobs:
           sleep 30
           bin/rails db:create
           bin/rails db:schema:load
-          bundle exec bin/rails runner -e test ElasticImporterJob.perform_now
+          bundle exec bin/rails runner -e test ElasticImporterJob.new.reset
           bundle exec cucumber features
