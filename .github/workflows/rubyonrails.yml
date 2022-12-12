@@ -81,7 +81,6 @@ jobs:
 
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
         run: |
-          sudo apt-get install -y mysql-client libmysqlclient-dev          
           bin/rails db:create
           bin/rails db:schema:load
           bundle exec cucumber features
