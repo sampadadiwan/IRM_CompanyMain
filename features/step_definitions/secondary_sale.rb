@@ -13,8 +13,11 @@
     click_on("New Secondary Sale")
     fill_in("secondary_sale_name", with: @input_sale.name)
     fill_in("secondary_sale_start_date", with: @input_sale.start_date.strftime("%d/%m/%Y"))
+    sleep 1
     fill_in("secondary_sale_offer_end_date", with: @input_sale.offer_end_date.strftime("%d/%m/%Y"))
+    sleep 1
     fill_in("secondary_sale_end_date", with: @input_sale.end_date.strftime("%d/%m/%Y"))
+    sleep 1
     fill_in("secondary_sale_percent_allowed", with: @input_sale.percent_allowed)
     fill_in("secondary_sale_support_email", with: @input_sale.support_email)
     click_on("Next")    

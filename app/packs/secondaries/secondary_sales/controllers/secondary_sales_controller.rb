@@ -203,11 +203,11 @@ class SecondarySalesController < ApplicationController
   def create
     puts "In controller"
     puts secondary_sale_params
-    puts @secondary_sale.to_json
-
+    
     @secondary_sale = SecondarySale.new(secondary_sale_params)
     @secondary_sale.entity_id = current_user.entity_id
     authorize @secondary_sale
+    puts @secondary_sale.to_json
 
     setup_doc_user(@secondary_sale)
 
