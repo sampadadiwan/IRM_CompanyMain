@@ -31,7 +31,7 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
         ports:
-        - 3306
+        - 3306/tcp
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
       # How to use Redis
       redis:
@@ -50,7 +50,7 @@ jobs:
         run: |
           sudo apt-get -y update
           sudo apt-get install -y mysql-client libmysqlclient-dev     
-          mysql -h localhost -p 3306 -u root -proot -e 'CREATE DATABASE IF NOT EXISTS test;'
+          mysql -h 127.0.0.1 -p 3306 -u root -proot -e 'CREATE DATABASE IF NOT EXISTS test;'
      
 
       - name: Checkout Commit
