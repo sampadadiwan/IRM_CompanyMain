@@ -46,15 +46,18 @@ jobs:
         options: -e="discovery.type=single-node" --health-cmd="curl http://localhost:9200/_cluster/health" --health-interval=10s --health-timeout=5s --health-retries=10
 
     steps:
+      - name: Install system dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt-get install -y mysql-client libmysqlclient-dev          
+
       - name: Checkout Commit
         uses: actions/checkout@v3
       - name: Install Ruby
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-      - name: Install system dependencies
-        run: |
-          sudo apt-get -y update
+      
       - name: Run tests
         env:
           RAILS_ENV: test
