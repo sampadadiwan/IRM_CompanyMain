@@ -82,7 +82,7 @@ jobs:
           DIGIO_BASE_URL: https://ext.digio.in:444
           DIGIO_CLIENT_URL: https://ext.digio.in
 
-          # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+          RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
         run: |
           bundle
           bin/rails db:create
