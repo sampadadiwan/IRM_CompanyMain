@@ -99,12 +99,10 @@ jobs:
           DIGIO_SECRET: ${{ secrets.DIGIO_SECRET }}
         run: |
           bundle
-          sleep 30
           bin/rails db:create
           bin/rails db:schema:load
           bundle exec bin/rails runner -e test ElasticImporterJob.new.reset
+          bundle exec cucumber features/startup/secondary_sale.feature:16:35
           bundle exec cucumber features/startup/deal_investor.feature:87
           bundle exec cucumber features/startup/offer.feature:68
           bundle exec cucumber features/vc/investment.feature:44 
-          bundle exec cucumber features/startup/secondary_sale.feature:16:35
-          
