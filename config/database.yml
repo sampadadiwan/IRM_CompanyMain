@@ -16,12 +16,13 @@ default: &default
   username: <%= ENV.fetch("DB_USER") %>
   password: <%= ENV.fetch("DB_PASS") %>
   # host: "0.0.0.0"
-  socket: /var/run/mysqld/mysqld.sock
 
 
 development:
   <<: *default
   database: IRM_development
+  socket: /var/run/mysqld/mysqld.sock
+
 
 staging:
   <<: *default

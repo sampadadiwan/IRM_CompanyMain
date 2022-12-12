@@ -33,7 +33,7 @@ class InvestorKyc < ApplicationRecord
   end
 
   # after_commit :send_notification_if_changed, if: :approved
-
+  
   after_commit :validate_pan_card
   def validate_pan_card
     VerifyKycPanJob.perform_later(id) if saved_change_to_PAN? || saved_change_to_full_name? || saved_change_to_pan_card_data?

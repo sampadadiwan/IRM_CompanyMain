@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_11_083508) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_12_070017) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1045,9 +1045,11 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_11_083508) do
     t.text "video_data"
     t.string "full_name", limit: 100
     t.boolean "send_confirmation", default: false
+    t.bigint "verified_by_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
     t.index ["form_type_id"], name: "index_investor_kycs_on_form_type_id"
     t.index ["investor_id"], name: "index_investor_kycs_on_investor_id"
+    t.index ["verified_by_id"], name: "index_investor_kycs_on_verified_by_id"
   end
 
   create_table "investor_notice_entries", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1687,6 +1689,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_11_083508) do
   add_foreign_key "investor_kycs", "entities"
   add_foreign_key "investor_kycs", "form_types"
   add_foreign_key "investor_kycs", "investors"
+  add_foreign_key "investor_kycs", "users", column: "verified_by_id"
   add_foreign_key "investor_notice_entries", "entities"
   add_foreign_key "investor_notice_entries", "entities", column: "investor_entity_id"
   add_foreign_key "investor_notice_entries", "investor_notices"
