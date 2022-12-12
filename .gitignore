@@ -62,3 +62,5 @@ test.xls
 .~lock.*
 credentials.json
 token.yaml
+
+/config/credentials/test.key
