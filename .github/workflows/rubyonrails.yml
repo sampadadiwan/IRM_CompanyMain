@@ -65,8 +65,7 @@ jobs:
           REDIS_URL: redis://localhost:6379
           HOST: localhost:3000
           BASE_URL: http://localhost:3000
-          DB_HOST: localhost
-          DATABASE_URL: "mysql2://root:root@localhost:3306/IRM_test"
+          DB_HOST: 127.0.0.1
           DB_USER: root
           DB_PASS: root
           SANDBOX_EMAILS: 'thimmaiah@gmail.com,ausang@gmail.com'
