@@ -61,6 +61,7 @@ jobs:
       
       - name: Run tests
         env:
+          CI: true
           RAILS_ENV: test
           ELASTIC_SEARCH_URL: localhost:9200
           REDIS_URL: redis://localhost:6379
