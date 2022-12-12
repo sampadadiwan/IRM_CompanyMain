@@ -83,6 +83,14 @@ jobs:
           DIGIO_CLIENT_URL: https://ext.digio.in
 
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          SES_SMTP_USERNAME: ${{ secrets.SES_SMTP_USERNAME }}
+          SES_SMTP_PASSWORD: ${{ secrets.SES_SMTP_PASSWORD }}
+          WHATSAPP_API_KEY: ${{ secrets.WHATSAPP_API_KEY }}
+          WHATSAPP_SOURCE_PHONE: 917834811114
+          DIGIO_CLIENT_ID: ${{ secrets.DIGIO_CLIENT_ID }}
+          DIGIO_SECRET: ${{ secrets.DIGIO_SECRET }}
         run: |
           bundle
           bin/rails db:create
