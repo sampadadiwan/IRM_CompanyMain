@@ -79,7 +79,7 @@ options.add_argument("--lang=en_UK");
 
 
 Capybara.register_driver :selenium do |app|
-  Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
+  Capybara::Selenium::Driver.new(app, browser: :chrome)
   # Selenium::WebDriver.for :chrome, options: options
 end
 

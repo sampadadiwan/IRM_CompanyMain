@@ -7,7 +7,7 @@
   When('I create a new sale {string}') do |arg1|
     @input_sale = FactoryBot.build(:secondary_sale)
     key_values(@input_sale, arg1)
-    puts "\n####Sale####\n"
+    puts "\n####Input Sale####\n"
     puts @input_sale.to_json
     
     click_on("New Secondary Sale")
