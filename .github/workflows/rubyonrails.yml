@@ -84,6 +84,7 @@ jobs:
 
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
         run: |
+          bundle
           bin/rails db:create
           bin/rails db:schema:load
           bundle exec cucumber features
