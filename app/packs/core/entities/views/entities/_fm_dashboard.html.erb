@@ -4,7 +4,7 @@
 
     <div class="associated_entity">
         
-        <%= render "funds/dashboard/investor_commitments", fund: current_user.entity.funds.last %>
+        <%#= render "funds/dashboard/investor_commitments", fund: current_user.entity.funds.last %>
         <%= render "/funds/index",  
             funds: policy_scope(Fund).includes(:entity) if current_user.enable_funds %>
     </div>
