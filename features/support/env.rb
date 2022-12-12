@@ -71,8 +71,16 @@ end
 Capybara.server_host = "localhost"
 Capybara.app_host = 'http://localhost:3000'
 
+options = Selenium::WebDriver::Chrome::Options.new
+options.add_argument('--ignore-certificate-errors')
+options.add_argument('--disable-popup-blocking')
+options.add_argument('--disable-translate')
+options.add_argument("--lang=en");
+
+
 Capybara.register_driver :selenium do |app|
-  Capybara::Selenium::Driver.new(app, browser: :chrome)
+  Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
+  # Selenium::WebDriver.for :chrome, options: options
 end
 
 if ENV['BROWSER'] == "true"
