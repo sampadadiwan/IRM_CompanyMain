@@ -19,4 +19,9 @@ jobs:
           bundler-cache: true
       - name: rubocop
         run: bundle exec rubocop --parallel
+
+      - uses: artplan1/brakeman-action@v1.2.1
+        with:
+          flags: "--color"
+
       
