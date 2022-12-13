@@ -8,7 +8,7 @@ on:
 
 jobs:
   lint:
-    name: all linters
+    name: rubocop
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -21,7 +21,7 @@ jobs:
         run: bundle exec rubocop --parallel
       
   brakeman:
-    name: all linters
+    name: brakeman
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -31,5 +31,8 @@ jobs:
         with:
           bundler-cache: true
       - uses: devmasx/brakeman-linter-action@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
 
       
