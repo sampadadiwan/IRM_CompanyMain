@@ -37,6 +37,7 @@ Scenario Outline: View Deal Investors in a deal
 Scenario Outline: View Deal Stages in a deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given there is an existing investor "name=Sequoia"
+  Given there is an existing investor "name=Kalaari"
   And there exists a deal "<deal>" for my company
   And there are "2" deal_investors for the deal
   And I visit the deal details page
@@ -55,6 +56,7 @@ Scenario Outline: View Deal Stages in a deal
 Scenario Outline: View Deal Stages in a deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given there is an existing investor "name=Sequoia"
+  Given there is an existing investor "name=Kalaari"
   And there exists a deal "<deal>" for my company
   And there are "2" deal_investors for the deal
   And I visit the deal details page
