@@ -204,7 +204,7 @@ class SecondarySalesController < ApplicationController
     @secondary_sale = SecondarySale.new(secondary_sale_params)
     @secondary_sale.entity_id = current_user.entity_id
     authorize @secondary_sale
-    
+
     setup_doc_user(@secondary_sale)
 
     respond_to do |format|

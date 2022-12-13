@@ -50,11 +50,6 @@ jobs:
         run: |
           sudo apt-get -y update
           sudo apt-get install -y mysql-client libmysqlclient-dev libreoffice    
-          sudo localectl set-locale LANG="en_GB.UTF-8"
-          export LANG="en_GB.UTF-8"
-          sudo update-locale
-          
-
 
       - name: Checkout Commit
         uses: actions/checkout@v3
@@ -101,7 +96,4 @@ jobs:
           bin/rails db:create
           bin/rails db:schema:load
           bundle exec bin/rails runner -e test ElasticImporterJob.new.reset
-          bundle exec cucumber features/startup/secondary_sale.feature:16:35
-          bundle exec cucumber features/startup/deal_investor.feature:87
-          bundle exec cucumber features/startup/offer.feature:68
-          bundle exec cucumber features/vc/investment.feature:44 
+          bundle exec cucumber features 

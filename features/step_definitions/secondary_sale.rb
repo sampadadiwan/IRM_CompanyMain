@@ -12,11 +12,9 @@
     
     click_on("New Secondary Sale")
     fill_in("secondary_sale_name", with: @input_sale.name)
-    puts "start_date = #{@input_sale.start_date.strftime("%d/%m/%Y")}"
-    fill_in("secondary_sale_start_date", with: @input_sale.start_date.strftime("%d/%m/%Y"))
-    fill_in("secondary_sale_offer_end_date", with: @input_sale.offer_end_date.strftime("%d/%m/%Y"))
-    puts "end_date = #{@input_sale.end_date.strftime("%d/%m/%Y")}"
-    fill_in("secondary_sale_end_date", with: @input_sale.end_date.strftime("%d/%m/%Y"))
+    fill_in("secondary_sale_start_date", with: @input_sale.start_date)
+    fill_in("secondary_sale_offer_end_date", with: @input_sale.offer_end_date)
+    fill_in("secondary_sale_end_date", with: @input_sale.end_date)
     fill_in("secondary_sale_percent_allowed", with: @input_sale.percent_allowed)
     fill_in("secondary_sale_support_email", with: @input_sale.support_email)
     click_on("Next")    
@@ -50,7 +48,7 @@
     @input_sale ||= @sale # This is for times when the sale is not created from the ui in tests
 
     expect(page).to have_content(@input_sale.name)
-    # expect(page).to have_content(@input_sale.start_date.strftime("%d/%m/%Y"))
+    # expect(page).to have_content(@input_sale.start_date)
     expect(page).to have_content(@input_sale.end_date.strftime("%d/%m/%Y"))
     if @user.entity_id == @sale.entity_id
       expect(page).to have_content(@input_sale.percent_allowed)
