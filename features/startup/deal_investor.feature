@@ -78,6 +78,7 @@ Scenario Outline: View Deal Stages in a deal
   And there are "1" deal_investors for the deal
   And I visit the deal details page
   And when I start the deal
+  Then I should see the "Deal was successfully started"
   And I visit the deal details page
   And I complete an activity
   Then the activity must be completed
