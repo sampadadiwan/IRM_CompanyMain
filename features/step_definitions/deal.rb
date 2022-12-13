@@ -68,7 +68,7 @@ end
 
 Given('when I start the deal') do
   click_on("Start Deal")
-  sleep(5) # To allow all deal activities to be created by sidekiq
+  sleep(1) # To allow all deal activities to be created by sidekiq
 end
 
 Then('the deal should be started') do
