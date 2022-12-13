@@ -31,5 +31,5 @@ jobs:
         with:
           bundler-cache: true
       - uses: devmasx/brakeman-linter-action@v1.0.0
-"
+
       
