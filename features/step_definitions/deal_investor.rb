@@ -90,6 +90,7 @@ include InvestmentsHelper
   
   Given('I complete an activity') do
     @deal_activity = @deal.deal_activities.last
+    visit(deal_path(@deal))
     within("#deal_activity_#{@deal_activity.id}") do
       find('span', text: 'No').click
       sleep(1)
