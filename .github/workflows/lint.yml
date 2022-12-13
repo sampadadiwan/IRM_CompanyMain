@@ -22,6 +22,6 @@ jobs:
 
       - uses: artplan1/brakeman-action@v1.2.1
         with:
-          flags: "--color"
+          flags: "--color -i config/brakeman.ignore"
 
       

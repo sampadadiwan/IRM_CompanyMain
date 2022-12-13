@@ -120,6 +120,47 @@
       "note": ""
     },
     {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 2,
+      "fingerprint": "80976fcca608e76f8a44de54dab1932ebf25070a161035ec8ef09cf58b24c759",
+      "check_name": "CrossSiteScripting",
+      "message": "Unescaped parameter value",
+      "file": "app/packs/funds/capital_calls/views/capital_calls/_show.html.erb",
+      "line": 96,
+      "link": "https://brakemanscanner.org/docs/warning_types/cross_site_scripting",
+      "code": "CapitalCall.find(params[:id]).notes",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "CapitalCallsController",
+          "method": "show",
+          "line": 22,
+          "file": "app/packs/funds/capital_calls/controllers/capital_calls_controller.rb",
+          "rendered": {
+            "name": "capital_calls/show",
+            "file": "app/packs/funds/capital_calls/views/capital_calls/show.html.erb"
+          }
+        },
+        {
+          "type": "template",
+          "name": "capital_calls/show",
+          "line": 2,
+          "file": "app/packs/funds/capital_calls/views/capital_calls/show.html.erb",
+          "rendered": {
+            "name": "capital_calls/_show",
+            "file": "app/packs/funds/capital_calls/views/capital_calls/_show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "capital_calls/_show"
+      },
+      "user_input": "params[:id]",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
       "warning_type": "SQL Injection",
       "warning_code": 0,
       "fingerprint": "8b873adde13480869c42ea7b88bf2affc1798e537cbc31b4161a147bbaacbd13",
@@ -431,6 +472,6 @@
       "note": ""
     }
   ],
-  "updated": "2022-12-13 10:59:09 +0530",
+  "updated": "2022-12-13 18:20:01 +0530",
   "brakeman_version": "5.2.1"
 }
