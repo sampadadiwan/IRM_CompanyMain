@@ -96,5 +96,4 @@ jobs:
           bin/rails db:create
           bin/rails db:schema:load
           bundle exec bin/rails runner -e test ElasticImporterJob.new.reset
-          bundle exec cucumber features/startup/document.feature:66:67 
-          bundle exec cucumber features/vc/investment.feature:43 
+          bundle exec cucumber features
