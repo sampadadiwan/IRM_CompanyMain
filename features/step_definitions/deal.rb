@@ -52,6 +52,7 @@ Then('I should see the deal in all deals page') do
 end
 
 Given('I visit the deal details page') do
+  @deal.reload
   visit(deal_url(@deal))
 end
 
@@ -66,13 +67,12 @@ end
 
 Given('when I start the deal') do
   click_on("Start Deal")
-  sleep(5) # To allow all deal activities to be created by sidekiq
+  # sleep(1) # To allow all deal activities to be created by sidekiq
 end
 
 Then('the deal should be started') do
   @deal.reload
   @deal.start_date.should_not == nil
-  sleep(1)
   @deal.deal_activities.should_not == nil
 end
 

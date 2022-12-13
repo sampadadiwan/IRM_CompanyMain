@@ -1,10 +1,11 @@
 <%= render "/layouts/alerts" %>
 
 <%= render "/investor_notices/carousel", investor_entity_id: current_user.entity_id %>
+<% allowed_dashboards = ["cxo_dashboard", "vc_dashboard", "fm_dashboard", "holding_dashboard", "investor_dashboard"] %>
 
 <% if current_user.entity %>
 
-    <% if params[:dashboard].present? %>
+    <% if params[:dashboard].present? &&  allowed_dashboards.include?(params[:dashboard]) %>
         <%= render params[:dashboard] %>
     <% else %>   
         <% if current_user.curr_role.to_sym == :company %>

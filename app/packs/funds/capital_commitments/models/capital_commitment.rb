@@ -17,7 +17,7 @@ class CapitalCommitment < ApplicationRecord
 
   belongs_to :fund, touch: true
 
-  has_many :capital_calls, dependent: :destroy
+  # has_many :capital_calls, dependent: :destroy
   has_many :capital_remittances, dependent: :destroy
   has_many :capital_distribution_payments, dependent: :destroy
 

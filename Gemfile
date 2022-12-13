@@ -128,6 +128,7 @@ group :development, :test do
   gem 'brakeman'
   gem "bundle-audit", "~> 0.1.0"
   gem "debug", platforms: %i[mri mingw x64_mingw]
+  gem 'erubis'
   gem 'pry-byebug'
   gem 'rubocop-performance', require: false
   gem 'rubocop-rails', require: false

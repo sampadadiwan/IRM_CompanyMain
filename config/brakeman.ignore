@@ -1,0 +1,436 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "0404b13401cd960788b76751755ba456c3deb46e9917d03fba76f4a508641cc5",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/packs/startups/investments/jobs/investment_percentage_holding_job.rb",
+      "line": 99,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "agg_investments.update_all(\"percentage = 100*(equity+preferred_converted_qty+units)/#{(((agg_investments.sum(:equity) + agg_investments.sum(:preferred_converted_qty)) + agg_investments.sum(:units)) or 1)},\\n                    full_diluted_percentage = 100*(equity+preferred_converted_qty+units+options)/#{((((agg_investments.sum(:equity) + agg_investments.sum(:preferred_converted_qty)) + agg_investments.sum(:units)) + agg_investments.sum(:options)) or 1)}\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "InvestmentPercentageHoldingJob",
+        "method": "update_aggregate"
+      },
+      "user_input": "((agg_investments.sum(:equity) + agg_investments.sum(:preferred_converted_qty)) + agg_investments.sum(:units))",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "0888f0ade3f48d06ff96c2023851d45c121c8261d6ecb79239e982210bd65530",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/packs/funds/capital_commitments/models/capital_commitment.rb",
+      "line": 54,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "fund.capital_commitments.update_all(\"percentage=100.0*committed_amount_cents/#{fund.capital_commitments.sum(:committed_amount_cents)}\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "CapitalCommitment",
+        "method": "compute_percentage"
+      },
+      "user_input": "fund.capital_commitments.sum(:committed_amount_cents)",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "Dynamic Render Path",
+      "warning_code": 15,
+      "fingerprint": "36e82ea8b78b74d1475efebf56725bf1b27b7d832e907ce7dbaee838d56e392d",
+      "check_name": "Render",
+      "message": "Render path contains parameter value",
+      "file": "app/packs/funds/funds/controllers/funds_controller.rb",
+      "line": 10,
+      "link": "https://brakemanscanner.org/docs/warning_types/dynamic_render_path/",
+      "code": "render(action => \"/funds/dashboard/#{params[:report]}\", {})",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "FundsController",
+        "method": "report"
+      },
+      "user_input": "params[:report]",
+      "confidence": "Medium",
+      "note": ""
+    },
+    {
+      "warning_type": "Dynamic Render Path",
+      "warning_code": 15,
+      "fingerprint": "5713780f8707f0ff234ee12d1c7f00c604f7281b7f85743e7be1d9bdd6556c58",
+      "check_name": "Render",
+      "message": "Render path contains parameter value",
+      "file": "app/packs/core/entities/views/entities/dashboard.html.erb",
+      "line": 9,
+      "link": "https://brakemanscanner.org/docs/warning_types/dynamic_render_path/",
+      "code": "render(action => params[:dashboard], {})",
+      "render_path": null,
+      "location": {
+        "type": "template",
+        "template": "entities/dashboard"
+      },
+      "user_input": "params[:dashboard]",
+      "confidence": "High",
+      "note": ""
+    },
+    {
+      "warning_type": "File Access",
+      "warning_code": 16,
+      "fingerprint": "5dd95baef92af5266f0557351ed61a62691aba4e09e2c035c7df0d170dc9f8a2",
+      "check_name": "FileAccess",
+      "message": "Model attribute used in file name",
+      "file": "app/packs/secondaries/secondary_sales/jobs/spa_job.rb",
+      "line": 33,
+      "link": "https://brakemanscanner.org/docs/warning_types/file_access/",
+      "code": "File.delete(SecondarySale.find(secondary_sale_id).spa.download.path)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "SpaJob",
+        "method": "perform"
+      },
+      "user_input": "SecondarySale.find(secondary_sale_id).spa.download.path",
+      "confidence": "Medium",
+      "note": ""
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "764aaca43d4bb5f12f04af0fdf9c2ee0f1fa8d450dc4d8ce4f1d46fa30d38765",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb",
+      "line": 76,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "interests.update_all(\"allocation_percentage = #{(100.0 * (1 or (1.0 / (((interests.sum(:quantity) * 1.0) / offers.sum(:quantity)).round(4) or 0)).round(6)))},\\n      allocation_quantity = ceil(quantity * #{(1 or (1.0 / (((interests.sum(:quantity) * 1.0) / offers.sum(:quantity)).round(4) or 0)).round(6))}),\\n      final_price = #{secondary_sale.final_price},\\n      allocation_amount_cents = (ceil(quantity * #{(1 or (1.0 / (((interests.sum(:quantity) * 1.0) / offers.sum(:quantity)).round(4) or 0)).round(6))}) * #{(secondary_sale.final_price * 100)})\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "CustomAllocationJob",
+        "method": "update_offers"
+      },
+      "user_input": "secondary_sale.final_price",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "8b873adde13480869c42ea7b88bf2affc1798e537cbc31b4161a147bbaacbd13",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/packs/startups/investments/jobs/investment_percentage_holding_job.rb",
+      "line": 73,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "esop_investments.update_all(\"percentage_holding = 0,\\n       diluted_percentage = quantity * 100.0 / (#{((equity_investments.sum(:quantity) + preferred_investments.sum(:preferred_converted_qty)) + esop_investments.sum(:quantity))})\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "InvestmentPercentageHoldingJob",
+        "method": "update_investments"
+      },
+      "user_input": "((equity_investments.sum(:quantity) + preferred_investments.sum(:preferred_converted_qty)) + esop_investments.sum(:quantity))",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "8d7699fe739416d496f778a873b3a87eb9fbd9245d0ace5c924e804ef35d7708",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/packs/secondaries/secondary_sales/jobs/fund_raise_allocation_job.rb",
+      "line": 49,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "secondary_sale.interests.eligible(secondary_sale).update_all(\"allocation_percentage = #{(100.0 * (1 or (1.0 / secondary_sale.allocation_percentage).round(6)))},\\n      allocation_quantity = ceil(quantity * #{(1 or (1.0 / secondary_sale.allocation_percentage).round(6))}),\\n      final_price = #{secondary_sale.final_price},\\n      allocation_amount_cents = (ceil(quantity * #{(1 or (1.0 / secondary_sale.allocation_percentage).round(6))}) * #{(secondary_sale.final_price * 100)})\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "FundRaiseAllocationJob",
+        "method": "update_interests"
+      },
+      "user_input": "secondary_sale.final_price",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "b0a3c9e3a359ca3b882eb99d505b8520ec97ab1cce4a433056d2ae04ccd7e760",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/packs/secondaries/secondary_sales/jobs/allocation_job.rb",
+      "line": 45,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "secondary_sale.interests.eligible(secondary_sale).update_all(\"allocation_percentage = #{(100.0 * (1 or (1.0 / secondary_sale.allocation_percentage).round(6)))},\\n      allocation_quantity = ceil(quantity * #{(1 or (1.0 / secondary_sale.allocation_percentage).round(6))}),\\n      final_price = #{secondary_sale.final_price},\\n      allocation_amount_cents = (ceil(quantity * #{(1 or (1.0 / secondary_sale.allocation_percentage).round(6))}) * #{(secondary_sale.final_price * 100)})\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "AllocationJob",
+        "method": "update_offers"
+      },
+      "user_input": "secondary_sale.final_price",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "Command Injection",
+      "warning_code": 14,
+      "fingerprint": "b1bafec463525ecb83d31af05a0c7279dca5aaec609aa44f6129d2e41fe358f0",
+      "check_name": "Execute",
+      "message": "Possible command injection",
+      "file": "app/packs/secondaries/offers/models/offer_spa_generator.rb",
+      "line": 63,
+      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
+      "code": "system(\"libreoffice --headless --convert-to pdf #{@working_dir}/Offer-#{offer.id}.odt --outdir #{@working_dir}\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "OfferSpaGenerator",
+        "method": "generate"
+      },
+      "user_input": "@working_dir",
+      "confidence": "Medium",
+      "note": ""
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "b68ee14cd06f5d31be8c0d212f3266892756741e257201e879ef5c2a4240be25",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/packs/startups/investments/jobs/investment_percentage_holding_job.rb",
+      "line": 67,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "preferred_investments.update_all(\"percentage_holding = preferred_converted_qty * 100.0 / #{(equity_investments.sum(:quantity) + preferred_investments.sum(:preferred_converted_qty))},\\n         diluted_percentage = preferred_converted_qty * 100.0 / (#{((equity_investments.sum(:quantity) + preferred_investments.sum(:preferred_converted_qty)) + esop_investments.sum(:quantity))})\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "InvestmentPercentageHoldingJob",
+        "method": "update_investments"
+      },
+      "user_input": "(equity_investments.sum(:quantity) + preferred_investments.sum(:preferred_converted_qty))",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "Command Injection",
+      "warning_code": 14,
+      "fingerprint": "c7fb83a0fdd65c7dc48eecc4a1169cdbd422434c4df494caa13b47dad3579512",
+      "check_name": "Execute",
+      "message": "Possible command injection",
+      "file": "app/packs/core/documents/helpers/document_generator_base.rb",
+      "line": 4,
+      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
+      "code": "system(\"libreoffice --headless --convert-to odt #{file_path} --outdir #{@working_dir}\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "DocumentGeneratorBase",
+        "method": "get_odt_file"
+      },
+      "user_input": "file_path",
+      "confidence": "Medium",
+      "note": ""
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "cf2591d75d0ebf4af1288e2809f3e8990bfe3e8acf617ec41f29234029bedbae",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/packs/secondaries/secondary_sales/jobs/allocation_job.rb",
+      "line": 50,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "secondary_sale.offers.approved.update_all(\" allocation_percentage = #{(100.0 * ((1.0 * secondary_sale.allocation_percentage).round(6) or 1))},\\n      allocation_quantity = ceil(quantity * #{((1.0 * secondary_sale.allocation_percentage).round(6) or 1)}),\\n      final_price = #{secondary_sale.final_price},\\n      allocation_amount_cents = (ceil(quantity * #{((1.0 * secondary_sale.allocation_percentage).round(6) or 1)}) * #{(secondary_sale.final_price * 100)})\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "AllocationJob",
+        "method": "update_offers"
+      },
+      "user_input": "secondary_sale.final_price",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "dbc7d855a6de08e0aba176abfd3cc6c9d460a4f0abf13707335708186be4459c",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/packs/startups/investments/jobs/investment_percentage_holding_job.rb",
+      "line": 62,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "equity_investments.update_all(\"percentage_holding = quantity * 100.0 / #{(equity_investments.sum(:quantity) + preferred_investments.sum(:preferred_converted_qty))},\\n         diluted_percentage = quantity * 100.0 / (#{((equity_investments.sum(:quantity) + preferred_investments.sum(:preferred_converted_qty)) + esop_investments.sum(:quantity))})\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "InvestmentPercentageHoldingJob",
+        "method": "update_investments"
+      },
+      "user_input": "(equity_investments.sum(:quantity) + preferred_investments.sum(:preferred_converted_qty))",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "Dynamic Render Path",
+      "warning_code": 15,
+      "fingerprint": "df0b4ff5c7f5a98c87fd7c214f617d19afdbd52aef929596d9de83b80187c4f1",
+      "check_name": "Render",
+      "message": "Render path contains parameter value",
+      "file": "app/packs/core/access_rights/views/access_rights/_index.html.erb",
+      "line": 56,
+      "link": "https://brakemanscanner.org/docs/warning_types/dynamic_render_path/",
+      "code": "render(action => (AccessRight.new(:access_to_investor_id => params[:access_to_investor_id], :owner_id => params[:owner_id], :owner_type => params[:owner_type], :entity_id => params[:entity_id]) or nil), { :access_right => ((AccessRight.new(:access_to_investor_id => params[:access_to_investor_id], :owner_id => params[:owner_id], :owner_type => params[:owner_type], :entity_id => params[:entity_id]) or nil)), :show_for => \"Yes\", :show_metadata => \"Yes\" })",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "ApprovalsController",
+          "method": "show",
+          "line": 18,
+          "file": "app/packs/misc/approvals/controllers/approvals_controller.rb",
+          "rendered": {
+            "name": "approvals/show",
+            "file": "app/packs/misc/approvals/views/approvals/show.html.erb"
+          }
+        },
+        {
+          "type": "template",
+          "name": "approvals/show",
+          "line": 28,
+          "file": "app/packs/misc/approvals/views/approvals/show.html.erb",
+          "rendered": {
+            "name": "approvals/_approval_details",
+            "file": "app/packs/misc/approvals/views/approvals/_approval_details.html.erb"
+          }
+        },
+        {
+          "type": "template",
+          "name": "approvals/_approval_details",
+          "line": 55,
+          "file": "app/packs/misc/approvals/views/approvals/_approval_details.html.erb",
+          "rendered": {
+            "name": "access_rights/_index",
+            "file": "app/packs/core/access_rights/views/access_rights/_index.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "access_rights/_index"
+      },
+      "user_input": "params[:entity_id]",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "e6749c2fb39f57b0b32a8f00569adf78fd5850e7e96d7cc1d779daeb84256755",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb",
+      "line": 81,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "offers.update_all(\" allocation_percentage = #{(100.0 * ((1.0 * (((interests.sum(:quantity) * 1.0) / offers.sum(:quantity)).round(4) or 0)).round(6) or 1))},\\n      allocation_quantity = ceil(quantity * #{((1.0 * (((interests.sum(:quantity) * 1.0) / offers.sum(:quantity)).round(4) or 0)).round(6) or 1)}),\\n      final_price = #{secondary_sale.final_price},\\n      allocation_amount_cents = (ceil(quantity * #{((1.0 * (((interests.sum(:quantity) * 1.0) / offers.sum(:quantity)).round(4) or 0)).round(6) or 1)}) * #{(secondary_sale.final_price * 100)})\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "CustomAllocationJob",
+        "method": "update_offers"
+      },
+      "user_input": "secondary_sale.final_price",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "Command Injection",
+      "warning_code": 14,
+      "fingerprint": "e7286bb2ef5fc68777e6fab79caac292017776b05527d1a23afc5f06cd8b7057",
+      "check_name": "Execute",
+      "message": "Possible command injection",
+      "file": "app/packs/startups/investments/models/esop_letter_generator.rb",
+      "line": 65,
+      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
+      "code": "system(\"libreoffice --headless --convert-to pdf #{@working_dir}/GrantLetter-#{holding.id}.odt --outdir #{@working_dir}\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "EsopLetterGenerator",
+        "method": "generate"
+      },
+      "user_input": "@working_dir",
+      "confidence": "Medium",
+      "note": ""
+    },
+    {
+      "warning_type": "Command Injection",
+      "warning_code": 14,
+      "fingerprint": "f13a41a4074a629f865ba32d3b1d99173238648d31409e7c518505f073d86cfe",
+      "check_name": "Execute",
+      "message": "Possible command injection",
+      "file": "app/packs/funds/capital_commitments/models/capital_commitment_doc_generator.rb",
+      "line": 58,
+      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
+      "code": "system(\"libreoffice --headless --convert-to pdf #{@working_dir}/CapitalCommitment-#{capital_commitment.id}.odt --outdir #{@working_dir}\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "CapitalCommitmentDocGenerator",
+        "method": "generate"
+      },
+      "user_input": "@working_dir",
+      "confidence": "Medium",
+      "note": ""
+    },
+    {
+      "warning_type": "Mass Assignment",
+      "warning_code": 105,
+      "fingerprint": "f26eaa2374eb784db5f590bdc14b5c39a9cbb62191860357126751731859c18e",
+      "check_name": "PermitAttributes",
+      "message": "Potentially dangerous key allowed for mass assignment",
+      "file": "app/packs/core/permissions/controllers/permissions_controller.rb",
+      "line": 83,
+      "link": "https://brakemanscanner.org/docs/warning_types/mass_assignment/",
+      "code": "params.require(:permission).permit(:user_id, :owner_id, :owner_type, :email, :role, :entity_id, :granted_by_id, :permissions => ([]))",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "PermissionsController",
+        "method": "permission_params"
+      },
+      "user_input": ":role",
+      "confidence": "Medium",
+      "note": ""
+    },
+    {
+      "warning_type": "Remote Code Execution",
+      "warning_code": 24,
+      "fingerprint": "f738e6f3f5cdc24c41934d168535b54284b028a2fdf25847acf72b5c5f75030a",
+      "check_name": "UnsafeReflection",
+      "message": "Unsafe reflection method `const_get` called with parameter value",
+      "file": "app/packs/core/valuations/controllers/valuations_controller.rb",
+      "line": 9,
+      "link": "https://brakemanscanner.org/docs/warning_types/remote_code_execution/",
+      "code": "Object.const_get(params[:owner_type])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "ValuationsController",
+        "method": "index"
+      },
+      "user_input": "params[:owner_type]",
+      "confidence": "High",
+      "note": ""
+    }
+  ],
+  "updated": "2022-12-13 10:59:09 +0530",
+  "brakeman_version": "5.2.1"
+}
