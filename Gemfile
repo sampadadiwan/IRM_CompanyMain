@@ -133,6 +133,7 @@ group :development, :test do
   gem 'rubocop-performance', require: false
   gem 'rubocop-rails', require: false
   gem 'rubocop-rspec', require: false
+  gem 'net-ssh', '7.0.0.beta1'
 end
 
 gem 'awesome_print'
