@@ -52,6 +52,7 @@ Then('I should see the deal in all deals page') do
 end
 
 Given('I visit the deal details page') do
+  sleep(5)
   @deal.reload
   visit(deal_url(@deal))
 end

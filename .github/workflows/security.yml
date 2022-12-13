@@ -1,0 +1,23 @@
+name: Code style
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint:
+    name: brakeman
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      
+      - uses: artplan1/brakeman-action@v1.2.1
+        with:
+          flags: "--color"
