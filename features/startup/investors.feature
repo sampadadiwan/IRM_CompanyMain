@@ -30,7 +30,6 @@ Scenario Outline: Create new investor from exiting entity
   	|user	      |entity               |investor         |msg	|
   	|  	        |entity_type=Company  |name=Accel       |Investor was successfully created|
     |  	        |entity_type=Company  |name=Bearing     |Investor was successfully created|
-    |  	        |entity_type=Company  |name=Kalaari     |Investor was successfully created|
 
 
 Scenario Outline: Import investor access
