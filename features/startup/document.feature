@@ -52,6 +52,7 @@ Examples:
 Scenario Outline: Add deal investor document
   Given Im logged in as a user "<user>" for an entity "<entity>"
   And there exists a deal "<deal>" for my company
+  Given there is an existing investor "name=Sequoia"
   And there are "1" deal_investors for the deal
   And I visit the deal investor details page
   When I create a new document "<document>"

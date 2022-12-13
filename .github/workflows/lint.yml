@@ -1,4 +1,4 @@
-name: Code style
+name: Lint And Security
 
 on:
   push:
