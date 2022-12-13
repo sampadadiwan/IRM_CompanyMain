@@ -26,7 +26,7 @@ class VerifyBankJob < ApplicationJob
     Rails.logger.debug response
     @model.bank_verification_status = nil
     @model.bank_verified = false
-    @model.bank_verification_response = JSON.parse(response.body)
+    @model.bank_verification_response = JSON.parse(response.body) if response.body
   end
 
   def check_details(response)
