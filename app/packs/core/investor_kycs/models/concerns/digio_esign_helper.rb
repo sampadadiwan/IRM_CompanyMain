@@ -6,7 +6,7 @@ class DigioEsignHelper
   attr_accessor :debug # Rails.env.development?
 
   BASE_URL = ENV["DIGIO_BASE_URL"]
-  AUTH_TOKEN = Base64.strict_encode64("#{ENV['DIGIO_CLIENT_ID']}:#{ENV['DIGIO_SECRET']}")
+  AUTH_TOKEN = Base64.strict_encode64("#{Rails.application.credentials[:DIGIO_CLIENT_ID]}:#{Rails.application.credentials[:DIGIO_SECRET]}")
 
   def initialize
     super

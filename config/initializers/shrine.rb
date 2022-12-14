@@ -10,8 +10,8 @@ when :s3, :s3_multipart
   s3_options = {
     bucket: "#{ENV['AWS_S3_BUCKET']}.#{Rails.env}", # required
     region: (ENV['AWS_S3_REGION']).to_s, # required
-    access_key_id: (ENV['AWS_ACCESS_KEY_ID']).to_s,
-    secret_access_key: (ENV['AWS_SECRET_ACCESS_KEY']).to_s
+    access_key_id: Rails.application.credentials[:AWS_ACCESS_KEY_ID].to_s,
+    secret_access_key: Rails.application.credentials[:AWS_SECRET_ACCESS_KEY].to_s
   }
 
   # both `cache` and `store` storages are needed

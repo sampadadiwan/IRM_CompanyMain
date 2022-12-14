@@ -16,8 +16,7 @@ class AdhaarEsignHelper
     response = HTTParty.post(
       'https://eve.idfystaging.com/v3/tasks/sync/generate/esign_document',
       headers: {
-        "api-key" => '9f81f27e-f5e1-4eae-b3ae-131e0101ea7e', # ENV["IDFY_API_KEY"],
-        # "account-id" => ENV["IDFY_ACCOUNT_ID"],
+        "api-key" => '9f81f27e-f5e1-4eae-b3ae-131e0101ea7e',
         'Content-Type' => 'application/json'
       },
       body: {
@@ -36,8 +35,7 @@ class AdhaarEsignHelper
     response = HTTParty.post(
       'https://eve.idfystaging.com/v3/tasks/sync/generate/esign_retrieve',
       headers: {
-        "api-key" => '9f81f27e-f5e1-4eae-b3ae-131e0101ea7e', # ENV["IDFY_API_KEY"],
-        # "account-id" => ENV["IDFY_ACCOUNT_ID"],
+        "api-key" => '9f81f27e-f5e1-4eae-b3ae-131e0101ea7e',
         'Content-Type' => 'application/json'
       },
       body: {
