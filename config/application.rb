@@ -70,7 +70,7 @@ module InvestorRelationshipManagement
     config.time_zone = 'New Delhi'
     config.active_record.default_timezone = :local
 
-    config.secret_key_base = ENV['SECRET_KEY_BASE']
+    config.secret_key_base = Rails.application.credentials[:SECRET_KEY_BASE]
 
     config.active_job.queue_adapter = :sidekiq
 
@@ -80,8 +80,8 @@ module InvestorRelationshipManagement
       address: "email-smtp.ap-south-1.amazonaws.com",
       domain: ENV["DOMAIN"],
       port: 587,
-      user_name: ENV["SES_SMTP_USERNAME"],
-      password: ENV["SES_SMTP_PASSWORD"],
+      user_name: Rails.application.credentials[:SES_SMTP_USERNAME],
+      password: Rails.application.credentials[:SES_SMTP_PASSWORD],
       authentication: :login,
       enable_starttls_auto: true
     }

@@ -14,7 +14,7 @@
 /db/sphinx
 /config/*.sphinx.conf
 
-.env.*
+.env.production
 
 /vendor/cache/*
 
@@ -57,10 +57,13 @@ yarn-debug.log*
 /config/credentials/development.key
 
 /config/credentials/sandbox.key
+
+/config/credentials/test.key
+
+
 test_new.xls
 test.xls
 .~lock.*
 credentials.json
 token.yaml
 
-/config/credentials/test.key

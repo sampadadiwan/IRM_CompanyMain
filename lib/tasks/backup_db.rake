@@ -14,8 +14,8 @@ namespace :db do  desc "Backup database to AWS-S3"
       bucket_name = "#{Rails.env}-db-backup.caphive.com" #gotcha: bucket names are unique across AWS-S3
       
       client = Aws::S3::Client.new(
-        :access_key_id => ENV['AWS_ACCESS_KEY_ID'],
-        :secret_access_key => ENV['AWS_SECRET_ACCESS_KEY'],
+        :access_key_id => Rails.application.credentials[:AWS_ACCESS_KEY_ID],
+        :secret_access_key => Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],
         region: 'ap-south-1'
       )
       

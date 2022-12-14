@@ -16,12 +16,12 @@ class WhatsappSenderJob < ApplicationJob
     request = Net::HTTP::Post.new(uri)
     request.content_type = "application/x-www-form-urlencoded"
     request["Cache-Control"] = "no-cache"
-    request["Apikey"] = (ENV['WHATSAPP_API_KEY']).to_s
+    request["Apikey"] = Rails.application.credentials[:WHATSAPP_API_KEY].to_s
     request.set_form_data(
       "channel" => "whatsapp",
       "destination" => phone,
       "message" => "{\"type\":\"text\",\"text\":\"#{msg}\"}",
-      "source" => (ENV['WHATSAPP_SOURCE_PHONE']).to_s,
+      "source" => Rails.application.credentials[:WHATSAPP_SOURCE_PHONE].to_s,
       "src.name" => "AltConnects"
     )
 

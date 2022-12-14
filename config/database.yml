@@ -13,8 +13,8 @@ default: &default
   adapter: mysql2
   encoding: utf8mb4
   pool: 15
-  username: <%= ENV.fetch("DB_USER") %>
-  password: <%= ENV.fetch("DB_PASS") %>
+  username: <%= Rails.application.credentials[:DB_USER] %>
+  password: <%= Rails.application.credentials[:DB_PASS] %>
 
 
 development:
