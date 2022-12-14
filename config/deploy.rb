@@ -59,11 +59,8 @@ namespace :deploy do
   desc "Uploads .env remote servers."
   task :upload_env do
     on roles(:app) do
-      upload!("/home/thimmaiah/work/IRM/.env", release_path.to_s, recursive: false)
-      upload!("/home/thimmaiah/work/IRM/.env.local", release_path.to_s, recursive: false) if fetch(:stage) != :production
-      upload!("/home/thimmaiah/work/IRM/.env.staging", release_path.to_s, recursive: false) if fetch(:stage) == :staging
-      upload!("/home/thimmaiah/work/IRM/.env.sandbox", release_path.to_s, recursive: false) if fetch(:stage) == :sandbox
-      upload!("/home/thimmaiah/work/IRM/.env.production", release_path.to_s, recursive: false) if fetch(:stage) == :production
+      # This is stored in /etc/environments
+      execute "echo $RAILS_MASTER_KEY > #{release_path}/config/credentials/#{fetch(:stage)}.key"
     end
   end
 

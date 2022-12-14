@@ -15,6 +15,7 @@ default: &default
   pool: 15
   username: <%= Rails.application.credentials[:DB_USER] %>
   password: <%= Rails.application.credentials[:DB_PASS] %>
+  host: <%= Rails.application.credentials[:DB_HOST] %>
 
 
 development:
@@ -24,13 +25,11 @@ development:
 
 
 staging:
-  <<: *default
-  host: <%= ENV.fetch("DB_HOST") %>
+  <<: *default  
   database: IRM_staging
   
 sandbox:
   <<: *default
-  host: <%= ENV.fetch("DB_HOST") %>
   database: IRM_sandbox
 
 # Warning: The database defined as "test" will be erased and
@@ -39,8 +38,7 @@ sandbox:
 test: &test
   <<: *default
   database: IRM_test
-  host: <%= ENV.fetch("DB_HOST") %>
-
+  
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
@@ -64,7 +62,6 @@ test: &test
 #
 production:
   <<: *default
-  host: <%= ENV.fetch("DB_HOST") %>
   database: IRM_production
 
 cucumber:

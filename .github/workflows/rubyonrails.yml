@@ -90,3 +90,9 @@ jobs:
           bin/rails db:schema:load
           bundle exec bin/rails runner -e test ElasticImporterJob.new.reset
           bundle exec cucumber features
+
+      - name: "Deploy"
+        uses: miloserdow/capistrano-deploy@master
+        with:
+          target: staging # Defines the environment that will be used for the deployment
+          deploy_key: ${{ secrets.DEPLOY_ENC_KEY }} # Name of the variable configured in Settings/Secrets of your github project
