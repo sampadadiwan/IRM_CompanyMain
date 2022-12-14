@@ -14,8 +14,6 @@
 /db/sphinx
 /config/*.sphinx.conf
 
-.env.production
-
 /vendor/cache/*
 
 # Ignore all logfiles and tempfiles.
