@@ -5,6 +5,9 @@
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#remittances-tab"
           data-action="click->tabdetails#loadData">Remittances</a>
 
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#distributions-tab"
+          data-action="click->tabdetails#loadData">Distributions</a>
+
     <% if capital_commitment.entity.enable_investor_kyc %>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#kycs-tab" 
               data-action="click->tabdetails#loadData">
@@ -38,6 +41,17 @@
             <% end %>
         
             <%= turbo_frame_tag "capital_remittances_frame", target: "_top" do %>
+            <% end %>
+          </div>     
+    </div>
+
+    <div id="distributions-tab" class="tab-pane fade in">
+          <div id="distributions" class="associated_entity">
+            <%= link_to capital_distribution_payments_path(capital_commitment_id: capital_commitment.id), class: "load_data_link", data: { turbo_frame: 'capital_distribution_payments_frame' } do %>
+              <span>Loading...</span>
+            <% end %>
+        
+            <%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top" do %>
             <% end %>
           </div>     
     </div>
