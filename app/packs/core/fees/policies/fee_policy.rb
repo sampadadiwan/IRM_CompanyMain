@@ -10,11 +10,10 @@ class FeePolicy < ApplicationPolicy
   end
 
   def show?
-    user.has_cached_role?(:super) || user.entity_id == record.entity_id
+    user.entity_id == record.entity_id
   end
 
   def create?
-    user.has_cached_role?(:super) ||
       (user.entity_id == record.entity_id && record.entity_id == record.owner.entity_id)
   end
 
