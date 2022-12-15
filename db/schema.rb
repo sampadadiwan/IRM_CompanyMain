@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_15_082155) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_15_121833) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -354,7 +354,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_15_082155) do
     t.bigint "deal_investor_id"
     t.date "by_date"
     t.string "status", limit: 20
-    t.boolean "completed"
+    t.string "completed", limit: 5
     t.integer "entity_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

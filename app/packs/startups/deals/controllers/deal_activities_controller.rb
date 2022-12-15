@@ -39,9 +39,7 @@ class DealActivitiesController < ApplicationController
   end
 
   # GET /deal_activities/1/edit
-  def edit
-    authorize @deal_activity
-  end
+  def edit; end
 
   # POST /deal_activities or /deal_activities.json
   def create
@@ -65,8 +63,6 @@ class DealActivitiesController < ApplicationController
 
   # PATCH/PUT /deal_activities/1 or /deal_activities/1.json
   def update
-    authorize @deal_activity
-
     respond_to do |format|
       if @deal_activity.update(deal_activity_params)
         format.html do
@@ -82,7 +78,6 @@ class DealActivitiesController < ApplicationController
   end
 
   def update_sequence
-    authorize @deal_activity, :update?
     DealActivity.public_activity_off
     @deal_activity.set_list_position(params[:sequence].to_i + 1)
     DealActivity.public_activity_on
@@ -102,10 +97,8 @@ class DealActivitiesController < ApplicationController
   end
 
   def toggle_completed
-    authorize @deal_activity, :update?
-    @deal_activity.completed = !@deal_activity.completed
     DealActivity.public_activity_off
-    @deal_activity.save
+    @deal_activity.update(deal_activity_params)
     DealActivity.public_activity_on
 
     @deal_activity.create_activity key: 'deal_activity.completed', owner: current_user if @deal_activity.completed
@@ -123,7 +116,6 @@ class DealActivitiesController < ApplicationController
 
   # DELETE /deal_activities/1 or /deal_activities/1.json
   def destroy
-    authorize @deal_activity
     @deal_activity.destroy
 
     redirect_path = if @deal_activity.deal_investor_id.blank?
@@ -142,6 +134,7 @@ class DealActivitiesController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_deal_activity
     @deal_activity = DealActivity.find(params[:id])
+    authorize @deal_activity
   end
 
   # Only allow a list of trusted parameters through.

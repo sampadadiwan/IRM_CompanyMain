@@ -38,13 +38,21 @@
                         id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <%= activity.summary %>
                     </span>
+
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
                         <a class="dropdown-item">Due: <%= l activity.by_date if activity.by_date %></a>
                         <div class="dropdown-divider"></div>
 
+                        <% completed = activity.completed == "Yes" ? "No" : "Yes" %>
+                        
+                        <div>
+                        <%= button_to "Toggle Done", toggle_completed_deal_activity_path(activity, "deal_activity[completed]": completed), class: "dropdown-item" %>
+                        </div>
 
-                        <%= button_to "Toggle Done", toggle_completed_deal_activity_path(activity), class: "dropdown-item" %>
+                        <div>
+                        <%= button_to "N/A", toggle_completed_deal_activity_path(activity, "deal_activity[completed]": "N/A"), class: "dropdown-item" %>
+                        </div>
 
                         <%= link_to "Show", deal_activity_path(activity), class: "dropdown-item" %>
                         

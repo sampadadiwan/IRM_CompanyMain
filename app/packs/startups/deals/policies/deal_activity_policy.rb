@@ -38,6 +38,14 @@ class DealActivityPolicy < DealBasePolicy
     update?
   end
 
+  def toggle_completed?
+    update?
+  end
+
+  def update_sequence?
+    update?
+  end
+
   def destroy?
     create? ||
       permissioned_advisor?(:destroy)

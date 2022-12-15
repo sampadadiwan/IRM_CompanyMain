@@ -36,7 +36,7 @@ class DealActivity < ApplicationRecord
   end
 
   def completed_status
-    completed ? "Yes" : "No"
+    completed
   end
 
   def summary
