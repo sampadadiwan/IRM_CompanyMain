@@ -45,7 +45,7 @@ class FundPolicy < FundBasePolicy
   end
 
   def new?
-    user.has_cached_role?(:company_admin)
+    user.has_cached_role?(:company_admin) && user.curr_role == "fund_manager"
   end
 
   def update?

@@ -20,11 +20,11 @@ class ApprovalPolicy < ApplicationPolicy
 
   def create?
     (user.entity_id == record.entity_id) &&
-      (user.has_cached_role?(:company) || user.has_cached_role?(:fund_manager))
+      (user.curr_role = "company" || user.curr_role = "fund_manager")
   end
 
   def new?
-    create?
+    (user.curr_role = "company" || user.curr_role = "fund_manager")
   end
 
   def update?

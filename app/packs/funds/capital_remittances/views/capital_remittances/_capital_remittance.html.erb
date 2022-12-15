@@ -24,6 +24,9 @@
     <%= money_to_currency capital_remittance.collected_amount, params %>
   </td>
   <td>
+    <%= l capital_remittance.payment_date if capital_remittance.payment_date  %>
+  </td>
+  <td>
     <%= link_to "Show" , capital_remittance , {class: "btn btn-primary" }%>
     
     <% if policy(capital_remittance).update? %>

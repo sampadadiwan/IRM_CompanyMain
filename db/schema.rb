@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_15_063201) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_15_082155) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -340,6 +340,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_15_063201) do
     t.boolean "verified", default: false
     t.text "payment_proof_data"
     t.string "folio_id", limit: 20
+    t.date "payment_date"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_capital_remittances_on_entity_id"

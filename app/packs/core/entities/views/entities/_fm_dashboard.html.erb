@@ -11,7 +11,7 @@
 
     <div class="associated_entity" >
         <%= render "/investment_opportunities/index",  
-            investment_opportunities: current_user.entity.investment_opportunities if current_user.enable_inv_opportunities %>
+            investment_opportunities: policy_scope(InvestmentOpportunity) if current_user.enable_inv_opportunities %>
     </div>
 
 

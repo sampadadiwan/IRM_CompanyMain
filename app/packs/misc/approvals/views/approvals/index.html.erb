@@ -2,7 +2,7 @@
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Approvals</h1>
-  <%= link_to "New Approval", new_approval_path, {class: "btn btn-primary"}  %>
+  <%= link_to "New Approval", new_approval_path, {class: "btn btn-primary"}  if policy(Approval.new).new? %>
 </div>
 
 <div class="table-responsive" data-controller="datatable">

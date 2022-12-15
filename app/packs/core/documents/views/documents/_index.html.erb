@@ -1,3 +1,4 @@
+<% @entity ||= nil %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">
     Documents in
@@ -6,7 +7,11 @@
 
   <% 
     external = owner && owner.entity_id != current_user.entity_id 
-    document = Document.new(entity_id: owner&.entity_id || current_user.entity_id, owner: owner)
+    entity_id = @entity&.id
+    entity_id ||= owner&.entity_id
+    entity_id ||= current_user.entity_id
+
+    document = Document.new(entity_id: , owner: owner)
     doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
   %>
 
