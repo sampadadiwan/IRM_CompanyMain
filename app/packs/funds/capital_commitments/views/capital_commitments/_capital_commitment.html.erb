@@ -12,7 +12,7 @@
     <%= money_to_currency capital_commitment.committed_amount, params %>
   </td>
   <td>
-    <%= capital_commitment.percentage %> %
+    <%= capital_commitment.percentage&.round(2) %> %
   </td>
   <td>
     <%= money_to_currency capital_commitment.collected_amount, params %>
