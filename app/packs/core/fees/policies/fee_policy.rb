@@ -14,7 +14,7 @@ class FeePolicy < ApplicationPolicy
   end
 
   def create?
-      (user.entity_id == record.entity_id && record.entity_id == record.owner.entity_id)
+    (user.entity_id == record.entity_id && record.entity_id == record.owner.entity_id)
   end
 
   def new?

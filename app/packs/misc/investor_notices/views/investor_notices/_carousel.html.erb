@@ -1,11 +1,11 @@
-<% cache ["InvestorNotice", current_user.entity] do %>
+<% cache ["InvestorNotice", current_user] do %>
 
 <div id="carouselExampleControls" class="carousel slide" data-ride="carousel">
 
     <div class="carousel-inner">
         <% 
             active = "active" 
-            notices = InvestorNotice.notices(investor_entity_id)
+            notices = InvestorNotice.notices(current_user)
             # If user has come in via a subdomain, show that notice first
             notices = notices.to_a.sort_by{|n| n.entity_id == @current_entity.id ? 0:1} if @current_entity
         %>
@@ -17,7 +17,7 @@
         <% end %>
     </div>
 
-    <% if InvestorNotice.notices(investor_entity_id).count > 0 %>
+    <% if notices.count > 0 %>
     <a class="carousel-control-prev" href="#carouselExampleControls" role="button" data-slide="prev">
         <span class="carousel-control-prev-icon" aria-hidden="true"></span>
         <span class="sr-only">Previous</span>

@@ -14,7 +14,7 @@ class InvestorAccessPolicy < ApplicationPolicy
   end
 
   def create?
-    user.entity_id == record.entity_id)
+    user.entity_id == record.entity_id
   end
 
   def request_access?

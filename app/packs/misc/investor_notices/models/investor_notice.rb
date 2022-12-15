@@ -27,7 +27,9 @@ class InvestorNotice < ApplicationRecord
     end
   end
 
-  def self.notices(investor_entity_id)
-    InvestorNotice.joins(:investor_notice_entries).where("investor_notices.active=?", true).where("investor_notice_entries.investor_entity_id=? and investor_notice_entries.active=?", investor_entity_id, true)
+  def self.notices(user)
+    InvestorNotice.joins(:investor_notice_entries, entity: :investor_accesses).where("investor_notices.active=?", true)
+                  .where("investor_notice_entries.investor_entity_id=? and investor_notice_entries.active=?", user.entity_id, true)
+                  .where("investor_accesses.user_id=? and investor_accesses.approved=?", user.id, true)
   end
 end
