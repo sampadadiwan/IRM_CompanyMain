@@ -19,8 +19,8 @@ class ExpressionOfInterestPolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id)
-    (user.entity_id == record.eoi_entity_id)
+    (user.entity_id == record.entity_id) ||
+      (user.entity_id == record.eoi_entity_id)
   end
 
   def new?
@@ -33,6 +33,15 @@ class ExpressionOfInterestPolicy < ApplicationPolicy
 
   def edit?
     update?
+  end
+
+  def generate_documentation?
+    update? && !record.esign_completed
+  end
+
+  def generate_esign_link?
+    update? &&
+      record.esigns.count.zero? && !record.esign_completed
   end
 
   def destroy?

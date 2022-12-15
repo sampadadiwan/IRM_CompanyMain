@@ -1,2 +1,5 @@
 <%= render "/layouts/alerts" %>
-<%= render "/expression_of_interests/index", expression_of_interests: @expression_of_interests %>
+
+<%= turbo_frame_tag "expression_of_interests_list", target: "_top" do %>
+    <%= render "/expression_of_interests/index", expression_of_interests: @expression_of_interests %>
+<% end %>

@@ -263,6 +263,26 @@
     {
       "warning_type": "Command Injection",
       "warning_code": 14,
+      "fingerprint": "bffc45add26a0f4f0e4e213ba088eb572ef2a831a0fde4fcbd6de4579e577d6f",
+      "check_name": "Execute",
+      "message": "Possible command injection",
+      "file": "app/packs/funds/investment_opportunities/models/eoi_doc_generator.rb",
+      "line": 55,
+      "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
+      "code": "system(\"libreoffice --headless --convert-to pdf #{@working_dir}/ExpressionOfInterest-#{expression_of_interest.id}.odt --outdir #{@working_dir}\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "EoiDocGenerator",
+        "method": "generate"
+      },
+      "user_input": "@working_dir",
+      "confidence": "Medium",
+      "note": ""
+    },
+    {
+      "warning_type": "Command Injection",
+      "warning_code": 14,
       "fingerprint": "c7fb83a0fdd65c7dc48eecc4a1169cdbd422434c4df494caa13b47dad3579512",
       "check_name": "Execute",
       "message": "Possible command injection",
@@ -472,6 +492,6 @@
       "note": ""
     }
   ],
-  "updated": "2022-12-13 18:20:01 +0530",
+  "updated": "2022-12-15 12:13:50 +0530",
   "brakeman_version": "5.2.1"
 }

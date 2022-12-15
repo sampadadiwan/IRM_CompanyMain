@@ -3,13 +3,10 @@
     <%= investment_opportunity.company_name %>
   </td>
   <td>
-    <%= raw investment_opportunity.tags.map{|tag| link_to(tag.name, search_investment_opportunities_path(query: tag.name))}.join(", ") %>
+    <%= raw investment_opportunity.tag_list.split(",").collect{|tag| link_to(tag, search_investment_opportunities_path(query: tag))}.join(", ") if investment_opportunity.tag_list.present? %>
   </td>
   <td>
     <%= money_to_currency investment_opportunity.fund_raise_amount, params %>
-  </td>
-  <td>
-    <%= money_to_currency investment_opportunity.valuation, params %>
   </td>
   <td>
     <%= money_to_currency investment_opportunity.min_ticket_size, params %>

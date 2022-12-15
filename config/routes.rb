@@ -75,6 +75,8 @@ Rails.application.routes.draw do
     patch 'allocate', on: :member
     get   'allocation_form', on: :member
     get 'search', on: :collection
+    patch 'generate_documentation', on: :member
+    patch 'generate_esign_link', on: :member
   end
 
   resources :investment_opportunities do

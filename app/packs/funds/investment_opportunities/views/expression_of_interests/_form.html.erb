@@ -14,6 +14,18 @@
   <%= form.text_field :investment_opportunity_id, class: "form-control", hidden: true  %>
 
   <div class="form-group">
+    <%= form.label :investor_id %>
+    <%= form.select :investor_id, expression_of_interest.investment_opportunity.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control"  %>
+  </div>
+
+  <% if expression_of_interest.investor %>
+  <div class="form-group">
+    <%= form.label :investor_signatory_id %>
+    <%= form.select :investor_signatory_id, expression_of_interest.investor.investor_entity.employees.map{|e| [e.full_name, e.id]}, {include_blank: true}, class: "form-control"  %>
+  </div>
+  <% end %>
+
+  <div class="form-group">
     <%= form.label :amount %>
     <%= form.number_field :amount, class: "form-control"  %>
     <small class="text-muted">Min ticket size is <%= money_to_currency(expression_of_interest.investment_opportunity.min_ticket_size, params) %></small> 

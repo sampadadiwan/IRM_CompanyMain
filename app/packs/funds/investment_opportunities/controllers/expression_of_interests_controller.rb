@@ -1,9 +1,9 @@
 class ExpressionOfInterestsController < ApplicationController
-  before_action :set_expression_of_interest, only: %i[show edit update destroy approve allocation_form allocate]
+  before_action :set_expression_of_interest, only: %i[show edit update destroy approve allocation_form allocate generate_documentation generate_esign_link]
 
   # GET /expression_of_interests or /expression_of_interests.json
   def index
-    @expression_of_interests = policy_scope(ExpressionOfInterest)
+    @expression_of_interests = policy_scope(ExpressionOfInterest).includes(:investor, :user)
     @expression_of_interests = @expression_of_interests.where(investment_opportunity_id: params[:investment_opportunity_id]) if params[:investment_opportunity_id].present?
   end
 
@@ -13,8 +13,7 @@ class ExpressionOfInterestsController < ApplicationController
   # GET /expression_of_interests/new
   def new
     @expression_of_interest = ExpressionOfInterest.new(expression_of_interest_params)
-    @expression_of_interest.eoi_entity_id = current_user.entity_id
-    @expression_of_interest.investment_opportunity = @expression_of_interest.investment_opportunity
+    @expression_of_interest.entity_id = @expression_of_interest.investment_opportunity.entity_id
     @expression_of_interest.amount = @expression_of_interest.investment_opportunity.min_ticket_size
     authorize @expression_of_interest
   end
@@ -25,7 +24,7 @@ class ExpressionOfInterestsController < ApplicationController
   # POST /expression_of_interests or /expression_of_interests.json
   def create
     @expression_of_interest = ExpressionOfInterest.new(expression_of_interest_params)
-    @expression_of_interest.eoi_entity_id = current_user.entity_id
+    @expression_of_interest.eoi_entity_id = @expression_of_interest.investor.investor_entity_id
     @expression_of_interest.entity_id = @expression_of_interest.investment_opportunity.entity_id
     @expression_of_interest.user_id = current_user.id
 
@@ -53,6 +52,16 @@ class ExpressionOfInterestsController < ApplicationController
         format.json { render json: @expression_of_interest.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  def generate_documentation
+    EoiDocJob.perform_later(@expression_of_interest.id)
+    redirect_to expression_of_interest_url(@expression_of_interest), notice: "Documentation generation started, please check back in a few mins."
+  end
+
+  def generate_esign_link
+    EoiGenerateEsignJob.perform_later(@expression_of_interest.id)
+    redirect_to expression_of_interest_url(@expression_of_interest), notice: "Esign generation started, please check back in a few mins."
   end
 
   def approve
@@ -113,8 +122,8 @@ class ExpressionOfInterestsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def expression_of_interest_params
-    params.require(:expression_of_interest).permit(:entity_id, :user_id, :eoi_entity_id,
-                                                   :investment_opportunity_id, :amount, :approved, :verified, :allocation_percentage, :comment,
+    params.require(:expression_of_interest).permit(:entity_id, :user_id, :eoi_entity_id, :investor_id,
+                                                   :investment_opportunity_id, :amount, :approved, :verified, :allocation_percentage, :comment, :investor_signatory_id,
                                                    :allocation_amount, :details)
   end
 end

@@ -3,12 +3,20 @@ class ExpressionOfInterest < ApplicationRecord
 
   belongs_to :entity
   belongs_to :user
+  belongs_to :investor
   belongs_to :eoi_entity, class_name: "Entity"
   belongs_to :investment_opportunity
   has_rich_text :details
+  serialize :properties, Hash
 
   has_many :documents, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
+
+  has_many :adhaar_esigns, as: :owner
+  has_many :esigns, -> { order("sequence_no asc") }, as: :owner
+  has_many :signature_workflows, as: :owner
+  has_many :investor_kycs, through: :investor
+  belongs_to :investor_signatory, class_name: "User", optional: true
 
   validate :check_amount
   counter_culture :investment_opportunity,
@@ -43,5 +51,27 @@ class ExpressionOfInterest < ApplicationRecord
 
   def folder_path
     "#{investment_opportunity.folder_path}/EOI/#{eoi_entity.name}-#{id}"
+  end
+
+  ################# eSign stuff follows ###################
+
+  def investor_signature_types; end
+
+  def signatory_ids(type = nil)
+    if @signatory_ids_map.blank?
+      @signatory_ids_map = { adhaar: [], dsc: [] }
+      @signatory_ids_map[:adhaar] << investor_signatory_id
+      @signatory_ids_map[:adhaar].compact!
+    end
+    type ? @signatory_ids_map[type.to_sym] : @signatory_ids_map
+  end
+
+  def signature_link(user, document_id = nil)
+    # Substitute the phone number required in the link
+    EoiEsignProvider.new(self).signature_link(user, document_id)
+  end
+
+  def signature_completed(signature_type, document_id, file)
+    EoiEsignProvider.new(self).signature_completed(signature_type, document_id, file)
   end
 end

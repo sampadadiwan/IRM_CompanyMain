@@ -20,10 +20,18 @@
     </tr>
     <tr>
       <td>
-        Eoi Entity
+        Investor
       </td>
       <td>
-        <%= @expression_of_interest.eoi_entity.name %>
+        <%= @expression_of_interest.investor.investor_name %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Signatory
+      </td>
+      <td>
+        <%= @expression_of_interest.investor_signatory.full_name if @expression_of_interest.investor_signatory %>
       </td>
     </tr>
     <tr>
@@ -96,6 +104,18 @@
       <%= button_to "Delete" , @expression_of_interest, method: :delete, class: "btn btn-danger" ,
           form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
     <% end %>
+
+    <%= button_to "Generate Documentation", 
+        generate_documentation_expression_of_interest_path(@expression_of_interest), 
+        method: :patch, class: "btn btn-success" , 
+        form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+        msg: "Generate documentation for this EOI from kyc and opportunity info. This will delete any previously generated documentation for this EOI. Proceed?"} if policy(@expression_of_interest).generate_documentation? %>
+
+  <%= button_to "Generate Esign Link", 
+        generate_esign_link_expression_of_interest_path(@expression_of_interest), 
+        method: :patch, class: "btn btn-success" , 
+        form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+        msg: "Generate esign link for this EOI. This will trigger the eSign process. Proceed?"} if policy(@expression_of_interest).generate_esign_link? %>
   </div>
 
   <%= render "expression_of_interests/details", expression_of_interest: @expression_of_interest %>

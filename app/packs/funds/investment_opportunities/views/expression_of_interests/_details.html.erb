@@ -5,6 +5,22 @@
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
       
+      <% if expression_of_interest.entity.enable_investor_kyc %>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#kycs-tab" 
+                data-action="click->tabdetails#loadData">
+          KYC
+        </a>
+      <% end %>
+      <% if params[:debug].present? %>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#esigns-tab" 
+                data-action="click->tabdetails#loadData">
+          eSigns
+        </a>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#signature-workflows-tab" 
+                  data-action="click->tabdetails#loadData">
+          Signature Workflows
+        </a>
+      <% end %>
     </nav>
   
     <div class="tab-content" data-controller="datatable">
@@ -15,9 +31,46 @@
                 owner: expression_of_interest, entity: expression_of_interest.entity,
                 msg: expression_of_interest.investment_opportunity.buyer_docs_list %>
           </div>     
+        </div>                 
+
+        <div id="kycs-tab" class="tab-pane fade">
+          <div id="kycs" class="associated_entity">
+            <%= link_to investor_kycs_path( investor_id: expression_of_interest.investor_id), 
+                                        class: "load_data_link", 
+                                        data: { turbo_frame: 'investor_kycs_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "investor_kycs_list", target: "_top" do %>
+            <% end %>
+          </div>
         </div>
-             
+
+        <div id="esigns-tab" class="tab-pane fade">
+          <div id="esigns" class="associated_entity">
+            <%= link_to esigns_path( owner_id: expression_of_interest.id, owner_type: "ExpressionOfInterest"), 
+                                        class: "load_data_link", 
+                                        data: { turbo_frame: 'esigns_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "esigns_list", target: "_top" do %>
+            <% end %>
+          </div>
+        </div>
+
+        <div id="signature-workflows-tab" class="tab-pane fade">
+          <div id="signature_workflows" class="associated_entity">
+            <%= link_to signature_workflows_path( owner_id: expression_of_interest.id, owner_type: "ExpressionOfInterest"), 
+                                        class: "load_data_link", 
+                                        data: { turbo_frame: 'signature_workflows_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "signature_workflows_list", target: "_top" do %>
+            <% end %>
+          </div>
+        </div>
+
     </div>
+
   
 </div>
   

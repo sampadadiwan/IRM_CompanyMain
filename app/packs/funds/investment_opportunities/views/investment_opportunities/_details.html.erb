@@ -47,9 +47,16 @@
 
         <div id="eoi-tab" class="tab-pane fade">
           <div id="eois" class="associated_entity">
-            <%= render "/expression_of_interests/index", 
-                expression_of_interests: policy_scope(investment_opportunity.expression_of_interests), 
-                investment_opportunity: investment_opportunity %>
+            
+            <%= link_to expression_of_interests_path( investment_opportunity_id: investment_opportunity.id, 
+                                    all: true), 
+                                    class: "load_data_link", 
+                                    data: { turbo_frame: 'expression_of_interests_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "expression_of_interests_list", target: "_top" do %>
+            <% end %>
+
           </div>     
         </div>
 

@@ -3,8 +3,6 @@ class InvestmentOpportunity < ApplicationRecord
 
   update_index('investment_opportunity') { self }
 
-  acts_as_taggable_on :tags
-
   belongs_to :entity, touch: true
   belongs_to :funding_round
 
@@ -49,19 +47,27 @@ class InvestmentOpportunity < ApplicationRecord
     "/InvestmentOpportunity/#{company_name}-#{id}"
   end
 
-  def self.for_investor(user)
-    InvestmentOpportunity
-      # Ensure the access rghts for Document
-      .joins(:access_rights)
+  def document_tags
+    %w[Template Document]
+  end
+
+  def investors
+    investor_list = []
+    access_rights.not_user.includes(:investor).find_each do |ar|
+      investor_list += ar.investors
+    end
+    investor_list.uniq
+  end
+
+  scope :for_investor, lambda { |user|
+    joins(:access_rights)
       .merge(AccessRight.access_filter)
       .joins(entity: :investors)
-      # Ensure that the user is an investor and tis investor has been given access rights
-      # .where("entities.id=?", entity.id)
       .where("investors.investor_entity_id=?", user.entity_id)
       # Ensure this user has investor access
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
-  end
+  }
 
   def notify_open_for_interests
     InvestmentOpportunityMailer.with(id:).notify_open_for_interests.deliver_later
