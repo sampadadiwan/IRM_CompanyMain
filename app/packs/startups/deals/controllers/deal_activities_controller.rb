@@ -39,13 +39,19 @@ class DealActivitiesController < ApplicationController
   end
 
   # GET /deal_activities/1/edit
-  def edit; end
+  def edit
+    @deal_activity[:completed] = deal_activity_params[:completed] if params[:deal_activity].present?
+  end
 
   # POST /deal_activities or /deal_activities.json
   def create
     @deal_activity = DealActivity.new(deal_activity_params)
     @deal_activity.entity_id = current_user.entity_id
     authorize @deal_activity
+
+    @deal_activity.has_documents_nested_attributes = true if params[:deal_activity] && params[:deal_activity][:documents_attributes].present?
+
+    setup_doc_user(@deal_activity)
 
     respond_to do |format|
       if @deal_activity.save
@@ -63,6 +69,9 @@ class DealActivitiesController < ApplicationController
 
   # PATCH/PUT /deal_activities/1 or /deal_activities/1.json
   def update
+    setup_doc_user(@deal_activity)
+    @deal_activity.has_documents_nested_attributes = true if params[:deal_activity] && params[:deal_activity][:documents_attributes].present?
+
     respond_to do |format|
       if @deal_activity.update(deal_activity_params)
         format.html do
@@ -98,19 +107,24 @@ class DealActivitiesController < ApplicationController
 
   def toggle_completed
     DealActivity.public_activity_off
-    @deal_activity.update(deal_activity_params)
+    success = @deal_activity.update(deal_activity_params)
     DealActivity.public_activity_on
 
     @deal_activity.create_activity key: 'deal_activity.completed', owner: current_user if @deal_activity.completed
 
     respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.replace(helpers.dom_id(@deal_activity.deal_investor), partial: "deals/grid_view_row",
-                                                                             locals: { deal_investor: @deal_activity.deal_investor })
-        ]
+      if success
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.replace(helpers.dom_id(@deal_activity.deal_investor), partial: "deals/grid_view_row",
+                                                                               locals: { deal_investor: @deal_activity.deal_investor })
+          ]
+        end
+        format.html { redirect_to deal_activity_url(@deal_activity), notice: "Activity was successfully updated." }
+      else
+        format.turbo_stream { redirect_to edit_deal_activity_path(@deal_activity, 'deal_activity[completed]': @deal_activity.completed), alert: @deal_activity.errors.full_messages }
+        format.html { render :edit }
       end
-      format.html { redirect_to deal_activity_url(@deal_activity), notice: "Activity was successfully updated." }
     end
   end
 
@@ -140,6 +154,7 @@ class DealActivitiesController < ApplicationController
   # Only allow a list of trusted parameters through.
   def deal_activity_params
     params.require(:deal_activity).permit(:deal_id, :deal_investor_id, :by_date, :status,
-                                          :title, :details, :completed, :entity_id, :days)
+                                          :title, :details, :completed, :entity_id, :days,
+                                          documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

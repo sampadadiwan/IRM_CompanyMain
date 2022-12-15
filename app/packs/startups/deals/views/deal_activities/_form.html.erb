@@ -1,3 +1,5 @@
+<%= render "/layouts/alerts" %>
+
 <%= form_with(model: deal_activity, validate: true) do |form| %>
   <% if deal_activity.errors.any? %>
     <div class="alert alert-danger">
@@ -58,6 +60,9 @@
     </div>
 
   <% end %>
+
+  <%= render "layouts/multi_upload", form: form, title: "Documents", 
+              for_model: "deal_activity" %>
 
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-primary"}%>

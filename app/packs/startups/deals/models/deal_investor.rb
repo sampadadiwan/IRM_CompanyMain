@@ -82,7 +82,9 @@ class DealInvestor < ApplicationRecord
       DealActivity.create(deal_id:, deal_investor_id: id,
                           entity_id:, title: template.title,
                           sequence: template.sequence, days: template.days,
-                          by_date:, template_id: template.id)
+                          by_date:, template_id: template.id,
+                          docs_required_for_completion: entity.activity_docs_required_for_completion,
+                          details_required_for_na: entity.activity_details_required_for_na)
 
       seq += 1
     end

@@ -2,6 +2,8 @@ class DealActivity < ApplicationRecord
   include ActivityTrackable
   include WithFolder
 
+  attr_accessor :has_documents_nested_attributes
+
   acts_as_list scope: %i[deal_id deal_investor_id], column: :sequence
 
   default_scope { order(sequence: :asc) }
@@ -10,6 +12,7 @@ class DealActivity < ApplicationRecord
   belongs_to :deal_investor, optional: true
   belongs_to :entity
   has_many :documents, as: :owner, dependent: :destroy
+  accepts_nested_attributes_for :documents, allow_destroy: true
 
   delegate :investor_name, to: :deal_investor, allow_nil: true
   delegate :name, to: :entity, prefix: :entity
@@ -23,8 +26,15 @@ class DealActivity < ApplicationRecord
   before_save :set_defaults
   after_commit :recreate_activities
 
+  validate :check_done
+
   def set_defaults
     self.status = "Template" if deal_investor_id.nil?
+  end
+
+  def check_done
+    errors.add(:documents, "required for completing the activity") if completed == "Yes" && docs_required_for_completion && !(has_documents_nested_attributes || documents.present?)
+    errors.add(:details, "required for marking N/A") if completed == "N/A" && details_required_for_na && details.blank?
   end
 
   def recreate_activities

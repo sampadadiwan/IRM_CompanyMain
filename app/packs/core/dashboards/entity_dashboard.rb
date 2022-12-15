@@ -22,6 +22,8 @@ class EntityDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     active: Field::BooleanEmoji,
+    activity_docs_required_for_completion: Field::BooleanEmoji,
+    activity_details_required_for_na: Field::BooleanEmoji,
     entity_type: Field::Select.with_options(collection: Entity::TYPES),
     currency: Field::Select.with_options(collection: ENV["CURRENCY"].split(",")),
     created_by: Field::Number,
@@ -87,6 +89,8 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_captable
     enable_investor_kyc
     employees
+    activity_docs_required_for_completion
+    activity_details_required_for_na
   ].freeze
 
   # FORM_ATTRIBUTES
@@ -117,6 +121,8 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_options
     enable_captable
     enable_investor_kyc
+    activity_docs_required_for_completion
+    activity_details_required_for_na
   ].freeze
 
   # COLLECTION_FILTERS

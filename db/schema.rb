@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_15_121833) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_15_145434) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -354,7 +354,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_15_121833) do
     t.bigint "deal_investor_id"
     t.date "by_date"
     t.string "status", limit: 20
-    t.string "completed", limit: 5
+    t.string "completed", limit: 5, default: "No"
     t.integer "entity_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -364,6 +364,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_15_121833) do
     t.integer "days"
     t.datetime "deleted_at"
     t.integer "template_id"
+    t.boolean "docs_required_for_completion", default: false
+    t.boolean "details_required_for_na", default: false
     t.index ["deal_id"], name: "index_deal_activities_on_deal_id"
     t.index ["deal_investor_id"], name: "index_deal_activities_on_deal_investor_id"
     t.index ["deleted_at"], name: "index_deal_activities_on_deleted_at"
@@ -532,6 +534,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_15_121833) do
     t.string "sub_domain"
     t.text "logo_data"
     t.string "kyc_doc_list", limit: 100
+    t.boolean "activity_docs_required_for_completion", default: false
+    t.boolean "activity_details_required_for_na", default: false
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
