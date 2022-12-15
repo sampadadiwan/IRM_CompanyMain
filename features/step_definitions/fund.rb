@@ -610,3 +610,18 @@ Then('the payments are generated for the capital distrbutions') do
     end
   end
 end
+
+
+Then('the capital commitments are updated with remittance numbers') do
+  CapitalCommitment.all.each do |cc|
+    cc.call_amount_cents.should == cc.capital_remittances.sum(:call_amount_cents)
+    cc.collected_amount_cents.should == cc.capital_remittances.sum(:collected_amount_cents)
+  end
+end
+
+Then('the funds are updated with remittance numbers') do
+  Fund.all.each do |f|
+    f.call_amount_cents.should == f.capital_remittances.sum(:call_amount_cents)
+    f.collected_amount_cents.should == f.capital_remittances.sum(:collected_amount_cents)
+  end
+end

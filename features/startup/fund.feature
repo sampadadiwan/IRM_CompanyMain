@@ -139,6 +139,8 @@ Scenario Outline: Import capital calls
   Then There should be "3" capital calls created
   And the capital calls must have the data in the sheet
   And the remittances are generated for the capital calls
+  And the capital commitments are updated with remittance numbers
+  And the funds are updated with remittance numbers
   
 
 Scenario Outline: Import capital distributions

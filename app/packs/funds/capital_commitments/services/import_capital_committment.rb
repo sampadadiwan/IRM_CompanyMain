@@ -69,11 +69,13 @@ class ImportCapitalCommittment < ImportUtil
     CapitalCommitment.import @commitments, on_duplicate_key_update: %i[folio_id notes committed_amount_cents]
     CapitalCommitmentIndex.import(CapitalCommitment.where(entity_id: import_upload.entity_id))
 
+    fund_ids = @commitments.collect(&:fund_id).to_set.to_a
+
     # Sometimes we import custom fields. Ensure custom fields get created
     @last_saved = import_upload.entity.funds.last.capital_commitments.last
     FormType.extract_from_db(@last_saved) if @last_saved
 
-    import_upload.entity.funds.each do |fund|
+    Fund.where(id: fund_ids).each do |fund|
       # Compute the percentages
       fund.capital_commitments.last&.compute_percentage
       # Ensure the counter caches are updated

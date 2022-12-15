@@ -39,7 +39,9 @@ class CapitalCallJob < ApplicationJob
     # Update the search index
     CapitalRemittanceIndex.import(@capital_call.capital_remittances)
     # Update the counter caches
-    CapitalRemittance.counter_culture_fix_counts
+    CapitalRemittance.counter_culture_fix_counts only: :capital_call, where: { id: @capital_call.id }
+    CapitalRemittance.counter_culture_fix_counts only: :capital_commitment, where: { fund_id: @capital_call.fund_id }
+    CapitalRemittance.counter_culture_fix_counts only: :fund, where: { id: @capital_call.fund_id }
   end
 
   def notify(capital_call_id)
