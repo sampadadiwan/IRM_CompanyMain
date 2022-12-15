@@ -36,7 +36,7 @@ class Fund < ApplicationRecord
 
   after_commit :generate_calcs
   def generate_calcs
-    FundCalcJob.perform_later(id) unless @update_by_fund_calc
+    # FundCalcJob.perform_later(id) unless @update_by_fund_calc
   end
 
   def folder_path
