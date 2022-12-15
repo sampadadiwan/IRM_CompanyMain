@@ -100,7 +100,7 @@ include InvestmentsHelper
   
   Then('the activity must be completed') do
     @deal_activity.reload
-    @deal_activity.completed.should == true
+    @deal_activity.completed.should == "Yes"
   end
   
 
