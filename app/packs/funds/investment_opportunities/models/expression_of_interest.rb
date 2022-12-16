@@ -56,6 +56,10 @@ class ExpressionOfInterest < ApplicationRecord
     "#{investment_opportunity.folder_path}/EOI/#{eoi_entity.name}-#{id}"
   end
 
+  def document_tags
+    investment_opportunity.buyer_docs_list.split(",") if investment_opportunity.buyer_docs_list.present?
+  end
+
   ################# eSign stuff follows ###################
 
   def investor_signature_types; end

@@ -21,7 +21,7 @@
   <div  data-controller="docform">
     <div class="form-group">
       <%= form.label :name %>
-      <% if document.name == nil && document.owner != nil && document.owner.respond_to?(:document_list) && document.owner.document_list %>
+      <% if document.name == nil && document.owner != nil && document.owner.respond_to?(:document_list) && document.owner.document_list.present? %>
         <%= form.select :name, document.owner.document_list.map{|d| d.strip} ,{}, class: "form-control", id: "doc_name_select", "data-action": "change->docform#checkOtherName" %>    
         <%= form.text_field :name, class: "form-control", disabled: true, id: "other_name"  %>
       <% else %>
@@ -46,7 +46,7 @@
         <small class="text-muted">Comma separated list of tags to classify the document</small>
       </div>
     
-    <% elsif document.owner.respond_to?(:document_tags) %>
+    <% elsif document.owner.respond_to?(:document_tags) && document.owner.document_tags.present?  %>
       <div class="form-group">
         <%= form.label :owner_tag, "Document For" %>
         <%= form.select :owner_tag, document.owner.document_tags ,{}, class: "form-control"  %>    
