@@ -68,14 +68,15 @@
     <small class="text-muted"> Upload Video. </small>
   </div>
 
-
-
   <%= custom_form_fields(investment_opportunity, form) %>
 
   <div class="form-group">
     <%= form.label :details %>
     <%= form.rich_text_area :details, class: "form-control trix-content"  %>
   </div>
+
+  <%= render "layouts/multi_upload", form: form, title: "Documents", 
+              for_model: "investment_opportunity" %>
 
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-primary"}%>

@@ -49,6 +49,8 @@ class InvestmentOpportunitiesController < ApplicationController
     @investment_opportunity.entity_id = current_user.entity_id
     authorize @investment_opportunity
 
+    setup_doc_user(@investment_opportunity)
+
     respond_to do |format|
       if @investment_opportunity.save
         format.html { redirect_to investment_opportunity_url(@investment_opportunity), notice: "Investment opportunity was successfully created." }
@@ -62,6 +64,7 @@ class InvestmentOpportunitiesController < ApplicationController
 
   # PATCH/PUT /investment_opportunities/1 or /investment_opportunities/1.json
   def update
+    setup_doc_user(@investment_opportunity)
     respond_to do |format|
       if @investment_opportunity.update(investment_opportunity_params)
         format.html { redirect_to investment_opportunity_url(@investment_opportunity), notice: "Investment opportunity was successfully updated." }
@@ -131,6 +134,7 @@ class InvestmentOpportunitiesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investment_opportunity_params
-    params.require(:investment_opportunity).permit(:entity_id, :company_name, :fund_raise_amount, :valuation, :min_ticket_size, :last_date, :currency, :logo, :video, :tag_list, :details, :buyer_docs_list, properties: {})
+    params.require(:investment_opportunity).permit(:entity_id, :company_name, :fund_raise_amount, :valuation, :min_ticket_size, :last_date, :currency, :logo, :video, :tag_list, :details, :buyer_docs_list,
+                                                   documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end
