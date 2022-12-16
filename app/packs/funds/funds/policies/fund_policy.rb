@@ -32,6 +32,10 @@ class FundPolicy < FundBasePolicy
       )
   end
 
+  def generate_calcs?
+    update?
+  end
+
   def last?
     update?
   end

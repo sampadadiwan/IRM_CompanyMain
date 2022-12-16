@@ -34,13 +34,8 @@ class Fund < ApplicationRecord
     self.funding_round = FundingRound.new(name:, entity_id:, status: "Open", currency:)
   end
 
-  after_commit :generate_calcs
   def generate_calcs
-    if Rails.env.test?
-      FundCalcJob.perform_later(id) unless @update_by_fund_calc
-    else
-      FundCalcJob.set(wait_until: 60.seconds).perform_later(id) unless @update_by_fund_calc
-    end
+    FundCalcJob.perform_later(id) unless @update_by_fund_calc
   end
 
   def folder_path

@@ -21,7 +21,10 @@ class ExpressionOfInterest < ApplicationRecord
   validate :check_amount
   counter_culture :investment_opportunity,
                   column_name: proc { |o| o.approved ? 'eoi_amount_cents' : nil },
-                  delta_column: 'amount_cents'
+                  delta_column: 'amount_cents',
+                  column_names: {
+                    ["expression_of_interests.approved = ?", true] => 'eoi_amount_cents'
+                  }
 
   monetize :amount_cents, :allocation_amount_cents,
            with_currency: ->(s) { s.investment_opportunity.currency }

@@ -1,9 +1,8 @@
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Expression Of Interests</h1>
-    <% investment_opportunity ||= nil %>
     <%= link_to "New Expression Of Interest", 
         new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": 
-            investment_opportunity.id ), {class: "btn btn-primary"} if investment_opportunity  %>
+            params[:investment_opportunity_id] ), {class: "btn btn-primary"} if params[:investment_opportunity_id]  %>
   </div>
   
   <div class="table-responsive">
