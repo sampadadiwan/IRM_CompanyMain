@@ -219,8 +219,9 @@
 
     @capital_call.capital_remittances.each do |remittance|
       visit(capital_call_url(@capital_call))
-      sleep(2)
+      sleep(1)
       click_on "Remittances"      
+      sleep(1)
       within("#capital_remittance_#{remittance.id}") do
         click_on "Verify"
         sleep(1)
