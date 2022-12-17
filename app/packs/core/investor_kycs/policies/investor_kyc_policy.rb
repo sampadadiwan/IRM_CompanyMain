@@ -6,7 +6,7 @@ class InvestorKycPolicy < ApplicationPolicy
       elsif user.has_cached_role?(:advisor)
         scope.for_advisor(user)
       else
-        scope.where(user_id: user.id)
+        scope.where('investors.investor_entity_id': user.entity_id)
       end
     end
   end
@@ -23,7 +23,7 @@ class InvestorKycPolicy < ApplicationPolicy
 
   def create?
     (user.entity_id == record.entity_id) ||
-      user.id == record.user_id ||
+      user.entity_id == record.investor.investor_entity_id ||
       record.entity.advisor?(user)
   end
 
