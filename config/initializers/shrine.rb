@@ -34,6 +34,7 @@ Shrine.plugin :cached_attachment_data # enables retaining cached file across for
 Shrine.plugin :restore_cached_data # extracts metadata for assigned cached files
 Shrine.plugin :validation_helpers
 Shrine.plugin :validation
+Shrine.plugin :keep_files if Rails.env.production?
 Shrine.plugin :determine_mime_type, analyzer: :marcel
 Shrine.plugin :presign_endpoint
 Shrine.plugin :uppy_s3_multipart # load the plugin

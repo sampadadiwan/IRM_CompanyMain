@@ -36,11 +36,11 @@ class ExpressionOfInterestPolicy < ApplicationPolicy
   end
 
   def generate_documentation?
-    update? && !record.esign_completed
+    user.entity_id == record.entity_id && !record.esign_completed
   end
 
   def generate_esign_link?
-    update? &&
+    user.entity_id == record.entity_id &&
       record.esigns.count.zero? && !record.esign_completed
   end
 

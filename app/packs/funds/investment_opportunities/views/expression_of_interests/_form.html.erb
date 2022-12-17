@@ -14,8 +14,11 @@
   <%= form.text_field :investment_opportunity_id, class: "form-control", hidden: true  %>
 
   <div class="form-group">
+    <% disabled = current_user.entity_id != expression_of_interest.entity_id %>
     <%= form.label :investor_id %>
-    <%= form.select :investor_id, expression_of_interest.investment_opportunity.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control"  %>
+    <%= form.select :investor_id, expression_of_interest.investment_opportunity.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control", disabled: disabled %>
+
+    <%= form.text_field :investor_id, hidden: true if disabled %>
   </div>
 
   <% if expression_of_interest.investor %>
