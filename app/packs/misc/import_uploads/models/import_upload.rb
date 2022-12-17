@@ -23,6 +23,12 @@ class ImportUpload < ApplicationRecord
     ImportUploadJob.set(wait_until: 2.seconds).perform_later(id) unless Rails.env.test?
   end
 
+  after_save_commit :broadcast_iu, on: [:update]
+
+  def broadcast_iu
+    broadcast_update partial: "/import_uploads/show"
+  end
+
   def percent_completed
     return 0 if total_rows_count.zero?
 
