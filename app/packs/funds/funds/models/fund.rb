@@ -3,6 +3,7 @@ class Fund < ApplicationRecord
 
   include FundCalcs
   include WithFolder
+  include Trackable
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model }, entity_id: proc { |_controller, model| model.entity_id }
 

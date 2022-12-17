@@ -1,4 +1,11 @@
 FactoryBot.define do
+  factory :user_alert do
+    user { nil }
+    message { "MyString" }
+    entity { nil }
+    level { "MyString" }
+  end
+
   factory :esign do
     entity { nil }
     user { nil }

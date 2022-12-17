@@ -2,7 +2,7 @@ class EoiDocJob < ApplicationJob
   queue_as :default
 
   # This is idempotent, we should be able to call it multiple times for the same ExpressionOfInterest
-  def perform(expression_of_interest_id)
+  def perform(expression_of_interest_id, user_id = nil)
     Chewy.strategy(:sidekiq) do
       @expression_of_interest = ExpressionOfInterest.find(expression_of_interest_id)
       @investment_opportunity = @expression_of_interest.investment_opportunity
@@ -20,7 +20,7 @@ class EoiDocJob < ApplicationJob
           # Delete any existing signed documents
           @expression_of_interest.documents.where(name: investment_opportunity_doc_template.name).each(&:destroy)
           # Generate a new signed document
-          EoiDocGenerator.new(@expression_of_interest, investment_opportunity_doc_template)
+          EoiDocGenerator.new(@expression_of_interest, investment_opportunity_doc_template, user_id)
         end
       end
     end

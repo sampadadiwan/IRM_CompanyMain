@@ -1,4 +1,5 @@
 class CapitalDistribution < ApplicationRecord
+  include Trackable
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 

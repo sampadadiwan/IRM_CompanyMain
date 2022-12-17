@@ -6,7 +6,7 @@ class EoiDocGenerator
 
   # expression_of_interest - we want to generate the document for this ExpressionOfInterest
   # investment_opportunity document template - the document are we using as  template for generation
-  def initialize(expression_of_interest, io_doc_template)
+  def initialize(expression_of_interest, io_doc_template, user_id = nil)
     @io_doc_template_name = io_doc_template.name
 
     io_doc_template.file.download do |tempfile|
@@ -14,12 +14,17 @@ class EoiDocGenerator
       create_working_dir(expression_of_interest)
       generate(expression_of_interest, io_doc_template_path)
       upload(io_doc_template, expression_of_interest)
+      notify(io_doc_template, expression_of_interest, user_id) if user_id
     ensure
       cleanup
     end
   end
 
   private
+
+  def notify(io_doc_template, expression_of_interest, user_id)
+    UserAlert.new(user_id:, message: "Document #{io_doc_template.name} generated for #{expression_of_interest.investor.investor_name}. Please refresh the page.", level: "success").broadcast
+  end
 
   def working_dir_path(expression_of_interest)
     "tmp/eoi_doc_generator/#{expression_of_interest.id}"

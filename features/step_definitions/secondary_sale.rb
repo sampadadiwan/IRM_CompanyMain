@@ -79,7 +79,7 @@
     @sale = SecondarySale.first
     puts "\n####Visible Sale####\n"
     puts "visible_externally = #{@sale.visible_externally}"
-
+    click_on("Details")
     @sale.visible_externally.should == true
     within("tr#visible_externally") do
         expect(page).to have_content("Yes")

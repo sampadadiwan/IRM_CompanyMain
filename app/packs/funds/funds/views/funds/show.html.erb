@@ -15,7 +15,13 @@
 
 
   <div>
+
+    <% if current_user.entity_id == @fund.entity_id %>
+      <button class="btn btn-primary" type="button" data-toggle="collapse" data-target=".multi-collapse"    aria-expanded="false" aria-controls="multi-collapse">Details</button> 
+    <% end %>
+    
     <% if policy(@fund).update? %>
+
       <%= link_to "Edit" , edit_fund_path(@fund), {class: "btn btn-primary" } %> 
 
       <div class="btn-group">

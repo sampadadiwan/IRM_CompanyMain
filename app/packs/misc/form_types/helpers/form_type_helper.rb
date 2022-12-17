@@ -3,8 +3,8 @@ module FormTypeHelper
     render partial: "/form_types/custom_form_fields", locals: { model:, form: } if model.form_type.present?
   end
 
-  def display_custom_fields(model)
-    render partial: "/form_types/display_custom_fields", locals: { model: }
+  def display_custom_fields(model, collapsed: false)
+    render partial: "/form_types/display_custom_fields", locals: { model:, collapsed: }
   end
 
   def get_form_type(name)

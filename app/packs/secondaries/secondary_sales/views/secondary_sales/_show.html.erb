@@ -33,7 +33,7 @@
         <%= secondary_sale.name %>
       </td>
     </tr>
-    <!-- <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Start Date
       </td>
@@ -41,14 +41,14 @@
         <%= l secondary_sale.start_date %>
       </td>
     </tr>
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Offer End Date
       </td>
       <td>
         <%= l secondary_sale.offer_end_date if secondary_sale.offer_end_date %>
       </td>
-    </tr> -->
+    </tr>
 
     <tr>
       <td>
@@ -162,7 +162,7 @@
       </td>
     </tr>
 
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Buyer Doc List
       </td>
@@ -170,7 +170,7 @@
         <%= secondary_sale.buyer_doc_list %>
       </td>
     </tr>
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Seller Doc List
       </td>
@@ -208,7 +208,7 @@
       </td>
     </tr>
 
-    <tr id="visible_externally">
+    <tr id="visible_externally"  class="collapse multi-collapse">
       <td>
         Visible Externally
       </td>
@@ -296,7 +296,7 @@
     
 
 
-    <%= display_custom_fields(secondary_sale) if current_user %>
+    <%= display_custom_fields(secondary_sale, collapsed: true) if current_user %>
 
   </table>
 

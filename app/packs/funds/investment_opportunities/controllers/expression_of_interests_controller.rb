@@ -59,7 +59,7 @@ class ExpressionOfInterestsController < ApplicationController
   end
 
   def generate_documentation
-    EoiDocJob.perform_later(@expression_of_interest.id)
+    EoiDocJob.perform_later(@expression_of_interest.id, current_user.id)
     redirect_to expression_of_interest_url(@expression_of_interest), notice: "Documentation generation started, please check back in a few mins."
   end
 

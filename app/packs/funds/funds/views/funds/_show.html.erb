@@ -48,7 +48,7 @@
       </tr>
 
       <% if fund.fund_signatory %>
-      <tr>
+      <tr class="collapse multi-collapse">
         <td>
           Fund Signatory
         </td>
@@ -59,7 +59,7 @@
       <% end %>
 
       <% if fund.trustee_signatory %>
-      <tr>
+      <tr class="collapse multi-collapse">
         <td>
           Trustee Signatory
         </td>
@@ -106,7 +106,7 @@
           </td>
         </tr>
         
-        <tr>
+        <tr class="collapse multi-collapse">
           <td>
             Commitment Document List
           </td>
@@ -114,7 +114,7 @@
             <%= fund.commitment_doc_list %>
           </td>
         </tr>
-        <tr>
+        <tr class="collapse multi-collapse">
           <td>
             Investor Signature Type
           </td>
@@ -122,7 +122,7 @@
             <%= fund.investor_signature_types&.capitalize %>
           </td>
         </tr>
-        <tr>
+        <tr class="collapse multi-collapse">
           <td>
             Fund Signature Type
           </td>
@@ -130,7 +130,7 @@
             <%= fund.fund_signature_types&.capitalize %>
           </td>
         </tr>
-        <tr>
+        <tr class="collapse multi-collapse">
           <td>
             Show Valuations to LPs 
           </td>
@@ -138,7 +138,7 @@
             <%= display_boolean fund.show_valuations %>
           </td>
         </tr>
-        <tr>
+        <tr class="collapse multi-collapse">
           <td>
             Show Fund Ratios to LPs
           </td>
@@ -148,6 +148,6 @@
         </tr>
       <% end %>
 
-      <%= display_custom_fields(fund) if current_user %>
+      <%= display_custom_fields(fund,collapsed: true) if current_user %>
       
     </table>

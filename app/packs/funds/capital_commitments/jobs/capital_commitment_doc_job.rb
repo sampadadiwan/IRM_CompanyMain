@@ -2,7 +2,7 @@ class CapitalCommitmentDocJob < ApplicationJob
   queue_as :default
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
-  def perform(capital_commitment_id)
+  def perform(capital_commitment_id, user_id = nil)
     Chewy.strategy(:sidekiq) do
       @capital_commitment = CapitalCommitment.find(capital_commitment_id)
       @fund = @capital_commitment.fund
@@ -20,7 +20,7 @@ class CapitalCommitmentDocJob < ApplicationJob
           # Delete any existing signed documents
           @capital_commitment.documents.where(name: fund_doc_template.name).each(&:destroy)
           # Generate a new signed document
-          CapitalCommitmentDocGenerator.new(@capital_commitment, fund_doc_template)
+          CapitalCommitmentDocGenerator.new(@capital_commitment, fund_doc_template, user_id)
         end
       end
     end

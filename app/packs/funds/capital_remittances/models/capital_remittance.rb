@@ -1,7 +1,7 @@
 class CapitalRemittance < ApplicationRecord
-  # include ActivityTrackable
-  # tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
-
+  include ActivityTrackable
+  tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
+  include Trackable
   include FundScopes
   update_index('capital_remittance') { self }
 

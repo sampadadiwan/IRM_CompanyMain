@@ -44,7 +44,7 @@ class CapitalCommitmentsController < ApplicationController
   def show; end
 
   def generate_documentation
-    CapitalCommitmentDocJob.perform_later(@capital_commitment.id)
+    CapitalCommitmentDocJob.perform_later(@capital_commitment.id, current_user.id)
     redirect_to capital_commitment_url(@capital_commitment), notice: "Documentation generation started, please check back in a few mins."
   end
 

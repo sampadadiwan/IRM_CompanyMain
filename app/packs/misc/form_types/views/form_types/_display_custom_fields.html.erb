@@ -1,10 +1,10 @@
 <% model.properties&.each do |k,v| %>
-    <tr>
-    <td>
-        <%= k.to_s.humanize.titleize %>
-    </td>
-    <td>
-        <%= v %>
-    </td>
+    <tr class="<%= collapsed ? 'collapse multi-collapse' : '' %>">
+        <td>
+            <%= k.to_s.humanize.titleize %>
+        </td>
+        <td>
+            <%= v %>
+        </td>
     </tr>
 <% end %>

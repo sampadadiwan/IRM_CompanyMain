@@ -28,14 +28,6 @@
 
   <tr>
     <td>
-      Investor Signatory
-    </td>
-    <td>
-      <%= @capital_commitment.investor_signatory.full_name if @capital_commitment.investor_signatory %>
-    </td>
-  </tr>
-  <tr>
-    <td>
       Fund
     </td>
     <td>
@@ -69,16 +61,19 @@
       </td>
     </tr>
   <% end %>
-  <%= display_custom_fields(@capital_commitment) if current_user %>
-  <tr>
+  
+  <%= display_custom_fields(@capital_commitment, collapsed: true) if current_user %>
+
+  <tr class="collapse multi-collapse">
     <td>
-      Notes
+      Investor Signatory
     </td>
     <td>
-      <%= @capital_commitment.notes.html_safe if @capital_commitment.notes %>
+      <%= @capital_commitment.investor_signatory.full_name if @capital_commitment.investor_signatory %>
     </td>
   </tr>
-  <tr>
+
+  <tr  class="collapse multi-collapse">
     <td>
       Investor Signature Type
     </td>
@@ -86,8 +81,24 @@
       <%= @capital_commitment.investor_signature_types&.capitalize %>
     </td>
   </tr>
+  
+  <tr  class="collapse multi-collapse">
+    <td>
+      Notes
+    </td>
+    <td>
+      <%= @capital_commitment.notes.html_safe if @capital_commitment.notes %>
+    </td>
+  </tr>
+  
+
 </table>
 <div>
+
+  <% if current_user.entity_id == @capital_commitment.entity_id %>
+      <button class="btn btn-primary" type="button" data-toggle="collapse" data-target=".multi-collapse"    aria-expanded="false" aria-controls="multi-collapse">Details</button> 
+  <% end %>
+
   <% if policy(@capital_commitment).update? %>
     <%= link_to "Edit" , edit_capital_commitment_path(@capital_commitment), {class: "btn btn-primary" } %>
     <%= button_to "Delete" , @capital_commitment, method: :delete, class: "btn btn-danger" ,
