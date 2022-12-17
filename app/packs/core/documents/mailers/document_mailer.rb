@@ -1,28 +1,17 @@
 class DocumentMailer < ApplicationMailer
   helper ApplicationHelper
 
-  def notify_signature_required
-    @access_right = AccessRight.find params[:access_right_id]
-    @document = @access_right.owner
+  def notify_new_document
+    @document = Document.find params[:id]
+    @document.owner.access_rights
 
-    email = sandbox_email(@document, @access_right.investor_emails)
+    email = sandbox_email(@document, @document.investor_users.collect(&:email))
 
     if email
-      subj = "Signature required by #{@document.entity.name} for #{@document.name}"
+      subj = "New document #{@document.name} uploaded by #{@document.entity.name}"
       mail(from: from_email(@document.entity),
            to: email,
            subject: subj)
     end
-  end
-
-  def notify_signed
-    @document = Document.find params[:id]
-
-    email = sandbox_email(@document, @document.signed_by.email)
-
-    subj = "Signature on document #{@document.name} recorded"
-    mail(from: from_email(@document.entity),
-         to: email,
-         subject: subj)
   end
 end

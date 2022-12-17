@@ -80,10 +80,8 @@ class Document < ApplicationRecord
     end
   end
 
-  def self.for_investor(user, entity)
-    Document
-      # Ensure the access rghts for Document
-      .joins(:access_rights)
+  scope :for_investor, lambda { |user|
+    joins(:access_rights)
       .merge(AccessRight.access_filter)
       .joins(entity: :investors)
       # Ensure that the user is an investor and tis investor has been given access rights
@@ -92,7 +90,7 @@ class Document < ApplicationRecord
       # Ensure this user has investor access
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
-  end
+  }
 
   def video?
     file&.mime_type&.include?('video')
@@ -102,44 +100,12 @@ class Document < ApplicationRecord
     file&.mime_type&.include?('image')
   end
 
-  def display_signature_type
-    SIGNATURE_TYPES.select { |k, _v| signature_type.include?(k.to_s) }.values.join(",")
+  after_create_commit :send_notification_for_owner
+  def send_notification_for_owner
+    DocumentMailer.with(id:).notify_new_document.deliver_later if %w[SecondarySale Fund InvestmentOpportunity].include? owner_type
   end
 
-  def access_rights_changed(access_right_id)
-    DocumentMailer.with(access_right_id:).notify_signature_required.deliver_later if signature_enabled
+  def investor_users
+    User.joins(investor_accesses: :investor).where("investor_accesses.approved=? and investor_accesses.entity_id=?", true, entity_id).merge(Investor.owner_access_rights(owner, nil))
   end
-
-  # def self.check_signature
-
-  #   # This example requires the Chilkat API to have been previously unlocked.
-  #   # See Global Unlock Sample for sample code.
-
-  #   pdf = Chilkat::CkPdf.new
-
-  #   # Load a PDF that has cryptographic signatures to be validated
-  #   success = pdf.LoadFile("public/sample_uploads/SignedDoc.pdf")
-  #   if success == false
-  #     Rails.logger.debug { "#{pdf.lastErrorText}\n" }
-  #     exit
-  #   end
-
-  #   # Each time we verify a signature, information about the signature is written into
-  #   # sigInfo (replacing whatever sigInfo previously contained).
-  #   sigInfo = Chilkat::CkJsonObject.new
-  #   sigInfo.put_EmitCompact(false)
-
-  #   # Iterate over each signature and validate each.
-  #   numSignatures = pdf.get_NumSignatures
-  #   validated = false
-  #   i = 0
-  #   while i < numSignatures
-  #     validated = pdf.VerifySignature(i, sigInfo)
-  #     Rails.logger.debug { "Signature #{i} validated: #{validated}\n" }
-  #     Rails.logger.debug { "#{sigInfo.emit}\n" }
-  #     i += 1
-  #   end
-
-  #   sigInfo.emit
-  # end
 end

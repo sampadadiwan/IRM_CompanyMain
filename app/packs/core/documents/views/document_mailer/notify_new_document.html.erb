@@ -1,0 +1,11 @@
+Dear User
+
+<p>
+    The firm <%= @document.entity.name %> has uploaded a new document <%= @document.name %>. Please click the button below and read through the document.
+</p>
+
+<p>
+    <%= @document.text %>
+</p>
+
+<p class="btn btn-primary"><%= link_to 'View Document', document_url(@document, subdomain: @document.entity.sub_domain) %></p>
