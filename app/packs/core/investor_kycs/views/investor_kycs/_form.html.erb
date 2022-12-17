@@ -67,7 +67,7 @@
   </div>
   
 
-  <div class="form-group">
+  <!-- div class="form-group">
     <div class="alert alert-info">
       Please upload a video where you are holding your PAN Card saying:
       
@@ -78,12 +78,12 @@
       Kindly make sure your full face and the PAN card are clearly visible in the video.
     </div>
 
-    <%= render "layouts/single_upload", form: form, field_label: "Upload KYC Video (mp4 only)", 
+    <%#= render "layouts/single_upload", form: form, field_label: "Upload KYC Video (mp4 only)", 
                             for_model: "investor_kyc", field_name: "video", 
                             model: investor_kyc, allowed_types: ['video/*'].freeze %>
 
     
-  </div>
+  </div -->
 
   <% if current_user.entity_id == investor_kyc.entity_id || policy(investor_kyc).advisor? %>
 
