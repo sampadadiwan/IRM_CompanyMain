@@ -7,23 +7,21 @@ class TasksController < ApplicationController
 
   # GET /tasks or /tasks.json
   def index
-    @for_entity = current_user.entity
+    @for_entity = params[:for_entity_id].present? ? Entity.find(params[:for_entity_id]) : current_user.entity
+
     if params[:owner_id].present? && params[:owner_type].present?
       # This is the tasks for a specific owen like interest/offer/deal etc
       @owner = params[:owner_type].constantize.find(params[:owner_id])
-      if policy(@owner).show?
-        @tasks = Task.where(owner_id: params[:owner_id])
-        @tasks = @tasks.where(owner_type: params[:owner_type])
-        # Filter the tasks to this users entity or where for_entity_id is nil
-        @tasks = @tasks.where(for_entity_id: current_user.entity_id) if current_user.entity_id != @owner.entity_id
-      end
+      @tasks = policy_scope(Task).where(owner_id: params[:owner_id])
+      @tasks = @tasks.where(owner_type: params[:owner_type])
+      @tasks = @tasks.where(for_entity_id: current_user.entity_id) if current_user.entity_id != @owner.entity_id
+
     elsif params[:entity_id].present?
       # This is the tasks for a specific entity, usually by investor
-      @tasks = Task.where(entity_id: params[:entity_id], for_entity_id: current_user.entity_id)
+      @tasks = policy_scope(Task).where(entity_id: params[:entity_id])
     elsif params[:for_entity_id].present?
       # This is to see all tasks under investors task tab
-      @for_entity = Entity.find(params[:for_entity_id])
-      @tasks = Task.where(entity_id: current_user.entity_id, for_entity_id: params[:for_entity_id])
+      @tasks = policy_scope(Task).where(for_entity_id: params[:for_entity_id])
     else
       @tasks = policy_scope(Task)
     end
