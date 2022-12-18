@@ -167,11 +167,11 @@ group :development do
 
   # Speed up commands on slow machines / big apps [https://github.com/rails/spring]
   # gem "spring"
-  gem "capistrano", "~> 3.10", require: false
+  gem "capistrano", "3.16", require: false
   gem "capistrano3-puma"
   gem "capistrano-rails", "~> 1.6", require: false
   gem 'capistrano-rvm'
-  gem 'capistrano-sidekiq', github: 'seuros/capistrano-sidekiq'
+  gem 'capistrano-sidekiq', github: 'seuros/capistrano-sidekiq', ref: "784b04c973e5c074dc78c30746077c9e6fd2bb9a"
   gem 'foreman'
 end
 
