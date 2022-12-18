@@ -80,7 +80,7 @@ class Document < ApplicationRecord
     end
   end
 
-  scope :for_investor, lambda { |user|
+  scope :for_investor, lambda { |user, entity|
     joins(:access_rights)
       .merge(AccessRight.access_filter)
       .joins(entity: :investors)

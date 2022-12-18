@@ -5,9 +5,9 @@ class DocumentMailer < ApplicationMailer
     @document = Document.find params[:id]
     @document.owner.access_rights
 
-    email = sandbox_email(@document, @document.investor_users.collect(&:email))
+    email = sandbox_email(@document, @document.investor_users.collect(&:email).join(","))
 
-    if email
+    if email.present?
       subj = "New document #{@document.name} uploaded by #{@document.entity.name}"
       mail(from: from_email(@document.entity),
            to: email,
