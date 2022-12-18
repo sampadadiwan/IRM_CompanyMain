@@ -12,7 +12,6 @@ class Offer < ApplicationRecord
   belongs_to :investor
   belongs_to :entity, touch: true
   belongs_to :secondary_sale, touch: true
-  has_many :adhaar_esigns, as: :owner
   has_many :esigns, -> { order("sequence_no asc") }, as: :owner
   has_many :signature_workflows, as: :owner
 
@@ -63,7 +62,6 @@ class Offer < ApplicationRecord
   scope :not_verified, -> { where(verified: false) }
   scope :not_final_agreement, -> { where(final_agreement: false) }
   scope :auto_match, -> { where(auto_match: true) }
-  scope :pending_verification, -> { where(verified: false) }
   scope :matched, -> { where.not(interest_id: nil) }
 
   validates :full_name, :address, :PAN, :bank_account_number, :ifsc_code, presence: true, if: proc { |o| o.secondary_sale.finalized }

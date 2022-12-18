@@ -5,7 +5,7 @@ class DigioEsignHelper
   debug_output $stdout
   attr_accessor :debug # Rails.env.development?
 
-  BASE_URL = ENV["DIGIO_BASE_URL"]
+  BASE_URL = ENV.fetch("DIGIO_BASE_URL", nil)
   AUTH_TOKEN = Base64.strict_encode64("#{Rails.application.credentials[:DIGIO_CLIENT_ID]}:#{Rails.application.credentials[:DIGIO_SECRET]}")
 
   def initialize
@@ -74,7 +74,7 @@ class DigioEsignHelper
       expire_in_days: 10,
       notify_signers: false,
       send_sign_link: false,
-      file_name: file_name,
+      file_name:,
       file_data: encoded_file
     }
   end

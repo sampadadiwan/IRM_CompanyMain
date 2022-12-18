@@ -10,7 +10,7 @@ class AccessRightsMailer < ApplicationMailer
     if confirmed_emails.present?
       if @access_right.access_to_category.present?
         bcc = sandbox_email(@access_right, confirmed_emails)
-        to = ENV['SUPPORT_EMAIL']
+        to = ENV.fetch('SUPPORT_EMAIL', nil)
       else
         to = sandbox_email(@access_right, confirmed_emails)
         bcc = nil

@@ -16,7 +16,7 @@ class ImportPostProcess
       import_upload.import_results = File.open(result_file_name, "rb")
       Rails.logger.info "Result file attached for import_upload #{import_upload.id}"
       import_upload.save
-      File.delete(result_file_name) if File.exist? result_file_name
+      FileUtils.rm_f(result_file_name)
     end
   end
 end

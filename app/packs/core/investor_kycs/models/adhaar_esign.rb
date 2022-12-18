@@ -35,16 +35,16 @@ class AdhaarEsign < ApplicationRecord
   def sub_domain
     if entity.sub_domain.present?
       # Hack... Hopefully http gets redirected to https
-      "http://#{entity.sub_domain.strip}.#{ENV['DOMAIN']}"
+      "http://#{entity.sub_domain.strip}.#{ENV.fetch('DOMAIN', nil)}"
     else
-      ENV['BASE_URL']
+      ENV.fetch('BASE_URL', nil)
     end
   end
 
   # The digio dev env runs on 444
 
   def esign_link(phone)
-    "#{ENV['DIGIO_CLIENT_URL']}/#/gateway/login/#{esign_doc_id}/#{rand(4**4)}/#{phone}?redirect_url=#{redirect_url}&logo=https://app.caphive.com/img/logo_big.png" if esign_doc_id.present?
+    "#{ENV.fetch('DIGIO_CLIENT_URL', nil)}/#/gateway/login/#{esign_doc_id}/#{rand(4**4)}/#{phone}?redirect_url=#{redirect_url}&logo=https://app.caphive.com/img/logo_big.png" if esign_doc_id.present?
   end
 
   def user_ids

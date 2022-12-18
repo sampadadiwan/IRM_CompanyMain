@@ -1,5 +1,5 @@
 SanitizeEmail::Config.configure do |config|
-  config[:sanitized_to] = ENV['SANDBOX_EMAILS']
+  config[:sanitized_to] = ENV.fetch('SANDBOX_EMAILS', nil)
   # config[:sanitized_cc] =         'cc@sanitize_email.org'
   # config[:sanitized_bcc] =        'bcc@sanitize_email.org'
   # run/call whatever logic should turn sanitize_email on and off in this Proc:

@@ -2,7 +2,7 @@ class KycVerify
   include HTTParty
   debug_output $stdout
 
-  BASE_URL = ENV["DIGIO_BASE_URL"]
+  BASE_URL = ENV.fetch("DIGIO_BASE_URL", nil)
   AUTH_TOKEN = Base64.strict_encode64("#{Rails.application.credentials[:DIGIO_CLIENT_ID]}:#{Rails.application.credentials[:DIGIO_SECRET]}")
 
   def verify_pan_exists(pan)

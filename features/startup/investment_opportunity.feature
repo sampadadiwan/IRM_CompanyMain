@@ -42,8 +42,12 @@ Scenario Outline: Create new interest for an investment_opportunity
   Then the EOI must be created
   And I should see the EOI details on the details page
   And I should see the EOI in all EOIs page
+  And the investment_opportunity eoi amount should be "0"
+  And when the EOI is approved
+  And the investment_opportunity eoi amount should be "1000000"
+  
 
   Examples:
   	|entity                                 |investment_opportunity                  |msg	|
-  	|entity_type=Investment Fund;enable_inv_opportunities=true  |company_name=Test IO|opportunity was successfully created|
-    |entity_type=Investment Fund;enable_inv_opportunities=true  |company_name=IO 2   |opportunity was successfully created|
+  	|entity_type=Investment Fund;enable_inv_opportunities=true  |company_name=Test IO;min_ticket_size_cents=1000000|opportunity was successfully created|
+    |entity_type=Investment Fund;enable_inv_opportunities=true  |company_name=IO 2;min_ticket_size_cents=1000000   |opportunity was successfully created|

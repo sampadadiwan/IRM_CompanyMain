@@ -89,8 +89,10 @@
   
   
 
-  When('I create an EOI {string}') do |string|
+  When('I create an EOI {string}') do |arg1|
     @expression_of_interest = FactoryBot.build(:expression_of_interest)
+    key_values(@expression_of_interest, arg1)
+    
     visit(investment_opportunity_path(@investment_opportunity))
     click_on "Interests"
     click_on "New Interest"
@@ -125,4 +127,19 @@
     expect(page).to have_content(@expression_of_interest.investor.investor_name)
     expect(page).to have_content(money_to_currency @expression_of_interest.amount)
     expect(page).to have_content(@expression_of_interest.user.full_name)
+  end
+
+
+  Then('the investment_opportunity eoi amount should be {string}') do |amount|
+    puts @investment_opportunity.reload.to_json
+    @investment_opportunity.eoi_amount_cents.should == amount.to_i
+  end
+  
+  Then('when the EOI is approved') do
+    visit(investment_opportunity_path(@investment_opportunity))
+    click_on "Interests"
+    within("#expression_of_interest_#{@expression_of_interest.id}") do
+      click_on "Approve"
+    end
+    sleep(1)
   end

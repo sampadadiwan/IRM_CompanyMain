@@ -19,7 +19,16 @@ jobs:
           bundler-cache: true
       - name: rubocop
         run: bundle exec rubocop --parallel
-      
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 'Bundler Audit'
+        uses: andrewmcodes/bundler-audit-action@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
   brakeman:
     name: brakeman
     runs-on: ubuntu-latest

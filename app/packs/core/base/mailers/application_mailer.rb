@@ -1,5 +1,5 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: ENV["SUPPORT_EMAIL"]
+  default from: ENV.fetch("SUPPORT_EMAIL", nil)
   layout "mailer"
 
   def sandbox_email(model, emails)
@@ -8,6 +8,6 @@ class ApplicationMailer < ActionMailer::Base
 
   def from_email(entity)
     @current_entity = entity
-    @current_entity.from_email.presence || ENV["SUPPORT_EMAIL"]
+    @current_entity.from_email.presence || ENV.fetch("SUPPORT_EMAIL", nil)
   end
 end
