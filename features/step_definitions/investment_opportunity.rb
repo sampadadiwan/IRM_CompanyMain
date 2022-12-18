@@ -74,7 +74,7 @@
     visit(investment_opportunity_path(@investment_opportunity))
     click_on "New Document"
     fill_in('document_name', with: "Test IO Doc")
-
+    attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
     sleep(2)
     click_on("Save")
     sleep(2)
