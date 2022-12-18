@@ -104,6 +104,15 @@
 
     <%= display_custom_fields(@investment_opportunity) if current_user %>
 
+    <tr>
+      <td>
+        Details
+      </td>
+      <td>
+        <%= @investment_opportunity.details  %>
+      </td>
+    </tr>
+
   </table>
 
   <%= render "layouts/video", 

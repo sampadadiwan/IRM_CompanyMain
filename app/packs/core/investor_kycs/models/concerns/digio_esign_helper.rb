@@ -10,7 +10,7 @@ class DigioEsignHelper
 
   def initialize
     super
-    @debug = true
+    @debug = Rails.env.development?
   end
 
   def sign(user_ids, file_name, file_path, reason)

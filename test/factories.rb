@@ -151,6 +151,7 @@ FactoryBot.define do
     last_date { Date.today + 1.month }
     currency { entity.currency }
     tag_list { [IO_TAGS.sample, IO_TAGS.sample].join(",") }
+    details { Faker::Company.catch_phrase  }
   end
 
   factory :approval do
