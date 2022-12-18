@@ -213,3 +213,14 @@ Given('I have access to all deals') do
         entity: di.entity, access_to_investor_id: di.investor_id)
   end
 end
+
+Given('the investors are added to the deal') do
+  @user.entity.investors.not_holding.not_trust.each do |inv|
+        ar = AccessRight.create!( owner: @deal, access_type: "Deal", 
+                                 access_to_investor_id: inv.id, entity: @user.entity)
+
+
+        puts "\n####Granted Access####\n"
+        puts ar.to_json                            
+  end 
+end

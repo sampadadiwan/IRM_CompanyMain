@@ -60,6 +60,7 @@ When('I create a new document {string}') do |args|
   
 end
 
+
 Then('an document should be created') do
   @created_doc = Document.last
   puts "\n####Document####\n"
@@ -186,4 +187,11 @@ Given('given there is a document {string} for the sale') do |args|
   puts "\n####Document####\n"
   puts @document.to_json  
 
+end
+
+Then('an email must go out to the investors for the document') do
+  user = InvestorAccess.includes(:user).first.user
+  puts "Checking email for document #{@document.name} to #{user.email}"
+  open_email(user.email)
+  expect(current_email.subject).to include "New document #{@document.name} uploaded by #{@document.entity.name}"    
 end

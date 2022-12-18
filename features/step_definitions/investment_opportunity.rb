@@ -86,12 +86,7 @@
     @investment_opportunity.documents.first.should == @document
   end
   
-  Then('an email must go out to the investors') do
-    user = Investor.first.investor_accesses.includes(:user).first.user
-    open_email(user.email)
-    expect(current_email.subject).to include "New document #{@document.name} uploaded by #{@investment_opportunity.entity.name}"    
-  end
-
+  
 
   When('I create an EOI {string}') do |string|
     @expression_of_interest = FactoryBot.build(:expression_of_interest)

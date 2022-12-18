@@ -610,3 +610,14 @@ Then('the seller must receive email with subject {string}') do |subject|
   open_email(@signed_offer.user.email)
   expect(current_email.subject).to include subject
 end
+
+Given('the investors are added to the sale') do
+  @user.entity.investors.not_holding.not_trust.each do |inv|
+    ar = AccessRight.create!( owner: @sale, access_type: "SecondarySale", 
+                             access_to_investor_id: inv.id, entity: @user.entity)
+
+
+    puts "\n####Granted Access####\n"
+    puts ar.to_json                            
+  end 
+end

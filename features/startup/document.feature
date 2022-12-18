@@ -35,10 +35,13 @@ Scenario Outline: Create new document
 Scenario Outline: Add deal document
   Given Im logged in as a user "<user>" for an entity "<entity>"
   And there exists a deal "<deal>" for my company
+  Given there is an existing investor "name=Accel" with "1" users
+  Given the investors are added to the deal
   And I visit the deal details page
   When I click "Deal Docs"
   When I create a new document "<document>"
   And an document should be created
+  And an email must go out to the investors for the document
   And the deal document details must be setup right
   And I visit the deal details page
   When I click "Deal Docs"
@@ -71,10 +74,13 @@ Scenario Outline: Add Sale documents
   Given Im logged in as a user "<user>" for an entity "<entity>"
   And I am at the sales page
   Given there is a sale "<sale>"
+  Given there is an existing investor "name=Accel" with "1" users
+  Given the investors are added to the sale
   When I visit the sale details page
   When I click the tab "Documents" 
   When I create a new document "<document>"
   And an document should be created
+  And an email must go out to the investors for the document
   And the sale document details must be setup right
   And I visit the sale details page
   When I click the tab "Documents"
