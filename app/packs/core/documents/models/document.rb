@@ -102,7 +102,7 @@ class Document < ApplicationRecord
 
   after_create_commit :send_notification_for_owner
   def send_notification_for_owner
-    DocumentMailer.with(id:).notify_new_document.deliver_later if %w[SecondarySale Fund InvestmentOpportunity Deal].include? owner_type
+    DocumentMailer.with(id:).notify_new_document.deliver_later if %w[SecondarySale Fund InvestmentOpportunity Deal].include?(owner_type) && owner_tag != "Template"
   end
 
   def investor_users
