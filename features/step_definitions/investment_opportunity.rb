@@ -47,3 +47,86 @@
     expect(page).to have_content(money_to_currency @investment_opportunity.min_ticket_size)
     expect(page).to have_content(@investment_opportunity.last_date.strftime("%d/%m/%Y"))    
   end
+
+
+  Given('there is an investment_opportunity {string}') do |arg1|
+    @investment_opportunity = FactoryBot.build(:investment_opportunity, entity: @entity)
+    key_values(@investment_opportunity, arg1)
+    @investment_opportunity.save!
+
+    puts "\n####InvestmentOpportunity####\n"
+    puts @investment_opportunity.to_json
+  end
+  
+  Given('the investors are added to the investment_opportunity') do
+    @user.entity.investors.not_holding.not_trust.each do |inv|
+        ar = AccessRight.create!( owner: @investment_opportunity, access_type: "InvestmentOpportunity", 
+                                 access_to_investor_id: inv.id, entity: @user.entity)
+
+
+        puts "\n####Granted Access####\n"
+        puts ar.to_json                            
+    end 
+    
+  end
+  
+  When('I upload a document for the investment_opportunity') do
+    visit(investment_opportunity_path(@investment_opportunity))
+    click_on "New Document"
+    fill_in('document_name', with: "Test IO Doc")
+
+    sleep(2)
+    click_on("Save")
+    sleep(2)
+  end
+  
+  Then('The document must be created with the owner set to the investment_opportunity') do
+    @document = Document.last
+    @investment_opportunity.reload
+    @investment_opportunity.documents.first.should == @document
+  end
+  
+  Then('an email must go out to the investors') do
+    user = Investor.first.investor_accesses.includes(:user).first.user
+    open_email(user.email)
+    expect(current_email.subject).to include "New document #{@document.name} uploaded by #{@investment_opportunity.entity.name}"    
+  end
+
+
+  When('I create an EOI {string}') do |string|
+    @expression_of_interest = FactoryBot.build(:expression_of_interest)
+    visit(investment_opportunity_path(@investment_opportunity))
+    click_on "Interests"
+    click_on "New Interest"
+    fill_in('expression_of_interest_amount', with: @expression_of_interest.amount.to_i)
+    select(@expression_of_interest.investor.investor_name, from: "expression_of_interest_investor_id")
+    find('trix-editor').click.set(@expression_of_interest.details.to_plain_text)
+    sleep(2)
+    click_on("Save")
+    sleep(2)
+  end
+  
+  Then('the EOI must be created') do
+    db_expression_of_interest = ExpressionOfInterest.last
+    db_expression_of_interest.investment_opportunity_id.should == @investment_opportunity.id
+    db_expression_of_interest.investor_id.should == @expression_of_interest.investor_id
+    db_expression_of_interest.amount_cents.should == @expression_of_interest.amount_cents
+    db_expression_of_interest.details.to_plain_text.should == @expression_of_interest.details.to_plain_text
+    @expression_of_interest = db_expression_of_interest
+  end
+  
+  Then('I should see the EOI details on the details page') do
+    visit(expression_of_interest_path(@expression_of_interest))
+    expect(page).to have_content(@expression_of_interest.investor.investor_name)
+    expect(page).to have_content(money_to_currency @expression_of_interest.amount)
+    expect(page).to have_content(@expression_of_interest.details.to_plain_text)
+    expect(page).to have_content(@expression_of_interest.user.full_name)
+  end
+  
+  Then('I should see the EOI in all EOIs page') do
+    visit(investment_opportunity_path(@investment_opportunity))
+    click_on "Interests"
+    expect(page).to have_content(@expression_of_interest.investor.investor_name)
+    expect(page).to have_content(money_to_currency @expression_of_interest.amount)
+    expect(page).to have_content(@expression_of_interest.user.full_name)
+  end

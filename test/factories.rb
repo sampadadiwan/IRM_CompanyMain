@@ -134,11 +134,13 @@ FactoryBot.define do
   factory :expression_of_interest do
     investment_opportunity { InvestmentOpportunity.all.sample }
     entity { investment_opportunity.entity }
-    eoi_entity { entity.investors.sample.investor_entity }
+    investor { entity.investors.sample }
+    eoi_entity { investor.investor_entity }
     user { eoi_entity.employees.sample }
     amount_cents { 10e6 * rand(50..100) }
     approved { false }
     verified { false }
+    details { Faker::Company.catch_phrase  }
   end
 
   IO_TAGS = ["Fintech", "Seed", "Pre Series A", "Bridge", "SAAS", "AgriTech", "eCommerce", "Health Tech"]

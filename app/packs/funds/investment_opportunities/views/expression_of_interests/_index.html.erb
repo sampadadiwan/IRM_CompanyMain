@@ -1,6 +1,6 @@
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Expression Of Interests</h1>
-    <%= link_to "New Expression Of Interest", 
+    <%= link_to "New Interest", 
         new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": 
             params[:investment_opportunity_id] ), {class: "btn btn-primary"} if params[:investment_opportunity_id]  %>
   </div>
@@ -15,7 +15,7 @@
             User
           </th>
           <th>
-            Eoi Entity
+            Investor
           </th>
           <th>
             Amount 
