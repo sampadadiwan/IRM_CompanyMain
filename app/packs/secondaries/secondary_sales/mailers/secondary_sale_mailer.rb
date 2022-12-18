@@ -9,7 +9,7 @@ class SecondarySaleMailer < ApplicationMailer
     sale_emails = User.joins(:entity).where('entities.entity_type in (?) or users.sale_notification=?',
                                             ["Investment Advisor", "Family Office"], true).collect(&:email)
 
-    mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
+    mail(from: from_email(@secondary_sale.entity), to: ENV.fetch('SUPPORT_EMAIL', nil),
          bcc: sandbox_email(@secondary_sale, sale_emails.join(',')),
          subject: "New Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}")
   end
@@ -22,7 +22,7 @@ class SecondarySaleMailer < ApplicationMailer
                  @secondary_sale.employee_users("Buyer").collect(&:emails).flatten
 
     Rails.logger.debug { "notify_open_for_interests: sending mail to #{all_emails}" }
-    mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
+    mail(from: from_email(@secondary_sale.entity), to: ENV.fetch('SUPPORT_EMAIL', nil),
          bcc: sandbox_email(@secondary_sale, all_emails.join(',')),
          subject: "Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}, open for interests")
   end
@@ -36,7 +36,7 @@ class SecondarySaleMailer < ApplicationMailer
 
     Rails.logger.debug { "notify_closing_interests: sending mail to #{all_emails}" }
 
-    mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
+    mail(from: from_email(@secondary_sale.entity), to: ENV.fetch('SUPPORT_EMAIL', nil),
          bcc: sandbox_email(@secondary_sale, all_emails.join(',')),
          subject: "Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}, reminder to enter your interest")
   end
@@ -49,7 +49,7 @@ class SecondarySaleMailer < ApplicationMailer
 
       Rails.logger.debug { "notify_open_for_offers: Sending mail to #{list} in bcc" }
 
-      mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
+      mail(from: from_email(@secondary_sale.entity), to: ENV.fetch('SUPPORT_EMAIL', nil),
            bcc: sandbox_email(@secondary_sale, list.join(',')),
            subject: "Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}, open for offers")
 
@@ -64,7 +64,7 @@ class SecondarySaleMailer < ApplicationMailer
     if list
       Rails.logger.debug { "notify_closing_offers: Sending mail to #{list} in bcc" }
 
-      mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
+      mail(from: from_email(@secondary_sale.entity), to: ENV.fetch('SUPPORT_EMAIL', nil),
            bcc: sandbox_email(@secondary_sale, open_for_offers_emails.join(',')),
            subject: "Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}, reminder to enter your offer")
     end
@@ -78,7 +78,7 @@ class SecondarySaleMailer < ApplicationMailer
     if list
       Rails.logger.debug { "notify_closing_offers: Sending mail to #{list} in bcc" }
 
-      mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
+      mail(from: from_email(@secondary_sale.entity), to: ENV.fetch('SUPPORT_EMAIL', nil),
            bcc: sandbox_email(@secondary_sale, list.join(',')),
            subject: "Secondary Sale: #{@secondary_sale.name} allocation complete.")
     end
@@ -90,7 +90,7 @@ class SecondarySaleMailer < ApplicationMailer
     interests_emails = @secondary_sale.interests.short_listed.collect(&:notification_emails).flatten
 
     all_emails = interests_emails
-    mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
+    mail(from: from_email(@secondary_sale.entity), to: ENV.fetch('SUPPORT_EMAIL', nil),
          bcc: sandbox_email(@secondary_sale, all_emails.join(',')),
          subject: "Secondary Sale: #{@secondary_sale.name} allocation complete.")
   end
@@ -103,7 +103,7 @@ class SecondarySaleMailer < ApplicationMailer
 
       Rails.logger.debug { "notify_spa_offers: Sending mail to #{list} in bcc" }
 
-      mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
+      mail(from: from_email(@secondary_sale.entity), to: ENV.fetch('SUPPORT_EMAIL', nil),
            bcc: sandbox_email(@secondary_sale, list.join(',')),
            subject: "Secondary Sale: #{@secondary_sale.name}, please accept uploaded SPA.")
 
@@ -116,7 +116,7 @@ class SecondarySaleMailer < ApplicationMailer
 
     Rails.logger.debug { "notify_spa_interests: Sending mail to #{all_emails} in bcc" }
 
-    mail(from: from_email(@secondary_sale.entity), to: ENV['SUPPORT_EMAIL'],
+    mail(from: from_email(@secondary_sale.entity), to: ENV.fetch('SUPPORT_EMAIL', nil),
          bcc: sandbox_email(@secondary_sale, all_emails.join(',')),
          subject: "Secondary Sale: #{@secondary_sale.name}, please accept uploaded SPA.")
   end

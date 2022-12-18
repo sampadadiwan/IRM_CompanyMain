@@ -74,11 +74,13 @@ module InvestorRelationshipManagement
 
     config.active_job.queue_adapter = :sidekiq
 
-    Rails.application.routes.default_url_options[:host] = ENV['HOST']
+    Rails.application.routes.default_url_options[:host] = ENV.fetch('HOST', nil)
+
+    config.active_record.yaml_column_permitted_classes = [BigDecimal, Date]
 
     config.action_mailer.smtp_settings = {
       address: "email-smtp.ap-south-1.amazonaws.com",
-      domain: ENV["DOMAIN"],
+      domain: ENV.fetch("DOMAIN", nil),
       port: 587,
       user_name: Rails.application.credentials[:SES_SMTP_USERNAME],
       password: Rails.application.credentials[:SES_SMTP_PASSWORD],
@@ -90,8 +92,8 @@ module InvestorRelationshipManagement
       Rails.application.config.middleware.use ExceptionNotification::Rack,
                                               email: {
                                                 email_prefix: '[Error:] ',
-                                                sender_address: %("Support" <#{ENV['SUPPORT_EMAIL']}>),
-                                                exception_recipients: %("ERROR" <#{ENV['ERROR_EMAIL']}>)
+                                                sender_address: %("Support" <#{ENV.fetch('SUPPORT_EMAIL', nil)}>),
+                                                exception_recipients: %("ERROR" <#{ENV.fetch('ERROR_EMAIL', nil)}>)
                                               }
 
     end

@@ -8,6 +8,7 @@ class ImportUtil
       begin
         process_rows(context.import_upload, context.headers, context.data)
       rescue StandardError => e
+        puts "e.message = #{e.message}"
         Rails.logger.debug e.backtrace
         raise e
       end
@@ -39,7 +40,9 @@ class ImportUtil
     # Sometimes we import custom fields. Ensure custom fields get created
     FormType.extract_from_db(@last_saved) if @last_saved
     # Save the results file
-    File.write("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
+    File.open("/tmp/import_result_#{import_upload.id}.xlsx", "wb") do |file|
+      file.write(package.to_stream.read)
+    end
 
     post_process(import_upload)
   end

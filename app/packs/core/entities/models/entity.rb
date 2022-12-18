@@ -28,7 +28,6 @@ class Entity < ApplicationRecord
   has_many :investors, dependent: :destroy
   has_many :investor_entities, through: :investors
   # List of investor records in which this company is an investee
-  has_many :investees, class_name: "Investor", foreign_key: "investor_entity_id", dependent: :destroy
 
   has_many :interests_shown, class_name: "Interest", foreign_key: "interest_entity_id", dependent: :destroy
 

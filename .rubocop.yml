@@ -3,6 +3,8 @@ require:
   - rubocop-rails
   - rubocop-rspec
 
+Rails/I18nLocaleTexts:
+  Enabled: false
 Style/FrozenStringLiteralComment:
   Enabled: false
 Style/StringLiterals:
@@ -132,7 +134,7 @@ Metrics/BlockLength:
     - 'app/packs/secondaries/offers/models/offer_spa_generator.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/spa_job.rb'
     - 'app/packs/secondaries/secondary_sales/views/secondary_sales/payments.xlsx.axlsx'
-  IgnoredMethods:
+  AllowedMethods:
     - context
     - describe
     - it

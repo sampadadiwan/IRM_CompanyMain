@@ -41,7 +41,7 @@ module DocumentGeneratorBase
     combined_pdf.save(spa_path)
 
     header_footer_download_path.each do |file_path|
-      File.delete(file_path) if File.exist?(file_path)
+      FileUtils.rm_f(file_path)
     end
   end
 

@@ -73,7 +73,7 @@ wb.add_worksheet(name: "Interests") do |sheet|
     user_name, entity_name = if o.escrow_deposited
                                [o.user.full_name, o.interest_entity.name]
                              else
-                               [ENV['OBFUSCATION'], ENV['OBFUSCATION']]
+                               [ENV.fetch('OBFUSCATION', nil), ENV.fetch('OBFUSCATION', nil)]
                              end
 
     row = sheet.add_row ["Link", user_name, entity_name,
