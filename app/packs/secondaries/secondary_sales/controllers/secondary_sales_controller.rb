@@ -192,7 +192,7 @@ class SecondarySalesController < ApplicationController
   end
 
   def send_notification
-    @secondary_sale.send(params[:notification])
+    @secondary_sale.send(params[:notification]) if SecondarySale::NOTIFICATIONS.include? params[:notification]
     respond_to do |format|
       format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "Notification sent successfully." }
       format.json { render :show, status: :ok, location: @secondary_sale }

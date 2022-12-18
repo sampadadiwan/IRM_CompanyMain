@@ -23,11 +23,82 @@
     {
       "warning_type": "SQL Injection",
       "warning_code": 0,
+      "fingerprint": "04a002191d234b62ef95ec0e2f0f397fdf8fe91f16c586b9c89bda4ba974b030",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/packs/secondaries/secondary_sales/jobs/allocation_base.rb",
+      "line": 27,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "secondary_sale.interests.update_all(\"allocation_percentage = 0.00,\\n            allocation_quantity = 0,\\n            final_price = #{secondary_sale.final_price},\\n            allocation_amount_cents = 0,\\n            offer_quantity = 0\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "AllocationBase",
+        "method": "clean_up"
+      },
+      "user_input": "secondary_sale.final_price",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 2,
+      "fingerprint": "053047c7baff629f8cb36a76f72aefe6e76b830b3738da3854d0b3a1f4a2633b",
+      "check_name": "CrossSiteScripting",
+      "message": "Unescaped model attribute",
+      "file": "app/packs/core/documents/views/documents/show.html.erb",
+      "line": 101,
+      "link": "https://brakemanscanner.org/docs/warning_types/cross_site_scripting",
+      "code": "Document.new(document_params).tags.map do\n link_to(tag.name, search_documents_path(:query => tag.name))\n end.join(\", \")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "DocumentsController",
+          "method": "create",
+          "line": 92,
+          "file": "app/packs/core/documents/controllers/documents_controller.rb",
+          "rendered": {
+            "name": "documents/show",
+            "file": "app/packs/core/documents/views/documents/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "documents/show"
+      },
+      "user_input": "Document.new(document_params).tags",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "084a0341a6efef5a9896b87ce3dbe7e6b98e205fc5b4dae729a06b1aa5435732",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/packs/secondaries/secondary_sales/jobs/allocation_base.rb",
+      "line": 32,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "secondary_sale.offers.update_all(\"allocation_percentage = 0,\\n            allocation_quantity = 0,\\n            final_price = #{secondary_sale.final_price},\\n            allocation_amount_cents = 0,\\n            interest_id = null\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "AllocationBase",
+        "method": "clean_up"
+      },
+      "user_input": "secondary_sale.final_price",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
       "fingerprint": "0888f0ade3f48d06ff96c2023851d45c121c8261d6ecb79239e982210bd65530",
       "check_name": "SQL",
       "message": "Possible SQL injection",
       "file": "app/packs/funds/capital_commitments/models/capital_commitment.rb",
-      "line": 54,
+      "line": 55,
       "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
       "code": "fund.capital_commitments.update_all(\"percentage=100.0*committed_amount_cents/#{fund.capital_commitments.sum(:committed_amount_cents)}\")",
       "render_path": null,
@@ -37,6 +108,118 @@
         "method": "compute_percentage"
       },
       "user_input": "fund.capital_commitments.sum(:committed_amount_cents)",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "Remote Code Execution",
+      "warning_code": 24,
+      "fingerprint": "173d0b9a3efa1f321c0d894f0193b2e94e1c7f04d27ac7ea3af1a4e50cfb41fe",
+      "check_name": "UnsafeReflection",
+      "message": "Unsafe reflection method `constantize` called on parameter value",
+      "file": "app/packs/core/access_rights/controllers/access_rights_controller.rb",
+      "line": 25,
+      "link": "https://brakemanscanner.org/docs/warning_types/remote_code_execution/",
+      "code": "params[:owner_type].constantize",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "AccessRightsController",
+        "method": "search"
+      },
+      "user_input": "params[:owner_type]",
+      "confidence": "High",
+      "note": ""
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "1d764dd701fffc10a7723e5694f8a968140a77a2afced22ad230053d7c7302ec",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/packs/secondaries/offers/views/offers/_show.html.erb",
+      "line": 186,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(\"Download Pan Card\", Offer.new(offer_params).pan_card_url, :target => \"_blank\", :class => \"btn btn-success\")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "OffersController",
+          "method": "create",
+          "line": 154,
+          "file": "app/packs/secondaries/offers/controllers/offers_controller.rb",
+          "rendered": {
+            "name": "offers/show",
+            "file": "app/packs/secondaries/offers/views/offers/show.html.erb"
+          }
+        },
+        {
+          "type": "template",
+          "name": "offers/show",
+          "line": 10,
+          "file": "app/packs/secondaries/offers/views/offers/show.html.erb",
+          "rendered": {
+            "name": "offers/_show",
+            "file": "app/packs/secondaries/offers/views/offers/_show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "offers/_show"
+      },
+      "user_input": "Offer.new(offer_params).pan_card_url",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "Dynamic Render Path",
+      "warning_code": 15,
+      "fingerprint": "2afe18fd447658ce03229d5d354b3b33d4e4ca7bc9c90fea404adf28519ef486",
+      "check_name": "Render",
+      "message": "Render path contains parameter value",
+      "file": "app/packs/secondaries/secondary_sales/controllers/secondary_sales_controller.rb",
+      "line": 46,
+      "link": "https://brakemanscanner.org/docs/warning_types/dynamic_render_path/",
+      "code": "render(action => \"/interests/#{params[:report]}\", {})",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "SecondarySalesController",
+        "method": "interests"
+      },
+      "user_input": "params[:report]",
+      "confidence": "Medium",
+      "note": ""
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "35c6e24bdc55a3116d92bbe8fbfab6dcd0e38b17d04c14ade5c71d7f591f51dc",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/packs/secondaries/offers/views/offers/show.html.erb",
+      "line": 37,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(\"eSign SPA\", (Unresolved Model).new.link, :class => \"btn btn-success\")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "OffersController",
+          "method": "show",
+          "line": 74,
+          "file": "app/packs/secondaries/offers/controllers/offers_controller.rb",
+          "rendered": {
+            "name": "offers/show",
+            "file": "app/packs/secondaries/offers/views/offers/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "offers/show"
+      },
+      "user_input": "(Unresolved Model).new.link",
       "confidence": "Weak",
       "note": ""
     },
@@ -63,19 +246,82 @@
     {
       "warning_type": "Dynamic Render Path",
       "warning_code": 15,
-      "fingerprint": "5713780f8707f0ff234ee12d1c7f00c604f7281b7f85743e7be1d9bdd6556c58",
+      "fingerprint": "3f5ca619258651d58c17d859f0c62938e2cc32eb5e6c5166d49746346dc4e756",
       "check_name": "Render",
       "message": "Render path contains parameter value",
       "file": "app/packs/core/entities/views/entities/dashboard.html.erb",
-      "line": 9,
+      "line": 10,
       "link": "https://brakemanscanner.org/docs/warning_types/dynamic_render_path/",
       "code": "render(action => params[:dashboard], {})",
-      "render_path": null,
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "EntitiesController",
+          "method": "dashboard",
+          "line": 14,
+          "file": "app/packs/core/entities/controllers/entities_controller.rb",
+          "rendered": {
+            "name": "entities/dashboard",
+            "file": "app/packs/core/entities/views/entities/dashboard.html.erb"
+          }
+        }
+      ],
       "location": {
         "type": "template",
         "template": "entities/dashboard"
       },
       "user_input": "params[:dashboard]",
+      "confidence": "High",
+      "note": ""
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 2,
+      "fingerprint": "4bb0047d196fefc0d02339de9f38fb0ec7f40e041c120ce63195f31504165ad5",
+      "check_name": "CrossSiteScripting",
+      "message": "Unescaped model attribute",
+      "file": "app/packs/core/tasks/views/tasks/show.html.erb",
+      "line": 10,
+      "link": "https://brakemanscanner.org/docs/warning_types/cross_site_scripting",
+      "code": "Task.new(task_params).details",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "TasksController",
+          "method": "create",
+          "line": 82,
+          "file": "app/packs/core/tasks/controllers/tasks_controller.rb",
+          "rendered": {
+            "name": "tasks/show",
+            "file": "app/packs/core/tasks/views/tasks/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "tasks/show"
+      },
+      "user_input": null,
+      "confidence": "High",
+      "note": ""
+    },
+    {
+      "warning_type": "Remote Code Execution",
+      "warning_code": 24,
+      "fingerprint": "568a7bab04ef328698a6a0f252aae2683a3ae283e621a3f80bc10879eaf7b7ea",
+      "check_name": "UnsafeReflection",
+      "message": "Unsafe reflection method `constantize` called on parameter value",
+      "file": "app/packs/core/documents/controllers/documents_controller.rb",
+      "line": 144,
+      "link": "https://brakemanscanner.org/docs/warning_types/remote_code_execution/",
+      "code": "params[:owner_type].constantize",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "DocumentsController",
+        "method": "entity_documents"
+      },
+      "user_input": "params[:owner_type]",
       "confidence": "High",
       "note": ""
     },
@@ -100,6 +346,77 @@
       "note": ""
     },
     {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 2,
+      "fingerprint": "72b69f43d957090d48f35c49ec476f29bfbe8ad7df7c47a6d369a3dad33d9dcb",
+      "check_name": "CrossSiteScripting",
+      "message": "Unescaped parameter value",
+      "file": "app/packs/startups/investments/views/investments/show.html.erb",
+      "line": 144,
+      "link": "https://brakemanscanner.org/docs/warning_types/cross_site_scripting",
+      "code": "@investment.versions.where(:id => params[:version_id]).first.reify.notes",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "InvestmentsController",
+          "method": "show",
+          "line": 79,
+          "file": "app/packs/startups/investments/controllers/investments_controller.rb",
+          "rendered": {
+            "name": "investments/show",
+            "file": "app/packs/startups/investments/views/investments/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "investments/show"
+      },
+      "user_input": "params[:version_id]",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "73373505aea88b7ed924eb9512909bf2d28996ce7192d2fae0e081f9ec778f4a",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/packs/core/documents/views/documents/_document.html.erb",
+      "line": 5,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(file_url, :class => \"document_download_icon\", :target => \"_blank\")",
+      "render_path": [
+        {
+          "type": "template",
+          "name": "capital_calls/_details",
+          "line": 17,
+          "file": "app/packs/funds/capital_calls/views/capital_calls/_details.html.erb",
+          "rendered": {
+            "name": "documents/_index",
+            "file": "app/packs/core/documents/views/documents/_index.html.erb"
+          }
+        },
+        {
+          "type": "template",
+          "name": "documents/_index",
+          "line": 59,
+          "file": "app/packs/core/documents/views/documents/_index.html.erb",
+          "rendered": {
+            "name": "documents/_document",
+            "file": "app/packs/core/documents/views/documents/_document.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "documents/_document"
+      },
+      "user_input": "file_url",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
       "warning_type": "SQL Injection",
       "warning_code": 0,
       "fingerprint": "764aaca43d4bb5f12f04af0fdf9c2ee0f1fa8d450dc4d8ce4f1d46fa30d38765",
@@ -120,44 +437,105 @@
       "note": ""
     },
     {
+      "warning_type": "Remote Code Execution",
+      "warning_code": 24,
+      "fingerprint": "784f5c98ab4300d2a486fab8bdfa84daa0a45ad31313bced168f6df2af2ff7ef",
+      "check_name": "UnsafeReflection",
+      "message": "Unsafe reflection method `constantize` called on parameter value",
+      "file": "app/packs/core/tasks/controllers/tasks_controller.rb",
+      "line": 14,
+      "link": "https://brakemanscanner.org/docs/warning_types/remote_code_execution/",
+      "code": "params[:owner_type].constantize",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "TasksController",
+        "method": "index"
+      },
+      "user_input": "params[:owner_type]",
+      "confidence": "High",
+      "note": ""
+    },
+    {
       "warning_type": "Cross-Site Scripting",
       "warning_code": 2,
-      "fingerprint": "80976fcca608e76f8a44de54dab1932ebf25070a161035ec8ef09cf58b24c759",
+      "fingerprint": "807f9897c58c293ba36c6a33f20aee4d99f905c732aa87b88f412fee51fb6b54",
       "check_name": "CrossSiteScripting",
-      "message": "Unescaped parameter value",
-      "file": "app/packs/funds/capital_calls/views/capital_calls/_show.html.erb",
-      "line": 96,
+      "message": "Unescaped model attribute",
+      "file": "app/packs/funds/capital_commitments/views/capital_commitments/show.html.erb",
+      "line": 90,
       "link": "https://brakemanscanner.org/docs/warning_types/cross_site_scripting",
-      "code": "CapitalCall.find(params[:id]).notes",
+      "code": "CapitalCommitment.new(capital_commitment_params).notes",
       "render_path": [
         {
           "type": "controller",
-          "class": "CapitalCallsController",
-          "method": "show",
-          "line": 22,
-          "file": "app/packs/funds/capital_calls/controllers/capital_calls_controller.rb",
+          "class": "CapitalCommitmentsController",
+          "method": "create",
+          "line": 77,
+          "file": "app/packs/funds/capital_commitments/controllers/capital_commitments_controller.rb",
           "rendered": {
-            "name": "capital_calls/show",
-            "file": "app/packs/funds/capital_calls/views/capital_calls/show.html.erb"
-          }
-        },
-        {
-          "type": "template",
-          "name": "capital_calls/show",
-          "line": 2,
-          "file": "app/packs/funds/capital_calls/views/capital_calls/show.html.erb",
-          "rendered": {
-            "name": "capital_calls/_show",
-            "file": "app/packs/funds/capital_calls/views/capital_calls/_show.html.erb"
+            "name": "capital_commitments/show",
+            "file": "app/packs/funds/capital_commitments/views/capital_commitments/show.html.erb"
           }
         }
       ],
       "location": {
         "type": "template",
-        "template": "capital_calls/_show"
+        "template": "capital_commitments/show"
       },
-      "user_input": "params[:id]",
+      "user_input": null,
+      "confidence": "High",
+      "note": ""
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "867feb5f42716e1f4185feb5a74bf475036f4d38a7bfbcfbbff77a46f2b09f6f",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/packs/core/documents/views/documents/show.html.erb",
+      "line": 46,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(Document.new(document_params).file_url, :class => \"document_download_icon\", :target => \"_blank\")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "DocumentsController",
+          "method": "create",
+          "line": 92,
+          "file": "app/packs/core/documents/controllers/documents_controller.rb",
+          "rendered": {
+            "name": "documents/show",
+            "file": "app/packs/core/documents/views/documents/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "documents/show"
+      },
+      "user_input": "Document.new(document_params).file_url",
       "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "Dynamic Render Path",
+      "warning_code": 15,
+      "fingerprint": "89fff2deb94c80237b61c799bdf1374a27f8b030c7ffeac08eb988810aab5148",
+      "check_name": "Render",
+      "message": "Render path contains parameter value",
+      "file": "app/packs/funds/capital_commitments/controllers/capital_commitments_controller.rb",
+      "line": 15,
+      "link": "https://brakemanscanner.org/docs/warning_types/dynamic_render_path/",
+      "code": "render(action => params[:report], {})",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "CapitalCommitmentsController",
+        "method": "report"
+      },
+      "user_input": "params[:report]",
+      "confidence": "High",
       "note": ""
     },
     {
@@ -198,6 +576,26 @@
       },
       "user_input": "secondary_sale.final_price",
       "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "Remote Code Execution",
+      "warning_code": 24,
+      "fingerprint": "9ac2f70fd2e2de6a86b09b885061a3b46535b317d48bd1c13ce45829ac619fdc",
+      "check_name": "UnsafeReflection",
+      "message": "Unsafe reflection method `constantize` called on model attribute",
+      "file": "app/packs/misc/import_uploads/jobs/import_upload_job.rb",
+      "line": 10,
+      "link": "https://brakemanscanner.org/docs/warning_types/remote_code_execution/",
+      "code": "\"Import#{ImportUpload.find(import_upload_id).import_type}Service\".constantize",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "ImportUploadJob",
+        "method": "perform"
+      },
+      "user_input": "ImportUpload.find(import_upload_id).import_type",
+      "confidence": "Medium",
       "note": ""
     },
     {
@@ -261,13 +659,74 @@
       "note": ""
     },
     {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 2,
+      "fingerprint": "b7a3a78966b8dd15be5401b247c4e36547b3556e5f0067d364e011d837d2a198",
+      "check_name": "CrossSiteScripting",
+      "message": "Unescaped model attribute",
+      "file": "app/packs/funds/capital_calls/views/capital_calls/_show.html.erb",
+      "line": 96,
+      "link": "https://brakemanscanner.org/docs/warning_types/cross_site_scripting",
+      "code": "CapitalCall.new(capital_call_params).notes",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "CapitalCallsController",
+          "method": "create",
+          "line": 45,
+          "file": "app/packs/funds/capital_calls/controllers/capital_calls_controller.rb",
+          "rendered": {
+            "name": "capital_calls/show",
+            "file": "app/packs/funds/capital_calls/views/capital_calls/show.html.erb"
+          }
+        },
+        {
+          "type": "template",
+          "name": "capital_calls/show",
+          "line": 2,
+          "file": "app/packs/funds/capital_calls/views/capital_calls/show.html.erb",
+          "rendered": {
+            "name": "capital_calls/_show",
+            "file": "app/packs/funds/capital_calls/views/capital_calls/_show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "capital_calls/_show"
+      },
+      "user_input": null,
+      "confidence": "High",
+      "note": ""
+    },
+    {
+      "warning_type": "Dangerous Send",
+      "warning_code": 23,
+      "fingerprint": "baa54cea4eb795a1e840a28af7cc9c08c55ccf04aec230b4149391fee90e578c",
+      "check_name": "Send",
+      "message": "User controlled method execution",
+      "file": "app/packs/funds/investment_opportunities/controllers/investment_opportunities_controller.rb",
+      "line": 100,
+      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_send/",
+      "code": "InvestmentOpportunity.find(params[:id]).send(params[:notification])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "InvestmentOpportunitiesController",
+        "method": "send_notification"
+      },
+      "user_input": "params[:notification]",
+      "confidence": "High",
+      "note": ""
+    },
+    {
       "warning_type": "Command Injection",
       "warning_code": 14,
       "fingerprint": "bffc45add26a0f4f0e4e213ba088eb572ef2a831a0fde4fcbd6de4579e577d6f",
       "check_name": "Execute",
       "message": "Possible command injection",
       "file": "app/packs/funds/investment_opportunities/models/eoi_doc_generator.rb",
-      "line": 55,
+      "line": 60,
       "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
       "code": "system(\"libreoffice --headless --convert-to pdf #{@working_dir}/ExpressionOfInterest-#{expression_of_interest.id}.odt --outdir #{@working_dir}\")",
       "render_path": null,
@@ -278,6 +737,26 @@
       },
       "user_input": "@working_dir",
       "confidence": "Medium",
+      "note": ""
+    },
+    {
+      "warning_type": "Dangerous Send",
+      "warning_code": 23,
+      "fingerprint": "c07d54b236a9f4481ff7fb761f9855c643bb7dc6560a9a4d4a74055f388b12a6",
+      "check_name": "Send",
+      "message": "User controlled method execution",
+      "file": "app/packs/secondaries/secondary_sales/controllers/secondary_sales_controller.rb",
+      "line": 195,
+      "link": "https://brakemanscanner.org/docs/warning_types/dangerous_send/",
+      "code": "SecondarySale.find(params[:id]).send(params[:notification])",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "SecondarySalesController",
+        "method": "send_notification"
+      },
+      "user_input": "params[:notification]",
+      "confidence": "High",
       "note": ""
     },
     {
@@ -301,6 +780,77 @@
       "note": ""
     },
     {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 2,
+      "fingerprint": "cbbc25f071a1adedfc05f69fdc0a4be5d711d66ae72f435429875afa3ffabb91",
+      "check_name": "CrossSiteScripting",
+      "message": "Unescaped model attribute",
+      "file": "app/packs/core/investors/views/investors/show.html.erb",
+      "line": 26,
+      "link": "https://brakemanscanner.org/docs/warning_types/cross_site_scripting",
+      "code": "Investor.new(investor_params).tag_list.split(\",\").collect do\n link_to(tag, search_investors_path(:query => tag))\n end.join(\", \")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "InvestorsController",
+          "method": "create",
+          "line": 58,
+          "file": "app/packs/core/investors/controllers/investors_controller.rb",
+          "rendered": {
+            "name": "investors/show",
+            "file": "app/packs/core/investors/views/investors/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "investors/show"
+      },
+      "user_input": "Investor.new(investor_params).tag_list",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 2,
+      "fingerprint": "cc5ef4e4c5679dc898290999dc89df764fa9a55bf3f64a3526cd688358ece98b",
+      "check_name": "CrossSiteScripting",
+      "message": "Unescaped model attribute",
+      "file": "app/packs/core/documents/views/documents/_document.html.erb",
+      "line": 11,
+      "link": "https://brakemanscanner.org/docs/warning_types/cross_site_scripting",
+      "code": "tags.map do\n link_to(tag.name, search_documents_path(:query => tag.name))\n end.join(\", \")",
+      "render_path": [
+        {
+          "type": "template",
+          "name": "capital_calls/_details",
+          "line": 17,
+          "file": "app/packs/funds/capital_calls/views/capital_calls/_details.html.erb",
+          "rendered": {
+            "name": "documents/_index",
+            "file": "app/packs/core/documents/views/documents/_index.html.erb"
+          }
+        },
+        {
+          "type": "template",
+          "name": "documents/_index",
+          "line": 59,
+          "file": "app/packs/core/documents/views/documents/_index.html.erb",
+          "rendered": {
+            "name": "documents/_document",
+            "file": "app/packs/core/documents/views/documents/_document.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "documents/_document"
+      },
+      "user_input": "tags",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
       "warning_type": "SQL Injection",
       "warning_code": 0,
       "fingerprint": "cf2591d75d0ebf4af1288e2809f3e8990bfe3e8acf617ec41f29234029bedbae",
@@ -317,6 +867,37 @@
         "method": "update_offers"
       },
       "user_input": "secondary_sale.final_price",
+      "confidence": "Weak",
+      "note": ""
+    },
+    {
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 2,
+      "fingerprint": "d92c2bf8a5c09ec9ce21f6874f90cd68446faad71c543f32a619166deb20e762",
+      "check_name": "CrossSiteScripting",
+      "message": "Unescaped model attribute",
+      "file": "app/packs/funds/investment_opportunities/views/investment_opportunities/show.html.erb",
+      "line": 27,
+      "link": "https://brakemanscanner.org/docs/warning_types/cross_site_scripting",
+      "code": "InvestmentOpportunity.new(investment_opportunity_params).tag_list.split(\",\").collect do\n link_to(tag, search_investment_opportunities_path(:query => tag))\n end.join(\", \")",
+      "render_path": [
+        {
+          "type": "controller",
+          "class": "InvestmentOpportunitiesController",
+          "method": "create",
+          "line": 57,
+          "file": "app/packs/funds/investment_opportunities/controllers/investment_opportunities_controller.rb",
+          "rendered": {
+            "name": "investment_opportunities/show",
+            "file": "app/packs/funds/investment_opportunities/views/investment_opportunities/show.html.erb"
+          }
+        }
+      ],
+      "location": {
+        "type": "template",
+        "template": "investment_opportunities/show"
+      },
+      "user_input": "InvestmentOpportunity.new(investment_opportunity_params).tag_list",
       "confidence": "Weak",
       "note": ""
     },
@@ -341,53 +922,33 @@
       "note": ""
     },
     {
-      "warning_type": "Dynamic Render Path",
-      "warning_code": 15,
-      "fingerprint": "df0b4ff5c7f5a98c87fd7c214f617d19afdbd52aef929596d9de83b80187c4f1",
-      "check_name": "Render",
-      "message": "Render path contains parameter value",
-      "file": "app/packs/core/access_rights/views/access_rights/_index.html.erb",
-      "line": 56,
-      "link": "https://brakemanscanner.org/docs/warning_types/dynamic_render_path/",
-      "code": "render(action => (AccessRight.new(:access_to_investor_id => params[:access_to_investor_id], :owner_id => params[:owner_id], :owner_type => params[:owner_type], :entity_id => params[:entity_id]) or nil), { :access_right => ((AccessRight.new(:access_to_investor_id => params[:access_to_investor_id], :owner_id => params[:owner_id], :owner_type => params[:owner_type], :entity_id => params[:entity_id]) or nil)), :show_for => \"Yes\", :show_metadata => \"Yes\" })",
+      "warning_type": "Cross-Site Scripting",
+      "warning_code": 4,
+      "fingerprint": "e494ad8a3a3556c89f376a2e176cc7238a99d9ab2243aff28fc53ad80f597686",
+      "check_name": "LinkToHref",
+      "message": "Potentially unsafe model attribute in `link_to` href",
+      "file": "app/packs/core/documents/views/documents/show.html.erb",
+      "line": 167,
+      "link": "https://brakemanscanner.org/docs/warning_types/link_to_href",
+      "code": "link_to(Document.new(document_params).file_url, :target => \"_blank\")",
       "render_path": [
         {
           "type": "controller",
-          "class": "ApprovalsController",
-          "method": "show",
-          "line": 18,
-          "file": "app/packs/misc/approvals/controllers/approvals_controller.rb",
+          "class": "DocumentsController",
+          "method": "create",
+          "line": 92,
+          "file": "app/packs/core/documents/controllers/documents_controller.rb",
           "rendered": {
-            "name": "approvals/show",
-            "file": "app/packs/misc/approvals/views/approvals/show.html.erb"
-          }
-        },
-        {
-          "type": "template",
-          "name": "approvals/show",
-          "line": 28,
-          "file": "app/packs/misc/approvals/views/approvals/show.html.erb",
-          "rendered": {
-            "name": "approvals/_approval_details",
-            "file": "app/packs/misc/approvals/views/approvals/_approval_details.html.erb"
-          }
-        },
-        {
-          "type": "template",
-          "name": "approvals/_approval_details",
-          "line": 55,
-          "file": "app/packs/misc/approvals/views/approvals/_approval_details.html.erb",
-          "rendered": {
-            "name": "access_rights/_index",
-            "file": "app/packs/core/access_rights/views/access_rights/_index.html.erb"
+            "name": "documents/show",
+            "file": "app/packs/core/documents/views/documents/show.html.erb"
           }
         }
       ],
       "location": {
         "type": "template",
-        "template": "access_rights/_index"
+        "template": "documents/show"
       },
-      "user_input": "params[:entity_id]",
+      "user_input": "Document.new(document_params).file_url",
       "confidence": "Weak",
       "note": ""
     },
@@ -438,7 +999,7 @@
       "check_name": "Execute",
       "message": "Possible command injection",
       "file": "app/packs/funds/capital_commitments/models/capital_commitment_doc_generator.rb",
-      "line": 58,
+      "line": 63,
       "link": "https://brakemanscanner.org/docs/warning_types/command_injection/",
       "code": "system(\"libreoffice --headless --convert-to pdf #{@working_dir}/CapitalCommitment-#{capital_commitment.id}.odt --outdir #{@working_dir}\")",
       "render_path": null,
@@ -472,6 +1033,26 @@
       "note": ""
     },
     {
+      "warning_type": "Dynamic Render Path",
+      "warning_code": 15,
+      "fingerprint": "f4148fd2146e0a1507d6704143b8c5a5b37e0abc8de868ef38cebebe6a32464c",
+      "check_name": "Render",
+      "message": "Render path contains parameter value",
+      "file": "app/packs/secondaries/secondary_sales/controllers/secondary_sales_controller.rb",
+      "line": 29,
+      "link": "https://brakemanscanner.org/docs/warning_types/dynamic_render_path/",
+      "code": "render(action => \"/offers/#{params[:report]}\", {})",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "SecondarySalesController",
+        "method": "offers"
+      },
+      "user_input": "params[:report]",
+      "confidence": "Medium",
+      "note": ""
+    },
+    {
       "warning_type": "Remote Code Execution",
       "warning_code": 24,
       "fingerprint": "f738e6f3f5cdc24c41934d168535b54284b028a2fdf25847acf72b5c5f75030a",
@@ -492,6 +1073,6 @@
       "note": ""
     }
   ],
-  "updated": "2022-12-15 12:13:50 +0530",
-  "brakeman_version": "5.2.1"
+  "updated": "2022-12-18 13:19:59 +0530",
+  "brakeman_version": "5.2.2"
 }

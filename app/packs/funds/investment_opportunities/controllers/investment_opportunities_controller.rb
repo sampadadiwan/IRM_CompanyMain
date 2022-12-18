@@ -97,7 +97,7 @@ class InvestmentOpportunitiesController < ApplicationController
   end
 
   def send_notification
-    @investment_opportunity.send(params[:notification])
+    @investment_opportunity.send(params[:notification]) if %w[notify_open_for_interests notify_allocation].include? params[:notification]
     respond_to do |format|
       format.html { redirect_to investment_opportunity_url(@investment_opportunity), notice: "Notification sent successfully." }
       format.json { render :show, status: :ok, location: @investment_opportunity }

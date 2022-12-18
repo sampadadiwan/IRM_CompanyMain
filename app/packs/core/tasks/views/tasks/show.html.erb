@@ -7,7 +7,7 @@
         Details
       </td>
       <td>
-        <%= @task.details.html_safe %>
+        <%= @task.details.html_safe if @task.details %>
       </td>
     </tr>
 
