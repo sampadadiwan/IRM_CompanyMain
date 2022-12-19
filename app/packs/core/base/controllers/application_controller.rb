@@ -72,12 +72,7 @@ class ApplicationController < ActionController::Base
   end
 
   def set_current_entity
-    if Rails.env.development?
-      if request.subdomain.present? && !ENV['HOST'].starts_with?(request.subdomain)
-        @current_entity = Entity.where(sub_domain: request.subdomain).load_async.first
-        redirect_to(ENV.fetch('BASE_URL', nil), allow_other_host: true) unless @current_entity
-      end
-    elsif request.subdomain.present? && !ENV['HOST'].starts_with?(request.subdomain)
+    if request.subdomain.present? && !ENV['HOST'].starts_with?(request.subdomain)
       @current_entity = Entity.where(sub_domain: request.subdomain).load_async.first
       redirect_to(ENV.fetch('BASE_URL', nil), allow_other_host: true) unless @current_entity
     end
