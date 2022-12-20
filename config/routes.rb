@@ -269,7 +269,6 @@ Rails.application.routes.draw do
   root "entities#dashboard"
   get '/oauth2callback', to: 'entities#dashboard'
 
-
   case Rails.configuration.upload_server
   when :s3
     # By default in production we use s3, including upload directly to S3 with
