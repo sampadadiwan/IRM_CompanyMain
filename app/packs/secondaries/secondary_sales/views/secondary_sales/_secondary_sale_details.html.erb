@@ -73,7 +73,7 @@
 
       <div id="docs-tab" class="tab-pane fade">
         <div id="docs" class="associated_entity">
-          <% documents = secondary_sale.documents.includes(:folder, tags: :taggings) %>
+          <% documents = secondary_sale.documents.includes(:folder) %>
 
           <%= link_to documents_path(owner_id: secondary_sale.id, owner_type: "SecondarySale", 
                                      owner_tag: document_tag,

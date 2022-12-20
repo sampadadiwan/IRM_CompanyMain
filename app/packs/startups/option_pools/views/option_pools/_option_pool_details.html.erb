@@ -29,7 +29,7 @@
         <div id="docs-tab" class="tab-pane fade">
             <div id="docs" class="associated_entity">
               <% 
-                documents = @option_pool.documents.includes(:folder, tags: :taggings) 
+                documents = @option_pool.documents.includes(:folder) 
               %>
               <%= render "/documents/index", owner: @option_pool, entity: @option_pool.entity, 
                   documents:  %>

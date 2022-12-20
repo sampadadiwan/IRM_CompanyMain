@@ -9,7 +9,7 @@ class Document < ApplicationRecord
   # Make all models searchable
   update_index('document') { self }
 
-  acts_as_taggable_on :tags
+  # acts_as_taggable_on :tags
 
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :permissions, as: :owner, dependent: :destroy

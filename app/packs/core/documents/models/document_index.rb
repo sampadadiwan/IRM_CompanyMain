@@ -1,10 +1,10 @@
 class DocumentIndex < Chewy::Index
   SEARCH_FIELDS = %i[name folder_name folder_full_path entity_name tag_list properties].freeze
 
-  index_scope Document.includes(:entity, :folder, tags: :taggings)
+  index_scope Document.includes(:entity, :folder)
 
   field :name
-  field :tag_list, value: ->(i) { i.tags.map(&:name).join(", ") }
+  field :tag_list
   field :entity_id
   field :entity_name, value: ->(doc) { doc.entity.name if doc.entity }
   field :folder_full_path

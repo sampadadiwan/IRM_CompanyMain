@@ -27,7 +27,7 @@ class DocumentsController < ApplicationController
       @documents = @documents.where(folder_id: folder_ids)
     end
     @documents = @documents.order(id: :desc)
-    @documents = @documents.includes(:folder, tags: :taggings).page params[:page]
+    @documents = @documents.includes(:folder).page params[:page]
   end
 
   def investor_documents
@@ -157,7 +157,7 @@ class DocumentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def document_params
-    params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id,
+    params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id, :tag_list,
                                      :signature_enabled, :signed_by_id, :public_visibility,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag,
                                      :tag_list, :folder_id, :file, properties: {}, signature_type: [])

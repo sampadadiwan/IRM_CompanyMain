@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_20_025044) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_20_152352) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -537,6 +537,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_20_025044) do
     t.string "signature_type", limit: 100
     t.boolean "locked", default: false
     t.boolean "public_visibility", default: false
+    t.string "tag_list", limit: 60
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
     t.index ["folder_id"], name: "index_documents_on_folder_id"
