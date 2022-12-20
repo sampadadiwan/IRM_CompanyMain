@@ -269,10 +269,6 @@ Rails.application.routes.draw do
   root "entities#dashboard"
   get '/oauth2callback', to: 'entities#dashboard'
 
-  require 'sidekiq/web'
-  authenticate :user do
-    mount Sidekiq::Web => '/sidekiq'
-  end
 
   case Rails.configuration.upload_server
   when :s3
@@ -286,5 +282,12 @@ Rails.application.routes.draw do
     # In development and test environment by default we're using filesystem storage
     # for speed, so on the client side we'll upload files to our app.
     mount Shrine.upload_endpoint(:cache) => "/upload"
+  end
+
+  require 'sidekiq/web'
+
+  authenticate :user, ->(user) { user.has_cached_role?(:super) } do
+    mount Sidekiq::Web => '/sidekiq'
+    mount Blazer::Engine, at: "blazer"
   end
 end

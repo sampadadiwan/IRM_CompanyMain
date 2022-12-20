@@ -121,6 +121,8 @@ gem "image_processing", "~> 1.2"
 # gem 'rmagick'
 gem "combine_pdf"
 
+gem "blazer"
+
 # gem "strong_migrations"
 
 group :development, :test do
