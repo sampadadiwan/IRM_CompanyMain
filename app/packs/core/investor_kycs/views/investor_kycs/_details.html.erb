@@ -13,7 +13,7 @@
       <div id="docs-tab" class="tab-pane fade in show active">
         <div id="docs" class="associated_entity">
           <% msg = nil %>
-          <%= render "/documents/index", documents: @investor_kyc.documents.includes(:folder, :tags), 
+          <%= render "/documents/index", documents: @investor_kyc.documents.includes(:folder), 
               owner: @investor_kyc, entity: @investor_kyc.entity, msg: msg %>
         </div>     
       </div>

@@ -69,7 +69,7 @@ Then('an document should be created') do
   @created_doc.name.should == @document.name
   @created_doc.download.should == @document.download
   @created_doc.printing.should == @document.printing
-  @created_doc.tag_list.should == @document.tag_list
+  @created_doc.tag_list.should == @document.tag_list if @document.tag_list
   @created_doc.user_id.should == @user.id
   if @created_doc.owner != nil
     @created_doc.entity_id.should == @created_doc.owner.entity_id
