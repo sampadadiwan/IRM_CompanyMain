@@ -42,7 +42,7 @@
   <div class="form-group">
     <%= form.label :clone_from %>
     <%= form.select :clone_from_id, deal.entity.deals.map{|d| [d.name, d.id]}, {include_blank: true}, class: "form-control"  %>
-    <small class="text-muted"> Select a deal if you want the steps to be clonedused as a template, or leave blank </small>
+    <small class="text-muted"> Select a deal if you want the steps to be cloned, or leave blank </small>
   </div>
 
   <%= custom_form_fields(deal, form) %>
