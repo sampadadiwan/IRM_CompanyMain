@@ -11,6 +11,8 @@ class Deal < ApplicationRecord
   update_index('deal') { self }
 
   belongs_to :entity
+  # belongs_to :clone_from, optional: true, class_nane: "Deal"
+
   counter_culture :entity
   delegate :name, to: :entity, prefix: :entity
 

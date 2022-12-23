@@ -31,4 +31,8 @@
     <td class="hideMobP">
         <%= deal_activity.days %>
     </td>
+    <td class="hideMobP">
+        <%= link_to "Show", deal_activity, class: "btn btn-primary" %>
+        <%= link_to "Edit", edit_deal_activity_path(deal_activity), class: "btn btn-success" %>
+    </td>
 </tr>

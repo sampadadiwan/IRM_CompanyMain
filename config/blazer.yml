@@ -27,13 +27,17 @@ data_sources:
       # status: {0: "Active", 1: "Archived"}
       entity_name: "SELECT name FROM entities where entity_type not in ('Holding') ORDER BY name ASC"
       entity_id: "SELECT id, name FROM entities where entity_type not in ('Holding') ORDER BY name ASC"
+      fund_entity_id: "SELECT id, name FROM entities where entity_type in ('Investment Fund') ORDER BY name ASC"
       entity_type: "SELECT distinct(entity_type) FROM entities ORDER BY entity_type ASC"
+      fund_id: "SELECT name FROM funds ORDER BY name ASC"
 
     linked_columns:
       user_id: "/admin/users/{value}"
       investor_id: "/admin/investors/{value}"
       document_id: "/admin/documents/{value}"
       deal_id: "/admin/deals/{value}"
+      fund_id: "/admin/funds/{value}"
+      investment_opportunity_id: "/admin/investment_opportunities/{value}"
       secondary_sale_id: "/admin/secondary_sales/{value}"
 
     smart_columns:
