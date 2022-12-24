@@ -33,17 +33,19 @@ class ImportCapitalRemittance < ImportUtil
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
     capital_call = fund.capital_calls.where(name: user_data["Capital Call"].strip).first
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
+    folio_id = user_data["Folio Id"]&.strip
 
     if fund && capital_call && investor
-      if CapitalRemittance.exists?(entity_id: import_upload.entity_id, fund:, capital_call:, investor:)
+      if CapitalRemittance.exists?(entity_id: import_upload.entity_id, fund:, capital_call:, investor:, folio_id:)
         raise "Capital Remittance Already Present"
       else
 
         # Make the capital_remittance
         capital_remittance = CapitalRemittance.new(entity_id: import_upload.entity_id, fund:, capital_call:, investor:, status: user_data["Status"])
 
-        capital_remittance.folio_id = user_data["Folio Id"]
+        capital_remittance.folio_id = folio_id
         capital_remittance.call_amount = user_data["Due Amount"]
+        capital_remittance.payment_date = user_data["Payment Date"]
         capital_remittance.collected_amount = user_data["Collected Amount"]
         capital_remittance.verified = user_data["Verified"] == "Yes"
 
