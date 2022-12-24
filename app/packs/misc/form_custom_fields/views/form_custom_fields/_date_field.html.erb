@@ -1,0 +1,5 @@
+<div class="form-group">
+    <%= f.label field.name, field.name.humanize.titleize %>
+    <%= f.date_field field.name, class: "form-control", required: field.required %>
+    <small class="text-muted"><%= field.help_text %></small>
+</div>

@@ -76,7 +76,7 @@ module InvestorRelationshipManagement
 
     Rails.application.routes.default_url_options[:host] = ENV.fetch('HOST', nil)
 
-    config.active_record.yaml_column_permitted_classes = [BigDecimal, Date]
+    config.active_record.yaml_column_permitted_classes = [BigDecimal, Date, ActiveSupport::HashWithIndifferentAccess]
 
     config.action_mailer.smtp_settings = {
       address: "email-smtp.ap-south-1.amazonaws.com",
