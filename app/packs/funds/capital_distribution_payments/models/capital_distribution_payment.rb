@@ -12,6 +12,7 @@ class CapitalDistributionPayment < ApplicationRecord
   belongs_to :investor
   belongs_to :capital_commitment
   belongs_to :form_type, optional: true
+  serialize :properties, Hash
 
   monetize :amount_cents, with_currency: ->(i) { i.fund.currency }
   validates :folio_id, presence: true

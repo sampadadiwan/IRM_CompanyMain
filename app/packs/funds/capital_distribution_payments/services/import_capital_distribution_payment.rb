@@ -33,27 +33,27 @@ class ImportCapitalDistributionPayment < ImportUtil
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
     capital_distribution = fund.capital_distributions.where(title: user_data["Capital Distribution"].strip).first
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
+    folio_id = user_data["Folio Id"]&.strip
+    capital_commitment = fund.capital_commitments.where(investor_id: investor.id, folio_id:).first
 
     if fund && capital_distribution && investor
-      if CapitalDistributionPayment.exists?(entity_id: import_upload.entity_id, fund:, capital_distribution:, investor:)
-        raise "Payment Already Present"
-      else
 
-        # Make the capital_distribution_payment
-        capital_distribution_payment = CapitalDistributionPayment.new(entity_id: import_upload.entity_id, fund:, capital_distribution:, investor:, payment_date: user_data["Payment Date"])
+      # Make the capital_distribution_payment
+      capital_distribution_payment = CapitalDistributionPayment.new(entity_id: import_upload.entity_id, fund:, capital_distribution:, investor:, capital_commitment:, payment_date: user_data["Payment Date"])
 
-        capital_distribution_payment.folio_id = user_data["Folio Id"]
-        capital_distribution_payment.amount = user_data["Amount"]
-        capital_distribution_payment.completed = user_data["Completed"] == "Yes"
+      capital_distribution_payment.folio_id = folio_id
+      capital_distribution_payment.amount = user_data["Amount"]
+      capital_distribution_payment.completed = user_data["Completed"] == "Yes"
 
-        setup_custom_fields(user_data, capital_distribution_payment, custom_field_headers)
+      setup_custom_fields(user_data, capital_distribution_payment, custom_field_headers)
 
-        capital_distribution_payment.save!
-      end
+      capital_distribution_payment.save!
+
     else
       raise "Fund not found" unless fund
       raise "Capital Distribution not found" unless capital_distribution
       raise "Investor not found" unless investor
+      raise "Capita Commitment not found" unless capital_commitment
     end
   end
 end
