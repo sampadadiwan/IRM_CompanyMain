@@ -13,11 +13,11 @@ class CapitalDistribution < ApplicationRecord
   has_many :capital_distribution_payments, dependent: :destroy, inverse_of: :capital_distribution
   serialize :properties, Hash
 
-  monetize :net_amount_cents, :carry_cents, :gross_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :net_amount_cents, :carry_cents, :fee_cents, :gross_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.fund.currency }
 
   before_save :compute_net_amount
   def compute_net_amount
-    self.net_amount_cents = gross_amount_cents - carry_cents
+    self.net_amount_cents = gross_amount_cents - carry_cents - fee_cents
   end
 
   after_commit :generate_distribution_payments

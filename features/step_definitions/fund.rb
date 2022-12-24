@@ -409,6 +409,7 @@ When('I create a new capital distribution {string}') do |args|
   fill_in('capital_distribution_title', with: @capital_distribution.title)
   fill_in('capital_distribution_gross_amount', with: @capital_distribution.gross_amount)
   fill_in('capital_distribution_carry', with: @capital_distribution.carry)
+  fill_in('capital_distribution_fee', with: @capital_distribution.fee)
   fill_in('capital_distribution_distribution_date', with: @capital_distribution.distribution_date)
   
   click_on "Save"

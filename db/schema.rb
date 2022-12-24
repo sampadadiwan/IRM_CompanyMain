@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_23_052855) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_24_100759) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -380,6 +380,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_23_052855) do
     t.boolean "generate_payments", default: true
     t.boolean "generate_payments_paid", default: false
     t.datetime "deleted_at"
+    t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["approved_by_user_id"], name: "index_capital_distributions_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_distributions_on_deleted_at"
     t.index ["entity_id"], name: "index_capital_distributions_on_entity_id"

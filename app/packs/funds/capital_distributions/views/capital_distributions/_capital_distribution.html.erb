@@ -9,6 +9,9 @@
     <%= money_to_currency capital_distribution.carry, params %>
   </td>
   <td>
+    <%= money_to_currency capital_distribution.fee, params %>
+  </td>
+  <td>
     <%= l capital_distribution.distribution_date if capital_distribution.distribution_date %>
   </td>
   <td>

@@ -32,6 +32,11 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :fee %> <span class="formatted_currency"></span>
+      <%= form.number_field :fee, class: "form-control", data: {action: "input->currencyformat#format"}   %>
+    </div>
+
+    <div class="form-group">
       <%= form.label :distribution_date %>
       <%= form.date_field :distribution_date, class: "form-control"  %>
     </div>

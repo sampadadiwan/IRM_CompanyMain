@@ -49,6 +49,7 @@ class ImportCapitalDistribution < ImportUtil
 
         capital_distribution.gross_amount = user_data["Gross"]
         capital_distribution.carry = user_data["Carry"]
+        capital_distribution.fee = user_data["Fee"]
 
         setup_custom_fields(user_data, capital_distribution, custom_field_headers)
 
