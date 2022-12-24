@@ -24,12 +24,12 @@ module FundCalcs
 
       cf = Xirr::Cashflow.new
 
-      capital_calls.each do |capital_call|
-        cf << Xirr::Transaction.new(-1 * capital_call.collected_amount_cents, date: capital_call.due_date)
+      capital_remittances.each do |cr|
+        cf << Xirr::Transaction.new(-1 * cr.collected_amount_cents, date: cr.payment_date)
       end
 
-      capital_distributions.each do |capital_distribution|
-        cf << Xirr::Transaction.new(capital_distribution.net_amount_cents, date: capital_distribution.distribution_date)
+      capital_distribution_payments.each do |cdp|
+        cf << Xirr::Transaction.new(cdp.amount_cents, date: cdp.payment_date)
       end
 
       cf << Xirr::Transaction.new(last_valuation.pre_money_valuation_cents, date: last_valuation.valuation_date)

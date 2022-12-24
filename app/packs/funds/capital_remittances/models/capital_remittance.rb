@@ -59,11 +59,11 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def set_status
-    self.status = if call_amount_cents == collected_amount_cents
-                    "Paid"
-                  else
-                    "Pending"
-                  end
+    self.status ||= if call_amount_cents == collected_amount_cents
+                      "Paid"
+                    else
+                      "Pending"
+                    end
   end
 
   def due_amount

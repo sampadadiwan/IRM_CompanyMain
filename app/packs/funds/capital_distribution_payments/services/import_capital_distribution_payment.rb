@@ -39,7 +39,7 @@ class ImportCapitalDistributionPayment < ImportUtil
     if fund && capital_distribution && investor
 
       # Make the capital_distribution_payment
-      capital_distribution_payment = CapitalDistributionPayment.new(entity_id: import_upload.entity_id, fund:, capital_distribution:, investor:, capital_commitment:, payment_date: user_data["Payment Date"])
+      capital_distribution_payment = CapitalDistributionPayment.new(entity_id: import_upload.entity_id, fund:, capital_distribution:, investor:, capital_commitment:, folio_id:, payment_date: user_data["Payment Date"])
 
       capital_distribution_payment.folio_id = folio_id
       capital_distribution_payment.amount = user_data["Amount"]
