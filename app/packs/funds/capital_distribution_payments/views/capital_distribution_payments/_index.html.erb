@@ -11,7 +11,7 @@
 
         <%= link_to "Upload", 
             new_import_upload_path("import_upload[owner_id]": params[:capital_distribution_id], 
-            "import_upload[owner_type]": "Fund", 
+            "import_upload[owner_type]": "CapitalDistribution", 
             "import_upload[import_type]": "CapitalDistributionPayment", 
             "sample_upload": "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE"), 
             { class: "btn btn-primary"}  %> 
