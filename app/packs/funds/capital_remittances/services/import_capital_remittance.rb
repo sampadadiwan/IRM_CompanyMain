@@ -29,22 +29,19 @@ class ImportCapitalRemittance < ImportUtil
   def save_capital_remittance(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing capital_remittance #{user_data}" }
 
-    fund, capital_call, investor, folio_id, capital_commitment, collected_amount = inputs(user_data)
+    fund, capital_call, investor, folio_id, capital_commitment, collected_amount_cents = inputs(import_upload, user_data)
 
     if fund && capital_call && investor && capital_commitment
-      if CapitalRemittance.exists?(entity_id: import_upload.entity_id, fund:, capital_call:, investor:, folio_id:, collected_amount:, capital_commitment_id: capital_commitment.id)
-        raise "Capital Remittance Already Present"
-      else
 
-        # Make the capital_remittance
-        capital_remittance = CapitalRemittance.new(entity_id: import_upload.entity_id, fund:, capital_call:, investor:, capital_commitment:, status: user_data["Status"], folio_id:, collected_amount:, call_amount: user_data["Due Amount"], payment_date: user_data["Payment Date"])
+      # Make the capital_remittance
+      capital_remittance = CapitalRemittance.new(entity_id: import_upload.entity_id, fund:, capital_call:, investor:, capital_commitment:, status: user_data["Status"], folio_id:, collected_amount_cents:, call_amount: user_data["Due Amount"], payment_date: user_data["Payment Date"])
 
-        capital_remittance.verified = user_data["Verified"] == "Yes"
+      capital_remittance.verified = user_data["Verified"] == "Yes"
 
-        setup_custom_fields(user_data, capital_remittance, custom_field_headers)
+      setup_custom_fields(user_data, capital_remittance, custom_field_headers)
 
-        capital_remittance.save!
-      end
+      capital_remittance.save!
+
     else
       raise "Fund not found" unless fund
       raise "Capital Call not found" unless capital_call
@@ -53,15 +50,15 @@ class ImportCapitalRemittance < ImportUtil
     end
   end
 
-  def inputs(user_data)
+  def inputs(import_upload, user_data)
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
     capital_call = fund.capital_calls.where(name: user_data["Capital Call"].strip).first
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
-    folio_id = user_data["Folio No"]&.strip
+    folio_id = user_data["Folio Id"]&.strip
     capital_commitment = fund.capital_commitments.where(investor_id: investor.id, folio_id:).first
 
-    collected_amount = user_data["Collected Amount"].to_d
+    collected_amount_cents = user_data["Collected Amount"].to_d * 100
 
-    [fund, capital_call, investor, folio_id, capital_commitment, collected_amount]
+    [fund, capital_call, investor, folio_id, capital_commitment, collected_amount_cents]
   end
 end

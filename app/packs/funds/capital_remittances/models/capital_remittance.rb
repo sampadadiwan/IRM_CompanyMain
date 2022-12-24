@@ -21,7 +21,6 @@ class CapitalRemittance < ApplicationRecord
 
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
   validates :folio_id, presence: true
-  validates_uniqueness_of :folio_id, scope: :capital_call_id
 
   counter_culture :capital_call, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                                  delta_column: 'collected_amount_cents',
