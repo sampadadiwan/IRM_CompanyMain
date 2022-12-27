@@ -2,85 +2,92 @@
 <% investor_label = @deal.entity.entity_type == "Investment Fund" ? "Company" : "Investor" %>
 <% cache([@deal, current_user.entity, "GridView", params[:all], params[:units]]) do %>
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4" data-controller="nudge">
-    <h1 class="h3 mb-0 text-gray-800">Deal <%= @deal.name %> : Grid View</h1>
-    <span>
+<% if params[:collab_doc].present? %>
+    
+    <%= render "/deals/deal_collab_doc" %>
 
-        <%= render "investments/currency_form" %>
+<% else %>
 
-        
-        <% if params[:all].blank? %>
-            <%= link_to "All #{investor_label}s", deal_path(id: @deal.id, grid_view: true, all:true), {class: "btn btn-primary"}  %>
-        <% else %>
-            <%= link_to "Not Declined", deal_path(id: @deal.id, grid_view: true), {class: "btn btn-primary"}  %>
-        <% end %>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4" data-controller="nudge">
+        <h1 class="h3 mb-0 text-gray-800">Deal <%= @deal.name %> : Grid View</h1>
+        <span>
 
-        <% if current_user.entity_id == @deal.entity_id %>
-            <%= link_to "Add #{investor_label}", new_deal_investor_path("deal_investor[deal_id]": @deal.id, "deal_investor[entity_id]": current_user.entity_id) , {class: "btn btn-success"}%>
-            <%= link_to "All Nudges", nudges_path , {class: "btn btn-primary"}%>
-        
+            <%= render "investments/currency_form" %>
 
-            <% if !@deal.start_date.present?  %>
-                <%= button_to "Start Deal", start_deal_deal_path(@deal), 
-                {class: "btn btn-success", form_class: "deleteButton"} %> 
+            
+            <% if params[:all].blank? %>
+                <%= link_to "All #{investor_label}s", deal_path(id: @deal.id, grid_view: true, all:true), {class: "btn btn-primary"}  %>
+            <% else %>
+                <%= link_to "Not Declined", deal_path(id: @deal.id, grid_view: true), {class: "btn btn-primary"}  %>
             <% end %>
 
-            <a class="btn btn-success", hidden="hidden", data-action="click->nudge#newDealMsg">Send Message</a>
-            <%= link_to new_nudge_path(), id: "new_nudge", hidden: true do %>
-                <span>Loading...</span>
-            <% end %>
-            <%= link_to deal_path(id: @deal.id, grid_view: true, all:true, format: :xlsx), {class: "btn btn-success"} do %>
-                <i class="fa-lg fa-regular fa-file-excel"></i> Download
-            <% end %>
+            <% if current_user.entity_id == @deal.entity_id %>
+                <%= link_to "Add #{investor_label}", new_deal_investor_path("deal_investor[deal_id]": @deal.id, "deal_investor[entity_id]": current_user.entity_id) , {class: "btn btn-success"}%>
+                <%= link_to "All Nudges", nudges_path , {class: "btn btn-primary"}%>
+            
 
-            <%= link_to deal_path(id: @deal.id, chart: true), {class: "btn btn-success"} do %>
-                <i class="fas fa-chart-line"></i> Charts
-            <% end %>
-
-        <% end %>
-
-    </span>
-</div>
-
-<div id="deal_grid_div" class="table-responsive dropright" data-controller="datatable">
-    <table id="deal_grid_view" class="table table-bordered dataTable jqDataTable" >
-        <thead>
-            <tr>
-                <th class="sticky-col first-col"><%= investor_label %></th>
-                <th>
-                    Pre Money
-                    (<%= @deal.currency %>)
-                </th>
-                <th>
-                    Primary
-                    (<%= @deal.currency %>)
-                </th>
-                <th>
-                    Secondary
-                    (<%= @deal.currency %>)
-                </th>
-                <th>
-                    Tier
-                </th>
-                <% DealActivity.templates(@deal).each do |deal_activity| %>
-                    <th> <%= deal_activity.title %> </th>
+                <% if !@deal.start_date.present?  %>
+                    <%= button_to "Start Deal", start_deal_deal_path(@deal), 
+                    {class: "btn btn-success", form_class: "deleteButton"} %> 
                 <% end %>
-                <th> Advisor </th>
-                
-            </tr>
-        </thead>
-        <tbody>
-            <%  @deal_investors = policy_scope(@deal.deal_investors).includes(:investor, :deal, :deal_activities)
-                @deal_investors = @deal_investors.not_declined if params[:all].blank?
-                @deal_investors.each do |deal_investor| %>
 
-                <%= render "deals/grid_view_row", deal_investor: deal_investor %>
+                <a class="btn btn-success", hidden="hidden", data-action="click->nudge#newDealMsg">Send Message</a>
+                <%= link_to new_nudge_path(), id: "new_nudge", hidden: true do %>
+                    <span>Loading...</span>
+                <% end %>
+                <%= link_to deal_path(id: @deal.id, grid_view: true, all:true, format: :xlsx), {class: "btn btn-success"} do %>
+                    <i class="fa-lg fa-regular fa-file-excel"></i> Download
+                <% end %>
+
+                <%= link_to deal_path(id: @deal.id, chart: true), {class: "btn btn-success"} do %>
+                    <i class="fas fa-chart-line"></i> Charts
+                <% end %>
+
             <% end %>
-        </tbody>
-    </table>
-</div>
+
+        </span>
+    </div>
+
+    <div id="deal_grid_div" class="table-responsive dropright" data-controller="datatable">
+        <table id="deal_grid_view" class="table table-bordered dataTable jqDataTable" >
+            <thead>
+                <tr>
+                    <th class="sticky-col first-col"><%= investor_label %></th>
+                    <th>
+                        Pre Money
+                        (<%= @deal.currency %>)
+                    </th>
+                    <th>
+                        Primary
+                        (<%= @deal.currency %>)
+                    </th>
+                    <th>
+                        Secondary
+                        (<%= @deal.currency %>)
+                    </th>
+                    <th>
+                        Tier
+                    </th>
+                    <% DealActivity.templates(@deal).each do |deal_activity| %>
+                        <th> <%= deal_activity.title %> </th>
+                    <% end %>
+                    <th> Advisor </th>
+                    
+                </tr>
+            </thead>
+            <tbody>
+                <%  @deal_investors = policy_scope(@deal.deal_investors).includes(:investor, :deal, :deal_activities)
+                    @deal_investors = @deal_investors.not_declined if params[:all].blank?
+                    @deal_investors.each do |deal_investor| %>
+
+                    <%= render "deals/grid_view_row", deal_investor: deal_investor %>
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+
+    <% end %>
+
+    <%= render "/deals/deal_details", deal: @deal, show_investors: "No" if policy(@deal).show_detail_tabs? %>
 
 <% end %>
-
-<%= render "/deals/deal_details", deal: @deal, show_investors: "No" if policy(@deal).show_detail_tabs? %>
-

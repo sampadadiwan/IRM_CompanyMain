@@ -113,7 +113,7 @@ end
 
 Then('I should see the document details on the details page') do
   page.should have_content(@document.name)
-  page.should have_content(@document.tag_list)
+  page.should have_content(@document.tag_list) if @document.tag_list
   page.should have_content(@document.folder.full_path)
 end
 

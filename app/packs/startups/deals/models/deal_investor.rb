@@ -1,4 +1,5 @@
 class DealInvestor < ApplicationRecord
+  include Trackable
   include WithFolder
 
   monetize :secondary_investment_cents, with_currency: ->(i) { i.deal.currency }
@@ -79,13 +80,7 @@ class DealInvestor < ApplicationRecord
         by_date = start_date + days_to_completion.days
       end
 
-      # create it
-      DealActivity.create(deal_id:, deal_investor_id: id,
-                          entity_id:, title: template.title,
-                          sequence: template.sequence, days: template.days,
-                          by_date:, template_id: template.id,
-                          docs_required_for_completion: entity.activity_docs_required_for_completion,
-                          details_required_for_na: entity.activity_details_required_for_na)
+      DealActivity.where(deal_id:, deal_investor_id: id, entity_id:, template_id: template.id).update_or_create(title: template.title, sequence: template.sequence, days: template.days, by_date:, template_id: template.id, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na)
 
       seq += 1
     end

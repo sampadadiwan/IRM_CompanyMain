@@ -1,4 +1,5 @@
 class DealActivity < ApplicationRecord
+  include Trackable
   include ActivityTrackable
   include WithFolder
 
