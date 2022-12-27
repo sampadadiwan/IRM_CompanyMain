@@ -38,7 +38,7 @@ class DealsController < ApplicationController
   def recreate_activities
     GenerateDealActivitiesJob.perform_later(@deal.id, "Deal")
     respond_to do |format|
-      format.html { redirect_to deal_url(@deal), notice: "Success! Deal activites will be recreated in a bit, please be patient." }
+      format.html { redirect_to deal_url(@deal), notice: "Success! Deal activites will be recreated in a bit, please refresh the page in a minute." }
     end
   end
 

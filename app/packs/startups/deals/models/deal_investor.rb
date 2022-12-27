@@ -77,7 +77,13 @@ class DealInvestor < ApplicationRecord
         by_date = start_date + days_to_completion.days
       end
 
-      DealActivity.where(deal_id:, deal_investor_id: id, entity_id:, template_id: template.id).update_or_create(title: template.title, sequence: template.sequence, days: template.days, by_date:, template_id: template.id, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na)
+      existing = DealActivity.where(deal_id:, deal_investor_id: id, entity_id:, template_id: template.id).first
+
+      if existing
+        existing.update(title: template.title, sequence: template.sequence, days: template.days, by_date:, template_id: template.id, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na)
+      else
+        DealActivity.create(deal_id:, deal_investor_id: id, entity_id:, template_id: template.id, title: template.title, sequence: template.sequence, days: template.days, by_date:, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na)
+      end
 
       seq += 1
     end
