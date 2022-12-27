@@ -66,9 +66,6 @@ class DealInvestor < ApplicationRecord
   end
 
   def create_activities
-    # Delete all activities
-    deal_activities.each(&:destroy)
-
     start_date = deal.start_date
     by_date = nil
     seq = 1
