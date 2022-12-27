@@ -70,6 +70,8 @@ gem 'odf-report'
 gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary-edge'
 
+gem 'google_drive'
+
 gem "administrate"
 gem 'administrate-field-active_storage'
 gem 'administrate-field-boolean_emoji', '~> 0.3.0'
