@@ -20,7 +20,8 @@ class DealDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     start_date: Field::Date,
-    end_date: Field::Date
+    end_date: Field::Date,
+    versions: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
