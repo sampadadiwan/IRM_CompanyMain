@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_28_062157) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_28_064415) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -655,6 +655,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_28_062157) do
     t.decimal "tax_rate", precision: 5, scale: 2, default: "0.0"
     t.date "approved_on"
     t.text "payment_proof_data"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_excercises_on_deleted_at"
     t.index ["entity_id"], name: "index_excercises_on_entity_id"
     t.index ["holding_id"], name: "index_excercises_on_holding_id"
     t.index ["option_pool_id"], name: "index_excercises_on_option_pool_id"
@@ -880,7 +882,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_28_062157) do
     t.boolean "option_dilutes", default: true
     t.integer "preferred_conversion", default: 1
     t.text "grant_letter_data"
+    t.datetime "deleted_at"
     t.index ["created_from_excercise_id"], name: "index_holdings_on_created_from_excercise_id"
+    t.index ["deleted_at"], name: "index_holdings_on_deleted_at"
     t.index ["entity_id"], name: "index_holdings_on_entity_id"
     t.index ["form_type_id"], name: "index_holdings_on_form_type_id"
     t.index ["funding_round_id"], name: "index_holdings_on_funding_round_id"
@@ -1364,6 +1368,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_28_062157) do
     t.bigint "form_type_id"
     t.text "certificate_signature_data"
     t.text "grant_letter_data"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_option_pools_on_deleted_at"
     t.index ["entity_id"], name: "index_option_pools_on_entity_id"
     t.index ["form_type_id"], name: "index_option_pools_on_form_type_id"
     t.index ["funding_round_id"], name: "index_option_pools_on_funding_round_id"

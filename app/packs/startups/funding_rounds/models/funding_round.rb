@@ -1,25 +1,3 @@
-# == Schema Information
-#
-# Table name: funding_rounds
-#
-#  id                         :integer          not null, primary key
-#  name                       :string(255)
-#  total_amount_cents         :decimal(20, 2)   default("0.00")
-#  currency                   :string(5)
-#  pre_money_valuation_cents  :decimal(20, 2)   default("0.00")
-#  post_money_valuation_cents :decimal(20, 2)   default("0.00")
-#  entity_id                  :integer          not null
-#  created_at                 :datetime         not null
-#  updated_at                 :datetime         not null
-#  amount_raised_cents        :decimal(20, 2)   default("0.00")
-#  status                     :string(255)      default("Open")
-#  closed_on                  :date
-#  deleted_at                 :datetime
-#  equity                     :integer          default("0")
-#  preferred                  :integer          default("0")
-#  options                    :integer          default("0")
-#
-
 class FundingRound < ApplicationRecord
   audited
   include Trackable

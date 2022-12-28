@@ -22,7 +22,8 @@ class ExcerciseDashboard < Administrate::BaseDashboard
     approved: Field::Boolean,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
-    tax_rate: Field::Number
+    tax_rate: Field::Number,
+    versions: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -55,6 +56,7 @@ class ExcerciseDashboard < Administrate::BaseDashboard
     tax_rate
 
     created_holding
+    versions
 
   ].freeze
 

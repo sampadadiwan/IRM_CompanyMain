@@ -22,7 +22,8 @@ class HoldingDashboard < Administrate::BaseDashboard
     cancelled: Field::BooleanEmoji,
     lapsed: Field::BooleanEmoji,
     emp_ack: Field::BooleanEmoji,
-    investment_instrument: Field::Select.with_options(collection: Investment::INSTRUMENT_TYPES)
+    investment_instrument: Field::Select.with_options(collection: Investment::INSTRUMENT_TYPES),
+    versions: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -59,6 +60,7 @@ class HoldingDashboard < Administrate::BaseDashboard
     lapsed
     emp_ack
     excercises
+    versions
   ].freeze
 
   # FORM_ATTRIBUTES

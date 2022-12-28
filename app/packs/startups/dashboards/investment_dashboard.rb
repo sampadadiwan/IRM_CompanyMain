@@ -21,7 +21,8 @@ class InvestmentDashboard < Administrate::BaseDashboard
     price_cents: ObfuscatedField,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
-    category: Field::String
+    category: Field::String,
+    versions: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -51,6 +52,7 @@ class InvestmentDashboard < Administrate::BaseDashboard
     quantity
     created_at
     updated_at
+    versions
   ].freeze
 
   # FORM_ATTRIBUTES

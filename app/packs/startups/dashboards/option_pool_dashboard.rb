@@ -27,7 +27,8 @@ class OptionPoolDashboard < Administrate::BaseDashboard
     excercised_quantity: Field::Number,
     vested_quantity: Field::Number,
     lapsed_quantity: Field::Number,
-    approved: Field::Boolean
+    approved: Field::Boolean,
+    versions: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -64,6 +65,7 @@ class OptionPoolDashboard < Administrate::BaseDashboard
     approved
     holdings
     excercises
+    versions
   ].freeze
 
   # FORM_ATTRIBUTES

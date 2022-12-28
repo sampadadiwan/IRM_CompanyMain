@@ -18,7 +18,8 @@ class DealInvestorDashboard < Administrate::BaseDashboard
     secondary_investment: ObfuscatedField,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
-    investor_entity_id: Field::Number
+    investor_entity_id: Field::Number,
+    versions: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -48,6 +49,7 @@ class DealInvestorDashboard < Administrate::BaseDashboard
     created_at
     updated_at
     deal_activities
+    versions
   ].freeze
 
   # FORM_ATTRIBUTES

@@ -1,5 +1,6 @@
 class Holding < ApplicationRecord
   audited
+  include Trackable
   include HoldingCounters
   include HoldingScopes
   include OptionCalculations
