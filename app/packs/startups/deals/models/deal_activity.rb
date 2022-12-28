@@ -51,10 +51,6 @@ class DealActivity < ApplicationRecord
     completed
   end
 
-  def summary
-    status.presence || completed_status
-  end
-
   def to_s
     "#{title} : #{investor_name}"
   end

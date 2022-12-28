@@ -123,7 +123,7 @@ class DealActivitiesController < ApplicationController
         format.html { redirect_to deal_activity_url(@deal_activity), notice: "Activity was successfully updated." }
       else
         format.turbo_stream { redirect_to edit_deal_activity_path(@deal_activity, 'deal_activity[completed]': @deal_activity.completed), alert: @deal_activity.errors.full_messages }
-        format.html { render :edit }
+        format.html { render :edit, back_to: deal_path(@deal_activity.deal) }
       end
     end
   end

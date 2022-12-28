@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_28_064415) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_28_075938) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -481,6 +481,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_28_064415) do
     t.string "investor_advisor", limit: 100
     t.string "investor_name"
     t.string "tier", limit: 10
+    t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["deal_id"], name: "index_deal_investors_on_deal_id"
     t.index ["deleted_at"], name: "index_deal_investors_on_deleted_at"
     t.index ["entity_id"], name: "index_deal_investors_on_entity_id"

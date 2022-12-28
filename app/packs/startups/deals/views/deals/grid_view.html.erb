@@ -69,6 +69,16 @@
                         Secondary
                         (<%= @deal.currency %>)
                     </th>
+                    <% if @deal.entity.entity_type == "Investment Fund" %>
+                        <th>
+                            Fee
+                            (<%= @deal.currency %>)
+                        </th>
+                        <th>
+                            Total
+                            (<%= @deal.currency %>)
+                        </th>
+                    <% end %>
                     <th>
                         Tier
                     </th>

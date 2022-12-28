@@ -64,6 +64,25 @@
   </tr>
   <tr>
     <td>
+      Fee
+    </td>
+    <td>
+      <%= money_to_currency deal_investor.fee, params %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Total
+      (Primary + Secondary + Fee)
+    </td>
+    <td>
+      <%= money_to_currency deal_investor.total, params %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
       Company Advisor
     </td>
     <td>

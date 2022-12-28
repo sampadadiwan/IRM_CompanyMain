@@ -6,6 +6,7 @@
             </span>
             <div class="dropdown-menu">
                 <%= link_to "View Investor", deal_investor_path(id: deal_investor.id), class: "dropdown-item" %>
+                <%= link_to "Edit Investor", edit_deal_investor_path(id: deal_investor.id), class: "dropdown-item" %>
                 <%= link_to "View Tasks", messages_path(owner_id: deal_investor.id, owner_type: "DealInvestor",
                          investor_id: deal_investor.investor_id, deal_id: deal_investor.deal_id), class: "dropdown-item" %>
                 <%= link_to "View Steps", deal_activities_path(deal_investor_id: deal_investor.id, deal_id: deal_investor.deal_id), class: "dropdown-item" %>
@@ -26,6 +27,14 @@
     <td>
         <%= money_to_currency deal_investor.secondary_investment, params %> 
     </td>
+    <% if (@deal && @deal.entity.entity_type == "Investment Fund") || deal_investor.entity.entity_type == "Investment Fund" %>
+        <td>
+            <%= money_to_currency deal_investor.fee, params %> 
+        </td>
+        <td>
+            <%= money_to_currency deal_investor.total, params %> 
+        </td>
+    <% end %>
     <td>
         <%= deal_investor.tier %>
     </td>
@@ -36,7 +45,7 @@
                 <div id="<%=dom_id(activity)%>" class="dropdown">
                     <span class="btn btn-sm dropdown-toggle <%=activity_color(activity)%>" 
                         id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <%= activity.summary %>
+                        <%= activity.completed %>
                     </span>
 
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">

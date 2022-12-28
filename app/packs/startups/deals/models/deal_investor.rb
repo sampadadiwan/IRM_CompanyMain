@@ -2,10 +2,8 @@ class DealInvestor < ApplicationRecord
   include Trackable
   include WithFolder
 
-  monetize :secondary_investment_cents, with_currency: ->(i) { i.deal.currency }
-  monetize :primary_amount_cents, with_currency: ->(i) { i.deal.currency }
-  monetize :pre_money_valuation_cents, with_currency: ->(i) { i.deal.currency }
-
+  monetize  :fee_cents, :pre_money_valuation_cents, :secondary_investment_cents,
+            :primary_amount_cents, with_currency: ->(i) { i.deal.currency }
   # Make all models searchable
   update_index('deal_investor') { self }
 
@@ -63,6 +61,10 @@ class DealInvestor < ApplicationRecord
   def short_name
     names = investor_name.split("-")
     %w[Employees Founders].include?(names[1].strip) ? names[1] : names[0]
+  end
+
+  def total
+    primary_amount + secondary_investment + fee
   end
 
   def create_activities

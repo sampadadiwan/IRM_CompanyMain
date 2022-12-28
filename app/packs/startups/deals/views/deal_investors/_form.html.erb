@@ -66,6 +66,12 @@
   </div>
 
   <div class="form-group">
+    <%= form.label :fee %>
+    <%= form.number_field :fee, class: "form-control"  %>
+    <small class="text-muted">In <%= deal_investor.deal.currency %></small>
+  </div>
+
+  <div class="form-group">
     <%= form.label :notes %>
     <%= form.rich_text_area :notes, class: "form-control trix-content"  %>
   </div>
