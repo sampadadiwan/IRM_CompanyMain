@@ -87,6 +87,6 @@ class Deal < ApplicationRecord
   end
 
   def history
-    self.versions.each(&:reify)
+    versions.each(&:reify)
   end
 end

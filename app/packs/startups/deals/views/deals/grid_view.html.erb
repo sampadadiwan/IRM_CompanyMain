@@ -82,7 +82,7 @@
             <tbody>
                 <%  @deal_investors = policy_scope(@deal.deal_investors).includes(:investor, :deal, :deal_activities)
                     @deal_investors = @deal_investors.not_declined if params[:all].blank?
-                    @deal_investors.order("sequence asc").each do |deal_investor| %>
+                    @deal_investors.order("deal_investors.investor_name asc").each do |deal_investor| %>
 
                     <%= render "deals/grid_view_row", deal_investor: deal_investor %>
                 <% end %>
