@@ -75,7 +75,7 @@ include InvestmentsHelper
       within("#deal_investor_#{deal_investor.id}") do
         deal_investor.deal_activities.each do |act|
           within("#deal_activity_#{act.id}") do
-            expect(page).to have_content(act.summary)
+            expect(page).to have_content(act.completed)
           end
         end        
       end
