@@ -10,7 +10,6 @@ class CapitalDistributionDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     fund: Field::BelongsTo,
     entity: Field::BelongsTo,
-    form_type: Field::BelongsTo,
     capital_distribution_payments: Field::HasMany,
     id: Field::Number,
     gross_amount_cents: Field::String.with_options(searchable: false),
@@ -22,7 +21,8 @@ class CapitalDistributionDashboard < Administrate::BaseDashboard
     title: Field::String,
     completed: Field::Boolean,
     distribution_amount_cents: Field::String.with_options(searchable: false),
-    net_amount_cents: Field::String.with_options(searchable: false)
+    net_amount_cents: Field::String.with_options(searchable: false),
+    versions: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -43,7 +43,6 @@ class CapitalDistributionDashboard < Administrate::BaseDashboard
   SHOW_PAGE_ATTRIBUTES = %i[
     fund
     entity
-    form_type
     capital_distribution_payments
     id
     gross_amount_cents
@@ -56,6 +55,7 @@ class CapitalDistributionDashboard < Administrate::BaseDashboard
     completed
     distribution_amount_cents
     net_amount_cents
+    versions
   ].freeze
 
   # FORM_ATTRIBUTES
@@ -64,12 +64,10 @@ class CapitalDistributionDashboard < Administrate::BaseDashboard
   FORM_ATTRIBUTES = %i[
     fund
     entity
-    form_type
     capital_distribution_payments
     gross_amount_cents
     carry_cents
     distribution_date
-    properties
     title
     completed
     distribution_amount_cents

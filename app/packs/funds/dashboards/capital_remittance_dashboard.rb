@@ -13,7 +13,6 @@ class CapitalRemittanceDashboard < Administrate::BaseDashboard
     capital_call: Field::BelongsTo,
     capital_commitment: Field::BelongsTo,
     investor: Field::BelongsTo,
-    form_type: Field::BelongsTo,
     id: Field::Number,
     status: Field::String,
     call_amount_cents: Field::String.with_options(searchable: false),
@@ -22,7 +21,8 @@ class CapitalRemittanceDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     properties: Field::Text,
-    verified: Field::Boolean
+    verified: Field::Boolean,
+    versions: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -48,7 +48,6 @@ class CapitalRemittanceDashboard < Administrate::BaseDashboard
     capital_call
     capital_commitment
     investor
-    form_type
     id
     status
     call_amount_cents
@@ -58,6 +57,7 @@ class CapitalRemittanceDashboard < Administrate::BaseDashboard
     updated_at
     properties
     verified
+    versions
   ].freeze
 
   # FORM_ATTRIBUTES
@@ -69,12 +69,10 @@ class CapitalRemittanceDashboard < Administrate::BaseDashboard
     capital_call
     capital_commitment
     investor
-    form_type
     status
     call_amount_cents
     collected_amount_cents
     notes
-    properties
     verified
   ].freeze
 

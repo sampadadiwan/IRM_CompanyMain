@@ -1,4 +1,5 @@
 class Interest < ApplicationRecord
+  include Trackable
   include WithFolder
   include SaleChildrenScopes
 

@@ -14,6 +14,7 @@ module PaperTrail
       item: Field::Polymorphic,
       object: Field::Text,
       whodunnit: Field::String,
+      changeset: Field::String,
       created_at: Field::DateTime
     }.freeze
 
@@ -26,7 +27,7 @@ module PaperTrail
       id
       event
       item
-      object
+      changeset
       whodunnit
     ].freeze
 
@@ -36,9 +37,9 @@ module PaperTrail
       id
       event
       item
+      changeset
       object
       whodunnit
-      {:null=>false limit=>191}
       created_at
     ].freeze
 
@@ -47,10 +48,7 @@ module PaperTrail
     # on the model's form (`new` and `edit`) pages.
     FORM_ATTRIBUTES = %i[
       event
-      item
-      object
       whodunnit
-      {:null=>false limit=>191}
     ].freeze
 
     # COLLECTION_FILTERS

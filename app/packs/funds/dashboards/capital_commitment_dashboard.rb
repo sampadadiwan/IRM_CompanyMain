@@ -12,7 +12,6 @@ class CapitalCommitmentDashboard < Administrate::BaseDashboard
     investor: Field::BelongsTo,
     fund: Field::BelongsTo,
     capital_remittances: Field::HasMany,
-    form_type: Field::BelongsTo,
     id: Field::Number,
     committed_amount_cents: Field::String.with_options(searchable: false),
     collected_amount_cents: Field::String.with_options(searchable: false),
@@ -20,7 +19,8 @@ class CapitalCommitmentDashboard < Administrate::BaseDashboard
     investor_signature_types: Field::String,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
-    properties: Field::Text
+    properties: Field::Text,
+    versions: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -42,7 +42,6 @@ class CapitalCommitmentDashboard < Administrate::BaseDashboard
     entity
     investor
     fund
-    form_type
     id
     committed_amount_cents
     collected_amount_cents
@@ -52,7 +51,7 @@ class CapitalCommitmentDashboard < Administrate::BaseDashboard
     updated_at
     properties
     capital_remittances
-
+    versions
   ].freeze
 
   # FORM_ATTRIBUTES

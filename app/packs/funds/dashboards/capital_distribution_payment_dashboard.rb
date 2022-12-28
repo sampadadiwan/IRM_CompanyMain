@@ -12,14 +12,14 @@ class CapitalDistributionPaymentDashboard < Administrate::BaseDashboard
     entity: Field::BelongsTo,
     capital_distribution: Field::BelongsTo,
     investor: Field::BelongsTo,
-    form_type: Field::BelongsTo,
     id: Field::Number,
     amount_cents: Field::String.with_options(searchable: false),
     payment_date: Field::Date,
     properties: Field::Text,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
-    completed: Field::Boolean
+    completed: Field::Boolean,
+    versions: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -43,7 +43,6 @@ class CapitalDistributionPaymentDashboard < Administrate::BaseDashboard
     entity
     capital_distribution
     investor
-    form_type
     id
     amount_cents
     payment_date
@@ -51,6 +50,7 @@ class CapitalDistributionPaymentDashboard < Administrate::BaseDashboard
     created_at
     updated_at
     completed
+    versions
   ].freeze
 
   # FORM_ATTRIBUTES
@@ -61,10 +61,8 @@ class CapitalDistributionPaymentDashboard < Administrate::BaseDashboard
     entity
     capital_distribution
     investor
-    form_type
     amount_cents
     payment_date
-    properties
     completed
   ].freeze
 

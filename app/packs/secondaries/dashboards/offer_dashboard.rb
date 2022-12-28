@@ -40,7 +40,8 @@ class OfferDashboard < Administrate::BaseDashboard
     bank_verification_status: Field::String,
     comments: Field::Text,
     auto_match: Field::BooleanEmoji,
-    granted_by_user_id: Field::Number
+    granted_by_user_id: Field::Number,
+    versions: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -91,6 +92,7 @@ class OfferDashboard < Administrate::BaseDashboard
     granted_by_user_id
 
     documents
+    versions
   ].freeze
 
   # FORM_ATTRIBUTES

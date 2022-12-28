@@ -10,7 +10,6 @@ class CapitalCallDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     entity: Field::BelongsTo,
     fund: Field::BelongsTo,
-    form_type: Field::BelongsTo,
     capital_remittances: Field::HasMany,
     documents: Field::HasMany,
     id: Field::Number,
@@ -22,7 +21,8 @@ class CapitalCallDashboard < Administrate::BaseDashboard
     notes: Field::Text,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
-    properties: Field::Text
+    properties: Field::Text,
+    versions: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -42,7 +42,6 @@ class CapitalCallDashboard < Administrate::BaseDashboard
   SHOW_PAGE_ATTRIBUTES = %i[
     entity
     fund
-    form_type
     capital_remittances
     documents
     id
@@ -55,6 +54,7 @@ class CapitalCallDashboard < Administrate::BaseDashboard
     created_at
     updated_at
     properties
+    versions
   ].freeze
 
   # FORM_ATTRIBUTES
@@ -63,7 +63,6 @@ class CapitalCallDashboard < Administrate::BaseDashboard
   FORM_ATTRIBUTES = %i[
     entity
     fund
-    form_type
     capital_remittances
     documents
     name
@@ -72,7 +71,6 @@ class CapitalCallDashboard < Administrate::BaseDashboard
     call_amount_cents
     due_date
     notes
-    properties
   ].freeze
 
   # COLLECTION_FILTERS

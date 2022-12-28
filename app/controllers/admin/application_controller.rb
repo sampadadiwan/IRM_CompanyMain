@@ -7,6 +7,7 @@
 module Admin
   class ApplicationController < Administrate::ApplicationController
     before_action :authenticate_admin
+    before_action :set_paper_trail_whodunnit
 
     def authenticate_admin
       redirect_to '/', alert: 'Not authorized.' unless current_user&.has_role?(:super)

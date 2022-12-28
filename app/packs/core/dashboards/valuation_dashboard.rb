@@ -10,7 +10,6 @@ class ValuationDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     entity: Field::BelongsTo,
     owner: Field::Polymorphic,
-    form_type: Field::BelongsTo,
     id: Field::Number,
     valuation_date: Field::Date,
     pre_money_valuation_cents: Field::String.with_options(searchable: false),
@@ -37,7 +36,6 @@ class ValuationDashboard < Administrate::BaseDashboard
   SHOW_PAGE_ATTRIBUTES = %i[
     entity
     owner
-    form_type
     id
     valuation_date
     pre_money_valuation_cents
@@ -52,7 +50,6 @@ class ValuationDashboard < Administrate::BaseDashboard
   FORM_ATTRIBUTES = %i[
     entity
     owner
-    form_type
     valuation_date
     pre_money_valuation_cents
     per_share_value_cents

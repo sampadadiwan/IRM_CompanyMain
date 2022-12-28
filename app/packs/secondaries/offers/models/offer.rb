@@ -1,4 +1,5 @@
 class Offer < ApplicationRecord
+  include Trackable
   include WithFolder
   include SaleChildrenScopes
 

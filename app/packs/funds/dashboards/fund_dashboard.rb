@@ -18,7 +18,6 @@ class FundDashboard < Administrate::BaseDashboard
     capital_distributions: Field::HasMany,
     capital_calls: Field::HasMany,
     access_rights: Field::HasMany,
-    form_type: Field::BelongsTo,
     id: Field::Number,
     name: Field::String,
     committed_amount_cents: Field::String.with_options(searchable: false),
@@ -31,7 +30,8 @@ class FundDashboard < Administrate::BaseDashboard
     updated_at: Field::DateTime,
     call_amount_cents: Field::String.with_options(searchable: false),
     properties: Field::Text,
-    distribution_amount_cents: Field::String.with_options(searchable: false)
+    distribution_amount_cents: Field::String.with_options(searchable: false),
+    versions: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -62,7 +62,6 @@ class FundDashboard < Administrate::BaseDashboard
     call_amount_cents
     properties
     distribution_amount_cents
-    form_type
 
     funding_round
     documents
@@ -72,6 +71,7 @@ class FundDashboard < Administrate::BaseDashboard
     capital_distributions
     capital_calls
     access_rights
+    versions
 
   ].freeze
 
@@ -89,7 +89,6 @@ class FundDashboard < Administrate::BaseDashboard
     investor_signature_types
 
     call_amount_cents
-    properties
     distribution_amount_cents
   ].freeze
 
