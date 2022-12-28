@@ -65,11 +65,15 @@
     <small class="text-muted">In <%= deal_investor.deal.currency %></small>
   </div>
 
-  <div class="form-group">
-    <%= form.label :fee %>
-    <%= form.number_field :fee, class: "form-control"  %>
-    <small class="text-muted">In <%= deal_investor.deal.currency %></small>
-  </div>
+  <% if deal_investor.entity.entity_type == "Investment Fund" %>
+
+    <div class="form-group">
+      <%= form.label :fee %>
+      <%= form.number_field :fee, class: "form-control"  %>
+      <small class="text-muted">In <%= deal_investor.deal.currency %></small>
+    </div>
+
+  <% end %>
 
   <div class="form-group">
     <%= form.label :notes %>

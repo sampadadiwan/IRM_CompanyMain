@@ -62,24 +62,29 @@
       <%= money_to_currency deal_investor.secondary_investment, params %>
     </td>
   </tr>
-  <tr>
-    <td>
-      Fee
-    </td>
-    <td>
-      <%= money_to_currency deal_investor.fee, params %>
-    </td>
-  </tr>
 
-  <tr>
-    <td>
-      Total
-      (Primary + Secondary + Fee)
-    </td>
-    <td>
-      <%= money_to_currency deal_investor.total, params %>
-    </td>
-  </tr>
+  <% if deal_investor.entity.entity_type == "Investment Fund" %>
+
+    <tr>
+      <td>
+        Fee
+      </td>
+      <td>
+        <%= money_to_currency deal_investor.fee, params %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Total
+        (Primary + Secondary + Fee)
+      </td>
+      <td>
+        <%= money_to_currency deal_investor.total, params %>
+      </td>
+    </tr>
+
+  <% end %>
 
   <tr>
     <td>
