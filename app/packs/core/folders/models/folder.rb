@@ -1,5 +1,5 @@
 class Folder < ApplicationRecord
-  acts_as_paranoid
+  include Trackable
   has_ancestry orphan_strategy: :destroy, touch: true
 
   update_index('folder') { self }

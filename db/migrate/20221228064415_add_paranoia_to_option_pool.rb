@@ -6,5 +6,7 @@ class AddParanoiaToOptionPool < ActiveRecord::Migration[7.0]
     add_index :holdings, :deleted_at
     add_column :excercises, :deleted_at, :datetime
     add_index :excercises, :deleted_at
+    add_column :investor_kycs, :deleted_at, :datetime
+    add_index :investor_kycs, :deleted_at
   end
 end

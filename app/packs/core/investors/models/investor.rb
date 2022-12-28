@@ -1,5 +1,5 @@
 class Investor < ApplicationRecord
-  # include Trackable
+  include Trackable
   include WithFolder
   update_index('investor') { self }
 

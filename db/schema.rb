@@ -1137,6 +1137,8 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_28_064415) do
     t.string "full_name", limit: 100
     t.boolean "send_confirmation", default: false
     t.bigint "verified_by_id"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
     t.index ["form_type_id"], name: "index_investor_kycs_on_form_type_id"
     t.index ["investor_id"], name: "index_investor_kycs_on_investor_id"
