@@ -39,6 +39,13 @@ class Deal < ApplicationRecord
     deal_investors.each(&:create_activities)
   end
 
+  def broadcast_message(message, level = "info")
+    broadcast_replace_to [self, "deal_message"],
+                         partial: '/deals/deal_message',
+                         locals: { deal: self, message:, level: },
+                         target: "deal_message"
+  end
+
   def start_deal
     self.start_date = Time.zone.today
     save
