@@ -59,9 +59,7 @@
       <%= link_to "Change Sequence", update_sequence_deal_activity_path( id: 0, sequence: 0), id: "sort_link", hidden: true %>
       <div data-controller="activitytemplatesort"></div>
       <div class="info text-center alert alert-info">
-        The deal steps are generated based on the templates here. Modify/Add/Reorder these templates before starting the deal.</br>
-        If you want to change the templates after the deal has been started, make all required changes to the templates </br>
-        Then <%= button_to "Click Here", recreate_activities_deal_path(id: params[:deal_id]), class:"btn-primary btn-sm", data: {action: "click->confirm#popup", turbo:false, msg: "This will delete all existing deal activities and related documents and recreate them. Proceed?", method: "post"} %> to regenerate the deal steps.        
+        The deal steps are generated based on the templates here. Modify/Add/Reorder these templates before starting the deal.        
       </div>
   <% end %>
 
