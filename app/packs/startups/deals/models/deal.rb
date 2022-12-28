@@ -85,4 +85,8 @@ class Deal < ApplicationRecord
   def folder_path
     "/Deals/#{name}-#{id}"
   end
+
+  def history
+    self.versions.each(&:reify)
+  end
 end

@@ -1,10 +1,14 @@
 Rails.application.routes.draw do
+
+  
+
   resources :esigns
   resources :signature_workflows
   resources :investor_notice_entries
   resources :investor_notices
   resources :fees
   namespace :admin do
+    namespace :paper_trail do resources :versions end
     resources :investors
     resources :users
     resources :entities
