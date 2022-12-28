@@ -2,7 +2,7 @@ wb = xlsx_package.workbook
 
 wb.add_worksheet(name: "Offers") do |sheet|
   # Create the header row
-  sheet.add_row ["Full Name", "Allocation Quantity", "Price", "Allocation Amount", "Fees", "Net Amount", "Bank Account Number", "IFSC Code", "PAN", "Buyer"]
+  sheet.add_row ["Full Name", "Allocation Quantity", "Price", "Allocation Amount", "Fees", "Net Amount", "Bank Account Number", "IFSC Code", "PAN", "Buyer", "Buyer Account", "Buyer IFSC"]
 
   # Create entries for each offer
   @buyer_offers.each do |buyer_entity_name, buyer_hash|
@@ -14,7 +14,7 @@ wb.add_worksheet(name: "Offers") do |sheet|
       sheet.add_row [o.full_name, custom_format_number(o.allocation_quantity, params),
                      o.final_price, money_to_currency(o.allocation_amount, params), money_to_currency(fee_amount, params), money_to_currency(o.allocation_amount - fee_amount, params),
                      o.bank_account_number, o.ifsc_code,
-                     o.PAN, buyer_entity_name]
+                     o.PAN, buyer_entity_name, o.interest.bank_account_number, o.interest.ifsc_code]
     end
 
     buyer_hash[:fees].each do |advisor_name, fee|
