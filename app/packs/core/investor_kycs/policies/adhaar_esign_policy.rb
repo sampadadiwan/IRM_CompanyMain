@@ -1,11 +1,7 @@
 class AdhaarEsignPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if %i[company fund_manager].include? user.curr_role.to_sym
-        scope.where(entity_id: user.entity_id)
-      else
-        scope.none
-      end
+      scope.where(entity_id: user.entity_id)
     end
   end
 

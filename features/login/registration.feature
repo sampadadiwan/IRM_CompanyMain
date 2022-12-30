@@ -23,9 +23,9 @@ Scenario Outline: User Registration Successfully
   Then the user should have the roles "<roles>"
   Examples:
   	|user		|entity               |roles		|	
-  	| 	    |entity_type=Investor       |investor,secondary_buyer	|
+  	| 	    |entity_type=Investor       |investor|
     |       |entity_type=Company  |employee   |
     | 	    |entity_type=Holding  |holding   |
-    | 	    |entity_type=Investment Advisor  |secondary_buyer   |
-    | 	    |entity_type=Family Office  |secondary_buyer   |
+    | 	    |entity_type=Investment Advisor  |investor   |
+    | 	    |entity_type=Family Office  |investor   |
 

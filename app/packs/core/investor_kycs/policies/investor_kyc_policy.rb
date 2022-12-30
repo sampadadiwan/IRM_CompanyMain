@@ -1,9 +1,9 @@
 class InvestorKycPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if %i[company fund_manager].include? user.curr_role.to_sym
+      if %i[employee].include? user.curr_role.to_sym
         scope.where(entity_id: user.entity_id)
-      elsif user.has_cached_role?(:advisor)
+      elsif user.curr_role.to_sym == :advisor
         scope.for_advisor(user)
       else
         scope.where('investors.investor_entity_id': user.entity_id)

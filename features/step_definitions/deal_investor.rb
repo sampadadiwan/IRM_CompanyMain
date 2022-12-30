@@ -8,7 +8,7 @@ include InvestmentsHelper
     puts "\n####DealInvestor####\n"
     puts @deal_investor.to_json
 
-    click_on("Investments")
+    find("#deal_investments").click
     click_on("New Potential Investment")
 
     select(@deal_investor.investor_name, from: "deal_investor_investor_id")

@@ -1,6 +1,6 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Funds</h1>
-    <%= link_to "New Fund" , new_fund_path, {class: "btn btn-primary" } if policy(Fund.new).new? %>
+    <%= link_to "New Fund" , new_fund_path, {class: "btn btn-primary" } if policy(Fund.new(entity_id: current_user.entity_id)).new? %>
   </div>
 
   <div class="table-responsive" data-controller="datatable">

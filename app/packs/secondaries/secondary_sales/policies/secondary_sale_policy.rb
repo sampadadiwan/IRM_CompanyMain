@@ -7,10 +7,10 @@ class SecondarySalePolicy < SaleBasePolicy
         scope.where(entity_id: user.entity_id)
       elsif user.curr_role.to_sym == :advisor
         scope.for_advisor(user)
-      elsif %i[holding investor].include?(user.curr_role.to_sym)
+      elsif user.curr_role.to_sym == :holding
         scope.for(user).distinct
-      elsif user.curr_role.to_sym == :secondary_buyer
-        scope.where(visible_externally: true)
+      elsif user.curr_role.to_sym == :investor
+        scope.for(user)
       else
         scope.none
       end
@@ -26,7 +26,7 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def external_sale?
-    (user.has_cached_role?(:secondary_buyer) && record.visible_externally)
+    (user.has_cached_role?(:investor) && record.visible_externally)
   end
 
   def owner?

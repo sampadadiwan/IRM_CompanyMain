@@ -65,17 +65,9 @@ class User < ApplicationRecord
       elsif entity.entity_type == "Holding"
         add_role :holding
         self.curr_role = :holding
-      elsif ["Investor"].include?(entity.entity_type) || InvestorAccess.where(user_id: id).first.present?
-        add_role :secondary_buyer
+      elsif ["Investor", "Investment Advisor", "Family Office"].include?(entity.entity_type) || InvestorAccess.where(user_id: id).first.present?
         add_role :investor
         self.curr_role ||= :investor
-      elsif ["Investment Advisor"].include?(entity.entity_type)
-        add_role :secondary_buyer
-        self.curr_role = :secondary_buyer
-      elsif ["Family Office"].include?(entity.entity_type)
-        add_role :secondary_buyer
-        add_role :investor
-        self.curr_role ||= :secondary_buyer
       elsif ["Investment Fund"].include?(entity.entity_type)
         add_role :employee
         self.curr_role = :employee
@@ -104,7 +96,7 @@ class User < ApplicationRecord
     end
     # Add this role so we can identify which users have holdings
     add_role :holding if entity && (entity.entity_type == "Holding")
-    add_role :secondary_buyer if entity && (entity.entity_type == "Investor")
+    add_role :investor if entity && (entity.entity_type == "Investor")
     add_role :advisor if entity && (entity.entity_type == "Advisor")
     save
   end

@@ -9,8 +9,6 @@ class OfferPolicy < SaleBasePolicy
         scope.where(user_id: user.id)
       elsif user.curr_role.to_sym == :investor
         scope.joins(:investor).where('investors.investor_entity_id': user.entity_id)
-      elsif user.curr_role.to_sym == :secondary_buyer
-        scope.joins(:interest).where("interests.interest_entity_id=?", user.entity_id)
       else
         scope.where(entity_id: user.entity_id)
       end

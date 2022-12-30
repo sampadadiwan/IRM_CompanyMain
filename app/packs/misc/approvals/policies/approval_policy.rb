@@ -20,11 +20,11 @@ class ApprovalPolicy < ApplicationPolicy
 
   def create?
     (user.entity_id == record.entity_id) &&
-      (user.curr_role = "company" || user.curr_role = "fund_manager")
+      (user.curr_role = "company_admin")
   end
 
   def new?
-    (user.curr_role = "company" || user.curr_role = "fund_manager")
+    (user.curr_role = "company_admin")
   end
 
   def update?

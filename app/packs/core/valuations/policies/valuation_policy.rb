@@ -1,11 +1,7 @@
 class ValuationPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.curr_role == "company" || user.curr_role == "fund_manager"
-        scope.where(entity_id: user.entity_id)
-      else
-        scope.none
-      end
+      scope.where(entity_id: user.entity_id)
     end
   end
 

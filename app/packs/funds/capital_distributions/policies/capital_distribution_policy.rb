@@ -7,7 +7,7 @@ class CapitalDistributionPolicy < FundBasePolicy
         scope.where(entity_id: user.entity_id)
       elsif user.has_cached_role?(:employee)
         scope.for_employee(user)
-      elsif user.has_cached_role?(:advisor)
+      elsif user.curr_role.to_sym == :advisor
         scope.for_advisor(user).distinct
       else
         scope.for_investor(user).distinct

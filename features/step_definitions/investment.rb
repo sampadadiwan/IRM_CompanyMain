@@ -489,6 +489,9 @@ end
 Given('Given I upload a holdings file') do
   Sidekiq.redis(&:flushdb)
 
+  puts "##############\n"
+  puts @user.entity.investors.holding.first.to_json
+
   @existing_user_count = User.count
   visit("/holdings")
   click_on("Upload Holdings")

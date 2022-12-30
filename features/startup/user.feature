@@ -14,8 +14,8 @@ Scenario Outline: Create new user
 
   Examples:
   	|roles                      |entity                     |user                                 |msg	|
-  	|investor,secondary_buyer	  |entity_type=Investor             |first_name=Mohith;email=m1@gmail.com |A message with a confirmation link has been sent to your email address.|
+  	|investor	  |entity_type=Investor             |first_name=Mohith;email=m1@gmail.com |A message with a confirmation link has been sent to your email address.|
     |employee   	                |entity_type=Company        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
-    |secondary_buyer  	        |entity_type=Investment Advisor        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
-    |secondary_buyer  	        |entity_type=Family Office  |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
+    |investor  	        |entity_type=Investment Advisor        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
+    |investor  	        |entity_type=Family Office  |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
     |holding         	          |entity_type=Holding        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|

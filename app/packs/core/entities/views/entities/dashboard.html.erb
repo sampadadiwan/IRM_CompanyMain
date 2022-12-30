@@ -9,14 +9,14 @@
     <% if params[:dashboard].present? &&  allowed_dashboards.include?(params[:dashboard]) %>
         <%= render params[:dashboard] %>
     <% else %>   
-        <% if current_user.curr_role.to_sym == :employee %>
-            <%= render "cxo_dashboard" %>
-        <% elsif current_user.curr_role.to_sym == :investor %>
+        <% if current_user.curr_role.to_sym == :investor %>
             <%= render "vc_dashboard" %>
-        <% elsif current_user.curr_role.to_sym == :employee %>
-            <%= render "fm_dashboard" %>
         <% elsif current_user.curr_role == "holding" %>
             <%= render "holding_dashboard" %>
+        <% elsif current_user.entity.entity_type == "Company" %>
+            <%= render "cxo_dashboard" %>        
+        <% elsif current_user.entity.entity_type == "Investment Fund" %>
+            <%= render "fm_dashboard" %>
         <% elsif current_user.entity.entity_type == "Family Office" || current_user.entity.entity_type == "Investment Advisor" %>
             <%= render "investment_advisor_dashboard" %>
         <% end %>
