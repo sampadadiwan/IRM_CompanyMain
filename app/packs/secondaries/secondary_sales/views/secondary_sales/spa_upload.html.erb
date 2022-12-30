@@ -1,4 +1,4 @@
-<%= render "/layouts/steps", steps: ["This is the closing process for the sale", "Once completed the saleprice is frozen", "Please review the allocations post this step"].freeze if current_user.has_cached_role?(:company) %>
+<%= render "/layouts/steps", steps: ["This is the closing process for the sale", "Once completed the saleprice is frozen", "Please review the allocations post this step"].freeze if current_user.has_cached_role?(:employee) %>
 
 <%= form_with(model: @secondary_sale, validate: true, id: "spa_upload") do |form| %>
   <% if @secondary_sale.errors.any? %>

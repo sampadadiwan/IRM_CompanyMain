@@ -73,13 +73,13 @@
                 <%= render "layouts/sidebars/sidebar_investor" %>                
             <% end %>
 
-            <% if current_user && current_user.curr_role.to_sym == :fund_manager %>
+            <% if current_user && current_user.curr_role.to_sym == :employee %>
                 <!-- Divider -->
                 <hr class="sidebar-divider">
                 <%= render "layouts/sidebars/sidebar_fund" %>
             <% end %>
 
-            <% if current_user && current_user.curr_role.to_sym == :company %>
+            <% if current_user && current_user.curr_role.to_sym == :employee %>
                 <!-- Divider -->
                 <hr class="sidebar-divider">
                 <%= render "layouts/sidebars/sidebar_startup" %>

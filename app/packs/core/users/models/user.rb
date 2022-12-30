@@ -59,9 +59,9 @@ class User < ApplicationRecord
         add_role :advisor
         self.curr_role = :advisor
       elsif entity.entity_type == "Company"
-        add_role :company
+        add_role :employee
         add_role :holding
-        self.curr_role = :company
+        self.curr_role = :employee
       elsif entity.entity_type == "Holding"
         add_role :holding
         self.curr_role = :holding
@@ -77,8 +77,8 @@ class User < ApplicationRecord
         add_role :investor
         self.curr_role ||= :secondary_buyer
       elsif ["Investment Fund"].include?(entity.entity_type)
-        add_role :fund_manager
-        self.curr_role = :fund_manager
+        add_role :employee
+        self.curr_role = :employee
       else
         add_role :consultant
         self.curr_role = :consultant

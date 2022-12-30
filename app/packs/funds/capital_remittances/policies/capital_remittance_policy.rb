@@ -3,9 +3,9 @@ class CapitalRemittancePolicy < FundBasePolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      elsif user.has_cached_role?(:fund_manager) && user.has_cached_role?(:company_admin)
+      elsif user.has_cached_role?(:employee) && user.has_cached_role?(:company_admin)
         scope.where(entity_id: user.entity_id)
-      elsif user.has_cached_role?(:fund_manager)
+      elsif user.has_cached_role?(:employee)
         scope.for_employee(user)
       elsif user.has_cached_role?(:advisor)
         scope.for_advisor(user)

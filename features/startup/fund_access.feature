@@ -11,9 +11,9 @@ Scenario Outline: Access fund
   Examples:
   	|user	    |entity                                         |role           |given  |should	|access |
   	|  	        |entity_type=Investment Fund;enable_funds=true  |company_admin  |no    |true    |show,edit,update   |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |no    |false  |show,edit,update,destroy   |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |true   |show|
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |false   |edit,update,destroy      |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |no    |false  |show,edit,update,destroy   |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |true   |show|
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |false   |edit,update,destroy      |
     
 
 
@@ -38,9 +38,9 @@ Scenario Outline: Access fund & details as Employee
   Examples:
   	|user	    |entity                                         |role           |given  |should	|access |
   	|  	        |entity_type=Investment Fund;enable_funds=true  |company_admin  |no    |true    |show,edit,update,destroy   |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |no    |false  |show,edit,update,destroy   |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |true   |show|
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |false   |edit,update,destroy      |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |no    |false  |show,edit,update,destroy   |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |true   |show|
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |false   |edit,update,destroy      |
 
 
 Scenario Outline: Access fund & details as Employee with update access
@@ -64,16 +64,16 @@ Scenario Outline: Access fund & details as Employee with update access
   
   Examples:
   	|user	    |entity                                         |role           |given  |should	|access | crud |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |no    |false  |show,edit,update,destroy   | read |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |true   |show| read |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |false   |edit,update,destroy      | read |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |true   |edit,update,destroy      | create,read,update,destroy |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |true   |create      | create |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |false   |create,destroy      | update |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |true   |update      | update |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |false   |destroy      | update |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |true   |destroy      | destroy |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |fund_manager   |yes   |false   |destroy      | update |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |no    |false  |show,edit,update,destroy   | read |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |true   |show| read |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |false   |edit,update,destroy      | read |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |true   |edit,update,destroy      | create,read,update,destroy |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |true   |create      | create |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |false   |create,destroy      | update |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |true   |update      | update |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |false   |destroy      | update |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |true   |destroy      | destroy |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |false   |destroy      | update |
     
 
 Scenario Outline: Access fund & details as Investor

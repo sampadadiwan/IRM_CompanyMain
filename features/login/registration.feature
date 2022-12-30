@@ -24,7 +24,7 @@ Scenario Outline: User Registration Successfully
   Examples:
   	|user		|entity               |roles		|	
   	| 	    |entity_type=Investor       |investor,secondary_buyer	|
-    |       |entity_type=Company  |company   |
+    |       |entity_type=Company  |employee   |
     | 	    |entity_type=Holding  |holding   |
     | 	    |entity_type=Investment Advisor  |secondary_buyer   |
     | 	    |entity_type=Family Office  |secondary_buyer   |

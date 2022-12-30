@@ -3,7 +3,7 @@ class SecondarySalePolicy < SaleBasePolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      elsif user.curr_role.to_sym == :company
+      elsif user.curr_role.to_sym == :employee
         scope.where(entity_id: user.entity_id)
       elsif user.curr_role.to_sym == :advisor
         scope.for_advisor(user)

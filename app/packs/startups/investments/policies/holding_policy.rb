@@ -18,7 +18,7 @@ class HoldingPolicy < ApplicationPolicy
 
   def show?
     user.has_cached_role?(:super) ||
-      (user.enable_holdings && user.entity_id == record.entity_id && user.has_cached_role?(:company)) ||
+      (user.enable_holdings && user.entity_id == record.entity_id && user.has_cached_role?(:employee)) ||
       (user.id == record.user_id && user.has_cached_role?(:holding)) ||
       (user.entity_id == record.investor.investor_entity_id && user.has_cached_role?(:investor))
   end

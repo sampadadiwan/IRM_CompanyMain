@@ -1,11 +1,11 @@
 <%= render "/layouts/alerts" %>
 <%= render "/layouts/steps", steps: ["Setup Secondary Sales", "Customize Sale", "Setup Access Rights", 
-                        "View/Approve Offers", "Receive/Shortlist Interests"].freeze if current_user.has_cached_role?(:company) %>
+                        "View/Approve Offers", "Receive/Shortlist Interests"].freeze if current_user.has_cached_role?(:employee) %>
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Secondary Sales</h1>
     <%= link_to "New Secondary Sale" , new_secondary_sale_path("secondary_sale[entity_id]": current_user.entity_id),
-      {class: "btn btn-primary" } if current_user.has_cached_role?(:company) %>
+      {class: "btn btn-primary" } if current_user.has_cached_role?(:employee) %>
   </div>
 
   <div class="table-responsive" data-controller="datatable">

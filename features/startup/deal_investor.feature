@@ -47,10 +47,10 @@ Scenario Outline: View Deal Investors in a deal as employee
 
   Examples:
   	|role	        |deal_investor              |entity               |deal                             | given| should |
-  	|company  	  |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 | yes | true |
-    |fund_manager |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 | yes | true |
-    |company  	  |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 | no | false |
-    |fund_manager |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 | no | false |
+  	|employee  	  |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 | yes | true |
+    |employee |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 | yes | true |
+    |employee  	  |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 | no | false |
+    |employee |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 | no | false |
 
 
 

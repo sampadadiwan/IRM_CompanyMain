@@ -13,8 +13,8 @@ Scenario Outline: Access Deal employee
   	|user	    |entity               |deal                     | role | deal_access | doc_access |
   	|  	      |entity_type=Company  |name=Series A;amount_cents=100 | company_admin | true | true |
     |  	      |entity_type=Company  |name=Series B;amount_cents=120 | company_admin | true | true |
-    |  	      |entity_type=Company  |name=Series A;amount_cents=100 | company | false | true |
-    |  	      |entity_type=Company  |name=Series B;amount_cents=120 | fund_manager | false | true |
+    |  	      |entity_type=Company  |name=Series A;amount_cents=100 | employee | false | true |
+    |  	      |entity_type=Company  |name=Series B;amount_cents=120 | employee | false | true |
 
 
 Scenario Outline: Access Deal employee
@@ -28,8 +28,8 @@ Scenario Outline: Access Deal employee
 
   Examples:
   	|given	    |entity               |deal                     | role | deal_access | doc_access |
-    | yes 	    |entity_type=Company  |name=Series A;amount_cents=100 | company | true | true |
-    | yes       |entity_type=Company  |name=Series B;amount_cents=120 | fund_manager | true | true |
+    | yes 	    |entity_type=Company  |name=Series A;amount_cents=100 | employee | true | true |
+    | yes       |entity_type=Company  |name=Series B;amount_cents=120 | employee | true | true |
 
 Scenario Outline: Access Deal as Other User
   Given there is a user "<user>" for an entity "<entity>"

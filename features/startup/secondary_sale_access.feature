@@ -40,9 +40,9 @@ Scenario Outline: Access Sale as an employee
     |entity_type=Company  |name=Grand Sale  | company_admin | yes   |       | false  | buyer,seller,offer,show_interest  |
     |entity_type=Company  |name=Winter Sale | company_admin | no    |       | true  | show,update,destroy,see_private_docs  |
     |entity_type=Company  |name=Winter Sale | company_admin | no    |       | false  | buyer,seller,offer,show_interest  |
-    |entity_type=Company  |name=Grand Sale  | company       | yes   |create,read,update,destroy | true  | show,update,destroy,see_private_docs  |
-    |entity_type=Company  |name=Grand Sale  | company       | yes   |create,read,update,destroy | false  | buyer,seller,offer,show_interest |
-    |entity_type=Company  |name=Grand Sale  | company       | yes   |  | false  | update,destroy,buyer,seller,offer,show_interest  |
+    |entity_type=Company  |name=Grand Sale  | employee       | yes   |create,read,update,destroy | true  | show,update,destroy,see_private_docs  |
+    |entity_type=Company  |name=Grand Sale  | employee       | yes   |create,read,update,destroy | false  | buyer,seller,offer,show_interest |
+    |entity_type=Company  |name=Grand Sale  | employee       | yes   |  | false  | update,destroy,buyer,seller,offer,show_interest  |
     
 Scenario Outline: Access Sale as an advisor
   Given there is a user "first_name=Test" for an entity "<entity>"

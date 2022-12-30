@@ -16,13 +16,13 @@ class DealActivityPolicy < DealBasePolicy
   end
 
   def show?
-    (user.has_cached_role?(:super) || (user.entity_id == record.entity_id)) ||
+    permissioned_employee? ||
       (record.deal_investor && record.deal_investor.investor_entity_id == user.entity_id) ||
       permissioned_advisor?
   end
 
   def create?
-    user.has_cached_role?(:super) || (user.entity_id == record.entity_id)
+    permissioned_employee?(:create)
   end
 
   def new?
@@ -30,7 +30,7 @@ class DealActivityPolicy < DealBasePolicy
   end
 
   def update?
-    create? ||
+    permissioned_employee?(:update) ||
       permissioned_advisor?(:update)
   end
 
@@ -47,7 +47,7 @@ class DealActivityPolicy < DealBasePolicy
   end
 
   def destroy?
-    create? ||
+    permissioned_employee?(:destroy) ||
       permissioned_advisor?(:destroy)
   end
 end
