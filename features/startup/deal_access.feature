@@ -3,16 +3,33 @@ Feature: Access
 
 Scenario Outline: Access Deal employee
   Given there is a user "<user>" for an entity "<entity>"
+  Given the user has role "<role>"
   And given there is a deal "<deal>" for the entity 
-  And I should have access to the deal
+  And I have "<deal_access>" access to the deal
   And given there is a document "name=Test" for the deal 
-  And I should have access to the document  
+  And I have "<doc_access>" access to the document  
 
   Examples:
-  	|user	    |entity               |deal                     |
-  	|  	      |entity_type=Company  |name=Series A;amount_cents=100 |
-    |  	      |entity_type=Company  |name=Series B;amount_cents=120 |
+  	|user	    |entity               |deal                     | role | deal_access | doc_access |
+  	|  	      |entity_type=Company  |name=Series A;amount_cents=100 | company_admin | true | true |
+    |  	      |entity_type=Company  |name=Series B;amount_cents=120 | company_admin | true | true |
+    |  	      |entity_type=Company  |name=Series A;amount_cents=100 | company | false | true |
+    |  	      |entity_type=Company  |name=Series B;amount_cents=120 | fund_manager | false | true |
 
+
+Scenario Outline: Access Deal employee
+  Given there is a user "" for an entity "<entity>"
+  Given the user has role "<role>"
+  And given there is a deal "<deal>" for the entity 
+  And I am "<given>" employee access to the deal
+  And I have "<deal_access>" access to the deal
+  And given there is a document "name=Test" for the deal 
+  And I have "<doc_access>" access to the document  
+
+  Examples:
+  	|given	    |entity               |deal                     | role | deal_access | doc_access |
+    | yes 	    |entity_type=Company  |name=Series A;amount_cents=100 | company | true | true |
+    | yes       |entity_type=Company  |name=Series B;amount_cents=120 | fund_manager | true | true |
 
 Scenario Outline: Access Deal as Other User
   Given there is a user "<user>" for an entity "<entity>"

@@ -5,11 +5,11 @@
 %>
 
 <tr id="<%= dom_id access_right %>">
-    <td>
-        <% if access_right.access_to_investor_id.present? %>
+    <td>        
+        <% if access_right.user_id.present? %>
+            <%= link_to access_right.user.full_name, user_path(access_right.user) %>
+        <% elsif access_right.access_to_investor_id.present? %>
             <%= link_to access_right.investor.investor_name, investor_path(access_right.investor, tab: "investors-tab") %>
-        <% elsif access_right.user_id.present? %>
-            <%= link_to access_right.user.full_name, investor_path(access_right.user) %>
         <% else %>
             <%= link_to access_right.access_to_category, investors_path(category: access_right.access_to_category) %>
         <% end %>

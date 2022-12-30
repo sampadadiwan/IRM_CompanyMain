@@ -3,8 +3,10 @@ class DealPolicy < ApplicationPolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      elsif %w[company fund_manager].include? user.curr_role
+      elsif %w[company fund_manager].include?(user.curr_role) && user.has_cached_role?(:company_admin)
         scope.where(entity_id: user.entity_id)
+      elsif %w[company fund_manager].include? user.curr_role
+        scope.for_employee(user)
       elsif user.curr_role == "investor"
         scope.for_investor(user)
       elsif user.curr_role == "advisor"
@@ -18,7 +20,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id && user.enable_deals) ||
+    (permissioned_employee? && user.enable_deals) ||
       permissioned_advisor?
   end
 
@@ -27,7 +29,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def create?
-    user.has_cached_role?(:super) || (user.entity_id == record.entity_id && user.enable_deals)
+    permissioned_employee?(:create) && user.enable_deals
   end
 
   def new?
@@ -35,7 +37,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def update?
-    create? ||
+    permissioned_employee?(:update) ||
       permissioned_advisor?(:update)
   end
 
@@ -52,7 +54,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def destroy?
-    create? ||
+    permissioned_employee?(:destroy) ||
       permissioned_advisor?(:destroy)
   end
 
@@ -66,6 +68,24 @@ class DealPolicy < ApplicationPolicy
         @deal.present? && @deal.access_rights[0].permissions.set?(perm)
       else
         @deal.present?
+      end
+    else
+      false
+    end
+  end
+
+  def permissioned_employee?(perm = nil)
+    if user.entity_id == record.entity_id
+      if user.has_cached_role?(:company_admin)
+        true
+      else
+        deal_id = record.instance_of?(Deal) ? record.id : record.deal_id
+        @deal ||= Deal.for_employee(user).includes(:access_rights).where("deals.id=?", deal_id).first
+        if perm
+          @deal.present? && @deal.access_rights[0].permissions.set?(perm)
+        else
+          @deal.present?
+        end
       end
     else
       false

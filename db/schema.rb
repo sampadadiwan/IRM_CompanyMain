@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_12_28_075938) do
+ActiveRecord::Schema[7.0].define(version: 2022_12_30_063614) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -607,6 +607,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_12_28_075938) do
     t.string "kyc_doc_list", limit: 100
     t.boolean "activity_docs_required_for_completion", default: false
     t.boolean "activity_details_required_for_na", default: false
+    t.boolean "enable_investors", default: true
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"

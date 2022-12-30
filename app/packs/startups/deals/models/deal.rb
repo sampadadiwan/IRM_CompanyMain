@@ -56,6 +56,10 @@ class Deal < ApplicationRecord
     start_date != nil
   end
 
+  scope :for_employee, lambda { |user|
+    includes(:access_rights).joins(:access_rights).where("deals.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
+  }
+
   scope :for_advisor, lambda { |user|
     # Ensure the access rghts for Document
     includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter)

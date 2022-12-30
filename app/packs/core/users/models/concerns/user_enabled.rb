@@ -44,6 +44,6 @@ module UserEnabled
   end
 
   def enable_investors
-    permissions.enable_investors?
+    permissions.enable_investors? && entity && entity.enable_investors
   end
 end

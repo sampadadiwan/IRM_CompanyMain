@@ -3,6 +3,7 @@ Feature: Deal
 
 Scenario Outline: Create new deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   And I am at the deals page
   When I create a new deal "<deal>"
   Then I should see the "<msg>"
@@ -17,6 +18,7 @@ Scenario Outline: Create new deal
 
 Scenario Outline: Edit deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   And I am at the deals page
   When I create a new deal "<deal>"
   Then I should see the "<msg>"
@@ -32,6 +34,7 @@ Scenario Outline: Edit deal
 
 Scenario Outline: Start deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   And there exists a deal "<deal>" for my company
   And I visit the deal details page
   And I should see the deal details on the details page

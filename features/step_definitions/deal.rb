@@ -87,8 +87,19 @@ Given('given there is a deal {string} for the entity') do |arg1|
 
 end
 
-Given('I should have access to the deal') do
-  Pundit.policy(@user, @deal).show?.should == true
+
+Given('the deal is started') do
+  @deal.start_deal
+end
+
+Given('I am {string} employee access to the deal') do |given|
+  if given == "given" || given == "yes"
+    @access_right = AccessRight.create(entity_id: @deal.entity_id, owner: @deal, user_id: @user.id)
+  end
+end
+
+Given('I have {string} access to the deal') do |should|  
+  Pundit.policy(@user, @deal).show?.should == (should == "true")
 end
 
 

@@ -101,6 +101,10 @@ class DealInvestor < ApplicationRecord
     save
   end
 
+  scope :for_employee, lambda { |user|
+    includes(:access_rights).joins(:access_rights).where("deal_investors.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
+  }
+
   scope :for_advisor, lambda { |user|
     # Ensure the access rghts for Document
     includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter)

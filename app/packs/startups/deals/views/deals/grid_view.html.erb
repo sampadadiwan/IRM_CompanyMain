@@ -4,7 +4,7 @@
 <%= turbo_stream_from @deal, "deal_message" if current_user %>
 <div id="deal_message"></div>
 
-<% cache([@deal, current_user.entity, "GridView", params[:all], params[:units]]) do %>
+<% cache([@deal, current_user, "GridView", params[:all], params[:units]]) do %>
 
 <% if params[:collab_doc].present? %>
     

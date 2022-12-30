@@ -3,8 +3,10 @@ class DealInvestorPolicy < DealBasePolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      elsif %w[company fund_manager].include? user.curr_role
+      elsif %w[company fund_manager].include?(user.curr_role) && user.has_cached_role?(:company_admin)
         scope.where(entity_id: user.entity_id)
+      elsif %w[company fund_manager].include? user.curr_role
+        scope.for_employee(user)
       elsif user.curr_role == "investor"
         scope.for_investor(user)
       elsif user.curr_role == "advisor"
@@ -18,13 +20,13 @@ class DealInvestorPolicy < DealBasePolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id) ||
-      (user.entity_id == record.investor_entity_id) ||
+    (user.entity_id == record.investor_entity_id) ||
+      permissioned_employee? ||
       permissioned_advisor?
   end
 
   def create?
-    (user.entity_id == record.entity_id)
+    (user.entity_id == record.entity_id) && user.has_cached_role?(:company_admin)
   end
 
   def new?
@@ -33,6 +35,7 @@ class DealInvestorPolicy < DealBasePolicy
 
   def update?
     create? ||
+      permissioned_employee?(:update) ||
       permissioned_advisor?(:update)
   end
 
@@ -42,6 +45,7 @@ class DealInvestorPolicy < DealBasePolicy
 
   def destroy?
     create? ||
+      permissioned_employee?(:destroy) ||
       permissioned_advisor?(:destroy)
   end
 end

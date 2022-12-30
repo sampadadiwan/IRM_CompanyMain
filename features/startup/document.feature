@@ -34,6 +34,7 @@ Scenario Outline: Create new document
 
 Scenario Outline: Add deal document
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   And there exists a deal "<deal>" for my company
   Given there is an existing investor "name=Accel" with "1" users
   Given the investors are added to the deal
@@ -54,6 +55,7 @@ Examples:
 
 Scenario Outline: Add deal investor document
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   And there exists a deal "<deal>" for my company
   Given there is an existing investor "name=Sequoia"
   And there are "1" deal_investors for the deal

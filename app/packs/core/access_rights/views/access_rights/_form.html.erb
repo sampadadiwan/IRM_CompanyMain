@@ -79,7 +79,7 @@
       </div>
     <% end %>
 
-    <% if ["Fund", "SecondarySale"].include? access_right.owner_type %>    
+    <% if ["Fund", "SecondarySale", "Deal", "DealInvestor"].include? access_right.owner_type %>    
       <div class="form-group" id="employee_form_group">
         <%= form.label :user_id, "Select User" %>
         <%= form.select :user_id, access_right.entity.employees.map{|u| [u.full_name, u.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple"  %>

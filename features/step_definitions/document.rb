@@ -6,6 +6,11 @@
     puts @document.to_json
   end
   
+
+  Given('I have {string} access to the document') do |should|
+    Pundit.policy(@user, @document).show?.should == (should == "true")
+  end
+
   Given('I should have access to the document') do
     Pundit.policy(@user, @document).show?.should == true
   end

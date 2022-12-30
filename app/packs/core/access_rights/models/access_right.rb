@@ -76,7 +76,7 @@ class AccessRight < ApplicationRecord
     owner_class_name = owner.class.name
     case owner_class_name
     when "Deal", "DealInvestor"
-      AccessRight::TYPES - ["All Investors of Specific Category"]
+      AccessRight::TYPES - ["All Investors of Specific Category"] + ["Employee"]
     when "Fund", "SecondarySale"
       AccessRight::TYPES + ["Employee"]
     else

@@ -112,7 +112,33 @@ include InvestmentsHelper
   When('I view the deal investor details') do
     visit(deal_investor_path(@deal_investor))
   end
-  
-  
+
+  Given('I am {string} employee access to the deal_investors') do |given|
+    if given == "given" || given == "yes"
+      DealInvestor.all.each do |di|
+        @access_right = AccessRight.create!(entity_id: di.entity_id, owner: di, user_id: @user.id)
+        puts "\n####AccessRight####\n"
+        puts @access_right.to_json
+      end
+    end
+  end
+
+  Then('I {string} see the deal investors in the deal details page') do |should|
+    visit(deal_path(@deal))
+
+    
+    @deal.deal_investors.each do |deal_investor|
+        if should == "true"
+          within("#deal_investor_#{deal_investor.id}") do
+            expect(page).to have_content(deal_investor.investor_name)
+            expect(page).to have_content(money_to_currency deal_investor.primary_amount)
+            expect(page).to have_content(money_to_currency deal_investor.secondary_investment)
+            expect(page).to have_content(money_to_currency deal_investor.pre_money_valuation)
+          end
+        else
+          expect(page).not_to have_selector "#deal_investor_#{deal_investor.id}"
+        end      
+    end
+  end
   
   
