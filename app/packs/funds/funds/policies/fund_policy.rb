@@ -48,7 +48,7 @@ class FundPolicy < FundBasePolicy
     user.enable_funds &&
       (user.entity_id == record.entity_id) &&
       user.has_cached_role?(:company_admin) &&
-      user.entity.entity_type == "Investment Fund"
+      user.entity_type == "Investment Fund"
   end
 
   def new?

@@ -73,13 +73,13 @@
                 <%= render "layouts/sidebars/sidebar_investor" %>                
             <% end %>
 
-            <% if current_user && current_user.curr_role.to_sym == :employee %>
+            <% if current_user && current_user.curr_role.to_sym == :employee && current_user.entity_type == "Investment Fund" %>
                 <!-- Divider -->
                 <hr class="sidebar-divider">
                 <%= render "layouts/sidebars/sidebar_fund" %>
             <% end %>
 
-            <% if current_user && current_user.curr_role.to_sym == :employee %>
+            <% if current_user && current_user.curr_role.to_sym == :employee && current_user.entity_type == "Company" %>
                 <!-- Divider -->
                 <hr class="sidebar-divider">
                 <%= render "layouts/sidebars/sidebar_startup" %>
@@ -114,7 +114,7 @@
             <% end %>
 
 
-            <% if current_user && current_user.entity && ["Investment Fund", "Company"].include?(current_user.entity.entity_type) %>
+            <% if current_user && current_user.entity && ["Investment Fund", "Company"].include?(current_user.entity_type) %>
                 <li class="nav-item"> 
                     <a class="nav-link" href="/aggregate_investments" data-toggle="collapse" data-target="#taskMenus">
                         <i class="fas fa-lg fa-fw fa-check"></i>

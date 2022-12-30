@@ -13,11 +13,11 @@
             <%= render "vc_dashboard" %>
         <% elsif current_user.curr_role == "holding" %>
             <%= render "holding_dashboard" %>
-        <% elsif current_user.entity.entity_type == "Company" %>
+        <% elsif current_user.entity_type == "Company" %>
             <%= render "cxo_dashboard" %>        
-        <% elsif current_user.entity.entity_type == "Investment Fund" %>
+        <% elsif current_user.entity_type == "Investment Fund" %>
             <%= render "fm_dashboard" %>
-        <% elsif current_user.entity.entity_type == "Family Office" || current_user.entity.entity_type == "Investment Advisor" %>
+        <% elsif current_user.entity_type == "Family Office" || current_user.entity_type == "Investment Advisor" %>
             <%= render "investment_advisor_dashboard" %>
         <% end %>
     <% end %>

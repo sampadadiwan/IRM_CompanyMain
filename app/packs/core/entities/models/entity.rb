@@ -87,6 +87,12 @@ class Entity < ApplicationRecord
     else
       SetupFolders.call(entity: self)
     end
+
+    # Ensure users entity_type is saved
+    self.employees.each do |user|
+      user.entity_type = self.entity_type
+      user.save
+    end
   end
 
   def to_s

@@ -80,7 +80,7 @@ class User < ApplicationRecord
     end
 
     self.permissions = User.permissions.keys if permissions.blank?
-
+    self.entity_type = entity&.entity_type
     self.active = true
   end
 
@@ -123,5 +123,25 @@ class User < ApplicationRecord
 
   def employee_parent_entity
     entity.investees.first&.entity
+  end
+
+  def self.update_roles
+    User.all.each do |u|
+      if u.has_cached_role?(:company)
+        u.remove_role(:company)
+        u.add_role(:employee)
+      end
+      if u.has_cached_role?(:fund_manager)
+        u.remove_role(:fund_manager)
+        u.add_role(:employee)
+      end
+      if u.has_cached_role?(:secondary_buyer)
+        u.remove_role(:secondary_buyer)
+        u.add_role(:investor)
+      end
+
+      u.entity_type = u.entity&.entity_type
+      u.save
+    end
   end
 end
