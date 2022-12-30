@@ -47,8 +47,9 @@
                         <span>Offers</span>
                     </a>
 
-                </li>
-            
+                </li>                            
+            <% end %>
+
             <% if current_user && ["investor", "advisor"].include?(current_user.curr_role) %>
                 <!-- Divider -->
                 <hr class="sidebar-divider">
