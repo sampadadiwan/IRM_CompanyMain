@@ -18,6 +18,8 @@ Given('there is a user {string} for an entity {string}') do |arg1, arg2|
   @user.save!
   puts "\n####User####\n"
   puts @user.to_json
+
+  @entity.reload
 end
 
 
