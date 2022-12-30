@@ -127,17 +127,16 @@ class User < ApplicationRecord
 
   def self.update_roles
     User.all.each do |u|
-      if u.has_cached_role?(:company)
+      if u.has_cached_role?(:company) || u.has_cached_role?(:fund_manager)
         u.remove_role(:company)
-        u.add_role(:employee)
-      end
-      if u.has_cached_role?(:fund_manager)
         u.remove_role(:fund_manager)
         u.add_role(:employee)
+        u.curr_role = :employee
       end
       if u.has_cached_role?(:secondary_buyer)
         u.remove_role(:secondary_buyer)
         u.add_role(:investor)
+        u.curr_role = :investor
       end
 
       u.entity_type = u.entity&.entity_type

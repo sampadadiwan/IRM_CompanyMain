@@ -89,8 +89,8 @@ class Entity < ApplicationRecord
     end
 
     # Ensure users entity_type is saved
-    self.employees.each do |user|
-      user.entity_type = self.entity_type
+    employees.each do |user|
+      user.entity_type = entity_type
       user.save
     end
   end

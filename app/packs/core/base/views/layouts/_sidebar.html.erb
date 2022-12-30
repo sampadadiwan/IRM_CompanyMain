@@ -49,24 +49,6 @@
 
                 </li>
             
-            <% elsif current_user && current_user.curr_role.to_sym == :investor %>
-                <li class="nav-item">
-                     
-                    <a class="nav-link" href="/secondary_sales">
-                        <i class="fas fa-lg fa-fw fa-briefcase"></i>
-                        <span>Secondary Sales</span>
-                    </a>
-
-
-                    <a class="nav-link" href="/approvals">
-                        <i class="fas fa-lg fa-fw fa-stamp"></i>
-                        <span>Approvals</span>                        
-                    </a>
-
-                </li>
-                
-            <% end %>
-
             <% if current_user && ["investor", "advisor"].include?(current_user.curr_role) %>
                 <!-- Divider -->
                 <hr class="sidebar-divider">
@@ -114,7 +96,7 @@
             <% end %>
 
 
-            <% if current_user && current_user.entity && ["Investment Fund", "Company"].include?(current_user.entity_type) %>
+            <% if current_user &&  ["Investment Fund", "Company"].include?(current_user.entity_type) %>
                 <li class="nav-item"> 
                     <a class="nav-link" href="/aggregate_investments" data-toggle="collapse" data-target="#taskMenus">
                         <i class="fas fa-lg fa-fw fa-check"></i>
