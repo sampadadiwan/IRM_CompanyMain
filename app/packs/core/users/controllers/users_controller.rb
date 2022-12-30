@@ -48,9 +48,9 @@ class UsersController < ApplicationController
     respond_to do |format|
       if @user.update(user_params)
 
-        if user_params[:role_name] && current_user.has_cached_role?(:company_admin)
+        if current_user.has_cached_role?(:company_admin)
           User::UPDATABLE_ROLES.each do |role|
-            user_params[:role_name].include?(role) ? @user.add_role(role) : @user.remove_role(role)
+            user_params[:role_name].present? && user_params[:role_name].include?(role) ? @user.add_role(role) : @user.remove_role(role)
           end
         end
         format.html { redirect_to user_url(@user), notice: "User was successfully updated." }
