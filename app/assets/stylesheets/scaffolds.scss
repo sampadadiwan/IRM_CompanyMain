@@ -173,15 +173,20 @@ video { float: none; }
 
 
 .nav-link.active {
-  background-color: #4e73df !important;
-  color: white !important;
-  font-weight: bold;
+  border-color: #4e73df !important;
+  color: #4e73df !important;
+  font-weight: 600;
 }
 
 .nav-tabs .nav-link {
   margin-right: 3px;
   background-color:lighten($color: cornflowerblue, $amount: 30);
-  color: darkgray;
+  color: darkgray;  
+}
+
+.nav-link:hover {
+  font-weight: 500;
+  border-color: lighten(#4e73df, 10%) !important;
 }
 
 .table_divider {

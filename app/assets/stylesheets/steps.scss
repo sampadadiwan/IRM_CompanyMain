@@ -14,7 +14,7 @@ $brand-danger: #d50000;
 
 $gray-dark: #333;
 $gray-light: #999;
-$gray-lighter: #eee;
+$gray-lighter:lighten(#eee, 1%);
 
 $icon-danger: '!';
 $icon-success: '✓';
