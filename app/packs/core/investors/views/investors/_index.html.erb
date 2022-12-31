@@ -12,13 +12,14 @@
     <%= link_to "All Notes" , notes_path, {class: "btn btn-outline-success" } %>
 
 
-    <div class="btn-outline-group">
+    <div class="btn-group">
       <div class="dropdown">
         <button class="btn btn-outline-primary dropdown-toggle" type="button" 
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Actions
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        
           <%= link_to "Download" , investors_path(format: "xlsx"),
             {class: "dropdown-item" } %>
 

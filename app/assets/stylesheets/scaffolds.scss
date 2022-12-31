@@ -133,16 +133,16 @@ h1 {
 
 .btn-group {
   .dropdown-menu.show {
-    background-color: #1cc88a;
+    border-color: #4e73df;
   }
-  .dropdown-item {
-    color: white !important;
-  }
+  // .dropdown-item {
+  //   color: white !important;
+  // }
 
-  .dropdown-item:focus, .dropdown-item:hover {
-    font-weight: bold;
-    background-color: #2ca87b !important;
-  }
+  // .dropdown-item:focus, .dropdown-item:hover {
+  //   font-weight: bold;
+  //   background-color: #2ca87b !important;
+  // }
 }
 
 #deal_grid_div {
