@@ -1,7 +1,11 @@
 class EntityPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      scope.all
+      if user.curr_role.to_sym == :investor
+        scope.for_investor(user)
+      else
+        scope.all
+      end
     end
   end
 

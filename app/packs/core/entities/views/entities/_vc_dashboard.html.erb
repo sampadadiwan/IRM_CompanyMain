@@ -1,8 +1,12 @@
 <%#= render "entities/vc_dashboard_stats" %>
 
+    <div class="associated_entity">        
+        <%= render "/entities/index",  
+            entities: policy_scope(Entity), vc_view: true %>
+    </div>
+
     <div class="associated_entity">
         
-        <%#= render "funds/dashboard/investor_commitments", fund: current_user.entity.funds.last %>
         <%= render "/funds/index",  
             funds: policy_scope(Fund).includes(:entity) if current_user.enable_funds %>
     </div>
