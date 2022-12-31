@@ -6,7 +6,7 @@ class DealActivityPolicy < DealBasePolicy
       elsif user.curr_role == "advisor"
         scope.for_advisor(user)
       else
-        scope.where("entity_id=?", user.entity_id)
+        scope.joins(:deal_investor).where("deal_activities.entity_id=? or deal_investors.investor_entity_id=?", user.entity_id, user.entity_id)
       end
     end
   end

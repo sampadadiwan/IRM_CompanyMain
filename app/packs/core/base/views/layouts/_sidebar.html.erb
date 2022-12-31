@@ -50,19 +50,19 @@
                 </li>                            
             <% end %>
 
-            <% if current_user && ["investor", "advisor"].include?(current_user.curr_role) %>
+            <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role) && Entity::SECONDARY_BUYERS.include?(current_user.entity_type) %>
                 <!-- Divider -->
                 <hr class="sidebar-divider">
                 <%= render "layouts/sidebars/sidebar_investor" %>                
             <% end %>
 
-            <% if current_user && current_user.curr_role.to_sym == :employee && current_user.entity_type == "Investment Fund" %>
+            <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && current_user.entity_type == "Investment Fund" %>
                 <!-- Divider -->
                 <hr class="sidebar-divider">
                 <%= render "layouts/sidebars/sidebar_fund" %>
             <% end %>
 
-            <% if current_user && current_user.curr_role.to_sym == :employee && current_user.entity_type == "Company" %>
+            <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && current_user.entity_type == "Company" %>
                 <!-- Divider -->
                 <hr class="sidebar-divider">
                 <%= render "layouts/sidebars/sidebar_startup" %>

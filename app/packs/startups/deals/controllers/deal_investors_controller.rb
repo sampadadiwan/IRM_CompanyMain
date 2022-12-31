@@ -4,12 +4,10 @@ class DealInvestorsController < ApplicationController
 
   # GET /deal_investors or /deal_investors.json
   def index
-    @deal_investors = if params[:for_investor].present?
-                        DealInvestor.for_investor(current_user)
-                      else
-                        policy_scope(DealInvestor).includes(:investor, :deal)
-                      end
+    @deal_investors = policy_scope(DealInvestor).includes(:investor, :deal)
+
     @deal_investors = @deal_investors.where(deal_id: params[:deal_id]) if params[:deal_id].present?
+    @deal_investors = @deal_investors.where(entity_id: params[:entity_id]) if params[:entity_id].present?
   end
 
   def search
