@@ -50,6 +50,7 @@ class Investor < ApplicationRecord
                       investor_entity_id: user.entity_id)
               }
 
+  scope :advisors, -> { where(category: "Advisor") }
   scope :for_vc, ->(vc_user) { where(investor_entity_id: vc_user.entity_id) }
   scope :not_holding, -> { where(is_holdings_entity: false) }
   scope :not_trust, -> { where(is_trust: false) }

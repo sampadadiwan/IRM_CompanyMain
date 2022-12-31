@@ -73,10 +73,11 @@ class AccessRight < ApplicationRecord
   end
 
   def types
-    owner_class_name = owner.class.name
-    case owner_class_name
-    when "Deal", "DealInvestor"
-      AccessRight::TYPES - ["All Investors of Specific Category"] + ["Employee"]
+    case owner_type
+    when "Deal"
+      AccessRight::TYPES - ["All Stakeholder of Specific Category"]
+    when "DealInvestor"
+      AccessRight::TYPES - ["All Stakeholder of Specific Category"] + ["Employee"]
     when "Fund", "SecondarySale"
       AccessRight::TYPES + ["Employee"]
     else
