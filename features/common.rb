@@ -36,6 +36,8 @@ Given('there is another user {string} for another entity {string}') do |arg1, ar
   @another_user.save!
   puts "\n####Another User####\n"
   puts @another_user.to_json
+
+  @another_entity.reload
 end
 
 Then(/^the email has the profile in the body$/) do

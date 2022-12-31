@@ -58,6 +58,8 @@ Given('there is an existing investor entity {string} with employee {string}') do
   puts "\n####Employee Investor####\n"
   puts @employee_investor.to_json
   @holdings_investor = @employee_investor
+
+  @investor_entity.reload
 end
 
 
