@@ -8,4 +8,4 @@
     <%= render "/excercises/show", excercise: @excercise, current_user: nil %>
 </p>
 
-<p class="btn btn-primary"><%= link_to 'View Excercise', excercise_url(@excercise, subdomain: @excercise.entity.sub_domain) %></p>
+<p class="btn btn-outline-primary"><%= link_to 'View Excercise', excercise_url(@excercise, subdomain: @excercise.entity.sub_domain) %></p>

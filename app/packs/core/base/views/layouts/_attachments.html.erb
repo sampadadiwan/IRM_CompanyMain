@@ -6,12 +6,12 @@
 <ul class="attachment_list">
     <% attachments.each do |file| %>
       <li>
-        <%= link_to rails_blob_path(file, disposition: disposition), class: "btn btn-sm btn-primary", target: target do%>
+        <%= link_to rails_blob_path(file, disposition: disposition), class: "btn btn-outline-sm btn-outline-primary", target: target do%>
           <i class="fas fa-download"></i>
           <%= file.filename.to_s.capitalize %>
         <% end %>
         <% if policy(file.record).update? && allow_delete == "Yes" %>
-          <%= button_to delete_attachment_entities_path(attachment_id: file.id), class: "btn-sm btn-danger" do %>
+          <%= button_to delete_attachment_entities_path(attachment_id: file.id), class: "btn-outline-sm btn-outline-danger" do %>
             <i class="fas fa-trash-alt"></i>                
           <% end %>
         <% end %>

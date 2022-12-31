@@ -12,18 +12,18 @@
 
     <% if current_user.entity_id == @entity.id %>
       
-      <%= link_to "Scenarios", simple_simulator_aggregate_investments_path, {class: "btn btn-primary", data: {toggle: "tooltip", title: "Plan Scenarios"} } %>
+      <%= link_to "Scenarios", simple_simulator_aggregate_investments_path, {class: "btn btn-outline-primary", data: {toggle: "tooltip", title: "Plan Scenarios"} } %>
 
-      <%= link_to "Details View", investments_path, {class: "btn btn-primary"} %>
+      <%= link_to "Details View", investments_path, {class: "btn btn-outline-primary"} %>
 
 
       <%= link_to "New Investment", new_investment_path("investment[entity_id]": current_user.entity_id), 
-        {class: "btn btn-primary"} %>
+        {class: "btn btn-outline-primary"} %>
 
       
-      <div class="btn-group">
+      <div class="btn-outline-group">
         <div class="dropdown">
-          <button class="btn btn-primary dropdown-toggle" type="button" 
+          <button class="btn btn-outline-primary dropdown-toggle" type="button" 
                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             Actions
           </button>
@@ -54,7 +54,7 @@
       </div>
 
     <% else %>
-      <%= link_to "Details View", investor_investments_investments_path(entity_id: @entity.id), {class: "btn btn-primary"} %>
+      <%= link_to "Details View", investor_investments_investments_path(entity_id: @entity.id), {class: "btn btn-outline-primary"} %>
     <% end %>
 
     

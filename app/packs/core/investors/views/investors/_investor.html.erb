@@ -24,7 +24,7 @@
   <% end %>
 </td>  
 <td>
-  <%= link_to "Add Note", new_note_path("note[investor_id]": investor.id, "note[entity_id]": investor.entity_id) , {class: "btn btn-sm btn-success"}%>
-  <%= link_to "View Notes", notes_path(investor_id: investor.id) , {class: "btn btn-sm btn-success"}%>
+  <%= link_to "Add Note", new_note_path("note[investor_id]": investor.id, "note[entity_id]": investor.entity_id) , {class: "btn btn-outline-sm btn-outline-success"}%>
+  <%= link_to "View Notes", notes_path(investor_id: investor.id) , {class: "btn btn-outline-sm btn-outline-success"}%>
 </td>
 </tr>

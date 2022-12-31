@@ -3,8 +3,8 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Deals</h1>
   <span>
-    <%= link_to "New Deal", new_deal_path("deal[entity_id]": current_user.entity_id), {class: "btn btn-primary"}  %>
-    <%= link_to "View Archived Deals", deals_path(include_archived:true), {class: "btn btn-success"}  %>
+    <%= link_to "New Deal", new_deal_path("deal[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
+    <%= link_to "View Archived Deals", deals_path(include_archived:true), {class: "btn btn-outline-success"}  %>
     <%= render "investments/currency_form" %>
   </span>
 </div>

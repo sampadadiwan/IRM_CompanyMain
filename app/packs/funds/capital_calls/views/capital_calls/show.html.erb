@@ -4,14 +4,14 @@
 
   <div>
     <% if policy(@capital_call).update? %>
-      <%= link_to "Edit" , edit_capital_call_path(@capital_call), {class: "btn btn-primary" } %> 
-      <%= button_to "Delete" , @capital_call, method: :delete, class: "btn btn-danger", 
+      <%= link_to "Edit" , edit_capital_call_path(@capital_call), {class: "btn btn-outline-primary" } %> 
+      <%= button_to "Delete" , @capital_call, method: :delete, class: "btn btn-outline-danger", 
           form_class: "deleteButton", data: {action: "click->confirm#popup" , turbo:false} %>
     
     <% end %>
 
     <%= button_to "Approve" , approve_capital_call_path(@capital_call), method: :post, 
-        class: "btn btn-success", form_class: "deleteButton", 
+        class: "btn btn-outline-success", form_class: "deleteButton", 
         data: {action: "click->confirm#popup", turbo:false, method: :post, msg: "This will generate all the notifications to your clients"} if policy(@capital_call).approve? %>
   </div>
 

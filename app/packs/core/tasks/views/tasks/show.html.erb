@@ -89,8 +89,8 @@
 
   <div>
     <% if policy(@task).update? %>
-      <%= link_to "Edit" , edit_task_path(@task), {class: "btn btn-primary" } %> |
-      <%= button_to "Delete" , @task, method: :delete, class: "btn btn-danger" , form_class: "deleteButton" , data:
+      <%= link_to "Edit" , edit_task_path(@task), {class: "btn btn-outline-primary" } %> |
+      <%= button_to "Delete" , @task, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton" , data:
           {action: "click->confirm#delete" , turbo:false} %>
     <% end %>
   </div>

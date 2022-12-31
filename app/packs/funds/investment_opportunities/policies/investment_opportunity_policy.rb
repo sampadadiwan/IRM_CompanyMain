@@ -28,7 +28,7 @@ class InvestmentOpportunityPolicy < ApplicationPolicy
   end
 
   def new?
-    create?
+    user.enable_inv_opportunities && ["Investment Fund"].include?(user.entity_type)
   end
 
   def update?

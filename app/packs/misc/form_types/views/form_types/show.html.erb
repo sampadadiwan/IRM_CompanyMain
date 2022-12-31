@@ -36,8 +36,8 @@
 
 
   <div>
-    <%= link_to "Edit" , edit_form_type_path(@form_type), {class: "btn btn-primary" } %> |
-    <%= link_to "Back" , :back, {class: "btn btn-primary" } %> |
+    <%= link_to "Edit" , edit_form_type_path(@form_type), {class: "btn btn-outline-primary" } %> |
+    <%= link_to "Back" , :back, {class: "btn btn-outline-primary" } %> |
 
-    <%= button_to "Delete" , @form_type, method: :delete, class: "btn btn-danger" , form_class: "deleteButton" %>
+    <%= button_to "Delete" , @form_type, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton" %>
   </div>

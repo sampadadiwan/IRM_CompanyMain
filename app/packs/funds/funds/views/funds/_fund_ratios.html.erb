@@ -1,7 +1,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Fund Ratios</h1>
 
-    <%= button_to "Compute Ratios" , generate_calcs_fund_path(fund), method: :patch, class: "btn btn-success" , form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo: false, msg: "Computation will take a few mins, please be patient. Proceed?", method: :patch} if policy(fund).generate_calcs? %>
+    <%= button_to "Compute Ratios" , generate_calcs_fund_path(fund), method: :patch, class: "btn btn-outline-success" , form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo: false, msg: "Computation will take a few mins, please be patient. Proceed?", method: :patch} if policy(fund).generate_calcs? %>
   </div>
 
   <div class="table-responsive">

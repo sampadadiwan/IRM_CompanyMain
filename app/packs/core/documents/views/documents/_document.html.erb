@@ -37,11 +37,11 @@
   </td>
 
   <td>
-    <%= link_to "Show", document, class: "btn btn-primary" %>
+    <%= link_to "Show", document, class: "btn btn-outline-primary" %>
     <% if document.owner_type == "CapitalCommitment" && !document.locked %>
       <% document.owner.signature_link(current_user, document.id).each do |esign| %>
         <%= link_to "eSign", esign.link, 
-                class: "btn btn-success" if params[:signature_completed] != esign.document_id&.to_s %>
+                class: "btn btn-outline-success" if params[:signature_completed] != esign.document_id&.to_s %>
       <% end %>
     <% end %>
   </td>

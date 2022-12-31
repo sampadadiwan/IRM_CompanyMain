@@ -8,4 +8,4 @@
     <%= render "/capital_calls/show", capital_call: @capital_call, current_user: nil %>
 </p>
 
-<p class="btn btn-primary"><%= link_to 'View Call', capital_call_url(@capital_call, subdomain: @capital_call.entity.sub_domain) %></p>
+<p class="btn btn-outline-primary"><%= link_to 'View Call', capital_call_url(@capital_call, subdomain: @capital_call.entity.sub_domain) %></p>

@@ -39,7 +39,7 @@
       Valuation Reports
     </td>
     <td>
-      <%= link_to "Report", @valuation.report.url, class: "btn btn-success", target: "_blank" if @valuation.report.present? %>
+      <%= link_to "Report", @valuation.report.url, class: "btn btn-outline-success", target: "_blank" if @valuation.report.present? %>
     </td>
   </tr>
 
@@ -62,8 +62,8 @@
 <div>
   <% if policy(@valuation).update? %>
 
-    <%= link_to "Edit" , edit_valuation_path(@valuation), {class: "btn btn-primary" } %> |
-    <%= button_to "Delete" , @valuation, method: :delete, class: "btn btn-danger" , 
+    <%= link_to "Edit" , edit_valuation_path(@valuation), {class: "btn btn-outline-primary" } %> |
+    <%= button_to "Delete" , @valuation, method: :delete, class: "btn btn-outline-danger" , 
         form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
 
   <% end %>

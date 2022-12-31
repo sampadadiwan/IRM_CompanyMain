@@ -4,7 +4,7 @@
     <% if params[:template].present? || template %>
       <h1 class="h3 mb-0 text-gray-800">Deal Step Templates</h1>
       <%= link_to "New Step Template", new_deal_activity_path("deal_activity[deal_id]": params[:deal_id], 
-                      back_to: params[:back_to]), {class: "btn btn-primary"} if params[:deal_id] %>
+                      back_to: params[:back_to]), {class: "btn btn-outline-primary"} if params[:deal_id] %>
 
     <% else %>
       <h1 class="h3 mb-0 text-gray-800">Deal Steps</h1>

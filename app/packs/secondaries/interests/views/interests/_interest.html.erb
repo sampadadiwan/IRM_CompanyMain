@@ -43,9 +43,9 @@
   </td>
   
   <td>
-    <%= link_to "Show" , interest , {class: "btn btn-primary" }%>
+    <%= link_to "Show" , interest , {class: "btn btn-outline-primary" }%>
     <% label = interest.short_listed? ? "Remove Shortlist" : "Shortlist" %>
-    <%= button_to label , short_list_interest_path(interest), method: :patch, class: "btn btn-success" , 
+    <%= button_to label , short_list_interest_path(interest), method: :patch, class: "btn btn-outline-success" , 
       form_class: "deleteButton" if policy(interest).short_list? %>
 
   </td>

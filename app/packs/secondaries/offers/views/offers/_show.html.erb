@@ -183,7 +183,7 @@
           Pan Card
         </td>
         <td>
-          <%= link_to "Download Pan Card", @offer.pan_card_url, target: "_blank", class: "btn btn-success" if @offer.pan_card.present? %>
+          <%= link_to "Download Pan Card", @offer.pan_card_url, target: "_blank", class: "btn btn-outline-success" if @offer.pan_card.present? %>
           <br>
           <%= render "investor_kycs/pan_verification", model: @offer if current_user && !@offer.secondary_sale.disable_pan_kyc %>
         </td>
@@ -265,7 +265,7 @@
               SPA
           </td>
           <td>
-              <%= link_to "Download SPA", @offer.spa.url(expires_in: 60*60*24*7), target: "_blank", class: "btn btn-sm btn-success" if @offer.spa %>
+              <%= link_to "Download SPA", @offer.spa.url(expires_in: 60*60*24*7), target: "_blank", class: "btn btn-outline-sm btn-outline-success" if @offer.spa %>
               <span><%= "(Link expires in 7 days)" unless current_user %></span>              
           </td>
           </tr>

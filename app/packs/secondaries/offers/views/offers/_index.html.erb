@@ -3,7 +3,7 @@
     <h1 class="h3 mb-0 text-gray-800">Offers</h1>
     <span>
         <%= link_to "View All Offers", offers_secondary_sale_path(@secondary_sale), 
-                                  class: "btn btn-primary" if @secondary_sale %>
+                                  class: "btn btn-outline-primary" if @secondary_sale %>
 
 
         <%= link_to "Upload Offers", 
@@ -11,14 +11,14 @@
                 "import_upload[owner_type]": "Entity", 
                 "import_upload[import_type]": "Offer", 
                 "sample_upload": "OFFERS_SAMPLE"), 
-                { class: "btn btn-primary"} if @secondary_sale && policy(@secondary_sale).update? %> 
+                { class: "btn btn-outline-primary"} if @secondary_sale && policy(@secondary_sale).update? %> 
 
         <%= link_to "Download All", offers_secondary_sale_path(@secondary_sale, format: "xlsx"), 
-                                  class: "btn btn-success" if @secondary_sale %>
+                                  class: "btn btn-outline-success" if @secondary_sale %>
 
 
         <%= button_to "Approve All Pending", approve_offers_secondary_sale_path(@secondary_sale), 
-                                  method: :patch, class: "btn btn-success" if @secondary_sale && policy(@secondary_sale).approve_offers? %>
+                                  method: :patch, class: "btn btn-outline-success" if @secondary_sale && policy(@secondary_sale).approve_offers? %>
 
     </span>
 </div>

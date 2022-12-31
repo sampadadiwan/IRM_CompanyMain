@@ -1,7 +1,7 @@
 <tr id="<%=dom_id(deal_investor)%>">
     <td class="sticky-col first-col">        
         <div class="dropdown">
-            <span type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span type="button" class="btn btn-outline-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <%= deal_investor.investor_name %>      
             </span>
             <div class="dropdown-menu">
@@ -44,7 +44,7 @@
             <td class="deal_activity_cell">
                 
                 <div id="<%=dom_id(activity)%>" class="dropdown">
-                    <span class="btn btn-sm dropdown-toggle <%=activity_color(activity)%>" 
+                    <span class="btn btn-outline-sm dropdown-toggle <%=activity_color(activity)%>" 
                         id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <%= activity.completed %>
                     </span>

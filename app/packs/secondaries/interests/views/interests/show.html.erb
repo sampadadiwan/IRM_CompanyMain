@@ -12,23 +12,23 @@
 
   <div>
     <% if policy(@interest).update? %>
-      <%= link_to "Edit" , edit_interest_path(@interest), {class: "btn btn-primary" } %> 
-      <%= button_to "Delete" , @interest, method: :delete, class: "btn btn-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+      <%= link_to "Edit" , edit_interest_path(@interest), {class: "btn btn-outline-primary" } %> 
+      <%= button_to "Delete" , @interest, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
     <% end %>
 
     <% popupMsg = "This will mark your acceptance of the final price, allocated quantity and terms of the sale. No more modifications will be allowed from here on. Please ensure all documents have been uploaded before proceeding." %>
 
 
     <%= button_to "Accept SPA" , accept_spa_interest_path(@interest), 
-        method: :patch, class: "btn btn-success" , 
+        method: :patch, class: "btn btn-outline-success" , 
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch, turbo: false, msg: "I confirm that I accept all the SPAs with respect to the matched offer(s)."} if policy(@interest).accept_spa? %>
 
     <%= link_to "Matched Offers", matched_offers_interest_path(@interest), 
-        {class: "btn btn-primary" } if current_user && policy(@interest).matched_offers? %> 
+        {class: "btn btn-outline-primary" } if current_user && policy(@interest).matched_offers? %> 
 
     <%= link_to "Potential Matches", 
         search_offers_path(query: @interest.custom_matching_vals, secondary_sale_id: @interest.secondary_sale_id, finalize_allocation: true), 
-        {class: "btn btn-primary" } if current_user && @interest.entity_id == current_user.entity_id %> 
+        {class: "btn btn-outline-primary" } if current_user && @interest.entity_id == current_user.entity_id %> 
   </div>
 
   <%= render "interests/interest_details", interest: @interest %>

@@ -97,7 +97,7 @@
       <div class="form-group col-md-1">
         <label>&nbsp;</label>
         <span class="">
-          <button class="btn-sm btn-danger rmbtn delete-form-row"  data-toggle="tooltip" title="Delete Row"
+          <button class="btn-outline-sm btn-outline-danger rmbtn delete-form-row"  data-toggle="tooltip" title="Delete Row"
                   data-action="click->newinvestment#rmInvestmentRow">
                   <i class="fas fa-minus-circle"></i>              
                   
@@ -111,7 +111,7 @@
   
   <div class="text-right">
     <small class="text-muted"> 
-      <button class="btn-sm btn-primary" id="addInvestment" data-action="click->newinvestment#addInvestmentRow">
+      <button class="btn-outline-sm btn-outline-primary" id="addInvestment" data-action="click->newinvestment#addInvestmentRow">
         <i class="fas fa-plus-circle"></i>        
         Add
       </button>
@@ -124,7 +124,7 @@
   </div>
 
   <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-primary", data: {action: "click->newinvestment#checkRequiredFilled"}} %>
+    <%= form.submit "Save", {class: "btn btn-outline-primary", data: {action: "click->newinvestment#checkRequiredFilled"}} %>
   </div>
 <% end %>
 

@@ -12,7 +12,7 @@
                       "access_right[owner_type]": access_right.owner_type,
                       "access_right[entity_id]": access_right.entity_id), 
                       { data: { turbo_frame: 'new_access_right' },
-                      method: :get, class: "btn btn-primary" } if access_right %> 
+                      method: :get, class: "btn btn-outline-primary" } if access_right %> 
 
     <%= render "/funds/search_bar", model_name: "access_right" if access_right && access_right.owner_type == "Fund"%>
   </span>

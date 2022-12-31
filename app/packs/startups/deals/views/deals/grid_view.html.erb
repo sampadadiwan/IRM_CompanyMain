@@ -20,30 +20,30 @@
 
             
             <% if params[:all].blank? %>
-                <%= link_to "All #{investor_label}s", deal_path(id: @deal.id, grid_view: true, all:true), {class: "btn btn-primary"}  %>
+                <%= link_to "All #{investor_label}s", deal_path(id: @deal.id, grid_view: true, all:true), {class: "btn btn-outline-primary"}  %>
             <% else %>
-                <%= link_to "Not Declined", deal_path(id: @deal.id, grid_view: true), {class: "btn btn-primary"}  %>
+                <%= link_to "Not Declined", deal_path(id: @deal.id, grid_view: true), {class: "btn btn-outline-primary"}  %>
             <% end %>
 
             <% if current_user.entity_id == @deal.entity_id %>
-                <%= link_to "Add #{investor_label}", new_deal_investor_path("deal_investor[deal_id]": @deal.id, "deal_investor[entity_id]": current_user.entity_id) , {class: "btn btn-success"}%>
-                <%= link_to "All Nudges", nudges_path , {class: "btn btn-primary"}%>
+                <%= link_to "Add #{investor_label}", new_deal_investor_path("deal_investor[deal_id]": @deal.id, "deal_investor[entity_id]": current_user.entity_id) , {class: "btn btn-outline-success"}%>
+                <%= link_to "All Nudges", nudges_path , {class: "btn btn-outline-primary"}%>
             
 
                 <% if !@deal.start_date.present?  %>
                     <%= button_to "Start Deal", start_deal_deal_path(@deal), 
-                    {class: "btn btn-success", form_class: "deleteButton"} %> 
+                    {class: "btn btn-outline-success", form_class: "deleteButton"} %> 
                 <% end %>
 
-                <a class="btn btn-success", hidden="hidden", data-action="click->nudge#newDealMsg">Send Message</a>
+                <a class="btn btn-outline-success", hidden="hidden", data-action="click->nudge#newDealMsg">Send Message</a>
                 <%= link_to new_nudge_path(), id: "new_nudge", hidden: true do %>
                     <span>Loading...</span>
                 <% end %>
-                <%= link_to deal_path(id: @deal.id, grid_view: true, all:true, format: :xlsx), {class: "btn btn-success"} do %>
+                <%= link_to deal_path(id: @deal.id, grid_view: true, all:true, format: :xlsx), {class: "btn btn-outline-success"} do %>
                     <i class="fa-lg fa-regular fa-file-excel"></i> Download
                 <% end %>
 
-                <%= link_to deal_path(id: @deal.id, chart: true), {class: "btn btn-success"} do %>
+                <%= link_to deal_path(id: @deal.id, chart: true), {class: "btn btn-outline-success"} do %>
                     <i class="fas fa-chart-line"></i> Charts
                 <% end %>
 

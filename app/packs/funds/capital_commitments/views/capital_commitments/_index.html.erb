@@ -5,16 +5,16 @@
     <% if toolbar == "Yes" %>
     <span>
 
-        <%= link_to "New Capital Commitment", new_capital_commitment_path("capital_commitment[fund_id]": params[:fund_id]),  {class: "btn btn-primary" } if params[:fund_id] %>
+        <%= link_to "New Capital Commitment", new_capital_commitment_path("capital_commitment[fund_id]": params[:fund_id]),  {class: "btn btn-outline-primary" } if params[:fund_id] %>
 
-        <%= link_to "Download", capital_commitments_path(fund_id: params[:fund_id], format: "xlsx", all: true),  {class: "btn btn-primary" } if params[:fund_id] %>
+        <%= link_to "Download", capital_commitments_path(fund_id: params[:fund_id], format: "xlsx", all: true),  {class: "btn btn-outline-primary" } if params[:fund_id] %>
 
         <%= link_to "Upload", 
             new_import_upload_path("import_upload[owner_id]": params[:fund_id], 
             "import_upload[owner_type]": "Fund", 
             "import_upload[import_type]": "CapitalCommittment", 
             "sample_upload": "CAPITAL_COMMITMENT_SAMPLE"), 
-            { class: "btn btn-primary"}  %> 
+            { class: "btn btn-outline-primary"}  %> 
     
         <%= render "/funds/search_bar", model_name: "capital_commitment" %>
 

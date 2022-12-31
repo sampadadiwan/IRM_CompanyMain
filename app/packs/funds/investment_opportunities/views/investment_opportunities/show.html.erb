@@ -122,16 +122,16 @@
   <div>
     <% if policy(@investment_opportunity).update? %>
 
-    <%= link_to "Edit" , edit_investment_opportunity_path(@investment_opportunity), {class: "btn btn-primary" } %> 
-    <%= button_to "Delete" , @investment_opportunity, method: :delete, class: "btn btn-danger" ,
+    <%= link_to "Edit" , edit_investment_opportunity_path(@investment_opportunity), {class: "btn btn-outline-primary" } %> 
+    <%= button_to "Delete" , @investment_opportunity, method: :delete, class: "btn btn-outline-danger" ,
           form_class: "deleteButton", data: {action: "click->confirm#popup" , turbo:false} %>
 
 
     &nbsp;&nbsp;&nbsp;
 
-    <div class="btn-group">
+    <div class="btn-outline-group">
       <div class="dropdown">
-        <button class="btn btn-primary dropdown-toggle" type="button" 
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Allocation
         </button>
@@ -162,9 +162,9 @@
 
     
 
-    <div class="btn-group">
+    <div class="btn-outline-group">
       <div class="dropdown">
-        <button class="btn btn-success dropdown-toggle" type="button" 
+        <button class="btn btn-outline-success dropdown-toggle" type="button" 
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Notifications
         </button>

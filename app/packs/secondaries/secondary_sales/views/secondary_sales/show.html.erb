@@ -6,49 +6,49 @@
 
   <div>
     <% if current_user.entity_id == @secondary_sale.entity_id %>
-      <button class="btn btn-primary" type="button" data-toggle="collapse" data-target=".multi-collapse"    aria-expanded="false" aria-controls="multi-collapse">Details</button> 
+      <button class="btn btn-outline-primary" type="button" data-toggle="collapse" data-target=".multi-collapse"    aria-expanded="false" aria-controls="multi-collapse">Details</button> 
     <% end %>
     
     <% if policy(@secondary_sale).update? %>
-      <%= link_to "Edit" , edit_secondary_sale_path(@secondary_sale), {class: "btn btn-primary" } %> 
+      <%= link_to "Edit" , edit_secondary_sale_path(@secondary_sale), {class: "btn btn-outline-primary" } %> 
 
       <% label = @secondary_sale.visible_externally ? "Hide Externally" : "Make Visible Externally" %>
       <% popupMsg = @secondary_sale.visible_externally ? "This will hide the Sale from external investment advisors" : "This will allow external investment advisors to view this sale and place interests for buying." %>
 
       <%= button_to label , make_visible_secondary_sale_path(@secondary_sale), method: :patch, 
-          class: "btn btn-success" , 
+          class: "btn btn-outline-success" , 
           data: {action: "click->confirm#popup", turbo:false, msg: popupMsg, title: label, method: "patch"}  %> 
       
       &nbsp;&nbsp;&nbsp;
 
-      <%= button_to "Delete" , @secondary_sale, method: :delete, class: "btn btn-danger" , 
+      <%= button_to "Delete" , @secondary_sale, method: :delete, class: "btn btn-outline-danger" , 
           form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
       
     <% end %>
 
     <%= link_to "Finalize" , spa_upload_secondary_sale_path(@secondary_sale), 
-        class: "btn btn-danger" if policy(@secondary_sale).finalize_allocation? %>
+        class: "btn btn-outline-danger" if policy(@secondary_sale).finalize_allocation? %>
 
     &nbsp;&nbsp;&nbsp;
     
     <%= button_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), method: :patch, class: 
-          "btn btn-success", 
+          "btn btn-outline-success", 
           data: { action: "click->confirm#popup", turbo:false, method: "patch",
                   msg: "This will kick off the allocation process, which will take a few mins."}  if policy(@secondary_sale).allocate? %> 
 
     
 
     <%= button_to "Generate SPA" , generate_spa_secondary_sale_path(@secondary_sale), method: :patch, class: 
-    "btn btn-success", 
+    "btn btn-outline-success", 
     data: { action: "click->confirm#popup", turbo:false, method: "patch",
             msg: "This will kick off the SPA generation process, which will take a few mins."} if policy(@secondary_sale).generate_spa?  %> 
                               
 
 
     <%  if policy(@secondary_sale).view_allocations? %>
-    <div class="btn-group">
+    <div class="btn-outline-group">
       <div class="dropdown">
-        <button class="btn btn-primary dropdown-toggle" type="button" 
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           View Allocations
         </button>
@@ -79,9 +79,9 @@
       </div>
     </div>
 
-    <div class="btn-group">
+    <div class="btn-outline-group">
       <div class="dropdown">
-        <button class="btn btn-primary dropdown-toggle" type="button" 
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Notifications
         </button>

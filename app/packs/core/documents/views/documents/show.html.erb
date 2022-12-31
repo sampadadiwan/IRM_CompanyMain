@@ -195,9 +195,9 @@
 
 <% if current_user && policy(@document).update? %>
    <div style="display: inline-block;">      
-      <%= link_to "Edit", edit_document_path(@document), {class: "btn btn-primary"} %> 
-      <%= link_to "All Documents", documents_path, {class: "btn btn-success"} %> 
-      <%= button_to "Delete", @document, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@document).destroy? %> 
+      <%= link_to "Edit", edit_document_path(@document), {class: "btn btn-outline-primary"} %> 
+      <%= link_to "All Documents", documents_path, {class: "btn btn-outline-success"} %> 
+      <%= button_to "Delete", @document, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@document).destroy? %> 
    </div>
 <% end %>
 

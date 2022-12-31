@@ -8,9 +8,9 @@
         
         <% if policy(@secondary_sale).update? %>
 
-        <div class="btn-group">
+        <div class="btn-outline-group">
             <div class="dropdown">
-              <button class="btn btn-primary dropdown-toggle" type="button" 
+              <button class="btn btn-outline-primary dropdown-toggle" type="button" 
                       data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Offers
               </button>
@@ -30,8 +30,8 @@
         </div>
             |
 
-            <%= link_to "Un-Matched", finalize_offer_allocation_secondary_sale_path(@secondary_sale, matched: false), {class: "btn btn-warning" }  %> 
-            <%= link_to "Matched", finalize_offer_allocation_secondary_sale_path(@secondary_sale, matched: true), {class: "btn btn-success" }  %> 
+            <%= link_to "Un-Matched", finalize_offer_allocation_secondary_sale_path(@secondary_sale, matched: false), {class: "btn btn-outline-warning" }  %> 
+            <%= link_to "Matched", finalize_offer_allocation_secondary_sale_path(@secondary_sale, matched: true), {class: "btn btn-outline-success" }  %> 
                     
             |
 
@@ -39,7 +39,7 @@
             <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
 
             <%= link_to download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
-                                                    {class: "btn btn-success #{download_disabled}"  } do %> 
+                                                    {class: "btn btn-outline-success #{download_disabled}"  } do %> 
                     <i class="fa-lg fa-regular fa-file-excel"></i> Download
             <% end %>
         
@@ -47,11 +47,11 @@
       
             <%= link_to "Interest Allocations",
             finalize_interest_allocation_secondary_sale_path(@secondary_sale), 
-              {class: "btn btn-success" } if policy(@secondary_sale).view_allocations? %> 
+              {class: "btn btn-outline-success" } if policy(@secondary_sale).view_allocations? %> 
               
             <% label = @secondary_sale.lock_allocations ? 'Unlock Allocations' : 'Lock Allocations' %>
             <%= link_to label , lock_allocations_secondary_sale_path(@secondary_sale),    
-                        class: "btn btn-danger" if policy(@secondary_sale).lock_allocations? %> 
+                        class: "btn btn-outline-danger" if policy(@secondary_sale).lock_allocations? %> 
         
         <% end %>
         <form class="d-sm-inline-block form-inline navbar-search" action="<%= search_offers_path %>">

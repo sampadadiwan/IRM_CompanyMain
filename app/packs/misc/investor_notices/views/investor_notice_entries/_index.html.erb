@@ -1,7 +1,7 @@
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Investor Notice Entries</h1>
-    <%= link_to "New Investor Notice Entry" , new_investor_notice_entry_path("investor_notice_entry[investor_notice_id]": @investor_notice.id), {class: "btn btn-primary" } if @investor_notice %>
+    <%= link_to "New Investor Notice Entry" , new_investor_notice_entry_path("investor_notice_entry[investor_notice_id]": @investor_notice.id), {class: "btn btn-outline-primary" } if @investor_notice %>
   </div>
 
   <div class="table-responsive" data-controller="datatable">

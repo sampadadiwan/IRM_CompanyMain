@@ -49,10 +49,10 @@
 
 
 <div style=" display: inline-block;">
-          <%= link_to "Edit" , edit_investor_path(@investor), {class: "btn btn-primary" } %> |
-          <%= link_to "View Notes" , notes_path(investor_id: @investor.id), class: "btn btn-success" %> |
-          <%= link_to "Add Note" , new_note_path("note[investor_id]": @investor.id), class: "btn btn-success" %> |
-          <%= button_to "Delete" , @investor, method: :delete, class: "btn btn-danger" ,
+          <%= link_to "Edit" , edit_investor_path(@investor), {class: "btn btn-outline-primary" } %> |
+          <%= link_to "View Notes" , notes_path(investor_id: @investor.id), class: "btn btn-outline-success" %> |
+          <%= link_to "Add Note" , new_note_path("note[investor_id]": @investor.id), class: "btn btn-outline-success" %> |
+          <%= button_to "Delete" , @investor, method: :delete, class: "btn btn-outline-danger" ,
               form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo: false} %>
 </div>
 

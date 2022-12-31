@@ -6,24 +6,24 @@
 
     <% if current_user.entity_id == entity.id %>
     
-      <%= link_to "Aggregated View", aggregate_investments_path, {class: "btn btn-primary"} %>
+      <%= link_to "Aggregated View", aggregate_investments_path, {class: "btn btn-outline-primary"} %>
 
       <%= link_to "New Investment", new_investment_path("investment[entity_id]": current_user.entity_id,
                                                       "investment[investment_instrument]": title), 
-        {class: "btn btn-primary"} %>
+        {class: "btn btn-outline-primary"} %>
 
-      <%= link_to "Funding Rounds", funding_rounds_path, {class: "btn btn-primary"} %>
-      <%= link_to investments_path(format: :xlsx), {class: "btn btn-success"} do %>
+      <%= link_to "Funding Rounds", funding_rounds_path, {class: "btn btn-outline-primary"} %>
+      <%= link_to investments_path(format: :xlsx), {class: "btn btn-outline-success"} do %>
         <i class="fa-lg fa-regular fa-file-excel"></i> Download
       <% end %>
 
-      <%= link_to investments_path(charts: true), {class: "btn btn-success"} do %>
+      <%= link_to investments_path(charts: true), {class: "btn btn-outline-success"} do %>
         <i class="fas fa-chart-line"></i> Graphs
       <% end %>
 
     <% else %>
       <%= link_to "Aggregate View", investor_investments_aggregate_investments_path(entity_id: entity.id), 
-                  {class: "btn btn-primary"} %>
+                  {class: "btn btn-outline-primary"} %>
     <% end %>
 
   <% end %>

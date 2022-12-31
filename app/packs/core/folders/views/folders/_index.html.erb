@@ -1,9 +1,9 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Folders</h1>
     <span>
-      <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id), {class: "btn btn-primary"}  %>
-      <%= link_to "All Folders", folders_path(all:true), {class: "btn btn-success"} unless params[:all].present? %>
-      <%= link_to "Hide System Folders", folders_path(), {class: "btn btn-warning"} if params[:all].present?  %>
+      <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
+      <%= link_to "All Folders", folders_path(all:true), {class: "btn btn-outline-success"} unless params[:all].present? %>
+      <%= link_to "Hide System Folders", folders_path(), {class: "btn btn-outline-warning"} if params[:all].present?  %>
     </span>
 </div>
   

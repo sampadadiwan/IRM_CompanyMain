@@ -11,21 +11,21 @@
                                         owner_id: owner&.id, owner_type: owner&.class&.name, 
                                         completed: :all), 
                                         data: { turbo_frame: 'task_list' },
-                                        class: "btn btn-sm btn-success float-right" if for_entity || owner%>
+                                        class: "btn btn-outline-sm btn-outline-success float-right" if for_entity || owner%>
 
         <%= link_to "Incomplete" , tasks_path(for_entity_id: show_for&.id, 
                                         entity_id: params[:entity_id],
                                         assigned_to_id: params[:assigned_to_id],
                                         owner_id: owner&.id, owner_type: owner&.class&.name), 
                                         data: { turbo_frame: 'task_list' },
-                                        class: "btn btn-sm btn-warning float-right" if for_entity || owner %>
+                                        class: "btn btn-outline-sm btn-outline-warning float-right" if for_entity || owner %>
 
         <%= link_to "New Task" , new_task_path("task[for_entity_id]": for_entity.id, 
                                         "task[entity_id]": params[:entity_id],
                                         "task[owner_id]": owner&.id,
                                         "task[owner_type]": owner&.class&.name), 
                                         data: { turbo_frame: 'new_task' },
-                                        class: "btn btn-sm btn-primary float-right" if for_entity || owner %>
+                                        class: "btn btn-outline-sm btn-outline-primary float-right" if for_entity || owner %>
     </h6>
 
     <% end %>         

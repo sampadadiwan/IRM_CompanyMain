@@ -37,8 +37,8 @@
     </div>
     <div class="divTableCell"><%= interest.comments %></div>
     <div class="divTableCell">
-        <%= link_to "Show", interest, class: "btn btn-primary", target: '_top' %>
-        <%= link_to "Edit", allocation_form_interest_path(interest), data: { turbo_frame: "tf_#{dom_id(interest)}" }, class: "btn btn-success" unless interest.secondary_sale.finalized %>
+        <%= link_to "Show", interest, class: "btn btn-outline-primary", target: '_top' %>
+        <%= link_to "Edit", allocation_form_interest_path(interest), data: { turbo_frame: "tf_#{dom_id(interest)}" }, class: "btn btn-outline-success" unless interest.secondary_sale.finalized %>
     </div>
 
 <% end %>

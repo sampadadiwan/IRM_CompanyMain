@@ -5,4 +5,4 @@
 
 <p>This is in regard to the EOI in <%= investment_opportunity.name %>. For the EOI to be confirmed, you are required to sign the <%= @esign.document ? @esign.document.name : 'required documents' %>. Please use the link below to sign the document after reading it.</p>
 
-<p class="btn btn-primary"><%= link_to  "View EOI",  [eoi, subdomain: @esign.entity.sub_domain] %></p>
+<p class="btn btn-outline-primary"><%= link_to  "View EOI",  [eoi, subdomain: @esign.entity.sub_domain] %></p>

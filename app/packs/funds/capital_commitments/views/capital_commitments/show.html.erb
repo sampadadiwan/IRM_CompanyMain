@@ -96,26 +96,26 @@
 <div>
 
   <% if current_user.entity_id == @capital_commitment.entity_id %>
-      <button class="btn btn-primary" type="button" data-toggle="collapse" data-target=".multi-collapse"    aria-expanded="false" aria-controls="multi-collapse">Details</button> 
+      <button class="btn btn-outline-primary" type="button" data-toggle="collapse" data-target=".multi-collapse"    aria-expanded="false" aria-controls="multi-collapse">Details</button> 
   <% end %>
 
   <% if policy(@capital_commitment).update? %>
-    <%= link_to "Edit" , edit_capital_commitment_path(@capital_commitment), {class: "btn btn-primary" } %>
-    <%= button_to "Delete" , @capital_commitment, method: :delete, class: "btn btn-danger" ,
+    <%= link_to "Edit" , edit_capital_commitment_path(@capital_commitment), {class: "btn btn-outline-primary" } %>
+    <%= button_to "Delete" , @capital_commitment, method: :delete, class: "btn btn-outline-danger" ,
             form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
 
-    <%= link_to "LP Account Statement" , report_capital_commitment_path(@capital_commitment, report: "lp_statement"), {class: "btn btn-primary" } %>
+    <%= link_to "LP Account Statement" , report_capital_commitment_path(@capital_commitment, report: "lp_statement"), {class: "btn btn-outline-primary" } %>
                 
   <% end %>
   <%= button_to "Generate Documentation", 
         generate_documentation_capital_commitment_path(@capital_commitment), 
-        method: :patch, class: "btn btn-success" , 
+        method: :patch, class: "btn btn-outline-success" , 
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
         msg: "Generate documentation for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"} if policy(@capital_commitment).generate_documentation? %>
 
   <%= button_to "Generate Esign Link", 
         generate_esign_link_capital_commitment_path(@capital_commitment), 
-        method: :patch, class: "btn btn-success" , 
+        method: :patch, class: "btn btn-outline-success" , 
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
         msg: "Generate esign link for this capital commitment. This will trigger the eSign process. Proceed?"} if policy(@capital_commitment).generate_esign_link? %>
 

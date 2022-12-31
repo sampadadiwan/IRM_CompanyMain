@@ -50,9 +50,9 @@
                     <td><%= holding.option_pool.excercise_price %></td>
                     <td><%= money_to_currency holding.value, params %></td>
                     <td>
-                        <%= link_to "Details" , holding , {class: "btn btn-primary" }%>
-                        <%= link_to "Excercise" , new_excercise_path("excercise[holding_id]": holding.id, "excercise[entity_id]": holding.entity_id), {class: "btn btn-success" } if policy(holding).excercise? %> 
-                        <%= button_to "Acknowledge" , emp_ack_holding_path(holding), method: :patch, class: "btn btn-success" , form_class: "deleteButton", data: {turbo:false} if policy(holding).emp_ack? && !holding.emp_ack  %>
+                        <%= link_to "Details" , holding , {class: "btn btn-outline-primary" }%>
+                        <%= link_to "Excercise" , new_excercise_path("excercise[holding_id]": holding.id, "excercise[entity_id]": holding.entity_id), {class: "btn btn-outline-success" } if policy(holding).excercise? %> 
+                        <%= button_to "Acknowledge" , emp_ack_holding_path(holding), method: :patch, class: "btn btn-outline-success" , form_class: "deleteButton", data: {turbo:false} if policy(holding).emp_ack? && !holding.emp_ack  %>
                     </td>
                 </tr>
             <% end %>

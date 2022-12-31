@@ -96,7 +96,7 @@
             Grant Letter Template
           </td>
           <td>
-            <%= link_to "Download Grant Letter Template", @option_pool.grant_letter.url, class: "btn btn-success", target: "_blank" if @option_pool.grant_letter.present? %>
+            <%= link_to "Download Grant Letter Template", @option_pool.grant_letter.url, class: "btn btn-outline-success", target: "_blank" if @option_pool.grant_letter.present? %>
           </td>
         </tr>
 
@@ -268,18 +268,18 @@
   <div class="actions">
     
     <% if current_user.entity_id == @option_pool.entity_id %>
-      <button class="btn btn-primary" type="button" data-toggle="collapse" data-target=".multi-collapse"    aria-expanded="false" aria-controls="multi-collapse">Details</button> 
+      <button class="btn btn-outline-primary" type="button" data-toggle="collapse" data-target=".multi-collapse"    aria-expanded="false" aria-controls="multi-collapse">Details</button> 
     <% end %>
     
     <% if policy(@option_pool).update? %>
 
-      <%= link_to "Edit" , edit_option_pool_path(@option_pool), {class: "btn btn-primary" } %> 
-      <%= button_to "Delete" , @option_pool, method: :delete, class: "btn btn-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %> 
+      <%= link_to "Edit" , edit_option_pool_path(@option_pool), {class: "btn btn-outline-primary" } %> 
+      <%= button_to "Delete" , @option_pool, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %> 
 
     <% end %>
 
     <%= button_to "Approve" , approve_option_pool_path(@option_pool), method: :patch, 
-        class: "btn btn-success" , form_class: "deleteButton", 
+        class: "btn btn-outline-success" , form_class: "deleteButton", 
         data: {action: "click->confirm#popup", turbo:false, method: "patch",
         msg: "Please verify the details of this option pool. Once approved, the option pool cannot be modified."} if policy(@option_pool).approve?  %> 
 

@@ -5,9 +5,9 @@
 
     <span>
         <%= link_to "Download", payments_secondary_sale_path(@secondary_sale, format: "xlsx"), 
-            class: "btn btn-primary" %>
+            class: "btn btn-outline-primary" %>
         <%= link_to "Verified Offers", payments_secondary_sale_path(@secondary_sale, verified: true), 
-            class: "btn btn-primary" %>
+            class: "btn btn-outline-primary" %>
     </span>
 </div>
 
@@ -118,7 +118,7 @@
                         </td>
 
                         <td>
-                            <%= link_to "Show", offer, class: "btn btn-sm btn-primary"  %>
+                            <%= link_to "Show", offer, class: "btn btn-outline-sm btn-outline-primary"  %>
                         </td>
                     </tr>
 
@@ -165,7 +165,7 @@
                         </td>
                         <td></td>
                         <td>
-                            <%= link_to "Show", fee[:fee], class: "btn btn-sm btn-primary"  %> 
+                            <%= link_to "Show", fee[:fee], class: "btn btn-outline-sm btn-outline-primary"  %> 
                         </td>
                     </tr>
                 <% end %>

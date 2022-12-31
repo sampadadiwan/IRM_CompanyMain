@@ -11,7 +11,7 @@
         <span>
             <% if current_user.entity_type == "Company" %>
             
-                <%= link_to "New Holding" , investor_path(investor, tab: "investors-tab" ), {class: "btn btn-primary" } if investor %>
+                <%= link_to "New Holding" , investor_path(investor, tab: "investors-tab" ), {class: "btn btn-outline-primary" } if investor %>
 
                 
                 <%= link_to "Upload Holdings", 
@@ -19,19 +19,19 @@
                     "import_upload[owner_type]": "Entity", 
                     "import_upload[import_type]": "Holding", 
                     "sample_upload": "HOLDINGS_SAMPLE"), 
-                    { class: "btn btn-primary"} if investor && import_upload %> 
+                    { class: "btn btn-outline-primary"} if investor && import_upload %> 
 
 
                 <% if @option_pool && policy(@option_pool).approve_all_holdings? %>
                     <%= button_to "Approve All Holdings" , 
                         approve_all_holdings_holdings_path(option_pool_id: @option_pool.id), 
-                        method: :post, class: "btn btn-success" , form_class: "deleteButton", 
+                        method: :post, class: "btn btn-outline-success" , form_class: "deleteButton", 
                         data: {turbo:false}  %>
 
                 <% elsif policy(current_user.entity).approve_all_holdings? %>
                     <%= button_to "Approve All Holdings" , 
                         approve_all_holdings_holdings_path(), 
-                        method: :post, class: "btn btn-success" , form_class: "deleteButton", 
+                        method: :post, class: "btn btn-outline-success" , form_class: "deleteButton", 
                         data: {turbo:false}  %>
 
                 <% end %>
@@ -40,9 +40,9 @@
 
             <% if @option_pool %>
                 <%= link_to "Download Excel", holdings_path(format: "xlsx", option_pool_id: @option_pool.id),
-                    class: "btn btn-success" %>
+                    class: "btn btn-outline-success" %>
             <% else %>
-                <%= link_to "Download Excel", holdings_path(format: "xlsx"), class: "btn btn-success" %>
+                <%= link_to "Download Excel", holdings_path(format: "xlsx"), class: "btn btn-outline-success" %>
             <% end %>
         </span>
     </span>

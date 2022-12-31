@@ -19,7 +19,7 @@
     <%= display_boolean capital_distribution_payment.completed %>
   </td>
   <td>
-    <%= link_to "Show" , capital_distribution_payment , {class: "btn btn-primary" }%>
-    <%= link_to "Edit" , edit_capital_distribution_payment_path(capital_distribution_payment) , {class: "btn btn-success" } if policy(capital_distribution_payment).update? %>
+    <%= link_to "Show" , capital_distribution_payment , {class: "btn btn-outline-primary" }%>
+    <%= link_to "Edit" , edit_capital_distribution_payment_path(capital_distribution_payment) , {class: "btn btn-outline-success" } if policy(capital_distribution_payment).update? %>
   </td>
 </tr>

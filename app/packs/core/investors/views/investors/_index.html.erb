@@ -7,14 +7,14 @@
 
     <span>
     <%= link_to "New Stakeholder" , new_investor_path("investor[entity_id]": current_user.entity_id),
-      {class: "btn btn-primary" } %>
+      {class: "btn btn-outline-primary" } %>
 
-    <%= link_to "All Notes" , notes_path, {class: "btn btn-success" } %>
+    <%= link_to "All Notes" , notes_path, {class: "btn btn-outline-success" } %>
 
 
-    <div class="btn-group">
+    <div class="btn-outline-group">
       <div class="dropdown">
-        <button class="btn btn-primary dropdown-toggle" type="button" 
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Actions
         </button>

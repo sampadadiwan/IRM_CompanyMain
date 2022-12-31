@@ -96,8 +96,8 @@
       </table>
       <div>
          <% if policy(@entity).edit? %>
-            <%= link_to "Edit", edit_entity_path(@entity), {class: "btn btn-primary"} %> 
-            <%= link_to "View Payments", payments_path, {class: "btn btn-success"} if @entity.entity_type == "Company" %> 
+            <%= link_to "Edit", edit_entity_path(@entity), {class: "btn btn-outline-primary"} %> 
+            <%= link_to "View Payments", payments_path, {class: "btn btn-outline-success"} if @entity.entity_type == "Company" %> 
          <% end %>
 
          <% 
@@ -107,7 +107,7 @@
          %>
             <%= button_to "Request Access", 
                   request_access_investor_accesses_path("investor_access[investor_id]": investor.id), 
-                  class: "btn btn-success" %> 
+                  class: "btn btn-outline-success" %> 
 
          <% end %>
 

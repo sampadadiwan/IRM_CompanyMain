@@ -34,9 +34,9 @@
           <%= form.check_box :completed, class: "form-control task-done-checkbox", onchange:"this.form.requestSubmit();"  %>
       <% end %>
 
-      <%= link_to "Edit" , edit_task_path(task) , {class: "btn btn-success" } %>
+      <%= link_to "Edit" , edit_task_path(task) , {class: "btn btn-outline-success" } %>
     <% end %>
     
-    <%= link_to "Show" , task , {class: "btn btn-primary" } if policy(task).show? %>
+    <%= link_to "Show" , task , {class: "btn btn-outline-primary" } if policy(task).show? %>
   </td>
 </tr>

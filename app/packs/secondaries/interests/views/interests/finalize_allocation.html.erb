@@ -7,17 +7,17 @@
             <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
 
             <%= link_to download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
-                                                    {class: "btn btn-success #{download_disabled}"  } do %> 
+                                                    {class: "btn btn-outline-success #{download_disabled}"  } do %> 
                     <i class="fa-lg fa-regular fa-file-excel"></i> Download
             <% end %>
         
             <%= link_to "Offer Allocations",
                 finalize_offer_allocation_secondary_sale_path(@secondary_sale), 
-                {class: "btn btn-success" } if policy(@secondary_sale).view_allocations? %> 
+                {class: "btn btn-outline-success" } if policy(@secondary_sale).view_allocations? %> 
               
             <% label = @secondary_sale.lock_allocations ? 'Unlock Allocations' : 'Lock Allocations' %>
             <%= link_to label , lock_allocations_secondary_sale_path(@secondary_sale),    
-                        {class: "btn btn-danger" } %> 
+                        {class: "btn btn-outline-danger" } %> 
         
         <% end %>
 

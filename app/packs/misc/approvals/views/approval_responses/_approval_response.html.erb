@@ -11,8 +11,8 @@
         with_content(approval_response.status) if approval_response.status %>
   </td>
   <td>
-    <%= link_to "Show" , approval_response , {class: "btn btn-primary" }%>
-    <%= button_to "Approve" , approve_approval_response_path(approval_response, status: "Approved") , {class: "btn btn-success", method: :patch } if policy(approval_response).approve? %>
-    <%= button_to "Reject" , approve_approval_response_path(approval_response, status: "Rejected") , {class: "btn btn-danger", method: :patch } if policy(approval_response).approve? %>
+    <%= link_to "Show" , approval_response , {class: "btn btn-outline-primary" }%>
+    <%= button_to "Approve" , approve_approval_response_path(approval_response, status: "Approved") , {class: "btn btn-outline-success", method: :patch } if policy(approval_response).approve? %>
+    <%= button_to "Reject" , approve_approval_response_path(approval_response, status: "Rejected") , {class: "btn btn-outline-danger", method: :patch } if policy(approval_response).approve? %>
   </td>
 </tr>

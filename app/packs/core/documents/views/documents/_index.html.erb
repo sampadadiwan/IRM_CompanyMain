@@ -18,7 +18,7 @@
   <%= link_to "New Document", new_document_path(external: external, 
               document: doc_attributes, 
               "document[folder_id]": params[:folder_id]), 
-              {class: "btn btn-primary" }  if policy(document).create? %>
+              {class: "btn btn-outline-primary" }  if policy(document).create? %>
 
 </div>
 

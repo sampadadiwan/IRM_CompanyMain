@@ -5,9 +5,9 @@
 
   <div>
     <% if policy(@approval_response).update? %>
-      <%= link_to "Edit" , edit_approval_response_path(@approval_response), {class: "btn btn-primary" } %> |
+      <%= link_to "Edit" , edit_approval_response_path(@approval_response), {class: "btn btn-outline-primary" } %> |
 
-      <%= button_to "Delete" , @approval_response, method: :delete, class: "btn btn-danger" ,
+      <%= button_to "Delete" , @approval_response, method: :delete, class: "btn btn-outline-danger" ,
         form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
     <% end %>
   </div>

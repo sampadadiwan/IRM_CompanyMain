@@ -12,7 +12,7 @@
     <%= display_boolean(reminder.sent) %>
   </td>
   <td>
-    <%= link_to "Show" , reminder , {class: "btn btn-primary" }%>
-    <%= link_to "Edit" , edit_reminder_path(reminder) , {data: { turbo_frame: 'new_reminder' }, class: "btn btn-success" } if policy(reminder).update? %>
+    <%= link_to "Show" , reminder , {class: "btn btn-outline-primary" }%>
+    <%= link_to "Edit" , edit_reminder_path(reminder) , {data: { turbo_frame: 'new_reminder' }, class: "btn btn-outline-success" } if policy(reminder).update? %>
   </td>
 </tr>
