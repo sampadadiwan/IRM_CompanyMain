@@ -1,7 +1,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Investment Opportunities</h1>
     <%= link_to "New Investment Opportunity", new_investment_opportunity_path(), 
-        {class: "btn btn-outline-primary"} policy(InvestmentOpportunity.new(entity_id: params[:entity_id])).new?  %>
+        {class: "btn btn-outline-primary"} if policy(InvestmentOpportunity.new(entity_id: params[:entity_id])).new?  %>
   </div>
   
   <% if params[:view] != "row" %>
