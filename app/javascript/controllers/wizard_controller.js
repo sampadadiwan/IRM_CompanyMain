@@ -45,6 +45,6 @@ export default class extends Controller {
                 nextStepWizard.removeAttr('disabled').trigger('click');
         });
 
-        $('div.setup-panel div a.btn-primary').trigger('click');
+        $('div.setup-panel div a.btn-outline-primary').first().trigger('click');
     }
 }
