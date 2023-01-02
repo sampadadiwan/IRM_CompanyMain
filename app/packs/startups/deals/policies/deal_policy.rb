@@ -41,14 +41,6 @@ class DealPolicy < ApplicationPolicy
       permissioned_advisor?(:update)
   end
 
-  def start_deal?
-    update?
-  end
-
-  def recreate_activities?
-    start_deal?
-  end
-
   def edit?
     create?
   end

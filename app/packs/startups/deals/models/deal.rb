@@ -46,16 +46,6 @@ class Deal < ApplicationRecord
                          target: "deal_message"
   end
 
-  def start_deal
-    self.start_date = Time.zone.today
-    save
-    GenerateDealActivitiesJob.perform_later(id, "Deal")
-  end
-
-  def started?
-    start_date != nil
-  end
-
   scope :for_employee, lambda { |user|
     includes(:access_rights).joins(:access_rights).where("deals.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
   }

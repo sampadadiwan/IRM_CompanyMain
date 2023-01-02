@@ -79,10 +79,6 @@
   <% if current_user.entity_id == @deal.entity_id %>
     <div>
       <%= link_to "Edit", edit_deal_path(@deal), {class: "btn btn-outline-primary"} %> |
-      <% if !@deal.start_date.present?  %>
-        <%= button_to "Start Deal", start_deal_deal_path(@deal), 
-          {class: "btn btn-outline-primary", form_class: "deleteButton", "data-turbo": false} %> |
-      <% end %>
       <%= button_to "Delete", @deal, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
     
     </div>

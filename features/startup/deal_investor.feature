@@ -25,7 +25,6 @@ Scenario Outline: View Deal Investors in a deal as company_admin
   Given there are "3" existing investor ""
   And there exists a deal "<deal>" for my company
   And I visit the deal details page
-  And when I start the deal
   And there are "3" deal_investors for the deal
   And I should see the deal investors in the deal details page
 
@@ -39,7 +38,6 @@ Scenario Outline: View Deal Investors in a deal as employee
   Given the user has role "<role>"
   Given there are "3" existing investor ""
   And there exists a deal "<deal>" for my company
-  And the deal is started
   And there are "3" deal_investors for the deal
   And I am "<given>" employee access to the deal_investors
   And I visit the deal details page  
@@ -62,7 +60,6 @@ Scenario Outline: View Deal Stages in a deal
   And there exists a deal "<deal>" for my company
   And there are "2" deal_investors for the deal
   And I visit the deal details page
-  And when I start the deal
   And I visit the deal details page
   And I should see the deal investors in the deal details page
   And I should see the deal stages in the deal details page
@@ -82,7 +79,6 @@ Scenario Outline: View Deal Stages in a deal
   And there exists a deal "<deal>" for my company
   And there are "2" deal_investors for the deal
   And I visit the deal details page
-  And when I start the deal
   And the deal activites are completed
   And I visit the deal details page
   And I should see the deal investors in the deal details page
@@ -102,8 +98,6 @@ Scenario Outline: View Deal Stages in a deal
   And there exists a deal "<deal>" for my company
   And there are "1" deal_investors for the deal
   And I visit the deal details page
-  And when I start the deal
-  Then I should see the "Deal was successfully started"
   And I complete an activity
   Then the activity must be completed
 

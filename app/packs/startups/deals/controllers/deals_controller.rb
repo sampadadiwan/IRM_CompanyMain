@@ -1,5 +1,5 @@
 class DealsController < ApplicationController
-  before_action :set_deal, only: %w[show update destroy edit start_deal recreate_activities]
+  before_action :set_deal, only: %w[show update destroy edit]
   after_action :verify_authorized, except: %i[index search investor_deals]
 
   # GET /deals or /deals.json
@@ -35,18 +35,9 @@ class DealsController < ApplicationController
     render "index"
   end
 
-  def recreate_activities
-    GenerateDealActivitiesJob.perform_later(@deal.id, "Deal")
-    respond_to do |format|
-      format.html { redirect_to deal_url(@deal), notice: "Success! Deal activites will be recreated in a bit, please refresh the page in a minute." }
-    end
-  end
-
   # GET /deals/1 or /deals/1.json
   def show
-    if params[:grid_view] == "false" || @deal.start_date.nil?
-      render "show"
-    elsif params[:chart].present?
+    if params[:chart].present?
       render "deal_charts"
     else
       respond_to do |format|
@@ -68,6 +59,7 @@ class DealsController < ApplicationController
     @deal = Deal.new(deal_params)
     @deal.currency = @deal.entity.currency
     @deal.activity_list = Deal::ACTIVITIES
+    @deal.start_date = Time.zone.today
 
     authorize @deal
     setup_custom_fields(@deal)
@@ -76,15 +68,6 @@ class DealsController < ApplicationController
   # GET /deals/1/edit
   def edit
     setup_custom_fields(@deal)
-  end
-
-  def start_deal
-    @deal.start_deal
-
-    respond_to do |format|
-      format.turbo_stream { render :start_deal }
-      format.html { redirect_to deal_url(@deal), notice: "Deal was successfully started." }
-    end
   end
 
   # POST /deals or /deals.json
@@ -139,6 +122,6 @@ class DealsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def deal_params
     params.require(:deal).permit(:entity_id, :name, :amount, :status, :form_type_id, :clone_from_id,
-                                 :currency, :units, :activity_list, :archived, properties: {})
+                                 :start_date, :currency, :units, :activity_list, :archived, properties: {})
   end
 end

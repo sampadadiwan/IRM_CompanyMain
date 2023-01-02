@@ -35,9 +35,12 @@ Then('an deal should be created') do
   @created.name.should == @deal.name
   @created.amount.should == @deal.amount
   @created.status.should == @deal.status
+  @deal = @created
 end
 
 Then('I should see the deal details on the details page') do
+  visit(deal_path(@deal))
+  find("#deal_tab").click()
   expect(page).to have_content(@deal.name)
   expect(page).to have_content(money_to_currency(@deal.amount))
   expect(page).to have_content(@deal.status)

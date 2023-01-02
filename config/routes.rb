@@ -213,8 +213,6 @@ Rails.application.routes.draw do
   end
   resources :deals do
     get 'search', on: :collection
-    post 'start_deal', on: :member
-    post 'recreate_activities', on: :member
     get 'investor_deals', on: :collection
   end
 

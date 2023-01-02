@@ -352,6 +352,7 @@ FactoryBot.define do
     status { "Open" }
     currency { entity.currency }
     units { entity.units }
+    start_date { Date.today + rand(5).days }
   end
 
   factory :note do
