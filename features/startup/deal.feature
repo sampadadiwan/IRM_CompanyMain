@@ -10,6 +10,7 @@ Scenario Outline: Create new deal
   And an deal should be created
   And I should see the deal details on the details page
   And I should see the deal in all deals page
+  And the deal data room should be setup
 
   Examples:
   	|user	      |entity               |deal                             |msg	|

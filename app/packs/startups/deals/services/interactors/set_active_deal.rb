@@ -4,8 +4,12 @@ class SetActiveDeal
   def call
     Rails.logger.debug "Interactor: SetActiveDeal called"
     if context.deal.present?
-      context.deal.save
-      active_deal(context.deal)
+      if context.deal.save
+        active_deal(context.deal)
+      else
+        Rails.logger.debug context.deal.errors.full_messages
+        context.fail!(message: "Deal not saved: #{context.deal.errors.full_messages}")
+      end
     else
       Rails.logger.error "No Deal specified"
       context.fail!(message: "No Deal specified")

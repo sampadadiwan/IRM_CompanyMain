@@ -57,8 +57,8 @@ class Approval < ApplicationRecord
     ApprovalMailer.with(id:).notify_new_approval.deliver_later if saved_change_to_approved?
   end
 
-  def access_rights_changed(access_right_id)
-    access_right = AccessRight.where(id: access_right_id).first
+  def access_rights_changed(access_right)
+    access_right = AccessRight.where(id: access_right.id).first
     if access_right
       logger.debug "Added new Access Rights for Approval #{id}"
       generate_responses

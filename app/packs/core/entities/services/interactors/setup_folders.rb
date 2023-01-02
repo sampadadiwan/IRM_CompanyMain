@@ -13,7 +13,7 @@ class SetupFolders
 
   def setup_root_folder(entity)
     entity.root_folder.presence ||
-      Folder.create(name: "/", entity_id: entity.id, level: 0, folder_type: :system)
+      Folder.create(name: "/", entity_id: entity.id, level: 0, folder_type: :regular)
   end
 
   def create_if_not_exist(name, entity, parent, folder_type)

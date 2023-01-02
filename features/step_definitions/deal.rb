@@ -110,6 +110,14 @@ Given('I should not have access to the deal') do
   Pundit.policy(@user, @deal).show?.should == false
 end
 
+Given('I have {string} access to the deal data room') do |arg|
+  Pundit.policy(@user, @deal.data_room_folder).show?.to_s.should == arg
+end
+
+Then('another user {string} have access to the deal data room') do |arg|
+  Pundit.policy(@another_user, @deal.data_room_folder).show?.to_s.should == arg
+end
+
 Given('another user {string} have access to the deal') do |arg|
   Pundit.policy(@another_user, @deal).show?.to_s.should == arg
 end
@@ -237,4 +245,14 @@ Given('the investors are added to the deal') do
         puts "\n####Granted Access####\n"
         puts ar.to_json                            
   end 
+end
+
+
+Then('the deal data room should be setup') do
+  @deal.reload
+  puts "\n####Data Room####\n"
+  puts @deal.data_room_folder.to_json        
+  @deal.data_room_folder.should_not == nil
+  @deal.data_room_folder.name.should == "Data Room"
+  @deal.data_room_folder.full_path.should == "/Deals/#{@deal.name}-#{@deal.id}/Data Room"
 end

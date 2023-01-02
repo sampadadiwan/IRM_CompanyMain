@@ -6,6 +6,10 @@ module WithFolder
     after_commit :rename_document_folder
   end
 
+  def folder_type
+    :system
+  end
+
   # Get or Create the folder based on folder_path
   def document_folder
     folder = Folder.where(entity_id:, full_path: folder_path).last
@@ -22,7 +26,7 @@ module WithFolder
       next if folder_name.blank?
 
       # Check if it exists
-      folder = parent.children.where(entity_id:, name: folder_name, folder_type: :system).first_or_create
+      folder = parent.children.where(entity_id:, name: folder_name, folder_type:).first_or_create
       parent = folder
     end
     folder
@@ -32,7 +36,7 @@ module WithFolder
   # Thus the document_folder does not have owner id in the path.
   # Rename the folder correctly once the owner is created
   def rename_document_folder
-    if documents.present?
+    if documents.present? && self.class.name != "Deal"
       folder = documents[0].folder
       folder.full_path = folder_path
       folder.name = folder_path.split("/")[-1]

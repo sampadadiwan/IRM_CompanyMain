@@ -12,7 +12,9 @@ class DocumentsController < ApplicationController
 
   # GET /documents or /documents.json
   def index
-    if params[:entity_id].present?
+    if params[:owner_id].present? && params[:owner_type].present?
+      owner_documents
+    elsif params[:entity_id].present?
       entity_documents
     else
       @entity = current_user.entity
@@ -138,19 +140,24 @@ class DocumentsController < ApplicationController
   def entity_documents
     # We are trying to get documents that belong to some entity
     @entity = Entity.find(params[:entity_id])
+    # Show all the documents for the investor for that entity
+    @documents = Document.for_investor(current_user, @entity)
+    @show_steps = false
+  end
+
+  def owner_documents
+    # We are trying to get documents that belong to some entity
     @owner = nil
     if params[:owner_type].present? && params[:owner_id].present?
       # Show all the documents for the owner for that entity
       @owner = params[:owner_type].constantize.find(params[:owner_id])
-      if policy(@owner).show?
-        @documents = Document.where(owner_id: params[:owner_id], entity_id: @entity.id)
-        @documents = @documents.where(owner_type: params[:owner_type])
-      else
-        @documents = Document.none
-      end
-    else
-      # Show all the documents for the investor for that entity
-      @documents = Document.for_investor(current_user, @entity)
+      @entity = @owner.entity
+
+      @documents = if policy(@owner).show?
+                     Document.where(owner_id: params[:owner_id], owner_type: params[:owner_type])
+                   else
+                     Document.none
+                   end
     end
     @show_steps = false
   end

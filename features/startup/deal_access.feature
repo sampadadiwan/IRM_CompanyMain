@@ -6,6 +6,7 @@ Scenario Outline: Access Deal employee
   Given the user has role "<role>"
   And given there is a deal "<deal>" for the entity 
   And I have "<deal_access>" access to the deal
+  And I have "true" access to the deal data room
   And given there is a document "name=Test" for the deal 
   And I have "<doc_access>" access to the document  
 
@@ -23,6 +24,7 @@ Scenario Outline: Access Deal employee
   And given there is a deal "<deal>" for the entity 
   And I am "<given>" employee access to the deal
   And I have "<deal_access>" access to the deal
+  And I have "true" access to the deal data room
   And given there is a document "name=Test" for the deal 
   And I have "<doc_access>" access to the document  
 
@@ -36,6 +38,7 @@ Scenario Outline: Access Deal as Other User
   And given there is a deal "<deal>" for the entity 
   Given there is another user "first_name=Investor" for another entity "entity_type=Investor"
   And another user "false" have access to the deal
+  And another user "false" have access to the deal data room
   And given there is a document "name=Test" for the deal 
   And another user has "false" access to the document 
 
@@ -52,6 +55,7 @@ Scenario Outline: Access Deal as Investor without access
   And another entity is an investor "category=Lead Investor" in entity
   And another entity is a deal_investor "status=Active" in the deal
   Then another user "false" have access to the deal
+  And another user "false" have access to the deal data room
   And given there is a document "name=Test" for the deal 
   And another user has "false" access to the document 
 
@@ -70,6 +74,7 @@ Scenario Outline: Access Deal as Investor with access
   And investor has access right "<access_right>" in the deal
   And another user has investor access "<investor_access>" in the investor
   Then another user "<should>" have access to the deal 
+  Then another user "<should>" have access to the deal data room 
   And given there is a document "name=Test" for the deal 
   And another user has "<should>" access to the document 
 

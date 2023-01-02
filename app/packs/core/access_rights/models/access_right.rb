@@ -151,7 +151,7 @@ class AccessRight < ApplicationRecord
   after_create_commit :update_owner
   after_destroy :update_owner
   def update_owner
-    owner.access_rights_changed(id) if owner.respond_to? :access_rights_changed
+    owner.access_rights_changed(self) if owner.respond_to? :access_rights_changed
   end
 
   def investors
