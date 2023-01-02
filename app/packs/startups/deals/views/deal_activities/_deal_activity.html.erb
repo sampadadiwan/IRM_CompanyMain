@@ -33,6 +33,6 @@
     </td>
     <td class="hideMobP">
         <%= link_to "Show", deal_activity, class: "btn btn-outline-primary" %>
-        <%= link_to "Edit", edit_deal_activity_path(deal_activity), class: "btn btn-outline-success" %>
+        <%= link_to "Edit", edit_deal_activity_path(deal_activity), class: "btn btn-outline-success" if policy(deal_activity).update? %>
     </td>
 </tr>
