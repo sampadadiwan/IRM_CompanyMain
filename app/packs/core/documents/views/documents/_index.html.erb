@@ -23,8 +23,9 @@
 
 
     <% @owner ||= nil %>
-    <%= link_to "Data Room", documents_path(parent_folder_id: @owner.document_folder.id), 
-                {class: "btn btn-outline-primary" }  if @owner && @owner.respond_to?(:data_room_folder_id) %>
+    <%= link_to "Data Room", 
+        documents_path(folder_id: @owner.data_room_folder_id, parent_folder_id: @owner.document_folder.id), 
+        {class: "btn btn-outline-primary" }  if @owner && @owner.respond_to?(:data_room_folder_id) %>
 
   </span>
 </div>
