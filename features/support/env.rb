@@ -47,12 +47,17 @@ rescue NameError => e
   raise "You need to add database_cleaner to your Gemfile (in the :test group) if you wish to use it."
 end
 
-After do
+After do |scenario|
   # DatabaseCleaner.clean
   Sidekiq.redis(&:flushdb)
-  # UserIndex.reset!
-  # EntityIndex.reset!
-  # InvestorIndex.reset!
+  
+  if scenario.failed?
+    puts scenario.location.to_s
+    timestamp = "#{Time.zone.now.strftime('%Y-%m-%d-%H:%M:%S')}"
+    screenshot_name = "screenshot-#{scenario.name}-#{scenario.location.to_s}.png"
+    screenshot_path = "#{Rails.root.join("tmp/cucumber")}/#{screenshot_name}"
+    Capybara.page.save_screenshot(screenshot_path, full: true)
+  end
 end
 
 Cucumber::Rails::Database.javascript_strategy = :truncation

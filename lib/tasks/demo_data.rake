@@ -417,7 +417,7 @@ namespace :irm do
           AccessRight.create(owner: deal, access_type: "Deal", entity: e, investor: inv)
         end
 
-        deal.start_deal if rand(2).positive?
+        # deal.start_deal if rand(2).positive?
       end
 
     end
