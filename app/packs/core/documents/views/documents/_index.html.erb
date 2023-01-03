@@ -15,11 +15,18 @@
     doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
   %>
 
-  <%= link_to "New Document", new_document_path(external: external, 
-              document: doc_attributes, 
-              "document[folder_id]": params[:folder_id]), 
-              {class: "btn btn-outline-primary" }  if policy(document).create? %>
+  <span>
+    <%= link_to "New Document", new_document_path(external: external, 
+                document: doc_attributes, 
+                "document[folder_id]": params[:folder_id]), 
+                {class: "btn btn-outline-primary" }  if policy(document).create? %>
 
+
+    <% @owner ||= nil %>
+    <%= link_to "Data Room", documents_path(parent_folder_id: @owner.document_folder.id), 
+                {class: "btn btn-outline-primary" }  if @owner && @owner.respond_to?(:data_room_folder_id) %>
+
+  </span>
 </div>
 
 <div class="table-responsive">

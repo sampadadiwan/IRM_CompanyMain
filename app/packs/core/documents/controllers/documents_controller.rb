@@ -25,7 +25,8 @@ class DocumentsController < ApplicationController
 
     @documents = @documents.where(owner_tag: params[:owner_tag]) if params[:owner_tag].present?
     if params[:folder_id].present?
-      folder_ids = Folder.find(params[:folder_id]).descendant_ids << params[:folder_id]
+      @folder = Folder.find(params[:folder_id])
+      folder_ids = @folder.descendant_ids << params[:folder_id]
       @documents = @documents.where(folder_id: folder_ids)
     end
     @documents = @documents.order(id: :desc)

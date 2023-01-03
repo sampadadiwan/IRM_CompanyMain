@@ -5,7 +5,7 @@
         <%= render "/documents/index", documents: @documents, entity: @entity, owner: @owner %>
     <% end %>
 <% else %>
-    <% cache_if((current_user.entity_id == @entity.id && params[:folder_id].blank? && params[:query].blank?), [@entity,  params[:page]]) do %>
+    <% cache_if((current_user.entity_id == @entity.id && params.blank?), [@entity]) do %>
         <%= render "/documents/tree_view", documents: @documents, entity: @entity, 
             folders: @folders, show_steps: @show_steps, owner: @owner, no_folders: @no_folders %>
 

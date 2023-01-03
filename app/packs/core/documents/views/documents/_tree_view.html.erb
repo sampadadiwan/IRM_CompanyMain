@@ -17,10 +17,14 @@
             </div>
             <div class="card-body">
                 <div id="tree_view" class="tree_view" data-controller="treeview">
-                    <% entity_id = params[:entity_id].present? ? params[:entity_id] : current_user.entity_id %>
+                    <% entity_id = params[:entity_id].present? ? params[:entity_id].to_i : current_user.entity_id %>
                     <% 
                         if entity_id == current_user.entity_id
-                            folders = @entity.root_folder.subtree.not_system.arrange 
+                            if params[:parent_folder_id].present?
+                                folders = Folder.find(params[:parent_folder_id]).subtree.not_system.arrange 
+                            else
+                                folders = @entity.root_folder.subtree.not_system.arrange 
+                            end
                         else
                             allowed_folders = @documents.pluck(:folder_id)
                             folders = @entity.root_folder.subtree.not_system.where(id: allowed_folders).arrange
@@ -40,7 +44,7 @@
             </div>
             <div class="card-body">
                 <%= render "documents/index", documents: documents, entity: entity, owner: nil %>
-                <%= paginate documents %>
+                <%= paginate documents %>                
             </div>
         </div>
     </div>
