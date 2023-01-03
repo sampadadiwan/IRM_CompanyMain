@@ -37,7 +37,7 @@ sandbox:
 # Do not set this db to the same as development or production.
 test: &test
   <<: *default
-  database: IRM_test
+  database: IRM_test<%= ENV['TEST_ENV_NUMBER'] %>
   
 
 # As with config/credentials.yml, you never want to store sensitive information,

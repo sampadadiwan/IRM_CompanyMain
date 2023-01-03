@@ -94,7 +94,7 @@ gem 'whenever', require: false
 gem 'active_flag'
 gem 'active_storage_validations'
 gem "acts_as_list"
-gem 'acts-as-taggable-on', '~> 9.0'
+
 gem 'ancestry'
 gem 'caxlsx'
 gem 'caxlsx_rails'
@@ -138,6 +138,7 @@ group :development, :test do
   gem 'rubocop-performance', require: false
   gem 'rubocop-rails', require: false
   gem 'rubocop-rspec', require: false
+  gem 'parallel_tests'
 end
 
 gem 'awesome_print'
