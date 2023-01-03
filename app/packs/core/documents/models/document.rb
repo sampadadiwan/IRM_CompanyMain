@@ -36,6 +36,8 @@ class Document < ApplicationRecord
 
   delegate :full_path, to: :folder, prefix: :folder
   before_validation :setup_folder, :setup_entity
+
+  after_create :send_notification_for_owner
   after_create :setup_access_rights
 
   include FileUploader::Attachment(:file)
@@ -50,6 +52,10 @@ class Document < ApplicationRecord
 
   def setup_folder
     self.folder = owner.document_folder if folder.nil? && owner
+  end
+
+  def send_notification_for_owner
+    DocumentMailer.with(id:).notify_new_document.deliver_later if %w[SecondarySale Fund InvestmentOpportunity Deal].include?(owner_type) && owner_tag != "Template"
   end
 
   def setup_access_rights
@@ -96,11 +102,6 @@ class Document < ApplicationRecord
 
   def image?
     file&.mime_type&.include?('image')
-  end
-
-  after_create_commit :send_notification_for_owner
-  def send_notification_for_owner
-    DocumentMailer.with(id:).notify_new_document.deliver_later if %w[SecondarySale Fund InvestmentOpportunity Deal].include?(owner_type) && owner_tag != "Template"
   end
 
   def investor_users

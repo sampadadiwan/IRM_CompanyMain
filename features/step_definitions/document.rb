@@ -95,7 +95,7 @@ Given('the folder has access rights {string}') do |arg1|
   key_values(@access_right, arg1)
   puts @access_right.to_json
   
-  @access_right.save
+  @access_right.save!
   puts "\n####Access Right####\n"
   puts @access_right.to_json  
 end
@@ -104,7 +104,7 @@ Then('the document should have the same access rights as the folder') do
   puts "\n####Document Access Right####\n"
   puts @document.reload.access_rights.to_json  
   puts "\n####Folder Access Right####\n"
-  puts @folder.reload.to_json
+  puts @folder.reload.access_rights.to_json
 
   @document.access_rights.count.should == @folder.access_rights.count
   @document.access_rights.each_with_index do |dar, idx|
@@ -131,8 +131,8 @@ end
 
 Then('the deal document details must be setup right') do
   @document.owner.should == @deal
-  @document.folder.name.should == "#{@deal.name}-#{@deal.id}"
-  @document.folder.full_path.should == "/Deals/#{@deal.name}-#{@deal.id}"
+  @document.folder.name.should == "Data Room"
+  @document.folder.full_path.should == "/Deals/#{@deal.name}-#{@deal.id}/Data Room"
 end
 
 
@@ -195,8 +195,15 @@ Given('given there is a document {string} for the sale') do |args|
 end
 
 Then('an email must go out to the investors for the document') do
+  puts @document.valid?
   user = InvestorAccess.includes(:user).first.user
+  subj = "New document #{@document.name} uploaded by #{@document.entity.name}"
   puts "Checking email for document #{@document.name} to #{user.email}"
-  open_email(user.email)
-  expect(current_email.subject).to include "New document #{@document.name} uploaded by #{@document.entity.name}"    
+  current_email = nil
+  emails_sent_to(user.email).each do |email|
+    puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
+    puts email.subject == subj
+    current_email = email if email.subject == subj
+  end
+  expect(current_email.subject).to include subj    
 end
