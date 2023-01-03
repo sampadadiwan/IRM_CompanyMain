@@ -29,6 +29,9 @@ module WithFolder
       folder = parent.children.where(entity_id:, name: folder_name, folder_type:).first_or_create
       parent = folder
     end
+
+    folder.owner = self
+    folder.save
     folder
   end
 

@@ -195,14 +195,12 @@ Given('given there is a document {string} for the sale') do |args|
 end
 
 Then('an email must go out to the investors for the document') do
-  puts @document.valid?
   user = InvestorAccess.includes(:user).first.user
   subj = "New document #{@document.name} uploaded by #{@document.entity.name}"
   puts "Checking email for document #{@document.name} to #{user.email}"
   current_email = nil
   emails_sent_to(user.email).each do |email|
     puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
-    puts email.subject == subj
     current_email = email if email.subject == subj
   end
   expect(current_email.subject).to include subj    

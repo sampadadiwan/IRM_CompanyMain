@@ -52,6 +52,7 @@ class Document < ApplicationRecord
 
   def setup_folder
     self.folder = owner.document_folder if folder.nil? && owner
+    self.owner ||= folder.owner
   end
 
   def send_notification_for_owner
