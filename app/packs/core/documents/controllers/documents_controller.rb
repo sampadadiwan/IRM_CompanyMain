@@ -30,7 +30,7 @@ class DocumentsController < ApplicationController
       @documents = @documents.where(folder_id: folder_ids)
     end
     @documents = @documents.order(id: :desc)
-    @documents = @documents.includes(:folder).page(params[:page]).per(2)
+    @documents = @documents.includes(:folder).page(params[:page])
   end
 
   def investor_documents
