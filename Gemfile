@@ -134,11 +134,11 @@ group :development, :test do
   gem "debug", platforms: %i[mri mingw x64_mingw]
   gem 'erubis'
   gem 'net-ssh', '7.0.0.beta1'
+  gem 'parallel_tests'
   gem 'pry-byebug'
   gem 'rubocop-performance', require: false
   gem 'rubocop-rails', require: false
   gem 'rubocop-rspec', require: false
-  gem 'parallel_tests'
 end
 
 gem 'awesome_print'

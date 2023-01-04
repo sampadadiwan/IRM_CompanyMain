@@ -142,7 +142,11 @@ class DocumentsController < ApplicationController
     # We are trying to get documents that belong to some entity
     @entity = Entity.find(params[:entity_id])
     # Show all the documents for the investor for that entity
-    @documents = Document.for_investor(current_user, @entity)
+    @documents = if current_user.entity_id == @entity.id
+                   @entity.documents
+                 else
+                   Document.for_investor(current_user, @entity)
+                 end
     @show_steps = false
   end
 
