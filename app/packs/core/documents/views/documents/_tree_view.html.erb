@@ -1,3 +1,5 @@
+<input type="text" id="selected_folder_id" value="<%=params[:folder_id]%>" hidden>
+
 <% no_folders ||= false %>
 <%= render "/layouts/steps", steps: ["Create Folders", "Upload Docs", "Setup Access Rights"].freeze if show_steps %>
 
@@ -30,7 +32,10 @@
                             folders = @entity.root_folder.subtree.where(id: allowed_folders).arrange
                         end
                     %>
+                    
                     <%= render "folders/tree_view", folders: folders  %>
+                    
+
                 </div>
             </div>
         </div>
