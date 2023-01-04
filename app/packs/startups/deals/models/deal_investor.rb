@@ -125,6 +125,7 @@ class DealInvestor < ApplicationRecord
   }
 
   def folder_path
+    deal.document_folder
     "#{deal.folder_path}/Deal Investors/#{investor_name}-#{id}"
   end
 

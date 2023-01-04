@@ -105,6 +105,7 @@ class Interest < ApplicationRecord
   end
 
   def folder_path
+    secondary_sale.document_folder
     "#{secondary_sale.folder_path}/Interests/#{interest_entity.name}-#{id}"
   end
 

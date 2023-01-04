@@ -56,6 +56,7 @@ class DealActivity < ApplicationRecord
   end
 
   def folder_path
+    deal_investor.document_folder
     "#{deal_investor.folder_path}/Steps/#{id}"
   end
 

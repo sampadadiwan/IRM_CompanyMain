@@ -150,6 +150,7 @@ class Offer < ApplicationRecord
   end
 
   def folder_path
+    secondary_sale.document_folder
     "#{secondary_sale.folder_path}/Offers/#{user.full_name}-#{id}"
   end
 

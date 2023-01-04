@@ -60,6 +60,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def folder_path
+    fund.document_folder
     "#{fund.folder_path}/Commitments/#{investor.investor_name}-#{id}"
   end
 

@@ -1,4 +1,6 @@
+<!- The below 2 fields are manipulated by treeview_controller.js to load the selected folder docs in the documents_frame ->
 <input type="text" id="selected_folder_id" value="<%=params[:folder_id]%>" hidden>
+<a id="selected_folder_link" href="" data-turbo-frame="documents_frame"><span></span></a>
 
 <% no_folders ||= false %>
 <%= render "/layouts/steps", steps: ["Create Folders", "Upload Docs", "Setup Access Rights"].freeze if show_steps %>
@@ -48,8 +50,10 @@
                 <%= link_to "All Documents", documents_path(entity_id:params[:entity_id]), class: "btn btn-outline-sm btn-outline-primary float-right"  %>               
             </div>
             <div class="card-body">
-                <%= render "documents/index", documents: documents, entity: entity, owner: @owner %>
-                <%= paginate documents %>                
+                <%= turbo_frame_tag "documents_frame", target: "_top" do %>
+                    <%= render "documents/index", documents: documents, entity: entity, owner: @owner %>
+                    <%= paginate documents %>                
+                <% end %>
             </div>
         </div>
     </div>

@@ -38,6 +38,7 @@ class CapitalCall < ApplicationRecord
   end
 
   def folder_path
+    fund.document_folder
     "#{fund.folder_path}/Capital Calls/#{name}-#{id}"
   end
 

@@ -34,10 +34,18 @@ export default class extends Controller {
 
           });
 
-          // Show documents in the clicked folder
+          // // Show documents in the clicked folder
           $("#tree_view li").on("click", "a", 
               function() {
-                  document.location.href = this;
+                  // document.location.href = this;
+                  $("#tree_view").jstree('open_node', this);
+                  // This is done so we can load the documents_frame using turbo_frames
+                  let link = $(this).attr("href");
+                  if (link !== "#") {
+                    console.log(`link = ${link}`);
+                    $("#selected_folder_link").attr("href", link);
+                    $("#selected_folder_link").find('span').trigger('click');
+                  }
               }
           );
        
