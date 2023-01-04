@@ -43,6 +43,12 @@ class Folder < ApplicationRecord
       folder_ar.access_type = 'Folder'
       folder_ar.save
     end
+
+    # If we have an owner for the parent and none for the child
+    if parent&.owner && owner.nil?
+      self.owner = parent.owner
+      save
+    end
   end
 
   def touch_root

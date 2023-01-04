@@ -32,6 +32,18 @@
       </td>
     </tr>
 
+    <% if @folder.owner %>
+    <tr>
+      <td>
+        Owner
+      </td>
+      <td>
+        <%= link_to @folder.owner_type, @folder.owner %>
+      </td>
+    </tr>
+    <% end %>
+
+
 
   </table>
 

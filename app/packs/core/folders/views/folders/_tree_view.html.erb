@@ -2,7 +2,7 @@
     <% folders.each do |folder, children| %>
         <ul id="<%=folder.id%>">
 
-        <li id="folder_<%=folder.id%>" class="<%= params[:folder_id]&.to_i == folder.id ? 'opened': '' %>">
+        <li id="folder_<%=folder.id%>">
             <span  class="caret">
             <%= link_to folder.name, documents_path(folder_id: folder.id, entity_id: params[:entity_id], parent_folder_id: params[:parent_folder_id])  %>
 
