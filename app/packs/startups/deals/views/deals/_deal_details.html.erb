@@ -37,13 +37,13 @@
       </div>
       <div id="docs-tab" class="tab-pane fade">
         <div id="docs" class="associated_entity">
-          <%= link_to documents_path(owner_id: deal.id, owner_type: "Deal", 
-                                     entity_id: deal.entity_id, no_folders: true), 
+          <%= link_to documents_path(entity_id: deal.entity_id, folder_id: deal.data_room_folder_id, 
+                                     parent_folder_id:  deal.document_folder.id), 
                                      class: "load_data_link", 
-                                     data: { turbo_frame: 'documents_frame' } do %>
+                                     data: { turbo_frame: 'documents_tree_frame' } do %>
               <span>Loading...</span>
           <% end %>
-          <%= turbo_frame_tag "documents_frame", target: "_top" do %>
+          <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
           <% end %>
         </div>     
       </div>

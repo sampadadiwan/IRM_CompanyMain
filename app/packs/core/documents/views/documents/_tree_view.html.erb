@@ -52,7 +52,7 @@
             <div class="card-body">
                 <%= turbo_frame_tag "documents_frame", target: "_top" do %>
                     <%= render "documents/index", documents: documents, entity: entity, owner: @owner %>
-                    <%= paginate documents %>                
+                    <%= paginate documents, data: {turbo_frame: 'documents_frame'} %>                
                 <% end %>
             </div>
         </div>

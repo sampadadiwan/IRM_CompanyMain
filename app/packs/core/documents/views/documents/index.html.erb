@@ -3,11 +3,14 @@
 <% if params[:no_folders].present? %>
     <%= turbo_frame_tag "documents_frame", target: "_top" do %>
         <%= render "/documents/index", documents: @documents, entity: @entity, owner: @owner %>
+        <%= paginate @documents, data: {turbo_frame: 'documents_frame'} %>
     <% end %>
 <% else %>
     <% cache_if((current_user.entity_id == @entity.id && params.blank?), [@entity]) do %>
-        <%= render "/documents/tree_view", documents: @documents, entity: @entity, 
-            folders: @folders, show_steps: @show_steps, owner: @owner, no_folders: @no_folders %>
+        <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
+            <%= render "/documents/tree_view", documents: @documents, entity: @entity, 
+                folders: @folders, show_steps: @show_steps, owner: @owner, no_folders: @no_folders %>
+        <% end %>
 
     <% end %>            
 <% end %>
