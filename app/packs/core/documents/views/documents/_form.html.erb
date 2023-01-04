@@ -36,7 +36,7 @@
 
       <% 
         root = document.owner ? document.owner.data_room_folder : document.entity.root_folder 
-        folders = ([[root.full_path, root.id]]  + root.descendants.not_system.map{|f| [f.full_path, f.id]})
+        folders = ([[root.full_path, root.id]]  + root.descendants.map{|f| [f.full_path, f.id]})
       %>
       <div class="form-group">
         <%= form.label :folder %>

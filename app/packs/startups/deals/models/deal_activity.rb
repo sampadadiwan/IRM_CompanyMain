@@ -59,6 +59,10 @@ class DealActivity < ApplicationRecord
     "#{deal_investor.folder_path}/Steps/#{id}"
   end
 
+  def folder_type
+    :regular
+  end
+
   scope :for_advisor, lambda { |user|
     # Ensure the access rghts for Document
     joins(deal_investor: :access_rights).merge(AccessRight.access_filter)

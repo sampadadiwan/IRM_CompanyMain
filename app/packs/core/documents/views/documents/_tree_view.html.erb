@@ -21,13 +21,13 @@
                     <% 
                         if entity_id == current_user.entity_id
                             if params[:parent_folder_id].present?
-                                folders = Folder.find(params[:parent_folder_id]).subtree.not_system.arrange 
+                                folders = Folder.find(params[:parent_folder_id]).subtree.arrange 
                             else
-                                folders = @entity.root_folder.subtree.not_system.arrange 
+                                folders = @entity.root_folder.subtree.arrange 
                             end
                         else
                             allowed_folders = @documents.pluck(:folder_id)
-                            folders = @entity.root_folder.subtree.not_system.where(id: allowed_folders).arrange
+                            folders = @entity.root_folder.subtree.where(id: allowed_folders).arrange
                         end
                     %>
                     <%= render "folders/tree_view", folders: folders  %>
