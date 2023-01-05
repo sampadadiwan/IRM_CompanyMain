@@ -1,134 +1,117 @@
 <%= turbo_frame_tag "new_access_right" do %>
-
-<div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
-
-<div class="dynamic_form card shadow mb-4" data-controller="access">
-  <div class="card-header py-3">
+  <div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
+  <div class="dynamic_form card shadow mb-4" data-controller="access">
+    <div class="card-header py-3">
       <h6 class="m-0 font-weight-bold text-primary">Grant Access</h6>
-  </div>
-  <div class="card-body">
+    </div>
+    <div class="card-body">
+      <%= form_with(model: access_right, class: "associated_entity", id: "access_rights_form") do |form| %>
+        <% if access_right.errors.any? %>
+          <div class="alert alert-danger">
+            <h2><%= pluralize(access_right.errors.count, "error") %> prohibited this access_right from being saved:</h2>
+            <ul>
+              <% access_right.errors.each do |error| %>
+                <li><%= error.full_message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+        <% types = access_right.types %>
+        <div class="form-group" hidden='hidden'>
+          <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+          <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+          <%= form.text_field :access_type, class: "form-control", hidden: true  %>
+        </div>
 
-  <%= form_with(model: access_right, class: "associated_entity", id: "access_rights_form") do |form| %>
-    <% if access_right.errors.any? %>
-      <div class="alert alert-danger">
-        <h2><%= pluralize(access_right.errors.count, "error") %> prohibited this access_right from being saved:</h2>
+        <div data-controller="select" data-select-url-value="<%= users_path %>"
+           data-select-param-value="email_or_cat">
 
-        <ul>
-          <% access_right.errors.each do |error| %>
-            <li><%= error.full_message %></li>
+          <div class="form-group">
+            <%= form.label :access_type %>
+            <%= form.select :email_or_cat, types, {}, class: "form-control", 
+              name: "email_or_cat", "data-action": "change->access#onChange change->select#change" %>
+          </div>
+
+          <% if ["Fund", "SecondarySale", "DealInvestor"].include? access_right.owner_type %>
+            <div class="form-group" id="employee_form_group">
+              <%= form.label :user_id, "Select User" %>
+              <%= form.select :user_id, [], {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" }  %>
+            </div>
           <% end %>
-        </ul>
-      </div>
-    <% end %>
 
-    <% 
-      types = access_right.types
-    %>
+        </div>
 
-    <div class="form-group" hidden='hidden'>
-      <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
-      <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
-      <%= form.text_field :access_type, class: "form-control", hidden: true  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :access_type %>
-      <%= form.select :email_or_cat, types, {}, class: "form-control", 
-            name: "email_or_cat", "data-action": "change->access#onChange"   %>
-    </div>
-
-    <% unless ["Deal", "DealInvestor"].include? access_right.owner_type %>
-
-    <div class="form-group" id="category_form_group">
-      <%= form.label :access_to_category, "Select Stakeholder Category" %>
-      <%= form.select :access_to_category, Investor.INVESTOR_CATEGORIES(current_user.entity),
+        <% unless ["Deal", "DealInvestor"].include? access_right.owner_type %>
+          <div class="form-group" id="category_form_group">
+            <%= form.label :access_to_category, "Select Stakeholder Category" %>
+            <%= form.select :access_to_category, Investor.INVESTOR_CATEGORIES(current_user.entity),
             {:include_blank=>false, include_hidden: false}, 
             class: "form-control select2-multiple", disabled: "disabled", multiple: "multiple",
             "data-action": "change->access#addErrorCheck"  %>
-    </div>
+          </div>
+        <% end %>
 
-    <% end %>
-
-    <% investors = access_right.owner_type == "DealInvestor" ? current_user.entity.investors.advisors : current_user.entity.investors  %>
-    <div class="form-group" id="investor_form_group">
-        <%= form.label :access_to_investor_id, "Select Stakeholder" %>
-        <%= form.select :access_to_investor_id, investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, 
-            {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple",
-            "data-action": "change->access#addErrorCheck" %>
-    </div>
-
-    <% if access_right.access_type == "Investment" %>
-      <div class="form-group">
-        <%= form.label :metadata, "Select Investment View" %>
-        <%= form.select :metadata, AccessRight::VIEWS, {}, class: "form-control"  %>
-      </div>
-    <% end %>
-
-    <% if access_right.owner_type == "SecondarySale" %>
-      <div class="form-group" id="metadata_form_group">
-        <%= form.label :metadata, "Select Buyer or Seller" %>
-        <%= form.select :metadata, ["Buyer", "Seller", "Advisor"], {}, 
-            class: "form-control", "data-action": "change->access#investorAdvisorChange"   %>
-      </div>
-    <% end %>
-
-    <% if ["Fund"].include? access_right.owner_type %>
-      <div class="form-group" id="metadata_form_group">
-        <%= form.label :metadata, "Select Investor or Advisor" %>
-        <%= form.select :metadata, ["Investor", "Advisor"], {}, 
-            class: "form-control", "data-action": "change->access#investorAdvisorChange"  %>
-      </div>
-    <% end %>
-
-    <% if ["Deal"].include? access_right.owner_type %>
-      <div class="form-group" id="metadata_form_group">
-        <%= form.label :metadata, "Select Investor or Advisor" %>
-        <%= form.select :metadata, ["Investor"], {}, 
-            class: "form-control", "data-action": "change->access#investorAdvisorChange"  %>
-      </div>
-    <% end %>
-
-    <% if ["DealInvestor"].include? access_right.owner_type %>
-      <div class="form-group" id="metadata_form_group">
-        <%= form.label :metadata, "Select Investor or Advisor" %>
-        <%= form.select :metadata, ["Advisor"], {}, 
-            class: "form-control", "data-action": "change->access#investorAdvisorChange"  %>
-      </div>
-    <% end %>
-
-    <% if ["Fund", "SecondarySale", "DealInvestor"].include? access_right.owner_type %>    
-      <div class="form-group" id="employee_form_group">
-        <%= form.label :user_id, "Select User" %>
-        <%= form.select :user_id, access_right.entity.employees.map{|u| [u.full_name, u.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple"  %>
-      </div>
-    <% end %>
-
-
-    <% if access_right.access_type == "Folder" %>
-      <div class="form-group">
-        <%= form.label :cascade, "Apply to files and sub folders" %>
-        <%= form.check_box :cascade, class: "form-control form-checkbox"  %>
-      </div>
-    <% end %>
-
-    <div class="form-group" id="permissions_form_group">
-      <% AccessRight.permissions.pairs.each do |key, val| %>
+        <div data-controller="select" data-select-url-value="<%= investors_path %>"
+           data-select-param-value="metadata">
           
-            <%= form.label :permissions, key %>
-            <%= form.check_box :permissions, {name: "access_right[permissions][]",  
-                val: val, id: "permissions_#{val}", class: "form-checkbox-horizontal"}, val, nil   %>
-          
+          <% if access_right.owner_type == "SecondarySale" %>
+            <div class="form-group" id="metadata_form_group">
+              <%= form.label :metadata, "Select Buyer or Seller" %>
+              <%= form.select :metadata, ["Buyer", "Seller", "Advisor"], {}, 
+              class: "form-control", "data-action": "change->access#investorAdvisorChange"   %>
+            </div>
+          <% end %>
+          <% if ["Fund"].include? access_right.owner_type %>
+            <div class="form-group" id="metadata_form_group">
+              <%= form.label :metadata, "Select Investor or Advisor" %>
+              <%= form.select :metadata, ["Investor", "Advisor"], {}, 
+              class: "form-control", "data-action": "change->access#investorAdvisorChange change->select#change"%>
+              
+            </div>
+          <% end %>
+          <% if ["Deal"].include? access_right.owner_type %>
+            <div class="form-group" id="metadata_form_group">
+              <%= form.label :metadata, "Select Investor or Advisor" %>
+              <%= form.select :metadata, ["Investor"], {}, 
+              class: "form-control", "data-action": "change->access#investorAdvisorChange"  %>
+            </div>
+          <% end %>
+          <% if ["DealInvestor"].include? access_right.owner_type %>
+            <div class="form-group" id="metadata_form_group">
+              <%= form.label :metadata, "Select Investor or Advisor" %>
+              <%= form.select :metadata, ["Advisor"], {}, 
+              class: "form-control", "data-action": "change->access#investorAdvisorChange"  %>
+            </div>
+          <% end %>
+
+
+          <% investors = access_right.owner_type == "DealInvestor" ? current_user.entity.investors.advisors : current_user.entity.investors.not_advisors  %>
+          <div class="form-group" id="investor_form_group">
+            <%= form.label :access_to_investor_id, "Select Stakeholder" %>
+            <%= form.select :access_to_investor_id, investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, 
+              {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" },
+              "data-action": "change->access#addErrorCheck" %>
+          </div>
+
+        </div>
+
+      <% if access_right.access_type == "Folder" %>
+        <div class="form-group">
+          <%= form.label :cascade, "Apply to files and sub folders" %>
+          <%= form.check_box :cascade, class: "form-control form-checkbox"  %>
+        </div>
       <% end %>
-    </div>
-    
-    <div class="form-group">
-      <%= form.submit "Save", {class: "btn btn-outline-primary", data: {action: "click->access#checkRequiredFilled"}}%>
-      <a class="btn btn-outline-danger", data-action="click->access#close">Close</a>
-    </div>
-  <% end %>
-
+      <div class="form-group" id="permissions_form_group">
+        <% AccessRight.permissions.pairs.each do |key, val| %>
+          <%= form.label :permissions, key %>
+          <%= form.check_box :permissions, {name: "access_right[permissions][]",  
+                val: val, id: "permissions_#{val}", class: "form-checkbox-horizontal"}, val, nil   %>
+        <% end %>
+      </div>
+      <div class="form-group">
+        <%= form.submit "Save", {class: "btn btn-outline-primary", data: {action: "click->access#checkRequiredFilled"}}%>
+        <a class="btn btn-outline-danger", data-action="click->access#close">Close</a>
+      </div>
+    <% end %>
   </div>
-</div>
-
 <% end %>
-

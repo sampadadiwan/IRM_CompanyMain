@@ -9,6 +9,15 @@ class InvestorsController < ApplicationController
 
     @investors = @investors.where(category: params[:category]) if params[:category]
 
+    # This is specifically to cater for access rights drop down
+    if params[:metadata]
+      @investors = if params[:metadata] == "Advisor"
+                     @investors.advisors
+                   else
+                     @investors.not_advisors
+                   end
+    end
+
     @investors = @investors.order("investors.id desc")
 
     @investors = @investors.page(params[:page]) if params[:all].blank?
