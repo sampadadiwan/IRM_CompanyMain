@@ -18,3 +18,4 @@ pin "@client-side-validations/client-side-validations/src", to: "/js/client_side
 pin "@nathanvda/cocoon", to: "https://cdn.jsdelivr.net/npm/@nathanvda/cocoon@1.2.14/cocoon.min.js"
 pin_all_from "app/javascript/custom", under: "custom"
 pin "cleave.js", to: "https://ga.jspm.io/npm:cleave.js@1.6.0/dist/cleave.js"
+pin "@rails/request.js", to: "https://ga.jspm.io/npm:@rails/request.js@0.0.8/src/index.js"

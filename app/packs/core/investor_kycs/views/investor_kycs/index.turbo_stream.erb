@@ -1,0 +1,3 @@
+<%= turbo_stream.update params[:target] do %>
+  <%= options_for_select @investor_kycs.map{|e| [e.full_name, e.id]} %>
+<% end %>

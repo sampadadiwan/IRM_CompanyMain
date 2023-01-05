@@ -1,5 +1,5 @@
 class ImportCapitalRemittance < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Due Amount", "Collected Amount", "Status", "Verified"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Due Amount", "Collected Amount", "Status", "Verified", "Folio No"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -54,7 +54,7 @@ class ImportCapitalRemittance < ImportUtil
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
     capital_call = fund.capital_calls.where(name: user_data["Capital Call"].strip).first
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
-    folio_id = user_data["Folio Id"]&.strip
+    folio_id = user_data["Folio No"]&.strip
     capital_commitment = fund.capital_commitments.where(investor_id: investor.id, folio_id:).first
 
     collected_amount_cents = user_data["Collected Amount"].to_d * 100

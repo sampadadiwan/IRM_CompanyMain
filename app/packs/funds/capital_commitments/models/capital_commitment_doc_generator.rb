@@ -51,12 +51,9 @@ class CapitalCommitmentDocGenerator
 
       generate_custom_fields(r, capital_commitment)
 
-      investor_kyc = InvestorKyc.where(investor_id: capital_commitment.investor_id,
-                                       entity_id: capital_commitment.entity_id).first
-
       # Can we have more than one LP signer ?
-      add_image(r, :investor_signature, investor_kyc.signature)
-      generate_kyc_fields(r, investor_kyc)
+      add_image(r, :investor_signature, capital_commitment.investor_kyc.signature)
+      generate_kyc_fields(r, capital_commitment.investor_kyc)
     end
 
     report.generate("#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.odt")

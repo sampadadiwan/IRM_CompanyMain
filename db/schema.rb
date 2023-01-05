@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_02_124016) do
+ActiveRecord::Schema[7.0].define(version: 2023_01_05_033924) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -327,11 +327,13 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_02_124016) do
     t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.boolean "onboarding_completed", default: false
     t.datetime "deleted_at"
+    t.bigint "investor_kyc_id"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
     t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"
     t.index ["investor_id"], name: "index_capital_commitments_on_investor_id"
+    t.index ["investor_kyc_id"], name: "index_capital_commitments_on_investor_kyc_id"
     t.index ["investor_signatory_id"], name: "index_capital_commitments_on_investor_signatory_id"
   end
 
@@ -1720,6 +1722,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_02_124016) do
   add_foreign_key "capital_calls", "users", column: "approved_by_user_id"
   add_foreign_key "capital_commitments", "entities"
   add_foreign_key "capital_commitments", "funds"
+  add_foreign_key "capital_commitments", "investor_kycs"
   add_foreign_key "capital_commitments", "investors"
   add_foreign_key "capital_commitments", "users", column: "investor_signatory_id"
   add_foreign_key "capital_distribution_payments", "capital_commitments"

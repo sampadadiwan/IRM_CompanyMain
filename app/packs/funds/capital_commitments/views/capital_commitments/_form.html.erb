@@ -13,18 +13,32 @@
 
   <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
   <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
-  
-  <div class="form-group">
-    <%= form.label :investor_id %>
-    <%= form.select :investor_id, capital_commitment.fund.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control"  %>
+
+
+  <div data-controller="commitmentselect" data-commitmentselect-kyc-url-value="<%= investor_kycs_path %>" data-commitmentselect-employee-url-value="<%= investor_accesses_path %>"
+           data-commitmentselect-param-value="investor_id">
+
+    <div class="form-group">
+      <%= form.label :investor_id %>
+      <%= form.select :investor_id, capital_commitment.fund.investors.map{|i| [i.investor_name, i.id]}  ,{include_blank: "Select Investor"}, { class: 'form-control', data: { action: "change->commitmentselect#change" } }  %>
+    </div>
+
+
+    <div class="form-group">
+      <%= form.label :investor_signatory_id %>
+      <% employees = capital_commitment.investor ? capital_commitment.investor.investor_accesses.map{|e| [e.full_name, e.user_id]} : [] %>
+      
+      <%= form.select :investor_signatory_id, employees, {include_blank: true}, {class: 'form-control', data: { commitmentselect_target: "employeeSelect" } }  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :investor_kyc %>
+      <% investor_kycs = capital_commitment.investor ? capital_commitment.investor.investor_kycs.map{|e| [e.full_name, e.id]} : [] %>
+      
+      <%= form.select :investor_kyc_id, investor_kycs, {include_blank: true}, {class: 'form-control', data: { commitmentselect_target: "kycSelect" } } %>
+    </div>
+
   </div>
-  
-  <% if capital_commitment.investor %>
-  <div class="form-group">
-    <%= form.label :investor_signatory_id %>
-    <%= form.select :investor_signatory_id, capital_commitment.investor.investor_entity.employees.map{|e| [e.full_name, e.id]}, {include_blank: true}, class: "form-control"  %>
-  </div>
-  <% end %>
 
   <div class="form-group">
     <%= form.label :investor_signature_types %>

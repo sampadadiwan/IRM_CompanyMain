@@ -47,6 +47,10 @@ class InvestorAccess < ApplicationRecord
     errors.add(:user, "cannot be given access. Belongs to #{user.entity.name} but is being added to #{investor.investor_entity.name}") if user && user.entity_id != investor.investor_entity_id
   end
 
+  def full_name
+    "#{first_name} #{last_name}"
+  end
+
   def to_s
     email
   end
