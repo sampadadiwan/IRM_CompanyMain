@@ -42,9 +42,9 @@ export default class extends Controller {
                   // This is done so we can load the documents_frame using turbo_frames
                   let link = $(this).attr("href");
                   if (link !== "#") {
-                    console.log(`link = ${link}`);
-                    $("#selected_folder_link").attr("href", link);
-                    $("#selected_folder_link").find('span').trigger('click');
+                    const frame = document.getElementById('documents_frame');
+                    frame.src=link;
+                    frame.reload();
                   }
               }
           );

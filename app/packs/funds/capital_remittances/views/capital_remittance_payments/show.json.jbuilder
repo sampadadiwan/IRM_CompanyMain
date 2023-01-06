@@ -1,0 +1,1 @@
+json.partial! "capital_remittance_payments/capital_remittance_payment", capital_remittance_payment: @capital_remittance_payment

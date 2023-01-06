@@ -42,6 +42,7 @@ Rails/FilePath:
 
 Rails/SkipsModelValidations:
   Exclude:
+    - 'app/packs/funds/capital_calls/jobs/capital_call_job.rb'
     - 'app/packs/core/folders/models/folder.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/fund_raise_allocation_job.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/allocation_job.rb'

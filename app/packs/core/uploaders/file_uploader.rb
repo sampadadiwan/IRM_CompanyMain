@@ -43,7 +43,7 @@ class FileUploader < Shrine
       elsif ["Excercise"].include? record.owner_type
         # Put it inside the Deal folder
         "#{entity}/OptionPool/#{record.owner.option_pool_id}/#{owner_path}"
-      elsif %w[CapitalCall CapitalCommitment CapitalRemittance CapitalDistribution CapitalDistributionPayment].include? record.owner_type
+      elsif %w[CapitalCall CapitalCommitment CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment].include? record.owner_type
         # Put it inside the Fund folder
         "#{entity}/Funds/#{record.owner.fund.name}/#{owner_path}"
       end

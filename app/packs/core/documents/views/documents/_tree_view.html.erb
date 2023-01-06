@@ -1,7 +1,3 @@
-<!- The below 2 fields are manipulated by treeview_controller.js to load the selected folder docs in the documents_frame ->
-<input type="text" id="selected_folder_id" value="<%=params[:folder_id]%>" hidden>
-<a id="selected_folder_link" href="" data-turbo-frame="documents_frame"><span></span></a>
-
 <% no_folders ||= false %>
 <%= render "/layouts/steps", steps: ["Create Folders", "Upload Docs", "Setup Access Rights"].freeze if show_steps %>
 

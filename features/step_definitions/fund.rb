@@ -105,7 +105,7 @@
   
   Given('the investors are added to the fund') do
     @user.entity.investors.not_holding.not_trust.each do |inv|
-        ar = AccessRight.create!( owner: @fund, access_type: "Fund", 
+        ar = AccessRight.create( owner: @fund, access_type: "Fund", 
                                  access_to_investor_id: inv.id, entity: @user.entity)
 
 
@@ -142,6 +142,23 @@
         puts commitment.to_json
     end
   end
+
+  Given('there is a capital commitment of {string} for the investor {string}') do |args, name|
+    @fund.reload
+    inv = Investor.where(investor_name: name).first 
+    commitment = FactoryBot.build(:capital_commitment, fund: @fund, investor: inv)
+    key_values(commitment, args)
+    commitment.save
+    puts "\n####CapitalCommitment####\n"
+    puts commitment.to_json
+  end
+
+  Given('there is a capital call {string}') do |arg|
+    @capital_call = FactoryBot.build(:capital_call, fund: @fund, entity: @fund.entity)
+    key_values(@capital_call, arg)
+    @capital_call.save
+  end
+  
   
   When('I create a new capital call {string}') do |args|
     @capital_call = FactoryBot.build(:capital_call, fund: @fund)
@@ -163,6 +180,8 @@
 
   Then('the corresponding remittances should be created') do
     @capital_call = CapitalCall.last
+    
+    @capital_call.capital_remittances.count.should == @fund.investors.count
     @capital_call.capital_remittances.each do |remittance|
         cc = @fund.capital_commitments.where(investor_id: remittance.investor_id).first
         (cc.committed_amount * @capital_call.percentage_called / 100.0).should == remittance.due_amount
@@ -171,8 +190,8 @@
   
   Then('I should see the remittances') do
     @capital_call.reload
-    @fund.capital_commitments.count.should == 2
-    @capital_call.capital_remittances.count.should == 2
+    @fund.capital_commitments.count.should == @fund.investors.count
+    @capital_call.capital_remittances.count.should == @fund.investors.count
 
     visit(capital_call_url(@capital_call))
     click_on "Remittances"
@@ -202,14 +221,9 @@
   When('I mark the remittances as paid') do
 
     @capital_call.capital_remittances.each do |remittance|
-      visit(capital_call_url(@capital_call))
-      sleep(2)
-      click_on "Remittances"      
-      within("#capital_remittance_#{remittance.id}") do
-        click_on "Paid"
-        sleep(1)
-      end
-      fill_in('capital_remittance_collected_amount', with: remittance.due_amount)
+      visit(capital_remittance_url(remittance))
+      click_on "New Payment"      
+      fill_in('capital_remittance_payment_amount', with: remittance.due_amount)
       click_on "Save"
       sleep(1)
     end
@@ -235,6 +249,7 @@
 Then('the capital call collected amount should be {string}') do |arg|
   @capital_call.reload
   @capital_call.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.fund.currency)
+  @capital_call.fund.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.fund.currency)
 end
 
   
@@ -478,6 +493,7 @@ end
 Then('the capital distribution must reflect the payments') do
   @capital_distribution.reload
   @capital_distribution.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:amount_cents)
+  @capital_distribution.fund.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:amount_cents)
 end
 
 Then('the investors must receive email with subject {string}') do |subject|

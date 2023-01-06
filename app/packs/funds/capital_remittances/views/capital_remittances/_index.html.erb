@@ -10,11 +10,11 @@
 
         <%= link_to "Download", capital_remittances_path(capital_call_id: params[:capital_call_id], format: "xlsx", all: true),  {class: "btn btn-outline-primary" } %>
 
-        <%= link_to "Upload", 
+        <%= link_to "Upload Payments", 
             new_import_upload_path("import_upload[owner_id]": params[:capital_call_id], 
             "import_upload[owner_type]": "CapitalCall", 
-            "import_upload[import_type]": "CapitalRemittance", 
-            "sample_upload": "CAPITAL_REMITTANCE_SAMPLE"), 
+            "import_upload[import_type]": "CapitalRemittancePayment", 
+            "sample_upload": "CAPITAL_REMITTANCE_PAYMENT_SAMPLE"), 
             { class: "btn btn-outline-primary"}  %> 
 
         
@@ -50,10 +50,6 @@
                 <th>
                     Collected Amount
                 </th>
-                <th>
-                    Payment Date
-                </th>
-                
                 <th>
                 </th>
             </tr>

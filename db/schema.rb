@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_05_033924) do
+ActiveRecord::Schema[7.0].define(version: 2023_01_06_090045) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -388,6 +388,23 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_05_033924) do
     t.index ["entity_id"], name: "index_capital_distributions_on_entity_id"
     t.index ["form_type_id"], name: "index_capital_distributions_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_distributions_on_fund_id"
+  end
+
+  create_table "capital_remittance_payments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "fund_id", null: false
+    t.bigint "capital_remittance_id", null: false
+    t.bigint "entity_id", null: false
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.date "payment_date"
+    t.text "properties"
+    t.text "payment_proof_data"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "reference_no", limit: 40
+    t.index ["capital_remittance_id"], name: "index_capital_remittance_payments_on_capital_remittance_id"
+    t.index ["entity_id"], name: "index_capital_remittance_payments_on_entity_id"
+    t.index ["fund_id"], name: "index_capital_remittance_payments_on_fund_id"
   end
 
   create_table "capital_remittances", charset: "utf8mb3", force: :cascade do |t|
@@ -1735,6 +1752,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_05_033924) do
   add_foreign_key "capital_distributions", "form_types"
   add_foreign_key "capital_distributions", "funds"
   add_foreign_key "capital_distributions", "users", column: "approved_by_user_id"
+  add_foreign_key "capital_remittance_payments", "capital_remittances"
+  add_foreign_key "capital_remittance_payments", "entities"
+  add_foreign_key "capital_remittance_payments", "funds"
   add_foreign_key "capital_remittances", "capital_calls"
   add_foreign_key "capital_remittances", "capital_commitments"
   add_foreign_key "capital_remittances", "entities"

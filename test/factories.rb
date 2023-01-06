@@ -1,4 +1,12 @@
 FactoryBot.define do
+  factory :capital_remittance_payment do
+    fund { nil }
+    capital_remittance { nil }
+    entity { nil }
+    amount_cents { "9.99" }
+    payment_date { "2023-01-06" }
+  end
+
   factory :user_alert do
     user { nil }
     message { "MyString" }
@@ -118,7 +126,7 @@ FactoryBot.define do
     entity { fund.entity }
     investor { fund.investors.sample }
     committed_amount { 100000 * rand(10..30)}
-    folio_id {rand(10**4)}
+    folio_id {rand(100**4)}
     notes { Faker::Company.catch_phrase }
   end
 

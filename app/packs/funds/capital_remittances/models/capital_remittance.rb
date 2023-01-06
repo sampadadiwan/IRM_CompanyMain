@@ -10,17 +10,18 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :capital_call
   belongs_to :capital_commitment
   belongs_to :investor
+  has_many :capital_remittance_payments
 
   belongs_to :form_type, optional: true
   serialize :properties, Hash
 
-  include FileUploader::Attachment(:payment_proof)
-
   scope :paid, -> { where(status: "Paid") }
   scope :pending, -> { where(status: "Pending") }
+  scope :verified, -> { where(verified: true) }
 
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
   validates :folio_id, presence: true
+  validates_uniqueness_of :folio_id, scope: :capital_call_id
 
   counter_culture :capital_call, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                                  delta_column: 'collected_amount_cents',
@@ -46,12 +47,12 @@ class CapitalRemittance < ApplicationRecord
   before_save :set_status
   before_create :set_call_amount
   def set_call_amount
-    self.call_amount_cents = capital_commitment ? capital_call.percentage_called * capital_commitment.committed_amount_cents / 100.0 : 0
-
-    # When the upload is done, we get historical data, so set the collected amount
-    self.collected_amount = call_amount if capital_call.generate_remittances_verified
-
+    self.call_amount_cents = calc_call_amount_cents
     set_status
+  end
+
+  def calc_call_amount_cents
+    capital_call.percentage_called * capital_commitment.committed_amount_cents / 100.0
   end
 
   def send_notification
@@ -59,11 +60,11 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def set_status
-    self.status ||= if call_amount_cents == collected_amount_cents
-                      "Paid"
-                    else
-                      "Pending"
-                    end
+    self.status = if (call_amount_cents - collected_amount_cents).abs < 100
+                    "Paid"
+                  else
+                    "Pending"
+                  end
   end
 
   def due_amount

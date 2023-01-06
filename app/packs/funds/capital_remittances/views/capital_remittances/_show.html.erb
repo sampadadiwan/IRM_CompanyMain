@@ -36,21 +36,22 @@
 
     <tr>
       <td>
-        Payment Date
-      </td>
-      <td>
-        <%= l capital_remittance.payment_date if capital_remittance.payment_date %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
         Investor
       </td>
       <td>
         <%= link_to capital_remittance.investor.investor_name, capital_remittance.investor %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Folio Id
+      </td>
+      <td>
+        <%= capital_remittance.folio_id %>
+      </td>
+    </tr>
+
     <tr>
       <td>
         Status
@@ -91,15 +92,6 @@
         </td>
       </tr>
 
-      
-      <tr>
-        <td>
-            Payment Proof
-        </td>
-        <td>
-            <%= link_to "Payment Proof", capital_remittance.payment_proof.url, class: "btn btn-outline-success", target: "_blank" if capital_remittance.payment_proof.present? %>
-        </td>
-      </tr>
 
       <tr>
         <td>

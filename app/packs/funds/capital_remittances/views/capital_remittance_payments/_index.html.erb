@@ -1,0 +1,35 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Capital Remittance Payments</h1>
+  <% capital_remittance||= nil %>
+  <%= link_to "New Payment", new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id), {class: "btn btn-primary"} if capital_remittance %>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="capital_remittance_payments" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          Fund
+        </th>
+        <th>
+          Capital Remittance
+        </th>
+        <th>
+          Amount
+        </th>
+        <th>
+          Payment Date
+        </th>
+        <th>
+          Reference No
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% capital_remittance_payments.each do |capital_remittance_payment| %>
+        <%= render capital_remittance_payment %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

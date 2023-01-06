@@ -1,0 +1,21 @@
+<tr id="<%= dom_id capital_remittance_payment %>">
+  <td>
+    <%= link_to capital_remittance_payment.fund.name, capital_remittance_payment.fund %>
+  </td>
+  <td>
+    <%= link_to capital_remittance_payment.capital_remittance_id, capital_remittance_payment.capital_remittance %>
+  </td>
+  <td>
+    <%= money_to_currency capital_remittance_payment.amount, params %>
+  </td>
+  <td>
+    <%= l capital_remittance_payment.payment_date if capital_remittance_payment.payment_date %>
+  </td>
+  <td>
+    <%= capital_remittance_payment.reference_no %>
+  </td>
+
+  <td>
+    <%= link_to "Show", capital_remittance_payment , {class: "btn btn-primary"}%>
+  </td>
+</tr>

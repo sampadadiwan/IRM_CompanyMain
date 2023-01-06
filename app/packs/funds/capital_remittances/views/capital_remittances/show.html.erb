@@ -6,13 +6,15 @@
   <div>
     <% if policy(@capital_remittance).update? %>
         <%= link_to "Edit", edit_capital_remittance_path(@capital_remittance), {class: "btn btn-outline-primary" } %>      
-        <%= link_to "Paid", edit_capital_remittance_path(@capital_remittance, status: "Paid"), {class: "btn btn-outline-primary" } %>      
     <% end %>
 
     <% label = @capital_remittance.verified ? "Unverify" : "Verify" %> 
     <% msg = @capital_remittance.verified ? "Mark as Unverified?" : "Mark as Verified?" %> 
     <%= button_to label, verify_capital_remittance_path(@capital_remittance), method: :patch, 
         class: "btn btn-outline-success", form_class: "deleteButton", 
-        data: {action: "click->confirm#popup", msg: msg, turbo:false, method: :patch} if policy(@capital_remittance).verify? && @capital_remittance.status=="Paid" %>
+        data: {action: "click->confirm#popup", msg: msg, turbo:false, method: :patch} if policy(@capital_remittance).verify? %>
 
   </div>
+
+
+  <%= render "/capital_remittances/details", capital_remittance: @capital_remittance %>
