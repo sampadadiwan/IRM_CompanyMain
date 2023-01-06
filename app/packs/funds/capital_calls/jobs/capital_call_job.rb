@@ -4,7 +4,7 @@ class CapitalCallJob < ApplicationJob
   attr_accessor :remittances, :payments
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCall
-  def perform(capital_call_id, type = "Generate")
+  def perform(capital_call_id, type, _capital_commitment_id = nil)
     @remittances = []
     @payments = []
     Chewy.strategy(:sidekiq) do
@@ -37,6 +37,21 @@ class CapitalCallJob < ApplicationJob
     # import the rows
     CapitalRemittance.import @remittances
 
+    # Generate any payments for the imported remittances if required
+    generate_remittance_payments
+
+    # Update the search index
+    CapitalRemittanceIndex.import(@capital_call.capital_remittances)
+    # Update the counter caches
+    CapitalRemittance.counter_culture_fix_counts only: :capital_call, where: { id: @capital_call.id }
+    CapitalRemittance.counter_culture_fix_counts only: :capital_commitment, where: { fund_id: @capital_call.fund_id }
+    CapitalRemittance.counter_culture_fix_counts only: :fund, where: { id: @capital_call.fund_id }
+
+    # Mark all remittances for this call as paid if the called - collected < 100 cents
+    CapitalRemittance.where(capital_call_id: @capital_call.id).where("ABS(capital_remittances.collected_amount_cents - capital_remittances.call_amount_cents) <= 100").update_all(status: "Paid")
+  end
+
+  def generate_remittance_payments
     # Some rows will be verified but will have no payments, for these generate the payments also
     @capital_call.capital_remittances.verified.each do |cr|
       next unless cr.collected_amount_cents.zero?
@@ -50,16 +65,6 @@ class CapitalCallJob < ApplicationJob
 
     CapitalRemittancePayment.import @payments
     CapitalRemittancePayment.counter_culture_fix_counts only: :capital_remittance, where: { fund_id: @capital_call.fund_id }
-
-    # Update the search index
-    CapitalRemittanceIndex.import(@capital_call.capital_remittances)
-    # Update the counter caches
-    CapitalRemittance.counter_culture_fix_counts only: :capital_call, where: { id: @capital_call.id }
-    CapitalRemittance.counter_culture_fix_counts only: :capital_commitment, where: { fund_id: @capital_call.fund_id }
-    CapitalRemittance.counter_culture_fix_counts only: :fund, where: { id: @capital_call.fund_id }
-
-    # Mark all remittances for this call as paid if the called - collected < 100 cents
-    CapitalRemittance.where(capital_call_id: @capital_call.id).where("ABS(capital_remittances.collected_amount_cents - capital_remittances.call_amount_cents) <= 100").update_all(status: "Paid")
   end
 
   def notify(capital_call_id)

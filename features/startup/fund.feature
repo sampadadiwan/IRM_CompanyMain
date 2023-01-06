@@ -70,16 +70,16 @@ Scenario Outline: Create new commitment after capital call
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund  
   Given there are capital commitments of "committed_amount_cents=100000000" from each investor
-  Given there is a capital call "percentage_called=20"
+  Given there is a capital call "<call>"
   Given there is an existing investor "name=New Investor" with "1" users
   Given there is a capital commitment of "committed_amount_cents=100000000" for the investor "New Investor"
   Given the investors are added to the fund  
   Then the corresponding remittances should be created
   Then I should see the remittances  
 Examples:
-  	|user	    |entity                                 |fund                 |
-  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |
+  	|user	    |entity                                 |fund                 | call |
+  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test  | percentage_called=20 |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger| percentage_called=20;generate_remittances_verified=true |
 
 
 Scenario Outline: Create new capital call

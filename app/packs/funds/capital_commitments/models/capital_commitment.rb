@@ -44,9 +44,7 @@ class CapitalCommitment < ApplicationRecord
   def create_remittance
     # When the CapitalCommitment is created, ensure that for any capital calls prev created
     # The corr CapitalRemittance are created
-    fund.capital_calls.each do |cc|
-      CapitalCallJob.perform_later(cc.id)
-    end
+    CapitalCommitmentRemittanceJob.perform_later(id)
   end
 
   after_save :compute_percentage, if: :saved_change_to_committed_amount_cents?
