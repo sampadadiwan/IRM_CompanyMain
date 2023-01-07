@@ -54,7 +54,7 @@ Examples:
 Scenario Outline: Create new investment
   Given Im logged in as a user "last_name=Tester" for an entity "entity_type=Company"
   Given a esop pool "name=Pool 1;approved=true" is created with vesting schedule "12:20,24:30,36:50"
-  Given there is an existing investor "name=Sequoia"
+  Given there is an existing investor ""
   And I am at the investments page
   And I create an investment "investment_instrument=Equity;quantity=100;investor_id=4"
   And I create an investment "investment_instrument=Preferred;quantity=200;investor_id=4"

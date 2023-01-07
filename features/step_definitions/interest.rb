@@ -63,7 +63,7 @@
   Given('an interest {string} from some entity {string}') do |int_args, entity_args|
     @buyer_entity = FactoryBot.build(:entity)
     key_values(@buyer_entity, entity_args)
-    @buyer_entity.save
+    @buyer_entity.save!
     @buyer_user = FactoryBot.create(:user, entity: @buyer_entity)
 
     @interest = Interest.new(user: @buyer_user, interest_entity: @buyer_entity, 

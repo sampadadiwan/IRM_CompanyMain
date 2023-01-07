@@ -37,6 +37,7 @@ ActionController::Base.allow_rescue = false
 
 begin
   DatabaseCleaner.strategy = [:truncation, except: %w[abraham_histories blazer_audits blazer_checks blazer_dashboard_queries   blazer_dashboards blazer_queries  active_admin_comments video_kycs taggings tags admin_users active_storage_attachments active_storage_blobs active_storage_variant_records user_alerts impressions activities exception_tracks impressions investment_snapshots messages nudges reminders payments holding_actions holding_audit_trails deal_docs]]
+  
   Chewy.strategy :bypass
 
   # UserIndex.reset!
@@ -54,13 +55,13 @@ After do |scenario|
   if scenario.failed?
     puts scenario.location.to_s
     timestamp = "#{Time.zone.now.strftime('%Y-%m-%d-%H:%M:%S')}"
-    screenshot_name = "screenshot-#{scenario.name}-#{scenario.location.to_s}.png"
+    screenshot_name = "screenshot-#{scenario.name.gsub("/","-")}-#{scenario.location.to_s}.png"
     screenshot_path = "#{Rails.root.join("tmp/cucumber")}/#{screenshot_name}"
     Capybara.page.save_screenshot(screenshot_path, full: true)
   end
 end
 
-Cucumber::Rails::Database.javascript_strategy = :truncation
+# Cucumber::Rails::Database.javascript_strategy = :truncation
 
 Capybara.run_server = true
 Capybara.server_port = 3000 + ENV['TEST_ENV_NUMBER'].to_i 
@@ -69,7 +70,7 @@ Capybara.default_max_wait_time = 5
 Capybara.register_server :puma do |app, port, host|
   require 'puma'
   Puma::Server.new(app).tap do |s|
-    s.add_tcp_listener host, port
+    s.add_tcp_listener host, 3000 + ENV['TEST_ENV_NUMBER'].to_i
   end.run.join
 end
 

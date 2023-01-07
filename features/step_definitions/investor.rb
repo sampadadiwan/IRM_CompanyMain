@@ -108,7 +108,7 @@ end
 Given('there is an existing investor entity {string}') do |arg1|
   @investor_entity = FactoryBot.build(:entity, entity_type: "Investor")
   key_values(@investor_entity, arg1)
-  @investor_entity.save
+  @investor_entity.save!
   puts "\n####Investor Entity####\n"
   puts @investor_entity.to_json
   EntityIndex.import

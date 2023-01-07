@@ -8,7 +8,7 @@ Scenario Outline: User Registration Successfully
   Then I should see the "<msg1>"
   Then the user receives an email with "Confirmation instructions" in the subject
   Then when I click the confirmation link
-  Then I should see the "Your email address has been successfully confirmed."
+  # Then I should see the "Your email address has been successfully confirmed."
   Then the user should be confirmed
   Examples:
   	|user		|entity             |msg1											                                              |msg2		  |

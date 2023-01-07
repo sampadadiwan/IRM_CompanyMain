@@ -52,7 +52,7 @@
       @access_right = AccessRight.create(entity_id: @fund.entity_id, owner: @fund, access_to_investor_id: @investor.id, metadata: "Advisor")
 
       @user.curr_role = "advisor"
-      @user.save
+      @user.save!
       @user.add_role :advisor
 
       ia = InvestorAccess.create(entity: @investor.entity, investor: @investor, 
@@ -143,9 +143,9 @@
     end
   end
 
-  Given('there is a capital commitment of {string} for the investor {string}') do |args, name|
+  Given('there is a capital commitment of {string} for the last investor') do |args|
     @fund.reload
-    inv = Investor.where(investor_name: name).first 
+    inv = Investor.last
     commitment = FactoryBot.build(:capital_commitment, fund: @fund, investor: inv)
     key_values(commitment, args)
     commitment.save

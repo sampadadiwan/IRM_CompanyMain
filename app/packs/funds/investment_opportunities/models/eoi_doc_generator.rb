@@ -27,7 +27,7 @@ class EoiDocGenerator
   end
 
   def working_dir_path(expression_of_interest)
-    "tmp/eoi_doc_generator/#{rand(1000000)}/#{expression_of_interest.id}"
+    "tmp/eoi_doc_generator/#{rand(1_000_000)}/#{expression_of_interest.id}"
   end
 
   # io_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"

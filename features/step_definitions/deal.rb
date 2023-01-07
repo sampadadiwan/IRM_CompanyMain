@@ -172,7 +172,7 @@ end
 
 
 Given('there are {string} exisiting deals {string} with another firm in the startups') do |count, args|
-  @another_entity = FactoryBot.create(:entity, entity_type: "Investor", name: "Another Investor Firm")
+  @another_entity = FactoryBot.create(:entity, entity_type: "Investor")
 
   Entity.startups.each do |company|
     @investor = FactoryBot.create(:investor, investor_entity: @another_entity, entity: company)

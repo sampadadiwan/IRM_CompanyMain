@@ -389,7 +389,7 @@ Given('there are {string} exisiting investments {string} from my firm in startup
   @funding_round ||= FactoryBot.create(:funding_round, entity: @entity)
 
   (1..count.to_i).each do |i|
-    @startup_entity = FactoryBot.create(:entity, entity_type: "Company", name: "Company #{i}")
+    @startup_entity = FactoryBot.create(:entity, entity_type: "Company")
     @startup_entity_employee = FactoryBot.create(:user, entity: @startup_entity)
     @investor = FactoryBot.create(:investor, investor_entity: @entity, entity: @startup_entity)
     (1..count.to_i).each do 
@@ -405,7 +405,7 @@ end
 Given('there are {string} exisiting investments {string} from another firm in startups') do |count, args|
   @funding_round ||= FactoryBot.create(:funding_round, entity: @entity)
 
-  @another_entity = FactoryBot.create(:entity, entity_type: "Investor", name: "Another Investor Firm")
+  @another_entity = FactoryBot.create(:entity, entity_type: "Investor")
   @another_entity_employee = FactoryBot.create(:user, entity: @another_entity)
 
   Entity.startups.each do |company|
@@ -468,10 +468,11 @@ Then('I should be able to see only my investments for each entity') do
   Entity.startups.each do |entity|
     entity.investments.each do |inv|
       visit(investor_entities_entities_path)
-      find("#investments_entity_#{entity.id}").click
 
       @investment = inv
       if @investment.investor_entity_id == @entity.id
+        find("#investments_entity_#{entity.id}").click
+
         find("#show_investment_#{inv.id}").click  
         steps %(
           Then I should see the investment details on the details page    

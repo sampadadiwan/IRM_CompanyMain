@@ -88,15 +88,15 @@ module InvestorRelationshipManagement
       enable_starttls_auto: true
     }
 
-    unless Rails.env.development? || Rails.env.test?
-      Rails.application.config.middleware.use ExceptionNotification::Rack,
-                                              email: {
-                                                email_prefix: '[Error:] ',
-                                                sender_address: %("Support" <#{ENV.fetch('SUPPORT_EMAIL', nil)}>),
-                                                exception_recipients: %("ERROR" <#{ENV.fetch('ERROR_EMAIL', nil)}>)
-                                              }
+    # unless Rails.env.development? || Rails.env.test?
+    Rails.application.config.middleware.use ExceptionNotification::Rack,
+                                            email: {
+                                              email_prefix: '[Error:] ',
+                                              sender_address: %("Support" <#{ENV.fetch('SUPPORT_EMAIL', nil)}>),
+                                              exception_recipients: %("ERROR" <#{ENV.fetch('ERROR_EMAIL', nil)}>)
+                                            }
 
-    end
+    # end
 
     # config.active_storage.replace_on_assign_to_many = false
     config.active_storage.analyzers = []

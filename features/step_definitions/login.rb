@@ -7,7 +7,8 @@ Given('Im logged in as a user {string} for an entity {string}') do |arg1, arg2|
 end
 
 Given(/^I am at the login page$/) do
-  visit("/")
+  visit("/users/sign_in")
+  expect(page).to have_content("Welcome To Cap Hive")
 end
 
 When(/^I fill and submit the login page$/) do
@@ -15,6 +16,8 @@ When(/^I fill and submit the login page$/) do
   fill_in('user_password', with: "password")
   click_on("Log in")
   sleep(1)
+  expect(page).to have_content("Signed in successfully")
+  User.find_by_email(@user.email).sign_in_count.should == 1
 end
 
 When(/^I fill the password incorrectly and submit the login page$/) do

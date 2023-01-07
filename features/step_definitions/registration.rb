@@ -16,13 +16,12 @@ When(/^I fill and submit the registration page$/) do
 end
 
 Then(/^when I click the confirmation link$/) do
-  @saved_user = User.last
-  url = user_confirmation_url(confirmation_token: @saved_user.confirmation_token)
-  visit(url)
+  User.last.email.should == @user.email
+  current_email.click_link "Access Your Account"
 end
 
 Then(/^the user should be confirmed$/) do
-  @saved_user.reload
+  @saved_user = User.find_by_email(@user.email)
   @saved_user.confirmed_at.should_not be_nil
 
   fields = %w[first_name last_name email phone]

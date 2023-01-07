@@ -102,6 +102,11 @@ include InvestmentsHelper
     @deal_activity.completed.should == "Yes"
   end
   
+  Given('there is a deal investor for the last investor') do 
+    inv = Investor.last
+    @deal_investor = FactoryBot.create(:deal_investor, investor: inv, entity_id: inv.entity_id, deal: @deal)
+  end
+  
 
   Given('there is a deal investor with name {string}') do |name|
     inv = Investor.find_by(investor_name: name)

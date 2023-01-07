@@ -20,8 +20,8 @@ Scenario Outline: Access fund
 Scenario Outline: Access fund & details as Employee
   Given there is a user "<user>" for an entity "<entity>"
   Given the user has role "<role>"
-  Given there is an existing investor "name=Arun Gupta"
-  Given there is an existing investor "name=Brahmos Family"
+  Given there is an existing investor ""
+  Given there is an existing investor ""
   Given there is a fund "name=Test fund" for the entity
   And I am "<given>" employee access to the fund
   Given the fund has capital commitments from each investor
@@ -46,8 +46,8 @@ Scenario Outline: Access fund & details as Employee
 Scenario Outline: Access fund & details as Employee with update access
   Given there is a user "<user>" for an entity "<entity>"
   Given the user has role "<role>"
-  Given there is an existing investor "name=Arun Gupta"
-  Given there is an existing investor "name=Brahmos Family"
+  Given there is an existing investor ""
+  Given there is an existing investor ""
   Given there is a fund "name=Test fund" for the entity
   And I am "<given>" employee access to the fund
   And the access right has access "<crud>"
@@ -78,7 +78,7 @@ Scenario Outline: Access fund & details as Employee with update access
 
 Scenario Outline: Access fund & details as Investor
   Given there is a user "<user>" for an entity "<entity>"
-  Given there is an existing investor "name=Arun Gupta;entity_type=Family Office"
+  Given there is an existing investor "entity_type=Family Office"
   Given there is an existing investor entity "entity_type=Family Office" with employee "first_name=Investor"
   Given there is a fund "name=Test fund" for the entity
   And another user is "<given>" investor access to the fund
@@ -105,7 +105,7 @@ Scenario Outline: Access fund & details as Investor
 
 Scenario Outline: Access fund & details as Advisor
   Given there is a user "<user>" for an entity "<entity>"
-  Given there is an existing investor "name=Arun Gupta;entity_type=Family Office"
+  Given there is an existing investor "entity_type=Family Office"
   Given there is an existing investor entity "entity_type=Advisor" with employee "first_name=Advisor"
   Given there is a fund "name=Test fund" for the entity
   And another user is "<given>" advisor access to the fund
@@ -131,7 +131,7 @@ Scenario Outline: Access fund & details as Advisor
 
 Scenario Outline: Access fund & details as Advisor with update access
   Given there is a user "<user>" for an entity "<entity>"
-  Given there is an existing investor "name=Arun Gupta;entity_type=Family Office"
+  Given there is an existing investor "entity_type=Family Office"
   Given there is an existing investor entity "entity_type=Advisor" with employee "first_name=Advisor"
   Given there is a fund "name=Test fund" for the entity
   And another user is "<given>" advisor access to the fund

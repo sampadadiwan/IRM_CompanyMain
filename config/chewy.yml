@@ -2,7 +2,7 @@
 # separate environment configs
 test:
   host: '<%= ENV["ELASTIC_SEARCH_URL"] %>'
-  prefix: 'test'
+  prefix: 'test<%= ENV["TEST_ENV_NUMBER"] %>'
 staging:
   host: '<%= ENV["ELASTIC_SEARCH_URL"] %>'
   prefix: 'staging'

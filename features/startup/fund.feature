@@ -47,13 +47,13 @@ Scenario Outline: View fund - without employee access
 Scenario Outline: Create new capital commitment
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
-  Given there is an existing investor "name=Accel" with "2" users
-  Given there is an existing investor "name=Sequoia" with "2" users
+  Given there is an existing investor "name=A1" with "2" users
+  Given there is an existing investor "name=A2" with "2" users
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund  
-  When I add a capital commitment "1000000" for investor "Accel"
+  When I add a capital commitment "1000000" for investor "A1"
   Then the fund total committed amount must be "1000000"
-  When I add a capital commitment "1000000" for investor "Sequoia"
+  When I add a capital commitment "1000000" for investor "A2"
   Then the fund total committed amount must be "2000000"
   
   Examples:
@@ -65,14 +65,14 @@ Scenario Outline: Create new capital commitment
 Scenario Outline: Create new commitment after capital call
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
-  Given there is an existing investor "name=Accel" with "1" users
-  Given there is an existing investor "name=Sequoia" with "1" users
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund  
   Given there are capital commitments of "committed_amount_cents=100000000" from each investor
   Given there is a capital call "<call>"
-  Given there is an existing investor "name=New Investor" with "1" users
-  Given there is a capital commitment of "committed_amount_cents=100000000" for the investor "New Investor"
+  Given there is an existing investor "" with "1" users
+  Given there is a capital commitment of "committed_amount_cents=100000000" for the last investor 
   Given the investors are added to the fund  
   Then the corresponding remittances should be created
   Then I should see the remittances  
@@ -85,8 +85,8 @@ Examples:
 Scenario Outline: Create new capital call
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
-  Given there is an existing investor "name=Accel" with "2" users
-  Given there is an existing investor "name=Sequoia" with "2" users
+  Given there is an existing investor "" with "2" users
+  Given there is an existing investor "" with "2" users
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund  
   Given there are capital commitments of "committed_amount_cents=100000000" from each investor
@@ -113,8 +113,8 @@ Scenario Outline: Create new capital call
 Scenario Outline: Create new capital distrbution
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
-  Given there is an existing investor "name=Accel" with "2" users
-  Given there is an existing investor "name=Sequoia" with "2" users
+  Given there is an existing investor "" with "2" users
+  Given there is an existing investor "" with "2" users
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund  
   Given there are capital commitments of "committed_amount_cents=100000000" from each investor

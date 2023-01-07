@@ -55,8 +55,8 @@ Scenario Outline: View Deal Investors in a deal as employee
 Scenario Outline: View Deal Stages in a deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
-  Given there is an existing investor "name=Sequoia"
-  Given there is an existing investor "name=Kalaari"
+  Given there is an existing investor ""
+  Given there is an existing investor ""
   And there exists a deal "<deal>" for my company
   And there are "2" deal_investors for the deal
   And I visit the deal details page
@@ -74,8 +74,8 @@ Scenario Outline: View Deal Stages in a deal
 Scenario Outline: View Deal Stages in a deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
-  Given there is an existing investor "name=Sequoia"
-  Given there is an existing investor "name=Kalaari"
+  Given there is an existing investor ""
+  Given there is an existing investor ""
   And there exists a deal "<deal>" for my company
   And there are "2" deal_investors for the deal
   And I visit the deal details page
@@ -94,7 +94,7 @@ Scenario Outline: View Deal Stages in a deal
 Scenario Outline: View Deal Stages in a deal
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
-  Given there is an existing investor "name=Sequoia"
+  Given there is an existing investor ""
   And there exists a deal "<deal>" for my company
   And there are "1" deal_investors for the deal
   And I visit the deal details page
@@ -110,9 +110,9 @@ Scenario Outline: View Deal Stages in a deal
 Scenario Outline: Create new deal investor document
   Given there is a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
-  Given there is an existing investor "name=Sequoia" with "1" users
+  Given there is an existing investor "" with "1" users
   And there exists a deal "<deal>" for my company
-  Given there is a deal investor with name "Sequoia"
+  Given there is a deal investor for the last investor
   Given Im logged in as an investor
   When I view the deal investor details
   Then I should see the deal investor details on the details page

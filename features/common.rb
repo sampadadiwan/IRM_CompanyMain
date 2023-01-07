@@ -27,7 +27,7 @@ end
 Given('there is another user {string} for another entity {string}') do |arg1, arg2|
   @another_entity = FactoryBot.build(:entity)
   key_values(@another_entity, arg2)
-  @another_entity.save
+  @another_entity.save!
   puts "\n####Another Entity####\n"
   puts @another_entity.to_json
 
