@@ -62,26 +62,7 @@ jobs:
         env:
           CI: true
           RAILS_ENV: test
-          ELASTIC_SEARCH_URL: localhost:9200
-          REDIS_URL: redis://localhost:6379
-          HOST: localhost:3000
-          BASE_URL: http://localhost:3000
-          DB_HOST: 127.0.0.1
-          DB_USER: root
-          DB_PASS: root
-          SANDBOX_EMAILS: 'thimmaiah@gmail.com,ausang@gmail.com'
-
-          SUPPORT_EMAIL: support@caphive.com
-          ERROR_EMAIL: thimmaiah@gmail.com
-          DOMAIN: altconnects.com
-
-          AWS_S3_REGION: ap-south-1
-          AWS_S3_HOST_NAME: s3.ap-south-1.amazonaws.com
-          AWS_S3_BUCKET: docs.altx.com
-
-          DIGIO_BASE_URL: https://ext.digio.in:444
-          DIGIO_CLIENT_URL: https://ext.digio.in
-
+          
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           
         run: |
@@ -89,7 +70,8 @@ jobs:
           bin/rails db:create
           bin/rails db:schema:load
           bundle exec bin/rails runner -e test ElasticImporterJob.new.reset
-          bundle exec cucumber features
+          bundle exec rake parallel:setup
+          parallel_cucumber
 
       - name: "Deploy"
         uses: miloserdow/capistrano-deploy@master
