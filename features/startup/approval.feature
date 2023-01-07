@@ -36,8 +36,8 @@ Scenario Outline: Edit approval
 Scenario Outline: Grant Access Rights to approval
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "approver"
-  Given there is an existing investor "name=Accel" with "2" users
-  Given there is an existing investor "name=Sequoia" with "2" users
+  Given there is an existing investor "" with "2" users
+  Given there is an existing investor "" with "2" users
   Given there is an approval "<approval>" for the entity
   Given the investors are added to the approval  
   When I visit the approval details page
@@ -54,8 +54,8 @@ Scenario Outline: Grant Access Rights to approval
 Scenario Outline: Grant Access Rights to approval after approved
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "approver"
-  Given there is an existing investor "name=Accel" with "2" users
-  Given there is an existing investor "name=Sequoia" with "2" users
+  Given there is an existing investor "" with "2" users
+  Given there is an existing investor "" with "2" users
   Given there is an approval "<approval>" for the entity
   Given the investors are added to the approval  
   When I visit the approval details page
@@ -72,7 +72,7 @@ Scenario Outline: Grant Access Rights to approval after approved
 Scenario Outline: Provide approval response
   Given there is a user "<user>" for an entity "<entity>"
   Given the user has role "approver"
-  Given there is an existing investor "name=Accel" with "2" users
+  Given there is an existing investor "" with "2" users
   Given there is an approval "<approval>" for the entity
   Given the investors are added to the approval  
   Given Im logged in as an investor

@@ -184,7 +184,7 @@
     @capital_call.capital_remittances.count.should == @fund.investors.count
     @capital_call.capital_remittances.each do |remittance|
         cc = @fund.capital_commitments.where(investor_id: remittance.investor_id).first
-        (cc.committed_amount * @capital_call.percentage_called / 100.0).should == remittance.due_amount
+        ((cc.committed_amount * @capital_call.percentage_called / 100.0) - remittance.collected_amount).should == remittance.due_amount
     end
   end
   

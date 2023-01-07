@@ -4,7 +4,7 @@ Feature: Deal Investor
 Scenario Outline: Create new deal investor
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
-  Given there is an existing investor "name=Sequoia"
+  Given there is an existing investor ""
   And there exists a deal "<deal>" for my company
   And I visit the deal details page
   When I create a new deal investor "<deal_investor>"
