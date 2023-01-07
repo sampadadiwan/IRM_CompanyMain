@@ -62,7 +62,6 @@ jobs:
         env:
           CI: true
           RAILS_ENV: test
-          
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           
         run: |
@@ -70,9 +69,7 @@ jobs:
           bin/rails db:create
           bin/rails db:schema:load
           bundle exec bin/rails runner -e test ElasticImporterJob.new.reset
-          bundle exec rake parallel:create
-          bundle exec rake parallel:setup
-          parallel_cucumber
+          bundle exec cucumber features
 
       - name: "Deploy"
         uses: miloserdow/capistrano-deploy@master
