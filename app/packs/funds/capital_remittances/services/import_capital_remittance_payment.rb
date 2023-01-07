@@ -68,6 +68,7 @@ class ImportCapitalRemittancePayment < ImportUtil
 
   def inputs(import_upload, user_data)
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
+    raise "Fund not found" unless fund
     capital_call = fund.capital_calls.where(name: user_data["Capital Call"].strip).first
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
     raise "Investor not found" unless investor

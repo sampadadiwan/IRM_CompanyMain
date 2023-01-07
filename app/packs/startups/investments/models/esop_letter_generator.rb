@@ -28,7 +28,7 @@ class EsopLetterGenerator
   end
 
   def working_dir_path(holding)
-    "tmp/holding_grant_letter_generator/#{holding.id}"
+    "tmp/holding_grant_letter_generator/#{rand(1000000)}/#{holding.id}"
   end
 
   def download_master_grant_letter(holding)

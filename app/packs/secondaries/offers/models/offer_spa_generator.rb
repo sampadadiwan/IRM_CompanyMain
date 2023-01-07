@@ -27,7 +27,7 @@ class OfferSpaGenerator
   end
 
   def working_dir_path(offer)
-    "tmp/offer_spa_generator/#{offer.id}"
+    "tmp/offer_spa_generator/#{rand(1000000)}/#{offer.id}"
   end
 
   def download_master_spa(offer)

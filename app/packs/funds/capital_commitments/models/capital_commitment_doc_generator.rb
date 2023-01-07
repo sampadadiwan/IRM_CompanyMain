@@ -23,7 +23,7 @@ class CapitalCommitmentDocGenerator
   private
 
   def working_dir_path(capital_commitment)
-    "tmp/fund_doc_generator/#{capital_commitment.id}"
+    "tmp/fund_doc_generator/#{rand(1000000)}/#{capital_commitment.id}"
   end
 
   def notify(fund_doc_template, capital_commitment, user_id)
