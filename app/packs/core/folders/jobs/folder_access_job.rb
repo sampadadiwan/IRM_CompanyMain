@@ -1,5 +1,5 @@
 class FolderAccessJob < ApplicationJob
-  queue_as :low
+  queue_as :serial
 
   def perform(folder_id, access_right_id)
     Chewy.strategy(:sidekiq) do

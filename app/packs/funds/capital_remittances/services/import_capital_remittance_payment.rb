@@ -1,5 +1,5 @@
 class ImportCapitalRemittancePayment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Collected Amount", "Folio No", "Verified", "Reference No"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Collected Amount", "Folio No", "Verified", "Reference No", "Payment Date"].freeze
 
   attr_accessor :fund_ids
 
