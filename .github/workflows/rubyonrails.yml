@@ -70,6 +70,7 @@ jobs:
           bin/rails db:create
           bin/rails db:schema:load
           bundle exec bin/rails runner -e test ElasticImporterJob.new.reset
+          bundle exec rake parallel:create
           bundle exec rake parallel:setup
           parallel_cucumber
 
