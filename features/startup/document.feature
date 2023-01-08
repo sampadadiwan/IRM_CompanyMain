@@ -17,7 +17,7 @@ Scenario Outline: Create new document
     |  	        |entity_type=Company  |name=Strategy;download=true;printing=true    |
 
 
-Scenario Outline: Create new document
+Scenario Outline: Create new document with folder access
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the entity has a folder "name=Test Folder"
   Given the folder has access rights "<access_rights>"
@@ -29,8 +29,24 @@ Scenario Outline: Create new document
 
   Examples:
   	|user	    |entity               |document                   |access_rights	|
-  	|  	      |entity_type=Company  |name=Q1 Summary;folder_id=1|access_type=Folder;access_to_category=Lead Investor|
-    |  	      |entity_type=Company  |name=Strategy;folder_id=1  |access_type=Folder;access_to_category=Board|
+  	|  	      |entity_type=Company  |name=Q1 Summary;folder_id=4|access_type=Folder;access_to_category=Lead Investor|
+    |  	      |entity_type=Company  |name=Strategy;folder_id=4  |access_type=Folder;access_to_category=Board|
+
+Scenario Outline: Create new document with folder access later
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the entity has a folder "name=Test Folder"
+  Given the entity has a child folder "name=Child Folder"
+  And I am at the documents page
+  When I create a new document "<document>"
+  Then I should see the "Document was successfully created"
+  And an document should be created
+  Given the folder has access rights "<access_rights>"
+  Then the document should have the same access rights as the folder
+
+  Examples:
+  	|user	    |entity               |document                   |access_rights	|
+  	|  	      |entity_type=Company  |name=Q1 Summary;folder_id=5|access_type=Folder;access_to_category=Lead Investor;cascade=true|
+    |  	      |entity_type=Company  |name=Strategy;folder_id=5  |access_type=Folder;access_to_category=Board;cascade=true|
 
 Scenario Outline: Add deal document
   Given Im logged in as a user "<user>" for an entity "<entity>"

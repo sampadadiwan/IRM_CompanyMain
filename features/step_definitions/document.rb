@@ -56,7 +56,7 @@ When('I create a new document {string}') do |args|
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
   check('document_download') if @document.download
   check('document_printing') if @document.printing
-  select("Test Folder", from: "document_folder_id") if @document.folder_id
+  select(@folder.name, from: "document_folder_id") if @document.folder_id
 
 
   sleep(2)
@@ -88,7 +88,16 @@ Given('the entity has a folder {string}') do |args|
   @folder = Folder.new(parent: Folder.first, entity: @user.entity)
   key_values(@folder, args)
   @folder.save!
+  puts @folder.to_json
 end
+
+Given('the entity has a child folder {string}') do |args|
+  @child_folder = Folder.new(parent: @folder, entity: @user.entity)
+  key_values(@child_folder, args)
+  @child_folder.save!
+  puts @child_folder.to_json
+end
+
 
 Given('the folder has access rights {string}') do |arg1|
   @access_right = AccessRight.new(owner: @folder, entity: @user.entity)
