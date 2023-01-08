@@ -36,8 +36,8 @@ class Fund < ApplicationRecord
     self.funding_round = FundingRound.new(name:, entity_id:, status: "Open", currency:)
   end
 
-  def generate_calcs
-    FundCalcJob.perform_later(id) unless @update_by_fund_calc
+  def generate_calcs(user_id)
+    FundCalcJob.perform_later(id, user_id) unless @update_by_fund_calc
   end
 
   def folder_path

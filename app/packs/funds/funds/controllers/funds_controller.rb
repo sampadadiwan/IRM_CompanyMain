@@ -68,7 +68,7 @@ class FundsController < ApplicationController
   end
 
   def generate_calcs
-    @fund.generate_calcs
+    @fund.generate_calcs(current_user.id)
     redirect_to fund_path(@fund, tab: "fund-ratios-tab"), notice: "Calculations in progress, please check back in a few mins."
   end
 
