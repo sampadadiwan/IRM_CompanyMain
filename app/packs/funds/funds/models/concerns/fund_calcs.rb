@@ -24,8 +24,8 @@ module FundCalcs
 
       cf = Xirr::Cashflow.new
 
-      capital_remittances.each do |cr|
-        cf << Xirr::Transaction.new(-1 * cr.collected_amount_cents, date: cr.payment_date)
+      capital_remittance_payments.each do |cr|
+        cf << Xirr::Transaction.new(-1 * cr.amount_cents, date: cr.payment_date)
       end
 
       capital_distribution_payments.each do |cdp|
