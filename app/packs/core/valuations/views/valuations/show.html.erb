@@ -18,14 +18,7 @@
       <%= l @valuation.valuation_date %>
     </td>
   </tr>
-  <tr>
-    <td>
-      Valuation
-    </td>
-    <td>
-      <%= money_to_currency @valuation.pre_money_valuation, params %>
-    </td>
-  </tr>
+
   <tr>
     <td>
       Per Share Value
@@ -34,6 +27,31 @@
       <%= money_to_currency @valuation.per_share_value, params %>
     </td>
   </tr>
+
+  
+  <tr>
+    <td>
+      Valuation
+    </td>
+    <td>
+      <%= money_to_currency @valuation.valuation, params %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Net Valuation
+    </td>
+    <td>
+      <%= money_to_currency @valuation.net_valuation, params %>
+    </td>
+  </tr>
+
+  
+  
+
+  <%= display_custom_fields(@valuation) %>
+
   <tr>
     <td>
       Valuation Reports
@@ -53,8 +71,6 @@
     </td>
   </tr>
   <% end %>
-
-  <%= display_custom_fields(@valuation) %>
 
 </table>
 

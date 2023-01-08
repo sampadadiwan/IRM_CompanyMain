@@ -3,7 +3,7 @@ module FundCalcs
 
   def compute_rvpi
     valuation = valuations.order(valuation_date: :asc).last
-    (valuation.pre_money_valuation_cents / collected_amount_cents).round(2) if valuation
+    (valuation.valuation_cents / collected_amount_cents).round(2) if valuation
   end
 
   def compute_dpi
@@ -32,7 +32,7 @@ module FundCalcs
         cf << Xirr::Transaction.new(cdp.amount_cents, date: cdp.payment_date)
       end
 
-      cf << Xirr::Transaction.new(last_valuation.pre_money_valuation_cents, date: last_valuation.valuation_date)
+      cf << Xirr::Transaction.new(last_valuation.valuation_cents, date: last_valuation.valuation_date)
 
       Rails.logger.debug { "fund.xirr cf: #{cf}" }
       Rails.logger.debug { "fund.xirr irr: #{cf.xirr}" }

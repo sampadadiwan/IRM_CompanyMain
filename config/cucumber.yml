@@ -8,4 +8,4 @@ std_opts = "--format #{ENV['CUCUMBER_FORMAT'] || 'pretty'} --strict rerun
 default: <%= std_opts %> features
 wip: --tags @wip:3 --wip features
 rerun: <%= rerun_opts %> --format rerun --out rerun.txt --strict 
-parallel: --retry 2 --format pretty --format ParallelTests::Cucumber::FailuresLogger --out tmp/cucumber_failures.log
+parallel: --format pretty --format ParallelTests::Cucumber::FailuresLogger --out tmp/cucumber_failures.log

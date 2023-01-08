@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_06_090045) do
+ActiveRecord::Schema[7.0].define(version: 2023_01_08_073406) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -221,7 +221,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_06_090045) do
     t.index ["user_id", "user_type"], name: "user_index"
   end
 
-  create_table "blazer_audits", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+  create_table "blazer_audits", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "query_id"
     t.text "statement"
@@ -231,7 +231,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_06_090045) do
     t.index ["user_id"], name: "index_blazer_audits_on_user_id"
   end
 
-  create_table "blazer_checks", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+  create_table "blazer_checks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "creator_id"
     t.bigint "query_id"
     t.string "state"
@@ -247,7 +247,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_06_090045) do
     t.index ["query_id"], name: "index_blazer_checks_on_query_id"
   end
 
-  create_table "blazer_dashboard_queries", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+  create_table "blazer_dashboard_queries", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "dashboard_id"
     t.bigint "query_id"
     t.integer "position"
@@ -257,7 +257,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_06_090045) do
     t.index ["query_id"], name: "index_blazer_dashboard_queries_on_query_id"
   end
 
-  create_table "blazer_dashboards", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+  create_table "blazer_dashboards", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "creator_id"
     t.string "name"
     t.datetime "created_at", null: false
@@ -265,7 +265,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_06_090045) do
     t.index ["creator_id"], name: "index_blazer_dashboards_on_creator_id"
   end
 
-  create_table "blazer_queries", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+  create_table "blazer_queries", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "creator_id"
     t.string "name"
     t.text "description"
@@ -390,7 +390,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_06_090045) do
     t.index ["fund_id"], name: "index_capital_distributions_on_fund_id"
   end
 
-  create_table "capital_remittance_payments", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+  create_table "capital_remittance_payments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "fund_id", null: false
     t.bigint "capital_remittance_id", null: false
     t.bigint "entity_id", null: false
@@ -629,6 +629,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_06_090045) do
     t.boolean "activity_docs_required_for_completion", default: false
     t.boolean "activity_details_required_for_na", default: false
     t.boolean "enable_investors", default: true
+    t.text "valuation_math"
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
@@ -1611,7 +1612,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_06_090045) do
     t.index ["user_id"], name: "index_tasks_on_user_id"
   end
 
-  create_table "user_alerts", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+  create_table "user_alerts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "message"
     t.bigint "entity_id", null: false
@@ -1671,7 +1672,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_06_090045) do
   create_table "valuations", charset: "utf8mb3", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.date "valuation_date"
-    t.decimal "pre_money_valuation_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "valuation_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "per_share_value_cents", precision: 15, scale: 2, default: "0.0"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -1679,6 +1680,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_06_090045) do
     t.string "owner_type"
     t.bigint "owner_id"
     t.text "report_data"
+    t.decimal "net_valuation_cents", precision: 20, scale: 2, default: "0.0"
+    t.text "properties"
     t.index ["entity_id"], name: "index_valuations_on_entity_id"
     t.index ["form_type_id"], name: "index_valuations_on_form_type_id"
     t.index ["owner_type", "owner_id"], name: "index_valuations_on_owner"

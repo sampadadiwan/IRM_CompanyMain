@@ -12,8 +12,8 @@ class ValuationDashboard < Administrate::BaseDashboard
     owner: Field::Polymorphic,
     id: Field::Number,
     valuation_date: Field::Date,
-    pre_money_valuation_cents: Field::String.with_options(searchable: false),
-    per_share_value_cents: Field::String.with_options(searchable: false),
+    net_valuation_cents: Field::String,
+    per_share_value_cents: Field::String,
     created_at: Field::DateTime,
     updated_at: Field::DateTime
   }.freeze
@@ -27,7 +27,7 @@ class ValuationDashboard < Administrate::BaseDashboard
     entity
     owner
     valuation_date
-    pre_money_valuation_cents
+    net_valuation_cents
     per_share_value_cents
   ].freeze
 
@@ -38,7 +38,7 @@ class ValuationDashboard < Administrate::BaseDashboard
     owner
     id
     valuation_date
-    pre_money_valuation_cents
+    net_valuation_cents
     per_share_value_cents
     created_at
     updated_at
@@ -51,7 +51,7 @@ class ValuationDashboard < Administrate::BaseDashboard
     entity
     owner
     valuation_date
-    pre_money_valuation_cents
+    net_valuation_cents
     per_share_value_cents
   ].freeze
 

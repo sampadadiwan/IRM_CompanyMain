@@ -37,7 +37,7 @@ class ValuationsController < ApplicationController
   def create
     @valuation = Valuation.new(valuation_params)
     @valuation.entity_id = current_user.entity_id
-    @valuation.pre_money_valuation_cents = valuation_params[:pre_money_valuation].to_f * 100
+    @valuation.net_valuation_cents = valuation_params[:net_valuation].to_f * 100
     @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
     authorize @valuation
 
@@ -58,6 +58,9 @@ class ValuationsController < ApplicationController
 
   # PATCH/PUT /valuations/1 or /valuations/1.json
   def update
+    @valuation.net_valuation_cents = valuation_params[:net_valuation].to_f * 100
+    @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
+
     respond_to do |format|
       if @valuation.update(valuation_params)
         format.html { redirect_to valuation_url(@valuation), notice: "Valuation was successfully updated." }
@@ -89,8 +92,7 @@ class ValuationsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def valuation_params
-    params.require(:valuation).permit(:entity_id, :valuation_date, :pre_money_valuation,
-                                      :owner_id, :owner_type,
-                                      :form_type_id, :per_share_value, :report, properties: {})
+    params.require(:valuation).permit(:entity_id, :valuation_date, :net_valuation,
+                                      :owner_id, :owner_type, :form_type_id, :per_share_value, :report, properties: {})
   end
 end
