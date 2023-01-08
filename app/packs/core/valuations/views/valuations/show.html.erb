@@ -23,7 +23,7 @@
       Valuation
     </td>
     <td>
-      <%= @valuation.pre_money_valuation %>
+      <%= money_to_currency @valuation.pre_money_valuation, params %>
     </td>
   </tr>
   <tr>
@@ -31,7 +31,7 @@
       Per Share Value
     </td>
     <td>
-      <%= @valuation.per_share_value %>
+      <%= money_to_currency @valuation.per_share_value, params %>
     </td>
   </tr>
   <tr>
