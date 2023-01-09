@@ -659,3 +659,77 @@ Then('the funds are updated with remittance numbers') do
     f.collected_amount_cents.should == f.capital_remittances.sum(:collected_amount_cents)
   end
 end
+
+
+Given('my firm is an investor in the fund') do
+  @investor = FactoryBot.create(:investor, entity: @fund.entity, investor_entity: @user.entity)
+  puts "\n####Fund Investor####\n"
+  puts @investor.to_json  
+
+  ar = AccessRight.create!( owner: @fund, access_type: "Fund", 
+      access_to_investor_id: @investor.id, entity: @fund.entity)
+
+
+  ia = InvestorAccess.create!(entity: @investor.entity, investor: @investor, 
+        first_name: @user.first_name, last_name: @user.last_name,
+        email: @user.email, granter: @user, approved: true )
+
+  puts "\n####Granted Access####\n"
+  puts ar.to_json  
+  
+  @fund.reload
+end
+
+
+Then('I should be able to see my capital commitments') do
+  click_on("Commitments")
+  within("#capital_commitments") do
+    CapitalCommitment.all.each do |cc|
+
+      puts "checking capital commitment for #{cc.investor.investor_name} against #{@investor.investor_name}"
+
+      if cc.investor_id == @investor.id 
+        expect(page).to have_content(@investor.investor_name)
+        expect(page).to have_content(cc.fund.name)
+        expect(page).to have_content( money_to_currency(cc.committed_amount) )
+      else
+        expect(page).not_to have_content(cc.investor.investor_name)      
+      end
+    end
+  end
+end
+
+Then('I should be able to see my capital remittances') do
+  click_on("Capital Calls")
+  CapitalRemittance.all.each do |cc|
+    puts "checking capital remittance for #{cc.investor.investor_name} against #{@investor.investor_name} "
+    if cc.investor_id == @investor.id 
+      expect(page).to have_content(@investor.investor_name)
+      expect(page).to have_content( money_to_currency(cc.due_amount) )
+      expect(page).to have_content( money_to_currency(cc.collected_amount) )
+    else
+      expect(page).not_to have_content(cc.investor.investor_name)      
+    end
+  end
+end
+
+
+Given('there is a capital distribution {string}') do |args|
+  @capital_distribution = FactoryBot.build(:capital_distribution, entity: @fund.entity, fund: @fund, approved: true)
+  key_values(@capital_distribution, args)
+  @capital_distribution.save!
+end
+
+Then('I should be able to see my capital distributions') do
+  click_on("Capital Distributions")
+  CapitalDistributionPayment.all.each do |cc|
+    puts "checking capital distrbution payment for #{cc.investor.investor_name} against #{@investor.investor_name} "
+    if cc.investor_id == @investor.id 
+      expect(page).to have_content(@investor.investor_name)
+      expect(page).to have_content( money_to_currency(cc.amount) )
+      expect(page).to have_content( cc.payment_date.strftime("%d/%m/%Y") )
+    else
+      expect(page).not_to have_content(cc.investor.investor_name)      
+    end
+  end
+end

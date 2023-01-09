@@ -2,7 +2,7 @@ Feature: Fund
   Can create and view a fund as a company
 
 Scenario Outline: Create new fund
-  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
   And I am at the funds page
   When I create a new fund "<fund>"
@@ -12,9 +12,9 @@ Scenario Outline: Create new fund
   And I should see the fund in all funds page
 
   Examples:
-  	|user	    |entity                                 |fund                 |msg	|
-  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
-    |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
+  	|entity                                 |fund                 |msg	|
+  	|entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
+    |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
 
 
 Scenario Outline: View fund with employee access
@@ -83,7 +83,7 @@ Examples:
 
 
 Scenario Outline: Create new capital call
-  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is an existing investor "" with "2" users
   Given there is an existing investor "" with "2" users
@@ -105,9 +105,9 @@ Scenario Outline: Create new capital call
   And the investors must receive email with subject "Capital Call"
   
   Examples:
-  	|user	    |entity                                 |fund                 |msg	|
-  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
-    |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
+  	|entity                                 |fund                 |msg	|
+  	|entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
+    |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
 
 
 Scenario Outline: Create new capital distrbution
