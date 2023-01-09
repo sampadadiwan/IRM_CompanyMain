@@ -61,7 +61,7 @@
   </div>
 
 
-  <% if entity.entity_type == "Company" %>
+  <% if ["Company", "Investment Fund"].include? entity.entity_type %>
 
     <div class="form-group">
       <%= form.label :investor_categories %>
