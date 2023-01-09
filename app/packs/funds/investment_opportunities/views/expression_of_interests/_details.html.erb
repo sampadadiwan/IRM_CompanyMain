@@ -73,6 +73,7 @@
       <div id="tasks" class="associated_entity">
         <% investor = expression_of_interest.investor %>
         <%= link_to tasks_path( for_entity_id: investor&.investor_entity_id, 
+                                entity_id: expression_of_interest.entity_id,
                                 owner_id: expression_of_interest.id, owner_type: "ExpressionOfInterest"), 
                                 class: "load_data_link", 
                                 data: { turbo_frame: 'task_list' } do %>

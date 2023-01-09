@@ -101,6 +101,7 @@
       <div id="tasks" class="associated_entity">
         <% investor = Investor.for(current_user, capital_commitment.entity).first %>
         <%= link_to tasks_path( for_entity_id: investor&.investor_entity_id, 
+                                entity_id: capital_commitment.entity_id,
                                 owner_id: capital_commitment.id, owner_type: "CapitalCommitment"), 
                                 class: "load_data_link", 
                                 data: { turbo_frame: 'task_list' } do %>
