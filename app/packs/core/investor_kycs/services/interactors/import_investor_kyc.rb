@@ -1,7 +1,7 @@
 class ImportInvestorKyc < ImportUtil
   include Interactor
 
-  STANDARD_HEADERS = ["Investor", "First Name", "Last Name", "Full Name", "Email", "PAN", "Address", "Phone",
+  STANDARD_HEADERS = ["Investor", "Full Name", "PAN", "Address",
                       "Bank Account", "IFSC Code", "Send Confirmation Email"].freeze
 
   def standard_headers

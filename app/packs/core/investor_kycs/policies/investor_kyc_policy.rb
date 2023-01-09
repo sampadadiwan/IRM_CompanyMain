@@ -17,7 +17,7 @@ class InvestorKycPolicy < ApplicationPolicy
 
   def show?
     user.entity_id == record.entity_id ||
-      user.id == record.user_id ||
+      user.entity_id == record.investor.investor_entity_id ||
       record.entity.advisor?(user)
   end
 

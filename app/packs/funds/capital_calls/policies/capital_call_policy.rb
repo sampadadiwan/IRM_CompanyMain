@@ -3,9 +3,9 @@ class CapitalCallPolicy < FundBasePolicy
     def resolve
       if user.has_cached_role?(:super)
         scope.all
-      elsif user.has_cached_role?(:employee) && user.has_cached_role?(:company_admin)
+      elsif user.has_cached_role?(:company_admin) && user.entity_type == "Investment Fund"
         scope.where(entity_id: user.entity_id)
-      elsif user.has_cached_role?(:employee)
+      elsif user.has_cached_role?(:employee) && user.entity_type == "Investment Fund"
         scope.for_employee(user)
       elsif user.curr_role.to_sym == :advisor
         scope.for_advisor(user)
