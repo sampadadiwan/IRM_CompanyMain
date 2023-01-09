@@ -3,6 +3,9 @@
     <%= link_to capital_distribution_payment.investor.investor_name, capital_distribution_payment.investor %>
   </td>
   <td>
+    <%= link_to capital_distribution_payment.investor_kyc.full_name, capital_distribution_payment.investor_kyc if capital_distribution_payment.investor_kyc %>
+  </td>
+  <td>
     <%= capital_distribution_payment.folio_id %>
   </td>
   <td>

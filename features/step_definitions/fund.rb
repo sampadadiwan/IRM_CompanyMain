@@ -35,14 +35,17 @@
     # Hack to make the tests work without rewriting many steps for another user
     @user = @employee_investor
     if given == "given" || given == "yes"
-      @access_right = AccessRight.create(entity_id: @fund.entity_id, owner: @fund, access_to_investor_id: @investor.id, metadata: "Investor")
-      ia = InvestorAccess.create(entity: @investor.entity, investor: @investor, 
+      @access_right = AccessRight.create!(entity_id: @fund.entity_id, owner: @fund, access_to_investor_id: @investor.id, 
+                                          metadata: "Investor")
+      ia = InvestorAccess.create!(entity: @investor.entity, investor: @investor, 
         first_name: @user.first_name, last_name: @user.last_name,
         email: @user.email, granter: @user, approved: true )
 
       puts "\n####Investor Access####\n"
       puts ia.to_json
     end
+
+    @fund.reload
   end
 
   Given('another user is {string} advisor access to the fund') do |given|
@@ -367,7 +370,7 @@ Given('the fund has {string} capital distribution') do |count|
 end
 
 Then('user {string} have {string} access to the capital distributions') do |truefalse, accesses|
-  puts "##### Checking access to capital distributions for funds with rights #{@fund.access_rights.to_json}"
+  puts "##### Checking access to capital distributions for funds with rights #{@fund.reload.access_rights.to_json}"
   accesses.split(",").each do |access|
     @fund.capital_distributions.each do |cc|
       puts "##Checking access #{access} on capital_distribution from #{cc.title} for #{@user.email} as #{truefalse}"
@@ -375,6 +378,19 @@ Then('user {string} have {string} access to the capital distributions') do |true
     end
   end
 end
+
+Then('user {string} have {string} access to his own fund') do |truefalse, accesses|
+  
+  truefalse = "true" if truefalse == "yes"
+  truefalse = "false" if truefalse == "no"
+
+  puts "##### Checking access to funds with rights #{@fund.access_rights.to_json}"
+  accesses.split(",").each do |access|
+    acc = Pundit.policy(@user, @fund).send("#{access}?")
+    acc.to_s.should == truefalse
+  end
+end
+
 
 Given('the capital distributions are approved') do
   @fund.capital_distributions.each do |cc|

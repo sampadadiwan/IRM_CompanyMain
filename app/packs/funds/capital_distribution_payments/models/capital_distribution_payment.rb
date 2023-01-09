@@ -11,6 +11,7 @@ class CapitalDistributionPayment < ApplicationRecord
   belongs_to :capital_distribution, touch: true
   belongs_to :investor
   belongs_to :capital_commitment
+  has_one :investor_kyc, through: :capital_commitment
   belongs_to :form_type, optional: true
   serialize :properties, Hash
 

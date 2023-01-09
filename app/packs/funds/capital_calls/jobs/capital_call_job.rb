@@ -4,7 +4,7 @@ class CapitalCallJob < ApplicationJob
   attr_accessor :remittances, :payments
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCall
-  def perform(capital_call_id, type, _capital_commitment_id = nil)
+  def perform(capital_call_id, type)
     @remittances = []
     @payments = []
     Chewy.strategy(:sidekiq) do

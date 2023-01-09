@@ -10,9 +10,16 @@
       </ul>
     </div>
   <% end %>
-    
-  <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
+  
   <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+  <% if investor_kyc.investor_id.present? %>
+    <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
+  <% else %>
+    <div class="form-group">
+      <%= form.label :investor_id %>
+      <%= form.select :investor_id, investor_kyc.entity.investors.map{|i| [i.investor_name, i.id]}, {}, class: "form-control"  %>
+    </div>
+  <% end %>
   
   <div class="form-group">
     <%= form.label :full_name %>

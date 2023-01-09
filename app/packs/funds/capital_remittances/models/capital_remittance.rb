@@ -9,6 +9,7 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :fund, touch: true
   belongs_to :capital_call
   belongs_to :capital_commitment
+  has_one :investor_kyc, through: :capital_commitment
   belongs_to :investor
   has_many :capital_remittance_payments
 

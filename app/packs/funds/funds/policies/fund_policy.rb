@@ -46,8 +46,7 @@ class FundPolicy < FundBasePolicy
 
   def create?
     user.enable_funds &&
-      (user.entity_id == record.entity_id) &&
-      user.has_cached_role?(:company_admin) &&
+      permissioned_employee? &&
       user.entity_type == "Investment Fund"
   end
 
@@ -65,8 +64,7 @@ class FundPolicy < FundBasePolicy
   end
 
   def destroy?
-    false
-    # permissioned_employee?(:destroy) ||
-    #   permissioned_advisor?(:destroy)
+    permissioned_employee?(:destroy) ||
+      permissioned_advisor?(:destroy)
   end
 end

@@ -3,7 +3,7 @@ class CapitalRemittancesController < ApplicationController
 
   # GET /capital_remittances or /capital_remittances.json
   def index
-    @capital_remittances = policy_scope(CapitalRemittance).includes(:fund, :investor, :capital_call, :entity, :capital_commitment)
+    @capital_remittances = policy_scope(CapitalRemittance).includes(:fund, :investor, :capital_call, :entity, capital_commitment: :investor_kyc)
     @capital_remittances = @capital_remittances.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @capital_remittances = @capital_remittances.where(status: params[:status]) if params[:status].present?
     @capital_remittances = @capital_remittances.where(verified: params[:verified] == "true") if params[:verified].present?

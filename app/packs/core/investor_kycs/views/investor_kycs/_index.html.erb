@@ -2,7 +2,8 @@
     <h1 class="h3 mb-0 text-gray-800">Investor Kycs</h1>
 
     <span>
-      <%= link_to "New Investor Kyc" , new_investor_kyc_path("investor_kyc[investor_id]": @investor.id, "investor_kyc[entity_id]": @investor.entity_id), {class: "btn btn-outline-primary" } if @investor %>
+      <% entity_id = @investor ? @investor.entity_id : current_user.entity_id %>
+      <%= link_to "New Investor Kyc" , new_investor_kyc_path("investor_kyc[investor_id]": @investor&.id, "investor_kyc[entity_id]": entity_id), {class: "btn btn-outline-primary" } %>
 
       <%= link_to "Download", investor_kycs_path(investor_id: @investor&.id, format: "xlsx", all: true),  {class: "btn btn-outline-primary" }  %>
 

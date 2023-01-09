@@ -24,6 +24,7 @@ Scenario Outline: Access fund & details as Employee
   Given there is an existing investor ""
   Given there is a fund "name=Test fund" for the entity
   And I am "<given>" employee access to the fund
+  Then user "<should>" have "<access>" access to his own fund
   Given the fund has capital commitments from each investor
   Then user "<should>" have "<access>" access to the capital commitment
   Given the fund has "2" capital call
@@ -51,6 +52,7 @@ Scenario Outline: Access fund & details as Employee with update access
   Given there is a fund "name=Test fund" for the entity
   And I am "<given>" employee access to the fund
   And the access right has access "<crud>"
+  Then user "<should>" have "<access>" access to his own fund
   Given the fund has capital commitments from each investor
   Then user "<should>" have "<access>" access to the capital commitment
   Given the fund has "2" capital call
@@ -69,7 +71,6 @@ Scenario Outline: Access fund & details as Employee with update access
     |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |false   |edit,update,destroy      | read |
     |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |true   |edit,update,destroy      | create,read,update,destroy |
     |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |true   |create      | create |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |false   |create,destroy      | update |
     |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |true   |update      | update |
     |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |false   |destroy      | update |
     |  	        |entity_type=Investment Fund;enable_funds=true  |employee   |yes   |true   |destroy      | destroy |
@@ -83,6 +84,7 @@ Scenario Outline: Access fund & details as Investor
   Given there is a fund "name=Test fund" for the entity
   And another user is "<given>" investor access to the fund
   Given the user has role "<role>"
+  Then user "<given>" have "show" access to his own fund
   Given the fund has capital commitments from each investor
   Then user "<should>" have "<access>" access to his own capital commitment
   Given the fund has "2" capital call
@@ -100,6 +102,10 @@ Scenario Outline: Access fund & details as Investor
     |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |yes   |true   |show  | show|
     |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |yes   |false   |edit,update,destroy     | |
     |  	        |entity_type=Investment Fund;enable_funds=true  |investor   |yes   |true   |     |edit,update |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |company_admin   |no    |false  |show,edit,update,destroy| show,edit,update,destroy|
+    |  	        |entity_type=Investment Fund;enable_funds=true  |company_admin   |yes   |true   |show  | show|
+    |  	        |entity_type=Investment Fund;enable_funds=true  |company_admin   |yes   |false   |edit,update,destroy     | |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |company_admin   |yes   |true   |     |edit,update |
 
 
 
