@@ -1,11 +1,8 @@
 <%= render "/layouts/alerts" %>
 <table class="table table-bordered dataTable">
   
-  <tr>
-    <td>
-      Investor
-    </td>
-    <td>
+  <tr class="btn-success">
+    <td colspan="2">
       <%= @capital_commitment.investor.investor_name %>
     </td>
   </tr>
@@ -21,12 +18,37 @@
 
   <tr>
     <td>
+      Full Name
+    </td>
+    <td>
+      <%= @capital_commitment.investor_kyc&.full_name %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Address
+    </td>
+    <td>
+      <%= @capital_commitment.investor_kyc&.address %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
       Fund Name
     </td>
     <td>
       <%= @capital_commitment.fund.name %>
     </td>
   </tr>
+
+  <tr class="btn-success">
+    <td colspan="2">
+      Summary
+    </td>
+  </tr>
+
 
   <tr>
     <td>
@@ -49,10 +71,30 @@
 
   <tr>
     <td>
+      Pending Call Amount (Committed - Called)
+    </td>
+    <td>
+      <%= money_to_currency (@capital_commitment.committed_amount-@capital_commitment.call_amount), params %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
       Collected Amount
     </td>
     <td>
       <%= money_to_currency @capital_commitment.collected_amount, params %>      
+    </td>
+  </tr>
+
+
+  <tr>
+    <td>
+      Call Amount Receivable (Called - Collected) 
+    </td>
+    <td>
+      <% receivable = @capital_commitment.call_amount - @capital_commitment.collected_amount %>
+      <%= money_to_currency (receivable), params %>      
     </td>
   </tr>
 
