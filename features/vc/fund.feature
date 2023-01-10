@@ -3,6 +3,7 @@ Feature: Fund
 
 Scenario Outline: View a fund
   Given there is a user "" for an entity "<entity>"
+  Given the user has role "<role>"
   Given there is an existing investor "" with "1" users
   Given there is an existing investor "" with "1" users
   Given there is a fund "<fund>" for the entity
@@ -20,8 +21,9 @@ Scenario Outline: View a fund
   Then I should be able to see my capital distributions
 
   Examples:
-  	|entity                                 |fund                    |
-  	|entity_type=Investment Fund;enable_funds=true  |name=Test fund  |
-    |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund|
+  	|entity                                 |fund                       |role|
+  	|entity_type=Investment Fund;enable_funds=true  |name=Test 1 fund   |company_admin |
+    |entity_type=Investment Fund;enable_funds=true  |name=Test 2 Fund   |employee|
+    |entity_type=Investment Fund;enable_funds=true  |name=Test 3 Fund   |Investor|
 
   
