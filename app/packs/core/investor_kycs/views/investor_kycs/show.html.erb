@@ -9,6 +9,8 @@
 
       <%= button_to "Delete" , @investor_kyc, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#delete" , turbo:false} %>
     <% end %>
+
+    <%= button_to "Toggle Verified" , toggle_verified_investor_kyc_path(@investor_kyc), method: :put, class: "btn btn-outline-primary" , form_class: "deleteButton" if policy(@investor_kyc).toggle_verified? %>
   </div>
 
 <%= render "investor_kycs/details", investor_kyc: @investor_kyc %>

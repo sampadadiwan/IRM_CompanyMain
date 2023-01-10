@@ -1,5 +1,5 @@
 class InvestorKycsController < ApplicationController
-  before_action :set_investor_kyc, only: %i[show edit update destroy]
+  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified]
   after_action :verify_authorized, except: %i[index search]
 
   # GET /investor_kycs or /investor_kycs.json
@@ -74,6 +74,18 @@ class InvestorKycsController < ApplicationController
   def update
     respond_to do |format|
       if @investor_kyc.update(investor_kyc_params)
+        format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully updated." }
+        format.json { render :show, status: :ok, location: @investor_kyc }
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  def toggle_verified
+    respond_to do |format|
+      if @investor_kyc.update(verified: !@investor_kyc.verified)
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully updated." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else

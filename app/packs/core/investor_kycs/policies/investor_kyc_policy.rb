@@ -35,8 +35,12 @@ class InvestorKycPolicy < ApplicationPolicy
     create?
   end
 
+  def toggle_verified?
+    user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)
+  end
+
   def update?
-    create?
+    create? && !record.verified
   end
 
   def edit?

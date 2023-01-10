@@ -102,6 +102,7 @@ Rails.application.routes.draw do
 
   resources :investor_kycs do
     get 'search', on: :collection
+    put 'toggle_verified', on: :member
   end
   resources :video_kycs do
     get 'search', on: :collection
