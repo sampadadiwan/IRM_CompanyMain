@@ -69,6 +69,7 @@ gem 'xirr', git: "https://github.com/thimmaiah/xirr"
 gem 'odf-report'
 gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary-edge'
+gem 'grover'
 
 gem 'google_drive'
 

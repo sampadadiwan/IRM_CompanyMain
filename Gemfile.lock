@@ -400,6 +400,9 @@ GEM
       signet (~> 0.15)
     groupdate (6.1.0)
       activesupport (>= 5.2)
+    grover (1.1.2)
+      combine_pdf (~> 1.0)
+      nokogiri (~> 1.0)
     hightop (0.3.0)
       activesupport (>= 5.2)
     htmlentities (4.3.4)
@@ -813,6 +816,7 @@ DEPENDENCIES
   foreman
   google_drive
   groupdate
+  grover
   hightop
   httparty
   image_processing (~> 1.2)
