@@ -14,4 +14,18 @@ class DocumentMailer < ApplicationMailer
            subject: subj)
     end
   end
+
+  def email_link
+    @user = User.find(params[:user_id])
+    @link = params[:link]
+
+    email = sandbox_email(@user, @user.email)
+
+    if email.present?
+      subj = "Download link"
+      mail(from: from_email(@user.entity),
+           to: email,
+           subject: subj)
+    end
+  end
 end

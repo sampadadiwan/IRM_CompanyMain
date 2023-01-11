@@ -16,6 +16,9 @@
   %>
 
   <span>
+    <%= link_to "Download Folder", download_folder_path(id: params[:folder_id]), 
+        class: "btn btn-outline-success", data: {action: "click->confirm#popup"} if params[:folder_id].present? && policy(@folder).download? %>
+
     <%= link_to "New Document", new_document_path(external: external, 
                 document: doc_attributes, 
                 "document[folder_id]": params[:folder_id]), 

@@ -13,6 +13,10 @@ class FolderPolicy < ApplicationPolicy
     user.entity_id == record.entity_id
   end
 
+  def download?
+    create? && user.has_cached_role?(:company_admin)
+  end
+
   def create?
     (user.entity_id == record.entity_id)
   end

@@ -1,6 +1,6 @@
 class FoldersController < ApplicationController
   # prepend_view_path 'app/packs/core/folders/views'
-  before_action :set_folder, only: %i[show edit update destroy]
+  before_action :set_folder, only: %i[show edit update destroy download]
 
   # GET /folders or /folders.json
   def index
@@ -15,6 +15,11 @@ class FoldersController < ApplicationController
   def new
     @folder = Folder.new(folder_params)
     authorize @folder
+  end
+
+  def download
+    DocumentDownloadJob.perform_later(@folder.id, current_user.id)
+    redirect_to documents_url(folder_id: @folder.id), notice: "You will be sent a download link for the documents in a few minutes."
   end
 
   # GET /folders/1/edit

@@ -188,7 +188,10 @@ Rails.application.routes.draw do
     post 'approve_all_holdings', on: :collection
   end
 
-  resources :folders
+  resources :folders do
+    get 'download', on: :member
+  end
+
   resources :investor_accesses do
     get 'search', on: :collection
     patch 'approve', on: :member
