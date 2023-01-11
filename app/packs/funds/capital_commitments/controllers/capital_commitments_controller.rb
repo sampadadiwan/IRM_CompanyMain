@@ -71,6 +71,8 @@ class CapitalCommitmentsController < ApplicationController
     @capital_commitment = CapitalCommitment.new(capital_commitment_params)
     @capital_commitment.entity_id = @capital_commitment.fund.entity_id
     authorize @capital_commitment
+    setup_doc_user(@capital_commitment)
+
     respond_to do |format|
       if @capital_commitment.save
         format.html { redirect_to capital_commitment_url(@capital_commitment), notice: "Capital commitment was successfully created." }
@@ -84,6 +86,8 @@ class CapitalCommitmentsController < ApplicationController
 
   # PATCH/PUT /capital_commitments/1 or /capital_commitments/1.json
   def update
+    setup_doc_user(@capital_commitment)
+
     respond_to do |format|
       if @capital_commitment.update(capital_commitment_params)
         format.html { redirect_to capital_commitment_url(@capital_commitment), notice: "Capital commitment was successfully updated." }
@@ -115,6 +119,6 @@ class CapitalCommitmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_commitment_params
-    params.require(:capital_commitment).permit(:entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :notes, :folio_id, :investor_signatory_id, :investor_kyc_id, :onboarding_completed, :investor_signature_types, properties: {})
+    params.require(:capital_commitment).permit(:entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :notes, :folio_id, :investor_signatory_id, :investor_kyc_id, :onboarding_completed, :investor_signature_types, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end
