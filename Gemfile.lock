@@ -852,6 +852,7 @@ DEPENDENCIES
   rubocop-performance
   rubocop-rails
   rubocop-rspec
+  rubyzip
   rupees!
   sanitize_email
   sassc-rails

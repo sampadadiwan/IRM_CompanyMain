@@ -66,10 +66,10 @@ gem 'xirr', git: "https://github.com/thimmaiah/xirr"
 # For verifying digital signatures in PDFs
 # gem 'chilkat'
 
+gem 'grover'
 gem 'odf-report'
 gem 'wicked_pdf'
 gem 'wkhtmltopdf-binary-edge'
-gem 'grover'
 
 gem 'google_drive'
 
@@ -112,6 +112,7 @@ gem 'rack-attack'
 
 # for making external API calls
 gem 'httparty'
+gem 'rubyzip'
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[mingw mswin x64_mingw jruby]

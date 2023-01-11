@@ -1,0 +1,16 @@
+wb = xlsx_package.workbook
+
+form_type, custom_field_names, custom_headers = get_form_type("Document")
+
+wb.add_worksheet(name: "InvestorKyc") do |sheet|
+  # Create the header row
+  sheet.add_row(["Full Path", "Name"] + custom_headers)
+
+  # Create entries for each item
+  @documents.each do |doc|
+    custom_field_values = get_custom_values(doc, form_type, custom_field_names)
+    row = sheet.add_row [doc.folder_full_path, doc.name] + custom_field_values
+
+    sheet.add_hyperlink location: document_url(doc), ref: row.cells[1]
+  end
+end
