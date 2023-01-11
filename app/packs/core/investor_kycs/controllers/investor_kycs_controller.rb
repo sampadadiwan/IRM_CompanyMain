@@ -59,6 +59,8 @@ class InvestorKycsController < ApplicationController
   def create
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
     authorize(@investor_kyc)
+    setup_doc_user(@investor_kyc)
+
     respond_to do |format|
       if @investor_kyc.save
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully created." }
@@ -72,6 +74,7 @@ class InvestorKycsController < ApplicationController
 
   # PATCH/PUT /investor_kycs/1 or /investor_kycs/1.json
   def update
+    setup_doc_user(@investor_kyc)
     respond_to do |format|
       if @investor_kyc.update(investor_kyc_params)
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully updated." }
@@ -115,7 +118,6 @@ class InvestorKycsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_kyc_params
-    params.require(:investor_kyc).permit(:investor_id, :entity_id, :user_id, :full_name, :PAN, :pan_card, :signature, :address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :bank_verification_status, :pan_verified, :pan_verification_response, :pan_verification_status, :comments, :verified, :video,
-                                         :phone, :form_type_id, Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:investor_kyc).permit(:investor_id, :entity_id, :user_id, :full_name, :PAN, :pan_card, :signature, :address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :bank_verification_status, :pan_verified, :pan_verification_response, :pan_verification_status, :comments, :verified, :video, :phone, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end
