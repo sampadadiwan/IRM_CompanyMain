@@ -116,6 +116,7 @@ FactoryBot.define do
     fund { Fund.all.sample }
     entity { fund.entity }
     due_date { Time.zone.today + 3.weeks }
+    call_date { Time.zone.today + 3.weeks }
     name { "Capital Call #{rand(1..10)}" }
     percentage_called { rand(1..4) * 10 }
     notes { Faker::Company.catch_phrase }

@@ -16,7 +16,7 @@ class CapitalCall < ApplicationRecord
   has_many :capital_remittances, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
 
-  validates :name, :due_date, :percentage_called, presence: true
+  validates :name, :due_date, :call_date, :percentage_called, presence: true
   validates :percentage_called, numericality: { in: 0..100 }
 
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
