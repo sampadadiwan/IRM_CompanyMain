@@ -31,7 +31,17 @@
       KYC
     </td>
     <td>
-      <%= link_to @capital_commitment.investor_kyc.full_name, @capital_commitment.investor_kyc if @capital_commitment.investor_kyc %>
+      <% if @capital_commitment.investor_kyc %>
+        <%= link_to @capital_commitment.investor_kyc.full_name, @capital_commitment.investor_kyc %>
+        <br>
+        <% if @capital_commitment.investor_kyc.verified %>
+          <span class="badge bg-success">Verified</span>
+        <% else %>
+          <span class="badge bg-warning">Not Verified</span>
+        <% end %>
+      <% else %>
+        <span class="badge bg-danger">No KYC</span>
+      <% end %>
     </td>
   </tr>
 
