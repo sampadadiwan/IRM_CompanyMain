@@ -126,11 +126,11 @@
     <%= link_to "LP Account Statement" , report_capital_commitment_path(@capital_commitment, report: "lp_statement"), {class: "btn btn-outline-primary" } %>
                 
   <% end %>
-  <%= button_to "Generate Documentation", 
+  <%= button_to "Generate Documents", 
         generate_documentation_capital_commitment_path(@capital_commitment), 
         method: :patch, class: "btn btn-outline-success" , 
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-        msg: "Generate documentation for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"} if policy(@capital_commitment).generate_documentation? %>
+        msg: "Generate Documents for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"} if policy(@capital_commitment).generate_documentation? %>
 
   <%= button_to "Generate Esign Link", 
         generate_esign_link_capital_commitment_path(@capital_commitment), 

@@ -7,7 +7,7 @@ class CapitalRemittanceDocJob < ApplicationJob
       @capital_remittance = CapitalRemittance.find(capital_remittance_id)
       @fund = @capital_remittance.fund
       @investor = @capital_remittance.investor
-      @templates = @fund.documents.where(owner_tag: "Call Document Template")
+      @templates = @fund.documents.where(owner_tag: "Call Template")
 
       Rails.logger.debug { "Generating Remittance documents for #{@investor.investor_name}, for fund #{@fund.name}" }
 

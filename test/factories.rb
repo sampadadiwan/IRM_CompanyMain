@@ -72,8 +72,7 @@ FactoryBot.define do
   factory :investor_kyc do
     entity { Entity.where(enable_investor_kyc: true).sample }
     investor { entity.investors.sample }
-    user { investor.investor_entity.employees.sample }
-    full_name { user.full_name }
+    full_name { Faker::Name.name }
     PAN {(0...10).map { (65 + rand(26)).chr }.join}
     address { Faker::Address.full_address }
     bank_account_number  {Faker::Bank.account_number}

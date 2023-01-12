@@ -105,11 +105,11 @@
           form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
     <% end %>
 
-    <%= button_to "Generate Documentation", 
+    <%= button_to "Generate Documents", 
         generate_documentation_expression_of_interest_path(@expression_of_interest), 
         method: :patch, class: "btn btn-outline-success" , 
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-        msg: "Generate documentation for this EOI from kyc and opportunity info. This will delete any previously generated documentation for this EOI. Proceed?"} if policy(@expression_of_interest).generate_documentation? %>
+        msg: "Generate Documents for this EOI from kyc and opportunity info. This will delete any previously generated documentation for this EOI. Proceed?"} if policy(@expression_of_interest).generate_documentation? %>
 
   <%= button_to "Generate Esign Link", 
         generate_esign_link_expression_of_interest_path(@expression_of_interest), 

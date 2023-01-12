@@ -51,7 +51,7 @@
           <div id="docs" class="associated_entity">
             <% cache([fund, "Documents", policy(fund).update?]) do %>
 
-              <% documents = policy(fund).update? ? fund.documents : fund.documents.where.not(owner_tag: "Template")  %>
+              <% documents = policy(fund).update? ? fund.documents : fund.documents.where.not(owner_tag: Fund::TEMPLATE_TAGS)  %>
 
               <%= render "/documents/index", documents: documents, owner: fund, 
                   entity: fund.entity %>

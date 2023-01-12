@@ -7,7 +7,7 @@ class CapitalCommitmentDocJob < ApplicationJob
       @capital_commitment = CapitalCommitment.find(capital_commitment_id)
       @fund = @capital_commitment.fund
       @investor = @capital_commitment.investor
-      @templates = @fund.documents.where(owner_tag: "Commitment Document Template")
+      @templates = @fund.documents.where(owner_tag: "Commitment Template")
 
       Rails.logger.debug { "Generating documents for #{@investor.investor_name}, for fund #{@fund.name}" }
 

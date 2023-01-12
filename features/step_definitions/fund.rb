@@ -733,3 +733,69 @@ Then('I should be able to see my capital distributions') do
     end
   end
 end
+
+
+
+Given('the fund has capital call template') do
+  @call_template = Document.create!(name: "Call Doc", owner_tag: "Call Template", 
+    owner: @fund, entity_id: @fund.entity_id, user: @user,
+    file: File.new("public/sample_uploads/Drawdown notice format.docx", "r"))
+end
+
+Given('the fund has capital commitment template') do
+  @commitment_template = Document.create!(name: "Fund Agreement", owner_tag: "Commitment Template", 
+    owner: @fund, entity_id: @fund.entity_id, user: @user,
+    file: File.new("public/sample_uploads/FundDocVariables.docx", "r"))
+end
+
+Then('when the capital commitment docs are generated') do
+  CapitalCommitment.all.each do |cc|
+    visit(capital_commitment_path(cc))
+    click_on("Generate Documents")
+    sleep(1)
+    click_on("Proceed")
+    expect(page).to have_content("Documentation generation started")
+  end
+end
+
+Then('the generated doc must be attached to the capital commitments') do
+  CapitalCommitment.all.each do |cc|
+    cc.documents.where(name: @commitment_template.name).count.should == 1
+    visit(capital_commitment_path(cc))
+    expect(page).to have_content(@commitment_template.name)
+    expect(page).to have_content("Generated")
+  end
+end
+
+Then('when the capital call docs are generated') do
+  CapitalCall.all.each do |cc|
+    visit(capital_call_path(cc))
+    click_on("Generate Documents")
+    expect(page).to have_content("Documentation generation started")
+    sleep(1)
+    # expect(page).to have_content("Document #{@call_template.name} generated")
+  end
+end
+
+Then('the generated doc must be attached to the capital remittances') do
+  CapitalRemittance.all.each do |cc|
+    cc.documents.where(name: @call_template.name).count.should == 1
+    visit(capital_remittance_path(cc))
+    within("#remittance_details") do
+      click_on("Documents")
+      expect(page).to have_content(@call_template.name)
+      expect(page).to have_content("Generated")
+    end
+  end
+end
+
+
+Given('each investor has a {string} kyc linked to the commitment') do |status|
+  verified = status == "verified"
+  Investor.all.each do |inv|
+    kyc = FactoryBot.create(:investor_kyc, investor: inv, entity: @fund.entity, verified:)
+    @fund.capital_commitments.where(investor_id: inv.id).update(investor_kyc_id: kyc.id)
+  end
+end
+
+
