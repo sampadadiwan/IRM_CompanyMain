@@ -1,5 +1,5 @@
 class CapitalCallsController < ApplicationController
-  before_action :set_capital_call, only: %i[show edit update destroy reminder approve]
+  before_action :set_capital_call, only: %i[show edit update destroy reminder approve generate_docs]
 
   # GET /capital_calls or /capital_calls.json
   def index
@@ -20,12 +20,17 @@ class CapitalCallsController < ApplicationController
   # GET /capital_calls/1 or /capital_calls/1.json
   def show; end
 
+  def generate_docs
+    CapitalCallRemittanceDocJob.perform_later(@capital_call.id, current_user.id)
+    redirect_to capital_call_path(@capital_call), notice: "Documentation generation started, please check back in a few mins. Each remittance will have the customized document attached"
+  end
+
   # GET /capital_calls/new
   def new
     @capital_call = CapitalCall.new(capital_call_params)
     @capital_call.entity_id = @capital_call.fund.entity_id
     @capital_call.due_date = Time.zone.today + 2.weeks
-    @capital_call.call_date = Time.zone.today 
+    @capital_call.call_date = Time.zone.today
     authorize @capital_call
     setup_custom_fields(@capital_call)
   end

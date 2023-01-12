@@ -53,11 +53,13 @@ Rails.application.routes.draw do
   resources :capital_remittances do
     patch 'verify', on: :member
     get 'search', on: :collection
+    patch 'generate_docs', on: :member
   end
   resources :capital_calls do
     get 'search', on: :collection
     post 'reminder', on: :member
     post 'approve', on: :member
+    patch 'generate_docs', on: :member
   end
 
   resources :capital_commitments do

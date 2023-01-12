@@ -13,6 +13,9 @@
     <%= button_to "Approve" , approve_capital_call_path(@capital_call), method: :post, 
         class: "btn btn-outline-success", form_class: "deleteButton", 
         data: {action: "click->confirm#popup", turbo:false, method: :post, msg: "This will generate all the notifications to your clients"} if policy(@capital_call).approve? %>
+
+    <%= button_to "Generate Documents" , generate_docs_capital_call_path(@capital_call),    
+        method: :patch, class: "btn btn-outline-success", form_class: "deleteButton" if policy(@capital_call).generate_docs? %>
   </div>
 
   <%= render "/capital_calls/details", capital_call: @capital_call %>
