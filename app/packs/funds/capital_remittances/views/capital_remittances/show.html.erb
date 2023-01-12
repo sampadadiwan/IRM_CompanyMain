@@ -14,6 +14,11 @@
         class: "btn btn-outline-success", form_class: "deleteButton", 
         data: {action: "click->confirm#popup", msg: msg, turbo:false, method: :patch} if policy(@capital_remittance).verify? %>
 
+    <%= button_to "Generate Documents" , 
+        generate_docs_capital_remittance_path(@capital_remittance),    
+        method: :patch, class: "btn btn-outline-success", 
+        form_class: "deleteButton" if policy(@capital_remittance).generate_docs? %>
+
   </div>
 
 

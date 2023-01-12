@@ -1,5 +1,5 @@
 class CapitalRemittancesController < ApplicationController
-  before_action :set_capital_remittance, only: %i[show edit update destroy verify]
+  before_action :set_capital_remittance, only: %i[show edit update destroy verify generate_docs]
 
   # GET /capital_remittances or /capital_remittances.json
   def index
@@ -45,6 +45,11 @@ class CapitalRemittancesController < ApplicationController
 
   # GET /capital_remittances/1 or /capital_remittances/1.json
   def show; end
+
+  def generate_docs
+    CapitalRemittanceDocJob.perform_later(@capital_remittance.id, current_user.id)
+    redirect_to capital_remittance_path(@capital_remittance), notice: "Documentation generation started, please check back in a few mins."
+  end
 
   # GET /capital_remittances/new
   def new

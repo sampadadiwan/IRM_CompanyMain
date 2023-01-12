@@ -43,6 +43,10 @@ class CapitalRemittancePolicy < FundBasePolicy
     update?
   end
 
+  def generate_docs?
+    update?
+  end
+
   def destroy?
     permissioned_employee?(:destroy) ||
       permissioned_advisor?(:destroy)

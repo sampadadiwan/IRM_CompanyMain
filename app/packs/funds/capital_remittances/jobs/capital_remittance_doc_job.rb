@@ -1,5 +1,5 @@
 class CapitalRemittanceDocJob < ApplicationJob
-  queue_as :default
+  queue_as :serial
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalRemittance
   def perform(capital_remittance_id, user_id = nil)

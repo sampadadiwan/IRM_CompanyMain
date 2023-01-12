@@ -1,8 +1,14 @@
 module DocumentGeneratorBase
   def get_odt_file(file_path)
     Rails.logger.debug { "Converting #{file_path} to odt" }
-    system("libreoffice --headless --convert-to odt #{file_path} --outdir #{@working_dir}")
-    "#{@working_dir}/#{File.basename(file_path, '.*')}.odt"
+    raise "Input File not found #{file_path}" unless File.exist?(file_path)
+
+    response_code = system("libreoffice --headless --convert-to odt #{file_path} --outdir #{@working_dir}")
+
+    out_file_path = "#{@working_dir}/#{File.basename(file_path, '.*')}.odt"
+    raise "Ouput File not found #{out_file_path}, response_code = #{response_code}" unless File.exist?(out_file_path)
+
+    out_file_path
   end
 
   def create_working_dir(offer)

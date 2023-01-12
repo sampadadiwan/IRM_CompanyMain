@@ -30,7 +30,6 @@ class CapitalRemittanceDocGenerator
     UserAlert.new(user_id:, message: "Document #{fund_doc_template.name} generated for #{capital_remittance.investor.investor_name}. Please refresh the page.", level: "success").broadcast
   end
 
-  # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
   def generate(capital_remittance, fund_doc_template_path)
     odt_file_path = get_odt_file(fund_doc_template_path)
 
