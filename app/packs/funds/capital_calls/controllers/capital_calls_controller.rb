@@ -25,6 +25,7 @@ class CapitalCallsController < ApplicationController
     @capital_call = CapitalCall.new(capital_call_params)
     @capital_call.entity_id = @capital_call.fund.entity_id
     @capital_call.due_date = Time.zone.today + 2.weeks
+    @capital_call.call_date = Time.zone.today 
     authorize @capital_call
     setup_custom_fields(@capital_call)
   end
@@ -103,6 +104,6 @@ class CapitalCallsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_call_params
-    params.require(:capital_call).permit(:entity_id, :fund_id, :name, :percentage_called, :due_date, :notes, properties: {})
+    params.require(:capital_call).permit(:entity_id, :fund_id, :name, :percentage_called, :due_date, :call_date, :notes, properties: {})
   end
 end

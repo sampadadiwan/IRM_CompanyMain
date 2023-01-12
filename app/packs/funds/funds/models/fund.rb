@@ -96,7 +96,7 @@ class Fund < ApplicationRecord
   end
 
   def document_tags
-    ["Template", "Fund Document"]
+    ["Commitment Document Template", "Call Document Template", "Fund Document"]
   end
 
   def advisor_users

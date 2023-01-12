@@ -5,13 +5,6 @@ class DealsController < ApplicationController
   # GET /deals or /deals.json
   def index
     @deals = policy_scope(Deal)
-
-    @deals = if params[:other_deals].present?
-               Deal.deals_for_vc(current_user)
-             else
-               @deals # .includes(:entity)
-             end
-
     @deals = @deals.where("deals.archived=?", false) if params[:include_archived].blank?
   end
 

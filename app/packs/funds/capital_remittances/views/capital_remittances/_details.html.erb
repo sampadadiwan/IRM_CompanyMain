@@ -3,6 +3,9 @@
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#payments-tab"
           data-action="click->tabdetails#loadData">Payments</a>
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
+          data-action="click->tabdetails#loadData">Documents</a>
+    
   </nav>
 
   <div class="tab-content" data-controller="datatable">
@@ -11,6 +14,14 @@
         <%= render "/capital_remittance_payments/index", capital_remittance_payments: capital_remittance.capital_remittance_payments, capital_remittance: %>
       </div>
     </div>
+  
+    <div id="docs-tab" class="tab-pane fade in">
+      <div id="docs" class="associated_entity">
+        <%= render "/documents/index", documents: capital_remittance.documents, 
+                owner: capital_remittance, entity: capital_remittance.entity %>
+      </div>
+    </div>
+
   </div>
 
 </div>

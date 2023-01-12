@@ -13,6 +13,9 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :investor
   has_many :capital_remittance_payments
 
+  has_many :documents, as: :owner, dependent: :destroy
+  accepts_nested_attributes_for :documents, allow_destroy: true
+
   belongs_to :form_type, optional: true
   serialize :properties, Hash
 
