@@ -1673,7 +1673,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_12_081319) do
   create_table "valuations", charset: "utf8mb3", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.date "valuation_date"
-    t.decimal "pre_money_valuation_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "valuation_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "per_share_value_cents", precision: 15, scale: 2, default: "0.0"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

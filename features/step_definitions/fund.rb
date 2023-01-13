@@ -772,7 +772,7 @@ Then('when the capital call docs are generated') do
     visit(capital_call_path(cc))
     click_on("Generate Documents")
     expect(page).to have_content("Documentation generation started")
-    sleep(1)
+    sleep(2)
     # expect(page).to have_content("Document #{@call_template.name} generated")
   end
 end
