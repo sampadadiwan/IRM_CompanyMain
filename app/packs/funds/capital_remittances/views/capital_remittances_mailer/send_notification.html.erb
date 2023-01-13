@@ -5,6 +5,10 @@
 </p>
 
 <p>
+    <%= @capital_remittance.capital_call.notes&.html_safe %>
+</p>
+
+<p>
     <%= render "/capital_remittances/show", capital_remittance: @capital_remittance, current_user: nil, params: {} %>
 </p>
 
