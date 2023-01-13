@@ -30,7 +30,7 @@ class ImportInvestorKyc < ImportUtil
       save_kyc(investor_kyc, investor, user_data, custom_field_headers)
 
     else
-      Rails.logger.debug { "Skipping: InvestorKyc with investor already exists for entity #{import_upload.entity_id}" }
+      raise "Skipping: InvestorKyc for investor already exists"
     end
 
     saved
