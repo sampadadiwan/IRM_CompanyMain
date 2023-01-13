@@ -1,5 +1,5 @@
 class CapitalCallRemittanceDocJob < ApplicationJob
-  queue_as :low
+  queue_as :doc_gen
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCall
   def perform(capital_call_id, user_id)

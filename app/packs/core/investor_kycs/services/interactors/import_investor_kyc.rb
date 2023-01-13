@@ -28,7 +28,7 @@ class ImportInvestorKyc < ImportUtil
     elsif investor_kyc.nil? || (investor_kyc.created_at.to_date != Time.zone.today)
       investor_kyc = InvestorKyc.new(entity_id: import_upload.entity_id)
       save_kyc(investor_kyc, investor, user_data, custom_field_headers)
-      
+
     else
       Rails.logger.debug { "Skipping: InvestorKyc with investor already exists for entity #{import_upload.entity_id}" }
     end

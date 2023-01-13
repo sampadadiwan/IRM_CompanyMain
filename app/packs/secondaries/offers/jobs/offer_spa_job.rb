@@ -1,5 +1,5 @@
 class OfferSpaJob < ApplicationJob
-  queue_as :default
+  queue_as :doc_gen
 
   def perform(offer_id)
     Chewy.strategy(:sidekiq) do

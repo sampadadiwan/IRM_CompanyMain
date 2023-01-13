@@ -1,5 +1,5 @@
 class EoiDocJob < ApplicationJob
-  queue_as :default
+  queue_as :doc_gen
 
   # This is idempotent, we should be able to call it multiple times for the same ExpressionOfInterest
   def perform(expression_of_interest_id, user_id = nil)
