@@ -46,6 +46,7 @@ class ImportCapitalCommittment < ImportUtil
                                                  fund:, investor:, notes: user_data["Notes"])
 
       capital_commitment.committed_amount = user_data["Committed Amount"].to_d
+      capital_commitment.investor_kyc = fund.entity.investor_kycs.where(investor_id: investor.id).last
 
       setup_custom_fields(user_data, capital_commitment, custom_field_headers)
 
