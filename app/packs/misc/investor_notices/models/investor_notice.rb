@@ -19,13 +19,7 @@ class InvestorNotice < ApplicationRecord
     ars
   end
 
-  def investors
-    if owner_type == "Entity"
-      owner.investors
-    else
-      access_rights.collect(&:investors).flatten
-    end
-  end
+  delegate :investors, to: :owner
 
   def self.notices(user)
     InvestorNotice.joins(:investor_notice_entries, entity: :investor_accesses).where("investor_notices.active=?", true)

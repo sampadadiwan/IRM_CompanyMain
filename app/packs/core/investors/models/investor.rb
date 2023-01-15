@@ -64,6 +64,7 @@ class Investor < ApplicationRecord
     joins(entity: :access_rights).where(entity_id:).where("access_rights.access_to_category=investors.category or access_rights.access_to_investor_id=investors.id").where("access_rights.metadata=?", metadata)
   }
 
+  # Get the investors associated with owner (Fund) which has access rights for investors
   scope :owner_access_rights, lambda { |owner, metadata|
     if metadata
       joins(entity: :access_rights).where(entity_id: owner.entity_id).where("access_rights.access_to_category=investors.category or access_rights.access_to_investor_id=investors.id").where("access_rights.metadata=?", metadata).where("owner_id=? and owner_type=?", owner.id, owner.class.name)

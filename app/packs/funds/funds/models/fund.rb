@@ -45,11 +45,7 @@ class Fund < ApplicationRecord
   end
 
   def investors
-    investor_list = []
-    access_rights.not_user.includes(:investor).find_each do |ar|
-      investor_list += ar.investors
-    end
-    investor_list.uniq
+    Investor.owner_access_rights(self, "Investor")
   end
 
   scope :for_employee, lambda { |user|
