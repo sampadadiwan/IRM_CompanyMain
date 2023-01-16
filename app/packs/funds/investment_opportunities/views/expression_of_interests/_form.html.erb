@@ -16,7 +16,7 @@
   <div class="form-group">
     <% disabled = current_user.entity_id != expression_of_interest.entity_id %>
     <%= form.label :investor_id %>
-    <%= form.select :investor_id, expression_of_interest.investment_opportunity.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control", disabled: disabled %>
+    <%= form.select :investor_id, expression_of_interest.investment_opportunity.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control select2", disabled: disabled %>
 
     <%= form.text_field :investor_id, hidden: true if disabled %>
   </div>
