@@ -16,6 +16,8 @@ class InvestorKyc < ApplicationRecord
   include FileUploader::Attachment(:pan_card)
   include FileUploader::Attachment(:video)
 
+  belongs_to :verified_by, class_name: "User", optional: true
+
   # Customize form
   belongs_to :form_type, optional: true
   serialize :properties, Hash

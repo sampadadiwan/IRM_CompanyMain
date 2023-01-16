@@ -212,9 +212,12 @@ namespace :irm do
       Entity.family_offices.each do |fo|
         inv = FactoryBot.create(:investor, entity: e, investor_entity: fo, tag_list: [tags.sample, tags.sample].join(","))
         puts "Investor #{inv.id}"
+
         inv.investor_entity.employees.each do |user|
           InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
         end
+
+        FactoryBot.create(:investor_kyc, entity: e, investor: inv)
       end
 
       # Add an advisor
