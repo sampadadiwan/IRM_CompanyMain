@@ -3,6 +3,10 @@ class CapitalDistributionPaymentDecorator < ApplicationDecorator
     h.render partial: "/capital_distribution_payments/amount", locals: { capital_distribution_payment: object }, formats: [:html]
   end
 
+  def folio_id
+    h.link_to object.folio_id, object.capital_commitment
+  end
+
   # Just an example of a complex method you can add to you decorator
   # To render it in a datatable just add a column 'dt_actions' in
   # 'view_columns' and 'data' methods and call record.decorate.dt_actions

@@ -6,6 +6,11 @@ class CapitalRemittancesMailer < ApplicationMailer
     @capital_remittance = CapitalRemittance.find params[:id]
     emails = sandbox_email(@capital_remittance, @capital_remittance.investor.emails)
 
+    # Check for attachments
+    @capital_remittance.documents.generated.each do |doc|
+      attachments[doc.name] = doc.file.read
+    end
+
     if emails.present?
       mail(from: from_email(@capital_remittance.entity),
            to: emails,

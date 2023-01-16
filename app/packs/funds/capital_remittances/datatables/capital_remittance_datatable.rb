@@ -3,6 +3,7 @@ class CapitalRemittanceDatatable < AjaxDatatablesRails::ActiveRecord
     @view_columns ||= {
       id: { source: "CapitalRemittance.id", searchable: false },
       investor_name: { source: "CapitalRemittance.investor_name", searchable: true },
+      folio_id: { source: "CapitalRemittance.folio_id", searchable: true },
       call_amount: { source: "CapitalRemittance.call_amount_cents", searchable: false },
       collected_amount: { source: "CapitalRemittance.collected_amount_cents", searchable: false },
       due_amount: { source: "", orderable: false },
@@ -16,6 +17,7 @@ class CapitalRemittanceDatatable < AjaxDatatablesRails::ActiveRecord
     records.map do |record|
       {
         id: record.id,
+        folio_id: record.decorate.folio_id,
         investor_name: record.decorate.investor_link,
         call_amount: record.decorate.money_to_currency(record.call_amount, params),
         collected_amount: record.decorate.money_to_currency(record.collected_amount, params),

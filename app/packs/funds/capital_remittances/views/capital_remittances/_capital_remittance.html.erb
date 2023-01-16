@@ -4,6 +4,9 @@
     <%= link_to capital_remittance.investor_name, investor_path(id: capital_remittance.investor_id) %>
   </td>
   <td>
+    <%= capital_remittance.folio_id %>
+  </td>
+  <td>
     <%= link_to capital_remittance.investor_kyc.full_name, capital_remittance.investor_kyc if capital_remittance.investor_kyc %>
   </td>
   <td class="status">

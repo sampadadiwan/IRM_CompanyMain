@@ -15,7 +15,7 @@ class CapitalDistributionPaymentDatatable < AjaxDatatablesRails::ActiveRecord
     records.map do |record|
       {
         id: record.id,
-        folio_id: record.folio_id,
+        folio_id: record.decorate.folio_id,
         investor_name: record.decorate.investor_link,
         amount: record.decorate.amount,
         completed: record.decorate.display_boolean(record.completed),

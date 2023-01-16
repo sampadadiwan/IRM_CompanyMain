@@ -42,6 +42,8 @@ class Document < ApplicationRecord
 
   include FileUploader::Attachment(:file)
 
+  scope :generated, -> { where(owner_tag: "Generated") }
+
   def to_s
     name
   end

@@ -6,6 +6,7 @@ export default class extends ServerDatatableController {
   columns() {
     return [
       {"data": "investor_name"},
+      {"data": "folio_id"},
       {"data": "status"},
       {"data": "verified", "className": "verified"},      
       {"data": "due_amount"},
