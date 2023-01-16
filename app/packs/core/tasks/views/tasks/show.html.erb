@@ -21,6 +21,15 @@
       </td>
     </tr>
     <% end %>
+
+    <tr>
+      <td>
+        Response
+      </td>
+      <td>
+        <%= @task.response.html_safe if @task.response %>
+      </td>
+    </tr>
     
     <tr>
       <td>
