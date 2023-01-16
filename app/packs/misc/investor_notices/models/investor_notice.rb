@@ -7,10 +7,17 @@ class InvestorNotice < ApplicationRecord
 
   validates :title, :start_date, :end_date, :details, presence: true
 
+  after_commit :update_investors
   after_commit :generate_investor_notice_entries, if: proc { |notice| notice.generate && notice.saved_change_to_generate? }
 
   def generate_investor_notice_entries
     InvestorNoticeJob.perform_later(id)
+  end
+
+  def update_investors
+    # Bust the cache for this notice for all investor_entity_ids, see carousel is cached based on that
+    investor_entity_ids = investor_notice_entries.collect(&:investor_entity_id)
+    Entity.where(id: investor_entity_ids).update_all(updated_at: Time.zone.now)
   end
 
   def access_rights
