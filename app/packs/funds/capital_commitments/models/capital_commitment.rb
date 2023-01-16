@@ -42,6 +42,11 @@ class CapitalCommitment < ApplicationRecord
 
   counter_culture :fund, column_name: 'committed_amount_cents', delta_column: 'committed_amount_cents'
 
+  before_save :set_investor_name
+  def set_investor_name
+    self.investor_name = investor.investor_name
+  end
+
   after_create_commit :create_remittance
   def create_remittance
     # When the CapitalCommitment is created, ensure that for any capital calls prev created
@@ -56,12 +61,12 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def to_s
-    "#{investor.investor_name}: #{committed_amount}"
+    "#{investor_name}: #{committed_amount}"
   end
 
   def folder_path
     fund.document_folder
-    "#{fund.folder_path}/Commitments/#{investor.investor_name}-#{id}"
+    "#{fund.folder_path}/Commitments/#{investor_name}-#{id}"
   end
 
   def document_list

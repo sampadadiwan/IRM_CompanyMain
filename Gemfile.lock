@@ -103,6 +103,10 @@ GEM
       globalid (>= 0.3.6)
     activemodel (7.0.3.1)
       activesupport (= 7.0.3.1)
+    activemodel-serializers-xml (1.0.2)
+      activemodel (> 5.x)
+      activesupport (> 5.x)
+      builder (~> 3.1)
     activerecord (7.0.3.1)
       activemodel (= 7.0.3.1)
       activesupport (= 7.0.3.1)
@@ -144,6 +148,9 @@ GEM
       rails (>= 4.2)
     airbrussh (1.4.1)
       sshkit (>= 1.6.1, != 1.7.0)
+    ajax-datatables-rails (1.4.0)
+      rails (>= 5.2)
+      zeitwerk
     ancestry (4.2.0)
       activerecord (>= 5.2.6)
     annotate (3.2.0)
@@ -320,6 +327,13 @@ GEM
       railties (>= 3.2)
     down (5.3.1)
       addressable (~> 2.8)
+    draper (4.0.2)
+      actionpack (>= 5.0)
+      activemodel (>= 5.0)
+      activemodel-serializers-xml (>= 1.0)
+      activesupport (>= 5.0)
+      request_store (>= 1.0)
+      ruby2_keywords
     elasticsearch (7.13.3)
       elasticsearch-api (= 7.13.3)
       elasticsearch-transport (= 7.13.3)
@@ -403,6 +417,9 @@ GEM
     grover (1.1.2)
       combine_pdf (~> 1.0)
       nokogiri (~> 1.0)
+    has_scope (0.8.0)
+      actionpack (>= 5.2)
+      activesupport (>= 5.2)
     hightop (0.3.0)
       activesupport (>= 5.2)
     htmlentities (4.3.4)
@@ -775,6 +792,7 @@ DEPENDENCIES
   administrate-field-active_storage
   administrate-field-boolean_emoji (~> 0.3.0)
   administrate-field-shrine
+  ajax-datatables-rails
   ancestry
   annotate
   audited (~> 5.0)
@@ -807,6 +825,7 @@ DEPENDENCIES
   debug
   devise
   dotenv-rails
+  draper
   erubis
   eu_central_bank
   exception_notification
@@ -817,6 +836,7 @@ DEPENDENCIES
   google_drive
   groupdate
   grover
+  has_scope
   hightop
   httparty
   image_processing (~> 1.2)

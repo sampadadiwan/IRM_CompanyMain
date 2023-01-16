@@ -3,12 +3,20 @@ class CapitalDistributionPaymentsController < ApplicationController
 
   # GET /capital_distribution_payments or /capital_distribution_payments.json
   def index
-    @capital_distribution_payments = policy_scope(CapitalDistributionPayment).includes(:investor, :entity, :fund, :capital_distribution)
+    @capital_distribution_payments = policy_scope(CapitalDistributionPayment).includes(:entity, :fund, :capital_distribution)
     @capital_distribution_payments = @capital_distribution_payments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
 
     @capital_distribution_payments = @capital_distribution_payments.where(capital_distribution_id: params[:capital_distribution_id]) if params[:capital_distribution_id].present?
 
+    @capital_distribution_payments = @capital_distribution_payments.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
+
     @capital_distribution_payments = @capital_distribution_payments.page(params[:page]) if params[:all].blank?
+
+    respond_to do |format|
+      format.html
+      format.xlsx
+      format.json { render json: CapitalDistributionPaymentDatatable.new(params, capital_distribution_payments: @capital_distribution_payments) }
+    end
   end
 
   def search
@@ -30,9 +38,10 @@ class CapitalDistributionPaymentsController < ApplicationController
         term = { entity_id: current_user.entity_id }
       end
 
-      @capital_distribution_payments = CapitalDistributionPaymentIndex.filter(term:)
-                                                                      .query(query_string: { fields: CapitalDistributionPaymentIndex::SEARCH_FIELDS,
-                                                                                             query:, default_operator: 'and' })
+      @capital_distribution_payments =
+        CapitalDistributionPaymentIndex.filter(term:)
+                                       .query(query_string: { fields: CapitalDistributionPaymentIndex::SEARCH_FIELDS,
+                                                              query:, default_operator: 'and' })
 
       @capital_distribution_payments = @capital_distribution_payments.objects
       render "index"

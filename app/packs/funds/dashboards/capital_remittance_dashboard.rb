@@ -92,6 +92,6 @@ class CapitalRemittanceDashboard < Administrate::BaseDashboard
   # across all pages of the admin dashboard.
   #
   def display_resource(capital_remittance)
-    "CapitalRemittance ##{capital_remittance.investor.investor_name}"
+    "CapitalRemittance ##{capital_remittance.investor_name}"
   end
 end

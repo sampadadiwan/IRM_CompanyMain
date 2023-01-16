@@ -42,6 +42,11 @@ class CapitalDistributionPayment < ApplicationRecord
     self.capital_commitment = fund.capital_commitments.where(investor_id:, folio_id:).first
   end
 
+  before_save :set_investor_name
+  def set_investor_name
+    self.investor_name = investor.investor_name
+  end
+
   after_commit :send_notification, if: :completed
   def send_notification
     CapitalDistributionPaymentsMailer.with(id:).send_notification.deliver_later if saved_change_to_completed? && capital_distribution.approved && !capital_distribution.manual_generation

@@ -1,68 +1,75 @@
 <% search ||= "Yes" %>
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
+<div data-controller="remittances" 
+     data-remittances-lazy-load-data-value=<%= lazy_load_data %>
+     data-remittances-table-name-value="#capital_remittances">
+
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
     <span>
-    <% if params[:capital_call_id].present? %>
-        <% capital_call = CapitalCall.find(params[:capital_call_id]) %>
-        <%#= link_to "New Capital Remittance" , new_capital_remittance_path("capital_remittance[capital_call_id]": params[:capital_call_id]), {class: "btn btn-outline-primary" } if policy(capital_call).update? %>
-
-        <%= button_to "Capital Call Reminder", reminder_capital_call_path(id: params[:capital_call_id]), class: "btn btn-outline-primary", data: {action: "click->confirm#popup", turbo:false, msg: "Send reminder for pending payments?", method: "post"} if policy(capital_call).reminder? %>
-
-        <%= link_to "Download", capital_remittances_path(capital_call_id: params[:capital_call_id], format: "xlsx", all: true),  {class: "btn btn-outline-primary" } %>
+      <% capital_call ||= nil %>
+     
+      <% if capital_call %>
+        <%= button_to "Capital Call Reminder", reminder_capital_call_path(id: capital_call.id), 
+                        class: "btn btn-outline-primary", 
+                        data: {action: "click->confirm#popup", turbo:false, 
+                        msg: "Send reminder for pending payments?", 
+                        method: "post"} if policy(capital_call).reminder? %>
+        
+        <%= link_to "Download", capital_remittances_path(capital_call_id: capital_call.id, format: "xlsx", all: true),  {class: "btn btn-outline-primary" } %>
 
         <%= link_to "Upload Payments", 
-            new_import_upload_path("import_upload[owner_id]": params[:capital_call_id], 
+            new_import_upload_path("import_upload[owner_id]": capital_call.id, 
             "import_upload[owner_type]": "CapitalCall", 
             "import_upload[import_type]": "CapitalRemittancePayment", 
             "sample_upload": "CAPITAL_REMITTANCE_PAYMENT_SAMPLE"), 
-            { class: "btn btn-outline-primary"}  %> 
-
-        
-        <%= render "capital_remittances/filter", capital_call_id: params[:capital_call_id] %>
-
-    <% end %>
-
-    <%= render "/funds/search_bar", model_name: "capital_remittance" unless search == "No" %>
-
+            { class: "btn btn-outline-primary"}  if policy(capital_call).update? %>
+            
+        <%= render "capital_remittances/filter", capital_call_id: capital_call.id %>
+      <% end %>
+     
+      <%#= render "/funds/search_bar", model_name: "capital_remittance" unless search == "No" %>
     </span>
-</div>
-
-<div class="table-responsive">
-
-    <table id="capital_remittances" class="table table-bordered dataTable jqDataTable">
-        <thead>
-            <tr>
-                <th>
-                    Investor
-                </th>
-                <th>
-                    KYC Full Name
-                </th>
-                <th>
-                    Status
-                </th>
-                <th>
-                    Verified
-                </th>
-                <th>
-                    Due Amount
-                    <div class="hideMobP">
-                        <small class="text-muted hideMobP">Committed Amount x Call Percentage - Collected Amount</small>
-                    </div>
-                </th>
-                <th>
-                    Collected Amount
-                </th>
-                <th>
-                </th>
-            </tr>
-        </thead>
-
-        <tbody>
-            <% capital_remittances.each do |capital_remittance| %>
-                <%= render capital_remittance %>
-            <% end %>
-        </tbody>
+  </div>
+  
+  <% data_source ||= capital_remittances_path(params, format: :json, all: true, status: "", verified: "") %>
+  <% lazy_load_data ||= false %>
+  
+  <div class="table-responsive">
+    <% if lazy_load_data %>
+      <a class="load_data_link" data-action="click->remittances#loadData"><span>Load Data</span></a>
+    <% end %>
+  
+    <table id="capital_remittances" class="table table-bordered dataTable" 
+        data-source="<%= data_source %>" style="width:100%" >
+    
+      <thead>
+        <tr>
+          <th>
+            Investor
+          </th>
+          <th>
+            Status
+          </th>
+          <th>
+            Verified
+          </th>
+          <th>
+            Due Amount
+            <div class="hideMobP">
+              <small class="text-muted hideMobP">Committed Amount x Call Percentage - Collected Amount</small>
+            </div>
+          </th>
+          <th>
+            Collected Amount
+          </th>
+          <th>
+          </th>
+        </tr>
+      </thead>
+      
+      <tbody>
+      </tbody>
+    
     </table>
-
+  </div>
 </div>

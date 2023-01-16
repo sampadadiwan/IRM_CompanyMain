@@ -34,7 +34,7 @@ class ImportCapitalRemittance < ImportUtil
     if fund && capital_call && investor && capital_commitment
 
       # Make the capital_remittance
-      capital_remittance = CapitalRemittance.new(entity_id: import_upload.entity_id, fund:, capital_call:, investor:, capital_commitment:, status: user_data["Status"], folio_id:, collected_amount_cents:, call_amount: user_data["Due Amount"], payment_date: user_data["Payment Date"])
+      capital_remittance = CapitalRemittance.new(entity_id: import_upload.entity_id, fund:, capital_call:, investor:, investor_name: investor.investor_name, capital_commitment:, status: user_data["Status"], folio_id:, collected_amount_cents:, call_amount: user_data["Due Amount"], payment_date: user_data["Payment Date"])
 
       capital_remittance.verified = user_data["Verified"] == "Yes"
 

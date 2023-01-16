@@ -6,7 +6,7 @@
     <% status = params[:status].presence %>
     <%= form.select :status, ["Paid", "Pending"], {selected: status, include_blank: "Payment Status"}, 
         { id: "status", class: "form-control", 
-        data: { action: "change->remittance#submit" } } %>
+        data: { action: "change->remittances#filterData" } } %>
         
   </div>
 
@@ -14,7 +14,7 @@
     <% verified = params[:verified].presence %>
     <%= form.select :verified, [["Yes", true], ["No", false]], {selected: verified, include_blank: "Verified"}, 
         { id: "verified", class: "form-control", 
-        data: { action: "change->remittance#submit" } } %>
+        data: { action: "change->remittances#filterData" } } %>
         
   </div>
 

@@ -1,5 +1,4 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
-
   
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#payments-tab" data-action="click->tabdetails#loadData">Payments</a>
@@ -15,15 +14,8 @@
   
         <div id="payments-tab" class="tab-pane fade in show active">
           <div id="payments" class="associated_entity">
-            
-
-            <%= link_to capital_distribution_payments_path(capital_distribution_id: @capital_distribution.id), 
-                                    class: "load_data_link", 
-                                    data: { turbo_frame: 'capital_distribution_payments_frame' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top" do %>
-            <% end %>
+            <%= render "/capital_distribution_payments/index", capital_distribution: capital_distribution,
+                lazy_load_data: false, data_source: capital_distribution_payments_path(capital_distribution_id: capital_distribution.id, all: true) %>
           </div>     
         </div>
 

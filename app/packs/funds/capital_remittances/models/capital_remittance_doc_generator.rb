@@ -27,7 +27,7 @@ class CapitalRemittanceDocGenerator
   end
 
   def notify(fund_doc_template, capital_remittance, user_id)
-    UserAlert.new(user_id:, message: "Document #{fund_doc_template.name} generated for #{capital_remittance.investor.investor_name}. Please refresh the page.", level: "success").broadcast
+    UserAlert.new(user_id:, message: "Document #{fund_doc_template.name} generated for #{capital_remittance.investor_name}. Please refresh the page.", level: "success").broadcast
   end
 
   def generate(capital_remittance, fund_doc_template_path)
@@ -41,7 +41,7 @@ class CapitalRemittanceDocGenerator
       r.add_field :folio_id, capital_remittance.folio_id
       r.add_field :fund_details, capital_remittance.fund.details
 
-      r.add_field :investor_name, capital_remittance.investor.investor_name
+      r.add_field :investor_name, capital_remittance.investor_name
       r.add_field :percentage_called, capital_remittance.capital_call.percentage_called
       r.add_field :call_amount, money_to_currency(capital_remittance.call_amount)
       r.add_field :due_date, capital_remittance.capital_call.due_date&.strftime("%d %B %Y")

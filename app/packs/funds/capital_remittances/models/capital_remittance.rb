@@ -63,6 +63,11 @@ class CapitalRemittance < ApplicationRecord
     CapitalRemittancesMailer.with(id:).send_notification.deliver_later if capital_call.approved && !capital_call.manual_generation
   end
 
+  before_save :set_investor_name
+  def set_investor_name
+    self.investor_name = investor.investor_name
+  end
+
   def set_status
     self.status = if (call_amount_cents - collected_amount_cents).abs < 100
                     "Paid"
@@ -77,9 +82,9 @@ class CapitalRemittance < ApplicationRecord
 
   def to_s
     if status == "Paid"
-      "#{investor.investor_name}: #{collected_amount} : #{status}"
+      "#{investor_name}: #{collected_amount} : #{status}"
     else
-      "#{investor.investor_name}: #{due_amount} : #{status}"
+      "#{investor_name}: #{due_amount} : #{status}"
     end
   end
 end

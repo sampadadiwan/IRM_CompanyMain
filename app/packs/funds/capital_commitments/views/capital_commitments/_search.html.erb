@@ -1,0 +1,43 @@
+<%= render "/capital_commitments/index_header" %>
+
+<div class="table-responsive">
+
+    <table id="capital_commitments" class="table table-bordered dataTable jqDataTable">
+
+        <thead>
+            <tr>
+                <th>
+                    Folio No
+                </th>
+                <th>
+                    Investor
+                </th>
+                <th>
+                    Fund
+                </th>
+                <th>
+                    Committed Amount
+                </th>
+                <th>
+                    Percentage
+                </th>
+                <th>
+                    Collected Amount
+                </th>
+                <th>
+                    Onboarding Completed
+                </th>
+
+                <th>
+                </th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <% capital_commitments.each do |capital_commitment| %>
+                <%= render capital_commitment %>
+            <% end %>
+        </tbody>
+    </table>
+
+</div>

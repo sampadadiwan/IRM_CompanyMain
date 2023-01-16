@@ -50,11 +50,16 @@ Scenario Outline: Create new capital commitment
   Given there is an existing investor "name=A1" with "2" users
   Given there is an existing investor "name=A2" with "2" users
   Given there is a fund "<fund>" for the entity
+  Given the fund has capital commitment template   
   Given the investors are added to the fund  
   When I add a capital commitment "1000000" for investor "A1"
   Then the fund total committed amount must be "1000000"
   When I add a capital commitment "1000000" for investor "A2"
   Then the fund total committed amount must be "2000000"
+  Given each investor has a "verified" kyc linked to the commitment
+  And when the capital commitment docs are generated
+  Then the generated doc must be attached to the capital commitments
+
   
   Examples:
   	|user	    |entity                                 |fund                 |msg	|
@@ -76,6 +81,7 @@ Scenario Outline: Create new commitment after capital call
   Given the investors are added to the fund  
   Then the corresponding remittances should be created
   Then I should see the remittances  
+  
 Examples:
   	|user	    |entity                                 |fund                 | call |
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test  | percentage_called=20 |
@@ -88,6 +94,7 @@ Scenario Outline: Create new capital call
   Given there is an existing investor "" with "2" users
   Given there is an existing investor "" with "2" users
   Given there is a fund "<fund>" for the entity
+  Given the fund has capital call template
   Given the investors are added to the fund  
   Given there are capital commitments of "committed_amount_cents=100000000" from each investor
   When I create a new capital call "percentage_called=20"
@@ -103,6 +110,10 @@ Scenario Outline: Create new capital call
   Then I should see the remittances
   And the capital call collected amount should be "400000"
   And the investors must receive email with subject "Capital Call"
+  Given each investor has a "verified" kyc linked to the commitment
+  And when the capital call docs are generated
+  Then the generated doc must be attached to the capital remittances
+
   
   Examples:
   	|entity                                 |fund                 |msg	|
@@ -138,7 +149,6 @@ Scenario Outline: Import capital commitments
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund" for the entity
-  Given the fund has capital commitment template 
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
   Then I should see the "Import upload was successfully created"
@@ -146,16 +156,12 @@ Scenario Outline: Import capital commitments
   And the capital commitments must have the data in the sheet
   And the capital commitments must have the percentages updated
   And the fund must have the counter caches updated
-  Given each investor has a "verified" kyc linked to the commitment
-  And when the capital commitment docs are generated
-  Then the generated doc must be attached to the capital commitments
-
+  
 
 Scenario Outline: Import capital calls
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund" for the entity
-  Given the fund has capital call template
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
   And Given I upload "capital_calls.xlsx" file for "Capital Calls" of the fund
@@ -165,10 +171,7 @@ Scenario Outline: Import capital calls
   And the remittances are generated for the capital calls
   And the capital commitments are updated with remittance numbers
   And the funds are updated with remittance numbers
-  Given each investor has a "verified" kyc linked to the commitment
-  And when the capital call docs are generated
-  Then the generated doc must be attached to the capital remittances
-
+  
 
 Scenario Outline: Import capital distributions
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"

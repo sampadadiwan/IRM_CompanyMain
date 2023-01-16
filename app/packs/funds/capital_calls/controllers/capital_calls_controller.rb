@@ -7,13 +7,9 @@ class CapitalCallsController < ApplicationController
     @capital_calls = @capital_calls.where(fund_id: params[:fund_id]) if params[:fund_id]
 
     respond_to do |format|
-      format.xlsx do
-        response.headers[
-          'Content-Disposition'
-        ] = "attachment; filename=capital_calls.xlsx"
-      end
+      format.xlsx
       format.html { render :index }
-      format.json { render :index }
+      format.json { render json: CapitalCallDatatable.new(params, capital_calls: @capital_calls) }
     end
   end
 

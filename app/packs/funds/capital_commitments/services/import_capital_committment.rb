@@ -43,7 +43,8 @@ class ImportCapitalCommittment < ImportUtil
     if fund && investor
       # Make the capital_commitment
       capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
-                                                 fund:, investor:, notes: user_data["Notes"])
+                                                 fund:, investor:, investor_name: investor.investor_name,
+                                                 notes: user_data["Notes"])
 
       capital_commitment.committed_amount = user_data["Committed Amount"].to_d
       capital_commitment.investor_kyc = fund.entity.investor_kycs.where(investor_id: investor.id).last

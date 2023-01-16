@@ -21,7 +21,7 @@ class CapitalCallJob < ApplicationJob
     @capital_call = CapitalCall.find(capital_call_id)
     @capital_call.fund.capital_commitments.each_with_index do |capital_commitment, _idx|
       # Check if we alread have a CapitalRemittance for this commitment
-      Rails.logger.debug { "CapitalCallJob: Creating CapitalRemittance for #{capital_commitment.investor.investor_name} for #{@capital_call.name}" }
+      Rails.logger.debug { "CapitalCallJob: Creating CapitalRemittance for #{capital_commitment.investor_name} for #{@capital_call.name}" }
 
       # Note the due amount for the call is calculated automatically inside CapitalRemittance
       status = @capital_call.generate_remittances_verified ? "Paid" : "Pending"

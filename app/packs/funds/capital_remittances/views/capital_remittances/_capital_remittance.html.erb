@@ -1,7 +1,7 @@
 <tr id="<%= dom_id capital_remittance %>">
   
   <td>
-    <%= link_to capital_remittance.investor.investor_name, capital_remittance.investor %>
+    <%= link_to capital_remittance.investor_name, investor_path(id: capital_remittance.investor_id) %>
   </td>
   <td>
     <%= link_to capital_remittance.investor_kyc.full_name, capital_remittance.investor_kyc if capital_remittance.investor_kyc %>
@@ -14,14 +14,7 @@
     <%= display_boolean(capital_remittance.verified) %>
   </td>
   <td>
-    <%= money_to_currency (capital_remittance.due_amount), params %>
-    <div class="hideMobP">
-      <small class="text-muted hideMobP">
-      <%= money_to_currency capital_remittance.capital_commitment.committed_amount, params %> x 
-      <%= capital_remittance.capital_call.percentage_called %> % -
-      <%= money_to_currency capital_remittance.collected_amount, params %>
-      </small>
-    </div>
+    <%= render "/capital_remittances/due_amount", capital_remittance: capital_remittance %>
   </td>
   <td>
     <%= money_to_currency capital_remittance.collected_amount, params %>

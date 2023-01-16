@@ -18,7 +18,9 @@ class CapitalDistributionJob < ApplicationJob
                                                  entity_id: @capital_distribution.entity_id,
                                                  capital_distribution_id: @capital_distribution.id,
                                                  capital_commitment_id: cc.id,
-                                                 investor_id: cc.investor_id, amount_cents:,
+                                                 investor_id: cc.investor_id,
+                                                 investor_name: cc.investor_name,
+                                                 amount_cents:,
                                                  payment_date: @capital_distribution.distribution_date,
                                                  percentage: cc.percentage, folio_id: cc.folio_id,
                                                  completed: @capital_distribution.generate_payments_paid)
@@ -28,7 +30,7 @@ class CapitalDistributionJob < ApplicationJob
         payment.run_callbacks(:save) { false }
         payment.run_callbacks(:create) { false }
         @payments << payment
-        logger.debug "Created Payment of #{amount_cents} cents for #{cc.investor.investor_name} id #{payment.id}"
+        logger.debug "Created Payment of #{amount_cents} cents for #{cc.investor_name} id #{payment.id}"
       end
 
       # import the rows

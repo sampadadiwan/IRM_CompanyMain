@@ -3,7 +3,7 @@ class CapitalRemittancesController < ApplicationController
 
   # GET /capital_remittances or /capital_remittances.json
   def index
-    @capital_remittances = policy_scope(CapitalRemittance).includes(:fund, :investor, :capital_call, :entity, capital_commitment: :investor_kyc)
+    @capital_remittances = policy_scope(CapitalRemittance).includes(:fund, :capital_call, :entity, capital_commitment: :fund)
     @capital_remittances = @capital_remittances.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @capital_remittances = @capital_remittances.where(status: params[:status]) if params[:status].present?
     @capital_remittances = @capital_remittances.where(verified: params[:verified] == "true") if params[:verified].present?
@@ -11,6 +11,12 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittances = @capital_remittances.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
 
     @capital_remittances = @capital_remittances.page(params[:page]) if params[:all].blank?
+
+    respond_to do |format|
+      format.html
+      format.xlsx
+      format.json { render json: CapitalRemittanceDatatable.new(params, capital_remittances: @capital_remittances) }
+    end
   end
 
   def search

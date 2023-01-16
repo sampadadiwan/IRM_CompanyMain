@@ -2,13 +2,21 @@ class CapitalCommitmentsController < ApplicationController
   before_action :set_capital_commitment, only: %i[show edit update destroy generate_documentation
                                                   generate_esign_link report]
 
+  after_action :verify_policy_scoped, only: []
+
   # GET /capital_commitments or /capital_commitments.json
   def index
-    @capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :investor, :fund)
+    @capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund)
     @capital_commitments = @capital_commitments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @capital_commitments = @capital_commitments.where(onboarding_completed: params[:onboarding_completed]) if params[:onboarding_completed].present?
 
     @capital_commitments = @capital_commitments.page(params[:page]) if params[:all].blank?
+
+    respond_to do |format|
+      format.html
+      format.xlsx
+      format.json { render json: CapitalCommitmentDatatable.new(params, capital_commitments: @capital_commitments) }
+    end
   end
 
   def report
@@ -16,7 +24,7 @@ class CapitalCommitmentsController < ApplicationController
   end
 
   def search
-    query = params[:query]
+    query = params[:query] || params[:search][:value]
 
     if query.present?
       if params[:fund_id].present?
@@ -34,7 +42,7 @@ class CapitalCommitmentsController < ApplicationController
                                                                           query:, default_operator: 'and' })
 
       @capital_commitments = @capital_commitments.objects
-      render "index"
+      render "search"
     else
       redirect_to capital_commitments_path(params.to_enum.to_h)
     end
@@ -104,7 +112,7 @@ class CapitalCommitmentsController < ApplicationController
     @capital_commitment.destroy
 
     respond_to do |format|
-      format.html { redirect_to capital_commitments_url, notice: "Capital commitment was successfully destroyed." }
+      format.html { redirect_to fund_path(@capital_commitment.fund), notice: "Capital commitment was successfully destroyed." }
       format.json { head :no_content }
     end
   end

@@ -3,7 +3,7 @@
     <%= capital_commitment.folio_id %>
   </td>
   <td>
-    <%= link_to capital_commitment.investor.investor_name, capital_commitment.investor %>
+    <%= link_to capital_commitment.investor_name, investor_path(id: capital_commitment.investor_id) %>
   </td>
   <td>
     <%= link_to capital_commitment.fund.name, capital_commitment.fund %>

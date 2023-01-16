@@ -15,12 +15,7 @@
     <%= money_to_currency capital_call.call_amount, params %> 
   </td>
   <td>
-    <%= money_to_currency capital_call.collected_amount, params %> 
-    <div class="progress">
-      <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_call.percentage_raised %>%" aria-valuenow="<%=capital_call.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
-        <%= capital_call.percentage_raised %> %
-      </div>
-    </div>
+    <%= render "/capital_calls/percentage_raised", capital_call: capital_call %>
   </td>
   <td>
     <%= money_to_currency capital_call.due_amount, params %>     

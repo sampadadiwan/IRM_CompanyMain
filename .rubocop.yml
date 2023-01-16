@@ -66,6 +66,11 @@ Naming/MethodName:
 Naming/AccessorMethodName:
   Exclude:
     - 'app/datatables/note_datatable.rb'
+    - 'app/packs/funds/capital_commitments/datatables/capital_commitment_datatable.rb'
+    - 'app/packs/funds/capital_calls/datatables/capital_call_datatable.rb'
+    - 'app/packs/funds/capital_remittances/datatables/capital_remittance_datatable.rb'
+    - 'app/packs/funds/capital_distribution_payments/datatables/capital_distribution_payment_datatable.rb'
+    
 
 Lint/DuplicateBranch:
   Exclude:
@@ -77,6 +82,7 @@ Lint/MissingSuper:
 Rails/OutputSafety:
   Exclude:
     - 'config/initializers/client_side_validations.rb'
+    
 Style/OptionalBooleanParameter:
   Exclude:
     - 'app/packs/startups/investments/helpers/investments_helper.rb'

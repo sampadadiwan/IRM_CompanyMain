@@ -26,4 +26,5 @@ export default class extends Controller {
     $(`${event.target.hash} .load_data_link`).find('span').trigger('click'); 
     $(`${event.target.hash} .load_data_link`).hide();
   }
+  
 }

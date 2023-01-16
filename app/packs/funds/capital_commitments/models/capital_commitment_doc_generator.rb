@@ -27,7 +27,7 @@ class CapitalCommitmentDocGenerator
   end
 
   def notify(fund_doc_template, capital_commitment, user_id)
-    UserAlert.new(user_id:, message: "Document #{fund_doc_template.name} generated for #{capital_commitment.investor.investor_name}. Please refresh the page.", level: "success").broadcast
+    UserAlert.new(user_id:, message: "Document #{fund_doc_template.name} generated for #{capital_commitment.investor_name}. Please refresh the page.", level: "success").broadcast
   end
 
   # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
@@ -43,7 +43,7 @@ class CapitalCommitmentDocGenerator
       r.add_field :folio_id, capital_commitment.folio_id
       r.add_field :fund_details, capital_commitment.fund.details
 
-      r.add_field :investor_name, capital_commitment.investor.investor_name
+      r.add_field :investor_name, capital_commitment.investor_name
       r.add_field :commitment_amount, money_to_currency(capital_commitment.committed_amount)
 
       amount_in_words = capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize

@@ -77,7 +77,9 @@ gem "administrate"
 gem 'administrate-field-active_storage'
 gem 'administrate-field-boolean_emoji', '~> 0.3.0'
 gem 'administrate-field-shrine'
-# gem 'ajax-datatables-rails', git: "git@github.com:jbox-web/ajax-datatables-rails.git"
+gem 'ajax-datatables-rails'
+gem 'draper'
+gem 'has_scope'
 
 # For custom buckets in S3 per client
 gem 'fastimage'

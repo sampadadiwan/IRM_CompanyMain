@@ -10,6 +10,6 @@ wb.add_worksheet(name: "CapitalRemittance") do |sheet|
   @capital_remittances.each do |cc|
     verified = cc.verified ? "Yes" : "No"
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
-    sheet.add_row [cc.investor.investor_name, cc.fund.name, cc.capital_call.name, money_to_currency(cc.due_amount, params), money_to_currency(cc.collected_amount, params), cc.status, verified] + custom_field_values
+    sheet.add_row [cc.investor_name, cc.fund.name, cc.capital_call.name, money_to_currency(cc.due_amount, params), money_to_currency(cc.collected_amount, params), cc.status, verified] + custom_field_values
   end
 end

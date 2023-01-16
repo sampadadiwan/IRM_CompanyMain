@@ -40,23 +40,15 @@
 
     <div id="remittances-tab" class="tab-pane fade in">
           <div id="remittances" class="associated_entity">
-            <%= link_to capital_remittances_path(capital_commitment_id: capital_commitment.id), class: "load_data_link", data: { turbo_frame: 'capital_remittances_frame' } do %>
-              <span>Loading...</span>
-            <% end %>
-        
-            <%= turbo_frame_tag "capital_remittances_frame", target: "_top" do %>
-            <% end %>
+            <%= render "/capital_remittances/index", 
+                lazy_load_data: true, data_source: capital_remittances_path(capital_commitment_id: capital_commitment.id, all: true, status: "", verified: "") %>
           </div>     
     </div>
 
     <div id="distributions-tab" class="tab-pane fade in">
           <div id="distributions" class="associated_entity">
-            <%= link_to capital_distribution_payments_path(capital_commitment_id: capital_commitment.id), class: "load_data_link", data: { turbo_frame: 'capital_distribution_payments_frame' } do %>
-              <span>Loading...</span>
-            <% end %>
-        
-            <%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top" do %>
-            <% end %>
+            <%= render "/capital_distribution_payments/index", 
+                lazy_load_data: false, data_source: capital_distribution_payments_path(capital_commitment_id: capital_commitment.id, all: true) %>
           </div>     
     </div>
 

@@ -15,12 +15,12 @@ module FundStatisticsHelper
     commitments = fund.capital_commitments
     if commitments.length <= 10
       commitments = commitments.order(committed_amount_cents: :desc).joins(:investor).includes(:investor)
-      grouped = commitments.group_by { |i| i.investor.investor_name }
+      grouped = commitments.group_by(&:investor_name)
                            .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.committed_amount_cents / 100) }] }
 
     else
       commitments = commitments.limit(10).order(committed_amount_cents: :desc).joins(:investor).includes(:investor)
-      grouped = commitments.group_by { |i| i.investor.investor_name }
+      grouped = commitments.group_by(&:investor_name)
                            .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.committed_amount_cents / 100) }] }
 
       # This is to get the sum of the other
@@ -38,12 +38,12 @@ module FundStatisticsHelper
     commitments = fund.capital_commitments
     if commitments.length <= 10
       commitments = commitments.order(committed_amount_cents: :desc).joins(:investor).includes(:investor)
-      grouped = commitments.group_by { |i| i.investor.investor_name }
+      grouped = commitments.group_by(&:investor_name)
                            .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.collected_amount_cents / 100) }] }
 
     else
       commitments = commitments.limit(10).order(committed_amount_cents: :desc).joins(:investor).includes(:investor)
-      grouped = commitments.group_by { |i| i.investor.investor_name }
+      grouped = commitments.group_by(&:investor_name)
                            .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.collected_amount_cents / 100) }] }
 
       # This is to get the sum of the other

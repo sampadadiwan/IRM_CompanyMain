@@ -83,6 +83,6 @@ class CapitalCommitmentDashboard < Administrate::BaseDashboard
   # across all pages of the admin dashboard.
   #
   def display_resource(capital_commitment)
-    "CapitalCommitment ##{capital_commitment.investor.investor_name}"
+    "CapitalCommitment ##{capital_commitment.investor_name}"
   end
 end

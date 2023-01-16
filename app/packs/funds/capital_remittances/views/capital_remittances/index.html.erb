@@ -1,6 +1,2 @@
 <%= render "/layouts/alerts" %>
-
-<%= turbo_frame_tag "capital_remittances_frame", target: "_top" do %>
-    <%= render "/capital_remittances/index", capital_remittances: @capital_remittances, capital_call: nil %>
-    <%= paginate @capital_remittances, data: {turbo_frame: 'capital_remittances_frame'}   %>
-<% end %>
+<%= render "/capital_remittances/index", capital_remittances: @capital_remittances, capital_call: nil, lazy_load_data: false %>

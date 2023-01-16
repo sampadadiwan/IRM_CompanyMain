@@ -1,23 +1,38 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Calls</h1>
     <span>
-        <%= link_to "New Capital Call" , new_capital_call_path("capital_call[fund_id]": params[:fund_id]), {class: "btn btn-outline-primary"} if params[:fund_id] %>
-        <%= link_to "Download", capital_calls_path(fund_id: params[:fund_id], format: "xlsx"),  {class: "btn btn-outline-primary" } if params[:fund_id] %>
 
-        <%= link_to "Upload", 
-            new_import_upload_path("import_upload[owner_id]": params[:fund_id], 
-            "import_upload[owner_type]": "Fund", 
-            "import_upload[import_type]": "CapitalCall", 
-            "sample_upload": "CAPITAL_CALL_SAMPLE"), 
-            { class: "btn btn-outline-primary"}  %> 
-    
+        <% fund ||= nil %>
+        <% if fund && policy(fund).update? %>
+            <%= link_to "New Capital Call" , new_capital_call_path("capital_call[fund_id]": fund.id), 
+                        {class: "btn btn-outline-primary"} %>
+
+            <%= link_to "Upload", 
+                new_import_upload_path("import_upload[owner_id]": fund.id, 
+                "import_upload[owner_type]": "Fund", 
+                "import_upload[import_type]": "CapitalCall", 
+                "sample_upload": "CAPITAL_CALL_SAMPLE"), 
+                { class: "btn btn-outline-primary"}  %> 
+        <% end %>
+
+        <%= link_to "Download", capital_calls_path(fund_id: fund&.id, format: "xlsx"),  
+                    {class: "btn btn-outline-primary" }  %>
+
+
     </span>
 
 </div>
 
-<div class="table-responsive" data-controller="datatable">
+<% data_source ||= capital_calls_path(params, format: :json, all: true) %>    
+<% lazy_load_data ||= false %>
 
-    <table id="capital_calls" class="table table-bordered dataTable jqDataTable">
+<div class="table-responsive" data-controller="capital-calls" data-capital-calls-lazy-load-data-value=<%= lazy_load_data %> data-capital-calls-table-name-value="#capital_calls">
+
+    <% if lazy_load_data %>
+        <a class="load_data_link" data-action="click->capital-calls#loadData"><span>Load Data</span></a>
+    <% end %>
+
+    <table id="capital_calls" class="table table-bordered dataTable" data-source="<%= data_source %>" style="width:100%">
         <thead>
             <tr>
                 <th>
@@ -50,9 +65,7 @@
         </thead>
 
         <tbody>
-            <% capital_calls.each do |capital_call| %>
-                <%= render capital_call %>
-            <% end %>
+            
         </tbody>
     </table>
 

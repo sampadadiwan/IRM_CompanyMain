@@ -22,12 +22,8 @@
 
         <div id="remittances-tab" class="tab-pane fade in">
           <div id="remittances" class="associated_entity">
-            <%= link_to capital_remittances_path(capital_call_id: capital_call.id), class: "load_data_link", data: { turbo_frame: 'capital_remittances_frame' } do %>
-              <span>Loading...</span>
-            <% end %>
-        
-            <%= turbo_frame_tag "capital_remittances_frame", target: "_top" do %>
-            <% end %>
+           <%= render "/capital_remittances/index", capital_call: capital_call,
+                lazy_load_data: true, data_source: capital_remittances_path(capital_call_id: capital_call.id, all: true, status: "", verified: "") %>
           </div>     
         </div>
 

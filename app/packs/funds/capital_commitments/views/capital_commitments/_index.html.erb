@@ -1,30 +1,18 @@
-<% toolbar ||= "Yes" %>
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Capital Commitments</h1>
+            
+<% fund ||= nil %>        
+<% data_source ||= capital_commitments_path(params, format: :json, all: true) %>    
+<% lazy_load_data ||= false %>
 
-    <% if toolbar == "Yes" %>
-    <span>
+<%= render "/capital_commitments/index_header", fund: fund %>
 
-        <%= link_to "New Capital Commitment", new_capital_commitment_path("capital_commitment[fund_id]": params[:fund_id]),  {class: "btn btn-outline-primary" } if params[:fund_id] %>
+<div class="table-responsive" data-controller="commitments" data-commitments-lazy-load-data-value=<%= lazy_load_data %> data-commitments-table-name-value="#capital_commitments">
 
-        <%= link_to "Download", capital_commitments_path(fund_id: params[:fund_id], format: "xlsx", all: true),  {class: "btn btn-outline-primary" } if params[:fund_id] %>
-
-        <%= link_to "Upload", 
-            new_import_upload_path("import_upload[owner_id]": params[:fund_id], 
-            "import_upload[owner_type]": "Fund", 
-            "import_upload[import_type]": "CapitalCommittment", 
-            "sample_upload": "CAPITAL_COMMITMENT_SAMPLE"), 
-            { class: "btn btn-outline-primary"}  %> 
-    
-        <%= render "/funds/search_bar", model_name: "capital_commitment" %>
-
-    </span>
+    <% if lazy_load_data %>
+        <a class="load_data_link" data-action="click->commitments#loadData"><span>Load Data</span></a>
     <% end %>
-</div>
-
-<div class="table-responsive">
-
-    <table id="capital_commitments" class="table table-bordered dataTable jqDataTable">
+    
+    <table id="capital_commitments" class="table table-bordered dataTable" 
+        data-source="<%= data_source %>" style="width:100%" >
 
         <thead>
             <tr>
@@ -56,9 +44,7 @@
         </thead>
 
         <tbody>
-            <% capital_commitments.each do |capital_commitment| %>
-                <%= render capital_commitment %>
-            <% end %>
+            
         </tbody>
     </table>
 

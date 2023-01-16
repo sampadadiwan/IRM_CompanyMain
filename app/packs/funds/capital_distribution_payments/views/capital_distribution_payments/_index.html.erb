@@ -2,37 +2,47 @@
     <h1 class="h3 mb-0 text-gray-800">Capital Distribution Payments</h1>
 
     <span>
-      <% if params[:capital_distribution_id] %>
+      <% capital_distribution ||= nil %>
+      <% if capital_distribution %>
       
-        <%= link_to "New Capital Distribution Payment" , new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": params[:capital_distribution_id]), {class: "btn btn-outline-primary" }  %>
+        <%= link_to "New Capital Distribution Payment", 
+          new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id), 
+          {class: "btn btn-outline-primary" }  %>
 
-        <%= link_to "Download" , capital_distribution_payments_path(capital_distribution_id: params[:capital_distribution_id], format: "xlsx", all: true), {class: "btn btn-outline-primary" } %>
+        <%= link_to "Download" , 
+          capital_distribution_payments_path(capital_distribution_id: capital_distribution.id, 
+          format: "xlsx", all: true), {class: "btn btn-outline-primary" } %>
 
 
         <%= link_to "Upload", 
-            new_import_upload_path("import_upload[owner_id]": params[:capital_distribution_id], 
+            new_import_upload_path("import_upload[owner_id]": capital_distribution.id, 
             "import_upload[owner_type]": "CapitalDistribution", 
             "import_upload[import_type]": "CapitalDistributionPayment", 
             "sample_upload": "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE"), 
             { class: "btn btn-outline-primary"}  %> 
 
       <% end %>
-      <%= render "/funds/search_bar", model_name: "capital_distribution_payment" %>
+      <%#= render "/funds/search_bar", model_name: "capital_distribution_payment" %>
     </span>
 
   </div>
 
-  <div class="table-responsive">
+  <% data_source ||= capital_distribution_payments_path(params, format: :json, all: true) %>    
+  <% lazy_load_data ||= false %>
 
-    <table id="capital_distribution_payments" class="table table-bordered dataTable ">
+  <div class="table-responsive" data-controller="distribution-payments" data-distribution-payments-lazy-load-data-value=<%= lazy_load_data %> data-distribution-payments-table-name-value="#capital_distribution_payments">
+
+    <% if lazy_load_data %>
+        <a class="load_data_link" data-action="click->distribution-payments#loadData"><span>Load Data</span></a>
+    <% end %>
+    
+    <table id="capital_distribution_payments" class="table table-bordered dataTable" 
+        data-source="<%= data_source %>" style="width:100%" >
 
       <thead>
         <tr>
           <th>
             Investor
-          </th>
-          <th>
-            KYC Full Name
           </th>
           <th>
             Folio No
@@ -53,9 +63,7 @@
       </thead>
 
       <tbody>
-        <% capital_distribution_payments.each do |capital_distribution_payment| %>
-          <%= render capital_distribution_payment %>
-        <% end %>
+        
       </tbody>
     </table>
 

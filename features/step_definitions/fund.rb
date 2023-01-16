@@ -108,7 +108,7 @@
   
   Given('the investors are added to the fund') do
     @user.entity.investors.not_holding.not_trust.each do |inv|
-        ar = AccessRight.create( owner: @fund, access_type: "Fund", 
+        ar = AccessRight.create( owner: @fund, access_type: "Fund", metadata: "Investor", 
                                  access_to_investor_id: inv.id, entity: @user.entity)
 
 
@@ -771,9 +771,10 @@ Then('when the capital call docs are generated') do
   CapitalCall.all.each do |cc|
     visit(capital_call_path(cc))
     click_on("Generate Documents")
-    expect(page).to have_content("Documentation generation started")
+    sleep(4)
+    expect(page).to have_content("Document #{@call_template.name} generated")
     sleep(2)
-    # expect(page).to have_content("Document #{@call_template.name} generated")
+    expect(page).to have_content("Documentation generation started")
   end
 end
 

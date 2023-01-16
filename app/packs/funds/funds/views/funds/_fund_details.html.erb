@@ -77,34 +77,22 @@
 
         <div id="commitments-tab" class="tab-pane fade in">
           <div id="commitments" class="associated_entity">
-            <%= link_to capital_commitments_path(fund_id: fund.id), class: "load_data_link", data: { turbo_frame: 'capital_commitments_frame' } do %>
-              <span>Loading...</span>
-            <% end %>
-        
-            <%= turbo_frame_tag "capital_commitments_frame", target: "_top" do %>
-            <% end %>
+            <%= render "/capital_commitments/index", fund: fund,
+                lazy_load_data: true, data_source: capital_commitments_path(fund_id: fund.id, all: true) %>
           </div>     
         </div>
 
         <div id="capital-calls-tab" class="tab-pane fade in">
           <div id="capital-calls" class="associated_entity">
-            <%= link_to capital_calls_path(fund_id: fund.id), class: "load_data_link", data: { turbo_frame: 'capital_calls_frame' } do %>
-              <span>Loading...</span>
-            <% end %>
-        
-            <%= turbo_frame_tag "capital_calls_frame", target: "_top" do %>
-            <% end %>
+            <%= render "/capital_calls/index", fund: fund,
+                lazy_load_data: true, data_source: capital_calls_path(fund_id: fund.id, all: true) %>
           </div>     
         </div>
 
         <div id="capital-remittances-tab" class="tab-pane fade in">
           <div id="capital-remittances" class="associated_entity">
-            <%= link_to capital_remittances_path(fund_id: fund.id), class: "load_data_link", data: { turbo_frame: 'capital_remittances_frame' } do %>
-              <span>Loading...</span>
-            <% end %>
-        
-            <%= turbo_frame_tag "capital_remittances_frame", target: "_top" do %>
-            <% end %>
+            <%= render "/capital_remittances/index", fund: fund,
+                lazy_load_data: true, data_source: capital_remittances_path(fund_id:fund.id, all: true, status: "", verified: "") %>
           </div>     
         </div>
 
@@ -123,12 +111,8 @@
 
         <div id="capital-distribution-payments-tab" class="tab-pane fade in">
           <div id="capital-distribution-payments" class="associated_entity">
-            <%= link_to capital_distribution_payments_path(fund_id: fund.id), class: "load_data_link", data: { turbo_frame: 'capital_distribution_payments_frame' } do %>
-              <span>Loading...</span>
-            <% end %>
-        
-            <%= turbo_frame_tag "capital_distribution_payments_frame", target: "_top" do %>
-            <% end %>
+            <%= render "/capital_distribution_payments/index", fund: fund,
+                lazy_load_data: false, data_source: capital_distribution_payments_path(fund_id: fund.id, all: true) %>
           </div>     
         </div>
 

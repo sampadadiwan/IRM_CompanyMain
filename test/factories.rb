@@ -201,7 +201,7 @@ FactoryBot.define do
 
   factory :valuation do
     valuation_date { Date.today - rand(24).months }
-    pre_money_valuation_cents { rand(1..10) * 100000000 }
+    valuation_cents { rand(1..10) * 100000000 }
     per_share_value_cents { rand(1..10) * 100000 }
   end
 
