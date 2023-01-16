@@ -107,57 +107,36 @@ export default class extends Controller {
 
                 console.log(`In full screen ${instance.UI.isFullscreen()}`);
 
-                if ($("#sign_document").val() !== "true") {
-                    console.log(`############# Signing is NOT turned on`);
 
-                    instance.UI.disableElements(['ribbons']);
-                    instance.UI.disableElements(['toolsHeader']);
-                    instance.UI.disableElements(['toolbarGroup-Insert']);
+                instance.UI.disableElements(['ribbons']);
+                instance.UI.disableElements(['toolsHeader']);
+                instance.UI.disableElements(['toolbarGroup-Insert']);
 
-                    instance.UI.openElements(['menuOverlay']);
+                instance.UI.openElements(['menuOverlay']);
 
-                    $(".document_download_icon").hide();
+                $(".document_download_icon").hide();
 
-                    documentViewer.setWatermark({
-                        // Draw diagonal watermark in middle of the document
-                        diagonal: {
-                            fontSize: 20, // or even smaller size
-                            fontFamily: 'sans-serif',
-                            color: 'grey',
-                            opacity: 40, // from 0 to 100
-                            text: viewer_watermark
-                        },
-    
-                        // Draw header watermark
-                        header: {
-                            fontSize: 8,
-                            fontFamily: 'sans-serif',
-                            color: 'grey',
-                            opacity: 45,
-                            // left: 'left watermark',
-                            center: viewer_watermark,
-                            right: ''
-                        }
-                    });
+                documentViewer.setWatermark({
+                    // Draw diagonal watermark in middle of the document
+                    diagonal: {
+                        fontSize: 20, // or even smaller size
+                        fontFamily: 'sans-serif',
+                        color: 'grey',
+                        opacity: 40, // from 0 to 100
+                        text: viewer_watermark
+                    },
 
-                } else {
-                    if($("#signature_image").val() == "true") {
-                        console.log(`Signature Signing is turned on`);
-                        instance.UI.setToolbarGroup('toolbarGroup-Insert');
-                        instance.UI.openElements(['toolbarGroup-Insert']);
-                        instance.UI.setHeaderItems(function (header) {
-                            header.getHeader('toolbarGroup-Insert').delete(2);
-                            header.getHeader('toolbarGroup-Insert').delete(3);
-                            header.getHeader('toolbarGroup-Insert').delete(4);
-                        });
-                    } else {
-                        instance.UI.disableElements(['ribbons']);
-                        instance.UI.disableElements(['toolsHeader']);
-                        instance.UI.disableElements(['toolbarGroup-Insert']);
+                    // Draw header watermark
+                    header: {
+                        fontSize: 8,
+                        fontFamily: 'sans-serif',
+                        color: 'grey',
+                        opacity: 45,
+                        // left: 'left watermark',
+                        center: viewer_watermark,
+                        right: ''
                     }
-                                                            
-                }
-
+                });
 
             });
     }

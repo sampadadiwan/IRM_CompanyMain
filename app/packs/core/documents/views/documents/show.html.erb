@@ -29,32 +29,13 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
-                   Document
+                   <%= @document.name.capitalize.titleize %>
                    : <%= pluralize @document.impressions_count, "View" %>
 
                </h6>
             </div>
             <div class="card-body">
                <table class="table table-bordered dataTable ">
-                  <tr>
-                     <td>
-                        Download
-                     </td>
-                     <td>
-
-                        <% if @document.file %>
-                           <%= link_to @document.file_url(), class: "document_download_icon", target: "_blank" do %>
-                              <i class="fas fa-download"></i>
-                           <% end %>
-                           <%= @document.name.capitalize.titleize %>
-
-                        <% end %>
-
-                        
-                        
-                     </td>
-                  </tr>
-
                   <% if @document.from_template_id %>
                      <tr>
                         <td>
