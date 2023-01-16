@@ -1,91 +1,144 @@
-<div class="alert alert-info">
-  <%= "Only investors for this #{investor_notice.owner_type}, will see this notice." %>
+<div class="row">
+  <div class="col-lg-8 mb-4">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              Investor Notice: <%= "Only investors for this #{investor_notice.owner_type}, will see this notice." %>
+            </h6>
+        </div>
+        <div class="card-body">
+
+          <%= form_with(model: investor_notice, validate: true) do |form| %>
+            <% if investor_notice.errors.any? %>
+              <div class="alert alert-danger">
+                <h2><%= pluralize(investor_notice.errors.count, "error") %> prohibited this investor_notice from being saved:</h2>
+
+                <ul>
+                  <% investor_notice.errors.each do |error| %>
+                    <li><%= error.full_message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            
+            <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+
+            <% if investor_notice.owner_id.present? && investor_notice.owner_type.present? %>
+              <%= form.text_field :owner_id, hidden: true  %>
+              <%= form.text_field :owner_type, hidden: true  %>
+            <% else %>
+              <div class="form-group">
+                <%= form.label :owner_id, "Owner ID" %>
+                <%= form.text_field :owner_id, class: "form-control"  %>
+              </div>
+
+              <div class="form-group">
+                <%= form.label :owner_type %>
+                <%= form.select :owner_type, ["Fund", "SecondarySale", "Entity"], {}, class: "form-control" %>  
+              </div>
+            <% end %>
+            
+            <div class="form-group">
+              <%= form.label :start_date %>
+              <%= form.date_field :start_date, class: "form-control"  %>
+            </div>
+
+            <div class="form-group">
+              <%= form.label :end_date %>
+              <%= form.date_field :end_date, class: "form-control"  %>
+            </div>
+
+            <div class="form-group">
+              <%= form.label :title %>
+              <%= form.text_field :title, class: "form-control"  %>
+            </div>
+
+            <div class="form-group">
+              <%= form.label :link %>
+              <%= form.text_field :link, class: "form-control"  %>
+            </div>
+
+            <div class="form-group">
+              <%= form.label :btn_label, "Button Label" %>
+              <%= form.text_field :btn_label, class: "form-control"  %>
+            </div>
+
+            <div class="form-group">
+              <%= form.label :access_rights_metadata %>
+              <%= form.text_field :access_rights_metadata, class: "form-control"  %>
+            </div>
+
+            <div class="form-group">
+              <%= form.label :category %>
+              <%= form.select :category, Investor.INVESTOR_CATEGORIES(current_user.entity) , {include_blank: true}, class: "form-control"  %>
+            </div>
+
+            <div class="form-group" data-controller="trixurl">
+              <%= form.label :details %>
+              <%= form.rich_text_area :details, class: "form-control"  %>
+            </div>
+
+            <div class="form-group">
+              <%= form.label :active %>
+              <%= form.check_box :active, class: "form-control form-checkbox"  %>
+            </div>
+
+            <div class="form-group">
+              <%= form.label :generate, "Generate For Investors" %>
+              <%= form.check_box :generate, class: "form-control form-checkbox"  %>
+              <small>Generate Notices for all investors of the selected Owner</small>
+            </div>
+            
+
+            <div class="form-group">
+              <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+            </div>
+          <% end %>
+        </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-4 mb-4">
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              Important links for use inside your notices              
+            </h6>
+
+            
+        </div>
+        <div class="card-body">
+          <table class="table table-bordered table-striped dataTable">
+            <tr>
+              <td>Documents</td>
+              <td>
+                <span id="copy_document_link"><%= documents_path(entity_id: current_user.entity_id) %></span>
+              </td>
+              <td>
+                <i class="fas fa-lg fa-copy" data-action="click->confirm#copy" data-target="#copy_document_link" data-notify="#imp_links_notice"></i>
+              </td>
+            </tr>
+
+            <tr>
+              <td>Tasks</td>
+              <td>
+                <span id="copy_task_link"><%= tasks_path(entity_id: current_user.entity_id) %></span>
+              </td>
+              <td>
+                <i class="fas fa-lg fa-copy" data-action="click->confirm#copy" data-target="#copy_task_link" data-notify="#imp_links_notice"></i>
+              </td>
+            </tr>
+
+            <tr>
+              <td colspan="3">
+                <span id="imp_links_notice"></span>
+              </td>
+            </tr>
+          </table>
+        </div>
+    </div>
+  </div>
+  
 </div>
-
-<%= form_with(model: investor_notice, validate: true) do |form| %>
-  <% if investor_notice.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(investor_notice.errors.count, "error") %> prohibited this investor_notice from being saved:</h2>
-
-      <ul>
-        <% investor_notice.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  
-  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-
-  <% if investor_notice.owner_id.present? && investor_notice.owner_type.present? %>
-    <%= form.text_field :owner_id, hidden: true  %>
-    <%= form.text_field :owner_type, hidden: true  %>
-  <% else %>
-    <div class="form-group">
-      <%= form.label :owner_id, "Owner ID" %>
-      <%= form.text_field :owner_id, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :owner_type %>
-      <%= form.select :owner_type, ["Fund", "SecondarySale", "Entity"], {}, class: "form-control" %>  
-    </div>
-  <% end %>
-  
-  <div class="form-group">
-    <%= form.label :start_date %>
-    <%= form.date_field :start_date, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :end_date %>
-    <%= form.date_field :end_date, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :title %>
-    <%= form.text_field :title, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :link %>
-    <%= form.text_field :link, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :btn_label, "Button Label" %>
-    <%= form.text_field :btn_label, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :access_rights_metadata %>
-    <%= form.text_field :access_rights_metadata, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :category %>
-    <%= form.select :category, Investor.INVESTOR_CATEGORIES(current_user.entity) , {include_blank: true}, class: "form-control"  %>
-  </div>
-
-  <div class="form-group" data-controller="trixurl">
-    <%= form.label :details %>
-    <%= form.rich_text_area :details, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :active %>
-    <%= form.check_box :active, class: "form-control form-checkbox"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :generate, "Generate For Investors" %>
-    <%= form.check_box :generate, class: "form-control form-checkbox"  %>
-    <small>Generate Notices for all investors of the selected Owner</small>
-  </div>
-  
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
-<% end %>

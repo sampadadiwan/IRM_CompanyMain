@@ -51,6 +51,28 @@ export default class extends Controller {
         } 
     }
 
+
+    copy(event) {
+        console.log(event.target);
+        // Get the text field
+        let target = $(event.target).data('target');
+        let notify_span = $(event.target).data('notify');
+        
+        console.log(target);
+
+        let copyText = $(target)[0];
+        let notifyText = $(notify_span)[0];
+      
+         // Copy the text inside the text field
+        navigator.clipboard.writeText(copyText.innerHTML);
+      
+        // Alert the copied text
+        console.log("Copied the text: " + copyText.innerHTML);
+        // $(copyText).css({'color': 'blue', 'font-weight': '500'});
+        $(copyText).animate({color:'blue', 'font-size': '110%'}, 1000);
+        $(notifyText).text(`Copied ${copyText.innerHTML}`);
+    }
+
 }
 
 
