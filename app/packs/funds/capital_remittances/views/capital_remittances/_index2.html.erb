@@ -1,0 +1,69 @@
+<% search ||= "Yes" %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
+    <span>
+    <% if params[:capital_call_id].present? %>
+        <% capital_call = CapitalCall.find(params[:capital_call_id]) %>
+        <%#= link_to "New Capital Remittance" , new_capital_remittance_path("capital_remittance[capital_call_id]": params[:capital_call_id]), {class: "btn btn-outline-primary" } if policy(capital_call).update? %>
+
+        <%= button_to "Capital Call Reminder", reminder_capital_call_path(id: params[:capital_call_id]), class: "btn btn-outline-primary", data: {action: "click->confirm#popup", turbo:false, msg: "Send reminder for pending payments?", method: "post"} if policy(capital_call).reminder? %>
+
+        <%= link_to "Download", capital_remittances_path(capital_call_id: params[:capital_call_id], format: "xlsx", all: true),  {class: "btn btn-outline-primary" } %>
+
+        <%= link_to "Upload", 
+            new_import_upload_path("import_upload[owner_id]": params[:capital_call_id], 
+            "import_upload[owner_type]": "CapitalCall", 
+            "import_upload[import_type]": "CapitalRemittance", 
+            "sample_upload": "CAPITAL_REMITTANCE_SAMPLE"), 
+            { class: "btn btn-outline-primary"}  %> 
+
+        
+        <%= render "capital_remittances/filter", capital_call_id: params[:capital_call_id] %>
+
+    <% end %>
+
+    <%= render "/funds/search_bar", model_name: "capital_remittance" unless search == "No" %>
+
+    </span>
+</div>
+
+<div class="table-responsive">
+
+    <table id="capital_remittances" class="table table-bordered dataTable jqDataTable">
+        <thead>
+            <tr>
+                <th>
+                    Folio No
+                </th>
+                <th>
+                    Investor
+                </th>
+                <th>
+                    Fund
+                </th>
+                <th>
+                    Committed Amount
+                </th>
+                <th>
+                    Percentage
+                </th>
+                <th>
+                    Collected Amount
+                </th>
+                <th>
+                    Onboarding Completed
+                </th>
+
+                <th>
+                </th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <% capital_remittances.each do |capital_remittance| %>
+                <%= render capital_remittance %>
+            <% end %>
+        </tbody>
+    </table>
+
+</div>

@@ -21,6 +21,7 @@ export default class extends Controller {
     $(`a[href="#${tab}"]`).click();
 
     if( $(`#${tab} .load_data_link`).length > 0 ) {
+      console.log(`${tab} .load_data_link`);
       $(`#${tab} .load_data_link`).find('span').trigger('click'); // Works
       $(`#${tab} .load_data_link`).hide();  // Select tab by name
     }
