@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_17_015245) do
+ActiveRecord::Schema[7.0].define(version: 2023_01_17_075420) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -351,7 +351,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_17_015245) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "completed", default: false
-    t.decimal "percentage", precision: 5, scale: 2, default: "0.0"
+    t.decimal "percentage", precision: 11, scale: 8, default: "0.0"
     t.string "folio_id", limit: 20
     t.bigint "capital_commitment_id"
     t.datetime "deleted_at"

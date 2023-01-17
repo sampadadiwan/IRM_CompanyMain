@@ -42,6 +42,7 @@ class ImportCapitalDistributionPayment < ImportUtil
       capital_distribution_payment = CapitalDistributionPayment.new(entity_id: import_upload.entity_id, fund:, capital_distribution:, investor:, investor_name: investor.investor_name, capital_commitment:, folio_id:, payment_date: user_data["Payment Date"])
 
       capital_distribution_payment.folio_id = folio_id
+      capital_distribution_payment.percentage = capital_commitment.percentage
       capital_distribution_payment.amount = user_data["Amount"]
       capital_distribution_payment.completed = user_data["Completed"] == "Yes"
 

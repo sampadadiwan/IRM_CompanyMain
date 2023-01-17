@@ -47,7 +47,8 @@ export default class ServerDatatableController extends Controller {
         "columns": this.columns(),
         "initComplete": function() 
         {
-         $(".dataTables_filter input")
+          console.log(`Testing initComplete ${table_id}`);
+         $(`${table_id}_filter input`)
           .unbind() // Unbind previous default bindings
           .bind("input", function(e) { // Bind our desired behavior
               // If the length is 3 or more characters, or the user pressed ENTER, search

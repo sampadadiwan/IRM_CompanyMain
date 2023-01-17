@@ -38,6 +38,6 @@ class CapitalCallDatatable < AjaxDatatablesRails::ActiveRecord
 
   def get_raw_records
     # insert query here
-    capital_calls
+    capital_calls.joins(:fund)
   end
 end
