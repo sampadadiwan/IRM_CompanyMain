@@ -15,6 +15,7 @@ module HoldingScopes
     scope :employees, -> { where(holding_type: "Employee") }
     scope :founders, -> { where(holding_type: "Founder") }
     scope :lapsed, -> { where(lapsed: true) }
+    scope :not_lapsed, -> { where.not(lapsed: true) }
 
     scope :approved, -> { where(approved: true) }
     scope :not_approved, -> { where(approved: false) }
