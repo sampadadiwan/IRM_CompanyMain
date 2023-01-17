@@ -5,7 +5,7 @@ export default class extends ServerDatatableController {
  
   columns() {
     return [
-      {"data": "id"},
+      {"data": "folio_id"},
       {"data": "investor_name"},
       {"data": "fund_name"},
       {"data": "committed_amount"},

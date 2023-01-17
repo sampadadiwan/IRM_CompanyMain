@@ -113,8 +113,8 @@
 
   <tr>
     <td colspan="2">
-        <%= render "/capital_remittances/index2", 
-            capital_remittances: @capital_commitment.capital_remittances.includes(:investor, :fund) %>
+        <%= render "/capital_commitments/index", capital_commitment: @capital_commitment,
+                lazy_load_data: false, data_source: capital_commitments_path(capital_commitment_id: @capital_commitment.id, all: true) %>
     </td>
   </tr>
 
@@ -125,8 +125,9 @@
   
   <tr>
     <td colspan="2">
-        <%= render "/capital_distribution_payments/index", 
-            capital_distribution_payments: @capital_commitment.capital_distribution_payments.includes(:investor, :fund) %>
+
+        <%= render "/capital_distribution_payments/index", capital_commitment: @capital_commitment,
+                lazy_load_data: false, data_source: capital_distribution_payments_path(capital_commitment_id: @capital_commitment.id, all: true) %>
     </td>
   </tr>
 

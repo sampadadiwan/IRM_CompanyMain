@@ -11,6 +11,8 @@ class DealPolicy < ApplicationPolicy
         scope.for_investor(user)
       elsif user.curr_role == "advisor"
         scope.for_advisor(user)
+      else
+        scope.none
       end
     end
   end
