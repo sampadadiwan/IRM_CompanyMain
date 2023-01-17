@@ -24,6 +24,11 @@ class InvestorKyc < ApplicationRecord
   serialize :pan_verification_response, Hash
   serialize :bank_verification_response, Hash
 
+  before_save :set_investor_name
+  def set_investor_name
+    self.investor_name = investor.investor_name
+  end
+
   def folder_path
     "#{investor.folder_path}/KYC-#{id}/#{full_name}"
   end

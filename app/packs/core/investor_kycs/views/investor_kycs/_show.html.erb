@@ -27,7 +27,7 @@
           <%= display_boolean investor_kyc.verified %>
           <div>
             <small>
-              <%= "Approved by: " + investor_kyc.verified_by.full_name if investor_kyc.verified && investor_kyc.verified_by %>
+              <%= "Verified by: " + investor_kyc.verified_by.full_name if investor_kyc.verified && investor_kyc.verified_by %>
             </small>
           </div>
       </td>

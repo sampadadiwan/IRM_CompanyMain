@@ -15,7 +15,7 @@
     <% if capital_commitment.entity.enable_investor_kyc %>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#kycs-tab" 
               data-action="click->tabdetails#loadData">
-        KYC
+        All KYCs
       </a>
     <% end %>
     <% if params[:debug].present? %>
@@ -55,13 +55,9 @@
 
     <div id="kycs-tab" class="tab-pane fade">
       <div id="kycs" class="associated_entity">
-        <%= link_to investor_kycs_path( investor_id: capital_commitment.investor_id), 
-                                    class: "load_data_link", 
-                                    data: { turbo_frame: 'investor_kycs_list' } do %>
-          <span>Loading...</span>
-        <% end %>
-        <%= turbo_frame_tag "investor_kycs_list", target: "_top" do %>
-        <% end %>
+
+        <%= render "investor_kycs/index", data_source: investor_kycs_path(investor_id: capital_commitment.investor_id, all: true), lazy_load_data: false %>
+
       </div>
     </div>
 

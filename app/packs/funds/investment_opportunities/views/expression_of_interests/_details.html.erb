@@ -35,13 +35,7 @@
 
     <div id="kycs-tab" class="tab-pane fade">
       <div id="kycs" class="associated_entity">
-        <%= link_to investor_kycs_path( investor_id: expression_of_interest.investor_id), 
-                                        class: "load_data_link", 
-                                        data: { turbo_frame: 'investor_kycs_list' } do %>
-          <span>Loading...</span>
-        <% end %>
-        <%= turbo_frame_tag "investor_kycs_list", target: "_top" do %>
-        <% end %>
+        <%= render "investor_kycs/index", data_source: investor_kycs_path(investor_id: expression_of_interest.investor_id, all: true), lazy_load_data: false %>
       </div>
     </div>
 

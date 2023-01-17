@@ -15,6 +15,12 @@ class InvestorKycsController < ApplicationController
 
     @investor_kycs = @investor_kycs.includes(:investor, :entity)
     @investor_kycs = @investor_kycs.page(params[:page]) if params[:all].blank?
+
+    respond_to do |format|
+      format.html
+      format.xlsx
+      format.json { render json: InvestorKycDatatable.new(params, investor_kycs: @investor_kycs) }
+    end
   end
 
   def search
