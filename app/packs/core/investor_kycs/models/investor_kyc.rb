@@ -53,7 +53,7 @@ class InvestorKyc < ApplicationRecord
 
   after_save :notify_kyc_updated
   def notify_kyc_updated
-    InvestorKycMailer.with(id:).notify_kyc_updated.deliver_later
+    # InvestorKycMailer.with(id:).notify_kyc_updated.deliver_later
   end
 
   scope :for_advisor, lambda { |user|

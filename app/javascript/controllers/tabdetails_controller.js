@@ -4,13 +4,13 @@ export default class extends Controller {
 
   connect() {
 
-    // Sometimes we want to load a tab on load of the page
-    // This tab is stored in a hidden field #clickOnLoad 
-    if( $("#clickOnLoad").length > 0 ) {
-      let link = $("#clickOnLoad").val();
-      $(`${link} .load_data_link`).find('span').trigger('click'); // Works
-      $(`${link} .load_data_link`).hide();  
-    }
+    // // Sometimes we want to load a tab on load of the page
+    // // This tab is stored in a hidden field #clickOnLoad 
+    // if( $("#clickOnLoad").length > 0 ) {
+    //   let link = $("#clickOnLoad").val();
+    //   $(`${link} .load_data_link`).find('span').trigger('click'); // Works
+    //   $(`${link} .load_data_link`).hide();  
+    // }
   }
 
   // Find the load_data_link and click it to load the html into the 
