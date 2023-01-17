@@ -37,9 +37,9 @@
       Please upload a clear image of your PAN card
     </div>
 
-    <%= render "layouts/single_upload", form: form, field_label: "Upload PAN Card (jpg or png only)", 
+    <%= render "layouts/single_upload", form: form, field_label: "Upload PAN Card", 
                             for_model: "investor_kyc", field_name: "pan_card", 
-                            model: investor_kyc, allowed_types: ['image/*'].freeze %>
+                            model: investor_kyc %>
 
   </div>
 
