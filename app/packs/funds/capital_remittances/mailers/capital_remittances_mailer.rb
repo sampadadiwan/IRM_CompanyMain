@@ -8,7 +8,7 @@ class CapitalRemittancesMailer < ApplicationMailer
 
     # Check for attachments
     @capital_remittance.documents.generated.each do |doc|
-      attachments[doc.name] = doc.file.read
+      attachments["#{doc.name}.pdf"] = doc.file.read
     end
 
     if emails.present?
