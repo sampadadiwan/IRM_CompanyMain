@@ -1,0 +1,63 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @fund_ratio.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Fund
+    </td>
+    <td>
+      <%= @fund_ratio.fund.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Valuation
+    </td>
+    <td>
+      <%= link_to l(@fund_ratio.valuation.valuation_date), @fund_ratio.valuation %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Name
+    </td>
+    <td>
+      <%= @fund_ratio.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Value
+    </td>
+    <td>
+      <%= @fund_ratio.value %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Display Value
+    </td>
+    <td>
+      <%= @fund_ratio.display_value %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Notes
+    </td>
+    <td>
+      <%= @fund_ratio.notes %>
+    </td>
+  </tr>
+</table>
+<div>
+  <%= link_to "Edit", edit_fund_ratio_path(@fund_ratio), {class: "btn btn-primary"} if policy(@fund_ratio).update? %> 
+  <%= button_to "Delete", @fund_ratio, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  if policy(@fund_ratio).destroy? %>
+</div>

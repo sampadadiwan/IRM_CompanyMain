@@ -1,7 +1,6 @@
 class Fund < ApplicationRecord
   attr_accessor :update_by_fund_calc
 
-  include FundCalcs
   include WithFolder
   include Trackable
   include ActivityTrackable
@@ -14,6 +13,7 @@ class Fund < ApplicationRecord
   belongs_to :fund_signatory, class_name: "User", optional: true
   belongs_to :trustee_signatory, class_name: "User", optional: true
 
+  has_many :fund_ratios, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
   has_many :valuations, as: :owner, dependent: :destroy
   has_many :capital_remittances, dependent: :destroy

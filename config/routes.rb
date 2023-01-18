@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :fund_ratios
   resources :capital_remittance_payments
   resources :esigns
   resources :signature_workflows

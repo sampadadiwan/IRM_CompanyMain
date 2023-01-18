@@ -1,0 +1,71 @@
+class FundRatiosController < ApplicationController
+  before_action :set_fund_ratio, only: %i[show edit update destroy]
+
+  # GET /fund_ratios or /fund_ratios.json
+  def index
+    @fund_ratios = policy_scope(FundRatio)
+  end
+
+  # GET /fund_ratios/1 or /fund_ratios/1.json
+  def show; end
+
+  # GET /fund_ratios/new
+  def new
+    @fund_ratio = FundRatio.new(fund_ratio_params)
+    authorize(@fund_ratio)
+  end
+
+  # GET /fund_ratios/1/edit
+  def edit; end
+
+  # POST /fund_ratios or /fund_ratios.json
+  def create
+    @fund_ratio = FundRatio.new(fund_ratio_params)
+    authorize(@fund_ratio)
+    respond_to do |format|
+      if @fund_ratio.save
+        format.html { redirect_to fund_ratio_url(@fund_ratio), notice: "Fund ratio was successfully created." }
+        format.json { render :show, status: :created, location: @fund_ratio }
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: @fund_ratio.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # PATCH/PUT /fund_ratios/1 or /fund_ratios/1.json
+  def update
+    respond_to do |format|
+      if @fund_ratio.update(fund_ratio_params)
+        format.html { redirect_to fund_ratio_url(@fund_ratio), notice: "Fund ratio was successfully updated." }
+        format.json { render :show, status: :ok, location: @fund_ratio }
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @fund_ratio.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # DELETE /fund_ratios/1 or /fund_ratios/1.json
+  def destroy
+    @fund_ratio.destroy
+
+    respond_to do |format|
+      format.html { redirect_to fund_ratios_url, notice: "Fund ratio was successfully destroyed." }
+      format.json { head :no_content }
+    end
+  end
+
+  private
+
+  # Use callbacks to share common setup or constraints between actions.
+  def set_fund_ratio
+    @fund_ratio = FundRatio.find(params[:id])
+    authorize(@fund_ratio)
+  end
+
+  # Only allow a list of trusted parameters through.
+  def fund_ratio_params
+    params.require(:fund_ratio).permit(:entity_id, :fund_id, :valuation_id, :name, :value, :display_value, :notes)
+  end
+end

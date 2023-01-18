@@ -1,5 +1,5 @@
 <div class="form-group">
     <%= f.label field.name, field.name.humanize.titleize %>
-    <%= f.number_field field.name, class: "form-control", required: field.required %>
+    <%= f.number_field field.name, step: :any,  class: "form-control", required: field.required %>
     <small class="text-muted"><%= field.help_text %></small>
 </div>

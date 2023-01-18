@@ -1,4 +1,14 @@
 FactoryBot.define do
+  factory :fund_ratio do
+    entity { nil }
+    fund { nil }
+    valuation { nil }
+    name { "MyString" }
+    value { "9.99" }
+    display_value { "MyString" }
+    notes { "MyText" }
+  end
+
   factory :capital_remittance_payment do
     fund { nil }
     capital_remittance { nil }

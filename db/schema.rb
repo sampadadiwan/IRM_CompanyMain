@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_17_075420) do
+ActiveRecord::Schema[7.0].define(version: 2023_01_18_073954) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -771,6 +771,23 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_17_075420) do
     t.datetime "updated_at", null: false
     t.bigint "entity_id", null: false
     t.index ["entity_id"], name: "index_form_types_on_entity_id"
+  end
+
+  create_table "fund_ratios", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "valuation_id", null: false
+    t.string "name", limit: 30
+    t.decimal "value", precision: 10
+    t.string "display_value", limit: 20
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
+    t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"
+    t.index ["fund_id"], name: "index_fund_ratios_on_fund_id"
+    t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"
   end
 
   create_table "funding_rounds", charset: "utf8mb3", force: :cascade do |t|
@@ -1804,6 +1821,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_17_075420) do
   add_foreign_key "folders", "entities"
   add_foreign_key "form_custom_fields", "form_types"
   add_foreign_key "form_types", "entities"
+  add_foreign_key "fund_ratios", "entities"
+  add_foreign_key "fund_ratios", "funds"
+  add_foreign_key "fund_ratios", "valuations"
   add_foreign_key "funding_rounds", "entities"
   add_foreign_key "funds", "entities"
   add_foreign_key "funds", "funding_rounds"
