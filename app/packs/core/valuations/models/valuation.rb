@@ -1,4 +1,6 @@
 class Valuation < ApplicationRecord
+  include Trackable
+
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true, touch: true
   include FileUploader::Attachment(:report)
