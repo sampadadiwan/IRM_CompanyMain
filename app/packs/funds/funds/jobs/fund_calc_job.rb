@@ -8,7 +8,8 @@ class FundCalcJob < ApplicationJob
       valuation = fund.valuations.order(valuation_date: :asc).last
 
       calc_ratios(fund, valuation)
-
+      fund.touch
+      
       # Notify the user
       notify(fund, user_id)
     end
