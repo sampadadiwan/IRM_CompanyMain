@@ -27,14 +27,17 @@ class FundCalcs
   def compute_xirr
     cf = Xirr::Cashflow.new
 
-    @fund.capital_remittance_payments.where("created_at <= ?", @valuation.valuation_date).each do |cr|
+    @fund.capital_remittance_payments.where("capital_remittance_payments.payment_date <= ?", @valuation.valuation_date).each do |cr|
+      # puts "Adding capital_remittance_payment #{-1 * cr.amount_cents} #{cr.payment_date}"
       cf << Xirr::Transaction.new(-1 * cr.amount_cents, date: cr.payment_date)
     end
 
-    @fund.capital_distribution_payments.where("created_at <= ?", @valuation.valuation_date).each do |cdp|
+    @fund.capital_distribution_payments.where("capital_distribution_payments.payment_date <= ?", @valuation.valuation_date).each do |cdp|
+      # puts "Adding capital_distribution_payment #{cdp.amount_cents} #{cdp.payment_date}"
       cf << Xirr::Transaction.new(cdp.amount_cents, date: cdp.payment_date)
     end
 
+    # puts "Adding valuation #{@valuation.valuation_cents} #{@valuation.valuation_date}"
     cf << Xirr::Transaction.new(@valuation.valuation_cents, date: @valuation.valuation_date)
 
     Rails.logger.debug { "fund.xirr cf: #{cf}" }
