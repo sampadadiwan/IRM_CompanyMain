@@ -57,6 +57,7 @@ Rails/SkipsModelValidations:
     - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job2.rb'
     - 'app/packs/misc/investor_notices/jobs/investor_notice_job.rb'
     - 'app/packs/misc/investor_notices/models/investor_notice.rb'
+    - 'app/packs/funds/funds/jobs/fund_calc_job.rb'
 Rails/HasAndBelongsToMany:
   Exclude:
     - 'app/models/role.rb'

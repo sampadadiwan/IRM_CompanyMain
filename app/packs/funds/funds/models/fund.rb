@@ -35,7 +35,7 @@ class Fund < ApplicationRecord
   end
 
   def generate_calcs(user_id)
-    FundCalcJob.perform_later(id, user_id) 
+    FundCalcJob.perform_later(id, user_id)
   end
 
   def folder_path
@@ -103,7 +103,7 @@ class Fund < ApplicationRecord
   end
 
   def current_fund_ratios
-    val = self.valuations.order(valuation_date: :asc).last
-    self.fund_ratios.where(valuation_id: val.id)
+    val = valuations.order(valuation_date: :asc).last
+    val ? fund_ratios.where(valuation_id: val.id) : fund_ratios.none
   end
 end

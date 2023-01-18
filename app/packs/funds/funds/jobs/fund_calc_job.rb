@@ -9,7 +9,7 @@ class FundCalcJob < ApplicationJob
 
       calc_ratios(fund, valuation)
       fund.touch
-      
+
       # Notify the user
       notify(fund, user_id)
     end
