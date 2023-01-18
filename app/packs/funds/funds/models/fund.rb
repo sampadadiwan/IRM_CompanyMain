@@ -1,6 +1,4 @@
 class Fund < ApplicationRecord
-  attr_accessor :update_by_fund_calc
-
   include WithFolder
   include Trackable
   include ActivityTrackable
@@ -37,7 +35,7 @@ class Fund < ApplicationRecord
   end
 
   def generate_calcs(user_id)
-    FundCalcJob.perform_later(id, user_id) unless @update_by_fund_calc
+    FundCalcJob.perform_later(id, user_id) 
   end
 
   def folder_path
