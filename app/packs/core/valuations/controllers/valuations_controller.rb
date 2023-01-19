@@ -37,7 +37,9 @@ class ValuationsController < ApplicationController
   def create
     @valuation = Valuation.new(valuation_params)
     @valuation.entity_id = current_user.entity_id
-    @valuation.net_valuation_cents = valuation_params[:net_valuation].to_f * 100
+    @valuation.portfolio_fmv_valuation_cents = valuation_params[:portfolio_fmv_valuation].to_f * 100
+    @valuation.management_opex_cost_cents = valuation_params[:management_opex_cost].to_f * 100
+    @valuation.portfolio_inv_cost_cents = valuation_params[:portfolio_inv_cost].to_f * 100
     @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
     authorize @valuation
 
@@ -58,7 +60,9 @@ class ValuationsController < ApplicationController
 
   # PATCH/PUT /valuations/1 or /valuations/1.json
   def update
-    @valuation.net_valuation_cents = valuation_params[:net_valuation].to_f * 100
+    @valuation.portfolio_fmv_valuation_cents = valuation_params[:portfolio_fmv_valuation].to_f * 100
+    @valuation.management_opex_cost_cents = valuation_params[:management_opex_cost].to_f * 100
+    @valuation.portfolio_inv_cost_cents = valuation_params[:portfolio_inv_cost].to_f * 100
     @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
 
     respond_to do |format|
@@ -92,7 +96,7 @@ class ValuationsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def valuation_params
-    params.require(:valuation).permit(:entity_id, :valuation_date, :net_valuation,
+    params.require(:valuation).permit(:entity_id, :valuation_date,
                                       :owner_id, :owner_type, :form_type_id, :per_share_value, :report, :portfolio_inv_cost, :management_opex_cost, :portfolio_fmv_valuation, :collection_last_quarter, properties: {})
   end
 end

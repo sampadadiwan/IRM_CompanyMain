@@ -40,12 +40,12 @@
 
   <tr>
     <td>
-      Net Valuation
+      Portfolio FMV Valuation
     </td>
     <td>
-      <%= money_to_currency @valuation.net_valuation, params %>
+      <%= money_to_currency @valuation.portfolio_fmv_valuation, params %>
     </td>
-  </tr>
+  </tr>  
 
   <tr>
     <td>
@@ -65,14 +65,7 @@
     </td>
   </tr>
 
-  <tr>
-    <td>
-      Portfolio FMV Valuation
-    </td>
-    <td>
-      <%= money_to_currency @valuation.portfolio_fmv_valuation, params %>
-    </td>
-  </tr>  
+  
 
   <%= display_custom_fields(@valuation) %>
 
