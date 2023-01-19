@@ -38,6 +38,10 @@ class Fund < ApplicationRecord
     FundCalcJob.perform_later(id, user_id)
   end
 
+  def to_be_called_amount
+    call_amount - collected_amount
+  end
+
   def folder_path
     "/Funds/#{name}-#{id}"
   end
@@ -98,7 +102,7 @@ class Fund < ApplicationRecord
     investor_users("Advisor")
   end
 
-  def investor_users(metadata)
+  def investor_users(metadata = nil)
     User.joins(investor_accesses: :investor).where("investor_accesses.approved=? and investor_accesses.entity_id=?", true, entity_id).merge(Investor.owner_access_rights(self, metadata))
   end
 

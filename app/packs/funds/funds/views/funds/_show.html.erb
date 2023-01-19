@@ -47,27 +47,7 @@
         </td>
       </tr>
 
-      <% if fund.fund_signatory %>
-      <tr class="collapse multi-collapse">
-        <td>
-          Fund Signatory
-        </td>
-        <td>
-          <%= fund.fund_signatory.full_name %>
-        </td>
-      </tr>
-      <% end %>
-
-      <% if fund.trustee_signatory %>
-      <tr class="collapse multi-collapse">
-        <td>
-          Trustee Signatory
-        </td>
-        <td>
-          <%= fund.trustee_signatory.full_name %>
-        </td>
-      </tr>
-      <% end %>    
+      
 
       <% if policy(fund).update? %>
         <tr>
@@ -81,6 +61,15 @@
         
         <tr>
           <td>
+            Capital Call Amount
+          </td>
+          <td>
+            <%= money_to_currency fund.call_amount, params %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
             Collected Amount
           </td>
           <td>
@@ -90,10 +79,10 @@
 
         <tr>
           <td>
-            Capital Call Amount
+            Pending Call Amount
           </td>
           <td>
-            <%= money_to_currency fund.call_amount, params %>
+            <%= money_to_currency fund.to_be_called_amount , params %>
           </td>
         </tr>
 
@@ -105,6 +94,8 @@
             <%= money_to_currency fund.distribution_amount, params %>
           </td>
         </tr>
+
+        <%= display_custom_fields(fund,collapsed: true) if current_user %>
         
         <tr class="collapse multi-collapse">
           <td>
@@ -114,6 +105,29 @@
             <%= fund.commitment_doc_list %>
           </td>
         </tr>
+
+        <% if fund.fund_signatory %>
+        <tr class="collapse multi-collapse">
+          <td>
+            Fund Signatory
+          </td>
+          <td>
+            <%= fund.fund_signatory.full_name %>
+          </td>
+        </tr>
+        <% end %>
+
+        <% if fund.trustee_signatory %>
+        <tr class="collapse multi-collapse">
+          <td>
+            Trustee Signatory
+          </td>
+          <td>
+            <%= fund.trustee_signatory.full_name %>
+          </td>
+        </tr>
+        <% end %>    
+
         <tr class="collapse multi-collapse">
           <td>
             Investor Signature Type
@@ -148,6 +162,6 @@
         </tr>
       <% end %>
 
-      <%= display_custom_fields(fund,collapsed: true) if current_user %>
+      
       
     </table>

@@ -80,4 +80,8 @@ class InvestmentOpportunity < ApplicationRecord
   def percentage_raised
     ((eoi_amount_cents * 100.0) / fund_raise_amount_cents).round(2)
   end
+
+  def investor_users(metadata = nil)
+    User.joins(investor_accesses: :investor).where("investor_accesses.approved=? and investor_accesses.entity_id=?", true, entity_id).merge(Investor.owner_access_rights(self, metadata))
+  end
 end

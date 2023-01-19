@@ -109,4 +109,8 @@ class Deal < ApplicationRecord
       data_room_folder.access_rights.where(access_to_investor_id: access_right.access_to_investor_id, access_to_category: access_right.access_to_category, user_id: access_right.user_id).each(&:destroy)
     end
   end
+
+  def investor_users(metadata = nil)
+    User.joins(investor_accesses: :investor).where("investor_accesses.approved=? and investor_accesses.entity_id=?", true, entity_id).merge(Investor.owner_access_rights(self, metadata))
+  end
 end

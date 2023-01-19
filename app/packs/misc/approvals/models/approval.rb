@@ -65,4 +65,8 @@ class Approval < ApplicationRecord
       ApprovalMailer.with(id:, access_right_id: access_right.id).notify_new_approval.deliver_later
     end
   end
+
+  def investor_users(metadata = nil)
+    User.joins(investor_accesses: :investor).where("investor_accesses.approved=? and investor_accesses.entity_id=?", true, entity_id).merge(Investor.owner_access_rights(self, metadata))
+  end
 end
