@@ -10,7 +10,7 @@ class FundCalcs
   end
 
   def fund_utilization
-    @committed_amount_cents.positive? ? ((@valuation.portfolio_inv_cost_cents - @valuation.management_opex_cost_cents) / @committed_amount_cents) : 0
+    @committed_amount_cents.positive? ? ((@valuation.portfolio_inv_cost_cents + @valuation.management_opex_cost_cents) / @committed_amount_cents) : 0
   end
 
   def portfolio_value_to_cost

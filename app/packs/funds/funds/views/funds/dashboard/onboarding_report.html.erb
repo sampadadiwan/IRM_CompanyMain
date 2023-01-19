@@ -22,6 +22,9 @@
         <div data-controller="datatable">
           <%= render "/capital_commitments/index", 
               capital_commitments: @fund.capital_commitments.lp_onboarding_incomplete.includes(:investor, :fund), toolbar: "No" %>
+
+          <%= render "/capital_commitments/index", fund: @fund,
+                lazy_load_data: true, data_source: capital_commitments_path(fund_id: fund.id, all: true) %>
         </div>
     </td>
   </tr>
