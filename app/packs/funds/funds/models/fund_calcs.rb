@@ -25,7 +25,7 @@ class FundCalcs
     vals = @fund.valuations.order("valuation_date desc").limit(2)
     if vals.length == 2
       prev_valuation = vals[1]
-      (@valuation.valuation_cents - @valuation.collection_last_quarter_cents) / prev_valuation.valuation_cents
+      ((@valuation.valuation_cents - @valuation.collection_last_quarter_cents) / prev_valuation.valuation_cents) - 1
     else
       0
     end
