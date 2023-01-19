@@ -38,7 +38,7 @@ class FundCalcJob < ApplicationJob
     FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Tvpi", value:, display_value:)
 
     value = calc.fund_utilization
-    display_value = value ? "#{value.round(2)}x" : nil
+    display_value = value ? "#{value.round(2) * 100}%" : nil
     FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Fund Utilization", value:, display_value:)
 
     value = calc.portfolio_value_to_cost
