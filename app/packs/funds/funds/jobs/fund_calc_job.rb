@@ -50,7 +50,7 @@ class FundCalcJob < ApplicationJob
     FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Paid In to Committed Capital", value:, display_value:)
 
     value = calc.quarterly_irr
-    display_value = value ? "#{value.round(2) * 100}%" : nil
+    display_value = value ? "#{value.round(4) * 100}%" : nil
     FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Quarterly IRR", value:, display_value:)
   end
 

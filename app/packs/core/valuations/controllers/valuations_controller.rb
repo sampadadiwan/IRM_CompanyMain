@@ -41,6 +41,8 @@ class ValuationsController < ApplicationController
     @valuation.management_opex_cost_cents = valuation_params[:management_opex_cost].to_f * 100
     @valuation.portfolio_inv_cost_cents = valuation_params[:portfolio_inv_cost].to_f * 100
     @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
+    @valuation.collection_last_quarter_cents = valuation_params[:collection_last_quarter].to_f * 100
+
     authorize @valuation
 
     respond_to do |format|
@@ -64,6 +66,7 @@ class ValuationsController < ApplicationController
     @valuation.management_opex_cost_cents = valuation_params[:management_opex_cost].to_f * 100
     @valuation.portfolio_inv_cost_cents = valuation_params[:portfolio_inv_cost].to_f * 100
     @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
+    @valuation.collection_last_quarter_cents = valuation_params[:collection_last_quarter].to_f * 100
 
     respond_to do |format|
       if @valuation.update(valuation_params)
