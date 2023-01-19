@@ -9,7 +9,7 @@ class Valuation < ApplicationRecord
   belongs_to :form_type, optional: true
   serialize :properties, Hash
 
-  monetize :valuation_cents, :net_valuation_cents, :per_share_value_cents,
+  monetize :valuation_cents, :net_valuation_cents, :per_share_value_cents, :portfolio_inv_cost_cents, :portfolio_fmv_valuation_cents, :management_opex_cost_cents,
            with_currency: lambda { |s|
                             if s.owner && s.owner.respond_to?(:currency) && s.owner.currency.present?
                               s.owner.currency

@@ -26,6 +26,31 @@
   </div>
 
   <div class="form-group" data-controller="currencyformat">
+    <%= form.label :net_valuation, "Net Valuation" %> <span class="formatted_currency"></span>
+    <%= form.number_field :net_valuation, class: "form-control", 
+        data: {action: "input->currencyformat#format"}  %>
+  </div>
+
+  <div class="form-group" data-controller="currencyformat">
+    <%= form.label :portfolio_inv_cost, "Portfolio Investment At Cost" %> <span class="formatted_currency"></span>
+    <%= form.number_field :portfolio_inv_cost, class: "form-control", 
+        data: {action: "input->currencyformat#format"}  %>
+  </div>
+
+  <div class="form-group" data-controller="currencyformat">
+    <%= form.label :management_opex_cost, "Management And Opex Expenses" %> <span class="formatted_currency"></span>
+    <%= form.number_field :management_opex_cost, class: "form-control", 
+        data: {action: "input->currencyformat#format"}  %>
+  </div>
+
+  <div class="form-group" data-controller="currencyformat">
+    <%= form.label :portfolio_fmv_valuation, "Portfolio FMV Valuation" %> <span class="formatted_currency"></span>
+    <%= form.number_field :portfolio_fmv_valuation, class: "form-control", 
+        data: {action: "input->currencyformat#format"}  %>
+  </div>
+
+
+  <div class="form-group" data-controller="currencyformat">
     <%= form.label :per_share_value %> <span class="formatted_currency"></span>
     <%= form.number_field :per_share_value, class: "form-control",
         data: {action: "input->currencyformat#format"} %>

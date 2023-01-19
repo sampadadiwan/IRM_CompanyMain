@@ -93,6 +93,6 @@ class ValuationsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def valuation_params
     params.require(:valuation).permit(:entity_id, :valuation_date, :net_valuation,
-                                      :owner_id, :owner_type, :form_type_id, :per_share_value, :report, properties: {})
+                                      :owner_id, :owner_type, :form_type_id, :per_share_value, :report, :portfolio_inv_cost, :management_opex_cost, :portfolio_fmv_valuation, :collection_last_quarter, properties: {})
   end
 end

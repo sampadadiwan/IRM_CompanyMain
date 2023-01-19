@@ -47,8 +47,32 @@
     </td>
   </tr>
 
-  
-  
+  <tr>
+    <td>
+      Portfolio Investment At Cost
+    </td>
+    <td>
+      <%= money_to_currency @valuation.portfolio_inv_cost, params %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Management And Opex Expenses
+    </td>
+    <td>
+      <%= money_to_currency @valuation.management_opex_cost, params %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Portfolio FMV Valuation
+    </td>
+    <td>
+      <%= money_to_currency @valuation.portfolio_fmv_valuation, params %>
+    </td>
+  </tr>  
 
   <%= display_custom_fields(@valuation) %>
 

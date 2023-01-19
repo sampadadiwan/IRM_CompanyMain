@@ -36,6 +36,22 @@ class FundCalcJob < ApplicationJob
     value = calc.compute_tvpi
     display_value = value ? "#{value}x" : nil
     FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Tvpi", value:, display_value:)
+
+    value = calc.fund_utilization
+    display_value = value ? "#{value}x" : nil
+    FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Fund Utilization", value:, display_value:)
+
+    value = calc.portfolio_value_to_cost
+    display_value = value ? "#{value}x" : nil
+    FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Portfolio Value to Cost", value:, display_value:)
+
+    value = calc.paid_in_to_committed_capital
+    display_value = value ? "#{value}x" : nil
+    FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Paid In to Committed Capital", value:, display_value:)
+
+    value = calc.quarterly_irr
+    display_value = value ? "#{value}%" : nil
+    FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Quarterly IRR", value:, display_value:)
   end
 
   def notify(fund, user_id)
