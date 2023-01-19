@@ -1,6 +1,8 @@
 <% fund ||= nil %>
+<% valuation ||= nil %>
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Fund Ratios</h1>
+  <h1 class="h3 mb-0 text-gray-800">Fund Ratios <%= link_to l(valuation.valuation_date), valuation if valuation %> </h1>
   <%= button_to "Compute Ratios" , generate_calcs_fund_path(fund), method: :patch, 
       class: "btn btn-outline-success" , form_class: "deleteButton" , 
       data: {action: "click->confirm#popup" , turbo: false, 
@@ -15,16 +17,8 @@
           Name
         </th>
         <th>
-          Value
-        </th>
-        <th>
           Display Value
-        </th>
-        <th>
-          Notes
-        </th>
-        <th>
-        </th>
+        </th>        
       </tr>
     </thead>
 

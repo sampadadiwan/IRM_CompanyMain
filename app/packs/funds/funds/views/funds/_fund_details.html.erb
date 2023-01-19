@@ -118,7 +118,8 @@
 
         <div id="fund-ratios-tab" class="tab-pane fade in">
           <div id="fund-ratios" class="associated_entity">
-            <%= render "/fund_ratios/index", fund: fund, fund_ratios: fund.current_fund_ratios %>
+            <%  fund_ratios, valuation = fund.current_fund_ratios %>
+            <%= render "/fund_ratios/index", fund: fund, fund_ratios: fund_ratios, valuation: valuation  %>
           </div>     
         </div>
 

@@ -106,8 +106,9 @@ class Fund < ApplicationRecord
     User.joins(investor_accesses: :investor).where("investor_accesses.approved=? and investor_accesses.entity_id=?", true, entity_id).merge(Investor.owner_access_rights(self, metadata))
   end
 
-  def current_fund_ratios
-    val = valuations.order(valuation_date: :asc).last
-    val ? fund_ratios.where(valuation_id: val.id) : fund_ratios.none
+  def current_fund_ratios(valuation = nil)
+    valuation ||= valuations.order(valuation_date: :asc).last
+    ratios = valuation ? fund_ratios.where(valuation_id: valuation.id) : fund_ratios.none
+    [ratios, valuation]
   end
 end
