@@ -18,9 +18,12 @@ class InvestorsController < ApplicationController
                    end
     end
 
-    @investors = @investors.order("investors.id desc")
-
     @investors = @investors.page(params[:page]) if params[:all].blank?
+    respond_to do |format|
+      format.html
+      format.xlsx
+      format.json { render json: InvestorDatatable.new(params, investors: @investors) }
+    end
   end
 
   def search

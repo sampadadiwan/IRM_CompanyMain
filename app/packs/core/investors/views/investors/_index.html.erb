@@ -1,3 +1,6 @@
+<% data_source ||= investors_path(params, format: :json, all: true) %>    
+<% lazy_load_data ||= false %>
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <% header=defined?(title) ? title : "Stakeholders" %>
 
@@ -44,11 +47,14 @@
   </span>
 </div>
 
-<div class="table-responsive">
+<div class="table-responsive" data-controller="investors" data-investors-lazy-load-data-value=<%= lazy_load_data %> data-investors-table-name-value="#investors">
 
-  <div class="table-responsive">
-
-    <table id="investors" class="table table-bordered dataTable jqDataTable">
+    <% if lazy_load_data %>
+        <a class="load_data_link" data-action="click->commitments#loadData"><span>Load Data</span></a>
+    <% end %>
+    
+    <table id="investors" class="table table-bordered dataTable" 
+        data-source="<%= data_source %>" style="width:100%" >
       <thead>
         <tr>
           <th>
@@ -72,12 +78,8 @@
       </thead>
 
       <tbody>
-        <% investors.each do |investor| %>
-          <%= render partial: "investors/investor", locals: {investor: investor} %>
-        <% end %>
       </tbody>
 
     </table>
 
-  </div>
 </div>

@@ -73,6 +73,7 @@ Naming/AccessorMethodName:
     - 'app/packs/funds/capital_remittances/datatables/capital_remittance_datatable.rb'
     - 'app/packs/funds/capital_distribution_payments/datatables/capital_distribution_payment_datatable.rb'
     - 'app/packs/core/investor_kycs/datatables/investor_kyc_datatable.rb'
+    - 'app/packs/core/investors/datatables/investor_datatable.rb'
     
 
 Lint/DuplicateBranch:

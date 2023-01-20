@@ -12,16 +12,7 @@
   <%= investor.city %>
 </td>
 <td class="hideMobP">
-  <% if investor.investor_access_count > 0 %>
-    <span class="badge badge-success">
-      <%= link_to "Approved #{investor.investor_access_count}", investor_path(id: investor.id, tab: "investors-tab") %>
-    </span>
-  <% end %>
-  <% if investor.unapproved_investor_access_count > 0 %>
-    <span class="badge badge-warning">
-      <%= link_to "Pending #{investor.unapproved_investor_access_count}", investor_path(id: investor.id, tab: "investors-tab") %>
-    </span>
-  <% end %>
+  <%= render "/investors/access", investor: investor %>
 </td>  
 <td>
   <%= link_to "Add Note", new_note_path("note[investor_id]": investor.id, "note[entity_id]": investor.entity_id) , {class: "btn btn-outline-sm btn-outline-success"}%>
