@@ -56,6 +56,8 @@ class ImportCapitalRemittancePayment < ImportUtil
 
       capital_remittance_payment.save!
 
+      # We need to reload the capital_remittance, as the capital_remittance_payment counter caches would have updated the capital_remittance
+      capital_remittance.reload
       capital_remittance.verified = user_data["Verified"] == "Yes"
       capital_remittance.save!
 

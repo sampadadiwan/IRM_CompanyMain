@@ -14,16 +14,17 @@
       <%= label %>
     </a>
 
-    <% if investor.entity.enable_investments %>
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#investments-tab" 
-          data-action="click->tabdetails#loadData">
-        Investments
-    </a>
+    <% if current_user.entity_type == "Investment Fund" %>
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#commitments-tab"
+      data-action="click->tabdetails#loadData">Commitments</a>
+    <% else %>
+      <% if investor.entity.enable_investments %>
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#investments-tab" 
+            data-action="click->tabdetails#loadData">
+          Investments
+      </a>
+      <% end %>
     <% end %>
-
-
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
-    data-action="click->tabdetails#loadData">Documents</a>
 
     <% if policy(investor).update? %>
 
@@ -119,19 +120,12 @@
       </div>
 
 
-      <div id="docs-tab" class="tab-pane fade">
-        <div id="docs" class="associated_entity">
-
-          <%= link_to documents_path(owner_id: investor.id, owner_type: "Investor", 
-                                     entity_id: investor.entity_id, no_folders: true), 
-                                     class: "load_data_link", 
-                                     data: { turbo_frame: 'documents_frame' } do %>
-              <span>Loading...</span>
-          <% end %>
-          <%= turbo_frame_tag "documents_frame", target: "_top" do %>
-          <% end %>
-        </div>     
-      </div>
+      <div id="commitments-tab" class="tab-pane fade in">
+          <div id="commitments" class="associated_entity">
+            <%= render "/capital_commitments/index", investor: investor,
+                lazy_load_data: true, data_source: capital_commitments_path(investor_id: investor.id, all: true) %>
+          </div>     
+        </div>
 
   </div>
 
