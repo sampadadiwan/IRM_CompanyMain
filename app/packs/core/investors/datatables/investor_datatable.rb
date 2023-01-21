@@ -5,7 +5,7 @@ class InvestorDatatable < AjaxDatatablesRails::ActiveRecord
       investor_name: { source: "Investor.investor_name", orderable: true },
       category: { source: "Investor.category",  orderable: true },
       tag_list: { source: "Investor.tag_list",  orderable: true },
-      city: { source: "Investor.city",  orderable: true },
+      city: { source: "Investor.city", orderable: true },
       access: { source: "" },
       dt_actions: { source: "" }
     }

@@ -49,7 +49,7 @@ class KycVerify
         id_no: resp["id_no"],
         is_pan_dob_valid: resp["pan_verification_response"]["is_pan_dob_valid"],
         name_matched: resp["pan_verification_response"]["name_matched"],
-        verified: resp["id_card_verification_response"]["verified"]
+        verified: resp["pan_verification_response"]["verified"]
       }
     else
       { status: "failed", resp: }
