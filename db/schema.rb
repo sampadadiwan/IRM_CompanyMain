@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_19_090238) do
+ActiveRecord::Schema[7.0].define(version: 2023_01_22_113039) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -606,8 +606,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_19_090238) do
     t.boolean "enable_secondary_sale", default: false
     t.integer "parent_entity_id"
     t.string "currency", limit: 10
-    t.date "trial_end_date"
-    t.boolean "trial", default: false
     t.integer "tasks_count"
     t.integer "pending_accesses_count"
     t.integer "active_deal_id"
@@ -618,8 +616,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_19_090238) do
     t.decimal "per_share_value_cents", precision: 15, scale: 2, default: "0.0"
     t.text "sandbox_emails"
     t.boolean "sandbox", default: false
-    t.integer "snapshot_frequency_months", default: 0
-    t.date "last_snapshot_on", default: "2022-08-11"
     t.string "from_email", limit: 100
     t.boolean "enable_funds", default: false
     t.boolean "enable_inv_opportunities", default: false
@@ -633,11 +629,24 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_19_090238) do
     t.boolean "activity_docs_required_for_completion", default: false
     t.boolean "activity_details_required_for_na", default: false
     t.boolean "enable_investors", default: true
-    t.text "valuation_math"
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
     t.index ["sub_domain"], name: "index_entities_on_sub_domain", unique: true
+  end
+
+  create_table "entity_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.boolean "pan_verification"
+    t.boolean "bank_verification"
+    t.boolean "trial"
+    t.date "trial_end_date"
+    t.string "valuation_math"
+    t.integer "snapshot_frequency_months"
+    t.date "last_snapshot_on"
+    t.bigint "entity_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 
   create_table "esigns", charset: "utf8mb3", force: :cascade do |t|
@@ -1810,6 +1819,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_19_090238) do
   add_foreign_key "documents", "form_types"
   add_foreign_key "documents", "users"
   add_foreign_key "documents", "users", column: "signed_by_id"
+  add_foreign_key "entity_settings", "entities"
   add_foreign_key "esigns", "documents"
   add_foreign_key "esigns", "entities"
   add_foreign_key "esigns", "users"

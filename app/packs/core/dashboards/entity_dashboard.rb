@@ -29,9 +29,6 @@ class EntityDashboard < Administrate::BaseDashboard
     created_by: Field::Number,
     investor_categories: Field::String,
     instrument_types: Field::String,
-    trial: Field::BooleanEmoji,
-    trial_end_date: Field::Date,
-    valuation_math: Field::String,
     enable_documents: Field::BooleanEmoji,
     enable_deals: Field::BooleanEmoji,
     enable_investments: Field::BooleanEmoji,
@@ -77,9 +74,6 @@ class EntityDashboard < Administrate::BaseDashboard
     created_by
     investor_categories
     instrument_types
-    valuation_math
-    trial
-    trial_end_date
     enable_documents
     enable_deals
     enable_investments
@@ -111,9 +105,6 @@ class EntityDashboard < Administrate::BaseDashboard
     entity_type
     investor_categories
     instrument_types
-    trial
-    trial_end_date
-    valuation_math
     enable_documents
     enable_deals
     enable_investments

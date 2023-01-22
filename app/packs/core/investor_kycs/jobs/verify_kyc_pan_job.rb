@@ -4,8 +4,12 @@ class VerifyKycPanJob < VerifyPanJob
   def perform(id)
     Chewy.strategy(:sidekiq) do
       @model = InvestorKyc.find(id)
-      verify
-      @model.save
+      if @model.entity.entity_setting.pan_verification
+        verify
+        @model.save
+      else
+        Rails.logger.debug { "Skipping: pan_verification set to false for #{@model.entity.name}" }
+      end
     end
   end
 end

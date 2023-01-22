@@ -4,8 +4,12 @@ class VerifyKycBankJob < VerifyBankJob
   def perform(id)
     Chewy.strategy(:sidekiq) do
       @model = InvestorKyc.find(id)
-      verify
-      @model.save
+      if @model.entity.entity_setting.bank_verification
+        verify
+        @model.save
+      else
+        Rails.logger.debug { "Skipping: bank_verification set to false for #{@model.entity.name}" }
+      end
     end
   end
 end

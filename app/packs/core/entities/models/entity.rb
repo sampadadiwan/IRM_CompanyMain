@@ -10,6 +10,7 @@ class Entity < ApplicationRecord
 
   has_rich_text :details
   belongs_to :parent_entity, class_name: "Entity", optional: true
+  has_one :entity_setting, dependent: :destroy
   has_many :option_pools, dependent: :destroy
   has_many :deals, dependent: :destroy
   has_many :deal_investors, dependent: :destroy
@@ -103,6 +104,7 @@ class Entity < ApplicationRecord
     self.investor_categories = investor_categories.split(",").map(&:strip).join(",") if investor_categories
     self.instrument_types = instrument_types.split(",").map(&:strip).join(",") if instrument_types
     self.currency ||= "INR"
+    self.entity_setting ||= EntitySetting.new
   end
 
   scope :for_investor, lambda { |user|

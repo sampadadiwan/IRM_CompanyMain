@@ -1,4 +1,15 @@
 FactoryBot.define do
+  
+  factory :entity_setting do
+    pan_verification { false }
+    bank_verification { false }
+    trial { false }
+    trail_end_date { "2023-01-22" }
+    valuation_math { "MyString" }
+    snapshot_frequency_months { 1 }
+    last_snapshot_on { "2023-01-22" }
+  end
+
   factory :fund_ratio do
     entity { nil }
     fund { nil }
