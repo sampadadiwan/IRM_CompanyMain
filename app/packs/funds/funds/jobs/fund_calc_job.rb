@@ -22,20 +22,20 @@ class FundCalcJob < ApplicationJob
     calc = FundCalcs.new(fund, valuation)
     # Create the ratios
     xirr = calc.compute_xirr
-    FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Xirr", value: xirr, display_value: "#{xirr} %")
-    FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Moic", value: calc.compute_moic, display_value: calc.compute_moic.to_s)
+    FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "XIRR", value: xirr, display_value: "#{xirr} %")
+    # FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Moic", value: calc.compute_moic, display_value: calc.compute_moic.to_s)
 
     value = calc.compute_rvpi
     display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Rvpi", value:, display_value:)
+    FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "RVPI", value:, display_value:)
 
     value = calc.compute_dpi
     display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Dpi", value:, display_value:)
+    FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "DPI", value:, display_value:)
 
     value = calc.compute_tvpi
     display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "Tvpi", value:, display_value:)
+    FundRatio.create(entity_id: fund.entity_id, fund:, valuation:, name: "TVPI", value:, display_value:)
 
     value = calc.fund_utilization
     display_value = value ? "#{value.round(2) * 100}%" : nil
