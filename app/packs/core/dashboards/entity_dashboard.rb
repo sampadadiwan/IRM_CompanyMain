@@ -10,13 +10,11 @@ class EntityDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     documents: Field::HasMany,
     employees: Field::HasMany,
+    entity_setting: Field::HasOne,
     investments: Field::HasMany,
     id: Field::Number,
     name: Field::String,
     sub_domain: Field::String,
-    sandbox: Field::BooleanEmoji,
-    sandbox_emails: Field::String,
-    from_email: Field::String,
     url: Field::String,
     category: Field::String,
     created_at: Field::DateTime,
@@ -52,7 +50,6 @@ class EntityDashboard < Administrate::BaseDashboard
     url
     entity_type
     category
-    sandbox
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -66,9 +63,6 @@ class EntityDashboard < Administrate::BaseDashboard
     created_at
     updated_at
     active
-    sandbox
-    sandbox_emails
-    from_email
     currency
     entity_type
     created_by
@@ -85,6 +79,7 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_captable
     enable_investor_kyc
     employees
+    entity_setting
     activity_docs_required_for_completion
     activity_details_required_for_na
   ].freeze
@@ -99,9 +94,6 @@ class EntityDashboard < Administrate::BaseDashboard
     currency
     category
     active
-    sandbox
-    sandbox_emails
-    from_email
     entity_type
     investor_categories
     instrument_types
@@ -117,6 +109,7 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_investor_kyc
     activity_docs_required_for_completion
     activity_details_required_for_na
+    entity_setting
   ].freeze
 
   # COLLECTION_FILTERS

@@ -23,7 +23,13 @@ class OfferEsignProvider
 
     if spa_doc.present?
       # Setup this doc for esign by user_ids
-      AdhaarEsign.create!(document_id: spa_doc.id, owner: @offer).sign
+      adhaar_esign = AdhaarEsign.create!(document_id: spa_doc.id, owner: @offer)
+      if adhaar_esign.sign
+        Rails.logger.debug { "AdhaarEsign generated successfully" }
+      else
+        e = StandardError.new(adhaar_esign.esign_document_reponse)
+        raise e
+      end
     else
       Rails.logger.debug { "Skipping as Offer #{@offer.id} does not have #{spa_file_name}" }
     end

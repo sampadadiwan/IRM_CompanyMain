@@ -9,12 +9,15 @@ class EntitySettingDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     id: Field::Number,
-    bank_verification: Field::Boolean,
+    sandbox: Field::BooleanEmoji,
+    sandbox_emails: Field::String,
+    from_email: Field::String,
+    bank_verification: Field::BooleanEmoji,
+    pan_verification: Field::BooleanEmoji,
     entity: Field::BelongsTo,
     last_snapshot_on: Field::Date,
-    pan_verification: Field::Boolean,
     snapshot_frequency_months: Field::Number,
-    trial: Field::Boolean,
+    trial: Field::BooleanEmoji,
     trial_end_date: Field::Date,
     valuation_math: Field::String,
     created_at: Field::DateTime,
@@ -29,19 +32,27 @@ class EntitySettingDashboard < Administrate::BaseDashboard
   COLLECTION_ATTRIBUTES = %i[
     id
     bank_verification
+    pan_verification
     entity
+    snapshot_frequency_months
     last_snapshot_on
+    sandbox
+    sandbox_emails
+    from_email
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
     id
-    bank_verification
     entity
-    last_snapshot_on
+    sandbox
+    sandbox_emails
+    from_email
     pan_verification
+    bank_verification
     snapshot_frequency_months
+    last_snapshot_on
     trial
     trial_end_date
     valuation_math
@@ -53,10 +64,12 @@ class EntitySettingDashboard < Administrate::BaseDashboard
   # an array of attributes that will be displayed
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
+    sandbox
+    sandbox_emails
+    from_email
     bank_verification
-    entity
-    last_snapshot_on
     pan_verification
+    last_snapshot_on
     snapshot_frequency_months
     trial
     trial_end_date

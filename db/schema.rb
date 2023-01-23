@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_22_113039) do
+ActiveRecord::Schema[7.0].define(version: 2023_01_23_041927) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb3", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -614,9 +614,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_22_113039) do
     t.integer "options", default: 0
     t.boolean "percentage_in_progress", default: false
     t.decimal "per_share_value_cents", precision: 15, scale: 2, default: "0.0"
-    t.text "sandbox_emails"
-    t.boolean "sandbox", default: false
-    t.string "from_email", limit: 100
     t.boolean "enable_funds", default: false
     t.boolean "enable_inv_opportunities", default: false
     t.integer "units", default: 0
@@ -646,6 +643,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_22_113039) do
     t.bigint "entity_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "sandbox"
+    t.string "sandbox_emails"
+    t.string "from_email", limit: 100
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 
