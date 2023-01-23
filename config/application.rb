@@ -91,7 +91,7 @@ module InvestorRelationshipManagement
     # unless Rails.env.development? || Rails.env.test?
     Rails.application.config.middleware.use ExceptionNotification::Rack,
                                             email: {
-                                              email_prefix: '[Error:] ',
+                                              email_prefix: "[Error] #{Rails.env}: ",
                                               sender_address: %("Support" <#{ENV.fetch('SUPPORT_EMAIL', nil)}>),
                                               exception_recipients: %("ERROR" <#{ENV.fetch('ERROR_EMAIL', nil)}>)
                                             }

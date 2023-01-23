@@ -7,6 +7,15 @@ namespace :db do  desc "Backup database to AWS-S3"
   
       # process backup
       `mysqldump -u #{Rails.application.credentials[:DB_USER]} -p#{Rails.application.credentials[:DB_PASS]} -h#{Rails.application.credentials[:DB_HOST]} -i -c -q --lock-tables=false IRM_#{Rails.env} > tmp/#{backup_filename}`
+
+      size_kb = File.size("tmp/#{backup_filename}").to_f / 1024
+
+      if size_kb < 10
+        e = StandardError.new "mysqldump created file which is too small, backup aborted"
+        ExceptionNotifier.notify_exception(e)
+        raise e
+      end
+
       `gzip -9 tmp/#{backup_filename}`
       puts "Created backup: tmp/#{backup_filename}"
   
