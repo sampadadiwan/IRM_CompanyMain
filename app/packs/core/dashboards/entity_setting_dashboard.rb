@@ -91,7 +91,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
   # Overwrite this method to customize how entity settings are displayed
   # across all pages of the admin dashboard.
   #
-  # def display_resource(entity_setting)
-  #   "EntitySetting ##{entity_setting.id}"
-  # end
+  def display_resource(entity_setting)
+    "#{entity_setting.entity.name} Settings"
+  end
 end
