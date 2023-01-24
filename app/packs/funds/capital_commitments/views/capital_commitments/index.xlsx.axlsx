@@ -9,6 +9,6 @@ wb.add_worksheet(name: "CapitalCommitment") do |sheet|
   # Create entries for each item
   @capital_commitments.each do |cc|
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
-    sheet.add_row [cc.investor_name, cc.fund.name, money_to_currency(cc.committed_amount, params), money_to_currency(cc.collected_amount, params)] + custom_field_values
+    sheet.add_row [cc.investor_name, cc.fund.name, cc.committed_amount, cc.collected_amount] + custom_field_values
   end
 end

@@ -9,6 +9,6 @@ wb.add_worksheet(name: "CapitalCall") do |sheet|
   # Create entries for each item
   @capital_calls.each do |cc|
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
-    sheet.add_row [cc.fund.name, cc.name, cc.percentage_called, cc.due_date, money_to_currency(cc.call_amount, params), money_to_currency(cc.collected_amount, params), money_to_currency(cc.due_amount, params)] + custom_field_values
+    sheet.add_row [cc.fund.name, cc.name, cc.percentage_called, cc.due_date, cc.call_amount, cc.collected_amount, cc.due_amount] + custom_field_values
   end
 end
