@@ -1,0 +1,12 @@
+<div data-controller="openai" class="associated_entity">
+    <input id="fund_data" type="hidden" name="content" 
+        value="Write me a letter for the shareholders of my fund for <%= Time.zone.today.year  %> based on the following details. Summarize indian economy for <%= Time.zone.today.year %>, summarize the tech sector in India in <%= Time.zone.today.year %>, use fund details Name: <%= fund.name %>, Committed Amount: <%= money_to_currency(fund.committed_amount,params) %>">
+
+    <trix-editor input="fund_data">
+        
+    </trix-editor>
+
+    <div id="letter_preview" class="jumbotron"></div>
+
+    <button class="btn btn-lg btn-outline-success" data-action="click->openai#generate">Generate</button>
+</div>
