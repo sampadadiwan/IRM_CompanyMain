@@ -3,10 +3,15 @@
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Fund Ratios <%= link_to l(valuation.valuation_date), valuation if valuation %> </h1>
-  <%= button_to "Compute Ratios" , generate_calcs_fund_path(fund), method: :patch, 
-      class: "btn btn-outline-success" , form_class: "deleteButton" , 
-      data: {action: "click->confirm#popup" , turbo: false, 
-      msg: "Computation will take a few mins, please be patient. Proceed?", method: :patch} if fund && policy(fund).generate_calcs? %>
+
+  <span>
+    <%= button_to "Compute Ratios" , generate_calcs_fund_path(fund), method: :get, 
+        class: "btn btn-outline-success" , form_class: "deleteButton" , 
+        data: {action: "click->confirm#popup" , turbo: false, 
+        msg: "Computation will take a few mins, please be patient. Proceed?", method: :get} if fund && policy(fund).generate_calcs? %>
+
+    <%#= render "/fund_ratios/filter", fund: fund if fund %>
+  </span>
 </div>
 
 <div class="table-responsive" data-controller="datatable">

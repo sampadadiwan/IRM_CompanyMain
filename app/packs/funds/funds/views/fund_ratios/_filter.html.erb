@@ -1,0 +1,17 @@
+<%= form_with(model: nil, method: :get, url: "/fund_ratios", id: "fund_ratios_filter",  data: {turbo_frame: "fund_ratios_frame"} ) do |form| %>
+    
+  <input name="fund_id" value="<%= fund.id%>" hidden="hidden">
+
+  <div class="form-group" data-controller="fund_ratios">    
+    <% selected = params[:valuation_id].presence %>
+    <%= form.select :valuation_id, fund.valuations.map{|v| [l(v.valuation_date), v.id]}, {selected: selected, include_blank: "Valuation"}, 
+        { id: "valuation_id", class: "form-control", 
+        data: { action: "change->fund_ratios#filterData" } } %>
+        
+  </div>
+
+  
+  <%= form.submit "Submit", {hidden: true, id: "submit"}%>
+
+
+<% end %>

@@ -4,6 +4,8 @@ class FundRatiosController < ApplicationController
   # GET /fund_ratios or /fund_ratios.json
   def index
     @fund_ratios = policy_scope(FundRatio)
+    @fund_ratios = @fund_ratios.where(fund_id: params[:fund_id]) if params[:fund_id]
+    @fund_ratios = @fund_ratios.where(valuation_id: params[:valuation_id]) if params[:valuation_id]
   end
 
   # GET /fund_ratios/1 or /fund_ratios/1.json

@@ -74,7 +74,7 @@ Rails.application.routes.draw do
     get   'timeline', on: :member
     get   'last', on: :member
     get 'report', on: :member
-    patch 'generate_calcs', on: :member
+    get 'generate_calcs', on: :member
   end
 
   resources :investment_snapshots
