@@ -23,8 +23,7 @@
     
     <% if policy(@fund).update? %>
 
-      <%= link_to "Edit" , edit_fund_path(@fund), {class: "btn btn-outline-primary" } %> 
-
+      
       <div class="btn-group">
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle" type="button" 
@@ -40,19 +39,47 @@
         </div>
       </div>
       
-      <%= button_to "Delete" , @fund, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton" , data:
-            {action: "click->confirm#popup" , turbo:false} if policy(@fund).destroy? %>      
+      
 
-      <%= link_to "Import Investors", 
-      new_import_upload_path("import_upload[owner_id]": @fund.id, 
-          "import_upload[owner_type]": "Fund", 
-          "import_upload[import_type]": "Investor", 
-          "sample_upload": "FUND_INVESTORS_SAMPLE"), 
-          { class: "btn btn-outline-primary"}  %> 
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-success dropdown-toggle" type="button" 
+                  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Actions
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-      <%= link_to "Add Investor Notice" , 
-                new_investor_notice_path( "investor_notice[owner_id]": @fund.id, 
-                "investor_notice[owner_type]": "Fund"), {class: "btn btn-outline-primary" }  %>
+            <%= link_to "Edit Fund" , edit_fund_path(@fund), {class: "dropdown-item" } %> 
+            <%= button_to "Delete Fund" , @fund, method: :delete, class: "dropdown-item" , 
+                form_class: "deleteButton", 
+                data: {action: "click->confirm#popup" , turbo:false} if policy(@fund).destroy? %>      
+
+
+            <%
+            document = Document.new(entity_id: @fund.entity_id , owner: @fund)
+            doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
+            %>
+            <%= link_to "New Document", new_document_path( 
+                document: doc_attributes, 
+                "document[folder_id]": @fund.document_folder.id), 
+                {class: "dropdown-item" }  if policy(@fund).update? %>
+
+            <%= link_to "Import Investors", 
+            new_import_upload_path("import_upload[owner_id]": @fund.id, 
+                "import_upload[owner_type]": "Fund", 
+                "import_upload[import_type]": "Investor", 
+                "sample_upload": "FUND_INVESTORS_SAMPLE"), 
+                { class: "dropdown-item"}  %> 
+
+            <%= link_to "Add Investor Notice" , 
+                      new_investor_notice_path( "investor_notice[owner_id]": @fund.id, 
+                      "investor_notice[owner_type]": "Fund"), {class: "dropdown-item" }  %>      
+
+          </div>
+        </div>
+      </div>
+
+      
     <% end %>
 
     

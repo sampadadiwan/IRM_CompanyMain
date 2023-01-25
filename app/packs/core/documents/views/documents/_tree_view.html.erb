@@ -10,7 +10,7 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <span class="m-0 font-weight-bold text-primary">Folders</span> 
-                <% if current_user.entity_id == entity.id %>
+                <% if false && current_user.entity_id == entity.id %>
                     <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id, "folder[parent_id]": params[:folder_id]), class: "btn btn-outline-sm btn-outline-primary float-right"  %>               
                     <%= link_to "Show Folders", folders_path(), class: "btn btn-outline-sm btn-outline-primary float-right"  %>               
                 <% end %>
