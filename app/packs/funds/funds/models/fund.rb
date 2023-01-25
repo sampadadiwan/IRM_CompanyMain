@@ -9,7 +9,6 @@ class Fund < ApplicationRecord
   update_index('fund') { self }
 
   belongs_to :entity, touch: true
-  belongs_to :funding_round
   belongs_to :fund_signatory, class_name: "User", optional: true
   belongs_to :trustee_signatory, class_name: "User", optional: true
 
@@ -30,11 +29,6 @@ class Fund < ApplicationRecord
   monetize :call_amount_cents, :committed_amount_cents, :collected_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.currency }
 
   validates :name, :currency, presence: true
-
-  before_validation :setup_funding_round
-  def setup_funding_round
-    self.funding_round ||= FundingRound.new(name:, entity_id:, status: "Open", currency:)
-  end
 
   def generate_calcs(user_id)
     FundCalcJob.perform_later(id, user_id)

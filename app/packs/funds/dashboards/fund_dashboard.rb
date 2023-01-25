@@ -10,7 +10,6 @@ class FundDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     activities: Field::HasMany,
     entity: Field::BelongsTo,
-    funding_round: Field::BelongsTo,
     documents: Field::HasMany,
     valuations: Field::HasMany,
     capital_remittances: Field::HasMany,
@@ -62,8 +61,6 @@ class FundDashboard < Administrate::BaseDashboard
     call_amount_cents
     properties
     distribution_amount_cents
-
-    funding_round
     documents
     valuations
     capital_remittances

@@ -4,7 +4,6 @@ class InvestmentOpportunity < ApplicationRecord
   update_index('investment_opportunity') { self }
 
   belongs_to :entity, touch: true
-  belongs_to :funding_round
 
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :documents, as: :owner, dependent: :destroy
@@ -33,11 +32,6 @@ class InvestmentOpportunity < ApplicationRecord
 
   monetize :fund_raise_amount_cents, :valuation_cents,
            :min_ticket_size_cents, :eoi_amount_cents, with_model_currency: :currency
-
-  before_validation :setup_funding_round
-  def setup_funding_round
-    self.funding_round = FundingRound.new(name:, entity_id:, status: "Open", currency: entity.currency)
-  end
 
   def name
     company_name
