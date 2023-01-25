@@ -7,7 +7,7 @@ class ImportInvestor < ImportUtil
     STANDARD_HEADERS
   end
 
-  def post_process(import_upload)
+  def post_process(import_upload, _context)
     import_upload.entity.investor_notices.each do |notice|
       InvestorNoticeJob.perform_now(notice.id)
     end
@@ -60,7 +60,7 @@ class ImportInvestor < ImportUtil
     end
   end
 
-  def process_row(headers, custom_field_headers, row, import_upload)
+  def process_row(headers, custom_field_headers, row, import_upload, _context)
     # create hash from headers and cells
 
     user_data = [headers, row].transpose.to_h

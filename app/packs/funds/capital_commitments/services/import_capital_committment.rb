@@ -11,7 +11,7 @@ class ImportCapitalCommittment < ImportUtil
     @commitments = []
   end
 
-  def process_row(headers, custom_field_headers, row, import_upload)
+  def process_row(headers, custom_field_headers, row, import_upload, _context)
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
 
@@ -66,7 +66,7 @@ class ImportCapitalCommittment < ImportUtil
     end
   end
 
-  def post_process(import_upload)
+  def post_process(import_upload, _context)
     # Import it
     CapitalCommitment.import @commitments, on_duplicate_key_update: %i[folio_id notes committed_amount_cents]
     CapitalCommitmentIndex.import(CapitalCommitment.where(entity_id: import_upload.entity_id))

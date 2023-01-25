@@ -6,7 +6,7 @@ class ImportUtil
   def call
     if context.import_upload.present? && context.import_file.present?
       begin
-        process_rows(context.import_upload, context.headers, context.data)
+        process_rows(context.import_upload, context.headers, context.data, context)
       rescue StandardError => e
         Rails.logger.debug { "e.message = #{e.message}" }
         Rails.logger.debug e.backtrace
@@ -17,7 +17,7 @@ class ImportUtil
     end
   end
 
-  def process_rows(import_upload, headers, data)
+  def process_rows(import_upload, headers, data, context)
     Rails.logger.debug { "##### process_rows #{data.count}" }
     custom_field_headers = headers - standard_headers
 
@@ -28,7 +28,7 @@ class ImportUtil
           # skip header row
           next if idx.zero?
 
-          process_row(headers, custom_field_headers, row, import_upload)
+          process_row(headers, custom_field_headers, row, import_upload, context)
           # add row to results sheet
           sheet.add_row(row)
           # To indicate progress
@@ -42,10 +42,10 @@ class ImportUtil
     # Save the results file
     File.binwrite("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
 
-    post_process(import_upload)
+    post_process(import_upload, context)
   end
 
-  def post_process(import_upload); end
+  def post_process(import_upload, context); end
 
   def setup_custom_fields(user_data, model, custom_field_headers)
     # Were any custom fields passed in ? Set them up

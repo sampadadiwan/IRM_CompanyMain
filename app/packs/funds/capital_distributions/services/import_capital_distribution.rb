@@ -5,7 +5,7 @@ class ImportCapitalDistribution < ImportUtil
     STANDARD_HEADERS
   end
 
-  def process_row(headers, custom_field_headers, row, import_upload)
+  def process_row(headers, custom_field_headers, row, import_upload, _context)
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
 

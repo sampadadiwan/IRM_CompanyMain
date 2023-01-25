@@ -16,6 +16,14 @@
                 "import_upload[import_type]": "CapitalCommittment", 
                 "sample_upload": "CAPITAL_COMMITMENT_SAMPLE"), 
                 { class: "btn btn-outline-primary"}   %> 
+
+
+            <%= link_to "Upload Documents", 
+                new_import_upload_path("import_upload[owner_id]": fund.id, 
+                "import_upload[owner_type]": "Fund", 
+                "import_upload[import_type]": "FundDocs", 
+                "sample_upload": "FUND_DOCS_SAMPLE"), 
+                { class: "btn btn-outline-primary"}   %> 
         
         <% end %>
 
