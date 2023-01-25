@@ -7,8 +7,12 @@ module WithDataRoom
   end
 
   def create_data_room
-    self.data_room_folder = document_folder.children.where(entity_id:, name: "Public Data Room", folder_type: :regular, owner: self).first_or_create
+    self.data_room_folder = document_folder.children.where(entity_id:, name: data_room_name, folder_type: :regular, owner: self).first_or_create
     save
+  end
+
+  def data_room_name
+    "Public Data Room"
   end
 
   def access_rights_changed(access_right)

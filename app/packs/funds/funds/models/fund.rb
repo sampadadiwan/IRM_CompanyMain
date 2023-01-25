@@ -33,7 +33,7 @@ class Fund < ApplicationRecord
 
   before_validation :setup_funding_round
   def setup_funding_round
-    self.funding_round = FundingRound.new(name:, entity_id:, status: "Open", currency:)
+    self.funding_round ||= FundingRound.new(name:, entity_id:, status: "Open", currency:)
   end
 
   def generate_calcs(user_id)
