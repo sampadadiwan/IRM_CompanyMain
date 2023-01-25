@@ -1,5 +1,7 @@
 class Fund < ApplicationRecord
   include WithFolder
+  include WithDataRoom
+
   include Trackable
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model }, entity_id: proc { |_controller, model| model.entity_id }
@@ -44,6 +46,10 @@ class Fund < ApplicationRecord
 
   def folder_path
     "/Funds/#{name}-#{id}"
+  end
+
+  def folder_type
+    :regular
   end
 
   def investors

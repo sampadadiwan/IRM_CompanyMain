@@ -1,6 +1,7 @@
 class Deal < ApplicationRecord
   include Trackable
   include WithFolder
+  include WithDataRoom
   # include ActivityTrackable
   # include Impressionable
 
@@ -24,7 +25,6 @@ class Deal < ApplicationRecord
   has_many :documents, as: :owner, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
-  belongs_to :data_room_folder, class_name: "Folder", dependent: :destroy, optional: true
 
   # Customize form
   belongs_to :form_type, optional: true
@@ -35,13 +35,6 @@ class Deal < ApplicationRecord
   STATUS = %w[Open Closed].freeze
   ACTIVITIES = Rack::Utils.parse_nested_query(ENV["DEAL_ACTIVITIES"].tr(":", "=").tr(",", "&"))
   FUND_ACTIVITIES = Rack::Utils.parse_nested_query(ENV["FUND_DEAL_ACTIVITIES"].tr(":", "=").tr(",", "&"))
-
-  after_create_commit :create_data_room
-
-  def create_data_room
-    self.data_room_folder = document_folder.children.where(entity_id:, name: "Public Data Room", folder_type: :regular, owner: self).first_or_create
-    save
-  end
 
   def create_activities
     deal_investors.each(&:create_activities)
@@ -94,20 +87,6 @@ class Deal < ApplicationRecord
 
   def history
     versions.each(&:reify)
-  end
-
-  def access_rights_changed(access_right)
-    ar = AccessRight.where(id: access_right.id).first
-    if ar
-      # Add this ar to the data room
-      data_room_ar = ar.dup
-      data_room_ar.owner = data_room_folder
-      data_room_ar.cascade = true
-      data_room_ar.save
-    else
-      # Remove this ar to the data room
-      data_room_folder.access_rights.where(access_to_investor_id: access_right.access_to_investor_id, access_to_category: access_right.access_to_category, user_id: access_right.user_id).each(&:destroy)
-    end
   end
 
   def investor_users(metadata = nil)
