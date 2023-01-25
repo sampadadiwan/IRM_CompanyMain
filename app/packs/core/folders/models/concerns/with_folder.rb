@@ -39,7 +39,7 @@ module WithFolder
   # Thus the document_folder does not have owner id in the path.
   # Rename the folder correctly once the owner is created
   def rename_document_folder
-    if documents.present? &&  !(["Deal", "Fund"].include?(self.class.name))
+    if documents.present? && %w[Deal Fund].exclude?(self.class.name)
       folder = documents[0].folder
       folder.full_path = folder_path
       folder.name = folder_path.split("/")[-1]

@@ -12,7 +12,7 @@ module WithDataRoom
   end
 
   def data_room_name
-    "Public Data Room"
+    "#{name} Data Room"
   end
 
   def access_rights_changed(access_right)
