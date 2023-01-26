@@ -59,7 +59,7 @@
             document = Document.new(entity_id: @fund.entity_id , owner: @fund)
             doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
             %>
-            <%= link_to "New Document", new_document_path( 
+            <%= link_to "New Template", new_document_path( 
                 document: doc_attributes, 
                 "document[folder_id]": @fund.document_folder.id), 
                 {class: "dropdown-item" }  if policy(@fund).update? %>

@@ -95,7 +95,7 @@ class Fund < ApplicationRecord
 
   TEMPLATE_TAGS = ["Commitment Template", "Call Template"].freeze
   def document_tags
-    ["Fund Document"] + TEMPLATE_TAGS
+    TEMPLATE_TAGS
   end
 
   def advisor_users
