@@ -9,17 +9,7 @@
    <% end %>
 </div>
 
-<% if policy(@document).sign? %>
-   <% if @document.signature_type.present? %>
-      <div class="alert alert-info">
-         Please read through the document, Click the "Add New Signature" in the pdf menu bar, place your signature and sign it by clicking on the "Save Signed Document" button.
-      </div>
-   <% elsif @document.signature_type.present? %>
-      <div class="alert alert-info">
-         Please download the document, Add your digital signature to it and upload the signed document here.
-      </div>
-   <% end %>
-<% end %>
+
 
 <div class="row">
 
@@ -30,12 +20,27 @@
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
                    <%= @document.name.capitalize.titleize %>
-                   : <%= pluralize @document.impressions_count, "View" %>
-
+                   : <%= pluralize @document.impressions_count, "View" %>                  
                </h6>
             </div>
             <div class="card-body">
                <table class="table table-bordered dataTable ">
+
+               
+                  <% if @document.orignal %>                     
+                     <tr>
+                        <td>
+                           Download
+                        </td>
+                        <td>
+                           <%= link_to @document.file_url(), class: "btn btn-outline-success", target: "_blank" do %>
+                              <%= @document.name.capitalize.titleize %>
+                              <i class="fas fa-download fa-xl"></i>
+                           <% end %>      
+                        </td>
+                     </tr>    
+                  <% end %>
+
                   <% if @document.from_template_id %>
                      <tr>
                         <td>
@@ -47,21 +52,8 @@
                      </tr>
                   <% end %>
 
-                  <% if @document.signed_by_id %>
-                     <tr>
-                        <td>
-                           Signed By
-                        </td>
-                        <td>
-                           <%= @document.signed_by.full_name %>
-                           <% if @document.signed_by_accept %>
-                              <span class="badge badge-success">Accepted</span>
-                           <% else %>
-                              <span class="badge badge-warning">Not Accepted</span>
-                           <% end %>
-                        </td>
-                     </tr>
-                  <% end %>
+
+                  
 
                   <tr>
                      <td>
