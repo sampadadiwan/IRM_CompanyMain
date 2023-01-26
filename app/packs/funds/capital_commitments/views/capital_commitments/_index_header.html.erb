@@ -7,9 +7,16 @@
 
         <% if fund && policy(fund).update? %>
 
-            <%= link_to "New Capital Commitment", new_capital_commitment_path("capital_commitment[fund_id]": fund.id),  {class: "btn btn-outline-primary" } %>
+            <%= link_to "New Capital Commitment", new_capital_commitment_path("capital_commitment[fund_id]": fund.id),  {class: "btn btn-outline-primary" } %>            
 
-        
+            <%= link_to "Import Documents", 
+                new_import_upload_path("import_upload[owner_id]": fund.id, 
+                "import_upload[owner_type]": "Fund", 
+                "import_upload[import_type]": "FundDocs", 
+                "sample_upload": "FUND_DOCS_SAMPLE"), 
+                { class: "btn btn-outline-primary"}   %> 
+
+
             <%= link_to "Upload", 
                 new_import_upload_path("import_upload[owner_id]": fund.id, 
                 "import_upload[owner_type]": "Fund", 
@@ -17,13 +24,6 @@
                 "sample_upload": "CAPITAL_COMMITMENT_SAMPLE"), 
                 { class: "btn btn-outline-primary"}   %> 
 
-
-            <%= link_to "Upload Documents", 
-                new_import_upload_path("import_upload[owner_id]": fund.id, 
-                "import_upload[owner_type]": "Fund", 
-                "import_upload[import_type]": "FundDocs", 
-                "sample_upload": "FUND_DOCS_SAMPLE"), 
-                { class: "btn btn-outline-primary"}   %> 
         
         <% end %>
 
