@@ -140,8 +140,8 @@ end
 
 Then('the deal document details must be setup right') do
   @document.owner.should == @deal
-  @document.folder.name.should == "Public Data Room"
-  @document.folder.full_path.should == "/Deals/#{@deal.name}-#{@deal.id}/Public Data Room"
+  @document.folder.name.should == "#{@deal.name} Data Room"
+  @document.folder.full_path.should == "/Deals/#{@deal.name}-#{@deal.id}/#{@deal.name} Data Room"
 end
 
 
