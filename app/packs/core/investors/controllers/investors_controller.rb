@@ -21,6 +21,7 @@ class InvestorsController < ApplicationController
     @investors = @investors.page(params[:page]) if params[:all].blank?
     respond_to do |format|
       format.html
+      format.turbo_stream
       format.xlsx
       format.json { render json: InvestorDatatable.new(params, investors: @investors) }
     end

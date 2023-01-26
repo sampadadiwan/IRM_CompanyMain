@@ -18,6 +18,7 @@ class InvestorKycsController < ApplicationController
 
     respond_to do |format|
       format.html
+      format.turbo_stream
       format.xlsx
       format.json { render json: InvestorKycDatatable.new(params, investor_kycs: @investor_kycs) }
     end

@@ -9,6 +9,13 @@ export default class extends Controller {
     param: String
   }
 
+  connect() {
+    $(".select2").on('select2:select', function () {
+      let event = new Event('change', { bubbles: true }) // fire a native event
+      this.dispatchEvent(event);
+    });
+  }
+
   change(event) {
 
     console.log(this.kycUrlValue);
