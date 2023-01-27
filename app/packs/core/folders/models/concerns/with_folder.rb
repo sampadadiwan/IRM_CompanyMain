@@ -3,7 +3,10 @@ module WithFolder
 
   included do
     has_many :folders, as: :owner, dependent: :destroy
-    after_commit :rename_document_folder
+    # Ensure the document_folder gets created
+    before_validation :document_folder
+    # Ensure the document_folder gets renamed if required
+    after_create_commit :rename_document_folder
   end
 
   def folder_type
@@ -39,7 +42,7 @@ module WithFolder
   # Thus the document_folder does not have owner id in the path.
   # Rename the folder correctly once the owner is created
   def rename_document_folder
-    if documents.present? && (documents[0].folder_id != data_room_folder_id)
+    if documents.present?
       folder = documents[0].folder
       folder.full_path = folder_path
       folder.name = folder_path.split("/")[-1]
