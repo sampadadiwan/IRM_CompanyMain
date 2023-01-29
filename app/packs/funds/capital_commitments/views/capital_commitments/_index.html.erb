@@ -38,6 +38,13 @@
                     Onboarding Completed
                 </th>
 
+                <% if params[:show_docs].present? %>
+                <input id="show_docs" value="true" hidden>
+                <th>
+                    Documents
+                </th>
+                <% end %>
+
                 <th>
                 </th>
             </tr>
