@@ -13,7 +13,7 @@ class ImportInvestorAccess
     # next if user exists
 
     if user_data['Investor'].present?
-      investor = Investor.find_by(investor_name: user_data['Investor'])
+      investor = import_upload.entity.investors.find_by(investor_name: user_data['Investor'])
       return false unless investor
     else
       investor = import_upload.owner

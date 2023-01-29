@@ -34,6 +34,7 @@ Scenario Outline: Create new investor from exiting entity
 
 Scenario Outline: Import investor access
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
+  And Given I upload an investors file for the company
   And Given I upload an investor access file for employees
   Then I should see the "Import upload was successfully created"
   Then There should be "2" investor access created
