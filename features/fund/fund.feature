@@ -4,12 +4,23 @@ Feature: Fund
 Scenario Outline: Create new fund
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users  
   And I am at the funds page
   When I create a new fund "<fund>"
   Then I should see the "<msg>"
   And an fund should be created
+  Given the investors are added to the fund  
   And I should see the fund details on the details page
   And I should see the fund in all funds page
+  And I visit the fund details page
+  When I click on fund documents tab
+  When I create a new document "name=Quarterly Report" in folder "Data Room"
+  And an document should be created
+  And an email must go out to the investors for the document
+  And the fund document details must be setup right
+  And I visit the fund details page
+  When I click on fund documents tab
+  And I should see the document in all documents page
 
   Examples:
   	|entity                                 |fund                 |msg	|

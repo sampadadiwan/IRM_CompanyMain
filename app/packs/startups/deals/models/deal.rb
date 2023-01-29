@@ -21,8 +21,6 @@ class Deal < ApplicationRecord
   has_many :investors, through: :deal_investors
 
   has_many :deal_activities, dependent: :destroy
-
-  has_many :documents, as: :owner, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
 

@@ -11,9 +11,6 @@ class Excercise < ApplicationRecord
   belongs_to :user
   belongs_to :option_pool
 
-  has_many :documents, as: :owner, dependent: :destroy
-  accepts_nested_attributes_for :documents, allow_destroy: true
-
   include FileUploader::Attachment(:payment_proof)
 
   monetize :price_cents, :amount_cents, with_currency: ->(e) { e.entity.currency }
@@ -48,7 +45,7 @@ class Excercise < ApplicationRecord
   end
 
   def validate_quantity
-    errors.add(:quantity, "can't be greater than #{allowed}") if quantity > holding.net_avail_to_excercise_quantity
+    errors.add(:quantity, "can't be greater than #{holding.net_avail_to_excercise_quantity}") if quantity > holding.net_avail_to_excercise_quantity
   end
 
   def notify_excercise

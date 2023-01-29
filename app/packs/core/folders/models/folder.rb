@@ -45,7 +45,7 @@ class Folder < ApplicationRecord
     end
 
     # If we have an owner for the parent and none for the child
-    if parent&.owner && owner.nil?
+    if parent.owner && owner.nil?
       self.owner = parent.owner
       save
     end
@@ -65,5 +65,10 @@ class Folder < ApplicationRecord
     FolderIndex.filter(term: { entity_id: })
                .query(query_string: { fields: FolderIndex::SEARCH_FIELDS,
                                       query:, default_operator: 'and' }).objects
+  end
+
+  def self.with_ancestor_ids(documents)
+    ids = documents.joins(:folder).pluck("documents.folder_id, folders.ancestry")
+    ids.map { |p| p[1].split("/") << p[0] }.flatten.map(&:to_i)
   end
 end

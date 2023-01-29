@@ -21,8 +21,8 @@ class Valuation < ApplicationRecord
   before_save :update_valuation
   def update_valuation
     custom_fields_total_cents = 0
-    if entity.valuation_math.present?
-      entity.valuation_math.split(",").each do |cf|
+    if entity.entity_setting.valuation_math.present?
+      entity.entity_setting.valuation_math.split(",").each do |cf|
         custom_fields_total_cents += properties[cf].to_d * 100 if properties[cf].present?
       end
     end

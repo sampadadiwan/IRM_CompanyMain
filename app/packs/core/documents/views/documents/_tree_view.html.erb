@@ -17,28 +17,30 @@
             </div>
             <div class="card-body">
                 <div id="tree_view" class="tree_view" data-controller="treeview">
+                    
                     <% entity_id = params[:entity_id].present? ? params[:entity_id].to_i : current_user.entity_id %>
+                                        
                     <% 
                         if entity_id == current_user.entity_id
-                            if params[:parent_folder_id].present?
-                                folders = Folder.find(params[:parent_folder_id]).subtree.arrange 
+                            if params[:folder_id].present?
+                                folders = Folder.find(params[:folder_id]).subtree.arrange 
                             else
                                 folders = @entity.root_folder.subtree.arrange 
                             end
                         else
-                            allowed_folders = @documents.pluck(:folder_id)
-                            folders = @entity.root_folder.subtree.where(id: allowed_folders).arrange
+                            aids = Folder.with_ancestor_ids(@documents)
+                            folders = Folder.where(id: aids).arrange                            
                         end
                     %>
                     
-                    <%= render "folders/tree_view", folders: folders  %>
-                    
+                    <%= render "folders/tree_view", folders: folders  %>                    
 
                 </div>
             </div>
         </div>
     </div>
     <% end %>
+    
     <div class="<%= doc_index_class %>">
         <div class="card shadow mb-4">
             <div class="card-header py-3">

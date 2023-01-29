@@ -377,13 +377,16 @@ Given('there are {string} interests {string} for the sale') do |count, args|
   @sale.reload
 
   (1..count.to_i).each do
-    advisor_entity = FactoryBot.create(:entity, entity_type: "Advisor")
-    user = FactoryBot.create(:user, entity: advisor_entity)
+    investor_entity = FactoryBot.create(:entity, entity_type: "Family Office")
+    user = FactoryBot.create(:user, entity: investor_entity)
+    # investor = Investor.create(entity: @entity, investor_entity:)
 
     interest = Interest.new(secondary_sale: @sale, 
                   user: user, 
                   quantity: @sale.total_offered_quantity, 
                   price: @sale.min_price,
+                  entity: @entity,
+                  interest_entity: investor_entity,
                   short_listed: true)
 
     key_values(interest, args)

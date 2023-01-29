@@ -8,6 +8,9 @@ FactoryBot.define do
     valuation_math { "MyString" }
     snapshot_frequency_months { 1 }
     last_snapshot_on { "2023-01-22" }
+    # sandbox { true }
+    # sandbox_emails { "thimmaiah@gmail.com,ausang@gmail.com" }    
+    
   end
 
   factory :fund_ratio do
@@ -291,7 +294,7 @@ FactoryBot.define do
   factory :interest do
     buyer_entity_name {Faker::Company.name}
     address {Faker::Address.street_address}
-    city {Faker::Address.city}
+    city {Faker::Address.city.truncate(20)}
     demat {Faker::Number.number(digits: 10)}
     contact_name {Faker::Name.name}
     email {Faker::Internet.email}
@@ -302,7 +305,7 @@ FactoryBot.define do
   factory :offer do
     PAN {(0...10).map { (65 + rand(26)).chr }.join} 
     address { Faker::Address.full_address }
-    city {Faker::Address.city}
+    city {Faker::Address.city.truncate(20)}
     demat {Faker::Number.number(digits: 10)}
     bank_account_number  {Faker::Bank.account_number}
     bank_name {Faker::Bank.name}
@@ -413,7 +416,7 @@ FactoryBot.define do
     investor_entity_id { Entity.vcs.sample.id }
     entity_id { Entity.startups.sample.id }
     category { ["Lead Investor", "Co-Investor"][rand(2)] }
-    city {Faker::Address.city}
+    city {Faker::Address.city.truncate(20)}
   end
 
   factory :investment do

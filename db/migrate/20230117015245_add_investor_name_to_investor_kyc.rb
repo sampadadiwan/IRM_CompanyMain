@@ -5,5 +5,6 @@ class AddInvestorNameToInvestorKyc < ActiveRecord::Migration[7.0]
       cc.investor_name = cc.investor.investor_name
       cc.save
     end
+    
   end
 end

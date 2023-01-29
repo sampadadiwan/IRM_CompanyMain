@@ -6,8 +6,6 @@ class InvestmentOpportunity < ApplicationRecord
   belongs_to :entity, touch: true
 
   has_many :access_rights, as: :owner, dependent: :destroy
-  has_many :documents, as: :owner, dependent: :destroy
-  accepts_nested_attributes_for :documents, allow_destroy: true
 
   has_many :expression_of_interests, dependent: :destroy
 

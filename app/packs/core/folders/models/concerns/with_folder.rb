@@ -2,22 +2,38 @@ module WithFolder
   extend ActiveSupport::Concern
 
   included do
+    has_many :documents, as: :owner, dependent: :destroy
+    accepts_nested_attributes_for :documents, allow_destroy: true
+
     has_many :folders, as: :owner, dependent: :destroy
-    # Ensure the document_folder gets created
-    before_validation :document_folder
+    # The folder in which all the documents of this model should go
+    belongs_to :document_folder, class_name: "Folder", dependent: :destroy, optional: true
     # Ensure the document_folder gets renamed if required
     after_create_commit :rename_document_folder
   end
 
   def folder_type
-    :system
+    :regular
+  end
+
+  def document_folder
+    super || setup_document_folder
   end
 
   # Get or Create the folder based on folder_path
-  def document_folder
-    folder = Folder.where(entity_id:, full_path: folder_path).last
-    folder ||= setup_folder_from_path(folder_path)
-    folder
+  def setup_document_folder
+    if folder_path.present?
+      folder = Folder.where(entity_id:, full_path: folder_path).last
+      folder ||= setup_folder_from_path(folder_path)
+
+      # Ensure the owner is setup right
+      self.document_folder = folder
+      save
+      document_folder.owner = self
+      document_folder.save
+
+      folder
+    end
   end
 
   # Given a folder path, create the folder tree
@@ -33,8 +49,6 @@ module WithFolder
       parent = folder
     end
 
-    folder.owner = self
-    folder.save
     folder
   end
 
@@ -42,11 +56,17 @@ module WithFolder
   # Thus the document_folder does not have owner id in the path.
   # Rename the folder correctly once the owner is created
   def rename_document_folder
-    if documents.present?
-      folder = documents[0].folder
-      folder.full_path = folder_path
-      folder.name = folder_path.split("/")[-1]
-      folder.save
+    if document_folder_id.present?
+      document_folder.full_path = folder_path
+      document_folder.name = folder_path.split("/")[-1]
+      document_folder.save
+    end
+  end
+
+  def document_changed(document)
+    if %w[CapitalCommitment CapitalRemittance].include?(self.class.name) && !document.destroyed?
+      # Give explicit access rights to the doc to this investor
+      AccessRight.grant(document, investor_id)
     end
   end
 end

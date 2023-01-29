@@ -54,7 +54,7 @@ class Document < ApplicationRecord
   end
 
   def setup_entity
-    self.entity_id ||= folder.entity_id
+    self.entity_id = folder.entity_id
   end
 
   def send_notification_for_owner
@@ -109,5 +109,11 @@ class Document < ApplicationRecord
 
   def investor_users
     User.joins(investor_accesses: :investor).where("investor_accesses.approved=? and investor_accesses.entity_id=?", true, entity_id).merge(Investor.owner_access_rights(owner, nil))
+  end
+
+  after_update :update_owner
+  after_destroy :update_owner
+  def update_owner
+    owner.document_changed(self) if owner.respond_to? :document_changed
   end
 end

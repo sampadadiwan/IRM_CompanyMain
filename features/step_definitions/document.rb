@@ -42,13 +42,27 @@ Given('I am at the documents page') do
   visit(documents_path)
 end
 
-When('I create a new document {string}') do |args|
-  @folder = Folder.last || Folder.create!(name: "Test Folder", parent: Folder.first, folder_type: :regular, entity_id: Folder.first.entity_id)
-
+When('I create a new document {string} in folder {string}') do |args, folder_name|
+  @folder = Folder.where("name like '%#{folder_name}%'").first
+  
   @document = Document.new
   key_values(@document, args)
-  # @document.tag_list = "capybara,testing"
+  @document.folder_id = @folder.id
+  steps %(
+    When I fill and submit the new document page
+  )
+end
 
+When('I create a new document {string}') do |args|
+  @folder = Folder.last || Folder.create!(name: "Test Folder", parent: Folder.first, folder_type: :regular, entity_id: Folder.first.entity_id)
+  @document = Document.new
+  key_values(@document, args)
+  steps %(
+    When I fill and submit the new document page
+  )
+end
+
+When('I fill and submit the new document page') do
   click_on("New Document")
   fill_in("document_name", with: @document.name)
 
@@ -56,13 +70,11 @@ When('I create a new document {string}') do |args|
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
   check('document_download') if @document.download
   check('document_printing') if @document.printing
-  select(@folder.name, from: "document_folder_id") if @document.folder_id
-
+  select(@document.folder.name, from: "document_folder_id") if @document.folder_id
 
   sleep(2)
   click_on("Save")
   sleep(4)
-  
 end
 
 
@@ -139,6 +151,9 @@ Then('I should see the document in all documents page') do
 end
 
 Then('the deal document details must be setup right') do
+  @deal.data_room_folder.name.should == "#{@deal.name} Data Room"
+  @deal.data_room_folder.owner.should == @deal
+  
   @document.owner.should == @deal
   @document.folder.name.should == "#{@deal.name} Data Room"
   @document.folder.full_path.should == "/Deals/#{@deal.name}-#{@deal.id}/#{@deal.name} Data Room"

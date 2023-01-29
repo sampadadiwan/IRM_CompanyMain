@@ -9,9 +9,6 @@ class InvestorKyc < ApplicationRecord
 
   scope :verified, -> { where(verified: true) }
 
-  has_many :documents, as: :owner, dependent: :destroy
-  accepts_nested_attributes_for :documents, allow_destroy: true
-
   include FileUploader::Attachment(:signature)
   include FileUploader::Attachment(:pan_card)
   include FileUploader::Attachment(:video)

@@ -3,6 +3,8 @@ class CapitalRemittance < ApplicationRecord
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
   include Trackable
   include FundScopes
+  include WithFolder
+
   update_index('capital_remittance') { self }
 
   belongs_to :entity
@@ -12,9 +14,6 @@ class CapitalRemittance < ApplicationRecord
   has_one :investor_kyc, through: :capital_commitment
   belongs_to :investor
   has_many :capital_remittance_payments
-
-  has_many :documents, as: :owner, dependent: :destroy
-  accepts_nested_attributes_for :documents, allow_destroy: true
 
   belongs_to :form_type, optional: true
   serialize :properties, Hash
@@ -66,6 +65,10 @@ class CapitalRemittance < ApplicationRecord
   before_save :set_investor_name
   def set_investor_name
     self.investor_name = investor.investor_name
+  end
+
+  def folder_path
+    "#{capital_call.folder_path}/Remittances/#{investor_name}-#{id}"
   end
 
   def set_status

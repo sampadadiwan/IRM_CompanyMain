@@ -22,9 +22,6 @@ class CapitalCommitment < ApplicationRecord
   has_many :capital_remittances, dependent: :destroy
   has_many :capital_distribution_payments, dependent: :destroy
 
-  has_many :documents, as: :owner, dependent: :destroy
-  accepts_nested_attributes_for :documents, allow_destroy: true
-
   belongs_to :investor_signatory, class_name: "User", optional: true
   belongs_to :form_type, optional: true
   serialize :properties, Hash
@@ -65,7 +62,6 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def folder_path
-    fund.document_folder
     "#{fund.folder_path}/Commitments/#{investor_name}-#{id}"
   end
 

@@ -22,9 +22,6 @@ class Investor < ApplicationRecord
   has_many :holdings, dependent: :destroy
   has_many :notes, dependent: :destroy
 
-  has_many :documents, as: :owner, dependent: :destroy
-  accepts_nested_attributes_for :documents, allow_destroy: true
-
   has_many :investor_kycs, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
   has_many :approval_responses, dependent: :destroy

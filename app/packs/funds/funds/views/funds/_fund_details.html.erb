@@ -32,7 +32,8 @@
         
       <% end %>
 
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#documents-tab"
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" 
+          id="documents_tab" href="#documents-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
       <% if policy(fund).update? %>
@@ -54,8 +55,8 @@
           <div id="docs" class="associated_entity">
 
             <% cache([fund, "Documents", policy(fund).update?]) do %>
-              <%= link_to documents_path(entity_id: fund.entity_id, folder_id: fund.data_room_folder_id, 
-                                        parent_folder_id:  fund.document_folder.id), 
+              <%= link_to documents_path(entity_id: fund.entity_id, 
+                                        folder_id: fund.document_folder.id), 
                                         class: "load_data_link", 
                                         data: { turbo_frame: 'documents_tree_frame' } do %>
                   <span>Loading...</span>

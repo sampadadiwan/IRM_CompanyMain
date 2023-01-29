@@ -161,4 +161,8 @@ class AccessRight < ApplicationRecord
       [investor]
     end
   end
+
+  def self.grant(owner, investor_id)
+    AccessRight.create(owner:, access_to_investor_id: investor_id, entity_id: owner.entity_id)
+  end
 end

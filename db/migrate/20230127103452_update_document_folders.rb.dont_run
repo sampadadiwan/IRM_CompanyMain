@@ -1,0 +1,62 @@
+class UpdateDocumentFolders < ActiveRecord::Migration[7.0]
+  def change
+
+    ApprovalResponse.delete_all; Approval.delete_all
+    Folder.where("level > 0").update_all(folder_type: :regular)
+    
+    # puts "Updating CapitalCommitment investor_name"
+    # CapitalCommitment.all.each do |cc|
+    #   cc.investor_name = cc.investor.investor_name
+    #   cc.save
+    # end
+    # puts "Updating CapitalRemittance investor_name"
+    # CapitalRemittance.all.each do |cc|
+    #   cc.investor_name = cc.investor.investor_name
+    #   cc.save
+    # end
+    # puts "Updating CapitalDistributionPayment investor_name"
+    # CapitalDistributionPayment.all.each do |cc|
+    #   cc.investor_name = cc.investor.investor_name
+    #   cc.save
+    # end
+    
+
+    [InvestorKyc, Investor, Fund, CapitalCommitment, CapitalCall, CapitalRemittance, InvestmentOpportunity, ExpressionOfInterest,  Approval, SecondarySale, Interest, Offer, Deal, DealInvestor, DealActivity,  OptionPool, Excercise].each do |cls|
+      puts "processing #{cls}"
+      cls.all.each do |model|
+        if model.documents.present? 
+          puts "Updating model.document_folder for #{model}" 
+          model.document_folder
+          if [CapitalRemittance, CapitalCommitment].include?(cls)
+            model.documents.each do |document|
+              model.document_changed(document)
+            end
+          end          
+        end
+      end
+    end
+
+
+    # Ensure all funds have data rooms and they have access rights
+    Fund.all.each do |f|
+      f.create_data_room
+      f.access_rights.each do |ar|
+        f.data_room_folder.access_rights_changed(ar)
+      end
+    end
+
+    # # Ensure all funds folders are now made regular
+    # Entity.all.each do |e|
+    #   e.folders.where(name: "Funds").each do |df|
+    #     df.folder_type = :regular
+    #     df.save
+
+    #     df.children.each do |c|
+    #       c.folder_type = :regular
+    #       c.save
+    #     end
+    #   end
+    # end
+    
+  end
+end

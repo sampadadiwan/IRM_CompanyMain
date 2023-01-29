@@ -16,9 +16,6 @@ class Interest < ApplicationRecord
   include FileUploader::Attachment(:spa)
   include FileUploader::Attachment(:signature)
 
-  has_many :documents, as: :owner, dependent: :destroy
-  accepts_nested_attributes_for :documents, allow_destroy: true
-
   has_rich_text :details
 
   # Customize form
@@ -105,7 +102,6 @@ class Interest < ApplicationRecord
   end
 
   def folder_path
-    secondary_sale.document_folder
     "#{secondary_sale.folder_path}/Interests/#{interest_entity.name}-#{id}"
   end
 

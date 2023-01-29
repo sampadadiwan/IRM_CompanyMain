@@ -16,9 +16,6 @@ class SecondarySale < ApplicationRecord
 
   include FileUploader::Attachment(:spa)
 
-  has_many :documents, as: :owner, dependent: :destroy, inverse_of: :owner
-  accepts_nested_attributes_for :documents, allow_destroy: true
-
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy

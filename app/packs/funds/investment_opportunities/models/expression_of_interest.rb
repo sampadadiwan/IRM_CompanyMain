@@ -9,9 +9,6 @@ class ExpressionOfInterest < ApplicationRecord
   has_rich_text :details
   serialize :properties, Hash
 
-  has_many :documents, as: :owner, dependent: :destroy
-  accepts_nested_attributes_for :documents, allow_destroy: true
-
   has_many :adhaar_esigns, as: :owner
   has_many :esigns, -> { order("sequence_no asc") }, as: :owner
   has_many :signature_workflows, as: :owner

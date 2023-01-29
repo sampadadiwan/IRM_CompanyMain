@@ -12,8 +12,6 @@ class DealActivity < ApplicationRecord
   belongs_to :deal, touch: true
   belongs_to :deal_investor, optional: true
   belongs_to :entity
-  has_many :documents, as: :owner, dependent: :destroy
-  accepts_nested_attributes_for :documents, allow_destroy: true
 
   delegate :investor_name, to: :deal_investor, allow_nil: true
   delegate :name, to: :entity, prefix: :entity
@@ -56,8 +54,7 @@ class DealActivity < ApplicationRecord
   end
 
   def folder_path
-    deal_investor.document_folder
-    "#{deal_investor.folder_path}/Steps/#{id}"
+    "#{deal_investor.folder_path}/Steps/#{id}" if deal_investor
   end
 
   def folder_type

@@ -792,6 +792,14 @@ Then('the generated doc must be attached to the capital remittances') do
 end
 
 
+Given('each investor has a {string} kyc') do |status|
+  verified = status == "verified"
+  Investor.all.each do |inv|
+    kyc = FactoryBot.create(:investor_kyc, investor: inv, entity: @fund.entity, verified:)
+  end
+end
+
+
 Given('each investor has a {string} kyc linked to the commitment') do |status|
   verified = status == "verified"
   Investor.all.each do |inv|
@@ -801,3 +809,20 @@ Given('each investor has a {string} kyc linked to the commitment') do |status|
 end
 
 
+When('the fund document details must be setup right') do
+  @fund.data_room_folder.name.should == "#{@fund.name} Data Room"
+  @fund.data_room_folder.owner.should == @fund
+  
+  @document.owner.should == @fund
+  @document.folder.name.should == "#{@fund.name} Data Room"
+  @document.folder.full_path.should == "/Funds/#{@fund.name}-#{@fund.id}/#{@fund.name} Data Room"
+end
+
+When('I visit the fund details page') do
+  visit(fund_path(@fund))
+end
+
+When('I click on fund documents tab') do
+  sleep(1)
+  find("#documents_tab").click()
+end

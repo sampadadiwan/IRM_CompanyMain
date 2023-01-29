@@ -15,8 +15,6 @@ class DealInvestor < ApplicationRecord
 
   has_many :deal_activities, -> { order(sequence: :asc) }, dependent: :destroy
   has_many :messages, as: :owner, dependent: :destroy
-
-  has_many :documents, as: :owner, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
 
   delegate :name, to: :entity, prefix: :entity
@@ -125,7 +123,6 @@ class DealInvestor < ApplicationRecord
   }
 
   def folder_path
-    deal.document_folder
     "#{deal.folder_path}/Deal Investors/#{investor_name}-#{id}"
   end
 

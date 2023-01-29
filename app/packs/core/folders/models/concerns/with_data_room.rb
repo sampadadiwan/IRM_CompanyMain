@@ -3,7 +3,7 @@ module WithDataRoom
 
   included do
     belongs_to :data_room_folder, class_name: "Folder", dependent: :destroy, optional: true
-    after_create_commit :create_data_room
+    after_create_commit :create_data_room, :rename_document_folder
   end
 
   def create_data_room

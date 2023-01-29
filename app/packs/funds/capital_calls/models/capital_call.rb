@@ -14,7 +14,6 @@ class CapitalCall < ApplicationRecord
   serialize :properties, Hash
 
   has_many :capital_remittances, dependent: :destroy
-  has_many :documents, as: :owner, dependent: :destroy
 
   validates :name, :due_date, :call_date, :percentage_called, presence: true
   validates :percentage_called, numericality: { in: 0..100 }
@@ -38,7 +37,6 @@ class CapitalCall < ApplicationRecord
   end
 
   def folder_path
-    fund.document_folder
     "#{fund.folder_path}/Capital Calls/#{name}-#{id}"
   end
 

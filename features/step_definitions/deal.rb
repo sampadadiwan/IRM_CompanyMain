@@ -238,7 +238,7 @@ end
 
 Given('the investors are added to the deal') do
   @user.entity.investors.not_holding.not_trust.each do |inv|
-        ar = AccessRight.create!( owner: @deal, access_type: "Deal", 
+        ar = AccessRight.create( owner: @deal, access_type: "Deal", 
                                  access_to_investor_id: inv.id, entity: @user.entity)
 
 

@@ -36,6 +36,8 @@ export default class extends Controller {
 
         // Open the first level nodes
         $("#tree_view").jstree("open_node", $("#tree_view li"));
+        // $("#tree_view").jstree("open_all");
+        
         let selected_folder_id = $("#selected_folder_id").val();
         
         // Open the selected folder

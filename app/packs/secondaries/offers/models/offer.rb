@@ -39,9 +39,6 @@ class Offer < ApplicationRecord
   has_many :messages, as: :owner, dependent: :destroy
   has_many :adhaar_esigns, as: :owner, dependent: :destroy
 
-  has_many :documents, as: :owner, dependent: :destroy
-  accepts_nested_attributes_for :documents, allow_destroy: true
-
   include FileUploader::Attachment(:signature)
   include FileUploader::Attachment(:spa)
   include FileUploader::Attachment(:pan_card)
@@ -150,7 +147,6 @@ class Offer < ApplicationRecord
   end
 
   def folder_path
-    secondary_sale.document_folder
     "#{secondary_sale.folder_path}/Offers/#{user.full_name}-#{id}"
   end
 

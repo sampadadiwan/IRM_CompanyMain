@@ -13,7 +13,6 @@ class Fund < ApplicationRecord
   belongs_to :trustee_signatory, class_name: "User", optional: true
 
   has_many :fund_ratios, dependent: :destroy
-  has_many :documents, as: :owner, dependent: :destroy
   has_many :valuations, as: :owner, dependent: :destroy
   has_many :capital_remittances, dependent: :destroy
   has_many :capital_remittance_payments, dependent: :destroy

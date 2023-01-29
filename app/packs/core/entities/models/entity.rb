@@ -17,7 +17,6 @@ class Entity < ApplicationRecord
   has_many :option_pools, dependent: :destroy
   has_many :deals, dependent: :destroy
   has_many :deal_investors, dependent: :destroy
-  has_many :documents, dependent: :destroy
   has_many :secondary_sales, dependent: :destroy
   has_many :funding_rounds, dependent: :destroy
   has_many :valuations, dependent: :destroy
@@ -25,6 +24,7 @@ class Entity < ApplicationRecord
 
   # Will have many employees
   has_many :employees, class_name: "User", dependent: :destroy
+  has_many :documents, dependent: :destroy
   has_many :holdings, dependent: :destroy
   has_many :messages, dependent: :destroy
 

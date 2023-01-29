@@ -4,7 +4,6 @@ class Approval < ApplicationRecord
   belongs_to :entity
   has_rich_text :agreements_reference
   has_many :access_rights, as: :owner, dependent: :destroy
-  has_many :documents, as: :owner, dependent: :destroy
   has_many :approval_responses, dependent: :destroy
   has_many :approval_investors, through: :approval_responses, class_name: "Investor", source: :investor
   has_many :pending_investors, -> { where('approval_responses.status': "Pending") }, through: :approval_responses, class_name: "Investor", source: :investor

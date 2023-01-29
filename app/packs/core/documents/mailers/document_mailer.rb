@@ -16,6 +16,8 @@ class DocumentMailer < ApplicationMailer
            to: ENV.fetch('SUPPORT_EMAIL', nil),
            cc: email,
            subject: subj)
+    else
+      Rails.logger.debug { "No emails found for notify_new_document #{@document.name}" }
     end
   end
 

@@ -181,6 +181,8 @@ namespace :irm do
   task generateFakeInvestors: :environment do
 
     tags = %w[Warm Cold $50m+ $100m+ Secondary]
+    files = ["holdings.xlsx", "signature.png", "investor_access.xlsx", "Offer_1_SPA.pdf"]
+    
 
     Entity.startups.each do |e|
       i = nil
@@ -189,6 +191,11 @@ namespace :irm do
       Entity.vcs.each do |vc|
         inv = FactoryBot.create(:investor, entity: e, investor_entity: vc, tag_list: [tags.sample, tags.sample].join(","))
         puts "Investor #{inv.id}"
+
+        doc = Document.create!(entity: inv.entity, owner: inv, name: Faker::Company.catch_phrase, 
+                text: Faker::Company.catch_phrase, user: inv.entity.employees.sample,
+                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
+
         inv.investor_entity.employees.each do |user|
           InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
         end
@@ -212,6 +219,11 @@ namespace :irm do
       Entity.family_offices.each do |fo|
         inv = FactoryBot.create(:investor, entity: e, investor_entity: fo, tag_list: [tags.sample, tags.sample].join(","))
         puts "Investor #{inv.id}"
+
+        doc = Document.create!(entity: inv.entity, owner: inv, name: Faker::Company.catch_phrase, 
+                text: Faker::Company.catch_phrase, user: inv.entity.employees.sample,
+                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
+
 
         inv.investor_entity.employees.each do |user|
           InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
@@ -511,19 +523,42 @@ namespace :irm do
   desc "generates fake funds"
   task generateFakeFunds: :environment do
     i = 1
+    files = ["holdings.xlsx", "signature.png", "investor_access.xlsx", "Offer_1_SPA.pdf"]
+    
     Entity.funds.each do |e|
       3.times do
         fund = FactoryBot.create(:fund, entity: e)
+
+        doc = Document.create!(entity: e, owner: fund, name: Faker::Company.catch_phrase, 
+                text: Faker::Company.catch_phrase, user: e.employees.sample,
+                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r"))
+
+
         e.investors.sample(5).each do |inv|
           AccessRight.create(owner: fund, access_type: "Fund", entity: e, investor: inv, metadata: "Investor")
           commitment = FactoryBot.create(:capital_commitment, investor: inv, fund: )
           
+          doc = Document.create!(entity: e, owner: commitment, name: Faker::Company.catch_phrase, 
+                text: Faker::Company.catch_phrase, user: e.employees.sample,
+                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r"))
         end
 
 
         (1..3).each do 
           fund.reload
           call = FactoryBot.create(:capital_call, fund: ) 
+          doc = Document.create!(entity: e, owner: call, name: Faker::Company.catch_phrase, 
+                text: Faker::Company.catch_phrase, user: e.employees.sample,
+                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r"))
+
+
+          CapitalCallJob.perform_now(call.id, "Generate")
+          call.capital_remittances.each do |cr|
+            doc = Document.create!(entity: e, owner: cr, name: Faker::Company.catch_phrase, 
+                text: Faker::Company.catch_phrase, user: e.employees.sample,
+                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
+
+          end
         end
       end
 

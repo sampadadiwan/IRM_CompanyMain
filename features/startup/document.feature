@@ -56,7 +56,7 @@ Scenario Outline: Add deal document
   Given the investors are added to the deal
   And I visit the deal details page
   When I click "Deal Docs"
-  When I create a new document "<document>"
+  When I create a new document "<document>" in folder "Data Room"
   And an document should be created
   And an email must go out to the investors for the document
   And the deal document details must be setup right
