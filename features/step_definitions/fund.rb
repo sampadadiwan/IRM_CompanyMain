@@ -810,12 +810,12 @@ end
 
 
 When('the fund document details must be setup right') do
-  @fund.data_room_folder.name.should == "#{@fund.name} Data Room"
+  @fund.data_room_folder.name.should == "Data Room"
   @fund.data_room_folder.owner.should == @fund
   
   @document.owner.should == @fund
-  @document.folder.name.should == "#{@fund.name} Data Room"
-  @document.folder.full_path.should == "/Funds/#{@fund.name}-#{@fund.id}/#{@fund.name} Data Room"
+  @document.folder.name.should == "Data Room"
+  @document.folder.full_path.should == "/Funds/#{@fund.name}-#{@fund.id}/Data Room"
 end
 
 When('I visit the fund details page') do

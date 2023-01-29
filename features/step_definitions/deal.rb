@@ -253,6 +253,6 @@ Then('the deal data room should be setup') do
   puts "\n####Data Room####\n"
   puts @deal.data_room_folder.to_json        
   @deal.data_room_folder.should_not == nil
-  @deal.data_room_folder.name.should == "#{@deal.name} Data Room"
-  @deal.data_room_folder.full_path.should == "/Deals/#{@deal.name}-#{@deal.id}/#{@deal.name} Data Room"
+  @deal.data_room_folder.name.should == "Data Room"
+  @deal.data_room_folder.full_path.should == "/Deals/#{@deal.name}-#{@deal.id}/Data Room"
 end
