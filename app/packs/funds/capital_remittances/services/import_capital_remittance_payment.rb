@@ -33,7 +33,7 @@ class ImportCapitalRemittancePayment < ImportUtil
     end
   end
 
-  def post_process(_import_upload)
+  def post_process(_import_upload, _context)
     CapitalRemittance.counter_culture_fix_counts where: { 'capital_remittances.fund_id': @fund_ids.to_a }
   end
 

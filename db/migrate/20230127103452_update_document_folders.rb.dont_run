@@ -39,9 +39,9 @@ class UpdateDocumentFolders < ActiveRecord::Migration[7.0]
 
     # Ensure all funds have data rooms and they have access rights
     Fund.all.each do |f|
-      f.create_data_room
+      # f.create_data_room
       f.access_rights.each do |ar|
-        f.data_room_folder.access_rights_changed(ar)
+        f.access_rights_changed(ar)
       end
     end
 
