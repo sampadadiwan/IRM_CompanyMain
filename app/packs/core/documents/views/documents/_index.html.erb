@@ -2,7 +2,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <span class="mb-0 text-gray-800">
     Documents in
-    <%= params[:folder_id].present? ? link_to(Folder.find(params[:folder_id]).full_path, Folder.find(params[:folder_id])) : "" %>
+    <%= params[:folder_id].present? ? link_to(last_folders_path(Folder.find(params[:folder_id]).full_path, 4), Folder.find(params[:folder_id])) : "" %>
   </span>
 
   <% 

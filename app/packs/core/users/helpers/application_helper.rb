@@ -6,4 +6,9 @@ module ApplicationHelper
   def upload_server
     Rails.configuration.upload_server
   end
+
+  def last_folders_path(path_name, length)
+    parts = path_name.split("/")
+    parts.length > length ? parts[-length..].join("/") : path_name
+  end
 end
