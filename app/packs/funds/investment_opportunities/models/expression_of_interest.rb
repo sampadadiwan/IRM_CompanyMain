@@ -50,7 +50,7 @@ class ExpressionOfInterest < ApplicationRecord
   end
 
   def folder_path
-    "#{investment_opportunity.folder_path}/EOI/#{eoi_entity.name}-#{id}"
+    "#{investment_opportunity.folder_path}/EOI/#{eoi_entity.name}"
   end
 
   def document_list

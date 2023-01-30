@@ -63,6 +63,6 @@ class OptionPool < ApplicationRecord
   end
 
   def folder_path
-    "/OptionPools/#{name}-#{id}"
+    "/OptionPools/#{name}"
   end
 end

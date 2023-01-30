@@ -156,26 +156,26 @@ Then('the deal document details must be setup right') do
   
   @document.owner.should == @deal
   @document.folder.name.should == "Data Room"
-  @document.folder.full_path.should == "/Deals/#{@deal.name}-#{@deal.id}/Data Room"
+  @document.folder.full_path.should == "/Deals/#{@deal.name}/Data Room"
 end
 
 
 Then('the sale document details must be setup right') do
   @document.owner.should == @sale
-  @document.folder.name.should == "#{@sale.name}-#{@sale.id}"
-  @document.folder.full_path.should == "/Secondary Sales/#{@sale.name}-#{@sale.id}"
+  @document.folder.name.should == @sale.name
+  @document.folder.full_path.should == "/Secondary Sales/#{@sale.name}"
 end
 
 Then('the offer document details must be setup right') do
   @document.owner.should == @offer
   @document.folder.name.should == "#{@offer.user.full_name}-#{@offer.id}"
-  @document.folder.full_path.should == "/Secondary Sales/#{@offer.secondary_sale.name}-#{@offer.secondary_sale.id}/Offers/#{@offer.user.full_name}-#{@offer.id}"
+  @document.folder.full_path.should == "/Secondary Sales/#{@offer.secondary_sale.name}/Offers/#{@offer.user.full_name}-#{@offer.id}"
 end
 
 Then('the interest document details must be setup right') do
   @document.owner.should == @interest
   @document.folder.name.should == "#{@interest.interest_entity.name}-#{@interest.id}"
-  @document.folder.full_path.should == "/Secondary Sales/#{@interest.secondary_sale.name}-#{@interest.secondary_sale.id}/Interests/#{@interest.interest_entity.name}-#{@interest.id}"
+  @document.folder.full_path.should == "/Secondary Sales/#{@interest.secondary_sale.name}/Interests/#{@interest.interest_entity.name}-#{@interest.id}"
 end
 
 
@@ -187,8 +187,8 @@ end
 
 When('the deal investor document details must be setup right') do
   @document.owner.should == @deal_investor
-  @document.folder.name.should == "#{@deal_investor.investor_name}-#{@deal_investor.id}"
-  @document.folder.full_path.should == "/Deals/#{@deal.name}-#{@deal.id}/Deal Investors/#{@deal_investor.investor_name}-#{@deal_investor.id}"
+  @document.folder.name.should == "#{@deal_investor.investor_name}"
+  @document.folder.full_path.should == "/Deals/#{@deal.name}/Deal Investors/#{@deal_investor.investor_name}"
 end
 
 

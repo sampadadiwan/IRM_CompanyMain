@@ -4,12 +4,11 @@ module WithFolder
   included do
     has_many :documents, as: :owner, dependent: :destroy
     accepts_nested_attributes_for :documents, allow_destroy: true
+    validates_associated :documents
 
     has_many :folders, as: :owner, dependent: :destroy
     # The folder in which all the documents of this model should go
     belongs_to :document_folder, class_name: "Folder", dependent: :destroy, optional: true
-    # Ensure the document_folder gets renamed if required
-    after_create_commit :rename_document_folder
   end
 
   def folder_type
@@ -29,6 +28,7 @@ module WithFolder
       # Ensure the owner is setup right
       self.document_folder = folder
       save
+
       document_folder.owner = self
       document_folder.save
 
@@ -50,17 +50,6 @@ module WithFolder
     end
 
     folder
-  end
-
-  # In some cases where docs are nested attributes the docs are created before the owner is created
-  # Thus the document_folder does not have owner id in the path.
-  # Rename the folder correctly once the owner is created
-  def rename_document_folder
-    if document_folder_id.present?
-      document_folder.full_path = folder_path
-      document_folder.name = folder_path.split("/")[-1]
-      document_folder.save
-    end
   end
 
   def document_changed(document)

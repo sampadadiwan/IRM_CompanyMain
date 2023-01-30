@@ -76,7 +76,7 @@ class Deal < ApplicationRecord
   end
 
   def folder_path
-    "/Deals/#{name}-#{id}"
+    "/Deals/#{name}"
   end
 
   def folder_type

@@ -54,7 +54,7 @@ class DealActivity < ApplicationRecord
   end
 
   def folder_path
-    "#{deal_investor.folder_path}/Steps/#{id}" if deal_investor
+    "#{deal_investor.folder_path}/Steps/#{title}" if deal_investor
   end
 
   def folder_type

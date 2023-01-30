@@ -36,7 +36,7 @@ class InvestmentOpportunity < ApplicationRecord
   end
 
   def folder_path
-    "/InvestmentOpportunity/#{company_name}-#{id}"
+    "/InvestmentOpportunity/#{company_name}"
   end
 
   def document_tags

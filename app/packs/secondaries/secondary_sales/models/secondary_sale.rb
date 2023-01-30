@@ -106,7 +106,7 @@ class SecondarySale < ApplicationRecord
   end
 
   def folder_path
-    "/Secondary Sales/#{name}-#{id}"
+    "/Secondary Sales/#{name}"
   end
 
   def document_tags
