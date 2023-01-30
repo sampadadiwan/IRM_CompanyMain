@@ -4,7 +4,7 @@
 
         <li id="folder_<%=folder.id%>">
             <span  class="caret">
-            <%= link_to folder.name, documents_path(folder_id: folder.id, entity_id: params[:entity_id], parent_folder_id: params[:parent_folder_id])  %>
+            <%= link_to folder.name.truncate(20), documents_path(folder_id: folder.id, entity_id: params[:entity_id], parent_folder_id: params[:parent_folder_id])  %>
 
                
             </span>
