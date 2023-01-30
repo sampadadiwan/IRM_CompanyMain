@@ -147,7 +147,7 @@ class Offer < ApplicationRecord
   end
 
   def folder_path
-    "#{secondary_sale.folder_path}/Offers/#{user.full_name}-#{id}"
+    "#{secondary_sale.folder_path}/Offers/#{user.full_name.delete('/')}-#{id}"
   end
 
   def document_list

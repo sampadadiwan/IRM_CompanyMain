@@ -11,7 +11,7 @@ class ChangeTagsToLargerLength < ActiveRecord::Migration[7.0]
           puts "Updating model.document_folder for #{model}" 
           model.document_folder.full_path = model.folder_path
           model.document_folder.name = model.folder_path.split("/")[-1]
-          model.document_folder.save
+          model.document_folder.save(validate: false)
         end
       end
     end

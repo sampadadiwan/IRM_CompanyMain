@@ -53,6 +53,6 @@ class Excercise < ApplicationRecord
   end
 
   def folder_path
-    "#{option_pool.folder_path}/Excercises/#{user.full_name}-#{id}"
+    "#{option_pool.folder_path}/Excercises/#{user.full_name.delete('/')}-#{id}"
   end
 end

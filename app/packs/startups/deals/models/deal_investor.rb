@@ -123,7 +123,7 @@ class DealInvestor < ApplicationRecord
   }
 
   def folder_path
-    "#{deal.folder_path}/Deal Investors/#{investor_name}"
+    "#{deal.folder_path}/Deal Investors/#{investor_name.delete('/')}"
   end
 
   def folder_type

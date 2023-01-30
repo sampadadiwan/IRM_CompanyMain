@@ -76,7 +76,7 @@ class Deal < ApplicationRecord
   end
 
   def folder_path
-    "/Deals/#{name}"
+    "/Deals/#{name.delete('/')}"
   end
 
   def folder_type

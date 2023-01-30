@@ -27,7 +27,7 @@ class InvestorKyc < ApplicationRecord
   end
 
   def folder_path
-    "#{investor.folder_path}/KYC-#{id}/#{full_name}"
+    "#{investor.folder_path}/KYC-#{id}/#{full_name.delete('/')}"
   end
 
   def document_list
