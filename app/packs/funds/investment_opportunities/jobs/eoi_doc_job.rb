@@ -7,7 +7,7 @@ class EoiDocJob < ApplicationJob
       @expression_of_interest = ExpressionOfInterest.find(expression_of_interest_id)
       @investment_opportunity = @expression_of_interest.investment_opportunity
       @investor = @expression_of_interest.investor
-      @templates = @investment_opportunity.documents.where(owner_tag: "Template")
+      @templates = @investment_opportunity.documents.where(template: true)
 
       Rails.logger.debug { "Generating documents for #{@investor.investor_name}, for investment_opportunity #{@investment_opportunity.company_name}" }
 
