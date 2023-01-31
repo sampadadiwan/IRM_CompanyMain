@@ -51,7 +51,7 @@ class Document < ApplicationRecord
   def setup_folder
     self.folder = owner.document_folder if folder.nil? && owner
     self.owner ||= folder.owner
-    self.template = owner_tag.include?("Template")
+    self.template = owner_tag&.include?("Template")
   end
 
   def setup_entity
