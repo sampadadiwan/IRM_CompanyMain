@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :fund_units
   resources :fund_ratios
   resources :capital_remittance_payments
   resources :esigns
@@ -50,6 +51,7 @@ Rails.application.routes.draw do
   end
   resources :capital_distributions do
     post 'approve', on: :member
+    patch 'redeem_units', on: :member
   end
   resources :capital_remittances do
     patch 'verify', on: :member
@@ -61,6 +63,7 @@ Rails.application.routes.draw do
     post 'reminder', on: :member
     post 'approve', on: :member
     patch 'generate_docs', on: :member
+    patch 'allocate_units', on: :member
   end
 
   resources :capital_commitments do

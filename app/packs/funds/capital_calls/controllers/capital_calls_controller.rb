@@ -1,5 +1,5 @@
 class CapitalCallsController < ApplicationController
-  before_action :set_capital_call, only: %i[show edit update destroy reminder approve generate_docs]
+  before_action :set_capital_call, only: %i[show edit update destroy reminder approve generate_docs allocate_units]
 
   # GET /capital_calls or /capital_calls.json
   def index
@@ -19,6 +19,11 @@ class CapitalCallsController < ApplicationController
   def generate_docs
     CapitalCallRemittanceDocJob.perform_later(@capital_call.id, current_user.id)
     redirect_to capital_call_path(@capital_call), notice: "Documentation generation started, please check back in a few mins. Each remittance will have the customized document attached"
+  end
+
+  def allocate_units
+    FundUnitsJob.perform_later(@capital_call.id, "CapitalCall", "Allocation for remittance", current_user.id)
+    redirect_to capital_call_path(@capital_call), notice: "Allocation process started, please check back in a few mins."
   end
 
   # GET /capital_calls/new
@@ -105,6 +110,6 @@ class CapitalCallsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_call_params
-    params.require(:capital_call).permit(:entity_id, :fund_id, :name, :percentage_called, :due_date, :call_date, :notes, properties: {})
+    params.require(:capital_call).permit(:entity_id, :fund_id, :name, :percentage_called, :due_date, :call_date, :notes, unit_prices: {}, properties: {})
   end
 end

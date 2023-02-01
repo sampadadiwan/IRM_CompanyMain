@@ -12,6 +12,7 @@
     click_on("New Fund")
     fill_in('fund_name', with: @fund.name)
     fill_in('fund_currency', with: @fund.currency)
+    fill_in('fund_unit_types', with: @fund.unit_types)
     # fill_in('fund_details', with: @fund.details)
     find('trix-editor').click.set(@fund.details)
     click_on("Save")
@@ -126,6 +127,9 @@
     select(investor_name, from: "capital_commitment_investor_id")
     fill_in('capital_commitment_committed_amount', with: amount)
     fill_in('capital_commitment_folio_id', with: rand(10**4))
+
+    unit_types = @fund.unit_types.split(",").map{|x| x.strip}
+    select(unit_types[rand(unit_types.length)], from: 'capital_commitment_unit_type')
     click_on "Save"
 
     sleep(2)
@@ -160,6 +164,8 @@
     @capital_call = FactoryBot.build(:capital_call, fund: @fund, entity: @fund.entity)
     key_values(@capital_call, arg)
     @capital_call.save
+    puts "\n####CapitalCall####\n"
+    puts @capital_call.to_json
   end
   
   
@@ -719,6 +725,10 @@ Given('there is a capital distribution {string}') do |args|
   @capital_distribution = FactoryBot.build(:capital_distribution, entity: @fund.entity, fund: @fund, approved: true)
   key_values(@capital_distribution, args)
   @capital_distribution.save!
+
+  puts "\n####CapitalDistribution####\n"
+  puts @capital_distribution.to_json  
+  
 end
 
 Then('I should be able to see my capital distributions') do
@@ -825,4 +835,76 @@ end
 When('I click on fund documents tab') do
   sleep(1)
   find("#documents_tab").click()
+end
+
+Given('the remittances are paid and verified') do
+  CapitalRemittance.update_all("collected_amount_cents=call_amount_cents")
+  CapitalRemittance.update(verified: true)
+end
+
+Given('the units are generated') do
+  CapitalCall.all.each do |cc|
+    FundUnitsJob.perform_now(cc.id, "CapitalCall", "Allocation for collected call amount", User.first.id)
+  end 
+  CapitalDistribution.all.each do |cc|
+    FundUnitsJob.perform_now(cc.id, "CapitalDistribution", "Redemption for distribution", User.first.id)
+  end 
+  
+end
+
+Then('there should be correct units for the calls payment for each investor') do
+  CapitalCommitment.all.each do |cc|
+    puts "Checking units for #{cc}" 
+    cc.fund_units.length.should > 0
+    cc.fund_units.each do |fu|
+      ap fu
+      fu.unit_type.should == cc.unit_type
+      fu.owner_type.should == "CapitalRemittance"
+      fu.price.should == fu.owner.capital_call.unit_prices[fu.unit_type].to_d
+      fu.quantity.should == fu.owner.collected_amount_cents / (fu.price * 100)
+    end
+  end
+end
+
+
+Then('the corresponding distribution payments should be created') do
+  CapitalDistributionPayment.count.should == CapitalCommitment.count
+  CapitalDistributionPayment.all.each do |cdp|
+    cdp.investor_id.should == cdp.capital_commitment.investor_id
+    cdp.amount_cents.should == (@capital_distribution.net_amount_cents * cdp.capital_commitment.percentage / 100)
+    cdp.folio_id.should == cdp.capital_commitment.folio_id
+    cdp.capital_distribution_id.should == @capital_distribution.id
+    cdp.investor_name.should == cdp.capital_commitment.investor_name
+  end
+end
+
+Then('I should see the distribution payments') do
+  visit(capital_distribution_path(@capital_distribution))
+  CapitalDistributionPayment.all.each do |cdp|
+    within("#capital_distribution_payment_#{cdp.id}") do
+      expect(page).to have_content(cdp.investor_name)
+      expect(page).to have_content(cdp.folio_id)
+      expect(page).to have_content(money_to_currency(cdp.amount))
+      expect(page).to have_content(cdp.completed ? "Yes" : "No")      
+    end
+  end
+end
+
+Given('the distribution payments are completed') do
+  puts CapitalDistributionPayment.all.to_json 
+  CapitalDistributionPayment.update(completed: true)
+end
+
+Then('there should be correct units for the distribution payments for each investor') do
+  CapitalCommitment.all.each do |cc|
+    puts "Checking units for #{cc}" 
+    cc.fund_units.length.should > 0
+    cc.fund_units.each do |fu|
+      ap fu
+      fu.unit_type.should == cc.unit_type
+      fu.owner_type.should == "CapitalDistributionPayment"
+      fu.price.should == fu.owner.capital_distribution.unit_prices[fu.unit_type].to_d
+      fu.quantity.should == -(fu.owner.amount_cents / (fu.price * 100))
+    end
+  end
 end

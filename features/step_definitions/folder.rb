@@ -17,7 +17,7 @@
     @data_room.should_not == nil
     @data_room.owner.should == @deal
     @data_room.name.should == "Data Room"
-    @data_room.full_path.should == "/Deals/#{@deal.name}-#{@deal.id}/Data Room"
+    @data_room.full_path.should == "/Deals/#{@deal.name}/Data Room"
   end
   
   Then('the deal data room should have the correct access_rights') do

@@ -46,6 +46,10 @@ class CapitalCallPolicy < FundBasePolicy
     update?
   end
 
+  def allocate_units?
+    update?
+  end
+
   def destroy?
     permissioned_employee?(:destroy) ||
       permissioned_advisor?(:destroy)

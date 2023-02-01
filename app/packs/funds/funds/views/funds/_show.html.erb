@@ -17,6 +17,28 @@
           <%= fund.currency %>
         </td>
       </tr>
+
+      <% if fund.unit_types.present? %>
+        <tr>
+          <td>
+            Unit Types
+          </td>
+          <td>
+            <%= fund.unit_types %>
+          </td>
+        </tr>
+      <% end %>
+
+      <tr>
+        <td>
+          Tag List
+        </td>
+        <td>
+          <%= fund.tag_list %>
+        </td>
+      </tr>
+
+      
       
       <tr>
         <td>
@@ -38,15 +60,6 @@
           <%= fund.entity.name %>
         </td>
       </tr>
-      <tr>
-        <td>
-          Tag List
-        </td>
-        <td>
-          <%= fund.tag_list %>
-        </td>
-      </tr>
-
       
 
       <% if policy(fund).update? %>

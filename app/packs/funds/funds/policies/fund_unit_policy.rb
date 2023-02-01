@@ -1,4 +1,4 @@
-class CapitalRemittancePolicy < FundBasePolicy
+class FundUnitPolicy < FundBasePolicy
   class Scope < Scope
     def resolve
       if user.has_cached_role?(:super)
@@ -27,10 +27,6 @@ class CapitalRemittancePolicy < FundBasePolicy
 
   def new?
     create?
-  end
-
-  def allocate_units?
-    update?
   end
 
   def verify?

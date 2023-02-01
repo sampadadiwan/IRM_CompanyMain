@@ -53,6 +53,29 @@
       <%= link_to @capital_commitment.fund.name, @capital_commitment.fund %>
     </td>
   </tr>
+  
+  <% if @capital_commitment.fund.unit_types.present? %>
+  
+  <tr>
+    <td>
+      Unit Type
+    </td>
+    <td>
+      <%= @capital_commitment.unit_type %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Total Units
+    </td>
+    <td>
+      <%= @capital_commitment.total_fund_units_quantity %>
+    </td>
+  </tr>
+
+  <% end %>
+
   <tr>
     <td>
       Committed Amount
@@ -61,6 +84,7 @@
       <%= money_to_currency @capital_commitment.committed_amount, params %>
     </td>
   </tr>
+
   <tr>
     <td>
       Collected Amount

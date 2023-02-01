@@ -1,5 +1,5 @@
 class CapitalDistributionsController < ApplicationController
-  before_action :set_capital_distribution, only: %i[show edit update destroy approve]
+  before_action :set_capital_distribution, only: %i[show edit update destroy approve redeem_units]
 
   # GET /capital_distributions or /capital_distributions.json
   def index
@@ -9,6 +9,11 @@ class CapitalDistributionsController < ApplicationController
 
   # GET /capital_distributions/1 or /capital_distributions/1.json
   def show; end
+
+  def redeem_units
+    FundUnitsJob.perform_later(@capital_distribution.id, "CapitalDistribution", "Redemption for payout", current_user.id)
+    redirect_to capital_distribution_path(@capital_distribution), notice: "Redemption process started, please check back in a few mins."
+  end
 
   # GET /capital_distributions/new
   def new
@@ -84,6 +89,6 @@ class CapitalDistributionsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_distribution_params
-    params.require(:capital_distribution).permit(:fund_id, :entity_id, :form_type_id, :gross_amount, :carry, :fee, :distribution_date, :title, :completed, properties: {})
+    params.require(:capital_distribution).permit(:fund_id, :entity_id, :form_type_id, :gross_amount, :carry, :fee, :distribution_date, :title, :completed, unit_prices: {}, properties: {})
   end
 end

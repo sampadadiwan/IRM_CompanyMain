@@ -38,6 +38,10 @@ class CapitalDistributionPolicy < FundBasePolicy
     !record.approved && create? && user.has_cached_role?(:approver)
   end
 
+  def redeem_units?
+    update?
+  end
+
   def edit?
     update?
   end

@@ -5,7 +5,8 @@
           data-action="click->tabdetails#loadData">Payments</a>
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
-    
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-units-tab"
+          data-action="click->tabdetails#loadData">Units</a>
   </nav>
 
   <div class="tab-content" data-controller="datatable">
@@ -21,6 +22,19 @@
                 owner: capital_remittance, entity: capital_remittance.entity %>
       </div>
     </div>
+
+    <div id="fund-units-tab" class="tab-pane fade">
+      <div id="fund_units" class="associated_entity">
+        <%= link_to fund_units_path(owner_id: capital_remittance.id, owner_type: "CapitalRemittance"), 
+                                class: "load_data_link", 
+                                data: { turbo_frame: 'fund_units_list' } do %>
+          <span>Loading...</span>
+        <% end %>
+        <%= turbo_frame_tag "fund_units_list", target: "_top" do %>
+        <% end %>
+      </div>     
+    </div>
+
 
   </div>
 

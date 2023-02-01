@@ -49,6 +49,21 @@
       </td>
     </tr>
 
+    <% if @capital_call.fund.unit_types.present? %>
+      <% @capital_call.unit_prices.each do |unit_type, price| %>
+
+        <tr>
+          <td>
+            <%= unit_type %>
+          </td>
+          <td>
+            <%= price %>
+          </td>
+        </tr>
+
+      <% end %>  
+    <% end %>
+
 
 
     <% if current_user %>

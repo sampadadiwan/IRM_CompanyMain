@@ -12,6 +12,8 @@ class CapitalCall < ApplicationRecord
   belongs_to :form_type, optional: true
   belongs_to :approved_by_user, class_name: "User", optional: true
   serialize :properties, Hash
+  # Stores the prices for unit types for this call
+  serialize :unit_prices, Hash
 
   has_many :capital_remittances, dependent: :destroy
 

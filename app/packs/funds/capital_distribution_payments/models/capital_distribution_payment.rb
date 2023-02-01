@@ -51,4 +51,12 @@ class CapitalDistributionPayment < ApplicationRecord
   def send_notification
     CapitalDistributionPaymentsMailer.with(id:).send_notification.deliver_later if saved_change_to_completed? && capital_distribution.approved && !capital_distribution.manual_generation
   end
+
+  def to_s
+    if completed
+      "#{investor_name}: #{amount} : Completed"
+    else
+      "#{investor_name}: #{amount} : Pending"
+    end
+  end
 end

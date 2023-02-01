@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_31_043049) do
+ActiveRecord::Schema[7.0].define(version: 2023_02_01_054053) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -300,6 +300,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_31_043049) do
     t.datetime "deleted_at"
     t.date "call_date"
     t.bigint "document_folder_id"
+    t.text "unit_prices"
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_calls_on_document_folder_id"
@@ -335,6 +336,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_31_043049) do
     t.bigint "investor_kyc_id"
     t.string "investor_name"
     t.bigint "document_folder_id"
+    t.string "unit_type", limit: 10
+    t.decimal "total_fund_units_quantity", precision: 20, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
@@ -392,6 +395,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_31_043049) do
     t.boolean "generate_payments_paid", default: false
     t.datetime "deleted_at"
     t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.text "unit_prices"
     t.index ["approved_by_user_id"], name: "index_capital_distributions_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_distributions_on_deleted_at"
     t.index ["entity_id"], name: "index_capital_distributions_on_entity_id"
@@ -820,6 +824,26 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_31_043049) do
     t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"
   end
 
+  create_table "fund_units", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "fund_id", null: false
+    t.bigint "capital_commitment_id", null: false
+    t.bigint "investor_id", null: false
+    t.string "unit_type", limit: 10
+    t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
+    t.text "reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "entity_id", null: false
+    t.decimal "price", precision: 20, scale: 2, default: "0.0"
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.index ["capital_commitment_id"], name: "index_fund_units_on_capital_commitment_id"
+    t.index ["entity_id"], name: "index_fund_units_on_entity_id"
+    t.index ["fund_id"], name: "index_fund_units_on_fund_id"
+    t.index ["investor_id"], name: "index_fund_units_on_investor_id"
+    t.index ["owner_type", "owner_id"], name: "index_fund_units_on_owner"
+  end
+
   create_table "funding_rounds", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name"
     t.decimal "total_amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -874,6 +898,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_31_043049) do
     t.datetime "deleted_at"
     t.bigint "data_room_folder_id"
     t.bigint "document_folder_id"
+    t.string "unit_types", limit: 50
+    t.string "units_allocation_engine", limit: 50
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -1887,6 +1913,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_31_043049) do
   add_foreign_key "fund_ratios", "entities"
   add_foreign_key "fund_ratios", "funds"
   add_foreign_key "fund_ratios", "valuations"
+  add_foreign_key "fund_units", "capital_commitments"
+  add_foreign_key "fund_units", "entities"
+  add_foreign_key "fund_units", "funds"
+  add_foreign_key "fund_units", "investors"
   add_foreign_key "funding_rounds", "entities"
   add_foreign_key "funds", "entities"
   add_foreign_key "funds", "folders", column: "data_room_folder_id"

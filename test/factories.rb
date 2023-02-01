@@ -1,4 +1,13 @@
 FactoryBot.define do
+  factory :fund_unit do
+    fund { nil }
+    capital_commitment { nil }
+    investor { nil }
+    unit_type { "MyString" }
+    quantity { 1 }
+    reason { "MyText" }
+  end
+
   
   factory :entity_setting do
     pan_verification { false }
@@ -123,6 +132,9 @@ FactoryBot.define do
     carry { gross_amount * 0.1 }
     distribution_date { Date.today + rand(5).weeks }
     title { "Capital Dist #{rand(1..10)}" }
+    unit_prices {
+      fund.unit_types.split(",").map{|ut| [ut.strip, 100 * (rand(2) + 1)]}.to_h if fund.unit_types
+    }
   end
 
   factory :capital_remittance do
@@ -143,10 +155,14 @@ FactoryBot.define do
     name { "Capital Call #{rand(1..10)}" }
     percentage_called { rand(1..4) * 10 }
     notes { Faker::Company.catch_phrase }
+    unit_prices {
+      fund.unit_types.split(",").map{|ut| [ut.strip, 100 * (rand(2) + 1)]}.to_h if fund.unit_types
+    }
   end
 
   factory :capital_commitment do
     fund { Fund.all.sample }
+    unit_type { ["Series A", "Series B", "Series C"][rand(3)] }
     entity { fund.entity }
     investor { fund.investors.sample }
     committed_amount { 100000 * rand(10..30)}
@@ -159,6 +175,7 @@ FactoryBot.define do
     details { Faker::Company.catch_phrase }
     entity { Entity.funds.sample }
     tag_list {  }
+    unit_types {"Series A, Series B, Series C"}
     currency { ["INR", "USD", "SGD"].sample }
   end
 

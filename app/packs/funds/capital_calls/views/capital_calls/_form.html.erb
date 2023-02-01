@@ -34,6 +34,17 @@
     <%= form.date_field :due_date, class: "form-control"  %>
   </div>
 
+  <% if capital_call.fund.unit_types.present? %>
+    <% capital_call.fund.unit_types.split(",").each do |unit_type| %>
+      <div class="form-group">
+        <% unit_type = unit_type.strip %>
+        <%= form.label :unit_type, "#{unit_type} Unit Price" %>
+        <%= form.number_field :unit_type, step: :any, class: "form-control", 
+            name: "capital_call[unit_prices][#{unit_type}]", value: capital_call.unit_prices[unit_type] %>
+      </div>  
+    <% end %>  
+  <% end %>
+
   <%= custom_form_fields(capital_call, form) %>
 
   <div class="form-group">

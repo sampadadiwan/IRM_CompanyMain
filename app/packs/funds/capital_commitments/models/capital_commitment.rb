@@ -21,6 +21,7 @@ class CapitalCommitment < ApplicationRecord
   # has_many :capital_calls, dependent: :destroy
   has_many :capital_remittances, dependent: :destroy
   has_many :capital_distribution_payments, dependent: :destroy
+  has_many :fund_units, dependent: :destroy
 
   belongs_to :investor_signatory, class_name: "User", optional: true
   belongs_to :form_type, optional: true
@@ -42,6 +43,7 @@ class CapitalCommitment < ApplicationRecord
   before_save :set_investor_name
   def set_investor_name
     self.investor_name = investor.investor_name
+    self.unit_type = unit_type.strip if unit_type
   end
 
   after_create_commit :create_remittance

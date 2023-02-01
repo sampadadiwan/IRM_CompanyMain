@@ -18,7 +18,7 @@ module FundScopes
           # Ensure this user has investor access
           .joins(entity: :investor_accesses)
           .merge(InvestorAccess.approved_for_user(user))
-      elsif %w[CapitalCommitment CapitalDistributionPayment CapitalRemittance].include?(name)
+      elsif %w[CapitalCommitment CapitalDistributionPayment CapitalRemittance CapitalRemittancePayment FundUnit].include?(name)
         # These have a direct investor reln
         joins(:investor, fund: :access_rights)
           .merge(AccessRight.access_filter)

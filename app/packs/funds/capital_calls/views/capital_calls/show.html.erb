@@ -16,6 +16,12 @@
 
     <%= button_to "Generate Documents" , generate_docs_capital_call_path(@capital_call),    
         method: :patch, class: "btn btn-outline-success", form_class: "deleteButton" if policy(@capital_call).generate_docs? %>
+
+    <%= button_to "Allocate Units" , 
+        allocate_units_capital_call_path(@capital_call),    
+        method: :patch, class: "btn btn-outline-success", 
+        data: {action: "click->confirm#popup", turbo:false, method: :patch, msg: "This will compute the units to be allocated to each commitment in this fund"},
+        form_class: "deleteButton" if policy(@capital_call).allocate_units? %>
   </div>
 
   <%= render "/capital_calls/details", capital_call: @capital_call %>

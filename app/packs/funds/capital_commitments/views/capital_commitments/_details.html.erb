@@ -7,6 +7,8 @@
 
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#distributions-tab"
           data-action="click->tabdetails#loadData">Distributions</a>
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-units-tab"
+          data-action="click->tabdetails#loadData">Units</a>
 
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab" 
           data-action="click->tabdetails#loadData">
@@ -96,6 +98,19 @@
           <span>Loading...</span>
         <% end %>
         <%= turbo_frame_tag "task_list", target: "_top" do %>
+        <% end %>
+      </div>     
+    </div>
+
+
+    <div id="fund-units-tab" class="tab-pane fade">
+      <div id="fund_units" class="associated_entity">
+        <%= link_to fund_units_path(capital_commitment_id: capital_commitment.id), 
+                                class: "load_data_link", 
+                                data: { turbo_frame: 'fund_units_list' } do %>
+          <span>Loading...</span>
+        <% end %>
+        <%= turbo_frame_tag "fund_units_list", target: "_top" do %>
         <% end %>
       </div>     
     </div>

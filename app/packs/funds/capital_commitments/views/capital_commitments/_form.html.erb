@@ -52,6 +52,15 @@
     <small class="text-muted">If your clients have a Folio Id / Number, add it here</small>
   </div>
 
+  <% if capital_commitment.fund.unit_types.present? %>
+    <div class="form-group">
+      <%= form.label :unit_type %>
+      <%= form.select :unit_type, capital_commitment.fund.unit_types.split(","), 
+          {include_blank: true}, class: "form-control"  %>
+      <small class="text-muted">They type of unit issued for this commitment</small>
+    </div>
+  <% end %>
+
   
   <div class="form-group" data-controller="currencyformat">
     <%= form.label :committed_amount %> <span class="formatted_currency"></span>

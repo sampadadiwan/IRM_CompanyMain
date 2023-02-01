@@ -80,6 +80,21 @@
       </td>
     </tr>
 
+    <% if @capital_distribution.fund.unit_types.present? %>
+      <% @capital_distribution.unit_prices.each do |unit_type, price| %>
+
+        <tr>
+          <td>
+            <%= unit_type %>
+          </td>
+          <td>
+            <%= price %>
+          </td>
+        </tr>
+
+      <% end %>  
+    <% end %>
+
     <tr>
       <td>
         Approved
@@ -116,6 +131,12 @@
     <%= button_to "Approve" , approve_capital_distribution_path(@capital_distribution), method: :post, 
         class: "btn btn-outline-success", form_class: "deleteButton", 
         data: {action: "click->confirm#popup", turbo:false, method: :post, msg: "This will generate all the notifications to your clients"} if policy(@capital_distribution).approve? %>
+
+    <%= button_to "Redeem Units" , 
+        redeem_units_capital_distribution_path(@capital_distribution),    
+        method: :patch, class: "btn btn-outline-success", 
+        data: {action: "click->confirm#popup", turbo:false, method: :patch, msg: "This will compute the units to be redeemed against each commitment in this fund"},
+        form_class: "deleteButton" if policy(@capital_distribution).redeem_units? %>
 
   </div>
 
