@@ -7,8 +7,11 @@
 
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#distributions-tab"
           data-action="click->tabdetails#loadData">Distributions</a>
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-units-tab"
-          data-action="click->tabdetails#loadData">Units</a>
+
+    <% if capital_commitment.unit_type.present? %>
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-units-tab"
+            data-action="click->tabdetails#loadData">Units</a>
+    <% end %>
 
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab" 
           data-action="click->tabdetails#loadData">

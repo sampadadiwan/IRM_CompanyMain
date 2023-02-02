@@ -5,8 +5,12 @@
           data-action="click->tabdetails#loadData">Payments</a>
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-units-tab"
-          data-action="click->tabdetails#loadData">Units</a>
+
+    <% if capital_remittance.capital_commitment.unit_type.present? %>
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-units-tab"
+            data-action="click->tabdetails#loadData">Units</a>
+    <% end %>
+
   </nav>
 
   <div class="tab-content" data-controller="datatable">
