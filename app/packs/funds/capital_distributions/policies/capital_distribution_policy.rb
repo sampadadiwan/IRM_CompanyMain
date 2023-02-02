@@ -39,7 +39,7 @@ class CapitalDistributionPolicy < FundBasePolicy
   end
 
   def redeem_units?
-    update?
+    record.unit_prices.present? && update?
   end
 
   def edit?
