@@ -1,0 +1,54 @@
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Account Entries</h1>
+  <%  
+    if params[:capital_commitment_id].present?
+        account_entry = AccountEntry.new(capital_commitment_id: params[:capital_commitment_id]) 
+        account_entry.entity_id = account_entry.capital_commitment.entity_id
+        account_entry.fund_id = account_entry.capital_commitment.fund_id
+    
+  %>
+
+  <span>
+    <%= link_to "New Account Entry", new_account_entry_path("account_entry[capital_commitment_id]": account_entry.capital_commitment_id, "account_entry[entity_id]": account_entry.entity_id), {class: "btn btn-outline-primary"} if policy(account_entry).new? %>
+
+    <%= link_to "Upload", 
+                  new_import_upload_path("import_upload[owner_id]": account_entry.fund_id, 
+                  "import_upload[owner_type]": "Fund", 
+                  "import_upload[import_type]": "AccountEntry", 
+                  "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
+                  { class: "btn btn-outline-primary"}   %> 
+  </span>
+
+  <% end %>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="account_entries" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Folio
+        </th>
+        <th>
+          Reporting Date
+        </th>
+        <th>
+          Entry Type
+        </th>
+        <th>
+          Name
+        </th>
+        <th>
+          Amount
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% account_entries.each do |account_entry| %>
+        <%= render account_entry %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

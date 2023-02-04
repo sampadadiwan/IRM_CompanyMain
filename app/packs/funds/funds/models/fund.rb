@@ -20,6 +20,10 @@ class Fund < ApplicationRecord
   has_many :capital_distributions, dependent: :destroy
   has_many :capital_distribution_payments, dependent: :destroy
   has_many :capital_calls, dependent: :destroy
+
+  has_many :account_entries, dependent: :destroy
+  has_many :fund_account_entries, ->(_ae) { where(account_entries: { capital_commitment_id: nil }) }, class_name: "AccountEntry", dependent: :destroy
+
   has_many :access_rights, as: :owner, dependent: :destroy
 
   belongs_to :form_type, optional: true

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_02_01_054053) do
+ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -44,6 +44,28 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_01_054053) do
     t.index ["entity_id"], name: "index_access_rights_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_access_rights_on_owner"
     t.index ["user_id"], name: "index_access_rights_on_user_id"
+  end
+
+  create_table "account_entries", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "capital_commitment_id"
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "investor_id"
+    t.bigint "form_type_id"
+    t.string "folio_id", limit: 20
+    t.date "reporting_date"
+    t.string "entry_type", limit: 10
+    t.string "name", limit: 50
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.text "notes"
+    t.text "properties"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
+    t.index ["entity_id"], name: "index_account_entries_on_entity_id"
+    t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
+    t.index ["fund_id"], name: "index_account_entries_on_fund_id"
+    t.index ["investor_id"], name: "index_account_entries_on_investor_id"
   end
 
   create_table "action_text_rich_texts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1826,6 +1848,11 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_01_054053) do
   add_foreign_key "access_rights", "entities"
   add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
   add_foreign_key "access_rights", "users"
+  add_foreign_key "account_entries", "capital_commitments"
+  add_foreign_key "account_entries", "entities"
+  add_foreign_key "account_entries", "form_types"
+  add_foreign_key "account_entries", "funds"
+  add_foreign_key "account_entries", "investors"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "adhaar_esigns", "documents"

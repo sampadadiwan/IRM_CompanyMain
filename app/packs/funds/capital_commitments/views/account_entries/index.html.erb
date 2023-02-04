@@ -1,0 +1,4 @@
+<%= render "/layouts/alerts" %>
+<%= turbo_frame_tag "account_entries_list", target: "_top" do %>
+  <%= render "/account_entries/index", account_entries: @account_entries %>
+<% end %>

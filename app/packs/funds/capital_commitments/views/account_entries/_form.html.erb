@@ -1,0 +1,53 @@
+<%= form_with(model: account_entry, validate: true) do |form| %>
+  <% if account_entry.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(account_entry.errors.count, "error") %> prohibited this account_entry from being saved:</h2>
+
+      <ul>
+        <% account_entry.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+
+  <%= form.text_field :capital_commitment_id, class: "form-control", hidden: true %>
+  <%= form.text_field :entity_id, class: "form-control", hidden: true %>
+  <%= form.text_field :fund_id, class: "form-control", hidden: true %>
+  <%= form.text_field :investor_id, class: "form-control", hidden: true %>
+  
+  <div class="form-group">
+    <%= form.label :folio_id %>
+    <%= form.text_field :folio_id, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :reporting_date %>
+    <%= form.date_field :reporting_date, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :entry_type %>
+    <%= form.text_field :entry_type, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :name %>
+    <%= form.text_field :name, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :amount %>
+    <%= form.text_field :amount, class: "form-control", step: :any  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :notes %>
+    <%= form.text_area :notes, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-primary"}%>
+  </div>
+<% end %>

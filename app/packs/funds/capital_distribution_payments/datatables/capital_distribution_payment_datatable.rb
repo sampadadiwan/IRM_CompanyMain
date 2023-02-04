@@ -7,7 +7,7 @@ class CapitalDistributionPaymentDatatable < AjaxDatatablesRails::ActiveRecord
       amount: { source: "CapitalDistributionPayment.amount_cents", searchable: false },
       payment_date: { source: "CapitalDistributionPayment.payment_date", searchable: true },
       completed: { source: "CapitalDistributionPayment.completed", searchable: false },
-      dt_actions: { source: "" }
+      dt_actions: { source: "", orderable: false, searchable: false }
     }
   end
 

@@ -1,0 +1,82 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Fund
+    </td>
+    <td>
+      <%= link_to @account_entry.fund.name, @account_entry.fund %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Investor
+    </td>
+    <td>
+      <%= link_to @account_entry.investor.investor_name, @account_entry.investor %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Capital Commitment
+    </td>
+    <td>
+      <%= link_to @account_entry.capital_commitment %>
+    </td>
+  </tr>
+  
+  <tr>
+    <td>
+      Folio
+    </td>
+    <td>
+      <%= @account_entry.folio_id %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Reporting Date
+    </td>
+    <td>
+      <%= l @account_entry.reporting_date %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Entry Type
+    </td>
+    <td>
+      <%= @account_entry.entry_type %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Name
+    </td>
+    <td>
+      <%= @account_entry.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Amount
+    </td>
+    <td>
+      <%= money_to_currency @account_entry.amount, params %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Notes
+    </td>
+    <td>
+      <%= @account_entry.notes %>
+    </td>
+  </tr>
+</table>
+<div>
+  <% if policy(@account_entry).update? %>
+    <%= link_to "Edit", edit_account_entry_path(@account_entry), {class: "btn btn-primary"} %> 
+    <%= button_to "Delete", @account_entry, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+  <% end %>
+</div>

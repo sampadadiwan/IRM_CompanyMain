@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :account_entries
   resources :fund_units
   resources :fund_ratios
   resources :capital_remittance_payments

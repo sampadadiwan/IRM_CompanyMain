@@ -71,6 +71,14 @@
                 "sample_upload": "FUND_INVESTORS_SAMPLE"), 
                 { class: "dropdown-item"}  %> 
 
+
+            <%= link_to "Import Account Entries", 
+                  new_import_upload_path("import_upload[owner_id]": @fund.id, 
+                  "import_upload[owner_type]": "Fund", 
+                  "import_upload[import_type]": "AccountEntry", 
+                  "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
+                  { class: "dropdown-item"}   %>
+
             <%= link_to "Add Investor Notice" , 
                       new_investor_notice_path( "investor_notice[owner_id]": @fund.id, 
                       "investor_notice[owner_type]": "Fund"), {class: "dropdown-item" }  %>      

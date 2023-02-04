@@ -1,0 +1,84 @@
+class AccountEntriesController < ApplicationController
+  before_action :set_account_entry, only: %i[show edit update destroy]
+
+  # GET /account_entries or /account_entries.json
+  def index
+    @account_entries = policy_scope(AccountEntry)
+    @account_entries = @account_entries.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id]
+    @account_entries = @account_entries.where(investor_id: params[:investor_id]) if params[:investor_id]
+    @account_entries = @account_entries.where(fund_id: params[:fund_id]) if params[:fund_id]
+    @account_entries = @account_entries.where(entry_type: params[:entry_type]) if params[:entry_type]
+  end
+
+  # GET /account_entries/1 or /account_entries/1.json
+  def show; end
+
+  # GET /account_entries/new
+  def new
+    @account_entry = AccountEntry.new(account_entry_params)
+    @account_entry.entity_id = @account_entry.capital_commitment.entity_id
+    authorize @account_entry
+    @account_entry.fund_id = @account_entry.capital_commitment.fund_id
+    @account_entry.investor_id = @account_entry.capital_commitment.investor_id
+    @account_entry.folio_id = @account_entry.capital_commitment.folio_id
+    @account_entry.reporting_date = Time.zone.today
+    setup_custom_fields(@account_entry)
+  end
+
+  # GET /account_entries/1/edit
+  def edit
+    setup_custom_fields(@account_entry)
+  end
+
+  # POST /account_entries or /account_entries.json
+  def create
+    @account_entry = AccountEntry.new(account_entry_params)
+    authorize @account_entry
+
+    respond_to do |format|
+      if @account_entry.save
+        format.html { redirect_to account_entry_url(@account_entry), notice: "Account entry was successfully created." }
+        format.json { render :show, status: :created, location: @account_entry }
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: @account_entry.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # PATCH/PUT /account_entries/1 or /account_entries/1.json
+  def update
+    respond_to do |format|
+      if @account_entry.update(account_entry_params)
+        format.html { redirect_to account_entry_url(@account_entry), notice: "Account entry was successfully updated." }
+        format.json { render :show, status: :ok, location: @account_entry }
+      else
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @account_entry.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  # DELETE /account_entries/1 or /account_entries/1.json
+  def destroy
+    @account_entry.destroy
+
+    respond_to do |format|
+      format.html { redirect_to account_entries_url, notice: "Account entry was successfully destroyed." }
+      format.json { head :no_content }
+    end
+  end
+
+  private
+
+  # Use callbacks to share common setup or constraints between actions.
+  def set_account_entry
+    @account_entry = AccountEntry.find(params[:id])
+    authorize @account_entry
+  end
+
+  # Only allow a list of trusted parameters through.
+  def account_entry_params
+    params.require(:account_entry).permit(:capital_commitment_id, :entity_id, :fund_id, :investor_id, :folio_id, :reporting_date, :entry_type, :name, :amount, :notes)
+  end
+end

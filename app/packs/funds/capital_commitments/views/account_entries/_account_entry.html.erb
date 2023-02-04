@@ -1,0 +1,20 @@
+<tr id="<%= dom_id account_entry %>">
+  <td>
+    <%= account_entry.folio_id %>
+  </td>
+  <td>
+    <%= l account_entry.reporting_date if account_entry.reporting_date %>
+  </td>
+  <td>
+    <%= account_entry.entry_type %>
+  </td>
+  <td>
+    <%= account_entry.name %>
+  </td>
+  <td>
+    <%= money_to_currency account_entry.amount, params %>
+  </td>
+  <td>
+    <%= link_to "Show", account_entry , {class: "btn btn-primary"}%>
+  </td>
+</tr>

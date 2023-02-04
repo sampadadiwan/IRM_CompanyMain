@@ -1,4 +1,17 @@
 FactoryBot.define do
+  factory :account_entry do
+    capital_commitment { nil }
+    entity { nil }
+    fund { nil }
+    investor { nil }
+    folio_id { "MyString" }
+    reporting_date { "2023-02-02" }
+    entry_type { "MyString" }
+    name { "MyString" }
+    amount { "9.99" }
+    notes { "MyText" }
+  end
+
   factory :fund_unit do
     fund { nil }
     capital_commitment { nil }

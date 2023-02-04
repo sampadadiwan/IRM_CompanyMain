@@ -7,10 +7,10 @@ class CapitalCallDatatable < AjaxDatatablesRails::ActiveRecord
       call_amount: { source: "CapitalCall.call_amount_cents", searchable: false },
       due_date: { source: "CapitalCall.due_date", searchable: false, orderable: true },
       collected_amount: { source: "CapitalCall.collected_amount_cents", searchable: false },
-      due_amount: { source: "" },
+      due_amount: { source: "", orderable: false, searchable: false },
       percentage_called: { source: "CapitalCall.percentage_called", searchable: false },
       approved: { source: "CapitalCall.approved", searchable: false },
-      dt_actions: { source: "" }
+      dt_actions: { source: "", orderable: false, searchable: false }
     }
   end
 

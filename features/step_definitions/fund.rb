@@ -908,3 +908,60 @@ Then('there should be correct units for the distribution payments for each inves
     end
   end
 end
+
+
+Then('Given I upload {string} file for Account Entries') do |file|
+  @import_file = file
+  visit(capital_commitment_path(@fund.capital_commitments.first))
+  click_on("Account Entries")
+  sleep(1)
+  click_on("Upload")
+  fill_in('import_upload_name', with: "Test Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  sleep(1)
+  click_on("Save")
+  sleep(1)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+end
+
+Then('There should be {string} account_entries created') do |count|
+  AccountEntry.count.should == count.to_i
+end
+
+Then('the account_entries must have the data in the sheet') do
+    file = File.open("./public/sample_uploads/#{@import_file}", "r")
+    data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+    headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+  
+    account_entries = @fund.account_entries.order(id: :asc).to_a
+    data.each_with_index do |row, idx|
+      next if idx.zero? # skip header row
+  
+      # create hash from headers and cells
+      user_data = [headers, row].transpose.to_h
+      cc = account_entries[idx-1]
+      puts "Checking import of #{cc.name}"
+      cc.name.should == user_data["Name"].strip
+      cc.fund.name.should == user_data["Fund"]
+      cc.investor.investor_name.should == user_data["Investor"]
+      cc.folio_id.should == user_data["Folio No"].to_s
+      cc.amount_cents.should == user_data["Amount"].to_i * 100
+      cc.entry_type.should == user_data["Entry Type"]
+      cc.reporting_date.should == user_data["Reporting Date"]
+      cc.notes.should == user_data["Notes"]      
+    end
+  
+end
+
+
+Then('the account_entries must visible for each commitment') do
+  @fund.account_entries.each do |ae|
+    visit(capital_commitment_path(ae.capital_commitment))
+    click_on "Account Entries"
+    expect(page).to have_content(ae.name)
+    expect(page).to have_content(ae.entry_type)
+    expect(page).to have_content(money_to_currency(ae.amount, {}))
+    expect(page).to have_content(ae.capital_commitment.folio_id)
+    expect(page).to have_content(ae.reporting_date.strftime("%d/%m/%Y"))
+  end
+end

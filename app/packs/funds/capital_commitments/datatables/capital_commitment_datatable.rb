@@ -9,8 +9,8 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
       collected_amount: { source: "CapitalCommitment.collected_amount_cents", searchable: false },
       percentage: { source: "CapitalCommitment.percentage", searchable: false },
       onboarding_completed: { source: "CapitalCommitment.onboarding_completed", searchable: false },
-      document_names: { source: "" },
-      dt_actions: { source: "" }
+      document_names: { source: "", orderable: false, searchable: false },
+      dt_actions: { source: "", orderable: false, searchable: false }
     }
   end
 

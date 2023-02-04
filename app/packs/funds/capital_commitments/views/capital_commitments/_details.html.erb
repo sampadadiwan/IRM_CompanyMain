@@ -13,6 +13,9 @@
             data-action="click->tabdetails#loadData">Units</a>
     <% end %>
 
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#account-entries-tab"
+            data-action="click->tabdetails#loadData">Account Entries</a>
+
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab" 
           data-action="click->tabdetails#loadData">
       Tasks
@@ -114,6 +117,18 @@
           <span>Loading...</span>
         <% end %>
         <%= turbo_frame_tag "fund_units_list", target: "_top" do %>
+        <% end %>
+      </div>     
+    </div>
+
+    <div id="account-entries-tab" class="tab-pane fade">
+      <div id="account_entries" class="associated_entity">
+        <%= link_to account_entries_path(capital_commitment_id: capital_commitment.id), 
+                                class: "load_data_link", 
+                                data: { turbo_frame: 'account_entries_list' } do %>
+          <span>Loading...</span>
+        <% end %>
+        <%= turbo_frame_tag "account_entries_list", target: "_top" do %>
         <% end %>
       </div>     
     </div>

@@ -11,7 +11,8 @@ class ImportUpload < ApplicationRecord
               "INVESTOR_KYCS_SAMPLE" => "/sample_uploads/investor_kycs.xlsx",
               "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE" => "/sample_uploads/capital_distribution_payments.xlsx",
               "CAPITAL_COMMITMENT_SAMPLE" => "/sample_uploads/capital_commitments.xlsx",
-              "FUND_DOCS_SAMPLE" => "/sample_uploads/commitment_docs.zip" }.freeze
+              "FUND_DOCS_SAMPLE" => "/sample_uploads/commitment_docs.zip",
+              "ACCOUNT_ENTRY_SAMPLE" => "/sample_uploads/account_entries.xlsx" }.freeze
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true

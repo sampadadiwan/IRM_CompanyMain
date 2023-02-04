@@ -40,6 +40,10 @@ Rails/FilePath:
   Exclude:
     - 'config/application.rb'
 
+Lint/UselessAssignment:
+  Exclude:
+    - 'app/packs/funds/capital_commitments/services/import_account_entry.rb'
+    
 Rails/SkipsModelValidations:
   Exclude:
     - 'app/packs/funds/capital_calls/jobs/capital_call_job.rb'

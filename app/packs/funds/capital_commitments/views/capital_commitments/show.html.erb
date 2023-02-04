@@ -26,6 +26,17 @@
     </td>
   </tr>
 
+  <% if @capital_commitment.folio_id.present? %>
+    <tr>
+      <td>
+        Folio Id
+      </td>
+      <td>
+        <%= @capital_commitment.folio_id %>
+      </td>
+    </tr>
+  <% end %>
+  
   <tr>
     <td>
       Linked KYC
@@ -94,16 +105,6 @@
     </td>
   </tr>
   
-  <% if @capital_commitment.folio_id.present? %>
-    <tr>
-      <td>
-        Folio Id
-      </td>
-      <td>
-        <%= @capital_commitment.folio_id %>
-      </td>
-    </tr>
-  <% end %>
   
   <%= display_custom_fields(@capital_commitment, collapsed: true) if current_user %>
 
