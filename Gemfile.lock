@@ -669,6 +669,9 @@ GEM
       ffi (~> 1.12)
     ruby2_keywords (0.0.5)
     rubyzip (2.3.2)
+    sablon (0.3.2)
+      nokogiri (>= 1.8.5)
+      rubyzip (>= 1.1.1)
     safely_block (0.3.0)
       errbase (>= 0.1.1)
     sanitize_email (2.0.3)
@@ -872,6 +875,7 @@ DEPENDENCIES
   rubocop-rspec
   rubyzip
   rupees!
+  sablon
   sanitize_email
   sassc-rails
   selenium-webdriver

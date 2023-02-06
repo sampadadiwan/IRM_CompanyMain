@@ -32,58 +32,57 @@ class CapitalCommitmentDocGenerator
 
   # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
   def generate(capital_commitment, fund_doc_template_path)
-    odt_file_path = get_odt_file(fund_doc_template_path)
+    template = Sablon.template(File.expand_path(fund_doc_template_path))
 
-    report = ODFReport::Report.new(odt_file_path) do |r|
-      r.add_field :date, Time.zone.today.strftime("%d %B %Y")
+    amount_in_words = capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
 
-      r.add_field :company_name, capital_commitment.entity.name
-      r.add_field :fund_name, capital_commitment.fund.name
-      r.add_field :commitment_ppm_number, capital_commitment.ppm_number
-      r.add_field :folio_id, capital_commitment.folio_id
-      r.add_field :fund_details, capital_commitment.fund.details
+    context = {
+      date: Time.zone.today.strftime("%d %B %Y"),
+      company_name: capital_commitment.entity.name,
+      fund_name: capital_commitment.fund.name,
+      commitment_ppm_number: capital_commitment.ppm_number,
+      folio_id: capital_commitment.folio_id,
+      fund_details: capital_commitment.fund.details,
+      investor_name: capital_commitment.investor_name,
+      commitment_amount: money_to_currency(capital_commitment.committed_amount),
+      commitment_amount_words: amount_in_words
+    }
 
-      r.add_field :investor_name, capital_commitment.investor_name
-      r.add_field :commitment_amount, money_to_currency(capital_commitment.committed_amount)
+    generate_custom_fields(context, capital_commitment)
 
-      amount_in_words = capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
-      r.add_field :commitment_amount_words, amount_in_words
+    # Can we have more than one LP signer ?
+    add_image2(context, :investor_signature, capital_commitment.investor_kyc.signature)
+    generate_kyc_fields(context, capital_commitment.investor_kyc)
+    Rails.logger.debug { "Using context #{context} to render template" }
+    template.render_to_file File.expand_path("#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.docx"), context
 
-      generate_custom_fields(r, capital_commitment)
-
-      # Can we have more than one LP signer ?
-      add_image(r, :investor_signature, capital_commitment.investor_kyc.signature)
-      generate_kyc_fields(r, capital_commitment.investor_kyc)
-    end
-
-    report.generate("#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.odt")
-    system("libreoffice --headless --convert-to pdf #{@working_dir}/CapitalCommitment-#{capital_commitment.id}.odt --outdir #{@working_dir}")
+    system("libreoffice --headless --convert-to pdf #{@working_dir}/CapitalCommitment-#{capital_commitment.id}.docx --outdir #{@working_dir}")
 
     additional_footers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Footer" "#{@fund_doc_template_name} Signature"])
     additional_headers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Header", "#{@fund_doc_template_name} Stamp Paper"])
     add_header_footers(capital_commitment, "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf", additional_headers, additional_footers)
   end
 
-  def generate_custom_fields(report, capital_commitment)
+  def generate_custom_fields(context, capital_commitment)
     capital_commitment.properties.each do |k, v|
-      report.add_field "commitment_#{k}", v
+      context["commitment_#{k}"] = v
     end
 
     capital_commitment.fund.properties.each do |k, v|
-      report.add_field "fund_#{k}", v
+      context["fund_#{k}"] = v
     end
   end
 
-  def generate_kyc_fields(report, investor_kyc)
+  def generate_kyc_fields(context, investor_kyc)
     if investor_kyc
-      report.add_field :kyc_full_name, investor_kyc.full_name
-      report.add_field :kyc_pan, investor_kyc.PAN
-      report.add_field :kyc_address, investor_kyc.address
-      report.add_field :kyc_bank_account_number, investor_kyc.bank_account_number
-      report.add_field :kyc_ifsc_code, investor_kyc.ifsc_code
+      context.store :kyc_full_name, investor_kyc.full_name
+      context.store :kyc_pan, investor_kyc.PAN
+      context.store :kyc_address, investor_kyc.address
+      context.store :kyc_bank_account_number, investor_kyc.bank_account_number
+      context.store :kyc_ifsc_code, investor_kyc.ifsc_code
 
       investor_kyc.properties.each do |k, v|
-        report.add_field "kyc_#{k}", v
+        context.store "kyc_#{k}", v
       end
     end
   end
@@ -101,5 +100,17 @@ class CapitalCommitmentDocGenerator
     signed_document.owner_tag = "Generated"
 
     signed_document.save
+  end
+
+  def add_image2(context, field_name, image)
+    if image
+      file = image.download
+      stored_file_path = "#{@working_dir}/#{File.basename(file.path)}"
+
+      FileUtils.mv(file.path, stored_file_path)
+
+      context.store "image:#{field_name}", stored_file_path
+      stored_file_path
+    end
   end
 end
