@@ -1,6 +1,7 @@
 class OptionPool < ApplicationRecord
   include Trackable
   include WithFolder
+  include WithCustomField
   audited
 
   belongs_to :entity
@@ -15,10 +16,6 @@ class OptionPool < ApplicationRecord
   include FileUploader::Attachment(:grant_letter)
 
   has_rich_text :details
-
-  # Customize form
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
 
   validates :name, :start_date, :number_of_options, :excercise_price, presence: true
   validates :number_of_options, :excercise_price, numericality: { greater_than: 0 }

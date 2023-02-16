@@ -53,9 +53,11 @@ module WithFolder
   end
 
   def document_changed(document)
-    if %w[CapitalCommitment CapitalRemittance].include?(self.class.name) && !document.destroyed?
+    if %w[CapitalCommitment CapitalRemittance].include?(self.class.name) && document.id.present?
+      # Check if the doc exists
+      doc = Document.where(id: document.id).first
       # Give explicit access rights to the doc to this investor
-      AccessRight.grant(document, investor_id)
+      AccessRight.grant(document, investor_id) if doc.present?
     end
   end
 end

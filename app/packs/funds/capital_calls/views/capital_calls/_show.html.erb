@@ -50,14 +50,15 @@
     </tr>
 
     <% if @capital_call.fund.unit_types.present? %>
-      <% @capital_call.unit_prices.each do |unit_type, price| %>
+      <% @capital_call.unit_prices.each do |unit_type, unit_price| %>
 
         <tr>
           <td>
             <%= unit_type %>
           </td>
           <td>
-            <%= price %>
+            Price: <%= unit_price['price'] %>, 
+            Premium: <%= unit_price['premium'] %>
           </td>
         </tr>
 

@@ -1,3 +1,3 @@
 <%= turbo_stream.update params[:target] do %>
-  <%= options_for_select @investor_accesses.map{|e| [e.full_name, e.user_id]} %>
+  <%= options_for_select @investor_accesses.map{|e| ["#{e.full_name}, #{e.investor.investor_name}", e.user_id]} %>
 <% end %>

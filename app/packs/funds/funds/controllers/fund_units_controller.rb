@@ -71,6 +71,10 @@ class FundUnitsController < ApplicationController
   def set_fund_unit
     @fund_unit = FundUnit.find(params[:id])
     authorize @fund_unit
+    @bread_crumbs = { Funds: funds_path, "#{@fund_unit.fund.name}": fund_path(@fund_unit.fund),
+                      # "Fund Units": fund_units_path(fund_id: @fund_unit.fund_id),
+                      "#{@fund_unit.capital_commitment}": capital_commitment_path(@fund_unit.capital_commitment),
+                      "#{@fund_unit}": nil }
   end
 
   # Only allow a list of trusted parameters through.

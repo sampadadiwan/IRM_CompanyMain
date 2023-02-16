@@ -1,5 +1,5 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show edit update destroy timeline last report generate_calcs]
+  before_action :set_fund, only: %i[show edit update destroy timeline last report generate_calcs allocate_form allocate copy_formulas]
 
   # GET /funds or /funds.json
   def index
@@ -87,11 +87,50 @@ class FundsController < ApplicationController
                                           .includes(:trackable, :owner).order(id: :desc).page(params[:page])
   end
 
+  def allocate_form; end
+
+  def allocate
+    start_date = nil
+    end_date = nil
+
+    begin
+      start_date = Date.parse(params[:start_date])
+      end_date = Date.parse(params[:end_date])
+      generate_soa = params[:generate_soa] == "1"
+      user_id = current_user.id
+    rescue StandardError
+      Rails.logger.debug "allocate: Dates not sent properly"
+    end
+
+    formula_id = params[:fund_formula_id]
+
+    if start_date.present? && end_date.present?
+      AccountEntryAllocationJob.perform_later(@fund.id, start_date, end_date,
+                                              formula_id:, user_id:, generate_soa:)
+      redirect_to(@fund, notice: "Fund account entries allocation in progress. Please wait for a few mins and refresh the page")
+    else
+      redirect_back(fallback_location: root_path, alert: "Please specify the start_date and end_date for allocation.")
+    end
+  end
+
+  def copy_formulas
+    from_fund = Fund.find(params[:from_fund_id])
+
+    from_fund.fund_formulas.each do |ff|
+      new_ff = ff.dup
+      new_ff.fund = @fund
+      new_ff.save
+    end
+
+    redirect_back(fallback_location: fund_path(@fund), notice: "Formulas copied successfully.")
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.
   def set_fund
     @fund = Fund.find(params[:id])
+    @bread_crumbs = { Funds: funds_path, "#{@fund.name}": fund_path(@fund) }
     authorize(@fund)
   end
 
@@ -100,7 +139,7 @@ class FundsController < ApplicationController
     params.require(:fund).permit(:name, :committed_amount, :details, :collected_amount, :commitment_doc_list,
                                  :entity_id, :tag_list, :show_valuations, :show_fund_ratios,
                                  :investor_signature_types, :fund_signature_types, :currency,
-                                 :unit_types, :units_allocation_engine,
+                                 :unit_types, :units_allocation_engine, :form_type_id,
                                  :fund_signatory_id, :trustee_signatory_id, properties: {})
   end
 end

@@ -49,6 +49,7 @@ class Entity < ApplicationRecord
 
   has_many :funds, dependent: :destroy, inverse_of: :entity
   has_many :investment_opportunities, dependent: :destroy
+  has_many :portfolio_investments
 
   include FileUploader::Attachment(:logo)
 

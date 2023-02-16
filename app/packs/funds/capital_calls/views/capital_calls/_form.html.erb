@@ -35,14 +35,36 @@
   </div>
 
   <% if capital_call.fund.unit_types.present? %>
-    <% capital_call.fund.unit_types.split(",").each do |unit_type| %>
-      <div class="form-group">
-        <% unit_type = unit_type.strip %>
-        <%= form.label :unit_type, "#{unit_type} Unit Price" %>
-        <%= form.number_field :unit_type, step: :any, class: "form-control", 
-            name: "capital_call[unit_prices][#{unit_type}]", value: capital_call.unit_prices[unit_type] %>
-      </div>  
-    <% end %>  
+    <div data-controller="call-copy">
+      <% capital_call.fund.unit_types.split(",").each_with_index do |unit_type, index| %>
+        <% 
+            unit_type = unit_type.strip 
+            price = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["price"] : 0
+            premium = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["premium"] : 0
+        %>
+        <div class="form-row">  
+          <div class="form-group col-md-3">
+            <%= form.label :unit_type, "#{unit_type} Unit Price" %>
+            <%= form.number_field :unit_type, step: :any, class: "form-control price", 
+                name: "capital_call[unit_prices][#{unit_type}][price]", 
+                id: "#{unit_type}_price", value: price  %>
+          </div>
+          <div class="form-group col-md-3">
+            <%= form.label :unit_type, "Premium" %>      
+            <%= form.number_field :unit_type, step: :any, class: "form-control premium", 
+                name: "capital_call[unit_prices][#{unit_type}][premium]", 
+                id: "#{unit_type}_premium", value: premium %>
+          </div>
+
+          <% if index == 0 %>
+          <div class="form-group col-md-3">
+            <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
+          </div>
+          <% end %>
+
+        </div>
+      <% end %>  
+    </div>
   <% end %>
 
   <%= custom_form_fields(capital_call, form) %>

@@ -7,6 +7,10 @@ class CapitalRemittanceDecorator < ApplicationDecorator
     h.link_to object.folio_id, object.capital_commitment
   end
 
+  def collected_amount
+    h.money_to_currency object.collected_amount
+  end
+
   # Just an example of a complex method you can add to you decorator
   # To render it in a datatable just add a column 'dt_actions' in
   # 'view_columns' and 'data' methods and call record.decorate.dt_actions

@@ -33,6 +33,9 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_holdings: Field::BooleanEmoji,
     enable_secondary_sale: Field::BooleanEmoji,
     enable_funds: Field::BooleanEmoji,
+    enable_account_entries: Field::BooleanEmoji,
+    enable_units: Field::BooleanEmoji,
+    enable_fund_portfolios: Field::BooleanEmoji,
     enable_options: Field::BooleanEmoji,
     enable_captable: Field::BooleanEmoji,
     enable_investor_kyc: Field::BooleanEmoji,
@@ -74,6 +77,9 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_holdings
     enable_secondary_sale
     enable_funds
+    enable_account_entries
+    enable_units
+    enable_fund_portfolios
     enable_inv_opportunities
     enable_options
     enable_captable
@@ -103,6 +109,9 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_holdings
     enable_secondary_sale
     enable_funds
+    enable_account_entries
+    enable_units
+    enable_fund_portfolios
     enable_inv_opportunities
     enable_options
     enable_captable

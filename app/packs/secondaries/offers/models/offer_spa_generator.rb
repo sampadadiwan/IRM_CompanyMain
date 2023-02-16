@@ -37,30 +37,28 @@ class OfferSpaGenerator
 
   # master_spa_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
   def generate(offer, master_spa_path)
-    odt_file_path = get_odt_file(master_spa_path)
+    template = Sablon.template(File.expand_path(master_spa_path))
 
-    report = ODFReport::Report.new(odt_file_path) do |r|
-      r.add_field :effective_date, Time.zone.today.strftime("%d %B %Y")
-      r.add_field :offer_quantity, offer.quantity
-      r.add_field :company_name, offer.entity.name
+    context.store  :effective_date, Time.zone.today.strftime("%d %B %Y")
+    context.store  :offer_quantity, offer.quantity
+    context.store  :company_name, offer.entity.name
 
-      r.add_field :allocation_quantity, offer.allocation_quantity
-      r.add_field :share_price, offer.secondary_sale.final_price
-      r.add_field :allocation_amount, money_to_currency(offer.allocation_amount)
+    context.store  :allocation_quantity, offer.allocation_quantity
+    context.store  :share_price, offer.secondary_sale.final_price
+    context.store  :allocation_amount, money_to_currency(offer.allocation_amount)
 
-      amount_in_words = offer.entity.currency == "INR" ? offer.allocation_amount.to_i.rupees.humanize : offer.allocation_amount.to_i.to_words.humanize
-      r.add_field :allocation_amount_words, amount_in_words
+    amount_in_words = offer.entity.currency == "INR" ? offer.allocation_amount.to_i.rupees.humanize : offer.allocation_amount.to_i.to_words.humanize
+    context.store :allocation_amount_words, amount_in_words
 
-      add_seller_fields(r, offer)
-      add_image(r, :seller_signature, offer.signature)
+    add_seller_fields(context, offer)
+    add_image(context, :seller_signature, offer.signature)
 
-      add_buyer_fields(r, offer)
-      add_image(r, :buyer_signature, offer.interest&.signature)
-    end
+    add_buyer_fields(context, offer)
+    add_image(context, :buyer_signature, offer.interest&.signature)
 
-    report.generate("#{@working_dir}/Offer-#{offer.id}.odt")
+    template.render_to_file File.expand_path("#{@working_dir}/Offer-#{offer.id}.docx"), context
 
-    system("libreoffice --headless --convert-to pdf #{@working_dir}/Offer-#{offer.id}.odt --outdir #{@working_dir}")
+    system("libreoffice --headless --convert-to pdf #{@working_dir}/Offer-#{offer.id}.docx --outdir #{@working_dir}")
 
     additional_footers = nil
     additional_headers = nil
@@ -72,41 +70,41 @@ class OfferSpaGenerator
     add_header_footers(offer, "#{@working_dir}/Offer-#{offer.id}.pdf", additional_headers, additional_footers)
   end
 
-  def add_seller_fields(report, offer)
-    report.add_field :seller_name, offer.full_name
-    report.add_field :seller_address, offer.address
-    report.add_field :seller_pan, offer.PAN
-    report.add_field :seller_email, offer.user.email
-    report.add_field :seller_bank_account, offer.bank_account_number
-    report.add_field :seller_ifsc_code, offer.ifsc_code
-    report.add_field :seller_demat, offer.demat
-    report.add_field :seller_city, offer.city
+  def add_seller_fields(context, offer)
+    context.store  :seller_name, offer.full_name
+    context.store  :seller_address, offer.address
+    context.store  :seller_pan, offer.PAN
+    context.store  :seller_email, offer.user.email
+    context.store  :seller_bank_account, offer.bank_account_number
+    context.store  :seller_ifsc_code, offer.ifsc_code
+    context.store  :seller_demat, offer.demat
+    context.store  :seller_city, offer.city
 
     if offer.secondary_sale.fees
       fees = offer.compute_fees(offer.secondary_sale.fees)
       fee_amount = fees.sum(Money.new(0, offer.entity.currency)) { |i| i[:fee] }
 
-      report.add_field :seller_fees, fee_amount
-      report.add_field :net_allocation_amount, money_to_currency(offer.allocation_amount - fee_amount)
+      context.store  :seller_fees, fee_amount
+      context.store  :net_allocation_amount, money_to_currency(offer.allocation_amount - fee_amount)
     end
 
     offer.properties.each do |k, v|
-      report.add_field "seller_#{k}", v
+      context.store  "seller_#{k}", v
     end
   end
 
-  def add_buyer_fields(report, offer)
+  def add_buyer_fields(context, offer)
     if offer.interest
-      report.add_field :buyer_name, offer.interest.buyer_entity_name
-      report.add_field :buyer_address, offer.interest.address
-      report.add_field :buyer_email, offer.interest.email
-      report.add_field :buyer_pan, offer.interest.PAN
-      report.add_field :buyer_city, offer.interest.city
-      report.add_field :buyer_demat, offer.interest.demat
-      report.add_field :buyer_contact, offer.interest.contact_name
+      context.store  :buyer_name, offer.interest.buyer_entity_name
+      context.store  :buyer_address, offer.interest.address
+      context.store  :buyer_email, offer.interest.email
+      context.store  :buyer_pan, offer.interest.PAN
+      context.store  :buyer_city, offer.interest.city
+      context.store  :buyer_demat, offer.interest.demat
+      context.store  :buyer_contact, offer.interest.contact_name
 
       offer.interest.properties.each do |k, v|
-        report.add_field "buyer_#{k}", v
+        context.store "buyer_#{k}", v
       end
     end
   end

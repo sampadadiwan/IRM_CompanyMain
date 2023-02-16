@@ -1,0 +1,97 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @aggregate_portfolio_investment.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Fund
+    </td>
+    <td>
+      <%= link_to @aggregate_portfolio_investment.fund %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Portfolio Company
+    </td>
+    <td>
+      <%= link_to @aggregate_portfolio_investment.portfolio_company %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Current Quantity
+    </td>
+    <td>
+      <%= @aggregate_portfolio_investment.quantity %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Fmv
+    </td>
+    <td>
+      <%= money_to_currency @aggregate_portfolio_investment.fmv, params %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Avg Cost
+    </td>
+    <td>
+      <%= money_to_currency @aggregate_portfolio_investment.avg_cost, params %>
+    </td>
+  </tr>
+
+
+  <tr>
+    <td>
+      Bought Quantity
+    </td>
+    <td>
+      <%= @aggregate_portfolio_investment.bought_quantity %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Bought Amount
+    </td>
+    <td>
+      <%= money_to_currency @aggregate_portfolio_investment.bought_amount, params %>
+    </td>
+  </tr>
+
+
+  <tr>
+    <td>
+      Sold Quantity
+    </td>
+    <td>
+      <%= @aggregate_portfolio_investment.sold_quantity %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Sold Amount
+    </td>
+    <td>
+      <%= money_to_currency @aggregate_portfolio_investment.sold_amount, params %>
+    </td>
+  </tr>
+
+</table>
+
+
+<div class="associated_entity">
+      <% params[:fund_id] = @aggregate_portfolio_investment.fund_id %>
+      <%= render "/portfolio_investments/index", 
+          portfolio_investments: @aggregate_portfolio_investment.portfolio_investments.includes(:aggregate_portfolio_investment) %>
+</div>

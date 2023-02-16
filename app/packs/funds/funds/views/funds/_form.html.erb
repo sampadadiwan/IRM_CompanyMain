@@ -23,11 +23,13 @@
     <%= form.text_field :currency, class: "form-control"  %>
   </div>
 
-  <div class="form-group">
-    <%= form.label :unit_types %>
-    <%= form.text_field :unit_types, class: "form-control", maxlength: 50  %>
-    <small>Comma separated list unit types issued by the fund. Ex Series A,Series B </small>
-  </div>
+  <% if fund.entity.enable_units %>
+    <div class="form-group">
+      <%= form.label :unit_types %>
+      <%= form.text_field :unit_types, class: "form-control", maxlength: 50  %>
+      <small>Comma separated list unit types issued by the fund. Ex Series A,Series B </small>
+    </div>
+  <% end %>
 
   <div class="form-group">
     <%= form.label :commitment_doc_list %>

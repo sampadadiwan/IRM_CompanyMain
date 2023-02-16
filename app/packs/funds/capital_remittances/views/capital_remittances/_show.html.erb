@@ -81,6 +81,17 @@
       </td>
     </tr>
 
+    <% if capital_remittance.entity.enable_units %>
+    <tr>
+      <td>
+        Units Issues
+      </td>
+      <td>
+        <%= capital_remittance.units_quantity %>
+      </td>
+    </tr>
+    <% end %>
+    
     <% if current_user %>
     
       <tr>

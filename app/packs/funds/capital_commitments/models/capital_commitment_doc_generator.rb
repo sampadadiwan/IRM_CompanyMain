@@ -51,7 +51,7 @@ class CapitalCommitmentDocGenerator
     generate_custom_fields(context, capital_commitment)
 
     # Can we have more than one LP signer ?
-    add_image2(context, :investor_signature, capital_commitment.investor_kyc.signature)
+    add_image(context, :investor_signature, capital_commitment.investor_kyc.signature)
     generate_kyc_fields(context, capital_commitment.investor_kyc)
     Rails.logger.debug { "Using context #{context} to render template" }
     template.render_to_file File.expand_path("#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.docx"), context

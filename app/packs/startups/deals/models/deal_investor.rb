@@ -105,14 +105,14 @@ class DealInvestor < ApplicationRecord
 
   scope :for_advisor, lambda { |user|
     # Ensure the access rghts for Document
-    includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter)
+    includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter(user))
                             .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
                             .where("investors.investor_entity_id=?", user.entity_id)
   }
 
   scope :for_investor, lambda { |user|
     joins(deal: :access_rights)
-      .merge(AccessRight.access_filter)
+      .merge(AccessRight.access_filter(user))
       .joins(:investor)
       # Ensure that the user is an investor and tis investor has been given access rights
       .where("investors.investor_entity_id=?", user.entity_id)

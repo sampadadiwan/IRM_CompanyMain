@@ -4,11 +4,14 @@ class FundUnitsJob < ApplicationJob
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(owner_id, owner_type, reason, user_id)
     owner = owner_type.constantize.find(owner_id)
+
     Chewy.strategy(:sidekiq) do
       case owner_type
       when "CapitalCall"
+        reason ||= owner.name
         DefaultUnitAllocationEngine.new.allocate_call(owner, reason)
       when "CapitalDistribution"
+        reason ||= owner.title
         DefaultUnitAllocationEngine.new.allocate_distribution(owner, reason)
       else
         raise "Cannot generate fund units for #{owner}"

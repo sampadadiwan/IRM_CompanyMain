@@ -17,7 +17,7 @@ class CapitalDistributionPaymentDatatable < AjaxDatatablesRails::ActiveRecord
         id: record.id,
         folio_id: record.decorate.folio_id,
         investor_name: record.decorate.investor_link,
-        amount: record.decorate.amount,
+        amount: record.decorate.amount_explain,
         completed: record.decorate.display_boolean(record.completed),
         payment_date: record.decorate.display_date(record.payment_date),
         dt_actions: record.decorate.dt_actions,

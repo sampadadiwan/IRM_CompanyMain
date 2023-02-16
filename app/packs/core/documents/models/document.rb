@@ -1,6 +1,7 @@
 class Document < ApplicationRecord
   include Trackable
   include Impressionable
+  include WithCustomField
 
   SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
 
@@ -27,10 +28,6 @@ class Document < ApplicationRecord
   counter_culture :folder
 
   has_rich_text :text
-
-  # Customize form
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
 
   validates :name, :file, presence: true
 
@@ -90,7 +87,7 @@ class Document < ApplicationRecord
 
   scope :for_investor, lambda { |user, entity|
     joins(:access_rights)
-      .merge(AccessRight.access_filter)
+      .merge(AccessRight.access_filter(user))
       .joins(entity: :investors)
       # Ensure that the user is an investor and tis investor has been given access rights
       .where("entities.id=?", entity.id)

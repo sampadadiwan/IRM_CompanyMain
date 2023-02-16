@@ -1,5 +1,6 @@
 class CapitalCommitment < ApplicationRecord
   include WithFolder
+  include WithCustomField
   include Trackable
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
@@ -18,25 +19,31 @@ class CapitalCommitment < ApplicationRecord
 
   belongs_to :fund, touch: true
 
-  # has_many :capital_calls, dependent: :destroy
+  # The allocated expenses and incomes
+  has_many :account_entries, dependent: :destroy
+  # The remitances linked to this commitment
   has_many :capital_remittances, dependent: :destroy
+  # The distributions linked to this commitment
   has_many :capital_distribution_payments, dependent: :destroy
+  # The fund units issued to this commitment
   has_many :fund_units, dependent: :destroy
 
   belongs_to :investor_signatory, class_name: "User", optional: true
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
 
   has_many :adhaar_esigns, as: :owner
   has_many :esigns, -> { order("sequence_no asc") }, as: :owner
   has_many :signature_workflows, as: :owner
 
   monetize :committed_amount_cents, :collected_amount_cents,
-           :call_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.fund.currency }
+           :call_amount_cents, :distribution_amount_cents, :total_units_premium_cents,
+           :total_allocated_expense_cents, :total_allocated_income_cents,
+           with_currency: ->(i) { i.fund.currency }
 
   validates :committed_amount_cents, numericality: { greater_than: 0 }
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :fund_id
+
+  delegate :currency, to: :fund
 
   counter_culture :fund, column_name: 'committed_amount_cents', delta_column: 'committed_amount_cents'
 
@@ -60,7 +67,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def to_s
-    "#{investor_name}: #{committed_amount}"
+    "#{investor_name}, Folio: #{folio_id}, Committed: #{committed_amount}"
   end
 
   def folder_path
@@ -98,5 +105,35 @@ class CapitalCommitment < ApplicationRecord
 
   def signature_completed(signature_type, document_id, file)
     CapitalCommitmentEsignProvider.new(self).signature_completed(signature_type, document_id, file)
+  end
+
+  # In some cases name is nil - Ex Cumulative for portfolio FMV or costs @see AccountEntryAllocationEngine.allocate_portfolio_investments()
+  #
+  def rollup_account_entries(name, entry_type, start_date, end_date)
+    Rails.logger.debug { "rollup_account_entries(#{name}, #{entry_type}, #{start_date}, #{end_date})" }
+
+    # Remove the prev computed cumulative rollups
+    deletable = account_entries.where(entry_type:, reporting_date: start_date.., cumulative: true)
+    deletable = deletable.where(reporting_date: ..end_date)
+    deletable = deletable.where(name:) if name
+    deletable.delete_all
+
+    # Find the cum_amount_cents
+    addable = account_entries.where(entry_type:, cumulative: false)
+    addable = addable.where(name:) if name
+    cum_amount_cents = addable.sum(:amount_cents)
+
+    # Create a new Cumulative entry
+    new_name = name || entry_type
+    ae = account_entries.new(name: new_name, entry_type:, amount_cents: cum_amount_cents, entity_id:, fund_id:, investor_id:, folio_id:, reporting_date: end_date, period: "As of #{end_date}", cumulative: true, generated: true)
+
+    ae.save!
+  end
+
+  def cumulative_account_entry(name, entry_type, start_date, end_date)
+    cae = account_entries.where(reporting_date: start_date.., cumulative: true).where(reporting_date: ..end_date)
+    cae = cae.where(name:) if name
+    cae = cae.where(entry_type:) if entry_type
+    cae.last || AccountEntry.new(name:, amount_cents: 0)
   end
 end

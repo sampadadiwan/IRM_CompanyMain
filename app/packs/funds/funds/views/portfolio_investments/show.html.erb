@@ -1,0 +1,85 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @portfolio_investment.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Fund
+    </td>
+    <td>
+      <%= link_to @portfolio_investment.fund %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Company Name
+    </td>
+    <td>
+      <%= link_to @portfolio_investment.portfolio_company %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Investment Date
+    </td>
+    <td>
+      <%= @portfolio_investment.investment_date %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Amount
+    </td>
+    <td>
+      <%= money_to_currency @portfolio_investment.amount, params %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Quantity
+    </td>
+    <td>
+      <%= @portfolio_investment.quantity %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      FMV
+    </td>
+    <td>
+      <%= money_to_currency @portfolio_investment.fmv, params %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Investment Type
+    </td>
+    <td>
+      <%= @portfolio_investment.investment_type %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Notes
+    </td>
+    <td>
+      <%= @portfolio_investment.notes %>
+    </td>
+  </tr>
+</table>
+<div>
+  <% if policy(@portfolio_investment).update? %>
+    <%= link_to "Edit", edit_portfolio_investment_path(@portfolio_investment), {class: "btn btn-outline-primary"} %> |
+    <%= button_to "Delete", @portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+  <% end %>
+</div>
+
+<%= render "portfolio_investments/details", portfolio_investment: @portfolio_investment %>

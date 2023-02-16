@@ -1,4 +1,5 @@
 class CapitalCall < ApplicationRecord
+  include WithCustomField
   include WithFolder
   include Trackable
   include ActivityTrackable
@@ -9,9 +10,7 @@ class CapitalCall < ApplicationRecord
   belongs_to :entity
   belongs_to :fund, touch: true
 
-  belongs_to :form_type, optional: true
   belongs_to :approved_by_user, class_name: "User", optional: true
-  serialize :properties, Hash
   # Stores the prices for unit types for this call
   serialize :unit_prices, Hash
 
@@ -43,7 +42,7 @@ class CapitalCall < ApplicationRecord
   end
 
   def to_s
-    "#{name}: #{percentage_called}%"
+    "#{name}, #{percentage_called}%"
   end
 
   def due_amount

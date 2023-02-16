@@ -25,7 +25,7 @@ Scenario Outline: Import capital calls
   Given there is a fund "name=SAAS Fund" for the entity
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
-  And Given I upload "capital_calls.xlsx" file for "Capital Calls" of the fund
+  And Given I upload "capital_calls.xlsx" file for "Calls" of the fund
   Then I should see the "Import upload was successfully created"
   Then There should be "3" capital calls created
   And the capital calls must have the data in the sheet
@@ -40,7 +40,7 @@ Scenario Outline: Import capital distributions
   Given there is a fund "name=SAAS Fund" for the entity
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
-  And Given I upload "capital_distributions.xlsx" file for "Capital Distributions" of the fund
+  And Given I upload "capital_distributions.xlsx" file for "Distributions" of the fund
   Then I should see the "Import upload was successfully created"
   Then There should be "3" capital distributions created
   And the capital distributions must have the data in the sheet

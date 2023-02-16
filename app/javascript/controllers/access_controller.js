@@ -36,8 +36,7 @@ export default class extends Controller {
   }
 
   onChange(event) {
-    console.log("onChange");
-    console.log("change");
+    console.log("access controller onChange");
     let selected = $("#access_right_email_or_cat").val();
     switch (selected) {
       case "All Users for Specific Stakeholder":
@@ -64,6 +63,13 @@ export default class extends Controller {
         this.hideMetadata();
         this.showEmployee();
         this.showPermissions();
+        break;
+      case "Specific User":
+        // hide category & disable
+        this.hideCategory();
+        this.hideInvestor();
+        this.hideMetadata();
+        this.showEmployee();
         break;
       default:
     }

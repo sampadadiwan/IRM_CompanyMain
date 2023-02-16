@@ -1,0 +1,59 @@
+<%= form_with(model: portfolio_investment, validate: true) do |form| %>
+  <% if portfolio_investment.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(portfolio_investment.errors.count, "error") %> prohibited this portfolio_investment from being saved:</h2>
+
+      <ul>
+        <% portfolio_investment.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+    <%= form.text_field :entity_id, class: "form-control", hidden: true %>
+    <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+
+  <div class="form-group">
+    <%= form.label :portfolio_company_id, "Portfolio Company" %>
+    <%= form.select :portfolio_company_id, portfolio_investment.entity.investors.portfolio_companies.map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control"  %>
+
+    <small class="text-muted">
+      Create <%= link_to "New Portfolio Company", 
+        new_investor_path("investor[entity_id]": portfolio_investment.entity_id, "investor[category]": "Portfolio Company",
+            "back_to": new_portfolio_investment_path("portfolio_investment[fund_id]": portfolio_investment.fund_id,
+            "portfolio_investment[entity_id]": portfolio_investment.entity_id)) %>
+    </small>
+
+  </div>
+
+  <div class="form-group">
+    <%= form.label :investment_date %>
+    <%= form.date_field :investment_date, class: "form-control"  %>
+  </div>
+
+  <div class="form-group" data-controller="currencyformat">
+    <%= form.label :amount %> <span class="formatted_currency"></span>
+    <%= form.number_field :amount, class: "form-control", step: :any,
+        data: {action: "input->currencyformat#format"} %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :quantity %>
+    <%= form.number_field :quantity, class: "form-control", step: :any  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :investment_type %>
+    <%= form.text_field :investment_type, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :notes %>
+    <%= form.text_area :notes, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+  </div>
+<% end %>

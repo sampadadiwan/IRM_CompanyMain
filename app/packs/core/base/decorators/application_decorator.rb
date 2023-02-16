@@ -1,5 +1,8 @@
 class ApplicationDecorator < Draper::Decorator
+  delegate_all
+
   delegate :display_boolean, to: :h
+  delegate :money_to_currency, to: :h
 
   def display_date(val)
     h.l(val) if val
@@ -12,6 +15,4 @@ class ApplicationDecorator < Draper::Decorator
   def investor_link
     h.link_to object.investor_name, h.investor_path(id: object.investor_id)
   end
-
-  delegate :money_to_currency, to: :h
 end

@@ -24,6 +24,10 @@ Style/GuardClause:
 Rails/RenderInline:
   Enabled: false
 
+Style/CombinableLoops:
+  Exclude:
+    - 'app/packs/funds/capital_commitments/models/account_entry_allocation_engine.rb'
+
 AllCops:
   # DisabledByDefault: true
   NewCops: enable
@@ -43,7 +47,8 @@ Rails/FilePath:
 Lint/UselessAssignment:
   Exclude:
     - 'app/packs/funds/capital_commitments/services/import_account_entry.rb'
-    
+    - 'app/packs/funds/capital_commitments/models/account_entry_allocation_engine.rb'
+
 Rails/SkipsModelValidations:
   Exclude:
     - 'app/packs/funds/capital_calls/jobs/capital_call_job.rb'
@@ -70,19 +75,16 @@ Naming/MethodName:
     - 'app/packs/startups/investments/models/investment.rb'
     - 'app/packs/core/investors/models/investor.rb'
 Naming/AccessorMethodName:
+  Enabled: false    
+
+Lint/RescueException:
   Exclude:
-    - 'app/datatables/note_datatable.rb'
-    - 'app/packs/funds/capital_commitments/datatables/capital_commitment_datatable.rb'
-    - 'app/packs/funds/capital_calls/datatables/capital_call_datatable.rb'
-    - 'app/packs/funds/capital_remittances/datatables/capital_remittance_datatable.rb'
-    - 'app/packs/funds/capital_distribution_payments/datatables/capital_distribution_payment_datatable.rb'
-    - 'app/packs/core/investor_kycs/datatables/investor_kyc_datatable.rb'
-    - 'app/packs/core/investors/datatables/investor_datatable.rb'
-    
+    - 'app/packs/funds/capital_commitments/jobs/account_entry_allocation_job.rb'
 
 Lint/DuplicateBranch:
   Exclude:
     - 'app/packs/startups/investments/helpers/investments_helper.rb'
+    
 Lint/MissingSuper:
   Exclude:
     - 'app/services/*'
@@ -102,6 +104,8 @@ Security/Eval:
     - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb'
     - 'app/packs/secondaries/offers/models/offer.rb'
     - 'app/packs/secondaries/interests/models/interest.rb'
+    - 'app/packs/funds/capital_commitments/models/account_entry_allocation_engine.rb'
+
 # Metrics Cops
 Metrics/CyclomaticComplexity:
   Max: 10
@@ -126,7 +130,7 @@ Metrics/ModuleLength:
 
 Metrics/ParameterLists:
   Description: 'Pass no more than four parameters into a method.'
-  Max: 5
+  Max: 6
   Enabled: true
 
 Metrics/MethodLength:
@@ -139,7 +143,7 @@ Metrics/MethodLength:
   
 Metrics/BlockLength:
   CountComments: false
-  Max: 15
+  Max: 25
   Exclude:
     - 'app/packs/secondaries/secondary_sales/views/secondary_sales/download.xlsx.axlsx'
     - 'app/packs/misc/import_uploads/jobs/import_upload_job.rb'

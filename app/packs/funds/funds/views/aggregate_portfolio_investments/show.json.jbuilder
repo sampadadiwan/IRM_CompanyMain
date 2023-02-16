@@ -1,0 +1,1 @@
+json.partial! "aggregate_portfolio_investments/aggregate_portfolio_investment", aggregate_portfolio_investment: @aggregate_portfolio_investment

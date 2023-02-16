@@ -7,7 +7,7 @@
 <tr id="<%= dom_id access_right %>">
     <td>        
         <% if access_right.user_id.present? %>
-            <%= link_to access_right.user.full_name, user_path(access_right.user) %>
+            <%= access_right.user.full_name %>
         <% elsif access_right.access_to_investor_id.present? %>
             <%= link_to access_right.investor.investor_name, investor_path(access_right.investor, tab: "investors-tab") %>
         <% else %>
@@ -23,11 +23,11 @@
         <%= "Permissions: #{access_right.permissions}" if access_right.permissions.present?  %>
     </td>  
     <% end %>
-    <% if access_right.owner %>
+    
     <td>
-        <%= link_to access_right.owner.name, access_right.owner %>
+        <%= link_to access_right.owner.name, access_right.owner if access_right.owner %>
     </td>  
-    <% end %>
+    
     <td class="hideMobP">
         <%= button_to "Delete", access_right, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton" %>    
     </td>

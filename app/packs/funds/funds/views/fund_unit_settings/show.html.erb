@@ -1,0 +1,50 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @fund_unit_setting.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Fund
+    </td>
+    <td>
+      <%= link_to @fund_unit_setting.fund %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Class / Series / Unit Type
+    </td>
+    <td>
+      <%= @fund_unit_setting.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Management Fee
+    </td>
+    <td>
+      <%= @fund_unit_setting.management_fee %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Setup Fee
+    </td>
+    <td>
+      <%= @fund_unit_setting.setup_fee %>
+    </td>
+  </tr>
+
+  <%= display_custom_fields(@fund_unit_setting) if current_user %>
+
+</table>
+<div>
+  <%= link_to "Edit", edit_fund_unit_setting_path(@fund_unit_setting), {class: "btn btn-outline-primary"} %> 
+  <%= button_to "Delete", @fund_unit_setting, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+</div>

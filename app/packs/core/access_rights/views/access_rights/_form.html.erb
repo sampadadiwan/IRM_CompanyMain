@@ -23,7 +23,19 @@
           <%= form.text_field :access_type, class: "form-control", hidden: true  %>
         </div>
 
-        <div data-controller="select" data-select-url-value="<%= users_path %>"
+        <%
+          select_investor_users = false
+          select_employees = false
+
+          if ["Document"].include? access_right.owner_type
+            users_url = investor_accesses_path
+            select_investor_users = true
+          elsif ["Fund", "SecondarySale", "DealInvestor"].include? access_right.owner_type
+            users_url = users_path
+            select_employees = true
+          end
+        %>
+        <div data-controller="select" data-select-url-value="<%= users_url %>"
            data-select-param-value="email_or_cat">
 
           <div class="form-group">
@@ -32,9 +44,17 @@
               name: "email_or_cat", "data-action": "change->access#onChange change->select#change" %>
           </div>
 
-          <% if ["Fund", "SecondarySale", "DealInvestor"].include? access_right.owner_type %>
+          <% if select_investor_users %>
             <div class="form-group" id="employee_form_group">
-              <%= form.label :user_id, "Select User" %>
+              <%= form.label :user_id, "Select Specific User" %>
+              <%= form.select :user_id, [], {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" }  %>
+            </div>
+          <% end %>
+
+
+          <% if select_employees %>
+            <div class="form-group" id="employee_form_group">
+              <%= form.label :user_id, "Select Employee" %>
               <%= form.select :user_id, [], {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" }  %>
             </div>
           <% end %>

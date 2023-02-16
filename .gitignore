@@ -7,6 +7,7 @@
 # Ignore bundler config.
 /.bundle
 
+
 # Ignore the default SQLite database.
 /db/*.sqlite3
 /db/*.sqlite3-*
@@ -67,3 +68,4 @@ token.yaml
 
 config/google-config.json
 cuc.out
+*:Zone.Identifier

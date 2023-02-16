@@ -8,14 +8,14 @@ module SaleChildrenScopes
     }
 
     scope :for_advisor, lambda { |user|
-      joins(secondary_sale: :access_rights).merge(AccessRight.access_filter)
+      joins(secondary_sale: :access_rights).merge(AccessRight.access_filter(user))
                                            .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
                                            .where("investors.investor_entity_id=?", user.entity_id)
     }
 
     scope :for_investor, lambda { |user|
       joins(secondary_sale: :access_rights)
-        .merge(AccessRight.access_filter)
+        .merge(AccessRight.access_filter(user))
         .joins(entity: :investors)
         # Ensure that the user is an investor and tis investor has been given access rights
         .where("investors.investor_entity_id=?", user.entity_id)

@@ -1,0 +1,28 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Fund Unit Settings</h1>
+  <%= link_to "New Fund Unit Setting", new_fund_unit_setting_path("fund_unit_setting[fund_id]": params[:fund_id], "fund_unit_setting[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  if params[:fund_id].present? %>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="fund_unit_settings" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Class / Series
+        </th>
+        <th>
+          Management Fee
+        </th>
+        <th>
+          Setup Fee
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% fund_unit_settings.each do |fund_unit_setting| %>
+        <%= render fund_unit_setting %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

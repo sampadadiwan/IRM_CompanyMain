@@ -1,10 +1,15 @@
+<% map = model.map_custom_fields %>
 <% model.properties&.each do |k,v| %>
     <tr class="<%= collapsed ? 'collapse multi-collapse' : '' %>">
         <td>
             <%= k.to_s.humanize.titleize %>
         </td>
         <td>
-            <%= v %>
+            <% if map[k] && map[k].renderer %>
+                <%= render map[k].renderer, value: v, model: model %>
+            <% else %>
+                <%= v %>
+            <% end %>
         </td>
     </tr>
 <% end %>

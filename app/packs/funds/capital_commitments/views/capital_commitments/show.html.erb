@@ -104,6 +104,26 @@
       <%= money_to_currency @capital_commitment.collected_amount, params %>
     </td>
   </tr>
+
+  <% if @capital_commitment.entity.enable_account_entries %>
+    <tr>
+      <td>
+        Total Allocated Expense
+      </td>
+      <td>
+        <%= money_to_currency @capital_commitment.total_allocated_expense, params %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Total Allocated Income
+      </td>
+      <td>
+        <%= money_to_currency @capital_commitment.total_allocated_income, params %>
+      </td>
+    </tr>
+  <% end %>
   
   
   <%= display_custom_fields(@capital_commitment, collapsed: true) if current_user %>
@@ -148,20 +168,41 @@
     <%= button_to "Delete" , @capital_commitment, method: :delete, class: "btn btn-outline-danger" ,
             form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
 
-    <%= link_to "LP Account Statement" , report_capital_commitment_path(@capital_commitment, report: "lp_statement"), {class: "btn btn-outline-primary" } %>
                 
   <% end %>
-  <%= button_to "Generate Documents", 
+
+  <div class="btn-group">
+    <div class="dropdown">
+      <button class="btn btn-outline-success dropdown-toggle" type="button" 
+              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Actions
+      </button>
+      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+        <%= link_to "LP Account Statement" , report_capital_commitment_path(@capital_commitment, report: "lp_statement"), {class: "dropdown-item" } %>
+    
+        <%= button_to "Generate Documents", 
         generate_documentation_capital_commitment_path(@capital_commitment), 
-        method: :patch, class: "btn btn-outline-success" , 
+        method: :patch, class: "dropdown-item" , 
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
         msg: "Generate Documents for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"} if policy(@capital_commitment).generate_documentation? %>
 
-  <%= button_to "Generate Esign Link", 
+
+        <%= link_to "Generate SOA", 
+        generate_soa_form_capital_commitment_path(@capital_commitment), 
+        class: "dropdown-item" if policy(@capital_commitment).generate_soa? %>
+
+        <%= button_to "Generate Esign Link", 
         generate_esign_link_capital_commitment_path(@capital_commitment), 
-        method: :patch, class: "btn btn-outline-success" , 
+        method: :patch, class: "dropdown-item" , 
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
         msg: "Generate esign link for this capital commitment. This will trigger the eSign process. Proceed?"} if policy(@capital_commitment).generate_esign_link? %>
+        
+      </div>
+    </div>
+  </div>
 
+  
+  
 </div>
 <%= render "capital_commitments/details", capital_commitment: @capital_commitment %>

@@ -27,6 +27,16 @@
             <%= fund.unit_types %>
           </td>
         </tr>
+
+        <tr>
+          <td>
+            Unit Premiums
+          </td>
+          <td>
+            <%= money_to_currency fund.total_units_premium, params %>
+          </td>
+        </tr>
+
       <% end %>
 
       <tr>

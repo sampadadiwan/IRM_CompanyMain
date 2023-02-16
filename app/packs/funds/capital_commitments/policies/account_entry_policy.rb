@@ -34,8 +34,11 @@ class AccountEntryPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) ||
-      permissioned_advisor?(:update)
+    !record.generated &&
+      (
+        permissioned_employee?(:update) ||
+        permissioned_advisor?(:update)
+      )
   end
 
   def edit?

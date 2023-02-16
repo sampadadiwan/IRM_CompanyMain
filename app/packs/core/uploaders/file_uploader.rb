@@ -14,39 +14,15 @@ class FileUploader < Shrine
     prefix = derivative || "original"
 
     trailing = "#{table.titleize}/#{id}/#{prefix}-#{super}"
-    owner_path = record.respond_to?(:owner) && record.owner ? "#{record.owner_type.pluralize.titleize}/#{record.owner_id}/#{trailing}" : nil
 
-    get_path(entity, record, owner_path, trailing)
+    get_path(entity, record, trailing)
   end
 
   private
 
-  def get_path(entity, record, owner_path, trailing)
-    if owner_path
-      if %w[SecondarySale Deal OptionPool Holding Approval InvestmentOpportunity Fund Investor Entity].include? record.owner_type
-        "#{entity}/#{owner_path}"
-      elsif %w[ExpressionOfInterest].include? record.owner_type
-        # Put it inside the IO folder
-        "#{entity}/InvestmentOpportunity/#{record.owner.investment_opportunity_id}/#{owner_path}"
-      elsif %w[Offer Interest].include? record.owner_type
-        # Put it inside the SecondarySale folder
-        "#{entity}/SecondarySale/#{record.owner.secondary_sale_id}/#{owner_path}"
-      elsif %w[DealInvestor DealActivity].include? record.owner_type
-        # Put it inside the Deal folder
-        "#{entity}/Deal/#{record.owner.deal_id}/#{owner_path}"
-      elsif ["Valuation"].include? record.owner_type
-        # Put it inside the Deal folder
-        "#{entity}/Valuation/#{owner_path}"
-      elsif ["InvestorKyc"].include? record.owner_type
-        # Put it inside the Deal folder
-        "#{entity}/Investor/#{record.owner.investor_id}/#{owner_path}"
-      elsif ["Excercise"].include? record.owner_type
-        # Put it inside the Deal folder
-        "#{entity}/OptionPool/#{record.owner.option_pool_id}/#{owner_path}"
-      elsif %w[CapitalCall CapitalCommitment CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment].include? record.owner_type
-        # Put it inside the Fund folder
-        "#{entity}/Funds/#{record.owner.fund.name}/#{owner_path}"
-      end
+  def get_path(entity, record, trailing)
+    if record.respond_to?(:owner) && record.owner.respond_to?(:folder_path)
+      "#{entity}#{record.owner.folder_path}/#{trailing}"
     else
       "#{entity}/#{trailing}"
     end

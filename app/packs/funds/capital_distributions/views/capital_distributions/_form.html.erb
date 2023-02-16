@@ -42,14 +42,22 @@
     </div>
 
     <% if capital_distribution.fund.unit_types.present? %>
-      <% capital_distribution.fund.unit_types.split(",").each do |unit_type| %>
+    <div data-controller="call-copy">
+      <% capital_distribution.fund.unit_types.split(",").each_with_index do |unit_type, index| %>
         <div class="form-group">
           <% unit_type = unit_type.strip %>
           <%= form.label :unit_type, "#{unit_type} Unit Price" %>
-          <%= form.number_field :unit_type, step: :any, class: "form-control", 
+          <%= form.number_field :unit_type, step: :any, class: "form-control price", 
               name: "capital_distribution[unit_prices][#{unit_type}]", value: capital_distribution.unit_prices[unit_type] %>
+
+          <% if index == 0 %>
+            <div class="form-group col-md-3">
+              <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
+            </div>
+          <% end %>
         </div>  
       <% end %>  
+    </div>
     <% end %>
 
     <div class="form-group">

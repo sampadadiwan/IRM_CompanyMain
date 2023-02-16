@@ -11,7 +11,7 @@ class CapitalDistributionsController < ApplicationController
   def show; end
 
   def redeem_units
-    FundUnitsJob.perform_later(@capital_distribution.id, "CapitalDistribution", "Redemption for payout", current_user.id)
+    FundUnitsJob.perform_later(@capital_distribution.id, "CapitalDistribution", @capital_distribution.title, current_user.id)
     redirect_to capital_distribution_path(@capital_distribution), notice: "Redemption process started, please check back in a few mins."
   end
 
@@ -85,6 +85,9 @@ class CapitalDistributionsController < ApplicationController
   def set_capital_distribution
     @capital_distribution = CapitalDistribution.find(params[:id])
     authorize @capital_distribution
+    @bread_crumbs = { Funds: funds_path,
+                      "#{@capital_distribution.fund.name}": fund_path(@capital_distribution.fund),
+                      "#{@capital_distribution}": nil }
   end
 
   # Only allow a list of trusted parameters through.

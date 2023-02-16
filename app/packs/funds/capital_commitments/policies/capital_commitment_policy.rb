@@ -42,6 +42,14 @@ class CapitalCommitmentPolicy < FundBasePolicy
     update? && !record.esign_completed && record.investor_kyc&.verified
   end
 
+  def generate_soa_form?
+    generate_soa?
+  end
+
+  def generate_soa?
+    update? && record.investor_kyc&.verified
+  end
+
   def generate_esign_link?
     update? &&
       record.signatory_ids(:adhaar).present? &&

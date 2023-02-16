@@ -1,6 +1,7 @@
 class InvestorKyc < ApplicationRecord
   # Make all models searchable
   update_index('investor_kyc') { self }
+  include WithCustomField
   include Trackable
   include WithFolder
 
@@ -16,8 +17,6 @@ class InvestorKyc < ApplicationRecord
   belongs_to :verified_by, class_name: "User", optional: true
 
   # Customize form
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
   serialize :pan_verification_response, Hash
   serialize :bank_verification_response, Hash
 

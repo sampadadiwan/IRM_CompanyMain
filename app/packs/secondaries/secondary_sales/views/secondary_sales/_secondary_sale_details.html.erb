@@ -57,7 +57,7 @@
                 owner_type: "SecondarySale", 
                 entity_id: secondary_sale.entity_id) %>
                 
-            <%= render "/access_rights/index", access_rights: AccessRight.for_secondary_sale(secondary_sale).includes(:investor, :owner), access_right: access_right %>
+            <%= render "/access_rights/index", access_rights: secondary_sale.access_rights.includes(:investor, :owner), access_right: access_right %>
           </div>
         <% end %>
       </div>

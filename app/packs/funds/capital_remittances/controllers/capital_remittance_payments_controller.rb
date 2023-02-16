@@ -65,6 +65,11 @@ class CapitalRemittancePaymentsController < ApplicationController
   def set_capital_remittance_payment
     @capital_remittance_payment = CapitalRemittancePayment.find(params[:id])
     authorize(@capital_remittance_payment)
+    @bread_crumbs = { Funds: funds_path,
+                      "#{@capital_remittance_payment.fund.name}": fund_path(@capital_remittance_payment.fund),
+                      'Capital Call': capital_call_path(id: @capital_remittance_payment.capital_remittance.capital_call_id),
+                      "#{@capital_remittance_payment.capital_remittance}": capital_remittance_path(@capital_remittance_payment.capital_remittance),
+                      "#{@capital_remittance_payment}": nil }
   end
 
   # Only allow a list of trusted parameters through.

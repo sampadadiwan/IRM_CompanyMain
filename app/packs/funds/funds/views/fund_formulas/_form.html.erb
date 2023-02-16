@@ -1,0 +1,63 @@
+
+<%= form_with(model: fund_formula) do |form| %>
+  <% if fund_formula.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(fund_formula.errors.count, "error") %> prohibited this fund_formula from being saved:</h2>
+
+      <ul>
+        <% fund_formula.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+    <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+
+  <div class="form-group">
+    <%= form.label :name %>
+    <%= form.text_field :name, class: "form-control", maxlength: 50  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :sequence %>
+    <%= form.number_field :sequence, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :rule_type %>
+    <%= form.select :rule_type, ["AllocateAccountEntry", "AllocatePortfolio", "GenerateAccountEntry", "CumulateAccountEntry", "GenerateCustomField", "Percentage"], {}, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :entry_type %>
+    <%= form.text_field :entry_type, class: "form-control", maxlength: 50  %>
+    <small class="text-muted">Only for GenerateAccountEntry & CumulateAccountEntry, type of account entry to generate/cumulate</small>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :description %>
+    <%= form.text_area :description, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    
+    <div class="alert alert-info">
+      <small>Please ensure proper spacing between formula tokens</small>
+    </div>
+
+    <%= form.label :formula %>
+    <%= form.text_area :formula, class: "form-control"  %>
+    
+  </div>
+
+  <div class="form-group">
+      <%= form.label :enabled %>
+      <%= form.check_box :enabled, class: "form-control form-checkbox"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+  </div>
+<% end %>

@@ -1,0 +1,4 @@
+<% if value.present? %>
+    <% money_val = Money.new(value.to_d * 100, model.currency) %>
+    <%= money_to_currency(money_val, params) %>
+<% end %>

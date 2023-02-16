@@ -1,0 +1,17 @@
+<tr id="<%= dom_id aggregate_portfolio_investment %>">
+  <td>
+    <%= link_to aggregate_portfolio_investment.portfolio_company.investor_name, aggregate_portfolio_investment.portfolio_company %>
+  </td>
+  <td>
+    <%= aggregate_portfolio_investment.quantity %>
+  </td>
+  <td>
+    <%= money_to_currency aggregate_portfolio_investment.fmv, params %>
+  </td>
+  <td>
+    <%= money_to_currency aggregate_portfolio_investment.avg_cost, params %>
+  </td>
+  <td>
+    <%= link_to "Show", aggregate_portfolio_investment , {class: "btn btn-outline-primary"}%>
+  </td>
+</tr>

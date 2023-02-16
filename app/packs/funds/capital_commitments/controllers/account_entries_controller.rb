@@ -3,11 +3,21 @@ class AccountEntriesController < ApplicationController
 
   # GET /account_entries or /account_entries.json
   def index
-    @account_entries = policy_scope(AccountEntry)
+    @account_entries = policy_scope(AccountEntry).includes(:capital_commitment, :fund)
     @account_entries = @account_entries.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id]
     @account_entries = @account_entries.where(investor_id: params[:investor_id]) if params[:investor_id]
     @account_entries = @account_entries.where(fund_id: params[:fund_id]) if params[:fund_id]
+    @account_entries = @account_entries.where(capital_commitment_id: nil) if params[:fund_accounts_only].present?
+
     @account_entries = @account_entries.where(entry_type: params[:entry_type]) if params[:entry_type]
+
+    @account_entries = @account_entries.page(params[:page]) if params[:all].blank?
+
+    respond_to do |format|
+      format.html
+      format.xlsx
+      format.json { render json: AccountEntryDatatable.new(params, account_entries: @account_entries) }
+    end
   end
 
   # GET /account_entries/1 or /account_entries/1.json
@@ -16,11 +26,10 @@ class AccountEntriesController < ApplicationController
   # GET /account_entries/new
   def new
     @account_entry = AccountEntry.new(account_entry_params)
-    @account_entry.entity_id = @account_entry.capital_commitment.entity_id
+    @account_entry.entity_id = @account_entry.fund.entity_id
     authorize @account_entry
-    @account_entry.fund_id = @account_entry.capital_commitment.fund_id
-    @account_entry.investor_id = @account_entry.capital_commitment.investor_id
-    @account_entry.folio_id = @account_entry.capital_commitment.folio_id
+    @account_entry.investor_id = @account_entry.capital_commitment&.investor_id
+    @account_entry.folio_id = @account_entry.capital_commitment&.folio_id
     @account_entry.reporting_date = Time.zone.today
     setup_custom_fields(@account_entry)
   end
@@ -79,6 +88,6 @@ class AccountEntriesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def account_entry_params
-    params.require(:account_entry).permit(:capital_commitment_id, :entity_id, :fund_id, :investor_id, :folio_id, :reporting_date, :entry_type, :name, :amount, :notes)
+    params.require(:account_entry).permit(:capital_commitment_id, :entity_id, :fund_id, :investor_id, :folio_id, :reporting_date, :entry_type, :name, :amount, :notes, :period, :form_type_id)
   end
 end

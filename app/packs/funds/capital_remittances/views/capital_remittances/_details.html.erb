@@ -6,7 +6,7 @@
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
-    <% if capital_remittance.capital_commitment.unit_type.present? %>
+    <% if capital_remittance.entity.enable_units %>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-units-tab"
             data-action="click->tabdetails#loadData">Units</a>
     <% end %>

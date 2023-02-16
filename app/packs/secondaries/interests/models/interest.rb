@@ -2,6 +2,7 @@ class Interest < ApplicationRecord
   include Trackable
   include WithFolder
   include SaleChildrenScopes
+  include WithCustomField
 
   belongs_to :user
   belongs_to :final_agreement_user, class_name: "User", optional: true
@@ -17,10 +18,6 @@ class Interest < ApplicationRecord
   include FileUploader::Attachment(:signature)
 
   has_rich_text :details
-
-  # Customize form
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
 
   validates :quantity, comparison: { less_than_or_equal_to: :display_quantity }
   validates :price, comparison: { less_than_or_equal_to: :max_price }, if: -> { secondary_sale.price_type == 'Price Range' }

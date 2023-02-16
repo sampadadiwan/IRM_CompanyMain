@@ -103,6 +103,8 @@
                     <%= render "/layouts/accept_terms" if (current_user && !current_user.accept_terms) %>
 
                     <span id="alert"></span>
+                    <%= render "/layouts/breadcrumbs" %>
+                    
                     <%= yield %>
                 </div>
                 <!-- /.container-fluid -->

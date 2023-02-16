@@ -11,7 +11,7 @@ module FundScopes
       if %w[CapitalCall CapitalDistribution].include?(name)
         # These dont have a direct investor reln, so go through entity
         joins(fund: :access_rights)
-          .merge(AccessRight.access_filter)
+          .merge(AccessRight.access_filter(user))
           .joins(entity: :investors)
           # Ensure that the user is an investor and this investor
           .where("investors.investor_entity_id=?", user.entity_id)
@@ -21,7 +21,7 @@ module FundScopes
       elsif %w[CapitalCommitment CapitalDistributionPayment CapitalRemittance CapitalRemittancePayment FundUnit].include?(name)
         # These have a direct investor reln
         joins(:investor, fund: :access_rights)
-          .merge(AccessRight.access_filter)
+          .merge(AccessRight.access_filter(user))
           # Ensure that the user is an investor and this investor
           .where("investors.investor_entity_id=?", user.entity_id)
           # Ensure this user has investor access
@@ -32,7 +32,7 @@ module FundScopes
 
     scope :for_advisor, lambda { |user|
       # Ensure the access rghts for Document
-      joins(fund: :access_rights).merge(AccessRight.access_filter)
+      joins(fund: :access_rights).merge(AccessRight.access_filter(user))
                                  .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
                                  .where("investors.investor_entity_id=?", user.entity_id)
       #  .includes(fund: :access_rights)

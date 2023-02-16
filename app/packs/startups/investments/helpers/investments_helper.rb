@@ -4,6 +4,7 @@ module InvestmentsHelper
   INDIA_FORMAT = /(\d+?)(?=(\d\d)+(\d)(?!\d))/
 
   def custom_format_number(number, params = {}, ignore_units = false)
+    cookies ||= nil
     raw_units = params[:units].presence || (cookies && cookies[:currency_units])
 
     if raw_units.present? && !ignore_units
@@ -28,6 +29,7 @@ module InvestmentsHelper
     money = money.clone
 
     units = ""
+    cookies ||= nil
     raw_units = params[:units].presence || (cookies && cookies[:currency_units])
 
     if raw_units.present? && !ignore_units

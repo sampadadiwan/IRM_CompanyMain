@@ -22,7 +22,7 @@ class CapitalCallsController < ApplicationController
   end
 
   def allocate_units
-    FundUnitsJob.perform_later(@capital_call.id, "CapitalCall", "Allocation for remittance", current_user.id)
+    FundUnitsJob.perform_later(@capital_call.id, "CapitalCall", @capital_call.name, current_user.id)
     redirect_to capital_call_path(@capital_call), notice: "Allocation process started, please check back in a few mins."
   end
 
@@ -106,10 +106,12 @@ class CapitalCallsController < ApplicationController
   def set_capital_call
     @capital_call = CapitalCall.find(params[:id])
     authorize @capital_call
+    @bread_crumbs = { Funds: funds_path, "#{@capital_call.fund.name}": fund_path(@capital_call.fund),
+                      "#{@capital_call}": nil }
   end
 
   # Only allow a list of trusted parameters through.
   def capital_call_params
-    params.require(:capital_call).permit(:entity_id, :fund_id, :name, :percentage_called, :due_date, :call_date, :notes, unit_prices: {}, properties: {})
+    params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :due_date, :call_date, :notes, unit_prices: {}, properties: {})
   end
 end

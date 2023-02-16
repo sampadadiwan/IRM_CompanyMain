@@ -12,7 +12,7 @@
     click_on("New Fund")
     fill_in('fund_name', with: @fund.name)
     fill_in('fund_currency', with: @fund.currency)
-    fill_in('fund_unit_types', with: @fund.unit_types)
+    fill_in('fund_unit_types', with: @fund.unit_types) if @fund.entity.enable_units
     # fill_in('fund_details', with: @fund.details)
     find('trix-editor').click.set(@fund.details)
     click_on("Save")
@@ -89,6 +89,7 @@
   
   Then('I should see the fund details on the details page') do
     expect(page).to have_content(@fund.name)
+    expect(page).to have_content(@fund.unit_types)
     expect(page).to have_content(strip_tags(@fund.details))
   end
   
@@ -120,19 +121,37 @@
   end
 
   When('I add a capital commitment {string} for investor {string}') do |amount, investor_name|
+    @new_capital_commitment = CapitalCommitment.new(investor_name: investor_name, committed_amount_cents: (amount.to_d * 100), fund: @fund)
 
     visit(fund_url(@fund))
     click_on("Commitments")
     click_on("New Capital Commitment")
-    select(investor_name, from: "capital_commitment_investor_id")
-    fill_in('capital_commitment_committed_amount', with: amount)
+    select(@new_capital_commitment.investor_name, from: "capital_commitment_investor_id")
+    fill_in('capital_commitment_committed_amount', with: @new_capital_commitment.committed_amount)
     fill_in('capital_commitment_folio_id', with: rand(10**4))
 
-    unit_types = @fund.unit_types.split(",").map{|x| x.strip}
-    select(unit_types[rand(unit_types.length)], from: 'capital_commitment_unit_type')
+    if @fund.entity.enable_units
+      unit_types = @fund.unit_types.split(",").map{|x| x.strip}
+      @new_capital_commitment.unit_type = unit_types[rand(unit_types.length)]
+      select(@new_capital_commitment.unit_type, from: 'capital_commitment_unit_type')
+    end
+
     click_on "Save"
 
     sleep(2)
+  end
+
+  Then('I should see the capital commitment details') do
+    @capital_commitment = CapitalCommitment.last
+    @capital_commitment.investor_name.should == @new_capital_commitment.investor_name
+    @capital_commitment.unit_type.should == @new_capital_commitment.unit_type
+    @capital_commitment.committed_amount_cents.should == @new_capital_commitment.committed_amount_cents
+
+    expect(page).to have_content(@capital_commitment.investor_name)
+    expect(page).to have_content(@capital_commitment.entity.name)
+    expect(page).to have_content(money_to_currency @capital_commitment.committed_amount, {})
+    expect(page).to have_content(@capital_commitment.fund.name)
+    expect(page).to have_content(@capital_commitment.unit_type) if @fund.entity.enable_units  
   end
   
   Then('the fund total committed amount must be {string}') do |amount|
@@ -172,16 +191,26 @@
   When('I create a new capital call {string}') do |args|
     @capital_call = FactoryBot.build(:capital_call, fund: @fund)
     key_values(@capital_call, args)
+
+    puts @capital_call.to_json
     
     visit(fund_url(@fund))
 
-    click_on "Capital Calls"
+    click_on "Calls"
     click_on "New Capital Call"
 
     fill_in('capital_call_name', with: @capital_call.name)
     fill_in('capital_call_percentage_called', with: @capital_call.percentage_called)
     fill_in('capital_call_due_date', with: @capital_call.due_date)
     
+    if @fund.entity.enable_units
+      @fund.unit_types.split(",").each do |unit_type|
+        unit_type = unit_type.strip
+        fill_in("#{unit_type}_price", with: @capital_call.unit_prices[unit_type]["price"])
+        fill_in("#{unit_type}_premium", with: @capital_call.unit_prices[unit_type]["premium"])
+      end
+    end
+
     click_on "Save"
     sleep(2)
 
@@ -440,7 +469,7 @@ When('I create a new capital distribution {string}') do |args|
   
   visit(fund_url(@fund))
 
-  click_on "Capital Distributions"
+  click_on "Distributions"
   click_on "New Capital Distribution"
 
   fill_in('capital_distribution_title', with: @capital_distribution.title)
@@ -541,8 +570,10 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   sleep(1)
   click_on("Save")
-  sleep(1)
+  sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(2)
+  
 end
 
 Then('There should be {string} capital commitments created') do |count|
@@ -707,7 +738,7 @@ Then('I should be able to see my capital commitments') do
 end
 
 Then('I should be able to see my capital remittances') do
-  click_on("Capital Calls")
+  click_on("Calls")
   CapitalRemittance.all.each do |cc|
     puts "checking capital remittance for #{cc.investor.investor_name} against #{@investor.investor_name} "
     if cc.investor_id == @investor.id 
@@ -732,7 +763,7 @@ Given('there is a capital distribution {string}') do |args|
 end
 
 Then('I should be able to see my capital distributions') do
-  click_on("Capital Distributions")
+  click_on("Distributions")
   CapitalDistributionPayment.all.each do |cc|
     puts "checking capital distrbution payment for #{cc.investor.investor_name} against #{@investor.investor_name} "
     if cc.investor_id == @investor.id 
@@ -860,7 +891,7 @@ Then('there should be correct units for the calls payment for each investor') do
       ap fu
       fu.unit_type.should == cc.unit_type
       fu.owner_type.should == "CapitalRemittance"
-      fu.price.should == fu.owner.capital_call.unit_prices[fu.unit_type].to_d
+      fu.price.should == fu.owner.capital_call.unit_prices[fu.unit_type]["price"].to_d
       fu.quantity.should == fu.owner.collected_amount_cents / (fu.price * 100)
     end
   end

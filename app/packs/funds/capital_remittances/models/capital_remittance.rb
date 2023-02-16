@@ -4,6 +4,7 @@ class CapitalRemittance < ApplicationRecord
   include Trackable
   include FundScopes
   include WithFolder
+  include WithCustomField
 
   update_index('capital_remittance') { self }
 
@@ -14,9 +15,6 @@ class CapitalRemittance < ApplicationRecord
   has_one :investor_kyc, through: :capital_commitment
   belongs_to :investor
   has_many :capital_remittance_payments
-
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
 
   scope :paid, -> { where(status: "Paid") }
   scope :pending, -> { where(status: "Pending") }

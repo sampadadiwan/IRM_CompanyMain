@@ -79,7 +79,7 @@ class Investment < ApplicationRecord
     Investment
       # Ensure the access rights for Investment
       .joins(:investor)
-      # .merge(AccessRight.access_filter)
+      # .merge(AccessRight.access_filter(current_user))
       # Ensure that the user is an investor and tis investor has been given access rights
       .where("investors.investor_entity_id=?", current_user.entity_id)
       # Ensure this user has investor access
@@ -91,7 +91,7 @@ class Investment < ApplicationRecord
     investments = entity.investments
                         # Ensure the access rights for Investment
                         .joins(entity: %i[investors access_rights])
-                        .merge(AccessRight.access_filter)
+                        .merge(AccessRight.access_filter(current_user))
                         # Ensure that the user is an investor and tis investor has been given access rights
                         .where("entities.id=?", entity.id)
                         .where("investors.investor_entity_id=?", current_user.entity_id)
@@ -105,7 +105,7 @@ class Investment < ApplicationRecord
     investor = Investor.for(current_user, entity).first
 
     # Get the investor access for this user and this entity
-    access_right = AccessRight.investments.investor_access(investor).last
+    access_right = AccessRight.investments.investor_access(investor, current_user).last
     return Investment.none if access_right.nil?
 
     Rails.logger.debug access_right.to_json

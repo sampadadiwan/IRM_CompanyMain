@@ -1,7 +1,7 @@
 class DefaultUnitAllocationEngine
   def allocate_call(capital_call, reason)
     if capital_call.fund.unit_types.present?
-      capital_call.capital_remittances.each do |cr|
+      capital_call.capital_remittances.verified.each do |cr|
         allocate_remittance(cr, reason)
       end
     end
@@ -9,7 +9,7 @@ class DefaultUnitAllocationEngine
 
   def allocate_distribution(capital_distribution, reason)
     if capital_distribution.fund.unit_types.present?
-      capital_distribution.capital_distribution_payments.each do |cdp|
+      capital_distribution.capital_distribution_payments.completed.each do |cdp|
         allocate_distribution_payment(cdp, reason)
       end
     end
@@ -24,7 +24,8 @@ class DefaultUnitAllocationEngine
         capital_call.unit_prices.present? && capital_commitment.unit_type.present?
       # Get the price for the unit type for this commitment from the call
       unit_type = capital_commitment.unit_type
-      price_cents = capital_call.unit_prices[unit_type].to_d * 100
+      price_cents = capital_call.unit_prices[unit_type]["price"].to_d * 100
+      premium_cents = capital_call.unit_prices[unit_type]["premium"].to_d * 100
       # Calculate the quantity to be allocated
       quantity = price_cents.positive? ? (capital_remittance.collected_amount_cents / price_cents) : 0
 
@@ -33,6 +34,8 @@ class DefaultUnitAllocationEngine
       # Update quantity
       fund_unit.quantity = quantity
       fund_unit.price = (price_cents / 100)
+      fund_unit.premium = (premium_cents / 100)
+      fund_unit.total_premium_cents = (premium_cents * quantity)
       fund_unit.reason = reason
 
       fund_unit.save

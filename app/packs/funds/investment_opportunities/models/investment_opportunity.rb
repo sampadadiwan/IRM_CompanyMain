@@ -1,5 +1,6 @@
 class InvestmentOpportunity < ApplicationRecord
   include WithFolder
+  include WithCustomField
 
   update_index('investment_opportunity') { self }
 
@@ -8,10 +9,6 @@ class InvestmentOpportunity < ApplicationRecord
   has_many :access_rights, as: :owner, dependent: :destroy
 
   has_many :expression_of_interests, dependent: :destroy
-
-  # Customize form
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
 
   has_rich_text :details
 
@@ -53,7 +50,7 @@ class InvestmentOpportunity < ApplicationRecord
 
   scope :for_investor, lambda { |user|
     joins(:access_rights)
-      .merge(AccessRight.access_filter)
+      .merge(AccessRight.access_filter(user))
       .joins(entity: :investors)
       .where("investors.investor_entity_id=?", user.entity_id)
       # Ensure this user has investor access

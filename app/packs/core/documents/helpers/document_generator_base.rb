@@ -11,23 +11,27 @@ module DocumentGeneratorBase
     out_file_path
   end
 
-  def create_working_dir(offer)
-    @working_dir = working_dir_path(offer)
+  def create_working_dir(model)
+    @working_dir = working_dir_path(model)
     FileUtils.mkdir_p @working_dir
+  end
+
+  def working_dir_path(model)
+    "tmp/#{model.class.name}/#{rand(1_000_000)}/#{model.id}"
   end
 
   def cleanup
     FileUtils.rm_rf(@working_dir)
   end
 
-  def add_image(report, field_name, image)
+  def add_image(context, field_name, image)
     if image
       file = image.download
       stored_file_path = "#{@working_dir}/#{File.basename(file.path)}"
 
       FileUtils.mv(file.path, stored_file_path)
 
-      report.add_image field_name.to_sym, stored_file_path
+      context.store "image:#{field_name}", stored_file_path
       stored_file_path
     end
   end
@@ -81,5 +85,9 @@ module DocumentGeneratorBase
         combined_pdf << CombinePDF.load(file.path)
       end
     end
+  end
+
+  def send_notification(message, user_id, level = "success")
+    UserAlert.new(user_id:, message:, level:).broadcast
   end
 end

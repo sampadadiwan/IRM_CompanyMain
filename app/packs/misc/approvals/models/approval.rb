@@ -1,5 +1,6 @@
 class Approval < ApplicationRecord
   include WithFolder
+  include WithCustomField
 
   belongs_to :entity
   has_rich_text :agreements_reference
@@ -7,9 +8,6 @@ class Approval < ApplicationRecord
   has_many :approval_responses, dependent: :destroy
   has_many :approval_investors, through: :approval_responses, class_name: "Investor", source: :investor
   has_many :pending_investors, -> { where('approval_responses.status': "Pending") }, through: :approval_responses, class_name: "Investor", source: :investor
-
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
 
   validates :title, :due_date, presence: true
 
@@ -25,7 +23,7 @@ class Approval < ApplicationRecord
     Approval
       # Ensure the access rghts for Document
       .joins(:access_rights)
-      .merge(AccessRight.access_filter)
+      .merge(AccessRight.access_filter(user))
       .joins(entity: :investors)
       # Ensure that the user is an investor and tis investor has been given access rights
       .where("investors.investor_entity_id=?", user.entity_id)

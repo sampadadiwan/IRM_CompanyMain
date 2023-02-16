@@ -32,58 +32,59 @@ class EoiDocGenerator
 
   # io_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
   def generate(expression_of_interest, io_doc_template_path)
-    odt_file_path = get_odt_file(io_doc_template_path)
+    template = Sablon.template(File.expand_path(io_doc_template_path))
 
-    report = ODFReport::Report.new(odt_file_path) do |r|
-      r.add_field :date, Time.zone.today.strftime("%d %B %Y")
+    context = {}
 
-      r.add_field :company_name, expression_of_interest.entity.name
-      r.add_field :investment_opportunity_name, expression_of_interest.investment_opportunity.company_name
-      r.add_field :investment_opportunity_details, expression_of_interest.investment_opportunity.details&.to_plain_text
-      r.add_field :investor_name, expression_of_interest.investor.investor_name
-      r.add_field :amount, money_to_currency(expression_of_interest.amount)
+    context.store  :date, Time.zone.today.strftime("%d %B %Y")
 
-      amount_in_words = expression_of_interest.investment_opportunity.currency == "INR" ? expression_of_interest.amount.to_i.rupees.humanize : expression_of_interest.amount.to_i.to_words.humanize
-      r.add_field :amount_words, amount_in_words
+    context.store  :company_name, expression_of_interest.entity.name
+    context.store  :investment_opportunity_name, expression_of_interest.investment_opportunity.company_name
+    context.store  :investment_opportunity_details, expression_of_interest.investment_opportunity.details&.to_plain_text
+    context.store  :investor_name, expression_of_interest.investor.investor_name
+    context.store  :amount, money_to_currency(expression_of_interest.amount)
 
-      generate_custom_fields(r, expression_of_interest)
+    amount_in_words = expression_of_interest.investment_opportunity.currency == "INR" ? expression_of_interest.amount.to_i.rupees.humanize : expression_of_interest.amount.to_i.to_words.humanize
+    context.store :amount_words, amount_in_words
 
-      investor_kyc = InvestorKyc.where(investor_id: expression_of_interest.investor_id,
-                                       entity_id: expression_of_interest.entity_id).first
+    generate_custom_fields(context, expression_of_interest)
 
-      # Can we have more than one LP signer ?
-      add_image(r, :investor_signature, investor_kyc.signature)
-      generate_kyc_fields(r, investor_kyc)
-    end
+    investor_kyc = InvestorKyc.where(investor_id: expression_of_interest.investor_id,
+                                     entity_id: expression_of_interest.entity_id).first
 
-    report.generate("#{@working_dir}/ExpressionOfInterest-#{expression_of_interest.id}.odt")
-    system("libreoffice --headless --convert-to pdf #{@working_dir}/ExpressionOfInterest-#{expression_of_interest.id}.odt --outdir #{@working_dir}")
+    # Can we have more than one LP signer ?
+    add_image(context, :investor_signature, investor_kyc.signature)
+    generate_kyc_fields(context, investor_kyc)
+
+    template.render_to_file File.expand_path("#{@working_dir}/ExpressionOfInterest-#{expression_of_interest.id}.docx"), context
+
+    system("libreoffice --headless --convert-to pdf #{@working_dir}/ExpressionOfInterest-#{expression_of_interest.id}.docx --outdir #{@working_dir}")
 
     additional_footers = expression_of_interest.documents.where(name: ["#{@io_doc_template_name} Footer" "#{@io_doc_template_name} Signature"])
     additional_headers = expression_of_interest.documents.where(name: ["#{@io_doc_template_name} Header", "#{@io_doc_template_name} Stamp Paper"])
     add_header_footers(expression_of_interest, "#{@working_dir}/ExpressionOfInterest-#{expression_of_interest.id}.pdf", additional_headers, additional_footers)
   end
 
-  def generate_custom_fields(report, expression_of_interest)
+  def generate_custom_fields(context, expression_of_interest)
     expression_of_interest.properties.each do |k, v|
-      report.add_field "eoi_#{k}", v
+      context.store  "eoi_#{k}", v
     end
 
     expression_of_interest.investment_opportunity.properties.each do |k, v|
-      report.add_field "investment_opportunity_#{k}", v
+      context.store  "investment_opportunity_#{k}", v
     end
   end
 
-  def generate_kyc_fields(report, investor_kyc)
+  def generate_kyc_fields(context, investor_kyc)
     if investor_kyc
-      report.add_field :kyc_full_name, investor_kyc.full_name
-      report.add_field :kyc_pan, investor_kyc.PAN
-      report.add_field :kyc_address, investor_kyc.address
-      report.add_field :kyc_bank_account_number, investor_kyc.bank_account_number
-      report.add_field :kyc_ifsc_code, investor_kyc.ifsc_code
+      context.store  :kyc_full_name, investor_kyc.full_name
+      context.store  :kyc_pan, investor_kyc.PAN
+      context.store  :kyc_address, investor_kyc.address
+      context.store  :kyc_bank_account_number, investor_kyc.bank_account_number
+      context.store  :kyc_ifsc_code, investor_kyc.ifsc_code
 
       investor_kyc.properties.each do |k, v|
-        report.add_field "kyc_#{k}", v
+        context.store "kyc_#{k}", v
       end
     end
   end

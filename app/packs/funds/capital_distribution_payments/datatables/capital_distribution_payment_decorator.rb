@@ -1,10 +1,14 @@
 class CapitalDistributionPaymentDecorator < ApplicationDecorator
-  def amount
+  def amount_explain
     h.render partial: "/capital_distribution_payments/amount", locals: { capital_distribution_payment: object }, formats: [:html]
   end
 
   def folio_id
     h.link_to object.folio_id, object.capital_commitment
+  end
+
+  def amount
+    h.money_to_currency object.amount
   end
 
   # Just an example of a complex method you can add to you decorator

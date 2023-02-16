@@ -1,13 +1,10 @@
 class Valuation < ApplicationRecord
   include Trackable
+  include WithCustomField
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true, touch: true
   include FileUploader::Attachment(:report)
-
-  # Customize form
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
 
   monetize :valuation_cents, :per_share_value_cents, :portfolio_inv_cost_cents, :portfolio_fmv_valuation_cents, :management_opex_cost_cents, :collection_last_quarter_cents,
            with_currency: lambda { |s|
@@ -33,5 +30,11 @@ class Valuation < ApplicationRecord
   def update_entity
     entity.per_share_value_cents = per_share_value_cents
     entity.save
+  end
+
+  # Ensure callback to the owner
+  after_commit :update_owner
+  def update_owner
+    owner.valuation_updated(self) if owner.respond_to?(:valuation_updated)
   end
 end

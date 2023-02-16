@@ -2,6 +2,7 @@ class Offer < ApplicationRecord
   include Trackable
   include WithFolder
   include SaleChildrenScopes
+  include WithCustomField
 
   # Make all models searchable
   update_index('offer') { self }
@@ -43,9 +44,6 @@ class Offer < ApplicationRecord
   include FileUploader::Attachment(:spa)
   include FileUploader::Attachment(:pan_card)
 
-  # Customize form
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
   serialize :pan_verification_response, Hash
   serialize :bank_verification_response, Hash
   serialize :docs_uploaded_check, Hash

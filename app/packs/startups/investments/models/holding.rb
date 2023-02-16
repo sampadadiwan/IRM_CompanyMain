@@ -4,6 +4,7 @@ class Holding < ApplicationRecord
   include HoldingCounters
   include HoldingScopes
   include OptionCalculations
+  include WithCustomField
 
   OPTION_TYPES = ["Regular", "Phantom", "Equity SAR"].freeze
 
@@ -29,10 +30,6 @@ class Holding < ApplicationRecord
   has_rich_text :note
 
   include FileUploader::Attachment(:grant_letter)
-
-  # Customize form
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
 
   monetize :price_cents, :value_cents, with_currency: ->(i) { i.entity.currency }
 

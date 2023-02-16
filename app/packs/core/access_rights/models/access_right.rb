@@ -32,29 +32,25 @@ class AccessRight < ApplicationRecord
 
   scope :for, ->(owner) { where(owner_id: owner.id, owner_type: owner.class.name) }
   scope :for_access_type, ->(type) { where("access_rights.access_type=?", type) }
+
   scope :for_investor, lambda { |investor|
                          where("(access_rights.entity_id=?
-                                              and access_rights.access_to_investor_id is NULL
-                                              and access_rights.access_to_category=?)
-                                              OR (access_rights.access_to_investor_id=?)",
+                                        and access_rights.access_to_investor_id is NULL
+                                        and access_rights.access_to_category=?)
+                                        OR (access_rights.access_to_investor_id=?)",
                                investor.entity_id, investor.category, investor.id)
                        }
 
-  scope :for_secondary_sale, lambda { |secondary_sale|
-                               where("(access_rights.entity_id=?
-                                             and access_rights.owner_id=?
-                                             and access_rights.owner_type=?)",
-                                     secondary_sale.entity_id, secondary_sale.id, "SecondarySale")
-                             }
-
-  scope :investor_access, lambda { |investor|
+  scope :investor_access, lambda { |investor, user|
                             where(" (access_rights.entity_id=?) AND
-                                    (access_rights.access_to_investor_id=? OR access_rights.access_to_category=?)",
-                                  investor.entity_id, investor.id, investor.category)
+                                    ( access_rights.access_to_investor_id=? OR
+                                    access_rights.access_to_category=? OR
+                                    access_rights.user_id=? )",
+                                  investor.entity_id, investor.id, investor.category, user.id)
                           }
 
-  scope :access_filter, lambda {
-    where("investors.category=access_rights.access_to_category OR access_rights.access_to_investor_id=investors.id")
+  scope :access_filter, lambda { |user|
+    where("investors.category=access_rights.access_to_category OR access_rights.access_to_investor_id=investors.id OR access_rights.user_id=?", user.id)
   }
 
   validate :any_present?
@@ -80,6 +76,8 @@ class AccessRight < ApplicationRecord
       AccessRight::TYPES - ["All Stakeholder of Specific Category"] + ["Employee"]
     when "Fund", "SecondarySale"
       AccessRight::TYPES + ["Employee"]
+    when "Document"
+      AccessRight::TYPES + ["Specific User"]
     else
       AccessRight::TYPES
     end

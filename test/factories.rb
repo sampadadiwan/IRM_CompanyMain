@@ -1,4 +1,39 @@
 FactoryBot.define do
+  factory :aggregate_portfolio_investment do
+    entity { nil }
+    fund { nil }
+    portfolio_company { nil }
+    quantity { "9.99" }
+    fmv { "9.99" }
+    avg_cost { "9.99" }
+  end
+
+  factory :fund_formula do
+    fund { nil }
+    name { "MyString" }
+    description { "MyText" }
+    formula { "MyText" }
+  end
+
+  factory :fund_unit_setting do
+    entity { nil }
+    fund { nil }
+    name { "MyString" }
+    management_fee { "9.99" }
+    setup_fee { "9.99" }
+  end
+
+  factory :portfolio_investment do
+    fund { Fund.all.sample }
+    entity { fund.entity }
+    portfolio_company { entity.investors.portfolio_companies.sample }
+    investment_date { Time.zone.today - rand(36).months }
+    amount_cents { 10000000 * rand(1..20) }
+    quantity { rand(2) > 0 ? 100 * rand(1..10) : -100 * rand(1..10) }
+    investment_type { "Equity" }
+    notes { Faker::Company.buzzword }
+  end
+
   factory :account_entry do
     capital_commitment { nil }
     entity { nil }
@@ -169,7 +204,7 @@ FactoryBot.define do
     percentage_called { rand(1..4) * 10 }
     notes { Faker::Company.catch_phrase }
     unit_prices {
-      fund.unit_types.split(",").map{|ut| [ut.strip, 100 * (rand(2) + 1)]}.to_h if fund.unit_types
+      fund.unit_types.split(",").map{|ut| [ut.strip, "price" => 100 * (rand(2) + 1), "premium" => 10 * (rand(2) + 1) ]}.to_h if fund.unit_types
     }
   end
 
@@ -486,6 +521,8 @@ FactoryBot.define do
     enable_secondary_sale {true}
     enable_captable {true}
     enable_funds {true}
+    enable_account_entries {true}
+    enable_units {true}
     enable_inv_opportunities {true}
     currency { ENV["CURRENCY"].split(",")[rand(3)] }
     units { ENV["CURRENCY_UNITS"].split(",")[rand(3)] }

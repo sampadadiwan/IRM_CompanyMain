@@ -23,6 +23,18 @@ class FundPolicy < FundBasePolicy
     update?
   end
 
+  def allocate?
+    update?
+  end
+
+  def copy_formulas?
+    update?
+  end
+
+  def allocate_form?
+    update?
+  end
+
   def show?
     user.enable_funds &&
       (

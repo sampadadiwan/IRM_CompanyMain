@@ -2,6 +2,7 @@ class Deal < ApplicationRecord
   include Trackable
   include WithFolder
   include WithDataRoom
+  include WithCustomField
   # include ActivityTrackable
   # include Impressionable
 
@@ -23,10 +24,6 @@ class Deal < ApplicationRecord
   has_many :deal_activities, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
-
-  # Customize form
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
 
   validates :name, :amount_cents, :status, :currency, presence: true
 
@@ -51,14 +48,14 @@ class Deal < ApplicationRecord
 
   scope :for_advisor, lambda { |user|
     # Ensure the access rghts for Document
-    includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter)
+    includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter(user))
                             .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
                             .where("investors.investor_entity_id=?", user.entity_id)
   }
 
   scope :for_investor, lambda { |user|
     joins(:access_rights)
-      .merge(AccessRight.access_filter)
+      .merge(AccessRight.access_filter(user))
       .joins(:investors)
       # Ensure that the user is an investor and tis investor has been given access rights
       .where("investors.investor_entity_id=?", user.entity_id)

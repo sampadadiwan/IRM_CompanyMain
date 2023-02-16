@@ -1,5 +1,5 @@
 class ImportCapitalCommittment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Committed Amount", "Notes", "Folio No"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Committed Amount", "Notes", "Folio No", "Unit Type"].freeze
   attr_accessor :commitments
 
   def standard_headers
@@ -40,12 +40,13 @@ class ImportCapitalCommittment < ImportUtil
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
     folio_id = user_data["Folio No"].presence
+    unit_type = user_data["Unit Type"].presence
 
     if fund && investor
       # Make the capital_commitment
       capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
                                                  fund:, investor:, investor_name: investor.investor_name,
-                                                 notes: user_data["Notes"])
+                                                 unit_type:, notes: user_data["Notes"])
 
       capital_commitment.committed_amount = user_data["Committed Amount"].to_d
       capital_commitment.investor_kyc = fund.entity.investor_kycs.where(investor_id: investor.id).last

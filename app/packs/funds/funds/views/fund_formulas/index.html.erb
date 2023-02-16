@@ -1,0 +1,44 @@
+<%= render "/layouts/alerts" %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Fund Formulas</h1>
+
+  <% if params[:fund_id] %>
+    <span>
+      <%= link_to "New Fund Formula", new_fund_formula_path("fund_formula[fund_id]": params[:fund_id], "fund_formula[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}   %>
+
+      <%= link_to "Run All", allocate_form_fund_path(id: params[:fund_id]), 
+                      class: "btn btn-outline-success"  %> 
+    </span>
+  <% end %>
+
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="fund_formulas" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Sequence
+        </th>
+        <th>
+          Name
+        </th>
+        <th>
+          Type
+        </th>
+        <th>
+          Formula
+        </th>
+        <th>
+          Enabled
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @fund_formulas.each do |fund_formula| %>
+        <%= render fund_formula %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

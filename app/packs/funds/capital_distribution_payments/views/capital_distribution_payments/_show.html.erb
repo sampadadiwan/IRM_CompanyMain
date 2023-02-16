@@ -50,6 +50,18 @@
         <%= money_to_currency capital_distribution_payment.amount, params %>
       </td>
     </tr>
+
+    <% if capital_distribution_payment.entity.enable_units %>
+    <tr>
+      <td>
+        Units Redeemed
+      </td>
+      <td>
+        <%= capital_distribution_payment.units_quantity %>
+      </td>
+    </tr>
+    <% end %>
+
     <tr>
       <td>
         Payment Date

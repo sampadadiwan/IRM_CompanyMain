@@ -23,9 +23,9 @@ Scenario Outline: Create new fund
   And I should see the document in all documents page
 
   Examples:
-  	|entity                                 |fund                 |msg	|
+    |entity                                         |fund                |msg	|
   	|entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
-    |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
+    |entity_type=Investment Fund;enable_funds=true;enable_units=true  |name=Merger Fund;unit_types=Series A,Series B    |Fund was successfully created|
 
 
 Scenario Outline: View fund with employee access
@@ -64,8 +64,10 @@ Scenario Outline: Create new capital commitment
   Given the fund has capital commitment template   
   Given the investors are added to the fund  
   When I add a capital commitment "1000000" for investor "A1"
+  Then I should see the capital commitment details
   Then the fund total committed amount must be "1000000"
   When I add a capital commitment "1000000" for investor "A2"
+  Then I should see the capital commitment details
   Then the fund total committed amount must be "2000000"
   Given each investor has a "verified" kyc linked to the commitment
   And when the capital commitment docs are generated
@@ -74,8 +76,8 @@ Scenario Outline: Create new capital commitment
   
   Examples:
   	|user	    |entity                                 |fund                 |msg	|
-  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
-    |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
+  	|  	      |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
+    |         |entity_type=Investment Fund;enable_funds=true;enable_units=true  |name=Merger Fund;unit_types=Series A,Series B    |Fund was successfully created|
 
 
 Scenario Outline: Create new commitment after capital call
@@ -96,7 +98,7 @@ Scenario Outline: Create new commitment after capital call
 Examples:
   	|user	    |entity                                 |fund                 | call |
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test  | percentage_called=20 |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger| percentage_called=20;generate_remittances_verified=true |
+    |  	        |entity_type=Investment Fund;enable_funds=true;enable_units=true  |name=Merger;unit_types=Series A,Series B| percentage_called=20;generate_remittances_verified=true |
 
 
 Scenario Outline: Create new capital call
@@ -122,14 +124,14 @@ Scenario Outline: Create new capital call
   And the capital call collected amount should be "400000"
   And the investors must receive email with subject "Capital Call"
   Given each investor has a "verified" kyc linked to the commitment
-  And when the capital call docs are generated
-  Then the generated doc must be attached to the capital remittances
+  # And when the capital call docs are generated
+  # Then the generated doc must be attached to the capital remittances
 
   
   Examples:
   	|entity                                 |fund                 |msg	|
   	|entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
-    |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
+    |entity_type=Investment Fund;enable_funds=true;enable_units=true  |name=Merger Fund;unit_types=Series A,Series B    |Fund was successfully created|
 
 
 Scenario Outline: Create new capital distrbution

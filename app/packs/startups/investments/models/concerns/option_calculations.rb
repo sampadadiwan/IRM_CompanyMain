@@ -3,6 +3,7 @@ module OptionCalculations
 
   def vesting_schedule
     schedule = []
+    schedule_struct = Struct.new(:date, :percentage, :quantity)
     vqty = 0
     count = option_pool.vesting_schedules.count
     option_pool.vesting_schedules.each_with_index do |pvs, idx|
@@ -14,7 +15,7 @@ module OptionCalculations
               (orig_grant_quantity * pvs.vesting_percent / 100.0).floor(0)
             end
       vqty += qty
-      schedule << [grant_date + pvs.months_from_grant.month, pvs.vesting_percent, qty]
+      schedule << schedule_struct.new(grant_date + pvs.months_from_grant.month, pvs.vesting_percent, qty)
     end
     schedule
   end

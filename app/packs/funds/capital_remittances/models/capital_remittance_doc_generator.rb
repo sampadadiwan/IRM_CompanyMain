@@ -31,75 +31,75 @@ class CapitalRemittanceDocGenerator
   end
 
   def generate(capital_remittance, fund_doc_template_path)
-    odt_file_path = get_odt_file(fund_doc_template_path)
+    template = Sablon.template(File.expand_path(fund_doc_template_path))
 
-    report = ODFReport::Report.new(odt_file_path) do |r|
-      r.add_field :date, Time.zone.today.strftime("%d %B %Y")
+    context = {}
+    context.store :date, Time.zone.today.strftime("%d %B %Y")
 
-      r.add_field :company_name, capital_remittance.entity.name
-      r.add_field :fund_name, capital_remittance.fund.name
-      r.add_field :folio_id, capital_remittance.folio_id
-      r.add_field :fund_details, capital_remittance.fund.details
+    context.store :company_name, capital_remittance.entity.name
+    context.store :fund_name, capital_remittance.fund.name
+    context.store :folio_id, capital_remittance.folio_id
+    context.store :fund_details, capital_remittance.fund.details
 
-      r.add_field :investor_name, capital_remittance.investor_name
-      r.add_field :percentage_called, capital_remittance.capital_call.percentage_called
-      r.add_field :call_amount, money_to_currency(capital_remittance.call_amount)
-      r.add_field :due_date, capital_remittance.capital_call.due_date&.strftime("%d %B %Y")
-      r.add_field :call_date, capital_remittance.capital_call.call_date&.strftime("%d %B %Y")
+    context.store :investor_name, capital_remittance.investor_name
+    context.store :percentage_called, capital_remittance.capital_call.percentage_called
+    context.store :call_amount, money_to_currency(capital_remittance.call_amount)
+    context.store :due_date, capital_remittance.capital_call.due_date&.strftime("%d %B %Y")
+    context.store :call_date, capital_remittance.capital_call.call_date&.strftime("%d %B %Y")
 
-      add_amounts(capital_remittance, r)
+    add_amounts(capital_remittance, context)
 
-      generate_custom_fields(r, capital_remittance)
+    generate_custom_fields(context, capital_remittance)
 
-      generate_kyc_fields(r, capital_remittance.capital_commitment.investor_kyc) if capital_remittance.capital_commitment.investor_kyc
-    end
+    generate_kyc_fields(context, capital_remittance.capital_commitment.investor_kyc) if capital_remittance.capital_commitment.investor_kyc
 
-    report.generate("#{@working_dir}/CapitalRemittance-#{capital_remittance.id}.odt")
-    system("libreoffice --headless --convert-to pdf #{@working_dir}/CapitalRemittance-#{capital_remittance.id}.odt --outdir #{@working_dir}")
+    template.render_to_file File.expand_path("#{@working_dir}/CapitalRemittance-#{capital_remittance.id}.docx"), context
+
+    system("libreoffice --headless --convert-to pdf #{@working_dir}/CapitalRemittance-#{capital_remittance.id}.docx --outdir #{@working_dir}")
   end
 
-  def add_amounts(capital_remittance, report)
+  def add_amounts(capital_remittance, context)
     call_amount_in_words = capital_remittance.fund.currency == "INR" ? capital_remittance.call_amount.to_i.rupees.humanize : capital_remittance.call_amount.to_i.to_words.humanize
 
-    report.add_field :call_amount_words, call_amount_in_words
-    report.add_field :call_amount, money_to_currency(capital_remittance.call_amount)
+    context.store  :call_amount_words, call_amount_in_words
+    context.store  :call_amount, money_to_currency(capital_remittance.call_amount)
 
-    report.add_field :committed_amount, money_to_currency(capital_remittance.capital_commitment.committed_amount)
+    context.store  :committed_amount, money_to_currency(capital_remittance.capital_commitment.committed_amount)
 
     collected_amount_in_words = capital_remittance.fund.currency == "INR" ? capital_remittance.collected_amount.to_i.rupees.humanize : capital_remittance.collected_amount.to_i.to_words.humanize
 
-    report.add_field :collected_amount_words, collected_amount_in_words
-    report.add_field :collected_amount, money_to_currency(capital_remittance.collected_amount)
+    context.store  :collected_amount_words, collected_amount_in_words
+    context.store  :collected_amount, money_to_currency(capital_remittance.collected_amount)
   end
 
-  def generate_custom_fields(report, capital_remittance)
+  def generate_custom_fields(context, capital_remittance)
     capital_remittance.properties.each do |k, v|
-      report.add_field "remittance_#{k}", v
+      context.store  "remittance_#{k}", v
     end
 
     capital_remittance.fund.properties.each do |k, v|
-      report.add_field "fund_#{k}", v
+      context.store  "fund_#{k}", v
     end
 
     capital_remittance.capital_call.properties.each do |k, v|
-      report.add_field "call_#{k}", v
+      context.store  "call_#{k}", v
     end
 
     capital_remittance.capital_commitment.properties.each do |k, v|
-      report.add_field "commitment_#{k}", v
+      context.store  "commitment_#{k}", v
     end
   end
 
-  def generate_kyc_fields(report, investor_kyc)
+  def generate_kyc_fields(context, investor_kyc)
     if investor_kyc
-      report.add_field :kyc_full_name, investor_kyc.full_name
-      report.add_field :kyc_pan, investor_kyc.PAN
-      report.add_field :kyc_address, investor_kyc.address
-      report.add_field :kyc_bank_account_number, investor_kyc.bank_account_number
-      report.add_field :kyc_ifsc_code, investor_kyc.ifsc_code
+      context.store  :kyc_full_name, investor_kyc.full_name
+      context.store  :kyc_pan, investor_kyc.PAN
+      context.store  :kyc_address, investor_kyc.address
+      context.store  :kyc_bank_account_number, investor_kyc.bank_account_number
+      context.store  :kyc_ifsc_code, investor_kyc.ifsc_code
 
       investor_kyc.properties.each do |k, v|
-        report.add_field "kyc_#{k}", v
+        context.store "kyc_#{k}", v
       end
     end
   end

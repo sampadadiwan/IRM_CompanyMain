@@ -1,4 +1,5 @@
 class Investor < ApplicationRecord
+  include WithCustomField
   include Trackable
   include WithFolder
   update_index('investor') { self }
@@ -15,12 +16,14 @@ class Investor < ApplicationRecord
   has_many :approved_users, through: :approved_investor_accesses, source: :user
 
   has_many :tasks, as: :owner, dependent: :destroy
+  has_many :valuations, as: :owner, dependent: :destroy
 
   has_many :access_rights, foreign_key: :access_to_investor_id, dependent: :destroy
   has_many :deal_investors, dependent: :destroy
   has_many :deals, through: :deal_investors
   has_many :holdings, dependent: :destroy
   has_many :notes, dependent: :destroy
+  has_many :portfolio_investments, dependent: :destroy
 
   has_many :investor_kycs, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
@@ -31,10 +34,6 @@ class Investor < ApplicationRecord
   has_many :investments, dependent: :destroy
   has_many :aggregate_investments, dependent: :destroy
   has_many :investor_notice_entries, dependent: :destroy
-
-  # Customize form
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
 
   delegate :name, to: :entity, prefix: :investee
   validates :category, presence: true
@@ -48,6 +47,7 @@ class Investor < ApplicationRecord
               }
 
   scope :advisors, -> { where(category: "Advisor") }
+  scope :portfolio_companies, -> { where(category: "Portfolio Company") }
   scope :not_advisors, -> { where.not(category: "Advisor") }
 
   scope :for_vc, ->(vc_user) { where(investor_entity_id: vc_user.entity_id) }
@@ -73,7 +73,9 @@ class Investor < ApplicationRecord
   INVESTOR_CATEGORIES = ENV["INVESTOR_CATEGORIES"].split(",") << "Prospective"
 
   def self.INVESTOR_CATEGORIES(entity = nil)
-    Investment.INVESTOR_CATEGORIES(entity) + %w[Prospective Advisor]
+    cats = Investment.INVESTOR_CATEGORIES(entity) + %w[Prospective Advisor]
+    cats += ["Portfolio Company"] if entity && entity.entity_type == "Investment Fund"
+    cats
   end
 
   after_create_commit -> { InvestorAddedJob.perform_later(id) unless imported }
@@ -122,5 +124,11 @@ class Investor < ApplicationRecord
 
   def folder_path
     "/Investors/#{investor_name.delete('/')}"
+  end
+
+  # callback but only for category = Portfolio Company
+  def valuation_updated(_valuation)
+    # Ensure the portfolio_investments calculate the fmv
+    entity.portfolio_investments.where(portfolio_company_id: id).each(&:save)
   end
 end

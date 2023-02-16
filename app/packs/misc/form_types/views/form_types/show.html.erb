@@ -23,8 +23,9 @@
           <%= f.name %>
         </td>
         <td>
-          <%= f.field_type %>  : 
-          <%= f.required ? "Required " : "Not Required " %>  <br>
+          <%= f.field_type %> : 
+          Required <%= display_boolean f.required %>  ,
+          Read Only <%= display_boolean f.read_only %>  <br>
           Metadata: <%= f.meta_data %><br>
           Help Text: <%= f.help_text %><br>
         </td>

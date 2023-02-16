@@ -19,37 +19,50 @@
     <%= form.date_field :valuation_date, class: "form-control"  %>
   </div>
 
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :portfolio_fmv_valuation, "Portfolio FMV Valuation" %> <span class="formatted_currency"></span>
-    <%= form.number_field :portfolio_fmv_valuation, class: "form-control", 
-        data: {action: "input->currencyformat#format"}  %>
-  </div>
+  <% if valuation.owner_type == "Fund" %>
 
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :portfolio_inv_cost, "Portfolio Investment At Cost" %> <span class="formatted_currency"></span>
-    <%= form.number_field :portfolio_inv_cost, class: "form-control", 
-        data: {action: "input->currencyformat#format"}  %>
-  </div>
+    <div class="form-group" data-controller="currencyformat">
+      <%= form.label :portfolio_fmv_valuation, "Portfolio FMV Valuation" %> <span class="formatted_currency"></span>
+      <%= form.number_field :portfolio_fmv_valuation, class: "form-control",  step: :any, 
+          data: {action: "input->currencyformat#format"}  %>
+    </div>
 
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :management_opex_cost, "Management And Opex Expenses" %> <span class="formatted_currency"></span>
-    <%= form.number_field :management_opex_cost, class: "form-control", 
-        data: {action: "input->currencyformat#format"}  %>
-  </div>
+    <div class="form-group" data-controller="currencyformat">
+      <%= form.label :portfolio_inv_cost, "Portfolio Investment At Cost" %> <span class="formatted_currency"></span>
+      <%= form.number_field :portfolio_inv_cost, class: "form-control",  step: :any,
+          data: {action: "input->currencyformat#format"}  %>
+    </div>
 
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :collection_last_quarter, "Collection Last Quarter" %> <span class="formatted_currency"></span>
-    <%= form.number_field :collection_last_quarter, class: "form-control", 
-        data: {action: "input->currencyformat#format"}  %>
-  </div>
+    <div class="form-group" data-controller="currencyformat">
+      <%= form.label :management_opex_cost, "Management And Opex Expenses" %> <span class="formatted_currency"></span>
+      <%= form.number_field :management_opex_cost, class: "form-control",  step: :any,
+          data: {action: "input->currencyformat#format"}  %>
+    </div>
 
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :per_share_value %> <span class="formatted_currency"></span>
-    <%= form.number_field :per_share_value, class: "form-control",
-        data: {action: "input->currencyformat#format"} %>
-  </div>
+    <div class="form-group" data-controller="currencyformat">
+      <%= form.label :collection_last_quarter, "Collection Last Quarter" %> <span class="formatted_currency"></span>
+      <%= form.number_field :collection_last_quarter, class: "form-control",  step: :any,
+          data: {action: "input->currencyformat#format"}  %>
+    </div>
 
+    
+  <% else %>
+
+    <div class="form-group" data-controller="currencyformat">
+      <%= form.label :valuation, "Valuation" %> <span class="formatted_currency"></span>
+      <%= form.number_field :valuation, class: "form-control",  step: :any, 
+          data: {action: "input->currencyformat#format"}  %>
+    </div>
+
+  <% end %>
   
+  <div class="form-group" data-controller="currencyformat">
+      <%= form.label :per_share_value %> <span class="formatted_currency"></span>
+      <%= form.number_field :per_share_value, class: "form-control",  step: :any,
+          data: {action: "input->currencyformat#format"} %>
+  </div>
+
+
   <div class="form-group">
     
     <%= render "layouts/single_upload", form: form, field_label: "Upload the valuation report", 

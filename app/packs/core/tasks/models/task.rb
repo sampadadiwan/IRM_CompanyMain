@@ -1,5 +1,6 @@
 class Task < ApplicationRecord
   update_index('task') { self }
+  include WithCustomField
 
   belongs_to :entity
   belongs_to :for_entity, class_name: "Entity", optional: true
@@ -9,10 +10,6 @@ class Task < ApplicationRecord
 
   has_many :reminders, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :reminders, allow_destroy: true
-
-  # Customize form
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
 
   scope :completed, -> { where(completed: true) }
   scope :incomplete, -> { where(completed: false) }

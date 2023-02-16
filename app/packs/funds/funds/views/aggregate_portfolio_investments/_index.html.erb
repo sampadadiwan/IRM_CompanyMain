@@ -1,0 +1,36 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Aggregate Portfolio Investments</h1>
+
+  <%= link_to "New Portfolio Investment", 
+      new_portfolio_investment_path("portfolio_investment[entity_id]": current_user.entity_id,
+      "portfolio_investment[fund_id]": params[:fund_id]), 
+      {class: "btn btn-outline-primary"}   %>
+  
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="aggregate_portfolio_investments" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Portfolio Company
+        </th>
+        <th>
+          Quantity
+        </th>
+        <th>
+          Fmv
+        </th>
+        <th>
+          Avg Cost
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% aggregate_portfolio_investments.each do |aggregate_portfolio_investment| %>
+        <%= render aggregate_portfolio_investment %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

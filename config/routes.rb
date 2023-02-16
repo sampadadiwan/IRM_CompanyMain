@@ -1,13 +1,5 @@
 Rails.application.routes.draw do
-  resources :account_entries
-  resources :fund_units
-  resources :fund_ratios
-  resources :capital_remittance_payments
-  resources :esigns
-  resources :signature_workflows
-  resources :investor_notice_entries
-  resources :investor_notices
-  resources :fees
+  resources :aggregate_portfolio_investments
   namespace :admin do
     namespace :paper_trail do
       resources :versions
@@ -46,6 +38,19 @@ Rails.application.routes.draw do
     root to: "investors#index"
   end
 
+  resources :fund_formulas
+  resources :fund_unit_settings
+  resources :portfolio_investments
+  resources :account_entries
+  resources :fund_units
+  resources :fund_ratios
+  resources :capital_remittance_payments
+  resources :esigns
+  resources :signature_workflows
+  resources :investor_notice_entries
+  resources :investor_notices
+  resources :fees
+
   resources :share_transfers
   resources :capital_distribution_payments do
     get 'search', on: :collection
@@ -69,6 +74,8 @@ Rails.application.routes.draw do
 
   resources :capital_commitments do
     patch 'generate_documentation', on: :member
+    patch 'generate_soa', on: :member
+    get 'generate_soa_form', on: :member
     patch 'generate_esign_link', on: :member
     get 'search', on: :collection
     get 'report', on: :member
@@ -79,6 +86,9 @@ Rails.application.routes.draw do
     get   'last', on: :member
     get 'report', on: :member
     get 'generate_calcs', on: :member
+    patch 'allocate', on: :member
+    get 'allocate_form', on: :member
+    get 'copy_formulas', on: :member
   end
 
   resources :investment_snapshots

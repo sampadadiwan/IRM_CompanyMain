@@ -1,0 +1,15 @@
+<%  
+ @bread_crumbs ||= nil
+ if @bread_crumbs 
+%>
+
+    <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <% @bread_crumbs.each do |tag, link| %>
+            <li class="breadcrumb-item"><a href="<%=link%>"><%= tag %></a></li>
+        <% end %>
+    </ol>
+    </nav>
+
+<% end %>

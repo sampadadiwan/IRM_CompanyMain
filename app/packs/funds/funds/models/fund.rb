@@ -1,6 +1,7 @@
 class Fund < ApplicationRecord
   include WithFolder
   include WithDataRoom
+  include WithCustomField
 
   include Trackable
   include ActivityTrackable
@@ -22,14 +23,15 @@ class Fund < ApplicationRecord
   has_many :capital_calls, dependent: :destroy
 
   has_many :account_entries, dependent: :destroy
+  has_many :aggregate_portfolio_investments, dependent: :destroy
+  has_many :portfolio_investments, dependent: :destroy
+  has_many :fund_formulas, dependent: :destroy
+
   has_many :fund_account_entries, ->(_ae) { where(account_entries: { capital_commitment_id: nil }) }, class_name: "AccountEntry", dependent: :destroy
 
   has_many :access_rights, as: :owner, dependent: :destroy
 
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
-
-  monetize :call_amount_cents, :committed_amount_cents, :collected_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.currency }
+  monetize :call_amount_cents, :committed_amount_cents, :collected_amount_cents, :distribution_amount_cents, :total_units_premium_cents, with_currency: ->(i) { i.currency }
 
   validates :name, :currency, presence: true
 
@@ -59,7 +61,7 @@ class Fund < ApplicationRecord
 
   scope :for_advisor, lambda { |user|
     # Ensure the access rghts for Document
-    includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter)
+    includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter(user))
                             .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
                             .where("investors.investor_entity_id=?", user.entity_id)
   }
@@ -67,7 +69,7 @@ class Fund < ApplicationRecord
   scope :for_investor, lambda { |user|
     # Ensure the access rghts for Document
     joins(:access_rights)
-      .merge(AccessRight.access_filter)
+      .merge(AccessRight.access_filter(user))
       .joins(entity: :investors)
       # Ensure that the user is an investor and tis investor has been given access rights
       # .where("entities.id=?", entity.id)
@@ -96,7 +98,7 @@ class Fund < ApplicationRecord
     end
   end
 
-  TEMPLATE_TAGS = ["Commitment Template", "Call Template"].freeze
+  TEMPLATE_TAGS = ["Commitment Template", "Call Template", "SOA Template"].freeze
   def document_tags
     TEMPLATE_TAGS
   end

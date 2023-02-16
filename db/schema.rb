@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
+ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -54,18 +54,26 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
     t.bigint "form_type_id"
     t.string "folio_id", limit: 20
     t.date "reporting_date"
-    t.string "entry_type", limit: 10
-    t.string "name", limit: 50
+    t.string "entry_type", limit: 50
+    t.string "name", limit: 100
     t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
     t.text "notes"
     t.text "properties"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "explanation"
+    t.boolean "cumulative", default: false
+    t.string "period", limit: 25
+    t.string "parent_type"
+    t.bigint "parent_id"
+    t.boolean "generated", default: false
+    t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative"], name: "idx_account_entries_reporting_date_uniq", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
+    t.index ["parent_type", "parent_id"], name: "index_account_entries_on_parent"
   end
 
   create_table "action_text_rich_texts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -187,6 +195,25 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
     t.index ["entity_id"], name: "index_aggregate_investments_on_entity_id"
     t.index ["funding_round_id"], name: "index_aggregate_investments_on_funding_round_id"
     t.index ["investor_id"], name: "index_aggregate_investments_on_investor_id"
+  end
+
+  create_table "aggregate_portfolio_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "portfolio_company_id", null: false
+    t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "fmv_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "avg_cost_cents", precision: 20, scale: 2, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "portfolio_company_name", limit: 100
+    t.decimal "bought_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "bought_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "sold_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "sold_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
+    t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
+    t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
   end
 
   create_table "approval_responses", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -360,6 +387,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
     t.bigint "document_folder_id"
     t.string "unit_type", limit: 10
     t.decimal "total_fund_units_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "total_allocated_income_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "total_allocated_expense_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
@@ -387,6 +417,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
     t.bigint "capital_commitment_id"
     t.datetime "deleted_at"
     t.string "investor_name"
+    t.decimal "units_quantity", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
     t.index ["deleted_at"], name: "index_capital_distribution_payments_on_deleted_at"
@@ -463,6 +494,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
     t.datetime "deleted_at"
     t.string "investor_name"
     t.bigint "document_folder_id"
+    t.decimal "units_quantity", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"
@@ -669,6 +701,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
     t.boolean "activity_docs_required_for_completion", default: false
     t.boolean "activity_details_required_for_na", default: false
     t.boolean "enable_investors", default: true
+    t.boolean "enable_account_entries", default: false
+    t.boolean "enable_units", default: false
+    t.boolean "enable_fund_portfolios", default: false
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
@@ -818,6 +853,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
     t.boolean "has_attachment", default: false
     t.integer "position"
     t.text "help_text"
+    t.boolean "read_only", default: false
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
   end
 
@@ -827,6 +863,22 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
     t.datetime "updated_at", null: false
     t.bigint "entity_id", null: false
     t.index ["entity_id"], name: "index_form_types_on_entity_id"
+  end
+
+  create_table "fund_formulas", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "fund_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "name", limit: 50
+    t.text "description"
+    t.text "formula"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "sequence", default: 0
+    t.string "rule_type", limit: 20
+    t.boolean "enabled", default: false
+    t.string "entry_type", limit: 50
+    t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
+    t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
   end
 
   create_table "fund_ratios", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -846,6 +898,22 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
     t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"
   end
 
+  create_table "fund_unit_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.string "name", limit: 15
+    t.decimal "management_fee", precision: 20, scale: 2, default: "0.0"
+    t.decimal "setup_fee", precision: 20, scale: 2, default: "0.0"
+    t.bigint "form_type_id"
+    t.text "properties"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_fund_unit_settings_on_entity_id"
+    t.index ["form_type_id"], name: "index_fund_unit_settings_on_form_type_id"
+    t.index ["fund_id"], name: "index_fund_unit_settings_on_fund_id"
+  end
+
   create_table "fund_units", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "fund_id", null: false
     t.bigint "capital_commitment_id", null: false
@@ -859,6 +927,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
     t.decimal "price", precision: 20, scale: 2, default: "0.0"
     t.string "owner_type"
     t.bigint "owner_id"
+    t.decimal "premium", precision: 20, scale: 2, default: "0.0"
+    t.decimal "total_premium_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_commitment_id"], name: "index_fund_units_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_fund_units_on_entity_id"
     t.index ["fund_id"], name: "index_fund_units_on_fund_id"
@@ -922,6 +992,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
     t.bigint "document_folder_id"
     t.string "unit_types", limit: 50
     t.string "units_allocation_engine", limit: 50
+    t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -1548,6 +1619,31 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
     t.index ["user_id"], name: "index_permissions_on_user_id"
   end
 
+  create_table "portfolio_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "form_type_id"
+    t.bigint "portfolio_company_id", null: false
+    t.string "portfolio_company_name", limit: 100
+    t.date "investment_date"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
+    t.string "investment_type", limit: 10
+    t.text "notes"
+    t.text "properties"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "fmv_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "document_folder_id"
+    t.bigint "aggregate_portfolio_investment_id", null: false
+    t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
+    t.index ["document_folder_id"], name: "index_portfolio_investments_on_document_folder_id"
+    t.index ["entity_id"], name: "index_portfolio_investments_on_entity_id"
+    t.index ["form_type_id"], name: "index_portfolio_investments_on_form_type_id"
+    t.index ["fund_id"], name: "index_portfolio_investments_on_fund_id"
+    t.index ["portfolio_company_id"], name: "index_portfolio_investments_on_portfolio_company_id"
+  end
+
   create_table "reminders", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "owner_type", null: false
@@ -1860,6 +1956,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
   add_foreign_key "aggregate_investments", "entities"
   add_foreign_key "aggregate_investments", "funding_rounds"
   add_foreign_key "aggregate_investments", "investors"
+  add_foreign_key "aggregate_portfolio_investments", "entities"
+  add_foreign_key "aggregate_portfolio_investments", "funds"
+  add_foreign_key "aggregate_portfolio_investments", "investors", column: "portfolio_company_id"
   add_foreign_key "approval_responses", "approvals"
   add_foreign_key "approval_responses", "entities"
   add_foreign_key "approval_responses", "entities", column: "response_entity_id"
@@ -1937,9 +2036,14 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
   add_foreign_key "folders", "entities"
   add_foreign_key "form_custom_fields", "form_types"
   add_foreign_key "form_types", "entities"
+  add_foreign_key "fund_formulas", "entities"
+  add_foreign_key "fund_formulas", "funds"
   add_foreign_key "fund_ratios", "entities"
   add_foreign_key "fund_ratios", "funds"
   add_foreign_key "fund_ratios", "valuations"
+  add_foreign_key "fund_unit_settings", "entities"
+  add_foreign_key "fund_unit_settings", "form_types"
+  add_foreign_key "fund_unit_settings", "funds"
   add_foreign_key "fund_units", "capital_commitments"
   add_foreign_key "fund_units", "entities"
   add_foreign_key "fund_units", "funds"
@@ -2014,6 +2118,11 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_03_113916) do
   add_foreign_key "permissions", "entities"
   add_foreign_key "permissions", "users"
   add_foreign_key "permissions", "users", column: "granted_by_id"
+  add_foreign_key "portfolio_investments", "entities"
+  add_foreign_key "portfolio_investments", "folders", column: "document_folder_id"
+  add_foreign_key "portfolio_investments", "form_types"
+  add_foreign_key "portfolio_investments", "funds"
+  add_foreign_key "portfolio_investments", "investors", column: "portfolio_company_id"
   add_foreign_key "reminders", "entities"
   add_foreign_key "secondary_sales", "entities"
   add_foreign_key "secondary_sales", "folders", column: "document_folder_id"

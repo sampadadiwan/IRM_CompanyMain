@@ -1,0 +1,45 @@
+<%
+  start_date ||= Time.zone.today.beginning_of_quarter
+  end_date ||= Time.zone.today.end_of_quarter
+%>
+
+<%= render "/layouts/alerts" %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Allocate Account Entries For : <%= @fund.name %> </h1>
+</div>
+
+
+<% if params[:fund_formula_id].present? %>
+  <div class="alert alert-info">
+    <% fund_formula = FundFormula.find(params[:fund_formula_id]) %>
+    Run Formula: <%= fund_formula.name %> <br>
+    Formula: <%= fund_formula.formula %>
+  </div>
+<% end %>
+
+<%= form_with(model: @fund, url: allocate_fund_path(@fund), method: :patch) do |form| %>
+  
+  <%= form.text_field :id, class: "form-control", hidden: true  %>
+  <%= form.text_field :formula_id, class: "form-control", hidden: true, value: params[:fund_formula_id], name: "fund_formula_id"  %>
+
+  <div class="form-group">
+    <%= form.label :start_date %>
+    <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :end_date %>
+    <%= form.date_field :end_date, class: "form-control", name: "end_date", value: end_date %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :generate_soa, "Generate SOA" %>
+    <%= form.check_box :generate_soa, class: "form-control form-checkbox", name: "generate_soa", value: true %>
+    <small class="text-muted">Check if the SOA for each LP should be generated post the allocation process</small>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Allocate Now", {class: "btn btn-outline-primary"}%>
+  </div>
+<% end %>

@@ -3,7 +3,7 @@
   
   <tr class="btn-success">
     <td colspan="2">
-      <%= @capital_commitment.investor_name %>
+      <h1><%= @capital_commitment.investor_name.titleize %></h1>
     </td>
   </tr>
 
@@ -45,7 +45,7 @@
 
   <tr class="btn-success">
     <td colspan="2">
-      Summary
+      <h1>Summary</h1>
     </td>
   </tr>
 
@@ -128,6 +128,18 @@
 
         <%= render "/capital_distribution_payments/index", capital_commitment: @capital_commitment,
                 lazy_load_data: false, data_source: capital_distribution_payments_path(capital_commitment_id: @capital_commitment.id, all: true) %>
+    </td>
+  </tr>
+
+  <tr>
+    <td colspan="2" class="bg-primary"></td>
+  </tr>
+
+  
+  <tr>
+    <td colspan="2">
+        <%= render "/account_entries/index", 
+                lazy_load_data: false, data_source: account_entries_path(capital_commitment_id: @capital_commitment.id, all: true, format: :json) %>
     </td>
   </tr>
 

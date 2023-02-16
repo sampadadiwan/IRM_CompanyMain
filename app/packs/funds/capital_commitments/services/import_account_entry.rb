@@ -1,5 +1,5 @@
 class ImportAccountEntry < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Folio No", "Reporting Date", "Entry Type", "Name", "Amount", "Notes"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Folio No", "Reporting Date", "Entry Type", "Name", "Amount", "Notes", "Period"].freeze
   attr_accessor :account_entries
 
   def standard_headers
@@ -50,12 +50,12 @@ class ImportAccountEntry < ImportUtil
   end
 
   def prepare_record(user_data, import_upload, custom_field_headers)
-    folio_id, name, entry_type, reporting_date, investor_name, amount_cents, fund, capital_commitment, investor = get_fields(user_data, import_upload)
+    folio_id, name, entry_type, reporting_date, period, investor_name, amount_cents, fund, capital_commitment, investor = get_fields(user_data, import_upload)
 
     # Note this could be an entry for a commitment or for a fund (i.e no commitment)
-    account_entry = AccountEntry.first_or_initialize(entity_id: import_upload.entity_id, folio_id:,
-                                                     fund:, capital_commitment:, investor:, reporting_date:,
-                                                     entry_type:, name:, amount_cents:)
+    account_entry = AccountEntry.find_or_initialize_by(entity_id: import_upload.entity_id, folio_id:,
+                                                       fund:, capital_commitment:, investor:, reporting_date:,
+                                                       period:, entry_type:, name:, amount_cents:)
 
     if account_entry.new_record? && account_entry.valid?
       account_entry.notes = user_data["Notes"]
@@ -75,18 +75,19 @@ class ImportAccountEntry < ImportUtil
   end
 
   def get_fields(user_data, import_upload)
-    folio_id = user_data["Folio No"].presence
+    folio_id = user_data["Folio No"]&.to_s&.strip
     name = user_data["Name"].presence
     entry_type = user_data["Entry Type"].presence
     reporting_date = user_data["Reporting Date"].presence
-    investor_name = user_data["Investor"].strip
+    investor_name = user_data["Investor"]&.strip
     amount_cents = user_data["Amount"].to_d * 100
+    period = user_data["Period"]&.strip
 
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
-    capital_commitment = fund.capital_commitments.where(investor_name:, folio_id:).first
+    capital_commitment = investor_name.present? ? fund.capital_commitments.where(investor_name:, folio_id:).first : nil
     investor = capital_commitment&.investor
 
-    [folio_id, name, entry_type, reporting_date, investor_name, amount_cents, fund, capital_commitment, investor]
+    [folio_id, name, entry_type, reporting_date, period, investor_name, amount_cents, fund, capital_commitment, investor]
   end
 
   def post_process(import_upload, _context)

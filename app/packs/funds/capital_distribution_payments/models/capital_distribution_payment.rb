@@ -1,4 +1,5 @@
 class CapitalDistributionPayment < ApplicationRecord
+  include WithCustomField
   include Trackable
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
@@ -12,8 +13,6 @@ class CapitalDistributionPayment < ApplicationRecord
   belongs_to :investor
   belongs_to :capital_commitment
   has_one :investor_kyc, through: :capital_commitment
-  belongs_to :form_type, optional: true
-  serialize :properties, Hash
 
   monetize :amount_cents, with_currency: ->(i) { i.fund.currency }
   validates :folio_id, presence: true
@@ -36,6 +35,9 @@ class CapitalDistributionPayment < ApplicationRecord
   counter_culture :capital_commitment,
                   column_name: 'distribution_amount_cents',
                   delta_column: 'amount_cents'
+
+  scope :completed, -> { where(completed: true) }
+  scope :incomplete, -> { where(completed: false) }
 
   before_validation :ensure_commitment
   def ensure_commitment
