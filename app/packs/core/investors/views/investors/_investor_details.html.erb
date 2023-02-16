@@ -10,6 +10,10 @@
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#valuations-tab">
         Valuations
       </a>
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#portfolio-investments-tab"
+         data-action="click->tabdetails#loadData">
+        Portfolio
+      </a>
     <% else %>
 
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">
@@ -75,6 +79,18 @@
             <% params[:owner_id] = investor.id; params[:owner_type]= "Investor" %>
             <%= render "/valuations/index", valuations: Valuation.where(owner: investor) %>
           </div>
+        </div>
+
+        <div id="portfolio-investments-tab" class="tab-pane fade">
+          <div id="portfolio_investments" class="associated_entity">
+            <%= link_to aggregate_portfolio_investments_path(investor_id: investor.id), 
+                                    class: "load_data_link", 
+                                    data: { turbo_frame: 'aggregate_portfolio_investments_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "aggregate_portfolio_investments_list", target: "_top" do %>
+            <% end %>
+          </div>     
         </div>
 
       <% else %>

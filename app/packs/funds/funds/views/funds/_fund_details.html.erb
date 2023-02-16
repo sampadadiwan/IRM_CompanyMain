@@ -26,6 +26,12 @@
             data-action="click->tabdetails#loadData">Calls</a>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-distribution-payments-tab"
             data-action="click->tabdetails#loadData">Distributions</a>
+
+        <% if fund.entity.enable_units %>
+          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-units-tab"
+                data-action="click->tabdetails#loadData">Units</a>
+        <% end %>
+
         <% if fund.show_valuations %>
           <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#valuations-tab"
               data-action="click->tabdetails#loadData">Valuations</a>
@@ -129,18 +135,19 @@
           </div>     
         </div>
 
-
-        <div id="portfolio-investments-tab" class="tab-pane fade">
-          <div id="portfolio_investments" class="associated_entity">
-            <%= link_to aggregate_portfolio_investments_path( fund_id: fund.id), 
-                                    class: "load_data_link", 
-                                    data: { turbo_frame: 'aggregate_portfolio_investments_list' } do %>
-              <span>Loading...</span>
-            <% end %>
-            <%= turbo_frame_tag "aggregate_portfolio_investments_list", target: "_top" do %>
-            <% end %>
-          </div>     
-        </div>
+        <% if fund.entity.enable_fund_portfolios %>
+          <div id="portfolio-investments-tab" class="tab-pane fade">
+            <div id="portfolio_investments" class="associated_entity">
+              <%= link_to aggregate_portfolio_investments_path( fund_id: fund.id), 
+                                      class: "load_data_link", 
+                                      data: { turbo_frame: 'aggregate_portfolio_investments_list' } do %>
+                <span>Loading...</span>
+              <% end %>
+              <%= turbo_frame_tag "aggregate_portfolio_investments_list", target: "_top" do %>
+              <% end %>
+            </div>     
+          </div>
+        <% end %>
 
         <% else %>
 
@@ -180,6 +187,20 @@
             <% end %>
           </div>     
         </div>
+
+        <% if fund.entity.enable_units %>
+        <div id="fund-units-tab" class="tab-pane fade">
+          <div id="fund_units" class="associated_entity">
+            <%= link_to fund_units_path(capital_commitment_id: capital_commitment.id), 
+                                    class: "load_data_link", 
+                                    data: { turbo_frame: 'fund_units_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "fund_units_list", target: "_top" do %>
+            <% end %>
+          </div>     
+        </div>
+        <% end %>
 
         
     </div>
