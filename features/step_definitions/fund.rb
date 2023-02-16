@@ -232,6 +232,7 @@
     @capital_call.capital_remittances.count.should == @fund.investors.count
 
     visit(capital_call_url(@capital_call))
+    sleep(2)
     click_on "Remittances"
 
     @capital_call.capital_remittances.each do |remittance|
@@ -793,6 +794,7 @@ end
 Then('when the capital commitment docs are generated') do
   CapitalCommitment.all.each do |cc|
     visit(capital_commitment_path(cc))
+    click_on("Actions")
     click_on("Generate Documents")
     sleep(1)
     click_on("Proceed")

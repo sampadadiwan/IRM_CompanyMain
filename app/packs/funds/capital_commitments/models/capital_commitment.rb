@@ -23,6 +23,7 @@ class CapitalCommitment < ApplicationRecord
   has_many :account_entries, dependent: :destroy
   # The remitances linked to this commitment
   has_many :capital_remittances, dependent: :destroy
+  has_many :capital_remittance_payments, through: :capital_remittances
   # The distributions linked to this commitment
   has_many :capital_distribution_payments, dependent: :destroy
   # The fund units issued to this commitment

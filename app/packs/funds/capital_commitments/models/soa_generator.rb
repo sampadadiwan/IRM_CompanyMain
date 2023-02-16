@@ -56,18 +56,26 @@ class SoaGenerator
       commitment_amount_words: amount_in_words
     }
 
+    add_account_entries(context, capital_commitment, start_date, end_date)
+
+    generate_custom_fields(context, capital_commitment)
+
+    Rails.logger.debug { "Using context #{context.keys} to render template" }
+    Rails.logger.debug "Rendering template"
+    template.render_to_file File.expand_path("#{@working_dir}/SOA-#{capital_commitment.id}.docx"), context
+
+    system("libreoffice --headless --convert-to pdf #{@working_dir}/SOA-#{capital_commitment.id}.docx --outdir #{@working_dir}")
+  end
+
+  def add_account_entries(context, capital_commitment, start_date, end_date)
     context["cumulative_account_entry"] = {}
     capital_commitment.account_entries.pluck(:entry_type).uniq.each do |entry_type|
       context["cumulative_account_entry"][entry_type.delete(' ').underscore] = capital_commitment.cumulative_account_entry(nil, entry_type, start_date, end_date).decorate
     end
 
-    generate_custom_fields(context, capital_commitment)
-
-    Rails.logger.debug { "Using context #{context} to render template" }
-    Rails.logger.debug "Rendering template"
-    template.render_to_file File.expand_path("#{@working_dir}/SOA-#{capital_commitment.id}.docx"), context
-
-    system("libreoffice --headless --convert-to pdf #{@working_dir}/SOA-#{capital_commitment.id}.docx --outdir #{@working_dir}")
+    capital_commitment.account_entries.pluck(:name).uniq.each do |name|
+      context["cumulative_account_entry"][name.delete(' ').underscore] = capital_commitment.cumulative_account_entry(name, nil, start_date, end_date).decorate
+    end
   end
 
   def generate_custom_fields(context, capital_commitment)

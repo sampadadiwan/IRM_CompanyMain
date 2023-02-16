@@ -640,7 +640,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
     t.string "signature_type", limit: 100
     t.boolean "locked", default: false
     t.boolean "public_visibility", default: false
-    t.string "tag_list", limit: 60
+    t.string "tag_list", limit: 120
     t.boolean "template", default: false
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
@@ -1210,7 +1210,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
     t.text "buyer_docs_list"
     t.text "properties"
     t.bigint "funding_round_id"
-    t.string "tag_list", limit: 60
+    t.string "tag_list", limit: 120
     t.bigint "document_folder_id"
     t.index ["document_folder_id"], name: "index_investment_opportunities_on_document_folder_id"
     t.index ["entity_id"], name: "index_investment_opportunities_on_entity_id"
@@ -1528,27 +1528,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
     t.index ["investor_id"], name: "index_offers_on_investor_id"
     t.index ["secondary_sale_id"], name: "index_offers_on_secondary_sale_id"
     t.index ["user_id"], name: "index_offers_on_user_id"
-  end
-
-  create_table "option_details", charset: "utf8mb3", force: :cascade do |t|
-    t.bigint "option_id", null: false
-    t.integer "excercised_quantity", default: 0
-    t.integer "vested_quantity", default: 0
-    t.boolean "lapsed", default: false
-    t.boolean "fully_vested", default: false
-    t.integer "lapsed_quantity", default: 0
-    t.integer "gross_avail_to_excercise_quantity", default: 0
-    t.integer "unexcercised_cancelled_quantity", default: 0
-    t.integer "net_avail_to_excercise_quantity", default: 0
-    t.integer "gross_unvested_quantity", default: 0
-    t.integer "unvested_cancelled_quantity", default: 0
-    t.integer "net_unvested_quantity", default: 0
-    t.boolean "manual_vesting", default: false
-    t.string "option_type", limit: 30
-    t.boolean "option_dilutes", default: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["option_id"], name: "index_option_details_on_option_id"
   end
 
   create_table "option_pools", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2108,7 +2087,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
   add_foreign_key "offers", "secondary_sales"
   add_foreign_key "offers", "users"
   add_foreign_key "offers", "users", column: "final_agreement_user_id"
-  add_foreign_key "option_details", "holdings", column: "option_id"
   add_foreign_key "option_pools", "entities"
   add_foreign_key "option_pools", "folders", column: "document_folder_id"
   add_foreign_key "option_pools", "form_types"
@@ -2118,6 +2096,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
   add_foreign_key "permissions", "entities"
   add_foreign_key "permissions", "users"
   add_foreign_key "permissions", "users", column: "granted_by_id"
+  add_foreign_key "portfolio_investments", "aggregate_portfolio_investments"
   add_foreign_key "portfolio_investments", "entities"
   add_foreign_key "portfolio_investments", "folders", column: "document_folder_id"
   add_foreign_key "portfolio_investments", "form_types"

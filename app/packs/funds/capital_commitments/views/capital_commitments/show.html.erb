@@ -8,15 +8,16 @@
       <%= @capital_commitment.entity.name %>
     </td>
   </tr>
+
   <tr>
     <td>
-      Onboarding Complete
+      Fund
     </td>
     <td>
-      <%= display_boolean @capital_commitment.onboarding_completed %>
+      <%= link_to @capital_commitment.fund.name, @capital_commitment.fund %>
     </td>
   </tr>
-
+  
   <tr>
     <td>
       Investor
@@ -56,14 +57,6 @@
     </td>
   </tr>
 
-  <tr>
-    <td>
-      Fund
-    </td>
-    <td>
-      <%= link_to @capital_commitment.fund.name, @capital_commitment.fund %>
-    </td>
-  </tr>
   
   <% if @capital_commitment.fund.unit_types.present? %>
   
@@ -104,6 +97,16 @@
       <%= money_to_currency @capital_commitment.collected_amount, params %>
     </td>
   </tr>
+
+  <tr>
+    <td>
+      Onboarding Complete
+    </td>
+    <td>
+      <%= display_boolean @capital_commitment.onboarding_completed %>
+    </td>
+  </tr>
+
 
   <% if @capital_commitment.entity.enable_account_entries %>
     <tr>
