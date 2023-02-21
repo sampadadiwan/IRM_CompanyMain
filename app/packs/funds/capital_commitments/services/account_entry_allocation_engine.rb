@@ -80,8 +80,8 @@ class AccountEntryAllocationEngine
 
       Rails.logger.debug printable
 
-      eval(fund_formula.formula)
-      capital_commitment.save
+      ae = AccountEntry.new(name: fund_formula.name, amount_cents: eval(fund_formula.formula))
+      add_to_computed_fields_cache(capital_commitment, ae)
     end
   end
 
@@ -283,10 +283,6 @@ class AccountEntryAllocationEngine
       cached_commitment_fields["expense_before_start_date"] = capital_commitment.account_entries.total_amount('Expense', end_date: @start_date)
 
       # Portfolio fields
-      cached_commitment_fields["portfolio_fmv"] = capital_commitment.account_entries.total_amount("Portfolio FMV", end_date: @end_date)
-
-      cached_commitment_fields["cost_of_exited_investments"] = capital_commitment.account_entries.total_amount("Cost Of Exited Investments", end_date: @end_date)
-
       cached_commitment_fields["units"] = capital_commitment.fund_units.where(created_at: ..@end_date).sum(:quantity)
 
       @cached_generated_fields[capital_commitment.id] = cached_commitment_fields

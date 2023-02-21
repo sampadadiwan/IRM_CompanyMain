@@ -84,6 +84,11 @@ class AccountEntriesController < ApplicationController
   def set_account_entry
     @account_entry = AccountEntry.find(params[:id])
     authorize @account_entry
+    @bread_crumbs = { Funds: funds_path,
+                      "#{@account_entry.fund.name}": fund_path(@account_entry.fund) }
+    @bread_crumbs[@account_entry.capital_commitment.to_s] = capital_commitment_path(@account_entry.capital_commitment, tab: "account-entries-tab") if @account_entry.capital_commitment
+
+    @bread_crumbs[@account_entry.to_s] = nil
   end
 
   # Only allow a list of trusted parameters through.
