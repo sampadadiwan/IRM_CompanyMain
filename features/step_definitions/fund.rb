@@ -129,7 +129,11 @@
     click_on("New Capital Commitment")
     select(@new_capital_commitment.investor_name, from: "capital_commitment_investor_id")
     fill_in('capital_commitment_committed_amount', with: @new_capital_commitment.committed_amount)
-    fill_in('capital_commitment_fund_close', with: @new_capital_commitment.fund_close)
+    if @fund.capital_commitments.count > 0
+      select(@new_capital_commitment.fund_close, from: "capital_commitment_fund_close")
+    else
+      fill_in('capital_commitment_fund_close', with: @new_capital_commitment.fund_close)
+    end
     fill_in('capital_commitment_folio_id', with: rand(10**4))
 
     if @fund.entity.enable_units
