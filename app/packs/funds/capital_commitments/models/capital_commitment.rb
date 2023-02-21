@@ -28,6 +28,8 @@ class CapitalCommitment < ApplicationRecord
   has_many :capital_distribution_payments, dependent: :destroy
   # The fund units issued to this commitment
   has_many :fund_units, dependent: :destroy
+  # Fund ratios computed per investor
+  has_many :fund_ratios, dependent: :destroy
 
   belongs_to :investor_signatory, class_name: "User", optional: true
 
@@ -41,7 +43,7 @@ class CapitalCommitment < ApplicationRecord
            with_currency: ->(i) { i.fund.currency }
 
   validates :committed_amount_cents, numericality: { greater_than: 0 }
-  validates :folio_id, presence: true
+  validates :folio_id, :fund_close, presence: true
   validates_uniqueness_of :folio_id, scope: :fund_id
 
   delegate :currency, to: :fund
@@ -120,7 +122,7 @@ class CapitalCommitment < ApplicationRecord
     deletable.delete_all
 
     # Find the cum_amount_cents
-    addable = account_entries.where(entry_type:, cumulative: false)
+    addable = account_entries.where(entry_type:, cumulative: false, reporting_date: ..end_date)
     addable = addable.where(name:) if name
     cum_amount_cents = addable.sum(:amount_cents)
 
@@ -131,10 +133,13 @@ class CapitalCommitment < ApplicationRecord
     ae.save!
   end
 
-  def cumulative_account_entry(name, entry_type, start_date, end_date)
-    cae = account_entries.where(reporting_date: start_date.., cumulative: true).where(reporting_date: ..end_date)
+  def cumulative_account_entry(name, entry_type, start_date, end_date, cumulative: true)
+    cae = account_entries.where(cumulative:).order(reporting_date: :asc)
+    cae = cae.where(reporting_date: start_date..) if start_date
+    cae = cae.where(reporting_date: ..end_date) if end_date
     cae = cae.where(name:) if name
     cae = cae.where(entry_type:) if entry_type
-    cae.last || AccountEntry.new(name:, amount_cents: 0)
+
+    cae.last || AccountEntry.new(name:, fund_id:, amount_cents: 0)
   end
 end

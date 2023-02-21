@@ -4,7 +4,7 @@ class InvestorAddedJob < ApplicationJob
   def perform(id)
     Chewy.strategy(:sidekiq) do
       investor = Investor.find(id)
-      investor.entity.investor_notices.where(generate: true).each do |notice|
+      investor.entity.investor_notices.where(owner: nil, generate: true).each do |notice|
         InvestorNoticeJob.perform_now(notice.id)
       end
     end

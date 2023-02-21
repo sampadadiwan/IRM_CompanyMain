@@ -3,5 +3,6 @@ class FundRatio < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
-  belongs_to :valuation
+  belongs_to :capital_commitment, optional: true
+  belongs_to :valuation, optional: true
 end

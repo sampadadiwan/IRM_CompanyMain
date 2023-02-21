@@ -1,5 +1,5 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show edit update destroy timeline last report generate_calcs allocate_form allocate copy_formulas]
+  before_action :set_fund, only: %i[show edit update destroy timeline last report generate_fund_ratios allocate_form allocate copy_formulas]
 
   # GET /funds or /funds.json
   def index
@@ -67,9 +67,14 @@ class FundsController < ApplicationController
     end
   end
 
-  def generate_calcs
-    @fund.generate_calcs(current_user.id)
-    redirect_to fund_path(@fund, tab: "fund-ratios-tab"), notice: "Calculations in progress, please check back in a few mins."
+  def generate_fund_ratios
+    if params[:end_date].present?
+      generate_for_commitments = params[:generate_for_commitments] == "1"
+      @fund.generate_fund_ratios(current_user.id, Date.parse(params[:end_date]), generate_for_commitments:)
+      redirect_to fund_path(@fund, tab: "fund-ratios-tab"), notice: "Calculations in progress, please check back in a few mins."
+    else
+      render "generate_fund_ratios"
+    end
   end
 
   # DELETE /funds/1 or /funds/1.json
@@ -97,6 +102,7 @@ class FundsController < ApplicationController
       start_date = Date.parse(params[:start_date])
       end_date = Date.parse(params[:end_date])
       generate_soa = params[:generate_soa] == "1"
+      fund_ratios = params[:fund_ratios] == "1"
       user_id = current_user.id
     rescue StandardError
       Rails.logger.debug "allocate: Dates not sent properly"
@@ -106,7 +112,7 @@ class FundsController < ApplicationController
 
     if start_date.present? && end_date.present?
       AccountEntryAllocationJob.perform_later(@fund.id, start_date, end_date,
-                                              formula_id:, user_id:, generate_soa:)
+                                              formula_id:, user_id:, generate_soa:, fund_ratios:)
       redirect_to(@fund, notice: "Fund account entries allocation in progress. Please wait for a few mins and refresh the page")
     else
       redirect_back(fallback_location: root_path, alert: "Please specify the start_date and end_date for allocation.")
@@ -119,6 +125,7 @@ class FundsController < ApplicationController
     from_fund.fund_formulas.each do |ff|
       new_ff = ff.dup
       new_ff.fund = @fund
+      new_ff.entity_id = current_user.id
       new_ff.save
     end
 

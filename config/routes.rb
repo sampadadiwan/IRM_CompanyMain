@@ -85,7 +85,7 @@ Rails.application.routes.draw do
     get   'timeline', on: :member
     get   'last', on: :member
     get 'report', on: :member
-    get 'generate_calcs', on: :member
+    get 'generate_fund_ratios', on: :member
     patch 'allocate', on: :member
     get 'allocate_form', on: :member
     get 'copy_formulas', on: :member

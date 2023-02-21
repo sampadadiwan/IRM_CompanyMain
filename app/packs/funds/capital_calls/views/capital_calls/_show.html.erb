@@ -49,6 +49,15 @@
       </td>
     </tr>
 
+    <tr>
+      <td>
+        Applicable To Close
+      </td>
+      <td>
+        <%= @capital_call.fund_closes %>
+      </td>
+    </tr>
+
     <% if @capital_call.fund.unit_types.present? %>
       <% @capital_call.unit_prices.each do |unit_type, unit_price| %>
 

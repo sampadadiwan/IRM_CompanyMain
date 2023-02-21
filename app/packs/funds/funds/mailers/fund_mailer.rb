@@ -1,5 +1,5 @@
 class FundMailer < ApplicationMailer
-  helper EmailCurrencyHelper
+  helper CurrencyHelper
   helper ApplicationHelper
 
   def notify_capital_call

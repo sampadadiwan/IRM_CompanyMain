@@ -44,7 +44,7 @@ class FundPolicy < FundBasePolicy
       )
   end
 
-  def generate_calcs?
+  def generate_fund_ratios?
     update?
   end
 

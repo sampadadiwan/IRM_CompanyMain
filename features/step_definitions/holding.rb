@@ -1,4 +1,4 @@
-  include InvestmentsHelper
+  include CurrencyHelper
 
   Given('Im logged in as the employee investor') do
     @user = @investor_entity.employees.first

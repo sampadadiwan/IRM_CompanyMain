@@ -1,5 +1,5 @@
 
-  include InvestmentsHelper
+  include CurrencyHelper
   include ActionView::Helpers::SanitizeHelper
 
   Given('I am at the investment_opportunities page') do

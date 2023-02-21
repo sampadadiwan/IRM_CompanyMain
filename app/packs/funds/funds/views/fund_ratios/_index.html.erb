@@ -5,10 +5,10 @@
   <h1 class="h3 mb-0 text-gray-800">Fund Ratios <%= link_to l(valuation.valuation_date), valuation if valuation %> </h1>
 
   <span>
-    <%= button_to "Compute Ratios" , generate_calcs_fund_path(fund), method: :get, 
+    <%= button_to "Compute Ratios" , generate_fund_ratios_fund_path(fund), method: :get, 
         class: "btn btn-outline-success" , form_class: "deleteButton" , 
         data: {action: "click->confirm#popup" , turbo: false, 
-        msg: "Computation will take a few mins, please be patient. Proceed?", method: :get} if fund && policy(fund).generate_calcs? %>
+        msg: "Computation will take a few mins, please be patient. Proceed?", method: :get} if fund && policy(fund).generate_fund_ratios? %>
 
     <%#= render "/fund_ratios/filter", fund: fund if fund %>
   </span>
@@ -23,7 +23,10 @@
         </th>
         <th>
           Display Value
-        </th>        
+        </th> 
+        <th>
+          On
+        </th>                
       </tr>
     </thead>
 

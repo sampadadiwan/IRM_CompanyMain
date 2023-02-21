@@ -1,8 +1,6 @@
 <%= render "/layouts/alerts" %>
-
-  <table class="table table-bordered dataTable">
-
-    <tr>
+<table class="table table-bordered dataTable">
+  <tr>
     <td>
       Entity
     </td>
@@ -10,6 +8,16 @@
       <%= @valuation.entity.name %>
     </td>
   </tr>
+
+  <tr>
+    <td>
+      Instrument Type
+    </td>
+    <td>
+      <%= @valuation.instrument_type %>
+    </td>
+  </tr>
+
   <tr>
     <td>
       Valuation Date
@@ -18,7 +26,6 @@
       <%= l @valuation.valuation_date %>
     </td>
   </tr>
-
   <tr>
     <td>
       Per Share Value
@@ -27,8 +34,6 @@
       <%= money_to_currency @valuation.per_share_value, params %>
     </td>
   </tr>
-
-  
   <tr>
     <td>
       Valuation
@@ -37,48 +42,7 @@
       <%= money_to_currency @valuation.valuation, params %>
     </td>
   </tr>
-
-  <tr>
-    <td>
-      Portfolio FMV Valuation
-    </td>
-    <td>
-      <%= money_to_currency @valuation.portfolio_fmv_valuation, params %>
-    </td>
-  </tr>  
-
-  <tr>
-    <td>
-      Portfolio Investment At Cost
-    </td>
-    <td>
-      <%= money_to_currency @valuation.portfolio_inv_cost, params %>
-    </td>
-  </tr>
-
-  <tr>
-    <td>
-      Management And Opex Expenses
-    </td>
-    <td>
-      <%= money_to_currency @valuation.management_opex_cost, params %>
-    </td>
-  </tr>
-
-
-  <tr>
-    <td>
-      Collection Last Quarter
-    </td>
-    <td>
-      <%= money_to_currency @valuation.collection_last_quarter, params %>
-    </td>
-  </tr>
-
-  
-
   <%= display_custom_fields(@valuation) %>
-
   <tr>
     <td>
       Valuation Reports
@@ -87,27 +51,21 @@
       <%= link_to "Report", @valuation.report.url, class: "btn btn-outline-success", target: "_blank" if @valuation.report.present? %>
     </td>
   </tr>
-
   <% if @valuation.owner %>
-  <tr>
-    <td>
-      Owner
-    </td>
-    <td>
-      <%= link_to @valuation.owner_type, @valuation.owner %>
-    </td>
-  </tr>
+    <tr>
+      <td>
+        Owner
+      </td>
+      <td>
+        <%= link_to @valuation.owner_type, @valuation.owner %>
+      </td>
+    </tr>
   <% end %>
-
 </table>
-
-
 <div>
   <% if policy(@valuation).update? %>
-
     <%= link_to "Edit" , edit_valuation_path(@valuation), {class: "btn btn-outline-primary" } %> |
     <%= button_to "Delete" , @valuation, method: :delete, class: "btn btn-outline-danger" , 
         form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
-
   <% end %>
 </div>

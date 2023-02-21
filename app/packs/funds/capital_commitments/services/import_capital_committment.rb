@@ -1,6 +1,5 @@
 class ImportCapitalCommittment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Committed Amount", "Notes", "Folio No", "Unit Type"].freeze
-  attr_accessor :commitments
+  STANDARD_HEADERS = ["Investor", "Fund", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -45,6 +44,7 @@ class ImportCapitalCommittment < ImportUtil
     if fund && investor
       # Make the capital_commitment
       capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
+                                                 fund_close: user_data["Fund Close"].strip,
                                                  fund:, investor:, investor_name: investor.investor_name,
                                                  unit_type:, notes: user_data["Notes"])
 

@@ -112,6 +112,6 @@ class CapitalCallsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_call_params
-    params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :due_date, :call_date, :notes, unit_prices: {}, properties: {})
+    params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :due_date, :call_date, :notes, fund_closes: [], unit_prices: {}, properties: {})
   end
 end

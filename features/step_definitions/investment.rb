@@ -1,4 +1,4 @@
-include InvestmentsHelper
+include CurrencyHelper
 
 Given('I am at the investments page') do
   visit("/investments")

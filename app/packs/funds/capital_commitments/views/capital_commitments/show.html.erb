@@ -37,6 +37,15 @@
       </td>
     </tr>
   <% end %>
+
+  <tr>
+    <td>
+      Fund Close
+    </td>
+    <td>
+      <%= @capital_commitment.fund_close %>
+    </td>
+  </tr>
   
   <tr>
     <td>
@@ -157,7 +166,112 @@
       <%= @capital_commitment.notes.html_safe if @capital_commitment.notes %>
     </td>
   </tr>
+
+  <% if params[:debug].present? %>
+  <tr class="collapse multi-collapse btn-primary">
+    <td colspan="2">
+    </td>
+  </tr>
   
+  <% 
+    end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Time.zone.today 
+    cc_calcs = CapitalCommitmentCalcs.new(@capital_commitment, end_date)
+  %>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Cash In Hand
+          </td>
+          <td>
+            <%= currency_from_cents cc_calcs.cash_in_hand_cents, @capital_commitment.fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Net Current Assets
+          </td>
+          <td>
+            <%= currency_from_cents cc_calcs.net_current_assets_cents, @capital_commitment.fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Esitmated Carry
+          </td>
+          <td>
+            <%= currency_from_cents cc_calcs.estimated_carry_cents, @capital_commitment.fund.currency, params  %>
+          </td>
+        </tr>
+
+        
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Collected
+          </td>
+          <td>
+            <%= currency_from_cents cc_calcs.collected_cents, @capital_commitment.fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            DPI
+          </td>
+          <td>
+            <%= currency_from_cents cc_calcs.dpi, @capital_commitment.fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            RVPI
+          </td>
+          <td>
+            <%= currency_from_cents cc_calcs.rvpi, @capital_commitment.fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            TVPI
+          </td>
+          <td>
+            <%= currency_from_cents cc_calcs.tvpi, @capital_commitment.fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            FMV
+          </td>
+          <td>
+            <%= currency_from_cents cc_calcs.fmv_on_date, @capital_commitment.fund.currency, params  %>
+          </td>
+        </tr>
+
+        
+        <tr class="collapse multi-collapse">
+          <td>
+            Gross XIRR
+          </td>
+          <td>
+            <%= currency_from_cents cc_calcs.xirr, @capital_commitment.fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Net XIRR
+          </td>
+          <td>
+            <%= currency_from_cents cc_calcs.xirr(net_irr: true), @capital_commitment.fund.currency, params  %>
+          </td>
+        </tr>
+
+  <% end %>
 
 </table>
 <div>

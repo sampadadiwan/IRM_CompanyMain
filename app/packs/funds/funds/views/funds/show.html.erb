@@ -63,7 +63,9 @@
               <%= link_to "Allocate Account Entries", allocate_form_fund_path(@fund), 
                   class: "dropdown-item" if policy(@fund).allocate? %> 
 
-              <%= link_to "Fund Account Entries" , account_entries_path(fund_id: @fund.id, fund_accounts_only: true), class: "dropdown-item" %> 
+              <%= link_to "Fund Account Entries", 
+                  account_entries_path(fund_id: @fund.id, fund_accounts_only: true, all: true), 
+                  class: "dropdown-item" %> 
 
               <%= link_to "Import Account Entries", 
                   new_import_upload_path("import_upload[owner_id]": @fund.id, 

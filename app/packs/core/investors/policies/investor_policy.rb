@@ -35,6 +35,7 @@ class InvestorPolicy < ApplicationPolicy
   end
 
   def destroy?
-    create?
+    # TODO: - check for key dependency and allow/deny delete
+    false
   end
 end

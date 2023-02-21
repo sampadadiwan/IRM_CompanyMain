@@ -202,6 +202,7 @@ FactoryBot.define do
     call_date { Time.zone.today + 3.weeks }
     name { "Capital Call #{rand(1..10)}" }
     percentage_called { rand(1..4) * 10 }
+    fund_closes { ["All"] }
     notes { Faker::Company.catch_phrase }
     unit_prices {
       fund.unit_types.split(",").map{|ut| [ut.strip, "price" => 100 * (rand(2) + 1), "premium" => 10 * (rand(2) + 1) ]}.to_h if fund.unit_types
@@ -215,6 +216,7 @@ FactoryBot.define do
     investor { fund.investors.sample }
     committed_amount { 100000 * rand(10..30)}
     folio_id {rand(100**4)}
+    fund_close { "First Close" }
     notes { Faker::Company.catch_phrase }
   end
 
@@ -289,6 +291,7 @@ FactoryBot.define do
   end
 
   factory :valuation do
+    instrument_type { "Equity" }
     valuation_date { Date.today - rand(24).months }
     valuation_cents { rand(1..10) * 100000000 }
     per_share_value_cents { rand(1..10) * 100000 }
@@ -524,6 +527,7 @@ FactoryBot.define do
     enable_account_entries {true}
     enable_units {true}
     enable_inv_opportunities {true}
+    enable_fund_portfolios {true}
     currency { ENV["CURRENCY"].split(",")[rand(3)] }
     units { ENV["CURRENCY_UNITS"].split(",")[rand(3)] }
     sub_domain { rand(2) > 0 ? name.parameterize : nil }

@@ -52,6 +52,20 @@
     <small class="text-muted">If your clients have a Folio Id / Number, add it here</small>
   </div>
 
+  <div class="form-group" data-controller="otherselect" data-otherselect-select-id-value="#capital_commitment_fund_close">
+    <%
+      closes = capital_commitment.fund.capital_commitments.pluck(:fund_close).uniq 
+      closes += ["Other"]
+    %>
+    <%= form.label :fund_close %>
+    <% if closes.length > 1 %>
+      <%= form.select :fund_close, closes, {}, class: "form-control", "data-action": "change->otherselect#checkOtherName"  %>
+      <%= form.text_field :fund_close, class: "form-control", disabled: true, id: "other_name"  %>
+    <% else %>
+      <%= form.text_field :fund_close, class: "form-control"  %>
+    <% end %>
+  </div>
+
   <% if capital_commitment.fund.unit_types.present? %>
     <div class="form-group">
       <%= form.label :unit_type %>

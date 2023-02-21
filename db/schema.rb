@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
+ActiveRecord::Schema[7.0].define(version: 2023_02_21_051814) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -56,7 +56,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
     t.date "reporting_date"
     t.string "entry_type", limit: 50
     t.string "name", limit: 100
-    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "amount_cents", precision: 25, scale: 2, default: "0.0"
     t.text "notes"
     t.text "properties"
     t.datetime "created_at", null: false
@@ -211,6 +211,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
     t.decimal "bought_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "sold_quantity", precision: 20, scale: 2, default: "0.0"
     t.decimal "sold_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "cost_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
@@ -350,6 +351,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
     t.date "call_date"
     t.bigint "document_folder_id"
     t.text "unit_prices"
+    t.string "fund_closes", limit: 50
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_calls_on_document_folder_id"
@@ -390,6 +392,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
     t.decimal "total_allocated_income_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_allocated_expense_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "fund_close", limit: 15
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
@@ -877,6 +880,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
     t.string "rule_type", limit: 20
     t.boolean "enabled", default: false
     t.string "entry_type", limit: 50
+    t.boolean "roll_up", default: true
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
   end
@@ -884,7 +888,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
   create_table "fund_ratios", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
-    t.bigint "valuation_id", null: false
+    t.bigint "valuation_id"
     t.string "name", limit: 30
     t.decimal "value", precision: 10
     t.string "display_value", limit: 20
@@ -892,6 +896,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
+    t.bigint "capital_commitment_id"
+    t.date "end_date"
+    t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"
     t.index ["fund_id"], name: "index_fund_ratios_on_fund_id"
@@ -929,6 +936,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
     t.bigint "owner_id"
     t.decimal "premium", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_premium_cents", precision: 20, scale: 2, default: "0.0"
+    t.date "issue_date"
     t.index ["capital_commitment_id"], name: "index_fund_units_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_fund_units_on_entity_id"
     t.index ["fund_id"], name: "index_fund_units_on_fund_id"
@@ -1607,7 +1615,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
     t.date "investment_date"
     t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
-    t.string "investment_type", limit: 10
+    t.string "investment_type", limit: 15
     t.text "notes"
     t.text "properties"
     t.datetime "created_at", null: false
@@ -1847,6 +1855,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
     t.string "dept", limit: 20
     t.text "signature_data"
     t.string "entity_type", limit: 25
+    t.timestamp "accepted_terms_on"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -1876,10 +1885,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
     t.decimal "net_valuation_cents", precision: 20, scale: 2, default: "0.0"
     t.text "properties"
     t.datetime "deleted_at"
-    t.decimal "portfolio_inv_cost_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "management_opex_cost_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "portfolio_fmv_valuation_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "collection_last_quarter_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "instrument_type", limit: 15
     t.index ["deleted_at"], name: "index_valuations_on_deleted_at"
     t.index ["entity_id"], name: "index_valuations_on_entity_id"
     t.index ["form_type_id"], name: "index_valuations_on_form_type_id"
@@ -2017,6 +2023,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_15_041332) do
   add_foreign_key "form_types", "entities"
   add_foreign_key "fund_formulas", "entities"
   add_foreign_key "fund_formulas", "funds"
+  add_foreign_key "fund_ratios", "capital_commitments"
   add_foreign_key "fund_ratios", "entities"
   add_foreign_key "fund_ratios", "funds"
   add_foreign_key "fund_ratios", "valuations"

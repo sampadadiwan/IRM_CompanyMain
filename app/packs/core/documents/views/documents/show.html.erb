@@ -53,7 +53,7 @@
                   <% end %>
 
 
-                  
+                  <% if @document.entity_id == current_user&.entity_id %>
 
                   <tr>
                      <td>
@@ -66,6 +66,7 @@
                         <%= link_to "View Folder", folder_path(id: @document.folder_id),
                               class: "badge badge-success" %>                    
                      </td>
+                  </tr>
                   <tr>
                      <td>
                         Tags
@@ -129,21 +130,8 @@
                      </td>
                   </tr>
 
-                  <% if false && @document.signed_by_id.present? %>
-                  <tr>
-                     <td>
-                        Signed By
-                     </td>
-                     <td>
-                        <%= @document.signed_by.full_name  %> | <%= @document.signed_by.email  %>                                  
-                        
-                        <%= link_to @document.file_url(), target: "_blank" do %>
-                           <i class="fas fa-download"></i>
-                           Download Signed: <%= @document.name.capitalize.titleize %>
-                        <% end %>
-                        
-                     </td>
-                  </tr>
+                  <%= display_custom_fields(@document) if current_user %>
+
                   <% end %>
                   
                   <% if @document.text.present? %>
@@ -157,7 +145,6 @@
                   </tr>
                   <% end %>
 
-                  <%= display_custom_fields(@document) if current_user %>
 
                </table>
 

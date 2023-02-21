@@ -1,5 +1,5 @@
 class InvestmentOpportunityMailer < ApplicationMailer
-  helper EmailCurrencyHelper
+  helper CurrencyHelper
   helper ApplicationHelper
 
   def notify_open_for_interests

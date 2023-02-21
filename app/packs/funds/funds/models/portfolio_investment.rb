@@ -13,6 +13,11 @@ class PortfolioInvestment < ApplicationRecord
   counter_culture :aggregate_portfolio_investment, column_name: 'quantity', delta_column: 'quantity'
   counter_culture :aggregate_portfolio_investment, column_name: 'fmv_cents', delta_column: 'fmv_cents'
 
+  # Duplicate of bought_amount_cents
+  # counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.quantity.positive? ? "cost_cents" : nil }, delta_column: 'amount_cents', column_names: {
+  #   ["portfolio_investments.quantity > ?", 0] => 'cost_cents'
+  # }
+
   counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.quantity.positive? ? "bought_quantity" : "sold_quantity" }, delta_column: 'quantity', column_names: {
     ["portfolio_investments.quantity > ?", 0] => 'bought_quantity',
     ["portfolio_investments.quantity < ?", 0] => 'sold_quantity'
@@ -46,7 +51,7 @@ class PortfolioInvestment < ApplicationRecord
   after_commit :compute_avg_cost
   def compute_avg_cost
     aggregate_portfolio_investment.reload
-    aggregate_portfolio_investment.compute_avg_cost
+    # save will recomute the avg costs
     aggregate_portfolio_investment.save
   end
 
@@ -60,5 +65,45 @@ class PortfolioInvestment < ApplicationRecord
 
   def folder_path
     "#{portfolio_company.folder_path}/Portfolio Investments"
+  end
+
+  ##########################################################
+  ############# Computations for Fund Ratios  ##############
+  ##########################################################
+
+  def self.total_investment_costs_cents(model, end_date)
+    model.portfolio_investments.buys.where(investment_date: ..end_date).sum(:amount_cents)
+  end
+
+  def self.fmv_cents(model, end_date)
+    total_fmv_end_date = 0
+    model.portfolio_investments.buys.where(investment_date: ..end_date).each do |pi|
+      # Find the valuation just prior to the end_date
+      valuation = pi.portfolio_company.valuations.where(instrument_type: pi.investment_type, valuation_date: ..end_date).order(valuation_date: :asc).last
+      total_fmv_end_date += pi.quantity * valuation.valuation_cents
+    end
+    total_fmv_end_date
+  end
+
+  def self.avg_cost_cents(model, end_date)
+    total_amount_cents = model.portfolio_investments.buys.where(investment_date: ..end_date).sum(:amount_cents)
+    total_buy_quantity = model.portfolio_investments.buys.where(investment_date: ..end_date).sum(:quantity)
+    total_buy_quantity.positive? ? total_amount_cents / total_buy_quantity : 0
+  end
+
+  def self.cost_of_net_cents(model, end_date)
+    # Find the net quantity before end_date
+    total_quantity = model.portfolio_investments.where(investment_date: ..end_date).sum(:quantity)
+    total_quantity * avg_cost_cents(model, end_date)
+  end
+
+  def self.cost_of_sold_cents(model, end_date)
+    # Find sold quantity before end_date
+    total_sold_quantity = model.portfolio_investments.sells.where(investment_date: ..end_date).sum(:quantity)
+    total_sold_quantity * avg_cost_cents(model, end_date)
+  end
+
+  def self.total_investment_sold_cents(model, end_date)
+    model.portfolio_investments.sells.where(investment_date: ..end_date).sum(:amount_cents)
   end
 end

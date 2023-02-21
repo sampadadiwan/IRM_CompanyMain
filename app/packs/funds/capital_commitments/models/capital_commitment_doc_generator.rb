@@ -1,5 +1,5 @@
 class CapitalCommitmentDocGenerator
-  include EmailCurrencyHelper
+  include CurrencyHelper
   include DocumentGeneratorBase
 
   attr_accessor :working_dir, :fund_doc_template_name

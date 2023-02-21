@@ -2,7 +2,6 @@ class Fund < ApplicationRecord
   include WithFolder
   include WithDataRoom
   include WithCustomField
-
   include Trackable
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model }, entity_id: proc { |_controller, model| model.entity_id }
@@ -26,6 +25,8 @@ class Fund < ApplicationRecord
   has_many :aggregate_portfolio_investments, dependent: :destroy
   has_many :portfolio_investments, dependent: :destroy
   has_many :fund_formulas, dependent: :destroy
+  has_many :fund_unit_settings, dependent: :destroy
+  has_many :fund_units, dependent: :destroy
 
   has_many :fund_account_entries, ->(_ae) { where(account_entries: { capital_commitment_id: nil }) }, class_name: "AccountEntry", dependent: :destroy
 
@@ -35,8 +36,8 @@ class Fund < ApplicationRecord
 
   validates :name, :currency, presence: true
 
-  def generate_calcs(user_id)
-    FundCalcJob.perform_later(id, user_id)
+  def generate_fund_ratios(user_id, end_date, generate_for_commitments: false)
+    FundRatiosJob.perform_later(id, nil, end_date, user_id, generate_for_commitments)
   end
 
   def to_be_called_amount
@@ -113,7 +114,7 @@ class Fund < ApplicationRecord
 
   def current_fund_ratios(valuation = nil)
     valuation ||= valuations.order(valuation_date: :asc).last
-    ratios = valuation ? fund_ratios.where(valuation_id: valuation.id) : fund_ratios.none
+    ratios = valuation ? fund_ratios.where(valuation_id: valuation.id, capital_commitment_id: nil) : fund_ratios.none
     [ratios, valuation]
   end
 end

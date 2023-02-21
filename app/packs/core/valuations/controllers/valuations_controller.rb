@@ -37,12 +37,8 @@ class ValuationsController < ApplicationController
   def create
     @valuation = Valuation.new(valuation_params)
     @valuation.entity_id = current_user.entity_id
-    @valuation.portfolio_fmv_valuation_cents = valuation_params[:portfolio_fmv_valuation].to_f * 100
-    @valuation.management_opex_cost_cents = valuation_params[:management_opex_cost].to_f * 100
-    @valuation.portfolio_inv_cost_cents = valuation_params[:portfolio_inv_cost].to_f * 100
     @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
-    @valuation.collection_last_quarter_cents = valuation_params[:collection_last_quarter].to_f * 100
-
+    @valuation.valuation_cents = valuation_params[:valuation].to_f * 100
     authorize @valuation
 
     respond_to do |format|
@@ -62,12 +58,8 @@ class ValuationsController < ApplicationController
 
   # PATCH/PUT /valuations/1 or /valuations/1.json
   def update
-    @valuation.portfolio_fmv_valuation_cents = valuation_params[:portfolio_fmv_valuation].to_f * 100
-    @valuation.management_opex_cost_cents = valuation_params[:management_opex_cost].to_f * 100
-    @valuation.portfolio_inv_cost_cents = valuation_params[:portfolio_inv_cost].to_f * 100
     @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
-    @valuation.collection_last_quarter_cents = valuation_params[:collection_last_quarter].to_f * 100
-
+    @valuation.valuation_cents = valuation_params[:valuation].to_f * 100
     respond_to do |format|
       if @valuation.update(valuation_params)
         format.html { redirect_to valuation_url(@valuation), notice: "Valuation was successfully updated." }
@@ -84,7 +76,9 @@ class ValuationsController < ApplicationController
     @valuation.destroy
 
     respond_to do |format|
-      format.html { redirect_to valuations_url, notice: "Valuation was successfully destroyed." }
+      format.html do
+        redirect_to @valuation.owner || valuations_url, notice: "Valuation was successfully destroyed."
+      end
       format.json { head :no_content }
     end
   end
@@ -99,7 +93,7 @@ class ValuationsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def valuation_params
-    params.require(:valuation).permit(:entity_id, :valuation_date,
-                                      :owner_id, :owner_type, :form_type_id, :per_share_value, :report, :portfolio_inv_cost, :management_opex_cost, :portfolio_fmv_valuation, :collection_last_quarter, properties: {})
+    params.require(:valuation).permit(:entity_id, :valuation_date, :instrument_type,
+                                      :owner_id, :owner_type, :form_type_id, :per_share_value, :report, :valuation, properties: {})
   end
 end

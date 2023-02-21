@@ -121,7 +121,7 @@ class CapitalRemittancesController < ApplicationController
 
   def verify
     @capital_remittance.verified = !@capital_remittance.verified
-    @capital_remittance.save!
+    @capital_remittance.save
     redirect_to capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: "Successfully updated."
   end
 

@@ -1,11 +1,34 @@
-class ImportInvestorAccess
-  include Interactor
+class ImportInvestorAccess < ImportUtil
+  STANDARD_HEADERS = ["Investor", "First Name", "Last Name", "Email", "Approved", "Send Confirmation"].freeze
 
-  def call
-    if context.import_upload.present? && context.import_file.present?
-      process_investor_access(context.import_file, context.import_upload)
-    else
-      context.fail!(message: "Required inputs not present")
+  def standard_headers
+    STANDARD_HEADERS
+  end
+
+  def initialize(params)
+    super(params)
+    @investor_accesses = []
+  end
+
+  def process_row(headers, _custom_field_headers, row, import_upload, _context)
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+
+    begin
+      status, msg = save_investor_access(user_data, import_upload)
+      if status
+        import_upload.processed_row_count += 1
+      else
+        import_upload.failed_row_count += 1
+      end
+      row << msg
+    rescue ActiveRecord::Deadlocked => e
+      raise e
+    rescue StandardError => e
+      Rails.logger.debug e.backtrace
+      Rails.logger.debug { "Error #{e.message}" }
+      row << "Error #{e.message}"
+      import_upload.failed_row_count += 1
     end
   end
 
@@ -34,27 +57,5 @@ class ImportInvestorAccess
 
     Rails.logger.debug { "Saving InvestorAccess with email '#{ia.email}'" }
     ia.save
-  end
-
-  def process_investor_access(_file, import_upload)
-    headers = context.headers
-    data = context.data
-    # Parse the XL rows
-
-    data.each_with_index do |row, idx|
-      next if idx.zero? # skip header row
-
-      # create hash from headers and cells
-      user_data = [headers, row].transpose.to_h
-
-      if save_investor_access(user_data, import_upload)
-        import_upload.processed_row_count += 1
-      else
-        import_upload.failed_row_count += 1
-      end
-
-      # To indicate progress
-      import_upload.save if (idx % 10).zero?
-    end
   end
 end

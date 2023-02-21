@@ -20,6 +20,16 @@
   </div>
 
   <div class="form-group">
+    <%= form.label :fund_closes, "Applicable To" %>
+    <%
+      closes = ["All"] 
+      closes += capital_call.fund.capital_commitments.pluck(:fund_close).uniq 
+    %>
+    <%= form.select :fund_closes, closes, {include_blank: false, include_hidden: false}, 
+                    class: "form-control select2 select2-multiple", multiple: "multiple" %>
+  </div>
+
+  <div class="form-group">
     <%= form.label :percentage_called %>
     <%= form.number_field :percentage_called, class: "form-control"  %>
   </div>

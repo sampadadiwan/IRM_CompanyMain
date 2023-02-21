@@ -17,6 +17,9 @@
     <% if capital_commitment.entity.enable_account_entries %>
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#account-entries-tab"
             data-action="click->tabdetails#loadData">Account Entries</a>
+
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-ratios-tab"
+            data-action="click->tabdetails#loadData">Ratios</a>
     <% end %>
 
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab" 
@@ -133,6 +136,16 @@
         <%= render "/account_entries/index", 
                 lazy_load_data: true, data_source: account_entries_path(capital_commitment_id: capital_commitment.id, all: true, format: :json) %>
       </div>     
+    </div>
+
+    <div id="fund-ratios-tab" class="tab-pane fade">
+      <div id="fund_ratios" class="associated_entity">
+        <%= link_to fund_ratios_path( capital_commitment_id: capital_commitment.id, fund_id: capital_commitment.fund_id), class: "load_data_link", data: { turbo_frame: 'fund_ratios_list' } do %>
+          <span>Loading...</span>
+        <% end %>
+        <%= turbo_frame_tag "fund_ratios_list", target: "_top" do %>
+        <% end %>
+      </div>
     </div>
 
   </div>

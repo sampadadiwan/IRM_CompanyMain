@@ -37,6 +37,7 @@ class DefaultUnitAllocationEngine
       fund_unit.premium = (premium_cents / 100)
       fund_unit.total_premium_cents = (premium_cents * quantity)
       fund_unit.reason = reason
+      fund_unit.issue_date = capital_remittance.payment_date
 
       fund_unit.save
       [fund_unit, msg]
@@ -70,6 +71,7 @@ class DefaultUnitAllocationEngine
       fund_unit.quantity = -quantity
       fund_unit.price = (price_cents / 100)
       fund_unit.reason = reason
+      fund_unit.issue_date = capital_distribution_payment.payment_date
 
       fund_unit.save
       [fund_unit, msg]

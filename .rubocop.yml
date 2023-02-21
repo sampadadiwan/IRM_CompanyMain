@@ -26,7 +26,7 @@ Rails/RenderInline:
 
 Style/CombinableLoops:
   Exclude:
-    - 'app/packs/funds/capital_commitments/models/account_entry_allocation_engine.rb'
+    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
 
 AllCops:
   # DisabledByDefault: true
@@ -47,7 +47,7 @@ Rails/FilePath:
 Lint/UselessAssignment:
   Exclude:
     - 'app/packs/funds/capital_commitments/services/import_account_entry.rb'
-    - 'app/packs/funds/capital_commitments/models/account_entry_allocation_engine.rb'
+    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
 
 Rails/SkipsModelValidations:
   Exclude:
@@ -66,7 +66,7 @@ Rails/SkipsModelValidations:
     - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job2.rb'
     - 'app/packs/misc/investor_notices/jobs/investor_notice_job.rb'
     - 'app/packs/misc/investor_notices/models/investor_notice.rb'
-    - 'app/packs/funds/funds/jobs/fund_calc_job.rb'
+    - 'app/packs/funds/funds/jobs/fund_ratios_job.rb'
 Rails/HasAndBelongsToMany:
   Exclude:
     - 'app/models/role.rb'
@@ -80,10 +80,12 @@ Naming/AccessorMethodName:
 Lint/RescueException:
   Exclude:
     - 'app/packs/funds/capital_commitments/jobs/account_entry_allocation_job.rb'
+    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
+    - 'app/packs/funds/capital_commitments/services/formula_printer.rb'
 
 Lint/DuplicateBranch:
   Exclude:
-    - 'app/packs/startups/investments/helpers/investments_helper.rb'
+    - 'app/packs/core/base/helpers/currency_helper.rb'
     
 Lint/MissingSuper:
   Exclude:
@@ -96,7 +98,7 @@ Rails/OutputSafety:
 Style/OptionalBooleanParameter:
   Exclude:
     - 'app/packs/startups/investments/helpers/investments_helper.rb'
-    - 'app/packs/core/base/mailers/email_currency_helper.rb'
+    - 'app/packs/core/base/helpers/currency_helper.rb'
 
 Security/Eval:
   Exclude:
@@ -104,7 +106,8 @@ Security/Eval:
     - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb'
     - 'app/packs/secondaries/offers/models/offer.rb'
     - 'app/packs/secondaries/interests/models/interest.rb'
-    - 'app/packs/funds/capital_commitments/models/account_entry_allocation_engine.rb'
+    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
+    - 'app/packs/funds/capital_commitments/services/formula_printer.rb'
 
 # Metrics Cops
 Metrics/CyclomaticComplexity:
@@ -132,6 +135,9 @@ Metrics/ParameterLists:
   Description: 'Pass no more than four parameters into a method.'
   Max: 6
   Enabled: true
+  Exclude:
+    - 'app/packs/funds/capital_commitments/jobs/account_entry_allocation_job.rb'
+    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
 
 Metrics/MethodLength:
   Description: 'Avoid methods longer than 5 lines of code.'

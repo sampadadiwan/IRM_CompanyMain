@@ -1,4 +1,4 @@
-  include InvestmentsHelper
+  include CurrencyHelper
   include ActionView::Helpers::SanitizeHelper
 
   Given('I am at the funds page') do
@@ -122,12 +122,14 @@
 
   When('I add a capital commitment {string} for investor {string}') do |amount, investor_name|
     @new_capital_commitment = CapitalCommitment.new(investor_name: investor_name, committed_amount_cents: (amount.to_d * 100), fund: @fund)
+    @new_capital_commitment.fund_close ||= "First Close"
 
     visit(fund_url(@fund))
     click_on("Commitments")
     click_on("New Capital Commitment")
     select(@new_capital_commitment.investor_name, from: "capital_commitment_investor_id")
     fill_in('capital_commitment_committed_amount', with: @new_capital_commitment.committed_amount)
+    fill_in('capital_commitment_fund_close', with: @new_capital_commitment.fund_close)
     fill_in('capital_commitment_folio_id', with: rand(10**4))
 
     if @fund.entity.enable_units
@@ -149,6 +151,7 @@
 
     expect(page).to have_content(@capital_commitment.investor_name)
     expect(page).to have_content(@capital_commitment.entity.name)
+    expect(page).to have_content(@capital_commitment.fund_close)
     expect(page).to have_content(money_to_currency @capital_commitment.committed_amount, {})
     expect(page).to have_content(@capital_commitment.fund.name)
     expect(page).to have_content(@capital_commitment.unit_type) if @fund.entity.enable_units  
@@ -202,6 +205,7 @@
     fill_in('capital_call_name', with: @capital_call.name)
     fill_in('capital_call_percentage_called', with: @capital_call.percentage_called)
     fill_in('capital_call_due_date', with: @capital_call.due_date)
+    select(@capital_call.fund_closes[0], from: 'capital_call_fund_closes')
     
     if @fund.entity.enable_units
       @fund.unit_types.split(",").each do |unit_type|

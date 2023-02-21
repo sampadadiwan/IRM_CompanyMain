@@ -13,10 +13,11 @@ class CapitalCall < ApplicationRecord
   belongs_to :approved_by_user, class_name: "User", optional: true
   # Stores the prices for unit types for this call
   serialize :unit_prices, Hash
+  serialize :fund_closes, Array
 
   has_many :capital_remittances, dependent: :destroy
 
-  validates :name, :due_date, :call_date, :percentage_called, presence: true
+  validates :name, :due_date, :call_date, :percentage_called, :fund_closes, presence: true
   validates :percentage_called, numericality: { in: 0..100 }
 
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }

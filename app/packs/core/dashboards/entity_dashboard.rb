@@ -10,6 +10,8 @@ class EntityDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     documents: Field::HasMany,
     employees: Field::HasMany,
+    investors: Field::HasMany,
+    investor_entities: Field::HasMany,
     entity_setting: Field::HasOne,
     investments: Field::HasMany,
     id: Field::Number,
@@ -50,9 +52,17 @@ class EntityDashboard < Administrate::BaseDashboard
   COLLECTION_ATTRIBUTES = %i[
     id
     name
-    url
     entity_type
-    category
+    enable_documents
+    enable_deals
+    enable_investments
+    enable_captable
+    enable_secondary_sale
+    enable_funds
+    enable_account_entries
+    enable_units
+    enable_fund_portfolios
+    enable_investor_kyc
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -85,6 +95,8 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_captable
     enable_investor_kyc
     employees
+    investors
+    investor_entities
     entity_setting
     activity_docs_required_for_completion
     activity_details_required_for_na

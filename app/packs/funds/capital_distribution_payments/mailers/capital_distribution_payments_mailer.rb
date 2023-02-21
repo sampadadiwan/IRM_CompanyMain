@@ -1,5 +1,5 @@
 class CapitalDistributionPaymentsMailer < ApplicationMailer
-  helper EmailCurrencyHelper
+  helper CurrencyHelper
   helper ApplicationHelper
 
   def send_notification

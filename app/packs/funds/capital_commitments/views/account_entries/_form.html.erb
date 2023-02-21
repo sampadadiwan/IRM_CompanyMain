@@ -36,7 +36,7 @@
 
   <div class="form-group" data-controller="docform">
     <%= form.label :entry_type %>
-    <%= form.select :entry_type, ["Expense", "Income", "Tax", "Other"], {}, class: "form-control", id: "doc_name_select", "data-action": "change->docform#checkOtherName"  %>
+    <%= form.select :entry_type, ["Expense", "Income", "Tax", "Cash In Hand", "Other"], {}, class: "form-control", id: "doc_name_select", "data-action": "change->docform#checkOtherName"  %>
     <%= form.text_field :entry_type, class: "form-control", disabled: true, id: "other_name"  %>
   </div>
 

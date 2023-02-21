@@ -36,7 +36,7 @@ class AccountEntry < ApplicationRecord
 
   before_validation :setup_period
   def setup_period
-    self.period = "Q#{(reporting_date.month / 3.0).ceil}-#{reporting_date.year}" if period.blank?
+    self.period = "Q#{(reporting_date.month / 3.0).ceil}-#{reporting_date.year}"
   end
 
   def to_s

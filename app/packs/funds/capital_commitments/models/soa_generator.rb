@@ -1,5 +1,5 @@
 class SoaGenerator
-  include EmailCurrencyHelper
+  include CurrencyHelper
   include DocumentGeneratorBase
 
   # capital_commitment - we want to generate the document for this CapitalCommitment
@@ -43,6 +43,7 @@ class SoaGenerator
       capital_remittances: capital_commitment.capital_remittances.decorate,
       capital_distribution_payments: capital_commitment.capital_distribution_payments.decorate,
       account_entries: capital_commitment.account_entries.cumulative.where(reporting_date: start_date..).where(reporting_date: ..end_date).decorate,
+      fund_ratios: capital_commitment.fund_ratios.where(end_date:),
 
       kyc: capital_commitment.investor_kyc,
 

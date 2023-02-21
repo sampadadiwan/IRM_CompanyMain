@@ -185,4 +185,212 @@
         </tr>
       <% end %>
 
+      <% if params[:debug].present? %>
+        <tr class="collapse multi-collapse btn-primary">
+          <td colspan="2">
+          </td>
+        </tr>
+        
+        <% 
+          end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Time.zone.today 
+          fund_portfolio_calcs = FundPortfolioCalcs.new(fund, end_date)
+        %>
+        <tr class="collapse multi-collapse">
+          <td>
+            Total Investment Cost
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.total_investment_costs_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            FMV 
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.fmv_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Avg Cost 
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.avg_cost_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Cost of Net
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.cost_of_net_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Cost of Sold
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.cost_of_sold_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Total Investment Sold
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.total_investment_sold_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Distribution
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.distribution_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Reinvested Capital
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.reinvested_capital_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Cash In Hand
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.cash_in_hand_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Net Current Assets
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.net_current_assets_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Esitmated Carry
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.estimated_carry_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Total Value
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.total_value_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+        
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Net Total Value
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.net_total_value_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Collected 
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.collected_cents, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            DPI
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.dpi, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            RVPI
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.rvpi, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            TVPI
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.tvpi, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            FMV
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.fmv_on_date, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Gross Portfolio IRR
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.gross_portfolio_irr, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Gross XIRR
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.xirr, fund.currency, params  %>
+          </td>
+        </tr>
+
+        <tr class="collapse multi-collapse">
+          <td>
+            Net XIRR
+          </td>
+          <td>
+            <%= currency_from_cents fund_portfolio_calcs.xirr(net_irr: true), fund.currency, params  %>
+          </td>
+        </tr>
+
+
+
+
+      <% end %>
+
+
     </table>

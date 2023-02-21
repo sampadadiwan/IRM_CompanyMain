@@ -1485,7 +1485,12 @@ pre code {
 .table {
   width: 100%;
   margin-bottom: 1rem;
-  color: #858796;
+  color: black;
+}
+
+th {
+  color: rgb(100, 98, 98);
+  /* color: #858796; */
 }
 
 .table th,

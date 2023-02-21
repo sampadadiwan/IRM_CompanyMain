@@ -75,6 +75,7 @@ class UsersController < ApplicationController
 
   def accept_terms
     current_user.accept_terms = true
+    current_user.accepted_terms_on = Time.zone.now
     current_user.save
 
     # puts current_user.to_json

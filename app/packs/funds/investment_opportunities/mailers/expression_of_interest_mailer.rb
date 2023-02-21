@@ -1,5 +1,5 @@
 class ExpressionOfInterestMailer < ApplicationMailer
-  helper EmailCurrencyHelper
+  helper CurrencyHelper
   helper ApplicationHelper
 
   def notify_approved

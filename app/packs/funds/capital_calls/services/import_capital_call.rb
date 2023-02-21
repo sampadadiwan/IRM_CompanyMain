@@ -1,5 +1,5 @@
 class ImportCapitalCall < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date", "Call Date", "Generate Remittances", "Remittances Verified"].freeze
+  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date", "Call Date", "Fund Closes", "Generate Remittances", "Remittances Verified"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -39,11 +39,13 @@ class ImportCapitalCall < ImportUtil
       else
         generate_remittances = user_data["Generate Remittances"]&.strip&.downcase == "yes"
         generate_remittances_verified = user_data["Remittances Verified"]&.strip&.downcase == "yes"
+        fund_closes = user_data["Fund Closes"] ? user_data["Fund Closes"].strip.split(",") : ["All"]
 
         # Make the capital_call
         capital_call = CapitalCall.new(entity_id: import_upload.entity_id, name:,
                                        fund:, due_date: user_data["Due Date"],
                                        call_date: user_data["Call Date"],
+                                       fund_closes:,
                                        percentage_called: user_data["Percentage Called"],
                                        manual_generation: true,
                                        generate_remittances:, generate_remittances_verified:)

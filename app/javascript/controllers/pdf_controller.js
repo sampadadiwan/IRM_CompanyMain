@@ -122,16 +122,16 @@ export default class extends Controller {
                         fontSize: 20, // or even smaller size
                         fontFamily: 'sans-serif',
                         color: 'grey',
-                        opacity: 40, // from 0 to 100
+                        opacity: 30, // from 0 to 100
                         text: viewer_watermark
                     },
 
                     // Draw header watermark
                     header: {
-                        fontSize: 8,
+                        fontSize: 4,
                         fontFamily: 'sans-serif',
                         color: 'grey',
-                        opacity: 45,
+                        opacity: 40,
                         // left: 'left watermark',
                         center: viewer_watermark,
                         right: ''

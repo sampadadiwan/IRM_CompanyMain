@@ -19,7 +19,12 @@ class CapitalCallJob < ApplicationJob
 
   def generate(capital_call_id)
     @capital_call = CapitalCall.find(capital_call_id)
-    @capital_call.fund.capital_commitments.each_with_index do |capital_commitment, _idx|
+
+    capital_commitments = @capital_call.fund.capital_commitments
+    # Some calls are for specific fund closes - so only generate remittances for the commitments in that close
+    capital_commitments = capital_commitments.where(fund_close: @capital_call.fund_closes) unless @capital_call.fund_closes.include?("All")
+
+    capital_commitments.each_with_index do |capital_commitment, _idx|
       # Check if we alread have a CapitalRemittance for this commitment
       Rails.logger.debug { "CapitalCallJob: Creating CapitalRemittance for #{capital_commitment.investor_name} for #{@capital_call.name}" }
 
@@ -53,10 +58,10 @@ class CapitalCallJob < ApplicationJob
 
   def generate_remittance_payments
     # Some rows will be verified but will have no payments, for these generate the payments also
-    @capital_call.capital_remittances.verified.each do |cr|
+    @capital_call.reload.capital_remittances.verified.each do |cr|
       next unless cr.collected_amount_cents.zero?
 
-      crp = CapitalRemittancePayment.new(capital_remittance: cr, fund_id: cr.fund_id, entity_id: cr.entity_id, amount_cents: cr.call_amount_cents, payment_date: Time.zone.today)
+      crp = CapitalRemittancePayment.new(capital_remittance: cr, fund_id: cr.fund_id, entity_id: cr.entity_id, amount_cents: cr.call_amount_cents, payment_date: @capital_call.due_date)
 
       crp.run_callbacks(:save) { false }
       crp.run_callbacks(:create) { false }

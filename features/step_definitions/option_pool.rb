@@ -1,4 +1,4 @@
-  include InvestmentsHelper
+  include CurrencyHelper
 
   Given('I am at the Option Pools page') do
     visit(option_pools_path)

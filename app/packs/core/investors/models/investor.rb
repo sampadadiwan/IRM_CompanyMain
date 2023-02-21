@@ -23,7 +23,7 @@ class Investor < ApplicationRecord
   has_many :deals, through: :deal_investors
   has_many :holdings, dependent: :destroy
   has_many :notes, dependent: :destroy
-  has_many :portfolio_investments, dependent: :destroy
+  has_many :portfolio_investments, dependent: :destroy, foreign_key: :portfolio_company_id
 
   has_many :investor_kycs, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy

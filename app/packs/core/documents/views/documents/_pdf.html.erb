@@ -5,7 +5,7 @@
 
    <% if current_user %>
    <input id="viewer_watermark" ,
-      value="Exclusively for <%= current_user.entity ? current_user.entity.name : current_user.full_name %>"
+      value="<%= current_user.entity ? current_user.entity.name : current_user.full_name %>"
       hidden="hidden">
    </input>
    <% end %>

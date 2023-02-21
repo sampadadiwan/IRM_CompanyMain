@@ -1,5 +1,5 @@
 class ExcerciseMailer < ApplicationMailer
-  helper EmailCurrencyHelper
+  helper CurrencyHelper
   helper ApplicationHelper
 
   def notify_excercise

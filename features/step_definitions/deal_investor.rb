@@ -1,5 +1,5 @@
 include ActionView::Helpers::NumberHelper
-include InvestmentsHelper
+include CurrencyHelper
 
   When('I create a new deal investor {string}') do |arg1|
     @deal_investor = FactoryBot.build(:deal_investor)

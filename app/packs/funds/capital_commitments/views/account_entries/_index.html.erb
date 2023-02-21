@@ -20,6 +20,11 @@
                   "import_upload[import_type]": "AccountEntry", 
                   "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
                   { class: "btn btn-outline-primary"}   %> 
+
+
+    <%= link_to "Download", account_entries_path(capital_commitment_id: params[:capital_commitment_id], 
+                            fund_id: params[:fund_id], all: true, format: :xlsx), 
+                            class: "btn btn-outline-success" %>
   </span>
 
   <% end %>

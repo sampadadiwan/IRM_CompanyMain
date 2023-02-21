@@ -1,5 +1,5 @@
 class SecondarySaleMailer < ApplicationMailer
-  helper EmailCurrencyHelper
+  helper CurrencyHelper
   helper ApplicationHelper
 
   def notify_investment_advisors

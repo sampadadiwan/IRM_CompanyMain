@@ -1,5 +1,5 @@
 class EoiDocGenerator
-  include EmailCurrencyHelper
+  include CurrencyHelper
   include DocumentGeneratorBase
 
   attr_accessor :working_dir, :io_doc_template_name

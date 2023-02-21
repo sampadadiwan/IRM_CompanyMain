@@ -1,4 +1,4 @@
 <%= render "/layouts/alerts" %>
-<%= turbo_frame_tag "fund_ratios_frame", target: "_top" do %>
+<%= turbo_frame_tag "fund_ratios_list", target: "_top" do %>
     <%= render "/fund_ratios/index", fund_ratios: @fund_ratios %>
 <% end %>

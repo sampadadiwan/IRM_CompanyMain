@@ -4,8 +4,10 @@ class FundRatiosController < ApplicationController
   # GET /fund_ratios or /fund_ratios.json
   def index
     @fund_ratios = policy_scope(FundRatio)
-    @fund_ratios = @fund_ratios.where(fund_id: params[:fund_id]) if params[:fund_id]
-    @fund_ratios = @fund_ratios.where(valuation_id: params[:valuation_id]) if params[:valuation_id]
+    @fund_ratios = @fund_ratios.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    @fund_ratios = @fund_ratios.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
+    @fund_ratios = @fund_ratios.where(capital_commitment_id: nil) if params[:fund_ratios_only].present?
+    @fund_ratios = @fund_ratios.where(valuation_id: params[:valuation_id]) if params[:valuation_id].present?
   end
 
   # GET /fund_ratios/1 or /fund_ratios/1.json
@@ -68,6 +70,6 @@ class FundRatiosController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def fund_ratio_params
-    params.require(:fund_ratio).permit(:entity_id, :fund_id, :valuation_id, :name, :value, :display_value, :notes)
+    params.require(:fund_ratio).permit(:entity_id, :fund_id, :capital_commitment_id, :valuation_id, :name, :value, :display_value, :notes)
   end
 end

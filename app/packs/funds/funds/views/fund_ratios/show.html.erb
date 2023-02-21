@@ -16,14 +16,18 @@
       <%= @fund_ratio.fund.name %>
     </td>
   </tr>
+
+  <% if @fund_ratio.capital_commitment %>
   <tr>
     <td>
-      Valuation
+      For
     </td>
     <td>
-      <%= link_to l(@fund_ratio.valuation.valuation_date), @fund_ratio.valuation %>
+      <%= link_to @fund_ratio.capital_commitment %>
     </td>
   </tr>
+  <% end %>
+  
   <tr>
     <td>
       Name
@@ -46,6 +50,14 @@
     </td>
     <td>
       <%= @fund_ratio.display_value %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      On
+    </td>
+    <td>
+      <%= l @fund_ratio.end_date if @fund_ratio.end_date %>
     </td>
   </tr>
   <tr>

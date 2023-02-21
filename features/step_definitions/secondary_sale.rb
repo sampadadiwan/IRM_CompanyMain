@@ -1,4 +1,4 @@
-  include InvestmentsHelper
+  include CurrencyHelper
 
   Given('I am at the sales page') do
     visit(secondary_sales_path)
