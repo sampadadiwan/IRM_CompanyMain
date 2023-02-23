@@ -1,12 +1,24 @@
 class DocumentMailer < ApplicationMailer
   helper ApplicationHelper
 
-  def notify_new_document
+  def notify_new_document_to_investors
     @document = Document.find params[:id]
     @document.owner.access_rights
 
-    email_list = @document.investor_users.collect(&:email)
-    email_list += @document.owner.investor_users.collect(&:email) if @document.owner
+    investors = @document.investors_granted_access
+    investors += @document.owner.investors_granted_access
+
+    investors.each do |investor|
+      DocumentMailer.with(id: params[:id], investor_id: investor.id).notify_new_document_batch.deliver_later
+    end
+  end
+
+  def notify_new_document
+    @document = Document.find params[:id]
+    @document.owner.access_rights
+    @investor = Investor.find(params[:investor_id])
+
+    email_list = @investor.emails
 
     email = sandbox_email(@document, email_list.join(","))
 

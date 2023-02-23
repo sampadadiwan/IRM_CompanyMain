@@ -3,6 +3,7 @@ class Deal < ApplicationRecord
   include WithFolder
   include WithDataRoom
   include WithCustomField
+  include InvestorsGrantedAccess
   # include ActivityTrackable
   # include Impressionable
 
@@ -82,9 +83,5 @@ class Deal < ApplicationRecord
 
   def history
     versions.each(&:reify)
-  end
-
-  def investor_users(metadata = nil)
-    User.joins(investor_accesses: :investor).where("investor_accesses.approved=? and investor_accesses.entity_id=?", true, entity_id).merge(Investor.owner_access_rights(self, metadata))
   end
 end

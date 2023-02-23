@@ -1,4 +1,5 @@
 class Fund < ApplicationRecord
+  include InvestorsGrantedAccess
   include WithFolder
   include WithDataRoom
   include WithCustomField
@@ -102,14 +103,6 @@ class Fund < ApplicationRecord
   TEMPLATE_TAGS = ["Commitment Template", "Call Template", "SOA Template"].freeze
   def document_tags
     TEMPLATE_TAGS
-  end
-
-  def advisor_users
-    investor_users("Advisor")
-  end
-
-  def investor_users(metadata = nil)
-    User.joins(investor_accesses: :investor).where("investor_accesses.approved=? and investor_accesses.entity_id=?", true, entity_id).merge(Investor.owner_access_rights(self, metadata))
   end
 
   def current_fund_ratios(valuation = nil)

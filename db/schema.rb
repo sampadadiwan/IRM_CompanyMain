@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_02_21_051814) do
+ActiveRecord::Schema[7.0].define(version: 2023_02_22_090830) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -452,6 +452,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_21_051814) do
     t.datetime "deleted_at"
     t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
     t.text "unit_prices"
+    t.decimal "reinvestment_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["approved_by_user_id"], name: "index_capital_distributions_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_distributions_on_deleted_at"
     t.index ["entity_id"], name: "index_capital_distributions_on_entity_id"
@@ -1312,14 +1313,24 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_21_051814) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
-    t.string "first_name", limit: 20
-    t.string "last_name", limit: 20
+    t.string "first_name"
+    t.string "last_name"
     t.boolean "send_confirmation", default: false
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
     t.index ["email"], name: "index_investor_accesses_on_email"
     t.index ["entity_id"], name: "index_investor_accesses_on_entity_id"
     t.index ["investor_id"], name: "index_investor_accesses_on_investor_id"
     t.index ["user_id"], name: "index_investor_accesses_on_user_id"
+  end
+
+  create_table "investor_advisors", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "user_id", null: false
+    t.string "email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_investor_advisors_on_entity_id"
+    t.index ["user_id"], name: "index_investor_advisors_on_user_id"
   end
 
   create_table "investor_kycs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1856,6 +1867,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_21_051814) do
     t.text "signature_data"
     t.string "entity_type", limit: 25
     t.timestamp "accepted_terms_on"
+    t.bigint "advisor_entity_id"
+    t.bigint "investor_advisor_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -2070,6 +2083,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_21_051814) do
   add_foreign_key "investment_snapshots", "investors"
   add_foreign_key "investments", "aggregate_investments"
   add_foreign_key "investments", "funding_rounds"
+  add_foreign_key "investor_advisors", "entities"
+  add_foreign_key "investor_advisors", "users"
   add_foreign_key "investor_kycs", "entities"
   add_foreign_key "investor_kycs", "folders", column: "document_folder_id"
   add_foreign_key "investor_kycs", "form_types"

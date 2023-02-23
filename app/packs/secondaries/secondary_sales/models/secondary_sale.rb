@@ -5,6 +5,7 @@ class SecondarySale < ApplicationRecord
   include SecondarySaleNotifiers
   include SaleAccessScopes
   include WithCustomField
+  include InvestorsGrantedAccess
 
   # Make all models searchable
   update_index('secondary_sale') { self }
@@ -133,13 +134,5 @@ class SecondarySale < ApplicationRecord
 
   def display_amounts
     self.price_type == "Fixed Price" ? [Money.new(display_quantity * final_price, entity.currency)] : [Money.new(display_quantity * min_price, entity.currency), Money.new(display_quantity * max_price, entity.currency)]
-  end
-
-  def investor_users(metadata = nil)
-    User.joins(investor_accesses: :investor).where("investor_accesses.approved=? and investor_accesses.entity_id=?", true, entity_id).merge(Investor.owner_access_rights(self, metadata))
-  end
-
-  def employee_users(metadata)
-    User.joins(entity: :investees).where("investors.is_holdings_entity=? and investors.entity_id=?", true, entity_id).merge(Investor.owner_access_rights(self, metadata))
   end
 end

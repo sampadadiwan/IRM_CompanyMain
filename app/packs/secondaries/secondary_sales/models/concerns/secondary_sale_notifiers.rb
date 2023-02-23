@@ -1,7 +1,7 @@
 module SecondarySaleNotifiers
   extend ActiveSupport::Concern
 
-  MAX_TO_SIZE = 30
+  MAX_TO_SIZE = 40
   NOTIFICATIONS = %w[notify_open_for_offers notify_closing_offers notify_open_for_interests notify_closing_interests notify_allocation notify_spa_sellers notify_spa_buyers].freeze
 
   def notify_investment_advisors

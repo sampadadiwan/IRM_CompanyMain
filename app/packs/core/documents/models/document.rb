@@ -2,6 +2,7 @@ class Document < ApplicationRecord
   include Trackable
   include Impressionable
   include WithCustomField
+  include InvestorsGrantedAccess
 
   SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
 
@@ -56,7 +57,7 @@ class Document < ApplicationRecord
   end
 
   def send_notification_for_owner
-    DocumentMailer.with(id:).notify_new_document.deliver_later if %w[SecondarySale Fund InvestmentOpportunity Deal].include?(owner_type) && owner_tag != "Template"
+    DocumentMailer.with(id:).notify_new_document_batch.deliver_later if %w[SecondarySale Fund InvestmentOpportunity Deal].include?(owner_type) && owner_tag != "Template"
   end
 
   def setup_access_rights
@@ -103,10 +104,6 @@ class Document < ApplicationRecord
 
   def image?
     file&.mime_type&.include?('image')
-  end
-
-  def investor_users
-    User.joins(investor_accesses: :investor).where("investor_accesses.approved=? and investor_accesses.entity_id=?", true, entity_id).merge(Investor.owner_access_rights(owner, nil))
   end
 
   after_update :update_owner
