@@ -39,6 +39,8 @@ class OfferSpaGenerator
   def generate(offer, master_spa_path)
     template = Sablon.template(File.expand_path(master_spa_path))
 
+    context = {}
+    
     context.store  :effective_date, Time.zone.today.strftime("%d %B %Y")
     context.store  :offer_quantity, offer.quantity
     context.store  :company_name, offer.entity.name

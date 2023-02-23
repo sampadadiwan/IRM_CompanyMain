@@ -9,7 +9,7 @@ class DocumentMailer < ApplicationMailer
     investors += @document.owner.investors_granted_access
 
     investors.each do |investor|
-      DocumentMailer.with(id: params[:id], investor_id: investor.id).notify_new_document_batch.deliver_later
+      DocumentMailer.with(id: params[:id], investor_id: investor.id).notify_new_document.deliver_later
     end
   end
 
@@ -25,8 +25,7 @@ class DocumentMailer < ApplicationMailer
     if email.present?
       subj = "New document #{@document.name} uploaded by #{@document.entity.name}"
       mail(from: from_email(@document.entity),
-           to: ENV.fetch('SUPPORT_EMAIL', nil),
-           cc: email,
+           to: email,
            subject: subj)
     else
       Rails.logger.debug { "No emails found for notify_new_document #{@document.name}" }

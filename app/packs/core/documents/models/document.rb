@@ -57,7 +57,7 @@ class Document < ApplicationRecord
   end
 
   def send_notification_for_owner
-    DocumentMailer.with(id:).notify_new_document_batch.deliver_later if %w[SecondarySale Fund InvestmentOpportunity Deal].include?(owner_type) && owner_tag != "Template"
+    DocumentMailer.with(id:).notify_new_document_to_investors.deliver_later if %w[SecondarySale Fund InvestmentOpportunity Deal].include?(owner_type) && owner_tag != "Template"
   end
 
   def setup_access_rights
