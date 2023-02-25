@@ -1,4 +1,5 @@
 class InvestmentOpportunity < ApplicationRecord
+  include ForInvestor
   include WithFolder
   include WithCustomField
   include InvestorsGrantedAccess
@@ -48,16 +49,6 @@ class InvestmentOpportunity < ApplicationRecord
     end
     investor_list.uniq
   end
-
-  scope :for_investor, lambda { |user|
-    joins(:access_rights)
-      .merge(AccessRight.access_filter(user))
-      .joins(entity: :investors)
-      .where("investors.investor_entity_id=?", user.entity_id)
-      # Ensure this user has investor access
-      .joins(entity: :investor_accesses)
-      .merge(InvestorAccess.approved_for_user(user))
-  }
 
   def notify_open_for_interests
     InvestmentOpportunityMailer.with(id:).notify_open_for_interests.deliver_later

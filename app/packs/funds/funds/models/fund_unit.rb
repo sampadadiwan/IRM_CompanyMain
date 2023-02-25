@@ -1,5 +1,5 @@
 class FundUnit < ApplicationRecord
-  include FundScopes
+  include ForInvestor
 
   belongs_to :entity
   belongs_to :fund

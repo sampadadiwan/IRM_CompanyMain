@@ -67,6 +67,11 @@ class User < ApplicationRecord
       elsif ["Investor", "Investment Advisor", "Family Office"].include?(entity.entity_type) || InvestorAccess.where(user_id: id).first.present?
         add_role :investor
         self.curr_role ||= :investor
+      elsif ["Investor Advisor"].include?(entity.entity_type)
+        add_role :investor
+        add_role :investor_advisor
+        self.curr_role ||= :investor
+        self.advisor_entity_id = entity_id
       elsif ["Investment Fund"].include?(entity.entity_type)
         add_role :employee
         self.curr_role = :employee
@@ -141,5 +146,9 @@ class User < ApplicationRecord
       u.entity_type = u.entity&.entity_type
       u.save
     end
+  end
+
+  def investor_advisor?
+    advisor_entity_id.present? && advisor_entity_id != entity_id
   end
 end

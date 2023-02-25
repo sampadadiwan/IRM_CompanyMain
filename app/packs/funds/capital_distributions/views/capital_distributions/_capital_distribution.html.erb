@@ -6,10 +6,7 @@
     <%= money_to_currency capital_distribution.gross_amount, params %>
   </td>
   <td>
-    <%= money_to_currency capital_distribution.carry, params %>
-  </td>
-  <td>
-    <%= money_to_currency capital_distribution.fee, params %>
+    <%= money_to_currency capital_distribution.reinvestment, params %>
   </td>
   <td>
     <%= l capital_distribution.distribution_date if capital_distribution.distribution_date %>

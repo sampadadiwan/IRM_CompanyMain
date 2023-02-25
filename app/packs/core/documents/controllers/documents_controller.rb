@@ -13,10 +13,13 @@ class DocumentsController < ApplicationController
   # GET /documents or /documents.json
   def index
     if params[:owner_id].present? && params[:owner_type].present?
+      # This is typicaly for investors to view documents of a sale, offer, commitment etc
       owner_documents
     elsif params[:entity_id].present?
+      # This is typicaly for investors to view another entity's documents
       entity_documents
     else
+      # See your own docs
       @entity = current_user.entity
       @documents = policy_scope(Document)
       authorize(Document)
@@ -24,11 +27,18 @@ class DocumentsController < ApplicationController
     end
 
     @documents = @documents.where(owner_tag: params[:owner_tag]) if params[:owner_tag].present?
+
+    # Display docs of the folder and its children, like for data room
     if params[:folder_id].present?
       @folder = Folder.find(params[:folder_id])
       folder_ids = @folder.descendant_ids << params[:folder_id]
       @documents = @documents.where(folder_id: folder_ids)
     end
+
+    # This is specifically for investor advisors, who should not be able to see the docs for other funds
+    @documents = @documents.where.not(owner_type: %w[Fund CapitalCommitment CapitalRemittance]).or(@documents.where(owner_type: nil)) if params[:hide_fund_docs] == "true"
+
+    # Newest docs first
     @documents = @documents.order(id: :desc)
     @documents = @documents.includes(:folder).page(params[:page]) if params[:all].blank?
   end
@@ -170,7 +180,7 @@ class DocumentsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def document_params
     params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id, :tag_list,
-                                     :signature_enabled, :signed_by_id, :public_visibility,
+                                     :signature_enabled, :signed_by_id, :public_visibility, :send_email,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag,
                                      :tag_list, :folder_id, :file, properties: {}, signature_type: [])
   end

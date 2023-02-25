@@ -1,10 +1,12 @@
-class ExpressionOfInterestPolicy < ApplicationPolicy
+class ExpressionOfInterestPolicy < IoBasePolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
-        scope.all
+      if user.has_cached_role?(:company_admin) && user.entity_type == "Investment Fund"
+        scope.where(entity_id: user.entity_id)
+      elsif user.curr_role == "employee" && user.entity_type == "Investment Fund"
+        scope.for_employee(user)
       else
-        scope.where(entity_id: user.entity_id).or(scope.where(eoi_entity_id: user.entity_id))
+        scope.for_investor(user)
       end
     end
   end
@@ -14,13 +16,9 @@ class ExpressionOfInterestPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id) ||
-      (user.entity_id == record.eoi_entity_id)
-  end
-
-  def create?
-    (user.entity_id == record.entity_id) ||
-      (user.entity_id == record.eoi_entity_id)
+    permissioned_employee? ||
+      permissioned_investor? ||
+      permissioned_advisor?
   end
 
   def new?
@@ -28,7 +26,8 @@ class ExpressionOfInterestPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    permissioned_employee?(:update) ||
+      permissioned_advisor?(:update)
   end
 
   def edit?
@@ -36,27 +35,28 @@ class ExpressionOfInterestPolicy < ApplicationPolicy
   end
 
   def generate_documentation?
-    user.entity_id == record.entity_id && !record.esign_completed
+    update? && !record.esign_completed
   end
 
   def generate_esign_link?
-    user.entity_id == record.entity_id &&
+    update? &&
       record.esigns.count.zero? && !record.esign_completed
   end
 
   def destroy?
-    update?
+    permissioned_employee?(:destroy) ||
+      permissioned_advisor?(:destroy)
   end
 
   def approve?
-    record.entity_id == user.entity_id
+    update?
   end
 
   def allocate?
-    record.entity_id == user.entity_id
+    update?
   end
 
   def allocation_form?
-    record.entity_id == user.entity_id
+    update?
   end
 end

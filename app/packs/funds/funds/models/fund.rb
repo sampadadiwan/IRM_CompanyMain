@@ -1,4 +1,5 @@
 class Fund < ApplicationRecord
+  include ForInvestor
   include InvestorsGrantedAccess
   include WithFolder
   include WithDataRoom
@@ -57,30 +58,6 @@ class Fund < ApplicationRecord
     Investor.owner_access_rights(self, "Investor")
   end
 
-  scope :for_employee, lambda { |user|
-    includes(:access_rights).joins(:access_rights).where("funds.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
-  }
-
-  scope :for_advisor, lambda { |user|
-    # Ensure the access rghts for Document
-    includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter(user))
-                            .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
-                            .where("investors.investor_entity_id=?", user.entity_id)
-  }
-
-  scope :for_investor, lambda { |user|
-    # Ensure the access rghts for Document
-    joins(:access_rights)
-      .merge(AccessRight.access_filter(user))
-      .joins(entity: :investors)
-      # Ensure that the user is an investor and tis investor has been given access rights
-      # .where("entities.id=?", entity.id)
-      .where("investors.investor_entity_id=?", user.entity_id)
-      # Ensure this user has investor access
-      .joins(entity: :investor_accesses)
-      .merge(InvestorAccess.approved_for_user(user))
-  }
-
   def to_s
     name
   end
@@ -109,5 +86,22 @@ class Fund < ApplicationRecord
     valuation ||= valuations.order(valuation_date: :asc).last
     ratios = valuation ? fund_ratios.where(valuation_id: valuation.id, capital_commitment_id: nil) : fund_ratios.none
     [ratios, valuation]
+  end
+
+  # This method is used as sometimes we have setup a fund where two commitments belong to the same investor, but have got setup as 2 commitments under 2 different investors with similar names. WE need to merge all the commitments, remittances and payments and units
+  def merge_investors(retained_investor, defunct_investor)
+    investor_id = retained_investor.id
+    investor_name = retained_investor.investor_name
+    defunct_investor.investor_kycs.update_all(investor_id:)
+    defunct_investor.capital_commitments.update_all(investor_id:, investor_name:)
+    defunct_investor.capital_distribution_payments.update_all(investor_id:, investor_name:)
+    defunct_investor.capital_remittances.update_all(investor_id:, investor_name:)
+    defunct_investor.fund_units.update_all(investor_id:)
+    defunct_investor.account_entries.update_all(investor_id:)
+
+    AccessRight.where(access_to_investor_id: defunct_investor.id).update_all(access_to_investor_id: retained_investor.id)
+
+    # defunct_investor.investor_name += " - Defunct"
+    # defunct_investor.save
   end
 end

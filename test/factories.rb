@@ -1,4 +1,10 @@
 FactoryBot.define do
+  factory :investor_advisor do
+    entity { nil }
+    user { nil }
+    email { "MyString" }
+  end
+
   factory :aggregate_portfolio_investment do
     entity { nil }
     fund { nil }
@@ -177,7 +183,7 @@ FactoryBot.define do
     fund { Fund.all.sample }
     entity { fund.entity }
     gross_amount { 1000000 * rand(1..5) }
-    carry { gross_amount * 0.1 }
+    reinvestment { gross_amount * 0.5 }
     distribution_date { Date.today + rand(5).weeks }
     title { "Capital Dist #{rand(1..10)}" }
     unit_prices {

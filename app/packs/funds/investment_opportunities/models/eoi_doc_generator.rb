@@ -56,9 +56,8 @@ class EoiDocGenerator
     add_image(context, :investor_signature, investor_kyc.signature)
     generate_kyc_fields(context, investor_kyc)
 
-    template.render_to_file File.expand_path("#{@working_dir}/ExpressionOfInterest-#{expression_of_interest.id}.docx"), context
-
-    system("libreoffice --headless --convert-to pdf #{@working_dir}/ExpressionOfInterest-#{expression_of_interest.id}.docx --outdir #{@working_dir}")
+    file_name = "#{@working_dir}/ExpressionOfInterest-#{expression_of_interest.id}"
+    convert(template, context, file_name)
 
     additional_footers = expression_of_interest.documents.where(name: ["#{@io_doc_template_name} Footer" "#{@io_doc_template_name} Signature"])
     additional_headers = expression_of_interest.documents.where(name: ["#{@io_doc_template_name} Header", "#{@io_doc_template_name} Stamp Paper"])

@@ -19,6 +19,7 @@ Scenario Outline: Create new investment_opportunity
 
 Scenario Outline: Create new document for an investment_opportunity
   Given Im logged in as a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given there is an investment_opportunity "<investment_opportunity>"
   Given there is an existing investor "" with "1" users
   Given the investors are added to the investment_opportunity  
@@ -34,6 +35,7 @@ Scenario Outline: Create new document for an investment_opportunity
 
 Scenario Outline: Create new interest for an investment_opportunity
   Given Im logged in as a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given there is an investment_opportunity "<investment_opportunity>"
   Given there is an existing investor "" with "1" users
   Given the investors are added to the investment_opportunity  

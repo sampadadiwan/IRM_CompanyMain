@@ -1,0 +1,37 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @investor_advisor.user.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      User
+    </td>
+    <td>
+      <%= @investor_advisor.user.full_name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Email
+    </td>
+    <td>
+      <%= @investor_advisor.email %>
+    </td>
+  </tr>
+</table>
+<div>
+  <%= link_to "Edit", edit_investor_advisor_path(@investor_advisor), {class: "btn btn-primary"} %> |
+  <%= button_to "Delete", @investor_advisor, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+</div>
+
+<div class="associated_entity">
+  <%= render "/access_rights/index", 
+    access_rights: AccessRight.where(user_id: @investor_advisor.user_id, 
+        entity_id: @investor_advisor.entity_id).where.not(owner_type: "Folder") %>
+</div>

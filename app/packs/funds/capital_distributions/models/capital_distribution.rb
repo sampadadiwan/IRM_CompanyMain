@@ -4,7 +4,7 @@ class CapitalDistribution < ApplicationRecord
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
-  include FundScopes
+  include ForInvestor
 
   belongs_to :fund, touch: true
   belongs_to :entity
@@ -14,11 +14,11 @@ class CapitalDistribution < ApplicationRecord
   # Stores the prices for unit types for this call
   serialize :unit_prices, Hash
 
-  monetize :net_amount_cents, :carry_cents, :fee_cents, :gross_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :net_amount_cents, :reinvestment_cents, :gross_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.fund.currency }
 
   before_save :compute_net_amount
   def compute_net_amount
-    self.net_amount_cents = gross_amount_cents - carry_cents - fee_cents
+    self.net_amount_cents = gross_amount_cents - reinvestment_cents
   end
 
   after_commit :generate_distribution_payments

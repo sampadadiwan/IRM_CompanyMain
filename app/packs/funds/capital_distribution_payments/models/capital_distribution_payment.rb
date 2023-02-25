@@ -4,7 +4,7 @@ class CapitalDistributionPayment < ApplicationRecord
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
-  include FundScopes
+  include ForInvestor
   update_index('capital_distribution_payment') { self }
 
   belongs_to :fund, touch: true

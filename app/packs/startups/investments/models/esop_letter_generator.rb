@@ -51,9 +51,8 @@ class EsopLetterGenerator
     add_image(context, :employee_signature, holding.option_pool.certificate_signature)
 
     Rails.logger.debug { "Rendering with context #{context}" }
-    template.render_to_file File.expand_path("#{@working_dir}/GrantLetter-#{holding.id}.docx"), context
-
-    system("libreoffice --headless --convert-to pdf #{@working_dir}/GrantLetter-#{holding.id}.docx --outdir #{@working_dir}")
+    file_name = "#{@working_dir}/GrantLetter-#{holding.id}"
+    convert(template, context, file_name)
   end
 
   def add_holding_fields(context, holding)

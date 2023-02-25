@@ -13,7 +13,7 @@ class CapitalDistributionDashboard < Administrate::BaseDashboard
     capital_distribution_payments: Field::HasMany,
     id: Field::Number,
     gross_amount_cents: Field::String.with_options(searchable: false),
-    carry_cents: Field::String.with_options(searchable: false),
+    reinvestment_cents: Field::String.with_options(searchable: false),
     distribution_date: Field::Date,
     properties: Field::Text,
     created_at: Field::DateTime,
@@ -35,7 +35,7 @@ class CapitalDistributionDashboard < Administrate::BaseDashboard
     entity
     title
     gross_amount_cents
-    carry_cents
+    reinvestment_cents
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -46,7 +46,7 @@ class CapitalDistributionDashboard < Administrate::BaseDashboard
     capital_distribution_payments
     id
     gross_amount_cents
-    carry_cents
+    reinvestment_cents
     distribution_date
     properties
     created_at
@@ -66,7 +66,7 @@ class CapitalDistributionDashboard < Administrate::BaseDashboard
     entity
     capital_distribution_payments
     gross_amount_cents
-    carry_cents
+    reinvestment_cents
     distribution_date
     title
     completed

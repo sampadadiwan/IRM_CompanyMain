@@ -57,6 +57,7 @@ class TasksController < ApplicationController
   def new
     @task = params[:task] ? Task.new(task_params) : Task.new
     @task.entity_id ||= current_user.entity_id
+    @task.due_date = Time.zone.today + 1.week
     @task.user = current_user
     authorize @task
     setup_custom_fields(@task)

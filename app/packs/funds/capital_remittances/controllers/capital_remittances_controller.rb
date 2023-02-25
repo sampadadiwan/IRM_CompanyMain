@@ -1,5 +1,5 @@
 class CapitalRemittancesController < ApplicationController
-  before_action :set_capital_remittance, only: %i[show edit update destroy verify generate_docs allocate_units]
+  before_action :set_capital_remittance, only: %i[show edit update destroy verify generate_docs allocate_units send_notification]
 
   # GET /capital_remittances or /capital_remittances.json
   def index
@@ -60,6 +60,11 @@ class CapitalRemittancesController < ApplicationController
   def allocate_units
     FundUnitsJob.perform_later(@capital_remittance.id, "CapitalRemittance", "Allocation for remittance", current_user.id)
     redirect_to capital_remittance_path(@capital_remittance), notice: "Allocation process started, please check back in a few mins."
+  end
+
+  def send_notification
+    @capital_remittance.send_notification
+    redirect_to capital_remittance_path(@capital_remittance), notice: "Sent notification."
   end
 
   # GET /capital_remittances/new

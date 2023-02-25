@@ -1,0 +1,92 @@
+<%= turbo_frame_tag "new_access_right" do %>
+  <div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
+  <div class="dynamic_form card shadow mb-4" data-controller="access">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Grant Access</h6>
+    </div>
+    <div class="card-body">
+      <%= form_with(model: access_right, class: "associated_entity", id: "access_rights_form") do |form| %>
+        <% if access_right.errors.any? %>
+          <div class="alert alert-danger">
+            <h2><%= pluralize(access_right.errors.count, "error") %> prohibited this access_right from being saved:</h2>
+            <ul>
+              <% access_right.errors.each do |error| %>
+                <li><%= error.full_message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+
+        <div class="form-group" hidden='hidden'>
+          <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+          <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+          <%= form.text_field :access_type, class: "form-control", hidden: true  %>
+        </div>
+
+        <%
+          types = access_right.types
+          select_investor_users = false
+          select_employees = false
+
+            users_url = investor_accesses_path
+            select_investor_users = true
+        %>
+        <div data-controller="select" data-select-url-value="<%= users_url %>"
+           data-select-param-value="email_or_cat">
+
+          <div class="form-group">
+            <%= form.label :access_type %>
+            <%= form.select :email_or_cat, types, {}, class: "form-control", 
+              name: "email_or_cat", "data-action": "change->access#onChange change->select#change" %>
+          </div>
+
+          <% if select_investor_users %>
+            <div class="form-group" id="employee_form_group">
+              <%= form.label :user_id, "Select Specific User" %>
+              <%= form.select :user_id, [], {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" }  %>
+            </div>
+          <% end %>
+
+          <div class="form-group" id="category_form_group">
+            <%= form.label :access_to_category, "Select Stakeholder Category" %>
+            <%= form.select :access_to_category, Investor.INVESTOR_CATEGORIES(current_user.entity),
+            {:include_blank=>false, include_hidden: false}, 
+            class: "form-control select2-multiple", disabled: "disabled", multiple: "multiple",
+            "data-action": "change->access#addErrorCheck"  %>
+          </div>
+          
+          <% investors = current_user.entity.investors  %>
+          
+          <div class="form-group" id="investor_form_group">
+            <%= form.label :access_to_investor_id, "Select Stakeholder" %>
+            <%= form.select :access_to_investor_id, investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, 
+              {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" },
+              "data-action": "change->access#addErrorCheck" %>
+          </div>
+
+        </div>
+
+
+      <% if access_right.access_type == "Folder" %>
+        <div class="form-group">
+          <%= form.label :cascade, "Apply to files and sub folders" %>
+          <%= form.check_box :cascade, class: "form-control form-checkbox"  %>
+        </div>
+      <% end %>
+      
+      <div class="form-group" id="permissions_form_group">
+        <% AccessRight.permissions.pairs.each do |key, val| %>
+          <%= form.label :permissions, key %>
+          <%= form.check_box :permissions, {name: "access_right[permissions][]",  
+                val: val, id: "permissions_#{val}", class: "form-checkbox-horizontal"}, val, nil   %>
+        <% end %>
+      </div>
+
+      <div class="form-group">
+        <%= form.submit "Save", {class: "btn btn-outline-primary", data: {action: "click->access#checkRequiredFilled"}}%>
+        <a class="btn btn-outline-danger", data-action="click->access#close">Close</a>
+      </div>
+    <% end %>
+  </div>
+<% end %>

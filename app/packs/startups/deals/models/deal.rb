@@ -1,4 +1,5 @@
 class Deal < ApplicationRecord
+  include ForInvestor
   include Trackable
   include WithFolder
   include WithDataRoom
@@ -42,28 +43,6 @@ class Deal < ApplicationRecord
                          locals: { deal: self, message:, level: },
                          target: "deal_message"
   end
-
-  scope :for_employee, lambda { |user|
-    includes(:access_rights).joins(:access_rights).where("deals.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
-  }
-
-  scope :for_advisor, lambda { |user|
-    # Ensure the access rghts for Document
-    includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter(user))
-                            .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
-                            .where("investors.investor_entity_id=?", user.entity_id)
-  }
-
-  scope :for_investor, lambda { |user|
-    joins(:access_rights)
-      .merge(AccessRight.access_filter(user))
-      .joins(:investors)
-      # Ensure that the user is an investor and tis investor has been given access rights
-      .where("investors.investor_entity_id=?", user.entity_id)
-      # Ensure this user has investor access
-      .joins(entity: :investor_accesses)
-      .merge(InvestorAccess.approved_for_user(user))
-  }
 
   def to_s
     name

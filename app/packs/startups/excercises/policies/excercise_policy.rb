@@ -1,9 +1,7 @@
 class ExcercisePolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
-        scope.all
-      elsif user.has_cached_role?(:employee)
+      if user.has_cached_role?(:employee)
         scope.where(entity_id: user.entity_id)
       else
         scope.where(user_id: user.id)
@@ -16,7 +14,7 @@ class ExcercisePolicy < ApplicationPolicy
   end
 
   def show?
-    user.has_cached_role?(:super) || (user.entity_id == record.entity_id) || user.id == record.user_id
+    (user.entity_id == record.entity_id) || user.id == record.user_id
   end
 
   def create?

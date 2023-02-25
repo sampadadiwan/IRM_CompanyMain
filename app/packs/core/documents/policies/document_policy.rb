@@ -15,14 +15,10 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def show?
-    # puts user.enable_documents && user.entity_id == record.entity_id
-    # puts user.enable_documents && show_investor?
-    # puts record.owner && owner_policy.show?
-
     record.public_visibility ||
       (user && (
         (user.enable_documents && user.entity_id == record.entity_id) ||
-        (user.enable_documents && show_investor?) ||
+        (user.enable_documents && show_investor? && !user.has_cached_role?(:investor_advisor)) ||
         (record.owner && owner_policy.show?) ||
         allow_external?(:read)
       ))

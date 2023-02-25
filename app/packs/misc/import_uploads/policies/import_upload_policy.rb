@@ -1,11 +1,7 @@
 class ImportUploadPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
-        scope.all
-      else
-        scope.where(entity_id: user.entity_id)
-      end
+      scope.where(entity_id: user.entity_id)
     end
   end
 

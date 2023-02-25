@@ -40,7 +40,6 @@ class OfferSpaGenerator
     template = Sablon.template(File.expand_path(master_spa_path))
 
     context = {}
-    
     context.store  :effective_date, Time.zone.today.strftime("%d %B %Y")
     context.store  :offer_quantity, offer.quantity
     context.store  :company_name, offer.entity.name
@@ -58,9 +57,8 @@ class OfferSpaGenerator
     add_buyer_fields(context, offer)
     add_image(context, :buyer_signature, offer.interest&.signature)
 
-    template.render_to_file File.expand_path("#{@working_dir}/Offer-#{offer.id}.docx"), context
-
-    system("libreoffice --headless --convert-to pdf #{@working_dir}/Offer-#{offer.id}.docx --outdir #{@working_dir}")
+    file_name = "#{@working_dir}/Offer-#{offer.id}"
+    convert(template, context, file_name)
 
     additional_footers = nil
     additional_headers = nil

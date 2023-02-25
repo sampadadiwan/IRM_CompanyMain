@@ -57,6 +57,7 @@ module WithFolder
       # Check if the doc exists
       doc = Document.where(id: document.id).first
       # Give explicit access rights to the doc to this investor
+      # This is so that it becomes visible in the doc explorer
       AccessRight.grant(document, investor_id) if doc.present?
     end
   end

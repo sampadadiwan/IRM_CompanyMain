@@ -1,9 +1,7 @@
 class OfferPolicy < SaleBasePolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
-        scope.all
-      elsif user.curr_role == "advisor"
+      if user.curr_role == "advisor"
         scope.for_advisor(user)
       elsif user.curr_role.to_sym == :holding
         scope.where(user_id: user.id)

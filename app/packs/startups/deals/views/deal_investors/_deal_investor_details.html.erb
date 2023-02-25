@@ -40,7 +40,7 @@
                   access_type: "DealInvestor", 
                   owner_type: "DealInvestor", 
                   entity_id: deal_investor.entity_id) %>
-                  
+              <% params[:form_type] = "deal_investor_form" %>
               <%= render "/access_rights/index", access_rights: deal_investor.access_rights.includes(:investor, :owner), access_right: access_right %>
             </div>
           <% end %>

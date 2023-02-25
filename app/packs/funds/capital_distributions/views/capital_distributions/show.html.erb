@@ -46,21 +46,13 @@
     </tr>
     <tr>
       <td>
-        Carry
+        Reinvestment
       </td>
       <td>
-        <%= money_to_currency @capital_distribution.carry, params %>
+        <%= money_to_currency @capital_distribution.reinvestment, params %>
       </td>
     </tr>
-    <tr>
-      <td>
-        Fee
-      </td>
-      <td>
-        <%= money_to_currency @capital_distribution.fee, params %>
-      </td>
-    </tr>
-
+    
     <tr>
       <td>
         Net Amount

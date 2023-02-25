@@ -23,6 +23,7 @@ class Investor < ApplicationRecord
   has_many :deals, through: :deal_investors
   has_many :holdings, dependent: :destroy
   has_many :notes, dependent: :destroy
+  has_many :aggregate_portfolio_investments, dependent: :destroy, foreign_key: :portfolio_company_id
   has_many :portfolio_investments, dependent: :destroy, foreign_key: :portfolio_company_id
 
   has_many :investor_kycs, dependent: :destroy
@@ -74,7 +75,7 @@ class Investor < ApplicationRecord
 
   def self.INVESTOR_CATEGORIES(entity = nil)
     cats = Investment.INVESTOR_CATEGORIES(entity) + %w[Prospective Advisor]
-    cats += ["Portfolio Company"] if entity && entity.entity_type == "Investment Fund"
+    cats += ["Portfolio Company"] if entity.entity_type == "Investment Fund"
     cats
   end
 
@@ -97,6 +98,20 @@ class Investor < ApplicationRecord
       e.save
 
       self.investor_entity = e
+    end
+  end
+
+  # Some associations cache the investor_name, so update that if the name changes here.
+  after_commit :update_association_name
+  def update_association_name
+    if saved_change_to_investor_name
+      investor_kycs.update_all(investor_name:)
+      capital_commitments.update_all(investor_name:)
+      capital_distribution_payments.update_all(investor_name:)
+      capital_remittances.update_all(investor_name:)
+      aggregate_portfolio_investments.update_all(portfolio_company_name: investor_name)
+      portfolio_investments.update_all(portfolio_company_name: investor_name)
+      deal_investors.update_all(investor_name:)
     end
   end
 

@@ -10,7 +10,8 @@
                       "access_right[access_type]": access_right.access_type,
                       "access_right[owner_id]": access_right.owner_id,
                       "access_right[owner_type]": access_right.owner_type,
-                      "access_right[entity_id]": access_right.entity_id), 
+                      "access_right[entity_id]": access_right.entity_id,
+                      form_type: params[:form_type]), 
                       { data: { turbo_frame: 'new_access_right' },
                       method: :get, class: "btn btn-outline-primary" } if access_right %> 
 

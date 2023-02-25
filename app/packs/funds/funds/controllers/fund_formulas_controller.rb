@@ -6,6 +6,11 @@ class FundFormulasController < ApplicationController
     @fund_formulas = policy_scope(FundFormula)
     @fund_formulas = @fund_formulas.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @fund_formulas = @fund_formulas.order(:fund_id, sequence: :asc)
+
+    if params[:fund_id].present?
+      @bread_crumbs = { Funds: funds_path, "#{Fund.find(params[:fund_id])}": fund_path(id: params[:fund_id]),
+                        'Fund Formulas': nil }
+    end
   end
 
   # GET /fund_formulas/1 or /fund_formulas/1.json

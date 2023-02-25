@@ -15,6 +15,7 @@
                 owner_type: "Folder", 
                 entity_id: folder.entity_id) %> 
 
+            <% params[:form_type] = "document_form" %>
             <%= render "/access_rights/index", access_rights: folder.access_rights.includes(:investor, :owner), access_right: access_right %>
           </div>
         </div>

@@ -61,7 +61,7 @@ class InvestorsController < ApplicationController
   # POST /investors or /investors.json
   def create
     @investor = Investor.new(investor_params)
-    @investor.entity_id = current_user.entity_id unless current_user.has_role?(:super)
+    @investor.entity_id = current_user.entity_id
     authorize @investor
 
     respond_to do |format|

@@ -1,0 +1,61 @@
+<%= turbo_frame_tag "new_access_right" do %>
+  <div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
+  <div class="dynamic_form card shadow mb-4" data-controller="access">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Grant Access</h6>
+    </div>
+    <div class="card-body">
+      <%= form_with(model: access_right, class: "associated_entity", id: "access_rights_form") do |form| %>
+
+        <% if access_right.errors.any? %>
+          <div class="alert alert-danger">
+            <h2><%= pluralize(access_right.errors.count, "error") %> prohibited this access_right from being saved:</h2>
+            <ul>
+              <% access_right.errors.each do |error| %>
+                <li><%= error.full_message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+      
+        <div class="form-group" hidden='hidden'>
+          <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+          <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+          <%= form.text_field :access_type, class: "form-control", hidden: true  %>
+        </div>
+      
+        <%
+          types = ["Employee", "Investor Advisor"]
+          select_investor_users = false
+          select_employees = true
+          users = current_user.entity.employees
+          investor_advisors = current_user.entity.investor_advisors
+        %>
+      
+        <div>
+          <div class="form-group">
+            <%= form.label :access_type %>
+            <%= form.select :email_or_cat, types, {}, class: "form-control", 
+              name: "email_or_cat", "data-action": "change->access#onChange" %>
+          </div>
+
+          <div class="form-group" id="investor_advisor_form_group">
+            <%= form.label :user_id, "Select Investor Advisor" %>
+            <%= form.select :user_id, investor_advisors.map{|ia| [ia.user.full_name, ia.user_id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple"  %>
+          </div>
+          
+          <div class="form-group" id="employee_form_group">
+            <%= form.label :user_id, "Select Employee" %>
+            <%= form.select :user_id, users.map{|u| [u.full_name, u.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple"  %>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <%= form.submit "Save", {class: "btn btn-outline-primary", data: {action: "click->access#checkRequiredFilled"}}%>
+          <a class="btn btn-outline-danger", data-action="click->access#close">Close</a>
+        </div>
+
+      <% end %>
+
+    </div>
+  <% end %>

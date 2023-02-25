@@ -15,9 +15,7 @@ export default class extends Controller {
       this.dispatchEvent(event);
     });
 
-    this.hideCategory();
-    this.hideEmployee();
-    this.hidePermissons();
+    this.onChange();
   }
 
   investorAdvisorChange(event) {
@@ -41,35 +39,36 @@ export default class extends Controller {
     switch (selected) {
       case "All Users for Specific Stakeholder":
         // hide category & disable
-        this.hideCategory();
-        this.hideEmployee();
+        this.hideAll();
         this.showInvestor();
         this.showMetadata();
-        this.hidePermissons();
         break;
       case "All Stakeholder of Specific Category":
         // hide category & disable
+        this.hideAll();
         this.showCategory();
-        this.hideEmployee();        
-        this.hideInvestor();
         this.showMetadata();
-        this.hidePermissons();
         break;
 
       case "Employee":
         // hide category & disable
-        this.hideCategory();
-        this.hideInvestor();
-        this.hideMetadata();
+        this.hideAll();
         this.showEmployee();
         this.showPermissions();
         break;
+
+      case "Investor Advisor":
+          // hide category & disable
+          this.hideAll();
+          this.showInvestorAdvisor();
+          this.showPermissions();
+          break;
+        
       case "Specific User":
         // hide category & disable
-        this.hideCategory();
-        this.hideInvestor();
-        this.hideMetadata();
+        this.hideAll();
         this.showEmployee();
+        this.hidePermissons();
         break;
       default:
     }
@@ -158,6 +157,18 @@ export default class extends Controller {
     $('#access_right_user_id').removeClass('required');
   }
 
+  showInvestorAdvisor() {
+    $("#investor_advisor_form_group").show();
+    $('#access_right_user_id').prop('disabled', "");
+    $('#access_right_user_id').addClass('required');
+  }
+
+  hideInvestorAdvisor() {
+    $("#investor_advisor_form_group").hide();
+    $('#access_right_user_id').prop('disabled', "disabled");
+    $('#access_right_user_id').removeClass('required');
+  }
+
   hidePermissons() {
     $("#permissions_form_group").hide();
   }
@@ -166,5 +177,13 @@ export default class extends Controller {
     $("#permissions_form_group").show();        
   }
 
+  hideAll() {
+    this.hideCategory();
+    this.hideInvestor();
+    this.hideMetadata();
+    this.hideEmployee();
+    this.hidePermissons();
+    this.hideInvestorAdvisor();
+  }
 
 }

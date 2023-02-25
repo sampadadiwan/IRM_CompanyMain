@@ -119,6 +119,10 @@ class FundPortfolioCalcs
       instrument_type = k[1]
       valuation = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor",
                                   instrument_type:, valuation_date: ..@end_date).order(valuation_date: :asc).last
+
+      # We cannot proceed without a valid valuation
+      raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name} prior to date #{@end_date}" unless valuation
+
       # Get the fmv for this portfolio_company on the @end_date
       fmv_on_end_date_cents = quantity * valuation.per_share_value_cents
       # Aggregate the fmv across the fun

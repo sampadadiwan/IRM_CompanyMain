@@ -1,6 +1,6 @@
 class AccountEntry < ApplicationRecord
   include WithCustomField
-  include FundScopes
+  include ForInvestor
 
   belongs_to :capital_commitment, optional: true
   belongs_to :entity

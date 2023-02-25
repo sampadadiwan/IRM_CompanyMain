@@ -15,7 +15,8 @@
             <%= link_to "Documents", documents_path(entity_id: entity.id) , {class: "btn btn-outline-primary"}%>
             <%= link_to "Investments", investments_path(entity_id: entity.id) , {class: "btn btn-outline-success"}%>
         <% else %>
-            <%= link_to "Documents", documents_path(entity_id: entity.id) , {class: "btn btn-outline-primary"}%>
+            <% hide_fund_docs = current_user.has_cached_role?(:investor_advisor) %>
+            <%= link_to "Documents", documents_path(entity_id: entity.id, hide_fund_docs:) , {class: "btn btn-outline-primary"}%>
             
             <%= link_to "Investments", dashboard_entities_path(entity_id: entity.id, dashboard: "investor_dashboard") , 
                     {id: "investments_entity_#{entity.id}", class: "btn btn-outline-success"} if current_user.enable_investments && entity.entity_type != "Investment Fund" %>

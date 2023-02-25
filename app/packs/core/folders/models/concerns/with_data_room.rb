@@ -17,7 +17,7 @@ module WithDataRoom
 
   def access_rights_changed(access_right)
     ar = AccessRight.where(id: access_right.id).first
-    if ar
+    if ar && ar.entity_id == entity_id
       # Add this ar to the data room
       data_room_ar = ar.dup
       data_room_ar.owner = data_room_folder

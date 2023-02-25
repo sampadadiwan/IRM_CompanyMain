@@ -11,6 +11,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     id: Field::Number,
     sandbox: Field::BooleanEmoji,
     sandbox_emails: Field::String,
+    entity_bcc: Field::String,
     from_email: Field::String,
     bank_verification: Field::BooleanEmoji,
     pan_verification: Field::BooleanEmoji,
@@ -49,6 +50,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     sandbox
     sandbox_emails
     from_email
+    entity_bcc
     pan_verification
     bank_verification
     snapshot_frequency_months
@@ -67,6 +69,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     sandbox
     sandbox_emails
     from_email
+    entity_bcc
     bank_verification
     pan_verification
     last_snapshot_on

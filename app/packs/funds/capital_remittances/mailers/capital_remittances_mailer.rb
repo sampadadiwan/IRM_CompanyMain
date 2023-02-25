@@ -16,5 +16,10 @@ class CapitalRemittancesMailer < ApplicationMailer
            to: emails,
            subject: "Capital Call: #{@capital_remittance.entity.name}")
     end
+
+    Chewy.strategy(:sidekiq) do
+      @capital_remittance.notification_sent = true
+      @capital_remittance.save
+    end
   end
 end

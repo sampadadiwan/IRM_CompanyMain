@@ -1,0 +1,42 @@
+<%= turbo_frame_tag "new_access_right" do %>
+  <div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
+  <div class="dynamic_form card shadow mb-4" data-controller="access">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Grant Access</h6>
+    </div>
+    <div class="card-body">
+      <%= form_with(model: access_right, class: "associated_entity", id: "access_rights_form") do |form| %>
+        <% if access_right.errors.any? %>
+          <div class="alert alert-danger">
+            <h2><%= pluralize(access_right.errors.count, "error") %> prohibited this access_right from being saved:</h2>
+            <ul>
+              <% access_right.errors.each do |error| %>
+                <li><%= error.full_message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+
+        <div class="form-group" hidden='hidden'>
+          <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+          <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+          <%= form.text_field :access_type, class: "form-control", hidden: true  %>
+        </div>
+
+        <% investors = current_user.entity.investors.advisors.includes(:investor_entity).order("entities.name") + [access_right.owner.investor]  %>
+        
+        <div class="form-group" id="investor_form_group">
+            <%= form.label :access_to_investor_id, "Select Stakeholder" %>
+            <%= form.select :access_to_investor_id, investors.map{|c| [c.investor_name, c.id]}, 
+              {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" },
+              "data-action": "change->access#addErrorCheck" %>
+        </div>
+
+      <div class="form-group">
+        <%= form.submit "Save", {class: "btn btn-outline-primary", data: {action: "click->access#checkRequiredFilled"}}%>
+        <a class="btn btn-outline-danger", data-action="click->access#close">Close</a>
+      </div>
+    <% end %>
+  </div>
+<% end %>

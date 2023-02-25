@@ -1,4 +1,8 @@
 <h1>New Access Right</h1>
-<%= render "form", access_right: @access_right %>
+<% if params[:form_type] %>
+    <%= render params[:form_type], access_right: @access_right %>
+<% else %>
+    <%= render "form", access_right: @access_right %>
+<% end %>
 
 

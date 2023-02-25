@@ -8,7 +8,7 @@ class InvestorAccess < ApplicationRecord
   validates :email, :first_name, :last_name, presence: true
   belongs_to :entity
   counter_culture :entity, column_name: proc { |ia| ia.approved ? nil : 'pending_accesses_count' }
-
+  belongs_to :investor_entity, class_name: "Entity"
   belongs_to :investor # , strict_loading: true
   counter_culture :investor, column_name: proc { |model| model.approved ? 'investor_access_count' : 'unapproved_investor_access_count' }
 
@@ -24,7 +24,7 @@ class InvestorAccess < ApplicationRecord
       # But the holding company still needs to be added as an investor and give access rights
       where("1=1")
     else
-      where("investor_accesses.user_id=? and investor_accesses.approved=?", user.id, true)
+      where("investor_accesses.investor_entity_id=? and investor_accesses.user_id=? and investor_accesses.approved=?", user.entity_id, user.id, true)
     end
   }
 
@@ -43,8 +43,11 @@ class InvestorAccess < ApplicationRecord
   before_validation :update_user
   validate :ensure_entity_id
 
+  # This is to check that a user belonging to entity 1 is not given investor_access in an investor belonging to entity 2
+  # This rule however does not hold for investor_advisors. This is because they can switch entity_ids to become
+  # the advisor for any entity they have access to
   def ensure_entity_id
-    errors.add(:user, "cannot be given access. Belongs to #{user.entity.name} but is being added to #{investor.investor_entity.name}") if user && user.entity_id != investor.investor_entity_id
+    errors.add(:user, "cannot be given access. Belongs to #{user.entity.name} but is being added to #{investor.investor_entity.name}") if user && !user.has_cached_role?(:investor_advisor) && user.entity_id != investor.investor_entity_id
   end
 
   def full_name
@@ -58,6 +61,7 @@ class InvestorAccess < ApplicationRecord
   # after_commit :send_notification_if_changed, if: :approved
 
   def update_user
+    self.investor_entity_id = investor.investor_entity_id
     self.email = email.strip
     u = User.find_by(email:)
     if u.blank?

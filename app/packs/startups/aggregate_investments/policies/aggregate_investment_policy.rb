@@ -1,11 +1,7 @@
 class AggregateInvestmentPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
-        scope.all
-      else
-        scope.where(entity_id: user.entity_id)
-      end
+      scope.where(entity_id: user.entity_id)
     end
   end
 
@@ -14,7 +10,7 @@ class AggregateInvestmentPolicy < ApplicationPolicy
   end
 
   def show?
-    if user.has_cached_role?(:super) || (user.entity_id == record.entity_id)
+    if user.entity_id == record.entity_id
       true
     else
       user.enable_investments &&

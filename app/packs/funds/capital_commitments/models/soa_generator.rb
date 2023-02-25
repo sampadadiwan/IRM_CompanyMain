@@ -63,9 +63,9 @@ class SoaGenerator
 
     Rails.logger.debug { "Using context #{context.keys} to render template" }
     Rails.logger.debug "Rendering template"
-    template.render_to_file File.expand_path("#{@working_dir}/SOA-#{capital_commitment.id}.docx"), context
 
-    system("libreoffice --headless --convert-to pdf #{@working_dir}/SOA-#{capital_commitment.id}.docx --outdir #{@working_dir}")
+    file_name = "#{@working_dir}/SOA-#{capital_commitment.id}"
+    convert(template, context, file_name)
   end
 
   def add_account_entries(context, capital_commitment, start_date, end_date)
@@ -109,6 +109,7 @@ class SoaGenerator
     new_soa_doc.from_template = document
     new_soa_doc.owner = capital_commitment
     new_soa_doc.owner_tag = "Generated"
+    new_soa_doc.send_email = false
 
     new_soa_doc.save
   end

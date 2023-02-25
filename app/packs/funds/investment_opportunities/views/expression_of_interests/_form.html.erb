@@ -28,9 +28,9 @@
   </div>
   <% end %>
 
-  <div class="form-group">
-    <%= form.label :amount %>
-    <%= form.number_field :amount, class: "form-control"  %>
+  <div class="form-group" data-controller="currencyformat">
+    <%= form.label :amount %> <span class="formatted_currency"></span>
+    <%= form.number_field :amount, class: "form-control", data: {action: "input->currencyformat#format"}  %>
     <small class="text-muted">Min ticket size is <%= money_to_currency(expression_of_interest.investment_opportunity.min_ticket_size, params) %></small> 
   </div>
 

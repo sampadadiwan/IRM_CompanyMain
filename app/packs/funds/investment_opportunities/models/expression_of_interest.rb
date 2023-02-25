@@ -1,5 +1,6 @@
 class ExpressionOfInterest < ApplicationRecord
   include WithFolder
+  include ForInvestor
 
   belongs_to :entity
   belongs_to :user

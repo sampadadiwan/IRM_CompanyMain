@@ -28,18 +28,25 @@ class CapitalCallJob < ApplicationJob
       # Check if we alread have a CapitalRemittance for this commitment
       Rails.logger.debug { "CapitalCallJob: Creating CapitalRemittance for #{capital_commitment.investor_name} for #{@capital_call.name}" }
 
-      # Note the due amount for the call is calculated automatically inside CapitalRemittance
-      status = @capital_call.generate_remittances_verified ? "Paid" : "Pending"
-      cr = CapitalRemittance.new(capital_call: @capital_call, fund: @capital_call.fund,
-                                 entity: @capital_call.entity, investor: capital_commitment.investor, capital_commitment:, folio_id: capital_commitment.folio_id,
-                                 status:, verified: @capital_call.generate_remittances_verified)
+      if CapitalRemittance.exists?(capital_call: @capital_call, capital_commitment:)
+        Rails.logger.debug { "Skipping remittances for #{capital_commitment}, already present" }
+      else
 
-      cr.run_callbacks(:save) { false }
-      cr.run_callbacks(:create) { false }
-      @remittances << cr if cr.valid?
+        # Note the due amount for the call is calculated automatically inside CapitalRemittance
+
+        status = @capital_call.generate_remittances_verified ? "Paid" : "Pending"
+        cr = CapitalRemittance.new(capital_call: @capital_call, fund: @capital_call.fund,
+                                   entity: @capital_call.entity, investor: capital_commitment.investor, capital_commitment:, folio_id: capital_commitment.folio_id,
+                                   status:, verified: @capital_call.generate_remittances_verified)
+
+        cr.run_callbacks(:save) { false }
+        cr.run_callbacks(:create) { false }
+        @remittances << cr if cr.valid?
+      end
     end
 
     # import the rows
+    Rails.logger.debug { "Importing #{@remittances.length} CapitalRemittances" }
     CapitalRemittance.import @remittances
 
     # Generate any payments for the imported remittances if required

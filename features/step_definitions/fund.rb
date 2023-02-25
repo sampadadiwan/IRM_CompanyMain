@@ -49,6 +49,39 @@
     @fund.reload
   end
 
+  Given('another user is {string} investor advisor access to the fund') do |given|
+    @user = @employee_investor
+
+    if given == "given" || given == "yes"
+      @entity.investors.each do |inv|
+        if inv.investor_entity.entity_type != "Investor Advisor"
+          # Create the Investor Advisor
+          investor_advisor = InvestorAdvisor.create!(entity_id: inv.investor_entity_id, email: @user.email)
+          puts "\n####Investor Advisor####\n"
+          puts investor_advisor.to_json
+
+          # Switch the IA to the entity
+          investor_advisor.switch(@user)
+
+          # Create the Access Right 
+          @access_right = AccessRight.create!(entity_id: inv.investor_entity_id, owner: @fund, user_id: @user.id, metadata: "Investor Advisor")
+
+          puts "\n####Access Right####\n"
+          puts @access_right.to_json
+
+          ia = InvestorAccess.create(entity: inv.entity, investor: inv, 
+          first_name: @user.first_name, last_name: @user.last_name,
+          email: @user.email, granter: nil, approved: true )
+  
+          puts "\n####Investor Access####\n"
+          puts ia.to_json
+  
+        end
+      end
+
+    end
+  end
+
   Given('another user is {string} advisor access to the fund') do |given|
     # Hack to make the tests work without rewriting many steps for another user
     @user = @employee_investor
@@ -310,9 +343,11 @@ end
 
 Given('the fund has capital commitments from each investor') do
   @entity.investors.each do |inv|
-    cc = FactoryBot.create(:capital_commitment, fund: @fund, investor: inv)
-    puts "\n####CapitalCommitment####\n"
-    puts cc.to_json
+    if inv.investor_entity.entity_type != "Investor Advisor" # IAs cannot have commitments
+      cc = FactoryBot.create(:capital_commitment, fund: @fund, investor: inv)
+      puts "\n####CapitalCommitment####\n"
+      puts cc.to_json
+    end
   end
 
   @fund.reload
@@ -483,8 +518,7 @@ When('I create a new capital distribution {string}') do |args|
 
   fill_in('capital_distribution_title', with: @capital_distribution.title)
   fill_in('capital_distribution_gross_amount', with: @capital_distribution.gross_amount)
-  fill_in('capital_distribution_carry', with: @capital_distribution.carry)
-  fill_in('capital_distribution_fee', with: @capital_distribution.fee)
+  fill_in('capital_distribution_reinvestment', with: @capital_distribution.reinvestment)
   fill_in('capital_distribution_distribution_date', with: @capital_distribution.distribution_date)
   
   click_on "Save"
@@ -495,7 +529,7 @@ end
 Then('I should see the capital distrbution details') do
   expect(page).to have_content(@capital_distribution.title)
   expect(page).to have_content(money_to_currency(@capital_distribution.gross_amount))
-  expect(page).to have_content(money_to_currency(@capital_distribution.carry))
+  expect(page).to have_content(money_to_currency(@capital_distribution.reinvestment))
   expect(page).to have_content(money_to_currency(@capital_distribution.net_amount))
   expect(page).to have_content(@capital_distribution.distribution_date.strftime("%d/%m/%Y"))
 
@@ -655,7 +689,7 @@ Then('the capital distributions must have the data in the sheet') do
     cc.title.should == user_data["Title"].strip
     cc.fund.name.should == user_data["Fund"]
     cc.gross_amount_cents.should == user_data["Gross"].to_i * 100
-    cc.carry_cents.should == user_data["Carry"].to_i * 100
+    cc.reinvestment_cents.should == user_data["Reinvestment"].to_i * 100
     cc.distribution_date.should == user_data["Date"]
   end
 end

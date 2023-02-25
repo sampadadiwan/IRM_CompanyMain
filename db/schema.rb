@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_02_22_090830) do
+ActiveRecord::Schema[7.0].define(version: 2023_02_25_023757) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -499,6 +499,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_22_090830) do
     t.string "investor_name"
     t.bigint "document_folder_id"
     t.decimal "units_quantity", precision: 20, scale: 2, default: "0.0"
+    t.boolean "notification_sent", default: false
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"
@@ -575,7 +576,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_22_090830) do
     t.string "company_advisor", limit: 100
     t.string "investor_advisor", limit: 100
     t.string "investor_name"
-    t.string "tier", limit: 10
+    t.string "tier", limit: 20
     t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.index ["deal_id"], name: "index_deal_investors_on_deal_id"
@@ -646,6 +647,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_22_090830) do
     t.boolean "public_visibility", default: false
     t.string "tag_list", limit: 120
     t.boolean "template", default: false
+    t.boolean "send_email"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
     t.index ["folder_id"], name: "index_documents_on_folder_id"
@@ -728,6 +730,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_22_090830) do
     t.boolean "sandbox"
     t.string "sandbox_emails"
     t.string "from_email", limit: 100
+    t.string "entity_bcc"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 
@@ -1316,9 +1319,11 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_22_090830) do
     t.string "first_name"
     t.string "last_name"
     t.boolean "send_confirmation", default: false
+    t.bigint "investor_entity_id", null: false
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
     t.index ["email"], name: "index_investor_accesses_on_email"
     t.index ["entity_id"], name: "index_investor_accesses_on_entity_id"
+    t.index ["investor_entity_id"], name: "index_investor_accesses_on_investor_entity_id"
     t.index ["investor_id"], name: "index_investor_accesses_on_investor_id"
     t.index ["user_id"], name: "index_investor_accesses_on_user_id"
   end

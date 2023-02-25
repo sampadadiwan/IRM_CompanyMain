@@ -53,6 +53,10 @@ class AccessRight < ApplicationRecord
     where("investors.category=access_rights.access_to_category OR access_rights.access_to_investor_id=investors.id OR access_rights.user_id=?", user.id)
   }
 
+  scope :investor_granted_access_filter, lambda { |user|
+    where("access_rights.user_id=? and access_rights.entity_id=?", user.id, user.entity_id)
+  }
+
   validate :any_present?
 
   def any_present?
@@ -71,12 +75,12 @@ class AccessRight < ApplicationRecord
   def types
     case owner_type
     when "Deal"
-      AccessRight::TYPES - ["All Stakeholder of Specific Category"]
+      ["Employee"]
     when "DealInvestor"
       AccessRight::TYPES - ["All Stakeholder of Specific Category"] + ["Employee"]
     when "Fund", "SecondarySale"
       AccessRight::TYPES + ["Employee"]
-    when "Document"
+    when "Document", "Folder"
       AccessRight::TYPES + ["Specific User"]
     else
       AccessRight::TYPES
@@ -140,7 +144,8 @@ class AccessRight < ApplicationRecord
   def send_notification
     if Rails.env.test?
       AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later
-    elsif notify
+    elsif notify && (owner_type != "Document" || owner.send_email)
+      # Send notification for all but Documents should not get notification unless send_email flag is set
       AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later(wait_until: rand(60).seconds.from_now)
     end
     # Add jitter to the emails, so we dont flood aws SES

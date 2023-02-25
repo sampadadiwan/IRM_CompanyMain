@@ -53,9 +53,8 @@ class CapitalRemittanceDocGenerator
 
     generate_kyc_fields(context, capital_remittance.capital_commitment.investor_kyc) if capital_remittance.capital_commitment.investor_kyc
 
-    template.render_to_file File.expand_path("#{@working_dir}/CapitalRemittance-#{capital_remittance.id}.docx"), context
-
-    system("libreoffice --headless --convert-to pdf #{@working_dir}/CapitalRemittance-#{capital_remittance.id}.docx --outdir #{@working_dir}")
+    file_name = "#{@working_dir}/CapitalRemittance-#{capital_remittance.id}"
+    convert(template, context, file_name)
   end
 
   def add_amounts(capital_remittance, context)

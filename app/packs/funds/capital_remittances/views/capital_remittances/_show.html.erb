@@ -32,7 +32,7 @@
       <td>
         <%= l capital_remittance.capital_call.due_date %>
       </td>
-    </tr>
+    </tr>    
 
     <tr>
       <td>
@@ -108,6 +108,15 @@
         <td>
           <%= render DisplayBooleanComponent.new(bool: capital_remittance.status == "Paid").
           with_content(capital_remittance.status) if capital_remittance.status %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Notification Sent
+        </td>
+        <td>
+          <%= display_boolean capital_remittance.notification_sent %>
         </td>
       </tr>
 

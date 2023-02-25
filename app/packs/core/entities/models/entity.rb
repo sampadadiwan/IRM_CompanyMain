@@ -30,6 +30,7 @@ class Entity < ApplicationRecord
 
   # List of investors who are invested in this entity
   has_many :investors, dependent: :destroy
+  has_many :investor_advisors, dependent: :destroy
   has_many :investor_entities, through: :investors
   # List of investor records in which this company is an investee
 
@@ -56,7 +57,7 @@ class Entity < ApplicationRecord
   monetize :total_investments, as: "total", with_model_currency: :currency
   monetize :per_share_value_cents, with_model_currency: :currency
 
-  TYPES = ["Investor", "Company", "Holding", "Investment Advisor", "Family Office", "Investment Fund", "Consulting", "Advisor"].freeze
+  TYPES = ["Investor", "Investor Advisor", "Company", "Holding", "Investment Advisor", "Family Office", "Investment Fund", "Consulting", "Advisor"].freeze
   SECONDARY_BUYERS = ["Investor", "Investment Advisor", "Family Office"].freeze
 
   FUNDING_UNITS = %w[Lakhs Crores].freeze
@@ -68,6 +69,7 @@ class Entity < ApplicationRecord
   scope :startups, -> { where(entity_type: "Company") }
   scope :advisors, -> { where(entity_type: "Advisor") }
   scope :investment_advisors, -> { where(entity_type: "Investment Advisor") }
+  scope :investor_advisors, -> { where(entity_type: "Investor Advisor") }
   scope :family_offices, -> { where(entity_type: "Family Office") }
   scope :funds, -> { where(entity_type: "Investment Fund") }
   scope :user_investor_entities, ->(user) { where('access_rights.access_to': user.email).includes(:access_rights) }

@@ -1,5 +1,4 @@
 Rails.application.routes.draw do
-  resources :aggregate_portfolio_investments
   namespace :admin do
     namespace :paper_trail do
       resources :versions
@@ -38,6 +37,12 @@ Rails.application.routes.draw do
     root to: "investors#index"
   end
 
+  resources :investor_advisors do
+    post 'switch', on: :collection
+  end
+
+  resources :aggregate_portfolio_investments
+
   resources :fund_formulas
   resources :fund_unit_settings
   resources :portfolio_investments
@@ -63,6 +68,7 @@ Rails.application.routes.draw do
     patch 'verify', on: :member
     get 'search', on: :collection
     patch 'generate_docs', on: :member
+    patch 'send_notification', on: :member
   end
   resources :capital_calls do
     get 'search', on: :collection

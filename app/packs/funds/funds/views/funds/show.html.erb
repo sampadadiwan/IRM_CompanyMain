@@ -114,6 +114,12 @@
                 "sample_upload": "FUND_INVESTORS_SAMPLE"), 
                 { class: "dropdown-item"}  %> 
 
+            <%= link_to "Import Investor Advisors", 
+            new_import_upload_path("import_upload[owner_id]": @fund.id, 
+                "import_upload[owner_type]": "Fund", 
+                "import_upload[import_type]": "InvestorAdvisor", 
+                "sample_upload": "FUND_INVESTOR_ADVISORS_SAMPLE"), 
+                { class: "dropdown-item"}  %> 
 
             <%= link_to "Add Investor Notice" , 
                       new_investor_notice_path( "investor_notice[owner_id]": @fund.id, 

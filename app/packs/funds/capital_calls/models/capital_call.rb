@@ -5,7 +5,7 @@ class CapitalCall < ApplicationRecord
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
-  include FundScopes
+  include ForInvestor
 
   belongs_to :entity
   belongs_to :fund, touch: true

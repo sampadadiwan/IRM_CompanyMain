@@ -1,6 +1,7 @@
 class DealInvestor < ApplicationRecord
   include Trackable
   include WithFolder
+  include ForInvestor
 
   monetize  :fee_cents, :pre_money_valuation_cents, :secondary_investment_cents,
             :primary_amount_cents, with_currency: ->(i) { i.deal.currency }
@@ -98,29 +99,6 @@ class DealInvestor < ApplicationRecord
 
     save
   end
-
-  scope :for_employee, lambda { |user|
-    includes(:access_rights).joins(:access_rights).where("deal_investors.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
-  }
-
-  scope :for_advisor, lambda { |user|
-    # Ensure the access rghts for Document
-    includes(:access_rights).joins(:access_rights).merge(AccessRight.access_filter(user))
-                            .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
-                            .where("investors.investor_entity_id=?", user.entity_id)
-  }
-
-  scope :for_investor, lambda { |user|
-    joins(deal: :access_rights)
-      .merge(AccessRight.access_filter(user))
-      .joins(:investor)
-      # Ensure that the user is an investor and tis investor has been given access rights
-      .where("investors.investor_entity_id=?", user.entity_id)
-      # Ensure this user has investor access
-      .joins(entity: :investor_accesses)
-      .merge(InvestorAccess.approved_for_user(user))
-      .where("investor_accesses.entity_id = deals.entity_id")
-  }
 
   def folder_path
     "#{deal.folder_path}/Deal Investors/#{investor_name.delete('/')}"

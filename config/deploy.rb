@@ -3,7 +3,7 @@ lock "~> 3.16.0"
 
 set :application, "IRM"
 set :repo_url, "git@github.com:thimmaiah/IRM.git"
-set :branch, 'main'
+set :branch, 'investor_access_rights'
 
 # Default branch is :master
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp

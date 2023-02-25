@@ -83,6 +83,8 @@
   
   Then('The document must be created with the owner set to the investment_opportunity') do
     @document = Document.last
+    puts "\n####Uploaded Doc####\n"
+    puts @document.to_json                            
     @investment_opportunity.reload
     @investment_opportunity.documents.first.should == @document
   end
@@ -106,6 +108,11 @@
   
   Then('the EOI must be created') do
     db_expression_of_interest = ExpressionOfInterest.last
+    
+    puts "\n####EOI####\n"
+    puts db_expression_of_interest.to_json         
+
+    db_expression_of_interest.entity_id.should == @investment_opportunity.entity_id
     db_expression_of_interest.investment_opportunity_id.should == @investment_opportunity.id
     db_expression_of_interest.investor_id.should == @expression_of_interest.investor_id
     db_expression_of_interest.amount_cents.should == @expression_of_interest.amount_cents

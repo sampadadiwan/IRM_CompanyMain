@@ -30,7 +30,7 @@ Scenario Outline: View deal without access
 Scenario Outline: View deal with access
   Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Investor"
   Given there are "3" exisiting investments "quantity=100" from my firm in startups
-  Given there are "3" exisiting deals "<deal>" with my firm in the startups
+  Given there are "1" exisiting deals "<deal>" with my firm in the startups
   Given I have access to all deals
   And I am at the deal_investors page
   Then I should see the deals of the company

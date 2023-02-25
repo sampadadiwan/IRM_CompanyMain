@@ -1,6 +1,6 @@
 class CapitalRemittancePayment < ApplicationRecord
   include WithCustomField
-  include FundScopes
+  include ForInvestor
 
   belongs_to :fund
   belongs_to :capital_remittance

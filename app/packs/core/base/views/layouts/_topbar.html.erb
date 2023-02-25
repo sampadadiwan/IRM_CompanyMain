@@ -74,6 +74,11 @@
                     <%= render "/layouts/persona" %>
                 <% end %>
 
+                <% if current_user && current_user.advisor_entity_id.present? %>
+                    <div class="topbar-divider "></div>
+                    <%= render "/investor_advisors/personas" %>
+                <% end %>
+
                 <div class="topbar-divider d-none d-sm-block"></div>
 
                 <%# <li class="nav-item dropdown no-arrow d-none d-sm-block">
@@ -84,56 +89,68 @@
 
                 <div class="topbar-divider d-none d-sm-block"></div> %>
 
-                <li class="nav-item dropdown no-arrow d-none d-sm-block">
-                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <% if current_user && !current_user.investor_advisor? %>
+                    <li class="nav-item dropdown no-arrow d-none d-sm-block">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            
+                            <% if current_user && current_user.entity %>
+                                    <% if current_user.entity.logo.present? %>
+                                        <%= image_tag image_url(current_user.entity.logo.url(expires_in: 60*60*24*7)), 
+                                            class: "top_bar_logo" %>
+                                    <% else %>
+                                        <span class="mr-2 d-lg-inline text-gray-600 small">
+                                            <%= current_user.entity.name  %>
+                                        </span>                                
+                                    <% end %>                                    
+                            <% end %>
+                            
+                        </a>
+
                         
-                        <% if current_user && current_user.entity %>
-                                <% if current_user.entity.logo.present? %>
-                                    <%= image_tag image_url(current_user.entity.logo.url(expires_in: 60*60*24*7)), 
-                                        class: "top_bar_logo" %>
-                                <% else %>
-                                    <span class="mr-2 d-lg-inline text-gray-600 small">
-                                        <%= current_user.entity.name  %>
-                                    </span>                                
-                                <% end %>                                    
-                        <% end %>
+                        <!-- Dropdown - User Information -->
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                            aria-labelledby="userDropdown">
+                            <a class="dropdown-item" href="/notifications">
+                                <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Activity Timeline
+                            </a>
+                            <a class="dropdown-item" href="<%= entity_path(id: current_user.entity_id) if current_user && current_user.entity_id %>">
+                                <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Entity Details
+                            </a>
+
+                            <a class="dropdown-item" href="<%= users_path %>">
+                                <i class="fas fa-users fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Entity Users
+                            </a>
+
+                            <% if current_user&.entity_type != "Investment Fund" %>
+                            <a class="dropdown-item" href="<%= investor_advisors_path %>">
+                                <i class="fas fa-users fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Advisors
+                            </a>
+                            <% end %>
+
+                            <a class="dropdown-item" href="<%= access_rights_path %>">
+                                <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Stakeholder Access Rights
+                            </a>
+
+                            <a class="dropdown-item" href="<%= form_types_path %>">
+                                <i class="fas fa-gear fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Customize Forms
+                            </a>
+
+                            <a class="dropdown-item" href="<%= investor_notices_path %>">
+                                <i class="fas fa-edit fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Notices
+                            </a>
+
+                        </div>
                         
-                    </a>
-                    <!-- Dropdown - User Information -->
-                    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                        aria-labelledby="userDropdown">
-                        <a class="dropdown-item" href="/notifications">
-                            <i class="fas fa-cogs fa-sm fa-fw mr-2 text-gray-400"></i>
-                            Activity Timeline
-                        </a>
-                        <a class="dropdown-item" href="<%= entity_path(id: current_user.entity_id) if current_user && current_user.entity_id %>">
-                            <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
-                            Entity Details
-                        </a>
-
-                        <a class="dropdown-item" href="<%= users_path %>">
-                            <i class="fas fa-users fa-sm fa-fw mr-2 text-gray-400"></i>
-                            Entity Users
-                        </a>
-
-                        <a class="dropdown-item" href="<%= access_rights_path %>">
-                            <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
-                            Stakeholder Access Rights
-                        </a>
-
-                        <a class="dropdown-item" href="<%= form_types_path %>">
-                            <i class="fas fa-gear fa-sm fa-fw mr-2 text-gray-400"></i>
-                            Customize Forms
-                        </a>
-
-                        <a class="dropdown-item" href="<%= investor_notices_path %>">
-                            <i class="fas fa-edit fa-sm fa-fw mr-2 text-gray-400"></i>
-                            Notices
-                        </a>
-
-                    </div>
-                </li>
+                    </li>
+                <% end %>
 
 
                 <div class="topbar-divider "></div>

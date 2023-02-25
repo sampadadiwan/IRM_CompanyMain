@@ -1,9 +1,7 @@
 class CapitalRemittancePolicy < FundBasePolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
-        scope.all
-      elsif user.has_cached_role?(:company_admin) && user.entity_type == "Investment Fund"
+      if user.has_cached_role?(:company_admin) && user.entity_type == "Investment Fund"
         scope.where(entity_id: user.entity_id)
       elsif user.has_cached_role?(:employee) && user.entity_type == "Investment Fund"
         scope.for_employee(user)
@@ -37,9 +35,12 @@ class CapitalRemittancePolicy < FundBasePolicy
     update?
   end
 
+  def send_notification?
+    update? && !record.notification_sent && record.capital_call.approved
+  end
+
   def update?
-    permissioned_investor? ||
-      permissioned_employee?(:update) ||
+    permissioned_employee?(:update) ||
       permissioned_advisor?(:update)
   end
 

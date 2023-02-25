@@ -54,9 +54,9 @@ class CapitalCommitmentDocGenerator
     add_image(context, :investor_signature, capital_commitment.investor_kyc.signature)
     generate_kyc_fields(context, capital_commitment.investor_kyc)
     Rails.logger.debug { "Using context #{context} to render template" }
-    template.render_to_file File.expand_path("#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.docx"), context
 
-    system("libreoffice --headless --convert-to pdf #{@working_dir}/CapitalCommitment-#{capital_commitment.id}.docx --outdir #{@working_dir}")
+    file_name = "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}"
+    convert(template, context, file_name)
 
     additional_footers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Footer" "#{@fund_doc_template_name} Signature"])
     additional_headers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Header", "#{@fund_doc_template_name} Stamp Paper"])

@@ -47,9 +47,10 @@
           id="documents_tab" href="#documents-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
-      <% if policy(fund).update? %>
-          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab"
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab"
             data-action="click->tabdetails#loadData">Access</a>
+          
+      <% if policy(fund).update? %>
           <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#reminders-tab" 
             data-action="click->tabdetails#loadData">
             Reminders
@@ -87,23 +88,7 @@
         </div>
 
 
-        <% if policy(fund).update? || policy(fund).permissioned_advisor? %>
-
-        <div id="access-rights-tab" class="tab-pane fade in">
-
-          <% cache([fund, "AccessRights"]) do %>
-            <div id="access_rights" class="associated_entity" data-controller="datatable">
-              <%= link_to access_rights_path(owner_id: fund.id, owner_type: "Fund", entity_id: fund.entity_id), 
-                          class: "load_data_link", data: { turbo_frame: 'access_rights_frame' } do %>
-                <span>Loading...</span>
-              <% end %>
-          
-              <%= turbo_frame_tag "access_rights_frame", target: "_top" do %>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
-
+        <% if policy(fund).update? || policy(fund).permissioned_advisor? %>        
         
         <div id="capital-calls-tab" class="tab-pane fade in">
           <div id="capital-calls" class="associated_entity">
@@ -204,6 +189,23 @@
           </div>     
         </div>
         <% end %>
+
+        <div id="access-rights-tab" class="tab-pane fade in">
+
+            <div id="access_rights" class="associated_entity" data-controller="datatable">
+              <% form_type = current_user.entity_id != fund.entity_id ? "investor_form" : nil %>
+              <%= link_to access_rights_path(owner_id: fund.id, owner_type: "Fund", 
+                                             entity_id: current_user.entity_id, form_type:), 
+                          class: "load_data_link", data: { turbo_frame: 'access_rights_frame' } do %>
+                <span>Loading...</span>
+              <% end %>
+          
+              <%= turbo_frame_tag "access_rights_frame", target: "_top" do %>
+              <% end %>
+            </div>
+          
+        </div>
+
 
         
     </div>

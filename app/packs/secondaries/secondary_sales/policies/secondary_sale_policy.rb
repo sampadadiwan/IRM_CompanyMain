@@ -1,15 +1,14 @@
 class SecondarySalePolicy < SaleBasePolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
-        scope.all
-      elsif user.curr_role.to_sym == :employee
+      case user.curr_role.to_sym
+      when :employee
         scope.where(entity_id: user.entity_id)
-      elsif user.curr_role.to_sym == :advisor
+      when :advisor
         scope.for_advisor(user)
-      elsif user.curr_role.to_sym == :holding
+      when :holding
         scope.for(user).distinct
-      elsif user.curr_role.to_sym == :investor
+      when :investor
         scope.for(user)
       else
         scope.none

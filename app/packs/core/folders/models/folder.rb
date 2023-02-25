@@ -69,6 +69,6 @@ class Folder < ApplicationRecord
 
   def self.with_ancestor_ids(documents)
     ids = documents.joins(:folder).pluck("documents.folder_id, folders.ancestry")
-    ids.map { |p| p[1].split("/") << p[0] }.flatten.map(&:to_i)
+    ids.map { |p| p[1] ? (p[1].split("/") << p[0]) : [p[0]] }.flatten.map(&:to_i)
   end
 end

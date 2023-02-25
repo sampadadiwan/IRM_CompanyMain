@@ -92,6 +92,6 @@ class CapitalDistributionsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_distribution_params
-    params.require(:capital_distribution).permit(:fund_id, :entity_id, :form_type_id, :gross_amount, :carry, :fee, :distribution_date, :title, :completed, unit_prices: {}, properties: {})
+    params.require(:capital_distribution).permit(:fund_id, :entity_id, :form_type_id, :gross_amount, :reinvestment, :distribution_date, :title, :completed, unit_prices: {}, properties: {})
   end
 end

@@ -1,9 +1,7 @@
 class DealInvestorPolicy < DealBasePolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
-        scope.all
-      elsif %w[employee].include?(user.curr_role) && user.has_cached_role?(:company_admin)
+      if %w[employee].include?(user.curr_role) && user.has_cached_role?(:company_admin)
         scope.where(entity_id: user.entity_id)
       elsif %w[employee].include? user.curr_role
         scope.for_employee(user)

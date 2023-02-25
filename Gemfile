@@ -15,6 +15,7 @@ gem "audited", "~> 5.0"
 gem "mysql2", "~> 0.5"
 
 # Use the Puma web server [https://github.com/puma/puma]
+gem 'libreconv'
 gem "puma", "~> 5.0"
 gem 'sablon'
 

@@ -4,6 +4,7 @@ class FundsController < ApplicationController
   # GET /funds or /funds.json
   def index
     @funds = policy_scope(Fund).includes(:entity)
+    @funds = @funds.where(entity_id: params[:entity_id]) if params[:entity_id].present?
   end
 
   def report
@@ -122,10 +123,10 @@ class FundsController < ApplicationController
   def copy_formulas
     from_fund = Fund.find(params[:from_fund_id])
 
-    from_fund.fund_formulas.each do |ff|
+    from_fund.fund_formulas.order(sequence: :asc).each do |ff|
       new_ff = ff.dup
       new_ff.fund = @fund
-      new_ff.entity_id = current_user.id
+      new_ff.entity_id = current_user.entity_id
       new_ff.save
     end
 

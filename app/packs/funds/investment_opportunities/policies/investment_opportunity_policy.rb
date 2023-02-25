@@ -1,12 +1,12 @@
-class InvestmentOpportunityPolicy < ApplicationPolicy
+class InvestmentOpportunityPolicy < IoBasePolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
-        scope.all
-      elsif user.curr_role == "employee"
+      if user.has_cached_role?(:company_admin) && user.entity_type == "Investment Fund"
         scope.where(entity_id: user.entity_id)
+      elsif user.curr_role == "employee" && user.entity_type == "Investment Fund"
+        scope.for_employee(user)
       else
-        InvestmentOpportunity.for_investor(user)
+        scope.for_investor(user)
       end
     end
   end
@@ -18,13 +18,14 @@ class InvestmentOpportunityPolicy < ApplicationPolicy
   def show?
     user.enable_inv_opportunities &&
       (
-        (user.entity_id == record.entity_id) ||
-        InvestmentOpportunity.for_investor(user).where(id: record.id).present?
+        permissioned_employee? ||
+        permissioned_advisor?  ||
+        permissioned_investor?
       )
   end
 
   def create?
-    (user.entity_id == record.entity_id) && user.enable_inv_opportunities
+    user.enable_inv_opportunities && permissioned_employee?
   end
 
   def new?
@@ -32,7 +33,8 @@ class InvestmentOpportunityPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    permissioned_employee?(:update) ||
+      permissioned_advisor?(:update)
   end
 
   def edit?
@@ -40,7 +42,8 @@ class InvestmentOpportunityPolicy < ApplicationPolicy
   end
 
   def destroy?
-    update?
+    permissioned_employee?(:destroy) ||
+      permissioned_advisor?(:destroy)
   end
 
   def allocate?
