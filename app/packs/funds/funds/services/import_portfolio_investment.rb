@@ -16,7 +16,7 @@ class ImportPortfolioInvestment < ImportUtil
     amount_cents = user_data["Amount"].to_d * 100
     quantity = user_data["Quantity"].to_d
     investment_type = user_data["Investment Type"].strip
-    fund = Fund.find_by name: user_data["Fund"].strip
+    fund = Fund.find_by_name user_data["Fund"].strip
 
     portfolio_investment = PortfolioInvestment.find_or_initialize_by(portfolio_company_name:, investment_date:,
                                                                      amount_cents:, quantity:, investment_type:,
