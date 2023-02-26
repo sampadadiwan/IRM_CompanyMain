@@ -7,16 +7,19 @@ class InvestorAccess < ApplicationRecord
 
   validates :email, :first_name, :last_name, presence: true
   belongs_to :entity
-  counter_culture :entity, column_name: proc { |ia| ia.approved ? nil : 'pending_accesses_count' }
   belongs_to :investor_entity, class_name: "Entity"
   belongs_to :investor # , strict_loading: true
-  counter_culture :investor, column_name: proc { |model| model.approved ? 'investor_access_count' : 'unapproved_investor_access_count' }
 
   belongs_to :user, optional: true, strict_loading: true, touch: true
   belongs_to :granter, class_name: "User", foreign_key: :granted_by, optional: true
 
   delegate :name, to: :entity, prefix: :entity
   delegate :investor_name, to: :investor
+
+  validates_uniqueness_of :email, scope: :investor_id
+
+  counter_culture :entity, column_name: proc { |ia| ia.approved ? nil : 'pending_accesses_count' }
+  counter_culture :investor, column_name: proc { |model| model.approved ? 'investor_access_count' : 'unapproved_investor_access_count' }
 
   scope :approved_for_user, lambda { |user|
     if user.entity && user.entity.is_holdings_entity

@@ -17,9 +17,9 @@ class ImportInvestorAdvisor < ImportUtil
     entity = import_upload.entity
     investor = entity.investors.where(investor_name:).first
 
-    investor_advisor = InvestorAdvisor.where(email:, entity_id: import_upload.entity_id).first
+    investor_advisor = InvestorAdvisor.where(email:, entity_id: investor.investor_entity_id).first
     if investor_advisor.present?
-      Rails.logger.debug { "investor_advisor with email already exists for entity #{import_upload.entity_id}" }
+      Rails.logger.debug { "investor_advisor with email already exists for entity #{investor.investor_entity_id}" }
     else
       Rails.logger.debug user_data
       investor_advisor = InvestorAdvisor.new(email:, entity_id: investor.investor_entity_id)
@@ -31,27 +31,28 @@ class ImportInvestorAdvisor < ImportUtil
   end
 
   def add_to_fund(user_data, import_upload, investor_advisor, investor)
-    Rails.logger.debug { "######## add_to_fund #{user_data['Fund']} #{import_upload.owner}" }
+    Rails.logger.debug { "######## add_to_fund #{user_data['Name']} #{import_upload.owner}" }
     # If fund name is present, add this investor_advisor to the fund
-    if user_data["Fund"].present? || import_upload.owner_type == "Fund"
-      if user_data["Fund"].present?
-        Rails.logger.debug { "######## Fund present in import row #{user_data['Fund']}" }
-        fund = Fund.where(entity_id: import_upload.entity_id, name: user_data["Fund"].strip).first
-      elsif import_upload.owner_type == "Fund"
-        fund = import_upload.owner
-        Rails.logger.debug { "######## Fund present in import upload record #{fund.name}" }
+    if user_data["Add To"].present? && user_data["Name"].present?
+      if user_data["Add To"] == "Fund"
+        Rails.logger.debug { "######## Fund present in import row #{user_data['Name']}" }
+        fund = Fund.where(entity_id: import_upload.entity_id, name: user_data["Name"].strip).first
       end
 
       if fund
         # Give the investor_advisor access rights as an investor_advisor to the fund
-        AccessRight.create(entity_id: investor_advisor.entity_id, owner: fund, user_id: investor_advisor.user_id, access_type: "Fund", metadata: "investor_advisor")
+        ar = AccessRight.create(entity_id: investor_advisor.entity_id, owner: fund, user_id: investor_advisor.user_id, access_type: "Fund", metadata: "investor_advisor")
+
+        Rails.logger.debug { "Error saving AccessRight: #{ar.errors}" } if ar.errors.present?
 
         # Give this user investor access in the investor
         user = investor_advisor.user
         investor.investor_accesses.create(email: user.email, first_name: user.first_name, last_name: user.last_name, approved: true, send_confirmation: false, entity_id:
         import_upload.entity_id, granted_by: import_upload.user_id)
+
       else
         Rails.logger.debug { "Specified fund #{user_data['Fund']} not found in import_upload #{import_upload.id}" }
+        raise "Fund not found #{user_data['Name']}"
       end
     end
   end

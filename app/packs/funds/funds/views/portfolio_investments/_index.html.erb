@@ -1,10 +1,23 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Portfolio Investments</h1>
-  <%= link_to "New Portfolio Investment", 
-      new_portfolio_investment_path("portfolio_investment[entity_id]": current_user.entity_id,
-      "portfolio_investment[fund_id]": params[:fund_id]), 
-      {class: "btn btn-outline-primary"} if params[:fund_id].present? %>
+
+  <span>
+    <%= link_to "New Portfolio Investment", 
+        new_portfolio_investment_path("portfolio_investment[entity_id]": current_user.entity_id,
+        "portfolio_investment[fund_id]": params[:fund_id]), 
+        {class: "btn btn-outline-primary"} if params[:fund_id].present? %>
+
+
+    <%= link_to "Upload", 
+        new_import_upload_path("import_upload[owner_id]": params[:fund_id], 
+        "import_upload[owner_type]": "Fund", 
+        "import_upload[import_type]": "PortfolioInvestment", 
+        "sample_upload": "PORTFOLIO_SAMPLE"), 
+        { class: "btn btn-outline-primary"}   %> 
+
+  </span>
 </div>
+
 <div class="table-responsive" data-controller="datatable">
   <table id="portfolio_investments" class="table table-bordered dataTable jqDataTable">
     <thead>

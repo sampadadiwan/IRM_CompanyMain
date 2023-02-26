@@ -65,7 +65,7 @@ class AccessRight < ApplicationRecord
 
   validate :access_is_unique
   def access_is_unique
-    errors.add(:owner, 'Duplicate! already has this permission') if AccessRight.where.not(id:).exists?(owner:, access_to_investor_id:, access_to_category:, user_id:)
+    errors.add(:owner, 'Duplicate! already has this permission') if AccessRight.where.not(id:).exists?(owner:, access_to_investor_id:, access_to_category:, user_id:, entity_id:)
   end
 
   def to_s

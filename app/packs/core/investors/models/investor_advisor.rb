@@ -34,4 +34,10 @@ class InvestorAdvisor < ApplicationRecord
     user.investor_advisor_id = nil
     user.save
   end
+
+  after_destroy :remove_access_rights
+  def remove_access_rights
+    AccessRight.where(entity_id:, user_id:).each(&:destroy)
+    InvestorAccess.where(investor_entity_id: entity_id, email:).delete_all
+  end
 end

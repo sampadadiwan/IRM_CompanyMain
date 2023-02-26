@@ -1,0 +1,35 @@
+<% if aggregate_portfolio_investment %>
+
+<div class="row">
+    <div class="col-lg-12 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"> Per Share Value </h6>
+            </div>
+            <div class="card-body">
+                <%= share_price_line(aggregate_portfolio_investment.portfolio_company)  %>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-lg-12 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"> Buys / Sells </h6>
+            </div>
+            <div class="card-body">
+                <%= bought_sold(aggregate_portfolio_investment) %>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<% end %>

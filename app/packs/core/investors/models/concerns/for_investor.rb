@@ -43,12 +43,14 @@ module ForInvestor
       join_clause = if instance_methods.include?(:access_rights)
                       Rails.logger.debug { "######## for_investor has access_rights" }
                       if instance_methods.include?(:investor)
+                        Rails.logger.debug { "######## for_investor has :investor" }
                         joins(:access_rights).joins(:investor)
                       else
+                        Rails.logger.debug { "######## for_investor has entity: :investor" }
                         joins(:access_rights).joins(entity: :investors)
                       end
                     elsif instance_methods.include?(:investor)
-                      Rails.logger.debug { "######## for_investor has investor" }
+                      Rails.logger.debug { "######## for_investor has :investor" }
                       joins(:investor, parent_class_type.name.underscore => :access_rights)
                     else
                       Rails.logger.debug { "######## for_investor has parent_class_type #{parent_class_type}" }
