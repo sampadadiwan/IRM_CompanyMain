@@ -11,7 +11,6 @@ class ImportPortfolioInvestment < ImportUtil
   def post_process(import_upload, _context); end
 
   def save_portfolio_investment(user_data, _import_upload, custom_field_headers)
-    
     portfolio_company_name = user_data['Portfolio Company Name'].strip
     investment_date = user_data["Investment Date"]
     amount_cents = user_data["Amount"].to_d * 100
