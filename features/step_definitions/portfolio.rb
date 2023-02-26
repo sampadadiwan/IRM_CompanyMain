@@ -79,8 +79,9 @@ Given('there is a valuation {string} for the portfolio company') do |args|
   @valuation.save!
 end
 
-Then('the fmv must be calculated for the portfolio') do
+Then('the fmv must be calculated for the portfolio') do  
   PortfolioInvestment.all.each do |pi|
+    binding.pry if pi.fmv_cents != (pi.quantity * @valuation.per_share_value_cents)
     pi.fmv_cents.abs.should > 0
     pi.fmv_cents.should == (pi.quantity * @valuation.per_share_value_cents)
   end

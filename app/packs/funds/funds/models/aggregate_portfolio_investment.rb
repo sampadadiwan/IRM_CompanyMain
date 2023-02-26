@@ -31,7 +31,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
 
   def as_of(end_date)
     api = dup
-    pis = portfolio_investments.where(investment_date: ..end_date)
+    pis = portfolio_investments.where(investment_date: ..end_date, investment_type:)
     api.quantity = pis.sum(:quantity)
     api.bought_quantity = pis.buys.sum(:quantity)
     api.bought_amount_cents = pis.buys.sum(:amount_cents)
@@ -40,7 +40,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     api.compute_avg_cost
 
     # FMV is complicated, as the latest fmv is stored, so we need to recompute the fmv as of end_date
-    valuation = api.portfolio_company.valuations.where(valuation_date: ..end_date).order(valuation_date: :asc).last
+    valuation = api.portfolio_company.valuations.where(valuation_date: ..end_date, instrument_type: investment_type).order(valuation_date: :asc).last
     api.fmv_cents = valuation ? api.quantity * valuation.per_share_value_cents : 0
     api.freeze
   end

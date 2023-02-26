@@ -37,9 +37,9 @@ Scenario Outline: Create valuation and FMV
   # Given the user has role "company_admin"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company" 
   Given there is a fund "<fund>" for the entity
-  Given there is a valuation "per_share_value_cents=10000;instrument_type=Equity" for the portfolio company 
+  Given there is a valuation "per_share_value_cents=10000;instrument_type=Equity;valuation_date=01/01/2022" for the portfolio company 
   Given there are "3" portfolio investments "quantity=200;investment_type=Equity"
-  Given there is a valuation "per_share_value_cents=12000;instrument_type=Equity" for the portfolio company 
+  Given there is a valuation "per_share_value_cents=12000;instrument_type=Equity;valuation_date=01/01/2023" for the portfolio company 
   Given there are "3" portfolio investments "quantity=-100;investment_type=Equity"
   Then the fmv must be calculated for the portfolio
     

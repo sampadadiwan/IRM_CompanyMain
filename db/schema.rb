@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_02_25_023757) do
+ActiveRecord::Schema[7.0].define(version: 2023_02_26_134241) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -212,6 +212,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_25_023757) do
     t.decimal "sold_quantity", precision: 20, scale: 2, default: "0.0"
     t.decimal "sold_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "cost_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "investment_type", limit: 20
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
@@ -1631,7 +1632,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_25_023757) do
     t.date "investment_date"
     t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
-    t.string "investment_type", limit: 15
+    t.string "investment_type", limit: 20
     t.text "notes"
     t.text "properties"
     t.datetime "created_at", null: false
