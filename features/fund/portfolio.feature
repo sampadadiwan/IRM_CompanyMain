@@ -48,3 +48,22 @@ Scenario Outline: Create valuation and FMV
     |entity                             |fund                |
     |entity_type=Investment Fund;       |name=Test fund      |
     |entity_type=Investment Fund;       |name=Merger Fund;unit_types=Series A,Series B    |
+
+Scenario Outline: Import portfolio investments
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  And Given I upload "portfolio_investments.xlsx" file for "Portfolio" of the fund
+  Then I should see the "Import upload was successfully created"
+  Then There should be "8" portfolio investments created
+  And the portfolio investments must have the data in the sheet
+
+
+Scenario Outline: Import portfolio valuations
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  And Given I upload "valuations.xlsx" file for portfolio companies of the fund
+  Then I should see the "Import upload was successfully created"
+  Then There should be "4" valuations created
+  And the valuations must have the data in the sheet

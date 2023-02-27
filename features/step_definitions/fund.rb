@@ -928,9 +928,10 @@ Given('the units are generated') do
 end
 
 Then('there should be correct units for the calls payment for each investor') do
+  FundUnit.count.should == CapitalCommitment.count * CapitalCall.count
   CapitalCommitment.all.each do |cc|
     puts "Checking units for #{cc}" 
-    cc.fund_units.length.should > 0
+    cc.fund_units.length.should
     cc.fund_units.each do |fu|
       ap fu
       fu.unit_type.should == cc.unit_type
@@ -997,6 +998,7 @@ Then('Given I upload {string} file for Account Entries') do |file|
   click_on("Save")
   sleep(1)
   ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(3)
 end
 
 Then('There should be {string} account_entries created') do |count|

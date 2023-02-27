@@ -86,3 +86,69 @@ Then('the fmv must be calculated for the portfolio') do
     pi.fmv_cents.should == (pi.quantity * @valuation.per_share_value_cents)
   end
 end
+
+
+Then('There should be {string} portfolio investments created') do |count|
+  PortfolioInvestment.count.should == count.to_i
+end
+
+Then('the portfolio investments must have the data in the sheet') do
+  file = File.open("./public/sample_uploads/#{@import_file}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+
+  portfolio_investments = @fund.portfolio_investments.order(id: :asc).to_a
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    pi = portfolio_investments[idx-1]
+    puts "Checking import of #{pi.portfolio_company_name}"
+    pi.portfolio_company_name.should == user_data["Portfolio Company Name"].strip
+    pi.fund.name.should == user_data["Fund"]
+    pi.amount_cents.should == user_data["Amount"].to_d * 100
+    pi.quantity.should == user_data["Quantity"].to_d
+    pi.investment_type.should == user_data["Investment Type"]
+    pi.notes.should == user_data["Notes"]
+    pi.investment_date.should == Date.parse(user_data["Investment Date"].to_s)    
+  end
+end
+
+
+Given('Given I upload {string} file for portfolio companies of the fund') do |file|
+  @import_file = file
+  visit(new_import_upload_path("import_upload[entity_id]": @fund.entity_id, "import_upload[owner_id]": @fund.id, "import_upload[owner_type]": "Fund", "import_upload[import_type]": "Valuation"))
+  fill_in('import_upload_name', with: "Test Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  sleep(1)
+  click_on("Save")
+  sleep(2)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(2)
+end
+
+Then('There should be {string} valuations created') do |count|
+  Valuation.count.should == count.to_i
+end
+
+Then('the valuations must have the data in the sheet') do
+  file = File.open("./public/sample_uploads/#{@import_file}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+
+  valuations = @entity.valuations.order(id: :asc).to_a
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    val = valuations[idx-1]
+    puts "Checking import of #{val.owner.investor_name}"
+    val.instrument_type.should == user_data["Instrument"].strip
+    val.valuation_date.should == Date.parse(user_data["Valuation Date"].to_s)   
+    val.valuation_cents.should == user_data["Valuation"].to_d * 100
+    val.per_share_value_cents.should == user_data["Per Share Value"].to_d * 100
+    val.owner.investor_name.should == user_data["Portfolio Company"].strip
+  end
+end

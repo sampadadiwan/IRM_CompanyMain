@@ -1,5 +1,5 @@
 class ImportCapitalDistribution < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Title", "Gross", "Carry", "Date", "Generate Payments", "Payments Paid"].freeze
+  STANDARD_HEADERS = ["Fund", "Title", "Gross", "Date", "Generate Payments", "Payments Paid", "Reinvestment"].freeze
 
   def standard_headers
     STANDARD_HEADERS

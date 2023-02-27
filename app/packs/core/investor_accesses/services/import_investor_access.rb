@@ -1,5 +1,5 @@
 class ImportInvestorAccess < ImportUtil
-  STANDARD_HEADERS = ["Investor", "First Name", "Last Name", "Email", "Approved", "Send Confirmation"].freeze
+  STANDARD_HEADERS = ["Investor", "First Name", "Last Name", "Email", "Approved", "Send Confirmation Email"].freeze
 
   def standard_headers
     STANDARD_HEADERS

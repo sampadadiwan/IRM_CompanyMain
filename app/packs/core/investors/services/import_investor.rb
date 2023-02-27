@@ -1,7 +1,7 @@
 class ImportInvestor < ImportUtil
   include Interactor
 
-  STANDARD_HEADERS = %w[Name Category Tags City Fund].freeze
+  STANDARD_HEADERS = %w[Name Category Tags City].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -27,6 +27,8 @@ class ImportInvestor < ImportUtil
       investor = Investor.new(investor_name:, tag_list: user_data["Tags"],
                               category: user_data["Category"].strip, city: user_data["City"],
                               entity_id: import_upload.entity_id, imported: true)
+
+      custom_field_headers.delete("Fund")
 
       setup_custom_fields(user_data, investor, custom_field_headers)
 

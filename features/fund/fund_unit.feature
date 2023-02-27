@@ -18,6 +18,9 @@ Scenario Outline: Generate fund units from capital call
   Given the remittances are paid and verified
   Given the units are generated
   Then there should be correct units for the calls payment for each investor
+  # To check idempotency we run it again
+  Given the units are generated
+  Then there should be correct units for the calls payment for each investor
   
 Examples:
   	|user	    |entity                                 |fund                 | call |
@@ -41,6 +44,9 @@ Scenario Outline: Generate fund units from capital distribution
   Then the corresponding distribution payments should be created
   Then I should see the distribution payments
   Given the distribution payments are completed
+  Given the units are generated
+  Then there should be correct units for the distribution payments for each investor
+  # To check idempotency we run it again
   Given the units are generated
   Then there should be correct units for the distribution payments for each investor
   

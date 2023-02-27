@@ -197,11 +197,12 @@ Given('there are {string} exisiting deals {string} with my firm in the startups'
     (1..count.to_i).each do 
       deal = FactoryBot.create(:deal, entity: company, name: Faker::Company.bs)
       puts "\n####Deal####\n"
-      puts deal.to_json
-      di = FactoryBot.create(:deal_investor, investor: @investor, entity: company, deal: deal)
+      ap deal
+
+      inv = deal.entity.investors.where(investor_name: @investor.investor_name).first
+      di = FactoryBot.create(:deal_investor, investor: inv, entity: company, deal: deal)
       puts "\n####Deal Investor####\n"
-      puts di.to_json
-    end
+      ap di    end
   end
 end
 
@@ -220,8 +221,7 @@ end
 
 
 Then('I should see the deals of the company') do
-  # binding.pry
-  DealInvestor.all.each do |di|
+  DealInvestor.where(investor_entity_id: @entity.id).each do |di|
     expect(page).to have_content(di.deal_name)
     expect(page).to have_content(di.investor_name)
   end
@@ -231,11 +231,12 @@ end
 Given('I have access to all deals') do
   
   DealInvestor.where(investor_entity_id: @entity.id).all.each do |di|
-    InvestorAccess.create!(investor:di.investor, user: @user, 
-      first_name: @user.first_name, 
-      last_name: @user.last_name,
-      email: @user.email, approved: true, 
-      entity_id: di.entity_id)
+  
+    ia = InvestorAccess.create!(investor:di.investor, user: @user, 
+                          first_name: @user.first_name, 
+                          last_name: @user.last_name,
+                          email: @user.email, approved: true, 
+                          entity_id: di.entity_id)
 
     ar = AccessRight.create(owner: di, access_type: "DealInvestor",
         entity: di.entity, access_to_investor_id: di.investor_id)

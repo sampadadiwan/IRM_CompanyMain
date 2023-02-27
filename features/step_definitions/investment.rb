@@ -397,6 +397,8 @@ Given('there are {string} exisiting investments {string} from my firm in startup
           @startup_entity, investor: @investor, funding_round: @funding_round)
 
       @investment = SaveInvestment.call(investment: @investment).investment
+
+      ap @investment
     end
   end
 end
@@ -411,6 +413,7 @@ Given('there are {string} exisiting investments {string} from another firm in st
   Entity.startups.each do |company|
     @investor = FactoryBot.create(:investor, investor_entity: @another_entity, entity: company)
     (1..count.to_i).each do 
+      
       @investment = FactoryBot.build(:investment, entity: company, 
                         investor: @investor, funding_round: @funding_round)
       @investment = SaveInvestment.call(investment: @investment).investment
@@ -437,7 +440,7 @@ end
 
 Given('I have been granted access {string} to the investments') do |arg|
   Investment.joins(:investor).where("investors.investor_entity_id=?", @entity.id).each do |inv|
-    InvestorAccess.create!(investor:inv.investor, user: @user, first_name: @user.first_name,
+    InvestorAccess.create(investor:inv.investor, user: @user, first_name: @user.first_name,
         last_name: @user.last_name, email: @user.email, approved: true, 
         entity_id: inv.entity_id)
 

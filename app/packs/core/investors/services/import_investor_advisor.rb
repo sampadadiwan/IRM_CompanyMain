@@ -1,7 +1,7 @@
 class ImportInvestorAdvisor < ImportUtil
   include Interactor
 
-  STANDARD_HEADERS = %w[Email Fund].freeze
+  STANDARD_HEADERS = ["Email", "Add To", "Name", "Investor"].freeze
 
   def standard_headers
     STANDARD_HEADERS

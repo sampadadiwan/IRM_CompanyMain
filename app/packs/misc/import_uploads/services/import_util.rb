@@ -17,9 +17,19 @@ class ImportUtil
     end
   end
 
+  def validate_headers(headers)
+    if respond_to?(:standard_headers)
+      standard_headers.each do |header_name|
+        raise "Column not found #{header_name}" unless headers.include?(header_name)
+      end
+    end
+  end
+
   def process_rows(import_upload, headers, data, context)
     Rails.logger.debug { "##### process_rows #{data.count}" }
     custom_field_headers = headers - standard_headers
+
+    validate_headers(headers)
 
     # Parse the XL rows
     package = Axlsx::Package.new do |p|

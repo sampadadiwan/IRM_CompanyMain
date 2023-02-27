@@ -4,9 +4,19 @@
       owner_id = params[:owner_id].present? ? params[:owner_id] : current_user.entity_id 
       owner_type = params[:owner_type].present? ? params[:owner_type] : "Entity" 
     %>
+    <span>
     <%= link_to "New Valuation", 
         new_valuation_path("valuation[owner_id]": owner_id, "valuation[owner_type]": owner_type), 
         {class: "btn btn-outline-primary"}  %>
+
+    <%= link_to "Import Valuations", 
+                  new_import_upload_path("import_upload[owner_id]": owner_id, 
+                  "import_upload[owner_type]": owner_type, 
+                  "import_upload[import_type]": "Valuation", 
+                  "sample_upload": "VALUATION_SAMPLE"), 
+                  { class: "btn btn-outline-primary"}   %>
+
+    </span>
   </div>
   
   <div class="table-responsive" data-controller="datatable">
