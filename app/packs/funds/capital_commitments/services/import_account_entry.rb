@@ -55,7 +55,7 @@ class ImportAccountEntry < ImportUtil
     # Note this could be an entry for a commitment or for a fund (i.e no commitment)
     account_entry = AccountEntry.find_or_initialize_by(entity_id: import_upload.entity_id, folio_id:,
                                                        fund:, capital_commitment:, investor:, reporting_date:,
-                                                       period:, entry_type:, name:, amount_cents:)
+                                                       entry_type:, name:, amount_cents:)
 
     if account_entry.new_record? && account_entry.valid?
       account_entry.notes = user_data["Notes"]

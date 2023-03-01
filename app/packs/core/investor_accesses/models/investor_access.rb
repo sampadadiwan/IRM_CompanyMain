@@ -35,6 +35,14 @@ class InvestorAccess < ApplicationRecord
     where("investor_accesses.approved=?", true)
   }
 
+  scope :not_investor_advisors, lambda {
+    where("investor_accesses.is_investor_advisor=?", false)
+  }
+
+  scope :investor_advisors, lambda {
+    where("investor_accesses.is_investor_advisor=?", true)
+  }
+
   scope :unapproved, lambda {
     where("investor_accesses.approved=?", false)
   }
@@ -86,6 +94,7 @@ class InvestorAccess < ApplicationRecord
 
     end
     self.user = u
+    self.is_investor_advisor = user.has_cached_role?(:investor_advisor)
   end
 
   def send_notification

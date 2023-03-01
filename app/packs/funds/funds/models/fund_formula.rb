@@ -6,4 +6,9 @@ class FundFormula < ApplicationRecord
   scope :enabled, -> { where(enabled: true) }
 
   delegate :to_s, to: :name
+
+  before_save :sanitize_name
+  def sanitize_name
+    self.name = name.strip
+  end
 end

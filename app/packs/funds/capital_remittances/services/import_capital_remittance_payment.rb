@@ -1,5 +1,5 @@
 class ImportCapitalRemittancePayment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Collected Amount", "Folio No", "Verified", "Reference No", "Payment Date"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Amount", "Folio No", "Virtual Bank Account", "Verified", "Reference No", "Payment Date"].freeze
 
   attr_accessor :fund_ids
 
@@ -40,7 +40,7 @@ class ImportCapitalRemittancePayment < ImportUtil
   def save_capital_remittance_payment(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing capital_remittance_payment #{user_data}" }
 
-    fund, capital_call, investor, capital_commitment, capital_remittance, collected_amount_cents = inputs(import_upload, user_data)
+    fund, capital_call, investor, capital_commitment, capital_remittance, amount_cents = inputs(import_upload, user_data)
 
     if fund && capital_call && investor && capital_commitment && capital_remittance
       @fund_ids.add(fund.id)
@@ -48,7 +48,7 @@ class ImportCapitalRemittancePayment < ImportUtil
       # Make the capital_remittance
       capital_remittance_payment = CapitalRemittancePayment.new(entity_id: fund.entity_id, fund:,
                                                                 capital_remittance:,
-                                                                amount_cents: collected_amount_cents,
+                                                                amount_cents:,
                                                                 reference_no: user_data["Reference No"],
                                                                 payment_date: user_data["Payment Date"])
 
@@ -76,15 +76,20 @@ class ImportCapitalRemittancePayment < ImportUtil
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
     raise "Investor not found" unless investor
 
+    # One of the 2 should be present folio_id or virtual_bank_account
     folio_id = user_data["Folio No"]&.to_s&.strip
-    raise "Folio No not found" unless folio_id
+    virtual_bank_account = user_data["Virtual Bank Account"]&.to_s&.strip
 
-    capital_commitment = fund.capital_commitments.where(investor_id: investor.id, folio_id:).first
+    raise "Folio No or Virtual Bank Account must be specified" if folio_id.blank? && virtual_bank_account.blank?
+
+    # Find the capital_commitment from either the folio_id or virtual_bank_account
+    capital_commitment = fund.capital_commitments.where(investor_id: investor.id, folio_id:).first if folio_id
+    capital_commitment = fund.capital_commitments.where(investor_id: investor.id, virtual_bank_account:).first if virtual_bank_account
     raise "Investor commitment not found" unless capital_commitment
 
-    capital_remittance = capital_call.capital_remittances.where(folio_id:).first
-    collected_amount_cents = user_data["Collected Amount"].to_d * 100
+    capital_remittance = capital_call.capital_remittances.where(folio_id: capital_commitment.folio_id).first
+    amount_cents = user_data["Amount"].to_d * 100
 
-    [fund, capital_call, investor, capital_commitment, capital_remittance, collected_amount_cents]
+    [fund, capital_call, investor, capital_commitment, capital_remittance, amount_cents]
   end
 end

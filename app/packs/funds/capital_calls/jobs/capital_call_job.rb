@@ -20,9 +20,8 @@ class CapitalCallJob < ApplicationJob
   def generate(capital_call_id)
     @capital_call = CapitalCall.find(capital_call_id)
 
-    capital_commitments = @capital_call.fund.capital_commitments
     # Some calls are for specific fund closes - so only generate remittances for the commitments in that close
-    capital_commitments = capital_commitments.where(fund_close: @capital_call.fund_closes) unless @capital_call.fund_closes.include?("All")
+    capital_commitments = @capital_call.applicable_to
 
     capital_commitments.each_with_index do |capital_commitment, _idx|
       # Check if we alread have a CapitalRemittance for this commitment
@@ -39,6 +38,7 @@ class CapitalCallJob < ApplicationJob
                                    entity: @capital_call.entity, investor: capital_commitment.investor, capital_commitment:, folio_id: capital_commitment.folio_id,
                                    status:, verified: @capital_call.generate_remittances_verified)
 
+        cr.set_call_amount
         cr.run_callbacks(:save) { false }
         cr.run_callbacks(:create) { false }
         @remittances << cr if cr.valid?

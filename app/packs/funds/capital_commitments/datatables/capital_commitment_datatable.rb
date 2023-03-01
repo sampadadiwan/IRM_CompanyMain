@@ -3,6 +3,7 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
     @view_columns ||= {
       id: { source: "CapitalCommitment.id", searchable: false },
       folio_id: { source: "CapitalCommitment.folio_id", orderable: true },
+      unit_type: { source: "CapitalCommitment.unit_type", orderable: true },
       investor_name: { source: "CapitalCommitment.investor_name", orderable: true },
       fund_name: { source: "Fund.name", searchable: false, orderable: true },
       committed_amount: { source: "CapitalCommitment.committed_amount_cents", searchable: false },
@@ -19,6 +20,7 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
       {
         id: record.id,
         folio_id: record.folio_id,
+        unit_type: record.unit_type,
         investor_name: record.decorate.investor_link,
         fund_name: record.decorate.fund_link,
         committed_amount: record.decorate.money_to_currency(record.committed_amount, params),

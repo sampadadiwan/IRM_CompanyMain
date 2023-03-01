@@ -7,6 +7,7 @@ export default class extends ServerDatatableController {
     if ($("#show_docs").length > 0) {
       return [
         {"data": "folio_id"},
+        {"data": "unit_type"},
         {"data": "investor_name"},
         {"data": "fund_name"},
         {"data": "committed_amount"},
@@ -19,6 +20,7 @@ export default class extends ServerDatatableController {
     } else {
       return [
         {"data": "folio_id"},
+        {"data": "unit_type"},
         {"data": "investor_name"},
         {"data": "fund_name"},
         {"data": "committed_amount"},

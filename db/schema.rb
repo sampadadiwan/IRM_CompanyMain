@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_02_26_134241) do
+ActiveRecord::Schema[7.0].define(version: 2023_03_01_080537) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -352,7 +352,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_26_134241) do
     t.date "call_date"
     t.bigint "document_folder_id"
     t.text "unit_prices"
-    t.string "fund_closes", limit: 50
+    t.string "fund_closes", limit: 100
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_calls_on_document_folder_id"
@@ -393,7 +393,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_26_134241) do
     t.decimal "total_allocated_income_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_allocated_expense_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "fund_close", limit: 15
+    t.string "fund_close", limit: 30
+    t.string "virtual_bank_account", limit: 20
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
@@ -501,6 +502,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_26_134241) do
     t.bigint "document_folder_id"
     t.decimal "units_quantity", precision: 20, scale: 2, default: "0.0"
     t.boolean "notification_sent", default: false
+    t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"
@@ -1321,6 +1323,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_02_26_134241) do
     t.string "last_name"
     t.boolean "send_confirmation", default: false
     t.bigint "investor_entity_id", null: false
+    t.boolean "is_investor_advisor", default: false
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
     t.index ["email"], name: "index_investor_accesses_on_email"
     t.index ["entity_id"], name: "index_investor_accesses_on_entity_id"

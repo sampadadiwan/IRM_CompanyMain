@@ -13,6 +13,9 @@ class CapitalCommitmentRemittanceJob < ApplicationJob
   def generate_for_commitment(capital_commitment_id)
     capital_commitment = CapitalCommitment.find(capital_commitment_id)
     capital_commitment.fund.capital_calls.each do |capital_call|
+      # Generate the remittance only if the call is for All or this Fund Close
+      next unless capital_call.applicable_to.exists?(id: capital_commitment.id)
+
       CapitalRemittance.create(capital_call:, fund: capital_call.fund,
                                entity: capital_call.entity, investor: capital_commitment.investor, capital_commitment:, folio_id: capital_commitment.folio_id,
                                status: "Pending", verified: false)

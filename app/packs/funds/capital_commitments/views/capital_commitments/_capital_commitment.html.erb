@@ -9,6 +9,9 @@
     <%= link_to capital_commitment.fund.name, capital_commitment.fund %>
   </td>
   <td>
+    <%= capital_commitment.unit_type %>
+  </td>
+  <td>
     <%= money_to_currency capital_commitment.committed_amount, params %>
   </td>
   <td>

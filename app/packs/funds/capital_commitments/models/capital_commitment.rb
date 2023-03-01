@@ -43,6 +43,8 @@ class CapitalCommitment < ApplicationRecord
            with_currency: ->(i) { i.fund.currency }
 
   validates :committed_amount_cents, numericality: { greater_than: 0 }
+  validates :committed_amount_cents, numericality: { greater_than_or_equal_to: :collected_amount_cents }
+
   validates :folio_id, :fund_close, presence: true
   validates_uniqueness_of :folio_id, scope: :fund_id
 
@@ -79,9 +81,29 @@ class CapitalCommitment < ApplicationRecord
 
   def document_list
     # fund.commitment_doc_list&.split(",")
-    docs = fund.documents.where(template: true).map { |d| ["#{d.name} Header", "#{d.name} Footer"] }.flatten
+    docs = fund.documents.where(template: true).map(&:name)
+    docs += fund.documents.where(template: true).map { |d| ["#{d.name} Header", "#{d.name} Footer"] }.flatten
     docs += fund.commitment_doc_list.split(",").map(&:strip) if fund.commitment_doc_list.present?
     docs + ["Other"] if docs.present?
+    docs.sort
+  end
+
+  # Retrieves the templates to be used for rendering as SOA, FRA etc.
+  def templates(owner_tag, name = nil)
+    fund_templates = fund.documents.where(owner_tag:)
+    fund_templates = fund_templates.where(name:) if name
+    fund_template_names = fund_templates.pluck(:name)
+    # Try and get the template from the capital_commitment which override the fund templates
+    commitment_templates = documents.where(name: fund_template_names)
+
+    if commitment_templates.present?
+      template_names = commitment_templates.pluck(:name)
+      # Get the fund templates that are not overridden by the commitment
+      # If a name is specified and we found commitment_templates, then dont get any fund_templates
+      fund_templates = name ? [] : fund.documents.where(owner_tag:).where.not(name: template_names)
+    end
+
+    commitment_templates + fund_templates
   end
 
   ################# eSign stuff follows ###################

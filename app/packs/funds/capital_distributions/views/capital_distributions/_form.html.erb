@@ -56,6 +56,11 @@
     <% end %>
 
     <div class="form-group">
+      <%= form.label :generate_payments %>
+      <%= form.check_box :generate_payments, class: "form-control form-checkbox"  %>
+    </div>
+
+    <div class="form-group">
       <%= form.label :completed %>
       <%= form.check_box :completed, class: "form-control form-checkbox"  %>
     </div>

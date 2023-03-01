@@ -21,7 +21,7 @@
     <div class="form-group">
       <% disabled = capital_commitment.investor_id.present? ? "disabled" : nil %>
       <%= form.label :investor_id %>
-      <%= form.select :investor_id, capital_commitment.fund.investors.map{|i| [i.investor_name, i.id]}  ,{include_blank: "Select Investor"}, { disabled: disabled, class: 'form-control select2', data: { action: "change->commitmentselect#change" } }  %>
+      <%= form.select :investor_id, capital_commitment.fund.investors.order(:investor_name).map{|i| [i.investor_name, i.id]}  ,{include_blank: "Select Investor"}, { disabled: disabled, class: 'form-control select2', data: { action: "change->commitmentselect#change" } }  %>
     </div>
 
 
@@ -49,7 +49,13 @@
   <div class="form-group">
     <%= form.label :folio_id, "Folio Id" %>
     <%= form.text_field :folio_id, class: "form-control"  %>
-    <small class="text-muted">If your clients have a Folio Id / Number, add it here</small>
+    <small class="text-muted">Clients have a Folio Id / Number</small>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :virtual_bank_account %>
+    <%= form.text_field :virtual_bank_account, class: "form-control", maxlength: 20  %>
+    <small class="text-muted">Virtual Bank Account for your clients, if any</small>
   </div>
 
   <div class="form-group" data-controller="otherselect" data-otherselect-select-id-value="#capital_commitment_fund_close">
@@ -62,7 +68,7 @@
       <%= form.select :fund_close, closes, {}, class: "form-control", "data-action": "change->otherselect#checkOtherName"  %>
       <%= form.text_field :fund_close, class: "form-control", disabled: true, id: "other_name"  %>
     <% else %>
-      <%= form.text_field :fund_close, class: "form-control"  %>
+      <%= form.text_field :fund_close, class: "form-control", maxlength: 30  %>
     <% end %>
   </div>
 

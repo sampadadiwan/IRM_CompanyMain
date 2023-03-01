@@ -5,7 +5,7 @@
         Entity
       </td>
       <td>
-        <%= @capital_call.entity.name %>
+        <%= capital_call.entity.name %>
       </td>
     </tr>
     <tr>
@@ -13,7 +13,7 @@
         Fund
       </td>
       <td>
-        <%= link_to @capital_call.fund.name, @capital_call.fund %>
+        <%= link_to capital_call.fund.name, capital_call.fund %>
       </td>
     </tr>
     <tr>
@@ -21,7 +21,7 @@
         Name
       </td>
       <td>
-        <%= @capital_call.name %>
+        <%= capital_call.name %>
       </td>
     </tr>
     <tr>
@@ -29,7 +29,7 @@
         Percentage Called
       </td>
       <td>
-        <%= @capital_call.percentage_called %> %
+        <%= capital_call.percentage_called %> %
       </td>
     </tr>
     <tr>
@@ -37,7 +37,7 @@
         Call Date
       </td>
       <td>
-        <%= l @capital_call.call_date %>
+        <%= l capital_call.call_date %>
       </td>
     </tr>
     <tr>
@@ -45,7 +45,7 @@
         Due Date
       </td>
       <td>
-        <%= l @capital_call.due_date %>
+        <%= l capital_call.due_date %>
       </td>
     </tr>
 
@@ -54,12 +54,12 @@
         Applicable To Close
       </td>
       <td>
-        <%= @capital_call.fund_closes %>
+        <%= capital_call.fund_closes %>
       </td>
     </tr>
 
-    <% if @capital_call.fund.unit_types.present? %>
-      <% @capital_call.unit_prices.each do |unit_type, unit_price| %>
+    <% if capital_call.fund.unit_types.present? %>
+      <% capital_call.unit_prices.each do |unit_type, unit_price| %>
 
         <tr>
           <td>
@@ -83,7 +83,7 @@
             Approved
           </td>
           <td>
-            <%= display_boolean @capital_call.approved %>
+            <%= display_boolean capital_call.approved %>
           </td>
         </tr>
         <tr>
@@ -91,7 +91,7 @@
               Call Amount
           </td>
           <td>
-              <%= money_to_currency @capital_call.call_amount, params %>
+              <%= money_to_currency capital_call.call_amount, params %>
           </td>
         </tr>
         <tr>
@@ -99,11 +99,11 @@
             Collected Amount
         </td>
         <td>
-            <%= money_to_currency @capital_call.collected_amount, params %>
+            <%= money_to_currency capital_call.collected_amount, params %>
             
             <div class="progress">
-                <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= @capital_call.percentage_raised %>%" aria-valuenow="<%=@capital_call.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
-                    <%= @capital_call.percentage_raised %> %
+                <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_call.percentage_raised %>%" aria-valuenow="<%=capital_call.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
+                    <%= capital_call.percentage_raised %> %
                 </div>
             </div>
         
@@ -115,7 +115,7 @@
             Due Amount
         </td>
         <td>
-            <%= money_to_currency @capital_call.due_amount, params %>        
+            <%= money_to_currency capital_call.due_amount, params %>        
         </td>
         </tr>
 
@@ -126,11 +126,11 @@
         Notes
       </td>
       <td>
-        <%= @capital_call.notes.html_safe if @capital_call.notes %>
+        <%= capital_call.notes.html_safe if capital_call.notes %>
       </td>
     </tr>
 
-    <%= display_custom_fields(@capital_call) if current_user %>
+    <%= display_custom_fields(capital_call) if current_user %>
 
 
   </table>

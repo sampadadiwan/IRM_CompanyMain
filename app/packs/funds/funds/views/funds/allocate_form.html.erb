@@ -46,6 +46,12 @@
   </div>
 
   <div class="form-group">
+    <%= form.label :template_name, "SOA Template" %>
+    <%= form.select :template_name, @fund.capital_commitments.first.templates("SOA Template"), {}, class: "form-control", name: "template_name"  %>
+    <small class="text-muted">Select the SOA template to be used for SOA generation. </small>
+  </div>
+
+  <div class="form-group">
     <%= form.submit "Allocate Now", {class: "btn btn-outline-primary"}%>
   </div>
 <% end %>

@@ -16,7 +16,7 @@
   
   <div class="form-group">
     <%= form.label :name, "Class / Series / Unit Type" %>
-    <%= form.text_field :name, class: "form-control"  %>
+    <%= form.select :name, fund_unit_setting.fund.unit_types.split(",").map{|x| x.strip}, {}, class: "form-control"  %>
   </div>
 
   <div class="form-group">

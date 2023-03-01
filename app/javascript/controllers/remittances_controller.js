@@ -10,7 +10,8 @@ export default class extends ServerDatatableController {
       {"data": "status"},
       {"data": "verified", "className": "verified"},      
       {"data": "due_amount"},
-      {"data": "collected_amount"},          
+      {"data": "collected_amount"}, 
+      {"data": "payment_date"},          
       {"data": "dt_actions"}
     ]
   }

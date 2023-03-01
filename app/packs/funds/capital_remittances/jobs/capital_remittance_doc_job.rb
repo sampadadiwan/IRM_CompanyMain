@@ -7,7 +7,9 @@ class CapitalRemittanceDocJob < ApplicationJob
       @capital_remittance = CapitalRemittance.find(capital_remittance_id)
       @fund = @capital_remittance.fund
       @investor = @capital_remittance.investor
-      @templates = @fund.documents.where(owner_tag: "Call Template")
+
+      # Try and get the template from the capital_commitment
+      @templates = @capital_remittance.capital_commitment.templates("Call Template")
 
       Rails.logger.debug { "Generating Remittance documents for #{@investor.investor_name}, for fund #{@fund.name}" }
 

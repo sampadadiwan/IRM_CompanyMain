@@ -15,6 +15,9 @@
         "sample_upload": "PORTFOLIO_SAMPLE"), 
         { class: "btn btn-outline-primary"}   %> 
 
+
+    <%= link_to "Download", portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true),  {class: "btn btn-outline-primary" } %>
+
   </span>
 </div>
 

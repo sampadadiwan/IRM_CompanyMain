@@ -23,7 +23,7 @@ class SoaGenerator
   private
 
   def notify(fund_doc_template, capital_commitment, user_id)
-    send_notification(user_id, "SOA #{fund_doc_template.name} generated for #{capital_commitment.investor_name}. Please refresh the page.")
+    send_notification("SOA #{fund_doc_template.name} generated for #{capital_commitment.investor_name}. Please refresh the page.", user_id)
   end
 
   # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
@@ -42,7 +42,7 @@ class SoaGenerator
 
       capital_remittances: capital_commitment.capital_remittances.decorate,
       capital_distribution_payments: capital_commitment.capital_distribution_payments.decorate,
-      account_entries: capital_commitment.account_entries.cumulative.where(reporting_date: start_date..).where(reporting_date: ..end_date).decorate,
+      account_entries: capital_commitment.account_entries.includes(:fund).cumulative.where(reporting_date: start_date..).where(reporting_date: ..end_date).decorate,
       fund_ratios: capital_commitment.fund_ratios.where(end_date:),
 
       kyc: capital_commitment.investor_kyc,

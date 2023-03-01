@@ -4,7 +4,7 @@ class CapitalDistributionPaymentsMailer < ApplicationMailer
 
   def send_notification
     @capital_distribution_payment = CapitalDistributionPayment.find params[:id]
-    emails = sandbox_email(@capital_distribution_payment, @capital_distribution_payment.investor.emails)
+    emails = sandbox_email(@capital_distribution_payment, @capital_distribution_payment.investor.emails_for(@capital_distribution_payment.fund))
 
     if emails.present?
       mail(from: from_email(@capital_distribution_payment.entity),

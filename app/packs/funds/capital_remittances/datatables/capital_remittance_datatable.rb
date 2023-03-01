@@ -9,6 +9,7 @@ class CapitalRemittanceDatatable < AjaxDatatablesRails::ActiveRecord
       due_amount: { source: "", orderable: false, searchable: false },
       status: { source: "CapitalRemittance.status", searchable: true },
       verified: { source: "CapitalRemittance.verified", searchable: false },
+      payment_date: { source: "CapitalRemittance.payment_date", searchable: false },
       dt_actions: { source: "", orderable: false, searchable: false }
     }
   end
@@ -17,6 +18,7 @@ class CapitalRemittanceDatatable < AjaxDatatablesRails::ActiveRecord
     records.map do |record|
       {
         id: record.id,
+        payment_date: record.decorate.payment_date,
         folio_id: record.decorate.folio_id,
         investor_name: record.decorate.investor_link,
         call_amount: record.decorate.money_to_currency(record.call_amount, params),

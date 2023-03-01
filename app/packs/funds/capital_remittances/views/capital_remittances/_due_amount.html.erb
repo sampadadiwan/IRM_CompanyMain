@@ -1,7 +1,7 @@
 <%= money_to_currency (capital_remittance.due_amount), params %>
     <div class="hideMobP">
       <small class="text-muted hideMobP">
-      <%= money_to_currency capital_remittance.capital_commitment.committed_amount, params %> x 
+      <%= money_to_currency capital_remittance.committed_amount, params %> x 
       <%= capital_remittance.capital_call.percentage_called %> % -
       <%= money_to_currency capital_remittance.collected_amount, params %>
       </small>

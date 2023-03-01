@@ -12,9 +12,9 @@ class AccountEntryAllocationHelper
     notify("Cleaned up prev allocated entries", :success, @user_id)
   end
 
-  def generate_soa
+  def generate_soa(template_name)
     @fund.capital_commitments.each do |capital_commitment|
-      CapitalCommitmentSoaJob.perform_now(capital_commitment.id, @start_date, @end_date, @user_id)
+      CapitalCommitmentSoaJob.perform_now(capital_commitment.id, @start_date, @end_date, user_id: @user_id, template_name:)
     end
     notify("Done Genrating SOAs for #{@start_date} - #{@end_date}", :success, @user_id)
   end

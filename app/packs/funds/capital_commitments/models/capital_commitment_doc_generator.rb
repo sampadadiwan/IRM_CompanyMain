@@ -89,7 +89,7 @@ class CapitalCommitmentDocGenerator
 
   def upload(document, capital_commitment)
     file_name = "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf"
-    Rails.logger.debug { "Uploading new signed file #{file_name}" }
+    Rails.logger.debug { "Uploading generated file #{file_name} to folio #{capital_commitment.folio_id} " }
 
     signed_document = Document.new(document.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
 

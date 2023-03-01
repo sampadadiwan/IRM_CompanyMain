@@ -611,11 +611,11 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(1)
+  sleep(2)
   click_on("Save")
   sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(2)
+  sleep(4)
   
 end
 
@@ -711,7 +711,7 @@ Then('the remittances are generated for the capital calls') do
       # puts cc.capital_remittances.to_json
       cc.capital_remittances.count.should == fund.capital_commitments.count 
       cc.capital_remittances.sum(:call_amount_cents).should == cc.call_amount_cents
-      cc.capital_remittances.sum(:collected_amount_cents).should == cc.collected_amount_cents
+      cc.capital_remittances.verified.sum(:collected_amount_cents).should == cc.collected_amount_cents
     end
   end
 end
@@ -730,14 +730,14 @@ end
 Then('the capital commitments are updated with remittance numbers') do
   CapitalCommitment.all.each do |cc|
     cc.call_amount_cents.should == cc.capital_remittances.sum(:call_amount_cents)
-    cc.collected_amount_cents.should == cc.capital_remittances.sum(:collected_amount_cents)
+    cc.collected_amount_cents.should == cc.capital_remittances.verified.sum(:collected_amount_cents)
   end
 end
 
 Then('the funds are updated with remittance numbers') do
   Fund.all.each do |f|
     f.call_amount_cents.should == f.capital_remittances.sum(:call_amount_cents)
-    f.collected_amount_cents.should == f.capital_remittances.sum(:collected_amount_cents)
+    f.collected_amount_cents.should == f.capital_remittances.verified.sum(:collected_amount_cents)
   end
 end
 
@@ -840,6 +840,7 @@ Then('when the capital commitment docs are generated') do
     click_on("Generate Documents")
     sleep(1)
     click_on("Proceed")
+    sleep(6)
     expect(page).to have_content("Documentation generation started")
   end
 end
@@ -857,7 +858,7 @@ Then('when the capital call docs are generated') do
   CapitalCall.all.each do |cc|
     visit(capital_call_path(cc))
     click_on("Generate Documents")
-    sleep(4)
+    sleep(6)
     expect(page).to have_content("Document #{@call_template.name} generated")
     sleep(2)
     expect(page).to have_content("Documentation generation started")
@@ -1041,4 +1042,43 @@ Then('the account_entries must visible for each commitment') do
     expect(page).to have_content(ae.capital_commitment.folio_id)
     expect(page).to have_content(ae.reporting_date.strftime("%d/%m/%Y"))
   end
+end
+
+
+Then('Given I upload {string} file for the remittances of the capital call') do |file|  
+  @import_file = file
+  visit(capital_call_path(@fund.capital_calls.first))
+  click_on("Remittances")
+  sleep(1)
+  click_on("Upload Payments")
+  fill_in('import_upload_name', with: "Test Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  sleep(1)
+  click_on("Save")
+  sleep(1)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(5)
+end
+
+Then('the capital remittance payments must have the data in the sheet') do
+    file = File.open("./public/sample_uploads/#{@import_file}", "r")
+    data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+    headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+  
+    capital_remittance_payments = @fund.capital_remittance_payments.order(id: :asc).to_a
+    data.each_with_index do |row, idx|
+      next if idx.zero? # skip header row
+  
+      # create hash from headers and cells
+      user_data = [headers, row].transpose.to_h
+      cc = capital_remittance_payments[idx-1]
+      cc.fund.name.should == user_data["Fund"]
+      cc.capital_remittance.investor.investor_name.should == user_data["Investor"]
+      cc.capital_remittance.folio_id.should == user_data["Folio No"].to_s
+      cc.amount_cents.should == user_data["Amount"].to_i * 100
+      cc.reference_no.should == user_data["Reference No"].to_s
+      cc.payment_date.should == user_data["Payment Date"]
+
+      # sleep(30)
+    end
 end

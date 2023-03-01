@@ -27,13 +27,22 @@
     </td>
   </tr>
 
-  <% if @capital_commitment.folio_id.present? %>
     <tr>
       <td>
         Folio Id
       </td>
       <td>
         <%= @capital_commitment.folio_id %>
+      </td>
+    </tr>
+  
+  <% if @capital_commitment.virtual_bank_account.present? %>
+    <tr>
+      <td>
+        Virtual Bank Account
+      </td>
+      <td>
+        <%= @capital_commitment.virtual_bank_account %>
       </td>
     </tr>
   <% end %>
@@ -104,6 +113,16 @@
     </td>
     <td>
       <%= money_to_currency @capital_commitment.collected_amount, params %>
+    </td>
+  </tr>
+
+
+  <tr>
+    <td>
+      Distributed Amount
+    </td>
+    <td>
+      <%= money_to_currency @capital_commitment.distribution_amount, params %>
     </td>
   </tr>
 

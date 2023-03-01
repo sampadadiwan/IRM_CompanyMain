@@ -2,12 +2,14 @@ class CapitalCommitmentSoaJob < ApplicationJob
   queue_as :doc_gen
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
-  def perform(capital_commitment_id, start_date, end_date, user_id = nil)
+  def perform(capital_commitment_id, start_date, end_date, user_id: nil, template_name: nil)
     Chewy.strategy(:sidekiq) do
       @capital_commitment = CapitalCommitment.find(capital_commitment_id)
       @fund = @capital_commitment.fund
       @investor = @capital_commitment.investor
-      @templates = @fund.documents.where(owner_tag: "SOA Template")
+
+      # Try and get the template from the capital_commitment
+      @templates = @capital_commitment.templates("SOA Template", template_name)
 
       Rails.logger.debug { "Generating documents for #{@investor.investor_name}, for fund #{@fund.name}" }
 

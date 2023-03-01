@@ -133,8 +133,26 @@ class Investor < ApplicationRecord
     "#{investor_name} : #{category}"
   end
 
-  def emails
-    investor_accesses.approved.collect(&:email)
+  def emails(type = "Employees")
+    case type
+    when "Employees"
+      investor_accesses.approved.not_investor_advisors.pluck(:email)
+    when "Investor Advisors"
+      investor_accesses.approved.investor_advisors.pluck(:email)
+    when "All"
+      investor_accesses.approved.pluck(:email)
+    end
+  end
+
+  def emails_for(model)
+    employee_emails = emails("Employees")
+    advisor_emails = investor_advisor_emails(model)
+    employee_emails + advisor_emails
+  end
+
+  def investor_advisor_emails(model)
+    access_user_ids = model.access_rights.where.not(user_id: nil).where(entity_id: investor_entity_id).pluck(:user_id)
+    investor_accesses.approved.investor_advisors.where(user_id: access_user_ids).pluck(:email)
   end
 
   def folder_path

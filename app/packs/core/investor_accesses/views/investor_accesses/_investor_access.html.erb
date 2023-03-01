@@ -6,6 +6,9 @@
     <%= investor_access.user.name if investor_access.user %>
   </td>
   <td>
+    <%= investor_access.is_investor_advisor ? "Advisor" : "Employee" %>
+  </td>
+  <td>
     <%= investor_access.email %>
   </td>
   <td>

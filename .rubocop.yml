@@ -113,12 +113,12 @@ Security/Eval:
 
 # Metrics Cops
 Metrics/CyclomaticComplexity:
-  Max: 10
+  Max: 15
   Enabled: true
   Exclude:
     - 'app/packs/core/users/models/user.rb'
 Metrics/PerceivedComplexity:
-  Max: 12
+  Max: 15
   Exclude:
     - 'app/packs/core/users/models/user.rb'
     - 'app/packs/core/tasks/controllers/tasks_controller.rb'

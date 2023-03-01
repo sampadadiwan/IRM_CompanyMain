@@ -25,7 +25,17 @@ class CapitalCall < ApplicationRecord
 
   before_save :compute_call_amount
   def compute_call_amount
-    self.call_amount_cents = fund.committed_amount_cents * percentage_called / 100.0
+    self.call_amount_cents = applicable_to.sum(:committed_amount_cents) * percentage_called / 100.0
+  end
+
+  # This is a list of commitments for which this call is applicable
+  def applicable_to
+    # The call is applicable only to those commitments which have a fund_close specified in the call
+    if fund_closes.nil? || fund_closes.include?("All")
+      fund.capital_commitments
+    else
+      fund.capital_commitments.where(fund_close: fund_closes)
+    end
   end
 
   after_commit :generate_capital_remittances
@@ -55,10 +65,14 @@ class CapitalCall < ApplicationRecord
   end
 
   def notify_capital_call
-    FundMailer.with(id:).notify_capital_call.deliver_later
+    capital_remittances.pending.each do |cr|
+      CapitalRemittancesMailer.with(id: cr.id).notify_capital_remittance.deliver_later
+    end
   end
 
   def reminder_capital_call
-    FundMailer.with(id:).reminder_capital_call.deliver_later
+    capital_remittances.pending.each do |cr|
+      CapitalRemittancesMailer.with(id: cr.id).reminder_capital_remittance.deliver_later
+    end
   end
 end

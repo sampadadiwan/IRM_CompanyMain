@@ -3,15 +3,17 @@ class AccountEntryAllocationEngine
 
   # This is to split the formula and retain the delimiters
   # See https://stackoverflow.com/questions/18089562/how-do-i-keep-the-delimiters-when-splitting-a-ruby-string
-  FORMULA_DELIMS = %r{([%*+\-/()])} # %r{([?+|\-*/()%=]):} # ["+","-","*","/","(",")","%", "="]
+  FORMULA_DELIMS = %r{([%*+\-/()?:])} # %r{([?+|\-*/()%=]):} # ["+","-","*","/","(",")","%", "="]
 
-  def initialize(fund, start_date, end_date, formula_id: nil, user_id: nil, generate_soa: false, fund_ratios: false)
+  def initialize(fund, start_date, end_date, formula_id: nil, user_id: nil,
+                 generate_soa: false, template_name: nil, fund_ratios: false)
     @fund = fund
     @start_date = start_date
     @end_date = end_date
     @formula_id = formula_id
     @user_id = user_id
     @generate_soa = generate_soa
+    @template_name = template_name
     @fund_ratios = fund_ratios
     # This is the cache for storing expensive computations used across the formulas
     @cached_generated_fields = {}
@@ -36,7 +38,7 @@ class AccountEntryAllocationEngine
       run_formula(fund_formula, fund_unit_settings)
       @helper.notify("Completed #{index + 1} of #{count}: #{fund_formula.name}", :success, @user_id)
     rescue Exception => e
-      @helper.notify("Error in #{fund_formula.name} : #{e.message}", :danger, @user_id)
+      @helper.notify("Error in Formula #{fund_formula.sequence}: #{fund_formula.name} : #{e.message}", :danger, @user_id)
       Rails.logger.debug { "Error in #{fund_formula.name} : #{e.message}" }
       raise e
     end
@@ -44,7 +46,7 @@ class AccountEntryAllocationEngine
     @helper.notify("Done running all allocations for #{@start_date} - #{@end_date}", :success, @user_id)
 
     @helper.generate_fund_ratios if @fund_ratios
-    @helper.generate_soa if @generate_soa
+    @helper.generate_soa(@template_name) if @generate_soa
   end
 
   def run_formula(fund_formula, fund_unit_settings)
@@ -127,12 +129,12 @@ class AccountEntryAllocationEngine
       fields = computed_fields_cache(capital_commitment)
 
       @fund.aggregate_portfolio_investments.each do |orig_api|
-        ae = AccountEntry.new(name: orig_api.portfolio_company_name, entry_type: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", generated: true)
+        ae = AccountEntry.new(name: "#{orig_api.portfolio_company_name}-#{orig_api.investment_type}", entry_type: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", generated: true)
 
         # This will create the AggregatePortfolioInvestment as of the end date, it will be ised in the formulas
         api = orig_api.as_of(@end_date)
 
-        create_account_entry(ae, fund_formula, capital_commitment, orig_api, binding)
+        ae = create_account_entry(ae, fund_formula, capital_commitment, orig_api, binding)
 
         add_to_computed_fields_cache(capital_commitment, ae)
       end
@@ -154,7 +156,7 @@ class AccountEntryAllocationEngine
     account_entry.parent = parent
     account_entry.generated = true
 
-    account_entry.save!
+    account_entry.save
     account_entry
   rescue Exception => e
     fund_formula.formula.split(FORMULA_DELIMS).each do |token|

@@ -20,7 +20,7 @@ class CapitalRemittance < ApplicationRecord
   scope :pending, -> { where(status: "Pending") }
   scope :verified, -> { where(verified: true) }
 
-  monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :call_amount_cents, :collected_amount_cents, :committed_amount_cents, with_currency: ->(i) { i.fund.currency }
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :capital_call_id
 
@@ -48,6 +48,8 @@ class CapitalRemittance < ApplicationRecord
   before_save :set_status
   before_create :set_call_amount
   def set_call_amount
+    # This is the committed_amount when the remittance was created. In certain special top up cases the committed_amount for the commitment may be changed later. Hence this is a ref for the committed_amount at the time of creation
+    self.committed_amount_cents = capital_commitment.committed_amount_cents
     self.call_amount_cents = calc_call_amount_cents
     set_status
   end

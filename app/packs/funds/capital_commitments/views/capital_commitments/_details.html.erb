@@ -14,7 +14,7 @@
             data-action="click->tabdetails#loadData">Units</a>
     <% end %>
 
-    <% if capital_commitment.entity.enable_account_entries %>
+    <% if capital_commitment.entity.enable_account_entries && policy(capital_commitment).update? %>
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#account-entries-tab"
             data-action="click->tabdetails#loadData">Account Entries</a>
 
