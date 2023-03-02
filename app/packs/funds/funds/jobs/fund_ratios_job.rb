@@ -15,6 +15,8 @@ class FundRatiosJob < ApplicationJob
         fund.capital_commitments.each do |capital_commitment|
           calc_fund_ratios(fund, capital_commitment, end_date)
           notify("Folio #{capital_commitment.folio_id} calculations are now complete.", user_id)
+        rescue StandardError => e
+          notify("Error in fund ratios: #{e.message}", user_id, level: "alert").broadcast
         end
       end
 
@@ -63,7 +65,7 @@ class FundRatiosJob < ApplicationJob
     end
   end
 
-  def notify(message, user_id)
-    UserAlert.new(user_id:, message:, level: "success").broadcast
+  def notify(message, user_id, level: "success")
+    UserAlert.new(user_id:, message:, level:).broadcast
   end
 end

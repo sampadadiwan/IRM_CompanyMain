@@ -10,6 +10,7 @@ class AccountEntriesController < ApplicationController
     @account_entries = @account_entries.where(capital_commitment_id: nil) if params[:fund_accounts_only].present?
 
     @account_entries = @account_entries.where(entry_type: params[:entry_type]) if params[:entry_type]
+    @account_entries = @account_entries.where(cumulative: params[:cumulative] == "true") if params[:cumulative]
 
     @account_entries = @account_entries.page(params[:page]) if params[:all].blank?
 
