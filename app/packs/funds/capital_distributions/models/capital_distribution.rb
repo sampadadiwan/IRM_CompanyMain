@@ -2,6 +2,7 @@ class CapitalDistribution < ApplicationRecord
   include WithCustomField
   include Trackable
   include ActivityTrackable
+  include WithFolder
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
   include ForInvestor
@@ -34,5 +35,9 @@ class CapitalDistribution < ApplicationRecord
 
   def to_s
     title
+  end
+
+  def folder_path
+    "#{fund.folder_path}/Capital Distributions/#{title.delete('/')}"
   end
 end

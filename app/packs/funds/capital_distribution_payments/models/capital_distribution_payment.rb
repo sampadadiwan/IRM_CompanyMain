@@ -2,6 +2,8 @@ class CapitalDistributionPayment < ApplicationRecord
   include WithCustomField
   include Trackable
   include ActivityTrackable
+  include WithFolder
+
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
   include ForInvestor
@@ -60,5 +62,9 @@ class CapitalDistributionPayment < ApplicationRecord
     else
       "#{investor_name}: #{amount} : Pending"
     end
+  end
+
+  def folder_path
+    "#{capital_distribution.folder_path}/Payments/#{investor.investor_name.delete('/')}-#{folio_id.delete('/')}"
   end
 end

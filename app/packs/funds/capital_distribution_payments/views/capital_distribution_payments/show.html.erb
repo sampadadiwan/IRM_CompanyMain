@@ -2,12 +2,14 @@
 <%= render "/capital_distribution_payments/show", 
     capital_distribution_payment: @capital_distribution_payment %>
 
-
-  <div>
-    <% if policy(@capital_distribution_payment).update? %>
-      <%= link_to "Edit" , edit_capital_distribution_payment_path(@capital_distribution_payment),
+<div>
+  <% if policy(@capital_distribution_payment).update? %>
+    <%= link_to "Edit" , edit_capital_distribution_payment_path(@capital_distribution_payment),
         {class: "btn btn-outline-primary" } %> |
-      <%= button_to "Delete" , @capital_distribution_payment, method: :delete, class: "btn btn-outline-danger" ,
+    <%= button_to "Delete" , @capital_distribution_payment, method: :delete, class: "btn btn-outline-danger" ,
             form_class: "deleteButton" , data: {action: "click->confirm#delete" , turbo:false} %>
-    <% end %>
-  </div>
+  <% end %>
+</div>
+
+<%= render "/capital_distribution_payments/details", 
+    capital_distribution_payment: @capital_distribution_payment %>
