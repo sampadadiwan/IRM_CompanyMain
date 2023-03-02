@@ -60,6 +60,14 @@
       </td>
       <td>
         <%= money_to_currency @capital_distribution.reinvestment, params %>
+        <br>
+        <%= link_to "Create Account Entry", 
+            new_account_entry_path("account_entry[entity_id]": @capital_distribution.entity_id, 
+            "account_entry[fund_id]": @capital_distribution.fund_id, 
+            "account_entry[name]": "Reinvestment",
+            "account_entry[notes]": "Reinvestment from '#{@capital_distribution.title}' on #{@capital_distribution.distribution_date}",
+            "account_entry[amount]": @capital_distribution.reinvestment, 
+            "account_entry[entry_type]": "Reinvestment"), class: "badge badge-primary" %>
       </td>
     </tr>
     
