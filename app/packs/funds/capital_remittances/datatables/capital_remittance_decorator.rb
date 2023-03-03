@@ -12,7 +12,7 @@ class CapitalRemittanceDecorator < ApplicationDecorator
   end
 
   def payment_date
-    h.l object.payment_date
+    h.l object.payment_date if object.payment_date
   end
 
   # Just an example of a complex method you can add to you decorator
