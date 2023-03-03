@@ -12,7 +12,9 @@ export default class extends ServerDatatableController {
         {"data": "unit_type"},
         {"data": "committed_amount"},
         {"data": "percentage"},
+        {"data": "call_amount"},
         {"data": "collected_amount"},          
+        {"data": "distribution_amount"},          
         {"data": "onboarding_completed"},
         {"data": "document_names"},
         {"data": "dt_actions"}
@@ -25,7 +27,9 @@ export default class extends ServerDatatableController {
         {"data": "unit_type"},
         {"data": "committed_amount"},
         {"data": "percentage"},
-        {"data": "collected_amount"},          
+        {"data": "call_amount"},
+        {"data": "collected_amount"},
+        {"data": "distribution_amount"},          
         {"data": "onboarding_completed"},
         {"data": "dt_actions"}
       ]

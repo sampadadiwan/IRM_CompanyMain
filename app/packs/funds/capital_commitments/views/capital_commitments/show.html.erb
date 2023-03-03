@@ -109,13 +109,21 @@
 
   <tr>
     <td>
+      Called Amount
+    </td>
+    <td>
+      <%= money_to_currency @capital_commitment.call_amount, params %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
       Collected Amount
     </td>
     <td>
       <%= money_to_currency @capital_commitment.collected_amount, params %>
     </td>
   </tr>
-
 
   <tr>
     <td>
