@@ -14,6 +14,7 @@ export default class extends ServerDatatableController {
       {"data": "ifsc_code"},
       {"data": "bank_verified"},
       {"data": "verified"},
+      {"data": "expired"},
       {"data": "dt_actions"}
     ]
   }

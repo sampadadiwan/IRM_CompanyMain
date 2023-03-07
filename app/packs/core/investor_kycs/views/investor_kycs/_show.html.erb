@@ -6,7 +6,7 @@
         Investor
       </td>
       <td>
-        <%= link_to investor_kyc.investor.investor_name, investor_url(investor_kyc.investor, tab: "kycs-tab") %>
+        <%= link_to investor_kyc.investor.investor_name, investor_url(investor_kyc.investor, tab: "kycs-tab") %>        
       </td>
     </tr>
     <tr>
@@ -105,6 +105,17 @@
     </tr>
 
     <%= display_custom_fields(investor_kyc) if current_user %>
+
+    <tr>
+      <td>
+        Expiry Date
+      </td>
+      <td>
+        <%= l investor_kyc.expiry_date if investor_kyc.expiry_date %>
+        <br>
+        <%= render "investor_kycs/expired", investor_kyc:  %>
+      </td>
+    </tr>
 
     <tr>
       <td>

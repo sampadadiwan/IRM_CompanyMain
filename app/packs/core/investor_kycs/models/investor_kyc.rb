@@ -57,4 +57,8 @@ class InvestorKyc < ApplicationRecord
     joins(entity: :investors)
       .where("investors.category=? and investors.investor_entity_id=?", 'Advisor', user.entity_id)
   }
+
+  def expired?
+    expiry_date ? expiry_date < Time.zone.today : false
+  end
 end

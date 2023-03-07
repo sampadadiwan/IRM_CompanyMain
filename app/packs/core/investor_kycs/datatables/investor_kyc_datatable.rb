@@ -11,6 +11,7 @@ class InvestorKycDatatable < AjaxDatatablesRails::ActiveRecord
       pan_verified: { source: "InvestorKyc.pan_verified", searchable: false },
       bank_verified: { source: "InvestorKyc.bank_verified", searchable: false },
       verified: { source: "InvestorKyc.verified", searchable: false },
+      expired: { source: "", searchable: false },
       dt_actions: { source: "", orderable: false, searchable: false }
     }
   end
@@ -28,6 +29,7 @@ class InvestorKycDatatable < AjaxDatatablesRails::ActiveRecord
         pan_verified: record.decorate.display_boolean(record.pan_verified),
         bank_verified: record.decorate.display_boolean(record.bank_verified),
         verified: record.decorate.display_boolean(record.verified),
+        expired: record.decorate.expired,
         dt_actions: record.decorate.dt_actions,
         DT_RowId: "investor_kyc_#{record.id}" # This will automagically set the id attribute on the corresponding <tr> in the datatable
       }
