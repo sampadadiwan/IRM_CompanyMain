@@ -48,6 +48,7 @@ class ImportCapitalDistribution < ImportUtil
                                                        generate_payments:, generate_payments_paid:)
 
         capital_distribution.gross_amount = user_data["Gross"]
+        capital_distribution.cost_of_investment = user_data["Cost Of Investment"]
         capital_distribution.reinvestment = user_data["Reinvestment"]
 
         setup_custom_fields(user_data, capital_distribution, custom_field_headers)

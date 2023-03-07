@@ -44,6 +44,7 @@ class ImportCapitalDistributionPayment < ImportUtil
       capital_distribution_payment.folio_id = folio_id
       capital_distribution_payment.percentage = capital_commitment.percentage
       capital_distribution_payment.amount = user_data["Amount"]
+      capital_distribution_payment.cost_of_investment = user_data["Cost Of Investment"]
       capital_distribution_payment.completed = user_data["Completed"] == "Yes"
 
       setup_custom_fields(user_data, capital_distribution_payment, custom_field_headers)

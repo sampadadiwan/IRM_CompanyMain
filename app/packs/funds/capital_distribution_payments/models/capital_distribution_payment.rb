@@ -16,7 +16,7 @@ class CapitalDistributionPayment < ApplicationRecord
   belongs_to :capital_commitment
   has_one :investor_kyc, through: :capital_commitment
 
-  monetize :amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :amount_cents, :cost_of_investment_cents, with_currency: ->(i) { i.fund.currency }
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :capital_distribution_id
 
