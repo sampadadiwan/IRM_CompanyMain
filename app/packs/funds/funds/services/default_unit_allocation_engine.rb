@@ -57,13 +57,15 @@ class DefaultUnitAllocationEngine
     capital_distribution = capital_distribution_payment.capital_distribution
     msg = []
 
-    if  capital_distribution_payment.completed && capital_distribution_payment.amount_cents.positive? &&
-        capital_distribution.unit_prices.present? && capital_commitment.unit_type.present?
+    if  capital_distribution_payment.completed &&
+        capital_distribution_payment.cost_of_investment_cents.positive? &&
+        capital_distribution.unit_prices.present? &&
+        capital_commitment.unit_type.present?
       # Get the price for the unit type for this commitment from the call
       unit_type = capital_commitment.unit_type
       price_cents = capital_distribution.unit_prices[unit_type].to_d * 100
       # Calculate the quantity to be allocated
-      quantity = price_cents.positive? ? (capital_distribution_payment.amount_cents / price_cents) : 0
+      quantity = price_cents.positive? ? (capital_distribution_payment.cost_of_investment_cents / price_cents) : 0
 
       fund_unit = find_or_new_payment(capital_distribution_payment, unit_type)
 

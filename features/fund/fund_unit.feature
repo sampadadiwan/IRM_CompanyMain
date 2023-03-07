@@ -52,6 +52,6 @@ Scenario Outline: Generate fund units from capital distribution
   
 Examples:
   	|user	    |entity                                 |fund                 | distribution |
-  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test  | gross_amount_cents=20000000;reinvestment_cents=0;fee_cents=0;completed=true |
-    |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger| gross_amount_cents=20000000;reinvestment_cents=0;fee_cents=0;completed=true |
+  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test  | gross_amount_cents=20000000;cost_of_investment_cents=15000000;reinvestment_cents=0;fee_cents=0;completed=true |
+    |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger| gross_amount_cents=20000000;cost_of_investment_cents=15000000;reinvestment_cents=0;fee_cents=0;completed=true |
 

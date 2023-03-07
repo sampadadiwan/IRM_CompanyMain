@@ -15,7 +15,11 @@ class CapitalDistribution < ApplicationRecord
   # Stores the prices for unit types for this call
   serialize :unit_prices, Hash
 
-  monetize :net_amount_cents, :reinvestment_cents, :gross_amount_cents, :distribution_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :net_amount_cents, :reinvestment_cents, :gross_amount_cents, :distribution_amount_cents, :cost_of_investment_cents, with_currency: ->(i) { i.fund.currency }
+
+  validates :cost_of_investment_cents, :gross_amount_cents, numericality: { greater_than: 0 }
+
+  validates :distribution_date, presence: true
 
   before_save :compute_net_amount
   def compute_net_amount

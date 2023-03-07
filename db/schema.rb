@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_03_07_061427) do
+ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -424,6 +424,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_061427) do
     t.string "investor_name"
     t.decimal "units_quantity", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
+    t.decimal "cost_of_investment_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
     t.index ["deleted_at"], name: "index_capital_distribution_payments_on_deleted_at"
@@ -458,6 +459,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_061427) do
     t.text "unit_prices"
     t.decimal "reinvestment_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
+    t.decimal "cost_of_investment_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["approved_by_user_id"], name: "index_capital_distributions_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_distributions_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_distributions_on_document_folder_id"

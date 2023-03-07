@@ -981,7 +981,7 @@ Then('there should be correct units for the distribution payments for each inves
       fu.unit_type.should == cc.unit_type
       fu.owner_type.should == "CapitalDistributionPayment"
       fu.price.should == fu.owner.capital_distribution.unit_prices[fu.unit_type].to_d
-      fu.quantity.should == -(fu.owner.amount_cents / (fu.price * 100))
+      fu.quantity.should == -(fu.owner.cost_of_investment_cents / (fu.price * 100))
     end
   end
 end

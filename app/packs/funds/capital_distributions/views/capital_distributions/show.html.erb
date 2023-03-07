@@ -54,6 +54,17 @@
         <%= money_to_currency @capital_distribution.gross_amount, params %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Cost of Investment
+      </td>
+      <td>
+        <%= money_to_currency @capital_distribution.cost_of_investment, params %>
+      </td>
+    </tr>
+
+
     <tr>
       <td>
         Reinvestment
