@@ -13,6 +13,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     sandbox_emails: Field::String,
     entity_bcc: Field::String,
     from_email: Field::String,
+    reply_to: Field::String,
+    cc: Field::String,
     bank_verification: Field::BooleanEmoji,
     pan_verification: Field::BooleanEmoji,
     entity: Field::BelongsTo,
@@ -40,6 +42,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     sandbox
     sandbox_emails
     from_email
+    reply_to
+    cc
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -50,6 +54,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     sandbox
     sandbox_emails
     from_email
+    reply_to
+    cc
     entity_bcc
     pan_verification
     bank_verification

@@ -7,9 +7,14 @@ class ExpressionOfInterestMailer < ApplicationMailer
 
     # Get all emails of investors & holding company employees
     emails = sandbox_email(@expression_of_interest, @expression_of_interest.user.email)
+    @entity = @expression_of_interest.entity
+    cc = @entity.entity_setting.cc
+    reply_to = @entity.entity_setting.reply_to
 
     mail(from: from_email(@expression_of_interest.entity),
          to: emails,
+         reply_to:,
+         cc:,
          subject: "Expression Of Interest received for: #{@expression_of_interest.investment_opportunity.company_name}")
   end
 end

@@ -62,6 +62,10 @@ class CapitalRemittance < ApplicationRecord
     CapitalRemittancesMailer.with(id:).send_notification.deliver_later if capital_call.approved && !capital_call.manual_generation
   end
 
+  def payment_received_notification
+    CapitalRemittancesMailer.with(id:).payment_received.deliver_later
+  end
+
   before_save :set_investor_name
   def set_investor_name
     self.investor_name = investor.investor_name
