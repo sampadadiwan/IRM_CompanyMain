@@ -11,7 +11,7 @@ class InvestorKycDatatable < AjaxDatatablesRails::ActiveRecord
       pan_verified: { source: "InvestorKyc.pan_verified", searchable: false },
       bank_verified: { source: "InvestorKyc.bank_verified", searchable: false },
       verified: { source: "InvestorKyc.verified", searchable: false },
-      expired: { source: "", searchable: false },
+      expired: { source: "InvestorKyc.expiry_date", searchable: false },
       dt_actions: { source: "", orderable: false, searchable: false }
     }
   end

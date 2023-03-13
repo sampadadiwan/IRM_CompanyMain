@@ -89,16 +89,22 @@
       </td>
       <td>
         <%= import_upload.failed_row_count %>
-        <br>
-        <% if import_upload.failed_row_count > 0 %>
-          <span class="badge badge-danger">Failed to import <%= import_upload.failed_row_count %> rows</span>
-          <small> 
-            Download <%= link_to "Results", import_upload.import_results.url, class: "btn-sm btn-primary" if import_upload.import_results.present? %> file to check which rows have errors and why.
-          </small>
-        <% end %>
-        
       </td>
     </tr>
+
+    <% if import_upload.failed_row_count > 0 %>
+      <tr>
+        <td>
+          <span class="badge badge-danger">
+              Failed to import <%= import_upload.failed_row_count %> rows
+          </span>
+        </td>
+        <td>        
+            Download <%= link_to "Results", import_upload.import_results.url, class: "btn-sm btn-primary" if import_upload.import_results.present? %> file to check which rows have errors and why.
+        </td>
+      </tr>
+    <% end %>
+
     <tr>
       <td>
         Status
