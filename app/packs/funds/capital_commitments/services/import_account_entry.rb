@@ -52,7 +52,10 @@ class ImportAccountEntry < ImportUtil
   def prepare_record(user_data, import_upload, custom_field_headers)
     folio_id, name, entry_type, reporting_date, period, investor_name, amount_cents, fund, capital_commitment, investor = get_fields(user_data, import_upload)
 
-    if fund && folio_id && capital_commitment
+    if fund
+
+      raise "Commitment not found" if folio_id.present? && capital_commitment.nil?
+
       # Note this could be an entry for a commitment or for a fund (i.e no commitment)
       account_entry = AccountEntry.find_or_initialize_by(entity_id: import_upload.entity_id, folio_id:,
                                                          fund:, capital_commitment:, investor:, reporting_date:,
@@ -66,15 +69,12 @@ class ImportAccountEntry < ImportUtil
         account_entry.run_callbacks(:create) { false }
         @account_entries << account_entry
         ret_val = [true, "Success"]
-        # ret_val = prepare_for_import(account_entry, user_data, custom_field_headers)
       else
         ret_val = [false, "Duplicate, already present"] unless account_entry.new_record?
         ret_val = [false, account_entry.errors.full_messages] unless account_entry.valid?
       end
     else
       raise "Fund not found" unless fund
-      raise "Folio not found" unless folio_id
-      raise "Commitment not found" unless capital_commitment
     end
 
     ret_val
