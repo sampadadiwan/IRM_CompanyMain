@@ -54,8 +54,6 @@ class ImportAccountEntry < ImportUtil
 
     if fund
 
-      raise "Commitment not found" if folio_id.present? && capital_commitment.nil?
-
       # Note this could be an entry for a commitment or for a fund (i.e no commitment)
       account_entry = AccountEntry.find_or_initialize_by(entity_id: import_upload.entity_id, folio_id:,
                                                          fund:, capital_commitment:, investor:, reporting_date:,
@@ -90,8 +88,11 @@ class ImportAccountEntry < ImportUtil
     period = user_data["Period"]&.strip
 
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
+    raise "Fund not found" unless fund
+
     capital_commitment = investor_name.present? ? fund.capital_commitments.where(investor_name:, folio_id:).first : nil
     investor = capital_commitment&.investor
+    raise "Commitment not found" if folio_id.present? && capital_commitment.nil?
 
     [folio_id, name, entry_type, reporting_date, period, investor_name, amount_cents, fund, capital_commitment, investor]
   end
