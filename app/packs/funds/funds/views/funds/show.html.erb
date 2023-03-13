@@ -31,7 +31,9 @@
             Reports
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <%= link_to "Fund Export" , export_fund_path(@fund), {class: "dropdown-item" } %> 
             <%= link_to "Fund Numbers" , report_fund_path(@fund, report: "chart"), {class: "dropdown-item" } %> 
+            <%= link_to "Folio Numbers" , report_fund_path(@fund, report: "folio_numbers"), {class: "dropdown-item" } %> 
             <%= link_to "Pending Remittances" , report_fund_path(@fund, report: "calls_report"), {class: "dropdown-item" } %> 
             <%= link_to "Onboarding Report" , report_fund_path(@fund, report: "onboarding_report", show_docs: true), {class: "dropdown-item" } %>
             <%= link_to "Timeline" , timeline_fund_path(@fund), {class: "dropdown-item" } %> 

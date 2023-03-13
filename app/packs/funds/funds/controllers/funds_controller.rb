@@ -1,10 +1,16 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show edit update destroy timeline last report generate_fund_ratios allocate_form allocate copy_formulas]
+  before_action :set_fund, only: %i[show edit update destroy timeline last report generate_fund_ratios allocate_form allocate copy_formulas export]
 
   # GET /funds or /funds.json
   def index
     @funds = policy_scope(Fund).includes(:entity)
     @funds = @funds.where(entity_id: params[:entity_id]) if params[:entity_id].present?
+  end
+
+  def export
+    export_file = FundXlExport.new.generate(@fund)
+    send_file export_file, type: "application/vnd.ms-excel", filename: "#{@fund.name}.xlsx", stream: false
+    # File.delete(export_file)
   end
 
   def report

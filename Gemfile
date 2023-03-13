@@ -106,7 +106,6 @@ gem 'caxlsx_rails'
 gem 'counter_culture', '~> 2.0'
 gem 'impressionist'
 gem 'roo'
-gem 'spreadsheet' # To write exiting XLs with formulas
 
 gem 'ransack'
 gem "view_component"

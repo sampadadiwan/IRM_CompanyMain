@@ -9,6 +9,10 @@ class CapitalCommitmentDecorator < ApplicationDecorator
     h.display_boolean(object.onboarding_completed)
   end
 
+  def folio_link
+    h.link_to object.folio_id, object
+  end
+
   def document_names(params)
     params[:show_docs].present? ? object.documents.collect(&:name).join(", ") : ""
   end

@@ -1,10 +1,13 @@
 class FundUnitSettingsController < ApplicationController
+  include FundsHelper
+
   before_action :set_fund_unit_setting, only: %i[show edit update destroy]
 
   # GET /fund_unit_settings or /fund_unit_settings.json
   def index
     @fund_unit_settings = policy_scope(FundUnitSetting)
     @fund_unit_settings = @fund_unit_settings.where(fund_id: params[:fund_id]) if params[:fund_id]
+    fund_bread_crumbs("Unit Settings")
   end
 
   # GET /fund_unit_settings/1 or /fund_unit_settings/1.json

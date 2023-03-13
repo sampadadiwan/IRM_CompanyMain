@@ -1,9 +1,10 @@
 class FundUnitsController < ApplicationController
+  include FundsHelper
   before_action :set_fund_unit, only: %i[show edit update destroy]
 
   # GET /fund_units or /fund_units.json
   def index
-    @fund_units = policy_scope(FundUnit)
+    @fund_units = policy_scope(FundUnit).includes(:fund, :capital_commitment)
     @fund_units = @fund_units.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id]
     @fund_units = @fund_units.where(fund_id: params[:fund_id]) if params[:fund_id]
     @fund_units = @fund_units.where(investor_id: params[:investor_id]) if params[:investor_id]
@@ -12,6 +13,8 @@ class FundUnitsController < ApplicationController
       @fund_units = @fund_units.where(owner_id: params[:owner_id])
       @fund_units = @fund_units.where(owner_type: params[:owner_type])
     end
+
+    fund_bread_crumbs("Fund Units")
   end
 
   # GET /fund_units/1 or /fund_units/1.json

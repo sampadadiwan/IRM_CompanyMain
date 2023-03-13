@@ -1,5 +1,12 @@
 <div id="<%= dom_id(import_upload) %>">
 
+  <% if import_upload.failed_row_count > 0 %>
+          <div class="alert alert-danger">
+            Failed to import <%= import_upload.failed_row_count %> rows.
+            Download <%= link_to "Results", import_upload.import_results.url, class: "btn-sm btn-primary" if import_upload.import_results.present? %> file to check which rows have errors and why.            
+          </div>
+  <% end %>
+
   <table class="table table-bordered dataTable">
     <tr>
       <td>
@@ -82,6 +89,14 @@
       </td>
       <td>
         <%= import_upload.failed_row_count %>
+        <br>
+        <% if import_upload.failed_row_count > 0 %>
+          <span class="badge badge-danger">Failed to import <%= import_upload.failed_row_count %> rows</span>
+          <small> 
+            Download <%= link_to "Results", import_upload.import_results.url, class: "btn-sm btn-primary" if import_upload.import_results.present? %> file to check which rows have errors and why.
+          </small>
+        <% end %>
+        
       </td>
     </tr>
     <tr>

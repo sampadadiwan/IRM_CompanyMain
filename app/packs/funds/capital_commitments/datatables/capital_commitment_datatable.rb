@@ -21,7 +21,7 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
     records.map do |record|
       {
         id: record.id,
-        folio_id: record.folio_id,
+        folio_id: record.decorate.folio_link,
         unit_type: record.unit_type,
         investor_name: record.decorate.investor_link,
         fund_name: record.decorate.fund_link,

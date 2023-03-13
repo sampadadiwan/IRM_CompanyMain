@@ -121,8 +121,9 @@
   
   
   Then('I should see the fund details on the details page') do
+    click_on "Details"
     expect(page).to have_content(@fund.name)
-    expect(page).to have_content(@fund.unit_types)
+    expect(page).to have_content(@fund.unit_types) if @fund.unit_types.present?
     expect(page).to have_content(strip_tags(@fund.details))
   end
   
@@ -154,20 +155,21 @@
   end
 
   When('I add a capital commitment {string} for investor {string}') do |amount, investor_name|
-    @new_capital_commitment = CapitalCommitment.new(investor_name: investor_name, committed_amount_cents: (amount.to_d * 100), fund: @fund)
+    @new_capital_commitment = FactoryBot.build(:capital_commitment, investor_name: investor_name, folio_committed_amount_cents: (amount.to_d * 100), fund: @fund)
     @new_capital_commitment.fund_close ||= "First Close"
 
     visit(fund_url(@fund))
     click_on("Commitments")
     click_on("New Capital Commitment")
     select(@new_capital_commitment.investor_name, from: "capital_commitment_investor_id")
-    fill_in('capital_commitment_committed_amount', with: @new_capital_commitment.committed_amount)
+    fill_in('capital_commitment_folio_committed_amount', with: @new_capital_commitment.folio_committed_amount)
     if @fund.capital_commitments.count > 0
       select(@new_capital_commitment.fund_close, from: "capital_commitment_fund_close")
     else
       fill_in('capital_commitment_fund_close', with: @new_capital_commitment.fund_close)
     end
     fill_in('capital_commitment_folio_id', with: rand(10**4))
+    select(@new_capital_commitment.folio_currency, from: "capital_commitment_folio_currency")
 
     if @fund.entity.enable_units
       unit_types = @fund.unit_types.split(",").map{|x| x.strip}
@@ -184,11 +186,12 @@
     @capital_commitment = CapitalCommitment.last
     @capital_commitment.investor_name.should == @new_capital_commitment.investor_name
     @capital_commitment.unit_type.should == @new_capital_commitment.unit_type
-    @capital_commitment.committed_amount_cents.should == @new_capital_commitment.committed_amount_cents
+    @capital_commitment.folio_committed_amount_cents.should == @new_capital_commitment.folio_committed_amount_cents
 
     expect(page).to have_content(@capital_commitment.investor_name)
     expect(page).to have_content(@capital_commitment.entity.name)
     expect(page).to have_content(@capital_commitment.fund_close)
+    expect(page).to have_content(money_to_currency @capital_commitment.folio_committed_amount, {})
     expect(page).to have_content(money_to_currency @capital_commitment.committed_amount, {})
     expect(page).to have_content(@capital_commitment.fund.name)
     expect(page).to have_content(@capital_commitment.unit_type) if @fund.entity.enable_units  
@@ -214,7 +217,7 @@
     inv = Investor.last
     commitment = FactoryBot.build(:capital_commitment, fund: @fund, investor: inv)
     key_values(commitment, args)
-    commitment.save
+    commitment.save!
     puts "\n####CapitalCommitment####\n"
     puts commitment.to_json
   end
@@ -258,6 +261,7 @@
   end
 
   Then('the corresponding remittances should be created') do
+    
     @capital_call = CapitalCall.last
     
     @capital_call.capital_remittances.count.should == @fund.investors.count
@@ -303,9 +307,9 @@
     @capital_call.capital_remittances.each do |remittance|
       visit(capital_remittance_url(remittance))
       click_on "New Payment"      
-      fill_in('capital_remittance_payment_amount', with: remittance.due_amount)
+      fill_in('capital_remittance_payment_folio_amount', with: remittance.due_amount)
       click_on "Save"
-      sleep(1)
+      sleep(2)
     end
   end
   
@@ -327,6 +331,7 @@
 
 
 Then('the capital call collected amount should be {string}') do |arg|
+    
   @capital_call.reload
   @capital_call.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.fund.currency)
   @capital_call.fund.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.fund.currency)
@@ -518,6 +523,7 @@ When('I create a new capital distribution {string}') do |args|
 
   fill_in('capital_distribution_title', with: @capital_distribution.title)
   fill_in('capital_distribution_gross_amount', with: @capital_distribution.gross_amount)
+  fill_in('capital_distribution_cost_of_investment', with: @capital_distribution.cost_of_investment)
   fill_in('capital_distribution_reinvestment', with: @capital_distribution.reinvestment)
   fill_in('capital_distribution_distribution_date', with: @capital_distribution.distribution_date)
   
@@ -638,8 +644,11 @@ Then('the capital commitments must have the data in the sheet') do
     puts "Checking import of #{cc.investor.investor_name}"
     cc.investor.investor_name.should == user_data["Investor"].strip
     cc.fund.name.should == user_data["Fund"]
-    cc.committed_amount_cents.should == user_data["Committed Amount"].to_i * 100
+    cc.folio_currency.should == user_data["Folio Currency"]
+    cc.folio_committed_amount_cents.should == user_data["Committed Amount"].to_i * 100
     cc.folio_id.should == user_data["Folio No"].to_s
+    committed = cc.foreign_currency? ? (cc.folio_committed_amount_cents * cc.exchange_rate(cc.folio_currency, cc.fund.currency, Date.today).rate) : cc.folio_committed_amount_cents
+    cc.committed_amount_cents.should == committed
   end
 end  
 
@@ -729,8 +738,11 @@ end
 
 Then('the capital commitments are updated with remittance numbers') do
   CapitalCommitment.all.each do |cc|
+    cc.reload
     cc.call_amount_cents.should == cc.capital_remittances.sum(:call_amount_cents)
     cc.collected_amount_cents.should == cc.capital_remittances.verified.sum(:collected_amount_cents)
+    cc.folio_collected_amount_cents.should == cc.capital_remittances.verified.sum(:folio_collected_amount_cents)
+    cc.folio_call_amount_cents.should == cc.capital_remittances.sum(:folio_call_amount_cents)
   end
 end
 
@@ -858,9 +870,9 @@ Then('when the capital call docs are generated') do
   CapitalCall.all.each do |cc|
     visit(capital_call_path(cc))
     click_on("Generate Documents")
-    sleep(6)
+    sleep(8)
     expect(page).to have_content("Document #{@call_template.name} generated")
-    sleep(2)
+    sleep(3)
     expect(page).to have_content("Documentation generation started")
   end
 end
@@ -1071,14 +1083,39 @@ Then('the capital remittance payments must have the data in the sheet') do
   
       # create hash from headers and cells
       user_data = [headers, row].transpose.to_h
+      
       cc = capital_remittance_payments[idx-1]
       cc.fund.name.should == user_data["Fund"]
       cc.capital_remittance.investor.investor_name.should == user_data["Investor"]
       cc.capital_remittance.folio_id.should == user_data["Folio No"].to_s
-      cc.amount_cents.should == user_data["Amount"].to_i * 100
+      cc.folio_amount_cents.should == user_data["Amount"].to_i * 100
       cc.reference_no.should == user_data["Reference No"].to_s
       cc.payment_date.should == user_data["Payment Date"]
 
+      capital_commitment = cc.capital_remittance.capital_commitment
+      capital_commitment.folio_currency.should == user_data["Currency"]
+
+      amount = capital_commitment.foreign_currency? ? (cc.folio_amount_cents * capital_commitment.exchange_rate(capital_commitment.folio_currency, cc.fund.currency, Date.today).rate) : cc.amount_cents
+      cc.amount_cents.should == amount
       # sleep(30)
     end
+end
+
+
+
+Then('when the exchange rate changes') do
+  foreign_currencies = @fund.capital_commitments.joins(:fund).where("folio_currency != funds.currency").all.pluck(:folio_currency).uniq
+  foreign_currencies.each do |fc|
+    # Change the exchange rate for the foreign_currencies randomly
+    exchange_rate = ExchangeRate.where(from: fc, to: @fund.currency, latest: true).last.dup
+    exchange_rate.rate += (rand(10) - rand(10) + 0.1)
+    exchange_rate.save 
+  end
+end
+
+Then('the commitment amounts change correctly') do
+  @fund.reload
+  @fund.capital_commitments.each do |cc|
+    cc.committed_amount_cents.should == cc.collected_amount_cents + cc.convert_currency(cc.folio_currency, cc.fund.currency, cc.folio_pending_committed_amount.cents)
+  end
 end

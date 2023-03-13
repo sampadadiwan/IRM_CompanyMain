@@ -33,6 +33,10 @@ class FundPolicy < FundBasePolicy
     update?
   end
 
+  def export?
+    update?
+  end
+
   def show?
     user.enable_funds &&
       (

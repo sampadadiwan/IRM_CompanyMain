@@ -8,10 +8,10 @@ Scenario Outline: Generate fund units from capital call
   Given there is an existing investor "" with "1" users
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund  
-  Given there are capital commitments of "committed_amount_cents=100000000" from each investor
+  Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
   Given there is a capital call "<call>"
   Given there is an existing investor "" with "1" users
-  Given there is a capital commitment of "committed_amount_cents=100000000" for the last investor 
+  Given there is a capital commitment of "folio_committed_amount_cents=100000000" for the last investor 
   Given the investors are added to the fund  
   Then the corresponding remittances should be created
   Then I should see the remittances  
@@ -36,7 +36,7 @@ Scenario Outline: Generate fund units from capital distribution
   Given there is an existing investor "" with "1" users
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund  
-  Given there are capital commitments of "committed_amount_cents=100000000" from each investor
+  Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
   Given there is a capital distribution "<distribution>"
   # Given there is an existing investor "" with "1" users
   # Given there is a capital commitment of "committed_amount_cents=100000000" for the last investor 

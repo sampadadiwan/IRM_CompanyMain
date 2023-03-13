@@ -81,10 +81,23 @@
     </div>
   <% end %>
 
+  <div class="form-group">
+    <%
+      currency = capital_commitment.entity.exchange_rates
+                .where(to: capital_commitment.fund.currency)
+                .latest.pluck(:to, :from).flatten.uniq 
+
+      currency = [capital_commitment.fund.currency] if currency.length == 0
+    %>
+    <%= form.label :folio_currency %>
+    <%= form.select :folio_currency, currency, {}, class: "form-control" %>
+
+    <small class="text-muted"><%= link_to "Setup Exchange Rates", exchange_rates_path %></small>
+  </div>
   
   <div class="form-group" data-controller="currencyformat">
-    <%= form.label :committed_amount %> <span class="formatted_currency"></span>
-    <%= form.number_field :committed_amount, class: "form-control", data: {action: "input->currencyformat#format"}  %>
+    <%= form.label :folio_committed_amount %> <span class="formatted_currency"></span>
+    <%= form.number_field :folio_committed_amount, class: "form-control", data: {action: "input->currencyformat#format"}  %>
   </div>
 
   <%= custom_form_fields(capital_commitment, form) %>

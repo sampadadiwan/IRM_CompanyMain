@@ -1,5 +1,6 @@
 class AccountEntry < ApplicationRecord
   include WithCustomField
+  include WithExchangeRate
   include ForInvestor
 
   belongs_to :capital_commitment, optional: true
@@ -10,6 +11,7 @@ class AccountEntry < ApplicationRecord
 
   serialize :explanation, Array
 
+  monetize :folio_amount_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }
   monetize :amount_cents, with_currency: ->(i) { i.fund.currency }
 
   validates :name, :reporting_date, :entry_type, presence: true
@@ -37,6 +39,12 @@ class AccountEntry < ApplicationRecord
   before_validation :setup_period
   def setup_period
     self.period = "Q#{(reporting_date.month / 3.0).ceil}-#{reporting_date.year}"
+  end
+
+  before_save :set_folio_amount, if: :capital_commitment
+  def set_folio_amount
+    # Since the account entry amount is always in the fund currency, we compute the converted folio_amount based on exchange rates.
+    self.folio_amount_cents = convert_currency(fund.currency, capital_commitment.folio_currency, amount_cents)
   end
 
   def to_s

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
+ActiveRecord::Schema[7.0].define(version: 2023_03_12_040313) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -56,7 +56,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
     t.date "reporting_date"
     t.string "entry_type", limit: 50
     t.string "name", limit: 100
-    t.decimal "amount_cents", precision: 25, scale: 2, default: "0.0"
+    t.decimal "amount_cents", precision: 27, scale: 4, default: "0.0"
     t.text "notes"
     t.text "properties"
     t.datetime "created_at", null: false
@@ -67,6 +67,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
     t.string "parent_type"
     t.bigint "parent_id"
     t.boolean "generated", default: false
+    t.decimal "folio_amount_cents", precision: 27, scale: 4, default: "0.0"
     t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative"], name: "idx_account_entries_reporting_date_uniq", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
@@ -213,6 +214,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
     t.decimal "sold_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "cost_cents", precision: 20, scale: 2, default: "0.0"
     t.string "investment_type", limit: 20
+    t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
@@ -395,6 +397,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
     t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
     t.string "fund_close", limit: 30
     t.string "virtual_bank_account", limit: 20
+    t.string "folio_currency", limit: 5
+    t.decimal "folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_call_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
@@ -425,6 +431,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
     t.decimal "units_quantity", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.decimal "cost_of_investment_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
     t.index ["deleted_at"], name: "index_capital_distribution_payments_on_deleted_at"
@@ -480,6 +487,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "reference_no", limit: 40
+    t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_remittance_id"], name: "index_capital_remittance_payments_on_capital_remittance_id"
     t.index ["entity_id"], name: "index_capital_remittance_payments_on_entity_id"
     t.index ["fund_id"], name: "index_capital_remittance_payments_on_fund_id"
@@ -509,6 +517,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
     t.decimal "units_quantity", precision: 20, scale: 2, default: "0.0"
     t.boolean "notification_sent", default: false
     t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"
@@ -796,6 +807,19 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
     t.index ["holding_id"], name: "index_excercises_on_holding_id"
     t.index ["option_pool_id"], name: "index_excercises_on_option_pool_id"
     t.index ["user_id"], name: "index_excercises_on_user_id"
+  end
+
+  create_table "exchange_rates", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "from", limit: 5
+    t.string "to", limit: 5
+    t.decimal "rate", precision: 20, scale: 8, default: "0.0"
+    t.decimal "decimal", precision: 20, scale: 8, default: "0.0"
+    t.boolean "latest", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.date "as_of"
+    t.index ["entity_id"], name: "index_exchange_rates_on_entity_id"
   end
 
   create_table "expression_of_interests", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1635,6 +1659,21 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
     t.index ["user_id"], name: "index_permissions_on_user_id"
   end
 
+  create_table "portfolio_attributions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "sold_pi_id", null: false
+    t.bigint "bought_pi_id", null: false
+    t.decimal "quantity", precision: 20, scale: 8, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
+    t.index ["bought_pi_id"], name: "index_portfolio_attributions_on_bought_pi_id"
+    t.index ["entity_id"], name: "index_portfolio_attributions_on_entity_id"
+    t.index ["fund_id"], name: "index_portfolio_attributions_on_fund_id"
+    t.index ["sold_pi_id"], name: "index_portfolio_attributions_on_sold_pi_id"
+  end
+
   create_table "portfolio_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
@@ -1652,6 +1691,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
     t.decimal "fmv_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.bigint "aggregate_portfolio_investment_id", null: false
+    t.decimal "sold_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "net_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["document_folder_id"], name: "index_portfolio_investments_on_document_folder_id"
     t.index ["entity_id"], name: "index_portfolio_investments_on_entity_id"
@@ -2043,6 +2086,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
   add_foreign_key "excercises", "holdings"
   add_foreign_key "excercises", "option_pools"
   add_foreign_key "excercises", "users"
+  add_foreign_key "exchange_rates", "entities"
   add_foreign_key "expression_of_interests", "entities"
   add_foreign_key "expression_of_interests", "entities", column: "eoi_entity_id"
   add_foreign_key "expression_of_interests", "folders", column: "document_folder_id"
@@ -2138,6 +2182,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_07_065010) do
   add_foreign_key "permissions", "entities"
   add_foreign_key "permissions", "users"
   add_foreign_key "permissions", "users", column: "granted_by_id"
+  add_foreign_key "portfolio_attributions", "entities"
+  add_foreign_key "portfolio_attributions", "funds"
+  add_foreign_key "portfolio_attributions", "portfolio_investments", column: "bought_pi_id"
+  add_foreign_key "portfolio_attributions", "portfolio_investments", column: "sold_pi_id"
   add_foreign_key "portfolio_investments", "aggregate_portfolio_investments"
   add_foreign_key "portfolio_investments", "entities"
   add_foreign_key "portfolio_investments", "folders", column: "document_folder_id"

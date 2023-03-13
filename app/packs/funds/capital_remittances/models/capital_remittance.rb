@@ -5,6 +5,7 @@ class CapitalRemittance < ApplicationRecord
   include ForInvestor
   include WithFolder
   include WithCustomField
+  include WithExchangeRate
 
   update_index('capital_remittance') { self }
 
@@ -21,8 +22,11 @@ class CapitalRemittance < ApplicationRecord
   scope :verified, -> { where(verified: true) }
 
   monetize :call_amount_cents, :collected_amount_cents, :committed_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :folio_call_amount_cents, :folio_collected_amount_cents, :folio_committed_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
+
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :capital_call_id
+  validates :folio_committed_amount_cents, :folio_call_amount_cents, numericality: { greater_than: 0 }
 
   counter_culture :capital_call, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                                  delta_column: 'collected_amount_cents',
@@ -30,8 +34,16 @@ class CapitalRemittance < ApplicationRecord
                                    ["capital_remittances.verified = ?", true] => 'collected_amount_cents'
                                  }
 
+  counter_culture :capital_commitment, column_name: proc { |r| r.verified ? 'folio_collected_amount_cents' : nil },
+                                       delta_column: 'folio_collected_amount_cents',
+                                       column_names: {
+                                         ["capital_remittances.verified = ?", true] => 'folio_collected_amount_cents'
+                                       }
+
   counter_culture :capital_commitment, column_name: 'call_amount_cents',
                                        delta_column: 'call_amount_cents'
+  counter_culture :capital_commitment, column_name: 'folio_call_amount_cents',
+                                       delta_column: 'folio_call_amount_cents'
 
   counter_culture :capital_commitment, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                                        delta_column: 'collected_amount_cents',
@@ -49,13 +61,16 @@ class CapitalRemittance < ApplicationRecord
   before_create :set_call_amount
   def set_call_amount
     # This is the committed_amount when the remittance was created. In certain special top up cases the committed_amount for the commitment may be changed later. Hence this is a ref for the committed_amount at the time of creation
+    self.folio_committed_amount_cents = capital_commitment.folio_committed_amount_cents
     self.committed_amount_cents = capital_commitment.committed_amount_cents
-    self.call_amount_cents = calc_call_amount_cents
+    calc_call_amount_cents
     set_status
   end
 
   def calc_call_amount_cents
-    capital_call.percentage_called * capital_commitment.committed_amount_cents / 100.0
+    self.folio_call_amount_cents = capital_call.percentage_called * capital_commitment.folio_committed_amount_cents / 100.0
+
+    self.call_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency, folio_call_amount_cents)
   end
 
   def send_notification

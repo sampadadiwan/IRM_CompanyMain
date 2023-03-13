@@ -98,12 +98,42 @@
 
   <% end %>
 
+  <% if @capital_commitment.foreign_currency? %>
+  
+  <tr>
+    <td>
+      Folio Currency
+    </td>
+    <td>
+      <%= @capital_commitment.folio_currency %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Folio Committed Amount
+    </td>
+    <td>
+      <%= money_to_currency @capital_commitment.folio_committed_amount, params %>
+    </td>
+  </tr>
+
+  <% end %>
+
   <tr>
     <td>
       Committed Amount
     </td>
     <td>
       <%= money_to_currency @capital_commitment.committed_amount, params %>
+      <% if @capital_commitment.foreign_currency? %>
+        <br>
+        Collected + Pending
+        <br>
+        <%= money_to_currency(@capital_commitment.collected_amount, params) %> + 
+        <%= money_to_currency(@capital_commitment.folio_pending_committed_amount, params) %> x 
+        <%= @capital_commitment.exchange_rate(@capital_commitment.folio_currency, @capital_commitment.fund.currency, Time.zone.today) %>
+      <% end %>
     </td>
   </tr>
 
@@ -121,7 +151,39 @@
       Collected Amount
     </td>
     <td>
-      <%= money_to_currency @capital_commitment.collected_amount, params %>
+      <%= money_to_currency @capital_commitment.collected_amount, params %>      
+    </td>
+  </tr>
+
+
+  <tr>
+    <td>
+      Called - Collected
+    </td>
+    <td>
+      <span class="<%= @capital_commitment.pending_call_amount != 0 ? 'text-danger': '' %>"><%= money_to_currency @capital_commitment.pending_call_amount, params %></span>
+
+      <div class="progress">
+        <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= @capital_commitment.percentage_pending_call %>%" aria-valuenow="<%=@capital_commitment.percentage_pending_call%>" aria-valuemin="0" aria-valuemax="100">
+          <%= @capital_commitment.percentage_pending_call %> % Paid
+        </div>
+      </div>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Committed - Collected
+    </td>
+    <td>
+      <%= money_to_currency @capital_commitment.pending_committed_amount, params %>
+
+      <div class="progress">
+        <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= @capital_commitment.percentage_pending_committed %>%" aria-valuenow="<%=@capital_commitment.percentage_pending_committed%>" aria-valuemin="0" aria-valuemax="100">
+          <%= @capital_commitment.percentage_pending_committed %> % Collected
+        </div>
+      </div>
+
     </td>
   </tr>
 
@@ -195,7 +257,7 @@
   </tr>
 
   <% if params[:debug].present? %>
-  <tr class="collapse multi-collapse btn-primary">
+  <tr class="collapse multi-collapse btn-outline-primary">
     <td colspan="2">
     </td>
   </tr>

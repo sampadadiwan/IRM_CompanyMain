@@ -7,11 +7,21 @@ Given(/^there is a user "([^"]*)"$/) do |arg1|
 end
 
 Given('there is a user {string} for an entity {string}') do |arg1, arg2|
-  @entity = FactoryBot.build(:entity)
+  @entity = FactoryBot.build(:entity, :with_exchange_rates)
   key_values(@entity, arg2)
   @entity.save!
   puts "\n####Entity####\n"
   puts @entity.to_json
+
+  # Funds need exchange rates for their calculations
+  if @entity.entity_type == "Investment Fund"
+    ExchangeRate.create([
+        {from: "USD", to: "INR", rate: 81.72, entity: @entity, as_of: Date.today}, 
+        {from: "INR", to: "USD", rate: 0.012, entity: @entity, as_of: Date.today}
+    ])
+  end
+
+  puts @entity.exchange_rates.to_json
 
   @user = FactoryBot.build(:user, entity: @entity)
   key_values(@user, arg1)

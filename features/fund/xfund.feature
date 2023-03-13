@@ -29,7 +29,7 @@ Scenario Outline: Create new fund
 
 
 Scenario Outline: View fund with employee access
-  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given Im logged in as a user "" for an entity "<entity>"
   Given there is a fund "<fund>" for the entity
   And I am "given" employee access to the fund
   When I am at the fund details page  
@@ -37,9 +37,9 @@ Scenario Outline: View fund with employee access
   And I should see the fund in all funds page
 
   Examples:
-  	|user	    |entity                                 |fund                 |msg	|
-  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
-    |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
+  	|entity                                 |fund                 |msg	|
+  	|entity_type=Investment Fund;enable_funds=true;enable_units=true  |name=Test fund      |Fund was successfully created|
+    |entity_type=Investment Fund;enable_funds=true;enable_units=true  |name=Merger Fund    |Fund was successfully created|
 
 Scenario Outline: View fund - without employee access
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -81,24 +81,24 @@ Scenario Outline: Create new capital commitment
 
 
 Scenario Outline: Create new commitment after capital call
-  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is an existing investor "" with "1" users
   Given there is an existing investor "" with "1" users
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund  
-  Given there are capital commitments of "committed_amount_cents=100000000" from each investor
+  Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
   Given there is a capital call "<call>"
   Given there is an existing investor "" with "1" users
-  Given there is a capital commitment of "committed_amount_cents=100000000" for the last investor 
+  Given there is a capital commitment of "folio_committed_amount_cents=100000000" for the last investor 
   Given the investors are added to the fund  
   Then the corresponding remittances should be created
   Then I should see the remittances  
   
 Examples:
-  	|user	    |entity                                 |fund                 | call |
-  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test  | percentage_called=20 |
-    |  	        |entity_type=Investment Fund;enable_funds=true;enable_units=true  |name=Merger;unit_types=Series A,Series B| percentage_called=20;generate_remittances_verified=true |
+  	|entity                                 |fund                 | call |
+  	|entity_type=Investment Fund;enable_funds=true;currency=INR  |name=Test  | percentage_called=20 |
+    |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=USD  |name=Merger;unit_types=Series A,Series B| percentage_called=20;generate_remittances_verified=true |
 
 
 Scenario Outline: Create new capital call
@@ -109,7 +109,7 @@ Scenario Outline: Create new capital call
   Given there is a fund "<fund>" for the entity
   Given the fund has capital call template
   Given the investors are added to the fund  
-  Given there are capital commitments of "committed_amount_cents=100000000" from each investor
+  Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
   When I create a new capital call "percentage_called=20"
   Then I should see the capital call details
   Then when the capital call is approved
@@ -141,8 +141,8 @@ Scenario Outline: Create new capital distrbution
   Given there is an existing investor "" with "2" users
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund  
-  Given there are capital commitments of "committed_amount_cents=100000000" from each investor
-  When I create a new capital distribution "carry_cents=10000000;carry_cents=100000;fee_cents=10000"
+  Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
+  When I create a new capital distribution "cost_of_investment_cents=10000000;"
   Then I should see the capital distrbution details
   Then when the capital distrbution is approved
   Then I should see the capital distrbution payments generated correctly

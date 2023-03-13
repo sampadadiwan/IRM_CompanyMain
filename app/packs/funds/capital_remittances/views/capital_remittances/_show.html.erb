@@ -69,6 +69,17 @@
         <%= money_to_currency capital_remittance.call_amount, params %>
       </td>
     </tr>
+
+    <% if capital_remittance.call_amount != capital_remittance.folio_call_amount %>
+    <tr>
+      <td>
+        Folio Call Amount
+      </td>
+      <td>
+        <%= money_to_currency capital_remittance.folio_call_amount, params %>
+      </td>
+    </tr>
+    <% end %>
     
     <tr>
       <td>
@@ -78,6 +89,17 @@
         <%= money_to_currency capital_remittance.collected_amount, params %>
       </td>
     </tr>
+
+    <% if capital_remittance.collected_amount != capital_remittance.folio_collected_amount %>
+    <tr>
+      <td>
+        Folio Collected Amount
+      </td>
+      <td>
+        <%= money_to_currency capital_remittance.folio_collected_amount, params %>
+      </td>
+    </tr>
+    <% end %>
 
     <% if capital_remittance.entity.enable_units %>
     <tr>

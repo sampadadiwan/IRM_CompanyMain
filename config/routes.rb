@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :exchange_rates
   namespace :admin do
     namespace :paper_trail do
       resources :versions
@@ -95,6 +96,7 @@ Rails.application.routes.draw do
     patch 'allocate', on: :member
     get 'allocate_form', on: :member
     get 'copy_formulas', on: :member
+    get 'export', on: :member
   end
 
   resources :investment_snapshots

@@ -8,7 +8,12 @@ export default class extends Controller {
     }
 
   connect() {    
+    if(!this.otherIdValue) {
+      this.otherIdValue = "#other_name";
+    }
+    console.log(`otherIdValue = ${this.otherIdValue}`);
     this.checkOtherName();
+    
   }
 
   checkOtherName(event) {
@@ -16,14 +21,14 @@ export default class extends Controller {
 
     if($(this.selectIdValue).length > 0) {
       let selected = $(this.selectIdValue).val();
-      console.log(`other_name = ${$("#other_name").val().length}`);
+      console.log(`other_name = ${$(this.otherIdValue).val().length}`);
 
-      if (selected == "Other" || $("#other_name").val().length > 0) {
+      if (selected == "Other" || $(this.otherIdValue).val().length > 0) {
         $(this.selectIdValue).remove();
-        $("#other_name").prop("disabled", "")
-        $("#other_name").show();
+        $(this.otherIdValue).prop("disabled", "")
+        $(this.otherIdValue).show();
       } else {
-        $("#other_name").hide();
+        $(this.otherIdValue).hide();
       }
     }
   }

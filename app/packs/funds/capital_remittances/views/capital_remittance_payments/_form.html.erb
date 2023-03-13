@@ -16,8 +16,9 @@
   <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
 
   <div class="form-group" data-controller="currencyformat">
-    <%= form.label :amount %> <span class="formatted_currency"></span>
-    <%= form.number_field :amount, class: "form-control", data: {action: "input->currencyformat#format"} %>
+    <%= form.label :folio_amount, "Amount in #{capital_remittance_payment.capital_remittance.capital_commitment.folio_currency}" %> <span class="formatted_currency"></span>
+    <%= form.number_field :folio_amount, class: "form-control", data: {action: "input->currencyformat#format"} %>
+    <small class="text-muted"> Ensure this number is in <%= capital_remittance_payment.capital_remittance.capital_commitment.folio_currency %>. </small>
   </div>
 
   <div class="form-group">

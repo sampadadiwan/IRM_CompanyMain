@@ -1,5 +1,5 @@
 class ImportCapitalRemittancePayment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Amount", "Folio No", "Virtual Bank Account", "Verified", "Reference No", "Payment Date"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Amount", "Currency", "Folio No", "Virtual Bank Account", "Verified", "Reference No", "Payment Date", "Notes"].freeze
 
   attr_accessor :fund_ids
 
@@ -40,15 +40,18 @@ class ImportCapitalRemittancePayment < ImportUtil
   def save_capital_remittance_payment(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing capital_remittance_payment #{user_data}" }
 
-    fund, capital_call, investor, capital_commitment, capital_remittance, amount_cents = inputs(import_upload, user_data)
+    fund, capital_call, investor, capital_commitment, capital_remittance, folio_amount_cents, folio_currency = inputs(import_upload, user_data)
 
-    if fund && capital_call && investor && capital_commitment && capital_remittance
+    if fund && capital_call && investor && capital_commitment &&
+       capital_remittance && folio_currency == capital_commitment.folio_currency
+
       @fund_ids.add(fund.id)
 
       # Make the capital_remittance
       capital_remittance_payment = CapitalRemittancePayment.new(entity_id: fund.entity_id, fund:,
                                                                 capital_remittance:,
-                                                                amount_cents:,
+                                                                folio_amount_cents:,
+                                                                notes: user_data["Notes"],
                                                                 reference_no: user_data["Reference No"],
                                                                 payment_date: user_data["Payment Date"])
 
@@ -65,6 +68,7 @@ class ImportCapitalRemittancePayment < ImportUtil
       raise "Fund not found" unless fund
       raise "Capital Call not found" unless capital_call
       raise "Capital Remittance not found" unless capital_remittance
+      raise "Currency not same as commitment currency" unless folio_currency == capital_commitment.folio_currency
     end
   end
 
@@ -73,6 +77,8 @@ class ImportCapitalRemittancePayment < ImportUtil
     raise "Fund not found" unless fund
 
     capital_call = fund.capital_calls.where(name: user_data["Capital Call"].strip).first
+    raise "Capital Call not found" unless capital_call
+
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
     raise "Investor not found" unless investor
 
@@ -88,8 +94,10 @@ class ImportCapitalRemittancePayment < ImportUtil
     raise "Investor commitment not found" unless capital_commitment
 
     capital_remittance = capital_call.capital_remittances.where(folio_id: capital_commitment.folio_id).first
-    amount_cents = user_data["Amount"].to_d * 100
+    raise "Capital Remittance not found" unless capital_remittance
 
-    [fund, capital_call, investor, capital_commitment, capital_remittance, amount_cents]
+    folio_amount_cents = user_data["Amount"].to_d * 100
+    folio_currency = user_data["Currency"].strip
+    [fund, capital_call, investor, capital_commitment, capital_remittance, folio_amount_cents, folio_currency]
   end
 end

@@ -9,7 +9,7 @@
         </td>
       </tr>
 
-      <tr>
+      <tr class="collapse multi-collapse">
         <td>
           Currency
         </td>
@@ -18,28 +18,9 @@
         </td>
       </tr>
 
-      <% if fund.unit_types.present? %>
-        <tr>
-          <td>
-            Unit Types
-          </td>
-          <td>
-            <%= fund.unit_types %>
-          </td>
-        </tr>
+      
 
-        <tr>
-          <td>
-            Unit Premiums
-          </td>
-          <td>
-            <%= money_to_currency fund.total_units_premium, params %>
-          </td>
-        </tr>
-
-      <% end %>
-
-      <tr>
+      <tr class="collapse multi-collapse">
         <td>
           Tag List
         </td>
@@ -48,9 +29,7 @@
         </td>
       </tr>
 
-      
-      
-      <tr>
+      <tr class="collapse multi-collapse">
         <td>
           Details
         </td>
@@ -59,10 +38,7 @@
         </td>
       </tr>
 
-      
-      
-
-      <tr>
+      <tr class="collapse multi-collapse">
         <td>
           Entity
         </td>
@@ -70,6 +46,19 @@
           <%= fund.entity.name %>
         </td>
       </tr>
+
+      <% if fund.unit_types.present? %>
+
+          <tr class="collapse multi-collapse">
+            <td>
+              Unit Types
+            </td>
+            <td>
+              <%= fund.unit_types %>
+            </td>
+          </tr>
+
+      <% end %>
       
 
       <% if policy(fund).update? %>
@@ -117,6 +106,19 @@
             <%= money_to_currency fund.distribution_amount, params %>
           </td>
         </tr>
+
+        <% if fund.unit_types.present? %>
+
+          <tr class="collapse multi-collapse">
+            <td>
+              Unit Premiums
+            </td>
+            <td>
+              <%= money_to_currency fund.total_units_premium, params %>
+            </td>
+          </tr>
+
+        <% end %>
 
         <%= display_custom_fields(fund,collapsed: true) if current_user %>
         
@@ -186,7 +188,7 @@
       <% end %>
 
       <% if params[:debug].present? %>
-        <tr class="collapse multi-collapse btn-primary">
+        <tr class="collapse multi-collapse btn-outline-primary">
           <td colspan="2">
           </td>
         </tr>
@@ -210,33 +212,6 @@
           </td>
           <td>
             <%= currency_from_cents fund_portfolio_calcs.fmv_cents, fund.currency, params  %>
-          </td>
-        </tr>
-
-        <tr class="collapse multi-collapse">
-          <td>
-            Avg Cost 
-          </td>
-          <td>
-            <%= currency_from_cents fund_portfolio_calcs.avg_cost_cents, fund.currency, params  %>
-          </td>
-        </tr>
-
-        <tr class="collapse multi-collapse">
-          <td>
-            Cost of Net
-          </td>
-          <td>
-            <%= currency_from_cents fund_portfolio_calcs.cost_of_net_cents, fund.currency, params  %>
-          </td>
-        </tr>
-
-        <tr class="collapse multi-collapse">
-          <td>
-            Cost of Sold
-          </td>
-          <td>
-            <%= currency_from_cents fund_portfolio_calcs.cost_of_sold_cents, fund.currency, params  %>
           </td>
         </tr>
 

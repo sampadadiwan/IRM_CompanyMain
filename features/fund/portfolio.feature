@@ -67,3 +67,21 @@ Scenario Outline: Import portfolio valuations
   Then I should see the "Import upload was successfully created"
   Then There should be "4" valuations created
   And the valuations must have the data in the sheet
+
+
+Scenario Outline: FIFO
+  Given there is a user "" for an entity "entity_type=Investment Fund;"
+  Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company" 
+  Given there is a fund "name=Test fund" for the entity
+  Given there is a valuation "per_share_value_cents=10000;instrument_type=Equity;valuation_date=01/01/2022" for the portfolio company 
+  Given there are "3" portfolio investments "quantity=200;investment_type=Equity"
+  Given there are "1" portfolio investments "<sell>"
+  Then there must be "<attribution_count>" portfolio attributions created
+
+  Examples:
+    |sell                                        |attribution_count                |
+    |quantity=-200;investment_type=Equity;       |1       |
+    |quantity=-300;investment_type=Equity;       |2       |
+    |quantity=-400;investment_type=Equity;       |2       |
+    |quantity=-500;investment_type=Equity;       |3       |
+    |quantity=-600;investment_type=Equity;       |3       |

@@ -1,5 +1,6 @@
 class CapitalRemittancePayment < ApplicationRecord
   include WithCustomField
+  include WithExchangeRate
   include ForInvestor
 
   belongs_to :fund
@@ -9,12 +10,29 @@ class CapitalRemittancePayment < ApplicationRecord
   include FileUploader::Attachment(:payment_proof)
 
   monetize :amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :folio_amount_cents, with_currency: ->(i) { i.capital_remittance.capital_commitment.folio_currency }
 
   counter_culture :capital_remittance,
                   column_name: 'collected_amount_cents',
                   delta_column: 'amount_cents'
 
+  counter_culture :capital_remittance,
+                  column_name: 'folio_collected_amount_cents',
+                  delta_column: 'folio_amount_cents'
+
   validates_uniqueness_of :reference_no, scope: :fund_id, if: -> { reference_no.present? }
 
   delegate :to_s, to: :amount
+
+  before_save :set_amount, if: :folio_amount_cents_changed?
+  def set_amount
+    # Since the remittance amount is always in the folio currency, we compute the converted amount based on exchange rates.
+    self.amount_cents = convert_currency(capital_remittance.capital_commitment.folio_currency, fund.currency, folio_amount_cents)
+  end
+
+  after_commit :unverify_remittance
+  def unverify_remittance
+    capital_remittance.verified = false
+    capital_remittance.save
+  end
 end

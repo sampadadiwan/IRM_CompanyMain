@@ -1,5 +1,6 @@
 class CapitalCommitment < ApplicationRecord
   include WithFolder
+  include WithExchangeRate
   include WithCustomField
   include Trackable
   include ActivityTrackable
@@ -37,13 +38,14 @@ class CapitalCommitment < ApplicationRecord
   has_many :esigns, -> { order("sequence_no asc") }, as: :owner
   has_many :signature_workflows, as: :owner
 
+  monetize :folio_committed_amount_cents, :folio_collected_amount_cents, with_currency: ->(i) { i.folio_currency }
   monetize :committed_amount_cents, :collected_amount_cents,
            :call_amount_cents, :distribution_amount_cents, :total_units_premium_cents,
            :total_allocated_expense_cents, :total_allocated_income_cents,
            with_currency: ->(i) { i.fund.currency }
 
-  validates :committed_amount_cents, numericality: { greater_than: 0 }
-  validates :committed_amount_cents, numericality: { greater_than_or_equal_to: :collected_amount_cents }
+  validates :folio_committed_amount_cents, numericality: { greater_than: 0 }
+  # validates :committed_amount_cents, numericality: { greater_than_or_equal_to: :collected_amount_cents }
 
   validates :folio_id, :fund_close, presence: true
   validates_uniqueness_of :folio_id, scope: :fund_id
@@ -58,6 +60,20 @@ class CapitalCommitment < ApplicationRecord
     self.unit_type = unit_type.strip if unit_type
   end
 
+  before_save :set_committed_amount, if: :folio_committed_amount_cents_changed?
+  def set_committed_amount
+    # Since the commitment amount is always in the folio currency, we compute te converted committed_amount based on exchange rates.
+    self.committed_amount_cents = if foreign_currency?
+                                    collected_amount_cents + convert_currency(folio_currency, fund.currency, folio_pending_committed_amount.cents)
+                                  else
+                                    folio_committed_amount_cents
+                                  end
+  end
+
+  def folio_pending_committed_amount
+    folio_committed_amount - folio_collected_amount
+  end
+
   after_create_commit :create_remittance
   def create_remittance
     # When the CapitalCommitment is created, ensure that for any capital calls prev created
@@ -65,10 +81,31 @@ class CapitalCommitment < ApplicationRecord
     CapitalCommitmentRemittanceJob.perform_later(id)
   end
 
+  after_destroy :compute_percentage
   after_save :compute_percentage, if: :saved_change_to_committed_amount_cents?
   def compute_percentage
     total_committed_amount_cents = fund.capital_commitments.sum(:committed_amount_cents)
     fund.capital_commitments.update_all("percentage=100.0*committed_amount_cents/#{total_committed_amount_cents}")
+  end
+
+  def foreign_currency?
+    folio_currency != fund.currency
+  end
+
+  def pending_call_amount
+    call_amount - collected_amount
+  end
+
+  def pending_committed_amount
+    committed_amount - collected_amount
+  end
+
+  def percentage_pending_call
+    call_amount_cents.positive? ? 100 * (collected_amount_cents / call_amount_cents).round(2) : 0
+  end
+
+  def percentage_pending_committed
+    committed_amount_cents.positive? ? 100 * (collected_amount_cents / committed_amount_cents).round(2) : 0
   end
 
   def to_s
@@ -163,5 +200,9 @@ class CapitalCommitment < ApplicationRecord
     cae = cae.where(entry_type:) if entry_type
 
     cae.last || AccountEntry.new(name:, fund_id:, amount_cents: 0)
+  end
+
+  def fund_ratio(name, end_date)
+    fund_ratios.where(name:, end_date: ..end_date).last
   end
 end

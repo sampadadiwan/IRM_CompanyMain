@@ -99,6 +99,7 @@ class EoiDocGenerator
     signed_document.from_template = document
     signed_document.owner = expression_of_interest
     signed_document.owner_tag = "Generated"
+    signed_document.send_email = false
 
     signed_document.save
   end

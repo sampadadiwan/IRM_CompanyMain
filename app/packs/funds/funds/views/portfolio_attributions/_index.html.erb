@@ -1,0 +1,35 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Attribution</h1>
+
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+  <table id="portfolio_investments" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Fund
+        </th>
+        <th>
+          Sell
+        </th>
+        <th>
+          Buy
+        </th>
+        <th>
+          Quantity
+        </th>        
+      </tr>
+    </thead>
+    <tbody>
+      <% portfolio_attributions.each do |portfolio_attribution| %>
+        <tr>
+            <td><%= portfolio_attribution.fund.name %></td>
+            <td><%= link_to portfolio_attribution.sold_pi, portfolio_investment_path(id: portfolio_attribution.sold_pi_id, debug: true) %></td>
+            <td><%= link_to portfolio_attribution.bought_pi, portfolio_investment_path(id: portfolio_attribution.bought_pi_id, debug: true) %></td>
+            <td><%= portfolio_attribution.quantity %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

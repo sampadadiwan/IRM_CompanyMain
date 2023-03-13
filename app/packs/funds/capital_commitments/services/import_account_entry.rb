@@ -52,23 +52,29 @@ class ImportAccountEntry < ImportUtil
   def prepare_record(user_data, import_upload, custom_field_headers)
     folio_id, name, entry_type, reporting_date, period, investor_name, amount_cents, fund, capital_commitment, investor = get_fields(user_data, import_upload)
 
-    # Note this could be an entry for a commitment or for a fund (i.e no commitment)
-    account_entry = AccountEntry.find_or_initialize_by(entity_id: import_upload.entity_id, folio_id:,
-                                                       fund:, capital_commitment:, investor:, reporting_date:,
-                                                       entry_type:, name:, amount_cents:)
+    if fund && folio_id && capital_commitment
+      # Note this could be an entry for a commitment or for a fund (i.e no commitment)
+      account_entry = AccountEntry.find_or_initialize_by(entity_id: import_upload.entity_id, folio_id:,
+                                                         fund:, capital_commitment:, investor:, reporting_date:,
+                                                         entry_type:, name:, amount_cents:)
 
-    if account_entry.new_record? && account_entry.valid?
-      account_entry.notes = user_data["Notes"]
-      setup_custom_fields(user_data, account_entry, custom_field_headers)
+      if account_entry.new_record? && account_entry.valid?
+        account_entry.notes = user_data["Notes"]
+        setup_custom_fields(user_data, account_entry, custom_field_headers)
 
-      account_entry.run_callbacks(:save) { false }
-      account_entry.run_callbacks(:create) { false }
-      @account_entries << account_entry
-      ret_val = [true, "Success"]
-      # ret_val = prepare_for_import(account_entry, user_data, custom_field_headers)
+        account_entry.run_callbacks(:save) { false }
+        account_entry.run_callbacks(:create) { false }
+        @account_entries << account_entry
+        ret_val = [true, "Success"]
+        # ret_val = prepare_for_import(account_entry, user_data, custom_field_headers)
+      else
+        ret_val = [false, "Duplicate, already present"] unless account_entry.new_record?
+        ret_val = [false, account_entry.errors.full_messages] unless account_entry.valid?
+      end
     else
-      ret_val = [false, "Duplicate, already present"] unless account_entry.new_record?
-      ret_val = [false, account_entry.errors.full_messages] unless account_entry.valid?
+      raise "Fund not found" unless fund
+      raise "Folio not found" unless folio_id
+      raise "Commitment not found" unless capital_commitment
     end
 
     ret_val

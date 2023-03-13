@@ -51,6 +51,17 @@
       </td>
     </tr>
 
+    <% if capital_distribution_payment.folio_amount != capital_distribution_payment.amount %>
+    <tr>
+      <td>
+        Folio Amount
+      </td>
+      <td>
+        <%= money_to_currency capital_distribution_payment.folio_amount, params %>
+      </td>
+    </tr>
+    <% end %>
+
     <% if capital_distribution_payment.entity.enable_units %>
     <tr>
       <td>

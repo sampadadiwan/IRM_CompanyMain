@@ -41,7 +41,11 @@ class CapitalCallJob < ApplicationJob
         cr.set_call_amount
         cr.run_callbacks(:save) { false }
         cr.run_callbacks(:create) { false }
-        @remittances << cr if cr.valid?
+        if cr.valid?
+          @remittances << cr
+        else
+          Rails.logger.debug { "Error generating remitance: #{cr.errors.full_messages}" }
+        end
       end
     end
 
@@ -68,7 +72,7 @@ class CapitalCallJob < ApplicationJob
     @capital_call.reload.capital_remittances.verified.each do |cr|
       next unless cr.collected_amount_cents.zero?
 
-      crp = CapitalRemittancePayment.new(capital_remittance: cr, fund_id: cr.fund_id, entity_id: cr.entity_id, amount_cents: cr.call_amount_cents, payment_date: @capital_call.due_date)
+      crp = CapitalRemittancePayment.new(capital_remittance: cr, fund_id: cr.fund_id, entity_id: cr.entity_id, amount_cents: cr.call_amount_cents, folio_amount_cents: cr.folio_call_amount_cents, payment_date: @capital_call.due_date)
 
       crp.run_callbacks(:save) { false }
       crp.run_callbacks(:create) { false }

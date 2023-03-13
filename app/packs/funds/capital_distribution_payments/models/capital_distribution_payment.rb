@@ -1,5 +1,6 @@
 class CapitalDistributionPayment < ApplicationRecord
   include WithCustomField
+  include WithExchangeRate
   include Trackable
   include ActivityTrackable
   include WithFolder
@@ -16,7 +17,9 @@ class CapitalDistributionPayment < ApplicationRecord
   belongs_to :capital_commitment
   has_one :investor_kyc, through: :capital_commitment
 
+  monetize :folio_amount_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }
   monetize :amount_cents, :cost_of_investment_cents, with_currency: ->(i) { i.fund.currency }
+
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :capital_distribution_id
 
@@ -49,6 +52,12 @@ class CapitalDistributionPayment < ApplicationRecord
   before_save :set_investor_name
   def set_investor_name
     self.investor_name = investor.investor_name
+  end
+
+  before_save :set_amount, if: :amount_cents_changed?
+  def set_amount
+    # Since the distribution amount is always in the fund currency, we compute te converted folio_amount based on exchange rates.
+    self.folio_amount_cents = convert_currency(fund.currency, capital_commitment.folio_currency, amount_cents)
   end
 
   after_commit :send_notification, if: :completed

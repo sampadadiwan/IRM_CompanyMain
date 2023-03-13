@@ -12,18 +12,6 @@ class FundPortfolioCalcs
     PortfolioInvestment.fmv_cents(@fund, @end_date)
   end
 
-  def avg_cost_cents
-    PortfolioInvestment.avg_cost_cents(@fund, @end_date)
-  end
-
-  def cost_of_net_cents
-    PortfolioInvestment.cost_of_net_cents(@fund, @end_date)
-  end
-
-  def cost_of_sold_cents
-    PortfolioInvestment.cost_of_sold_cents(@fund, @end_date)
-  end
-
   def total_investment_sold_cents
     PortfolioInvestment.total_investment_sold_cents(@fund, @end_date)
   end

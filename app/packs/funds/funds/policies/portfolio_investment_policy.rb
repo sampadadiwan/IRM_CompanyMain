@@ -21,8 +21,10 @@ class PortfolioInvestmentPolicy < ApplicationPolicy
     create?
   end
 
+  # No updates to investments as the current algorith for attribution cannot handle updates
+  # So delete and create if you want to update
   def update?
-    create?
+    false
   end
 
   def edit?
@@ -30,6 +32,6 @@ class PortfolioInvestmentPolicy < ApplicationPolicy
   end
 
   def destroy?
-    update?
+    create?
   end
 end

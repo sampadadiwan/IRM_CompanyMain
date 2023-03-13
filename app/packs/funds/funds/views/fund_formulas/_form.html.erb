@@ -1,70 +1,188 @@
+<div class="row" data-controller="fund-formula">
+  <div class="col-lg-7 mb-4">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            Fund Formula
+        </h6>
+      </div>
+      <div class="card-body">
+        <%= form_with(model: fund_formula) do |form| %>
+          <% if fund_formula.errors.any? %>
+            <div class="alert alert-danger">
+              <h2><%= pluralize(fund_formula.errors.count, "error") %> prohibited this fund_formula from being saved:</h2>
 
-<%= form_with(model: fund_formula) do |form| %>
-  <% if fund_formula.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(fund_formula.errors.count, "error") %> prohibited this fund_formula from being saved:</h2>
+              <ul>
+                <% fund_formula.errors.each do |error| %>
+                  <li><%= error.full_message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
 
-      <ul>
-        <% fund_formula.errors.each do |error| %>
-          <li><%= error.full_message %></li>
+            <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+            <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+
+          <div class="form-group">
+            <%= form.label :name %>
+            <%= form.text_field :name, class: "form-control", maxlength: 50  %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :sequence %>
+            <%= form.number_field :sequence, class: "form-control"  %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :rule_type %>
+            <%= form.select :rule_type, ["AllocateAccountEntry", "AllocatePortfolio", "GenerateAccountEntry", "CumulateAccountEntry", "GenerateCustomField", "Percentage"], {}, class: "form-control", data: {action: "change->fund-formula#ruleTypeChanged"}   %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :entry_type %>
+            <%= form.text_field :entry_type, class: "form-control", maxlength: 50  %>
+            <small class="text-muted">Only for GenerateAccountEntry & CumulateAccountEntry, type of account entry to generate/cumulate</small>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :description %>
+            <%= form.text_area :description, class: "form-control"  %>
+          </div>
+
+          <div class="form-group">
+            
+            <div class="alert alert-info">
+              <small>Please ensure proper spacing between formula tokens</small>
+            </div>
+
+            <%= form.label :formula %>
+            <%= form.text_area :formula, class: "form-control"  %>
+            
+          </div>
+
+          <div class="form-group">
+              <%= form.label :roll_up %>
+              <%= form.check_box :roll_up, class: "form-control form-checkbox" %>
+              <small>Ensure that the entries are rolled up into an aggregate amount</small>
+          </div>
+
+          <div class="form-group">
+              <%= form.label :enabled %>
+              <%= form.check_box :enabled, class: "form-control form-checkbox"  %>
+              <small>Enable which formulas will run</small>
+          </div>
+
+          <div class="form-group">
+            <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+          </div>
         <% end %>
-      </ul>
+      </div>
     </div>
-  <% end %>
-
-    <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-
-  <div class="form-group">
-    <%= form.label :name %>
-    <%= form.text_field :name, class: "form-control", maxlength: 50  %>
   </div>
 
-  <div class="form-group">
-    <%= form.label :sequence %>
-    <%= form.number_field :sequence, class: "form-control"  %>
-  </div>
+  <div class="col-lg-5 mb-4">
 
-  <div class="form-group">
-    <%= form.label :rule_type %>
-    <%= form.select :rule_type, ["AllocateAccountEntry", "AllocatePortfolio", "GenerateAccountEntry", "CumulateAccountEntry", "GenerateCustomField", "Percentage"], {}, class: "form-control"  %>
-  </div>
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+              Important Notes              
+            </h6>
 
-  <div class="form-group">
-    <%= form.label :entry_type %>
-    <%= form.text_field :entry_type, class: "form-control", maxlength: 50  %>
-    <small class="text-muted">Only for GenerateAccountEntry & CumulateAccountEntry, type of account entry to generate/cumulate</small>
-  </div>
+            
+        </div>
+        <div class="card-body">
+          <table class="table table-bordered table-striped dataTable">
+            <thead>
+              <th>Type</th>
+              <th>Available variables for rule</th>
+            </thead>
+            <tr id="AllocateAccountEntry" class="explanation">
+              <td>Allocate Account Entry</td>
+              <td>
+                <ul>                  
+                  <li> Uses the specific fund account entry with the same name as the rule and allocates it to each commitment </li>
+                  <li>fund_account_entry: The specific fund account entry getting allocated</li>
+                  <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
+                  <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
+                  <li>fund_formula: The formula currently being run</li>
+                  <li>ae: The specific account entry being created for the commitment</li>
+                </ul>
+              </td>              
+            </tr>
 
-  <div class="form-group">
-    <%= form.label :description %>
-    <%= form.text_area :description, class: "form-control"  %>
-  </div>
+            <tr id="AllocatePortfolio" class="explanation">
+              <td>Allocate Portfolio</td>
+              <td>
+                <ul>
+                  <li> Uses each Aggregate Portfolio Entry and allocates it to each commitment </li>
+                  <li>api: The Aggregate Portfolio Investment (for a specific portfolio company) which has data (quantity, bought_quantity, bought_amount, sold_quantity, sold_amount, avg_cost_cents, cost_of_sold_cents) up till end_date </li>
+                  <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
+                  <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
+                  <li>fund_formula: The formula currently being run</li>
+                  <li>ae: The specific account entry being created for the commitment</li>
+                </ul>
+              </td>
+            </tr>
 
-  <div class="form-group">
-    
-    <div class="alert alert-info">
-      <small>Please ensure proper spacing between formula tokens</small>
+            <tr id="GenerateAccountEntry" class="explanation">
+              <td>Generate Account Entry</td>
+              <td>
+                <ul>
+                  <li> Uses the formula to generate an account entry to each commitment </li>
+                  <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
+                  <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
+                  <li>fund_formula: The formula currently being run</li>
+                  <li>ae: The specific account entry being created for the commitment</li>
+                </ul>
+              </td>
+            </tr>
+
+            <tr id="CumulateAccountEntry" class="explanation">
+              <td>Cumulate Account Entry</td>
+              <td>
+                <ul>
+                  <li>No formula is applied here, it simply cumulates the given account entry for every commitment. Typically used for account entries which are uploaded per Folio e.x TDS</li>
+                </ul>
+              </td>
+            </tr>
+
+            <tr id="GenerateCustomField" class="explanation">
+              <td>Generate Custom Field</td>
+              <td>
+                <ul>  
+                  <li>Does not create an Account Entry, but generates a variable with the name, which can be used in other rules</li>
+                  <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
+                  <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
+                  <li>fund_formula: The formula currently being run</li>
+                  <li>ae: The specific account entry being created for the commitment</li>
+                </ul>
+              </td>
+            </tr>
+
+            <tr id="Percentage" class="explanation">
+              <td>Percentage</td>
+              <td>
+                <ul>
+                  <li>No formula is applied here, it simply computes the percentage of the given account entry for every commitment. Typically used for account entries which are used in further computations such as 'Opening Investable Capital Percentage'</li>
+                </ul>
+              </td>
+            </tr>
+
+            <tr id="Other">
+              <td>Other Variables Available</td>
+              <td>
+                <ul>
+                  <li>@remittances: Remittances of the commitment till @end_date</li>
+                  <li>@distributions: Distributions of the commitment till @end_date</li>
+                  <li>@income_before_start_date: Income allocated to the commitment till @start_date</li>
+                  <li>@expense_before_start_date: Expense allocated to the commitment till @start_date</li>
+                  <li>@units: Units of the commitment till @start_date</li>
+                </ul>
+              </td>
+            </tr>
+
+          </table>
+        </div>
     </div>
-
-    <%= form.label :formula %>
-    <%= form.text_area :formula, class: "form-control"  %>
-    
   </div>
-
-  <div class="form-group">
-      <%= form.label :roll_up %>
-      <%= form.check_box :roll_up, class: "form-control form-checkbox" %>
-      <small>Ensure that the entries are rolled up into an aggregate amount</small>
-  </div>
-
-  <div class="form-group">
-      <%= form.label :enabled %>
-      <%= form.check_box :enabled, class: "form-control form-checkbox"  %>
-      <small>Enable which formulas will run</small>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
-<% end %>
+</div>

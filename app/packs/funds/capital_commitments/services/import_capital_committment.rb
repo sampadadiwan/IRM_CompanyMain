@@ -1,5 +1,5 @@
 class ImportCapitalCommittment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -40,15 +40,16 @@ class ImportCapitalCommittment < ImportUtil
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
     folio_id = user_data["Folio No"].presence
     unit_type = user_data["Unit Type"].presence
+    folio_currency = user_data["Folio Currency"].presence
 
     if fund && investor
       # Make the capital_commitment
       capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
                                                  fund_close: user_data["Fund Close"].strip,
                                                  fund:, investor:, investor_name: investor.investor_name,
-                                                 unit_type:, notes: user_data["Notes"])
+                                                 folio_currency:, unit_type:, notes: user_data["Notes"])
 
-      capital_commitment.committed_amount = user_data["Committed Amount"].to_d
+      capital_commitment.folio_committed_amount = user_data["Committed Amount"].to_d
       capital_commitment.investor_kyc = fund.entity.investor_kycs.where(investor_id: investor.id).last
 
       setup_custom_fields(user_data, capital_commitment, custom_field_headers)
@@ -59,6 +60,7 @@ class ImportCapitalCommittment < ImportUtil
         @commitments << capital_commitment
         [true, "Success"]
       else
+        Rails.logger.debug { "Could not save commitment: #{capital_commitment.errors.full_messages}" }
         [false, capital_commitment.errors.full_messages]
       end
     elsif fund

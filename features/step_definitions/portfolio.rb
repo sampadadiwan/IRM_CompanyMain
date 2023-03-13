@@ -41,8 +41,13 @@ include CurrencyHelper
 
   Given('there are {string} portfolio investments {string}') do |count, args|
     (1..count.to_i).each do |i|
-      FactoryBot.create(:portfolio_investment, entity: @entity, fund: @fund)
+      pi = FactoryBot.build(:portfolio_investment, entity: @entity, fund: @fund)
+      key_values(pi, args)
+      pi.save
+      puts "\n#########PortfolioInvestment##########\n"
+      puts pi.to_json
     end
+    
   end
   
   Then('an aggregate portfolio investment should be created') do
@@ -81,9 +86,8 @@ end
 
 Then('the fmv must be calculated for the portfolio') do  
   PortfolioInvestment.all.each do |pi|
-    binding.pry if pi.fmv_cents != (pi.quantity * @valuation.per_share_value_cents)
     pi.fmv_cents.abs.should > 0
-    pi.fmv_cents.should == (pi.quantity * @valuation.per_share_value_cents)
+    pi.fmv_cents.should == (pi.quantity.abs * @valuation.per_share_value_cents)
   end
 end
 
@@ -150,5 +154,20 @@ Then('the valuations must have the data in the sheet') do
     val.valuation_cents.should == user_data["Valuation"].to_d * 100
     val.per_share_value_cents.should == user_data["Per Share Value"].to_d * 100
     val.owner.investor_name.should == user_data["Portfolio Company"].strip
+  end
+end
+
+
+Then('there must be {string} portfolio attributions created') do |count|
+  PortfolioAttribution.count.should == count.to_i
+  PortfolioAttribution.all.each do |pa|
+    ap pa
+    pa.sold_pi.sell?.should == true
+    pa.sold_pi.cost_of_sold_cents.should == PortfolioAttribution.all.map{|x| x.quantity * x.bought_pi.cost_cents}.sum
+    pa.sold_pi.gain_cents.should == pa.sold_pi.fmv_cents - pa.sold_pi.cost_of_sold_cents
+    pa.bought_pi.buy?.should == true
+    pa.bought_pi.sold_quantity.should == pa.quantity
+    pa.bought_pi.net_quantity.should == pa.bought_pi.quantity + pa.bought_pi.sold_quantity
+    pa.sold_pi.quantity.should == PortfolioAttribution.all.sum(:quantity)
   end
 end

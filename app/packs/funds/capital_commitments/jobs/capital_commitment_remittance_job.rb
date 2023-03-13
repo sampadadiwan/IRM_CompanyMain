@@ -16,9 +16,12 @@ class CapitalCommitmentRemittanceJob < ApplicationJob
       # Generate the remittance only if the call is for All or this Fund Close
       next unless capital_call.applicable_to.exists?(id: capital_commitment.id)
 
-      CapitalRemittance.create(capital_call:, fund: capital_call.fund,
-                               entity: capital_call.entity, investor: capital_commitment.investor, capital_commitment:, folio_id: capital_commitment.folio_id,
-                               status: "Pending", verified: false)
+      cr = CapitalRemittance.new(capital_call:, fund: capital_call.fund,
+                                 entity: capital_call.entity, investor: capital_commitment.investor, capital_commitment:, folio_id: capital_commitment.folio_id,
+                                 status: "Pending", verified: false)
+
+      cr.set_call_amount
+      cr.save!
     end
   end
 end

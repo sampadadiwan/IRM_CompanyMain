@@ -3,7 +3,7 @@ class FundRatiosController < ApplicationController
 
   # GET /fund_ratios or /fund_ratios.json
   def index
-    @fund_ratios = policy_scope(FundRatio)
+    @fund_ratios = policy_scope(FundRatio).includes(:fund, :capital_commitment)
     @fund_ratios = @fund_ratios.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @fund_ratios = @fund_ratios.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
     @fund_ratios = @fund_ratios.where(capital_commitment_id: nil) if params[:fund_ratios_only].present?

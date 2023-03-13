@@ -1,4 +1,19 @@
 FactoryBot.define do
+  factory :portfolio_attribution do
+    entity { nil }
+    fund { nil }
+    sold_pi { nil }
+    bought_pi { nil }
+    quantity { "9.99" }
+  end
+
+  factory :exchange_rate do
+    entity { nil }
+    from { "MyString" }
+    to { "MyString" }
+    rate { "9.99" }
+  end
+
   factory :investor_advisor do
     entity { nil }
     user { nil }
@@ -183,6 +198,7 @@ FactoryBot.define do
     fund { Fund.all.sample }
     entity { fund.entity }
     gross_amount { 1000000 * rand(1..5) }
+    cost_of_investment_cents { gross_amount * 0.8 }
     reinvestment { gross_amount * 0.5 }
     distribution_date { Date.today + rand(5).weeks }
     title { "Capital Dist #{rand(1..10)}" }
@@ -220,8 +236,9 @@ FactoryBot.define do
     unit_type { ["Series A", "Series B", "Series C"][rand(3)] }
     entity { fund.entity }
     investor { fund.investors.sample }
-    committed_amount { 100000 * rand(10..30)}
+    folio_committed_amount_cents { 10000000 * rand(10..30) }
     folio_id {rand(100**4)}
+    folio_currency { fund.currency }
     fund_close { "First Close" }
     notes { Faker::Company.catch_phrase }
   end
@@ -232,7 +249,7 @@ FactoryBot.define do
     entity { Entity.funds.sample }
     tag_list {  }
     unit_types {"Series A, Series B, Series C"}
-    currency { ["INR", "USD", "SGD"].sample }
+    currency { ["INR", "USD"].sample }
   end
 
   
@@ -537,6 +554,16 @@ FactoryBot.define do
     currency { ENV["CURRENCY"].split(",")[rand(3)] }
     units { ENV["CURRENCY_UNITS"].split(",")[rand(3)] }
     sub_domain { rand(2) > 0 ? name.parameterize : nil }
+
+    trait :with_exchange_rates do
+      after(:create) do |entity|
+        ExchangeRate.create([
+            {from: "USD", to: "INR", rate: 81.72, entity:}, 
+            {from: "INR", to: "USD", rate: 0.012, entity:}
+        ])
+      end
+    end
+
   end
 end
 

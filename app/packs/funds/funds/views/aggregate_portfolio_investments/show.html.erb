@@ -42,24 +42,17 @@
       <%= @aggregate_portfolio_investment.quantity %>
     </td>
   </tr>
+  
   <tr>
     <td>
-      Fmv
-    </td>
-    <td>
-      <%= money_to_currency @aggregate_portfolio_investment.fmv, params %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Avg Cost
+      Avg Cost Per Share
     </td>
     <td>
       <%= money_to_currency @aggregate_portfolio_investment.avg_cost, params %>
     </td>
   </tr>
 
-
+  
   <tr>
     <td>
       Bought Quantity
@@ -96,6 +89,16 @@
       <%= money_to_currency @aggregate_portfolio_investment.sold_amount, params %>
     </td>
   </tr>
+
+  <tr>
+    <td>
+      Cost Of Sold (FIFO)
+    </td>
+    <td>
+      <%= money_to_currency @aggregate_portfolio_investment.cost_of_sold, params %>
+    </td>
+  </tr>
+
 
 
   <tr>

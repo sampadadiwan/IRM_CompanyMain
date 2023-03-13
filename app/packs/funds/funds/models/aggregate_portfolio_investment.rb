@@ -3,7 +3,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   belongs_to :fund
   belongs_to :portfolio_company, class_name: "Investor"
   has_many :portfolio_investments, dependent: :destroy
-  monetize :bought_amount_cents, :sold_amount_cents, :avg_cost_cents, :fmv_cents, :cost_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :bought_amount_cents, :sold_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_cents, with_currency: ->(i) { i.fund.currency }
 
   before_create :update_name
   def update_name
@@ -19,16 +19,9 @@ class AggregatePortfolioInvestment < ApplicationRecord
     self.avg_cost_cents = bought_quantity.positive? ? bought_amount_cents / bought_quantity : 0
   end
 
-  def cost_of_sold_cents
-    avg_cost_cents * sold_quantity
-  end
-
-  def cost_of_net_cents
-    avg_cost_cents * quantity
-  end
-
-  def fmv_cents_on_date(end_date); end
-
+  # This is used extensively in the AccountEntryAllocationEngine
+  # The AccountEntryAllocationEngine needs the date as of end_date,
+  # so this creates an AggregatePortfolioInvestment with data as of the end_date
   def as_of(end_date)
     api = dup
     pis = portfolio_investments.where(investment_date: ..end_date, investment_type:)
@@ -38,6 +31,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     api.sold_quantity = pis.sells.sum(:quantity)
     api.sold_amount_cents = pis.sells.sum(:amount_cents)
     api.compute_avg_cost
+    api.cost_of_sold_cents = pis.sells.sum(:cost_of_sold_cents)
 
     # FMV is complicated, as the latest fmv is stored, so we need to recompute the fmv as of end_date
     valuation = api.portfolio_company.valuations.where(valuation_date: ..end_date, instrument_type: investment_type).order(valuation_date: :asc).last

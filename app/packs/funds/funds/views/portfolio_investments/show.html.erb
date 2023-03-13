@@ -74,12 +74,50 @@
       <%= @portfolio_investment.notes %>
     </td>
   </tr>
+
+  <% if params[:debug].present? && @portfolio_investment.buy? %>
+  <tr>
+    <td>
+      Sold Quantity
+    </td>
+    <td>
+      <%= @portfolio_investment.sold_quantity %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Net Quantity
+    </td>
+    <td>
+      <%= @portfolio_investment.net_quantity %>
+    </td>
+  </tr>
+  <% end %>
+
+  <% if params[:debug].present? && @portfolio_investment.sell? %>
+  <tr>
+    <td>
+      Cost of Sold
+    </td>
+    <td>
+      <%= money_to_currency @portfolio_investment.cost_of_sold, params %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Gain
+    </td>
+    <td>
+      <%= money_to_currency @portfolio_investment.gain, params %>
+    </td>
+  </tr>
+  <% end %>
+
 </table>
 <div>
-  <% if policy(@portfolio_investment).update? %>
-    <%= link_to "Edit", edit_portfolio_investment_path(@portfolio_investment), {class: "btn btn-outline-primary"} %> |
-    <%= button_to "Delete", @portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
-  <% end %>
+    <%= link_to "Edit", edit_portfolio_investment_path(@portfolio_investment), {class: "btn btn-outline-primary"} if policy(@portfolio_investment).update? %> 
+    <%= button_to "Delete", @portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false} if policy(@portfolio_investment).destroy? %>
+  
 </div>
 
 <%= render "portfolio_investments/details", portfolio_investment: @portfolio_investment %>

@@ -3,7 +3,7 @@ class CapitalRemittancePaymentsController < ApplicationController
 
   # GET /capital_remittance_payments or /capital_remittance_payments.json
   def index
-    @capital_remittance_payments = policy_scope(CapitalRemittancePayment).includes(:entity, :capital_remittance)
+    @capital_remittance_payments = policy_scope(CapitalRemittancePayment).includes(:entity, capital_remittance: :capital_commitment)
   end
 
   # GET /capital_remittance_payments/1 or /capital_remittance_payments/1.json
@@ -54,7 +54,7 @@ class CapitalRemittancePaymentsController < ApplicationController
     @capital_remittance_payment.destroy
 
     respond_to do |format|
-      format.html { redirect_to capital_remittance_payments_url, notice: "Capital remittance payment was successfully destroyed." }
+      format.html { redirect_to capital_remittance_url(@capital_remittance_payment.capital_remittance), notice: "Capital remittance payment was successfully destroyed." }
       format.json { head :no_content }
     end
   end
@@ -74,6 +74,6 @@ class CapitalRemittancePaymentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_remittance_payment_params
-    params.require(:capital_remittance_payment).permit(:fund_id, :capital_remittance_id, :entity_id, :amount, :payment_date, :notes, :payment_proof, :reference_no)
+    params.require(:capital_remittance_payment).permit(:fund_id, :capital_remittance_id, :entity_id, :folio_amount, :payment_date, :notes, :payment_proof, :reference_no)
   end
 end

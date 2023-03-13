@@ -68,7 +68,7 @@ class AccountEntryAllocationEngine
   end
 
   # This in theory generates a custom field in the commitment
-  # E.x capital_commitment["properties"]["opening_investable_capital"] = capital_commitment.collected_amount_cents + capital_commitment.account_entries.total_amount('Income', end_date: @start_date) - capital_commitment.account_entries.total_amount('Expense', end_date: @start_date)
+  #
   def generate_custom_fields(fund_formula, fund_unit_settings)
     Rails.logger.debug { "generate_custom_fields #{fund_formula.name}" }
     # Generate the cols required
@@ -111,7 +111,7 @@ class AccountEntryAllocationEngine
     @fund.capital_commitments.each do |capital_commitment|
       percentage = total.positive? ? (100.0 * cc_map[capital_commitment.id]["amount_cents"] / total) : 0
 
-      ae = AccountEntry.new(name: "#{field_name} Percentage", entry_type: cc_map[capital_commitment.id]["entry_type"], entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", capital_commitment:, folio_id: capital_commitment.folio_id, generated: true, amount_cents: percentage)
+      ae = AccountEntry.new(name: "#{field_name} Percentage", entry_type: cc_map[capital_commitment.id]["entry_type"], entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", capital_commitment:, folio_id: capital_commitment.folio_id, generated: true, amount_cents: percentage, cumulative: true)
 
       ae.save!
 
@@ -131,7 +131,7 @@ class AccountEntryAllocationEngine
       @fund.aggregate_portfolio_investments.each do |orig_api|
         ae = AccountEntry.new(name: "#{orig_api.portfolio_company_name}-#{orig_api.investment_type}", entry_type: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", generated: true)
 
-        # This will create the AggregatePortfolioInvestment as of the end date, it will be ised in the formulas
+        # This will create the AggregatePortfolioInvestment as of the end date, it will be used in the formulas
         api = orig_api.as_of(@end_date)
 
         ae = create_account_entry(ae, fund_formula, capital_commitment, orig_api, binding)
@@ -285,7 +285,7 @@ class AccountEntryAllocationEngine
       cached_commitment_fields["expense_before_start_date"] = capital_commitment.account_entries.total_amount('Expense', end_date: @start_date)
 
       # Portfolio fields
-      cached_commitment_fields["units"] = capital_commitment.fund_units.where(created_at: ..@end_date).sum(:quantity)
+      cached_commitment_fields["units"] = capital_commitment.fund_units.where(issue_date: ..@end_date).sum(:quantity)
 
       @cached_generated_fields[capital_commitment.id] = cached_commitment_fields
     end
@@ -293,8 +293,9 @@ class AccountEntryAllocationEngine
     # Create variables available to eval here from all the cached fields
     # This is what allows formulas to have things line @cash_in_hand or @units
     cached_commitment_fields.keys.sort.each do |f|
-      instance_variable_set("@#{f}", cached_commitment_fields[f])
-      Rails.logger.debug { "Setting up variable @#{f} to #{cached_commitment_fields[f]}" }
+      variable_name = f.delete('.')
+      instance_variable_set("@#{variable_name}", cached_commitment_fields[f])
+      Rails.logger.debug { "Setting up variable @#{variable_name} to #{cached_commitment_fields[f]}" }
     end
 
     # return the cached fields

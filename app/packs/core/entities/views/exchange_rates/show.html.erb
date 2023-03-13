@@ -1,0 +1,65 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @exchange_rate.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      From
+    </td>
+    <td>
+      <%= @exchange_rate.from %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      To
+    </td>
+    <td>
+      <%= @exchange_rate.to %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Rate
+    </td>
+    <td>
+      <%= @exchange_rate.rate %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      As Of
+    </td>
+    <td>
+      <%= l @exchange_rate.as_of if @exchange_rate.as_of  %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      On
+    </td>
+    <td>
+      <%= l @exchange_rate.created_at %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Latest
+    </td>
+    <td>
+      <%= display_boolean @exchange_rate.latest %>
+    </td>
+  </tr>
+
+</table>
+<div>
+  <%= link_to "Edit", edit_exchange_rate_path(@exchange_rate), {class: "btn btn-outline-primary"} if policy(@exchange_rate).update? %> 
+  <%= button_to "Delete", @exchange_rate, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false} if policy(@exchange_rate).destroy?  %>
+</div>

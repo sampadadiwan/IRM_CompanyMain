@@ -1,0 +1,66 @@
+<div class="table-responsive" data-controller="datatable">
+
+<table id="capital_commitments" class="table table-bordered dataTable jqDataTable">
+
+        <thead>
+            <tr>
+                <th>
+                    Folio No
+                </th>
+                <th>
+                    Investor
+                </th>
+                <th>
+                    Committed
+                </th>
+                <th>
+                    Called
+                </th>
+                <th>
+                    Collected
+                </th>
+                <th>
+                    Called - Collected
+                </th>
+                <th>
+                    Committed - Collected
+                </th>
+                <th>
+                    Distributed
+                </th>
+                
+            </tr>
+        </thead>
+
+        <tbody>
+            <% @fund.capital_commitments.each do |capital_commitment| %>
+            <tr>
+                <td><%= link_to capital_commitment.folio_id, capital_commitment %></td>
+                <td><%= capital_commitment.investor_name %></td>
+                <td><%= money_to_currency capital_commitment.committed_amount, params %></td>
+                <td><%= money_to_currency capital_commitment.call_amount, params %></td>
+                <td><%= money_to_currency capital_commitment.collected_amount, params %></td>
+                <td>
+                    <%= money_to_currency capital_commitment.pending_call_amount, params %>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_commitment.percentage_pending_call %>%" aria-valuenow="<%=capital_commitment.percentage_pending_call%>" aria-valuemin="0" aria-valuemax="100">
+                        <%= capital_commitment.percentage_pending_call %> % Paid
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <%= money_to_currency capital_commitment.pending_committed_amount, params %>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_commitment.percentage_pending_committed %>%" aria-valuenow="<%=capital_commitment.percentage_pending_committed%>" aria-valuemin="0" aria-valuemax="100">
+                        <%= capital_commitment.percentage_pending_committed %> % Collected
+                        </div>
+                    </div>
+                </td>
+                <td><%= money_to_currency capital_commitment.distribution_amount, params %></td>
+                
+            </tr>      
+            <% end %>
+        </tbody>
+    </table>
+
+</div>

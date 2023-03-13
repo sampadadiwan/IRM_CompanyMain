@@ -60,7 +60,7 @@ class PortfolioInvestmentsController < ApplicationController
     @portfolio_investment.destroy
 
     respond_to do |format|
-      format.html { redirect_to portfolio_investments_url, notice: "Portfolio investment was successfully destroyed." }
+      format.html { redirect_to fund_path(@portfolio_investment.fund, tab: "portfolio-investments-tab"), notice: "Portfolio investment was successfully destroyed." }
       format.json { head :no_content }
     end
   end

@@ -41,6 +41,7 @@ class Entity < ApplicationRecord
   has_many :investee_entities, through: :investees
   has_many :notes, dependent: :destroy
   has_many :folders, dependent: :destroy
+  has_many :exchange_rates, dependent: :destroy
 
   has_many :investor_accesses, dependent: :destroy
   has_many :investor_kycs, dependent: :destroy

@@ -98,6 +98,7 @@ class CapitalCommitmentDocGenerator
     signed_document.from_template = document
     signed_document.owner = capital_commitment
     signed_document.owner_tag = "Generated"
+    signed_document.send_email = false
 
     signed_document.save
   end
