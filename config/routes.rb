@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :commitment_adjustments
   resources :exchange_rates
   namespace :admin do
     namespace :paper_trail do

@@ -1,7 +1,7 @@
 class ExchangeRateJob < ApplicationJob
   queue_as :low
 
-  def perform(id, _user_id = nil)
+  def perform(id)
     Chewy.strategy(:sidekiq) do
       @exchange_rate = ExchangeRate.find(id)
       count = 0
@@ -12,8 +12,15 @@ class ExchangeRateJob < ApplicationJob
         next unless cc.fund.currency == @exchange_rate.to
 
         Rails.logger.debug { "Updating commitment due to exchange_rate for #{cc.investor_name} in #{cc.fund.name}" }
-        cc.set_committed_amount
-        cc.save
+
+        amount_cents = cc.commitment_at_new_exchange_rate - cc.committed_amount_cents
+
+        reason = "Exchange Rate Changed: #{@exchange_rate}"
+        as_of = Time.zone.today
+
+        CommitmentAdjustment.create(entity_id: cc.entity_id, fund_id: cc.fund_id,
+                                    capital_commitment: cc, amount_cents:, reason:, as_of:)
+
         count += 1
       end
 

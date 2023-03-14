@@ -1,0 +1,21 @@
+
+<tr id="<%= dom_id commitment_adjustment %>">
+  <td>
+    <%= commitment_adjustment.pre_adjustment %>
+  </td>
+  <td>
+    <%= money_to_currency commitment_adjustment.folio_amount, params %>
+  </td>
+  <td>
+    <%= money_to_currency commitment_adjustment.amount, params %>
+  </td>
+  <td>
+    <%= commitment_adjustment.post_adjustment %>
+  </td>
+  <td>
+    <%= commitment_adjustment.reason %>
+  </td>
+  <td>
+    <%= link_to "Show", commitment_adjustment , {class: "btn btn-primary"}%>
+  </td>
+</tr>

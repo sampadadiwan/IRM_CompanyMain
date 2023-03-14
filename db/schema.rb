@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_03_12_040313) do
+ActiveRecord::Schema[7.0].define(version: 2023_03_14_020624) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -56,7 +56,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_12_040313) do
     t.date "reporting_date"
     t.string "entry_type", limit: 50
     t.string "name", limit: 100
-    t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
+    t.decimal "amount_cents", precision: 27, scale: 4, default: "0.0"
     t.text "notes"
     t.text "properties"
     t.datetime "created_at", null: false
@@ -67,7 +67,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_12_040313) do
     t.string "parent_type"
     t.bigint "parent_id"
     t.boolean "generated", default: false
-    t.decimal "folio_amount_cents", precision: 30, scale: 8, default: "0.0"
+    t.decimal "folio_amount_cents", precision: 27, scale: 4, default: "0.0"
     t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative"], name: "idx_account_entries_reporting_date_uniq", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
@@ -354,7 +354,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_12_040313) do
     t.date "call_date"
     t.bigint "document_folder_id"
     t.text "unit_prices"
-    t.string "fund_closes"
+    t.string "fund_closes", limit: 100
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_calls_on_document_folder_id"
@@ -395,12 +395,16 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_12_040313) do
     t.decimal "total_allocated_income_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_allocated_expense_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "fund_close"
+    t.string "fund_close", limit: 30
     t.string "virtual_bank_account", limit: 20
     t.string "folio_currency", limit: 5
     t.decimal "folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "adjustment_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "adjustment_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "orig_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "orig_folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
@@ -528,6 +532,23 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_12_040313) do
     t.index ["form_type_id"], name: "index_capital_remittances_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_remittances_on_fund_id"
     t.index ["investor_id"], name: "index_capital_remittances_on_investor_id"
+  end
+
+  create_table "commitment_adjustments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "capital_commitment_id", null: false
+    t.decimal "pre_adjustment_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "post_adjustment_cents", precision: 20, scale: 2, default: "0.0"
+    t.text "reason"
+    t.date "as_of"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["capital_commitment_id"], name: "index_commitment_adjustments_on_capital_commitment_id"
+    t.index ["entity_id"], name: "index_commitment_adjustments_on_entity_id"
+    t.index ["fund_id"], name: "index_commitment_adjustments_on_fund_id"
   end
 
   create_table "deal_activities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1354,7 +1375,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_12_040313) do
     t.string "first_name"
     t.string "last_name"
     t.boolean "send_confirmation", default: false
-    t.bigint "investor_entity_id"
+    t.bigint "investor_entity_id", null: false
     t.boolean "is_investor_advisor", default: false
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
     t.index ["email"], name: "index_investor_accesses_on_email"
@@ -2056,6 +2077,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_12_040313) do
   add_foreign_key "capital_remittances", "folders", column: "document_folder_id"
   add_foreign_key "capital_remittances", "funds"
   add_foreign_key "capital_remittances", "investors"
+  add_foreign_key "commitment_adjustments", "capital_commitments"
+  add_foreign_key "commitment_adjustments", "entities"
+  add_foreign_key "commitment_adjustments", "funds"
   add_foreign_key "deal_activities", "deal_investors"
   add_foreign_key "deal_activities", "deals"
   add_foreign_key "deal_activities", "folders", column: "document_folder_id"
@@ -2147,7 +2171,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_12_040313) do
   add_foreign_key "investment_snapshots", "investors"
   add_foreign_key "investments", "aggregate_investments"
   add_foreign_key "investments", "funding_rounds"
-  add_foreign_key "investor_accesses", "entities", column: "investor_entity_id"
   add_foreign_key "investor_advisors", "entities"
   add_foreign_key "investor_advisors", "users"
   add_foreign_key "investor_kycs", "entities"

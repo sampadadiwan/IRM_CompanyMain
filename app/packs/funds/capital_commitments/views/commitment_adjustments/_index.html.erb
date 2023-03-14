@@ -1,0 +1,36 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Commitment Adjustments</h1>
+  <%= link_to "New Commitment Adjustment", 
+        new_commitment_adjustment_path(capital_commitment_id: params[:capital_commitment_id]), 
+        {class: "btn btn-primary"}  %>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="commitment_adjustments" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          Pre Adjustment
+        </th>
+        <th>
+          Folio Amount
+        </th>
+        <th>
+          Amount
+        </th>
+        <th>
+          Post Adjustment
+        </th>
+        <th>
+          Reason
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% commitment_adjustments.each do |commitment_adjustment| %>
+        <%= render commitment_adjustment %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

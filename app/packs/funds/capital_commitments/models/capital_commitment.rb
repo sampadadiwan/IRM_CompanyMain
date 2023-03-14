@@ -38,10 +38,11 @@ class CapitalCommitment < ApplicationRecord
   has_many :esigns, -> { order("sequence_no asc") }, as: :owner
   has_many :signature_workflows, as: :owner
 
-  monetize :folio_committed_amount_cents, :folio_collected_amount_cents, with_currency: ->(i) { i.folio_currency }
-  monetize :committed_amount_cents, :collected_amount_cents,
+  monetize :orig_folio_committed_amount_cents, :folio_committed_amount_cents, :folio_collected_amount_cents,
+           :adjustment_folio_amount_cents, with_currency: ->(i) { i.folio_currency }
+  monetize :orig_committed_amount_cents, :committed_amount_cents, :collected_amount_cents,
            :call_amount_cents, :distribution_amount_cents, :total_units_premium_cents,
-           :total_allocated_expense_cents, :total_allocated_income_cents,
+           :total_allocated_expense_cents, :total_allocated_income_cents, :adjustment_amount_cents,
            with_currency: ->(i) { i.fund.currency }
 
   validates :folio_committed_amount_cents, numericality: { greater_than: 0 }
@@ -60,14 +61,25 @@ class CapitalCommitment < ApplicationRecord
     self.unit_type = unit_type.strip if unit_type
   end
 
-  before_save :set_committed_amount, if: :folio_committed_amount_cents_changed?
+  before_create :set_orig_amounts
+  def set_orig_amounts
+    self.orig_folio_committed_amount_cents = folio_committed_amount_cents
+    self.orig_committed_amount_cents = convert_currency(folio_currency, fund.currency, orig_folio_committed_amount_cents)
+  end
+
+  before_save :set_committed_amount
   def set_committed_amount
     # Since the commitment amount is always in the folio currency, we compute te converted committed_amount based on exchange rates.
+    self.folio_committed_amount_cents = orig_folio_committed_amount_cents + adjustment_folio_amount_cents
     self.committed_amount_cents = if foreign_currency?
-                                    collected_amount_cents + convert_currency(folio_currency, fund.currency, folio_pending_committed_amount.cents)
+                                    committed_amount_at_exchange_rate
                                   else
                                     folio_committed_amount_cents
                                   end
+  end
+
+  def committed_amount_at_exchange_rate
+    collected_amount_cents + adjustment_amount_cents + convert_currency(folio_currency, fund.currency, folio_pending_committed_amount.cents)
   end
 
   def folio_pending_committed_amount

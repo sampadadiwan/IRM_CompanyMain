@@ -98,25 +98,56 @@
 
   <% end %>
 
-  <% if @capital_commitment.foreign_currency? %>
+  <% if @capital_commitment.adjustment_amount_cents > 0 || @capital_commitment.foreign_currency? %>
   
-  <tr>
-    <td>
-      Folio Currency
-    </td>
-    <td>
-      <%= @capital_commitment.folio_currency %>
-    </td>
-  </tr>
+    <tr>
+      <td>
+        Folio Currency
+      </td>
+      <td>
+        <%= @capital_commitment.folio_currency %>
+      </td>
+    </tr>
 
-  <tr>
-    <td>
-      Folio Committed Amount
-    </td>
-    <td>
-      <%= money_to_currency @capital_commitment.folio_committed_amount, params %>
-    </td>
-  </tr>
+    <tr>
+      <td>
+        Folio Committed Amount
+      </td>
+      <td>
+        <%= money_to_currency @capital_commitment.folio_committed_amount, params %>
+      </td>
+    </tr>
+     
+    <% if @capital_commitment.adjustment_amount_cents != 0 %>
+
+      <tr>
+        <td>
+          Original Folio Committed Amount
+        </td>
+        <td>
+          <%= money_to_currency @capital_commitment.orig_folio_committed_amount, params %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Adjustment Folio Amount
+        </td>
+        <td>
+          <%= money_to_currency @capital_commitment.adjustment_folio_amount, params %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Adjustment Amount
+        </td>
+        <td>
+          <%= money_to_currency @capital_commitment.adjustment_amount, params %>
+        </td>
+      </tr>
+
+    <% end %>
 
   <% end %>
 
@@ -136,6 +167,7 @@
       <% end %>
     </td>
   </tr>
+
 
   <tr>
     <td>

@@ -95,9 +95,15 @@
     <small class="text-muted"><%= link_to "Setup Exchange Rates", exchange_rates_path %></small>
   </div>
   
+
   <div class="form-group" data-controller="currencyformat">
     <%= form.label :folio_committed_amount %> <span class="formatted_currency"></span>
-    <%= form.number_field :folio_committed_amount, class: "form-control", data: {action: "input->currencyformat#format"}  %>
+    <%= form.number_field :folio_committed_amount, class: "form-control", data: {action: "input->currencyformat#format"}, disabled: !capital_commitment.new_record?  %>
+
+    <% unless capital_commitment.new_record? %>
+      <small class="text-muted">Changes can be made only via <%= link_to 'Commitment Adjustment', new_commitment_adjustment_path(capital_commitment_id: capital_commitment.id) %></small>  
+    <% end %>
+    
   </div>
 
   <%= custom_form_fields(capital_commitment, form) %>

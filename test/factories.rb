@@ -1,4 +1,14 @@
 FactoryBot.define do
+  factory :commitment_adjustment do
+    entity { nil }
+    fund { nil }
+    capital_commitment { nil }
+    pre_adjustment { "9.99" }
+    amount { "9.99" }
+    post_adjustment { "9.99" }
+    reason { "MyText" }
+  end
+
   factory :portfolio_attribution do
     entity { nil }
     fund { nil }

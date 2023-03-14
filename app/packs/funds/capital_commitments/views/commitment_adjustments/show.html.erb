@@ -1,0 +1,78 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Fund
+    </td>
+    <td>
+      <%= @commitment_adjustment.fund.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Folio
+    </td>
+    <td>
+      <%= link_to @commitment_adjustment.capital_commitment %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Folio Amount
+    </td>
+    <td>
+      <%= money_to_currency @commitment_adjustment.folio_amount, params %>
+    </td>
+  </tr>
+  
+  <tr>
+    <td>
+      Amount
+    </td>
+    <td>
+      <%= money_to_currency @commitment_adjustment.amount, params %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Pre Adjustment
+    </td>
+    <td>
+      <%= money_to_currency @commitment_adjustment.pre_adjustment, params %>
+    </td>
+  </tr>
+  
+  <tr>
+    <td>
+      Post Adjustment
+    </td>
+    <td>
+      <%= money_to_currency @commitment_adjustment.post_adjustment, params %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Reason
+    </td>
+    <td>
+      <%= @commitment_adjustment.reason %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      As Of
+    </td>
+    <td>
+      <%= l @commitment_adjustment.as_of if @commitment_adjustment.as_of %>
+    </td>
+  </tr>
+</table>
+<div>
+  <% if policy(@commitment_adjustment).update? %>
+    <%= link_to "Edit", edit_commitment_adjustment_path(@commitment_adjustment), {class: "btn btn-primary"} %> 
+    <%= button_to "Delete", @commitment_adjustment, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+  <% end %>
+</div>

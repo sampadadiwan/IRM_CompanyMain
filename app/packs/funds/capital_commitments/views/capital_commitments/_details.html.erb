@@ -18,6 +18,9 @@
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#account-entries-tab"
             data-action="click->tabdetails#loadData">Account Entries</a>
 
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#adjustments-tab"
+            data-action="click->tabdetails#loadData">Adjustments</a>
+
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-ratios-tab"
             data-action="click->tabdetails#loadData">Ratios</a>
     <% end %>
@@ -135,6 +138,20 @@
         %>
         <%= render "/account_entries/index", 
                 lazy_load_data: true, data_source: account_entries_path(capital_commitment_id: capital_commitment.id, all: true, format: :json) %>
+      </div>     
+    </div>
+
+
+
+    <div id="adjustments-tab" class="tab-pane fade">
+      <div id="commitment_adjustments" class="associated_entity">
+        <%= link_to commitment_adjustments_path(capital_commitment_id: capital_commitment.id), 
+                                class: "load_data_link", 
+                                data: { turbo_frame: 'commitment_adjustments_list' } do %>
+          <span>Loading...</span>
+        <% end %>
+        <%= turbo_frame_tag "commitment_adjustments_list", target: "_top" do %>
+        <% end %>
       </div>     
     </div>
 
