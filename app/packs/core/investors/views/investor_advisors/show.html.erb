@@ -19,7 +19,7 @@
 </table>
 <div>
   <%= link_to "Edit", edit_investor_advisor_path(@investor_advisor), {class: "btn btn-primary"} %> |
-  <%= button_to "Delete", @investor_advisor, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+  <%= button_to "Delete", @investor_advisor, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
 </div>
 
 <div class="associated_entity">
