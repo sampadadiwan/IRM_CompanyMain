@@ -647,7 +647,7 @@ Then('the capital commitments must have the data in the sheet') do
     cc.folio_currency.should == user_data["Folio Currency"]
     cc.folio_committed_amount_cents.should == user_data["Committed Amount"].to_i * 100
     cc.folio_id.should == user_data["Folio No"].to_s
-    committed = cc.foreign_currency? ? (cc.folio_committed_amount_cents * cc.exchange_rate(cc.folio_currency, cc.fund.currency, Date.today).rate) : cc.folio_committed_amount_cents
+    committed = cc.foreign_currency? ? (cc.folio_committed_amount_cents * cc.get_exchange_rate(cc.folio_currency, cc.fund.currency, Date.today).rate) : cc.folio_committed_amount_cents
     cc.committed_amount_cents.should == committed
   end
 end  
@@ -1095,7 +1095,7 @@ Then('the capital remittance payments must have the data in the sheet') do
       capital_commitment = cc.capital_remittance.capital_commitment
       capital_commitment.folio_currency.should == user_data["Currency"]
 
-      amount = capital_commitment.foreign_currency? ? (cc.folio_amount_cents * capital_commitment.exchange_rate(capital_commitment.folio_currency, cc.fund.currency, Date.today).rate) : cc.amount_cents
+      amount = capital_commitment.foreign_currency? ? (cc.folio_amount_cents * capital_commitment.get_exchange_rate(capital_commitment.folio_currency, cc.fund.currency, Date.today).rate) : cc.amount_cents
       cc.amount_cents.should == amount
       # sleep(30)
     end
@@ -1116,6 +1116,6 @@ end
 Then('the commitment amounts change correctly') do
   @fund.reload
   @fund.capital_commitments.each do |cc|
-    cc.committed_amount_cents.should == cc.collected_amount_cents + cc.convert_currency(cc.folio_currency, cc.fund.currency, cc.folio_pending_committed_amount.cents)
+    cc.committed_amount_cents.should == cc.collected_amount_cents + cc.convert_currency(cc.folio_currency, cc.fund.currency, cc.folio_pending_committed_amount.cents, Date.today)
   end
 end
