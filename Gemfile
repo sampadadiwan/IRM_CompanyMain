@@ -3,8 +3,9 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby "3.1.2"
 
-# Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
+# 
 gem "interactor", "~> 3.0"
+# Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.0.3.1"
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
@@ -14,9 +15,11 @@ gem "sprockets-rails"
 gem "audited", "~> 5.0"
 gem "mysql2", "~> 0.5"
 
-# Use the Puma web server [https://github.com/puma/puma]
+# To convert Doc into PDF
 gem 'libreconv'
+# Use the Puma web server [https://github.com/puma/puma]
 gem "puma", "~> 5.0"
+# Used to produce mail merge documents from word templates and DB data
 gem 'sablon'
 
 # Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
@@ -24,7 +27,6 @@ gem "importmap-rails"
 
 # Hotwire's SPA-like page accelerator [https://turbo.hotwired.dev]
 gem "turbo-rails"
-
 # Hotwire's modest JavaScript framework [https://stimulus.hotwired.dev]
 gem "stimulus-rails"
 
@@ -39,13 +41,17 @@ gem "pundit", git: "https://github.com/varvet/pundit.git"
 gem "rolify"
 
 gem 'activerecord-import'
+# Store env variables
 gem 'dotenv-rails'
+# Send error emails to support
 gem 'exception_notification'
 gem 'sassc-rails'
+# Background Jobs
 gem 'sidekiq', '~> 6.4'
 gem 'sidekiq-limit_fetch'
 
 gem "aws-sdk-s3", require: false
+# Elastic search client
 gem 'chewy'
 
 gem 'kaminari'
@@ -75,34 +81,49 @@ gem 'wkhtmltopdf-binary-edge'
 
 gem 'google_drive'
 
+# Admin screens
 gem "administrate"
 gem 'administrate-field-active_storage'
 gem 'administrate-field-boolean_emoji', '~> 0.3.0'
 gem 'administrate-field-shrine'
+
+# This generates rails based datatables
 gem 'ajax-datatables-rails'
 gem 'draper'
+# Not used right now
 gem 'has_scope'
 
 # For custom buckets in S3 per client
 gem 'fastimage'
 gem 'marcel'
+
+# This is the S3 upload gem
 gem 'shrine', '~> 3.3'
 gem 'uppy-s3_multipart', '~> 1.1'
 
+# Nested for fields
 gem 'cocoon'
+# Allows for soft delete
 gem "paranoia", "~> 2.2"
+# Audit trail
 gem 'public_activity', github: 'chaps-io/public_activity', branch: 'master'
+# 
 gem 'sanitize_email'
+# Cron
 gem 'whenever', require: false
 # gem 'ajax-datatables-rails'
 
+# Uses bitwise flags
 gem 'active_flag'
 gem 'active_storage_validations'
 gem "acts_as_list"
 
+# Tree relationship of folders/documents
 gem 'ancestry'
+# Generating XL
 gem 'caxlsx'
 gem 'caxlsx_rails'
+# Maintain counter caches
 gem 'counter_culture', '~> 2.0'
 gem 'impressionist'
 gem 'roo'
@@ -110,6 +131,7 @@ gem 'roo'
 gem 'ransack'
 gem "view_component"
 
+# Validates using javascript
 gem 'client_side_validations'
 gem 'rack-attack'
 
