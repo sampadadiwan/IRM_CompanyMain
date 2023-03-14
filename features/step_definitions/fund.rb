@@ -852,7 +852,7 @@ Then('when the capital commitment docs are generated') do
     click_on("Generate Documents")
     sleep(1)
     click_on("Proceed")
-    sleep(6)
+    sleep(8)
     expect(page).to have_content("Documentation generation started")
   end
 end
@@ -870,7 +870,7 @@ Then('when the capital call docs are generated') do
   CapitalCall.all.each do |cc|
     visit(capital_call_path(cc))
     click_on("Generate Documents")
-    sleep(8)
+    sleep(10)
     expect(page).to have_content("Document #{@call_template.name} generated")
     sleep(3)
     expect(page).to have_content("Documentation generation started")

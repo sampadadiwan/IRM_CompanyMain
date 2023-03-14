@@ -27,7 +27,8 @@ class CapitalRemittancePayment < ApplicationRecord
   before_save :set_amount, if: :folio_amount_cents_changed?
   def set_amount
     # Since the remittance amount is always in the folio currency, we compute the converted amount based on exchange rates.
-    self.amount_cents = convert_currency(capital_remittance.capital_commitment.folio_currency, fund.currency, folio_amount_cents)
+    self.amount_cents = convert_currency(capital_remittance.capital_commitment.folio_currency, fund.currency,
+                                         folio_amount_cents, payment_date)
   end
 
   after_commit :unverify_remittance

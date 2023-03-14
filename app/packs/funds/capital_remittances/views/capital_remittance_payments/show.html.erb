@@ -64,6 +64,18 @@
       <%= @capital_remittance_payment.notes&.html_safe %>
     </td>
   </tr>
+
+  <% if @capital_remittance_payment.exchange_rate %>
+    <tr>
+      <td>
+        Exchange Rate
+      </td>
+      <td>
+        <%= link_to @capital_remittance_payment.exchange_rate %>
+      </td>
+    </tr>
+  <% end %>
+
 </table>
 <div>
   <% if policy(@capital_remittance_payment).update? %>

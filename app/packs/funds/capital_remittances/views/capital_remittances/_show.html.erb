@@ -151,6 +151,17 @@
         </td>
       </tr>
 
+      <% if capital_remittance.exchange_rate %>
+        <tr>
+          <td>
+            Exchange Rate
+          </td>
+          <td>
+            <%= link_to capital_remittance.exchange_rate %>
+          </td>
+        </tr>
+      <% end %>
+
     <% end %>
 
     <%= display_custom_fields(capital_remittance) if current_user %>

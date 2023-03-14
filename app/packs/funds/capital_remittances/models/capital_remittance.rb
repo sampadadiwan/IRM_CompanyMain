@@ -70,7 +70,8 @@ class CapitalRemittance < ApplicationRecord
   def calc_call_amount_cents
     self.folio_call_amount_cents = capital_call.percentage_called * capital_commitment.folio_committed_amount_cents / 100.0
 
-    self.call_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency, folio_call_amount_cents)
+    self.call_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency,
+                                              folio_call_amount_cents, payment_date)
   end
 
   def send_notification

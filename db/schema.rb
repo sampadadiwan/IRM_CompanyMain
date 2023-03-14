@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_03_14_020624) do
+ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -68,9 +68,11 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_020624) do
     t.bigint "parent_id"
     t.boolean "generated", default: false
     t.decimal "folio_amount_cents", precision: 27, scale: 4, default: "0.0"
+    t.bigint "exchange_rate_id"
     t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative"], name: "idx_account_entries_reporting_date_uniq", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
+    t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
@@ -405,9 +407,11 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_020624) do
     t.decimal "adjustment_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "orig_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "orig_folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "exchange_rate_id"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
+    t.index ["exchange_rate_id"], name: "index_capital_commitments_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"
     t.index ["investor_id"], name: "index_capital_commitments_on_investor_id"
@@ -436,11 +440,13 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_020624) do
     t.bigint "document_folder_id"
     t.decimal "cost_of_investment_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "exchange_rate_id"
     t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
     t.index ["deleted_at"], name: "index_capital_distribution_payments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_distribution_payments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_distribution_payments_on_entity_id"
+    t.index ["exchange_rate_id"], name: "index_capital_distribution_payments_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_capital_distribution_payments_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_distribution_payments_on_fund_id"
     t.index ["investor_id"], name: "index_capital_distribution_payments_on_investor_id"
@@ -492,8 +498,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_020624) do
     t.datetime "updated_at", null: false
     t.string "reference_no", limit: 40
     t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "exchange_rate_id"
     t.index ["capital_remittance_id"], name: "index_capital_remittance_payments_on_capital_remittance_id"
     t.index ["entity_id"], name: "index_capital_remittance_payments_on_entity_id"
+    t.index ["exchange_rate_id"], name: "index_capital_remittance_payments_on_exchange_rate_id"
     t.index ["fund_id"], name: "index_capital_remittance_payments_on_fund_id"
   end
 
@@ -524,11 +532,13 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_020624) do
     t.decimal "folio_call_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "exchange_rate_id"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_remittances_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_remittances_on_entity_id"
+    t.index ["exchange_rate_id"], name: "index_capital_remittances_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_capital_remittances_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_remittances_on_fund_id"
     t.index ["investor_id"], name: "index_capital_remittances_on_investor_id"
@@ -546,8 +556,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_020624) do
     t.date "as_of"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "exchange_rate_id"
     t.index ["capital_commitment_id"], name: "index_commitment_adjustments_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_commitment_adjustments_on_entity_id"
+    t.index ["exchange_rate_id"], name: "index_commitment_adjustments_on_exchange_rate_id"
     t.index ["fund_id"], name: "index_commitment_adjustments_on_fund_id"
   end
 
@@ -2026,6 +2038,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_020624) do
   add_foreign_key "access_rights", "users"
   add_foreign_key "account_entries", "capital_commitments"
   add_foreign_key "account_entries", "entities"
+  add_foreign_key "account_entries", "exchange_rates"
   add_foreign_key "account_entries", "form_types"
   add_foreign_key "account_entries", "funds"
   add_foreign_key "account_entries", "investors"
@@ -2051,6 +2064,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_020624) do
   add_foreign_key "capital_calls", "funds"
   add_foreign_key "capital_calls", "users", column: "approved_by_user_id"
   add_foreign_key "capital_commitments", "entities"
+  add_foreign_key "capital_commitments", "exchange_rates"
   add_foreign_key "capital_commitments", "folders", column: "document_folder_id"
   add_foreign_key "capital_commitments", "funds"
   add_foreign_key "capital_commitments", "investor_kycs"
@@ -2059,6 +2073,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_020624) do
   add_foreign_key "capital_distribution_payments", "capital_commitments"
   add_foreign_key "capital_distribution_payments", "capital_distributions"
   add_foreign_key "capital_distribution_payments", "entities"
+  add_foreign_key "capital_distribution_payments", "exchange_rates"
   add_foreign_key "capital_distribution_payments", "folders", column: "document_folder_id"
   add_foreign_key "capital_distribution_payments", "form_types"
   add_foreign_key "capital_distribution_payments", "funds"
@@ -2070,15 +2085,18 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_020624) do
   add_foreign_key "capital_distributions", "users", column: "approved_by_user_id"
   add_foreign_key "capital_remittance_payments", "capital_remittances"
   add_foreign_key "capital_remittance_payments", "entities"
+  add_foreign_key "capital_remittance_payments", "exchange_rates"
   add_foreign_key "capital_remittance_payments", "funds"
   add_foreign_key "capital_remittances", "capital_calls"
   add_foreign_key "capital_remittances", "capital_commitments"
   add_foreign_key "capital_remittances", "entities"
+  add_foreign_key "capital_remittances", "exchange_rates"
   add_foreign_key "capital_remittances", "folders", column: "document_folder_id"
   add_foreign_key "capital_remittances", "funds"
   add_foreign_key "capital_remittances", "investors"
   add_foreign_key "commitment_adjustments", "capital_commitments"
   add_foreign_key "commitment_adjustments", "entities"
+  add_foreign_key "commitment_adjustments", "exchange_rates"
   add_foreign_key "commitment_adjustments", "funds"
   add_foreign_key "deal_activities", "deal_investors"
   add_foreign_key "deal_activities", "deals"

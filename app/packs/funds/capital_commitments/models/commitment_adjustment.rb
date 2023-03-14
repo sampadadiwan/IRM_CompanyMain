@@ -15,7 +15,10 @@ class CommitmentAdjustment < ApplicationRecord
   before_save :update_amounts
   def update_amounts
     # Convert
-    self.amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency, folio_amount_cents) if folio_amount_cents != 0
+    if folio_amount_cents != 0
+      self.amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency,
+                                           folio_amount_cents, as_of)
+    end
     # Update Pre/Post
     self.pre_adjustment_cents = capital_commitment.committed_amount_cents
     self.post_adjustment_cents = amount_cents + pre_adjustment_cents

@@ -91,5 +91,16 @@
       </td>
     </tr>
 
+    <% if capital_distribution_payment.exchange_rate %>
+    <tr>
+      <td>
+        Exchange Rate
+      </td>
+      <td>
+        <%= link_to capital_distribution_payment.exchange_rate %>
+      </td>
+    </tr>
+    <% end %>
+
 
   </table>

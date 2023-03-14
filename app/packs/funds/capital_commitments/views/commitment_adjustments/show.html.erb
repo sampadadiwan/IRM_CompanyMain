@@ -69,6 +69,18 @@
       <%= l @commitment_adjustment.as_of if @commitment_adjustment.as_of %>
     </td>
   </tr>
+
+  <% if @commitment_adjustment.exchange_rate %>
+  <tr>
+    <td>
+      Exchange Rate
+    </td>
+    <td>
+      <%= link_to @commitment_adjustment.exchange_rate %>
+    </td>
+  </tr>
+  <% end %>
+
 </table>
 <div>
   <% if policy(@commitment_adjustment).update? %>

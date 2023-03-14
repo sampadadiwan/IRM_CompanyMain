@@ -24,7 +24,7 @@ class FundXlExport
     end
 
     workbook.add_worksheet(name: 'Fund Ratio Pivot') do |sheet|
-      sheet.add_pivot_table 'A4:F50', 'A1:H1000', sort_on_headers: ['Folio No'] do |pivot_table|
+      sheet.add_pivot_table 'A4:F50', 'A1:H10000', sort_on_headers: ['Folio No'] do |pivot_table|
         pivot_table.data_sheet = fund_ratios_sheet
         pivot_table.rows = ['Folio No']
         pivot_table.columns = ['Name']
@@ -45,7 +45,7 @@ class FundXlExport
     end
 
     workbook.add_worksheet(name: 'Fund Units Pivot') do |sheet|
-      sheet.add_pivot_table 'A4:F50', 'A1:J1000', sort_on_headers: ['Folio No'] do |pivot_table|
+      sheet.add_pivot_table 'A4:F50', 'A1:J10000', sort_on_headers: ['Folio No'] do |pivot_table|
         pivot_table.data_sheet = fund_units_sheet
         pivot_table.rows = ['Folio No']
         pivot_table.columns = ['Unit Type']
@@ -68,12 +68,12 @@ class FundXlExport
     end
 
     workbook.add_worksheet(name: 'Account Entry Pivot') do |sheet|
-      sheet.add_pivot_table 'A4:F50', 'A1:L1000', sort_on_headers: ['Folio'] do |pivot_table|
+      sheet.add_pivot_table 'A4:F50', 'A1:L100000', sort_on_headers: ['Folio'] do |pivot_table|
         pivot_table.data_sheet = account_entries_sheet
         pivot_table.rows = ['Folio']
-        pivot_table.columns = ['Name']
+        pivot_table.columns = ['Entry Type', 'Name']
         pivot_table.data = [ref: 'Amount', num_fmt: 4]
-        pivot_table.pages = ['Cumulative']
+        pivot_table.pages = ['Cumulative', 'Reporting Date']
       end
     end
   end
@@ -89,7 +89,7 @@ class FundXlExport
     end
 
     workbook.add_worksheet(name: 'Commitment Pivot') do |sheet|
-      sheet.add_pivot_table 'A4:F17', 'A1:H1000', sort_on_headers: ['Committed'] do |pivot_table|
+      sheet.add_pivot_table 'A4:F17', 'A1:H10000', sort_on_headers: ['Committed'] do |pivot_table|
         pivot_table.data_sheet = commitments_sheet
         pivot_table.rows = ['Unit Type']
         pivot_table.data = %w[Committed Called Collected]

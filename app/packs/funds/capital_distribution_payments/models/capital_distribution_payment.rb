@@ -57,7 +57,8 @@ class CapitalDistributionPayment < ApplicationRecord
   before_save :set_amount, if: :amount_cents_changed?
   def set_amount
     # Since the distribution amount is always in the fund currency, we compute te converted folio_amount based on exchange rates.
-    self.folio_amount_cents = convert_currency(fund.currency, capital_commitment.folio_currency, amount_cents)
+    self.folio_amount_cents = convert_currency(fund.currency, capital_commitment.folio_currency,
+                                               amount_cents, payment_date)
   end
 
   after_commit :send_notification, if: :completed

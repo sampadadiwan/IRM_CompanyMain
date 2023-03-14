@@ -100,6 +100,17 @@
     </td>
   </tr>
 
+  <% if @account_entry.exchange_rate %>
+  <tr>
+    <td>
+      Exchange Rate
+    </td>
+    <td>
+      <%= link_to @account_entry.exchange_rate %>
+    </td>
+  </tr>
+  <% end %>
+
   <% if @account_entry.explanation.present? %>
   <tr>
     <td>

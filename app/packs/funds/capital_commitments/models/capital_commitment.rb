@@ -65,7 +65,8 @@ class CapitalCommitment < ApplicationRecord
     # This is only excuted once when the commitment is created, to setup the orig amounts
     if orig_folio_committed_amount_cents.zero?
       self.orig_folio_committed_amount_cents = folio_committed_amount_cents
-      self.orig_committed_amount_cents = convert_currency(folio_currency, fund.currency, orig_folio_committed_amount_cents)
+      self.orig_committed_amount_cents = convert_currency(folio_currency, fund.currency,
+                                                          orig_folio_committed_amount_cents, created_at)
     end
   end
 
@@ -83,7 +84,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def committed_amount_at_exchange_rate
-    collected_amount_cents + adjustment_amount_cents + convert_currency(folio_currency, fund.currency, folio_pending_committed_amount.cents)
+    collected_amount_cents + adjustment_amount_cents + convert_currency(folio_currency, fund.currency, folio_pending_committed_amount.cents, Time.zone.today)
   end
 
   def folio_pending_committed_amount
