@@ -13,7 +13,7 @@ class ExchangeRateJob < ApplicationJob
 
         Rails.logger.debug { "Updating commitment due to exchange_rate for #{cc.investor_name} in #{cc.fund.name}" }
 
-        amount_cents = cc.commitment_at_new_exchange_rate - cc.committed_amount_cents
+        amount_cents = cc.committed_amount_at_exchange_rate - cc.committed_amount_cents
 
         reason = "Exchange Rate Changed: #{@exchange_rate}"
         as_of = Time.zone.today

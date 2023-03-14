@@ -159,11 +159,10 @@
       <%= money_to_currency @capital_commitment.committed_amount, params %>
       <% if @capital_commitment.foreign_currency? %>
         <br>
-        Collected + Pending
+        Adjustments + Original
         <br>
-        <%= money_to_currency(@capital_commitment.collected_amount, params) %> + 
-        <%= money_to_currency(@capital_commitment.folio_pending_committed_amount, params) %> x 
-        <%= @capital_commitment.exchange_rate(@capital_commitment.folio_currency, @capital_commitment.fund.currency, Time.zone.today) %>
+        <%= money_to_currency(@capital_commitment.adjustment_amount, params) %> + 
+        <%= money_to_currency(@capital_commitment.orig_committed_amount, params) %> 
       <% end %>
     </td>
   </tr>

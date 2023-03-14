@@ -61,14 +61,18 @@ class CapitalCommitment < ApplicationRecord
     self.unit_type = unit_type.strip if unit_type
   end
 
-  before_create :set_orig_amounts
   def set_orig_amounts
-    self.orig_folio_committed_amount_cents = folio_committed_amount_cents
-    self.orig_committed_amount_cents = convert_currency(folio_currency, fund.currency, orig_folio_committed_amount_cents)
+    # This is only excuted once when the commitment is created, to setup the orig amounts
+    if orig_folio_committed_amount_cents.zero?
+      self.orig_folio_committed_amount_cents = folio_committed_amount_cents
+      self.orig_committed_amount_cents = convert_currency(folio_currency, fund.currency, orig_folio_committed_amount_cents)
+    end
   end
 
   before_save :set_committed_amount
   def set_committed_amount
+    set_orig_amounts
+
     # Since the commitment amount is always in the folio currency, we compute te converted committed_amount based on exchange rates.
     self.folio_committed_amount_cents = orig_folio_committed_amount_cents + adjustment_folio_amount_cents
     self.committed_amount_cents = if foreign_currency?
