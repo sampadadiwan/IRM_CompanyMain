@@ -20,6 +20,23 @@
       <%= form.label :title %>
       <%= form.text_field :title, class: "form-control"  %>
     </div>
+
+    <div class="form-group" data-controller="hide-co-invest">
+      <%= form.label :commitment_type %>
+      <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control commitment_type', data: {action: "change->hide-co-invest#onChange"} %>
+    </div>
+
+    <div class="form-group co-invest">
+      <%= form.label :folio_id %>
+      <%= form.select :capital_commitment_id, capital_distribution.fund.capital_commitments.map{|cc| ["#{cc.investor_name}: #{cc.folio_id}", cc.id] }, {include_blank: true}, class: 'form-control' %>
+      <small class="text-muted">Select the Folio for the CoInvestment</small>
+    </div>
+
+    <div class="form-group pool">
+      <%= form.label :distribution_on %>
+      <%= form.select :distribution_on, CapitalDistribution.distribution_ons.keys, {}, class: 'form-control' %>
+      <small class="text-muted">Select the Folio for the CoInvestment</small>
+    </div>
       
     <div class="form-group">
       <%= form.label :gross_amount %> <span class="formatted_currency"></span>

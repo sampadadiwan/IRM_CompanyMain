@@ -27,7 +27,7 @@ class DefaultUnitAllocationEngine
       price_cents = capital_call.unit_prices[unit_type]["price"].to_d * 100
       premium_cents = capital_call.unit_prices[unit_type]["premium"].to_d * 100
       # Calculate the quantity to be allocated
-      quantity = price_cents.positive? ? (capital_remittance.collected_amount_cents / price_cents) : 0
+      quantity = price_cents.positive? ? (capital_remittance.collected_amount_cents / (price_cents + premium_cents)) : 0
 
       fund_unit = find_or_new_remittance(capital_remittance, unit_type)
 

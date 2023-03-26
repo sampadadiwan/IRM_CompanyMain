@@ -69,6 +69,7 @@ Rails/SkipsModelValidations:
     - 'app/packs/misc/investor_notices/jobs/investor_notice_job.rb'
     - 'app/packs/misc/investor_notices/models/investor_notice.rb'
     - 'app/packs/funds/funds/jobs/fund_ratios_job.rb'
+    - 'app/packs/core/folders/jobs/folder_defaults_job.rb'
 Rails/HasAndBelongsToMany:
   Exclude:
     - 'app/models/role.rb'
@@ -83,7 +84,7 @@ Lint/RescueException:
   Exclude:
     - 'app/packs/funds/capital_commitments/jobs/account_entry_allocation_job.rb'
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
-    - 'app/packs/funds/capital_commitments/services/formula_printer.rb'
+    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb'
 
 Lint/DuplicateBranch:
   Exclude:
@@ -109,7 +110,7 @@ Security/Eval:
     - 'app/packs/secondaries/offers/models/offer.rb'
     - 'app/packs/secondaries/interests/models/interest.rb'
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
-    - 'app/packs/funds/capital_commitments/services/formula_printer.rb'
+    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb'
 
 # Metrics Cops
 Metrics/CyclomaticComplexity:

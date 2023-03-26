@@ -17,6 +17,9 @@
         <thead>
             <tr>
                 <th>
+                    Type
+                </th>
+                <th>
                     Folio No
                 </th>
                 <th>
@@ -45,13 +48,14 @@
                 </th>
                 
                 <th>
+                    Pending
+                </th>
+
+                <th>
                     Distributed
                 </th>
                 
-                <th>
-                    Completed
-                </th>
-
+                
                 <% if params[:show_docs].present? %>
                 <input id="show_docs" value="true" hidden>
                 <th>

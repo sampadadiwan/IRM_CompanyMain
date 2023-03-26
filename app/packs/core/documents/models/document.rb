@@ -51,6 +51,14 @@ class Document < ApplicationRecord
     self.send_email = true
   end
 
+  def setup_folder_defaults
+    if folder
+      self.printing = folder.printing
+      self.download = folder.download
+      self.orignal = folder.orignal
+    end
+  end
+
   def setup_folder
     self.folder = owner.document_folder if folder.nil? && owner
     self.owner ||= folder.owner

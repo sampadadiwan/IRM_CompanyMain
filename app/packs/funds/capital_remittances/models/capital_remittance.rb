@@ -15,11 +15,13 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :capital_commitment
   has_one :investor_kyc, through: :capital_commitment
   belongs_to :investor
-  has_many :capital_remittance_payments
+  has_many :capital_remittance_payments, dependent: :destroy
 
   scope :paid, -> { where(status: "Paid") }
   scope :pending, -> { where(status: "Pending") }
   scope :verified, -> { where(verified: true) }
+  scope :pool, -> { joins(:capital_commitment).where("capital_commitments.commitment_type=?", "Pool") }
+  scope :co_invest, -> { joins(:capital_commitment).where("capital_commitments.commitment_type=?", "CoInvest") }
 
   monetize :call_amount_cents, :collected_amount_cents, :committed_amount_cents, with_currency: ->(i) { i.fund.currency }
   monetize :folio_call_amount_cents, :folio_collected_amount_cents, :folio_committed_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
@@ -42,6 +44,7 @@ class CapitalRemittance < ApplicationRecord
 
   counter_culture :capital_commitment, column_name: 'call_amount_cents',
                                        delta_column: 'call_amount_cents'
+
   counter_culture :capital_commitment, column_name: 'folio_call_amount_cents',
                                        delta_column: 'folio_call_amount_cents'
 
@@ -51,11 +54,23 @@ class CapitalRemittance < ApplicationRecord
                                          ["capital_remittances.verified = ?", true] => 'collected_amount_cents'
                                        }
 
-  counter_culture :fund, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
+  counter_culture :fund, column_name:
+                        proc { |r| r.verified && r.capital_commitment.Pool? ? 'collected_amount_cents' : nil },
                          delta_column: 'collected_amount_cents',
-                         column_names: {
-                           ["capital_remittances.verified = ?", true] => 'collected_amount_cents'
-                         }
+                         column_names: lambda {
+                                         {
+                                           CapitalRemittance.verified.pool => :collected_amount_cents
+                                         }
+                                       }
+
+  counter_culture :fund, column_name:
+                        proc { |r| r.verified && r.capital_commitment.CoInvest? ? 'co_invest_collected_amount_cents' : nil },
+                         delta_column: 'collected_amount_cents',
+                         column_names: lambda {
+                                         {
+                                           CapitalRemittance.verified.co_invest => :co_invest_collected_amount_cents
+                                         }
+                                       }
 
   before_save :set_status
   before_create :set_call_amount

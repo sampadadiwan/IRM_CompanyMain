@@ -106,6 +106,49 @@
             <%= money_to_currency fund.distribution_amount, params %>
           </td>
         </tr>
+        
+
+        <% if fund.co_invest_committed_amount_cents > 0 %>
+
+          <tr>
+            <td>
+              Co Invest Committed Amount
+            </td>
+            <td>
+              <%= money_to_currency fund.co_invest_committed_amount, params %>
+            </td>
+          </tr>
+          
+          <tr>
+            <td>
+              Co Invest Call Amount
+            </td>
+            <td>
+              <%= money_to_currency fund.co_invest_call_amount, params %>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Co Invest Collected Amount
+            </td>
+            <td>
+              <%= money_to_currency fund.co_invest_collected_amount, params %>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Co Invest Payments Distributed
+            </td>
+            <td>
+              <%= money_to_currency fund.co_invest_distribution_amount, params %>
+            </td>
+          </tr>
+          
+          
+        <% end %>
+
 
         <% if fund.unit_types.present? %>
 

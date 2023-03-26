@@ -77,6 +77,7 @@ class DocumentsController < ApplicationController
   # GET /documents/new
   def new
     @document = Document.new(document_params)
+    @document.setup_folder_defaults
     setup_custom_fields(@document)
     authorize @document
   end

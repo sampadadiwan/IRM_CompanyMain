@@ -30,6 +30,6 @@ class AggregatePortfolioInvestmentPolicy < ApplicationPolicy
   end
 
   def destroy?
-    update?
+    (user.entity_id == record.entity_id)
   end
 end

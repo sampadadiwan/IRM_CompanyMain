@@ -43,7 +43,7 @@ include CurrencyHelper
     (1..count.to_i).each do |i|
       pi = FactoryBot.build(:portfolio_investment, entity: @entity, fund: @fund)
       key_values(pi, args)
-      pi.save
+      pi.save!
       puts "\n#########PortfolioInvestment##########\n"
       puts pi.to_json
     end
@@ -87,7 +87,7 @@ end
 Then('the fmv must be calculated for the portfolio') do  
   PortfolioInvestment.all.each do |pi|
     pi.fmv_cents.abs.should > 0
-    pi.fmv_cents.should == (pi.quantity.abs * @valuation.per_share_value_cents)
+    pi.fmv_cents.should == (pi.quantity * @valuation.per_share_value_cents)
   end
 end
 
@@ -115,6 +115,10 @@ Then('the portfolio investments must have the data in the sheet') do
     pi.quantity.should == user_data["Quantity"].to_d
     pi.investment_type.should == user_data["Investment Type"]
     pi.notes.should == user_data["Notes"]
+    pi.commitment_type.should == user_data["Type"]
+    if pi.commitment_type == "CoInvest"
+      pi.capital_commitment_id.should == @fund.capital_commitments.where(folio_id: user_data["Folio No"]).first.id
+    end  
     pi.investment_date.should == Date.parse(user_data["Investment Date"].to_s)    
   end
 end
@@ -164,10 +168,18 @@ Then('there must be {string} portfolio attributions created') do |count|
     ap pa
     pa.sold_pi.sell?.should == true
     pa.sold_pi.cost_of_sold_cents.should == PortfolioAttribution.all.map{|x| x.quantity * x.bought_pi.cost_cents}.sum
-    pa.sold_pi.gain_cents.should == pa.sold_pi.fmv_cents - pa.sold_pi.cost_of_sold_cents
+    pa.sold_pi.gain_cents.should == pa.sold_pi.fmv_cents.abs - pa.sold_pi.cost_of_sold_cents
     pa.bought_pi.buy?.should == true
     pa.bought_pi.sold_quantity.should == pa.quantity
     pa.bought_pi.net_quantity.should == pa.bought_pi.quantity + pa.bought_pi.sold_quantity
     pa.sold_pi.quantity.should == PortfolioAttribution.all.sum(:quantity)
+  end
+end
+
+Then('the aggregate portfolio investments must have cost of sold computed') do
+  @fund.reload
+  @fund.portfolio_investments.sells.each do |pi|
+    # binding.pry
+    pi.aggregate_portfolio_investment.cost_of_sold_cents.should == pi.aggregate_portfolio_investment.portfolio_investments.sells.sum(:cost_of_sold_cents)
   end
 end

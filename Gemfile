@@ -122,7 +122,7 @@ gem 'ancestry'
 gem 'caxlsx'
 gem 'caxlsx_rails'
 # Maintain counter caches
-gem 'counter_culture', '~> 2.0'
+gem 'counter_culture', '~> 3.3'
 gem 'impressionist'
 gem 'roo'
 

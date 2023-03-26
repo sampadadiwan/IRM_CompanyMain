@@ -9,6 +9,9 @@
     <%= fund_formula.rule_type %>
   </td>
   <td>
+    <%= fund_formula.commitment_type %>
+  </td>
+  <td>
     <%= fund_formula.formula %>
   </td>
   <td>
@@ -22,8 +25,6 @@
   </td>
   <td>
     <%= link_to "Show", fund_formula , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Edit", edit_fund_formula_path(fund_formula) , {class: "btn btn-outline-success"}%>
-    <%= link_to "Run Formula", allocate_form_fund_path(id: fund_formula.fund_id, 
-                fund_formula_id: fund_formula.id), class: "btn btn-outline-success" if params[:debug].present? %> 
+    <%= link_to "Edit", edit_fund_formula_path(fund_formula) , {class: "btn btn-outline-success"} if policy(fund_formula).update? %>
   </td>
 </tr>

@@ -12,7 +12,11 @@ class AccountEntryDecorator < ApplicationDecorator
   end
 
   def amount
-    h.money_to_currency object.amount
+    if object.name.include?("Percentage")
+      "#{object.amount_cents} %"
+    else
+      h.money_to_currency object.amount
+    end
   end
 
   # Just an example of a complex method you can add to you decorator

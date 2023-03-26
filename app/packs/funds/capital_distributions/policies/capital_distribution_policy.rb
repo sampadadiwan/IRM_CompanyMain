@@ -32,6 +32,10 @@ class CapitalDistributionPolicy < FundBasePolicy
       permissioned_advisor?(:update)
   end
 
+  def payments_completed?
+    update?
+  end
+
   def approve?
     !record.approved && create? && user.has_cached_role?(:approver)
   end

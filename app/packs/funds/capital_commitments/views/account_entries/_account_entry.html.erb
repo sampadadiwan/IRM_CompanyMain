@@ -18,9 +18,15 @@
     <%= account_entry.name %>
   </td>
   <td>
-    <%= money_to_currency account_entry.amount, params %>
+    <% if account_entry.name.include?("Percentage") %>
+      <%= account_entry.amount %> %
+    <% else %>
+      <%= money_to_currency account_entry.amount, params %>
+    <% end %>
   </td>
-  
+  <td>
+    <%= account_entry.commitment_type %>
+  </td>
   <td>
     <%= link_to "Show", account_entry , {class: "btn btn-outline-primary"}%>
   </td>

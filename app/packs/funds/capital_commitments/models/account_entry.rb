@@ -9,6 +9,10 @@ class AccountEntry < ApplicationRecord
   belongs_to :investor, optional: true
   belongs_to :parent, polymorphic: true, optional: true
 
+  enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest", All: "All" }
+  scope :pool, -> { where(commitment_type: 'Pool') }
+  scope :co_invest, -> { where(commitment_type: 'CoInvest') }
+
   serialize :explanation, Array
 
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }

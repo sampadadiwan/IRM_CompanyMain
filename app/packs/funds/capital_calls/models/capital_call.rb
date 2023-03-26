@@ -7,6 +7,10 @@ class CapitalCall < ApplicationRecord
 
   include ForInvestor
 
+  enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
+  scope :pool, -> { where(commitment_type: 'Pool') }
+  scope :co_invest, -> { where(commitment_type: 'CoInvest') }
+
   belongs_to :entity
   belongs_to :fund, touch: true
 
@@ -17,11 +21,20 @@ class CapitalCall < ApplicationRecord
 
   has_many :capital_remittances, dependent: :destroy
 
-  validates :name, :due_date, :call_date, :percentage_called, :fund_closes, presence: true
+  validates :name, :due_date, :call_date, :percentage_called, :fund_closes, :commitment_type, presence: true
   validates :percentage_called, numericality: { in: 0..100 }
 
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
-  counter_culture :fund, column_name: 'call_amount_cents', delta_column: 'call_amount_cents'
+
+  counter_culture :fund,
+                  column_name: proc { |r| r.Pool? ? 'call_amount_cents' : 'co_invest_call_amount_cents' },
+                  delta_column: 'call_amount_cents',
+                  column_names: lambda {
+                                  {
+                                    CapitalCall.pool => :call_amount_cents,
+                                    CapitalCall.co_invest => :co_invest_call_amount_cents
+                                  }
+                                }
 
   before_save :compute_call_amount
   def compute_call_amount
@@ -30,11 +43,13 @@ class CapitalCall < ApplicationRecord
 
   # This is a list of commitments for which this call is applicable
   def applicable_to
+    commitments = Pool? ? fund.capital_commitments.pool : fund.capital_commitments.co_invest
+
     # The call is applicable only to those commitments which have a fund_close specified in the call
     if fund_closes.nil? || fund_closes.include?("All")
-      fund.capital_commitments
+      commitments
     else
-      fund.capital_commitments.where(fund_close: fund_closes)
+      commitments.where(fund_close: fund_closes)
     end
   end
 
@@ -74,5 +89,9 @@ class CapitalCall < ApplicationRecord
     capital_remittances.pending.each do |cr|
       CapitalRemittancesMailer.with(id: cr.id).reminder_capital_remittance.deliver_later
     end
+  end
+
+  def fund_units
+    FundUnit.where(fund_id:, owner_type: "CapitalRemittance", owner_id: capital_remittance_ids)
   end
 end

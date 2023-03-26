@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
+ActiveRecord::Schema[7.0].define(version: 2023_03_25_100028) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -69,6 +69,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
     t.boolean "generated", default: false
     t.decimal "folio_amount_cents", precision: 27, scale: 4, default: "0.0"
     t.bigint "exchange_rate_id"
+    t.string "commitment_type", limit: 10, default: "Pool"
     t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative"], name: "idx_account_entries_reporting_date_uniq", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
@@ -217,6 +218,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
     t.decimal "cost_cents", precision: 20, scale: 2, default: "0.0"
     t.string "investment_type", limit: 20
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "commitment_type", limit: 10, default: "Pool"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
@@ -357,6 +359,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
     t.bigint "document_folder_id"
     t.text "unit_prices"
     t.string "fund_closes", limit: 100
+    t.string "commitment_type", limit: 10, default: "Pool"
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_calls_on_document_folder_id"
@@ -408,6 +411,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
     t.decimal "orig_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "orig_folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "exchange_rate_id"
+    t.string "commitment_type", limit: 10, default: "pool"
+    t.boolean "feeder_fund", default: false
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
@@ -431,7 +436,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "completed", default: false
-    t.decimal "percentage", precision: 11, scale: 8, default: "0.0"
+    t.decimal "percentage", precision: 12, scale: 8, default: "0.0"
     t.string "folio_id", limit: 20
     t.bigint "capital_commitment_id"
     t.datetime "deleted_at"
@@ -477,7 +482,11 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
     t.decimal "reinvestment_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.decimal "cost_of_investment_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "commitment_type", limit: 10, default: "Pool"
+    t.bigint "capital_commitment_id"
+    t.integer "distribution_on", default: 0
     t.index ["approved_by_user_id"], name: "index_capital_distributions_on_approved_by_user_id"
+    t.index ["capital_commitment_id"], name: "index_capital_distributions_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_distributions_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_distributions_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_distributions_on_entity_id"
@@ -911,6 +920,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
     t.bigint "owner_id"
     t.datetime "deleted_at"
     t.string "ancestry"
+    t.boolean "download", default: false
+    t.boolean "printing", default: false
+    t.boolean "orignal", default: false
     t.index ["ancestry"], name: "index_folders_on_ancestry"
     t.index ["deleted_at"], name: "index_folders_on_deleted_at"
     t.index ["entity_id"], name: "index_folders_on_entity_id"
@@ -953,6 +965,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
     t.boolean "enabled", default: false
     t.string "entry_type", limit: 50
     t.boolean "roll_up", default: true
+    t.string "commitment_type", limit: 10
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
   end
@@ -1070,9 +1083,14 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
     t.datetime "deleted_at"
     t.bigint "data_room_folder_id"
     t.bigint "document_folder_id"
-    t.string "unit_types", limit: 50
+    t.string "unit_types", limit: 100
     t.string "units_allocation_engine", limit: 50
     t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "co_invest_call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "co_invest_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "co_invest_distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "co_invest_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.boolean "editable_formulas", default: false
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -1728,7 +1746,11 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
     t.decimal "net_quantity", precision: 20, scale: 2, default: "0.0"
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "commitment_type", limit: 10, default: "Pool"
+    t.string "folio_id", limit: 20
+    t.bigint "capital_commitment_id"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
+    t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["document_folder_id"], name: "index_portfolio_investments_on_document_folder_id"
     t.index ["entity_id"], name: "index_portfolio_investments_on_entity_id"
     t.index ["form_type_id"], name: "index_portfolio_investments_on_form_type_id"
@@ -2078,6 +2100,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
   add_foreign_key "capital_distribution_payments", "form_types"
   add_foreign_key "capital_distribution_payments", "funds"
   add_foreign_key "capital_distribution_payments", "investors"
+  add_foreign_key "capital_distributions", "capital_commitments"
   add_foreign_key "capital_distributions", "entities"
   add_foreign_key "capital_distributions", "folders", column: "document_folder_id"
   add_foreign_key "capital_distributions", "form_types"
@@ -2229,6 +2252,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_14_100959) do
   add_foreign_key "portfolio_attributions", "portfolio_investments", column: "bought_pi_id"
   add_foreign_key "portfolio_attributions", "portfolio_investments", column: "sold_pi_id"
   add_foreign_key "portfolio_investments", "aggregate_portfolio_investments"
+  add_foreign_key "portfolio_investments", "capital_commitments"
   add_foreign_key "portfolio_investments", "entities"
   add_foreign_key "portfolio_investments", "folders", column: "document_folder_id"
   add_foreign_key "portfolio_investments", "form_types"

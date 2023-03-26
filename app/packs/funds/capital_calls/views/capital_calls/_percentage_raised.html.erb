@@ -2,6 +2,6 @@
 
 <div class="progress">
     <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_call.percentage_raised %>%" aria-valuenow="<%=capital_call.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
-    <%= capital_call.percentage_raised %> %
+    <%= capital_call.percentage_raised.round(2) %> %
     </div>
 </div>

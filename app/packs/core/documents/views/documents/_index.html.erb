@@ -31,6 +31,13 @@
                 {class: "btn btn-outline-primary" }  if policy(document).create? %>
 
 
+    <%= link_to "Upload Documents", 
+        new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
+            "import_upload[owner_type]": "Entity", 
+            "import_upload[import_type]": "Documents", 
+            "sample_upload": "DOCS_SAMPLE"), 
+            { class: "btn btn-outline-primary"}  %> 
+            
     <% 
       owner ||= nil 
       @deal  ||= nil

@@ -1,5 +1,5 @@
 class ImportCapitalCommittment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type", "Type"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -40,12 +40,14 @@ class ImportCapitalCommittment < ImportUtil
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
     folio_id = user_data["Folio No"].presence
     unit_type = user_data["Unit Type"].presence
+    commitment_type = user_data["Type"].presence
     folio_currency = user_data["Folio Currency"].presence
 
     if fund && investor
       # Make the capital_commitment
       capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
                                                  fund_close: user_data["Fund Close"].strip,
+                                                 commitment_type:,
                                                  fund:, investor:, investor_name: investor.investor_name,
                                                  folio_currency:, unit_type:, notes: user_data["Notes"])
 
@@ -73,6 +75,9 @@ class ImportCapitalCommittment < ImportUtil
   def post_process(import_upload, _context)
     # Import it
     CapitalCommitment.import @commitments, on_duplicate_key_update: %i[folio_id notes committed_amount_cents]
+    # Fix counters
+    CapitalCommitment.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
+    # Ensure ES is updated
     CapitalCommitmentIndex.import(CapitalCommitment.where(entity_id: import_upload.entity_id))
 
     fund_ids = @commitments.collect(&:fund_id).to_set.to_a
@@ -84,9 +89,6 @@ class ImportCapitalCommittment < ImportUtil
     Fund.where(id: fund_ids).each do |fund|
       # Compute the percentages
       fund.capital_commitments.last&.compute_percentage
-      # Ensure the counter caches are updated
-      fund.committed_amount_cents = fund.capital_commitments.sum(:committed_amount_cents)
-      fund.collected_amount_cents = fund.capital_commitments.sum(:collected_amount_cents)
       fund.save
     end
   end

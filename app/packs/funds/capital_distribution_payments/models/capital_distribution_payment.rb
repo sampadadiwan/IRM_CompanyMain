@@ -31,10 +31,21 @@ class CapitalDistributionPayment < ApplicationRecord
                   }
 
   counter_culture :fund,
-                  column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil },
+                  column_name: proc { |r| r.completed && r.capital_commitment.Pool? ? 'distribution_amount_cents' : nil },
                   delta_column: 'amount_cents',
-                  column_names: {
-                    ["capital_distribution_payments.completed = ?", true] => 'distribution_amount_cents'
+                  column_names: lambda {
+                    {
+                      CapitalDistributionPayment.completed.pool => :distribution_amount_cents
+                    }
+                  }
+
+  counter_culture :fund,
+                  column_name: proc { |r| r.completed && r.capital_commitment.CoInvest? ? 'co_invest_distribution_amount_cents' : nil },
+                  delta_column: 'amount_cents',
+                  column_names: lambda {
+                    {
+                      CapitalDistributionPayment.completed.co_invest => :co_invest_distribution_amount_cents
+                    }
                   }
 
   counter_culture :capital_commitment,
@@ -43,6 +54,8 @@ class CapitalDistributionPayment < ApplicationRecord
 
   scope :completed, -> { where(completed: true) }
   scope :incomplete, -> { where(completed: false) }
+  scope :pool, -> { joins(:capital_commitment).where("capital_commitments.commitment_type=?", "Pool") }
+  scope :co_invest, -> { joins(:capital_commitment).where("capital_commitments.commitment_type=?", "CoInvest") }
 
   before_validation :ensure_commitment
   def ensure_commitment

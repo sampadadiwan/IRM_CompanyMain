@@ -6,6 +6,7 @@ export default class extends ServerDatatableController {
     return [
       {"data": "fund_name"},
       {"data": "name"},
+      {"data": "commitment_type"},
       {"data": "percentage_called"},
       {"data": "due_date"},
       {"data": "call_amount"},

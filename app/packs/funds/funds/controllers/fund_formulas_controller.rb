@@ -77,6 +77,6 @@ class FundFormulasController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def fund_formula_params
-    params.require(:fund_formula).permit(:fund_id, :name, :description, :formula, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up)
+    params.require(:fund_formula).permit(:fund_id, :name, :description, :formula, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :commitment_type)
   end
 end

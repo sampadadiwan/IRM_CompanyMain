@@ -22,11 +22,13 @@ class CapitalDistributionJob < ApplicationJob
 
   def generate_payments
     fund = @capital_distribution.fund
+    capital_commitments = @capital_distribution.Pool? ? fund.capital_commitments.pool : [@capital_distribution.capital_commitment]
     # Need to distriute the capital based on the percentage holding of the fund by the investor
-    fund.capital_commitments.each do |cc|
-      # Compute the amount based on the investment % in the fund
-      amount_cents = @capital_distribution.net_amount_cents * cc.percentage / 100.0
-      cost_of_investment_cents = @capital_distribution.cost_of_investment_cents * cc.percentage / 100.0
+    capital_commitments.each do |cc|
+      # Compute the amount based on the distribution_percentage of the capital_commitment
+      percentage = @capital_distribution.distribution_percentage(cc)
+      amount_cents = (@capital_distribution.net_amount_cents * percentage / 100.0).round(2)
+      cost_of_investment_cents = (@capital_distribution.cost_of_investment_cents * percentage / 100.0).round(2)
 
       if CapitalDistributionPayment.exists?(capital_distribution_id: @capital_distribution.id, capital_commitment_id: cc.id)
         Rails.logger.debug { "Skipping CapitalDistributionPayment for #{cc}, already exists" }
@@ -38,7 +40,7 @@ class CapitalDistributionJob < ApplicationJob
                                                  investor_id: cc.investor_id, cost_of_investment_cents:,
                                                  investor_name: cc.investor_name, amount_cents:,
                                                  payment_date: @capital_distribution.distribution_date,
-                                                 percentage: cc.percentage, folio_id: cc.folio_id,
+                                                 percentage: percentage.round(2), folio_id: cc.folio_id,
                                                  completed: @capital_distribution.generate_payments_paid)
 
         next unless payment.valid?

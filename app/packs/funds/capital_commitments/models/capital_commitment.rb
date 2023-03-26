@@ -8,6 +8,11 @@ class CapitalCommitment < ApplicationRecord
 
   include ForInvestor
 
+  COMMITMENT_TYPES = %w[Pool CoInvest].freeze
+  enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
+  scope :pool, -> { where(commitment_type: 'Pool') }
+  scope :co_invest, -> { where(commitment_type: 'CoInvest') }
+
   update_index('capital_commitment') { self }
 
   scope :lp_onboarding_complete, -> { where(onboarding_completed: true) }
@@ -48,12 +53,20 @@ class CapitalCommitment < ApplicationRecord
   validates :folio_committed_amount_cents, numericality: { greater_than: 0 }
   # validates :committed_amount_cents, numericality: { greater_than_or_equal_to: :collected_amount_cents }
 
-  validates :folio_id, :fund_close, presence: true
+  validates :folio_id, :fund_close, :commitment_type, presence: true
   validates_uniqueness_of :folio_id, scope: :fund_id
 
   delegate :currency, to: :fund
 
-  counter_culture :fund, column_name: 'committed_amount_cents', delta_column: 'committed_amount_cents'
+  counter_culture :fund,
+                  column_name: proc { |r| r.Pool? ? 'committed_amount_cents' : 'co_invest_committed_amount_cents' },
+                  delta_column: 'committed_amount_cents',
+                  column_names: lambda {
+                    {
+                      pool => 'committed_amount_cents',
+                      co_invest => 'co_invest_committed_amount_cents'
+                    }
+                  }
 
   before_save :set_investor_name
   def set_investor_name
@@ -101,8 +114,11 @@ class CapitalCommitment < ApplicationRecord
   after_destroy :compute_percentage
   after_save :compute_percentage, if: :saved_change_to_committed_amount_cents?
   def compute_percentage
-    total_committed_amount_cents = fund.capital_commitments.sum(:committed_amount_cents)
-    fund.capital_commitments.update_all("percentage=100.0*committed_amount_cents/#{total_committed_amount_cents}")
+    total_committed_amount_cents = fund.capital_commitments.pool.sum(:committed_amount_cents)
+    fund.capital_commitments.pool.update_all("percentage=100.0*committed_amount_cents/#{total_committed_amount_cents}")
+
+    total_committed_amount_cents = fund.capital_commitments.co_invest.sum(:committed_amount_cents)
+    fund.capital_commitments.co_invest.update_all("percentage=100.0*committed_amount_cents/#{total_committed_amount_cents}")
   end
 
   def foreign_currency?
@@ -126,7 +142,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def to_s
-    "#{investor_name}, Folio: #{folio_id}, Committed: #{committed_amount}"
+    "#{investor_name}, Folio: #{folio_id}"
   end
 
   def folder_path
@@ -207,6 +223,7 @@ class CapitalCommitment < ApplicationRecord
     ae = account_entries.new(name: new_name, entry_type:, amount_cents: cum_amount_cents, entity_id:, fund_id:, investor_id:, folio_id:, reporting_date: end_date, period: "As of #{end_date}", cumulative: true, generated: true)
 
     ae.save!
+    ae
   end
 
   def cumulative_account_entry(name, entry_type, start_date, end_date, cumulative: true)

@@ -4,10 +4,8 @@
     <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
-    <% if params[:debug].present? %>
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#portfolio-attributions-tab"
           data-action="click->tabdetails#loadData">Attribution</a>
-    <% end %>
   </nav>
   
   <div class="tab-content" data-controller="datatable">
@@ -18,13 +16,11 @@
       </div>
     </div>
 
-    <% if params[:debug].present? %>
     <div id="portfolio-attributions-tab" class="tab-pane fade in">
       <div id="portfolio_attributions" class="associated_entity">
         <%= render "/portfolio_attributions/index", portfolio_attributions: portfolio_investment.portfolio_attributions %>
       </div>
     </div>
-    <% end %>
 
   </div>
 

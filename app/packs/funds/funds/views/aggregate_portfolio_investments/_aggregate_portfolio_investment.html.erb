@@ -1,5 +1,8 @@
 <tr id="<%= dom_id aggregate_portfolio_investment %>">
   <td>
+    <%= aggregate_portfolio_investment.commitment_type %>
+  </td>
+  <td>
     <%= link_to aggregate_portfolio_investment.portfolio_company.investor_name, aggregate_portfolio_investment.portfolio_company %>
   </td>
   <td>
@@ -10,6 +13,9 @@
   </td>
   <td>
     <%= money_to_currency aggregate_portfolio_investment.fmv, params %>
+  </td>
+  <td>
+    <%= money_to_currency aggregate_portfolio_investment.cost_of_sold, params %>
   </td>
   <td>
     <%= money_to_currency aggregate_portfolio_investment.avg_cost, params %>

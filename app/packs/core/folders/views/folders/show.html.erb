@@ -33,15 +33,32 @@
     </tr>
 
     <% if @folder.owner %>
-    <tr>
-      <td>
-        Owner
-      </td>
-      <td>
-        <%= link_to @folder.owner_type, @folder.owner %>
-      </td>
-    </tr>
+
+      <tr>
+        <td>
+          Owner
+        </td>
+        <td>
+          <%= link_to @folder.owner_type, @folder.owner %>
+        </td>
+      </tr>
+
     <% end %>
+
+    <% if @folder.entity_id == current_user.entity_id %>
+      <tr>
+          <td>
+            Defaults 
+          </td>
+          <td>
+            Download <%= display_boolean @folder.download %>     
+            &nbsp;&nbsp; Printing <%= display_boolean @folder.printing %>   
+            &nbsp;&nbsp; Original <%= display_boolean @folder.orignal  %>                                
+          </td>
+      </tr>
+
+    <% end %>
+                  
 
 
 

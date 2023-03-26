@@ -52,6 +52,8 @@
                      </tr>
                   <% end %>
 
+                  <input type="text" id="download_document" hidden="hidden" value="<%= @document.download %>" />
+                  <input type="text" id="printing_document" hidden="hidden" value="<%= @document.printing %>" />
 
                   <% if @document.entity_id == current_user&.entity_id %>
 
@@ -94,17 +96,7 @@
                         <%= link_to @document.owner_type, [@document.owner, tab: "docs-tab"] if @document.owner %>
                      </td>
                   </tr>
-
-                  <input type="text" id="download_document" hidden="hidden" value="<%= @document.download %>" />
-                  <input type="text" id="printing_document" hidden="hidden" value="<%= @document.printing %>" />
-
-                  <% if policy(@document).sign? %>
-                     <input type="text" id="sign_document" hidden="hidden" value="<%= @document.signature_enabled %>" />
-                     <% @document.signature_type.each do |st| %>
-                        <input type="text" id="signature_<%= st %>" hidden="hidden" value="true" />
-                     <% end %>
-                  <% end %>
-
+               
                   <% if current_user && current_user.entity_id == @document.entity_id %>
 
                   <tr>

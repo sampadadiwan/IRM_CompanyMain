@@ -34,7 +34,8 @@ class Fund < ApplicationRecord
 
   has_many :access_rights, as: :owner, dependent: :destroy
 
-  monetize :call_amount_cents, :committed_amount_cents, :collected_amount_cents, :distribution_amount_cents, :total_units_premium_cents, with_currency: ->(i) { i.currency }
+  monetize :call_amount_cents, :committed_amount_cents, :collected_amount_cents, :distribution_amount_cents,
+           :co_invest_call_amount_cents, :co_invest_committed_amount_cents, :co_invest_collected_amount_cents, :co_invest_distribution_amount_cents, :total_units_premium_cents, with_currency: ->(i) { i.currency }
 
   validates :name, :currency, presence: true
 

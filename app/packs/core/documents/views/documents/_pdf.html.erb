@@ -4,10 +4,7 @@
    <input id="viewer_link" , value="<%=@document.file_url()%>" hidden="hidden"></input>
 
    <% if current_user %>
-   <input id="viewer_watermark" ,
-      value="<%= current_user.entity ? current_user.entity.name : current_user.full_name %>"
-      hidden="hidden">
-   </input>
+      <input id="viewer_watermark" value="<%= current_user.entity.name %>" hidden="hidden" />
    <% end %>
 
    <div class="card-header">

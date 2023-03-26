@@ -2,7 +2,7 @@ class FileUploader < Shrine
   ALLOWED_TYPES = %w[*/*].freeze
   Attacher.validate do
     # validate_mime_type ALLOWED_TYPES
-    validate_max_size 500 * 1024 * 1024, message: "is too large (max is 500 MB)"
+    validate_max_size 2048 * 1024 * 1024, message: "is too large (max is 2GB)"
   end
 
   def generate_location(io, record: nil, derivative: nil, **)

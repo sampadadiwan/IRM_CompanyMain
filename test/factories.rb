@@ -212,6 +212,7 @@ FactoryBot.define do
     reinvestment { gross_amount * 0.5 }
     distribution_date { Date.today + rand(5).weeks }
     title { "Capital Dist #{rand(1..10)}" }
+    commitment_type {"Pool"}
     unit_prices {
       fund.unit_types.split(",").map{|ut| [ut.strip, 100 * (rand(2) + 1)]}.to_h if fund.unit_types
     }
@@ -239,6 +240,7 @@ FactoryBot.define do
     unit_prices {
       fund.unit_types.split(",").map{|ut| [ut.strip, "price" => 100 * (rand(2) + 1), "premium" => 10 * (rand(2) + 1) ]}.to_h if fund.unit_types
     }
+    commitment_type { "Pool" }
   end
 
   factory :capital_commitment do
@@ -251,6 +253,7 @@ FactoryBot.define do
     folio_currency { fund.currency }
     fund_close { "First Close" }
     notes { Faker::Company.catch_phrase }
+    commitment_type { "Pool" }
   end
 
   factory :fund do

@@ -30,7 +30,8 @@ class FundDashboard < Administrate::BaseDashboard
     call_amount_cents: Field::String.with_options(searchable: false),
     properties: Field::Text,
     distribution_amount_cents: Field::String.with_options(searchable: false),
-    versions: Field::HasMany
+    versions: Field::HasMany,
+    editable_formulas: Field::BooleanEmoji
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -41,6 +42,7 @@ class FundDashboard < Administrate::BaseDashboard
   COLLECTION_ATTRIBUTES = %i[
     entity
     name
+    editable_formulas
     tag_list
   ].freeze
 
@@ -50,6 +52,7 @@ class FundDashboard < Administrate::BaseDashboard
     entity
     id
     name
+    editable_formulas
     committed_amount_cents
     details
     collected_amount_cents
@@ -78,6 +81,7 @@ class FundDashboard < Administrate::BaseDashboard
   FORM_ATTRIBUTES = %i[
 
     name
+    editable_formulas
     committed_amount_cents
     details
     collected_amount_cents

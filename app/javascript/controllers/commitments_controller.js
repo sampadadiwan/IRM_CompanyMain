@@ -6,6 +6,7 @@ export default class extends ServerDatatableController {
   columns() {
     if ($("#show_docs").length > 0) {
       return [
+        {"data": "commitment_type"},
         {"data": "folio_id"},
         {"data": "investor_name"},
         {"data": "fund_name"},
@@ -13,14 +14,15 @@ export default class extends ServerDatatableController {
         {"data": "committed_amount"},
         {"data": "percentage"},
         {"data": "call_amount"},
-        {"data": "collected_amount"},          
+        {"data": "collected_amount"},  
+        {"data": "pending_amount"},          
         {"data": "distribution_amount"},          
-        {"data": "onboarding_completed"},
         {"data": "document_names"},
         {"data": "dt_actions"}
       ]
     } else {
       return [
+        {"data": "commitment_type"},
         {"data": "folio_id"},
         {"data": "investor_name"},
         {"data": "fund_name"},
@@ -29,8 +31,8 @@ export default class extends ServerDatatableController {
         {"data": "percentage"},
         {"data": "call_amount"},
         {"data": "collected_amount"},
+        {"data": "pending_amount"},          
         {"data": "distribution_amount"},          
-        {"data": "onboarding_completed"},
         {"data": "dt_actions"}
       ]
     }

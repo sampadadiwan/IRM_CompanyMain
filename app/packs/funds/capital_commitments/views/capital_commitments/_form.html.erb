@@ -24,6 +24,16 @@
       <%= form.select :investor_id, capital_commitment.fund.investors.order(:investor_name).map{|i| [i.investor_name, i.id]}  ,{include_blank: "Select Investor"}, { disabled: disabled, class: 'form-control select2', data: { action: "change->commitmentselect#change" } }  %>
     </div>
 
+    <div class="form-group">
+      <%= form.label :commitment_type %>
+      <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control' %>
+    </div>
+    
+     <div class="form-group">
+      <%= form.label :feeder_fund %>
+      <%= form.check_box :feeder_fund, class: "form-control form-checkbox"  %>
+      <small class="text-muted">Check this only if you need to identify this as coming from a feeder fund</small>
+    </div>
 
     <div class="form-group">
       <%= form.label :investor_signatory_id %>

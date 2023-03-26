@@ -14,7 +14,7 @@ class FundFormulaPolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id)
+    (user.entity_id == record.entity_id) && record.fund.editable_formulas
   end
 
   def new?

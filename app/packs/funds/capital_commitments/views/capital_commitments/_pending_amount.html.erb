@@ -1,0 +1,7 @@
+<% if capital_commitment.pending_call_amount.cents > 0 %>
+    <span class="text-danger"><%= money_to_currency capital_commitment.pending_call_amount, params %></span>
+<% elsif capital_commitment.pending_call_amount.cents < 0 %>
+    <span class="text-warning"><%= money_to_currency capital_commitment.pending_call_amount, params %></span>
+<% else %>
+    <span><%= money_to_currency capital_commitment.pending_call_amount, params %></span>
+<% end %>

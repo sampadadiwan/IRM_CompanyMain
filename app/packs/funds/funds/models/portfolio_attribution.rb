@@ -5,8 +5,11 @@ class PortfolioAttribution < ApplicationRecord
   belongs_to :bought_pi, class_name: "PortfolioInvestment", touch: true
 
   before_save :compute_cost_of_sold_cents
+
+  monetize :cost_of_sold_cents, with_currency: ->(i) { i.fund.currency }
+
   counter_culture :bought_pi, column_name: 'sold_quantity', delta_column: 'quantity'
-  counter_culture :bought_pi, column_name: 'cost_of_sold_cents', delta_column: 'cost_of_sold_cents'
+  # counter_culture :bought_pi, column_name: 'cost_of_sold_cents', delta_column: 'cost_of_sold_cents'
   counter_culture :sold_pi, column_name: 'cost_of_sold_cents', delta_column: 'cost_of_sold_cents'
   after_save :update_cost_of_sold
 

@@ -17,6 +17,20 @@
       <%= link_to @capital_commitment.fund.name, @capital_commitment.fund %>
     </td>
   </tr>
+
+  <tr>
+    <td>
+      Type
+    </td>
+    <td>
+      <%= @capital_commitment.commitment_type %>
+      <% if @capital_commitment.feeder_fund %>
+        <br>
+        <span class="badge badge-success">Feeder Fund</span>
+      <% end %>
+    </td>
+  </tr>
+
   
   <tr>
     <td>

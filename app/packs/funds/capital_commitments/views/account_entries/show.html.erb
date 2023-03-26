@@ -72,6 +72,15 @@
     </td>
   </tr>
 
+  <tr>
+    <td>
+      Type
+    </td>
+    <td>
+      <%= @account_entry.commitment_type %>
+    </td>
+  </tr>
+
   <% if @account_entry.parent %>
   <tr>
     <td>
@@ -88,9 +97,14 @@
       Amount
     </td>
     <td>
-      <%= money_to_currency @account_entry.amount, params %>
+      <% if @account_entry.name.include?("Percentage") %>
+        <%= @account_entry.amount_cents %> %
+      <% else %>
+        <%= money_to_currency @account_entry.amount, params %>
+      <% end %>
     </td>
   </tr>
+
   <tr>
     <td>
       Notes

@@ -40,6 +40,14 @@
       <%= @fund_formula.rule_type %>
     </td>
   </tr>
+  <tr>
+    <td>
+      For
+    </td>
+    <td>
+      <%= @fund_formula.commitment_type %>
+    </td>
+  </tr>
 
   <% if @fund_formula.entry_type.present? %>
   <tr>
@@ -77,7 +85,8 @@
     </td>
   </tr>
 </table>
+
 <div>
-  <%= link_to "Edit", edit_fund_formula_path(@fund_formula), {class: "btn btn-outline-primary"} %> 
-  <%= button_to "Delete", @fund_formula, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+  <%= link_to "Edit", edit_fund_formula_path(@fund_formula), {class: "btn btn-outline-primary"} if policy(@fund_formula).update? %> 
+  <%= button_to "Delete", @fund_formula, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false} if policy(@fund_formula).destroy?  %>
 </div>

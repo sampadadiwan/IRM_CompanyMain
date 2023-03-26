@@ -3,11 +3,13 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
     @view_columns ||= {
       id: { source: "CapitalCommitment.id", searchable: false },
       folio_id: { source: "CapitalCommitment.folio_id", orderable: true },
+      commitment_type: { source: "CapitalCommitment.commitment_type", orderable: true },
       unit_type: { source: "CapitalCommitment.unit_type", orderable: true },
       investor_name: { source: "CapitalCommitment.investor_name", orderable: true },
       fund_name: { source: "Fund.name", searchable: false, orderable: true },
       committed_amount: { source: "CapitalCommitment.committed_amount_cents", searchable: false },
       collected_amount: { source: "CapitalCommitment.collected_amount_cents", searchable: false },
+      pending_amount: { source: "CapitalCommitment.collected_amount_cents", searchable: false },
       call_amount: { source: "CapitalCommitment.call_amount_cents", searchable: false },
       distribution_amount: { source: "CapitalCommitment.distribution_amount_cents", searchable: false },
       percentage: { source: "CapitalCommitment.percentage", searchable: false },
@@ -21,12 +23,14 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
     records.map do |record|
       {
         id: record.id,
+        commitment_type: record.commitment_type,
         folio_id: record.decorate.folio_link,
         unit_type: record.unit_type,
         investor_name: record.decorate.investor_link,
         fund_name: record.decorate.fund_link,
         committed_amount: record.decorate.money_to_currency(record.committed_amount, params),
         collected_amount: record.decorate.money_to_currency(record.collected_amount, params),
+        pending_amount: record.decorate.pending_call_amount,
         call_amount: record.decorate.money_to_currency(record.call_amount, params),
         distribution_amount: record.decorate.money_to_currency(record.distribution_amount, params),
         percentage: record.decorate.percentage,

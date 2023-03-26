@@ -267,7 +267,7 @@ GEM
     connection_pool (2.3.0)
     constant_resolver (0.2.0)
     content_disposition (1.0.0)
-    counter_culture (2.9.0)
+    counter_culture (3.3.0)
       activerecord (>= 4.2)
       activesupport (>= 4.2)
     crass (1.0.6)
@@ -818,7 +818,7 @@ DEPENDENCIES
   client_side_validations
   cocoon
   combine_pdf
-  counter_culture (~> 2.0)
+  counter_culture (~> 3.3)
   cucumber-rails
   database_cleaner-active_record
   debug

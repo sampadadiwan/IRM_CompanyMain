@@ -79,7 +79,6 @@ class FoldersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def folder_params
-    params.require(:folder).permit(:name, :parent_id, :full_path, :level, :entity_id, docs: [],
-                                                                                      documents_attributes: Document::NESTED_ATTRIBUTES)
+    params.require(:folder).permit(:name, :parent_id, :full_path, :level, :entity_id, :download, :printing, :orignal, docs: [], documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

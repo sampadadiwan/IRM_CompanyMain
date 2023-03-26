@@ -32,6 +32,12 @@ class PortfolioInvestmentPolicy < ApplicationPolicy
   end
 
   def destroy?
-    create?
+    # Buys cant be deleted easily as they may have been used up in sells
+    # If they have portfolio_attributions associated with the buy, then cant delete it
+    if record.buy? && record.buys_portfolio_attributions.count.positive?
+      false
+    else
+      create?
+    end
   end
 end

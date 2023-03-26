@@ -65,6 +65,7 @@ Rails.application.routes.draw do
   resources :capital_distributions do
     post 'approve', on: :member
     patch 'redeem_units', on: :member
+    patch 'payments_completed', on: :member
   end
   resources :capital_remittances do
     patch 'verify', on: :member

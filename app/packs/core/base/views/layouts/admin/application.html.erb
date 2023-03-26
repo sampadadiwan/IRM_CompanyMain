@@ -1,52 +1,134 @@
-<%#
-# Application Layout
-
-This view template is used as the layout
-for every page that Administrate generates.
-
-By default, it renders:
-- Navigation
-- Content for a search bar
-  (if provided by a `content_for` block in a nested page)
-- Flashes
-- Links to stylesheets and JavaScripts
-%>
-
 <!DOCTYPE html>
-<html lang="<%= I18n.locale %>">
-<head>
-  <meta charset="utf-8">
-  <meta name="ROBOTS" content="NOODP">
-  <meta name="viewport" content="initial-scale=1">
-  <title>
-    <%= content_for(:title) %> - <%= application_title %>
-  </title>
-  <%= render "stylesheet" %>
-  <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet">
-        
-  <link href="/css/sb-admin-2.min.css" rel="stylesheet">
+<html>
+  <head>
+    <title>CapHive</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
 
-  <%= csrf_meta_tags %>
-  <%= csp_meta_tag if defined?(csp_meta_tag) %>
-
+    <%= render "stylesheet" %>
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
 
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+
+    <!-- Custom fonts for this template-->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/smartwizard@5/dist/css/smart_wizard_all.min.css" rel="stylesheet" type="text/css" />
+    <link
+        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+        rel="stylesheet">
+
+    <!-- The core styles for the app -->
+    <link href="/css/sb-admin-2.css" rel="stylesheet">
+
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
+
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/smartwizard@5/dist/js/jquery.smartWizard.min.js" type="text/javascript"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="/vendor/jquery-easing/jquery.easing.min.js"></script>
+
+    <!-- For sorting deal activities -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js"></script>
+
+    <!-- For playing videos in docs -->
+    <link href="https://vjs.zencdn.net/7.17.0/video-js.css" rel="stylesheet" />
+
+    <!-- Datatables -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.11.4/b-2.2.2/fc-4.0.1/datatables.min.css"/>
+    <script type="text/javascript" src="https://cdn.datatables.net/v/bs4/dt-1.11.4/b-2.2.2/fc-4.0.1/datatables.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.0/dist/chart.min.js"></script>
+    
+    <!-- Tracking -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4CPQNX69HM"></script>
+    <script src="/js/clarity.js"></script>
+
+    <!-- PDFTron -->
+    <script src='/lib/webviewer.min.js'></script>
+    <script src='/lib/core/webviewer-core.min.js'></script>
+    <script src='/lib/core/pdf/PDFNet.js'></script>
+
+    
+    <script src="https://releases.transloadit.com/uppy/v2.12.1/uppy.min.js"></script>
+
+    <link href="https://releases.transloadit.com/uppy/v2.12.1/uppy.min.css" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+
+    <!--
+    <script src="https://cdn.ckbox.io/CKBox/1.2.0/ckbox.js"></script>
+    <script src="https://cdn.ckeditor.com/ckeditor5/35.3.2/super-build/ckeditor.js"></script>
+    -->
+    
+
 </head>
-<body>
-  <%= render "icons" %>
 
-  <div class="app-container">
-    <%= render "navigation" -%>
+<body id="page-top" data-controller="confirm">
 
-    <main class="main-content" role="main">
-      <%= render "flashes" -%>
-      <%= yield %>
-    </main>
-  </div>
+    <!-- Page Wrapper -->
+    <div id="wrapper">
 
-  <%= render "javascript" %>
+        <%= render "navigation" %>
+        
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+            
+            <!-- Main Content -->
+            <div id="content">
+
+                
+                <%= render "/layouts/topbar" %>
+
+                <!-- Begin Page Content -->
+                <div class="container-fluid">
+                    
+                    <%= turbo_stream_from current_user, "user_alert" if current_user %>
+                    <div id="user_alert"></div>
+
+                    <%= render "/users/reset_password" if (current_user && current_user.reset_password?) %>
+                    <%= render "/layouts/accept_terms" if (current_user && !current_user.accept_terms) %>
+
+                    <span id="alert"></span>
+                    <%= render "/layouts/breadcrumbs" %>
+                    
+                    <%= yield %>
+                </div>
+                <!-- /.container-fluid -->
+            </div>
+            <!-- End of Main Content -->
+
+        </div>
+        <!-- End of Content Wrapper -->
+
+    </div>
+    <!-- End of Page Wrapper -->
+
+    <!-- Scroll to Top Button-->
+    <a class="scroll-to-top rounded" href="#page-top">
+        <i class="fas fa-angle-up"></i>
+    </a>
+
+    <%= render "/layouts/logout_modal" %>    
+    <%= render "/layouts/confirm" %>
+    <%= render "/layouts/terms" if (current_user && !current_user.accept_terms) %>
+
 </body>
+
+
 </html>

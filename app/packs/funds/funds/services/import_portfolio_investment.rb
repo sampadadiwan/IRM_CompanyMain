@@ -2,13 +2,15 @@ class ImportPortfolioInvestment < ImportUtil
   include Interactor
 
   STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount",
-                      "Quantity",	"Investment Type",	"Notes"].freeze
+                      "Quantity",	"Investment Type", "Notes", "Type", "Folio No"].freeze
 
   def standard_headers
     STANDARD_HEADERS
   end
 
-  def post_process(import_upload, _context); end
+  def post_process(import_upload, _context)
+    PortfolioInvestment.counter_culture_fix_counts only: :aggregate_portfolio_investment, where: { entity_id: import_upload.entity_id }
+  end
 
   def save_portfolio_investment(user_data, _import_upload, custom_field_headers)
     portfolio_company_name = user_data['Portfolio Company Name'].strip
@@ -17,9 +19,13 @@ class ImportPortfolioInvestment < ImportUtil
     quantity = user_data["Quantity"].to_d
     investment_type = user_data["Investment Type"].strip
     fund = Fund.find_by name: user_data["Fund"].strip
+    commitment_type = user_data["Type"].strip
+    folio_id = user_data["Folio No"].presence
+    capital_commitment = commitment_type == "CoInvest" ? fund.capital_commitments.where(folio_id:).first : nil
 
     portfolio_investment = PortfolioInvestment.find_or_initialize_by(portfolio_company_name:, investment_date:,
                                                                      amount_cents:, quantity:, investment_type:,
+                                                                     capital_commitment:, commitment_type:,
                                                                      fund:, entity_id: fund.entity_id)
 
     if portfolio_investment.new_record?

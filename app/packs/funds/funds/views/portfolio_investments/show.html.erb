@@ -49,6 +49,17 @@
     </td>
   </tr>
 
+  <% if @portfolio_investment.buy? %>
+  <tr>
+    <td>
+      Cost
+    </td>
+    <td>
+      <%= money_to_currency @portfolio_investment.cost, params %>
+    </td>
+  </tr>
+  <% end %>
+
   <tr>
     <td>
       FMV
@@ -58,6 +69,17 @@
     </td>
   </tr>
 
+  <% if @portfolio_investment.sell? %>
+  <tr>
+    <td>
+      FIFO Cost of Sold
+    </td>
+    <td>
+      <%= money_to_currency @portfolio_investment.cost_of_sold, params %>
+    </td>
+  </tr>
+  <% end %>
+
   <tr>
     <td>
       Investment Type
@@ -66,6 +88,27 @@
       <%= @portfolio_investment.investment_type %>
     </td>
   </tr>
+
+  <tr>
+    <td>
+      For
+    </td>
+    <td>
+      <%= @portfolio_investment.commitment_type %>
+    </td>
+  </tr>
+
+  <% if @portfolio_investment.CoInvest? %>
+  <tr>
+    <td>
+      Folio
+    </td>
+    <td>
+      <%= link_to @portfolio_investment.capital_commitment %>
+    </td>
+  </tr>
+  <% end %>
+
   <tr>
     <td>
       Notes

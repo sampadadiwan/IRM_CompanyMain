@@ -36,6 +36,15 @@
 
   <tr>
     <td>
+      For
+    </td>
+    <td>
+      <%= @aggregate_portfolio_investment.commitment_type %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
       Current Quantity
     </td>
     <td>
@@ -120,6 +129,10 @@
   </tr>
 
 </table>
+
+<div class="associated_entity">
+  <%= button_to "Delete", @aggregate_portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all buy and sell transactions associated with this aggregate portfolio entry?"} if policy(@aggregate_portfolio_investment).destroy? %> 
+</div>
 
 <%= render "/aggregate_portfolio_investments/charts", aggregate_portfolio_investment: @aggregate_portfolio_investment %>
 

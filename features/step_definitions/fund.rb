@@ -331,7 +331,7 @@
 
 
 Then('the capital call collected amount should be {string}') do |arg|
-    
+  
   @capital_call.reload
   @capital_call.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.fund.currency)
   @capital_call.fund.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.fund.currency)
@@ -644,6 +644,7 @@ Then('the capital commitments must have the data in the sheet') do
     puts "Checking import of #{cc.investor.investor_name}"
     cc.investor.investor_name.should == user_data["Investor"].strip
     cc.fund.name.should == user_data["Fund"]
+    cc.commitment_type.should == user_data["Type"]
     cc.folio_currency.should == user_data["Folio Currency"]
     cc.folio_committed_amount_cents.should == user_data["Committed Amount"].to_i * 100
     cc.folio_id.should == user_data["Folio No"].to_s
@@ -708,9 +709,12 @@ Then('the capital commitments must have the percentages updated') do
 end
 
 Then('the fund must have the counter caches updated') do
+  # binding.pry
   @fund.reload
-  @fund.collected_amount_cents.should == CapitalCommitment.all.sum(:collected_amount_cents)
-  @fund.committed_amount_cents.should == CapitalCommitment.all.sum(:committed_amount_cents)
+  @fund.collected_amount_cents.should == CapitalCommitment.pool.sum(:collected_amount_cents)
+  @fund.committed_amount_cents.should == CapitalCommitment.pool.sum(:committed_amount_cents)
+  @fund.co_invest_collected_amount_cents.should == CapitalCommitment.co_invest.sum(:collected_amount_cents)
+  @fund.co_invest_committed_amount_cents.should == CapitalCommitment.co_invest.sum(:committed_amount_cents)
 end
 
 
@@ -718,7 +722,8 @@ Then('the remittances are generated for the capital calls') do
   Fund.all.each do |fund|
     fund.capital_calls.each do |cc|
       # puts cc.capital_remittances.to_json
-      cc.capital_remittances.count.should == fund.capital_commitments.count 
+      commitments = cc.Pool? ? fund.capital_commitments.pool : fund.capital_commitments.co_invest 
+      cc.capital_remittances.count.should == commitments.count
       cc.capital_remittances.sum(:call_amount_cents).should == cc.call_amount_cents
       cc.capital_remittances.verified.sum(:collected_amount_cents).should == cc.collected_amount_cents
     end
@@ -729,7 +734,8 @@ Then('the payments are generated for the capital distrbutions') do
   Fund.all.each do |fund|
     fund.capital_distributions.each do |cc|
       # puts cc.capital_distribution_payments.to_json
-      cc.capital_distribution_payments.count.should == fund.capital_commitments.count 
+      capital_distribution_payments_count = cc.Pool? ? fund.capital_commitments.pool.count : 1 # There is only one commitment for each co_invest
+      cc.capital_distribution_payments.count.should == capital_distribution_payments_count
       cc.capital_distribution_payments.sum(:amount_cents).round(0).should == cc.net_amount_cents.round(0)
     end
   end
@@ -748,8 +754,10 @@ end
 
 Then('the funds are updated with remittance numbers') do
   Fund.all.each do |f|
-    f.call_amount_cents.should == f.capital_remittances.sum(:call_amount_cents)
-    f.collected_amount_cents.should == f.capital_remittances.verified.sum(:collected_amount_cents)
+    f.call_amount_cents.should == f.capital_remittances.pool.sum(:call_amount_cents)
+    f.collected_amount_cents.should == f.capital_remittances.pool.verified.sum(:collected_amount_cents)
+    f.co_invest_call_amount_cents.should == f.capital_remittances.co_invest.sum(:call_amount_cents)
+    f.co_invest_collected_amount_cents.should == f.capital_remittances.co_invest.verified.sum(:collected_amount_cents)
   end
 end
 
@@ -950,7 +958,7 @@ Then('there should be correct units for the calls payment for each investor') do
       fu.unit_type.should == cc.unit_type
       fu.owner_type.should == "CapitalRemittance"
       fu.price.should == fu.owner.capital_call.unit_prices[fu.unit_type]["price"].to_d
-      fu.quantity.should == fu.owner.collected_amount_cents / (fu.price * 100)
+      fu.quantity.round(2).should == (fu.owner.collected_amount_cents / ((fu.price + fu.premium)* 100)).round(2)
     end
   end
 end
@@ -1070,6 +1078,10 @@ Then('Given I upload {string} file for the remittances of the capital call') do 
   sleep(1)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(5)
+end
+
+Then('There should be {string} remittance payments created') do |count|
+  CapitalRemittancePayment.count.should == count.to_i
 end
 
 Then('the capital remittance payments must have the data in the sheet') do

@@ -53,10 +53,27 @@ Scenario Outline: Import portfolio investments
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  Then I should see the "Import upload was successfully created"
+  Then There should be "6" capital commitments created
   And Given I upload "portfolio_investments.xlsx" file for "Portfolio" of the fund
   Then I should see the "Import upload was successfully created"
   Then There should be "8" portfolio investments created
   And the portfolio investments must have the data in the sheet
+  And the aggregate portfolio investments must have cost of sold computed
+
+Scenario Outline: Import portfolio investments failed
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  Then I should see the "Import upload was successfully created"
+  Then There should be "6" capital commitments created
+  And Given I upload "co_invest_portfolio_investments_failed.xlsx" file for "Portfolio" of the fund
+  Then I should see the "Import upload was successfully created"
+  Then There should be "1" portfolio investments created
 
 
 Scenario Outline: Import portfolio valuations
@@ -67,7 +84,6 @@ Scenario Outline: Import portfolio valuations
   Then I should see the "Import upload was successfully created"
   Then There should be "4" valuations created
   And the valuations must have the data in the sheet
-
 
 Scenario Outline: FIFO
   Given there is a user "" for an entity "entity_type=Investment Fund;"

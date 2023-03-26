@@ -18,6 +18,9 @@
         </th>
         <th>
           Quantity
+        </th>
+        <th>
+          Cost of Sold
         </th>        
       </tr>
     </thead>
@@ -28,6 +31,11 @@
             <td><%= link_to portfolio_attribution.sold_pi, portfolio_investment_path(id: portfolio_attribution.sold_pi_id, debug: true) %></td>
             <td><%= link_to portfolio_attribution.bought_pi, portfolio_investment_path(id: portfolio_attribution.bought_pi_id, debug: true) %></td>
             <td><%= portfolio_attribution.quantity %></td>
+            <td>
+              <%= money_to_currency portfolio_attribution.cost_of_sold, params %>
+              <br>
+              <%= portfolio_attribution.quantity %> x <%= portfolio_attribution.bought_pi.cost %>
+            </td>
         </tr>
       <% end %>
     </tbody>

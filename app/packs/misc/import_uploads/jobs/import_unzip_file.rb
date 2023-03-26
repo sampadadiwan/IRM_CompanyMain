@@ -7,7 +7,7 @@ class ImportUnzipFile
       # Unzip the contents into the unzip_dir
       unzip(context.import_file, context.unzip_dir, context.import_upload)
       # We replace the import_file with the index.xlsx, so import pre_process can work right
-      context.import_file = File.open("#{context.unzip_dir}/index.xlsx", "r")
+      context.import_file = File.open("#{context.unzip_dir}/index.xlsx", "r") if File.exist?("#{context.unzip_dir}/index.xlsx")
     else
       context.fail!(message: "Required inputs not present")
     end

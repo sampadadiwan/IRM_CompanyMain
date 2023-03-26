@@ -13,6 +13,38 @@
 
     <tr>
       <td>
+        Type
+      </td>
+      <td>
+        <%= @capital_distribution.commitment_type %>
+      </td>
+    </tr>
+
+    <% if @capital_distribution.capital_commitment %>
+    <tr>
+      <td>
+        Folio
+      </td>
+      <td>
+        <%= link_to @capital_distribution.capital_commitment %>
+      </td>
+    </tr>
+
+    <% else %>
+
+    <tr>
+      <td>
+        Distribution On
+      </td>
+      <td>
+        <%=  @capital_distribution.distribution_on %>
+      </td>
+    </tr>
+    
+    <% end %>
+
+    <tr>
+      <td>
         Generate Payments
       </td>
       <td>
@@ -76,6 +108,7 @@
             new_account_entry_path("account_entry[entity_id]": @capital_distribution.entity_id, 
             "account_entry[fund_id]": @capital_distribution.fund_id, 
             "account_entry[name]": "Reinvestment",
+            "account_entry[reporting_date]": @capital_distribution.distribution_date,
             "account_entry[notes]": "Reinvestment from '#{@capital_distribution.title}' on #{@capital_distribution.distribution_date}",
             "account_entry[amount]": @capital_distribution.reinvestment, 
             "account_entry[entry_type]": "Reinvestment"), class: "badge badge-primary" %>
@@ -152,6 +185,10 @@
     <%= button_to "Approve" , approve_capital_distribution_path(@capital_distribution), method: :post, 
         class: "btn btn-outline-success", form_class: "deleteButton", 
         data: {action: "click->confirm#popup", turbo:false, method: :post, msg: "This will generate all the notifications to your clients"} if policy(@capital_distribution).approve? %>
+
+    <%= button_to "Mark Payments Completed" , payments_completed_capital_distribution_path(@capital_distribution),
+        method: :patch, class: "btn btn-outline-success", form_class: "deleteButton", 
+        data: {action: "click->confirm#popup", turbo:false, method: :patch, msg: "This mark all payments in this distribution as completed. Please ensure you have verified each payment before doing this."} if policy(@capital_distribution).approve? %>
 
     <%= button_to "Redeem Units" , 
         redeem_units_capital_distribution_path(@capital_distribution),    

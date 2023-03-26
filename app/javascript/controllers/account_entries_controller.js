@@ -10,7 +10,8 @@ export default class extends ServerDatatableController {
         {"data": "period"},
         {"data": "entry_type"},
         {"data": "name"},          
-        {"data": "amount"},        
+        {"data": "amount"},    
+        {"data": "commitment_type"},        
         {"data": "dt_actions"}
       ]
     }

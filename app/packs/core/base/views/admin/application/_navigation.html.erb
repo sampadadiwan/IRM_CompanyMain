@@ -1,20 +1,29 @@
-<%#
-# Navigation
 
-This partial is used to display the navigation in Administrate.
-By default, the navigation contains navigation links
-for all resources in the admin dashboard,
-as defined by the routes in the `admin/` namespace
-%>
+<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion toggled" id="accordionSidebar">
 
-<nav class="navigation" role="navigation">
-  <%= link_to(t("administrate.navigation.back_to_app"), root_url, class: "button button--alt button--nav") if defined?(root_url) %>
+  <!-- Sidebar - Brand -->
+  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/">
+      <div class="sidebar-brand-icon">
+          <img src="/img/logo_trans.png"></img>
+      </div>
+  </a>
 
-  <% Administrate::Namespace.new(namespace).resources_with_index_route.each do |resource| %>
-    <%= link_to(
-      display_resource_name(resource),
-      resource_index_route(resource),
-      class: "navigation__link navigation__link--#{nav_link_state(resource)}"
-    ) if valid_action?(:index, resource) && show_action?(:index, model_from_resource(resource)) %>
+  <!-- Divider -->
+  <hr class="sidebar-divider my-0">
+
+  <% Administrate::Namespace.new(namespace).resources_with_index_route.sort.each do |resource| %>
+    <li class="nav-item">
+
+      
+      <% anchor = "<i class='fas fa-lg fa-fw'></i><span>#{display_resource_name(resource)}</span>".html_safe %>
+      
+      <%= link_to(anchor, resource_index_route(resource), class: "nav-link") if valid_action?(:index, resource) && show_action?(:index, model_from_resource(resource)) %>
+      
+    </li>
   <% end %>
-</nav>
+
+  <!-- Divider -->
+  <hr class="sidebar-divider d-none d-md-block">
+
+
+</ul>

@@ -75,7 +75,7 @@ class CapitalCallsController < ApplicationController
     @capital_call.destroy
 
     respond_to do |format|
-      format.html { redirect_to capital_calls_url, notice: "Capital call was successfully destroyed." }
+      format.html { redirect_to fund_url(id: @capital_call.fund_id, tab: "capital-calls-tab"), notice: "Capital call was successfully destroyed." }
       format.json { head :no_content }
     end
   end
@@ -112,6 +112,6 @@ class CapitalCallsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_call_params
-    params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :due_date, :call_date, :notes, fund_closes: [], unit_prices: {}, properties: {})
+    params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :due_date, :call_date, :notes, :commitment_type, fund_closes: [], unit_prices: {}, properties: {})
   end
 end

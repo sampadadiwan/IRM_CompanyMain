@@ -4,28 +4,36 @@ class PortfolioInvestment < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
+  # This is only for co invest
+  belongs_to :capital_commitment, optional: true
   belongs_to :aggregate_portfolio_investment
   belongs_to :portfolio_company, class_name: "Investor"
   has_many :portfolio_attributions, foreign_key: :sold_pi_id, dependent: :destroy
+  has_many :buys_portfolio_attributions, class_name: "PortfolioAttribution", foreign_key: :bought_pi_id, dependent: :destroy
 
   validates :investment_date, :quantity, :amount_cents, :investment_type, presence: true
   monetize :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :cost_of_sold_cents, with_currency: ->(i) { i.fund.currency }
 
   counter_culture :aggregate_portfolio_investment, column_name: 'quantity', delta_column: 'quantity'
   counter_culture :aggregate_portfolio_investment, column_name: 'fmv_cents', delta_column: 'fmv_cents'
-  # counter_culture :aggregate_portfolio_investment, column_name: 'cost_of_sold_cents', delta_column: 'cost_of_sold_cents'
 
-  # Duplicate of bought_amount_cents
-  # counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.quantity.positive? ? "cost_cents" : nil }, delta_column: 'amount_cents', column_names: {
-  #   ["portfolio_investments.quantity > ?", 0] => 'cost_cents'
-  # }
+  enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
+  scope :pool, -> { where(commitment_type: 'Pool') }
+  scope :co_invest, -> { where(commitment_type: 'CoInvest') }
+
+  validates :capital_commitment_id, presence: true, if: proc { |p| p.commitment_type == "CoInvest" }
 
   validate :sell_quantity_allowed
 
   def sell_quantity_allowed
     if sell? && new_record?
-      total_net_quantity = fund.portfolio_investments
-                               .allocatable_buys(portfolio_company_id, investment_type).sum(:net_quantity)
+
+      buys = fund.portfolio_investments.allocatable_buys(portfolio_company_id, investment_type)
+      buys = buys.where(capital_commitment_id:) if self.CoInvest?
+      buys = buys.pool if self.Pool?
+
+      total_net_quantity = buys.sum(:net_quantity)
+
       if quantity.abs > total_net_quantity
         errors.add(:quantity,
                    "Sell quantity is greater than net position #{total_net_quantity}")
@@ -57,7 +65,7 @@ class PortfolioInvestment < ApplicationRecord
   scope :sells, -> { where("portfolio_investments.quantity < 0") }
 
   def setup_aggregate
-    self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, investment_type:) if aggregate_portfolio_investment_id.blank?
+    self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, investment_type:, commitment_type:) if aggregate_portfolio_investment_id.blank?
   end
 
   before_create :update_name
@@ -68,10 +76,10 @@ class PortfolioInvestment < ApplicationRecord
   before_save :compute_fmv
   def compute_fmv
     last_valuation = portfolio_company.valuations.where(instrument_type: investment_type).order(valuation_date: :desc).first
-    self.fmv_cents = last_valuation ? quantity.abs * last_valuation.per_share_value_cents : 0
+    self.fmv_cents = last_valuation ? quantity * last_valuation.per_share_value_cents : 0
     # For buys setup net_quantity, note sold_quantity is -ive
     self.net_quantity = quantity + sold_quantity if buy?
-    self.gain_cents = fmv_cents - cost_of_sold_cents if sell? && fmv_cents.positive?
+    self.gain_cents = fmv_cents.abs - cost_of_sold_cents if sell?
   end
 
   after_commit :compute_avg_cost
@@ -89,7 +97,10 @@ class PortfolioInvestment < ApplicationRecord
       # Sell quantity is negative
       allocatable_quantity = quantity.abs
       # It's a sell
-      buys = fund.portfolio_investments.allocatable_buys(portfolio_company_id, investment_type)
+      buys = aggregate_portfolio_investment.portfolio_investments.allocatable_buys(portfolio_company_id, investment_type)
+      buys = buys.where(capital_commitment_id:) if self.CoInvest?
+      buys = buys.pool if self.Pool?
+
       buys.order(investment_date: :asc).each do |buy|
         Rails.logger.debug { "processing buy #{buy.to_json}" }
         attribution_quantity = if buy.net_quantity > allocatable_quantity

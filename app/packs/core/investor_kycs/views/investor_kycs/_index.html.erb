@@ -11,11 +11,18 @@
       <%= link_to "Download", investor_kycs_path(investor_id: @investor&.id, format: "xlsx", all: true),  {class: "btn btn-outline-primary" }  %>
 
       
-      <%= link_to "Upload", 
+      <%= link_to "Upload KYC Details", 
         new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
             "import_upload[owner_type]": "Entity", 
             "import_upload[import_type]": "InvestorKyc", 
             "sample_upload": "INVESTOR_KYCS_SAMPLE"), 
+            { class: "btn btn-outline-primary"}  %> 
+
+      <%= link_to "Upload KYC Documents", 
+        new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
+            "import_upload[owner_type]": "Entity", 
+            "import_upload[import_type]": "KycDocs", 
+            "sample_upload": "INVESTOR_KYCS_DOCS_SAMPLE"), 
             { class: "btn btn-outline-primary"}  %> 
     </span>
   </div>

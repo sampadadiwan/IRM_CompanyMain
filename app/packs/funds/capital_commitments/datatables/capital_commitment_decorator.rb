@@ -13,6 +13,10 @@ class CapitalCommitmentDecorator < ApplicationDecorator
     h.link_to object.folio_id, object
   end
 
+  def pending_call_amount
+    h.render partial: "/capital_commitments/pending_amount", locals: { capital_commitment: object }, formats: [:html]
+  end
+
   def document_names(params)
     params[:show_docs].present? ? object.documents.collect(&:name).join(", ") : ""
   end

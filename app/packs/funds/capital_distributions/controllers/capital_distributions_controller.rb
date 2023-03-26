@@ -1,5 +1,5 @@
 class CapitalDistributionsController < ApplicationController
-  before_action :set_capital_distribution, only: %i[show edit update destroy approve redeem_units]
+  before_action :set_capital_distribution, only: %i[show edit update destroy approve redeem_units payments_completed]
 
   # GET /capital_distributions or /capital_distributions.json
   def index
@@ -79,6 +79,11 @@ class CapitalDistributionsController < ApplicationController
     end
   end
 
+  def payments_completed
+    @capital_distribution.capital_distribution_payments.update(completed: true)
+    redirect_to capital_distribution_url(@capital_distribution), notice: "All payments marked as completed."
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.
@@ -92,6 +97,6 @@ class CapitalDistributionsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_distribution_params
-    params.require(:capital_distribution).permit(:fund_id, :entity_id, :form_type_id, :gross_amount, :cost_of_investment, :reinvestment, :distribution_date, :title, :completed, :generate_payments, unit_prices: {}, properties: {})
+    params.require(:capital_distribution).permit(:fund_id, :entity_id, :form_type_id, :gross_amount, :cost_of_investment, :reinvestment, :distribution_date, :title, :completed, :commitment_type, :capital_commitment_id, :distribution_on, :generate_payments, unit_prices: {}, properties: {})
   end
 end

@@ -4,6 +4,8 @@ class AccountEntryAllocationEngine
   # This is to split the formula and retain the delimiters
   # See https://stackoverflow.com/questions/18089562/how-do-i-keep-the-delimiters-when-splitting-a-ruby-string
   FORMULA_DELIMS = %r{([%*+\-/()?:])} # %r{([?+|\-*/()%=]):} # ["+","-","*","/","(",")","%", "="]
+  FORMULA_DELIMS_NO_PAREN = %r{([%*+\-/?:])}
+  FORMULA_DELIMS_NO_PAREN_NO_COLON = %r{([%*+\-/?])}
 
   def initialize(fund, start_date, end_date, formula_id: nil, user_id: nil,
                  generate_soa: false, template_name: nil, fund_ratios: false)
@@ -15,9 +17,7 @@ class AccountEntryAllocationEngine
     @generate_soa = generate_soa
     @template_name = template_name
     @fund_ratios = fund_ratios
-    # This is the cache for storing expensive computations used across the formulas
-    @cached_generated_fields = {}
-    @helper = AccountEntryAllocationHelper.new(fund, start_date, end_date, user_id:)
+    @helper = AccountEntryAllocationHelper.new(self, fund, start_date, end_date, user_id:)
   end
 
   # There are 3 types of formulas - we need to run them in the sequence defined
@@ -35,7 +35,9 @@ class AccountEntryAllocationEngine
     count = formulas.count
 
     formulas.each_with_index do |fund_formula, index|
-      run_formula(fund_formula, fund_unit_settings)
+      AccountEntry.transaction(joinable: false) do
+        run_formula(fund_formula, fund_unit_settings)
+      end
       @helper.notify("Completed #{index + 1} of #{count}: #{fund_formula.name}", :success, @user_id)
     rescue Exception => e
       @helper.notify("Error in Formula #{fund_formula.sequence}: #{fund_formula.name} : #{e.message}", :danger, @user_id)
@@ -63,7 +65,7 @@ class AccountEntryAllocationEngine
     when "AllocatePortfolio"
       allocate_portfolio_investments(fund_formula, fund_unit_settings)
     when "Percentage"
-      compute_custom_percentage(fund_formula.formula)
+      compute_custom_percentage(fund_formula)
     end
   end
 
@@ -72,33 +74,37 @@ class AccountEntryAllocationEngine
   def generate_custom_fields(fund_formula, fund_unit_settings)
     Rails.logger.debug { "generate_custom_fields #{fund_formula.name}" }
     # Generate the cols required
-    @fund.capital_commitments.each do |capital_commitment|
-      Rails.logger.debug { "Generating using #{fund_formula} for #{capital_commitment}, #{@start_date}, #{@end_date}" }
+    fund_formula.commitments.each do |capital_commitment|
+      Rails.logger.debug { "Generating using formula #{fund_formula} for #{capital_commitment}, #{@start_date}, #{@end_date}" }
 
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
       Rails.logger.debug { "No fund_unit_setting found for #{capital_commitment.to_json}" } unless fund_unit_setting
 
-      printable = print_formula(fund_formula, binding)
+      # This is used to generate instance variables from the cached computed values
+      fields = @helper.computed_fields_cache(capital_commitment)
 
+      printable = @helper.print_formula(fund_formula, binding)
       Rails.logger.debug printable
 
-      ae = AccountEntry.new(name: fund_formula.name, amount_cents: eval(fund_formula.formula))
-      add_to_computed_fields_cache(capital_commitment, ae)
+      ae = AccountEntry.new(name: fund_formula.name,
+                            amount_cents: @helper.safe_eval(fund_formula.formula, binding))
+      @helper.add_to_computed_fields_cache(capital_commitment, ae)
     end
   end
 
-  def compute_custom_percentage(field_name)
+  def compute_custom_percentage(fund_formula)
+    field_name = fund_formula.formula
     total = 0
     count = 0
     cc_map = {}
 
     # Loop thru all the commitments and get the total of the account entry "field_name"
-    @fund.capital_commitments.each do |capital_commitment|
+    fund_formula.commitments.each do |capital_commitment|
       ae = capital_commitment.cumulative_account_entry(field_name, nil, nil, @end_date)
 
       cc_map[capital_commitment.id] = {}
       cc_map[capital_commitment.id]["amount_cents"] = ae ? ae.amount_cents : 0
-      cc_map[capital_commitment.id]["entry_type"] = ae ? ae.entry_type : "Percentage"
+      cc_map[capital_commitment.id]["entry_type"] = ae && ae.entry_type ? ae.entry_type : "Percentage"
 
       total += ae ? ae.amount_cents : 0
 
@@ -108,14 +114,14 @@ class AccountEntryAllocationEngine
     # Delete all prev generated percentage
     AccountEntry.where(name: "#{field_name} Percentage", entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, generated: true).each(&:destroy)
 
-    @fund.capital_commitments.each do |capital_commitment|
+    fund_formula.commitments.each do |capital_commitment|
       percentage = total.positive? ? (100.0 * cc_map[capital_commitment.id]["amount_cents"] / total) : 0
 
       ae = AccountEntry.new(name: "#{field_name} Percentage", entry_type: cc_map[capital_commitment.id]["entry_type"], entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", capital_commitment:, folio_id: capital_commitment.folio_id, generated: true, amount_cents: percentage, cumulative: true)
 
       ae.save!
 
-      add_to_computed_fields_cache(capital_commitment, ae)
+      @helper.add_to_computed_fields_cache(capital_commitment, ae)
     end
   end
 
@@ -124,46 +130,44 @@ class AccountEntryAllocationEngine
   def allocate_portfolio_investments(fund_formula, fund_unit_settings)
     Rails.logger.debug { "allocate_portfolio_investments(#{fund_formula.name}, #{fund_unit_settings})" }
 
-    @fund.capital_commitments.each do |capital_commitment|
+    fund_formula.commitments.each do |capital_commitment|
       # This is used to generate instance variables from the cached computed values
-      fields = computed_fields_cache(capital_commitment)
-
-      @fund.aggregate_portfolio_investments.each do |orig_api|
+      fields = @helper.computed_fields_cache(capital_commitment)
+      apis = capital_commitment.Pool? ? @fund.aggregate_portfolio_investments.pool : []
+      # Only pool APIs should be used to generate account_entries
+      apis.each do |orig_api|
         ae = AccountEntry.new(name: "#{orig_api.portfolio_company_name}-#{orig_api.investment_type}", entry_type: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", generated: true)
 
         # This will create the AggregatePortfolioInvestment as of the end date, it will be used in the formulas
         api = orig_api.as_of(@end_date)
 
         ae = create_account_entry(ae, fund_formula, capital_commitment, orig_api, binding)
-
-        add_to_computed_fields_cache(capital_commitment, ae)
       end
 
-      capital_commitment.rollup_account_entries(nil, fund_formula.name, @start_date, @end_date) if fund_formula.roll_up
+      cumulative_ae = capital_commitment.rollup_account_entries(nil, fund_formula.name, @start_date, @end_date) if fund_formula.roll_up
+
+      @helper.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
     end
   end
 
   def create_account_entry(account_entry, fund_formula, capital_commitment, parent, bdg)
     account_entry.capital_commitment = capital_commitment
     account_entry.folio_id = capital_commitment.folio_id
-    account_entry.amount_cents = eval(fund_formula.formula, bdg)
+    account_entry.amount_cents = @helper.safe_eval(fund_formula.formula, bdg)
 
     account_entry.explanation = []
     account_entry.explanation << fund_formula.formula
     account_entry.explanation << fund_formula.description
-    account_entry.explanation << print_formula(fund_formula, bdg)
+    account_entry.explanation << @helper.print_formula(fund_formula, bdg)
 
     account_entry.parent = parent
     account_entry.generated = true
+    account_entry.commitment_type = fund_formula.commitment_type
 
     account_entry.save
+    @helper.add_to_computed_fields_cache(capital_commitment, account_entry)
+
     account_entry
-  rescue Exception => e
-    fund_formula.formula.split(FORMULA_DELIMS).each do |token|
-      found_definition = token.length > 1 ? eval("defined? #{token} #Ensure that each of the tokens is defined, if not let the user know", bdg, __FILE__, __LINE__) : true
-      raise "Could not find #{token}" unless found_definition
-    end
-    raise e
   end
 
   # Generate account entries of the fund, to the various capital commitments in the fund based on formulas
@@ -174,17 +178,16 @@ class AccountEntryAllocationEngine
 
     cumulative = !fund_formula.roll_up
 
-    @fund.capital_commitments.each do |capital_commitment|
+    fund_formula.commitments.each do |capital_commitment|
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
 
       # This is used to generate instance variables from the cached computed values
-      fields = computed_fields_cache(capital_commitment)
+      fields = @helper.computed_fields_cache(capital_commitment)
 
       ae = AccountEntry.new(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", entry_type: fund_formula.entry_type, generated: true, cumulative:)
 
       create_account_entry(ae, fund_formula, capital_commitment, nil, binding)
 
-      add_to_computed_fields_cache(capital_commitment, ae)
       # Rollup this allocation for each commitment
       capital_commitment.rollup_account_entries(ae.name, ae.entry_type, @start_date, @end_date) if fund_formula.roll_up
 
@@ -200,31 +203,16 @@ class AccountEntryAllocationEngine
     end
   end
 
-  def print_formula(fund_formula, bdg)
-    printable = ""
-    begin
-      fund_formula.formula.split(FORMULA_DELIMS).each do |token|
-        # puts "token = #{token}"
-        pt = token.length > 1 ? eval(token, bdg).to_s : token.to_s
-        printable += " #{pt}"
-      end
-    rescue Exception => e
-      Rails.logger.debug "######################"
-      Rails.logger.error e.message
-      Rails.logger.debug "######################"
-    end
-    Rails.logger.debug { "printable = #{printable}" }
-    printable
-  end
-
   # Used to generate cumulative account entries for things such as TDS which is uploaded by the fund per commitment
   def cumulate_account_entries(fund_formula, _fund_unit_settings)
     # binding.pry
-    @fund.capital_commitments.each do |capital_commitment|
+    fund_formula.commitments.each do |capital_commitment|
       Rails.logger.debug { "Cumulating #{fund_formula} to #{capital_commitment}" }
 
       # Rollup this allocation for each commitment
-      capital_commitment.rollup_account_entries(fund_formula.name, fund_formula.entry_type, @start_date, @end_date) if fund_formula.roll_up
+      cumulative_ae = capital_commitment.rollup_account_entries(fund_formula.name, fund_formula.entry_type, @start_date, @end_date) if fund_formula.roll_up
+
+      @helper.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
     end
   end
 
@@ -233,72 +221,50 @@ class AccountEntryAllocationEngine
   def allocate_account_entries(fund_formula, fund_unit_settings)
     Rails.logger.debug { "allocate_account_entries  #{fund_formula.name}" }
     # Compute the allocation
-    account_entries = @fund.fund_account_entries.where(reporting_date: @start_date.., name: fund_formula.name).where(reporting_date: ..@end_date)
+    account_entries = @fund.fund_account_entries.where(reporting_date: @start_date.., name: fund_formula.name).where(reporting_date: ..@end_date).where(commitment_type: fund_formula.commitment_type)
 
-    account_entries.each do |fund_account_entry|
-      allocate_entry(fund_account_entry, fund_formula, fund_unit_settings)
+    if account_entries.present?
+      # Each account entry with the formula name, has to be allocated
+      account_entries.each do |fund_account_entry|
+        allocate_entry(fund_account_entry, fund_formula, fund_unit_settings)
+      end
+    else
+      # There is nothing to allocate, so create a zero account entry
+      entry_type = fund_formula.entry_type.presence || fund_formula.name
+      fund_formula.commitments.each do |capital_commitment|
+        ae = AccountEntry.new(name: fund_formula.name, entry_type:, reporting_date: @end_date, fund: @fund, capital_commitment:)
+        ae.amount_cents = 0
+        allocate_entry(ae, fund_formula, fund_unit_settings)
+      end
     end
   end
 
   def allocate_entry(fund_account_entry, fund_formula, fund_unit_settings)
-    @fund.capital_commitments.each do |capital_commitment|
+    fund_formula.commitments.each do |capital_commitment|
       Rails.logger.debug { "Allocating #{fund_account_entry} to #{capital_commitment}" }
 
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
 
       # This is used to generate instance variables from the cached computed values
-      fields = computed_fields_cache(capital_commitment)
+      fields = @helper.computed_fields_cache(capital_commitment)
 
       # Allocate this fund_account_entry to this capital_commitment
       ae = fund_account_entry.dup
 
       create_account_entry(ae, fund_formula, capital_commitment, fund_account_entry, binding)
 
-      add_to_computed_fields_cache(capital_commitment, ae)
-
       # Rollup this allocation for each commitment
       capital_commitment.rollup_account_entries(ae.name, ae.entry_type, @start_date, @end_date) if fund_formula.roll_up
     end
   end
 
-  # This is used to simplify the formulas, use these variables inside the formulas
-  def add_to_computed_fields_cache(capital_commitment, account_entry)
-    @cached_generated_fields[capital_commitment.id] ||= {}
-    cached_commitment_fields = @cached_generated_fields[capital_commitment.id]
-    cached_commitment_fields[account_entry.name.titleize.delete(' ').underscore] = account_entry.amount_cents
-  end
-
-  def computed_fields_cache(capital_commitment)
-    cached_commitment_fields ||= {}
-    if @cached_generated_fields[capital_commitment.id]
-      cached_commitment_fields = @cached_generated_fields[capital_commitment.id]
-    else
-
-      # Commitment remittance and dist
-      cached_commitment_fields["remittances"] = capital_commitment.capital_remittances.where(payment_date: ..@end_date).sum(:collected_amount_cents)
-
-      cached_commitment_fields["distributions"] = capital_commitment.capital_distribution_payments.where(payment_date: ..@end_date).sum(:amount_cents)
-
-      # Income and Expense
-      cached_commitment_fields["income_before_start_date"] = capital_commitment.account_entries.total_amount('Income', end_date: @start_date)
-
-      cached_commitment_fields["expense_before_start_date"] = capital_commitment.account_entries.total_amount('Expense', end_date: @start_date)
-
-      # Portfolio fields
-      cached_commitment_fields["units"] = capital_commitment.fund_units.where(issue_date: ..@end_date).sum(:quantity)
-
-      @cached_generated_fields[capital_commitment.id] = cached_commitment_fields
-    end
-
+  def create_variables(cached_commitment_fields)
     # Create variables available to eval here from all the cached fields
     # This is what allows formulas to have things line @cash_in_hand or @units
     cached_commitment_fields.keys.sort.each do |f|
-      variable_name = f.delete('.')
+      variable_name = f.delete('.&')
       instance_variable_set("@#{variable_name}", cached_commitment_fields[f])
       Rails.logger.debug { "Setting up variable @#{variable_name} to #{cached_commitment_fields[f]}" }
     end
-
-    # return the cached fields
-    cached_commitment_fields
   end
 end

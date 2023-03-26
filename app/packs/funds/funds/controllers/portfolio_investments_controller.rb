@@ -3,7 +3,7 @@ class PortfolioInvestmentsController < ApplicationController
 
   # GET /portfolio_investments or /portfolio_investments.json
   def index
-    @portfolio_investments = policy_scope(PortfolioInvestment).includes(:aggregate_portfolio_investment)
+    @portfolio_investments = policy_scope(PortfolioInvestment).includes(:aggregate_portfolio_investment, :capital_commitment)
     @portfolio_investments = @portfolio_investments.where(fund_id: params[:fund_id]) if params[:fund_id]
     @portfolio_investments = @portfolio_investments.where(aggregate_portfolio_investment_id: params[:aggregate_portfolio_investment_id]) if params[:aggregate_portfolio_investment_id]
   end
@@ -81,6 +81,8 @@ class PortfolioInvestmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def portfolio_investment_params
-    params.require(:portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :investment_date, :amount, :quantity, :investment_type, :notes, :form_type_id, properties: {})
+    params.require(:portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :investment_date,
+                                                 :amount, :quantity, :investment_type, :notes, :form_type_id,
+                                                 :commitment_type, :capital_commitment_id, :folio_id, properties: {})
   end
 end
