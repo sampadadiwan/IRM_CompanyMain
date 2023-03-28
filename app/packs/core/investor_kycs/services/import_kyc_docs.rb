@@ -41,7 +41,7 @@ class ImportKycDocs < ImportUtil
     name = user_data["Document Name"].strip
     model = InvestorKyc.where(investor_id: investor.id, PAN: user_data["PAN"].strip).first if user_data["Document Type"].strip == "KYC"
 
-    if investor && model
+    if investor && model && File.exist?(file_name)
       if name == "PAN"
         # PAN is handled slightly differently, its not a separate document.
         model.pan_card = File.open(file_name, "rb")
@@ -62,8 +62,10 @@ class ImportKycDocs < ImportUtil
       end
     elsif model.nil?
       [false, "#{user_data['Document Type'].strip} not found"]
-    else
+    elsif investor.nil?
       [false, "Investor not found"]
+    else
+      [false, "File name #{user_data['File Name']} not found in zip, please include this file and upload."]
     end
   end
 

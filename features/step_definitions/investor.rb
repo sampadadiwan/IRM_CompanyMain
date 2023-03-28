@@ -154,7 +154,7 @@ Given('Given I upload an investor kyc file for employees') do
   # Sidekiq.redis(&:flushdb)
 
   visit(investor_kycs_path)
-  click_on("Upload")
+  click_on("Upload KYC Details")
   fill_in('import_upload_name', with: "Test Investor Access Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_kycs.xlsx'), make_visible: true)
   sleep(1)
