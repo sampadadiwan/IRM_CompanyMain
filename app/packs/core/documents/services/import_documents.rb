@@ -81,7 +81,8 @@ class ImportDocuments
     # Create the document to the last created folder
     doc = Document.new(entity_id: import_upload.entity_id,
                        name: file_name, folder: parent,
-                       user_id: import_upload.user_id)
+                       user_id: import_upload.user_id, send_email: false)
+
     doc.setup_folder_defaults
     # Attach the actual document on the file system to the document in our app
     doc.file = File.open(file_path, "rb")

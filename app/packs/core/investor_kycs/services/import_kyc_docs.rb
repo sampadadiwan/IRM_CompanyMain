@@ -55,7 +55,7 @@ class ImportKycDocs < ImportUtil
         # Create the document
         doc = Document.new(owner: model, entity_id: model.entity_id,
                            name:, tag_list: user_data["Tags"]&.strip,
-                           user_id: import_upload.user_id)
+                           user_id: import_upload.user_id, send_email: false)
 
         doc.file = File.open(file_name, "rb")
         [doc.save, doc.errors.full_messages]

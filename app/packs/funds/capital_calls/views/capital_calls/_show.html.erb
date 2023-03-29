@@ -24,22 +24,7 @@
         <%= capital_call.name %>
       </td>
     </tr>
-    <tr>
-      <td>
-        Type
-      </td>
-      <td>
-        <%= capital_call.commitment_type %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Percentage Called
-      </td>
-      <td>
-        <%= capital_call.percentage_called %> %
-      </td>
-    </tr>
+
     <tr>
       <td>
         Call Date
@@ -54,6 +39,25 @@
       </td>
       <td>
         <%= l capital_call.due_date %>
+      </td>
+    </tr>
+
+
+    <% if current_user.entity_id == capital_call.entity_id %>
+    <tr>
+      <td>
+        Type
+      </td>
+      <td>
+        <%= capital_call.commitment_type %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Percentage Called
+      </td>
+      <td>
+        <%= capital_call.percentage_called %> %
       </td>
     </tr>
 
@@ -81,8 +85,6 @@
 
       <% end %>  
     <% end %>
-
-
 
     <% if current_user %>
 
@@ -129,6 +131,10 @@
 
     <% end %>
 
+    <%= display_custom_fields(capital_call) if current_user %>
+    <% end %>
+    
+
     <tr>
       <td>
         Notes
@@ -138,7 +144,7 @@
       </td>
     </tr>
 
-    <%= display_custom_fields(capital_call) if current_user %>
+    
 
 
   </table>
