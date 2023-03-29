@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_03_25_100028) do
+ActiveRecord::Schema[7.0].define(version: 2023_03_29_124345) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1091,6 +1091,14 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_25_100028) do
     t.decimal "co_invest_distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "co_invest_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.boolean "editable_formulas", default: false
+    t.string "registration_number", limit: 20
+    t.string "category", limit: 15
+    t.string "sub_category", limit: 40
+    t.string "sponsor_name", limit: 100
+    t.string "manager_name", limit: 100
+    t.string "trustee_name", limit: 100
+    t.string "contact_name", limit: 100
+    t.string "contact_email", limit: 100
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"

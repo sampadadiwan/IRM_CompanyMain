@@ -231,7 +231,7 @@
       <% end %>
 
       <% if params[:debug].present? %>
-        <tr class="collapse multi-collapse btn-outline-primary">
+        <tr class="collapse multi-collapse btn-primary">
           <td colspan="2">
           </td>
         </tr>
@@ -404,11 +404,75 @@
             <%= currency_from_cents fund_portfolio_calcs.xirr(net_irr: true), fund.currency, params  %>
           </td>
         </tr>
-
-
-
-
+      
       <% end %>
 
+      <tr class="collapse multi-collapse btn-primary">
+          <td colspan="2">
+          </td>
+      </tr>
+
+      <tr class="collapse multi-collapse">
+          <td>
+            Registration Number
+          </td>
+          <td>
+            <%= fund.registration_number  %>
+          </td>
+      </tr>
+
+      <tr class="collapse multi-collapse">
+          <td>
+            Category
+          </td>
+          <td>
+            <%= fund.category  %>
+          </td>
+      </tr>
+
+      <tr class="collapse multi-collapse">
+          <td>
+            Sub Category
+          </td>
+          <td>
+            <%= fund.sub_category  %>
+          </td>
+      </tr>
+
+      <tr class="collapse multi-collapse">
+          <td>
+            Sponsor Name
+          </td>
+          <td>
+            <%= fund.sponsor_name  %>
+          </td>
+      </tr>
+
+      <tr class="collapse multi-collapse">
+          <td>
+            Manager Name
+          </td>
+          <td>
+            <%= fund.manager_name  %>
+          </td>
+      </tr>
+
+      <tr class="collapse multi-collapse">
+          <td>
+            Contact Name
+          </td>
+          <td>
+            <%= fund.contact_name  %>
+          </td>
+      </tr>
+
+      <tr class="collapse multi-collapse">
+          <td>
+            Contact Email
+          </td>
+          <td>
+            <%= fund.contact_email  %>
+          </td>
+      </tr>
 
     </table>

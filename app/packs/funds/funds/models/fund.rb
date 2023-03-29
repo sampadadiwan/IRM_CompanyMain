@@ -10,6 +10,8 @@ class Fund < ApplicationRecord
 
   update_index('fund') { self }
 
+  CATEGORIES = ["Category I", "Category II", "Category III"].freeze
+
   belongs_to :entity, touch: true
   belongs_to :fund_signatory, class_name: "User", optional: true
   belongs_to :trustee_signatory, class_name: "User", optional: true

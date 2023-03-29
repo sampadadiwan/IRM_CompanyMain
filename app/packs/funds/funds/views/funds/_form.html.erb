@@ -42,6 +42,45 @@
     <%= form.text_field :tag_list, class: "form-control"  %>
   </div>
 
+  <div class="">
+
+  <div class="form-group">
+    <%= form.label :registration_number %>
+    <%= form.text_field :registration_number, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :category %>
+    <%= form.select :category, Fund::CATEGORIES, {}, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :sub_category %>
+    <%= form.text_field :sub_category, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :sponsor_name %>
+    <%= form.text_field :sponsor_name, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :manager_name %>
+    <%= form.text_field :manager_name, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :contact_name %>
+    <%= form.text_field :contact_name, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :contact_email %>
+    <%= form.text_field :contact_email, class: "form-control"  %>
+  </div>
+
+  </div>
+
   <div class="form-group">
     <%= form.label :details %>
     <%= form.rich_text_area :details, class: "form-control"  %>
