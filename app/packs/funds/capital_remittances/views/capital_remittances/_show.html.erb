@@ -48,7 +48,11 @@
         Investor
       </td>
       <td>
-        <%= link_to capital_remittance.investor_name, investor_url(id: capital_remittance.investor_id) %>
+        <% if current_user %>
+          <%= link_to capital_remittance.investor_name, investor_url(id: capital_remittance.investor_id) %>
+        <% else %>
+          <%= capital_remittance.investor_name %>
+        <% end %>
       </td>
     </tr>
 
