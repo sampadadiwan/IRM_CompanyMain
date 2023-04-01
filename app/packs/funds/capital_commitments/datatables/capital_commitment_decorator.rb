@@ -13,6 +13,10 @@ class CapitalCommitmentDecorator < ApplicationDecorator
     h.link_to object.folio_id, object
   end
 
+  def full_name_link
+    h.link_to object.investor_kyc.full_name, object.investor_kyc if object.investor_kyc
+  end
+
   def pending_call_amount
     h.render partial: "/capital_commitments/pending_amount", locals: { capital_commitment: object }, formats: [:html]
   end

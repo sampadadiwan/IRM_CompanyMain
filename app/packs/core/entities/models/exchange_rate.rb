@@ -2,6 +2,8 @@ class ExchangeRate < ApplicationRecord
   belongs_to :entity
 
   scope :latest, -> { where(latest: true) }
+  validates :from, :to, :as_of, presence: true
+  validates :rate, numericality: { greater_than: 0 }
 
   before_save :set_latest
   def set_latest

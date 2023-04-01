@@ -1,5 +1,5 @@
 class ImportCapitalCommittment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type", "Type"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type", "Type", "Commitment Date"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -38,16 +38,14 @@ class ImportCapitalCommittment < ImportUtil
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
-    folio_id = user_data["Folio No"].presence
-    unit_type = user_data["Unit Type"].presence
-    commitment_type = user_data["Type"].presence
-    folio_currency = user_data["Folio Currency"].presence
+
+    folio_id, unit_type, commitment_type, commitment_date, folio_currency = get_params(user_data)
 
     if fund && investor
       # Make the capital_commitment
       capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
                                                  fund_close: user_data["Fund Close"].strip,
-                                                 commitment_type:,
+                                                 commitment_type:, commitment_date:,
                                                  fund:, investor:, investor_name: investor.investor_name,
                                                  folio_currency:, unit_type:, notes: user_data["Notes"])
 
@@ -70,6 +68,16 @@ class ImportCapitalCommittment < ImportUtil
     else
       [false, "Fund not found"]
     end
+  end
+
+  def get_params(user_data)
+    folio_id = user_data["Folio No"].presence
+    unit_type = user_data["Unit Type"].presence
+    commitment_type = user_data["Type"].presence
+    commitment_date = user_data["Commitment Date"].presence
+    folio_currency = user_data["Folio Currency"].presence
+
+    [folio_id, unit_type, commitment_type, commitment_date, folio_currency]
   end
 
   def post_process(import_upload, _context)

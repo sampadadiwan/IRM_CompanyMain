@@ -28,7 +28,7 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
         folio_id: record.decorate.folio_link,
         unit_type: record.unit_type,
         investor_name: record.decorate.investor_link,
-        full_name: record.investor_kyc&.full_name,
+        full_name: record.decorate.full_name_link,
         fund_name: record.decorate.fund_link,
         committed_amount: record.decorate.money_to_currency(record.committed_amount, params),
         collected_amount: record.decorate.money_to_currency(record.collected_amount, params),
@@ -52,9 +52,9 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
     # insert query here
     if params[:show_docs]
       # Dont load the docs unless we need them
-      capital_commitments.includes(:documents)
+      capital_commitments.left_joins(:investor_kyc).includes(:documents)
     else
-      capital_commitments
+      capital_commitments.left_joins(:investor_kyc)
     end
   end
 end

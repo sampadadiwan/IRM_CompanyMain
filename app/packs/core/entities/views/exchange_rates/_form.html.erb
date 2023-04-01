@@ -1,4 +1,4 @@
-<%= form_with(model: exchange_rate) do |form| %>
+<%= form_with(model: exchange_rate, validate: true) do |form| %>
   <% if exchange_rate.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(exchange_rate.errors.count, "error") %> prohibited this exchange_rate from being saved:</h2>

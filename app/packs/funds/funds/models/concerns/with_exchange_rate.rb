@@ -9,6 +9,8 @@ module WithExchangeRate
     if to == from
       amount
     else
+      raise "No date specified" unless as_of
+
       @exchange_rate = get_exchange_rate(from, to, as_of)
       if @exchange_rate
         # This sets the exchange rate being used for the conversion

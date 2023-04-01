@@ -40,7 +40,18 @@
       <%= link_to @capital_commitment.investor_name, investor_path(id: @capital_commitment.investor_id) %>
     </td>
   </tr>
-
+  
+  <% if @capital_commitment.commitment_date %>
+    <tr>
+      <td>
+        Date
+      </td>
+      <td>
+        <%= l @capital_commitment.commitment_date %>
+      </td>
+    </tr>
+  <% end %>
+  
     <tr>
       <td>
         Folio Id

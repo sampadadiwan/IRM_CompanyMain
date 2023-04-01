@@ -79,7 +79,7 @@ class CapitalCommitment < ApplicationRecord
     if orig_folio_committed_amount_cents.zero?
       self.orig_folio_committed_amount_cents = folio_committed_amount_cents
       self.orig_committed_amount_cents = convert_currency(folio_currency, fund.currency,
-                                                          orig_folio_committed_amount_cents, created_at)
+                                                          orig_folio_committed_amount_cents, commitment_date)
     end
   end
 

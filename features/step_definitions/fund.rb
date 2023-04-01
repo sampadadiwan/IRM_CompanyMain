@@ -645,6 +645,7 @@ Then('the capital commitments must have the data in the sheet') do
     cc.investor.investor_name.should == user_data["Investor"].strip
     cc.fund.name.should == user_data["Fund"]
     cc.commitment_type.should == user_data["Type"]
+    cc.commitment_date.should == Date.parse(user_data["Commitment Date"].to_s)
     cc.folio_currency.should == user_data["Folio Currency"]
     cc.folio_committed_amount_cents.should == user_data["Committed Amount"].to_i * 100
     cc.folio_id.should == user_data["Folio No"].to_s
