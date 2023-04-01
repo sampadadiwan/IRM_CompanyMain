@@ -6,7 +6,7 @@ class CapitalCommitmentsController < ApplicationController
 
   # GET /capital_commitments or /capital_commitments.json
   def index
-    @capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund)
+    @capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc)
     @capital_commitments = @capital_commitments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @capital_commitments = @capital_commitments.where(investor_id: params[:investor_id]) if params[:investor_id].present?
     @capital_commitments = @capital_commitments.where(onboarding_completed: params[:onboarding_completed]) if params[:onboarding_completed].present?

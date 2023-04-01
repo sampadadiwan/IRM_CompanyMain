@@ -66,5 +66,5 @@
   <div>
     <%= link_to "Edit" , edit_permission_path(@permission), {class: "btn btn-outline-primary" } %> |
     <%= button_to "Delete" , @permission, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton" ,
-        data: {action: "click->confirm#delete" , turbo:false} %>
+        data: {action: "click->confirm#popup" , turbo:false} %>
   </div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_03_29_124345) do
+ActiveRecord::Schema[7.0].define(version: 2023_03_30_072930) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -974,9 +974,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_29_124345) do
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "valuation_id"
-    t.string "name", limit: 30
+    t.string "name"
     t.decimal "value", precision: 10
-    t.string "display_value", limit: 20
+    t.string "display_value", limit: 50
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -1099,6 +1099,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_29_124345) do
     t.string "trustee_name", limit: 100
     t.string "contact_name", limit: 100
     t.string "contact_email", limit: 100
+    t.date "start_date"
+    t.decimal "target_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"

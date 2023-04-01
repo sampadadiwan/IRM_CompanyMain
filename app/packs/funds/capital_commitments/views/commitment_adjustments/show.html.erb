@@ -85,6 +85,6 @@
 <div>
   <% if policy(@commitment_adjustment).update? %>
     <%= link_to "Edit", edit_commitment_adjustment_path(@commitment_adjustment), {class: "btn btn-primary"} %> 
-    <%= button_to "Delete", @commitment_adjustment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+    <%= button_to "Delete", @commitment_adjustment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 </div>

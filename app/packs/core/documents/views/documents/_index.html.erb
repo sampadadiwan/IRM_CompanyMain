@@ -1,9 +1,18 @@
 <% @entity ||= nil %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <span class="mb-0 text-gray-800">
-    Documents in
-    <%= params[:folder_id].present? ? link_to(last_folders_path(Folder.find(params[:folder_id]).full_path, 4), Folder.find(params[:folder_id])) : "" %>
-  </span>
+  <% if params[:folder_id].present? %>
+    <% 
+      # Get the folder
+      folder = Folder.find(params[:folder_id]) 
+      # Shorten the path - some folders are too long to display
+      path = last_folders_path(folder.full_path, 4)
+      # link for users or just path for investors
+      link = (folder.entity_id == current_user.entity_id) ? link_to(path, folder) : path 
+    %>
+    <span class="mb-0 text-gray-800">
+      Documents: <%= link %>
+    </span>
+  <% end %>
 
   <% 
     external = owner && owner.entity_id != current_user.entity_id 
@@ -32,11 +41,11 @@
 
 
     <%= link_to "Upload Documents", 
-        new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
-            "import_upload[owner_type]": "Entity", 
+        new_import_upload_path("import_upload[owner_id]": params[:folder_id], 
+            "import_upload[owner_type]": "Folder", 
             "import_upload[import_type]": "Documents", 
             "sample_upload": "DOCS_SAMPLE"), 
-            { class: "btn btn-outline-primary"}  %> 
+            { class: "btn btn-outline-primary"} if params[:folder_id].present? %> 
             
     <% 
       owner ||= nil 

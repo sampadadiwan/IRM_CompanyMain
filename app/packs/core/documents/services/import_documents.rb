@@ -63,7 +63,7 @@ class ImportDocuments
     file_name = file_path.split("/")[-1]
 
     # Walk thru the folders and create them in our system
-    parent = import_upload.entity.root_folder
+    parent = import_upload.owner
     folders.each do |folder|
       child_folder = parent.children.where(entity_id: import_upload.entity_id, name: folder,
                                            folder_type: "regular").first_or_initialize

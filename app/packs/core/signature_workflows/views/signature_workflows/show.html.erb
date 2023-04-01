@@ -46,5 +46,5 @@
 </table>
 <div>
   <%= link_to "Edit", edit_signature_workflow_path(@signature_workflow), {class: "btn btn-outline-primary"} %> 
-  <%= button_to "Delete", @signature_workflow, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+  <%= button_to "Delete", @signature_workflow, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>
