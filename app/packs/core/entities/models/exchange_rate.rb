@@ -15,7 +15,7 @@ class ExchangeRate < ApplicationRecord
     if latest
       entity.exchange_rates.latest.where(to:, from:).where.not(id:).update(latest: false)
       # Ensure other dependent items get updated with this new exchange rate
-      ExchangeRateJob.perform_later(id)
+      ExchangeRateCommitmentAdjustmentJob.perform_later(id)
     end
   end
 

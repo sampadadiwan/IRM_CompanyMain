@@ -4,11 +4,11 @@ form_type, custom_field_names, custom_headers = get_form_type("CapitalCall")
 
 wb.add_worksheet(name: "CapitalCall") do |sheet|
   # Create the header row
-  sheet.add_row(["Fund", "Name", "Percentage Called", "Due Date", "Call Amount", "Collected Amount", "Due Amount"] + custom_headers)
+  sheet.add_row(["Fund", "Name", "Fund Closes", "Percentage Called", "Due Date", "Call Amount", "Collected Amount", "Due Amount"] + custom_headers)
 
   # Create entries for each item
   @capital_calls.each do |cc|
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
-    sheet.add_row [cc.fund.name, cc.name, cc.percentage_called, cc.due_date, cc.call_amount, cc.collected_amount, cc.due_amount] + custom_field_values
+    sheet.add_row [cc.fund.name, cc.name, cc.fund_closes.join(','), cc.percentage_called, cc.due_date, cc.call_amount, cc.collected_amount, cc.due_amount] + custom_field_values
   end
 end

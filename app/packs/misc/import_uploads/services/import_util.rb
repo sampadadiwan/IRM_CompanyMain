@@ -25,11 +25,15 @@ class ImportUtil
     end
   end
 
+  def pre_process(import_upload, context); end
+
   def process_rows(import_upload, headers, data, context)
     Rails.logger.debug { "##### process_rows #{data.count}" }
     custom_field_headers = headers - standard_headers
 
     validate_headers(headers)
+
+    pre_process(import_upload, context)
 
     # Parse the XL rows
     package = Axlsx::Package.new do |p|

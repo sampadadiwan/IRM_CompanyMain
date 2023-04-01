@@ -1,4 +1,4 @@
-class ExchangeRateJob < ApplicationJob
+class ExchangeRateCommitmentAdjustmentJob < ApplicationJob
   queue_as :low
 
   def perform(id)
@@ -15,11 +15,16 @@ class ExchangeRateJob < ApplicationJob
 
         amount_cents = cc.committed_amount_at_exchange_rate - cc.committed_amount_cents
 
-        reason = "Exchange Rate Changed: #{@exchange_rate}"
-        as_of = Time.zone.today
+        if amount_cents.zero?
+          Rails.logger.debug { "No adjustment required for #{cc} for #{@exchange_rate}" }
+        else
+          reason = "Exchange Rate Changed: #{@exchange_rate}"
+          as_of = Time.zone.today
 
-        CommitmentAdjustment.create(entity_id: cc.entity_id, fund_id: cc.fund_id,
-                                    capital_commitment: cc, amount_cents:, reason:, as_of:)
+          CommitmentAdjustment.create(entity_id: cc.entity_id, fund_id: cc.fund_id,
+                                      capital_commitment: cc, amount_cents:, reason:, as_of:)
+
+        end
 
         count += 1
       end
