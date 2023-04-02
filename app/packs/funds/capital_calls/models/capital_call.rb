@@ -26,23 +26,6 @@ class CapitalCall < ApplicationRecord
 
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
 
-  counter_culture :fund,
-                  column_name: proc { |r| r.Pool? ? 'call_amount_cents' : 'co_invest_call_amount_cents' },
-                  delta_column: 'call_amount_cents',
-                  column_names: lambda {
-                                  {
-                                    CapitalCall.pool => :call_amount_cents,
-                                    CapitalCall.co_invest => :co_invest_call_amount_cents
-                                  }
-                                }
-
-  before_save :compute_call_amount
-  def compute_call_amount
-    # At this time, all the commitments have been adjusted with the FX applicable on the due date of the call
-    # It is critical that the FX rates be updated before the call is created
-    self.call_amount_cents = applicable_to.sum(:committed_amount_cents) * percentage_called / 100.0
-  end
-
   # This is a list of commitments for which this call is applicable
   def applicable_to
     commitments = Pool? ? fund.capital_commitments.pool : fund.capital_commitments.co_invest

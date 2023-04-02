@@ -613,7 +613,7 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   @import_file = file
   visit(fund_path(@fund))
   click_on(tab)
-  sleep(1)
+  sleep(2)
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
@@ -759,6 +759,7 @@ end
 
 Then('the funds are updated with remittance numbers') do
   Fund.all.each do |f|
+    f.reload
     f.call_amount_cents.should == f.capital_remittances.pool.sum(:call_amount_cents)
     f.collected_amount_cents.should == f.capital_remittances.pool.verified.sum(:collected_amount_cents)
     f.co_invest_call_amount_cents.should == f.capital_remittances.co_invest.sum(:call_amount_cents)
@@ -1112,7 +1113,7 @@ Then('the capital remittance payments must have the data in the sheet') do
       capital_commitment = cc.capital_remittance.capital_commitment
       capital_commitment.folio_currency.should == user_data["Currency"]
 
-      amount = capital_commitment.foreign_currency? ? (cc.folio_amount_cents * capital_commitment.get_exchange_rate(capital_commitment.folio_currency, cc.fund.currency, Date.today).rate) : cc.amount_cents
+      amount = capital_commitment.foreign_currency? ? (cc.folio_amount_cents * capital_commitment.get_exchange_rate(capital_commitment.folio_currency, cc.fund.currency, cc.payment_date).rate) : cc.amount_cents
       cc.amount_cents.should == amount
       # sleep(30)
     end
@@ -1133,6 +1134,6 @@ end
 Then('the commitment amounts change correctly') do
   @fund.reload
   @fund.capital_commitments.each do |cc|
-    cc.committed_amount_cents.should == cc.collected_amount_cents + cc.convert_currency(cc.folio_currency, cc.fund.currency, cc.folio_pending_committed_amount.cents, Date.today)
+    cc.committed_amount_cents.should == cc.orig_committed_amount_cents + cc.adjustment_amount_cents
   end
 end

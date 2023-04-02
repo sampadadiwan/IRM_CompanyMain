@@ -46,6 +46,18 @@ class CapitalRemittance < ApplicationRecord
   counter_culture :capital_commitment, column_name: 'call_amount_cents',
                                        delta_column: 'call_amount_cents'
 
+  counter_culture :fund, column_name: proc { |r| r.capital_commitment.Pool? ? 'call_amount_cents' : 'co_invest_call_amount_cents' },
+                         delta_column: 'call_amount_cents',
+                         column_names: lambda {
+                                         {
+                                           CapitalRemittance.pool => :call_amount_cents,
+                                           CapitalRemittance.co_invest => :co_invest_call_amount_cents
+                                         }
+                                       }
+
+  counter_culture :capital_call, column_name: 'call_amount_cents',
+                                 delta_column: 'call_amount_cents'
+
   counter_culture :capital_commitment, column_name: 'folio_call_amount_cents',
                                        delta_column: 'folio_call_amount_cents'
 

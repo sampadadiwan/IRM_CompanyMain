@@ -66,12 +66,18 @@ class ImportCapitalCall < ImportUtil
     end
   end
 
+  # Capital call imports a re special, they have a special sheet called Exchange Rates in the XL
+  # This sheet must specify the exchange rate for the call_date for a multicurrency fund
+  # These rates are created before the call is created, so that the commitment amounts get adjusted
+  # due to the exchange_rate
   def check_exchange_rate(capital_call)
     # We need to setup the commitments for the exchange rate
-    er_user_data = @exchange_rates.find { |er| er["As Of"] == capital_call.call_date }
+    er_user_data = @exchange_rates.filter { |er| er["As Of"] == capital_call.call_date }
     if er_user_data.present?
-      exchange_rate = setup_exchange_rate(capital_call, er_user_data)
-      Rails.logger.debug { "Created #{exchange_rate}" }
+      er_user_data.each do |erud|
+        exchange_rate = setup_exchange_rate(capital_call, erud)
+        Rails.logger.debug { "Created #{exchange_rate}" }
+      end
     else
       Rails.logger.debug { "No ExchangeRate specified for Call #{capital_call}" }
     end
