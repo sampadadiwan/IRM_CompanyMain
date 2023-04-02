@@ -15,6 +15,7 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :capital_commitment
   has_one :investor_kyc, through: :capital_commitment
   belongs_to :investor
+  belongs_to :exchange_rate, optional: true
   has_many :capital_remittance_payments, dependent: :destroy
 
   scope :paid, -> { where(status: "Paid") }
@@ -83,8 +84,9 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def calc_call_amount_cents
+    # Get the call amount in the folio_currency
     self.folio_call_amount_cents = capital_call.percentage_called * capital_commitment.folio_committed_amount_cents / 100.0
-
+    # Now compute the call amount in the fund currency
     self.call_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency,
                                               folio_call_amount_cents, payment_date)
   end

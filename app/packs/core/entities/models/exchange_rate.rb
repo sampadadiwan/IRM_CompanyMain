@@ -20,6 +20,6 @@ class ExchangeRate < ApplicationRecord
   end
 
   def to_s
-    "#{rate} (#{from} -> #{to})"
+    "#{id}: #{rate} (#{from} -> #{to}) on #{as_of}, latest: #{latest}"
   end
 end

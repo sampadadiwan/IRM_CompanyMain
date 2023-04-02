@@ -58,6 +58,9 @@
     </td>
     <td>
       <%= @commitment_adjustment.reason %>
+      <% if @commitment_adjustment.owner %>
+        <div><%= link_to @commitment_adjustment.owner %></div>
+      <% end %>
     </td>
   </tr>
 

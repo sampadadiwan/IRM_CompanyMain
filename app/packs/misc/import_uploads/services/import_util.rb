@@ -73,4 +73,9 @@ class ImportUtil
 
     @last_saved = model
   end
+
+  def setup_exchange_rate(model, user_data)
+    ExchangeRate.create!(from: user_data["From Currency"], to: user_data["To Currency"], as_of: user_data["As Of"], rate: user_data["Exchange Rate"], entity_id: model.entity_id)
+    # puts "Created #{exchange_rate}"
+  end
 end

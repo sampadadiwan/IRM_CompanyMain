@@ -1,5 +1,5 @@
 class ImportCapitalCall < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date", "Call Date", "Fund Closes", "Generate Remittances", "Remittances Verified", "Type"].freeze
+  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date", "Call Date", "Fund Closes", "Generate Remittances", "Remittances Verified", "Type", "From Currency", "To Currency", "Exchange Rate", "As Of"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -52,27 +52,15 @@ class ImportCapitalCall < ImportUtil
 
         setup_custom_fields(user_data, capital_call, custom_field_headers)
 
-        # We need to adjust the commitments for the exchange rate
-        exchange_rates_commitment_adjustment(capital_call)
+        # We need to setup the commitments for the exchange rate
+        exchange_rate = setup_exchange_rate(capital_call, user_data)
+        Rails.logger.debug { "Created #{exchange_rate}" }
 
         capital_call.save!
+        Rails.logger.debug "Saved CapitalCall"
       end
     else
       raise "Fund not found"
-    end
-  end
-
-  # We need to ensure the exchange rate just prior to the call dues_date, is applied to the capital commitments
-  # This is so that the called amounts are from the adjusted commitments
-  def exchange_rates_commitment_adjustment(capital_call)
-    # For each folio currency used in the fund, apply it to adjust the commitments
-    folio_currencies = capital_call.fund.capital_commitments.pluck(:folio_currency).uniq
-    fund_currency = capital_call.fund.currency
-    folio_currencies.each do |folio_currency|
-      if folio_currency != fund_currency
-        exchange_rate = capital_call.entity.exchange_rates.where(from: folio_currency, to: fund_currency, as_of: ..capital_call.due_date).order(as_of: :asc).last
-        ExchangeRateCommitmentAdjustmentJob.perform_now(exchange_rate.id)
-      end
     end
   end
 end

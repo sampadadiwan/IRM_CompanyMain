@@ -15,9 +15,11 @@ module WithExchangeRate
       if @exchange_rate
         # This sets the exchange rate being used for the conversion
         self.exchange_rate = @exchange_rate
+        # puts "Using exchange_rate #{exchange_rate} for #{self}"
+        self.exchange_rate = @exchange_rate if respond_to? :exchange_rate
         amount * exchange_rate.rate
       else
-        raise "Exchange rate from #{from} to #{to} not found."
+        raise "Exchange rate from #{from} to #{to} not found for date #{as_of}."
       end
     end
   end

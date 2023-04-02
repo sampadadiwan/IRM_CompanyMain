@@ -13,17 +13,17 @@ class ExchangeRateCommitmentAdjustmentJob < ApplicationJob
 
         Rails.logger.debug { "Updating commitment due to exchange_rate for #{cc.investor_name} in #{cc.fund.name}" }
 
-        amount_cents = cc.committed_amount_at_exchange_rate - cc.committed_amount_cents
+        amount_cents = cc.committed_amount_at_exchange_rate(@exchange_rate.as_of) - cc.committed_amount_cents
 
         if amount_cents.zero?
           Rails.logger.debug { "No adjustment required for #{cc} for #{@exchange_rate}" }
         else
           reason = "Exchange Rate Changed: #{@exchange_rate}"
-          as_of = Time.zone.today
+          as_of = @exchange_rate.as_of
 
-          CommitmentAdjustment.create(entity_id: cc.entity_id, fund_id: cc.fund_id,
-                                      capital_commitment: cc, amount_cents:, reason:, as_of:)
-
+          ca = CommitmentAdjustment.create!(entity_id: cc.entity_id, fund_id: cc.fund_id, owner: @exchange_rate,
+                                            capital_commitment: cc, amount_cents:, reason:, as_of:)
+          Rails.logger.debug ca
         end
 
         count += 1

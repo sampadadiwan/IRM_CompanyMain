@@ -649,7 +649,10 @@ Then('the capital commitments must have the data in the sheet') do
     cc.folio_currency.should == user_data["Folio Currency"]
     cc.folio_committed_amount_cents.should == user_data["Committed Amount"].to_i * 100
     cc.folio_id.should == user_data["Folio No"].to_s
-    committed = cc.foreign_currency? ? (cc.folio_committed_amount_cents * cc.get_exchange_rate(cc.folio_currency, cc.fund.currency, Date.today).rate) : cc.folio_committed_amount_cents
+
+    exchange_rate = cc.get_exchange_rate(cc.folio_currency, cc.fund.currency, cc.commitment_date)
+    puts "Using exchange_rate #{exchange_rate}"
+    committed = cc.foreign_currency? ? (cc.folio_committed_amount_cents * exchange_rate.rate) : cc.folio_committed_amount_cents
     cc.committed_amount_cents.should == committed
   end
 end  
@@ -723,6 +726,7 @@ Then('the remittances are generated for the capital calls') do
   Fund.all.each do |fund|
     fund.capital_calls.each do |cc|
       # puts cc.capital_remittances.to_json
+      binding.pry
       commitments = cc.Pool? ? fund.capital_commitments.pool : fund.capital_commitments.co_invest 
       cc.capital_remittances.count.should == commitments.count
       cc.capital_remittances.sum(:call_amount_cents).should == cc.call_amount_cents

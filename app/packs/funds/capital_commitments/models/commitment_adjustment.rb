@@ -3,6 +3,7 @@ class CommitmentAdjustment < ApplicationRecord
   belongs_to :entity
   belongs_to :fund
   belongs_to :capital_commitment
+  belongs_to :owner, polymorphic: true, optional: true
 
   validates :reason, :as_of, :folio_amount_cents, presence: true
 
@@ -26,4 +27,8 @@ class CommitmentAdjustment < ApplicationRecord
 
   after_save -> { capital_commitment.reload.save }
   after_destroy -> { capital_commitment.reload.save }
+
+  def to_s
+    "CommitmentAdjustment: #{capital_commitment.folio_id}, #{folio_amount}, #{amount}, #{owner}"
+  end
 end
