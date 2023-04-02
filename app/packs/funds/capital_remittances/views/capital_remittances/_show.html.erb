@@ -103,6 +103,16 @@
         <%= money_to_currency capital_remittance.folio_collected_amount, params %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Exchange Rate
+      </td>
+      <td>
+        <%= link_to capital_remittance.exchange_rate if capital_remittance.exchange_rate %>
+      </td>
+    </tr>
+
     <% end %>
 
     <% if capital_remittance.entity.enable_units %>

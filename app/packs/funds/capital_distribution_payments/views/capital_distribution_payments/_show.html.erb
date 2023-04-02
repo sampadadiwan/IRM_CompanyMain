@@ -60,6 +60,15 @@
         <%= money_to_currency capital_distribution_payment.folio_amount, params %>
       </td>
     </tr>
+    <tr>
+      <td>
+        Exchange Rate
+      </td>
+      <td>
+        <%= link_to capital_distribution_payment.exchange_rate if capital_distribution_payment.exchange_rate %>
+      </td>
+    </tr>
+
     <% end %>
 
     <% if capital_distribution_payment.entity.enable_units %>
