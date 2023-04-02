@@ -90,15 +90,22 @@ class CapitalCommitment < ApplicationRecord
     # Since the commitment amount is always in the folio currency, we compute te converted committed_amount based on exchange rates.
     self.folio_committed_amount_cents = orig_folio_committed_amount_cents + adjustment_folio_amount_cents
     self.committed_amount_cents = if foreign_currency?
-                                    committed_amount_at_exchange_rate(commitment_date)
+                                    committed_amount_at_exchange_rate
                                   else
                                     folio_committed_amount_cents
                                   end
   end
 
-  def committed_amount_at_exchange_rate(_date)
-    # collected_amount_cents + adjustment_amount_cents + pending_committed_amount.cents #convert_currency(folio_currency, fund.currency, folio_pending_committed_amount.cents, date)
+  def committed_amount_at_exchange_rate
     adjustment_amount_cents + orig_committed_amount_cents
+  end
+
+  def changed_committed_amount_at_exchange_rate(date)
+    if get_exchange_rate(folio_currency, fund.currency, date - 1.day).nil?
+      0
+    else
+      convert_currency(folio_currency, fund.currency, folio_pending_committed_amount.cents, date) - convert_currency(folio_currency, fund.currency, folio_pending_committed_amount.cents, date - 1.day)
+    end
   end
 
   def folio_pending_committed_amount

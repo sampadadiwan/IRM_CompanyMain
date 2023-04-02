@@ -11,9 +11,11 @@ class ExchangeRateCommitmentAdjustmentJob < ApplicationJob
                        .each do |cc|
         next unless cc.fund.currency == @exchange_rate.to
 
+        cc.reload
+
         Rails.logger.debug { "Updating commitment due to exchange_rate for #{cc.investor_name} in #{cc.fund.name}" }
 
-        amount_cents = cc.committed_amount_at_exchange_rate(@exchange_rate.as_of) - cc.committed_amount_cents
+        amount_cents = cc.changed_committed_amount_at_exchange_rate(@exchange_rate.as_of)
 
         if amount_cents.zero?
           Rails.logger.debug { "No adjustment required for #{cc} for #{@exchange_rate}" }

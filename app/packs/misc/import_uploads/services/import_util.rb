@@ -75,7 +75,33 @@ class ImportUtil
   end
 
   def setup_exchange_rate(model, user_data)
-    ExchangeRate.create!(from: user_data["From Currency"], to: user_data["To Currency"], as_of: user_data["As Of"], rate: user_data["Exchange Rate"], entity_id: model.entity_id)
+    ExchangeRate.create!(from: user_data["From Currency"], to: user_data["To Currency"], as_of: user_data["As Of"], rate: user_data["Exchange Rate"], entity_id: model.entity_id, notes: "Imported with #{model}")
+
     # puts "Created #{exchange_rate}"
+  end
+
+  # get header row without the mandatory *
+  def get_headers(headers)
+    headers.each { |x| x.delete!("*") }.each(&:strip!)
+  end
+
+  def get_exchange_rates(file, _import_upload)
+    exchange_rates = []
+    # open spreadsheet with the rates sheet
+    data = Roo::Spreadsheet.open(file.path).sheet("Exchange Rates")
+    headers = get_headers(data.row(1))
+    Rails.logger.debug { "## exchange rate headers = #{headers}" }
+
+    data.each_with_index do |row, idx|
+      # skip header row
+      next if idx.zero?
+
+      exchange_rate = [headers, row].transpose.to_h
+      exchange_rate["As Of"] = Date.parse(exchange_rate["As Of"].to_s)
+      exchange_rates << exchange_rate
+    end
+
+    # Sort by the as_of date
+    exchange_rates.sort_by { |er| er["As Of"] }
   end
 end

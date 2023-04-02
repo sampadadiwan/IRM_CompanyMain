@@ -10,7 +10,7 @@ class ImportPreProcess
   end
 
   def pre_process(file, import_upload)
-    data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+    data = Roo::Spreadsheet.open(file.path).sheet(0) # open spreadsheet
     headers = get_headers(data.row(1)) # data.row(1).each{|x| x.gsub!("*", "")}.each{|x| x.strip!}
     Rails.logger.debug { "## headers = #{headers}" }
     import_upload.status = nil

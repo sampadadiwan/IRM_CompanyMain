@@ -1,8 +1,12 @@
 class ImportCapitalCall < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date", "Call Date", "Fund Closes", "Generate Remittances", "Remittances Verified", "Type", "From Currency", "To Currency", "Exchange Rate", "As Of"].freeze
+  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date", "Call Date", "Fund Closes", "Generate Remittances", "Remittances Verified", "Type"].freeze
 
   def standard_headers
     STANDARD_HEADERS
+  end
+
+  def pre_process(import_upload, context)
+    @exchange_rates = get_exchange_rates(context.import_file, import_upload)
   end
 
   def process_row(headers, custom_field_headers, row, import_upload, _context)
@@ -52,15 +56,24 @@ class ImportCapitalCall < ImportUtil
 
         setup_custom_fields(user_data, capital_call, custom_field_headers)
 
-        # We need to setup the commitments for the exchange rate
-        exchange_rate = setup_exchange_rate(capital_call, user_data)
-        Rails.logger.debug { "Created #{exchange_rate}" }
+        check_exchange_rate(capital_call)
 
         capital_call.save!
         Rails.logger.debug "Saved CapitalCall"
       end
     else
       raise "Fund not found"
+    end
+  end
+
+  def check_exchange_rate(capital_call)
+    # We need to setup the commitments for the exchange rate
+    er_user_data = @exchange_rates.find { |er| er["As Of"] == capital_call.call_date }
+    if er_user_data.present?
+      exchange_rate = setup_exchange_rate(capital_call, er_user_data)
+      Rails.logger.debug { "Created #{exchange_rate}" }
+    else
+      Rails.logger.debug { "No ExchangeRate specified for Call #{capital_call}" }
     end
   end
 end

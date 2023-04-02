@@ -726,7 +726,7 @@ Then('the remittances are generated for the capital calls') do
   Fund.all.each do |fund|
     fund.capital_calls.each do |cc|
       # puts cc.capital_remittances.to_json
-      binding.pry
+      # binding.pry
       commitments = cc.Pool? ? fund.capital_commitments.pool : fund.capital_commitments.co_invest 
       cc.capital_remittances.count.should == commitments.count
       cc.capital_remittances.sum(:call_amount_cents).should == cc.call_amount_cents
