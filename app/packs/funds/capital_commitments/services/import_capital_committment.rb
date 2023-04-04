@@ -41,6 +41,8 @@ class ImportCapitalCommittment < ImportUtil
 
     folio_id, unit_type, commitment_type, commitment_date, folio_currency, onboarding_completed = get_params(user_data)
 
+    # binding.pry
+
     if fund && investor
       # Make the capital_commitment
       capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
@@ -87,7 +89,7 @@ class ImportCapitalCommittment < ImportUtil
 
   def post_process(import_upload, _context)
     # Import it
-    CapitalCommitment.import @commitments, on_duplicate_key_update: %i[commitment_type commitment_date folio_currency unit_type fund_close virtual_bank_account notes properties]
+    CapitalCommitment.import @commitments, on_duplicate_key_update: %i[commitment_type commitment_date folio_currency unit_type fund_close virtual_bank_account notes properties onboarding_completed]
     # Fix counters
     CapitalCommitment.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
     # Ensure ES is updated
