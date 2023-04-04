@@ -90,8 +90,10 @@ class ImportCapitalCommittment < ImportUtil
   def post_process(import_upload, _context)
     # Import it
     CapitalCommitment.import @commitments, on_duplicate_key_update: %i[commitment_type commitment_date folio_currency unit_type fund_close virtual_bank_account notes properties onboarding_completed]
+
     # Fix counters
     CapitalCommitment.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
+
     # Ensure ES is updated
     CapitalCommitmentIndex.import(CapitalCommitment.where(entity_id: import_upload.entity_id))
 

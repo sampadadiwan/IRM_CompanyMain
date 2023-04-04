@@ -414,12 +414,13 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_04_024453) do
     t.string "commitment_type", limit: 10, default: "pool"
     t.boolean "feeder_fund", default: false
     t.date "commitment_date"
+    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_capital_commitments_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
-    t.index ["fund_id", "folio_id", "deleted_at"], name: "index_capital_commitments_on_fund_id_and_folio_id_and_deleted_at", unique: true
+    t.index ["fund_id", "folio_id", "generated_deleted"], name: "unique_commitment", unique: true
     t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"
     t.index ["investor_id"], name: "index_capital_commitments_on_investor_id"
     t.index ["investor_kyc_id"], name: "index_capital_commitments_on_investor_kyc_id"
