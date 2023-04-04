@@ -8,6 +8,9 @@ class CapitalCommitment < ApplicationRecord
 
   include ForInvestor
 
+  # Set by import upload when importing commitments
+  attr_accessor :imported
+
   COMMITMENT_TYPES = %w[Pool CoInvest].freeze
   enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
   scope :pool, -> { where(commitment_type: 'Pool') }
@@ -54,7 +57,7 @@ class CapitalCommitment < ApplicationRecord
   # validates :committed_amount_cents, numericality: { greater_than_or_equal_to: :collected_amount_cents }
 
   validates :folio_id, :fund_close, :commitment_type, presence: true
-  validates_uniqueness_of :folio_id, scope: :fund_id
+  validates_uniqueness_of :folio_id, scope: :fund_id, unless: :imported
 
   delegate :currency, to: :fund
 

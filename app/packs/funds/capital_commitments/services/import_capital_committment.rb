@@ -1,5 +1,5 @@
 class ImportCapitalCommittment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type", "Type", "Commitment Date", "From Currency", "To Currency", "Exchange Rate", "As Of"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type", "Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -39,13 +39,14 @@ class ImportCapitalCommittment < ImportUtil
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
 
-    folio_id, unit_type, commitment_type, commitment_date, folio_currency = get_params(user_data)
+    folio_id, unit_type, commitment_type, commitment_date, folio_currency, onboarding_completed = get_params(user_data)
 
     if fund && investor
       # Make the capital_commitment
       capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
                                                  fund_close: user_data["Fund Close"].strip,
                                                  commitment_type:, commitment_date:,
+                                                 onboarding_completed:, imported: true,
                                                  fund:, investor:, investor_name: investor.investor_name,
                                                  folio_currency:, unit_type:, notes: user_data["Notes"])
 
@@ -79,13 +80,14 @@ class ImportCapitalCommittment < ImportUtil
     commitment_type = user_data["Type"].presence
     commitment_date = user_data["Commitment Date"].presence
     folio_currency = user_data["Folio Currency"].presence
+    onboarding_completed = user_data["Onboarding Completed"] == "Yes"
 
-    [folio_id, unit_type, commitment_type, commitment_date, folio_currency]
+    [folio_id, unit_type, commitment_type, commitment_date, folio_currency, onboarding_completed]
   end
 
   def post_process(import_upload, _context)
     # Import it
-    CapitalCommitment.import @commitments, on_duplicate_key_update: %i[folio_id notes committed_amount_cents]
+    CapitalCommitment.import @commitments, on_duplicate_key_update: %i[commitment_type commitment_date folio_currency unit_type fund_close virtual_bank_account notes properties]
     # Fix counters
     CapitalCommitment.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
     # Ensure ES is updated

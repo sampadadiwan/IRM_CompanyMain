@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_02_092903) do
+ActiveRecord::Schema[7.0].define(version: 2023_04_04_024453) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -419,6 +419,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_02_092903) do
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_capital_commitments_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
+    t.index ["fund_id", "folio_id"], name: "index_capital_commitments_on_fund_id_and_folio_id", unique: true
     t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"
     t.index ["investor_id"], name: "index_capital_commitments_on_investor_id"
     t.index ["investor_kyc_id"], name: "index_capital_commitments_on_investor_kyc_id"
