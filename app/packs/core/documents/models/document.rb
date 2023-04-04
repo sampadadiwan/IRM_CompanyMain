@@ -48,7 +48,7 @@ class Document < ApplicationRecord
   end
 
   def init
-    self.send_email = true
+    self.send_email = true if send_email.nil?
   end
 
   def setup_folder_defaults
