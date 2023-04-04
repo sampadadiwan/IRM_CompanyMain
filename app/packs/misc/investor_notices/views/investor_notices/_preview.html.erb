@@ -1,10 +1,10 @@
 <div class="">
     <!-- <hr class="my-4"> -->
     <div class="lead row">
-        <div class="col-lg-6 mb-4">
-          <img style="width: 100%; height: 100%; object-fit: contain;" src=<%=investor_notice.link%> />
+        <div class="col-lg-6 mb-4 notice_image_div">
+          <img class="center notice_image" src=<%=investor_notice.link%> />
         </div>
-        <div class="col-lg-5 mb-4" style="display:flex; align-items:center;">
+        <div class="col-lg-6 mb-4" style="display:flex; align-items:center;">
           <%= raw investor_notice.details.to_plain_text %>
         </div>
     </div>

@@ -605,3 +605,16 @@ ul.vesting_schedule {
 .breadcrumb-item + .breadcrumb-item::before {
   color: white !important;
 }
+
+.notice_image_div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .notice_image {
+    margin: auto;
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+  }
+}
