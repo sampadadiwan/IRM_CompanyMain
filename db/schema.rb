@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_04_024453) do
+ActiveRecord::Schema[7.0].define(version: 2023_04_06_090807) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -982,7 +982,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_04_024453) do
     t.bigint "fund_id", null: false
     t.bigint "valuation_id"
     t.string "name"
-    t.decimal "value", precision: 10
+    t.decimal "value", precision: 20, scale: 8, default: "0.0"
     t.string "display_value", limit: 50
     t.text "notes"
     t.datetime "created_at", null: false
