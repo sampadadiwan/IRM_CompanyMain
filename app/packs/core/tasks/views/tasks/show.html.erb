@@ -39,6 +39,7 @@
         <%= @task.entity.name %>
       </td>
     </tr>
+    <% if @task.entity != @task.for_entity %>
     <tr>
       <td>
         For
@@ -47,12 +48,13 @@
         <%= @task.for_entity.name %>
       </td>
     </tr>
+    <% end %>
     <tr>
       <td>
-        Owner
+        Linked To
       </td>
       <td>
-        <%= link_to @task.owner_type, @task.owner if @task.owner %>
+        <%= link_to @task.owner if @task.owner %>
       </td>
     </tr>
 
