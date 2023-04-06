@@ -85,18 +85,22 @@ module PortfolioHelper
     last_irr = FundRatio.where(entity_id: fund.entity_id, fund_id: fund.id, name: "IRR", owner_type: "Investor")
                         .order(end_date: :asc).last
 
-    portfolio_irr_ratios = FundRatio.where(entity_id: fund.entity_id, fund_id: fund.id,
-                                           end_date: last_irr.end_date, name: "IRR", owner_type: "Investor")
-                                    .map { |fr| [fr.owner.investor_name, fr.value] }
+    if last_irr
+      portfolio_irr_ratios = FundRatio.where(entity_id: fund.entity_id, fund_id: fund.id,
+                                             end_date: last_irr.end_date, name: "IRR", owner_type: "Investor")
+                                      .map { |fr| [fr.owner.investor_name, fr.value] }
 
-    column_chart portfolio_irr_ratios, library: {
-      plotOptions: { line: {
-        dataLabels: {
-          enabled: true,
-          format: "{point.y:,.2f} %"
-        }
-      } }
-    }
+      column_chart portfolio_irr_ratios, library: {
+        plotOptions: { line: {
+          dataLabels: {
+            enabled: true,
+            format: "{point.y:,.2f} %"
+          }
+        } }
+      }
+    else
+      "No data available."
+    end
   end
 
   def cumulative(portfolio_investments)
