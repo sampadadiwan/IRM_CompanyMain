@@ -4,5 +4,6 @@
   </td>
   <td>
     <%= link_to "Show" , form_type , {class: "btn btn-outline-primary" }%>
+    <%= link_to "Edit" , form_type , {class: "btn btn-outline-success" } if policy(form_type).update? %>
   </td>
 </tr>
