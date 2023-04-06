@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_06_090807) do
+ActiveRecord::Schema[7.0].define(version: 2023_04_06_135654) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -990,10 +990,13 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_06_090807) do
     t.datetime "deleted_at"
     t.bigint "capital_commitment_id"
     t.date "end_date"
+    t.string "owner_type"
+    t.bigint "owner_id"
     t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"
     t.index ["fund_id"], name: "index_fund_ratios_on_fund_id"
+    t.index ["owner_type", "owner_id"], name: "index_fund_ratios_on_owner"
     t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"
   end
 

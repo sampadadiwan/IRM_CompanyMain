@@ -65,13 +65,31 @@ module PortfolioHelper
     }
   end
 
-  def fund_xirr_chart(fund)
+  def portfolio_xirr_lines(fund)
     portfolio_irr_ratios = FundRatio.where(entity_id: fund.entity_id, fund_id: fund.id)
                                     .order(end_date: :asc)
                                     .where("name like 'IRR%'").group_by(&:name)
 
     display_list = portfolio_irr_ratios.map { |name, ratios| { name:, data: ratios.map { |r| [r.end_date, r.value] } } }
     line_chart display_list, library: {
+      plotOptions: { line: {
+        dataLabels: {
+          enabled: true,
+          format: "{point.y:,.2f} %"
+        }
+      } }
+    }
+  end
+
+  def portfolio_last_xirr(fund)
+    last_irr = FundRatio.where(entity_id: fund.entity_id, fund_id: fund.id, name: "IRR", owner_type: "Investor")
+                        .order(end_date: :asc).last
+
+    portfolio_irr_ratios = FundRatio.where(entity_id: fund.entity_id, fund_id: fund.id,
+                                           end_date: last_irr.end_date, name: "IRR", owner_type: "Investor")
+                                    .map { |fr| [fr.owner.investor_name, fr.value] }
+
+    column_chart portfolio_irr_ratios, library: {
       plotOptions: { line: {
         dataLabels: {
           enabled: true,
