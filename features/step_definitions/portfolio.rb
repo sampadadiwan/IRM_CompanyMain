@@ -181,6 +181,5 @@ Then('the aggregate portfolio investments must have cost of sold computed') do
   @fund.portfolio_investments.sells.each do |pi|
     # binding.pry
     pi.aggregate_portfolio_investment.cost_of_sold_cents.should == pi.aggregate_portfolio_investment.portfolio_investments.sells.sum(:cost_of_sold_cents)
-    pi.aggregate_portfolio_investment.cost_cents.should ==
   end
 end
