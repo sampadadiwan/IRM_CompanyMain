@@ -86,7 +86,8 @@ export default class extends Controller {
     let required_missing = false;
     $('#access_rights_form .required').each(function () {
       if ($(this).val().length == 0) {
-        console.log("Its blank");
+        console.log(`Its blank`);
+        console.log($(this));
         $(this).closest('.form-group').addClass('field_with_errors');
         required_missing = true;
       } else {

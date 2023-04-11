@@ -41,12 +41,12 @@
 
           <div class="form-group" id="investor_advisor_form_group">
             <%= form.label :user_id, "Select Investor Advisor" %>
-            <%= form.select :user_id, investor_advisors.map{|ia| [ia.user.full_name, ia.user_id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple"  %>
+            <%= form.select :user_id, investor_advisors.map{|ia| [ia.user.full_name, ia.user_id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", id: "advisor_id"  %>
           </div>
           
           <div class="form-group" id="employee_form_group">
             <%= form.label :user_id, "Select Employee" %>
-            <%= form.select :user_id, users.map{|u| [u.full_name, u.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple"  %>
+            <%= form.select :user_id, users.map{|u| [u.full_name, u.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", id: "employee_id"  %>
           </div>
         </div>
         
