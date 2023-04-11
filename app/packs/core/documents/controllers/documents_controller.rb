@@ -31,8 +31,8 @@ class DocumentsController < ApplicationController
     # Display docs of the folder and its children, like for data room
     if params[:folder_id].present?
       @folder = Folder.find(params[:folder_id])
-      # folder_ids = @folder.descendant_ids << params[:folder_id]
-      @documents = @documents.where(folder_id: @folder.id)
+      folder_ids = @folder.descendant_ids << params[:folder_id]
+      @documents = @documents.where(folder_id: folder_ids)
     end
 
     # This is specifically for investor advisors, who should not be able to see the docs for other funds
