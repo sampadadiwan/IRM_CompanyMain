@@ -16,6 +16,6 @@ module FormTypeHelper
   end
 
   def get_custom_values(model, form_type, custom_field_names)
-    form_type && model.properties ? model.properties.values_at(*custom_field_names) : []
+    form_type && model&.properties ? model.properties.values_at(*custom_field_names) : []
   end
 end
