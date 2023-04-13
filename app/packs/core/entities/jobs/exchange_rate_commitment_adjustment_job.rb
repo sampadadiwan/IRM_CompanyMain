@@ -1,5 +1,5 @@
 class ExchangeRateCommitmentAdjustmentJob < ApplicationJob
-  queue_as :low
+  queue_as :serial
 
   def perform(id)
     Chewy.strategy(:sidekiq) do

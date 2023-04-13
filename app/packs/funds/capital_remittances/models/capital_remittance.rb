@@ -85,13 +85,14 @@ class CapitalRemittance < ApplicationRecord
                                          }
                                        }
 
-  before_save :set_status
-  before_create :set_call_amount
+  before_save :set_call_amount
   def set_call_amount
     # This is the committed_amount when the remittance was created. In certain special top up cases the committed_amount for the commitment may be changed later. Hence this is a ref for the committed_amount at the time of creation
     self.folio_committed_amount_cents = capital_commitment.folio_committed_amount_cents
     self.committed_amount_cents = capital_commitment.committed_amount_cents
+
     calc_call_amount_cents
+    # Setup Paid or Pending status
     set_status
   end
 
