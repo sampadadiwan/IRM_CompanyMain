@@ -98,9 +98,10 @@ class CapitalRemittance < ApplicationRecord
   def calc_call_amount_cents
     # Get the call amount in the folio_currency
     self.folio_call_amount_cents = capital_call.percentage_called * capital_commitment.folio_committed_amount_cents / 100.0
-    # Now compute the call amount in the fund currency
-    self.call_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency,
-                                              folio_call_amount_cents, payment_date)
+
+    # Now compute the call amount in the fund currency.
+    # Note the call amount is also subject to FX rate changes, but only for the due amount, collected amount has already been collected at the prevailing FX rate, hence is not subject to FX
+    self.call_amount_cents = collected_amount_cents + convert_currency(capital_commitment.folio_currency, fund.currency, folio_due_amount.cents, payment_date)
   end
 
   def send_notification
@@ -135,6 +136,10 @@ class CapitalRemittance < ApplicationRecord
 
   def due_amount
     call_amount - collected_amount
+  end
+
+  def folio_due_amount
+    folio_call_amount - folio_collected_amount
   end
 
   def to_s
