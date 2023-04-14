@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_06_135654) do
+ActiveRecord::Schema[7.0].define(version: 2023_04_14_020638) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -868,6 +868,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_06_135654) do
     t.datetime "updated_at", null: false
     t.date "as_of"
     t.text "notes"
+    t.bigint "document_folder_id"
+    t.index ["document_folder_id"], name: "index_exchange_rates_on_document_folder_id"
     t.index ["entity_id"], name: "index_exchange_rates_on_entity_id"
   end
 
@@ -2172,6 +2174,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_06_135654) do
   add_foreign_key "excercises", "option_pools"
   add_foreign_key "excercises", "users"
   add_foreign_key "exchange_rates", "entities"
+  add_foreign_key "exchange_rates", "folders", column: "document_folder_id"
   add_foreign_key "expression_of_interests", "entities"
   add_foreign_key "expression_of_interests", "entities", column: "eoi_entity_id"
   add_foreign_key "expression_of_interests", "folders", column: "document_folder_id"

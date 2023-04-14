@@ -1,4 +1,5 @@
 class ExchangeRate < ApplicationRecord
+  include WithFolder
   belongs_to :entity
 
   scope :latest, -> { where(latest: true) }
@@ -21,5 +22,9 @@ class ExchangeRate < ApplicationRecord
 
   def to_s
     "#{rate} (#{from} -> #{to}) on #{as_of}"
+  end
+
+  def folder_path
+    "#{entity}/Exchange Rates/#{to_s.delete('->')}"
   end
 end
