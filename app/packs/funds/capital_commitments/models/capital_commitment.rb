@@ -213,6 +213,10 @@ class CapitalCommitment < ApplicationRecord
     CapitalCommitmentEsignProvider.new(self).signature_completed(signature_type, document_id, file)
   end
 
+  ###########################################################
+  # Account Entry Stuff
+  ###########################################################
+
   # In some cases name is nil - Ex Cumulative for portfolio FMV or costs @see AccountEntryAllocationEngine.allocate_portfolio_investments()
   #
   def rollup_account_entries(name, entry_type, start_date, end_date)
@@ -249,5 +253,9 @@ class CapitalCommitment < ApplicationRecord
 
   def fund_ratio(name, end_date)
     fund_ratios.where(name:, end_date: ..end_date).last
+  end
+
+  def fund_unit_setting
+    fund.fund_unit_settings.where(name: unit_type).last
   end
 end
