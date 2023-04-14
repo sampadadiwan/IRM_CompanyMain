@@ -22,6 +22,11 @@
   <% end %>
   
   <div class="form-group">
+    <%= form.label :kyc_type %>
+    <%= form.select :kyc_type, InvestorKyc.kyc_types.values, {}, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
     <%= form.label :full_name %>
     <%= form.text_field :full_name, class: "form-control"  %>
   </div>
