@@ -29,7 +29,15 @@
                             end
                         else
                             aids = Folder.with_ancestor_ids(@documents)
-                            folders = Folder.where(id: aids).arrange                            
+                            if params[:folder_id].present?
+                                # We need to show only the descnedents of parent, but we also want to show only those folder for which the user has documents that he can see.
+                                parent = Folder.find(params[:folder_id])
+                                descendant_ids = parent.descendant_ids 
+                                descendant_ids << parent.id 
+                                folders = Folder.where(id: descendant_ids).where(id: aids).arrange                            
+                            else
+                                folders = Folder.where(id: aids).arrange                            
+                            end
                         end
                     %>
                     
