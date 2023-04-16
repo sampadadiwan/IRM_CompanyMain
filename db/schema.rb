@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_14_044752) do
+ActiveRecord::Schema[7.0].define(version: 2023_04_16_062847) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -771,7 +771,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_14_044752) do
     t.boolean "enable_investor_kyc", default: false
     t.string "sub_domain"
     t.text "logo_data"
-    t.string "kyc_doc_list", limit: 100
     t.boolean "activity_docs_required_for_completion", default: false
     t.boolean "activity_details_required_for_na", default: false
     t.boolean "enable_investors", default: true
@@ -801,6 +800,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_14_044752) do
     t.string "entity_bcc"
     t.string "reply_to"
     t.string "cc"
+    t.string "individual_kyc_doc_list"
+    t.string "non_individual_kyc_doc_list"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 

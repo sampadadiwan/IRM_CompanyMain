@@ -31,8 +31,11 @@ class InvestorKyc < ApplicationRecord
   end
 
   def document_list
-    # fund.commitment_doc_list&.split(",")
-    docs = entity.kyc_doc_list.split(",").map(&:strip) if entity.kyc_doc_list.present?
+    if individual?
+      docs = entity.entity_setting.individual_kyc_doc_list.split(",").map(&:strip) if entity.entity_setting.individual_kyc_doc_list.present?
+    elsif entity.entity_setting.non_individual_kyc_doc_list.present?
+      docs = entity.entity_setting.non_individual_kyc_doc_list.split(",").map(&:strip)
+    end
     docs + ["Other"] if docs.present?
   end
 
