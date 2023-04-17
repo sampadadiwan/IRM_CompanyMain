@@ -13,9 +13,9 @@ set :branch, 'main'
 set :deploy_to, "/home/ubuntu/IRM"
 set :ssh_options, forward_agent: true
 if fetch(:stage) == :production
-  set :ssh_options, keys: "/home/thimmaiah/.ssh/caphive.pem"
+  set :ssh_options, keys: "~/.ssh/caphive.pem"
 else
-  set :ssh_options, keys: "/home/thimmaiah/.ssh/altxdev.pem"
+  set :ssh_options, keys: "~/.ssh/altxdev.pem"
 end
 # Default value for :format is :airbrussh.
 # set :format, :airbrussh
