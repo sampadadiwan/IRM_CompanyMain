@@ -97,7 +97,7 @@ class ImportCapitalCommittment < ImportUtil
     # Ensure ES is updated
     CapitalCommitmentIndex.import(CapitalCommitment.where(entity_id: import_upload.entity_id))
 
-    fund_ids = @commitments.collect(&:fund_id).to_set.to_a
+    fund_ids = @commitments.to_set(&:fund_id).to_a
 
     # Sometimes we import custom fields. Ensure custom fields get created
     @last_saved = import_upload.entity.funds.last.capital_commitments.last

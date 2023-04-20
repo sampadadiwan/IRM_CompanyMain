@@ -70,7 +70,7 @@ Scenario Outline: Import Investor Advisors
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   And given there are investor advisors "terrie@hansen-inc.com,jeanice@hansen-inc.com,tameika@hansen-inc.com,daisey@hansen-inc.com"
-  Given there is a fund "name=SAAS Fund" for the entity
+  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
   And Given I upload "investor_advisors.xlsx" file for Investoment Advisors

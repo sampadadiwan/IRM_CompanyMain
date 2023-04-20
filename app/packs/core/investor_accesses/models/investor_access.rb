@@ -94,7 +94,7 @@ class InvestorAccess < ApplicationRecord
 
     end
     self.user = u
-    self.is_investor_advisor = user.has_cached_role?(:investor_advisor)
+    self.is_investor_advisor = user.investor_advisor?
   end
 
   def send_notification

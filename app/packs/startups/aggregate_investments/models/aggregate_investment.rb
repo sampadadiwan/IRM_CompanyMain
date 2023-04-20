@@ -1,20 +1,3 @@
-# == Schema Information
-#
-# Table name: aggregate_investments
-#
-#  id                      :integer          not null, primary key
-#  entity_id               :integer          not null
-#  shareholder             :string(255)
-#  investor_id             :integer          not null
-#  equity                  :integer          default("0")
-#  preferred               :integer          default("0")
-#  options                 :integer          default("0")
-#  percentage              :decimal(5, 2)    default("0.00")
-#  full_diluted_percentage :decimal(5, 2)    default("0.00")
-#  created_at              :datetime         not null
-#  updated_at              :datetime         not null
-#
-
 class AggregateInvestment < ApplicationRecord
   audited
 
@@ -29,6 +12,10 @@ class AggregateInvestment < ApplicationRecord
 
   belongs_to :investor
   delegate :investor_name, to: :investor
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[equity full_diluted_percentage options percentage preferred preferred_converted_qty shareholder units]
+  end
 
   def self.for_investor(current_user, entity)
     investments = entity.aggregate_investments

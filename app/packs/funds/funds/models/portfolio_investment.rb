@@ -103,13 +103,7 @@ class PortfolioInvestment < ApplicationRecord
 
       buys.order(investment_date: :asc).each do |buy|
         Rails.logger.debug { "processing buy #{buy.to_json}" }
-        attribution_quantity = if buy.net_quantity > allocatable_quantity
-                                 # The entire allocatable_quantity is available
-                                 allocatable_quantity
-                               else
-                                 # The entire allocatable_quantity is NOT available
-                                 buy.net_quantity
-                               end
+        attribution_quantity = [buy.net_quantity, allocatable_quantity].min
         # Create the portfolio attribution
         PortfolioAttribution.create!(entity_id:, fund_id:, bought_pi: buy,
                                      sold_pi: self, quantity: -attribution_quantity)

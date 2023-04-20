@@ -50,7 +50,19 @@ class AccessRight < ApplicationRecord
                           }
 
   scope :access_filter, lambda { |user|
-    where("investors.category=access_rights.access_to_category OR access_rights.access_to_investor_id=investors.id OR access_rights.user_id=?", user.id)
+    if user.investor_advisor?
+      # Since he is currently playing the role of IA, we should only use the access_rights
+      # given to his specific user id
+      where("access_rights.user_id=?", user.id)
+    elsif user.has_cached_role?(:investor_advisor) && !user.investor_advisor?
+      # This is to avoid duplicates in the results of the final query
+      # If the user has the role but is not currently switched as an IA for another investor
+      # Then essentially he is looking for his own funds/commitments/etc - so we dont use the user_id here
+      # We join only based on his own investor id
+      where("investors.category=access_rights.access_to_category OR access_rights.access_to_investor_id=investors.id")
+    else
+      where("investors.category=access_rights.access_to_category OR access_rights.access_to_investor_id=investors.id OR access_rights.user_id=?", user.id)
+    end
   }
 
   scope :investor_granted_access_filter, lambda { |user|

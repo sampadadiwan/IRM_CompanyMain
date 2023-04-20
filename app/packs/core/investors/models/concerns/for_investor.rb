@@ -37,8 +37,7 @@ module ForInvestor
 
     # Some models have a belongs_to :investor association
     scope :for_investor, lambda { |user|
-      investor_advisor = user.has_cached_role?(:investor_advisor)
-      filter = investor_advisor ? AccessRight.investor_granted_access_filter(user) : AccessRight.access_filter(user)
+      filter = user.investor_advisor? ? AccessRight.investor_granted_access_filter(user) : AccessRight.access_filter(user)
 
       join_clause = if instance_methods.include?(:access_rights)
                       Rails.logger.debug { "######## for_investor has access_rights" }

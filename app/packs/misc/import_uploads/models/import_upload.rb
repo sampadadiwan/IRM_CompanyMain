@@ -23,6 +23,8 @@ class ImportUpload < ApplicationRecord
   belongs_to :owner, polymorphic: true
   belongs_to :user
 
+  validates :import_file_data, presence: true
+
   include FileUploader::Attachment(:import_file)
   include FileUploader::Attachment(:import_results)
 
