@@ -17,6 +17,7 @@ class InvestorKyc < ApplicationRecord
   include FileUploader::Attachment(:video)
 
   belongs_to :verified_by, class_name: "User", optional: true
+  validates :full_name, :PAN, :address, presence: true
 
   # Customize form
   serialize :pan_verification_response, Hash

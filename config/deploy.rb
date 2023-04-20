@@ -3,7 +3,7 @@ lock "~> 3.17.2"
 
 set :application, "IRM"
 set :repo_url, "git@github.com:thimmaiah/IRM.git"
-set :branch, 'investor_advisor_with_fund'
+set :branch, 'main'
 
 # Default branch is :master
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
@@ -11,8 +11,7 @@ set :branch, 'investor_advisor_with_fund'
 # Default deploy_to directory is /var/www/my_app_name
 # set :deploy_to, "/var/www/my_app_name"
 set :deploy_to, "/home/ubuntu/IRM"
-set :ssh_options, forward_agent: true, compression: false, keepalive: true
-
+set :ssh_options, forward_agent: true
 if fetch(:stage) == :production
   set :ssh_options, keys: "~/.ssh/caphive.pem"
 else
