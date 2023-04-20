@@ -32,16 +32,16 @@
 
   <span>
     <%= link_to "Download Folder", download_folder_path(id: params[:folder_id]), 
-        class: "btn btn-outline-success", data: {action: "click->confirm#popup"} if params[:folder_id].present? && policy(@folder).download? %>
+        class: "btn btn-sm btn-outline-success", data: {action: "click->confirm#popup"} if params[:folder_id].present? && policy(@folder).download? %>
 
     <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
         "folder[parent_id]": @folder.id), 
-        class: "btn btn-outline-primary" if params[:folder_id].present? && policy(@folder).update?   %> 
+        class: "btn btn-sm btn-outline-primary" if params[:folder_id].present? && policy(@folder).update?   %> 
 
     <%= link_to "New Document", new_document_path(external: external, 
                 document: doc_attributes, 
                 "document[folder_id]": params[:folder_id]), 
-                {class: "btn btn-outline-primary" }  if policy(document).create? %>
+                {class: "btn btn-sm  btn-outline-primary" }  if policy(document).create? %>
 
 
     <%= link_to "Bulk Upload", 
@@ -49,7 +49,7 @@
             "import_upload[owner_type]": "Folder", 
             "import_upload[import_type]": "Documents", 
             "sample_upload": "DOCS_SAMPLE"), 
-            { class: "btn btn-outline-primary"} if params[:folder_id].present? %> 
+            { class: "btn btn-sm btn-outline-primary"} if params[:folder_id].present? %> 
             
     <% 
       owner ||= nil 
