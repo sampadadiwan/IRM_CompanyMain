@@ -80,7 +80,9 @@ class ImportDocuments
 
     # Sometimes we dont get a file but a directory or a special file
     if File.basename(file_path) == "desktop.ini"
-      [false, "Skipped"]
+      [true, "Skipped"]
+    elsif File.directory?(file_path)
+      [true, "Directory"]
     else
       # Create the document to the last created folder
       doc = Document.new(entity_id: import_upload.entity_id,
