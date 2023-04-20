@@ -618,3 +618,10 @@ ul.vesting_schedule {
     max-height: 100%;
   }
 }
+
+#remittance_filter {
+  input[type="date"].form-control {
+    -webkit-appearance: textfield !important;
+    -moz-appearance: textfield !important;
+  }
+}

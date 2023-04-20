@@ -30,6 +30,7 @@ Style/CombinableLoops:
 
 AllCops:
   # DisabledByDefault: true
+  SuggestExtensions: false
   NewCops: enable
   Exclude:
     - 'vendor/**/*'

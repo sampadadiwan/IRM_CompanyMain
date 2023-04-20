@@ -10,6 +10,7 @@ class InvestorKyc < ApplicationRecord
 
   scope :verified, -> { where(verified: true) }
   enum :kyc_type, { individual: "Individual", non_individual: "Non Individual" }
+  enum :residency, { domestic: "Domestic", foreign: "Foreign" }
 
   include FileUploader::Attachment(:signature)
   include FileUploader::Attachment(:pan_card)

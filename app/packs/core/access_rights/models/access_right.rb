@@ -61,6 +61,7 @@ class AccessRight < ApplicationRecord
       # We join only based on his own investor id
       where("investors.category=access_rights.access_to_category OR access_rights.access_to_investor_id=investors.id")
     else
+      # For regular users
       where("investors.category=access_rights.access_to_category OR access_rights.access_to_investor_id=investors.id OR access_rights.user_id=?", user.id)
     end
   }

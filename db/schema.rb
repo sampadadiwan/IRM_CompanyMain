@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_16_062847) do
+ActiveRecord::Schema[7.0].define(version: 2023_04_20_091341) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1477,6 +1477,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_16_062847) do
     t.bigint "document_folder_id"
     t.date "expiry_date"
     t.string "kyc_type", limit: 15, default: "Individual"
+    t.string "residency", limit: 10
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"

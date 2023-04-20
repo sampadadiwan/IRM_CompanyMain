@@ -23,7 +23,12 @@
   
   <div class="form-group">
     <%= form.label :kyc_type %>
-    <%= form.select :kyc_type, InvestorKyc.kyc_types.values, {}, class: "form-control"  %>
+    <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :residency %>
+    <%= form.select :residency, InvestorKyc.residencies.invert, {include_blank: true}, class: "form-control"  %>
   </div>
 
   <div class="form-group">
