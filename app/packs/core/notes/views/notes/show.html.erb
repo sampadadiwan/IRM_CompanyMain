@@ -7,7 +7,7 @@
           Stakeholder
         </td>
         <td>
-          <%= @note.investor.investor_name %>
+          <%= link_to @note.investor %>
         </td>    
       </tr>
     
@@ -20,11 +20,44 @@
           On: <%= l @note.on if @note.on%>
         </td>    
       </tr>
+
+      <% if @note.reminder %>
+
+      <tr>
+        <td>
+          Reminder Emails
+        </td>
+        <td>
+          <%= @note.reminder.email %>
+        </td>    
+      </tr>
+
+
+      <tr>
+        <td>
+          Reminder Date
+        </td>
+        <td>
+          <%= l @note.reminder.due_date %>
+        </td>    
+      </tr>
+
+
+      <tr>
+        <td>
+          Reminder Sent
+        </td>
+        <td>
+          <%= display_boolean @note.reminder.sent %>
+        </td>    
+      </tr>
+
+      <% end %>
   
 </table>
 
 
 <div>
-  <%= link_to "Edit", edit_note_path(@note), {class: "btn btn-outline-primary"} %> |
+  <%= link_to "Edit", edit_note_path(@note), {class: "btn btn-outline-primary"} if policy(@note).update? %> 
   <%= button_to "Delete", @note, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} %>
 </div>

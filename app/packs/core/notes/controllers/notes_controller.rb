@@ -27,21 +27,20 @@ class NotesController < ApplicationController
   end
 
   # GET /notes/1 or /notes/1.json
-  def show
-    authorize @note
-  end
+  def show; end
 
   # GET /notes/new
   def new
     @note = Note.new(note_params)
     @note.entity_id = current_user.entity_id
     @note.on = Time.zone.today
+    @note.reminder = Reminder.new(entity_id: @note.entity_id, due_date: Time.zone.today + 1.week, email: current_user.email)
     authorize @note
   end
 
   # GET /notes/1/edit
   def edit
-    authorize @note
+    @note.build_reminder(entity_id: @note.entity_id, due_date: Time.zone.today + 1.week, email: current_user.email) unless @note.reminder
   end
 
   # POST /notes or /notes.json
@@ -49,6 +48,10 @@ class NotesController < ApplicationController
     @note = Note.new(note_params)
     @note.user_id = current_user.id
     @note.entity_id = current_user.entity_id
+    if @note.reminder
+      @note.reminder.entity_id = @note.entity_id
+      @note.reminder.note = "Reminder for #{@note}"
+    end
     authorize @note
 
     respond_to do |format|
@@ -64,7 +67,6 @@ class NotesController < ApplicationController
 
   # PATCH/PUT /notes/1 or /notes/1.json
   def update
-    authorize @note
     respond_to do |format|
       if @note.update(note_params)
         format.html { redirect_to note_url(@note), notice: "Note was successfully updated." }
@@ -78,7 +80,6 @@ class NotesController < ApplicationController
 
   # DELETE /notes/1 or /notes/1.json
   def destroy
-    authorize @note
     @note.destroy
 
     respond_to do |format|
@@ -92,10 +93,11 @@ class NotesController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_note
     @note = Note.find(params[:id])
+    authorize @note
   end
 
   # Only allow a list of trusted parameters through.
   def note_params
-    params.require(:note).permit(:details, :entity_id, :user_id, :investor_id, :on)
+    params.require(:note).permit(:details, :entity_id, :user_id, :investor_id, :on, reminder_attributes: %i[due_date email])
   end
 end
