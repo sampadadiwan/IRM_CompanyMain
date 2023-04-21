@@ -58,12 +58,12 @@ class ImportDocuments
   def save_document(import_upload, unzip_dir, file_path)
     Rails.logger.debug { "Processing doc #{file_path}" }
 
-    # We remove the unzip_dir, as we dont want to create the unip dir folders in our app
+    # We remove the unzip_dir, as we dont want to create the unzip dir folders in our app
     folders = file_path.gsub("#{unzip_dir}/", '').split("/")[0..-2]
     file_name = file_path.split("/")[-1]
 
     # Walk thru the folders and create them in our system
-    parent = import_upload.entity.root_folder
+    parent = import_upload.owner
     folders.each do |folder|
       child_folder = parent.children.where(entity_id: import_upload.entity_id, name: folder,
                                            folder_type: "regular").first_or_initialize
@@ -78,19 +78,26 @@ class ImportDocuments
       parent = child_folder
     end
 
-    # Create the document to the last created folder
-    doc = Document.new(entity_id: import_upload.entity_id,
-                       name: file_name, folder: parent,
-                       user_id: import_upload.user_id, send_email: false)
+    # Sometimes we dont get a file but a directory or a special file
+    if File.basename(file_path) == "desktop.ini"
+      [true, "Skipped"]
+    elsif File.directory?(file_path)
+      [true, "Directory"]
+    else
+      # Create the document to the last created folder
+      doc = Document.new(entity_id: import_upload.entity_id,
+                         name: file_name, folder: parent,
+                         user_id: import_upload.user_id, send_email: false)
 
-    doc.setup_folder_defaults
-    # Attach the actual document on the file system to the document in our app
-    doc.file = File.open(file_path, "rb")
+      doc.setup_folder_defaults
+      # Attach the actual document on the file system to the document in our app
+      doc.file = File.open(file_path, "rb")
 
-    # Allow download of zip
-    doc.orignal = true if File.extname(file_path) == ".zip"
+      # Allow download of zip
+      doc.orignal = true if File.extname(file_path) == ".zip"
 
-    [doc.save, doc.errors.full_messages]
+      [doc.save, doc.errors.full_messages]
+    end
   end
 
   def post_process(_import_upload, context)

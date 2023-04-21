@@ -72,6 +72,6 @@ class ExchangeRatesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def exchange_rate_params
-    params.require(:exchange_rate).permit(:entity_id, :from, :to, :rate, :as_of)
+    params.require(:exchange_rate).permit(:entity_id, :from, :to, :rate, :as_of, :notes)
   end
 end

@@ -1,14 +1,15 @@
-<div class="jumbotron">
-    <h1 class="display-4"><%= investor_notice.title %></h1>
+<div class="card shadow mb-4">
     <!-- <hr class="my-4"> -->
-    <div class="lead">
-        <%= investor_notice.details %>
+    <div class="card-header py-3"><h3 class="m-0 font-weight-bold text-primary">
+      <%= investor_notice.title %></h3>
+    </div>
+    <div class="card-body lead row">
+        <div class="col-lg-5 mb-4 notice_image_div">
+          <img class="center notice_image" src=<%=investor_notice.link%> />
+        </div>
+        <div class="col-lg-7 mb-4" style="margin: auto;">
+          <%= raw investor_notice.details.to_plain_text %>
+        </div>
     </div>
     
-    <% if investor_notice.link.present? %>
-    <hr class="my-4">
-    <p class="lead">
-      <a class="btn btn-outline-primary btn-outline-lg" href="<%= investor_notice.link %>" role="button"><%= investor_notice.btn_label %></a>
-    </p>
-    <% end %>
 </div>

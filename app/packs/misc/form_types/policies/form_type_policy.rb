@@ -18,7 +18,7 @@ class FormTypePolicy < ApplicationPolicy
   end
 
   def create?
-    user.entity_id == record.entity_id
+    user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)
   end
 
   def new?

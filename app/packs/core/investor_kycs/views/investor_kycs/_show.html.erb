@@ -3,14 +3,6 @@
 
     <tr>
       <td>
-        Investor
-      </td>
-      <td>
-        <%= link_to investor_kyc.investor.investor_name, investor_url(investor_kyc.investor, tab: "kycs-tab") %>        
-      </td>
-    </tr>
-    <tr>
-      <td>
         Entity
       </td>
       <td>
@@ -18,7 +10,35 @@
       </td>
     </tr>
 
+    <tr>
+      <td>
+        Residency
+      </td>
+      <td>
+        <%= InvestorKyc.residencies[investor_kyc.residency] %>
+      </td>
+    </tr>
 
+    <tr>
+      <td>
+        Kyc Type
+      </td>
+      <td>
+        <%= InvestorKyc.kyc_types[investor_kyc.kyc_type] %>
+      </td>
+    </tr>
+
+
+    <tr>
+      <td>
+        Investor
+      </td>
+      <td>
+        <%= link_to investor_kyc.investor.investor_name, investor_url(investor_kyc.investor, tab: "kycs-tab") %>        
+      </td>
+    </tr>
+
+    
     <tr>
       <td>
         KYC Verified

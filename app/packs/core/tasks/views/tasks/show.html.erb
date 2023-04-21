@@ -39,6 +39,7 @@
         <%= @task.entity.name %>
       </td>
     </tr>
+    <% if @task.entity != @task.for_entity %>
     <tr>
       <td>
         For
@@ -47,12 +48,13 @@
         <%= @task.for_entity.name %>
       </td>
     </tr>
+    <% end %>
     <tr>
       <td>
-        Owner
+        Linked To
       </td>
       <td>
-        <%= link_to @task.owner_type, @task.owner if @task.owner %>
+        <%= link_to @task.owner if @task.owner %>
       </td>
     </tr>
 
@@ -100,7 +102,7 @@
     <% if policy(@task).update? %>
       <%= link_to "Edit" , edit_task_path(@task), {class: "btn btn-outline-primary" } %> |
       <%= button_to "Delete" , @task, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton" , data:
-          {action: "click->confirm#delete" , turbo:false} %>
+          {action: "click->confirm#popup" , turbo:false} %>
     <% end %>
   </div>
 

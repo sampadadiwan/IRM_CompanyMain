@@ -4,12 +4,12 @@ form_type, custom_field_names, custom_headers = get_form_type("CapitalRemittance
 
 wb.add_worksheet(name: "CapitalRemittance") do |sheet|
   # Create the header row
-  sheet.add_row(["Investor", "Fund", "Capital Call", "Due Amount", "Folio Currency", "Committed Amount (Folio Currency)", "Call Amount (Folio Currency)", "Collected Amount (Folio Currency)", "Fund Currency", "Committed Amount", "Call Amount", "Collected Amount", "Status", "Verified"] + custom_headers)
+  sheet.add_row(["Investor", "Fund", "Capital Call", "% Called", "Due Amount", "Folio Currency", "Committed Amount (Folio Currency)", "Call Amount (Folio Currency)", "Collected Amount (Folio Currency)", "Fund Currency", "Committed Amount", "Call Amount", "Collected Amount", "Status", "Verified"] + custom_headers)
 
   # Create entries for each item
   @capital_remittances.each do |cc|
     verified = cc.verified ? "Yes" : "No"
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
-    sheet.add_row [cc.investor_name, cc.fund.name, cc.capital_call.name, cc.due_amount, cc.capital_commitment.folio_currency, cc.folio_committed_amount, cc.folio_call_amount, cc.folio_collected_amount, cc.fund.currency, cc.committed_amount, cc.call_amount, cc.collected_amount, cc.status, verified] + custom_field_values
+    sheet.add_row [cc.investor_name, cc.fund.name, cc.capital_call.name, cc.capital_call.percentage_called, cc.due_amount, cc.capital_commitment.folio_currency, cc.folio_committed_amount, cc.folio_call_amount, cc.folio_collected_amount, cc.fund.currency, cc.committed_amount, cc.call_amount, cc.collected_amount, cc.status, verified] + custom_field_values
   end
 end

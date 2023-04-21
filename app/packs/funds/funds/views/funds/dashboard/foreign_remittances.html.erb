@@ -1,0 +1,62 @@
+<%= render "/layouts/alerts" %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    
+</div>
+<table class="table table-bordered dataTable">
+
+  <tr>
+    <td>
+      Fund Name
+    </td>
+    <td>
+      <%= link_to @fund.name, @fund %>
+    </td>
+  </tr>
+
+</table>
+
+<div class="associated_entity" data-controller="export-xl">
+  <% start_date = params[:start_date] || Date.today - 1.month; end_date = params[:end_date] || Date.today %>
+
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h4 mb-0 text-gray-800">Foreign Remittances: <%= start_date %> - <%= end_date %> </h1>
+
+    <span>
+    <%= render "/funds/dashboard/foreign_remittance_filter", fund: @fund, start_date:, end_date: %>
+
+    <button class="btn btn-outline-success", data-action="click->export-xl#export" data-tableid="foreign_remittances_table" data-filename='foreign_remittances'>Download</button>
+
+    </span>
+  </div>
+
+  
+
+  <table id="foreign_remittances_table" class="table table-bordered dataTable jqDataTable">
+      <thead>
+          <th>Call</th>
+          <th>Investor</th>
+          <th>Folio No</th>
+          <th>Kyc Full Name</th>
+          <th>Bank Account</th>
+          <th>PAN</th>
+          <th>Remittance Date</th>
+          <th>Call Amount</th>
+          <th>Collected Amount</th>
+      </thead>
+      <tbody>
+          <% @fund.capital_remittances.joins(capital_commitment: :investor_kyc).where("investor_kycs.residency=?", :foreign).where(payment_date: start_date..).where(payment_date: ..end_date).each do |cr| %>
+            <tr>
+              <td><%=cr.capital_call.name%></td>
+              <td><%=cr.investor_name%></td>
+              <td><%=cr.folio_id%></td>
+              <td><%=cr.capital_commitment.investor_kyc&.full_name%></td>
+              <td><%=cr.capital_commitment.investor_kyc&.bank_account_number%></td>
+              <td><%=cr.capital_commitment.investor_kyc&.PAN%></td>
+              <td><%= l cr.payment_date if cr.payment_date %></td>
+              <td><%= money_to_currency(cr.call_amount, params) %></td>
+              <td><%= money_to_currency(cr.collected_amount, params) %></td>
+            </tr>
+          <% end %>
+      </tbody>
+  </table>
+</div>

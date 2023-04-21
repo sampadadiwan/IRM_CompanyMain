@@ -9,7 +9,7 @@ module FundScopes
 
     scope :for_investor, lambda { |user|
       # We need to cater to investor granted access_rights also
-      investor_advisor = user.has_cached_role?(:investor_advisor)
+      investor_advisor = user.investor_advisor?
       filter = investor_advisor ? AccessRight.investor_granted_access_filter(user) : AccessRight.access_filter(user)
 
       if %w[CapitalCall CapitalDistribution].include?(name)

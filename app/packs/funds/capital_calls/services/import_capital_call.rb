@@ -5,6 +5,10 @@ class ImportCapitalCall < ImportUtil
     STANDARD_HEADERS
   end
 
+  def pre_process(import_upload, context)
+    @exchange_rates = get_exchange_rates(context.import_file, import_upload)
+  end
+
   def process_row(headers, custom_field_headers, row, import_upload, _context)
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
@@ -52,10 +56,30 @@ class ImportCapitalCall < ImportUtil
 
         setup_custom_fields(user_data, capital_call, custom_field_headers)
 
+        check_exchange_rate(capital_call)
+
         capital_call.save!
+        Rails.logger.debug "Saved CapitalCall"
       end
     else
       raise "Fund not found"
+    end
+  end
+
+  # Capital call imports a re special, they have a special sheet called Exchange Rates in the XL
+  # This sheet must specify the exchange rate for the call_date for a multicurrency fund
+  # These rates are created before the call is created, so that the commitment amounts get adjusted
+  # due to the exchange_rate
+  def check_exchange_rate(capital_call)
+    # We need to setup the commitments for the exchange rate
+    er_user_data = @exchange_rates.filter { |er| er["As Of"] == capital_call.call_date }
+    if er_user_data.present?
+      er_user_data.each do |erud|
+        exchange_rate = setup_exchange_rate(capital_call, erud)
+        Rails.logger.debug { "Created #{exchange_rate}" }
+      end
+    else
+      Rails.logger.debug { "No ExchangeRate specified for Call #{capital_call}" }
     end
   end
 end

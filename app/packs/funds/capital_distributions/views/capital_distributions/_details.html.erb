@@ -3,10 +3,10 @@
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#payments-tab" data-action="click->tabdetails#loadData">Payments</a>
       
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#reminders-tab" 
-            data-action="click->tabdetails#loadData">
-            Reminders
-          </a>
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab" 
+          data-action="click->tabdetails#loadData">
+        Tasks
+      </a>
 
     </nav>
   
@@ -19,15 +19,17 @@
           </div>     
         </div>
 
-        <div id="reminders-tab" class="tab-pane fade">
-          <div id="reminders" class="associated_entity">
-            <%= link_to reminders_path( owner_id: capital_distribution.id, 
-                                    owner_type: "CapitalDistribution", sent: false), 
+        <div id="tasks-tab" class="tab-pane fade">
+          <div id="tasks" class="associated_entity">
+            <% investor = Investor.for(current_user, capital_distribution.entity).first %>
+            <%= link_to tasks_path( for_entity_id: nil, 
+                                    entity_id: capital_distribution.entity_id,
+                                    owner_id: capital_distribution.id, owner_type: "CapitalDistribution"), 
                                     class: "load_data_link", 
-                                    data: { turbo_frame: 'reminders_list' } do %>
+                                    data: { turbo_frame: 'task_list' } do %>
               <span>Loading...</span>
             <% end %>
-            <%= turbo_frame_tag "reminders_list", target: "_top" do %>
+            <%= turbo_frame_tag "task_list", target: "_top" do %>
             <% end %>
           </div>     
         </div>

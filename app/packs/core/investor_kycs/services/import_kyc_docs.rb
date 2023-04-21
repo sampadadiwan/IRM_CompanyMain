@@ -40,6 +40,7 @@ class ImportKycDocs < ImportUtil
     file_name = "#{context.unzip_dir}/#{user_data['File Name'].strip}"
     name = user_data["Document Name"].strip
     model = InvestorKyc.where(investor_id: investor.id, PAN: user_data["PAN"].strip).first if user_data["Document Type"].strip == "KYC"
+    send_email = user_data["Send Email"]&.strip == "Yes"
 
     if investor && model && File.exist?(file_name)
       if name == "PAN"
@@ -55,7 +56,7 @@ class ImportKycDocs < ImportUtil
         # Create the document
         doc = Document.new(owner: model, entity_id: model.entity_id,
                            name:, tag_list: user_data["Tags"]&.strip,
-                           user_id: import_upload.user_id, send_email: false)
+                           user_id: import_upload.user_id, send_email:)
 
         doc.file = File.open(file_name, "rb")
         [doc.save, doc.errors.full_messages]

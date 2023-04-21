@@ -8,6 +8,9 @@ class CapitalCommitment < ApplicationRecord
 
   include ForInvestor
 
+  # Set by import upload when importing commitments
+  attr_accessor :imported
+
   COMMITMENT_TYPES = %w[Pool CoInvest].freeze
   enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
   scope :pool, -> { where(commitment_type: 'Pool') }
@@ -54,7 +57,7 @@ class CapitalCommitment < ApplicationRecord
   # validates :committed_amount_cents, numericality: { greater_than_or_equal_to: :collected_amount_cents }
 
   validates :folio_id, :fund_close, :commitment_type, presence: true
-  validates_uniqueness_of :folio_id, scope: :fund_id
+  validates_uniqueness_of :folio_id, scope: :fund_id, unless: :imported
 
   delegate :currency, to: :fund
 
@@ -79,7 +82,7 @@ class CapitalCommitment < ApplicationRecord
     if orig_folio_committed_amount_cents.zero?
       self.orig_folio_committed_amount_cents = folio_committed_amount_cents
       self.orig_committed_amount_cents = convert_currency(folio_currency, fund.currency,
-                                                          orig_folio_committed_amount_cents, created_at)
+                                                          orig_folio_committed_amount_cents, commitment_date)
     end
   end
 
@@ -97,7 +100,15 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def committed_amount_at_exchange_rate
-    collected_amount_cents + adjustment_amount_cents + convert_currency(folio_currency, fund.currency, folio_pending_committed_amount.cents, Time.zone.today)
+    adjustment_amount_cents + orig_committed_amount_cents
+  end
+
+  def changed_committed_amount_at_exchange_rate(date)
+    if get_exchange_rate(folio_currency, fund.currency, date - 1.day).nil?
+      0
+    else
+      convert_currency(folio_currency, fund.currency, folio_pending_committed_amount.cents, date) - convert_currency(folio_currency, fund.currency, folio_pending_committed_amount.cents, date - 1.day)
+    end
   end
 
   def folio_pending_committed_amount
@@ -202,6 +213,10 @@ class CapitalCommitment < ApplicationRecord
     CapitalCommitmentEsignProvider.new(self).signature_completed(signature_type, document_id, file)
   end
 
+  ###########################################################
+  # Account Entry Stuff
+  ###########################################################
+
   # In some cases name is nil - Ex Cumulative for portfolio FMV or costs @see AccountEntryAllocationEngine.allocate_portfolio_investments()
   #
   def rollup_account_entries(name, entry_type, start_date, end_date)
@@ -238,5 +253,9 @@ class CapitalCommitment < ApplicationRecord
 
   def fund_ratio(name, end_date)
     fund_ratios.where(name:, end_date: ..end_date).last
+  end
+
+  def fund_unit_setting
+    fund.fund_unit_settings.where(name: unit_type).last
   end
 end

@@ -9,12 +9,15 @@ class InvestorKyc < ApplicationRecord
   belongs_to :entity
 
   scope :verified, -> { where(verified: true) }
+  enum :kyc_type, { individual: "Individual", non_individual: "Non Individual" }
+  enum :residency, { domestic: "Domestic", foreign: "Foreign" }
 
   include FileUploader::Attachment(:signature)
   include FileUploader::Attachment(:pan_card)
   include FileUploader::Attachment(:video)
 
   belongs_to :verified_by, class_name: "User", optional: true
+  validates :full_name, presence: true
 
   # Customize form
   serialize :pan_verification_response, Hash
@@ -30,8 +33,11 @@ class InvestorKyc < ApplicationRecord
   end
 
   def document_list
-    # fund.commitment_doc_list&.split(",")
-    docs = entity.kyc_doc_list.split(",").map(&:strip) if entity.kyc_doc_list.present?
+    if individual?
+      docs = entity.entity_setting.individual_kyc_doc_list.split(",").map(&:strip) if entity.entity_setting.individual_kyc_doc_list.present?
+    elsif entity.entity_setting.non_individual_kyc_doc_list.present?
+      docs = entity.entity_setting.non_individual_kyc_doc_list.split(",").map(&:strip)
+    end
     docs + ["Other"] if docs.present?
   end
 

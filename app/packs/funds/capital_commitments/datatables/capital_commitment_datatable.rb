@@ -6,6 +6,7 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
       commitment_type: { source: "CapitalCommitment.commitment_type", orderable: true },
       unit_type: { source: "CapitalCommitment.unit_type", orderable: true },
       investor_name: { source: "CapitalCommitment.investor_name", orderable: true },
+      full_name: { source: "InvestorKyc.full_name", orderable: true },
       fund_name: { source: "Fund.name", searchable: false, orderable: true },
       committed_amount: { source: "CapitalCommitment.committed_amount_cents", searchable: false },
       collected_amount: { source: "CapitalCommitment.collected_amount_cents", searchable: false },
@@ -27,6 +28,7 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
         folio_id: record.decorate.folio_link,
         unit_type: record.unit_type,
         investor_name: record.decorate.investor_link,
+        full_name: record.decorate.full_name_link,
         fund_name: record.decorate.fund_link,
         committed_amount: record.decorate.money_to_currency(record.committed_amount, params),
         collected_amount: record.decorate.money_to_currency(record.collected_amount, params),
@@ -50,9 +52,9 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
     # insert query here
     if params[:show_docs]
       # Dont load the docs unless we need them
-      capital_commitments.includes(:documents)
+      capital_commitments.left_joins(:investor_kyc).includes(:documents)
     else
-      capital_commitments
+      capital_commitments.left_joins(:investor_kyc)
     end
   end
 end

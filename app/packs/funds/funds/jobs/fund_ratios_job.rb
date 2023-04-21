@@ -26,6 +26,7 @@ class FundRatiosJob < ApplicationJob
   end
 
   def calc_fund_ratios(fund, capital_commitment, end_date)
+    owner = capital_commitment || fund
     # Blow off prev fund ratio calcs for this valuation
     FundRatio.where(fund:, capital_commitment:, end_date:).delete_all
 
@@ -33,36 +34,51 @@ class FundRatiosJob < ApplicationJob
 
     # Create the ratios
     xirr = calc.xirr
-    FundRatio.create!(entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR", value: xirr, display_value: "#{xirr} %")
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR", value: xirr, display_value: "#{xirr} %")
 
-    # FundRatio.create!(entity_id: fund.entity_id, fund:, name: "Moic", value: calc.moic, display_value: calc.moic.to_s)
+    # FundRatio.create!(owner: , entity_id: fund.entity_id, fund:, name: "Moic", value: calc.moic, display_value: calc.moic.to_s)
 
     value = calc.rvpi
     display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create!(entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "RVPI", value:, display_value:)
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "RVPI", value:, display_value:)
 
     value = calc.dpi
     display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create!(entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "DPI", value:, display_value:)
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "DPI", value:, display_value:)
 
     value = calc.tvpi
     display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create!(entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "TVPI", value:, display_value:)
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "TVPI", value:, display_value:)
 
-    unless capital_commitment
-      value = calc.fund_utilization
-      display_value = value ? "#{value.round(2) * 100}%" : nil
-      FundRatio.create!(entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Fund Utilization", value:, display_value:)
+    calc_only_fund(calc, fund, capital_commitment, end_date, owner) unless capital_commitment
+  end
 
-      value = calc.portfolio_value_to_cost
-      display_value = value ? "#{value.round(2)}x" : nil
-      FundRatio.create!(entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Portfolio Value to Cost", value:, display_value:)
+  def calc_only_fund(calc, fund, capital_commitment, end_date, owner)
+    value = calc.fund_utilization
+    display_value = value ? "#{value.round(2) * 100}%" : nil
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Fund Utilization", value:, display_value:)
 
-      value = calc.paid_in_to_committed_capital
-      display_value = value ? "#{value.round(2)}x" : nil
-      FundRatio.create!(entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Paid In to Committed Capital", value:, display_value:)
+    value = calc.portfolio_value_to_cost
+    display_value = value ? "#{value.round(2)}x" : nil
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Portfolio Value to Cost", value:, display_value:)
 
+    value = calc.paid_in_to_committed_capital
+    display_value = value ? "#{value.round(2)}x" : nil
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Paid In to Committed Capital", value:, display_value:)
+
+    # Compute the portfolio_company_ratios
+    calc.portfolio_company_irr.each do |portfolio_company_id, values|
+      FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR", value: values[:xirr], display_value: "#{values[:xirr]} %")
     end
+
+    # Compute the portfolio_company_ratios
+    calc.portfolio_company_cost_to_value.each do |portfolio_company_id, values|
+      FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Value To Cost", value: values[:value_to_cost], display_value: "#{values[:value_to_cost].round(2)} x")
+    end
+
+    value = calc.gross_portfolio_irr
+    display_value = "#{value} %"
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Gross Portfolio IRR", value:, display_value:)
   end
 
   def notify(message, user_id, level: "success")

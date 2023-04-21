@@ -20,5 +20,5 @@
   <%%= link_to "Edit", <%= edit_helper(type: :path) %>, {class: "btn btn-primary"} %> |
   <%%= link_to "Back", :back, {class: "btn btn-primary"} %> |
 
-  <%%= button_to "Delete", <%= model_resource_name(prefix: "@") %>, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+  <%%= button_to "Delete", <%= model_resource_name(prefix: "@") %>, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>

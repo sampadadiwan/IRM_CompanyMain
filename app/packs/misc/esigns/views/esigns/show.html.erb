@@ -73,5 +73,5 @@
 
 <div>
   <%= link_to "Edit", edit_esign_path(@esign), {class: "btn btn-outline-primary"} %> 
-  <%= button_to "Delete", @esign, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+  <%= button_to "Delete", @esign, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>

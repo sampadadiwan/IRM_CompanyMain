@@ -142,6 +142,6 @@
 <div>
   <% if policy(@account_entry).update? %>
     <%= link_to "Edit", edit_account_entry_path(@account_entry), {class: "btn btn-outline-primary"} %> 
-    <%= button_to "Delete", @account_entry, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false}  %>
+    <%= button_to "Delete", @account_entry, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
   <% end %>
 </div>

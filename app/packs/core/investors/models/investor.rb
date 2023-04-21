@@ -37,7 +37,7 @@ class Investor < ApplicationRecord
   has_many :investor_notice_entries, dependent: :destroy
 
   delegate :name, to: :entity, prefix: :investee
-  validates :category, presence: true
+  validates :category, :investor_name, presence: true
 
   validates :investor_name, uniqueness: { scope: :entity_id, message: "already exists as an investor. Duplicate Investor." }
   validates :investor_entity_id, uniqueness: { scope: :entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }

@@ -6,7 +6,7 @@ class CapitalCommitmentsController < ApplicationController
 
   # GET /capital_commitments or /capital_commitments.json
   def index
-    @capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund)
+    @capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc)
     @capital_commitments = @capital_commitments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @capital_commitments = @capital_commitments.where(investor_id: params[:investor_id]) if params[:investor_id].present?
     @capital_commitments = @capital_commitments.where(onboarding_completed: params[:onboarding_completed]) if params[:onboarding_completed].present?
@@ -138,6 +138,6 @@ class CapitalCommitmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_commitment_params
-    params.require(:capital_commitment).permit(:entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :notes, :folio_id, :investor_signatory_id, :investor_kyc_id, :onboarding_completed, :form_type_id, :unit_type, :fund_close, :investor_signature_types, :virtual_bank_account, :folio_currency, :feeder_fund, :folio_committed_amount, :commitment_type, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:capital_commitment).permit(:entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :notes, :folio_id, :investor_signatory_id, :investor_kyc_id, :onboarding_completed, :form_type_id, :unit_type, :fund_close, :investor_signature_types, :virtual_bank_account, :folio_currency, :feeder_fund, :folio_committed_amount, :commitment_type, :commitment_date, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

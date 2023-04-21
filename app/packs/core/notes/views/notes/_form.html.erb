@@ -45,6 +45,21 @@
     <%= form.rich_text_area :details, class: "form-control trix-content"  %>
   </div>
 
+  <%= form.fields_for :reminder do |reminder_subform| %>
+
+      <div class="form-group">
+        <%= reminder_subform.label :email, "Reminder Emails" %>
+        <%= reminder_subform.text_field :email, class: "form-control"  %>
+        <small class="text-muted">Comma separated emails to send reminder to.</small>
+      </div>
+
+      <div class="form-group">
+        <%= reminder_subform.label :due_date, "Reminder Date" %>
+        <%= reminder_subform.date_field :due_date, class: "form-control"  %>
+      </div>
+
+  <% end %>
+
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
   </div>

@@ -9,16 +9,19 @@ class ImportPortfolioInvestment < ImportUtil
   end
 
   def post_process(import_upload, _context)
-    PortfolioInvestment.counter_culture_fix_counts only: :aggregate_portfolio_investment, where: { entity_id: import_upload.entity_id }
+    # This ensures all the counters for this funds API are fixed
+    PortfolioInvestment.counter_culture_fix_counts only: :aggregate_portfolio_investment, where: { fund_id: import_upload.owner_id }
+    # This will cause the compute_avg_cost to be called
+    AggregatePortfolioInvestment.where(fund_id: import_upload.owner_id).each(&:save)
   end
 
-  def save_portfolio_investment(user_data, _import_upload, custom_field_headers)
+  def save_portfolio_investment(user_data, import_upload, custom_field_headers)
     portfolio_company_name = user_data['Portfolio Company Name'].strip
     investment_date = user_data["Investment Date"]
     amount_cents = user_data["Amount"].to_d * 100
     quantity = user_data["Quantity"].to_d
     investment_type = user_data["Investment Type"].strip
-    fund = Fund.find_by name: user_data["Fund"].strip
+    fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).last
     commitment_type = user_data["Type"].strip
     folio_id = user_data["Folio No"].presence
     capital_commitment = commitment_type == "CoInvest" ? fund.capital_commitments.where(folio_id:).first : nil

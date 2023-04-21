@@ -7,7 +7,7 @@
     <%= link_to "Edit" , edit_capital_distribution_payment_path(@capital_distribution_payment),
         {class: "btn btn-outline-primary" } %> |
     <%= button_to "Delete" , @capital_distribution_payment, method: :delete, class: "btn btn-outline-danger" ,
-            form_class: "deleteButton" , data: {action: "click->confirm#delete" , turbo:false} %>
+            form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
   <% end %>
 </div>
 

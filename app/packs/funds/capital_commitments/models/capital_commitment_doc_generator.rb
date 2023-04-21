@@ -45,7 +45,8 @@ class CapitalCommitmentDocGenerator
       fund_details: capital_commitment.fund.details,
       investor_name: capital_commitment.investor_name,
       commitment_amount: money_to_currency(capital_commitment.committed_amount),
-      commitment_amount_words: amount_in_words
+      commitment_amount_words: amount_in_words,
+      capital_commitment:
     }
 
     generate_custom_fields(context, capital_commitment)

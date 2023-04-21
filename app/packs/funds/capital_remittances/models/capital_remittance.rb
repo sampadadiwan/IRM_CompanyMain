@@ -15,6 +15,7 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :capital_commitment
   has_one :investor_kyc, through: :capital_commitment
   belongs_to :investor
+  belongs_to :exchange_rate, optional: true
   has_many :capital_remittance_payments, dependent: :destroy
 
   scope :paid, -> { where(status: "Paid") }
@@ -45,6 +46,18 @@ class CapitalRemittance < ApplicationRecord
   counter_culture :capital_commitment, column_name: 'call_amount_cents',
                                        delta_column: 'call_amount_cents'
 
+  counter_culture :fund, column_name: proc { |r| r.capital_commitment.Pool? ? 'call_amount_cents' : 'co_invest_call_amount_cents' },
+                         delta_column: 'call_amount_cents',
+                         column_names: lambda {
+                                         {
+                                           CapitalRemittance.pool => :call_amount_cents,
+                                           CapitalRemittance.co_invest => :co_invest_call_amount_cents
+                                         }
+                                       }
+
+  counter_culture :capital_call, column_name: 'call_amount_cents',
+                                 delta_column: 'call_amount_cents'
+
   counter_culture :capital_commitment, column_name: 'folio_call_amount_cents',
                                        delta_column: 'folio_call_amount_cents'
 
@@ -72,21 +85,24 @@ class CapitalRemittance < ApplicationRecord
                                          }
                                        }
 
-  before_save :set_status
-  before_create :set_call_amount
+  before_save :set_call_amount
   def set_call_amount
     # This is the committed_amount when the remittance was created. In certain special top up cases the committed_amount for the commitment may be changed later. Hence this is a ref for the committed_amount at the time of creation
     self.folio_committed_amount_cents = capital_commitment.folio_committed_amount_cents
     self.committed_amount_cents = capital_commitment.committed_amount_cents
+
     calc_call_amount_cents
+    # Setup Paid or Pending status
     set_status
   end
 
   def calc_call_amount_cents
+    # Get the call amount in the folio_currency
     self.folio_call_amount_cents = capital_call.percentage_called * capital_commitment.folio_committed_amount_cents / 100.0
 
-    self.call_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency,
-                                              folio_call_amount_cents, payment_date)
+    # Now compute the call amount in the fund currency.
+    # Note the call amount is also subject to FX rate changes, but only for the due amount, collected amount has already been collected at the prevailing FX rate, hence is not subject to FX
+    self.call_amount_cents = collected_amount_cents + convert_currency(capital_commitment.folio_currency, fund.currency, folio_due_amount.cents, payment_date)
   end
 
   def send_notification
@@ -121,6 +137,10 @@ class CapitalRemittance < ApplicationRecord
 
   def due_amount
     call_amount - collected_amount
+  end
+
+  def folio_due_amount
+    folio_call_amount - folio_collected_amount
   end
 
   def to_s

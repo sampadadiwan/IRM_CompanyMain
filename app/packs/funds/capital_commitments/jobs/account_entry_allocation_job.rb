@@ -8,14 +8,9 @@ class AccountEntryAllocationJob < ApplicationJob
               generate_soa: nil, template_name: nil, fund_ratios: nil)
     Chewy.strategy(:sidekiq) do
       fund = Fund.find(fund_id)
-      begin
-        AccountEntryAllocationEngine.new(fund, start_date, end_date,
-                                         formula_id:, user_id:, generate_soa:,
-                                         template_name:, fund_ratios:).run_formulas
-      rescue Exception => e
-        # notify("Please contact support. Error running fund formulas: #{e.message}", :danger, user_id)
-        raise e
-      end
+      AccountEntryAllocationEngine.new(fund, start_date, end_date,
+                                       formula_id:, user_id:, generate_soa:,
+                                       template_name:, fund_ratios:).run_formulas
     end
   end
 

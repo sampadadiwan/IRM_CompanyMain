@@ -134,11 +134,11 @@ class Investment < ApplicationRecord
 
     investments.each do |inv|
       new_row_index += 1
-      open_book.worksheet(0).row(new_row_index).concat [inv.category, inv.funding_round.name,
-                                                        inv.investor.investor_name,
-                                                        inv.investment_instrument, inv.investment_date, inv.quantity, inv.percentage_holding,
-                                                        inv.diluted_percentage, inv.price.to_s.to_f,
-                                                        inv.amount.to_s.to_f, inv.liquidation_preference, inv.liq_pref_type, inv.anti_dilution]
+      open_book.worksheet(0).row(new_row_index).push inv.category, inv.funding_round.name,
+                                                     inv.investor.investor_name,
+                                                     inv.investment_instrument, inv.investment_date, inv.quantity, inv.percentage_holding,
+                                                     inv.diluted_percentage, inv.price.to_s.to_f,
+                                                     inv.amount.to_s.to_f, inv.liquidation_preference, inv.liq_pref_type, inv.anti_dilution
 
       Rails.logger.debug { "Wrote row #{new_row_index}" }
     end

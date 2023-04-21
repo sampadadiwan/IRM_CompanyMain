@@ -103,13 +103,7 @@ class PortfolioInvestment < ApplicationRecord
 
       buys.order(investment_date: :asc).each do |buy|
         Rails.logger.debug { "processing buy #{buy.to_json}" }
-        attribution_quantity = if buy.net_quantity > allocatable_quantity
-                                 # The entire allocatable_quantity is available
-                                 allocatable_quantity
-                               else
-                                 # The entire allocatable_quantity is NOT available
-                                 buy.net_quantity
-                               end
+        attribution_quantity = [buy.net_quantity, allocatable_quantity].min
         # Create the portfolio attribution
         PortfolioAttribution.create!(entity_id:, fund_id:, bought_pi: buy,
                                      sold_pi: self, quantity: -attribution_quantity)
@@ -155,25 +149,25 @@ class PortfolioInvestment < ApplicationRecord
 
   def self.fmv_cents(model, end_date)
     total_fmv_end_date = 0
-    model.portfolio_investments.buys.where(investment_date: ..end_date).each do |pi|
+    model.portfolio_investments.pool.buys.where(investment_date: ..end_date).each do |pi|
       # Find the valuation just prior to the end_date
       valuation = pi.portfolio_company.valuations.where(instrument_type: pi.investment_type, valuation_date: ..end_date).order(valuation_date: :asc).last
-      total_fmv_end_date += pi.quantity * valuation.valuation_cents
+      total_fmv_end_date += pi.quantity * valuation.per_share_value_cents
     end
     total_fmv_end_date
   end
 
   def self.avg_cost_cents(model, end_date)
-    total_amount_cents = model.portfolio_investments.buys.where(investment_date: ..end_date).sum(:amount_cents)
-    total_buy_quantity = model.portfolio_investments.buys.where(investment_date: ..end_date).sum(:quantity)
+    total_amount_cents = model.portfolio_investments.pool.buys.where(investment_date: ..end_date).sum(:amount_cents)
+    total_buy_quantity = model.portfolio_investments.pool.buys.where(investment_date: ..end_date).sum(:quantity)
     total_buy_quantity.positive? ? total_amount_cents / total_buy_quantity : 0
   end
 
   def self.cost_of_sold_cents_for(model, end_date)
-    model.portfolio_investments.sells.where(investment_date: ..end_date).sum(:cost_of_sold_cents)
+    model.portfolio_investments.pool.sells.where(investment_date: ..end_date).sum(:cost_of_sold_cents)
   end
 
   def self.total_investment_sold_cents(model, end_date)
-    model.portfolio_investments.sells.where(investment_date: ..end_date).sum(:amount_cents)
+    model.portfolio_investments.pool.sells.where(investment_date: ..end_date).sum(:amount_cents)
   end
 end

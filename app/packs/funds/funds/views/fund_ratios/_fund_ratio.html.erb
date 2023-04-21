@@ -1,5 +1,8 @@
 <tr id="<%= dom_id fund_ratio %>">
   <td>
+    <%= link_to fund_ratio.owner if fund_ratio.owner %>
+  </td>
+  <td>
     <%= link_to fund_ratio.name, fund_ratio %>
   </td>
   <td>

@@ -4,7 +4,7 @@
   %>
   <div class="form-group" data-controller="persona">
     <% selected = params[:persona].present? ? params[:persona] : current_user.investor_advisor_id %>
-    <%= form.select :persona, personas, {selected: selected, include_blank: true}, 
+    <%= form.select :persona, personas, {selected: selected, include_blank: 'Self'}, 
         { id: "persona", class: "form-control", name: "id",
         data: { action: "change->persona#setPersona", toggle: "tooltip", title: "Choose Persona" } } %>
   </div>

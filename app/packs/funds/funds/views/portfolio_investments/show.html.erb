@@ -159,7 +159,7 @@
 </table>
 <div>
     <%= link_to "Edit", edit_portfolio_investment_path(@portfolio_investment), {class: "btn btn-outline-primary"} if policy(@portfolio_investment).update? %> 
-    <%= button_to "Delete", @portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#delete", turbo:false} if policy(@portfolio_investment).destroy? %>
+    <%= button_to "Delete", @portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@portfolio_investment).destroy? %>
   
 </div>
 

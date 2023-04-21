@@ -3,10 +3,10 @@
 
 <div class="row">
     <!-- Show hide the folder view based on action -->
-    <% doc_index_class = (no_folders) ? "col-lg-12 mb-4" : "col-lg-9 mb-4" %>
+    <% doc_index_class = (no_folders) ? "col-lg-12 mb-4" : "col-lg-8 mb-4" %>
 
     <% unless no_folders %>
-    <div class="col-lg-3 mb-4">
+    <div class="col-lg-4 mb-4">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <span class="m-0 font-weight-bold text-primary">Folders</span> 
@@ -17,24 +17,10 @@
             </div>
             <div class="card-body">
                 <div id="tree_view" class="tree_view" data-controller="treeview">
-                    
-                    <% entity_id = params[:entity_id].present? ? params[:entity_id].to_i : current_user.entity_id %>
-                                        
-                    <% 
-                        if entity_id == current_user.entity_id
-                            if params[:folder_id].present?
-                                folders = Folder.find(params[:folder_id]).subtree.arrange 
-                            else
-                                folders = @entity.root_folder.subtree.arrange 
-                            end
-                        else
-                            aids = Folder.with_ancestor_ids(@documents)
-                            folders = Folder.where(id: aids).arrange                            
-                        end
-                    %>
-                    
-                    <%= render "folders/tree_view", folders: folders  %>                    
-
+                    <% if params[:page].blank? %>
+                        <% folders = get_tree_view_folders(params, current_user, @entity, @documents) %>                    
+                        <%= render "folders/tree_view", folders: folders  %>                    
+                    <% end %>
                 </div>
             </div>
         </div>
@@ -53,6 +39,7 @@
             </div>
             <div class="card-body">
                 <%= turbo_frame_tag "documents_frame", target: "_top" do %>
+                    <% documents = documents.where(folder_id: params[:folder_id]) if params[:folder_id].present? %>
                     <%= render "documents/index", documents: documents, entity: entity, owner: @owner %>
                     <%= paginate documents, data: {turbo_frame: 'documents_frame'} %>                
                 <% end %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_03_29_130105) do
+ActiveRecord::Schema[7.0].define(version: 2023_04_20_091341) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -340,7 +340,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_29_130105) do
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.string "name"
-    t.decimal "percentage_called", precision: 5, scale: 2, default: "0.0"
+    t.decimal "percentage_called", precision: 9, scale: 6, default: "0.0"
     t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.date "due_date"
@@ -413,11 +413,14 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_29_130105) do
     t.bigint "exchange_rate_id"
     t.string "commitment_type", limit: 10, default: "pool"
     t.boolean "feeder_fund", default: false
+    t.date "commitment_date"
+    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_capital_commitments_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
+    t.index ["fund_id", "folio_id", "generated_deleted"], name: "unique_commitment", unique: true
     t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"
     t.index ["investor_id"], name: "index_capital_commitments_on_investor_id"
     t.index ["investor_kyc_id"], name: "index_capital_commitments_on_investor_kyc_id"
@@ -566,10 +569,13 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_29_130105) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "exchange_rate_id"
+    t.string "owner_type"
+    t.bigint "owner_id"
     t.index ["capital_commitment_id"], name: "index_commitment_adjustments_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_commitment_adjustments_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_commitment_adjustments_on_exchange_rate_id"
     t.index ["fund_id"], name: "index_commitment_adjustments_on_fund_id"
+    t.index ["owner_type", "owner_id"], name: "index_commitment_adjustments_on_owner"
   end
 
   create_table "deal_activities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -765,7 +771,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_29_130105) do
     t.boolean "enable_investor_kyc", default: false
     t.string "sub_domain"
     t.text "logo_data"
-    t.string "kyc_doc_list", limit: 100
     t.boolean "activity_docs_required_for_completion", default: false
     t.boolean "activity_details_required_for_na", default: false
     t.boolean "enable_investors", default: true
@@ -795,6 +800,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_29_130105) do
     t.string "entity_bcc"
     t.string "reply_to"
     t.string "cc"
+    t.string "individual_kyc_doc_list"
+    t.string "non_individual_kyc_doc_list"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 
@@ -861,6 +868,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_29_130105) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.date "as_of"
+    t.text "notes"
+    t.bigint "document_folder_id"
+    t.index ["document_folder_id"], name: "index_exchange_rates_on_document_folder_id"
     t.index ["entity_id"], name: "index_exchange_rates_on_entity_id"
   end
 
@@ -974,19 +984,22 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_29_130105) do
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.bigint "valuation_id"
-    t.string "name", limit: 30
-    t.decimal "value", precision: 10
-    t.string "display_value", limit: 20
+    t.string "name"
+    t.decimal "value", precision: 20, scale: 8, default: "0.0"
+    t.string "display_value", limit: 50
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
     t.bigint "capital_commitment_id"
     t.date "end_date"
+    t.string "owner_type"
+    t.bigint "owner_id"
     t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"
     t.index ["fund_id"], name: "index_fund_ratios_on_fund_id"
+    t.index ["owner_type", "owner_id"], name: "index_fund_ratios_on_owner"
     t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"
   end
 
@@ -1463,6 +1476,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_29_130105) do
     t.string "investor_name"
     t.bigint "document_folder_id"
     t.date "expiry_date"
+    t.string "kyc_type", limit: 15, default: "Individual"
+    t.string "residency", limit: 10
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
@@ -2162,6 +2177,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_03_29_130105) do
   add_foreign_key "excercises", "option_pools"
   add_foreign_key "excercises", "users"
   add_foreign_key "exchange_rates", "entities"
+  add_foreign_key "exchange_rates", "folders", column: "document_folder_id"
   add_foreign_key "expression_of_interests", "entities"
   add_foreign_key "expression_of_interests", "entities", column: "eoi_entity_id"
   add_foreign_key "expression_of_interests", "folders", column: "document_folder_id"

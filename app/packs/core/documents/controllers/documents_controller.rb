@@ -31,16 +31,19 @@ class DocumentsController < ApplicationController
     # Display docs of the folder and its children, like for data room
     if params[:folder_id].present?
       @folder = Folder.find(params[:folder_id])
-      folder_ids = @folder.descendant_ids << params[:folder_id]
-      @documents = @documents.where(folder_id: folder_ids)
+      # folder_ids = @folder.descendant_ids << params[:folder_id]
+      # @documents = @documents.where(folder_id: folder_ids)
+      # Is this more efficient than the query above?
+      @documents = @documents.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
+      @documents = @documents.or(Document.where(folder_id: params[:folder_id]))
     end
 
     # This is specifically for investor advisors, who should not be able to see the docs for other funds
     @documents = @documents.where.not(owner_type: %w[Fund CapitalCommitment CapitalRemittance]).or(@documents.where(owner_type: nil)) if params[:hide_fund_docs] == "true"
 
     # Newest docs first
-    @documents = @documents.order(id: :desc)
-    @documents = @documents.includes(:folder).page(params[:page]) if params[:all].blank?
+    @documents = @documents.includes(:folder).order(id: :desc)
+    @documents = @documents.page(params[:page]) if params[:all].blank?
   end
 
   def investor_documents

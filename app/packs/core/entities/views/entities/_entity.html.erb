@@ -15,7 +15,7 @@
             <%= link_to "Documents", documents_path(entity_id: entity.id) , {class: "btn btn-outline-primary"}%>
             <%= link_to "Investments", investments_path(entity_id: entity.id) , {class: "btn btn-outline-success"}%>
         <% else %>
-            <% hide_fund_docs = current_user.has_cached_role?(:investor_advisor) %>
+            <% hide_fund_docs = current_user.investor_advisor? %>
             <%= link_to "Documents", documents_path(entity_id: entity.id, hide_fund_docs:) , {class: "btn btn-outline-primary"}%>
             
             <%= link_to "Investments", dashboard_entities_path(entity_id: entity.id, dashboard: "investor_dashboard") , 

@@ -7,7 +7,7 @@ class InvestmentOpportunityJob < ApplicationJob
 
       @investment_opportunity.expression_of_interests.update_all(allocation_amount_cents: 0, allocation_percentage: 0)
 
-      pct = @investment_opportunity.percentage_raised <= 100 ? 100 : @investment_opportunity.percentage_raised
+      pct = [@investment_opportunity.percentage_raised, 100].max
       @investment_opportunity.expression_of_interests.approved.each do |eoi|
         eoi.allocation_amount_cents = (eoi.amount_cents * 100.0 / pct).floor
         eoi.save

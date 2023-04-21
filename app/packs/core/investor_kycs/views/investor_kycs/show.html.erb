@@ -7,7 +7,7 @@
     <% if policy(@investor_kyc).update? %>
       <%= link_to "Edit" , edit_investor_kyc_path(@investor_kyc), {class: "btn btn-outline-primary" } %> 
 
-      <%= button_to "Delete" , @investor_kyc, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#delete" , turbo:false} %>
+      <%= button_to "Delete" , @investor_kyc, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup" , turbo:false} %>
     <% end %>
 
     <%= button_to "Toggle Verified" , toggle_verified_investor_kyc_path(@investor_kyc), method: :put, class: "btn btn-outline-primary" , form_class: "deleteButton" if policy(@investor_kyc).toggle_verified? %>

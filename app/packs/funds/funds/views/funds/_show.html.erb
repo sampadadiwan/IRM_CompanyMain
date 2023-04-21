@@ -378,6 +378,12 @@
           </td>
         </tr>
 
+        <tr class="collapse multi-collapse btn-primary">
+          <td colspan="2">
+          </td>
+        </tr>
+        
+
         <tr class="collapse multi-collapse">
           <td>
             Gross Portfolio IRR
@@ -386,6 +392,17 @@
             <%= currency_from_cents fund_portfolio_calcs.gross_portfolio_irr, fund.currency, params  %>
           </td>
         </tr>
+
+        <% fund_portfolio_calcs.portfolio_company_irr.each do |portfolio_company_id, xirr| %>
+        <tr class="collapse multi-collapse">
+          <td>
+            portfolio_company_id
+          </td>
+          <td>
+            <%= xirr %>
+          </td>
+        </tr>
+        <% end %>
 
         <tr class="collapse multi-collapse">
           <td>

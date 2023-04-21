@@ -72,7 +72,6 @@ class FundPortfolioCalcs
     committed_cents.positive? ? (total_investment_costs_cents / committed_cents) : 0
   end
 
-  # TODO
   def portfolio_value_to_cost
     total_investment_costs_cents.positive? ? fmv_cents / total_investment_costs_cents : 0
   end
@@ -98,10 +97,69 @@ class FundPortfolioCalcs
     (cf.xirr * 100).round(2)
   end
 
-  def fmv_on_date
+  # Compute the XIRR for each portfolio company
+  def portfolio_company_irr
+    portfolio_companies_map = {}
+
+    # Group all fund investments by the portfolio_company
+    @fund.portfolio_investments.pool.where(investment_date: ..@end_date).order(investment_date: :asc).group_by(&:portfolio_company_id)
+         .each do |portfolio_company_id, portfolio_investments|
+      cf = Xirr::Cashflow.new
+
+      # Get the buy cash flows
+      Rails.logger.debug "######################"
+      Rails.logger.debug "#########BUYS#########"
+      portfolio_investments.filter { |pi| pi.quantity.positive? }.each do |buy|
+        cf << Xirr::Transaction.new(-1 * buy.amount_cents, date: buy.investment_date)
+        Rails.logger.debug { "#{buy.portfolio_company_name}, #{buy.amount}, #{buy.investment_date}, #{buy.quantity}" }
+      end
+      Rails.logger.debug "######################"
+      Rails.logger.debug "#########SELLS#########"
+      # Get the sell cash flows
+      portfolio_investments.filter { |pi| pi.quantity.negative? }.each do |sell|
+        cf << Xirr::Transaction.new(sell.amount_cents, date: sell.investment_date)
+        Rails.logger.debug { "#{sell.portfolio_company_name}, #{sell.amount}, #{sell.investment_date}, #{sell.quantity}" }
+      end
+      Rails.logger.debug "######################"
+      Rails.logger.debug "#########FMV#########"
+      # Get the FMV for this specific portfolio_company
+      fmv_val = fmv_on_date(portfolio_company_id)
+      cf << Xirr::Transaction.new(fmv_val, date: @end_date)
+      Rails.logger.debug fmv_val.to_s
+      Rails.logger.debug "######################"
+      Rails.logger.debug "#########XIRR#########"
+      # Calculate and store the xirr
+      xirr_val = (cf.xirr * 100).round(2)
+      portfolio_companies_map[portfolio_company_id] = { name: portfolio_investments[0].portfolio_company_name,
+                                                        xirr: xirr_val }
+      Rails.logger.debug xirr
+    end
+
+    portfolio_companies_map
+  end
+
+  def portfolio_company_cost_to_value
+    portfolio_companies_map = {}
+
+    @fund.portfolio_investments.where(investment_date: ..@end_date).group_by(&:portfolio_company_id)
+         .each do |portfolio_company_id, portfolio_investments|
+      bought_amount = portfolio_investments.filter { |pi| pi.quantity.positive? }.sum(&:amount_cents)
+      sold_amount = portfolio_investments.filter { |pi| pi.quantity.negative? }.sum(&:amount_cents)
+      fmv = fmv_on_date(portfolio_company_id)
+
+      portfolio_companies_map[portfolio_company_id] =
+        { name: portfolio_investments[0].portfolio_company_name,
+          value_to_cost: (sold_amount + fmv) / bought_amount }
+    end
+
+    portfolio_companies_map
+  end
+
+  def fmv_on_date(portfolio_company_id = nil)
     total_fmv_on_end_date_cents = 0
-    @fund.portfolio_investments.where(investment_date: ..@end_date)
-         .group(:portfolio_company_id, :investment_type).sum(:quantity).each do |k, quantity|
+    portfolio_investments = @fund.portfolio_investments.pool.where(investment_date: ..@end_date)
+    portfolio_investments = portfolio_investments.where(portfolio_company_id:) if portfolio_company_id
+    portfolio_investments.group(:portfolio_company_id, :investment_type).sum(:quantity).each do |k, quantity|
       # Get the valuation as of the end date
       portfolio_company_id = k[0]
       instrument_type = k[1]

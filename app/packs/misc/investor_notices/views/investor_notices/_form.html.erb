@@ -55,13 +55,8 @@
             </div>
 
             <div class="form-group">
-              <%= form.label :link %>
+              <%= form.label :link, "Image Link" %>
               <%= form.text_field :link, class: "form-control"  %>
-            </div>
-
-            <div class="form-group">
-              <%= form.label :btn_label, "Button Label" %>
-              <%= form.text_field :btn_label, class: "form-control"  %>
             </div>
 
             <div class="form-group">
@@ -75,7 +70,7 @@
             </div>
 
             <div class="form-group" data-controller="trixurl">
-              <%= form.label :details %>
+              <%= form.label :details, "HTML to be displayed" %>
               <%= form.rich_text_area :details, class: "form-control"  %>
             </div>
 

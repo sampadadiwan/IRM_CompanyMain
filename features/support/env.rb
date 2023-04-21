@@ -104,10 +104,10 @@ else
 end
 
 module IRMUtils
-  def key_values(entity, args)
+  def key_values(model, args)
     key_val = args.split(";").to_h { |kv| kv.split("=") }
     key_val.each do |k, v|
-      entity[k] = v
+      model[k] = v
     end
   end
 end

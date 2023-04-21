@@ -33,6 +33,7 @@ class CapitalRemittancePayment < ApplicationRecord
 
   after_commit :unverify_remittance
   def unverify_remittance
+    capital_remittance.reload
     capital_remittance.verified = false
     capital_remittance.save
   end

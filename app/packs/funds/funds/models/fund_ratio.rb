@@ -5,4 +5,5 @@ class FundRatio < ApplicationRecord
   belongs_to :fund
   belongs_to :capital_commitment, optional: true
   belongs_to :valuation, optional: true
+  belongs_to :owner, polymorphic: true, optional: true
 end

@@ -16,20 +16,25 @@
   </div>
 
   <div class="form-group">
-    <%= form.label :entity_type %>
-    <%= form.select :entity_type, Entity::TYPES, {}, {class: "form-control"} %>
-  </div>
-  
-  <div class="form-group">
     <%= form.label :industry %>
     <%= form.text_field :category, class: "form-control"  %>
   </div>
 
-  <div class="form-group">
-    <%= form.label :kyc_doc_list %>
-    <%= form.text_field :kyc_doc_list, class: "form-control"  %>
-    <small>Comma separated list of documents to be uploaded for KYC</small>
-  </div>
+  <%= form.fields_for :entity_setting do |entity_setting_subform| %>
+  
+    <div class="form-group">
+      <%= entity_setting_subform.label :individual_kyc_doc_list %>
+      <%= entity_setting_subform.text_field :individual_kyc_doc_list, class: "form-control"  %>
+      <small>Comma separated list of documents to be uploaded for Individual KYC</small>
+    </div>
+
+    <div class="form-group">
+      <%= entity_setting_subform.label :non_individual_kyc_doc_list %>
+      <%= entity_setting_subform.text_field :non_individual_kyc_doc_list, class: "form-control"  %>
+      <small>Comma separated list of documents to be uploaded for Non Individual KYC</small>
+    </div>
+
+  <% end %>
 
   <div class="form-group">
     <%= form.label :url %>
