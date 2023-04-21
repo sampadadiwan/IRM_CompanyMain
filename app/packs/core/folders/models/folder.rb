@@ -72,8 +72,15 @@ class Folder < ApplicationRecord
                                       query:, default_operator: 'and' }).objects
   end
 
-  def self.with_ancestor_ids(documents)
-    ids = documents.joins(:folder).pluck("documents.folder_id, folders.ancestry")
-    ids.map { |p| p[1] ? (p[1].split("/") << p[0]) : [p[0]] }.flatten.map(&:to_i)
-  end
+  scope :for_investor, lambda { |user, entity|
+    joins(:access_rights)
+      .merge(AccessRight.access_filter(user))
+      .joins(entity: :investors)
+      # Ensure that the user is an investor and tis investor has been given access rights
+      .where("entities.id=?", entity.id)
+      .where("investors.investor_entity_id=?", user.entity_id)
+      # Ensure this user has investor access
+      .joins(entity: :investor_accesses)
+      .merge(InvestorAccess.approved_for_user(user))
+  }
 end
