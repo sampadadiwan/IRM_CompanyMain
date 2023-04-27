@@ -22,11 +22,13 @@
         </div>
       </div>
 
+      <% if current_user.entity.entity_setting.aml_enabled %>
       <div id="aml-reports-tab" class="tab-pane fade in show">
         <div id="aml-reports" class="associated_entity">
-          <%= render partial: "/aml_reports/index" , locals: {investor_kyc: @investor_kyc} %>
+          <%= render partial: "/aml_reports/index" , locals: {lazy_load_data: true, investor_kyc: @investor_kyc} %>
         </div>
       </div>
+      <% end %>
   </div>
 
 </div>

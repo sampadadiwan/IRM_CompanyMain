@@ -80,15 +80,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_26_155437) do
     t.index ["parent_type", "parent_id"], name: "index_account_entries_on_parent"
   end
 
-  create_table "action_mailbox_inbound_emails", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.integer "status", default: 0, null: false
-    t.string "message_id", null: false
-    t.string "message_checksum", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["message_id", "message_checksum"], name: "index_action_mailbox_inbound_emails_uniqueness", unique: true
-  end
-
   create_table "action_text_rich_texts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.text "body", size: :long
@@ -372,7 +363,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_26_155437) do
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.string "name"
-    t.decimal "percentage_called", precision: 11, scale: 8, default: "0.0"
+    t.decimal "percentage_called", precision: 9, scale: 6, default: "0.0"
     t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.date "due_date"
@@ -443,7 +434,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_26_155437) do
     t.decimal "orig_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "orig_folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "exchange_rate_id"
-    t.string "commitment_type", limit: 10, default: "Pool"
+    t.string "commitment_type", limit: 10, default: "pool"
     t.boolean "feeder_fund", default: false
     t.date "commitment_date"
     t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
@@ -832,7 +823,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_26_155437) do
     t.string "entity_bcc"
     t.string "reply_to"
     t.string "cc"
-    t.string "sandbox_numbers"
     t.string "individual_kyc_doc_list"
     t.string "non_individual_kyc_doc_list"
     t.boolean "aml_enabled", default: false
@@ -1009,7 +999,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_26_155437) do
     t.boolean "enabled", default: false
     t.string "entry_type", limit: 50
     t.boolean "roll_up", default: true
-    t.string "commitment_type", limit: 10, default: "All"
+    t.string "commitment_type", limit: 10
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
   end
@@ -1035,6 +1025,19 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_26_155437) do
     t.index ["fund_id"], name: "index_fund_ratios_on_fund_id"
     t.index ["owner_type", "owner_id"], name: "index_fund_ratios_on_owner"
     t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"
+  end
+
+  create_table "fund_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "fund_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "name", limit: 50
+    t.date "report_date"
+    t.string "name_of_scheme"
+    t.json "data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_fund_reports_on_entity_id"
+    t.index ["fund_id"], name: "index_fund_reports_on_fund_id"
   end
 
   create_table "fund_unit_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1573,7 +1576,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_26_155437) do
     t.string "tag_list", limit: 120
     t.boolean "imported", default: false
     t.bigint "document_folder_id"
-    t.string "sub_category", limit: 50
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
@@ -2046,7 +2048,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_26_155437) do
     t.timestamp "accepted_terms_on"
     t.bigint "advisor_entity_id"
     t.bigint "investor_advisor_id"
-    t.string "call_code", limit: 3, default: "91"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -2236,6 +2237,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_26_155437) do
   add_foreign_key "fund_ratios", "entities"
   add_foreign_key "fund_ratios", "funds"
   add_foreign_key "fund_ratios", "valuations"
+  add_foreign_key "fund_reports", "entities"
+  add_foreign_key "fund_reports", "funds"
   add_foreign_key "fund_unit_settings", "entities"
   add_foreign_key "fund_unit_settings", "form_types"
   add_foreign_key "fund_unit_settings", "funds"

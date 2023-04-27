@@ -15,6 +15,10 @@
        data-aml-reports-lazy-load-data-value=<%= lazy_load_data %>
        data-aml-reports-table-name-value="#aml_reports">
 
+    <% if lazy_load_data %>
+        <a class="load_data_link" data-action="click->aml-reports#loadData"><span>Load Data</span></a>
+    <% end %>
+
     <table id="aml_reports" class="table table-bordered dataTable"
            data-source="<%= data_source %>" style="width:100%" >
 
