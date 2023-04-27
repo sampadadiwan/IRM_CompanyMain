@@ -34,16 +34,16 @@
         Investor
       </td>
       <td>
-        <%= link_to investor_kyc.investor.investor_name, investor_url(investor_kyc.investor, tab: "kycs-tab") %>        
+        <%= link_to investor_kyc.investor.investor_name, investor_url(investor_kyc.investor, tab: "kycs-tab") %>
       </td>
     </tr>
 
-    
+
     <tr>
       <td>
         KYC Verified
       </td>
-      <td>        
+      <td>
           <%= display_boolean investor_kyc.verified %>
           <div>
             <small>
@@ -62,6 +62,14 @@
       </td>
     </tr>
 
+    <tr>
+      <td>
+        Date of Birth
+      </td>
+      <td>
+        <%= investor_kyc.birth_date&.strftime("%d %B, %Y") %>
+      </td>
+    </tr>
 
     <tr>
       <td>
@@ -76,7 +84,7 @@
       <td>
         Pan Verified
       </td>
-      <td>        
+      <td>
           <%= render "investor_kycs/pan_verification", model: investor_kyc, current_user: current_user %>
       </td>
     </tr>
@@ -86,7 +94,7 @@
         Signature
       </td>
       <td>
-        <%= image_tag investor_kyc.signature_url, 
+        <%= image_tag investor_kyc.signature_url,
           style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if investor_kyc.signature.present? %>
       </td>
     </tr>
@@ -189,7 +197,7 @@
         <%= investor_kyc.pan_card_data %>
       </td>
     </tr>
-    
+
     <tr>
       <td>
         Pan Verification Response
@@ -208,5 +216,5 @@
     </tr>
 
     <% end %>
-    
+
   </table>

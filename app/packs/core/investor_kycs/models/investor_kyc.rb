@@ -7,7 +7,7 @@ class InvestorKyc < ApplicationRecord
 
   belongs_to :investor
   belongs_to :entity
-
+  has_many :aml_reports, dependent: :destroy
   scope :verified, -> { where(verified: true) }
   enum :kyc_type, { individual: "Individual", non_individual: "Non Individual" }
   enum :residency, { domestic: "Domestic", foreign: "Foreign" }
@@ -17,11 +17,13 @@ class InvestorKyc < ApplicationRecord
   include FileUploader::Attachment(:video)
 
   belongs_to :verified_by, class_name: "User", optional: true
-  validates :full_name, presence: true
+  validates :full_name, :PAN, :address, presence: true
 
   # Customize form
   serialize :pan_verification_response, Hash
   serialize :bank_verification_response, Hash
+
+  attr_accessor :user_id
 
   before_save :set_investor_name
   def set_investor_name
@@ -56,6 +58,12 @@ class InvestorKyc < ApplicationRecord
   after_save :notify_kyc_updated
   def notify_kyc_updated
     # InvestorKycMailer.with(id:).notify_kyc_updated.deliver_later
+  end
+
+  after_create :generate_aml_report
+  def generate_aml_report(user_id = nil)
+    user_id ||= self.user_id
+    AmlReportJob.perform_later(id, user_id)
   end
 
   scope :for_advisor, lambda { |user|

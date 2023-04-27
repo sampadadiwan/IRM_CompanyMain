@@ -1,4 +1,4 @@
-<% data_source ||= investor_kycs_path(params, format: :json, all: true) %>    
+<% data_source ||= investor_kycs_path(params, format: :json, all: true) %>
 <% lazy_load_data ||= false %>
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -10,28 +10,28 @@
 
       <%= link_to "Download", investor_kycs_path(investor_id: @investor&.id, format: "xlsx", all: true),  {class: "btn btn-outline-primary" }  %>
 
-      
-      <%= link_to "Upload KYC Details", 
-        new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
-            "import_upload[owner_type]": "Entity", 
-            "import_upload[import_type]": "InvestorKyc", 
-            "sample_upload": "INVESTOR_KYCS_SAMPLE"), 
-            { class: "btn btn-outline-primary"}  %> 
 
-      <%= link_to "Upload KYC Documents", 
-        new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
-            "import_upload[owner_type]": "Entity", 
-            "import_upload[import_type]": "KycDocs", 
-            "sample_upload": "INVESTOR_KYCS_DOCS_SAMPLE"), 
-            { class: "btn btn-outline-primary"}  %> 
+      <%= link_to "Upload KYC Details",
+        new_import_upload_path("import_upload[owner_id]": current_user.entity_id,
+            "import_upload[owner_type]": "Entity",
+            "import_upload[import_type]": "InvestorKyc",
+            "sample_upload": "INVESTOR_KYCS_SAMPLE"),
+            { class: "btn btn-outline-primary"}  %>
+
+      <%= link_to "Upload KYC Documents",
+        new_import_upload_path("import_upload[owner_id]": current_user.entity_id,
+            "import_upload[owner_type]": "Entity",
+            "import_upload[import_type]": "KycDocs",
+            "sample_upload": "INVESTOR_KYCS_DOCS_SAMPLE"),
+            { class: "btn btn-outline-primary"}  %>
     </span>
   </div>
 
-  <div class="table-responsive" data-controller="investor-kycs" 
-       data-investor-kycs-lazy-load-data-value=<%= lazy_load_data %> 
+  <div class="table-responsive" data-controller="investor-kycs"
+       data-investor-kycs-lazy-load-data-value=<%= lazy_load_data %>
        data-investor-kycs-table-name-value="#investor_kycs">
 
-    <table id="investor_kycs" class="table table-bordered dataTable" 
+    <table id="investor_kycs" class="table table-bordered dataTable"
            data-source="<%= data_source %>" style="width:100%" >
 
       <thead>
@@ -73,7 +73,7 @@
       </thead>
 
       <tbody>
-        
+
       </tbody>
     </table>
 

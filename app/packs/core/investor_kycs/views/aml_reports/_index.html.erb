@@ -1,0 +1,48 @@
+<% data_source ||= aml_reports_path(investor_kyc_id: investor_kyc&.id, format: :json, all: true) %>
+<% lazy_load_data ||= false %>
+
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+
+    <h1 class="h3 mb-0 text-gray-800">Aml Reports</h1>
+    <span>
+      <% if investor_kyc.present? %>
+      <%= button_to "Generate New Aml Report", generate_new_aml_reports_path("aml_report[entity_id]":investor_kyc.entity_id, "aml_report[investor_id]":investor_kyc.investor_id, "aml_report[investor_kyc_id]":investor_kyc.id, "aml_report[name]":investor_kyc.full_name), method: :post, class: "btn btn-sm  btn-outline-primary" if policy(investor_kyc).generate_new_aml_report? %>
+      <% end %>
+    </span>
+  </div>
+
+  <div class="table-responsive" data-controller="aml-reports"
+       data-aml-reports-lazy-load-data-value=<%= lazy_load_data %>
+       data-aml-reports-table-name-value="#aml_reports">
+
+    <table id="aml_reports" class="table table-bordered dataTable"
+           data-source="<%= data_source %>" style="width:100%" >
+
+      <thead>
+        <tr>
+          <th>
+            Name
+          </th>
+          <th>
+            Match Status
+          </th>
+          <th>
+            Approved
+          </th>
+          <th style="max-height:250px; width:150px">
+            Types
+          </th>
+          <th style="max-height:250px">
+            Associates
+          </th>
+          <th>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+      </tbody>
+    </table>
+
+  </div>

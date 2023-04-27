@@ -6,6 +6,7 @@
 
 require 'cucumber/rails'
 require 'rspec/rails'
+require 'cucumber/rspec/doubles'
 
 require 'simplecov'
 SimpleCov.start
@@ -37,7 +38,7 @@ ActionController::Base.allow_rescue = false
 
 begin
   DatabaseCleaner.strategy = [:truncation, except: %w[abraham_histories blazer_audits blazer_checks blazer_dashboard_queries   blazer_dashboards blazer_queries  active_admin_comments video_kycs taggings tags admin_users active_storage_attachments active_storage_blobs active_storage_variant_records user_alerts impressions activities exception_tracks impressions investment_snapshots messages nudges reminders payments holding_actions holding_audit_trails deal_docs]]
-  
+
   Chewy.strategy :bypass
 
   # UserIndex.reset!
@@ -51,7 +52,7 @@ end
 After do |scenario|
   # DatabaseCleaner.clean
   Sidekiq.redis(&:flushdb)
-  
+
   if scenario.failed?
     puts scenario.location.to_s
     timestamp = "#{Time.zone.now.strftime('%Y-%m-%d-%H:%M:%S')}"
@@ -64,7 +65,7 @@ end
 # Cucumber::Rails::Database.javascript_strategy = :truncation
 
 Capybara.run_server = true
-Capybara.server_port = 3000 + ENV['TEST_ENV_NUMBER'].to_i 
+Capybara.server_port = 3000 + ENV['TEST_ENV_NUMBER'].to_i
 Capybara.default_max_wait_time = 5
 
 Capybara.register_server :puma do |app, port, host|

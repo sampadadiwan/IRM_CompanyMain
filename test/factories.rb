@@ -87,7 +87,7 @@ FactoryBot.define do
     reason { "MyText" }
   end
 
-  
+
   factory :entity_setting do
     pan_verification { false }
     bank_verification { false }
@@ -97,8 +97,8 @@ FactoryBot.define do
     snapshot_frequency_months { 1 }
     last_snapshot_on { "2023-01-22" }
     # sandbox { true }
-    # sandbox_emails { "thimmaiah@gmail.com,ausang@gmail.com" }    
-    
+    # sandbox_emails { "thimmaiah@gmail.com,ausang@gmail.com" }
+
   end
 
   factory :fund_ratio do
@@ -180,7 +180,7 @@ FactoryBot.define do
     entity { nil }
   end
 
-  
+
   factory :investor_kyc do
     entity { Entity.where(enable_investor_kyc: true).sample }
     investor { entity.investors.sample }
@@ -189,6 +189,37 @@ FactoryBot.define do
     address { Faker::Address.full_address }
     bank_account_number  {Faker::Bank.account_number}
     ifsc_code {Faker::Bank.swift_bic}
+  end
+
+  factory :aml_report do
+    entity { FactoryBot.create(:entity) }
+    investor { FactoryBot.create(:investor, entity: entity) }
+    investor_kyc { FactoryBot.create(:investor_kyc, entity: entity, investor: investor) }
+    name { Faker::Name.name }
+    match_status { "potential_match" }
+    approved { true }
+    approved_by_id {FactoryBot.create(:user, entity: entity).id}
+    associates { {Faker::Name.name =>"child", Faker::Name.name =>"spouse"}.to_s }
+    fields  {
+    {"Nationality"=>
+    [{"name"=>"Nationality", "source"=>"hm-treasury-list", "value"=>"Russian Federation"},
+     {"name"=>"Nationality", "source"=>"ofac-sdn-list", "value"=>"Russian Federation"}]}
+    }
+    types  {"pep, pep-class-1, pep-class-2, sanction, fitness-probity, adverse-media, adverse-media-general"}
+    source_notes  {
+    [{"internal-adverse-media"=>
+    {"name"=>"internal Adverse Media",
+     "aml_types"=>
+      ["adverse-media",
+       "adverse-media-financial-crime",
+       "adverse-media-fraud",
+       "adverse-media-general",
+       "adverse-media-narcotics",
+       "adverse-media-terrorism",
+       "adverse-media-violent-crime"],
+     "country_codes"=>["PL", "RU", "UA", "US"]}}]
+    }
+    response{"response json here"}
   end
 
 
@@ -265,7 +296,7 @@ FactoryBot.define do
     currency { ["INR", "USD"].sample }
   end
 
-  
+
   factory :expression_of_interest do
     investment_opportunity { InvestmentOpportunity.all.sample }
     entity { investment_opportunity.entity }
@@ -394,7 +425,7 @@ FactoryBot.define do
   end
 
 
-  
+
   factory :interest do
     buyer_entity_name {Faker::Company.name}
     address {Faker::Address.street_address}
@@ -405,9 +436,9 @@ FactoryBot.define do
     PAN {Faker::Number.number(digits: 10)}
   end
 
-  
+
   factory :offer do
-    PAN {(0...10).map { (65 + rand(26)).chr }.join} 
+    PAN {(0...10).map { (65 + rand(26)).chr }.join}
     address { Faker::Address.full_address }
     city {Faker::Address.city.truncate(20)}
     demat {Faker::Number.number(digits: 10)}
@@ -493,7 +524,7 @@ FactoryBot.define do
 
   factory :note do
     investor { Investor.all.sample }
-    details { 
+    details {
       [
         "investor is keen on the space; have invested in peers globally",
         "investment size over $75m",
@@ -507,7 +538,7 @@ FactoryBot.define do
         "Arrogant investor; thinks we won't survive  ",
         "Invested in peers; probably fishing for information ",
         "High energy team; have offered to make introductions with the Silicon valley biggies for US roll-out"
-      ].sample 
+      ].sample
     }
     entity_id { investor.entity_id }
     user { investor.entity.employees.sample }
@@ -517,7 +548,7 @@ FactoryBot.define do
 
 
   factory :investor do
-    investor_entity_id { Entity.vcs.sample.id }
+    investor_entity_id { Entity.all.sample.id }
     entity_id { Entity.startups.sample.id }
     category { ["Lead Investor", "Co-Investor"][rand(2)] }
     city {Faker::Address.city.truncate(20)}
@@ -531,7 +562,7 @@ FactoryBot.define do
     quantity { (rand(3..10) * 10000) }
     price { rand(3..10) * 1000 }
     spv { "SPV-#{rand(1-10)}" }
-    liquidation_preference { rand(1.0..2.0).round(1) } 
+    liquidation_preference { rand(1.0..2.0).round(1) }
     current_value {}
     investment_date { Date.today - rand(6).years - rand(12). months}
   end
@@ -571,7 +602,7 @@ FactoryBot.define do
     trait :with_exchange_rates do
       after(:create) do |entity|
         ExchangeRate.create([
-            {from: "USD", to: "INR", rate: 81.72, entity:}, 
+            {from: "USD", to: "INR", rate: 81.72, entity:},
             {from: "INR", to: "USD", rate: 0.012, entity:}
         ])
       end
