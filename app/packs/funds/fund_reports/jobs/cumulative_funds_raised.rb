@@ -8,9 +8,11 @@ class CumulativeFundsRaised
         @fund_report = FundReport.new(name: "CumulativeFundsRaised", fund: @fund, entity_id: @fund.entity_id, report_date: @report_date)
         
 
-        @fund_report.data = Hash.new
-        @fund_report.data["Total Corpus As On Date"] = @fund.collected_amount.to_d
+        data = Hash.new
+        data["Total Corpus As On Date"] = @fund.collected_amount.to_d
 
+
+        @fund_report.data = JSON.parse(data.to_json)
         @fund_report.save
     end
 end

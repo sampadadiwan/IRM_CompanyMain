@@ -25,6 +25,8 @@ class PortfolioInvestment < ApplicationRecord
 
   validate :sell_quantity_allowed
 
+  SECTORS = ENV["SECTORS"].split(",").sort
+
   def sell_quantity_allowed
     if sell? && new_record?
 
