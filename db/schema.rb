@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_20_091341) do
+ActiveRecord::Schema[7.0].define(version: 2023_04_21_114309) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1001,6 +1001,19 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_20_091341) do
     t.index ["fund_id"], name: "index_fund_ratios_on_fund_id"
     t.index ["owner_type", "owner_id"], name: "index_fund_ratios_on_owner"
     t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"
+  end
+
+  create_table "fund_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "fund_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "name", limit: 50
+    t.date "report_date"
+    t.string "name_of_scheme"
+    t.json "data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_fund_reports_on_entity_id"
+    t.index ["fund_id"], name: "index_fund_reports_on_fund_id"
   end
 
   create_table "fund_unit_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2195,6 +2208,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_20_091341) do
   add_foreign_key "fund_ratios", "entities"
   add_foreign_key "fund_ratios", "funds"
   add_foreign_key "fund_ratios", "valuations"
+  add_foreign_key "fund_reports", "entities"
+  add_foreign_key "fund_reports", "funds"
   add_foreign_key "fund_unit_settings", "entities"
   add_foreign_key "fund_unit_settings", "form_types"
   add_foreign_key "fund_unit_settings", "funds"
