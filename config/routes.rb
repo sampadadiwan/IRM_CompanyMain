@@ -47,7 +47,10 @@ Rails.application.routes.draw do
 
   resources :fund_formulas
   resources :fund_unit_settings
-  resources :portfolio_investments
+  resources :portfolio_investments do
+    get 'sub_categories', on: :collection
+  end
+
   resources :account_entries
   resources :fund_units
   resources :fund_ratios

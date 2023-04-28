@@ -26,6 +26,7 @@ class PortfolioInvestment < ApplicationRecord
   validate :sell_quantity_allowed
 
   SECTORS = ENV["SECTORS"].split(",").sort
+  CATEGORIES = JSON.parse(ENV.fetch("PORTFOLIO_CATEGORIES", nil))
 
   def sell_quantity_allowed
     if sell? && new_record?

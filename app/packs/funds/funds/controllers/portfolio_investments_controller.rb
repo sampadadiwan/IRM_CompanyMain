@@ -1,5 +1,6 @@
 class PortfolioInvestmentsController < ApplicationController
   before_action :set_portfolio_investment, only: %i[show edit update destroy]
+  skip_after_action :verify_authorized, only: %i[sub_categories]
 
   # GET /portfolio_investments or /portfolio_investments.json
   def index
@@ -65,6 +66,10 @@ class PortfolioInvestmentsController < ApplicationController
     end
   end
 
+  def sub_categories
+    @sub_categories = PortfolioInvestment::CATEGORIES[params[:category]]
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.
@@ -82,7 +87,7 @@ class PortfolioInvestmentsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def portfolio_investment_params
     params.require(:portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :investment_date,
-                                                 :amount, :quantity, :investment_type, :notes, :form_type_id,
+                                                 :amount, :quantity, :investment_type, :notes, :form_type_id, :category, :sub_category,
                                                  :commitment_type, :capital_commitment_id, :folio_id, properties: {})
   end
 end

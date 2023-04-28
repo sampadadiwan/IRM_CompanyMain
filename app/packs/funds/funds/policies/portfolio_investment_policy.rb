@@ -40,4 +40,8 @@ class PortfolioInvestmentPolicy < ApplicationPolicy
       create?
     end
   end
+
+  def sub_categories?
+    true
+  end
 end

@@ -60,6 +60,24 @@
     <small class="text-muted">Select the Folio for the CoInvestment</small>
   </div>
 
+  <div data-controller="select" data-select-url-value="<%= sub_categories_portfolio_investments_path %>"
+           data-select-param-value="category">
+
+    <div class="form-group">
+      <%= form.label :category %>
+      <%= form.select :category, PortfolioInvestment::CATEGORIES.keys.sort, {include_blank: true}, class: 'form-control',
+          "data-action": "change->select#change" %>
+      <small class="text-muted">Select the category (For SEBI Reports)</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :sub_category %>
+      <%= form.select :sub_category, [], {include_blank: true}, class: 'form-control', data: { select_target: "select" } %>
+      <small class="text-muted">Select the sub category (For SEBI Reports)</small>
+    </div>
+
+  </div>
+
   <div class="form-group">
     <%= form.label :notes %>
     <%= form.text_area :notes, class: "form-control"  %>
