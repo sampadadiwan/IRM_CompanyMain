@@ -4,7 +4,8 @@
   <span>
     <%= link_to "New Portfolio Investment", 
         new_portfolio_investment_path("portfolio_investment[entity_id]": current_user.entity_id,
-        "portfolio_investment[fund_id]": params[:fund_id]), 
+        "portfolio_investment[fund_id]": params[:fund_id], 
+        "portfolio_investment[portfolio_company_id]": params[:portfolio_company_id]), 
         {class: "btn btn-outline-primary"} if params[:fund_id].present? %>
 
 
