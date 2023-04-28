@@ -42,12 +42,6 @@
     <%= form.label :quantity %>
     <%= form.number_field :quantity, class: "form-control", step: :any  %>
   </div>
-
-  <div class="form-group">
-    <%= form.label :investment_type %>
-    <%= form.text_field :investment_type, class: "form-control", maxlength: 20  %>
-  </div>
-
   
   <div class="form-group" data-controller="hide-co-invest">
     <%= form.label :commitment_type %>
@@ -71,11 +65,31 @@
     </div>
 
     <div class="form-group">
+      <% sub_categories = @portfolio_investment.category.present? ? PortfolioInvestment::CATEGORIES[@portfolio_investment.category] : ""  %>
       <%= form.label :sub_category %>
-      <%= form.select :sub_category, [], {include_blank: true}, class: 'form-control', data: { select_target: "select" } %>
+      <%= form.select :sub_category, sub_categories, {include_blank: true}, class: 'form-control', data: { select_target: "select" } %>
       <small class="text-muted">Select the sub category (For SEBI Reports)</small>
     </div>
 
+  </div>
+
+
+  <div class="form-group">
+    <%= form.label :sector %>
+    <%= form.select :sector, PortfolioInvestment::SECTORS, {include_blank: true}, class: 'form-control select2' %>
+    <small class="text-muted">Select the sector (For SEBI Reports)</small>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :investment_origin %>
+    <%= form.select :investment_origin, ["Domestic", "Overseas"], {include_blank: true}, class: 'form-control' %>
+    <small class="text-muted">For SEBI Reports</small>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :startup, "Startup Investment" %>
+    <%= form.check_box :startup, class: 'form-control form-checkbox' %>
+    <small class="text-muted">For SEBI Reports</small>
   </div>
 
   <div class="form-group">

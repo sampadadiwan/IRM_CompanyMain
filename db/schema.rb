@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_28_064543) do
+ActiveRecord::Schema[7.0].define(version: 2023_04_28_082800) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1798,7 +1798,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_28_064543) do
     t.date "investment_date"
     t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
-    t.string "investment_type", limit: 20
     t.text "notes"
     t.text "properties"
     t.datetime "created_at", null: false
@@ -1815,6 +1814,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_28_064543) do
     t.bigint "capital_commitment_id"
     t.string "category", limit: 10
     t.string "sub_category", limit: 100
+    t.string "sector", limit: 100
+    t.boolean "startup", default: true
+    t.string "investment_origin", limit: 10, default: "Domestic"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["document_folder_id"], name: "index_portfolio_investments_on_document_folder_id"

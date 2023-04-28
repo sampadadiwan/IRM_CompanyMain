@@ -24,7 +24,8 @@
     <%= money_to_currency portfolio_investment.cost_of_sold, params %>
   </td>
   <td>
-    <%= portfolio_investment.investment_type %>
+    <%= portfolio_investment.category %>
+    : <%= portfolio_investment.sub_category %>
   </td>
   <td>
     <%= portfolio_investment.notes %>

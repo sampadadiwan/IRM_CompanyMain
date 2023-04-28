@@ -82,15 +82,6 @@
 
   <tr>
     <td>
-      Investment Type
-    </td>
-    <td>
-      <%= @portfolio_investment.investment_type %>
-    </td>
-  </tr>
-
-  <tr>
-    <td>
       For
     </td>
     <td>
@@ -129,6 +120,34 @@
     </td>
   </tr>
   
+  <tr>
+    <td>
+      Sector
+    </td>
+    <td>
+      <%= @portfolio_investment.sector %>
+    </td>
+  </tr>
+  
+  <tr>
+    <td>
+      Investment Origin
+    </td>
+    <td>
+      <%= @portfolio_investment.investment_origin %>
+    </td>
+  </tr>
+  
+  <tr>
+    <td>
+      Startup
+    </td>
+    <td>
+      <%= display_boolean @portfolio_investment.startup %>
+    </td>
+  </tr>
+  
+
   <tr>
     <td>
       Notes

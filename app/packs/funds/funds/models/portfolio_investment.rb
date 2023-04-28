@@ -127,7 +127,7 @@ class PortfolioInvestment < ApplicationRecord
   end
 
   def to_s
-    "#{portfolio_company_name} #{investment_type} #{buy? ? 'Buy' : 'Sell'} #{quantity}"
+    "#{portfolio_company_name} #{category} #{buy? ? 'Buy' : 'Sell'} #{quantity}"
   end
 
   def folder_path

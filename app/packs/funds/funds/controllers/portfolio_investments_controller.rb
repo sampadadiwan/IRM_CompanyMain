@@ -19,6 +19,16 @@ class PortfolioInvestmentsController < ApplicationController
     @portfolio_investment.investment_date ||= Time.zone.today
 
     authorize @portfolio_investment
+
+    if @portfolio_investment.portfolio_company
+      last_pi = PortfolioInvestment.where(entity_id: @portfolio_investment.entity_id, portfolio_company_id: @portfolio_investment.portfolio_company_id).last
+      @portfolio_investment.category = last_pi.category
+      @portfolio_investment.sub_category = last_pi.sub_category
+      @portfolio_investment.sector = last_pi.sector
+      @portfolio_investment.startup = last_pi.startup
+      @portfolio_investment.investment_origin = last_pi.investment_origin
+    end
+
     setup_custom_fields(@portfolio_investment)
   end
 
@@ -87,7 +97,7 @@ class PortfolioInvestmentsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def portfolio_investment_params
     params.require(:portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :investment_date,
-                                                 :amount, :quantity, :investment_type, :notes, :form_type_id, :category, :sub_category,
+                                                 :amount, :quantity, :investment_type, :notes, :form_type_id, :category, :sub_category, :sector, :startup, :investment_origin,
                                                  :commitment_type, :capital_commitment_id, :folio_id, properties: {})
   end
 end
