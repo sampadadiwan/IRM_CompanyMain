@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_21_114309) do
+ActiveRecord::Schema[7.0].define(version: 2023_04_28_045813) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -222,6 +222,29 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_21_114309) do
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
+  end
+
+  create_table "aml_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "investor_id", null: false
+    t.bigint "investor_kyc_id", null: false
+    t.bigint "approved_by_id"
+    t.string "name"
+    t.string "match_status"
+    t.boolean "approved", default: false
+    t.string "types"
+    t.json "source_notes"
+    t.json "associates"
+    t.json "fields"
+    t.json "response"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.json "media"
+    t.datetime "approved_on"
+    t.index ["approved_by_id"], name: "index_aml_reports_on_approved_by_id"
+    t.index ["entity_id"], name: "index_aml_reports_on_entity_id"
+    t.index ["investor_id"], name: "index_aml_reports_on_investor_id"
+    t.index ["investor_kyc_id"], name: "index_aml_reports_on_investor_kyc_id"
   end
 
   create_table "approval_responses", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -802,6 +825,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_21_114309) do
     t.string "cc"
     t.string "individual_kyc_doc_list"
     t.string "non_individual_kyc_doc_list"
+    t.boolean "aml_enabled", default: false
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 
@@ -1007,11 +1031,12 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_21_114309) do
     t.bigint "fund_id", null: false
     t.bigint "entity_id", null: false
     t.string "name", limit: 50
-    t.date "report_date"
     t.string "name_of_scheme"
     t.json "data"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "start_date"
+    t.date "end_date"
     t.index ["entity_id"], name: "index_fund_reports_on_entity_id"
     t.index ["fund_id"], name: "index_fund_reports_on_fund_id"
   end
@@ -1491,6 +1516,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_21_114309) do
     t.date "expiry_date"
     t.string "kyc_type", limit: 15, default: "Individual"
     t.string "residency", limit: 10
+    t.datetime "birth_date"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
@@ -2112,6 +2138,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_21_114309) do
   add_foreign_key "aggregate_portfolio_investments", "entities"
   add_foreign_key "aggregate_portfolio_investments", "funds"
   add_foreign_key "aggregate_portfolio_investments", "investors", column: "portfolio_company_id"
+  add_foreign_key "aml_reports", "entities"
+  add_foreign_key "aml_reports", "investor_kycs"
+  add_foreign_key "aml_reports", "investors"
+  add_foreign_key "aml_reports", "users", column: "approved_by_id"
   add_foreign_key "approval_responses", "approvals"
   add_foreign_key "approval_responses", "entities"
   add_foreign_key "approval_responses", "entities", column: "response_entity_id"
