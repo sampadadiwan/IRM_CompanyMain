@@ -31,21 +31,21 @@ class CumulativeFundsRaised
     c2 = @fund.capital_distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date).sum(:amount_cents) / 100
     data["Funds Raised By The Scheme"]["Distributions during the period (C2)"]["Value"] = c2
 
-    data["Funds Raised By The Scheme"]["At the end of the quarter (A2+B2)- (C2)"]["Value"] = a2 + b21 + b22 - c2
+    data["Funds Raised By The Scheme"]["At the end of the period (A2+B2)- (C2)"]["Value"] = a2 + b21 + b22 - c2
 
     ########## Investments
 
     a3 = @fund.portfolio_investments.buys.where(investment_date: ..start_date).sum { |pi| pi.net_quantity * pi.amount_cents / pi.quantity } / 100
-    data["Investments made by the Scheme"]["At the beginning of the quarter (A3)"]["Value"] = a3
+    data["Investments made by the Scheme"]["At the beginning of the period (A3)"]["Value"] = a3
 
     b3 = @fund.portfolio_investments.buys.where(investment_date: start_date..).where(investment_date: ..end_date).sum(:amount_cents)
-    data["Investments made by the Scheme"]["Additions during the quarter (B3)"]["Value"] = b3
+    data["Investments made by the Scheme"]["Additions during the period (B3)"]["Value"] = b3
 
     c3 = @fund.portfolio_investments.sells.where(investment_date: start_date..).where(investment_date: ..end_date).sum(:amount_cents)
 
-    data["Investments made by the Scheme"]["Divestment during the quarter (C3)"]["Value"] = c3
+    data["Investments made by the Scheme"]["Divestment during the period (C3)"]["Value"] = c3
 
-    data["Investments made by the Scheme"]["At the end of the quarter (A3+B3)- (C3)"]["Value"] = a3 + b3 - c3
+    data["Investments made by the Scheme"]["At the end of the period (A3+B3)- (C3)"]["Value"] = a3 + b3 - c3
 
     ######### Save the report
 

@@ -24,6 +24,7 @@ class Fund < ApplicationRecord
   has_many :capital_distributions, dependent: :destroy
   has_many :capital_distribution_payments, dependent: :destroy
   has_many :capital_calls, dependent: :destroy
+  has_many :fund_reports, dependent: :destroy
 
   has_many :account_entries, dependent: :destroy
   has_many :aggregate_portfolio_investments, dependent: :destroy
