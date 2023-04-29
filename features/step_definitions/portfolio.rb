@@ -14,7 +14,7 @@ include CurrencyHelper
     select(portfolio_company.investor_name, from: "portfolio_investment_portfolio_company_id")
     fill_in('portfolio_investment_amount', with: @new_portfolio_investment.amount)
     fill_in('portfolio_investment_quantity', with: @new_portfolio_investment.quantity)
-    fill_in('portfolio_investment_investment_type', with: @new_portfolio_investment.investment_type)
+    select(@new_portfolio_investment.category, from: 'portfolio_investment_category')
     
     click_on "Save"    
     sleep(1)
@@ -24,7 +24,7 @@ include CurrencyHelper
     @portfolio_investment = PortfolioInvestment.last
     @portfolio_investment.quantity.should == @new_portfolio_investment.quantity
     @portfolio_investment.amount.should == @new_portfolio_investment.amount
-    @portfolio_investment.investment_type.should == @new_portfolio_investment.investment_type
+    @portfolio_investment.category.should == @new_portfolio_investment.category
     @portfolio_investment.portfolio_company_name.should == @new_portfolio_investment.portfolio_company_name
   end
 
@@ -34,7 +34,7 @@ include CurrencyHelper
     expect(page).to have_content(@portfolio_investment.investment_date.strftime("%d/%m/%Y"))
     expect(page).to have_content(@portfolio_investment.portfolio_company_name)
     expect(page).to have_content(@portfolio_investment.quantity)
-    expect(page).to have_content(@portfolio_investment.investment_type)
+    expect(page).to have_content(@portfolio_investment.category)
     expect(page).to have_content( money_to_currency @portfolio_investment.amount)
   end
 
@@ -113,7 +113,10 @@ Then('the portfolio investments must have the data in the sheet') do
     pi.fund.name.should == user_data["Fund"]
     pi.amount_cents.should == user_data["Amount"].to_d * 100
     pi.quantity.should == user_data["Quantity"].to_d
-    pi.investment_type.should == user_data["Investment Type"]
+    pi.category.should == user_data["Category"]
+    pi.sub_category.should == user_data["Sub Category"]
+    pi.startup.should == (user_data["Startup"] == "Yes")
+    pi.investment_domicile.should == user_data["Investment Domicile"]
     pi.notes.should == user_data["Notes"]
     pi.commitment_type.should == user_data["Type"]
     if pi.commitment_type == "CoInvest"

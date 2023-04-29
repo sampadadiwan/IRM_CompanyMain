@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_28_082800) do
+ActiveRecord::Schema[7.0].define(version: 2023_04_29_064201) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1816,7 +1816,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_28_082800) do
     t.string "sub_category", limit: 100
     t.string "sector", limit: 100
     t.boolean "startup", default: true
-    t.string "investment_origin", limit: 10, default: "Domestic"
+    t.string "investment_domicile", limit: 10, default: "Domestic"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["document_folder_id"], name: "index_portfolio_investments_on_document_folder_id"
@@ -2082,7 +2082,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_28_082800) do
     t.decimal "net_valuation_cents", precision: 20, scale: 2, default: "0.0"
     t.text "properties"
     t.datetime "deleted_at"
-    t.string "instrument_type", limit: 15
+    t.string "category", limit: 10
+    t.string "sub_category", limit: 100
     t.index ["deleted_at"], name: "index_valuations_on_deleted_at"
     t.index ["entity_id"], name: "index_valuations_on_entity_id"
     t.index ["form_type_id"], name: "index_valuations_on_form_type_id"

@@ -11,7 +11,7 @@ class PortfolioInvestment < ApplicationRecord
   has_many :portfolio_attributions, foreign_key: :sold_pi_id, dependent: :destroy
   has_many :buys_portfolio_attributions, class_name: "PortfolioAttribution", foreign_key: :bought_pi_id, dependent: :destroy
 
-  validates :investment_date, :quantity, :amount_cents, :investment_type, presence: true
+  validates :investment_date, :quantity, :amount_cents, :category, :sub_category, presence: true
   monetize :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :cost_of_sold_cents, with_currency: ->(i) { i.fund.currency }
 
   counter_culture :aggregate_portfolio_investment, column_name: 'quantity', delta_column: 'quantity'
@@ -31,7 +31,7 @@ class PortfolioInvestment < ApplicationRecord
   def sell_quantity_allowed
     if sell? && new_record?
 
-      buys = fund.portfolio_investments.allocatable_buys(portfolio_company_id, investment_type)
+      buys = fund.portfolio_investments.allocatable_buys(portfolio_company_id, category, sub_category)
       buys = buys.where(capital_commitment_id:) if self.CoInvest?
       buys = buys.pool if self.Pool?
 
@@ -62,8 +62,8 @@ class PortfolioInvestment < ApplicationRecord
   before_validation :setup_aggregate
 
   scope :buys, -> { where("portfolio_investments.quantity > 0") }
-  scope :allocatable_buys, lambda { |portfolio_company_id, investment_type|
-    where("portfolio_company_id=? and investment_type = ? and portfolio_investments.quantity > 0 and net_quantity > 0", portfolio_company_id, investment_type)
+  scope :allocatable_buys, lambda { |portfolio_company_id, category, _sub_category|
+    where("portfolio_company_id=? and category = ? and portfolio_investments.quantity > 0 and net_quantity > 0", portfolio_company_id, category)
   }
   scope :sells, -> { where("portfolio_investments.quantity < 0") }
 
@@ -78,7 +78,7 @@ class PortfolioInvestment < ApplicationRecord
 
   before_save :compute_fmv
   def compute_fmv
-    last_valuation = portfolio_company.valuations.where(instrument_type: investment_type).order(valuation_date: :desc).first
+    last_valuation = portfolio_company.valuations.where(category:, sub_category:).order(valuation_date: :desc).first
     self.fmv_cents = last_valuation ? quantity * last_valuation.per_share_value_cents : 0
     # For buys setup net_quantity, note sold_quantity is -ive
     self.net_quantity = quantity + sold_quantity if buy?
@@ -100,7 +100,7 @@ class PortfolioInvestment < ApplicationRecord
       # Sell quantity is negative
       allocatable_quantity = quantity.abs
       # It's a sell
-      buys = aggregate_portfolio_investment.portfolio_investments.allocatable_buys(portfolio_company_id, investment_type)
+      buys = aggregate_portfolio_investment.portfolio_investments.allocatable_buys(portfolio_company_id, category, sub_category)
       buys = buys.where(capital_commitment_id:) if self.CoInvest?
       buys = buys.pool if self.Pool?
 
@@ -120,6 +120,10 @@ class PortfolioInvestment < ApplicationRecord
         break if allocatable_quantity.zero?
       end
     end
+  end
+
+  def investment_type
+    "#{category} : #{sub_category}"
   end
 
   def cost_cents
@@ -154,7 +158,7 @@ class PortfolioInvestment < ApplicationRecord
     total_fmv_end_date = 0
     model.portfolio_investments.pool.buys.where(investment_date: ..end_date).each do |pi|
       # Find the valuation just prior to the end_date
-      valuation = pi.portfolio_company.valuations.where(instrument_type: pi.investment_type, valuation_date: ..end_date).order(valuation_date: :asc).last
+      valuation = pi.portfolio_company.valuations.where(category: pi.category, sub_category: pi.sub_category, valuation_date: ..end_date).order(valuation_date: :asc).last
       total_fmv_end_date += pi.quantity * valuation.per_share_value_cents
     end
     total_fmv_end_date

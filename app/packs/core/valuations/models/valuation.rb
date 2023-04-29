@@ -28,4 +28,8 @@ class Valuation < ApplicationRecord
   def update_owner
     owner.valuation_updated(self) if owner.respond_to?(:valuation_updated)
   end
+
+  def instrument_type
+    "#{category} : #{sub_category}"
+  end
 end

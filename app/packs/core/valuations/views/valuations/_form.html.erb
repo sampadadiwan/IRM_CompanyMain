@@ -19,11 +19,22 @@
     <%= form.date_field :valuation_date, class: "form-control"  %>
   </div>
 
-  <div class="form-group">
-    <%= form.label :instrument_type %>
-    <%= form.text_field :instrument_type, class: "form-control"  %>
-  </div>
+  <div data-controller="select" data-select-url-value="<%= sub_categories_portfolio_investments_path %>"
+           data-select-param-value="category">
 
+    <div class="form-group">
+      <%= form.label :category %>
+      <%= form.select :category, PortfolioInvestment::CATEGORIES.keys.sort, {include_blank: true}, class: 'form-control',
+          "data-action": "change->select#change" %>
+    </div>
+
+    <div class="form-group">
+      <% sub_categories = @valuation.category.present? ? PortfolioInvestment::CATEGORIES[@valuation.category] : ""  %>
+      <%= form.label :sub_category %>
+      <%= form.select :sub_category, sub_categories, {include_blank: true}, class: 'form-control', data: { select_target: "select" } %>      
+    </div>
+
+  </div>
 
   <div class="form-group" data-controller="currencyformat">
     <%= form.label :valuation, "Company Valuation" %> <span class="formatted_currency"></span>

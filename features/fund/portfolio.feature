@@ -6,7 +6,7 @@ Scenario Outline: Create new portfolio investment
   Given the user has role "company_admin"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company" 
   Given there is a fund "<fund>" for the entity
-  When I create a new portfolio investment "portfolio_company_name=MyFavStartup;amount_cents=1000000;quantity=200;investment_type=Equity"
+  When I create a new portfolio investment "portfolio_company_name=MyFavStartup;amount_cents=1000000;quantity=200;category=Unlisted"
   Then a portfolio investment should be created
   Then I should see the portfolio investment details on the details page  
 
@@ -21,8 +21,8 @@ Scenario Outline: Create new PI and aggregate PI
   Given the user has role "company_admin"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company" 
   Given there is a fund "<fund>" for the entity
-  Given there are "3" portfolio investments "quantity=200;investment_type=Equity"
-  Given there are "3" portfolio investments "quantity=-100;investment_type=Equity"
+  Given there are "3" portfolio investments "quantity=200;category=Unlisted"
+  Given there are "3" portfolio investments "quantity=-100;category=Unlisted"
   Then an aggregate portfolio investment should be created
   Then I should see the aggregate portfolio investment details on the details page  
 
@@ -37,10 +37,10 @@ Scenario Outline: Create valuation and FMV
   # Given the user has role "company_admin"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company" 
   Given there is a fund "<fund>" for the entity
-  Given there is a valuation "per_share_value_cents=10000;instrument_type=Equity;valuation_date=01/01/2022" for the portfolio company 
-  Given there are "3" portfolio investments "quantity=200;investment_type=Equity"
-  Given there is a valuation "per_share_value_cents=12000;instrument_type=Equity;valuation_date=01/01/2023" for the portfolio company 
-  Given there are "3" portfolio investments "quantity=-100;investment_type=Equity"
+  Given there is a valuation "per_share_value_cents=10000;category=Unlisted;sub_category=Equity;valuation_date=01/01/2022" for the portfolio company 
+  Given there are "3" portfolio investments "quantity=200;category=Unlisted"
+  Given there is a valuation "per_share_value_cents=12000;category=Unlisted;sub_category=Equity;valuation_date=01/01/2023" for the portfolio company 
+  Given there are "3" portfolio investments "quantity=-100;category=Unlisted"
   Then the fmv must be calculated for the portfolio
     
 
@@ -52,7 +52,7 @@ Scenario Outline: Create valuation and FMV
 Scenario Outline: Import portfolio investments
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
-  Given there is a fund "name=SAAS Fund" for the entity
+  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   Then I should see the "Import upload was successfully created"
@@ -66,7 +66,7 @@ Scenario Outline: Import portfolio investments
 Scenario Outline: Import portfolio investments failed
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
-  Given there is a fund "name=SAAS Fund" for the entity
+  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   Then I should see the "Import upload was successfully created"
@@ -79,7 +79,7 @@ Scenario Outline: Import portfolio investments failed
 Scenario Outline: Import portfolio valuations
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
-  Given there is a fund "name=SAAS Fund" for the entity
+  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   And Given I upload "valuations.xlsx" file for portfolio companies of the fund
   Then I should see the "Import upload was successfully created"
   Then There should be "4" valuations created
@@ -89,15 +89,15 @@ Scenario Outline: FIFO
   Given there is a user "" for an entity "entity_type=Investment Fund;"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company" 
   Given there is a fund "name=Test fund" for the entity
-  Given there is a valuation "per_share_value_cents=10000;instrument_type=Equity;valuation_date=01/01/2022" for the portfolio company 
-  Given there are "3" portfolio investments "quantity=200;investment_type=Equity"
+  Given there is a valuation "per_share_value_cents=10000;category=Unlisted;sub_category=Equity;valuation_date=01/01/2022" for the portfolio company 
+  Given there are "3" portfolio investments "quantity=200;category=Unlisted"
   Given there are "1" portfolio investments "<sell>"
   Then there must be "<attribution_count>" portfolio attributions created
 
   Examples:
     |sell                                        |attribution_count                |
-    |quantity=-200;investment_type=Equity;       |1       |
-    |quantity=-300;investment_type=Equity;       |2       |
-    |quantity=-400;investment_type=Equity;       |2       |
-    |quantity=-500;investment_type=Equity;       |3       |
-    |quantity=-600;investment_type=Equity;       |3       |
+    |quantity=-200;category=Unlisted;       |1       |
+    |quantity=-300;category=Unlisted;       |2       |
+    |quantity=-400;category=Unlisted;       |2       |
+    |quantity=-500;category=Unlisted;       |3       |
+    |quantity=-600;category=Unlisted;       |3       |

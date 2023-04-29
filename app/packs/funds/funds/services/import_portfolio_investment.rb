@@ -2,7 +2,7 @@ class ImportPortfolioInvestment < ImportUtil
   include Interactor
 
   STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount",
-                      "Quantity",	"Investment Type", "Notes", "Type", "Folio No"].freeze
+                      "Quantity",	"Category", "Sub Category", "Sector", "Startup", "Investment Domicile", "Notes", "Type", "Folio No"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -20,16 +20,19 @@ class ImportPortfolioInvestment < ImportUtil
     investment_date = user_data["Investment Date"]
     amount_cents = user_data["Amount"].to_d * 100
     quantity = user_data["Quantity"].to_d
-    investment_type = user_data["Investment Type"].strip
+    category = user_data["Category"].strip
+    sub_category = user_data["Sub Category"].strip
+    sector = user_data["Sector"]&.strip
+    startup = user_data["Startup"].strip == "Yes"
+    investment_domicile = user_data["Investment Domicile"]&.strip
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).last
     commitment_type = user_data["Type"].strip
     folio_id = user_data["Folio No"].presence
     capital_commitment = commitment_type == "CoInvest" ? fund.capital_commitments.where(folio_id:).first : nil
 
-    portfolio_investment = PortfolioInvestment.find_or_initialize_by(portfolio_company_name:, investment_date:,
-                                                                     amount_cents:, quantity:, investment_type:,
-                                                                     capital_commitment:, commitment_type:,
-                                                                     fund:, entity_id: fund.entity_id)
+    portfolio_investment = PortfolioInvestment.find_or_initialize_by(
+      portfolio_company_name:, investment_date:, category:, sub_category:, amount_cents:, quantity:, sector:, startup:, capital_commitment:, commitment_type:, investment_domicile:, fund:, entity_id: fund.entity_id
+    )
 
     if portfolio_investment.new_record?
 

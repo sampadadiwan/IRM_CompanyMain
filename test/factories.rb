@@ -70,7 +70,8 @@ FactoryBot.define do
     investment_date { Time.zone.today - rand(36).months }
     amount_cents { 10000000 * rand(1..20) }
     quantity { rand(2) > 0 ? 100 * rand(1..10) : -100 * rand(1..10) }
-    investment_type { "Equity" }
+    sub_category { "Equity" }
+    category { "Unlisted" }
     notes { Faker::Company.buzzword }
   end
 
@@ -336,7 +337,8 @@ FactoryBot.define do
   end
 
   factory :valuation do
-    instrument_type { "Equity" }
+    category { "Unlisted" }
+    sub_category { "Equity" }
     valuation_date { Date.today - rand(24).months }
     valuation_cents { rand(1..10) * 100000000 }
     per_share_value_cents { rand(1..10) * 100000 }
