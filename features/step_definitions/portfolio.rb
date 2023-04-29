@@ -156,7 +156,8 @@ Then('the valuations must have the data in the sheet') do
     user_data = [headers, row].transpose.to_h
     val = valuations[idx-1]
     puts "Checking import of #{val.owner.investor_name}"
-    val.instrument_type.should == user_data["Instrument"].strip
+    val.category.should == user_data["Category"].strip
+    val.sub_category.should == user_data["Sub Category"].strip
     val.valuation_date.should == Date.parse(user_data["Valuation Date"].to_s)   
     val.valuation_cents.should == user_data["Valuation"].to_d * 100
     val.per_share_value_cents.should == user_data["Per Share Value"].to_d * 100
