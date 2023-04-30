@@ -11,7 +11,7 @@ class CumulativeFundsRaised
     Rails.logger.debug { "CumulativeFundsRaised: Generating Report for #{fund_id}, #{start_date}, #{end_date} " }
 
     @fund = Fund.find(fund_id)
-    @fund_report = FundReport.new(name: "CumulativeFundsRaised", fund: @fund, entity_id: @fund.entity_id, start_date:, end_date:)
+    @fund_report = FundReport.new(name: "CumulativeFundsRaised", name_of_scheme: @fund.name, fund: @fund, entity_id: @fund.entity_id, start_date:, end_date:)
 
     data = hash_tree
 

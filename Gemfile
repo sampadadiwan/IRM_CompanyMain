@@ -14,6 +14,8 @@ gem "sprockets-rails"
 gem "audited", "~> 5.0"
 gem "mysql2", "~> 0.5"
 
+gem "json2table"
+
 # To convert Doc into PDF
 gem 'libreconv'
 # Use the Puma web server [https://github.com/puma/puma]
