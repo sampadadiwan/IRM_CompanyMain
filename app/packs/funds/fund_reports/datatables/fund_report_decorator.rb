@@ -1,5 +1,4 @@
 class FundReportDecorator < ApplicationDecorator
-
   def name_of_scheme
     h.link_to object.name_of_scheme, object.fund
   end
@@ -7,7 +6,6 @@ class FundReportDecorator < ApplicationDecorator
   def name
     h.link_to object.name, h.report_fund_path(object.fund, fund_report_id: object.id, report: "sebi_reports/#{object.name.underscore}")
   end
-
 
   # Just an example of a complex method you can add to you decorator
   # To render it in a datatable just add a column 'dt_actions' in

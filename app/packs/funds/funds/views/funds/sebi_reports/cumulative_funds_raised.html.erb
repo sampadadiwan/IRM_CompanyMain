@@ -1,3 +1,16 @@
+<%
+    if params[:fund_report_id].present? 
+        fund_report = FundReport.where(id: params[:fund_report_id]).last
+    elsif params[:id].present?
+        fund_report = FundReport.where(fund_id: params[:id]).last
+    end
+    data = fund_report&.data 
+%>
+
+<% unless fund_report && policy(fund_report).show? %>
+    <div class="alert alert-danger" style="text-align: center;">Permission Denied</div>    
+<% end %>
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4" data-controller="export-xl">
     <h1 class="h4 mb-0 text-gray-800">Cumulative Funds Raised</h1>
 
@@ -8,7 +21,7 @@
 
 <table id="cumulative_funds_raised" class="table table-bordered dataTable">
     <tr>
-        <td colspan="11">Table 1: Details of capital raised and investments made by the AIF (in INR Crores)</td>
+        <td colspan="12">Table 1: Details of capital raised and investments made by the AIF (in INR Crores)</td>
     </tr>
     <tr>
         <td>Sl. No</td>
@@ -45,14 +58,7 @@
         <td></td>
     </tr>
 
-    <%
-        if params[:fund_report_id].present? 
-            fund_report = FundReport.find(params[:fund_report_id])
-        elsif params[:id].present?
-            fund_report = FundReport.where(fund_id: params[:id]).last
-        end
-        data = fund_report.data 
-    %>
+    <% if fund_report && policy(fund_report).show? %>
     <tr>
         <td>1</td>
         <td><%= @fund.name %></td>
@@ -67,5 +73,6 @@
         <td><%= data["Investments made by the Scheme"]["Divestment during the period (C3)"]["Value"] %></td>
         <td><%= data["Investments made by the Scheme"]["At the end of the period (A3+B3)- (C3)"]["Value"] %></td>
     </tr>
+    <% end %>
     
 </table>

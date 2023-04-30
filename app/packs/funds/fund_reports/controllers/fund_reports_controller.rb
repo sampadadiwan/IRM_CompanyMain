@@ -11,7 +11,6 @@ class FundReportsController < ApplicationController
       format.html
       format.json { render json: FundReportDatatable.new(params, fund_reports: @fund_reports) }
     end
-
   end
 
   # GET /fund_reports/1 or /fund_reports/1.json

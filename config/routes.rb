@@ -1,5 +1,4 @@
 Rails.application.routes.draw do
-  
   namespace :admin do
     namespace :paper_trail do
       resources :versions
@@ -37,7 +36,6 @@ Rails.application.routes.draw do
 
     root to: "investors#index"
   end
-
 
   resources :fund_reports
   resources :commitment_adjustments
