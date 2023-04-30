@@ -1,5 +1,5 @@
 class InvestorKycsController < ApplicationController
-  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified]
+  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_new_aml_report]
   after_action :verify_authorized, except: %i[index search]
 
   # GET /investor_kycs or /investor_kycs.json
@@ -65,6 +65,7 @@ class InvestorKycsController < ApplicationController
   # POST /investor_kycs or /investor_kycs.json
   def create
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
+    @investor_kyc.user_id = current_user.id if current_user
     authorize(@investor_kyc)
     setup_doc_user(@investor_kyc)
 
@@ -106,6 +107,12 @@ class InvestorKycsController < ApplicationController
     end
   end
 
+  def generate_new_aml_report
+    authorize(@investor_kyc)
+    @investor_kyc.generate_aml_report
+    redirect_to investor_kyc_url(@investor_kyc), notice: "AML report generation initiated."
+  end
+
   # DELETE /investor_kycs/1 or /investor_kycs/1.json
   def destroy
     @investor_kyc.destroy
@@ -126,6 +133,6 @@ class InvestorKycsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_kyc_params
-    params.require(:investor_kyc).permit(:investor_id, :entity_id, :user_id, :kyc_type, :full_name, :PAN, :pan_card, :signature, :address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :video, :phone, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:investor_kyc).permit(:investor_id, :entity_id, :user_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :video, :phone, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

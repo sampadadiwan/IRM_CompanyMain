@@ -68,7 +68,7 @@ Given('there is an existing investor {string}') do |arg1|
         Given there is an existing investor entity "#{arg1}"
     )
   @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id)
-  
+
   puts "\n####Investor####\n"
   puts @investor.to_json
 end
@@ -78,7 +78,7 @@ Given('there is an existing portfolio company {string}') do |arg1|
         Given there is an existing investor entity "#{arg1}"
     )
   @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id, category: "Portfolio Company")
-  
+
   puts "\n####Portfolio Company####\n"
   puts @investor.to_json
 end
@@ -91,12 +91,12 @@ Given('there is an existing investor {string} with {string} users') do |arg1, co
   @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id)
   (1..count.to_i).each do
     @investor_user = FactoryBot.create(:user, entity: @investor_entity)
-    @investor_access = InvestorAccess.create!(investor: @investor, user: @investor_user, 
+    @investor_access = InvestorAccess.create!(investor: @investor, user: @investor_user,
                                             entity_id: @investor.entity_id,
                                             first_name: @investor_user.first_name,
-                                            last_name: @investor_user.last_name,                              
+                                            last_name: @investor_user.last_name,
                                             email: @investor_user.email, approved: true)
-  
+
     puts "\n####Investor User####\n"
     puts @investor_user.to_json
     puts "\n####Investor Access####\n"
@@ -108,7 +108,7 @@ Given('there is an existing investor {string} with {string} users') do |arg1, co
 end
 
 Given('there are {string} existing investor {string}') do |count, arg1|
-  (1..count.to_i).each do 
+  (1..count.to_i).each do
     steps %(
       Given there is an existing investor "#{arg1}"
     )
@@ -127,9 +127,9 @@ end
 
 When('I create a new investor {string} for the existing investor entity') do |string|
   click_on("New Stakeholder")
-  
+
   fill_in('investor_investor_name', with: @investor_entity.name)
-  
+
   find('.ui-menu-item-wrapper', text: @investor_entity.name).click
   select("Founder", from: "investor_category")
   click_on("Save")
@@ -202,7 +202,7 @@ Then('the investors must have the data in the sheet') do
     inv.tag_list.should == user_data["Tags"]
     inv.category.should == user_data["Category"]
     inv.city.should == user_data["City"]
-    
+
   end
 
 end
@@ -226,7 +226,7 @@ Then('the investors must be added to the fund') do
   investors = @entity.investors.not_holding.not_trust.to_set
   fund_investors = @fund.investors.to_set
   investors.length.should == fund_investors.length
-  
+
   investors.should == fund_investors
 
 end
@@ -253,7 +253,18 @@ Then('the investor kycs must have the data in the sheet') do
     cc.PAN.should == user_data["PAN"]
     cc.bank_account_number.should == user_data["Bank Account"].to_s
     cc.ifsc_code.should == user_data["IFSC Code"].to_s
-    
+
   end
 end
+
+Then('Aml Report should be generated for each investor kyc') do
+  investor_kycs = @entity.investor_kycs
+  investor_kycs.each do |kyc|
+    kyc.aml_reports.count.should_not == 0
+    kyc.aml_reports.each do |report|
+      report.name.should == kyc.full_name
+    end
+  end
+end
+
 

@@ -17,6 +17,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     cc: Field::String,
     bank_verification: Field::BooleanEmoji,
     pan_verification: Field::BooleanEmoji,
+    aml_enabled: Field::BooleanEmoji,
     entity: Field::BelongsTo,
     last_snapshot_on: Field::Date,
     snapshot_frequency_months: Field::Number,
@@ -36,6 +37,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     id
     bank_verification
     pan_verification
+    aml_enabled
     entity
     snapshot_frequency_months
     last_snapshot_on
@@ -59,6 +61,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     entity_bcc
     pan_verification
     bank_verification
+    aml_enabled
     snapshot_frequency_months
     last_snapshot_on
     trial
@@ -78,6 +81,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     entity_bcc
     bank_verification
     pan_verification
+    aml_enabled
     last_snapshot_on
     snapshot_frequency_months
     trial

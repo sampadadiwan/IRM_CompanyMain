@@ -47,6 +47,7 @@ Scenario Outline: Import investor kycs
   Then I should see the "Import upload was successfully created"
   Then There should be "2" investor kycs created
   And the investor kycs must have the data in the sheet
+  And Aml Report should be generated for each investor kyc
 
 Scenario Outline: Import investors
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"

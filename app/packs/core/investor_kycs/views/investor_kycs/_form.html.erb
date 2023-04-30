@@ -10,7 +10,7 @@
       </ul>
     </div>
   <% end %>
-  
+
   <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
   <% if investor_kyc.investor_id.present? %>
     <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
@@ -20,7 +20,7 @@
       <%= form.select :investor_id, investor_kyc.entity.investors.map{|i| [i.investor_name, i.id]}, {}, class: "form-control select2"  %>
     </div>
   <% end %>
-  
+
   <div class="form-group">
     <%= form.label :kyc_type %>
     <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control"  %>
@@ -37,6 +37,11 @@
   </div>
 
   <div class="form-group">
+    <%= form.label :birth_date %>
+    <%= form.date_field :birth_date, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
     <%= form.label :PAN %>
     <%= form.text_field :PAN, class: "form-control"  %>
   </div>
@@ -47,8 +52,8 @@
       Please upload a clear image of your PAN card
     </div>
 
-    <%= render "layouts/single_upload", form: form, field_label: "Upload PAN Card", 
-                            for_model: "investor_kyc", field_name: "pan_card", 
+    <%= render "layouts/single_upload", form: form, field_label: "Upload PAN Card",
+                            for_model: "investor_kyc", field_name: "pan_card",
                             model: investor_kyc %>
 
   </div>
@@ -77,29 +82,29 @@
   </div>
 
   <div class="form-group">
-    <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image (jpg or png only)", 
-                            for_model: "investor_kyc", field_name: "signature", 
+    <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image (jpg or png only)",
+                            for_model: "investor_kyc", field_name: "signature",
                             model: investor_kyc, allowed_types: ['image/*'].freeze  %>
 
   </div>
-  
+
 
   <!-- div class="form-group">
     <div class="alert alert-info">
       Please upload a video where you are holding your PAN Card saying:
-      
+
       <div class="alert alert-success">
-      "My name is [NAME] and my PAN is [PAN number].  I confirm the KYC details provided by me for subscribing to the fund by <%= investor_kyc.entity.name %> 
+      "My name is [NAME] and my PAN is [PAN number].  I confirm the KYC details provided by me for subscribing to the fund by <%= investor_kyc.entity.name %>
       on <%= Time.zone.today.to_formatted_s(:long) %>"
       </div>
       Kindly make sure your full face and the PAN card are clearly visible in the video.
     </div>
 
-    <%#= render "layouts/single_upload", form: form, field_label: "Upload KYC Video (mp4 only)", 
-                            for_model: "investor_kyc", field_name: "video", 
+    <%#= render "layouts/single_upload", form: form, field_label: "Upload KYC Video (mp4 only)",
+                            for_model: "investor_kyc", field_name: "video",
                             model: investor_kyc, allowed_types: ['video/*'].freeze %>
 
-    
+
   </div -->
 
   <% if current_user.entity_id == investor_kyc.entity_id || policy(investor_kyc).advisor? %>
@@ -116,10 +121,10 @@
 
   <% end %>
 
-  
+
   <%= custom_form_fields(investor_kyc, form) %>
 
-  <%= render "layouts/multi_upload", form: form, title: "Documents", 
+  <%= render "layouts/multi_upload", form: form, title: "Documents",
               for_model: "investor_kyc" %>
 
   <div class="form-group">

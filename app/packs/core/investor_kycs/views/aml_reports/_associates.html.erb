@@ -1,0 +1,18 @@
+<% if aml_report.associates.present? %>
+<table>
+    <thead class="thead-light">
+        <tr>
+        <th>Name</th>
+        <th>Relationship</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% aml_report.associates&.each do |name, relationship| %>
+        <tr>
+            <td><%= name %></td>
+            <td><%= relationship.titleize %></td>
+        </tr>
+        <% end %>
+    </tbody>
+</table>
+<% end %>

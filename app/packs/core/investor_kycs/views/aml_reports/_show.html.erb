@@ -1,0 +1,232 @@
+  <div class="inline-parent">
+    <div class="inline-child float-left">
+      <h1>Aml Report - <%= aml_report.name %> </h1>
+    </div>
+    <div class="inline-child float-right">
+      <%= button_to "Toggle approved" , toggle_approved_aml_report_path(@aml_report), method: :put, class: "btn btn-outline-primary" , form_class: "deleteButton" if policy(@aml_report).toggle_approved? %>
+    </div>
+    <br>
+  </div>
+
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= aml_report.entity.name %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Investor
+      </td>
+      <td>
+        <%= link_to aml_report.investor.investor_name, investor_url(aml_report.investor, tab: "aml-reports-tab") %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Investor Kyc Id
+      </td>
+      <td>
+        <%= aml_report.investor_kyc_id %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Investor Kyc Name
+      </td>
+      <td>
+        <%= link_to aml_report.investor_kyc.full_name, aml_report.investor_kyc %>
+        <br>
+        <% if aml_report.investor_kyc.verified %>
+          <span class="badge bg-success">Verified</span>
+        <% else %>
+          <span class="badge bg-warning">Not Verified</span>
+        <% end %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Name
+      </td>
+      <td>
+        <%= aml_report.name %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Match Status
+      </td>
+      <td>
+        <%= aml_report.match_status.present? ? aml_report.match_status.titleize : "Pending"   %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Aml Approved
+      </td>
+      <td>
+        <%= display_boolean aml_report.approved %>
+        <div>
+        <small>
+        <%= "Approved by: " + aml_report.approved_by.full_name if aml_report.approved && aml_report.approved_by %>
+        </small>
+        </div>
+        <div>
+        <small>
+        <%= "Approved on: " + aml_report.approved_on.strftime("%d %B, %Y - %I:%M:%S %p %Z(%:::z)")  if aml_report.approved && aml_report.approved_on %>
+        </small>
+        </div>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Types
+      </td>
+      <td>
+        <%= aml_report.types   %>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        Generated On
+      </td>
+      <td>
+        <%= aml_report.created_at.strftime("%d %B, %Y - %I:%M:%S %p %Z(%:::z)")   %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Associates
+      </td>
+      <td>
+      <% if aml_report.associates.present? %>
+      <table>
+        <thead class="thead-light">
+          <tr>
+            <th>Name</th>
+            <th>Relationship</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% aml_report.associates.each do |name, relationship| %>
+            <tr>
+              <td><%= name %></td>
+              <td><%= relationship.titleize %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <%end%>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Media
+      </td>
+      <td>
+       <% if aml_report.media.present? %>
+        <% aml_report.media.each do |table_data| %>
+          <table>
+            <thead class="thead-light">
+              <tr>
+                <th>Column</th>
+                <th>Data</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% table_data&.each do |col, data| %>
+                <tr>
+                  <td><%= col.titleize %></td>
+                  <td><%= data %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      <%end%>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Source Notes
+      </td>
+      <td>
+       <% if aml_report.source_notes.present? %>
+        <% aml_report.get_source_notes_array.each do |table_data| %>
+          <table>
+            <thead class="thead-light">
+              <tr>
+                <th>Column</th>
+                <th>Data</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% table_data&.each do |col, data| %>
+                <tr>
+                  <td><%= col.titleize %></td>
+                  <td><%= data %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+      <%end%>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Fields
+      </td>
+      <td>
+       <% if aml_report.fields.present? %>
+        <% aml_report.fields.each do |heading,data_hash| %>
+          <% data_hash.each do |table_data| %>
+            <table>
+              <thead class="thead-light">
+                <tr>
+                  <th>Column</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% table_data&.each do |col, data| %>
+                  <tr>
+                    <td><%= col.titleize %></td>
+                    <td><%= data %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% end %>
+        <%end%>
+      <%end%>
+      </td>
+    </tr>
+
+   <tr>
+      <td>
+        Response
+      </td>
+      <td>
+        <pre style="white-space:pre-wrap">
+          <%= aml_report.response.present? ? JSON.pretty_generate(aml_report.response) : ""   %>
+        </pre>
+      </td>
+   </tr>
+
+  </table>

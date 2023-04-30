@@ -1,7 +1,5 @@
 Rails.application.routes.draw do
-  resources :fund_reports
-  resources :commitment_adjustments
-  resources :exchange_rates
+  
   namespace :admin do
     namespace :paper_trail do
       resources :versions
@@ -39,6 +37,11 @@ Rails.application.routes.draw do
 
     root to: "investors#index"
   end
+
+
+  resources :fund_reports
+  resources :commitment_adjustments
+  resources :exchange_rates
 
   resources :investor_advisors do
     post 'switch', on: :collection
@@ -134,7 +137,15 @@ Rails.application.routes.draw do
   resources :investor_kycs do
     get 'search', on: :collection
     put 'toggle_verified', on: :member
+    put 'generate_new_aml_report', on: :member
   end
+
+  resources :aml_reports do
+    get 'search', on: :collection
+    post 'generate_new', on: :collection
+    put 'toggle_approved', on: :member
+  end
+
   resources :video_kycs do
     get 'search', on: :collection
   end

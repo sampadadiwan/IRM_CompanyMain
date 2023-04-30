@@ -39,6 +39,10 @@ class InvestorKycPolicy < ApplicationPolicy
     user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)
   end
 
+  def generate_new_aml_report?
+    toggle_verified?
+  end
+
   def update?
     create? && !record.verified
   end
