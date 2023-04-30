@@ -47,7 +47,7 @@
       Start Date
     </td>
     <td>
-      <%= @fund_report.start_date %>
+      <%= l @fund_report.start_date %>
     </td>
   </tr>
   <tr>
@@ -55,12 +55,13 @@
       End Date
     </td>
     <td>
-      <%= @fund_report.end_date %>
+      <%= l @fund_report.end_date %>
     </td>
   </tr>
 </table>
 <div>
-  <%= link_to "Edit", edit_fund_report_path(@fund_report), {class: "btn btn-primary"} %> |
-  <%= link_to "Back", :back, {class: "btn btn-primary"} %> |
-  <%= button_to "Delete", @fund_report, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <% if policy(@fund_report).update? %>
+    <%= link_to "Edit", edit_fund_report_path(@fund_report), {class: "btn btn-primary"} %> 
+    <%= button_to "Delete", @fund_report, method: :delete, class: "btn btn-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <% end %>
 </div>

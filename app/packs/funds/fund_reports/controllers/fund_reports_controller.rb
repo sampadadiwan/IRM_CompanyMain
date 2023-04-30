@@ -3,7 +3,7 @@ class FundReportsController < ApplicationController
 
   # GET /fund_reports or /fund_reports.json
   def index
-    @fund_reports = policy_scope(FundReport)
+    @fund_reports = policy_scope(FundReport).includes(:fund)
     @fund_report = @fund_report.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @fund_report = @fund_report.where(name: params[:name]) if params[:name].present?
   end
@@ -13,8 +13,10 @@ class FundReportsController < ApplicationController
 
   # GET /fund_reports/new
   def new
-    @fund_report = FundReport.new(fund_report_params)
+    @fund_report = FundReport.new
     @fund_report.entity_id = current_user.entity_id
+    @fund_report.start_date ||= Time.zone.today - 3.months
+    @fund_report.end_date ||= Time.zone.today
     authorize @fund_report
   end
 
@@ -28,8 +30,9 @@ class FundReportsController < ApplicationController
     authorize @fund_report
 
     respond_to do |format|
-      if @fund_report.save
-        format.html { redirect_to fund_report_url(@fund_report), notice: "Fund report was successfully created." }
+      if FundReportJob.perform_later(@fund_report.entity_id, @fund_report.fund_id, @fund_report.name,
+                                     @fund_report.start_date, @fund_report.end_date, current_user.id)
+        format.html { redirect_to fund_reports_url, notice: "Fund report will be generated, please check back in a few mins." }
         format.json { render :show, status: :created, location: @fund_report }
       else
         format.html { render :new, status: :unprocessable_entity }

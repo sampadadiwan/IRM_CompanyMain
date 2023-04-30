@@ -1,15 +1,15 @@
 <tr id="<%= dom_id fund_report %>">
   <td>
-    <%= fund_report.name %>
+    <%= link_to fund_report.name, report_fund_path(fund_report.fund, report: "sebi_reports/#{fund_report.name.underscore}") %>
   </td>
   <td>
-    <%= fund_report.name_of_scheme %>
+    <%= link_to fund_report.fund %>
   </td>
   <td>
-    <%= fund_report.start_date %>
+    <%= l fund_report.start_date %>
   </td>
   <td>
-    <%= fund_report.end_date %>
+    <%= l fund_report.end_date %>
   </td>
   <td>
     <%= link_to "Show", fund_report , {class: "btn btn-primary"}%>
