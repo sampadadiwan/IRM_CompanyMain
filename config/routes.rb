@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :fund_reports
   resources :commitment_adjustments
   resources :exchange_rates
   namespace :admin do

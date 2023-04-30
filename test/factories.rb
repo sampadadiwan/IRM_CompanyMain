@@ -1,13 +1,5 @@
 FactoryBot.define do
-  factory :fund_report do
-    fund { nil }
-    entity { nil }
-    name { "MyString" }
-    report_date { "2023-04-21" }
-    name_of_scheme { "MyString" }
-    data { "" }
-  end
-
+  
   factory :commitment_adjustment do
     entity { nil }
     fund { nil }
