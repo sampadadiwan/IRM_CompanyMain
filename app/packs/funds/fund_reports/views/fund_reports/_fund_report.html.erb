@@ -1,6 +1,6 @@
 <tr id="<%= dom_id fund_report %>">
   <td>
-    <%= link_to fund_report.name, report_fund_path(fund_report.fund, report: "sebi_reports/#{fund_report.name.underscore}") %>
+    <%= link_to fund_report.name, report_fund_path(fund_report.fund, fund_report_id: fund_report.id, report: "sebi_reports/#{fund_report.name.underscore}") %>
   </td>
   <td>
     <%= link_to fund_report.fund %>

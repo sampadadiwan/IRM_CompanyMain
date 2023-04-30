@@ -45,7 +45,14 @@
         <td></td>
     </tr>
 
-    <% fund_report = @fund.fund_reports.last; data = fund_report.data %>
+    <%
+        if params[:fund_report_id].present? 
+            fund_report = FundReport.find(params[:fund_report_id])
+        elsif params[:id].present?
+            fund_report = FundReport.where(fund_id: params[:id]).last
+        end
+        data = fund_report.data 
+    %>
     <tr>
         <td>1</td>
         <td><%= @fund.name %></td>
