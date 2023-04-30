@@ -4,8 +4,14 @@ class FundReportsController < ApplicationController
   # GET /fund_reports or /fund_reports.json
   def index
     @fund_reports = policy_scope(FundReport).includes(:fund)
-    @fund_report = @fund_report.where(fund_id: params[:fund_id]) if params[:fund_id].present?
-    @fund_report = @fund_report.where(name: params[:name]) if params[:name].present?
+    @fund_reports = @fund_reports.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    @fund_reports = @fund_reports.where(name: params[:name]) if params[:name].present?
+
+    respond_to do |format|
+      format.html
+      format.json { render json: FundReportDatatable.new(params, fund_reports: @fund_reports) }
+    end
+
   end
 
   # GET /fund_reports/1 or /fund_reports/1.json
