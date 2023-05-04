@@ -1,13 +1,17 @@
 <div class="associated_entity">
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
-      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#folders-tab">Documents</a>
+      <a class="nav-link  active" data-bs-toggle="pill" data-toggle="tab" href="#folders-tab">Documents</a>
+
+      <% unless ["Fund", "Deal", "SecondarySale"].include? folder.owner_type %>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
+      <% end %>
+      
     </nav>
     
   
   
     <div class="tab-content" data-controller="datatable">
-        <div id="access-rights-tab" class="tab-pane fade in show active">
+        <div id="access-rights-tab" class="tab-pane fade">
           <div id="access_rights" class="associated_entity">
             <%  access_right = AccessRight.new(
                 owner_id: folder.id, 
@@ -20,7 +24,7 @@
           </div>
         </div>
     
-        <div id="folders-tab" class="tab-pane fade">
+        <div id="folders-tab" class="tab-pane fade in show active">
           <div id="folders" class="associated_entity">
             <% params[:folder_id] = folder.id %>
             <%= render "documents/tree_view", documents: folder.documents.page().per(100), 
