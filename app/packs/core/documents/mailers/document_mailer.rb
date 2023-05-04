@@ -8,7 +8,7 @@ class DocumentMailer < ApplicationMailer
     investors = @document.investors_granted_access
     investors += @document.owner.investors_granted_access
 
-    investors.each do |investor|
+    investors.uniq.each do |investor|
       DocumentMailer.with(id: params[:id], investor_id: investor.id).notify_new_document.deliver_later
     end
   end

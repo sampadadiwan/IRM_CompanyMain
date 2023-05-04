@@ -81,7 +81,8 @@ class Investor < ApplicationRecord
 
   after_create_commit -> { InvestorAddedJob.perform_later(id) unless imported }
 
-  before_validation :update_name
+  before_validation :update_name, if: :new_record?
+
   def update_name
     self.investor_name = investor_entity.name if investor_name.blank?
     self.last_interaction_date ||= Time.zone.today - 10.years
