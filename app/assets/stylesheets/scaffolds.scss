@@ -658,3 +658,8 @@ ul.vesting_schedule {
   grid-gap: 20px;
 }
 
+.jstree-children {
+  width: 100%;
+  overflow: hidden; 
+  text-overflow: ellipsis;
+}
