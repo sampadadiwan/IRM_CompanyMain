@@ -53,7 +53,7 @@ class AccessRight < ApplicationRecord
     if user.investor_advisor?
       # Since he is currently playing the role of IA, we should only use the access_rights
       # given to his specific user id
-      where("access_rights.user_id=?", user.id)
+      where("access_rights.user_id=? OR access_rights.access_to_investor_id=investors.id", user.id)
     elsif user.has_cached_role?(:investor_advisor) && !user.investor_advisor?
       # This is to avoid duplicates in the results of the final query
       # If the user has the role but is not currently switched as an IA for another investor

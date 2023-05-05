@@ -75,6 +75,18 @@ namespace :irm do
         puts user.to_json
       end
     end
+
+
+  investor_advisors = "Hansen Investor Advisors,Juniper Investor Advisors".split(",") 
+    
+  investor_advisors.each do |name|
+      e = FactoryBot.create(:entity, entity_type: "Investor Advisor", name: name, enable_funds: true, enable_inv_opportunities: true)
+      puts "Entity #{e.name}"
+      (1..2).each do |j|
+        user = FactoryBot.create(:user, entity: e, first_name: "Emp#{j}")
+        puts user.to_json
+      end
+    end
     
     user = FactoryBot.create(:user, entity: nil, first_name: "Super", last_name: "Admin", email: "admin@altx.com", curr_role: :super)
     user.add_role(:super)

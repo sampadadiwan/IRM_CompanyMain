@@ -1,7 +1,7 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#viewers-tab">Viewed By</a>
-      <% if policy(document).update? %>
+      <% if document.entity_id == current_user&.entity_id %>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#reminders-tab" 
             data-action="click->tabdetails#loadData">

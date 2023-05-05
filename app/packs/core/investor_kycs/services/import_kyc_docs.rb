@@ -59,7 +59,9 @@ class ImportKycDocs < ImportUtil
                            user_id: import_upload.user_id, send_email:)
 
         doc.file = File.open(file_name, "rb")
-        [doc.save, doc.errors.full_messages]
+        saved = doc.save
+        status = saved ? "Success" : doc.errors.full_messages
+        [saved, status]
       end
     elsif model.nil?
       [false, "#{user_data['Document Type'].strip} not found"]
