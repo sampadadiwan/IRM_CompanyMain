@@ -36,7 +36,7 @@
 
     <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
         "folder[parent_id]": @folder.id), 
-        class: "btn btn-sm btn-outline-primary" if params[:folder_id].present? && policy(@folder).update?   %> 
+        class: "btn btn-sm btn-outline-primary" if params[:folder_id].present? && policy(@folder).create?   %> 
 
     <%= link_to "New Document", new_document_path(external: external, 
                 document: doc_attributes, 

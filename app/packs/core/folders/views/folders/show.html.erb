@@ -66,6 +66,7 @@
 
 
   <div>
+    
     <%= link_to "Upload / Edit" , edit_folder_path(@folder), {class: "btn btn-outline-primary" } if @folder.level !=0 %> 
     <%= link_to "Create Sub Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
         "folder[parent_id]": @folder.id), 
@@ -73,7 +74,9 @@
 
     <%= button_to "Delete" , @folder, method: :delete, class: "btn btn-outline-danger" , 
         form_class: "deleteButton" , 
-        data: {action: "click->confirm#popup" , turbo:false} %>
+        data: {action: "click->confirm#popup" , turbo:false} %> |
+
+    <%= link_to "All Documents", documents_path, {class: "btn btn-outline-success"} %> 
   </div>
 
   <%= render "folders/folder_details" , folder: @folder %>

@@ -29,6 +29,7 @@
     </td>  
     
     <td class="hideMobP">
-        <%= button_to "Delete", access_right, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton" %>    
+        <%= button_to "Delete", access_right, method: :delete, class: "btn btn-outline-danger" ,
+              form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo: true} %>
     </td>
 </tr>
