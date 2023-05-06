@@ -1,131 +1,187 @@
-<%= form_with(model: fund, validate: true) do |form| %>
-  <% if fund.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(fund.errors.count, "error") %> prohibited this fund from being saved:</h2>
+<div class="wizard_container" data-controller="wizard">
+  <div class="stepwizard hidden">
+      <div class="stepwizard-row setup-panel">
+          <div class="stepwizard-step">
+              <a href="#step-1" type="button" class="btn btn-outline-primary btn-outline-primary btn-outline-circle">1</a>
+              <p>Step 1</p>
+          </div>
+          <div class="stepwizard-step">
+              <a href="#step-2" type="button" class="btn btn-outline-primary btn-outline-circle" disabled="disabled">2</a>
+              <p>Step 2</p>
+          </div>
+          <div class="stepwizard-step">
+              <a href="#step-3" type="button" class="btn btn-outline-primary btn-outline-circle" disabled="disabled">3</a>
+              <p>Step 3</p>
+          </div>
+      </div>
+  </div>
 
-      <ul>
-        <% fund.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
+  <%= form_with(model: fund, validate: true) do |form| %>
+    <% if fund.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(fund.errors.count, "error") %> prohibited this fund from being saved:</h2>
 
-  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-
-  <div class="form-group">
-    <%= form.label :name %>
-    <!-- We dont allow fund name changes, as this impacts folder names which screws up the system  -->
-    <% if fund.new_record? %>
-      <%= form.text_field :name, class: "form-control"  %>
-    <% else %>
-      <%= form.text_field :name, class: "form-control", disabled: true  %>
+        <ul>
+          <% fund.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
     <% end %>
-  </div>
 
-  <div class="form-group">
-    <%= form.label :currency %>
-    <%= form.text_field :currency, class: "form-control"  %>
-  </div>
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
 
-  <% if fund.entity.enable_units %>
-    <div class="form-group">
-      <%= form.label :unit_types %>
-      <%= form.text_field :unit_types, class: "form-control", maxlength: 100  %>
-      <small>Comma separated list unit types issued by the fund. Ex Series A,Series B </small>
+    <div class="row setup-content" id="step-1">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header"> 1. Fund Details </div>
+                <div class="card-body">
+
+                  <div class="form-group">
+                    <%= form.label :name %>
+                    <!-- We dont allow fund name changes, as this impacts folder names which screws up the system  -->
+                    <% if fund.new_record? %>
+                      <%= form.text_field :name, class: "form-control"  %>
+                    <% else %>
+                      <%= form.text_field :name, class: "form-control", disabled: true  %>
+                    <% end %>
+                  </div>
+
+                  <div class="form-group">
+                    <%= form.label :currency %>
+                    <%= form.text_field :currency, class: "form-control"  %>
+                  </div>
+
+                  <% if fund.entity.enable_units %>
+                    <div class="form-group">
+                      <%= form.label :unit_types %>
+                      <%= form.text_field :unit_types, class: "form-control", maxlength: 100  %>
+                      <small>Comma separated list unit types issued by the fund. Ex Series A,Series B </small>
+                    </div>
+                  <% end %>
+
+                  <div class="form-group">
+                    <%= form.label :commitment_doc_list %>
+                    <%= form.text_field :commitment_doc_list, class: "form-control"  %>
+                    <small>Comma separated list of documents to be uploaded into the commitment</small>
+                  </div>
+
+                  <div class="form-group">
+                    <%= form.label :tag_list %>
+                    <%= form.text_field :tag_list, class: "form-control"  %>
+                  </div>
+
+                  <div class="form-group">
+                    <%= form.label :details %>
+                    <%= form.rich_text_area :details, class: "form-control"  %>
+                  </div>
+
+                  <%= custom_form_fields(fund, form) %>
+                    
+                  <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
+
+                </div>
+            </div>
+        </div>
     </div>
+
+    
+
+    <div class="row setup-content" id="step-2">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header"> 2. SEBI Report Fields </div>
+                <div class="card-body">
+
+                  <div class="form-group">
+                    <%= form.label :registration_number %>
+                    <%= form.text_field :registration_number, class: "form-control"  %>
+                  </div>
+
+                  <div class="form-group">
+                    <%= form.label :category %>
+                    <%= form.select :category, Fund::CATEGORIES, {}, class: "form-control"  %>
+                  </div>
+
+                  <div class="form-group">
+                    <%= form.label :sub_category %>
+                    <%= form.text_field :sub_category, class: "form-control"  %>
+                  </div>
+
+                  <div class="form-group">
+                    <%= form.label :sponsor_name %>
+                    <%= form.text_field :sponsor_name, class: "form-control"  %>
+                  </div>
+
+                  <div class="form-group">
+                    <%= form.label :manager_name %>
+                    <%= form.text_field :manager_name, class: "form-control"  %>
+                  </div>
+
+                  <div class="form-group">
+                    <%= form.label :contact_name %>
+                    <%= form.text_field :contact_name, class: "form-control"  %>
+                  </div>
+
+                  <div class="form-group">
+                    <%= form.label :contact_email %>
+                    <%= form.text_field :contact_email, class: "form-control"  %>
+                  </div>
+                    
+                  <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row setup-content" id="step-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header"> 3. Signatures & Ratios </div>
+                <div class="card-body">
+
+                  <div class="form-group">
+                    <%= form.label :fund_signatory_id %>
+                    <%= form.select :fund_signatory_id, fund.entity.employees.map{|e| [e.full_name, e.id]}, {include_blank: true}, class: "form-control"  %>
+                  </div>
+
+                  <div class="form-group">
+                    <%= form.label :fund_signature_types %>
+                    <%= form.select :fund_signature_types, ["adhaar"], {include_blank: true}, class: "form-control"  %>
+                  </div>
+
+                  <div class="form-group">
+                    <%= form.label :investor_signature_types %>
+                    <%= form.select :investor_signature_types, ["adhaar"], {include_blank: true}, class: "form-control"  %>
+                  </div>
+                  
+
+                  <div class="form-group">
+                    <%= form.label :trustee_signatory_id %>
+                    <%= form.select :trustee_signatory_id, fund.advisor_users.map{|e| [e.full_name, e.id]}, {include_blank: true}, class: "form-control"  %>
+                  </div>
+
+                  <div class="form-group">
+                    <%= form.label :show_valuations, "Show fund valuations to LPs" %>
+                    <%= form.check_box :show_valuations, class: "form-control form-checkbox"  %>
+                  </div>
+
+                  <div class="form-group">
+                    <%= form.label :show_fund_ratios, "Show fund ratios to LPs" %>
+                    <%= form.check_box :show_fund_ratios, class: "form-control form-checkbox"  %>
+                  </div>                  
+
+                  <div class="form-group">
+                    <%= form.submit "Save", {class: "btn btn-outline-primary btn-lg pull-right"}%>
+                  </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    
+
   <% end %>
 
-  <div class="form-group">
-    <%= form.label :commitment_doc_list %>
-    <%= form.text_field :commitment_doc_list, class: "form-control"  %>
-    <small>Comma separated list of documents to be uploaded into the commitment</small>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :tag_list %>
-    <%= form.text_field :tag_list, class: "form-control"  %>
-  </div>
-
-  <div class="">
-
-  <div class="form-group">
-    <%= form.label :registration_number %>
-    <%= form.text_field :registration_number, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :category %>
-    <%= form.select :category, Fund::CATEGORIES, {}, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :sub_category %>
-    <%= form.text_field :sub_category, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :sponsor_name %>
-    <%= form.text_field :sponsor_name, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :manager_name %>
-    <%= form.text_field :manager_name, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :contact_name %>
-    <%= form.text_field :contact_name, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :contact_email %>
-    <%= form.text_field :contact_email, class: "form-control"  %>
-  </div>
-
-  </div>
-
-  <div class="form-group">
-    <%= form.label :details %>
-    <%= form.rich_text_area :details, class: "form-control"  %>
-  </div>
-
-  
-  <div class="form-group">
-    <%= form.label :fund_signatory_id %>
-    <%= form.select :fund_signatory_id, fund.entity.employees.map{|e| [e.full_name, e.id]}, {include_blank: true}, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :fund_signature_types %>
-    <%= form.select :fund_signature_types, ["adhaar"], {include_blank: true}, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :investor_signature_types %>
-    <%= form.select :investor_signature_types, ["adhaar"], {include_blank: true}, class: "form-control"  %>
-  </div>
-  
-
-  <div class="form-group">
-    <%= form.label :trustee_signatory_id %>
-    <%= form.select :trustee_signatory_id, fund.advisor_users.map{|e| [e.full_name, e.id]}, {include_blank: true}, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :show_valuations, "Show fund valuations to LPs" %>
-    <%= form.check_box :show_valuations, class: "form-control form-checkbox"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :show_fund_ratios, "Show fund ratios to LPs" %>
-    <%= form.check_box :show_fund_ratios, class: "form-control form-checkbox"  %>
-  </div>
-
-  <%= custom_form_fields(fund, form) %>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
-<% end %>
+</div>

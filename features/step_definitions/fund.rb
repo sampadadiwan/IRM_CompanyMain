@@ -15,6 +15,8 @@
     fill_in('fund_unit_types', with: @fund.unit_types) if @fund.entity.enable_units
     # fill_in('fund_details', with: @fund.details)
     find('trix-editor').click.set(@fund.details)
+    click_on("Next")
+    click_on("Next")
     click_on("Save")
   end
   
