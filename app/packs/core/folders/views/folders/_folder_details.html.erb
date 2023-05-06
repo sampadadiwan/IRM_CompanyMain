@@ -2,7 +2,7 @@
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
       <a class="nav-link  active" data-bs-toggle="pill" data-toggle="tab" href="#folders-tab">Documents</a>
 
-      <% unless ["Fund", "Deal", "SecondarySale"].include? folder.owner_type %>
+      <% unless (["Fund", "Deal", "SecondarySale"].include?(folder.owner_type) && params[:debug].blank?) %>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
       <% end %>
       

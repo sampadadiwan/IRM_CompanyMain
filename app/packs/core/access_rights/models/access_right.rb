@@ -1,6 +1,7 @@
 class AccessRight < ApplicationRecord
   # include Trackable
   include ActivityTrackable
+  acts_as_paranoid
 
   update_index('access_right') { self }
 
@@ -169,6 +170,10 @@ class AccessRight < ApplicationRecord
   def update_owner
     owner.access_rights_changed(self) if owner.respond_to? :access_rights_changed
   end
+
+  after_destroy lambda {
+    AccessRightsDeletedJob.perform_later(owner_id, owner_type, id) if owner.respond_to?(:document_folder)
+  }
 
   def investors
     if access_to_category.present?
