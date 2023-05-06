@@ -1,18 +1,7 @@
 <%= render "/layouts/alerts" %>
+<%= render "/funds/fund_stats", fund: @fund %>
 
-  <% if params[:charts].present? %>
-  <div class="row">
-    <div class="col-lg-5 mb-4">
-      <%= render "funds/show", fund: @fund %>
-    </div>
-    <div class="col-lg-7 mb-4">
-      <%= render "funds/dashboard/investor_commitments", fund: @fund %>
-    </div>
-  </div>
-  <% else %>
-    <%= render "funds/show", fund: @fund %>
-    <%#= render "funds/letter", fund: @fund %>
-  <% end %>
+<%= render "funds/show", fund: @fund %>
 
 
   <div>

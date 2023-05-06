@@ -185,6 +185,8 @@
   end
 
   Then('I should see the capital commitment details') do
+    click_on "Details"
+
     @capital_commitment = CapitalCommitment.last
     @capital_commitment.investor_name.should == @new_capital_commitment.investor_name
     @capital_commitment.unit_type.should == @new_capital_commitment.unit_type
@@ -297,6 +299,7 @@
   
 
    Then('I should see the capital call details') do
+    click_on "Details"
     expect(page).to have_content(@capital_call.name)
     expect(page).to have_content(@capital_call.percentage_called)
     expect(page).to have_content(@capital_call.due_date.strftime("%d/%m/%Y"))

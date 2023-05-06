@@ -663,3 +663,10 @@ ul.vesting_schedule {
   overflow: hidden; 
   text-overflow: ellipsis;
 }
+
+.stats{
+  .mb-4, .my-4 {
+    padding-left: 0px !important;
+    margin-bottom: 0px !important;
+  }
+}

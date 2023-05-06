@@ -1,6 +1,7 @@
 <%= render "/layouts/alerts" %>
-<table class="table table-bordered dataTable">
-  <tr>
+<%= render "/capital_commitments/capital_commitment_stats", capital_commitment: @capital_commitment %>
+<table class="table dataTable">
+  <tr class="collapse multi-collapse">
     <td>
       Entity
     </td>
@@ -9,7 +10,7 @@
     </td>
   </tr>
 
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Fund
     </td>
@@ -18,7 +19,7 @@
     </td>
   </tr>
 
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Type
     </td>
@@ -32,7 +33,7 @@
   </tr>
 
   
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Investor
     </td>
@@ -42,7 +43,7 @@
   </tr>
   
   <% if @capital_commitment.commitment_date %>
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Date
       </td>
@@ -52,7 +53,7 @@
     </tr>
   <% end %>
   
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Folio Id
       </td>
@@ -62,7 +63,7 @@
     </tr>
   
   <% if @capital_commitment.virtual_bank_account.present? %>
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Virtual Bank Account
       </td>
@@ -72,7 +73,7 @@
     </tr>
   <% end %>
 
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Fund Close
     </td>
@@ -81,7 +82,7 @@
     </td>
   </tr>
   
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Linked KYC
     </td>
@@ -103,7 +104,7 @@
   
   <% if @capital_commitment.fund.unit_types.present? %>
   
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Unit Type
     </td>
@@ -112,7 +113,7 @@
     </td>
   </tr>
 
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Total Units
     </td>
@@ -125,7 +126,7 @@
 
   <% if @capital_commitment.adjustment_amount_cents > 0 || @capital_commitment.foreign_currency? %>
   
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Folio Currency
       </td>
@@ -134,7 +135,7 @@
       </td>
     </tr>
 
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Folio Committed Amount
       </td>
@@ -145,7 +146,7 @@
      
     <% if @capital_commitment.adjustment_amount_cents != 0 %>
 
-      <tr>
+      <tr class="collapse multi-collapse">
         <td>
           Original Folio Committed Amount
         </td>
@@ -154,7 +155,7 @@
         </td>
       </tr>
 
-      <tr>
+      <tr class="collapse multi-collapse">
         <td>
           Adjustment Folio Amount
         </td>
@@ -163,7 +164,7 @@
         </td>
       </tr>
 
-      <tr>
+      <tr class="collapse multi-collapse">
         <td>
           Adjustment Amount
         </td>
@@ -176,7 +177,7 @@
 
   <% end %>
 
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Committed Amount
     </td>
@@ -193,7 +194,7 @@
   </tr>
 
 
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Called Amount
     </td>
@@ -202,7 +203,7 @@
     </td>
   </tr>
 
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Collected Amount
     </td>
@@ -212,7 +213,7 @@
   </tr>
 
 
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Called - Collected
     </td>
@@ -227,7 +228,7 @@
     </td>
   </tr>
 
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Committed - Collected
     </td>
@@ -243,7 +244,7 @@
     </td>
   </tr>
 
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Distributed Amount
     </td>
@@ -252,7 +253,7 @@
     </td>
   </tr>
 
-  <tr>
+  <tr class="collapse multi-collapse">
     <td>
       Onboarding Complete
     </td>
@@ -263,7 +264,7 @@
 
 
   <% if @capital_commitment.entity.enable_account_entries %>
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Total Allocated Expense
       </td>
@@ -272,7 +273,7 @@
       </td>
     </tr>
 
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Total Allocated Income
       </td>

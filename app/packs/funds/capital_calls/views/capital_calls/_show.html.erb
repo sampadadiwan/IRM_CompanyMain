@@ -1,6 +1,6 @@
-<table class="table table-bordered dataTable">
+<table class="table dataTable">
 
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Entity
       </td>
@@ -8,7 +8,7 @@
         <%= capital_call.entity.name %>
       </td>
     </tr>
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Fund
       </td>
@@ -16,7 +16,7 @@
         <%= link_to capital_call.fund.name, capital_call.fund %>
       </td>
     </tr>
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Name
       </td>
@@ -25,7 +25,7 @@
       </td>
     </tr>
 
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Call Date
       </td>
@@ -33,7 +33,7 @@
         <%= l capital_call.call_date %>
       </td>
     </tr>
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Due Date
       </td>
@@ -44,7 +44,7 @@
 
 
     <% if current_user.entity_id == capital_call.entity_id %>
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Type
       </td>
@@ -52,7 +52,7 @@
         <%= capital_call.commitment_type %>
       </td>
     </tr>
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Percentage Called
       </td>
@@ -61,7 +61,7 @@
       </td>
     </tr>
 
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Applicable To Close
       </td>
@@ -73,7 +73,7 @@
     <% if capital_call.fund.unit_types.present? %>
       <% capital_call.unit_prices.each do |unit_type, unit_price| %>
 
-        <tr>
+        <tr class="collapse multi-collapse">
           <td>
             <%= unit_type %>
           </td>
@@ -88,7 +88,7 @@
 
     <% if current_user %>
 
-        <tr>
+        <tr class="collapse multi-collapse">
           <td>
             Approved
           </td>
@@ -96,7 +96,7 @@
             <%= display_boolean capital_call.approved %>
           </td>
         </tr>
-        <tr>
+        <tr class="collapse multi-collapse">
           <td>
               Call Amount
           </td>
@@ -104,7 +104,7 @@
               <%= money_to_currency capital_call.call_amount, params %>
           </td>
         </tr>
-        <tr>
+        <tr class="collapse multi-collapse">
         <td>
             Collected Amount
         </td>
@@ -120,7 +120,7 @@
         </td>
         </tr>
 
-        <tr>
+        <tr class="collapse multi-collapse">
         <td>
             Due Amount
         </td>
@@ -135,7 +135,7 @@
     <% end %>
     
 
-    <tr>
+    <tr class="collapse multi-collapse">
       <td>
         Notes
       </td>
