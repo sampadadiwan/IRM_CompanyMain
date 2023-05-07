@@ -93,7 +93,7 @@
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Uncalled Amount
                             </div>
-                            <div class="h6 mb-0 font-weight-bold text-gray-800">
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 <%= money_to_currency(fund.committed_amount - fund.call_amount, params) %>
                             </div>
                         </div>
@@ -113,7 +113,7 @@
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                 Investors
                             </div>
-                            <div class="h6 mb-0 font-weight-bold text-gray-800">
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 <%= fund.capital_commitments.count %>
                             </div>
                         </div>
