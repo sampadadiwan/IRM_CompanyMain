@@ -40,14 +40,14 @@ class CumulativeFundsRaised
     a3 = @fund.portfolio_investments.buys.where(investment_date: ..start_date).sum { |pi| pi.net_quantity * pi.amount_cents / pi.quantity } / 100
     data["Investments made by the Scheme"]["At the beginning of the period (A3)"]["Value"] = a3.round(2)
 
-    b3 = @fund.portfolio_investments.buys.where(investment_date: start_date..).where(investment_date: ..end_date).sum(:amount_cents)
+    b3 = @fund.portfolio_investments.buys.where(investment_date: start_date..).where(investment_date: ..end_date).sum(:amount_cents) / 100
     data["Investments made by the Scheme"]["Additions during the period (B3)"]["Value"] = b3
 
-    c3 = @fund.portfolio_investments.sells.where(investment_date: start_date..).where(investment_date: ..end_date).sum(:amount_cents)
+    c3 = @fund.portfolio_investments.sells.where(investment_date: start_date..).where(investment_date: ..end_date).sum(:amount_cents) / 100
 
-    data["Investments made by the Scheme"]["Divestment during the period (C3)"]["Value"] = c3
+    data["Investments made by the Scheme"]["Divestment during the period (C3)"]["Value"] = c3.round(2)
 
-    data["Investments made by the Scheme"]["At the end of the period (A3+B3)- (C3)"]["Value"] = a3 + b3 - c3
+    data["Investments made by the Scheme"]["At the end of the period (A3+B3)- (C3)"]["Value"] = (a3 + b3 - c3).round(2)
 
     ######### Save the report
 
