@@ -19,6 +19,7 @@ class CumulativeFundsRaised
     ########## Commitments, Remittances and Distributions
 
     data["Total Corpus As On Date"]["Value"] = @fund.collected_amount.to_d
+    data["Total Commitments Raised (A1)"]["Value"] = @fund.capital_commitments.where(commitment_date: ..end_date).sum(:committed_amount_cents) / 100
 
     a2 = @fund.capital_remittance_payments.where(payment_date: ..start_date).sum(:amount_cents) / 100
     data["Funds Raised By The Scheme"]["At the beginning of the period (A2)"]["Value"] = a2
@@ -37,7 +38,7 @@ class CumulativeFundsRaised
     ########## Investments
 
     a3 = @fund.portfolio_investments.buys.where(investment_date: ..start_date).sum { |pi| pi.net_quantity * pi.amount_cents / pi.quantity } / 100
-    data["Investments made by the Scheme"]["At the beginning of the period (A3)"]["Value"] = a3
+    data["Investments made by the Scheme"]["At the beginning of the period (A3)"]["Value"] = a3.round(2)
 
     b3 = @fund.portfolio_investments.buys.where(investment_date: start_date..).where(investment_date: ..end_date).sum(:amount_cents)
     data["Investments made by the Scheme"]["Additions during the period (B3)"]["Value"] = b3
