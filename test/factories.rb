@@ -372,7 +372,7 @@ FactoryBot.define do
   factory :valuation do
     category { "Unlisted" }
     sub_category { "Equity" }
-    valuation_date { Date.today - rand(24).months }
+    valuation_date { Date.today - rand(48).months }
     valuation_cents { rand(1..10) * 100000000 }
     per_share_value_cents { rand(1..10) * 100000 }
   end
@@ -561,7 +561,7 @@ FactoryBot.define do
 
 
   factory :investor do
-    investor_entity_id { Entity.all.sample.id }
+    investor_entity_id { Entity.startups.sample.id }
     entity_id { Entity.startups.sample.id }
     category { ["Lead Investor", "Co-Investor"][rand(2)] }
     city {Faker::Address.city.truncate(20)}

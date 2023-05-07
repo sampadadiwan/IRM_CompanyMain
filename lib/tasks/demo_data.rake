@@ -537,6 +537,18 @@ namespace :irm do
     i = 1
     files = ["holdings.xlsx", "signature.png", "investor_access.xlsx", "Offer_1_SPA.pdf"]
     
+    startup_names = ["PayTm", "Apna", "RazorPay", "Delhivery", "Eat Fit", "Cult Fit", "Quadrant"]
+    startup_names.each do |name|
+      startup = FactoryBot.create(:entity, entity_type: "Company", name: name)
+      puts "Entity #{startup.name}"
+      (1..2).each do |j|
+        user = FactoryBot.create(:user, entity: startup, first_name: "Emp#{j}")
+        user.add_role :company_admin
+        user.add_role :approver
+        puts user.to_json
+      end
+    end
+
     Entity.funds.each do |e|
       3.times do
         fund = FactoryBot.create(:fund, entity: e)
@@ -572,6 +584,38 @@ namespace :irm do
 
           end
         end
+
+        (1..3).each do 
+          fund.reload
+          distribution = FactoryBot.create(:capital_distribution, fund: , approved: true, generate_payments_paid: true) 
+          doc = Document.create!(entity: e, owner: distribution, name: Faker::Company.catch_phrase, 
+                text: Faker::Company.catch_phrase, user: e.employees.sample,
+                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r"))
+
+
+          CapitalDistributionJob.perform_now(distribution.id)
+          distribution.capital_distribution_payments.each do |cr|
+            doc = Document.create!(entity: e, owner: cr, name: Faker::Company.catch_phrase, 
+                text: Faker::Company.catch_phrase, user: e.employees.sample,
+                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
+
+          end
+        end
+
+        startup_names.each do |name|        
+          begin
+            pc = FactoryBot.create(:investor, entity: e, investor_name: name, category: "Portfolio Company")
+            FactoryBot.create(:valuation, entity: e)
+            (1..3).each do
+              begin
+                pi = FactoryBot.create(:portfolio_investment, entity: e, fund:, portfolio_company: pc)
+              rescue
+              end
+            end
+          rescue
+          end
+        end
+
       end
 
       sleep(3)
