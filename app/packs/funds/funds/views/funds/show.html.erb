@@ -43,6 +43,7 @@
             Sebi Reports
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <%= link_to "All Reports", fund_reports_path, {class: "dropdown-item" }  %>
             <%= link_to "Capital and Investments" , report_fund_path(@fund, report: "sebi_reports/cumulative_funds_raised"), {class: "dropdown-item" } %>             
           </div>
         </div>
