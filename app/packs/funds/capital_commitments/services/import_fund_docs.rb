@@ -1,6 +1,6 @@
 class ImportFundDocs < ImportUtil
   STANDARD_HEADERS = ["Fund", "Investor", "Folio No", "Document Type", "Document Name", "File Name",
-                      "Tags", "Send Email"].freeze
+                      "Tags", "Send Email", "Folder"].freeze
   attr_accessor :commitments
 
   def standard_headers
@@ -50,8 +50,11 @@ class ImportFundDocs < ImportUtil
                           name: user_data["Document Name"].strip)
         [false, "#{user_data['Document Name']} already present"]
       else
+        # Check if we need to create a folder
+        folder = user_data["Folder"].presence
+        folder = model.document_folder.children.where(name: folder, entity_id: model.entity_id).first_or_create if folder
         # Create the document
-        doc = Document.new(owner: model, entity_id: model.entity_id,
+        doc = Document.new(owner: model, entity_id: model.entity_id, folder:,
                            name: user_data["Document Name"].strip, tag_list: user_data["Tags"]&.strip,
                            user_id: import_upload.user_id, send_email:)
 

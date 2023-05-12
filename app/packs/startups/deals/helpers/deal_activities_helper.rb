@@ -2,6 +2,8 @@ module DealActivitiesHelper
   def activity_color(deal_activity)
     if deal_activity.completed == "Yes"
       "btn-outline-success"
+    elsif deal_activity.completed == "N/A"
+      "btn-outline-info"
     elsif deal_activity.by_date && deal_activity.by_date < Time.zone.today
       "btn-outline-danger"
     elsif deal_activity.by_date && deal_activity.by_date == Time.zone.today && deal_activity.by_date

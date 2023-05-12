@@ -1,5 +1,5 @@
 <%= render "/layouts/alerts" %>
-<% if current_user.entity_id == @fund.entity_id %>
+<% if current_user.entity_id == @fund.entity_id || current_user.curr_role == "advisor" %>
   <%= render "/funds/fund_stats", fund: @fund %>
 <% else %>
   <%= render "/funds/fund_investor_stats", fund: @fund %>
