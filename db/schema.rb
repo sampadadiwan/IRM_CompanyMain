@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_04_29_064201) do
+ActiveRecord::Schema[7.0].define(version: 2023_05_11_202423) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -78,6 +78,15 @@ ActiveRecord::Schema[7.0].define(version: 2023_04_29_064201) do
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
     t.index ["parent_type", "parent_id"], name: "index_account_entries_on_parent"
+  end
+
+  create_table "action_mailbox_inbound_emails", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.integer "status", default: 0, null: false
+    t.string "message_id", null: false
+    t.string "message_checksum", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["message_id", "message_checksum"], name: "index_action_mailbox_inbound_emails_uniqueness", unique: true
   end
 
   create_table "action_text_rich_texts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
