@@ -8,7 +8,8 @@ class CapitalRemittancesMailer < ApplicationMailer
 
     @entity = @capital_remittance.entity
     cc = @entity.entity_setting.cc
-    reply_to = @entity.entity_setting.reply_to
+
+    reply_to = [@entity.entity_setting.reply_to, "capital_commitment-#{@capital_remittance.capital_commitment_id}@#{ENV.fetch('DOMAIN', nil)}"].filter(&:present?).join(",")
 
     # Check for attachments
     @capital_remittance.documents.generated.each do |doc|
@@ -38,7 +39,8 @@ class CapitalRemittancesMailer < ApplicationMailer
 
     @entity = @capital_remittance.entity
     cc = @entity.entity_setting.cc
-    reply_to = @entity.entity_setting.reply_to
+
+    reply_to = [@entity.entity_setting.reply_to, "capital_commitment-#{@capital_remittance.capital_commitment_id}@#{ENV.fetch('DOMAIN', nil)}"].filter(&:present?).join(",")
 
     if investor_emails.present?
       mail(from: from_email(@capital_remittance.entity),

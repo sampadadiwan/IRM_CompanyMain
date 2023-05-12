@@ -13,8 +13,16 @@ class TasksMailbox < ApplicationMailbox
     end
   end
 
+  REGEXP = /(?<owner>[a-zA-Z_]*)-(?<owner_id>\d+)/
+
   def owner
-    res = mail.to[0].match(/(?<owner>[a-zA-Z_]*)-(?<owner_id>\d+)/)
+    if mail.to.is_a?(String)
+      res = mail.to.match(REGEXP)
+    elsif mail.to.is_a?(Array)
+      # Sometimes we get multiple emails in to, but only one of them will be in the format we need
+      res = mail.to.map { |email| email.match(REGEXP) }.find(&:present?)
+    end
+
     owner_id = res[:owner_id]
     owner_name = res[:owner].camelize
     @owner ||= owner_name.constantize.find(owner_id)

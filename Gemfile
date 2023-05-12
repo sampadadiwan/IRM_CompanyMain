@@ -51,6 +51,7 @@ gem 'sassc-rails'
 gem 'sidekiq', '~> 6.4'
 gem 'sidekiq-limit_fetch'
 
+gem 'action_mailbox_amazon_ingress', '~> 0.1.3'
 gem "aws-sdk-s3", require: false
 # Elastic search client
 gem 'chewy'
