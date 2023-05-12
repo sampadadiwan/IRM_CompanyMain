@@ -215,7 +215,7 @@ group :test do
   gem 'cucumber-rails', require: false
   gem 'database_cleaner-active_record'
   gem 'rspec-rails'
-  gem "selenium-webdriver"
+  gem "selenium-webdriver", "4.8.6"
   gem 'simplecov', require: false, group: :test
   gem "webdrivers"
 end

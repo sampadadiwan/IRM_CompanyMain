@@ -58,7 +58,7 @@ After do |scenario|
     timestamp = "#{Time.zone.now.strftime('%Y-%m-%d-%H:%M:%S')}"
     screenshot_name = "screenshot-#{scenario.name.gsub("/","-")}-#{scenario.location.to_s}.png"
     screenshot_path = "#{Rails.root.join("tmp/cucumber")}/#{screenshot_name}"
-    Capybara.page.save_screenshot(screenshot_path, full: true)
+    # Capybara.page.save_screenshot(screenshot_path, full: true)
   end
 end
 

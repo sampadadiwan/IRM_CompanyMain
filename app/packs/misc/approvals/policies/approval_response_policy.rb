@@ -1,11 +1,9 @@
 class ApprovalResponsePolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if %w[employee].index(user.curr_role)
-        scope.where(entity_id: user.entity_id)
-      else
+      scope.where(entity_id: user.entity_id).or(
         scope.where(response_entity_id: user.entity_id)
-      end
+      )
     end
   end
 
