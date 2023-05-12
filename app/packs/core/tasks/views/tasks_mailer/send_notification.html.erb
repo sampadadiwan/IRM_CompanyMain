@@ -1,0 +1,13 @@
+<h3>Dear <%= @task.assigned_to.email %></h3>
+
+<% if @task.response.blank? %>
+<p>
+    A new task has been assigned to you.
+</p>
+<% end %>
+
+<p>
+    <%= render "/tasks/show", task: @task, current_user: nil, params: {} %>
+</p>
+
+<p class="btn btn-outline-primary"><%= link_to 'View Task', task_url(@task, subdomain: @task.entity.sub_domain) %></p>

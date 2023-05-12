@@ -15,4 +15,9 @@ class Task < ApplicationRecord
   scope :incomplete, -> { where(completed: false) }
 
   counter_culture :entity, column_name: proc { |t| t.completed ? nil : 'tasks_count' }
+
+  after_commit :send_notification
+  def send_notification
+    TasksMailer.with(id:).send_notification.deliver_later
+  end
 end
