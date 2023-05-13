@@ -52,7 +52,10 @@ class Approval < ApplicationRecord
   after_commit :send_notification
   def send_notification
     generate_responses
-    ApprovalMailer.with(id:).notify_new_approval.deliver_later if saved_change_to_approved?
+    if saved_change_to_approved?
+      # Send notification to all investors once its approved
+      approval_responses.each(&:send_notification)
+    end
   end
 
   def access_rights_changed(access_right)

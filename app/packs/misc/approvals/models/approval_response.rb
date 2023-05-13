@@ -22,6 +22,7 @@ class ApprovalResponse < ApplicationRecord
 
   after_commit :send_notification
   def send_notification
-    ApprovalMailer.with(id:).notify_approval_response.deliver_later if status != "Pending"
+    ApprovalMailer.with(id:).notify_new_approval.deliver_later if status == "Pending" && !notification_sent && approval.approved
+    ApprovalMailer.with(id:).notify_approval_response.deliver_later if status != "Pending" && approval.approved
   end
 end

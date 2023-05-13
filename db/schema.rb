@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_05_11_202423) do
+ActiveRecord::Schema[7.0].define(version: 2023_05_13_072255) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -265,6 +265,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_11_202423) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "investor_id", null: false
+    t.boolean "notification_sent", default: false
     t.index ["approval_id"], name: "index_approval_responses_on_approval_id"
     t.index ["entity_id"], name: "index_approval_responses_on_entity_id"
     t.index ["investor_id"], name: "index_approval_responses_on_investor_id"

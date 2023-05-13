@@ -2,22 +2,17 @@ class ApprovalMailer < ApplicationMailer
   helper ApplicationHelper
 
   def notify_new_approval
-    @approval = Approval.find params[:id]
+    @approval_response = ApprovalResponse.find params[:id]
+    @approval = @approval_response.approval
 
-    if @approval.approved
-      if params[:access_right_id].present?
-        # Get all emails of investor
-        access_right = AccessRight.find(params[:access_right_id])
-        investor_emails = sandbox_email(@approval,
-                                        access_right.investor_emails.flatten.join(","))
-      else
-        # Get all emails of investors
-        investor_emails = sandbox_email(@approval,
-                                        @approval.pending_investors.collect(&:emails).flatten.join(","))
-      end
+    if @approval_response.status == "Pending"
+      # Get all emails of investors
+      investor_emails = sandbox_email(@approval_response,
+                                      @approval_response.investor.investor_accesses.collect(&:email).flatten.join(","))
 
       if investor_emails.present?
-
+        # Mark notification_sent as true
+        @approval_response.update_column(:notification_sent, true)
         mail(from: from_email(@approval.entity),
              to: investor_emails,
              subject: "Approval required by #{@approval.entity.name}: #{@approval.title}")
