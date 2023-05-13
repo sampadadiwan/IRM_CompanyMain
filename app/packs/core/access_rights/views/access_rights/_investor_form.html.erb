@@ -49,6 +49,12 @@
             <%= form.select :user_id, users.map{|u| [u.full_name, u.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", id: "employee_id"  %>
           </div>
         </div>
+
+        <div class="form-group">
+          <%= form.label :notify, "Send Notification" %>
+          <%= form.check_box :notify, class: "form-control form-checkbox"  %>
+        </div>
+
         
         <div class="form-group">
           <%= form.submit "Save", {class: "btn btn-outline-primary", data: {action: "click->access#checkRequiredFilled"}}%>

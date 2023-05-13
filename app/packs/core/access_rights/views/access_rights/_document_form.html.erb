@@ -84,6 +84,11 @@
       </div>
 
       <div class="form-group">
+          <%= form.label :notify, "Send Notification" %>
+          <%= form.check_box :notify, class: "form-control form-checkbox"  %>
+      </div>
+
+      <div class="form-group">
         <%= form.submit "Save", {class: "btn btn-outline-primary", data: {action: "click->access#checkRequiredFilled"}}%>
         <a class="btn btn-outline-danger", data-action="click->access#close">Close</a>
       </div>

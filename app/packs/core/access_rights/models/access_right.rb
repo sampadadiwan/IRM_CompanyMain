@@ -156,7 +156,7 @@ class AccessRight < ApplicationRecord
 
   after_create_commit :send_notification
   def send_notification
-    if notify && owner_type != "Approval" && (owner_type != "Document" || owner.send_email)
+    if notify && (owner_type != "Document" || owner.send_email)
       if Rails.env.test?
         AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later
       else

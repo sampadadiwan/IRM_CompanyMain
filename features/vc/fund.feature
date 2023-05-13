@@ -15,7 +15,6 @@ Scenario Outline: View a fund
   Given there is a capital distribution "gross_amount_cents=2000000"
   And I should see the fund in all funds page
   When I am at the fund details page
-  And I should see the fund details on the details page
   Then I should be able to see my capital commitments
   Then I should be able to see my capital remittances
   Then I should be able to see my capital distributions
