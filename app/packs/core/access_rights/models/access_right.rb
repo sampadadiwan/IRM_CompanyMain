@@ -156,13 +156,15 @@ class AccessRight < ApplicationRecord
 
   after_create_commit :send_notification
   def send_notification
-    if Rails.env.test?
-      AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later
-    elsif notify && (owner_type != "Document" || owner.send_email)
-      # Send notification for all but Documents should not get notification unless send_email flag is set
-      AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later(wait_until: rand(60).seconds.from_now)
+    if notify && owner_type != "Approval" && (owner_type != "Document" || owner.send_email)
+      if Rails.env.test?
+        AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later
+      else
+        # Send notification for all but Documents should not get notification unless send_email flag is set
+        # Add jitter to the emails, so we dont flood aws SES
+        AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later(wait_until: rand(60).seconds.from_now)
+      end
     end
-    # Add jitter to the emails, so we dont flood aws SES
   end
 
   after_create_commit :update_owner

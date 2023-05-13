@@ -119,8 +119,7 @@
         puts "current_email = #{current_email}"
         expect(current_email.subject).to eq "Approval required by #{@approval.entity.name}: #{@approval.title}"
     end
-  end
-  
+  end 
 
   Then('I should see my approval response') do
     @approval.approval_responses.each do |response|
