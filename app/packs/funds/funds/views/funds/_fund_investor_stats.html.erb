@@ -1,9 +1,18 @@
 <% 
     capital_commitments = fund.capital_commitments.joins(:investor).where("investors.investor_entity_id=?", current_user.entity_id).to_a 
+    
     committed_amount =  capital_commitments.inject(0){|sum, cc| sum + cc.committed_amount }
+    committed_amount = Money.new(committed_amount, fund.currency) if committed_amount == 0
+    
     call_amount =  capital_commitments.inject(0){|sum, cc| sum + cc.call_amount }
+    call_amount = Money.new(call_amount, fund.currency) if call_amount == 0
+    
     collected_amount =  capital_commitments.inject(0){|sum, cc| sum + cc.collected_amount }
+    collected_amount = Money.new(collected_amount, fund.currency) if collected_amount == 0
+    
     distribution_amount =  capital_commitments.inject(0){|sum, cc| sum + cc.distribution_amount }
+    distribution_amount = Money.new(distribution_amount, fund.currency) if distribution_amount == 0
+
 %>
 <div class="col-lg-12 mb-4 stats">
 
