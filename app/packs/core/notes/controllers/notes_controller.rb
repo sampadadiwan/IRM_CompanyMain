@@ -34,13 +34,13 @@ class NotesController < ApplicationController
     @note = Note.new(note_params)
     @note.entity_id = current_user.entity_id
     @note.on = Time.zone.today
-    @note.reminder = Reminder.new(entity_id: @note.entity_id, due_date: Time.zone.today + 1.week, email: current_user.email)
+    @note.reminder = Reminder.new(entity_id: @note.entity_id)
     authorize @note
   end
 
   # GET /notes/1/edit
   def edit
-    @note.build_reminder(entity_id: @note.entity_id, due_date: Time.zone.today + 1.week, email: current_user.email) unless @note.reminder
+    @note.build_reminder(entity_id: @note.entity_id) unless @note.reminder
   end
 
   # POST /notes or /notes.json
@@ -48,10 +48,13 @@ class NotesController < ApplicationController
     @note = Note.new(note_params)
     @note.user_id = current_user.id
     @note.entity_id = current_user.entity_id
-    if @note.reminder
+    if @note.reminder.email.present?
       @note.reminder.entity_id = @note.entity_id
       @note.reminder.note = "Reminder for #{@note}"
+    else
+      @note.reminder = nil
     end
+
     authorize @note
 
     respond_to do |format|
@@ -67,8 +70,16 @@ class NotesController < ApplicationController
 
   # PATCH/PUT /notes/1 or /notes/1.json
   def update
+    np = note_params
+    if params[:note] && params[:note][:reminder_attributes] && params[:note][:reminder_attributes][:email].present?
+      @note.build_reminder(entity_id: @note.entity_id, note: "Reminder for #{@note}") unless @note.reminder
+    else
+      @note.reminder = nil
+      np = np.except(:reminder_attributes)
+    end
+
     respond_to do |format|
-      if @note.update(note_params)
+      if @note.update(np)
         format.html { redirect_to note_url(@note), notice: "Note was successfully updated." }
         format.json { render :show, status: :ok, location: @note }
       else

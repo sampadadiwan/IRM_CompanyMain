@@ -12,7 +12,7 @@ class Note < ApplicationRecord
   delegate :investor_name, to: :investor
   delegate :full_name, to: :user, prefix: :user
 
-  has_one :reminder, as: :owner
+  has_one :reminder, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :reminder, allow_destroy: true, update_only: true
 
   def to_s

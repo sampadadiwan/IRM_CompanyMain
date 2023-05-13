@@ -3,7 +3,8 @@ class Reminder < ApplicationRecord
   belongs_to :owner, polymorphic: true
   NESTED_ATTRIBUTES = %i[id note due_date email _destroy].freeze
 
-  validates :note, :due_date, presence: true
+  validates :note,  presence: true
+  validates_presence_of :due_date, if: ->(o) { o.email.present? }
 
   scope :unsent, -> { where(sent: false) }
   scope :due_today, -> { where("due_date <= ?", Time.zone.today) }
