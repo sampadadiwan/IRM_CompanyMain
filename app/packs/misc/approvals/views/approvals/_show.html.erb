@@ -16,6 +16,8 @@
             <%= l approval.due_date %>
         </td>
     </tr>
+    
+    <% if current_user && policy(approval).update? %>
     <tr>
         <td>
             Approved
@@ -24,9 +26,11 @@
             <%= display_boolean approval.approved %>
         </td>
     </tr>
+    <% end %>
+
     <tr>
         <td>
-            Agreements Reference
+            Details
         </td>
         <td>
             <%= approval.agreements_reference %>
