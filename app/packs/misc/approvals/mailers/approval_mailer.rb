@@ -5,6 +5,7 @@ class ApprovalMailer < ApplicationMailer
     @approval_response = ApprovalResponse.find params[:id]
     @approval = @approval_response.approval
 
+
     if @approval_response.status == "Pending"
       # Get all emails of investors
       investor_emails = sandbox_email(@approval_response,
@@ -15,6 +16,7 @@ class ApprovalMailer < ApplicationMailer
         @approval_response.update_column(:notification_sent, true)
         mail(from: from_email(@approval.entity),
              to: investor_emails,
+             cc: @approval.entity.entity_setting.cc,
              subject: "Approval required by #{@approval.entity.name}: #{@approval.title}")
 
       end
@@ -29,8 +31,8 @@ class ApprovalMailer < ApplicationMailer
     investor_emails = sandbox_email(@approval_response,
                                     @approval_response.investor.emails)
 
-    employee_emails = sandbox_email(@approval_response,
-                                    @approval_response.entity.employees.collect(&:email))
+    cc_emails = @approval_response.entity.employees.collect(&:email) << @approval.entity.entity_setting.cc
+    employee_emails = sandbox_email(@approval_response, cc_emails.join(","))
 
     if investor_emails.present?
       mail(from: from_email(@approval_response.entity),
