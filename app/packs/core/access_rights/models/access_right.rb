@@ -18,6 +18,7 @@ class AccessRight < ApplicationRecord
   belongs_to :entity
   # If this is a user access
   belongs_to :user, optional: true
+  belongs_to :granted_by, class_name: "User", optional: true
   # If this is a specific investor access
   belongs_to :investor, foreign_key: :access_to_investor_id, optional: true # , strict_loading: true
 

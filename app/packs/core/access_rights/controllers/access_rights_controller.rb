@@ -77,6 +77,7 @@ class AccessRightsController < ApplicationController
   # POST /access_rights or /access_rights.json
   def create
     @access_rights = initialize_from_params(access_right_params)
+    @access_rights.each { |access_right| access_right.granted_by = current_user }
     @access_rights.each(&:save)
     @access_rights = AccessRight.includes(:investor, :owner).where(id: @access_rights.collect(&:id))
     respond_to do |format|

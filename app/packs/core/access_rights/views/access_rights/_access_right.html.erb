@@ -26,6 +26,10 @@
     
     <td>
         <%= link_to access_right.owner.name, access_right.owner if access_right.owner %>
+    </td> 
+
+    <td>
+        <%= access_right.granted_by&.full_name %>
     </td>  
     
     <td class="hideMobP">
