@@ -76,6 +76,31 @@
     </div>
 
   <% end %>
-  
+
+  <%= form.fields_for :entity_setting do |entity_setting_subform| %>
+    <%= entity_setting_subform.text_field :id, hidden: true %>
+    
+    <div class="form-group">
+      <%= entity_setting_subform.label :sandbox, "Send emails to Sandbox" %>
+      <%= entity_setting_subform.check_box :sandbox, class: "form-control form-checkbox"  %>
+    </div>
+
+    <div class="form-group">
+      <%= entity_setting_subform.label :sandbox_emails %>
+      <%= entity_setting_subform.text_field :sandbox_emails, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= entity_setting_subform.label :cc, "cc" %>
+      <%= entity_setting_subform.text_field :cc, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= entity_setting_subform.label :entity_bcc, "bcc" %>
+      <%= entity_setting_subform.text_field :entity_bcc, class: "form-control"  %>
+    </div>
+
+  <% end %>
+
   <%= form.text_field :id, class: "form-control", hidden: true   %>
   <div data-controller="entityform"></div>

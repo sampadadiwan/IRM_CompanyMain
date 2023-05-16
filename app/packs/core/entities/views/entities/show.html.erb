@@ -52,6 +52,7 @@
             </td>
          </tr>
          
+         <% if current_user && current_user.entity_id == @entity.id %>
          <tr>
             <td>
                Currency
@@ -88,6 +89,41 @@
             </td>
          </tr>
 
+         <tr>
+            <td>
+               Sandbox
+            </td>
+            <td>
+               <%= display_boolean @entity.entity_setting.sandbox %>
+            </td>
+         </tr>
+
+         <tr>
+            <td>
+               Sandbox Emails
+            </td>
+            <td>
+               <%= @entity.entity_setting.sandbox_emails %>
+            </td>
+         </tr>
+
+         <tr>
+            <td>
+               cc Emails
+            </td>
+            <td>
+               <%= @entity.entity_setting.cc %>
+            </td>
+         </tr>
+
+         <tr>
+            <td>
+               bcc Emails
+            </td>
+            <td>
+               <%= @entity.entity_setting.entity_bcc %>
+            </td>
+         </tr>
 
          <tr>
             <td>
@@ -101,6 +137,8 @@
                <%= "Secondary Sale," if @entity.enable_secondary_sale %>
             </td>
          </tr>
+
+         <% end %>
 
       </table>
       <div>
