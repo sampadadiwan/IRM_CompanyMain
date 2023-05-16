@@ -15,7 +15,7 @@ class ApprovalMailer < ApplicationMailer
         @approval_response.update_column(:notification_sent, true)
         mail(from: from_email(@approval.entity),
              to: investor_emails,
-             cc: @approval.entity.entity_setting.cc,
+             cc: @approval_response.entity.entity_setting.cc,
              subject: "Approval required by #{@approval.entity.name}: #{@approval.title}")
 
       end
@@ -30,14 +30,14 @@ class ApprovalMailer < ApplicationMailer
     investor_emails = sandbox_email(@approval_response,
                                     @approval_response.investor.emails)
 
-    cc_emails = @approval_response.entity.employees.collect(&:email) << @approval.entity.entity_setting.cc
+    cc_emails = @approval_response.entity.employees.collect(&:email) << @approval_response.entity.entity_setting.cc
     employee_emails = sandbox_email(@approval_response, cc_emails.join(","))
 
     if investor_emails.present?
       mail(from: from_email(@approval_response.entity),
            to: investor_emails,
            cc: employee_emails,
-           subject: "Approval response from #{@approval_response.investor.investor_name}: #{@approval_response.status} ")
+           subject: "Approval response from #{@approval_response.investor.investor_name}: #{@approval_response.status}")
     end
   end
 end

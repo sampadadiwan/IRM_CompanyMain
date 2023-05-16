@@ -61,6 +61,10 @@ Scenario Outline: Grant Access Rights to approval after approved
   When I visit the approval details page
   Then the approval responses are generated with status "Pending"  
   Then the investor gets the approval notification
+  When the Send Reminder button on approval is clicked
+  Then the investor gets the approval notification
+  And when the approval response is accepted
+  Then the investor gets the accepted notification
 
   Examples:
   	|user	    |entity               |approval                                 |msg	|

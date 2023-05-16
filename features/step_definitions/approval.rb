@@ -116,13 +116,14 @@
     
     @approval.pending_investors.collect(&:emails).flatten.each do |email|
         open_email(email)
-        puts "current_email = #{current_email}"
+        puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}"
         expect(current_email.subject).to eq "Approval required by #{@approval.entity.name}: #{@approval.title}"
     end
   end 
+  
 
   Then('I should see my approval response') do
-    @approval.approval_responses.each do |response|
+    @approval.approval_responses.pending.each do |response|
       within("#approval_response_#{response.id}") do
         expect(page).to have_content(response.investor.investor_name)
         expect(page).to have_content(response.status)
@@ -131,7 +132,28 @@
 
   end
 
+  Then('when the approval response is accepted') do
+    @approval.approval_responses.update(status: "Accepted")
+  end
+  
+  Then('the investor gets the accepted notification') do
+    puts "\n#### Emails ###\n"
+    
+    @approval.approval_responses.each do |approval_response|
+        investor = approval_response.investor
+        investor.emails.each do |email|
+          open_email(email)
+          puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}"
+          expect(current_email.subject).to eq "Approval response from #{approval_response.investor.investor_name}: #{approval_response.status}"
+        end
+    end
+  end
 
+  When('the Send Reminder button on approval is clicked') do
+    visit(approval_url(@approval))
+    click_on("Send Reminder")
+  end
+ 
   Then('the approval response is {string}') do |arg|
     sleep(1)
     @approval.reload
