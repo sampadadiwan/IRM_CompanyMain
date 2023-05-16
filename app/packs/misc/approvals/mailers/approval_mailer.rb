@@ -5,7 +5,6 @@ class ApprovalMailer < ApplicationMailer
     @approval_response = ApprovalResponse.find params[:id]
     @approval = @approval_response.approval
 
-
     if @approval_response.status == "Pending"
       # Get all emails of investors
       investor_emails = sandbox_email(@approval_response,

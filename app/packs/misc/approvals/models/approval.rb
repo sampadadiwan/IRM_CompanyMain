@@ -49,14 +49,13 @@ class Approval < ApplicationRecord
     nil
   end
 
-  after_commit :send_notification
+  after_commit :send_notification, if: :saved_change_to_approved?
   def send_notification
-    generate_responses
-    if saved_change_to_approved?
-      # Send notification to all investors once its approved
-      approval_responses.each(&:send_notification)
-    end
+    # Send notification to all investors once its approved
+    approval_responses.each(&:send_notification)
   end
+
+  after_create :generate_responses
 
   def access_rights_changed(access_right)
     access_right = AccessRight.where(id: access_right.id).first
