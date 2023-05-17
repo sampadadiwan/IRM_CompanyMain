@@ -119,6 +119,8 @@
         puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}"
         expect(current_email.subject).to eq "Approval required by #{@approval.entity.name}: #{@approval.title}"
     end
+
+    clear_emails
   end 
   
 
@@ -147,11 +149,17 @@
           expect(current_email.subject).to eq "Approval response from #{approval_response.investor.investor_name}: #{approval_response.status}"
         end
     end
+
+    clear_emails
   end
 
   When('the Send Reminder button on approval is clicked') do
     visit(approval_url(@approval))
     click_on("Send Reminder")
+    sleep(1)
+    click_on("Proceed")
+    sleep(1)
+    expect(page).to have_content("Successfully sent reminder")
   end
  
   Then('the approval response is {string}') do |arg|

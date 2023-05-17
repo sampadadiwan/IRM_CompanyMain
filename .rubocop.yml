@@ -53,6 +53,7 @@ Lint/UselessAssignment:
 Rails/SkipsModelValidations:
   Exclude:
     - 'app/packs/misc/approvals/mailers/approval_mailer.rb'
+    - 'app/packs/misc/approvals/controllers/approvals_controller.rb'
     - 'app/packs/funds/funds/models/fund.rb'
     - 'app/packs/core/investors/models/investor.rb'
     - 'app/packs/funds/capital_calls/jobs/capital_call_job.rb'
