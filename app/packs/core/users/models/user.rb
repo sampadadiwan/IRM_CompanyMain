@@ -37,6 +37,14 @@ class User < ApplicationRecord
 
   before_create :setup_defaults
   after_create :update_investor_access
+  before_save :confirm_user, if: :password_changed?
+  def confirm_user
+    confirm unless confirmed?
+  end
+
+  def password_changed?
+    encrypted_password_changed? && persisted?
+  end
 
   delegate :name, to: :entity, prefix: :entity
 
