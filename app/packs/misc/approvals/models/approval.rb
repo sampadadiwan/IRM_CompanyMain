@@ -62,7 +62,6 @@ class Approval < ApplicationRecord
     if access_right
       logger.debug "Added new Access Rights for Approval #{id}"
       generate_responses
-      ApprovalMailer.with(id:, access_right_id: access_right.id).notify_new_approval.deliver_later
     end
   end
 end

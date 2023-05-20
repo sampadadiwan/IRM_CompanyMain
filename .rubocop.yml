@@ -153,6 +153,10 @@ Metrics/MethodLength:
   Exclude:
     - 'app/packs/core/users/models/user.rb'
   
+Metrics/BlockNesting:
+  Exclude:
+    - 'app/packs/misc/approvals/models/approval_response.rb'
+
 Metrics/BlockLength:
   CountComments: false
   Max: 25
