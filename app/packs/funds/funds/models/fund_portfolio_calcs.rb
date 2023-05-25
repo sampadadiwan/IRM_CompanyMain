@@ -159,7 +159,7 @@ class FundPortfolioCalcs
     total_fmv_on_end_date_cents = 0
     portfolio_investments = @fund.portfolio_investments.pool.where(investment_date: ..@end_date)
     portfolio_investments = portfolio_investments.where(portfolio_company_id:) if portfolio_company_id
-    portfolio_investments.group(:portfolio_company_id, :investment_type).sum(:quantity).each do |k, quantity|
+    portfolio_investments.group(:portfolio_company_id, :category, :sub_category).sum(:quantity).each do |k, quantity|
       # Get the valuation as of the end date
       portfolio_company_id = k[0]
       instrument_type = k[1]
