@@ -67,6 +67,10 @@ class Fund < ApplicationRecord
     name
   end
 
+  def get_lps_emails
+    investors.joins(:investor_accesses).where('investor_accesses.approved = true').pluck('investor_accesses.email')
+  end
+
   def mkdirs
     # dirs = ["funds", "capital_calls", "capital_commitments", "capital_distributions", "capital_distribution_payments", "capital_remittances"]
 

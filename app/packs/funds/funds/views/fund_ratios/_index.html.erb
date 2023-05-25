@@ -1,23 +1,31 @@
 <% fund ||= nil %>
 <% valuation ||= nil %>
+<% data_source ||= fund_ratios_path(fund_id: fund&.id, format: :json, all: true) %>
+<% lazy_load_data ||= false %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Fund Ratios <%= link_to l(valuation.valuation_date), valuation if valuation %> </h1>
-
   <span>
-    <%= button_to "Compute Ratios" , generate_fund_ratios_fund_path(fund), method: :get, 
-        class: "btn btn-outline-success" , form_class: "deleteButton" , 
-        data: {action: "click->confirm#popup" , turbo: false, 
-        msg: "Computation will take a few mins, please be patient. Proceed?", method: :get} if fund && policy(fund).generate_fund_ratios? %>
+  <%= link_to "Compute Ratios" , generate_fund_ratios_fund_path(fund), method: :get,
+      class: "btn btn-outline-success" ,
+      data: {action: "click->confirm#popup" , turbo: false,
+      msg: "Computation will take a few mins, please be patient. Proceed?"} if fund && policy(fund).generate_fund_ratios? %>
 
-    <%#= render "/fund_ratios/filter", fund: fund if fund %>
-
-    <%= link_to "Download", fund_ratios_path(fund_id: params[:fund_id], capital_commitment_id: params[:capital_commitment_id], format: :xlsx), class: "btn btn-outline-success" %>
+  <%= link_to "Download", fund_ratios_path(fund_id: params[:fund_id], capital_commitment_id: params[:capital_commitment_id], format: :xlsx), class: "btn btn-outline-success" %>
   </span>
 </div>
 
-<div class="table-responsive" data-controller="datatable">
-  <table id="fund_ratios" class="table table-bordered dataTable jqDataTable">
+<div class="table-responsive" data-controller="fund-ratios"
+      data-fund-ratios-lazy-load-data-value=<%= lazy_load_data %>
+      data-fund-ratios-table-name-value="#fund_ratios">
+
+  <% if lazy_load_data %>
+      <a class="load_data_link" data-action="click->fund-ratios#loadData"><span>Load Data</span></a>
+  <% end %>
+
+  <table id="fund_ratios" class="table table-bordered dataTable"
+          data-source="<%= data_source %>" style="width:100%" >
+
     <thead>
       <tr>
         <th>
@@ -28,17 +36,18 @@
         </th>
         <th>
           Display Value
-        </th> 
+        </th>
         <th>
           On
-        </th>                
+        </th>
+        <th>
+        </th>
       </tr>
     </thead>
 
     <tbody>
-      <% fund_ratios.each do |fund_ratio| %>
-        <%= render fund_ratio %>
-      <% end %>
+
     </tbody>
   </table>
+
 </div>

@@ -4,7 +4,7 @@
   Given('I am at the funds page') do
     visit(funds_url)
   end
-  
+
   When('I create a new fund {string}') do |arg1|
     @fund = FactoryBot.build(:fund)
     key_values(@fund, arg1)
@@ -19,7 +19,7 @@
     click_on("Next")
     click_on("Save")
   end
-  
+
   Then('an fund should be created') do
     db_fund = Fund.last
     db_fund.name.should == @fund.name
@@ -38,9 +38,9 @@
     # Hack to make the tests work without rewriting many steps for another user
     @user = @employee_investor
     if given == "given" || given == "yes"
-      @access_right = AccessRight.create!(entity_id: @fund.entity_id, owner: @fund, access_to_investor_id: @investor.id, 
+      @access_right = AccessRight.create!(entity_id: @fund.entity_id, owner: @fund, access_to_investor_id: @investor.id,
                                           metadata: "Investor")
-      ia = InvestorAccess.create!(entity: @investor.entity, investor: @investor, 
+      ia = InvestorAccess.create!(entity: @investor.entity, investor: @investor,
         first_name: @user.first_name, last_name: @user.last_name,
         email: @user.email, granter: @user, approved: true )
 
@@ -65,19 +65,19 @@
           # Switch the IA to the entity
           investor_advisor.switch(@user)
 
-          # Create the Access Right 
+          # Create the Access Right
           @access_right = AccessRight.create!(entity_id: inv.investor_entity_id, owner: @fund, user_id: @user.id, metadata: "Investor Advisor")
 
           puts "\n####Access Right####\n"
           puts @access_right.to_json
 
-          ia = InvestorAccess.create(entity: inv.entity, investor: inv, 
+          ia = InvestorAccess.create(entity: inv.entity, investor: inv,
           first_name: @user.first_name, last_name: @user.last_name,
           email: @user.email, granter: nil, approved: true )
-  
+
           puts "\n####Investor Access####\n"
           puts ia.to_json
-  
+
         end
       end
 
@@ -94,7 +94,7 @@
       @user.save!
       @user.add_role :advisor
 
-      ia = InvestorAccess.create(entity: @investor.entity, investor: @investor, 
+      ia = InvestorAccess.create(entity: @investor.entity, investor: @investor,
         first_name: @user.first_name, last_name: @user.last_name,
         email: @user.email, granter: @user, approved: true )
 
@@ -114,27 +114,27 @@
       puts @access_right.to_json
     end
   end
-  
-  
-  
+
+
+
   When('I am at the fund details page') do
     visit(fund_url(@fund))
   end
-  
-  
+
+
   Then('I should see the fund details on the details page') do
     click_on "Details"
     expect(page).to have_content(@fund.name)
     expect(page).to have_content(@fund.unit_types) if @fund.unit_types.present?
     expect(page).to have_content(strip_tags(@fund.details))
   end
-  
+
   Then('I should see the fund in all funds page') do
     visit(funds_path)
     expect(page).to have_content(@fund.name)
     # expect(page).to have_content(money_to_currency @fund.collected_amount)
   end
-  
+
 
   Given('there is a fund {string} for the entity') do |arg|
     @fund = FactoryBot.build(:fund, entity_id: @user.entity_id)
@@ -143,17 +143,17 @@
     puts "\n####Fund####\n"
     puts @fund.to_json
   end
-  
+
   Given('the investors are added to the fund') do
     @user.entity.investors.not_holding.not_trust.each do |inv|
-        ar = AccessRight.create( owner: @fund, access_type: "Fund", metadata: "Investor", 
+        ar = AccessRight.create( owner: @fund, access_type: "Fund", metadata: "Investor",
                                  access_to_investor_id: inv.id, entity: @user.entity)
 
 
         puts "\n####Granted Access####\n"
-        puts ar.to_json                            
-    end 
-    
+        puts ar.to_json
+    end
+
   end
 
   When('I add a capital commitment {string} for investor {string}') do |amount, investor_name|
@@ -198,14 +198,14 @@
     expect(page).to have_content(money_to_currency @capital_commitment.folio_committed_amount, {})
     expect(page).to have_content(money_to_currency @capital_commitment.committed_amount, {})
     expect(page).to have_content(@capital_commitment.fund.name)
-    expect(page).to have_content(@capital_commitment.unit_type) if @fund.entity.enable_units  
+    expect(page).to have_content(@capital_commitment.unit_type) if @fund.entity.enable_units
   end
-  
+
   Then('the fund total committed amount must be {string}') do |amount|
     @fund.reload
     (@fund.committed_amount_cents / 100).should == amount.to_i
   end
-  
+
   Given('there are capital commitments of {string} from each investor') do |args|
     @fund.investors.each do |inv|
         commitment = FactoryBot.build(:capital_commitment, fund: @fund, investor: inv)
@@ -233,14 +233,14 @@
     puts "\n####CapitalCall####\n"
     puts @capital_call.to_json
   end
-  
-  
+
+
   When('I create a new capital call {string}') do |args|
     @capital_call = FactoryBot.build(:capital_call, fund: @fund)
     key_values(@capital_call, args)
 
     puts @capital_call.to_json
-    
+
     visit(fund_url(@fund))
 
     click_on "Calls"
@@ -250,7 +250,7 @@
     fill_in('capital_call_percentage_called', with: @capital_call.percentage_called)
     fill_in('capital_call_due_date', with: @capital_call.due_date)
     select(@capital_call.fund_closes[0], from: 'capital_call_fund_closes')
-    
+
     if @fund.entity.enable_units
       @fund.unit_types.split(",").each do |unit_type|
         unit_type = unit_type.strip
@@ -265,16 +265,16 @@
   end
 
   Then('the corresponding remittances should be created') do
-    
+
     @capital_call = CapitalCall.last
-    
+
     @capital_call.capital_remittances.count.should == @fund.investors.count
     @capital_call.capital_remittances.each do |remittance|
         cc = @fund.capital_commitments.where(investor_id: remittance.investor_id).first
         ((cc.committed_amount * @capital_call.percentage_called / 100.0) - remittance.collected_amount).should == remittance.due_amount
     end
   end
-  
+
   Then('I should see the remittances') do
     @capital_call.reload
     @fund.capital_commitments.count.should == @fund.investors.count
@@ -292,11 +292,11 @@
             end
             expect(page).to have_content(remittance.status)
             expect(page).to have_content(money_to_currency remittance.due_amount)
-            expect(page).to have_content(money_to_currency remittance.collected_amount)            
+            expect(page).to have_content(money_to_currency remittance.collected_amount)
         end
     end
   end
-  
+
 
    Then('I should see the capital call details') do
     click_on "Details"
@@ -311,19 +311,19 @@
 
     @capital_call.capital_remittances.each do |remittance|
       visit(capital_remittance_url(remittance))
-      click_on "New Payment"      
+      click_on "New Payment"
       fill_in('capital_remittance_payment_folio_amount', with: remittance.due_amount)
       click_on "Save"
       sleep(2)
     end
   end
-  
+
   When('I mark the remittances as verified') do
 
     @capital_call.capital_remittances.each do |remittance|
       visit(capital_call_url(@capital_call))
       sleep(1)
-      click_on "Remittances"      
+      click_on "Remittances"
       sleep(1)
       within("#capital_remittance_#{remittance.id}") do
         click_on "Verify"
@@ -336,14 +336,14 @@
 
 
 Then('the capital call collected amount should be {string}') do |arg|
-  
+
   @capital_call.reload
   @capital_call.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.fund.currency)
   @capital_call.fund.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.fund.currency)
 end
 
-  
-  
+
+
 Then('user {string} have {string} access to the fund') do |truefalse, accesses|
   accesses.split(",").each do |access|
     puts "##Checking access #{access} on fund #{@fund.name} for #{@user.email} as #{truefalse}"
@@ -378,15 +378,15 @@ Then('user {string} have {string} access to his own capital commitment') do |tru
   accesses.split(",").each do |access|
     @fund.capital_commitments.includes(:investor).each do |cc|
       puts "##Checking access #{access} on capital_commitment from #{cc.investor.investor_name} for #{@user.email} is #{Pundit.policy(@user, cc).send("#{access}?")}"
-      
+
       if(cc.investor.investor_entity_id == @user.entity_id)
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
       elsif(@user.curr_role == "advisor")
-        Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse      
+        Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
       else
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == "false"
       end
-      
+
     end
   end
 end
@@ -469,7 +469,7 @@ Then('user {string} have {string} access to the capital distributions') do |true
 end
 
 Then('user {string} have {string} access to his own fund') do |truefalse, accesses|
-  
+
   truefalse = "true" if truefalse == "yes"
   truefalse = "false" if truefalse == "no"
 
@@ -520,7 +520,7 @@ end
 When('I create a new capital distribution {string}') do |args|
   @capital_distribution = FactoryBot.build(:capital_distribution, fund: @fund)
   key_values(@capital_distribution, args)
-  
+
   visit(fund_url(@fund))
 
   click_on "Distributions"
@@ -531,7 +531,7 @@ When('I create a new capital distribution {string}') do |args|
   fill_in('capital_distribution_cost_of_investment', with: @capital_distribution.cost_of_investment)
   fill_in('capital_distribution_reinvestment', with: @capital_distribution.reinvestment)
   fill_in('capital_distribution_distribution_date', with: @capital_distribution.distribution_date)
-  
+
   click_on "Save"
   sleep(2)
 
@@ -627,7 +627,7 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(4)
-  
+
 end
 
 Then('There should be {string} capital commitments created') do |count|
@@ -660,7 +660,7 @@ Then('the capital commitments must have the data in the sheet') do
     committed = cc.foreign_currency? ? (cc.folio_committed_amount_cents * exchange_rate.rate) : cc.folio_committed_amount_cents
     cc.committed_amount_cents.should == committed
   end
-end  
+end
 
 
 Then('There should be {string} capital calls created') do |count|
@@ -732,7 +732,7 @@ Then('the remittances are generated for the capital calls') do
     fund.capital_calls.each do |cc|
       # puts cc.capital_remittances.to_json
       # binding.pry
-      commitments = cc.Pool? ? fund.capital_commitments.pool : fund.capital_commitments.co_invest 
+      commitments = cc.Pool? ? fund.capital_commitments.pool : fund.capital_commitments.co_invest
       cc.capital_remittances.count.should == commitments.count
       cc.capital_remittances.sum(:call_amount_cents).should == cc.call_amount_cents
       cc.capital_remittances.verified.sum(:collected_amount_cents).should == cc.collected_amount_cents
@@ -776,19 +776,19 @@ end
 Given('my firm is an investor in the fund') do
   @investor = FactoryBot.create(:investor, entity: @fund.entity, investor_entity: @user.entity)
   puts "\n####Fund Investor####\n"
-  puts @investor.to_json  
+  puts @investor.to_json
 
-  ar = AccessRight.create!( owner: @fund, access_type: "Fund", 
+  ar = AccessRight.create!( owner: @fund, access_type: "Fund",
       access_to_investor_id: @investor.id, entity: @fund.entity)
 
 
-  ia = InvestorAccess.create!(entity: @investor.entity, investor: @investor, 
+  ia = InvestorAccess.create!(entity: @investor.entity, investor: @investor,
         first_name: @user.first_name, last_name: @user.last_name,
         email: @user.email, granter: @user, approved: true )
 
   puts "\n####Granted Access####\n"
-  puts ar.to_json  
-  
+  puts ar.to_json
+
   @fund.reload
 end
 
@@ -800,12 +800,12 @@ Then('I should be able to see my capital commitments') do
 
       puts "checking capital commitment for #{cc.investor.investor_name} against #{@investor.investor_name}"
 
-      if cc.investor_id == @investor.id 
+      if cc.investor_id == @investor.id
         expect(page).to have_content(@investor.investor_name)
         expect(page).to have_content(cc.fund.name)
         expect(page).to have_content( money_to_currency(cc.committed_amount) )
       else
-        expect(page).not_to have_content(cc.investor.investor_name)      
+        expect(page).not_to have_content(cc.investor.investor_name)
       end
     end
   end
@@ -815,12 +815,12 @@ Then('I should be able to see my capital remittances') do
   click_on("Calls")
   CapitalRemittance.all.each do |cc|
     puts "checking capital remittance for #{cc.investor.investor_name} against #{@investor.investor_name} "
-    if cc.investor_id == @investor.id 
+    if cc.investor_id == @investor.id
       expect(page).to have_content(@investor.investor_name)
       expect(page).to have_content( money_to_currency(cc.due_amount) )
       expect(page).to have_content( money_to_currency(cc.collected_amount) )
     else
-      expect(page).not_to have_content(cc.investor.investor_name)      
+      expect(page).not_to have_content(cc.investor.investor_name)
     end
   end
 end
@@ -832,20 +832,20 @@ Given('there is a capital distribution {string}') do |args|
   @capital_distribution.save!
 
   puts "\n####CapitalDistribution####\n"
-  puts @capital_distribution.to_json  
-  
+  puts @capital_distribution.to_json
+
 end
 
 Then('I should be able to see my capital distributions') do
   click_on("Distributions")
   CapitalDistributionPayment.all.each do |cc|
     puts "checking capital distrbution payment for #{cc.investor.investor_name} against #{@investor.investor_name} "
-    if cc.investor_id == @investor.id 
+    if cc.investor_id == @investor.id
       expect(page).to have_content(@investor.investor_name)
       expect(page).to have_content( money_to_currency(cc.amount) )
       expect(page).to have_content( cc.payment_date.strftime("%d/%m/%Y") )
     else
-      expect(page).not_to have_content(cc.investor.investor_name)      
+      expect(page).not_to have_content(cc.investor.investor_name)
     end
   end
 end
@@ -853,13 +853,13 @@ end
 
 
 Given('the fund has capital call template') do
-  @call_template = Document.create!(name: "Call Doc", owner_tag: "Call Template", 
+  @call_template = Document.create!(name: "Call Doc", owner_tag: "Call Template",
     owner: @fund, entity_id: @fund.entity_id, user: @user,
     file: File.new("public/sample_uploads/Drawdown notice format.docx", "r"))
 end
 
 Given('the fund has capital commitment template') do
-  @commitment_template = Document.create!(name: "Fund Agreement", owner_tag: "Commitment Template", 
+  @commitment_template = Document.create!(name: "Fund Agreement", owner_tag: "Commitment Template",
     owner: @fund, entity_id: @fund.entity_id, user: @user,
     file: File.new("public/sample_uploads/FundDocVariables.docx", "r"))
 end
@@ -929,7 +929,7 @@ end
 When('the fund document details must be setup right') do
   @fund.data_room_folder.name.should == "Data Room"
   @fund.data_room_folder.owner.should == @fund
-  
+
   @document.owner.should == @fund
   @document.folder.name.should == "Data Room"
   @document.folder.full_path.should == "/Funds/#{@fund.name}/Data Room"
@@ -952,17 +952,17 @@ end
 Given('the units are generated') do
   CapitalCall.all.each do |cc|
     FundUnitsJob.perform_now(cc.id, "CapitalCall", "Allocation for collected call amount", User.first.id)
-  end 
+  end
   CapitalDistribution.all.each do |cc|
     FundUnitsJob.perform_now(cc.id, "CapitalDistribution", "Redemption for distribution", User.first.id)
-  end 
-  
+  end
+
 end
 
 Then('there should be correct units for the calls payment for each investor') do
   FundUnit.count.should == CapitalCommitment.count * CapitalCall.count
   CapitalCommitment.all.each do |cc|
-    puts "Checking units for #{cc}" 
+    puts "Checking units for #{cc}"
     cc.fund_units.length.should
     cc.fund_units.each do |fu|
       ap fu
@@ -993,19 +993,19 @@ Then('I should see the distribution payments') do
       expect(page).to have_content(cdp.investor_name)
       expect(page).to have_content(cdp.folio_id)
       expect(page).to have_content(money_to_currency(cdp.amount))
-      expect(page).to have_content(cdp.completed ? "Yes" : "No")      
+      expect(page).to have_content(cdp.completed ? "Yes" : "No")
     end
   end
 end
 
 Given('the distribution payments are completed') do
-  puts CapitalDistributionPayment.all.to_json 
+  puts CapitalDistributionPayment.all.to_json
   CapitalDistributionPayment.update(completed: true)
 end
 
 Then('there should be correct units for the distribution payments for each investor') do
   CapitalCommitment.all.each do |cc|
-    puts "Checking units for #{cc}" 
+    puts "Checking units for #{cc}"
     cc.fund_units.length.should > 0
     cc.fund_units.each do |fu|
       ap fu
@@ -1041,11 +1041,11 @@ Then('the account_entries must have the data in the sheet') do
     file = File.open("./public/sample_uploads/#{@import_file}", "r")
     data = Roo::Spreadsheet.open(file.path) # open spreadsheet
     headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
-  
+
     account_entries = @fund.account_entries.order(id: :asc).to_a
     data.each_with_index do |row, idx|
       next if idx.zero? # skip header row
-  
+
       # create hash from headers and cells
       user_data = [headers, row].transpose.to_h
       cc = account_entries[idx-1]
@@ -1057,9 +1057,9 @@ Then('the account_entries must have the data in the sheet') do
       cc.amount_cents.should == user_data["Amount"].to_i * 100
       cc.entry_type.should == user_data["Entry Type"]
       cc.reporting_date.should == user_data["Reporting Date"]
-      cc.notes.should == user_data["Notes"]      
+      cc.notes.should == user_data["Notes"]
     end
-  
+
 end
 
 
@@ -1076,7 +1076,7 @@ Then('the account_entries must visible for each commitment') do
 end
 
 
-Then('Given I upload {string} file for the remittances of the capital call') do |file|  
+Then('Given I upload {string} file for the remittances of the capital call') do |file|
   @import_file = file
   visit(capital_call_path(@fund.capital_calls.first))
   click_on("Remittances")
@@ -1099,14 +1099,14 @@ Then('the capital remittance payments must have the data in the sheet') do
     file = File.open("./public/sample_uploads/#{@import_file}", "r")
     data = Roo::Spreadsheet.open(file.path) # open spreadsheet
     headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
-  
+
     capital_remittance_payments = @fund.capital_remittance_payments.order(id: :asc).to_a
     data.each_with_index do |row, idx|
       next if idx.zero? # skip header row
-  
+
       # create hash from headers and cells
       user_data = [headers, row].transpose.to_h
-      
+
       cc = capital_remittance_payments[idx-1]
       cc.fund.name.should == user_data["Fund"]
       cc.capital_remittance.investor.investor_name.should == user_data["Investor"]
@@ -1132,7 +1132,7 @@ Then('when the exchange rate changes') do
     # Change the exchange rate for the foreign_currencies randomly
     exchange_rate = ExchangeRate.where(from: fc, to: @fund.currency, latest: true).last.dup
     exchange_rate.rate += (rand(10) - rand(10) + 0.1)
-    exchange_rate.save 
+    exchange_rate.save
   end
 end
 
@@ -1140,5 +1140,27 @@ Then('the commitment amounts change correctly') do
   @fund.reload
   @fund.capital_commitments.each do |cc|
     cc.committed_amount_cents.should == cc.orig_committed_amount_cents + cc.adjustment_amount_cents
+  end
+end
+
+Given('the fund has fund ratios') do
+    FundRatiosJob.perform_now(@fund.id, nil, Time.zone.now + 2.days, @user.id, true)
+end
+
+Then('{string} has {string} "{string}" access to the fund_ratios') do |arg1,truefalse, accesses|
+  args_temp = arg1.split(";").to_h { |kv| kv.split("=") }
+  @user = if User.exists?(args_temp)
+    User.find_by(args_temp)
+  else
+    FactoryBot.build(:user)
+  end
+  key_values(@user, arg1)
+  @user.save!
+  puts "##### Checking access to fund_ratios for funds with rights #{@fund.access_rights.to_json}"
+  accesses.split(",").each do |access|
+    @fund.fund_ratios.each do |fr|
+      puts "##Checking access #{access} on fund_ratios from #{@fund.name} for #{@user.email} as #{truefalse}"
+      Pundit.policy(@user, fr).send("#{access}?").to_s.should == truefalse
+    end
   end
 end

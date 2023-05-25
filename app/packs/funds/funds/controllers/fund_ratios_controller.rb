@@ -3,11 +3,20 @@ class FundRatiosController < ApplicationController
 
   # GET /fund_ratios or /fund_ratios.json
   def index
-    @fund_ratios = policy_scope(FundRatio).includes(:fund, :capital_commitment)
-    @fund_ratios = @fund_ratios.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    @fund_ratios = policy_scope(FundRatio).includes(:fund, :capital_commitment, :owner)
+    if params[:fund_id].present?
+      @fund_ratios = @fund_ratios.where(fund_id: params[:fund_id])
+      @fund = @fund_ratios.last&.fund
+      @fund ||= Fund.find(params[:fund_id])
+    end
     @fund_ratios = @fund_ratios.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
     @fund_ratios = @fund_ratios.where(capital_commitment_id: nil) if params[:fund_ratios_only].present?
     @fund_ratios = @fund_ratios.where(valuation_id: params[:valuation_id]) if params[:valuation_id].present?
+    respond_to do |format|
+      format.html
+      format.turbo_stream
+      format.json { render json: FundRatioDatatable.new(params, fund_ratios: @fund_ratios) }
+    end
   end
 
   # GET /fund_ratios/1 or /fund_ratios/1.json
