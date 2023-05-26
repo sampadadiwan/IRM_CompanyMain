@@ -3,7 +3,12 @@ class ApprovalResponsesController < ApplicationController
 
   # GET /approval_responses or /approval_responses.json
   def index
-    @approval_responses = policy_scope(ApprovalResponse)
+    @approval_responses = policy_scope(ApprovalResponse).includes(:approval, :entity, :response_user)
+    @approval = nil
+    if params[:approval_id].present?
+      @approval = Approval.find(params[:approval_id])
+      @approval_responses = @approval_responses.where(approval_id: params[:approval_id])
+    end
   end
 
   # GET /approval_responses/1 or /approval_responses/1.json
@@ -81,6 +86,6 @@ class ApprovalResponsesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def approval_response_params
-    params.require(:approval_response).permit(:entity_id, :approval_id, :status, :details)
+    params.require(:approval_response).permit(:entity_id, :approval_id, :status, :details, :investor_id)
   end
 end
