@@ -3,10 +3,13 @@ class DocumentMailer < ApplicationMailer
 
   def notify_new_document_to_investors
     @document = Document.find params[:id]
-    @document.owner.access_rights
 
-    investors = @document.investors_granted_access
-    investors += @document.owner.investors_granted_access
+    if @document.owner.respond_to?(:access_rights)
+      investors = @document.investors_granted_access
+      investors += @document.owner.investors_granted_access
+    else
+      investors = @document.access_rights.map(&:investor)
+    end
 
     investors.uniq.each do |investor|
       DocumentMailer.with(id: params[:id], investor_id: investor.id).notify_new_document.deliver_later
@@ -15,7 +18,6 @@ class DocumentMailer < ApplicationMailer
 
   def notify_new_document
     @document = Document.find params[:id]
-    @document.owner.access_rights
     @investor = Investor.find(params[:investor_id])
 
     email_list = @investor.emails
