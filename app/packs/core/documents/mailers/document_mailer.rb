@@ -28,6 +28,7 @@ class DocumentMailer < ApplicationMailer
       subj = "New document #{@document.name} uploaded by #{@document.entity.name}"
       mail(from: from_email(@document.entity),
            to: email,
+           cc: @document.entity.entity_setting.cc,
            subject: subj)
     else
       Rails.logger.debug { "No emails found for notify_new_document #{@document.name}" }
