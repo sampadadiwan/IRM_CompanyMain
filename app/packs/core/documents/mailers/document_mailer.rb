@@ -11,7 +11,7 @@ class DocumentMailer < ApplicationMailer
       investors = @document.access_rights.map(&:investor)
     end
 
-    investors.uniq.each do |investor|
+    investors.uniq.compact.each do |investor|
       DocumentMailer.with(id: params[:id], investor_id: investor.id).notify_new_document.deliver_later
     end
   end
