@@ -72,7 +72,7 @@ When('I fill and submit the new document page') do
   check('document_printing') if @document.printing
   select(@document.folder.name, from: "document_folder_id") if @document.folder_id
 
-  sleep(2)
+  sleep(3)
   click_on("Save")
   sleep(4)
 end
