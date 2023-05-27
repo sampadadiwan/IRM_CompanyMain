@@ -31,6 +31,7 @@ class ApprovalMailer < ApplicationMailer
                                     @approval_response.investor.emails)
 
     cc_emails = @approval_response.entity.employees.collect(&:email) << @approval_response.entity.entity_setting.cc
+    cc_emails << @approval_response.entity.entity_setting.cc if @approval_response.entity.entity_setting.cc.present?
     employee_emails = sandbox_email(@approval_response, cc_emails.join(","))
 
     if investor_emails.present?
