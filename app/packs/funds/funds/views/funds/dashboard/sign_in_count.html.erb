@@ -1,12 +1,16 @@
 <%= render "/layouts/alerts" %>
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
+<div class="d-sm-flex align-items-center justify-content-between mb-4" data-controller="export-xl">
     <h1 class="h3 mb-0 text-gray-800">Investor Sign In Report</h1>
+
+    <span>
+        <button class="btn btn-outline-success", data-action="click->export-xl#export" data-tableid="sign_in_count_report" data-filename='sign_in_count_report'>Download</button>
+    </span>
 </div>
 
 <% data = @fund.investors_granted_access.joins(investor_accesses: :user).pluck("investors.investor_name, users.first_name, users.last_name, users.email, users.sign_in_count") %>
 
 <div data-controller="datatable">
-<table class="table table-bordered dataTable jqDataTable">
+<table id="sign_in_count_report" class="table table-bordered dataTable jqDataTable">
   <thead>
         <tr>
           <th>
@@ -44,7 +48,7 @@
         <%= record[4] %>
       </td>
       <td>
-        <%= record[1] %>
+        <%= record[0] %>
       </td>
     </tr>
   <% end %>

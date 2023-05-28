@@ -13,6 +13,10 @@ export default class extends Controller {
           table[key] = $(value).DataTable({        
             stateSave: false,
             retrieve: true,
+            lengthMenu: [
+              [10, 25, 50, -1],
+              [10, 25, 50, 'All'],
+            ],
             language: {
               search: '',
               searchPlaceholder: "Search...",
