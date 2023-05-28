@@ -64,6 +64,7 @@ Rails/SkipsModelValidations:
     - 'app/packs/startups/investments/jobs/investment_percentage_holding_job.rb'
     - 'app/packs/startups/investments/services/interactors/create_audit_trail.rb'
     - 'app/packs/core/entities/models/entity.rb'
+    - 'app/packs/core/entities/models/concerns/entity_merge.rb'
     - 'app/jobs/offer_spa_job.rb'
     - 'app/packs/funds/investment_opportunities/jobs/investment_opportunity_job.rb'
     - 'app/packs/funds/capital_commitments/models/capital_commitment.rb'

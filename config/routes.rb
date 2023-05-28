@@ -267,6 +267,8 @@ Rails.application.routes.draw do
 
   resources :investors do
     get 'search', on: :collection
+    get 'merge', on: :collection
+    post 'merge', on: :collection
   end
 
   resources :investments do

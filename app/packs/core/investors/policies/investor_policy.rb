@@ -26,6 +26,10 @@ class InvestorPolicy < ApplicationPolicy
     create?
   end
 
+  def merge?
+    true
+  end
+
   def edit?
     create?
   end

@@ -141,7 +141,7 @@ class Investor < ApplicationRecord
   end
 
   # Be very careful using this method, it is used to move all investors associations to a new investor
-  def self.merge_investor(old_investor, new_investor)
+  def self.merge(old_investor, new_investor)
     raise "Cannot merge investors from different entities" if old_investor.entity_id != new_investor.entity_id
 
     # Fund related stuff
@@ -187,7 +187,7 @@ class Investor < ApplicationRecord
     end
 
     old_investor.investor_entity.employees.update_all(entity_id: new_investor.investor_entity_id)
-    old_investor.update_column(:investor_name, "#{old_investor} - Defunct/Inactive")
+    old_investor.update_column(:investor_name, "#{old_investor.name} - Defunct/Inactive")
   end
 
   def setup_permissions(investor_entity)

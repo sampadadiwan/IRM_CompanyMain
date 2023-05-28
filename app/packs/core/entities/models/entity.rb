@@ -1,6 +1,6 @@
 class Entity < ApplicationRecord
   include Trackable
-
+  include EntityMerge
   # encrypts :name, deterministic: true
   validates :name, uniqueness: true
   # Make all models searchable
@@ -15,18 +15,28 @@ class Entity < ApplicationRecord
   accepts_nested_attributes_for :entity_setting, allow_destroy: true
 
   has_many :option_pools, dependent: :destroy
+  has_many :excercises, dependent: :destroy
   has_many :deals, dependent: :destroy
   has_many :deal_investors, dependent: :destroy
+  has_many :deal_activities, dependent: :destroy
+
   has_many :secondary_sales, dependent: :destroy
+  has_many :interests_shown, class_name: "Interest", foreign_key: "interest_entity_id", dependent: :destroy
+  has_many :offers, dependent: :destroy
+
   has_many :funding_rounds, dependent: :destroy
   has_many :valuations, dependent: :destroy
   has_many :investor_notices, dependent: :destroy
+  has_many :esigns, dependent: :destroy
 
   # Will have many employees
   has_many :employees, class_name: "User", dependent: :destroy
   has_many :documents, dependent: :destroy
   has_many :holdings, dependent: :destroy
   has_many :messages, dependent: :destroy
+  has_many :tasks, dependent: :destroy
+  has_many :approvals, dependent: :destroy
+  has_many :approval_responses, dependent: :destroy
 
   # List of investors who are invested in this entity
   has_many :investors, dependent: :destroy
@@ -34,14 +44,14 @@ class Entity < ApplicationRecord
   has_many :investor_entities, through: :investors
   # List of investor records in which this company is an investee
 
-  has_many :interests_shown, class_name: "Interest", foreign_key: "interest_entity_id", dependent: :destroy
-
   # List of investors where this entity is an investor
   has_many :investees, foreign_key: "investor_entity_id", class_name: "Investor", dependent: :destroy
   has_many :investee_entities, through: :investees
   has_many :notes, dependent: :destroy
   has_many :folders, dependent: :destroy
   has_many :exchange_rates, dependent: :destroy
+  has_many :fees, dependent: :destroy
+  has_many :import_uploads, dependent: :destroy
 
   has_many :investor_accesses, dependent: :destroy
   has_many :investor_kycs, dependent: :destroy
@@ -50,8 +60,22 @@ class Entity < ApplicationRecord
   has_many :aggregate_investments, dependent: :destroy
 
   has_many :funds, dependent: :destroy, inverse_of: :entity
+  has_many :capital_calls, dependent: :destroy
+  has_many :capital_commitments, dependent: :destroy
+  has_many :capital_remittances, dependent: :destroy
+  has_many :capital_remittance_payments, dependent: :destroy
+  has_many :capital_distributions, dependent: :destroy
+  has_many :capital_distribution_payments, dependent: :destroy
+  has_many :commitment_adjustments, dependent: :destroy
+  has_many :fund_ratios, dependent: :destroy
+  has_many :fund_units, dependent: :destroy
+  has_many :fund_reports, dependent: :destroy
+  has_many :fund_formulas, dependent: :destroy
+
   has_many :investment_opportunities, dependent: :destroy
+  has_many :expression_of_interests, dependent: :destroy
   has_many :portfolio_investments
+  has_many :aggregate_portfolio_investments
 
   include FileUploader::Attachment(:logo)
 

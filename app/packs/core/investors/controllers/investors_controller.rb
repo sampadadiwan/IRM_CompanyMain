@@ -1,6 +1,6 @@
 class InvestorsController < ApplicationController
   before_action :set_investor, only: %w[show update destroy edit]
-  # after_action :verify_authorized, except: [:search]
+  after_action :verify_authorized, except: [:merge]
 
   # GET /investors or /investors.json
   def index
@@ -24,6 +24,21 @@ class InvestorsController < ApplicationController
       format.turbo_stream
       format.xlsx
       format.json { render json: InvestorDatatable.new(params, investors: @investors) }
+    end
+  end
+
+  def merge
+    @entity = current_user.has_cached_role?(:super) ? Entity.find(params[:entity_id]) : current_user.entity
+    if request.get?
+      render "merge"
+    else
+      old_investor = Investor.find(params[:old_investor_id])
+      new_investor = Investor.find(params[:new_investor_id])
+      authorize(old_investor, :update?)
+      authorize(new_investor, :update?)
+
+      InvestorMergeJob.perform_later(old_investor.id, new_investor.id, current_user.id)
+      redirect_to investor_url(new_investor), notice: "Investor merge in progress, please check back in a few mins"
     end
   end
 
