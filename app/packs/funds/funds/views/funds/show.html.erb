@@ -26,6 +26,9 @@
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
             <%= link_to "Fund Export" , export_fund_path(@fund), {class: "dropdown-item" } %>
             <%= link_to "Foreign Remittances" , report_fund_path(@fund, report: "dashboard/foreign_remittances"), {class: "dropdown-item" } %>
+
+            <%= link_to "Sign In Report" , report_fund_path(@fund, report: "dashboard/sign_in_count"), {class: "dropdown-item" } %>
+
             <%= link_to "Fund Numbers" , report_fund_path(@fund, report: "dashboard/chart"), {class: "dropdown-item" } %>
             <%= link_to "Folio Numbers" , report_fund_path(@fund, report: "dashboard/folio_numbers"), {class: "dropdown-item" } %>
             <%= link_to "Pending Remittances" , report_fund_path(@fund, report: "dashboard/calls_report"), {class: "dropdown-item" } %>

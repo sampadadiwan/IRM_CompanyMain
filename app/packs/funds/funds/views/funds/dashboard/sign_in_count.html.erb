@@ -1,0 +1,52 @@
+<%= render "/layouts/alerts" %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Investor Sign In Report</h1>
+</div>
+
+<% data = @fund.investors_granted_access.joins(investor_accesses: :user).pluck("investors.investor_name, users.first_name, users.last_name, users.email, users.sign_in_count") %>
+
+<div data-controller="datatable">
+<table class="table table-bordered dataTable jqDataTable">
+  <thead>
+        <tr>
+          <th>
+            Fund
+          </th>
+          <th>
+            User
+          </th>
+          <th>
+            Email
+          </th>
+
+          <th>
+            Sign In Count
+          </th>
+          <th>
+            Investor
+          </th>
+          
+        </tr>
+      </thead>
+
+  <% data.each do |record| %>
+    <tr>
+      <td>
+        <%= link_to @fund.name, @fund %>
+      </td>
+      <td>
+        <%= record[1] + " " + record[2] %>
+      </td>
+      <td>
+        <%= record[3] %>
+      </td>
+      <td>
+        <%= record[4] %>
+      </td>
+      <td>
+        <%= record[1] %>
+      </td>
+    </tr>
+  <% end %>
+</table>
+</div>
