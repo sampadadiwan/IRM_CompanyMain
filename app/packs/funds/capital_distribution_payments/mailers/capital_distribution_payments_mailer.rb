@@ -8,7 +8,7 @@ class CapitalDistributionPaymentsMailer < ApplicationMailer
 
     @entity = @capital_distribution_payment.entity
     cc = @entity.entity_setting.cc
-    reply_to = @entity.entity_setting.reply_to
+    reply_to = @entity.entity_setting.cc
 
     if emails.present?
       mail(from: from_email(@capital_distribution_payment.entity),

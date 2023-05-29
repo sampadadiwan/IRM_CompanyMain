@@ -16,6 +16,7 @@ class ApprovalMailer < ApplicationMailer
         mail(from: from_email(@approval.entity),
              to: investor_emails,
              cc: @approval_response.entity.entity_setting.cc,
+             reply_to: @approval_response.entity.entity_setting.cc,
              subject: "Approval required by #{@approval.entity.name}: #{@approval.title}")
 
       end
@@ -38,6 +39,7 @@ class ApprovalMailer < ApplicationMailer
       mail(from: from_email(@approval_response.entity),
            to: investor_emails,
            cc: employee_emails,
+           reply_to: employee_emails,
            subject: "Approval response from #{@approval_response.investor.investor_name}: #{@approval_response.status}")
     end
   end

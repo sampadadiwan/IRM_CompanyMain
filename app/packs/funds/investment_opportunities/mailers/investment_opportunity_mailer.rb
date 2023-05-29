@@ -11,7 +11,7 @@ class InvestmentOpportunityMailer < ApplicationMailer
 
     @entity = @investment_opportunity.entity
     cc = @entity.entity_setting.cc
-    reply_to = @entity.entity_setting.reply_to
+    reply_to = cc
 
     mail(from: from_email(@investment_opportunity.entity), to: ENV.fetch('SUPPORT_EMAIL', nil),
          bcc: open_for_offers_emails.join(','),
@@ -24,7 +24,7 @@ class InvestmentOpportunityMailer < ApplicationMailer
 
     @entity = @investment_opportunity.entity
     cc = @entity.entity_setting.cc
-    reply_to = @entity.entity_setting.reply_to
+    reply_to = cc
 
     # Get all emails of investors & holding company employees
     open_for_offers_emails = sandbox_email(@investment_opportunity,

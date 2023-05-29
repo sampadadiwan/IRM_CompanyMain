@@ -29,6 +29,7 @@ class DocumentMailer < ApplicationMailer
       mail(from: from_email(@document.entity),
            to: email,
            cc: @document.entity.entity_setting.cc,
+           reply_to: @document.entity.entity_setting.cc,
            subject: subj)
     else
       Rails.logger.debug { "No emails found for notify_new_document #{@document.name}" }
