@@ -70,7 +70,7 @@ class Document < ApplicationRecord
   end
 
   def send_notification_for_owner
-    DocumentMailer.with(id:).notify_new_document_to_investors.deliver_later if owner_tag != "Template" && saved_change_to_send_email? && send_email
+    DocumentMailer.with(id:).notify_new_document_to_investors.deliver_later if owner_tag != "Template" && send_email
   end
 
   def setup_access_rights

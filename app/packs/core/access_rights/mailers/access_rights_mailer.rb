@@ -31,10 +31,12 @@ class AccessRightsMailer < ApplicationMailer
 
       to = sandbox_email(@access_right, confirmed_emails)
       bcc = (ENV.fetch('SUPPORT_EMAIL', nil) if @access_right.access_to_category.present?)
-
+      cc = @access_right.entity.entity_setting.cc
       mail(from: from_email(@access_right.entity),
            to:,
            bcc:,
+           cc:,
+           reply_to: cc,
            subject: "Access Granted to #{@access_right.owner_type} #{@access_right.owner.name} by #{@access_right.entity.name}")
     end
   end

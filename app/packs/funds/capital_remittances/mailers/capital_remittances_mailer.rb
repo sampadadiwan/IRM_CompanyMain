@@ -40,6 +40,9 @@ class CapitalRemittancesMailer < ApplicationMailer
     @entity = @capital_remittance.entity
     cc = @entity.entity_setting.cc
 
+    # This is to create tasks from the reply to email
+    # reply_to = [@entity.entity_setting.reply_to, "capital_commitment-#{@capital_remittance.capital_commitment_id}@#{ENV.fetch('DOMAIN', nil)}"].filter(&:present?).join(",")
+
     reply_to = cc
 
     if investor_emails.present?
