@@ -12,8 +12,10 @@
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-distributions-tab"
             data-action="click->tabdetails#loadData">Distributions</a>
 
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-ratios-tab"
+        <% if fund.show_fund_ratios %>
+          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-ratios-tab"
               data-action="click->tabdetails#loadData">Ratios</a>
+        <% end %>
 
         <% if fund.entity.enable_fund_portfolios %>
           <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#portfolio-investments-tab"
@@ -34,12 +36,6 @@
           <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#valuations-tab"
               data-action="click->tabdetails#loadData">Valuations</a>
         <% end %>
-
-        <% if fund.show_fund_ratios %>
-          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-ratios-tab"
-              data-action="click->tabdetails#loadData">Ratios</a>
-        <% end %>
-
 
       <% end %>
 

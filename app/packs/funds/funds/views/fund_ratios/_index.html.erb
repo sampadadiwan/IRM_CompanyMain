@@ -6,10 +6,10 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Fund Ratios <%= link_to l(valuation.valuation_date), valuation if valuation %> </h1>
   <span>
-  <%= link_to "Compute Ratios" , generate_fund_ratios_fund_path(fund), method: :get,
-      class: "btn btn-outline-success" ,
+  <%= button_to "Compute Ratios" , generate_fund_ratios_fund_path(fund), method: :get,
+      class: "btn btn-outline-success" , form_class: "deleteButton" ,
       data: {action: "click->confirm#popup" , turbo: false,
-      msg: "Computation will take a few mins, please be patient. Proceed?"} if fund && policy(fund).generate_fund_ratios? %>
+      msg: "Computation will take a few mins, please be patient. Proceed?", method: :get} if fund && policy(fund).generate_fund_ratios? %>
 
   <%= link_to "Download", fund_ratios_path(fund_id: params[:fund_id], capital_commitment_id: params[:capital_commitment_id], format: :xlsx), class: "btn btn-outline-success" %>
   </span>

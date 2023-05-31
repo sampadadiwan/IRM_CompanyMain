@@ -15,6 +15,7 @@ class FundRatiosController < ApplicationController
     respond_to do |format|
       format.html
       format.turbo_stream
+      format.xlsx
       format.json { render json: FundRatioDatatable.new(params, fund_ratios: @fund_ratios) }
     end
   end

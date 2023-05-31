@@ -1,0 +1,3 @@
+<%= turbo_stream.update params[:target] do %>
+  <%= options_for_select @fund_ratios.map{|e| [e.name, e.id]} %>
+<% end %>
