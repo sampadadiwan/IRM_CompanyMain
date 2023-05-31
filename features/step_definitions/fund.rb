@@ -1143,9 +1143,63 @@ Then('the commitment amounts change correctly') do
   end
 end
 
+Given('the last investor has a user {string}') do |args|
+  cr = CapitalRemittance.first
+  investor = cr.investor
+  user = FactoryBot.create(:user,entity: investor.investor_entity, whatsapp_enabled: true)
+  user1 = FactoryBot.create(:user,entity: investor.investor_entity)
+  user2 = FactoryBot.create(:user,entity: investor.investor_entity, phone:"321")
+
+  key_values(user,args)
+  user.save!
+
+  [user, user1].each do |u|
+    user.add_role :investor_advisor
+    AccessRight.create(entity_id: investor.investor_entity_id, owner: @fund, access_to_investor_id: investor.id,metadata: "Investor", user_id: u.id)
+    ia = InvestorAccess.create(entity: investor.entity, investor: investor,
+        first_name: u.first_name, last_name: u.last_name,
+        email: u.email, granter: u, approved: true, is_investor_advisor: true)
+    ia.update_columns(approved: true, is_investor_advisor: true)
+    end
+end
+
+Given('the capital remittance whatsapp notification is sent to the first investor') do
+  cr = CapitalRemittance.first
+  cc = cr.capital_call
+  cc.update_columns(approved:true, manual_generation: false)
+  @resjob = cr.send_notification
+end
+
+Then('the whatsapp message should be send successfully to {string}') do |number|
+  sleep(8) # wait for the job to complete and the message to be sent
+  body = WhatsappNotifier.get_messages(number,1,1)
+  body = JSON.parse(body)
+  body['messages']['items'].first['eventDescription'].include?('capital_remittance_noti_2').should == true
+end
+
+
 Given('the fund has fund ratios') do
     FundRatiosJob.perform_now(@fund.id, nil, Time.zone.now + 2.days, @user.id, true)
 end
+
+Then('{string} has {string} "{string}" access to the fund_ratios') do |arg1,truefalse, accesses|
+  args_temp = arg1.split(";").to_h { |kv| kv.split("=") }
+  @user = if User.exists?(args_temp)
+    User.find_by(args_temp)
+  else
+    FactoryBot.build(:user)
+  end
+  key_values(@user, arg1)
+  @user.save!
+  puts "##### Checking access to fund_ratios for funds with rights #{@fund.access_rights.to_json}"
+  accesses.split(",").each do |access|
+    @fund.fund_ratios.each do |fr|
+      puts "##Checking access #{access} on fund_ratios from #{@fund.name} for #{@user.email} as #{truefalse}"
+      Pundit.policy(@user, fr).send("#{access}?").to_s.should == truefalse
+    end
+  end
+end
+
 
 Then('{string} has {string} "{string}" access to the fund_ratios') do |arg1,truefalse, accesses|
   args_temp = arg1.split(";").to_h { |kv| kv.split("=") }

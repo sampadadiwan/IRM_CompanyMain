@@ -41,7 +41,7 @@
             Phone
           </td>
           <td>
-            <%=@user.phone%>
+            <%= "(#{@user.call_code})" + @user.phone%>
           </td>
         </tr>
 
@@ -50,7 +50,7 @@
             Signature
           </td>
           <td>
-            <%= image_tag @user.signature_url, 
+            <%= image_tag @user.signature_url,
               style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if @user.signature.present? %>
           </td>
         </tr>
@@ -97,15 +97,15 @@
                   </h6>
                 </div>
                 <div class="card-body">
-                  <img src="/img/whatsappQR.png" />                  
+                  <img src="/img/whatsappQR.png" />
                 </div>
-                <div class="card-header py-3">            
+                <div class="card-header py-3">
                   <smallclass="text-muted" >
                     Open a QR code scanner, scan this QR code, accept the terms, and hit send in whatsapp.
                     This will enable us to send you critical alters only, on whatsapp.
                   </small>
                 </div>
-                
+
               </div>
           </div>
         </div>
@@ -139,6 +139,6 @@
         <%= link_to "Edit" , edit_user_path(@user), {class: "btn btn-outline-primary" } if policy(@user).update? %>
       </div>
 
-      
+
     </div>
   </div>

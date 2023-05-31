@@ -3,7 +3,7 @@ class WhatsappSenderJob < ApplicationJob
 
   def perform(msg, user)
     if user.whatsapp_enabled
-      send(msg, user.phone)
+      send(msg, user.phone_with_call_code)
     else
       Rails.logger.debug "Whatsapp msg not sent. User has not enabled it"
     end

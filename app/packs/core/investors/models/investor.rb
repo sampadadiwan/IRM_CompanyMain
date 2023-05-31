@@ -226,8 +226,17 @@ class Investor < ApplicationRecord
   end
 
   def investor_advisor_emails(model)
-    access_user_ids = model.access_rights.where.not(user_id: nil).where(entity_id: investor_entity_id).pluck(:user_id)
+    access_user_ids = get_access_rights(model).pluck(:user_id)
     investor_accesses.approved.investor_advisors.where(user_id: access_user_ids).pluck(:email)
+  end
+
+  def get_access_rights(model)
+    model.access_rights.where.not(user_id: nil).where(entity_id: investor_entity_id)
+  end
+
+  def investor_advisor_numbers(model)
+    access_user_ids = get_access_rights(model).pluck(:user_id)
+    User.where(id: investor_accesses.approved.investor_advisors.where(user_id: access_user_ids).pluck(:user_id), whatsapp_enabled: true).pluck(:phone)
   end
 
   def folder_path

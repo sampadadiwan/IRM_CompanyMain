@@ -6,6 +6,10 @@ class ApplicationMailer < ActionMailer::Base
     model.entity.entity_setting.sandbox ? model.entity.entity_setting.sandbox_emails : emails
   end
 
+  def sandbox_whatsapp_numbers(model, numbers)
+    model.entity.entity_setting.sandbox ? model.entity.entity_setting.sandbox_numbers.to_s.split(',') : numbers
+  end
+
   def from_email(entity)
     @current_entity = entity
     @current_entity.entity_setting.from_email.presence || ENV.fetch("SUPPORT_EMAIL", nil)

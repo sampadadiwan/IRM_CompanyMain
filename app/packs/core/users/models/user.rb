@@ -5,6 +5,13 @@ class User < ApplicationRecord
   attr_accessor :role_name
 
   UPDATABLE_ROLES = %w[company_admin approver signatory].freeze
+  CALL_CODES = {
+    "in" => "91",
+    "us" => "1",
+    "uae" => "971",
+    "sg" => "65"
+  }.freeze
+  ACC_UPDATE_NOTI_TEMPLATE = "account_update_alert_1".freeze
 
   tracked except: :update, owner: proc { |controller, _model| controller.current_user if controller && controller.current_user },
           entity_id: proc { |controller, _model| controller.current_user.entity_id if controller && controller.current_user }
@@ -34,6 +41,7 @@ class User < ApplicationRecord
 
   validates :first_name, :last_name, presence: true
   validates :email, format: { with: /\A[^@\s]+@[^@\s]+\z/ }, presence: true
+  validates :call_code, presence: true, if: -> { phone.present? }
 
   before_create :setup_defaults
   after_create :update_investor_access
@@ -41,6 +49,8 @@ class User < ApplicationRecord
   def confirm_user
     confirm unless confirmed?
   end
+  # using before_save as after_save,after_commit,after_update all returned false for encrypted_password_changed?
+  before_save :send_password_update_notification, if: :password_changed?
 
   def password_changed?
     encrypted_password_changed? && persisted?
@@ -48,8 +58,15 @@ class User < ApplicationRecord
 
   delegate :name, to: :entity, prefix: :entity
 
+  # using before_save as after_save,after_commit,after_update all returned false for encrypted_password_changed?
+  before_save :send_password_update_notification, if: :password_changed?
+
   def to_s
     full_name
+  end
+
+  def phone_with_call_code
+    "#{call_code}#{phone}"
   end
 
   def name
@@ -159,5 +176,13 @@ class User < ApplicationRecord
 
   def investor_advisor?
     advisor_entity_id.present? && advisor_entity_id != entity_id
+  end
+
+  private
+
+  def send_password_update_notification
+    WhatsappNotifier.new.perform({ template_name: ACC_UPDATE_NOTI_TEMPLATE }.stringify_keys, self) if whatsapp_enabled
+  rescue StandardError => e # added rescue because if error is raised in before_save callback then the record wont get saved
+    Rails.logger.error "Error in sending whatsapp notification, #{e}"
   end
 end

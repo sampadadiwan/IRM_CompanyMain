@@ -34,14 +34,19 @@
   </div>
 
   <div class="form-group">
+    <%= form.label :Country_calling_code %>
+    <%= form.select :call_code, User::CALL_CODES.map{|key,val| ["#{key.upcase}(#{val})",val] }, {}, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
     <%= form.label :phone %>
     <%= form.text_field :phone, class: "form-control" %>
   </div>
 
 
   <div class="form-group">
-    <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image (jpg or png only)", 
-                            for_model: "user", field_name: "signature", 
+    <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image (jpg or png only)",
+                            for_model: "user", field_name: "signature",
                             model: user, allowed_types: ['image/*'].freeze %>
 
   </div>
@@ -65,18 +70,18 @@
   <% end %>
 
   <% if current_user.has_cached_role?(:company_admin) %>
-    
+
     <% if user.id.present? %>
       <%= form.label :roles %>
       <%= form.select :roles, ["company_admin", "approver"], {selected: user.roles.collect(&:name), include_hidden: false}, class: "form-control select2", multiple: true, name: "user[role_name][]" %>
     <% end %>
-    
+
     <div class="associated_entity">
     <% User.permissions.pairs.each do |key, val| %>
       <% if user.entity.send(val) %>
         <div class="form-group">
           <%= form.label :permissions, key %>
-          <%= form.check_box :permissions, {name: "user[permissions][]",  
+          <%= form.check_box :permissions, {name: "user[permissions][]",
               val: val, id: "permissions_#{val}", class: "form-control form-checkbox"}, val, nil   %>
         </div>
         <% end %>
@@ -89,8 +94,8 @@
     <%= form.label :whatsapp_enabled %>
     <%= form.check_box :whatsapp_enabled, class: "form-control form-checkbox" %>
     <small class="text-muted">
-      Additional step is required to enable whatsapp messages, 
-      you will need to scan a QR shown post saving your profile or 
+      Additional step is required to enable whatsapp messages,
+      you will need to scan a QR shown post saving your profile or
       click the 'Receive Whatsapp Updates' button in this app on your phone.
     </small>
   </div>
@@ -105,7 +110,7 @@
   </div>
   <% end %>
 
- 
+
   <%= form.text_field :entity_id, class: "form-control", hidden: true %>
 
 
