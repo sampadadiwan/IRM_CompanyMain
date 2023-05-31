@@ -375,7 +375,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_16_172418) do
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.string "name"
-    t.decimal "percentage_called", precision: 9, scale: 6, default: "0.0"
+    t.decimal "percentage_called", precision: 11, scale: 8, default: "0.0"
     t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.date "due_date"
@@ -446,7 +446,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_16_172418) do
     t.decimal "orig_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "orig_folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "exchange_rate_id"
-    t.string "commitment_type", limit: 10, default: "pool"
+    t.string "commitment_type", limit: 10, default: "Pool"
     t.boolean "feeder_fund", default: false
     t.date "commitment_date"
     t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
@@ -835,9 +835,12 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_16_172418) do
     t.string "entity_bcc"
     t.string "reply_to"
     t.string "cc"
+    t.string "sandbox_numbers"
     t.string "individual_kyc_doc_list"
     t.string "non_individual_kyc_doc_list"
     t.boolean "aml_enabled", default: false
+    t.string "fi_code"
+    t.boolean "ckyc_kra_enabled", default: false
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 
@@ -1011,7 +1014,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_16_172418) do
     t.boolean "enabled", default: false
     t.string "entry_type", limit: 50
     t.boolean "roll_up", default: true
-    t.string "commitment_type", limit: 10
+    t.string "commitment_type", limit: 10, default: "All"
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
   end
@@ -1529,6 +1532,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_16_172418) do
     t.string "kyc_type", limit: 15, default: "Individual"
     t.string "residency", limit: 10
     t.datetime "birth_date"
+    t.text "corr_address"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
@@ -1589,6 +1593,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_16_172418) do
     t.string "tag_list", limit: 120
     t.boolean "imported", default: false
     t.bigint "document_folder_id"
+    t.string "sub_category", limit: 50
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
@@ -1596,6 +1601,17 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_16_172418) do
     t.index ["investor_entity_id", "entity_id"], name: "index_investors_on_investor_entity_id_and_entity_id", unique: true
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
     t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
+  end
+
+  create_table "kyc_data", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "investor_kyc_id"
+    t.string "source"
+    t.json "response"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_kyc_data_on_entity_id"
+    t.index ["investor_kyc_id"], name: "index_kyc_data_on_investor_kyc_id"
   end
 
   create_table "messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2065,6 +2081,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_16_172418) do
     t.timestamp "accepted_terms_on"
     t.bigint "advisor_entity_id"
     t.bigint "investor_advisor_id"
+    t.string "call_code", limit: 3, default: "91"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -2315,6 +2332,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_05_16_172418) do
   add_foreign_key "investor_notices", "entities"
   add_foreign_key "investors", "folders", column: "document_folder_id"
   add_foreign_key "investors", "form_types"
+  add_foreign_key "kyc_data", "entities"
+  add_foreign_key "kyc_data", "investor_kycs"
   add_foreign_key "messages", "investors"
   add_foreign_key "messages", "users"
   add_foreign_key "nudges", "entities"

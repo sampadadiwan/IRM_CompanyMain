@@ -1,0 +1,32 @@
+  <div class="inline-parent">
+    <div class="inline-child float-left" style="width:47%;margin:5px">
+        <% if @ckyc_data.present? %>
+        <%= render "/kyc_datas/show" , kyc_data: @ckyc_data %>
+        <div>
+            <% if @ckyc_data.full_name.present? %>
+            <%= button_to "Select CKYC Data", assign_kyc_data_investor_kyc_path("id": @investor_kyc.id, "investor_kyc[id]": @investor_kyc.id, "investor_kyc[full_name]": @ckyc_data.full_name, "investor_kyc[address]": @ckyc_data.perm_address, "investor_kyc[corr_address]": @ckyc_data.corr_address), method: :put, class: "btn btn-sm  btn-outline-primary" if policy(@investor_kyc).assign_kyc_data? %>
+            <% else %>
+            <%= button_to "Refresh CKYC Data", generate_new_kyc_datas_path("investor_kyc_id": @investor_kyc.id, "source": "ckyc"), method: :post, class: "btn btn-sm  btn-outline-primary" if policy(@investor_kyc).generate_new_kyc_data? %>
+            <% end %>
+        </div>
+        <% end %>
+<br>
+<div class="float-left">
+    <%= button_to "Continue without Selecting", assign_kyc_data_investor_kyc_path("id": @investor_kyc.id, "investor_kyc[id]": @investor_kyc.id, "investor_kyc[full_name]": "", "investor_kyc[address]": "", "investor_kyc[corr_address]": ""), method: :put, class: "btn btn-sm  btn-outline-primary" if policy(@investor_kyc).assign_kyc_data? %>
+</div>
+    </div>
+    <div class="inline-child float-left" style="width:47%;margin:5px">
+        <% if @kra_data.present? %>
+        <%= render "/kyc_datas/show" , kyc_data: @kra_data %>
+        <div>
+
+            <% if @kra_data.full_name.present? %>
+            <%= button_to "Select KRA Data", assign_kyc_data_investor_kyc_path("id": @investor_kyc.id, "investor_kyc[id]": @investor_kyc.id, "investor_kyc[full_name]": @kra_data.full_name, "investor_kyc[address]": @kra_data.perm_address, "investor_kyc[corr_address]": @kra_data.corr_address), method: :put, class: "btn btn-sm  btn-outline-primary" if policy(@investor_kyc).assign_kyc_data? %>
+            <% else %>
+            <%= button_to "Refresh KRA Data", generate_new_kyc_datas_path("investor_kyc_id": @investor_kyc.id, "source": "kra"), method: :post, class: "btn btn-sm  btn-outline-primary" if policy(@investor_kyc).generate_new_kyc_data? %>
+            <% end %>
+        </div>
+        <% end %>
+    </div>
+  </div>
+

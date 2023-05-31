@@ -1,0 +1,40 @@
+<% data_source ||= kyc_datas_path(investor_kyc_id: investor_kyc&.id, format: :json, all: true) %>
+<% lazy_load_data ||= false %>
+
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Kyc Data</h1>
+  </div>
+
+  <div class="table-responsive" data-controller="kyc-datas"
+       data-kyc-datas-lazy-load-data-value=<%= lazy_load_data %>
+       data-kyc-datas-table-name-value="#kyc_datas">
+
+    <% if lazy_load_data %>
+        <a class="load_data_link" data-action="click->kyc-datas#loadData"><span>Load Data</span></a>
+    <% end %>
+
+    <table id="kyc_datas" class="table table-bordered dataTable"
+           data-source="<%= data_source %>" style="width:100%" >
+
+      <thead>
+        <tr>
+          <th>
+            Full Name
+          </th>
+          <th>
+            Source
+          </th>
+          <th>
+            Created at
+          </th>
+          <th>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+      </tbody>
+    </table>
+
+  </div>

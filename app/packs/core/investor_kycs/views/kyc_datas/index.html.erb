@@ -1,0 +1,5 @@
+<%= render "layouts/alerts" %>
+
+<% entity = @entity.present? ? @entity : (@investor_kyc.present? ? @investor_kyc.entity : current_user.entity ) if !entity.present? %>
+
+<%= render "/kyc_datas/index", kyc_datas: @kyc_datas, entity: entity, investor_kyc: nil  %>

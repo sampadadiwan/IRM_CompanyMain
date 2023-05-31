@@ -80,6 +80,36 @@ class InvestorKycsController < ApplicationController
     end
   end
 
+  def compare_kyc_datas
+    @investor_kyc = InvestorKyc.new(investor_kyc_params)
+    @investor_kyc.user_id = current_user.id if current_user
+    authorize(@investor_kyc)
+    setup_doc_user(@investor_kyc)
+    respond_to do |format|
+      if @investor_kyc.save
+        format.html do
+          redirect_to compare_ckyc_kra_kyc_datas_path(investor_kyc_id: @investor_kyc.id)
+        end
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  def assign_kyc_data
+    @investor_kyc = InvestorKyc.find(investor_kyc_params[:id])
+    authorize(@investor_kyc)
+    respond_to do |format|
+      if @investor_kyc.update(investor_kyc_params)
+        format.html { redirect_to edit_investor_kyc_path(@investor_kyc), notice: "Investor kyc was successfully updated." }
+      else
+        format.html { redirect_to edit_investor_kyc_path(@investor_kyc), status: :unprocessable_entity }
+      end
+      format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }
+    end
+  end
+
   # PATCH/PUT /investor_kycs/1 or /investor_kycs/1.json
   def update
     setup_doc_user(@investor_kyc)
@@ -133,6 +163,6 @@ class InvestorKycsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_kyc_params
-    params.require(:investor_kyc).permit(:investor_id, :entity_id, :user_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :video, :phone, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:investor_kyc).permit(:id, :investor_id, :entity_id, :user_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :video, :phone, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

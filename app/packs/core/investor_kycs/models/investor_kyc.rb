@@ -8,6 +8,7 @@ class InvestorKyc < ApplicationRecord
   belongs_to :investor
   belongs_to :entity
   has_many :aml_reports, dependent: :destroy
+  has_many :kyc_datas, dependent: :destroy
   scope :verified, -> { where(verified: true) }
   enum :kyc_type, { individual: "Individual", non_individual: "Non Individual" }
   enum :residency, { domestic: "Domestic", foreign: "Foreign" }
@@ -17,8 +18,13 @@ class InvestorKyc < ApplicationRecord
   include FileUploader::Attachment(:video)
 
   belongs_to :verified_by, class_name: "User", optional: true
-  validates :full_name, :PAN, :address, presence: true
+  validates :PAN, presence: true
 
+  # validation fail reloads page without investor dropdown
+  validate :birth_date_cannot_be_in_the_future
+  def birth_date_cannot_be_in_the_future
+    errors.add(:birth_date, "can't be in the future") if birth_date.present? && birth_date > Date.current
+  end
   # Customize form
   serialize :pan_verification_response, Hash
   serialize :bank_verification_response, Hash
@@ -60,7 +66,7 @@ class InvestorKyc < ApplicationRecord
     # InvestorKycMailer.with(id:).notify_kyc_updated.deliver_later
   end
 
-  after_create :generate_aml_report
+  after_save :generate_aml_report, if: ->(investor_kyc) { investor_kyc.full_name.present? and investor_kyc.full_name_changed? }
   def generate_aml_report(user_id = nil)
     user_id ||= self.user_id
     AmlReportJob.perform_later(id, user_id)

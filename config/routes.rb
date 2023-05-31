@@ -136,12 +136,20 @@ Rails.application.routes.draw do
     get 'search', on: :collection
     put 'toggle_verified', on: :member
     put 'generate_new_aml_report', on: :member
+    post 'compare_kyc_datas', on: :collection
+    put 'assign_kyc_data', on: :member
   end
 
   resources :aml_reports do
     get 'search', on: :collection
     post 'generate_new', on: :collection
     put 'toggle_approved', on: :member
+  end
+
+  resources :kyc_datas do
+    get 'search', on: :collection
+    post 'generate_new', on: :collection
+    get 'compare_ckyc_kra', on: :collection
   end
 
   resources :video_kycs do

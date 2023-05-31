@@ -43,6 +43,18 @@ class InvestorKycPolicy < ApplicationPolicy
     toggle_verified?
   end
 
+  def assign_kyc_data?
+    user.entity_id == record.entity_id
+  end
+
+  def compare_kyc_datas?
+    user.entity_id == record.entity_id
+  end
+
+  def generate_new_kyc_data?
+    user.entity_id == record.entity_id
+  end
+
   def update?
     create? && !record.verified
   end

@@ -9,6 +9,11 @@
     <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#aml-reports-tab"
         data-action="click->tabdetails#loadData">Aml Reports</a>
     <% end %>
+    <% if current_user.entity.entity_setting.ckyc_kra_enabled %>
+    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#kyc-datas-tab"
+        data-action="click->tabdetails#loadData">Kyc Data</a>
+    <% end %>
+
   </nav>
 
 
@@ -26,6 +31,14 @@
       <div id="aml-reports-tab" class="tab-pane fade in show">
         <div id="aml-reports" class="associated_entity">
           <%= render partial: "/aml_reports/index" , locals: {lazy_load_data: true, investor_kyc: @investor_kyc} %>
+        </div>
+      </div>
+      <% end %>
+
+      <% if current_user.entity.entity_setting.ckyc_kra_enabled %>
+      <div id="kyc-datas-tab" class="tab-pane fade in show">
+        <div id="kyc-datas" class="associated_entity">
+          <%= render partial: "/kyc_datas/index" , locals: {lazy_load_data: true, investor_kyc: @investor_kyc} %>
         </div>
       </div>
       <% end %>
