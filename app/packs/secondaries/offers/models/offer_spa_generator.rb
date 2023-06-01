@@ -4,40 +4,32 @@ class OfferSpaGenerator
 
   attr_accessor :working_dir
 
-  def initialize(offer, master_spa_path = nil)
+  def initialize(offer, template)
     # Cleanup esigns first
     OfferEsignProvider.new(offer).cleanup_prev
 
     create_working_dir(offer)
-    master_spa_path ||= download_master_spa(offer)
-    cleanup_old_spa(offer)
-    generate(offer, master_spa_path)
-    attach(offer)
+    template_path ||= download_template(template)
+    generate(offer, template_path)
+    upload(template, offer)
   ensure
     cleanup
   end
 
   private
 
-  def cleanup_old_spa(offer)
-    if offer.spa
-      offer.spa = nil
-      offer.save
-    end
-  end
-
   def working_dir_path(offer)
     "tmp/offer_spa_generator/#{rand(1_000_000)}/#{offer.id}"
   end
 
-  def download_master_spa(offer)
-    file = offer.secondary_sale.spa.download
+  def download_template(template)
+    file = template.file.download
     file.path
   end
 
-  # master_spa_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
-  def generate(offer, master_spa_path)
-    template = Sablon.template(File.expand_path(master_spa_path))
+  # template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
+  def generate(offer, template_path)
+    template = Sablon.template(File.expand_path(template_path))
 
     context = {}
     context.store  :effective_date, Time.zone.today.strftime("%d %B %Y")
@@ -109,8 +101,22 @@ class OfferSpaGenerator
     end
   end
 
-  def attach(offer)
-    offer.spa = File.open("#{@working_dir}/Offer-#{offer.id}.pdf", "rb")
-    offer.save
+  def upload(document, offer)
+    file_name = "#{@working_dir}/Offer-#{offer.id}.pdf"
+    Rails.logger.debug { "Uploading new file #{file_name}" }
+
+    new_generated_doc = Document.new(document.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
+
+    # Delete SOA for the same start_date, end_date
+    offer.documents.where(name: new_generated_doc.name).each(&:destroy)
+
+    # Create and attach the new SOA
+    new_generated_doc.file = File.open(file_name, "rb")
+    new_generated_doc.from_template = document
+    new_generated_doc.owner = offer
+    new_generated_doc.owner_tag = "Generated"
+    new_generated_doc.send_email = false
+
+    new_generated_doc.save
   end
 end

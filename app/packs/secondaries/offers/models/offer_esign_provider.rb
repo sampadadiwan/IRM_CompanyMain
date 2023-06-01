@@ -36,15 +36,7 @@ class OfferEsignProvider
   end
 
   def prepare_doc
-    doc = nil
-    # Download the orignal generated SPA file & create a doc
-    if @offer.spa.present?
-      @offer.spa.download do |tempfile|
-        doc = @offer.documents.create!(name: spa_file_name, entity_id: @offer.entity_id, download: true, file: tempfile, user_id: @offer.user_id)
-      end
-    end
-
-    doc
+    @offer.documents.where(name: "SPA").last
   end
 
   def signature_completed(signature_type, document_id, file)

@@ -109,7 +109,7 @@ class SecondarySale < ApplicationRecord
   end
 
   def document_tags
-    %w[Buyer Seller]
+    ["Buyer", "Buyer Template", "Seller"]
   end
 
   def buyer_investors

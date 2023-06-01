@@ -1,5 +1,5 @@
 class ImportOffer < ImportUtil
-  STANDARD_HEADERS = ["User (email)", "Offer Quantity", "First Name", "Middle Name", "Last Name", "Address", "PAN", "Bank Account", "IFSC Code"].freeze
+  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Middle Name", "Last Name", "Address", "PAN", "Bank Account", "IFSC Code"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -40,14 +40,14 @@ class ImportOffer < ImportUtil
 
     if holding
       offer = Offer.new(PAN: user_data["PAN"], address: user_data["Address"], city: user_data["City"],
-                        demat: user_data["Demat"], quantity: user_data["Quantity"], bank_account_number: user_data["Bank Account Number"], ifsc_code: user_data["IFSC Code"],
+                        demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["IFSC Code"],
                         holding:, secondary_sale:, final_price: secondary_sale.final_price,
                         user: holding.user, investor: holding.investor, entity: holding.entity,
                         full_name: holding.user&.full_name)
 
       setup_custom_fields(user_data, offer, custom_field_headers)
 
-      offer.save
+      raise offer.errors.full_messages.to_s unless offer.save
     else
       raise "No holding found for user with email #{email}"
     end

@@ -7,29 +7,25 @@ class FundRatiosJob < ApplicationJob
     capital_commitment = capital_commitment_id ? CapitalCommitment.find(capital_commitment_id) : nil
 
     Chewy.strategy(:sidekiq) do
+      calc_fund_ratios(fund, capital_commitment, end_date)
+      capital_commitment&.touch
+      fund.touch
 
-      begin
-        calc_fund_ratios(fund, capital_commitment, end_date)
-        capital_commitment&.touch
-        fund.touch
-
-        if generate_for_commitments
-          fund.capital_commitments.each do |capital_commitment|
-            calc_fund_ratios(fund, capital_commitment, end_date)
-            notify("Folio #{capital_commitment.folio_id} calculations are now complete.", user_id)
-          rescue StandardError => e
-            notify("Error in fund ratios: #{e.message}", user_id, level: "danger")
-            raise e
-          end
+      if generate_for_commitments
+        fund.capital_commitments.each do |capital_commitment|
+          calc_fund_ratios(fund, capital_commitment, end_date)
+          notify("Folio #{capital_commitment.folio_id} calculations are now complete.", user_id)
+        rescue StandardError => e
+          notify("Error in fund ratios: #{e.message}", user_id, level: "danger")
+          raise e
         end
-
-        # Notify the user
-        notify("#{fund.name} fund ratio calculations are now complete. Please refresh the page.", user_id)
-
-      rescue StandardError => e
-        notify("Error in fund ratios: #{e.message}", user_id, level: "danger")
-        raise e
       end
+
+      # Notify the user
+      notify("#{fund.name} fund ratio calculations are now complete. Please refresh the page.", user_id)
+    rescue StandardError => e
+      notify("Error in fund ratios: #{e.message}", user_id, level: "danger")
+      raise e
     end
   end
 
