@@ -11,11 +11,9 @@ class AmlReportJob < ApplicationJob
   def perform(investor_kyc_id, _user_id = nil)
     Chewy.strategy(:sidekiq) do
       investor_kyc = InvestorKyc.find(investor_kyc_id)
-      Chewy.strategy(:sidekiq) do
-        aml_report = AmlReport.new(name: investor_kyc.full_name, investor_kyc_id:, entity_id: investor_kyc.entity_id, investor_id: investor_kyc.investor_id)
-        aml_report.generate({ year: investor_kyc.birth_date&.year.to_s })
-        aml_report.save!
-      end
+      aml_report = AmlReport.new(name: investor_kyc.full_name, investor_kyc_id:, entity_id: investor_kyc.entity_id, investor_id: investor_kyc.investor_id)
+      aml_report.generate({ year: investor_kyc.birth_date&.year.to_s })
+      aml_report.save!
     end
   end
 end
