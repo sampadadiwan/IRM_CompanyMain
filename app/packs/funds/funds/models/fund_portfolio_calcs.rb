@@ -162,9 +162,10 @@ class FundPortfolioCalcs
     portfolio_investments.group(:portfolio_company_id, :category, :sub_category).sum(:quantity).each do |k, quantity|
       # Get the valuation as of the end date
       portfolio_company_id = k[0]
-      instrument_type = k[1]
-      valuation = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor",
-                                  instrument_type:, valuation_date: ..@end_date).order(valuation_date: :asc).last
+      category = k[1]
+      sub_category = k[2]
+      valuation = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", category:,
+                                  sub_category:, valuation_date: ..@end_date).order(valuation_date: :asc).last
 
       # We cannot proceed without a valid valuation
       raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name} prior to date #{@end_date}" unless valuation

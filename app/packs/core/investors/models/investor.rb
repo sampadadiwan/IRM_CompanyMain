@@ -187,7 +187,7 @@ class Investor < ApplicationRecord
     end
 
     old_investor.investor_entity.employees.update_all(entity_id: new_investor.investor_entity_id)
-    old_investor.update_column(:investor_name, "#{old_investor.name} - Defunct/Inactive")
+    old_investor.update_column(:investor_name, "#{old_investor.investor_name} - Defunct/Inactive")
   end
 
   def setup_permissions(investor_entity)

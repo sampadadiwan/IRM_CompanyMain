@@ -608,6 +608,7 @@ namespace :irm do
             FactoryBot.create(:valuation, entity: e)
             (1..3).each do
               begin
+                FactoryBot.create(:valuation, entity: e, portfolio_company: pc)
                 pi = FactoryBot.create(:portfolio_investment, entity: e, fund:, portfolio_company: pc)
               rescue
               end

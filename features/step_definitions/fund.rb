@@ -1201,20 +1201,20 @@ Then('{string} has {string} "{string}" access to the fund_ratios') do |arg1,true
 end
 
 
-Then('{string} has {string} "{string}" access to the fund_ratios') do |arg1,truefalse, accesses|
-  args_temp = arg1.split(";").to_h { |kv| kv.split("=") }
-  @user = if User.exists?(args_temp)
-    User.find_by(args_temp)
-  else
-    FactoryBot.build(:user)
-  end
-  key_values(@user, arg1)
-  @user.save!
-  puts "##### Checking access to fund_ratios for funds with rights #{@fund.access_rights.to_json}"
-  accesses.split(",").each do |access|
-    @fund.fund_ratios.each do |fr|
-      puts "##Checking access #{access} on fund_ratios from #{@fund.name} for #{@user.email} as #{truefalse}"
-      Pundit.policy(@user, fr).send("#{access}?").to_s.should == truefalse
-    end
-  end
-end
+# Then('{string} has {string} "{string}" access to the fund_ratios') do |arg1,truefalse, accesses|
+#   args_temp = arg1.split(";").to_h { |kv| kv.split("=") }
+#   @user = if User.exists?(args_temp)
+#     User.find_by(args_temp)
+#   else
+#     FactoryBot.build(:user)
+#   end
+#   key_values(@user, arg1)
+#   @user.save!
+#   puts "##### Checking access to fund_ratios for funds with rights #{@fund.access_rights.to_json}"
+#   accesses.split(",").each do |access|
+#     @fund.fund_ratios.each do |fr|
+#       puts "##Checking access #{access} on fund_ratios from #{@fund.name} for #{@user.email} as #{truefalse}"
+#       Pundit.policy(@user, fr).send("#{access}?").to_s.should == truefalse
+#     end
+#   end
+# end
