@@ -116,7 +116,7 @@ class OfferSpaGenerator
     new_generated_doc.owner = offer
     new_generated_doc.owner_tag = "Generated"
     new_generated_doc.send_email = false
-
+    new_generated_doc.locked = true
     new_generated_doc.save
   end
 end

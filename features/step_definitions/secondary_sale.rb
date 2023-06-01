@@ -548,8 +548,9 @@ end
 
 
 Given('the sale has a SPA template') do
-  @sale.spa = File.open("public/sample_uploads/Purchase-Agreement-1.docx", "rb")
-  @sale.save
+  doc = Document.new(entity_id: @sale.entity_id, owner: @sale, name: "SPA", user: User.first, owner_tag: "Seller Template")
+  doc.file = File.open("public/sample_uploads/Purchase-Agreement-1.docx", "rb")
+  doc.save!
 end
 
 Then('when the offers are verified') do
@@ -562,7 +563,7 @@ end
 Then('the SPAs must be generated for each verified offer') do
   @sale.reload
   @sale.offers.verified.each do |offer|
-    offer.spa_data.should_not == nil
+    offer.documents.where(name: "SPA").should_not == nil
   end
 end
 
