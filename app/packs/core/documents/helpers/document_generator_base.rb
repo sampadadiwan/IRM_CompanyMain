@@ -16,7 +16,7 @@ module DocumentGeneratorBase
   end
 
   def cleanup
-    FileUtils.rm_rf(@working_dir)
+    FileUtils.rm_rf(@working_dir) if @working_dir
   end
 
   def add_image(context, field_name, image)
