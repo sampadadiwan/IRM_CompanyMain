@@ -67,7 +67,7 @@ class InvestorKyc < ApplicationRecord
   end
 
   after_create :generate_aml_report, if: ->(inv_kyc) { inv_kyc.full_name.present? }
-  before_save :generate_aml_report, if: :full_name_has_changed?
+  after_update :generate_aml_report, if: :full_name_has_changed?
   def generate_aml_report(user_id = nil)
     return if id.blank?
 
@@ -75,7 +75,7 @@ class InvestorKyc < ApplicationRecord
   end
 
   def full_name_has_changed?
-    full_name.present? && full_name_changed?
+    full_name.present? && saved_change_to_full_name?
   end
 
   scope :for_advisor, lambda { |user|
