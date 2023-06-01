@@ -15,7 +15,7 @@ class KycDataDatatable < AjaxDatatablesRails::ActiveRecord
         id: record.id,
         full_name: record.investor_kyc.full_name,
         created_at: record.created_at.strftime("%d %B, %Y - %I:%M:%S %p %Z(%:::z)"),
-        source: record.source,
+        source: record.source.upcase,
         dt_actions: record.decorate.dt_actions,
         DT_RowId: "kyc_data_#{record.id}" # This will automagically set the id attribute on the corresponding <tr> in the datatable
       }

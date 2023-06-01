@@ -75,4 +75,12 @@ class KycData < ApplicationRecord
     end
     perm_address = perm_address.select(&:present?).join(", ").gsub(/,(?=\s*\d{6}\b)/, " -")
   end
+
+  def get_json_table
+    if source == "ckyc"
+      Json2table.get_html_table(response['download_response']&.except("images"), JsonTable::TABLE_OPTIONS)
+    else
+      Json2table.get_html_table(response, JsonTable::TABLE_OPTIONS)
+    end
+  end
 end

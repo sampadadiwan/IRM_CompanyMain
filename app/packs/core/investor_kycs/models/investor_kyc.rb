@@ -66,10 +66,16 @@ class InvestorKyc < ApplicationRecord
     # InvestorKycMailer.with(id:).notify_kyc_updated.deliver_later
   end
 
-  after_save :generate_aml_report, if: ->(investor_kyc) { investor_kyc.full_name.present? and investor_kyc.full_name_changed? }
+  after_create :generate_aml_report, if: ->(inv_kyc) { inv_kyc.full_name.present? }
+  before_save :generate_aml_report, if: :full_name_has_changed?
   def generate_aml_report(user_id = nil)
-    user_id ||= self.user_id
+    return if id.blank?
+
     AmlReportJob.perform_later(id, user_id)
+  end
+
+  def full_name_has_changed?
+    full_name.present? && full_name_changed?
   end
 
   scope :for_advisor, lambda { |user|

@@ -54,7 +54,6 @@ class KycDatasController < ApplicationController
 
   def compare_ckyc_kra
     @kyc_datas = policy_scope(KycData)
-    authorize(@kyc_datas.last)
     @investor_kyc = nil
     @ckyc_data = nil
     @kra_data = nil
@@ -65,6 +64,7 @@ class KycDatasController < ApplicationController
       @ckyc_data = CkycKraService.new.get_ckyc_data(@investor_kyc) if @ckyc_data.blank?
       @kra_data = @kyc_datas.where(source: "kra").last
       @kra_data = CkycKraService.new.get_kra_data(@investor_kyc) if @kra_data.blank?
+      authorize(@kra_data)
     end
 
     respond_to do |format|
