@@ -36,10 +36,9 @@
             |
 
         
-            <% download_disabled =  @secondary_sale.allocation_status == 'Completed' ? nil : 'disabled' %>
 
             <%= link_to download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
-                                                    {class: "btn btn-outline-success #{download_disabled}"  } do %> 
+                                                    {class: "btn btn-outline-success"  } do %> 
                     <i class="fa-lg fa-regular fa-file-excel"></i> Download
             <% end %>
         
