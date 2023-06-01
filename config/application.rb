@@ -93,7 +93,7 @@ module InvestorRelationshipManagement
                                             email: {
                                               email_prefix: "[Error] #{Rails.env}: ",
                                               sender_address: %("Support" <#{ENV.fetch('SUPPORT_EMAIL', nil)}>),
-                                              exception_recipients: %(ENV.fetch('ERROR_EMAIL', nil))
+                                              exception_recipients: %("#{ENV.fetch('ERROR_EMAIL', nil)}")
                                             }
 
     # end
