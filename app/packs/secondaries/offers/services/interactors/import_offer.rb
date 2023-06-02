@@ -35,7 +35,7 @@ class ImportOffer < ImportUtil
     holding = Holding.joins(:user).where("users.email=? and holdings.entity_id=?",
                                          email, import_upload.entity_id).first
     # Get the Secondary Sale
-    secondary_sale = import_upload.entity.secondary_sales.last
+    secondary_sale = import_upload.owner
     # Make the offer
 
     if holding
@@ -47,10 +47,19 @@ class ImportOffer < ImportUtil
 
       setup_custom_fields(user_data, offer, custom_field_headers)
 
-      raise offer.errors.full_messages.to_s unless offer.save
+      ret_val = offer.save
+      raise offer.errors.full_messages.to_s unless ret_val
+
+      ret_val
     else
       raise "No holding found for user with email #{email}"
     end
+  end
+
+  def post_process(import_upload, _context)
+    # Sometimes we import custom fields. Ensure custom fields get created
+    @last_saved = import_upload.entity.offers.last
+    FormType.extract_from_db(@last_saved) if @last_saved
   end
 
   def adhoc_update(file_path, secondary_sale_id)

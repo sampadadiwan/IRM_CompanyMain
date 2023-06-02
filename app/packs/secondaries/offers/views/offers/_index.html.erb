@@ -7,8 +7,8 @@
 
 
         <%= link_to "Upload Offers", 
-                new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
-                "import_upload[owner_type]": "Entity", 
+                new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
+                "import_upload[owner_type]": "SecondarSale", 
                 "import_upload[import_type]": "Offer", 
                 "sample_upload": "OFFERS_SAMPLE"), 
                 { class: "btn btn-outline-primary"} if @secondary_sale && policy(@secondary_sale).update? %> 

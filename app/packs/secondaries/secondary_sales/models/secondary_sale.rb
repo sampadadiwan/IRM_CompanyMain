@@ -109,7 +109,7 @@ class SecondarySale < ApplicationRecord
   end
 
   def document_tags
-    ["Buyer", "Buyer Template", "Seller"]
+    ["Buyer", "Offer Template", "Seller"]
   end
 
   def buyer_investors
