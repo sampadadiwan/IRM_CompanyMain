@@ -28,7 +28,7 @@
 </div>
 
 
-<% data_source ||= offers_path(params, format: :json, all: true, secondary_sale_id: @secondary_sale.id, approved: params[:approved], verified: params[:verified]) %>
+<% data_source ||= offers_path(params, format: :json, all: true, secondary_sale_id: @secondary_sale&.id, approved: params[:approved], verified: params[:verified]) %>
 <% lazy_load_data ||= false %>
   
 <div class="table-responsive">
