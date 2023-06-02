@@ -50,7 +50,7 @@ class ApplicationController < ActionController::Base
 
   def setup_custom_fields(model)
     # Custom form fields
-    form_type = FormType.where(entity_id: current_user.entity_id, name: model.class.name).first
+    form_type = FormType.where(entity_id: model.entity_id, name: model.class.name).first
     model.form_type = form_type
   end
 
