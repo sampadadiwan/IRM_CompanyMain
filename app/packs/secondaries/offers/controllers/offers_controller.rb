@@ -10,9 +10,9 @@ class OffersController < ApplicationController
     @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
     @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
     @offers = @offers.where(secondary_sale_id: params[:secondary_sale_id]) if params[:secondary_sale_id].present?
-    @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest, holding: :funding_round)
+    @offers = @offers.joins(:investor, :user).includes(:secondary_sale, :entity, :interest, holding: :funding_round)
 
-    @offers = @offers.page(params[:page]) unless request.format.xlsx?
+    @offers = @offers.page(params[:page]) unless request.format.xlsx? || params[:all] == 'true'
 
     respond_to do |format|
       format.xlsx do
@@ -21,7 +21,7 @@ class OffersController < ApplicationController
         ] = "attachment; filename=offers.xlsx"
       end
       format.html { render :index }
-      format.json { render :index }
+      format.json { render json: OfferDatatable.new(params, offers: @offers) }
     end
   end
 

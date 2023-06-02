@@ -1,4 +1,8 @@
 
+<div data-controller="offers" 
+     data-offers-lazy-load-data-value=<%= false %>
+     data-offers-table-name-value="#offers">
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Offers</h1>
     <span>
@@ -8,7 +12,7 @@
 
         <%= link_to "Upload Offers", 
                 new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
-                "import_upload[owner_type]": "SecondarSale", 
+                "import_upload[owner_type]": "SecondarySale", 
                 "import_upload[import_type]": "Offer", 
                 "sample_upload": "OFFERS_SAMPLE"), 
                 { class: "btn btn-outline-primary"} if @secondary_sale && policy(@secondary_sale).update? %> 
@@ -23,61 +27,61 @@
     </span>
 </div>
 
-<div class="table-responsive" data-controller="datatable">
 
-<table id="offers" class="table table-bordered dataTable">
-    <thead>
-        <tr>
-            <th>
-                User
-            </th>
-            <th>
-                Investor
-            </th>
-            <% if show_secondary_sale %>
-            <th>
-                Secondary Sale
-            </th>
-            <% end %>
-            <th>
-                Quantity
-            </th>
-            <th>
-                Holding %
-            </th>
-            <th>
-                Allocation Quantity
-            </th>
-            <th>
-                Allocation %
-            </th>
-            <th>
-                Price
-            </th>
-            <th>
-                Allocation Amount
-            </th>
-            <th>
-                Notes
-            </th>
-            <th>
-                Approved
-            </th>
-            <th>
-                Verified
-            </th>
-            <th>
-            </th>
-        </tr>
-    </thead>
+<% data_source ||= offers_path(params, format: :json, all: true, secondary_sale_id: @secondary_sale.id, approved: params[:approved], verified: params[:verified]) %>
+<% lazy_load_data ||= false %>
+  
+<div class="table-responsive">
 
-    <tbody>
-        <% offers.each do |offer| %>
-            <%= render offer, show_entity: show_entity, show_secondary_sale: show_secondary_sale, secondary_sale: secondary_sale %>
-        <% end %>
-    </tbody>
-</table>
+    <% if lazy_load_data %>
+      <a class="load_data_link" data-action="click->offers#loadData"><span>Load Data</span></a>
+    <% end %>
+
+    <table id="offers" class="table table-bordered dataTable" data-source="<%= data_source %>" style="width:100%">
+        <thead>
+            <tr>
+                <th>
+                    User
+                </th>
+                <th>
+                    Investor
+                </th>
+                <th>
+                    Quantity
+                </th>
+                <th>
+                    Holding %
+                </th>
+                <th>
+                    Allocation Quantity
+                </th>
+                <th>
+                    Allocation %
+                </th>
+                <th>
+                    Price
+                </th>
+                <th>
+                    Allocation Amount
+                </th>
+                <th>
+                    Notes
+                </th>
+                <th>
+                    Approved
+                </th>
+                <th>
+                    Verified
+                </th>
+                <th>
+                </th>
+            </tr>
+        </thead>
+
+        <tbody>
+        </tbody>
+    </table>
 
 </div>
 
-<%=paginate @offers %>
+</div>

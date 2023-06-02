@@ -91,8 +91,7 @@
       <div id="offerings-tab" class="tab-pane fade">
         <div id="offerings" class="associated_entity">
           <% approved = policy(secondary_sale).owner? ? false : nil %>
-          <%= link_to offers_secondary_sale_path(id: secondary_sale.id, show_entity: false, 
-              show_secondary_sale: false, approved: approved), 
+          <%= link_to offers_secondary_sale_path(id: secondary_sale.id, show_entity: false, approved: approved), 
               class: "load_data_link", data: { turbo_frame: 'offers_frame' } do %>
             <span>Loading...</span>
           <% end %>

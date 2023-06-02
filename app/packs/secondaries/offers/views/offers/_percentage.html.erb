@@ -1,0 +1,4 @@
+<%= offer.percentage %>%
+<% if offer.percentage && offer.percentage > offer.secondary_sale.percent_allowed %>
+    <span class="badge badge-danger">Over Allowed Percentge</span>
+<% end %>
