@@ -17,8 +17,8 @@
     
 
     steps = ["Review your offer details below",  
-            "Please review the SPA and other generated documents below".html_safe, 
-            "You to accept the SPA using the 'Accept SPA' button below",
+            "Please review the SPA and other generated #{link_to 'documents', '#docs-tab'} below".html_safe, 
+            "You to accept the SPA using the #{link_to 'Accept SPA', '#accept_spa_btn'} button below".html_safe,
             "Wait for communication from #{@offer.secondary_sale.entity.name}"].freeze             
     %>
 
@@ -57,7 +57,8 @@
         <% end %>
 
       <% else %>
-        <%= button_to "Accept SPA" , accept_spa_offer_path(@offer), method: :patch, class: "btn btn-outline-success" , 
+        <%= button_to "Accept SPA" , accept_spa_offer_path(@offer), method: :patch, 
+            class: "btn btn-outline-success" , id: 'accept_spa_btn',
             form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
             msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(@offer).accept_spa? %>
 
