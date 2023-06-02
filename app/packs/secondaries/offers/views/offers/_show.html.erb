@@ -219,6 +219,8 @@
           <%= @offer.ifsc_code %>
         </td>
       </tr>
+
+      <%= display_custom_fields(@offer) if current_user %>
       
       <% if current_user %>
 
@@ -276,7 +278,7 @@
 
     <% end %>
 
-    <%= display_custom_fields(@offer) if current_user %>
+    
 
 
   </table>

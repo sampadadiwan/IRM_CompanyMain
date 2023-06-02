@@ -1,10 +1,28 @@
 <%= render "/layouts/alerts" %>
 
 <% if policy(@offer).update? && @offer.approved %>
-    <%= render "/layouts/steps", steps: ["Review your offer details below", 
+
+    <% 
+    
+    steps = ["Review your offer details below", 
             "Please #{link_to 'Add', edit_offer_path(@offer)} the required documentation & details to finalize the sale".html_safe, 
-            "You will need the follwing docs #{@offer.secondary_sale.seller_doc_list}",
-            "Wait for communication from #{@offer.secondary_sale.entity.name}"].freeze %>
+            "You will need the following docs #{@offer.secondary_sale.seller_doc_list}",
+            "Wait for communication from #{@offer.secondary_sale.entity.name}"].freeze
+
+    %>
+
+    <%= render "/layouts/steps", steps:  %>
+<% elsif policy(@offer).show? && @offer.verified %>
+  <% 
+    
+
+    steps = ["Review your offer details below",  
+            "Please review the SPA and other generated documents below".html_safe, 
+            "You to accept the SPA using the 'Accept SPA' button below",
+            "Wait for communication from #{@offer.secondary_sale.entity.name}"].freeze             
+    %>
+
+    <%= render "/layouts/steps", steps:  %>
 <% end %>
 
   <%= render "/offers/show" %>
