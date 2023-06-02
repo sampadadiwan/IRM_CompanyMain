@@ -63,4 +63,80 @@ Given('the entity {string} has aml enabled {string}') do |args, boolean|
   @entity.save!
 end
 
+Then('there is an investor {string} for the entity {string} with investor kyc and aml report is generated for it') do |arg1, arg2|
+  args_temp = arg2.split(";").to_h { |kv| kv.split("=") }
+  @investor_entity = if Entity.exists?(args_temp)
+    Entity.find_by(args_temp)
+  else
+    FactoryBot.build(:entity)
+  end
+  key_values(@investor_entity, arg2)
+  @investor_entity.save!
+  args_temp = arg1.split(";").to_h { |kv| kv.split("=") }
+  @investor = if Investor.exists?(args_temp)
+    Investor.find_by(args_temp)
+  else
+    FactoryBot.build(:investor, investor_entity_id: FactoryBot.create(:entity).id, entity_id: @investor_entity.id)
+  end
+  key_values(@investor, arg1)
+  @investor.entity_id = @investor_entity.id
+  @investor.save!
 
+  @investor.entity.entity_setting.fi_code = "test"
+  @investor.entity.entity_setting.ckyc_kra_enabled = true
+  @investor.entity.entity_setting.aml_enabled = true
+  @investor.entity.entity_setting.save!
+  visit(investor_kycs_url)
+  sleep(2)
+  click_on("New Investor Kyc")
+  sleep(3)
+  pan = "testpannum555"
+  fill_in('investor_kyc_birth_date', with: "22/02/2002")
+  fill_in('investor_kyc_PAN', with: pan)
+  click_on("Next")
+  sleep(3)
+  click_on("Select CKYC Data")
+  sleep(3)
+  click_on("Save")
+  InvestorKyc.where(PAN: pan).last.aml_reports.count.should > 0
+  AmlReport.where(name: InvestorKyc.where(PAN: pan).last.full_name).count > 0
+end
+
+Then('there is an investor {string} for the entity {string} with investor kyc and aml report is not generated for it') do |arg1, arg2|
+  args_temp = arg2.split(";").to_h { |kv| kv.split("=") }
+  @investor_entity = if Entity.exists?(args_temp)
+    Entity.find_by(args_temp)
+  else
+    FactoryBot.build(:entity)
+  end
+  key_values(@investor_entity, arg2)
+  @investor_entity.save!
+  args_temp = arg1.split(";").to_h { |kv| kv.split("=") }
+  @investor = if Investor.exists?(args_temp)
+    Investor.find_by(args_temp)
+  else
+    FactoryBot.build(:investor, investor_entity_id: FactoryBot.create(:entity).id, entity_id: @investor_entity.id)
+  end
+  key_values(@investor, arg1)
+  @investor.entity_id = @investor_entity.id
+  @investor.save!
+
+  @investor.entity.entity_setting.fi_code = "test"
+  @investor.entity.entity_setting.ckyc_kra_enabled = true
+  @investor.entity.entity_setting.aml_enabled = true
+  @investor.entity.entity_setting.save!
+  visit(investor_kycs_url)
+  sleep(2)
+  click_on("New Investor Kyc")
+  sleep(3)
+  pan = "testpannum555"
+  fill_in('investor_kyc_birth_date', with: "22/02/2002")
+  fill_in('investor_kyc_PAN', with: pan)
+  click_on("Next")
+  sleep(3)
+  click_on("Continue without Selecting")
+  sleep(3)
+  click_on("Save")
+  InvestorKyc.where(PAN: pan).last.aml_reports.count.should == 0
+  AmlReport.where(name: InvestorKyc.where(PAN: pan).last.full_name).count == 0
+end

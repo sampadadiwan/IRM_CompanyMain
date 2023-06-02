@@ -27,3 +27,25 @@ Scenario Outline: Access Aml Report as Other User
   |first_name=AdminUser|entity_type=Company;name=TestCompany123  |company_admin|"index,show,create,toggle_approved,generate_new"|investor_name=Investor12|first_name=Investor2|
   |first_name=approver  |entity_type=Company;name=TestCompany223  |approver |"index,show,create,toggle_approved,generate_new"|investor_name=Investor22|first_name=Investor2|
   |first_name=signatory  |entity_type=Company;name=TestCompany323  |signatory |"index,show,create,toggle_approved,generate_new"|investor_name=Investor32|first_name=Investor2|
+
+Scenario Outline: Auto Create new Aml Report
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given the entity "<entity>" has aml enabled "true"
+  Then there is an investor "<investor>" for the entity "<entity>" with investor kyc and aml report is generated for it
+
+  Examples:
+  |user	    |entity                                 |fund                	|investor|
+  |  	      |entity_type=Investment Fund;enable_funds=true |name=Test fund|investor_name=Investor12|
+
+Scenario Outline: Do not Create new Aml Report with blank name
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given the entity "<entity>" has aml enabled "true"
+  Then there is an investor "<investor>" for the entity "<entity>" with investor kyc and aml report is not generated for it
+
+  Examples:
+  |user	    |entity                                 |fund                	|investor|
+  |  	      |entity_type=Investment Fund;enable_funds=true |name=Test fund|investor_name=Investor12|
+
+

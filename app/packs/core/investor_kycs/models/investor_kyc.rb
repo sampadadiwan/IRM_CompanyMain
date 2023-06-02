@@ -69,9 +69,7 @@ class InvestorKyc < ApplicationRecord
   after_create :generate_aml_report, if: ->(inv_kyc) { inv_kyc.full_name.present? }
   after_update :generate_aml_report, if: :full_name_has_changed?
   def generate_aml_report(user_id = nil)
-    return if id.blank?
-
-    AmlReportJob.perform_later(id, user_id)
+    AmlReportJob.perform_later(id, user_id) if id.present? && full_name.present?
   end
 
   def full_name_has_changed?
