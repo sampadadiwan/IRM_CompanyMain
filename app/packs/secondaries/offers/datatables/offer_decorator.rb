@@ -13,7 +13,7 @@ class OfferDecorator < ApplicationDecorator
   def dt_actions
     links = []
     links << h.link_to('Show', h.offer_path(object), class: "btn btn-outline-primary")
-    links << h.link_to("Complete Offer Details", h.edit_offer_path(offer), class: "btn btn-outline-warning") if object.approved
+    links << h.link_to("Complete Offer Details", h.edit_offer_path(offer), class: "btn btn-outline-warning") if object.approved && h.policy(object).edit?
     h.safe_join(links, '')
   end
 end
