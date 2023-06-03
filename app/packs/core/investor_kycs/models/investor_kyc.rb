@@ -20,7 +20,6 @@ class InvestorKyc < ApplicationRecord
   belongs_to :verified_by, class_name: "User", optional: true
   validates :PAN, presence: true
 
-  # validation fail reloads page without investor dropdown
   validate :birth_date_cannot_be_in_the_future
   def birth_date_cannot_be_in_the_future
     errors.add(:birth_date, "can't be in the future") if birth_date.present? && birth_date > Date.current
@@ -67,7 +66,7 @@ class InvestorKyc < ApplicationRecord
   end
 
   after_create :generate_aml_report, if: ->(inv_kyc) { inv_kyc.full_name.present? }
-  after_update :generate_aml_report, if: :full_name_has_changed?
+  after_update_commit :generate_aml_report, if: :full_name_has_changed?
   def generate_aml_report(user_id = nil)
     AmlReportJob.perform_later(id, user_id) if id.present? && full_name.present?
   end
