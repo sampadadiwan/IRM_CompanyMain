@@ -18,14 +18,17 @@ class ImportUnzipFile
     dest_file = "#{unzip_dir}/#{File.basename(file.path)}"
     FileUtils.cp(file.path, dest_file)
 
-    Zip::File.open(dest_file) do |zip_file|
-      # Handle entries one by one
-      zip_file.each do |entry|
-        Rails.logger.debug { "Extracting #{entry.name}" }
-        # Extract to file or directory based on name in the archive
-        entry.extract "#{unzip_dir}/#{entry.name}"
-      end
-    end
+    # Zip::File.open(dest_file) do |zip_file|
+    #   # Handle entries one by one
+    #   zip_file.each do |entry|
+    #     Rails.logger.debug { "Extracting #{entry.name}" }
+    #     # Extract to file or directory based on name in the archive
+    #     entry.extract "#{unzip_dir}/#{entry.name}"
+    #   end
+    # end
+
+    # Some files were not getting uzipped by ruby zip, so we use the system unzip
+    `unzip -o #{dest_file} -d #{unzip_dir}`
   rescue StandardError => e
     Rails.logger.debug e.message
     raise e
