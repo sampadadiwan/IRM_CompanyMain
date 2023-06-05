@@ -91,13 +91,14 @@ Then('there is an investor {string} for the entity {string} with investor kyc an
   click_on("New Investor Kyc")
   sleep(3)
   pan = "testpannum555"
-  fill_in('investor_kyc_birth_date', with: "22/02/2002")
+  fill_in('investor_kyc_birth_date', with: "03/03/2020")
   fill_in('investor_kyc_PAN', with: pan)
   click_on("Next")
   sleep(3)
   click_on("Select CKYC Data")
   sleep(3)
   click_on("Save")
+  sleep(3)
   InvestorKyc.where(PAN: pan).last.aml_reports.count.should > 0
   AmlReport.where(name: InvestorKyc.where(PAN: pan).last.full_name).count > 0
 end
@@ -130,7 +131,7 @@ Then('there is an investor {string} for the entity {string} with investor kyc an
   click_on("New Investor Kyc")
   sleep(3)
   pan = "testpannum555"
-  fill_in('investor_kyc_birth_date', with: "22/02/2002")
+  fill_in('investor_kyc_birth_date', with: "01/01/1955")
   fill_in('investor_kyc_PAN', with: pan)
   click_on("Next")
   sleep(3)
