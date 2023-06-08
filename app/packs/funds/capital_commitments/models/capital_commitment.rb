@@ -171,7 +171,7 @@ class CapitalCommitment < ApplicationRecord
     docs = fund.documents.where(template: true).map(&:name)
     docs += fund.documents.where(template: true).map { |d| ["#{d.name} Header", "#{d.name} Footer"] }.flatten
     docs += fund.commitment_doc_list.split(",").map(&:strip) if fund.commitment_doc_list.present?
-    docs + ["Other"] if docs.present?
+    docs += ["Other"] if docs.present?
     docs.sort
   end
 

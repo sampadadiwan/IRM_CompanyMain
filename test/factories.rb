@@ -254,7 +254,7 @@ FactoryBot.define do
     cost_of_investment_cents { gross_amount * 0.8 }
     reinvestment { gross_amount * 0.5 }
     distribution_date { Date.today + rand(5).weeks }
-    title { "Capital Dist #{rand(1..10)}" }
+    title { "Capital Dist #{Time.now.to_f}" }
     commitment_type {"Pool"}
     unit_prices {
       fund.unit_types.split(",").map{|ut| [ut.strip, 100 * (rand(2) + 1)]}.to_h if fund.unit_types
@@ -276,7 +276,7 @@ FactoryBot.define do
     entity { fund.entity }
     due_date { Time.zone.today + 3.weeks }
     call_date { Time.zone.today + 3.weeks }
-    name { "Capital Call #{rand(1..10)}" }
+    name { "Capital Call #{Time.now.to_f}" }
     percentage_called { rand(1..4) * 10 }
     fund_closes { ["All"] }
     notes { Faker::Company.catch_phrase }
