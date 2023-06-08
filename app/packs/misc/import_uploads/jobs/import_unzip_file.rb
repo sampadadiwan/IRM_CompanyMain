@@ -16,7 +16,7 @@ class ImportUnzipFile
   def unzip(file, unzip_dir, _import_upload)
     FileUtils.mkdir_p unzip_dir
     dest_file = "#{unzip_dir}/#{File.basename(file.path)}"
-    FileUtils.cp(file.path, dest_file)
+    FileUtils.mv(file.path, dest_file)
 
     # Zip::File.open(dest_file) do |zip_file|
     #   # Handle entries one by one

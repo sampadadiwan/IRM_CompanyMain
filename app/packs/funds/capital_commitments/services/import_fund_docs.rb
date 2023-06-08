@@ -1,6 +1,6 @@
 class ImportFundDocs < ImportUtil
   STANDARD_HEADERS = ["Fund", "Investor", "Folio No", "Document Type", "Document Name", "File Name",
-                      "Tags", "Send Email", "Folder"].freeze
+                      "Tags", "Send Email", "Folder", "Call / Distribution Name"].freeze
   attr_accessor :commitments
 
   def standard_headers
@@ -38,6 +38,8 @@ class ImportFundDocs < ImportUtil
 
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
+    raise "Fund #{user_data['Fund']} not found" unless fund
+
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
     folio_id = user_data["Folio No"].presence
     send_email = user_data["Send Email"]&.strip == "Yes"
@@ -59,7 +61,7 @@ class ImportFundDocs < ImportUtil
                            user_id: import_upload.user_id, send_email:)
 
         doc.file = File.open(file_name, "rb")
-        [doc.save, doc.errors.full_messages]
+        doc.save ? [true, "Success"] : [false, doc.errors.full_messages.join(", ")]
       end
     elsif model.nil?
       [false, "#{user_data['Document Type'].strip} not found for #{folio_id}"]
@@ -77,9 +79,13 @@ class ImportFundDocs < ImportUtil
     when "Commitment"
       return CapitalCommitment.where(fund_id: fund.id, folio_id:).last
     when "Remittance"
-      return CapitalRemittance.where(fund_id: fund.id, folio_id:).last
+      call_name = user_data["Call / Distribution Name"].strip
+      call = CapitalCall.where(fund_id: fund.id, name: call_name).last
+      return CapitalRemittance.where(fund_id: fund.id, folio_id:, capital_call_id: call.id).last
     when "Distribution"
-      return CapitalDistributionPayment.where(fund_id: fund.id, folio_id:).last
+      distribution_name = user_data["Call / Distribution Name"].strip
+      distribution = CapitalDistribution.where(fund_id: fund.id, title: distribution_name).last
+      return CapitalDistributionPayment.where(fund_id: fund.id, folio_id:, capital_distribution_id: distribution.id).last
     end
 
     nil

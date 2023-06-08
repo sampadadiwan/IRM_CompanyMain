@@ -11,7 +11,7 @@ class ImportUpload < ApplicationRecord
               "INVESTOR_KYCS_SAMPLE" => "/sample_uploads/investor_kycs.xlsx",
               "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE" => "/sample_uploads/capital_distribution_payments.xlsx",
               "CAPITAL_COMMITMENT_SAMPLE" => "/sample_uploads/capital_commitments.xlsx",
-              "FUND_DOCS_SAMPLE" => "/sample_uploads/commitment_docs.zip",
+              "FUND_DOCS_SAMPLE" => "/sample_uploads/import_fund_docs.zip",
               "FUND_INVESTOR_ADVISORS_SAMPLE" => "/sample_uploads/investor_advisors.xlsx",
               "PORTFOLIO_SAMPLE" => "/sample_uploads/portfolio_investments.xlsx",
               "VALUATION_SAMPLE" => "/sample_uploads/valuations.xlsx",
