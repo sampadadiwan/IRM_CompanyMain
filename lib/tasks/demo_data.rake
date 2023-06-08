@@ -582,6 +582,8 @@ namespace :irm do
                 text: Faker::Company.catch_phrase, user: e.employees.sample,
                 file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
 
+            FactoryBot.create(:capital_remittance_payment, capital_remittance: cr, amount_cents: cr.call_amount_cents,  payment_date: cr.capital_call.due_date, fund: cr.fund, entity: cr.entity)
+
           end
         end
 

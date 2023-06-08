@@ -26,6 +26,7 @@ class CapitalDistribution < ApplicationRecord
   monetize :net_amount_cents, :reinvestment_cents, :gross_amount_cents, :distribution_amount_cents, :cost_of_investment_cents, with_currency: ->(i) { i.fund.currency }
 
   validates :gross_amount_cents, numericality: { greater_than: 0 }
+  validates_uniqueness_of :title, scope: :fund_id
 
   validates :distribution_date, presence: true
   validates :capital_commitment, presence: true, if: proc { |cd| cd.CoInvest? }

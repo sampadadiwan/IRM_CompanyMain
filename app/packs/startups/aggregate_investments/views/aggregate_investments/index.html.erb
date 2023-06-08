@@ -4,7 +4,7 @@
                             "Permission Investors", "Setup Scenarios"].freeze if current_user.has_cached_role?(:employee) %>
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Shareholding</h1>
+    <h1 class="h3 mb-0 text-gray-800">Shareholding for <%=@entity.name%> </h1>
 
     <span>
 
@@ -144,3 +144,12 @@
     To see individual investments click on the drill down or click on the 'Details View' button
   </small>
 </div>
+
+<% if policy(@entity).update? %>
+<div class="associated_entity">
+  <% 
+    access_right = AccessRight.new(entity: @entity, access_type: "Investment", owner: current_user.entity) 
+  %>
+  <%= render "/access_rights/index", access_rights: @entity.access_rights.investments, access_right: %>
+</div>
+<% end %>

@@ -20,7 +20,7 @@ class CapitalCall < ApplicationRecord
   serialize :fund_closes, Array
 
   has_many :capital_remittances, dependent: :destroy
-
+  validates_uniqueness_of :name, scope: :fund_id
   validates :name, :due_date, :call_date, :percentage_called, :fund_closes, :commitment_type, presence: true
   validates :percentage_called, numericality: { in: 0..100 }
 

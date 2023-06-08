@@ -1,7 +1,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Investor Access Rights</h1>
   <%
-    access_right ||= params[:entity_id].present? ? AccessRight.new(access_to_investor_id: params[:access_to_investor_id], owner_id: params[:owner_id], owner_type: params[:owner_type], entity_id: params[:entity_id]) : nil
+    access_right ||= params[:entity_id].present? ? AccessRight.new(access_to_investor_id: params[:access_to_investor_id], owner_id: params[:owner_id], owner_type: params[:owner_type], entity_id: params[:entity_id], access_type: params[:access_type]) : nil
   %>
   <span>
     <%= link_to "Grant Access", 

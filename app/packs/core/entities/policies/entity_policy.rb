@@ -52,4 +52,13 @@ class EntityPolicy < ApplicationPolicy
   def destroy?
     false
   end
+
+  def view_investments?
+    user.entity_id == record.id || investment_access?
+  end
+
+  def investment_access?
+    investor = Investor.for(user, record).first
+    record.access_rights.investments.exists?(access_to_investor_id: investor.id)
+  end
 end

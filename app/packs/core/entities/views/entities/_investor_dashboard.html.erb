@@ -9,8 +9,11 @@
 <div data-controller="datatable">
     <div class="mb-4">
         <div class="card shadow mb-4">
-            <div class="card-header py-3">
+            <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
                 <h6 class="m-0 font-weight-bold text-primary">Investments</h6>
+                <span>
+                    <%= link_to "View All", investor_investments_aggregate_investments_path(entity_id: entity.id), class: "btn btn-outline-primary" if policy(entity).view_investments? %>
+                </span>
             </div>
             <div class="card-body">
                 <%= render "/investments/index", investments: investments, title: "Investments", entity: entity %>
