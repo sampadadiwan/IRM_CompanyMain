@@ -1,5 +1,5 @@
 class ImportOffer < ImportUtil
-  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Middle Name", "Last Name", "Address", "PAN", "Bank Account", "IFSC Code"].freeze
+  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Last Name", "Address", "PAN", "Bank Account", "IFSC Code"].freeze
 
   def standard_headers
     STANDARD_HEADERS
