@@ -1,4 +1,6 @@
 <% data_source ||= investor_kycs_path(params, format: :json, all: true) %>
+<%=params %>
+<%=data_source %>
 <% lazy_load_data ||= false %>
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -30,6 +32,10 @@
   <div class="table-responsive" data-controller="investor-kycs"
        data-investor-kycs-lazy-load-data-value=<%= lazy_load_data %>
        data-investor-kycs-table-name-value="#investor_kycs">
+
+    <% if lazy_load_data %>
+      <a class="load_data_link" data-action="click->investor-kycs#loadData"><span>Load Data</span></a>
+    <% end %>
 
     <table id="investor_kycs" class="table table-bordered dataTable"
            data-source="<%= data_source %>" style="width:100%" >

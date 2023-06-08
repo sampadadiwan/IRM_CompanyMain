@@ -11,7 +11,6 @@ class User < ApplicationRecord
     "uae" => "971",
     "sg" => "65"
   }.freeze
-  ACC_UPDATE_NOTI_TEMPLATE = "account_update_alert_1".freeze
 
   tracked except: :update, owner: proc { |controller, _model| controller.current_user if controller && controller.current_user },
           entity_id: proc { |controller, _model| controller.current_user.entity_id if controller && controller.current_user }
@@ -181,7 +180,7 @@ class User < ApplicationRecord
   private
 
   def send_password_update_notification
-    WhatsappNotifier.new.perform({ template_name: ACC_UPDATE_NOTI_TEMPLATE }.stringify_keys, self) if whatsapp_enabled
+    WhatsappNotifier.new.perform({ template_name: ENV.fetch('ACC_UPDATE_NOTI_TEMPLATE') }.stringify_keys, self) if whatsapp_enabled
   rescue StandardError => e # added rescue because if error is raised in before_save callback then the record wont get saved
     Rails.logger.error "Error in sending whatsapp notification, #{e}"
   end

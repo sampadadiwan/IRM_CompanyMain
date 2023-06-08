@@ -1174,7 +1174,7 @@ Then('the whatsapp message should be send successfully to {string}') do |number|
   sleep(8) # wait for the job to complete and the message to be sent
   body = WhatsappNotifier.get_messages(number,1,1)
   body = JSON.parse(body)
-  body['messages']['items'].first['eventDescription'].include?('capital_remittance_noti_2').should == true
+  body['messages']['items'].first['eventDescription'].include?(ENV.fetch('CAPITAL_REMITTANCE_NOTI_TEMPLATE')).should == true
 end
 
 

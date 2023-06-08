@@ -10,7 +10,7 @@ class WhatsappNotifier < ApplicationJob
   def perform(params, user = nil)
     template_name = params["template_name"].to_s
     case template_name
-    when User::ACC_UPDATE_NOTI_TEMPLATE
+    when ENV.fetch('ACC_UPDATE_NOTI_TEMPLATE')
       params = if params.key?('template_params')
                  params['template_params']
                elsif user.present?

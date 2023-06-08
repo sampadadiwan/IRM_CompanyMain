@@ -12,7 +12,7 @@ class CapitalRemittancesWhatsappNotifier < WhatsappNotifier
     capital_remittance = CapitalRemittance.find(params["id"])
     # params for request body
     broadcast_name = "capital call noti broadcast"
-    template_name = "capital_remittance_noti_2"
+    template_name = ENV.fetch('CAPITAL_REMITTANCE_NOTI_TEMPLATE')
     investor_name = capital_remittance.investor_name
     fund_name = capital_remittance.fund.name
     entity_name = capital_remittance.entity.name
