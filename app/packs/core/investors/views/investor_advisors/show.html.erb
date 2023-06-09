@@ -16,9 +16,19 @@
       <%= @investor_advisor.email %>
     </td>
   </tr>
+  <tr>
+    <td>
+      Permissions
+    </td>
+    <td>
+      <% @investor_advisor.permissions.map{|p| p.to_s.titleize}.each do |permission| %>
+        <span class="badge badge-success"><%= permission %></span>
+      <% end %>
+    </td>
+  </tr>
 </table>
 <div>
-  <%= link_to "Edit", edit_investor_advisor_path(@investor_advisor), {class: "btn btn-primary"} %> |
+  <%= link_to "Edit", edit_investor_advisor_path(@investor_advisor), {class: "btn btn-outline-primary"} %> 
   <%= button_to "Delete", @investor_advisor, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>
 

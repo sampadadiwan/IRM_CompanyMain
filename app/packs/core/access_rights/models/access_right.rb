@@ -94,7 +94,7 @@ class AccessRight < ApplicationRecord
     when "DealInvestor"
       AccessRight::TYPES - ["All Stakeholder of Specific Category"] + ["Employee"]
     when "Fund", "SecondarySale"
-      AccessRight::TYPES + ["Employee"]
+      AccessRight::TYPES + %w[Employee Advisor]
     when "Document", "Folder"
       AccessRight::TYPES + ["Specific User"]
     else

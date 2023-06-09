@@ -9,6 +9,8 @@
 # 4. Then he becomes like an employee whose access is controlled via access rights
 
 class InvestorAdvisor < ApplicationRecord
+  include UserEnabled
+
   belongs_to :entity
   belongs_to :user
 
@@ -26,6 +28,7 @@ class InvestorAdvisor < ApplicationRecord
   def switch(user)
     user.entity_id = entity_id
     user.investor_advisor_id = id
+    user.entity_type = user.entity.entity_type
     user.save
   end
 

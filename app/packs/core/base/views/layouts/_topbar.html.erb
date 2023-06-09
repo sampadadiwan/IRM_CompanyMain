@@ -125,13 +125,11 @@
                                 Entity Users
                             </a>
 
-                            <% if current_user&.entity_type != "Investment Fund" %>
                             <a class="dropdown-item" href="<%= investor_advisors_path %>">
                                 <i class="fas fa-users fa-sm fa-fw mr-2 text-gray-400"></i>
                                 Advisors
                             </a>
-                            <% end %>
-
+                            
                             <a class="dropdown-item" href="<%= access_rights_path %>">
                                 <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
                                 Stakeholder Access Rights

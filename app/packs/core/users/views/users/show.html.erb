@@ -64,6 +64,17 @@
           </td>
         </tr>
 
+        <tr>
+          <td>
+            Permissions
+          </td>
+          <td>
+            <% @user.permissions.map{|p| p.to_s.titleize}.each do |permission| %>
+              <span class="badge badge-success"><%= permission %></span>
+            <% end %>
+          </td>
+        </tr>
+
         <% if Entity::SECONDARY_BUYERS.include? @user.entity&.entity_type %>
           <tr>
             <td>

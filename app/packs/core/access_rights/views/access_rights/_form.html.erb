@@ -28,6 +28,9 @@
           types = access_right.types
           select_investor_users = false
           select_employees = false
+          select_advisors = false
+          investor_advisors = current_user.entity.investor_advisors
+          users = current_user.entity.employees
 
           if ["Fund", "SecondarySale"].include? access_right.owner_type
             users_url = users_path
@@ -51,12 +54,15 @@
           <% end %>
 
 
-          <% if select_employees %>
-            <div class="form-group" id="employee_form_group">
-              <%= form.label :user_id, "Select Employee" %>
-              <%= form.select :user_id, [], {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" }  %>
-            </div>
-          <% end %>
+          <div class="form-group" id="employee_form_group">
+            <%= form.label :user_id, "Select Employee" %>
+            <%= form.select :user_id, users.map{|u| [u.full_name, u.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" } , id: "employee_id" %>
+          </div>
+
+          <div class="form-group" id="investor_advisor_form_group">
+            <%= form.label :user_id, "Select Advisor" %>
+            <%= form.select :user_id, investor_advisors.map{|ia| [ia.user.full_name, ia.user_id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", id: "advisor_id"  %>
+          </div>
 
         </div>
 
