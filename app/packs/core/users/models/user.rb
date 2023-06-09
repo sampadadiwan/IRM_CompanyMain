@@ -177,6 +177,10 @@ class User < ApplicationRecord
     advisor_entity_id.present? && advisor_entity_id != entity_id
   end
 
+  def investor_advisor
+    entity.investor_advisors.where(user_id: id).first
+  end
+
   private
 
   def send_password_update_notification
