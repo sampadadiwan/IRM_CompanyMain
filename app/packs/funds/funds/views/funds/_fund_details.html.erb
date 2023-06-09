@@ -6,7 +6,7 @@
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#commitments-tab"
           data-action="click->tabdetails#loadData">Commitments</a>
 
-      <% if policy(fund).update? || policy(fund).permissioned_advisor? %>
+      <% if policy(fund).update? %>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-calls-tab"
             data-action="click->tabdetails#loadData">Calls</a>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-distributions-tab"
@@ -88,7 +88,7 @@
         </div>
 
 
-        <% if policy(fund).update? || policy(fund).permissioned_advisor? %>
+        <% if policy(fund).update? %>
 
         <div id="capital-calls-tab" class="tab-pane fade in">
           <div id="capital-calls" class="associated_entity">

@@ -1,6 +1,7 @@
 class PortfolioInvestment < ApplicationRecord
   include WithCustomField
   include WithFolder
+  include ForInvestor
 
   belongs_to :entity
   belongs_to :fund

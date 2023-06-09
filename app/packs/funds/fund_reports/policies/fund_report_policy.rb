@@ -11,8 +11,7 @@ class FundReportPolicy < FundBasePolicy
 
   def show?
     permissioned_employee? ||
-      permissioned_investor? ||
-      permissioned_advisor?
+      permissioned_investor?
   end
 
   def new?
@@ -20,8 +19,7 @@ class FundReportPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) ||
-      permissioned_advisor?(:update)
+    permissioned_employee?(:update)
   end
 
   def edit?
@@ -29,7 +27,6 @@ class FundReportPolicy < FundBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy) ||
-      permissioned_advisor?(:destroy)
+    permissioned_employee?(:destroy)
   end
 end

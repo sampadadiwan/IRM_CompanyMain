@@ -4,7 +4,7 @@ module ForInvestor
   included do
     # Defines which tabel to join with for access_rights
     def self.parent_class_type
-      if %w[CapitalCommitment CapitalCall CapitalRemittance CapitalDistribution CapitalDistributionPayment FundUnit].include?(name)
+      if %w[CapitalCommitment CapitalCall CapitalRemittance CapitalDistribution CapitalDistributionPayment FundUnit FundRatio FundUnit FundUnitSetting PortfolioInvestment AggregatePortfolioInvestment FundFormula].include?(name)
         Fund
       elsif ["ExpressionOfInterest"].include?(name)
         InvestmentOpportunity
@@ -21,18 +21,6 @@ module ForInvestor
                     end
 
       join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
-    }
-
-    scope :for_advisor, lambda { |user|
-      join_clause = if instance_methods.include?(:access_rights)
-                      joins(:access_rights)
-                    else
-                      joins(parent_class_type.name.underscore => :access_rights)
-                    end
-
-      join_clause.merge(AccessRight.access_filter(user))
-                 .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
-                 .where("investors.investor_entity_id=?", user.entity_id)
     }
 
     # Some models have a belongs_to :investor association

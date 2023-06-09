@@ -1,4 +1,6 @@
 class AggregatePortfolioInvestment < ApplicationRecord
+  include ForInvestor
+
   belongs_to :entity
   belongs_to :fund
   belongs_to :portfolio_company, class_name: "Investor"

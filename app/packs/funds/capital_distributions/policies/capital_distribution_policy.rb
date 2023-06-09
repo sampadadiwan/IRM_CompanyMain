@@ -5,8 +5,6 @@ class CapitalDistributionPolicy < FundBasePolicy
         scope.where(entity_id: user.entity_id)
       elsif user.curr_role == "employee" && user.entity_type == "Investment Fund"
         scope.for_employee(user)
-      elsif user.curr_role.to_sym == :advisor
-        scope.for_advisor(user).distinct
       else
         scope.for_investor(user).distinct
       end
@@ -19,8 +17,7 @@ class CapitalDistributionPolicy < FundBasePolicy
 
   def show?
     permissioned_employee? ||
-      permissioned_investor? ||
-      permissioned_advisor?
+      permissioned_investor?
   end
 
   def new?
@@ -28,8 +25,7 @@ class CapitalDistributionPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) ||
-      permissioned_advisor?(:update)
+    permissioned_employee?(:update)
   end
 
   def payments_completed?
@@ -49,8 +45,7 @@ class CapitalDistributionPolicy < FundBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy) ||
-      permissioned_advisor?(:destroy)
+    permissioned_employee?(:destroy)
   end
 
   def reminder?

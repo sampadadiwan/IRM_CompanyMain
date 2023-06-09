@@ -1,7 +1,13 @@
 class FundRatioPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      scope.where(entity_id: user.entity_id)
+      if user.has_cached_role?(:company_admin) && user.entity_type == "Investment Fund"
+        scope.where(entity_id: user.entity_id)
+      elsif user.curr_role == 'employee' && user.entity_type == "Investment Fund"
+        scope.for_employee(user)
+      else
+        scope.for_investor(user)
+      end
     end
   end
 

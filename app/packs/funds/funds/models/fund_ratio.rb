@@ -1,5 +1,6 @@
 class FundRatio < ApplicationRecord
   include Trackable
+  include ForInvestor
 
   belongs_to :entity
   belongs_to :fund

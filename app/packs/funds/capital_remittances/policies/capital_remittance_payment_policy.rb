@@ -1,10 +1,10 @@
 class CapitalRemittancePaymentPolicy < FundBasePolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:employee)
+      if user.has_cached_role?(:company_admin)
         scope.where(entity_id: user.entity_id)
-      elsif user.curr_role.to_sym == :advisor
-        scope.for_advisor(user)
+      elsif user.curr_role.to_sym == :employee
+        scope.for_employee(user)
       else
         scope.none
       end
@@ -17,8 +17,7 @@ class CapitalRemittancePaymentPolicy < FundBasePolicy
 
   def show?
     permissioned_employee? ||
-      permissioned_investor? ||
-      permissioned_advisor?
+      permissioned_investor?
   end
 
   def new?
@@ -31,8 +30,7 @@ class CapitalRemittancePaymentPolicy < FundBasePolicy
 
   def update?
     permissioned_investor? ||
-      permissioned_employee?(:update) ||
-      permissioned_advisor?(:update)
+      permissioned_employee?(:update)
   end
 
   def edit?
@@ -40,7 +38,6 @@ class CapitalRemittancePaymentPolicy < FundBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy) ||
-      permissioned_advisor?(:destroy)
+    permissioned_employee?(:destroy)
   end
 end

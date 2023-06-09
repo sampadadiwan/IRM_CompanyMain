@@ -108,13 +108,12 @@ Scenario Outline: Access fund & details as Investor
     |  	        |entity_type=Investment Fund  |company_admin   |yes   |false   |     |edit,update |
 
 
-
 Scenario Outline: Access fund & details as Advisor
   Given there is a user "<user>" for an entity "<entity>"
   Given there is an existing investor "entity_type=Family Office"
-  Given there is an existing investor entity "entity_type=Advisor" with employee "first_name=Advisor"
+  Given there is an existing investor entity "entity_type=Investor Advisor" with employee "first_name=Advisor"
   Given there is a fund "name=Test fund" for the entity
-  And another user is "<given>" advisor access to the fund
+  And another user is "<given>" fund advisor access to the fund
   Given the user has role "<role>"
   Given the fund has capital commitments from each investor
   Then user "<should>" have "<access>" access to his own capital commitment
@@ -168,9 +167,9 @@ Scenario Outline: Access fund & details as Investor Advisor
 Scenario Outline: Access fund & details as Advisor with update access
   Given there is a user "<user>" for an entity "<entity>"
   Given there is an existing investor "entity_type=Family Office"
-  Given there is an existing investor entity "entity_type=Advisor" with employee "first_name=Advisor"
+  Given there is an existing investor entity "entity_type=Investor Advisor" with employee "first_name=Advisor"
   Given there is a fund "name=Test fund" for the entity
-  And another user is "<given>" advisor access to the fund
+  And another user is "<given>" fund advisor access to the fund
   And the access right has access "<crud>"
   Given the user has role "<role>"
   Given the fund has capital commitments from each investor
@@ -187,7 +186,7 @@ Scenario Outline: Access fund & details as Advisor with update access
   Examples:
   	|user	    |entity                         |role       |given  |should	|access | crud |
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show  | read |
-    |  	        |entity_type=Investment Fund  |investor   |yes   |true   |edit,update,destroy     | create,read,update,destroy |
+    |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |edit,update     | update |
     |  	       |entity_type=Investment Fund  |investor   |yes   |false   |destroy     | update |
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |destroy     | destroy |

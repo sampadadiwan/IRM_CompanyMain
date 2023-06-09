@@ -17,8 +17,7 @@ class ExpressionOfInterestPolicy < IoBasePolicy
 
   def show?
     permissioned_employee? ||
-      permissioned_investor? ||
-      permissioned_advisor?
+      permissioned_investor?
   end
 
   def new?
@@ -26,8 +25,7 @@ class ExpressionOfInterestPolicy < IoBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) ||
-      permissioned_advisor?(:update)
+    permissioned_employee?(:update)
   end
 
   def edit?
@@ -44,8 +42,7 @@ class ExpressionOfInterestPolicy < IoBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy) ||
-      permissioned_advisor?(:destroy)
+    permissioned_employee?(:destroy)
   end
 
   def approve?

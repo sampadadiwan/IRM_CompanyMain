@@ -1,4 +1,6 @@
 class FundFormula < ApplicationRecord
+  include ForInvestor
+
   belongs_to :fund
   belongs_to :entity
   acts_as_list scope: %i[fund_id], column: :sequence

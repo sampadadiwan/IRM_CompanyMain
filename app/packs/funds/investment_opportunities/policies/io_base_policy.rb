@@ -17,23 +17,6 @@ class IoBasePolicy < ApplicationPolicy
     end
   end
 
-  def permissioned_advisor?(perm = nil)
-    # binding.pry
-
-    if user.entity_id != record.entity_id && user.curr_role == "advisor"
-      investment_opportunity_id = record.instance_of?(InvestmentOpportunity) ? record.id : record.investment_opportunity_id
-      @investment_opportunity ||= InvestmentOpportunity.for_advisor(user).includes(:access_rights).where("investment_opportunities.id=?", investment_opportunity_id).first
-      if perm
-        @investment_opportunity.present? && @investment_opportunity.access_rights[0].permissions.set?(perm)
-      else
-        @investment_opportunity.present?
-      end
-    else
-      false
-    end
-  end
-
-  # This must always be called after permissioned_advisor?
   def permissioned_investor?
     if user.entity_id == record.entity_id
       false
@@ -45,7 +28,6 @@ class IoBasePolicy < ApplicationPolicy
 
   def create?
     (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)) ||
-      permissioned_employee?(:create) ||
-      permissioned_advisor?(:create)
+      permissioned_employee?(:create)
   end
 end

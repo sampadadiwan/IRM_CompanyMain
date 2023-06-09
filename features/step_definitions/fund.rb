@@ -59,6 +59,9 @@
         if inv.investor_entity.entity_type != "Investor Advisor"
           # Create the Investor Advisor
           investor_advisor = InvestorAdvisor.create!(entity_id: inv.investor_entity_id, email: @user.email)
+          investor_advisor.permissions.set(:enable_funds)
+          investor_advisor.save
+
           puts "\n####Investor Advisor####\n"
           puts investor_advisor.to_json
 
@@ -84,24 +87,38 @@
     end
   end
 
-  Given('another user is {string} advisor access to the fund') do |given|
-    # Hack to make the tests work without rewriting many steps for another user
+  Given('another user is {string} fund advisor access to the fund') do |given|
     @user = @employee_investor
+
     if given == "given" || given == "yes"
-      @access_right = AccessRight.create(entity_id: @fund.entity_id, owner: @fund, access_to_investor_id: @investor.id, metadata: "Advisor")
+      
+          # Create the Investor Advisor
+          investor_advisor = InvestorAdvisor.create!(entity_id: @entity.id, email: @user.email)
+          investor_advisor.permissions.set(:enable_funds)
+          investor_advisor.save
+          
+          puts "\n####Investor Advisor####\n"
+          puts investor_advisor.to_json
 
-      @user.curr_role = "advisor"
-      @user.save!
-      @user.add_role :advisor
+          # Switch the IA to the entity
+          investor_advisor.switch(@user)
 
-      ia = InvestorAccess.create(entity: @investor.entity, investor: @investor,
-        first_name: @user.first_name, last_name: @user.last_name,
-        email: @user.email, granter: @user, approved: true )
+          # Create the Access Right
+          @access_right = AccessRight.create!(entity_id: @entity.id, owner: @fund, user_id: @user.id, metadata: "Investor Advisor")
+          @access_right.permissions.set(:create)
+          @access_right.permissions.set(:read)
+          # @access_right.permissions.set(:update)
+          # @access_right.permissions.set(:destroy)
+          @access_right.save
+          
 
-      puts "\n####Investor Access####\n"
-      puts ia.to_json
+          puts "\n####Access Right####\n"
+          ap @access_right
+
     end
   end
+
+  
 
   Given('the access right has access {string}') do |crud|
     puts AccessRight.all.to_json
@@ -381,7 +398,7 @@ Then('user {string} have {string} access to his own capital commitment') do |tru
 
       if(cc.investor.investor_entity_id == @user.entity_id)
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
-      elsif(@user.curr_role == "advisor")
+      elsif(@user.investor_advisor?)
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
       else
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == "false"
@@ -438,7 +455,7 @@ Then('user {string} have {string} access to his own capital remittances') do |tr
       puts "##Checking access #{access} on capital_remittance from #{cc.investor.investor_name} for #{@user.email} is #{Pundit.policy(@user, cc).send("#{access}?")}"
       if(cc.investor.investor_entity_id == @user.entity_id)
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
-      elsif(@user.curr_role == "advisor")
+      elsif(@user.investor_advisor?)
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
       else
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == "false"
@@ -507,7 +524,7 @@ Then('user {string} have {string} access to his own capital distribution payment
       puts "##Checking access #{access} on capital_distribution_payments from #{cc.investor.investor_name} for #{@user.email} as #{Pundit.policy(@user, cc).send("#{access}?")}"
       if(cc.investor.investor_entity_id == @user.entity_id)
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
-      elsif(@user.curr_role == "advisor")
+      elsif(@user.investor_advisor?)
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == truefalse
       else
         Pundit.policy(@user, cc).send("#{access}?").to_s.should == "false"

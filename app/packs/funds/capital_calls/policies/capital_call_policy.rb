@@ -5,8 +5,6 @@ class CapitalCallPolicy < FundBasePolicy
         scope.where(entity_id: user.entity_id)
       elsif user.curr_role == "employee" && user.entity_type == "Investment Fund"
         scope.for_employee(user)
-      elsif user.curr_role.to_sym == :advisor
-        scope.for_advisor(user)
       else
         scope.for_investor(user)
       end
@@ -19,8 +17,7 @@ class CapitalCallPolicy < FundBasePolicy
 
   def show?
     permissioned_investor? ||
-      permissioned_employee? ||
-      permissioned_advisor?
+      permissioned_employee?
   end
 
   def new?
@@ -28,8 +25,7 @@ class CapitalCallPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) ||
-      permissioned_advisor?(:update)
+    permissioned_employee?(:update)
   end
 
   def approve?
@@ -49,8 +45,7 @@ class CapitalCallPolicy < FundBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy) ||
-      permissioned_advisor?(:destroy)
+    permissioned_employee?(:destroy)
   end
 
   def reminder?

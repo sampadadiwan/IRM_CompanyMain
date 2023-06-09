@@ -19,7 +19,6 @@ class InvestmentOpportunityPolicy < IoBasePolicy
     user.enable_inv_opportunities &&
       (
         permissioned_employee? ||
-        permissioned_advisor?  ||
         permissioned_investor?
       )
   end
@@ -33,8 +32,7 @@ class InvestmentOpportunityPolicy < IoBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) ||
-      permissioned_advisor?(:update)
+    permissioned_employee?(:update)
   end
 
   def edit?
@@ -42,8 +40,7 @@ class InvestmentOpportunityPolicy < IoBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy) ||
-      permissioned_advisor?(:destroy)
+    permissioned_employee?(:destroy)
   end
 
   def allocate?
