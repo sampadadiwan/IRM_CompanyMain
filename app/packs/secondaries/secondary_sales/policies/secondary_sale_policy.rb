@@ -3,11 +3,11 @@ class SecondarySalePolicy < SaleBasePolicy
     def resolve
       case user.curr_role.to_sym
       when :employee
-        scope.where(entity_id: user.entity_id)
+        user.has_cached_role?(:company_admin) ? scope.where(entity_id: user.entity_id) : scope.for_employee(user)
       when :holding
-        scope.for(user).distinct
+        scope.for_investor(user).distinct
       when :investor
-        scope.for(user)
+        scope.for_investor(user)
       else
         scope.none
       end

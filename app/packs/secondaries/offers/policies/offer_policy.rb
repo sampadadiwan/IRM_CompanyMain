@@ -1,12 +1,15 @@
 class OfferPolicy < SaleBasePolicy
   class Scope < Scope
     def resolve
-      if user.curr_role.to_sym == :holding
+      case user.curr_role.to_sym
+      when :employee
+        user.has_cached_role?(:company_admin) ? scope.where(entity_id: user.entity_id) : scope.for_employee(user)
+      when :holding
         scope.where(user_id: user.id)
-      elsif user.curr_role.to_sym == :investor
-        scope.joins(:investor).where('investors.investor_entity_id': user.entity_id)
+      when :investor
+        scope.for_investor(user)
       else
-        scope.where(entity_id: user.entity_id)
+        scope.none
       end
     end
   end

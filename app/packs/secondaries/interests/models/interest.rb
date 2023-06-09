@@ -3,6 +3,7 @@ class Interest < ApplicationRecord
   include WithFolder
   include SaleChildrenScopes
   include WithCustomField
+  include ForInvestor
 
   belongs_to :user
   belongs_to :final_agreement_user, class_name: "User", optional: true

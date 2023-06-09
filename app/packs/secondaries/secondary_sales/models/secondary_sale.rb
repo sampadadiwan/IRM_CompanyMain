@@ -6,6 +6,7 @@ class SecondarySale < ApplicationRecord
   include SaleAccessScopes
   include WithCustomField
   include InvestorsGrantedAccess
+  include ForInvestor
 
   # Make all models searchable
   update_index('secondary_sale') { self }
@@ -35,28 +36,6 @@ class SecondarySale < ApplicationRecord
   validates :final_price, presence: true, if: -> { price_type == 'Fixed Price' }
   validates :min_price, :max_price, presence: true, if: -> { price_type == 'Price Range' }
   validates :max_price, numericality: { greater_than: :min_price }, if: -> { price_type == 'Price Range' }
-
-  scope :for, lambda { |user|
-                if user.entity && user.entity.is_holdings_entity
-                  # Employees dont need InvestorAccess, they have default access
-                  joins(:access_rights)
-                    .merge(AccessRight.access_filter(user))
-                    .joins(entity: :investors)
-                    # Ensure that the user is an investor and tis investor has been given access rights
-                    .where("investors.investor_entity_id=?", user.entity_id)
-
-                else
-                  joins(:access_rights)
-                    .merge(AccessRight.access_filter(user))
-                    .joins(entity: :investors)
-                    # Ensure that the user is an investor and tis investor has been given access rights
-                    .where("investors.investor_entity_id=?", user.entity_id)
-                    # Ensure this user has investor access
-                    .joins(entity: :investor_accesses)
-                    .merge(InvestorAccess.approved_for_user(user))
-
-                end
-              }
 
   before_save :set_defaults
   def set_defaults

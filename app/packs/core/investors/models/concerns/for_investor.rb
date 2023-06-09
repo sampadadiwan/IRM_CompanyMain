@@ -8,6 +8,8 @@ module ForInvestor
         Fund
       elsif ["ExpressionOfInterest"].include?(name)
         InvestmentOpportunity
+      elsif %w[Offer Interest].include?(name)
+        SecondarySale
       else
         self
       end
