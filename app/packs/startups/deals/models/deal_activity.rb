@@ -60,11 +60,4 @@ class DealActivity < ApplicationRecord
   def folder_type
     :regular
   end
-
-  scope :for_advisor, lambda { |user|
-    # Ensure the access rghts for Document
-    joins(deal_investor: :access_rights).merge(AccessRight.access_filter(user))
-                                        .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
-                                        .where("investors.investor_entity_id=?", user.entity_id)
-  }
 end

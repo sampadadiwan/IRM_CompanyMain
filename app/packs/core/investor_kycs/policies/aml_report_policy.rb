@@ -3,8 +3,6 @@ class AmlReportPolicy < ApplicationPolicy
     def resolve
       if %i[employee].include? user.curr_role.to_sym
         scope.where(entity_id: user.entity_id)
-      elsif user.curr_role.to_sym == :advisor
-        scope.for_advisor(user)
       else
         scope.none
       end
@@ -22,10 +20,6 @@ class AmlReportPolicy < ApplicationPolicy
 
   def create?
     false
-  end
-
-  def advisor?
-    record.entity.advisor?(user)
   end
 
   def new?

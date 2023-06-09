@@ -4,8 +4,6 @@ class SecondarySalePolicy < SaleBasePolicy
       case user.curr_role.to_sym
       when :employee
         scope.where(entity_id: user.entity_id)
-      when :advisor
-        scope.for_advisor(user)
       when :holding
         scope.for(user).distinct
       when :investor
@@ -29,8 +27,7 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def owner?
-    permissioned_employee?(:update) ||
-      permissioned_advisor?(:update)
+    permissioned_employee?(:update)
   end
 
   def offers?
@@ -59,8 +56,7 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def see_private_docs?
-    permissioned_advisor? ||
-      permissioned_employee? ||
+    permissioned_employee? ||
       user.entity.interests_shown.short_listed.where(secondary_sale_id: record.id).present?
   end
 
@@ -68,15 +64,14 @@ class SecondarySalePolicy < SaleBasePolicy
     if user.entity_id == record.entity_id && user.enable_secondary_sale
       true
     else
-      (permissioned_advisor? ||
-        permissioned_investor? ||
+      (permissioned_investor? ||
         external_sale?)
     end
   end
 
   def create?
     user.enable_secondary_sale &&
-      (permissioned_employee?(:create) || permissioned_advisor?(:create))
+      permissioned_employee?(:create)
   end
 
   def new?
@@ -85,7 +80,7 @@ class SecondarySalePolicy < SaleBasePolicy
 
   def update?
     user.enable_secondary_sale && !record.finalized &&
-      (permissioned_employee?(:update) || permissioned_advisor?(:update))
+      permissioned_employee?(:update)
   end
 
   def spa_upload?
@@ -137,8 +132,7 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy) ||
-      permissioned_advisor?(:destroy)
+    permissioned_employee?(:destroy)
   end
 
   def buyer?

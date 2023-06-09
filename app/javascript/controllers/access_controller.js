@@ -57,7 +57,7 @@ export default class extends Controller {
         this.showPermissions();
         break;
 
-      case "Investor Advisor", "Advisor":
+      case "Investor Advisor":
           // hide category & disable
           this.hideAll();
           this.showInvestorAdvisor();

@@ -17,10 +17,6 @@ class AdhaarEsignPolicy < ApplicationPolicy
     false
   end
 
-  def advisor?
-    record.entity.advisor?(user)
-  end
-
   def new?
     create?
   end

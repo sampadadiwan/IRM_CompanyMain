@@ -82,7 +82,7 @@ class Entity < ApplicationRecord
   monetize :total_investments, as: "total", with_model_currency: :currency
   monetize :per_share_value_cents, with_model_currency: :currency
 
-  TYPES = ["Investor", "Investor Advisor", "Company", "Holding", "Investment Advisor", "Family Office", "Investment Fund", "Consulting", "Advisor"].freeze
+  TYPES = ["Investor", "Investor Advisor", "Company", "Holding", "Investment Advisor", "Family Office", "Investment Fund", "Consulting"].freeze
   SECONDARY_BUYERS = ["Investor", "Investment Advisor", "Family Office"].freeze
 
   FUNDING_UNITS = %w[Lakhs Crores].freeze
@@ -92,7 +92,6 @@ class Entity < ApplicationRecord
   scope :vcs, -> { where(entity_type: "Investor") }
   scope :consulting, -> { where(entity_type: "Consulting") }
   scope :startups, -> { where(entity_type: "Company") }
-  scope :advisors, -> { where(entity_type: "Advisor") }
   scope :investment_advisors, -> { where(entity_type: "Investment Advisor") }
   scope :investor_advisors, -> { where(entity_type: "Investor Advisor") }
   scope :family_offices, -> { where(entity_type: "Family Office") }

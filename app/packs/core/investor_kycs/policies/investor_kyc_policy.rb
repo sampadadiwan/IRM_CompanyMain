@@ -3,8 +3,6 @@ class InvestorKycPolicy < ApplicationPolicy
     def resolve
       if %i[employee].include? user.curr_role.to_sym
         scope.where(entity_id: user.entity_id)
-      elsif user.curr_role.to_sym == :advisor
-        scope.for_advisor(user)
       else
         scope.where('investors.investor_entity_id': user.entity_id)
       end
@@ -17,18 +15,12 @@ class InvestorKycPolicy < ApplicationPolicy
 
   def show?
     user.entity_id == record.entity_id ||
-      user.entity_id == record.investor.investor_entity_id ||
-      record.entity.advisor?(user)
+      user.entity_id == record.investor.investor_entity_id
   end
 
   def create?
     (user.entity_id == record.entity_id) ||
-      user.entity_id == record.investor.investor_entity_id ||
-      record.entity.advisor?(user)
-  end
-
-  def advisor?
-    record.entity.advisor?(user)
+      user.entity_id == record.investor.investor_entity_id
   end
 
   def new?

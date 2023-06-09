@@ -54,9 +54,9 @@ class Investor < ApplicationRecord
                       investor_entity_id: user.entity_id)
               }
 
-  scope :advisors, -> { where(category: "Advisor") }
+  scope :advisors, -> { where(category: "Investor Advisor") }
   scope :portfolio_companies, -> { where(category: "Portfolio Company") }
-  scope :not_advisors, -> { where.not(category: "Advisor") }
+  scope :not_advisors, -> { where.not(category: "Investor Advisor") }
 
   scope :for_vc, ->(vc_user) { where(investor_entity_id: vc_user.entity_id) }
   scope :not_holding, -> { where(is_holdings_entity: false) }
@@ -81,7 +81,7 @@ class Investor < ApplicationRecord
   INVESTOR_CATEGORIES = ENV["INVESTOR_CATEGORIES"].split(",") << "Prospective"
 
   def self.INVESTOR_CATEGORIES(entity = nil)
-    cats = Investment.INVESTOR_CATEGORIES(entity) + %w[Prospective Advisor]
+    cats = Investment.INVESTOR_CATEGORIES(entity) + %w[Prospective]
     cats += ["Portfolio Company"] if entity.entity_type == "Investment Fund"
     cats
   end
@@ -97,10 +97,7 @@ class Investor < ApplicationRecord
     # Ensure we have an investor entity
     if investor_entity_id.blank?
       e = Entity.where(name: investor_name.strip).first
-      unless e
-        entity_type = category == "Advisor" ? "Advisor" : "Investor"
-        e = Entity.create(name: investor_name.strip, entity_type:)
-      end
+      e ||= Entity.create(name: investor_name.strip, entity_type: "Investor")
 
       setup_permissions(e)
       e.save

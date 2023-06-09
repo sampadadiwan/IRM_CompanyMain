@@ -41,12 +41,6 @@ class AmlReport < ApplicationRecord
 
   scope :approved, -> { where(approved: true) }
 
-  scope :for_advisor, lambda { |user|
-    # Ensure the access rghts for Document
-    joins(entity: :investors)
-      .where("investors.category=? and investors.investor_entity_id=?", 'Advisor', user.entity_id)
-  }
-
   # accepts specific types as well as all and pep_all
   def self.aml_types(types)
     types_result = []

@@ -7,8 +7,6 @@ class DealInvestorPolicy < DealBasePolicy
         scope.for_employee(user)
       elsif user.curr_role == "investor"
         scope.for_investor(user)
-      elsif user.curr_role == "advisor"
-        scope.for_advisor(user)
       end
     end
   end
@@ -19,8 +17,7 @@ class DealInvestorPolicy < DealBasePolicy
 
   def show?
     (user.entity_id == record.investor_entity_id) ||
-      permissioned_employee? ||
-      permissioned_advisor?
+      permissioned_employee?
   end
 
   def create?
@@ -33,8 +30,7 @@ class DealInvestorPolicy < DealBasePolicy
 
   def update?
     create? ||
-      permissioned_employee?(:update) ||
-      permissioned_advisor?(:update)
+      permissioned_employee?(:update)
   end
 
   def edit?
@@ -43,7 +39,6 @@ class DealInvestorPolicy < DealBasePolicy
 
   def destroy?
     create? ||
-      permissioned_employee?(:destroy) ||
-      permissioned_advisor?(:destroy)
+      permissioned_employee?(:destroy)
   end
 end

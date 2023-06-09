@@ -75,12 +75,6 @@ class InvestorKyc < ApplicationRecord
     full_name.present? && saved_change_to_full_name?
   end
 
-  scope :for_advisor, lambda { |user|
-    # Ensure the access rghts for Document
-    joins(entity: :investors)
-      .where("investors.category=? and investors.investor_entity_id=?", 'Advisor', user.entity_id)
-  }
-
   def expired?
     expiry_date ? expiry_date < Time.zone.today : false
   end

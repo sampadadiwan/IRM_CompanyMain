@@ -1,11 +1,7 @@
 class InterestPolicy < SaleBasePolicy
   class Scope < Scope
     def resolve
-      if user.curr_role == "advisor"
-        scope.for_advisor(user)
-      else
-        scope.where("interest_entity_id=? or entity_id=?", user.entity_id, user.entity_id)
-      end
+      scope.where("interest_entity_id=? or entity_id=?", user.entity_id, user.entity_id)
     end
   end
 

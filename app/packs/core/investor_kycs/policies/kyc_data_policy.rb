@@ -3,8 +3,6 @@ class KycDataPolicy < ApplicationPolicy
     def resolve
       if %i[employee].include? user.curr_role.to_sym
         scope.where(entity_id: user.entity_id)
-      elsif user.curr_role.to_sym == :advisor
-        scope.for_advisor(user)
       else
         scope.none
       end

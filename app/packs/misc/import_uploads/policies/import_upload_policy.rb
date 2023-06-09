@@ -10,13 +10,11 @@ class ImportUploadPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id) ||
-      permissioned_advisor?
+    (user.entity_id == record.entity_id)
   end
 
   def create?
-    (user.entity_id == record.entity_id) ||
-      permissioned_advisor?(:create)
+    (user.entity_id == record.entity_id)
   end
 
   def new?
@@ -24,8 +22,7 @@ class ImportUploadPolicy < ApplicationPolicy
   end
 
   def update?
-    (user.entity_id == record.entity_id) ||
-      permissioned_advisor?(:update)
+    (user.entity_id == record.entity_id)
   end
 
   def edit?
@@ -34,20 +31,5 @@ class ImportUploadPolicy < ApplicationPolicy
 
   def destroy?
     update?
-  end
-
-  def permissioned_advisor?(perm = nil)
-    if user.entity_id != record.entity_id && user.curr_role == "advisor"
-      owner = record.owner
-      db_owner ||= owner.class.for_advisor(user).includes(:access_rights).where("#{owner.class.table_name}.id=?", owner.id).first
-
-      if perm
-        db_owner.present? && db_owner.access_rights[0].permissions.set?(perm)
-      else
-        db_owner.present?
-      end
-    else
-      false
-    end
   end
 end

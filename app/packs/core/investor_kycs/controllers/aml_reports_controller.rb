@@ -22,12 +22,7 @@ class AmlReportsController < ApplicationController
     query = params[:query]
     if query.present?
 
-      entity_ids = if current_user.curr_role == "advisor"
-                     # Advisors can search for KYC across all the entities that they are advisors for
-                     Entity.advisor_for(current_user).collect(&:id)
-                   else
-                     [current_user.entity_id]
-                   end
+      entity_ids = [current_user.entity_id]
 
       @aml_reports = AmlReport.filter(terms: { entity_id: entity_ids })
                               .query(query_string: { fields: AmlReportIndex::SEARCH_FIELDS,

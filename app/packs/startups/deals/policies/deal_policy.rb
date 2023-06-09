@@ -7,8 +7,6 @@ class DealPolicy < ApplicationPolicy
         scope.for_employee(user)
       elsif user.curr_role == "investor"
         scope.for_investor(user)
-      elsif user.curr_role == "advisor"
-        scope.for_advisor(user)
       else
         scope.none
       end
@@ -20,8 +18,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def show?
-    (permissioned_employee? && user.enable_deals) ||
-      permissioned_advisor?
+    (permissioned_employee? && user.enable_deals)
   end
 
   def show_detail_tabs?
@@ -37,8 +34,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def update?
-    permissioned_employee?(:update) ||
-      permissioned_advisor?(:update)
+    permissioned_employee?(:update)
   end
 
   def edit?
@@ -46,24 +42,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy) ||
-      permissioned_advisor?(:destroy)
-  end
-
-  def permissioned_advisor?(perm = nil)
-    # binding.pry
-
-    if user.entity_id != record.entity_id && user.curr_role == "advisor"
-      deal_id = record.instance_of?(Deal) ? record.id : record.deal_id
-      @deal ||= Deal.for_advisor(user).includes(:access_rights).where("deals.id=?", deal_id).first
-      if perm
-        @deal.present? && @deal.access_rights[0].permissions.set?(perm)
-      else
-        @deal.present?
-      end
-    else
-      false
-    end
+    permissioned_employee?(:destroy)
   end
 
   def permissioned_employee?(perm = nil)

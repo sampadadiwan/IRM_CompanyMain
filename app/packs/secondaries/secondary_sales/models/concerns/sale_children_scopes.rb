@@ -7,12 +7,6 @@ module SaleChildrenScopes
         .where("secondary_sales.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
     }
 
-    scope :for_advisor, lambda { |user|
-      joins(secondary_sale: :access_rights).merge(AccessRight.access_filter(user))
-                                           .where("access_rights.metadata=?", "Advisor").joins(entity: :investors)
-                                           .where("investors.investor_entity_id=?", user.entity_id)
-    }
-
     scope :for_investor, lambda { |user|
       joins(secondary_sale: :access_rights)
         .merge(AccessRight.access_filter(user))

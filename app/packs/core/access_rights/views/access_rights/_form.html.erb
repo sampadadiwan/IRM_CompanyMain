@@ -28,7 +28,6 @@
           types = access_right.types
           select_investor_users = false
           select_employees = false
-          select_advisors = false
           investor_advisors = current_user.entity.investor_advisors
           users = current_user.entity.employees
 
@@ -80,19 +79,9 @@
           <% if access_right.owner_type == "SecondarySale" %>
             <div class="form-group" id="metadata_form_group">
               <%= form.label :metadata, "Select Buyer or Seller" %>
-              <%= form.select :metadata, ["Buyer", "Seller", "Advisor"], {}, 
-              class: "form-control", "data-action": "change->access#investorAdvisorChange"   %>
+              <%= form.select :metadata, ["Buyer", "Seller"], {}, class: "form-control" %>
             </div>
           <% end %>
-          <% if ["Fund"].include? access_right.owner_type %>
-            <div class="form-group" id="metadata_form_group">
-              <%= form.label :metadata, "Select Investor or Advisor" %>
-              <%= form.select :metadata, ["Investor", "Advisor"], {}, 
-              class: "form-control", "data-action": "change->access#investorAdvisorChange change->select#change"%>
-              
-            </div>
-          <% end %>
-          
 
           <% investors = current_user.entity.investors.not_advisors  %>
           <div class="form-group" id="investor_form_group">

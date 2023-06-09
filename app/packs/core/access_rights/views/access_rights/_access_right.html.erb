@@ -15,7 +15,7 @@
         <% end %>
     </td>  
     <td class="hideMobP">
-        <%= access_right.access_type %>
+        <%= access_right.access_type.present? ? access_right.access_type : access_right.owner&.class&.name %>
     </td>  
     <% if show_metadata == "Yes" %>
     <td class="hideMobP">

@@ -1,11 +1,7 @@
 class DealActivityPolicy < DealBasePolicy
   class Scope < Scope
     def resolve
-      if user.curr_role == "advisor"
-        scope.for_advisor(user)
-      else
-        scope.joins(:deal_investor).where("deal_activities.entity_id=? or deal_investors.investor_entity_id=?", user.entity_id, user.entity_id)
-      end
+      scope.joins(:deal_investor).where("deal_activities.entity_id=? or deal_investors.investor_entity_id=?", user.entity_id, user.entity_id)
     end
   end
 
@@ -15,8 +11,7 @@ class DealActivityPolicy < DealBasePolicy
 
   def show?
     permissioned_employee? ||
-      (record.deal_investor && record.deal_investor.investor_entity_id == user.entity_id) ||
-      permissioned_advisor?
+      (record.deal_investor && record.deal_investor.investor_entity_id == user.entity_id)
   end
 
   def create?
@@ -28,8 +23,7 @@ class DealActivityPolicy < DealBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) ||
-      permissioned_advisor?(:update)
+    permissioned_employee?(:update)
   end
 
   def edit?
@@ -45,7 +39,6 @@ class DealActivityPolicy < DealBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy) ||
-      permissioned_advisor?(:destroy)
+    permissioned_employee?(:destroy)
   end
 end
