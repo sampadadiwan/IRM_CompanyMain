@@ -34,8 +34,9 @@ export default class extends Controller {
   }
 
   onChange(event) {
-    console.log("access controller onChange");
     let selected = $("#access_right_email_or_cat").val();
+    console.log(`access controller onChange ${selected}`);
+    
     switch (selected) {
       case "All Users for Specific Stakeholder":
         // hide category & disable
@@ -57,7 +58,7 @@ export default class extends Controller {
         this.showPermissions();
         break;
 
-      case "Investor Advisor":
+      case "Investor Advisor", "Advisor":
           // hide category & disable
           this.hideAll();
           this.showInvestorAdvisor();

@@ -14,8 +14,7 @@
             investment_opportunities: policy_scope(InvestmentOpportunity) if current_user.enable_inv_opportunities %>
     </div>
 
-
-<%= render "entities/dashboard/notes" %>
-<%= render "entities/dashboard/investors" %>
+<%= render "entities/dashboard/notes" if current_user.enable_investors %>
+<%= render "entities/dashboard/investors" if current_user.enable_investors %>
 <%= render "entities/dashboard/timeline" %>
 

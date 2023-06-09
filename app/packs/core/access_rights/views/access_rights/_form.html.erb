@@ -31,7 +31,7 @@
           investor_advisors = current_user.entity.investor_advisors
           users = current_user.entity.employees
 
-          if ["Fund", "SecondarySale"].include? access_right.owner_type
+          if ["Fund", "InvestmentOpportunity", "SecondarySale"].include? access_right.owner_type
             users_url = users_path
             select_employees = true
           end

@@ -4,7 +4,7 @@
     <div class="card-header py-3">
       <h6 class="m-0 font-weight-bold text-primary">Grant Access</h6>
     </div>
-    <div class="card-body">
+    <div class="card-body" data-controller="access">
       <%= form_with(model: access_right, class: "associated_entity", id: "access_rights_form") do |form| %>
         <% if access_right.errors.any? %>
           <div class="alert alert-danger">
@@ -24,10 +24,42 @@
           <%= form.text_field :access_type, class: "form-control", hidden: true  %>
         </div>
 
+        <%
+          types = access_right.types
+
+          select_investor_users = false
+          select_employees = true
+          users = current_user.entity.employees
+          investor_advisors = current_user.entity.investor_advisors
+        %>
+      
+        <div class="form-group">
+            <%= form.label :access_type %>
+            <%= form.select :email_or_cat, types, {}, class: "form-control", 
+              name: "email_or_cat", "data-action": "change->access#onChange" %>
+        </div>
+
         <div class="form-group" id="employee_form_group">
               <%= form.label :user_id, "Select Employee" %>
-              <%= form.select :user_id, access_right.entity.employees.map{|e| [e.full_name, e.id]} , {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" }  %>
+              <%= form.select :user_id, users.map{|e| [e.full_name, e.id]} , {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" }, id: "employee_id"  %>
         </div>
+
+        <div class="form-group" id="investor_advisor_form_group">
+            <%= form.label :user_id, "Select Advisor" %>
+            <%= form.select :user_id, investor_advisors.map{|ia| [ia.user.full_name, ia.user_id]}, {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", id: "advisor_id"  %>
+        </div>
+
+        <% if access_right.owner_type == "DealInvestor" %>          
+          <% investors = [access_right.owner.investor]  %>
+          
+          <div class="form-group" id="investor_form_group">
+              <%= form.label :access_to_investor_id, "Select Stakeholder" %>
+              <%= form.select :access_to_investor_id, investors.map{|c| [c.investor_name, c.id]}, 
+                {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" },
+                "data-action": "change->access#addErrorCheck" %>
+          </div>
+        <% end %>
+
       
       <div class="form-group" id="permissions_form_group">
         <% AccessRight.permissions.pairs.each do |key, val| %>

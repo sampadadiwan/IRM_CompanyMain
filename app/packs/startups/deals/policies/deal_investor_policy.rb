@@ -21,7 +21,7 @@ class DealInvestorPolicy < DealBasePolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id) && user.has_cached_role?(:company_admin)
+    (user.entity_id == record.entity_id) && DealPolicy.new(user, record.deal).update?
   end
 
   def new?

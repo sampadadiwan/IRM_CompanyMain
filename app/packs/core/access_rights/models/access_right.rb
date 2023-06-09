@@ -90,10 +90,10 @@ class AccessRight < ApplicationRecord
   def types
     case owner_type
     when "Deal"
-      ["Employee"]
+      %w[Employee Advisor]
     when "DealInvestor"
-      AccessRight::TYPES - ["All Stakeholder of Specific Category"] + ["Employee"]
-    when "Fund", "SecondarySale"
+      ["All Users for Specific Stakeholder"] + %w[Employee Advisor]
+    when "Fund", "InvestmentOpportunity", "SecondarySale"
       AccessRight::TYPES + %w[Employee Advisor]
     when "Document", "Folder"
       AccessRight::TYPES + ["Specific User"]
@@ -105,6 +105,7 @@ class AccessRight < ApplicationRecord
   def access_to_label
     label = access_to_category if access_to_category.present?
     label ||= investor.investor_name if access_to_investor_id.present?
+    label ||= user.full_name if user_id.present?
 
     label
   end
