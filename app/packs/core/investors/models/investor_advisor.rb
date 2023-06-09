@@ -29,6 +29,12 @@ class InvestorAdvisor < ApplicationRecord
     user.entity_id = entity_id
     user.investor_advisor_id = id
     user.entity_type = user.entity.entity_type
+    case user.entity_type
+    when "Investor", "Investor Advisor"
+      user.curr_role = :investor
+    when "Company"
+      user.curr_role = :employee
+    end
     user.save
   end
 
