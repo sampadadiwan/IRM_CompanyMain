@@ -8,9 +8,9 @@ module DocumentHelper
     # If the user is from the same company show him all the folders
     if entity_id == current_user.entity_id
       folders = if params[:folder_id].present?
-                  Folder.find(params[:folder_id]).subtree.arrange
+                  Folder.find(params[:folder_id]).subtree.order(:name).arrange
                 else
-                  entity.root_folder.subtree.arrange
+                  entity.root_folder.subtree.order(:name).arrange
                 end
     else
       # If the user is NOT from the same company show him only the folders for the documents he has access to
@@ -24,9 +24,9 @@ module DocumentHelper
         parent = Folder.find(params[:folder_id])
         descendant_ids = parent.descendant_ids
         descendant_ids << parent.id
-        folders = Folder.where(id: descendant_ids).where(id: aids).arrange
+        folders = Folder.where(id: descendant_ids).where(id: aids).order(:name).arrange
       else
-        folders = Folder.where(id: aids).arrange
+        folders = Folder.where(id: aids).order(:name).arrange
       end
     end
 

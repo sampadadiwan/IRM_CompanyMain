@@ -47,10 +47,11 @@
           id="documents_tab" href="#documents-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab"
-            data-action="click->tabdetails#loadData">Access</a>
-
       <% if policy(fund).update? %>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab"
+              data-action="click->tabdetails#loadData">Access</a>
+
+      
           <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab"
               data-action="click->tabdetails#loadData">
             Tasks
