@@ -231,9 +231,9 @@ class Investor < ApplicationRecord
     model.access_rights.where.not(user_id: nil).where(entity_id: investor_entity_id)
   end
 
-  def investor_advisor_numbers(model)
+  def investor_advisors(model)
     access_user_ids = get_access_rights(model).pluck(:user_id)
-    User.where(id: investor_accesses.approved.investor_advisors.where(user_id: access_user_ids).pluck(:user_id), whatsapp_enabled: true).pluck(:phone)
+    User.where(id: investor_accesses.approved.investor_advisors.where(user_id: access_user_ids).pluck(:user_id), whatsapp_enabled: true)
   end
 
   def folder_path

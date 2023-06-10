@@ -24,10 +24,9 @@ class CapitalRemittancesMailer < ApplicationMailer
            cc:,
            subject: "Capital Call: #{@capital_remittance.entity.name}")
     end
-    numbers = investor.investor_advisor_numbers(@capital_remittance.fund)
-    numbers = sandbox_whatsapp_numbers(@capital_remittance, numbers)
-    numbers.each do |whno|
-      CapitalRemittancesWhatsappNotifier.perform_later({ whatsapp_no: whno, id: @capital_remittance.id }.stringify_keys)
+    inv_advisors = investor.investor_advisors(@capital_remittance.fund)
+    inv_advisors.each do |user|
+      CapitalRemittancesWhatsappNotifier.perform_later(user, @capital_remittance.id)
     end
 
     Chewy.strategy(:sidekiq) do

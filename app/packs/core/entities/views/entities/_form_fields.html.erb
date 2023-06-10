@@ -21,7 +21,7 @@
   </div>
 
   <%= form.fields_for :entity_setting do |entity_setting_subform| %>
-  
+
     <div class="form-group">
       <%= entity_setting_subform.label :individual_kyc_doc_list %>
       <%= entity_setting_subform.text_field :individual_kyc_doc_list, class: "form-control"  %>
@@ -53,8 +53,8 @@
 
   <div class="form-group">
 
-    <%= render "layouts/single_upload", form: form, field_label: "Upload Company Logo", 
-                            for_model: "entity", field_name: "logo", 
+    <%= render "layouts/single_upload", form: form, field_label: "Upload Company Logo",
+                            for_model: "entity", field_name: "logo",
                             model: entity %>
 
   </div>
@@ -70,7 +70,7 @@
 
     <div class="form-group">
       <%= form.label :investor_categories %>
-      <%= form.text_field :investor_categories, class: "form-control", 
+      <%= form.text_field :investor_categories, class: "form-control",
         placeholder: "Comma separated list of investor categories e.x #{Investment::INVESTOR_CATEGORIES.join(",")}"  %>
       <small class="text-muted">Leave this blank to use defaults.</small>
     </div>
@@ -79,7 +79,7 @@
 
   <%= form.fields_for :entity_setting do |entity_setting_subform| %>
     <%= entity_setting_subform.text_field :id, hidden: true %>
-    
+
     <div class="form-group">
       <%= entity_setting_subform.label :sandbox, "Send emails to Sandbox" %>
       <%= entity_setting_subform.check_box :sandbox, class: "form-control form-checkbox"  %>
@@ -93,6 +93,11 @@
     <div class="form-group">
       <%= entity_setting_subform.label :cc, "cc" %>
       <%= entity_setting_subform.text_field :cc, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= entity_setting_subform.label :sandbox_numbers %>
+      <%= entity_setting_subform.text_field :sandbox_numbers, class: "form-control"  %>
     </div>
 
   <% end %>

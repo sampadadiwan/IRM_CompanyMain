@@ -51,7 +51,7 @@
                <%= @entity.details %>
             </td>
          </tr>
-         
+
          <% if current_user && current_user.entity_id == @entity.id %>
          <tr>
             <td>
@@ -118,6 +118,15 @@
 
          <tr>
             <td>
+               Sandbox Numbers
+            </td>
+            <td>
+               <%= @entity.entity_setting.sandbox_numbers %>
+            </td>
+         </tr>
+
+         <tr>
+            <td>
                Access Enabled
             </td>
             <td>
@@ -134,18 +143,18 @@
       </table>
       <div>
          <% if policy(@entity).edit? %>
-            <%= link_to "Edit", edit_entity_path(@entity), {class: "btn btn-outline-primary"} %> 
-            <%= link_to "View Payments", payments_path, {class: "btn btn-outline-success"} if @entity.entity_type == "Company" %> 
+            <%= link_to "Edit", edit_entity_path(@entity), {class: "btn btn-outline-primary"} %>
+            <%= link_to "View Payments", payments_path, {class: "btn btn-outline-success"} if @entity.entity_type == "Company" %>
          <% end %>
 
-         <% 
-            investor = Investor.where( entity_id: @entity.id, 
+         <%
+            investor = Investor.where( entity_id: @entity.id,
                                     investor_entity_id: current_user.entity_id).first
-            if investor.present? 
+            if investor.present?
          %>
-            <%= button_to "Request Access", 
-                  request_access_investor_accesses_path("investor_access[investor_id]": investor.id), 
-                  class: "btn btn-outline-success" %> 
+            <%= button_to "Request Access",
+                  request_access_investor_accesses_path("investor_access[investor_id]": investor.id),
+                  class: "btn btn-outline-success" %>
 
          <% end %>
 

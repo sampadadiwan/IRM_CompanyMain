@@ -34,7 +34,7 @@ Scenario Outline: Import capital calls
   And the funds are updated with remittance numbers
   And when the exchange rate changes
   Then the commitment amounts change correctly
-  Given the last investor has a user "phone=917721046692"
+  Given the last investor has a user "phone=7721046692"
   And the capital remittance whatsapp notification is sent to the first investor
   Then the whatsapp message should be send successfully to "917721046692"
 

@@ -7,27 +7,36 @@ DEFAULT_WHATSAPP_MSG = "How can we help you?".freeze
 class WhatsappNotifier < ApplicationJob
   # call perform_later with params
   # templates can have variables in them, so params will include template name and template_params
-  def perform(params, user = nil)
-    template_name = params["template_name"].to_s
-    case template_name
-    when ENV.fetch('ACC_UPDATE_NOTI_TEMPLATE')
-      params = if params.key?('template_params')
-                 params['template_params']
-               elsif user.present?
-                 { "whatsapp_no" => user.phone_with_call_code, "user_name" => user.name }
-               else
-                 {}
-               end
-      self.class.send_acc_update_alert_notification(params)
-    when "default", ""
-      params = if params.key?('template_params')
-                 params['template_params']
-               elsif user.present?
-                 { "whatsapp_no" => user.phone_with_call_code }
-               end
-      self.class.send_message(params["whatsapp_no"], params["message"])
-    else
-      Rails.logger.error "Error: template_name has an invalid value (#{template_name})"
+  def perform(params, user)
+    if user.blank?
+      Rails.logger.error "Error: User required to send Whatsapp Notification"
+      return
+    elsif user.present? && (!user.whatsapp_enabled || user.phone.blank?)
+      Rails.logger.error "Error: Whatsapp Not Enabled or Invalid Number for User ID #{user.id}"
+      return
+    end
+    whnos = ApplicationMailer.new.sandbox_whatsapp_numbers(user, [user.phone_with_call_code])
+    whnos.each do |whno|
+      case params["template_name"].to_s
+      when ENV.fetch('ACC_UPDATE_NOTI_TEMPLATE')
+        params = if params.key?('template_params')
+                   params['template_params']
+                 elsif user.present?
+                   { "whatsapp_no" => whno, "user_name" => user.name }
+                 else
+                   {}
+                 end
+        self.class.send_acc_update_alert_notification(params)
+      when "default", ""
+        params = if params.key?('template_params')
+                   params['template_params']
+                 elsif user.present?
+                   { "whatsapp_no" => whno }
+                 end
+        self.class.send_message(params["whatsapp_no"], params["message"])
+      else
+        Rails.logger.error "Error: template_name has an invalid value (#{params['template_name']})"
+      end
     end
   end
 
@@ -64,7 +73,7 @@ class WhatsappNotifier < ApplicationJob
     http = get_http url
     request = get_post_request url
     request["content-type"] = 'text/json'
-    request.body = "{\"parameters\":[{\"name\":\"name\",\"value\":\"#{user_name}\"}],\"broadcast_name\":\"Acc Update\",\"template_name\":\"account_update_alert_1\"}"
+    request.body = "{\"parameters\":[{\"name\":\"name\",\"value\":\"#{user_name}\"}],\"broadcast_name\":\"Acc Update\",\"template_name\":\"#{ENV.fetch('ACC_UPDATE_NOTI_TEMPLATE')}\"}"
     response = http.request(request)
     response.read_body
   end
