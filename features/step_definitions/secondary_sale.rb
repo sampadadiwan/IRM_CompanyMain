@@ -180,6 +180,8 @@ end
 
 
 
+
+
 ############################################################################
 ############################################################################
 #######################  Investor related test steps #############################  
@@ -510,6 +512,32 @@ Then('the offers completetion page must be visible') do
   end
 end
 
+Given('advisor is {string} advisor access to the sale') do |given|
+  @user = @employee_investor
+
+    if given == "given" || given == "yes"
+      
+          # Create the Investor Advisor
+          investor_advisor = InvestorAdvisor.create!(entity_id: @entity.id, email: @user.email)
+          investor_advisor.permissions.set(:enable_secondary_sale)
+          investor_advisor.save
+          
+          puts "\n####Investor Advisor####\n"
+          puts investor_advisor.to_json
+
+          # Switch the IA to the entity
+          investor_advisor.switch(@user)
+
+          # Create the Access Right
+          @access_right = AccessRight.create!(entity_id: @entity.id, owner: @sale, user_id: @user.id, metadata: "Investor Advisor")
+          @access_right.save
+          
+
+          puts "\n####Access Right####\n"
+          ap @access_right
+
+    end
+end
 
 Given('the advisor has role {string}') do |roles|
   @user = @employee_investor
@@ -534,7 +562,7 @@ Given('the sale access right has access {string}') do |crud|
     end
     @access_right.save!
     puts "####### AccessRight Permissions #######\n"
-    puts @access_right.to_json
+    ap @access_right
   end
 end
 

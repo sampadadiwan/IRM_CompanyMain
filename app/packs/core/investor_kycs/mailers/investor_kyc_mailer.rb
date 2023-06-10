@@ -15,10 +15,8 @@ class InvestorKycMailer < ApplicationMailer
 
   def notify_kyc_updated
     @investor_kyc = InvestorKyc.find(params[:id])
-    # TODO: - remove Advisor
-    @investor_accesses = @investor_kyc.entity.investor_accesses.joins(:investor).where("investors.category='Advisor'")
 
-    to_emails = @investor_accesses.collect(&:email)
+    to_emails = @investor_kyc.entity.entity_setting.cc
 
     email = sandbox_email(@investor_kyc, to_emails)
 
