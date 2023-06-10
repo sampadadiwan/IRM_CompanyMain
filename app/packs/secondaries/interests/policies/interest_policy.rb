@@ -12,12 +12,11 @@ class InterestPolicy < SaleBasePolicy
   end
 
   def index?
-    true
+    user.enable_secondary_sale
   end
 
   def owner?
-    user.entity_id == record.interest_entity_id ||
-      allow_external?(:read)
+    user.entity_id == record.interest_entity_id
   end
 
   def matched_offer?

@@ -15,7 +15,7 @@ class OfferPolicy < SaleBasePolicy
   end
 
   def index?
-    true
+    user.enable_secondary_sale
   end
 
   def show?
