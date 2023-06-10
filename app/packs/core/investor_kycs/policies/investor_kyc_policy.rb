@@ -10,7 +10,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def index?
-    true
+    user.enable_funds
   end
 
   def show?

@@ -1,6 +1,6 @@
 <%= render "/layouts/alerts" %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Investor Advisors</h1>
+  <h1 class="h3 mb-0 text-gray-800">Advisors</h1>
   <%= link_to "New Investor Advisor", new_investor_advisor_path("investor_advisor[entity_id]": current_user.entity_id), {class: "btn btn-primary"}  %>
 </div>
 <div class="table-responsive" data-controller="datatable">

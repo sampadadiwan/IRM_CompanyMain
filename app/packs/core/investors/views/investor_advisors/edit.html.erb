@@ -1,3 +1,8 @@
-<h1>Editing Investor Advisor</h1>
-
-<%=render "form", investor_advisor: @investor_advisor %>
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+    <h6 class="m-0 font-weight-bold text-primary">Edit Advisor</h6>
+  </div>
+  <div class="card-body">
+    <%= render "form", investor_advisor: @investor_advisor %>
+  </div>
+</div>

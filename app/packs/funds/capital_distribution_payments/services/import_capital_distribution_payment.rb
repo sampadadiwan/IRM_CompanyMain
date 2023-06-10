@@ -34,9 +34,9 @@ class ImportCapitalDistributionPayment < ImportUtil
     capital_distribution = fund.capital_distributions.where(title: user_data["Capital Distribution"].strip).first
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
     folio_id = user_data["Folio No"]&.strip
-    capital_commitment = fund.capital_commitments.where(investor_id: investor.id, folio_id:).first
+    capital_commitment = fund.capital_commitments.where(investor_id: investor&.id, folio_id:).first
 
-    if fund && capital_distribution && investor
+    if fund && capital_distribution && investor && capital_commitment
 
       # Make the capital_distribution_payment
       capital_distribution_payment = CapitalDistributionPayment.new(entity_id: import_upload.entity_id, fund:, capital_distribution:, investor:, investor_name: investor.investor_name, capital_commitment:, folio_id:, payment_date: user_data["Payment Date"])
@@ -55,7 +55,7 @@ class ImportCapitalDistributionPayment < ImportUtil
       raise "Fund not found" unless fund
       raise "Capital Distribution not found" unless capital_distribution
       raise "Investor not found" unless investor
-      raise "Capita Commitment not found" unless capital_commitment
+      raise "Capital Commitment not found" unless capital_commitment
     end
   end
 end
