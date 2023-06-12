@@ -125,14 +125,17 @@ class Investor < ApplicationRecord
   def update_folder_names
     capital_commitments.each do |cc|
       cc.document_folder.name = cc.folder_path.split("/")[-1]
+      cc.document_folder.set_defaults
       cc.document_folder.save
     end
     capital_remittances.each do |cc|
       cc.document_folder.name = cc.folder_path.split("/")[-1]
+      cc.document_folder.set_defaults
       cc.document_folder.save
     end
     capital_distribution_payments.each do |cc|
       cc.document_folder.name = cc.folder_path.split("/")[-1]
+      cc.document_folder.set_defaults
       cc.document_folder.save
     end
   end

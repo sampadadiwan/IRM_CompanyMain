@@ -14,8 +14,10 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def show?
+    user.enable_funds && (
     user.entity_id == record.entity_id ||
       user.entity_id == record.investor.investor_entity_id
+  )
   end
 
   def create?

@@ -36,6 +36,8 @@ class DocumentsController < ApplicationController
       # Is this more efficient than the query above?
       @documents = @documents.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
       @documents = @documents.or(Document.where(folder_id: params[:folder_id]))
+    elsif current_user.investor_advisor?
+      raise Pundit::NotAuthorizedError, "Advisors can access documents only in specific folders"
     end
 
     # This is specifically for investor advisors, who should not be able to see the docs for other funds
