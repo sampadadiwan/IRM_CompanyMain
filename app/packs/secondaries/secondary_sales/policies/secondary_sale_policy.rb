@@ -120,7 +120,7 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def approve_offers?
-    create?
+    user.has_cached_role?(:approver) && create?
   end
 
   def view_allocations?

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_06_12_075818) do
+ActiveRecord::Schema[7.0].define(version: 2023_06_12_130604) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1612,6 +1612,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_12_075818) do
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "document_folder_id"
+    t.index ["document_folder_id"], name: "index_kpi_reports_on_document_folder_id"
     t.index ["entity_id"], name: "index_kpi_reports_on_entity_id"
     t.index ["form_type_id"], name: "index_kpi_reports_on_form_type_id"
     t.index ["user_id"], name: "index_kpi_reports_on_user_id"
@@ -2363,6 +2365,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_12_075818) do
   add_foreign_key "investors", "folders", column: "document_folder_id"
   add_foreign_key "investors", "form_types"
   add_foreign_key "kpi_reports", "entities"
+  add_foreign_key "kpi_reports", "folders", column: "document_folder_id"
   add_foreign_key "kpi_reports", "form_types"
   add_foreign_key "kpi_reports", "users"
   add_foreign_key "kpis", "entities"

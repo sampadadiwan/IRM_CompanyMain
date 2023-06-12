@@ -1,0 +1,73 @@
+<div class="associated_entity" data-controller="tabs tabdetails">
+
+  
+    <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
+      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#kpis-tab"
+          data-action="click->tabdetails#loadData">Kpis</a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
+          data-action="click->tabdetails#loadData">Documents</a>
+
+      <% if policy(kpi_report).update? %>          
+          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab" 
+              data-action="click->tabdetails#loadData">
+            Tasks
+          </a>
+      <% end %>
+
+
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab" 
+          data-action="click->tabdetails#loadData">Access Rights</a>
+    </nav>
+  
+    <div class="tab-content" data-controller="datatable">
+  
+        <div id="kpis-tab" class="tab-pane fade in show active">
+          <div id="kpis" class="associated_entity">
+            <%= render "/kpis/index", kpis: kpi_report.kpis %>
+          </div>     
+        </div>
+
+
+        <div id="docs-tab" class="tab-pane fade in fade">
+          <div id="docs" class="associated_entity">
+            <%= render "/documents/index", documents: kpi_report.documents, 
+                owner: kpi_report, entity: kpi_report.entity %>
+          </div>     
+        </div>
+        
+        <div id="access-rights-tab" class="tab-pane fade">
+
+          <div id="access_rights" class="associated_entity" data-controller="datatable">
+            <% form_type = current_user.entity_id != kpi_report.entity_id ? "investor_form" : nil %>
+            <%= link_to access_rights_path(owner_id: kpi_report.id, owner_type: "KpiReport", 
+                                            entity_id: current_user.entity_id, form_type:), 
+                        class: "load_data_link", data: { turbo_frame: 'access_rights_frame' } do %>
+              <span>Loading...</span>
+            <% end %>
+        
+            <%= turbo_frame_tag "access_rights_frame", target: "_top" do %>
+            <% end %>
+          </div>
+    
+        </div>
+  
+        <div id="tasks-tab" class="tab-pane fade">
+          <div id="tasks" class="associated_entity">
+            <% investor = Investor.for(current_user, kpi_report.entity).first %>
+            <%= link_to tasks_path( for_entity_id: nil, 
+                                    entity_id: kpi_report.entity_id,
+                                    owner_id: kpi_report.id, owner_type: "KpiReport"), 
+                                    class: "load_data_link", 
+                                    data: { turbo_frame: 'task_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "task_list", target: "_top" do %>
+            <% end %>
+          </div>     
+        </div>
+  
+    </div>
+  
+</div>
+  
