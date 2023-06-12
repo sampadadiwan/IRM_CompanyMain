@@ -11,10 +11,18 @@
     </div>
   <% end %>
   
+  <% 
+  
+    types = ["Investor", "SecondarySale", "Deal", "Offer", "Interest", "Document", "OptionPool", "Task", "Valuation", "Holding", "InvestmentOpportunity", "Fund", "CapitalCommitment", "CapitalCall", "CapitalRemittance", "Approval", "InvestorKyc", "FundUnitSetting"] 
+
+    types += [form_type.name] unless form_type.name.blank? || types.include?(form_type.name) 
+
+  %>
+
   <div data-controller="customfield">
     <div class="form-group">
       <%= form.label :name, "Form Name" %>
-      <%= form.select :name, ["Investor", "SecondarySale", "Deal", "Offer", "Interest", "Document", "OptionPool", "Task", "Valuation", "Holding", "InvestmentOpportunity", "Fund", "CapitalCommitment", "CapitalCall", "CapitalRemittance", "Approval", "InvestorKyc", "FundUnitSetting"].sort, {}, class: "form-control"  %>
+      <%= form.select :name, types.sort, {}, class: "form-control"  %>
     </div>
 
     <h1>Custom Fields</h1>

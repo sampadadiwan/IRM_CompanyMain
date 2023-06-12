@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_06_09_094044) do
+ActiveRecord::Schema[7.0].define(version: 2023_06_12_075818) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1603,6 +1603,36 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_09_094044) do
     t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
   end
 
+  create_table "kpi_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "form_type_id"
+    t.date "as_of"
+    t.text "notes"
+    t.text "properties"
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_kpi_reports_on_entity_id"
+    t.index ["form_type_id"], name: "index_kpi_reports_on_form_type_id"
+    t.index ["user_id"], name: "index_kpi_reports_on_user_id"
+  end
+
+  create_table "kpis", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "form_type_id"
+    t.string "name", limit: 50
+    t.decimal "value", precision: 10
+    t.string "display_value", limit: 30
+    t.string "notes"
+    t.text "properties"
+    t.bigint "kpi_report_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_kpis_on_entity_id"
+    t.index ["form_type_id"], name: "index_kpis_on_form_type_id"
+    t.index ["kpi_report_id"], name: "index_kpis_on_kpi_report_id"
+  end
+
   create_table "kyc_data", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "investor_kyc_id"
@@ -2332,6 +2362,12 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_09_094044) do
   add_foreign_key "investor_notices", "entities"
   add_foreign_key "investors", "folders", column: "document_folder_id"
   add_foreign_key "investors", "form_types"
+  add_foreign_key "kpi_reports", "entities"
+  add_foreign_key "kpi_reports", "form_types"
+  add_foreign_key "kpi_reports", "users"
+  add_foreign_key "kpis", "entities"
+  add_foreign_key "kpis", "form_types"
+  add_foreign_key "kpis", "kpi_reports"
   add_foreign_key "kyc_data", "entities"
   add_foreign_key "kyc_data", "investor_kycs"
   add_foreign_key "messages", "investors"

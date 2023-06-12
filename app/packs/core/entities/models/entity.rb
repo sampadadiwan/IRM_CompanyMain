@@ -35,6 +35,7 @@ class Entity < ApplicationRecord
   has_many :holdings, dependent: :destroy
   has_many :messages, dependent: :destroy
   has_many :tasks, dependent: :destroy
+  has_many :form_types, dependent: :destroy
   has_many :approvals, dependent: :destroy
   has_many :approval_responses, dependent: :destroy
 

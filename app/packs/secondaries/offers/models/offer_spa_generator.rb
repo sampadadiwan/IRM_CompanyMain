@@ -10,7 +10,7 @@ class OfferSpaGenerator
 
     create_working_dir(offer)
     template_path ||= download_template(template)
-    generate(offer, template_path)
+    generate(offer, template, template_path)
     upload(template, offer)
   ensure
     cleanup
@@ -28,7 +28,7 @@ class OfferSpaGenerator
   end
 
   # template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
-  def generate(offer, template_path)
+  def generate(offer, template_document, template_path)
     template = Sablon.template(File.expand_path(template_path))
 
     context = {}
@@ -52,14 +52,17 @@ class OfferSpaGenerator
     file_name = "#{@working_dir}/Offer-#{offer.id}"
     convert(template, context, file_name)
 
-    additional_footers = nil
-    additional_headers = nil
+    additional_footers = []
+    additional_headers = []
     if offer.interest
       # Get any footers from the interest
-      additional_footers = offer.interest.documents.where(name: %w[Footer Signature])
-      additional_headers = offer.interest.documents.where(name: ["Header", "Stamp Paper"])
+      additional_footers += offer.interest.documents.where(name: %w[Footer Signature])
+      additional_footers += offer.interest.documents.where(name: ["#{template_document.name} Footer", "#{template_document.name} Signature"])
+      additional_headers += offer.interest.documents.where(name: ["Header", "Stamp Paper"])
+      additional_headers += offer.interest.documents.where(name: ["#{template_document.name} Header", "#{template_document.name} Stamp Paper"])
     end
-    add_header_footers(offer, "#{@working_dir}/Offer-#{offer.id}.pdf", additional_headers, additional_footers)
+
+    add_header_footers(offer, "#{@working_dir}/Offer-#{offer.id}.pdf", additional_headers, additional_footers, template_document.name)
   end
 
   def add_seller_fields(context, offer)

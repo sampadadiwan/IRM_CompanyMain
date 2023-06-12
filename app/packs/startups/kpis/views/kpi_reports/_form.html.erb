@@ -1,0 +1,35 @@
+<%= form_with(model: kpi_report) do |form| %>
+  <% if kpi_report.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(kpi_report.errors.count, "error") %> prohibited this kpi_report from being saved:</h2>
+
+      <ul>
+        <% kpi_report.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form.text_field :entity_id, class: "form-control", hidden: true %>
+  <%= form.text_field :user_id, class: "form-control", hidden: true %>
+
+  <div class="form-group">
+    <%= form.label :as_of %>
+    <%= form.date_field :as_of, class: "form-control"  %>
+  </div>
+  
+  <%= form.fields_for :kpis do |sub_form| %>
+    <%= render "kpis/form", form: sub_form %>
+  <% end %>
+
+
+  <div class="form-group">
+    <%= form.label :notes %>
+    <%= form.text_area :notes, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+  </div>
+<% end %>

@@ -31,16 +31,16 @@ module DocumentGeneratorBase
     end
   end
 
-  def add_header_footers(model, spa_path, additional_headers = nil, additional_footers = nil)
+  def add_header_footers(model, spa_path, additional_headers = nil, additional_footers = nil, template_name = nil)
     header_footer_download_path = []
 
     combined_pdf = CombinePDF.new
-    generate_headers(model, additional_headers, combined_pdf, header_footer_download_path)
+    generate_headers(model, additional_headers, combined_pdf, header_footer_download_path, template_name)
 
     # Combine the SPA
     combined_pdf << CombinePDF.load(spa_path)
 
-    generate_footers(model, additional_footers, combined_pdf, header_footer_download_path)
+    generate_footers(model, additional_footers, combined_pdf, header_footer_download_path, template_name)
 
     # Overwrite the orig SPA with the one with header and footer
     combined_pdf.save(spa_path)
@@ -50,9 +50,9 @@ module DocumentGeneratorBase
     end
   end
 
-  def generate_headers(model, additional_headers, combined_pdf, header_footer_download_path)
+  def generate_headers(model, additional_headers, combined_pdf, header_footer_download_path, template_name = nil)
     # Get the headers
-    headers = model.documents.where(name: ["Header", "Stamp Paper"])
+    headers = model.documents.where(name: ["Header", "Stamp Paper", "#{template_name} Header", "#{template_name} Stamp Paper"])
     headers += additional_headers if additional_headers.present?
     header_count = headers.count
     Rails.logger.debug { "headers are #{headers.collect(&:name)}" }
@@ -67,9 +67,9 @@ module DocumentGeneratorBase
     end
   end
 
-  def generate_footers(model, additional_footers, combined_pdf, header_footer_download_path)
+  def generate_footers(model, additional_footers, combined_pdf, header_footer_download_path, template_name = nil)
     # Get the footers
-    footers = model.documents.where(name: %w[Footer Signature]).to_a
+    footers = model.documents.where(name: ["Footer", "Signature", "#{template_name} Footer" "#{template_name} Signature"]).to_a
     footers += additional_footers if additional_footers.present?
     Rails.logger.debug { "footers are #{footers.collect(&:name)}" }
     # Combine the footers

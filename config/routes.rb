@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  resources :kpis
+  resources :kpi_reports
   namespace :admin do
     namespace :paper_trail do
       resources :versions

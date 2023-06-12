@@ -1,0 +1,46 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @kpi_report.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      As Of
+    </td>
+    <td>
+      <%= l @kpi_report.as_of %>
+    </td>
+  </tr>
+
+  <%= display_custom_fields(@kpi_report, collapsed: false) if current_user %>
+
+  <tr>
+    <td>
+      Notes
+    </td>
+    <td>
+      <%= @kpi_report.notes %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      By
+    </td>
+    <td>
+      <%= @kpi_report.user.full_name %>
+    </td>
+  </tr>
+</table>
+<div>
+  <%= link_to "Edit", edit_kpi_report_path(@kpi_report), {class: "btn btn-outline-primary"} %> 
+  <%= button_to "Delete", @kpi_report, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+</div>
+
+<div class="associated_entity">
+  <%= render "/kpis/index", kpis: @kpi_report.kpis %>
+</div>

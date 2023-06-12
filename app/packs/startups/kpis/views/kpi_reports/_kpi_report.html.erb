@@ -1,0 +1,14 @@
+<tr id="<%= dom_id kpi_report %>">
+  <td>
+    <%= l kpi_report.as_of %>
+  </td>
+  <td>
+    <%= kpi_report.notes %>
+  </td>
+  <td>
+    <%= kpi_report.user.full_name %>
+  </td>
+  <td>
+    <%= link_to "Show", kpi_report , {class: "btn btn-outline-primary"}%>
+  </td>
+</tr>

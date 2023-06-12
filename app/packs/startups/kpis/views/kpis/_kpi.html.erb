@@ -1,0 +1,11 @@
+<tr id="<%= dom_id kpi %>">
+  <td>
+    <%= kpi.name %>
+  </td>
+  <td>
+    <%= kpi.display_value.present? ? kpi.display_value : kpi.value %>
+  </td>
+  <td>
+    <%= kpi.notes %>
+  </td>
+</tr>

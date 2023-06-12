@@ -1,0 +1,17 @@
+class KpiReport < ApplicationRecord
+  include WithCustomField
+
+  belongs_to :entity
+  belongs_to :user
+  has_many :kpis, dependent: :destroy
+
+  accepts_nested_attributes_for :kpis, reject_if: :all_blank, allow_destroy: true
+
+  def custom_kpis
+    my_kpis = kpis.to_a
+    form_type.form_custom_fields.each do |custom_field|
+      kpis << Kpi.new(name: custom_field.name, entity_id:) unless my_kpis.any? { |kpi| kpi.name == custom_field.name }
+    end
+    kpis
+  end
+end

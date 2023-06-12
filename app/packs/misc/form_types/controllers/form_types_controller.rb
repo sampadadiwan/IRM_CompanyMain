@@ -11,7 +11,7 @@ class FormTypesController < ApplicationController
 
   # GET /form_types/new
   def new
-    @form_type = FormType.new
+    @form_type = params[:form_type].present? ? FormType.new(form_type_params) : FormType.new
     @form_type.entity_id = current_user.entity_id
     authorize(@form_type)
   end

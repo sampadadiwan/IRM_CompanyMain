@@ -1,4 +1,20 @@
 FactoryBot.define do
+  factory :kpi do
+    entity { nil }
+    name { "MyString" }
+    value { "9.99" }
+    display_value { "MyString" }
+    notes { "MyString" }
+    kpi_report { nil }
+  end
+
+  factory :kpi_report do
+    entity { nil }
+    as_of { "2023-06-12" }
+    notes { "MyText" }
+    user { nil }
+  end
+
   factory :fund_report do
     fund { nil }
     entity { nil }

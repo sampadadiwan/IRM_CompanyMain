@@ -56,7 +56,7 @@ module InvestorRelationshipManagement
       config.paths['app/helpers'].unshift("#{Rails.root}/app/packs/secondaries/#{view_path}/helpers")
     end
 
-    startup_view_paths = %w[investments aggregate_investments option_pools excercises deals funding_rounds]
+    startup_view_paths = %w[investments aggregate_investments option_pools excercises deals funding_rounds kpis kpi_reports]
 
     startup_view_paths.each do |view_path|
       config.paths['app/views'].unshift("#{Rails.root}/app/packs/startups/#{view_path}/views")

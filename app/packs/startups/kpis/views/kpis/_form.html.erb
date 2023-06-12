@@ -1,0 +1,46 @@
+  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+
+  <div class="row">
+
+    <div class="form-group col">
+      <%= form.label :name %>
+      <%= form.text_field :name, class: "form-control", disabled: true %>
+      <%= form.text_field :name, class: "form-control", hidden: true %>
+    </div>
+
+    <% 
+      kpi = form.object
+      field = @kpi_report.form_type.form_custom_fields.where(name: kpi.name).first 
+    %>
+
+    <div class="form-group col" data-controller="currencyformat">
+      <%= form.label :value %> <span class="formatted_currency"></span>
+      
+      
+      <% if field.field_type == "NumberField" %>
+        <%= form.number_field :value, step: :any,  class: "form-control", required: field.required %>
+
+      <% elsif field.field_type == "TextField" %>
+        <%= form.text_field :display_value, class: "form-control", required: field.required %>
+        
+      <% elsif field.field_type == "Select" %>
+        <% options = field.meta_data.present? ? field.meta_data.split(",") : [] %>
+        <%= form.select :display_value, options, {}, class: "form-control", required: field.required %>
+        
+      <% elsif field.field_type == "CheckBox" %>
+        <%= form.check_box :display_value, class: "form-control form-checkbox", required: field.required %> 
+
+      <% elsif field.field_type == "Money" %>
+        <%= form.number_field :value, class: "form-control", required: field.required, step: :any, data: {action: "input->currencyformat#format"} %>
+      <% end %>
+
+      <small class="text-muted"><%= field.help_text %></small>    
+    </div>
+
+
+    <div class="form-group col">
+      <%= form.label :notes %>
+      <%= form.text_field :notes, class: "form-control"  %>
+    </div>
+
+</div>
