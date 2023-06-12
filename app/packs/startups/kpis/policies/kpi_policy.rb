@@ -1,4 +1,4 @@
-class KpiPolicy < ApplicationPolicy
+class KpiPolicy < KpiPolicyBase
   class Scope < Scope
     def resolve
       scope.where(entity_id: user.entity_id)
@@ -6,12 +6,12 @@ class KpiPolicy < ApplicationPolicy
   end
 
   def index?
-    user.enable_investors
+    user.enable_kpis
   end
 
   def show?
-    user.enable_investors &&
-      (user.entity_id == record.entity_id)
+    user.enable_kpis &&
+      (user.entity_id == record.entity_id || permissioned_employee? || permissioned_investor?)
   end
 
   def create?
@@ -19,11 +19,11 @@ class KpiPolicy < ApplicationPolicy
   end
 
   def new?
-    create?
+    create? && permissioned_employee?(:create)
   end
 
   def update?
-    create?
+    create? && permissioned_employee?(:update)
   end
 
   def edit?

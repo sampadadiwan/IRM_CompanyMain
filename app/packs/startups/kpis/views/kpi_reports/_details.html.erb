@@ -2,6 +2,7 @@
 
   
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
+
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#kpis-tab"
           data-action="click->tabdetails#loadData">Kpis</a>
 
@@ -13,11 +14,12 @@
               data-action="click->tabdetails#loadData">
             Tasks
           </a>
+    
+
+          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab" 
+            data-action="click->tabdetails#loadData">Access Rights</a>
       <% end %>
 
-
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab" 
-          data-action="click->tabdetails#loadData">Access Rights</a>
     </nav>
   
     <div class="tab-content" data-controller="datatable">

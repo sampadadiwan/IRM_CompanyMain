@@ -6,7 +6,7 @@ class KpiReport < ApplicationRecord
   belongs_to :entity
   belongs_to :user
   has_many :kpis, dependent: :destroy
-  has_many :access_rights, dependent: :destroy
+  has_many :access_rights, as: :owner, dependent: :destroy
 
   accepts_nested_attributes_for :kpis, reject_if: :all_blank, allow_destroy: true
 
