@@ -19,9 +19,6 @@
       
       <% if field.field_type == "NumberField" %>
         <%= form.number_field :value, step: :any,  class: "form-control", required: field.required %>
-
-      <% elsif field.field_type == "TextField" %>
-        <%= form.text_field :display_value, class: "form-control", required: field.required %>
         
       <% elsif field.field_type == "Select" %>
         <% options = field.meta_data.present? ? field.meta_data.split(",") : [] %>
@@ -32,6 +29,10 @@
 
       <% elsif field.field_type == "Money" %>
         <%= form.number_field :value, class: "form-control", required: field.required, step: :any, data: {action: "input->currencyformat#format"} %>
+
+      <% else %>
+        <%= form.text_field :display_value, class: "form-control", required: field.required %>
+      
       <% end %>
 
       <small class="text-muted"><%= field.help_text %></small>    
