@@ -14,6 +14,11 @@
          data-action="click->tabdetails#loadData">
         Portfolio
       </a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#kpis-tab"
+         data-action="click->tabdetails#loadData">
+        Kpis
+      </a>
     <% else %>
 
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">
@@ -89,6 +94,18 @@
               <span>Loading...</span>
             <% end %>
             <%= turbo_frame_tag "aggregate_portfolio_investments_list", target: "_top" do %>
+            <% end %>
+          </div>     
+        </div>
+
+        <div id="kpis-tab" class="tab-pane fade">
+          <div id="kpis" class="associated_entity">
+            <%= link_to kpi_reports_path(investor_id: investor.id), 
+                                    class: "load_data_link", 
+                                    data: { turbo_frame: 'kpi_reports_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "kpi_reports_list", target: "_top" do %>
             <% end %>
           </div>     
         </div>

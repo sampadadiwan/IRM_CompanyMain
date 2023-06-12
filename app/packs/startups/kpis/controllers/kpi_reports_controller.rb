@@ -4,6 +4,7 @@ class KpiReportsController < ApplicationController
   # GET /kpi_reports or /kpi_reports.json
   def index
     @kpi_reports = policy_scope(KpiReport)
+    authorize(KpiReport)
   end
 
   # GET /kpi_reports/1 or /kpi_reports/1.json
