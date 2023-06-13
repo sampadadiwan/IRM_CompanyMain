@@ -45,9 +45,16 @@
         <%= link_to "SPA", offer.spa.url, target: "_blank", class: "small" if offer.spa %>     
     </div>
     <div class="divTableCell">
-        <%= display_boolean offer.verified %>        
+        <%= display_boolean offer.verified %>            
     </div>
-    <div class="divTableCell"><%= offer.comments %></div>
+    <div class="divTableCell">
+        <%= offer.comments %>
+        <% if offer.verified %>
+            <% offer.documents.each do |doc| %> 
+                <%= link_to doc.name, doc, target: "_blank", class: "badge badge-info small-badge" if doc.owner_tag == "Generated" %>
+            <% end %>   
+        <% end %>
+    </div>
     <div class="divTableCell">
         <%= link_to "Show", offer, class: "btn btn-outline-primary", target: '_top' %>
         <%= link_to "Edit", allocation_form_offer_path(offer), data: { turbo_frame: "tf_#{dom_id(offer)}" }, class: "btn btn-outline-success" if policy(offer).allocation_form? && !offer.secondary_sale.lock_allocations %>
