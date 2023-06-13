@@ -236,6 +236,7 @@ Given('Given I upload a offer file') do
     @existing_user_count = User.count
     visit(secondary_sale_path(@sale))
     click_on("Pending Offers")
+    click_on("Upload / Download")
     click_on("Upload Offers")
     fill_in('import_upload_name', with: "Test Upload")
     attach_file('files[]', File.absolute_path('./public/sample_uploads/offers.xlsx'), make_visible: true)

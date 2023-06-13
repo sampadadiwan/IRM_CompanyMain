@@ -33,7 +33,7 @@
                         { class: "dropdown-item"} if @secondary_sale && policy(@secondary_sale).update? %> 
 
 
-                <%= link_to "Download All", offers_secondary_sale_path(@secondary_sale, format: "xlsx"), 
+                <%= link_to "Download All Offers", offers_secondary_sale_path(@secondary_sale, format: "xlsx"), 
                                         class: "dropdown-item" if @secondary_sale %>
 
 
