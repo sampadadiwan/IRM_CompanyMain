@@ -51,7 +51,7 @@
         <%= offer.comments %>
         <% if offer.verified %>
             <% offer.documents.each do |doc| %> 
-                <%= link_to doc.name, doc, target: "_blank", class: "badge badge-info small-badge" if doc.owner_tag == "Generated" %>
+                <%= link_to doc.name, doc.file.url, target: "_blank", class: "badge badge-info small-badge" if doc.file && doc.owner_tag == "Generated" %>
             <% end %>   
         <% end %>
     </div>
