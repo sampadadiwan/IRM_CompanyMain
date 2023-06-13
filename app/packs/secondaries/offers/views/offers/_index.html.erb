@@ -9,16 +9,38 @@
         <%= link_to "View All Offers", offers_secondary_sale_path(@secondary_sale), 
                                   class: "btn btn-outline-primary" if @secondary_sale %>
 
+        
+        <div class="btn-group">
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Upload / Download
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-        <%= link_to "Upload Offers", 
-                new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
-                "import_upload[owner_type]": "SecondarySale", 
-                "import_upload[import_type]": "Offer", 
-                "sample_upload": "OFFERS_SAMPLE"), 
-                { class: "btn btn-outline-primary"} if @secondary_sale && policy(@secondary_sale).update? %> 
+                <%= link_to "Upload Offers", 
+                    new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
+                    "import_upload[owner_type]": "SecondarySale", 
+                    "import_upload[import_type]": "Offer", 
+                    "sample_upload": "OFFERS_SAMPLE"), 
+                    { class: "dropdown-item"} if @secondary_sale && policy(@secondary_sale).update? %> 
 
-        <%= link_to "Download All", offers_secondary_sale_path(@secondary_sale, format: "xlsx"), 
-                                  class: "btn btn-outline-success" if @secondary_sale %>
+                <%= link_to "Upload Offers Documents", 
+                        new_import_upload_path("import_upload[owner_id]": @secondary_sale.id, 
+                        "import_upload[owner_type]": "SecondarySale", 
+                        "import_upload[import_type]": "OfferDocs", 
+                        "sample_upload": "OFFERS_DOCS_SAMPLE"), 
+                        { class: "dropdown-item"} if @secondary_sale && policy(@secondary_sale).update? %> 
+
+
+                <%= link_to "Download All", offers_secondary_sale_path(@secondary_sale, format: "xlsx"), 
+                                        class: "dropdown-item" if @secondary_sale %>
+
+
+
+                </div>
+            </div>
+        </div>
 
 
         <%= button_to "Approve All Pending", approve_offers_secondary_sale_path(@secondary_sale), 

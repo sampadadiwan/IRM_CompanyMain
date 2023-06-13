@@ -17,6 +17,7 @@ class ImportUpload < ApplicationRecord
               "VALUATION_SAMPLE" => "/sample_uploads/valuations.xlsx",
               "INVESTOR_KYCS_DOCS_SAMPLE" => "/sample_uploads/import_kyc_docs.zip",
               "DOCS_SAMPLE" => "/sample_uploads/documents_upload.zip",
+              "OFFERS_DOCS_SAMPLE" => "/sample_uploads/offer_docs.zip",
               "ACCOUNT_ENTRY_SAMPLE" => "/sample_uploads/account_entries.xlsx" }.freeze
 
   belongs_to :entity
