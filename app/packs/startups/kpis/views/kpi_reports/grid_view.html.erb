@@ -1,5 +1,5 @@
 <%= render "/layouts/alerts" %>
-<% form_custom_fields = @kpi_reports[0].form_type.form_custom_fields %>
+<% form_custom_fields = @kpi_reports[0].form_type.form_custom_fields.order(position: :asc) %>
 <div data-controller="export-xl">
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -24,7 +24,7 @@
             <% @kpi_reports.each do |kpi_report| %>
                 <% kpis = kpi_report.kpis.map{|kpi| [kpi.name, kpi]}.to_h %>            
                 <tr>
-                    <td><%= l kpi_report.as_of %></td>
+                    <td><%= link_to l(kpi_report.as_of), kpi_report %></td>
                     <% form_custom_fields.each do |fcf| %>
                         <td><%= kpis[fcf.name]&.value %> </td>
                     <% end %>
