@@ -90,7 +90,7 @@ class OfferSpaGenerator
       context.store  "seller_#{k}", v
     end
 
-    context.store "individual",  ["true", "yes", "1"].include?(offer.properties["individual"]&.downcase)
+    context.store "individual", %w[true yes 1].include?(offer.properties["individual"]&.downcase)
   end
 
   def add_buyer_fields(context, offer)

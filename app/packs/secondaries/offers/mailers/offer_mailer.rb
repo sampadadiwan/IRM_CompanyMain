@@ -9,9 +9,9 @@ class OfferMailer < ApplicationMailer
     cc = @offer.entity.entity_setting.cc
     reply_to = cc
 
-    mail( from: from_email(@offer.entity), 
-          to: emails, cc:, reply_to:,
-          subject:)
+    mail(from: from_email(@offer.entity),
+         to: emails, cc:, reply_to:,
+         subject:)
   end
 
   def notify_accept_spa
@@ -22,9 +22,9 @@ class OfferMailer < ApplicationMailer
     subject = "SPA confirmation received"
     cc = @offer.entity.entity_setting.cc
     reply_to = cc
-    
-    mail(from: from_email(@offer.entity), 
-          to: emails, cc:, reply_to:,
-          subject:)
+
+    mail(from: from_email(@offer.entity),
+         to: emails, cc:, reply_to:,
+         subject:)
   end
 end

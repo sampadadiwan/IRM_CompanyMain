@@ -7,7 +7,7 @@ class InterestMailer < ApplicationMailer
     emails = sandbox_email(@interest, @interest.entity.employees.collect(&:email))
     cc = @interest.entity.entity_setting.cc
     reply_to = cc
-    
+
     mail(from: from_email(@interest.entity), to: emails, cc:, reply_to:,
          subject: "Interest for #{@interest.secondary_sale.name} ")
   end
@@ -17,7 +17,7 @@ class InterestMailer < ApplicationMailer
     emails = sandbox_email(@interest, @interest.user.email)
     cc = @interest.entity.entity_setting.cc
     reply_to = cc
-    
+
     mail(from: from_email(@interest.entity), to: emails, cc:, reply_to:,
          subject: "Interest Shortlisted for #{@interest.secondary_sale.name} ")
 
@@ -32,7 +32,7 @@ class InterestMailer < ApplicationMailer
     emails = sandbox_email(@interest, email_list)
     cc = @interest.entity.entity_setting.cc
     reply_to = cc
-    
+
     mail(from: from_email(@interest.entity), to: emails, cc:, reply_to:,
          subject: "SPA confirmation received")
   end
@@ -42,7 +42,7 @@ class InterestMailer < ApplicationMailer
     emails = sandbox_email(@interest, @interest.user.email)
     cc = @interest.entity.entity_setting.cc
     reply_to = cc
-    
+
     mail(from: from_email(@interest.entity), to: emails, cc:, reply_to:,
          subject: "Interest Finalized for #{@interest.secondary_sale.name} ")
 
