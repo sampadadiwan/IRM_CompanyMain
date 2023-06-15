@@ -1,0 +1,32 @@
+class KpiReportDatatable < AjaxDatatablesRails::ActiveRecord
+  def view_columns
+    @view_columns ||= {
+      id: { source: "KpiReport.id", searchable: false },
+      user: { source: "User.first_name", orderable: true },
+      notes: { source: "Investor.notes", orderable: false, searchable: false },
+      as_of: { source: "KpiReport.as_of", orderable: true },
+      dt_actions: { source: "", orderable: false, searchable: false }
+    }
+  end
+
+  def data
+    records.map do |record|
+      {
+        id: record.id,
+        as_of: record.decorate.display_date(record.as_of),
+        notes: record.notes,
+        user: record.user.full_name,
+        dt_actions: record.decorate.dt_actions,
+        DT_RowId: "kpi_report_#{record.id}" # This will automagically set the id attribute on the corresponding <tr> in the datatable
+      }
+    end
+  end
+
+  def kpi_reports
+    @kpi_reports ||= options[:kpi_reports]
+  end
+
+  def get_raw_records
+    kpi_reports
+  end
+end

@@ -5,6 +5,11 @@ class KpiReportsController < ApplicationController
   def index
     @kpi_reports = policy_scope(KpiReport)
     authorize(KpiReport)
+
+    respond_to do |format|
+      format.html { render :index }
+      format.json { render json: KpiReportDatatable.new(params, kpi_reports: @kpi_reports) }
+    end
   end
 
   # GET /kpi_reports/1 or /kpi_reports/1.json
