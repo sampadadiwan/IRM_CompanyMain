@@ -3,11 +3,16 @@ class KpiReportsController < ApplicationController
 
   # GET /kpi_reports or /kpi_reports.json
   def index
-    @kpi_reports = policy_scope(KpiReport)
+    @kpi_reports = policy_scope(KpiReport).includes(:kpis)
     authorize(KpiReport)
 
+    if params[:period].present?
+      date = Time.zone.today - params[:period].to_i.months
+      @kpi_reports = @kpi_reports.where(as_of: date..)
+    end
+
     respond_to do |format|
-      format.html { render :index }
+      format.html { render  params[:grid_view].present? ? :grid_view : :index }
       format.json { render json: KpiReportDatatable.new(params, kpi_reports: @kpi_reports) }
     end
   end
