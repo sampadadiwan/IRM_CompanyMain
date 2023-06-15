@@ -80,7 +80,7 @@
                     <%= link_to "SPA", o.spa.url if o.spa %>
                 </td>
                 <td>
-                    <%= display_boolean (o.documents.any?{|d| d.name == "Stamp Paper"}) %>
+                    <%= display_boolean (o.documents.any?{|d| d.name.include? "Stamp Paper"}) %>
                 </td>
                 <td>
                     <%= o.documents.collect(&:name).join(", ") %>

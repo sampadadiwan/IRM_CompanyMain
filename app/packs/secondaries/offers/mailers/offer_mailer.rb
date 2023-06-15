@@ -6,8 +6,12 @@ class OfferMailer < ApplicationMailer
     @offer = Offer.find params[:offer_id]
     emails = sandbox_email(@offer, @offer.user.email)
     subject = "Your offer has been approved"
-    mail(from: from_email(@offer.entity), to: emails,
-         subject:)
+    cc = @offer.entity.entity_setting.cc
+    reply_to = cc
+
+    mail( from: from_email(@offer.entity), 
+          to: emails, cc:, reply_to:,
+          subject:)
   end
 
   def notify_accept_spa
@@ -16,7 +20,11 @@ class OfferMailer < ApplicationMailer
     email_list = [@offer.user.email, sale.support_email].join(",")
     emails = sandbox_email(@offer, email_list)
     subject = "SPA confirmation received"
-    mail(from: from_email(@offer.entity), to: emails,
-         subject:)
+    cc = @offer.entity.entity_setting.cc
+    reply_to = cc
+    
+    mail(from: from_email(@offer.entity), 
+          to: emails, cc:, reply_to:,
+          subject:)
   end
 end

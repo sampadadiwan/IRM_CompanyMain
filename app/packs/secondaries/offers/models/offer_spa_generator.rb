@@ -33,15 +33,18 @@ class OfferSpaGenerator
 
     context = {}
     context.store  :effective_date, Time.zone.today.strftime("%d %B %Y")
-    context.store  :offer_quantity, offer.quantity
-    context.store  :company_name, offer.entity.name
+    context.store  :seller_offer_quantity, offer.quantity
+    context.store  :seller_company_name, offer.entity.name
 
-    context.store  :allocation_quantity, offer.allocation_quantity
-    context.store  :share_price, offer.secondary_sale.final_price
-    context.store  :allocation_amount, money_to_currency(offer.allocation_amount)
+    context.store  :seller_allocation_quantity, offer.allocation_quantity
+    allocation_quantity_in_words = offer.entity.currency == "INR" ? offer.allocation_quantity.to_i.rupees.humanize : offer.allocation_quantity.to_i.to_words.humanize
+    context.store :seller_allocation_quantity_words, allocation_quantity_in_words
+
+    context.store  :seller_share_price, offer.secondary_sale.final_price
+    context.store  :seller_allocation_amount, offer.allocation_amount.to_f
 
     amount_in_words = offer.entity.currency == "INR" ? offer.allocation_amount.to_i.rupees.humanize : offer.allocation_amount.to_i.to_words.humanize
-    context.store :allocation_amount_words, amount_in_words
+    context.store :seller_allocation_amount_words, amount_in_words
 
     add_seller_fields(context, offer)
     add_image(context, :seller_signature, offer.signature)
@@ -70,7 +73,7 @@ class OfferSpaGenerator
     context.store  :seller_address, offer.address
     context.store  :seller_pan, offer.PAN
     context.store  :seller_email, offer.user.email
-    context.store  :seller_bank_account, offer.bank_account_number
+    context.store  :seller_bank_account_number, offer.bank_account_number
     context.store  :seller_ifsc_code, offer.ifsc_code
     context.store  :seller_demat, offer.demat
     context.store  :seller_city, offer.city
@@ -86,6 +89,8 @@ class OfferSpaGenerator
     offer.properties.each do |k, v|
       context.store  "seller_#{k}", v
     end
+
+    context.store "individual",  ["true", "yes", "1"].include?(offer.properties["individual"]&.downcase)
   end
 
   def add_buyer_fields(context, offer)
