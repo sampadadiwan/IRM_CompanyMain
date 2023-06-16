@@ -92,37 +92,7 @@
             Whatsapp Enabled
           </td>
           <td>
-            <%= @user.whatsapp_enabled ? "Yes" : "No" %>
-
-            <% if @user.whatsapp_enabled && @user.id==current_user.id %>
-        <div class="enable_whatsapp">
-          <div class="click_btn">
-            Click to receive <a class="btn btn-outline-success"
-              href="https://signupforservices.com/whatsapp/optin/?bId=2c729a2b-a232-49bf-b229-4e2b73a8f1a2&bName=AltConnects&s=URL&lang=en_US">
-              Whatsapp Updates
-            </a>
-          </div>
-          <div class="qr_code">
-              <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                  <h6 class="m-0 font-weight-bold text-primary">Additional Steps: To get WhatsApp updates.
-                  </h6>
-                </div>
-                <div class="card-body">
-                  <img src="/img/whatsappQR.png" />
-                </div>
-                <div class="card-header py-3">
-                  <smallclass="text-muted" >
-                    Open a QR code scanner, scan this QR code, accept the terms, and hit send in whatsapp.
-                    This will enable us to send you critical alters only, on whatsapp.
-                  </small>
-                </div>
-
-              </div>
-          </div>
-        </div>
-      <% end %>
-
+            <%= display_boolean @user.whatsapp_enabled %>
           </td>
         </tr>
 

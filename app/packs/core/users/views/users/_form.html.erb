@@ -93,11 +93,6 @@
   <div class="form-group">
     <%= form.label :whatsapp_enabled %>
     <%= form.check_box :whatsapp_enabled, class: "form-control form-checkbox" %>
-    <small class="text-muted">
-      Additional step is required to enable whatsapp messages,
-      you will need to scan a QR shown post saving your profile or
-      click the 'Receive Whatsapp Updates' button in this app on your phone.
-    </small>
   </div>
 
   <% if Entity::SECONDARY_BUYERS.include? user.entity&.entity_type %>
