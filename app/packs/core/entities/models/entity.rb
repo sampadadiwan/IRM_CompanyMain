@@ -13,7 +13,7 @@ class Entity < ApplicationRecord
 
   has_one :entity_setting, dependent: :destroy
   accepts_nested_attributes_for :entity_setting, allow_destroy: true
-
+  has_many :kpi_reports, dependent: :destroy
   has_many :option_pools, dependent: :destroy
   has_many :excercises, dependent: :destroy
   has_many :deals, dependent: :destroy

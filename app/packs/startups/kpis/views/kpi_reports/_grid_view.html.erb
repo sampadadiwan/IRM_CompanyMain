@@ -1,14 +1,19 @@
-<%= render "/layouts/alerts" %>
-<% form_custom_fields = @kpi_reports[0].form_type.form_custom_fields.order(position: :asc) %>
+
 <div data-controller="export-xl">
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h4 mb-0 text-gray-800">Kpis</h1>
+    <h1 class="h4 mb-0 text-gray-800">
+        Kpis
+        <%= Entity.find(params[:entity_id]).name if params[:entity_id] %>
+    </h1>
 
     <span>
         <button class="btn btn-outline-success", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button>
     </span>
 </div>
+
+<% if kpi_reports.present? %>
+<% form_custom_fields = kpi_reports[0].form_type.form_custom_fields.order(position: :asc) %>
 
 <div class="table-responsive" data-controller="datatable">
     <table id="kpi_reports_grid" class="table table-bordered dataTable jqDataTable">
@@ -21,7 +26,7 @@
             </tr>
         </thead>
         <tbody>
-            <% @kpi_reports.each do |kpi_report| %>
+            <% kpi_reports.each do |kpi_report| %>
                 <% kpis = kpi_report.kpis.map{|kpi| [kpi.name, kpi]}.to_h %>            
                 <tr>
                     <td><%= link_to l(kpi_report.as_of), kpi_report %></td>
@@ -34,3 +39,5 @@
     </table>
 </div>
 </div>
+
+<% end %>

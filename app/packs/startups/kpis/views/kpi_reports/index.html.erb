@@ -1,53 +1,8 @@
 <%= render "/layouts/alerts" %>
-
-<div data-controller="kpi-reports" 
-     data-kpi-reports-lazy-load-data-value=<%= false %>
-     data-kpi-reports-table-name-value="#kpi_reports">
-
-  <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Kpi Reports</h1>
-    <span>
-      
-      <% form_type = current_user.entity.form_types.where(name: "KpiReport").first %>
-      <% if form_type %>
-        <%= link_to "New Kpi Report", new_kpi_report_path("kpi_report[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
-        <%= link_to "Grid View", kpi_reports_path("kpi_report[entity_id]": current_user.entity_id, grid_view: true), {class: "btn btn-outline-primary"}  %>
-        <%= link_to "Customize Kpis", edit_form_type_path(form_type), {class: "btn btn-outline-success"}  %>
-      <% else %>
-        <%= link_to "Customize Kpis", new_form_type_path("form_type[name]": "KpiReport"), {class: "btn btn-outline-success"}  %>
-      <% end %>
-    </span>
-  </div>
-
-  <% data_source ||= kpi_reports_path(params, format: :json, all: true) %>
-  <% lazy_load_data ||= false %>
-
-  <div class="table-responsive">
-
-    <% if lazy_load_data %>
-      <a class="load_data_link" data-action="click->kpi-reports#loadData"><span>Load Data</span></a>
+<% if params[:grid_view].present? %>
+    <%= turbo_frame_tag "kpi_reports_list", target: "_top" do %>
+        <%= render "/kpi_reports/grid_view", kpi_reports: @kpi_reports if @kpi_reports %>
     <% end %>
-
-    <table id="kpi_reports" class="table table-bordered dataTable" data-source="<%= data_source %>">
-      <thead>
-        <tr>
-          <th>
-            As Of
-          </th>
-          <th>
-            Notes
-          </th>
-          <th>
-            User
-          </th>
-          <th>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        
-      </tbody>
-    </table>
-  </div>
-
-</div>
+<% else %>
+    <%= render "/kpi_reports/index", kpi_reports: @kpi_reports if @kpi_reports %>
+<% end %>

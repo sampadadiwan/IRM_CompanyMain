@@ -5,6 +5,8 @@ class Investor < ApplicationRecord
   update_index('investor') { self }
 
   belongs_to :investor_entity, class_name: "Entity"
+  has_many :kpi_reports, through: :investor_entity
+
   belongs_to :entity, touch: true
   counter_culture :entity
 
