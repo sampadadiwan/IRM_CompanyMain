@@ -2,7 +2,13 @@ class InvestorKycPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
       if %i[employee].include? user.curr_role.to_sym
-        scope.where(entity_id: user.entity_id)
+        if user.investor_advisor?
+          # We cant show them all the KYCs, only the ones for the funds they have been permissioned
+          fund_ids = Fund.for_employee(user).pluck(:id)
+          scope.joins(investor: [capital_commitments: :fund]).where('funds.id': fund_ids)
+        else
+          scope.where(entity_id: user.entity_id)
+        end
       else
         scope.where('investors.investor_entity_id': user.entity_id)
       end
@@ -10,11 +16,11 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def index?
-    user.enable_funds
+    user.enable_kycs
   end
 
   def show?
-    user.enable_funds && (
+    user.enable_kycs && (
     user.entity_id == record.entity_id ||
       user.entity_id == record.investor.investor_entity_id
   )

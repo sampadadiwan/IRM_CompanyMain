@@ -16,6 +16,10 @@ class InvestorKycsController < ApplicationController
     @investor_kycs = @investor_kycs.includes(:investor, :entity)
     @investor_kycs = @investor_kycs.page(params[:page]) if params[:all].blank?
 
+    # The distinct clause is there because IAs can access only KYCs that belong to thier funds
+    # See policy_scope - this query returns dups
+    @investor_kycs = @investor_kycs.distinct
+
     respond_to do |format|
       format.html
       format.turbo_stream
