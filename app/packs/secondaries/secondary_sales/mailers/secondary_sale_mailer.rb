@@ -65,7 +65,7 @@ class SecondarySaleMailer < ApplicationMailer
       Rails.logger.debug { "notify_closing_offers: Sending mail to #{list} in bcc" }
 
       mail(from: from_email(@secondary_sale.entity), to: ENV.fetch('SUPPORT_EMAIL', nil),
-           bcc: sandbox_email(@secondary_sale, open_for_offers_emails.join(',')),
+           bcc: sandbox_email(@secondary_sale, list.join(',')),
            subject: "Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}, reminder to enter your offer")
     end
   end

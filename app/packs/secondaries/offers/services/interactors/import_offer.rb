@@ -32,13 +32,19 @@ class ImportOffer < ImportUtil
 
     email = user_data["Email"].strip
 
+    user = User.find_by(email:)
+    raise "User #{email} not found" unless user
+
     if user_data["Founder/Employee/Investor"]&.strip == "Investor"
       # This offer is for an investor
-      investor = import_upload.entity.investors.where(name: user_data["Investor"].strip).first
+      investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
       raise "Investor #{user_data['Investor']} not found" unless investor
 
       # Get the holding for which the offer is being made
-      holding = Holding.joins(:user).where("holdings.investor_id=? and holdings.entity_id=?", investor.id, import_upload.entity_id).first
+      holding = Holding.where("holdings.investor_id=? and holdings.entity_id=?", investor.id, import_upload.entity_id).first
+
+      raise "User not found for investor #{user_data['Investor']}" unless user.entity_id == investor.investor_entity_id
+
     else
 
       # Get the holding for which the offer is being made
@@ -50,12 +56,13 @@ class ImportOffer < ImportUtil
     secondary_sale = import_upload.owner
     # Make the offer
 
+    full_name = "#{user_data['First Name']} #{user_data['Last Name']}"
+
     if holding
       offer = Offer.new(PAN: user_data["PAN"], address: user_data["Address"], city: user_data["City"],
                         demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["IFSC Code"],
                         holding:, secondary_sale:, final_price: secondary_sale.final_price,
-                        user: holding.user, investor: holding.investor, entity: holding.entity,
-                        full_name: holding.user&.full_name)
+                        user:, investor: holding.investor, entity: holding.entity, full_name:)
 
       setup_custom_fields(user_data, offer, custom_field_headers)
 
