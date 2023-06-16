@@ -19,22 +19,46 @@
     <table id="kpi_reports_grid" class="table table-bordered dataTable jqDataTable">
         <thead>
             <tr>
-                <th>As Of</th>
-                <% form_custom_fields.each do |fcf| %>
-                    <th><%= fcf.name %></th>
-                <% end %>
+                <th class="no-sort"></th>
+                <% kpi_reports.each do |kpi_report| %>
+                    <th><%= l kpi_report.as_of %></th>
+                <% end %>            
             </tr>
         </thead>
         <tbody>
-            <% kpi_reports.each do |kpi_report| %>
-                <% kpis = kpi_report.kpis.map{|kpi| [kpi.name, kpi]}.to_h %>            
+                        
+            <% form_custom_fields.each do |fcf| %>            
                 <tr>
-                    <td><%= link_to l(kpi_report.as_of), kpi_report %></td>
-                    <% form_custom_fields.each do |fcf| %>
+                    <td><%= fcf.name %></td>
+                    
+                    <% kpi_reports.each do |kpi_report| %>            
+                        <% kpis = kpi_report.kpis.map{|kpi| [kpi.name, kpi]}.to_h %>
                         <td><%= kpis[fcf.name]&.value %> </td>
                     <% end %>
+                    
                 </tr>
             <% end %>
+
+            <tr>
+                <td>Documents</td>
+                <% kpi_reports.each do |kpi_report| %>                               
+                        <td>
+                            <% kpi_report.documents.each do |doc| %>
+                            <%=  link_to doc %>,
+                            <% end %>
+                        </td>                    
+                <% end %>
+            </tr>     
+
+            <tr>
+                <td>Link</td>
+                <% kpi_reports.each do |kpi_report| %>                               
+                        <td>
+                            <%=  link_to kpi_report %>
+                        </td>                    
+                <% end %>
+            </tr>     
+
         </tbody>
     </table>
 </div>

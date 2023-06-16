@@ -10,7 +10,8 @@ export default class extends Controller {
         if ( $.fn.dataTable.isDataTable( value ) ) {
         }
         else {
-          table[key] = $(value).DataTable({        
+          table[key] = $(value).DataTable({    
+            order: [],     
             stateSave: false,
             retrieve: true,
             lengthMenu: [

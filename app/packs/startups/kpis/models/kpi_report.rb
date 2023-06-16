@@ -22,6 +22,10 @@ class KpiReport < ApplicationRecord
     "KPI - #{as_of}"
   end
 
+  def to_s
+    name
+  end
+
   def folder_path
     "/KPIs/#{name.delete('/')}"
   end
