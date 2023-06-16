@@ -27,8 +27,9 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id) ||
-      user.entity_id == record.investor.investor_entity_id
+    (user.entity_id == record.entity_id ||
+      user.entity_id == record.investor.investor_entity_id) && 
+      !user.investor_advisor? # IAs can't create / update KYCs
   end
 
   def new?
