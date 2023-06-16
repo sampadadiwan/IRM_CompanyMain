@@ -91,6 +91,8 @@ class ImportDocuments
 
       doc.setup_folder_defaults
       # Attach the actual document on the file system to the document in our app
+      raise "#{file_path} does not exist. Check for missing file or extension" unless File.exist?(file_path)
+
       doc.file = File.open(file_path, "rb")
 
       # Allow download of zip
