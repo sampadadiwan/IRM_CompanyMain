@@ -1,5 +1,5 @@
 class ImportOffer < ImportUtil
-  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Last Name", "Address", "PAN", "Bank Account", "IFSC Code"].freeze
+  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Last Name", "Address", "PAN", "Bank Account", "IFSC Code", "Founder/Employee/Investor", "Investor"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -31,9 +31,21 @@ class ImportOffer < ImportUtil
     Rails.logger.debug { "Processing offer #{user_data}" }
 
     email = user_data["Email"].strip
-    # Get the holding for which the offer is being made
-    holding = Holding.joins(:user).where("users.email=? and holdings.entity_id=?",
-                                         email, import_upload.entity_id).first
+
+    if user_data["Founder/Employee/Investor"]&.strip == "Investor"
+      # This offer is for an investor
+      investor = import_upload.entity.investors.where(name: user_data["Investor"].strip).first
+      raise "Investor #{user_data['Investor']} not found" unless investor
+
+      # Get the holding for which the offer is being made
+      holding = Holding.joins(:user).where("holdings.investor_id=? and holdings.entity_id=?", investor.id, import_upload.entity_id).first
+    else
+
+      # Get the holding for which the offer is being made
+      holding = Holding.joins(:user).where("users.email=? and holdings.entity_id=?",
+                                           email, import_upload.entity_id).first
+
+    end
     # Get the Secondary Sale
     secondary_sale = import_upload.owner
     # Make the offer
