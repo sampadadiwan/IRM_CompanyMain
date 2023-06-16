@@ -10,12 +10,6 @@ GIT
       railties (>= 3.0.0)
 
 GIT
-  remote: https://github.com/satishkaushik/rupees.git
-  revision: b7670ffe127c390ab8002af26af7bf33328a59e3
-  specs:
-    rupees (0.1.0)
-
-GIT
   remote: https://github.com/seuros/capistrano-sidekiq.git
   revision: 784b04c973e5c074dc78c30746077c9e6fd2bb9a
   ref: 784b04c973e5c074dc78c30746077c9e6fd2bb9a
@@ -24,6 +18,12 @@ GIT
       capistrano (>= 3.9.0)
       capistrano-bundler
       sidekiq (>= 6.0)
+
+GIT
+  remote: https://github.com/thimmaiah/rupees.git
+  revision: e0c2a326f538d7918c3db825570c147e703f9e3c
+  specs:
+    rupees (0.1.0)
 
 GIT
   remote: https://github.com/thimmaiah/xirr

@@ -30,7 +30,7 @@
             <% form_custom_fields.each do |fcf| %>            
                 <tr>
                     <td><%= fcf.name %></td>
-                    
+                    <!-- TODO Optimize this loop -->
                     <% kpi_reports.each do |kpi_report| %>            
                         <% kpis = kpi_report.kpis.map{|kpi| [kpi.name, kpi]}.to_h %>
                         <td><%= kpis[fcf.name]&.value %> </td>

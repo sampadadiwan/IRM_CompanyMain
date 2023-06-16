@@ -84,7 +84,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     sandbox
     sandbox_emails
     from_email
-    entity_bcc
+    cc
     bank_verification
     pan_verification
     aml_enabled
