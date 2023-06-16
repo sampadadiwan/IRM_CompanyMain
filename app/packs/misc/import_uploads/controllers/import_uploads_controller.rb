@@ -3,7 +3,7 @@ class ImportUploadsController < ApplicationController
 
   # GET /import_uploads or /import_uploads.json
   def index
-    @import_uploads = policy_scope(ImportUpload).includes(:user, :owner)
+    @import_uploads = policy_scope(ImportUpload).includes(:user, :owner).order(id: :desc)
   end
 
   # GET /import_uploads/1 or /import_uploads/1.json

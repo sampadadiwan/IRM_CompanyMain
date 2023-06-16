@@ -4,7 +4,7 @@ module UserEnabled
   included do
     flag :permissions, %i[enable_documents enable_deals enable_investments enable_holdings
                           enable_secondary_sale enable_funds enable_inv_opportunities enable_options
-                          enable_captable enable_investors enable_kpis]
+                          enable_captable enable_investors enable_kpis enable_kycs]
   end
 
   def enable_documents
@@ -49,6 +49,10 @@ module UserEnabled
 
   def enable_kpis
     get_permissions.enable_kpis? && entity && entity.enable_kpis
+  end
+
+  def enable_kycs
+    get_permissions.enable_kycs? && entity && entity.enable_kycs
   end
 
   def get_permissions

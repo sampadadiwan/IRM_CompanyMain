@@ -42,6 +42,7 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_captable: Field::BooleanEmoji,
     enable_investor_kyc: Field::BooleanEmoji,
     enable_kpis: Field::BooleanEmoji,
+    enable_kycs: Field::BooleanEmoji,
     enable_inv_opportunities: Field::BooleanEmoji
   }.freeze
 
@@ -65,6 +66,7 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_fund_portfolios
     enable_investor_kyc
     enable_kpis
+    enable_kycs
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -97,6 +99,7 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_captable
     enable_investor_kyc
     enable_kpis
+    enable_kycs
     employees
     investors
     investor_entities
@@ -132,6 +135,7 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_captable
     enable_investor_kyc
     enable_kpis
+    enable_kycs
     activity_docs_required_for_completion
     activity_details_required_for_na
     entity_setting
