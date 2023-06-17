@@ -16,11 +16,11 @@ table.dataTable {
     }    
 
     tbody tr:nth-child(even):hover td{
-      background-color: lighten(#1cc88a, 45%) !important;
+      background-color: lighten(lightblue, 15%) !important;
     }
     
     tbody tr:nth-child(odd):hover td {
-        background-color: lighten(#1cc88a, 45%) !important;
+        background-color: lighten(lightblue, 15%) !important;
     }
 }
 
