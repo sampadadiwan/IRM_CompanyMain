@@ -1,7 +1,12 @@
 class FileUploader < Shrine
   ALLOWED_TYPES = %w[*/*].freeze
+  MIME_TYPES = [
+    "image/jpeg", "image/png", "image/gif", "image/bmp", "image/svg+xml", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "text/plain", "text/html", "text/css", "text/csv", "application/xml", "application/json", "audio/mpeg", "audio/wav", "video/mp4", "video/mpeg", "application/zip", "application/x-rar-compressed", "application/x-tar", "application/x-gzip", "application/x-7z-compressed", "application/x-bzip2", "application/x-iso9660-image"
+  ]
   Attacher.validate do
     # validate_mime_type ALLOWED_TYPES
+    validate_mime_type MIME_TYPES, message: "upload with this extension is not allowed"
+
     validate_max_size 2048 * 1024 * 1024, message: "is too large (max is 2GB)"
   end
 
