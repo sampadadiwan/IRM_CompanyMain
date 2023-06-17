@@ -257,6 +257,7 @@ div.divider {
 }
 
 #deal_grid_view {
+  overflow: auto;
   th, td, .btn {
     font-size: 1em;
   }
@@ -326,14 +327,6 @@ div.divider {
     margin-bottom: 10px;
     height: auto;
   }display: inline;
-}
-
-#offers {
-  td {
-    .badge {
-      display: table;
-    }
-  }
 }
 
 .info {
@@ -679,3 +672,4 @@ ul.vesting_schedule {
 .small-badge {
   font-size: 60% !important;
 }
+
