@@ -212,14 +212,6 @@ namespace :irm do
           InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
         end
       end
-
-      # Add an advisor
-      advisor = Entity.advisors.sample
-      inv = FactoryBot.create(:investor, entity: e, investor_entity: advisor, tag_list: [tags.sample, tags.sample].join(","), category: "Advisor")
-      puts "Investor #{inv.id}"
-      inv.investor_entity.employees.each do |user|
-        InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
-      end
       
     end
 
@@ -244,14 +236,7 @@ namespace :irm do
         FactoryBot.create(:investor_kyc, entity: e, investor: inv)
       end
 
-      # Add an advisor
-      advisor = Entity.advisors.sample
-      inv = FactoryBot.create(:investor, entity: e, investor_entity: advisor, tag_list: [tags.sample, tags.sample].join(","), category: "Advisor")
-      puts "Investor #{inv.id}"
-      inv.investor_entity.employees.each do |user|
-        InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
-      end
-    
+      
     end
 
   rescue Exception => e
@@ -582,7 +567,7 @@ namespace :irm do
                 text: Faker::Company.catch_phrase, user: e.employees.sample,
                 file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
 
-            FactoryBot.create(:capital_remittance_payment, capital_remittance: cr, amount_cents: cr.call_amount_cents,  payment_date: cr.capital_call.due_date, fund: cr.fund, entity: cr.entity)
+            FactoryBot.create(:capital_remittance_payment, capital_remittance: cr, folio_amount_cents: cr.call_amount_cents,  payment_date: cr.capital_call.due_date, fund: cr.fund, entity: cr.entity)
 
           end
         end

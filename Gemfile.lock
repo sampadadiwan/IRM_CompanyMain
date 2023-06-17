@@ -149,6 +149,9 @@ GEM
     administrate-field-shrine (0.0.5)
       administrate (> 0.5.0)
       rails (>= 4.2)
+    after_commit_action (1.1.0)
+      activerecord (>= 3.0.0)
+      activesupport (>= 3.0.0)
     airbrussh (1.4.1)
       sshkit (>= 1.6.1, != 1.7.0)
     ajax-datatables-rails (1.4.0)
@@ -805,6 +808,7 @@ DEPENDENCIES
   administrate-field-active_storage
   administrate-field-boolean_emoji (~> 0.3.0)
   administrate-field-shrine
+  after_commit_action
   ajax-datatables-rails
   ancestry
   annotate
