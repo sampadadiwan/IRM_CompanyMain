@@ -44,7 +44,7 @@
       <% end %>
 
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab"
-          id="documents_tab" href="#documents-tab"
+          id="documents_tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
       <% if policy(fund).update? %>      
@@ -63,7 +63,7 @@
 
     <div class="tab-content" data-controller="datatable">
 
-        <div id="documents-tab" class="tab-pane fade in">
+        <div id="docs-tab" class="tab-pane fade in">
           <div id="docs" class="associated_entity">
 
             <% cache([fund, "Documents", policy(fund).update?]) do %>
