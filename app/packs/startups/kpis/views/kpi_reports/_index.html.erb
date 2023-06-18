@@ -13,7 +13,7 @@
       <% form_type = current_user.entity.form_types.where(name: "KpiReport").first %>
       <% if form_type %>
         <%= link_to "New Kpi Report", new_kpi_report_path("kpi_report[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
-        <%= link_to "Grid View", kpi_reports_path("kpi_report[entity_id]": current_user.entity_id, grid_view: true), {class: "btn btn-outline-primary"}  %>
+        <%= link_to "Grid View", kpi_reports_path(entity_id: current_user.entity_id, grid_view: true), {class: "btn btn-outline-primary"}  %>
         <%= link_to "Customize Kpis", edit_form_type_path(form_type), {class: "btn btn-outline-success"}  %>
       <% else %>
         <%= link_to "Customize Kpis", new_form_type_path("form_type[name]": "KpiReport"), {class: "btn btn-outline-success"}  %>
