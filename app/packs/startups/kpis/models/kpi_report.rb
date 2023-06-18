@@ -10,6 +10,10 @@ class KpiReport < ApplicationRecord
 
   accepts_nested_attributes_for :kpis, reject_if: :all_blank, allow_destroy: true
 
+  def self.custom_fields
+    JSON.parse(ENV.fetch("KPIS", nil)).keys.sort
+  end
+
   def custom_kpis
     my_kpis = kpis.to_a
     form_type.form_custom_fields.each do |custom_field|

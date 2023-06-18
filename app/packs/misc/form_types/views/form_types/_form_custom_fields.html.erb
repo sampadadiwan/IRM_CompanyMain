@@ -7,7 +7,7 @@
     <% if @form_type.name == 'KpiReport' %>
         <div class="form-group col-md-2">
             <%= f.label :name %>
-            <%= f.select :name, ENV['KPIS'].split(",").sort, {}, class: "form-control" %>
+            <%= f.select :name, KpiReport.custom_fields, {}, class: "form-control" %>
         </div>
     <% else %>
         <div class="form-group col-md-2">

@@ -962,9 +962,17 @@ When('I click on fund documents tab') do
 end
 
 Given('the remittances are paid and verified') do
-  CapitalRemittance.update_all("collected_amount_cents=call_amount_cents")
-  CapitalRemittance.update(verified: true)
+  CapitalRemittance.all.each do |cr|
+    cr.update(folio_collected_amount_cents: cr.folio_call_amount_cents, collected_amount_cents: cr.call_amount_cents, verified: true)
+  end
 end
+
+Given('the remittances are overpaid and verified') do
+  CapitalRemittance.all.each do |cr|
+    cr.update(folio_collected_amount_cents: cr.folio_call_amount_cents + 1000, collected_amount_cents: cr.call_amount_cents + 1000, verified: true)
+  end
+end
+
 
 Given('the units are generated') do
   CapitalCall.all.each do |cc|
@@ -986,7 +994,8 @@ Then('there should be correct units for the calls payment for each investor') do
       fu.unit_type.should == cc.unit_type
       fu.owner_type.should == "CapitalRemittance"
       fu.price.should == fu.owner.capital_call.unit_prices[fu.unit_type]["price"].to_d
-      fu.quantity.round(2).should == (fu.owner.collected_amount_cents / ((fu.price + fu.premium)* 100)).round(2)
+      amount_cents = fu.owner.collected_amount_cents < fu.owner.call_amount_cents ? fu.owner.collected_amount_cents : fu.owner.call_amount_cents
+      fu.quantity.round(2).should == ( amount_cents / ((fu.price + fu.premium)* 100)).round(2)
     end
   end
 end

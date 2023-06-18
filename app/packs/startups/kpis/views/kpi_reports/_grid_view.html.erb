@@ -3,7 +3,7 @@
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h4 mb-0 text-gray-800">
-        Kpis
+        Key Performance Indicators
         <%= Entity.find(params[:entity_id]).name if params[:entity_id] %>
     </h1>
 
@@ -24,7 +24,7 @@
     <table id="kpi_reports_grid" class="table table-bordered dataTable jqDataTable">
         <thead>
             <tr>
-                <th class="no-sort">Kpi</th>
+                <th class="no-sort">KPI</th>
                 <% kpi_reports.each do |kpi_report| %>
                     <th><%= l kpi_report.as_of %></th>
                 <% end %>            
@@ -69,6 +69,7 @@
 </div>
 </div>
 
+<div class="associated_entity">
     <div class="row">
         <div class="col-lg-12 mb-4">
 
@@ -83,5 +84,6 @@
             </div>
         </div>
     </div>
+</div>
 
 <% end %>

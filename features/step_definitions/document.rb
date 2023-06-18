@@ -195,7 +195,7 @@ end
 Given('given there is a document {string} for the deal') do |args|
   @document = Document.new(entity: @deal.entity, name: "Test", 
     text: Faker::Company.catch_phrase, user: @user, owner: @deal,
-    folder: @deal.entity.folders.sample, file: File.new("public/sample_uploads/Instructions.txt", "r"))
+    folder: @deal.entity.folders.sample, file: File.new("public/sample_uploads/GrantLetter.docx", "r"))
 
   key_values(@document, args)
   @document.save!  
@@ -208,7 +208,7 @@ end
 Given('given there is a document {string} for the sale') do |args|
   @document = Document.new(entity: @sale.entity, name: "Test", 
     text: Faker::Company.catch_phrase, user: @user, owner: @sale,
-    folder: @sale.entity.folders.sample, file: File.new("public/sample_uploads/Instructions.txt", "r"))
+    folder: @sale.entity.folders.sample, file: File.new("public/sample_uploads/GrantLetter.docx", "r"))
 
   key_values(@document, args)
   @document.save!

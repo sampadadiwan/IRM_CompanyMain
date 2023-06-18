@@ -4,6 +4,6 @@ module KpisHelper
 
     chart_data = kpis.map { |name, arr| [name:, data: arr.map { |kpi| [kpi.kpi_report.as_of.strftime("%m/%y"), kpi.value] }] }.flatten
 
-    line_chart chart_data
+    column_chart chart_data
   end
 end

@@ -26,20 +26,19 @@ class DefaultUnitAllocationEngine
       unit_type = capital_commitment.unit_type
       price_cents = capital_call.unit_prices[unit_type]["price"].to_d * 100
       premium_cents = capital_call.unit_prices[unit_type]["premium"].to_d * 100
-      # Calculate the quantity to be allocated
-      quantity = price_cents.positive? ? (capital_remittance.collected_amount_cents / (price_cents + premium_cents)) : 0
 
-      fund_unit = find_or_new_remittance(capital_remittance, unit_type)
+      # Sometimes we collect more than the call amount, issue of funds units should be based on lesser of collected amount or call amount
+      if capital_remittance.collected_amount_cents > capital_remittance.call_amount_cents
+        amount_cents = capital_remittance.call_amount_cents
+        reason += " Collected amount greater than call amount, issuing units for call amount"
+      else
+        amount_cents = capital_remittance.collected_amount_cents
+      end
 
-      # Update quantity
-      fund_unit.quantity = quantity
-      fund_unit.price = (price_cents / 100)
-      fund_unit.premium = (premium_cents / 100)
-      fund_unit.total_premium_cents = (premium_cents * quantity)
-      fund_unit.reason = reason
-      fund_unit.issue_date = capital_remittance.payment_date
+      quantity = price_cents.positive? ? (amount_cents / (price_cents + premium_cents)) : 0
 
-      fund_unit.save
+      new_fund_unit(capital_remittance, unit_type, quantity, price_cents, premium_cents, reason)
+
       [fund_unit, msg]
     else
       msg << "Skipping fund units generation"
@@ -50,6 +49,21 @@ class DefaultUnitAllocationEngine
       Rails.logger.debug msg.join(", ")
       [nil, msg]
     end
+  end
+
+  def new_fund_unit(capital_remittance, unit_type, quantity, price_cents, premium_cents, reason)
+    fund_unit = find_or_new_remittance(capital_remittance, unit_type)
+
+    # Update quantity
+    fund_unit.quantity = quantity
+    fund_unit.price = (price_cents / 100)
+    fund_unit.premium = (premium_cents / 100)
+    fund_unit.total_premium_cents = (premium_cents * quantity)
+    fund_unit.reason = reason
+    fund_unit.issue_date = [capital_remittance.payment_date, capital_call.due_date].max
+
+    fund_unit.save
+    fund_unit
   end
 
   def allocate_distribution_payment(capital_distribution_payment, reason)

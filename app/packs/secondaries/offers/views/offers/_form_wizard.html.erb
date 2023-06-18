@@ -138,36 +138,19 @@
                 <div class="card-header"> 3. Additional Documents </div>
                 <div class="card-body">
 
+                    <% if offer.secondary_sale.seller_doc_list.present? %>
                     <div class="form-group">
 
                         <% label = offer.secondary_sale.seller_doc_list ? offer.secondary_sale.seller_doc_list : "Additional Documents" %>
-                        <%= form.label :documents, label, class: "form-label" %>
+                        <%= form.label :documents, "Upload #{label}", class: "form-label" %>
                         <%= render "layouts/multi_upload", form: form, title: "Offer Documents", 
                                                 for_model: "offer" %>
                     
                         <small class="text-muted"> Upload documents here </small>
                     
                     </div>
-
-                    <% if false && offer.secondary_sale.seller_doc_list.present? %>
-                        
-                        <label class="form-label">Confirm Uploaded Documents</label>
-                        <div class="docs_uploaded_check">                        
-                        <% offer.secondary_sale.seller_doc_list.split(",").each_with_index do |doc_name, idx| %>
-        
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" 
-                                id="duc_<%=idx%>"
-                                name="offer[docs_uploaded_check][<%=doc_name.strip%>]" 
-                                value="1"
-                                <%= offer.docs_uploaded_check[doc_name.strip].present? ? 'checked' : nil %>>
-                                <label class="form-check-label" for="duc_<%=idx%>"><%= doc_name %></label>
-                            </div>
-                        <% end %>
-                        </div>
                     <% end %>
-                  
-                    <br>
+
                     
                     <% if offer.secondary_sale.seller_signature_types.include?("image") %>
                     <div class="form-group">
