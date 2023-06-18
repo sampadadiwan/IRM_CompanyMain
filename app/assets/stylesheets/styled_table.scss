@@ -13,14 +13,16 @@ table.dataTable {
       .text-muted {
         color: white !important;
       }
+      font-weight: 500;
+      vertical-align: top;
     }    
 
     tbody tr:nth-child(even):hover td{
-      background-color: lighten(lightblue, 15%) !important;
+      background-color: lighten($color: cornflowerblue, $amount: 30);
     }
     
     tbody tr:nth-child(odd):hover td {
-        background-color: lighten(lightblue, 15%) !important;
+        background-color: lighten($color: cornflowerblue, $amount: 30);
     }
 }
 
@@ -781,11 +783,11 @@ div.dt-button-collection span.dt-button-spacer {
 
 
 tr.even td {
-  background-color: #ffffff;
+  background-color: white;
 }
 
 tr.odd td {
-  background-color: #f9f9f9;
+  background-color: white; //#f9f9f9;
 }
 
 tr.selected td {

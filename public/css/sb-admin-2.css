@@ -1495,7 +1495,7 @@ th {
 
 .table th,
 .table td {
-  padding: 1rem;
+  padding: 0.7rem;
   /* vertical-align: top; */
   border-top: 1px solid #e3e6f0;
 }

@@ -174,8 +174,9 @@ video { float: none; }
 
 
 .nav-link.active {
-  border-color: #4e73df !important;
-  color: #4e73df !important;
+  background-color: #4e73df !important;
+  // color: #4e73df !important;
+  color: white !important;
   font-weight: 600;
 }
 
