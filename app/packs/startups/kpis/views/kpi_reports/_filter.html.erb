@@ -1,0 +1,14 @@
+<%= form_with(model: nil, method: :get, url: "/kpi_reports", id: "kpi_reports_filter",  data: {turbo_frame: "kpi_reports_list"} ) do |form| %>
+    
+  <input name="kpi_report[entity_id]" value="<%= params[:kpi_report][:entity_id] %>" hidden="hidden">
+  <input name="grid_view" value="true" hidden="hidden">
+
+  <div class="form-group col-md-1" data-controller="kpi_reports">    
+    <% period = params[:period].presence %>
+    <%= form.label :period, "Period in months" %>
+    <%= form.text_field :period, class: "form-control", value: period, style: "width: 50px;" %>        
+  </div>
+
+  <%= form.submit "Submit", {class: "btn btn-outline-success", id: "submit"}%>
+
+<% end %>

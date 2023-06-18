@@ -10,4 +10,11 @@ export default class extends ServerDatatableController {
       {"data": "dt_actions"}
     ]
   }
+
+  submit(event) {
+    // Make the call
+    let form = $("#kpi_reports_filter");
+    event.target.form.requestSubmit();
+
+  }
 }

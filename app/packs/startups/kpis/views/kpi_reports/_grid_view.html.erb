@@ -8,8 +8,13 @@
     </h1>
 
     <span>
-        <button class="btn btn-outline-success", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button>
+        <%= render "kpi_reports/filter" %>
+
+        <button class="btn btn-outline-success", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button> 
     </span>
+
+    
+
 </div>
 
 <% if kpi_reports.present? %>
@@ -19,7 +24,7 @@
     <table id="kpi_reports_grid" class="table table-bordered dataTable jqDataTable">
         <thead>
             <tr>
-                <th class="no-sort"></th>
+                <th class="no-sort">Kpi</th>
                 <% kpi_reports.each do |kpi_report| %>
                     <th><%= l kpi_report.as_of %></th>
                 <% end %>            

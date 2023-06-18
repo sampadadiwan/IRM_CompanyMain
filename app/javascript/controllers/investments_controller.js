@@ -74,7 +74,7 @@ export default class extends Controller {
 
       return '<div class="nested_holdings">'+
       `<span class="mb-0 text-gray-800">Top 5 ${category} ${instrument} Holdings</span>`+
-      '<table class="table table-bordered table-striped dataTable">'+
+      '<table class="table table-bordered dataTable">'+
           '<tr>'+
             '<th>Funding Round</th>'+
             '<th>Name</th>'+

@@ -6,6 +6,7 @@ class KpiReportsController < ApplicationController
     @kpi_reports = policy_scope(KpiReport).includes(:kpis, :documents)
     authorize(KpiReport)
 
+    params[:period] ||= 6
     if params[:period].present?
       date = Time.zone.today - params[:period].to_i.months
       @kpi_reports = @kpi_reports.where(as_of: date..)
@@ -83,6 +84,7 @@ class KpiReportsController < ApplicationController
   def set_kpi_report
     @kpi_report = KpiReport.find(params[:id])
     authorize @kpi_report
+    @bread_crumbs = { Kpis: kpi_reports_path, "#{@kpi_report.as_of}": kpi_report_path(@kpi_report) }
   end
 
   # Only allow a list of trusted parameters through.

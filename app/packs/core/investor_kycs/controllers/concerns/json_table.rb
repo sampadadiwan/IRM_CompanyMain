@@ -4,7 +4,7 @@ module JsonTable
   TABLE_OPTIONS = {
     table_style: "border: 1px solid black; max-width: 600px;",
     table_class:
-    "table table-striped table-hover table-condensed table-bordered",
+    "table table-hover table-condensed table-bordered",
     table_attributes: "border=1"
   }.freeze
 
