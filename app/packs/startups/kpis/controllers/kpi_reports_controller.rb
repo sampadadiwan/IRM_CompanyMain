@@ -30,13 +30,14 @@ class KpiReportsController < ApplicationController
     @kpi_report.user_id = current_user.id
     @kpi_report.as_of = Time.zone.today
     authorize @kpi_report
-    setup_custom_fields(@kpi_report)
+    # setup_custom_fields(@kpi_report)
     @kpi_report.custom_kpis
   end
 
   # GET /kpi_reports/1/edit
   def edit
-    setup_custom_fields(@kpi_report)
+    # setup_custom_fields(@kpi_report)
+    @kpi_report.custom_kpis
   end
 
   # POST /kpi_reports or /kpi_reports.json

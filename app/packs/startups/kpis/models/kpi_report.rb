@@ -14,6 +14,10 @@ class KpiReport < ApplicationRecord
     JSON.parse(ENV.fetch("KPIS", nil)).keys.sort
   end
 
+  def self.custom_fields_map
+    JSON.parse(ENV.fetch("KPIS", nil))
+  end
+
   def custom_kpis
     my_kpis = kpis.to_a
     form_type.form_custom_fields.each do |custom_field|
