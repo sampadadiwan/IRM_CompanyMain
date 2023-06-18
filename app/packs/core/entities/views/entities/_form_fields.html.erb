@@ -22,6 +22,7 @@
 
   <%= form.fields_for :entity_setting do |entity_setting_subform| %>
 
+    <% if entity.enable_kycs %>
     <div class="form-group">
       <%= entity_setting_subform.label :individual_kyc_doc_list %>
       <%= entity_setting_subform.text_field :individual_kyc_doc_list, class: "form-control"  %>
@@ -33,6 +34,15 @@
       <%= entity_setting_subform.text_field :non_individual_kyc_doc_list, class: "form-control"  %>
       <small>Comma separated list of documents to be uploaded for Non Individual KYC</small>
     </div>
+    <% end %>
+
+    <% if entity.enable_kpis %>
+    <div class="form-group">
+      <%= entity_setting_subform.label :kpi_doc_list %>
+      <%= entity_setting_subform.select :kpi_doc_list, ENV["KPI_DOCS"].split(","), {include_blank: false, include_hidden: false}, class: "form-control select2", multiple: true %>
+      <small>Comma separated list of documents to be uploaded for KPIs</small>
+    </div>
+    <% end %>
 
   <% end %>
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_06_16_131058) do
+ActiveRecord::Schema[7.0].define(version: 2023_06_18_093407) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -843,6 +843,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_16_131058) do
     t.string "sandbox_numbers"
     t.string "fi_code"
     t.boolean "ckyc_kra_enabled", default: false
+    t.string "kpi_doc_list"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 

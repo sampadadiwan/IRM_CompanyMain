@@ -5,6 +5,7 @@ class EntitySetting < ApplicationRecord
   belongs_to :entity
 
   validate :validate_ckyc_kra_enabled
+  serialize :kpi_doc_list, Array
 
   def validate_ckyc_kra_enabled
     errors.add(:ckyc_kra, "can not be enabled without FI Code") if ckyc_kra_enabled == true && fi_code.blank?

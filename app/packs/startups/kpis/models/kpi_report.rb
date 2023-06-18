@@ -26,6 +26,10 @@ class KpiReport < ApplicationRecord
     name
   end
 
+  def document_list
+    entity.entity_setting.kpi_doc_list
+  end
+
   def folder_path
     "/KPIs/#{name.delete('/')}"
   end

@@ -71,6 +71,7 @@
             </td>
          </tr>
 
+         <% if @entity.enable_kycs %>
          <tr>
             <td>
                KYC Document List (Individual)
@@ -88,6 +89,18 @@
                <%= @entity.entity_setting.non_individual_kyc_doc_list %>
             </td>
          </tr>
+         <% end %>
+
+         <% if @entity.enable_kpis %>
+         <tr>
+            <td>
+               KPI Document List
+            </td>
+            <td>
+               <%= @entity.entity_setting.kpi_doc_list %>
+            </td>
+         </tr>
+         <% end %>
 
          <tr>
             <td>
