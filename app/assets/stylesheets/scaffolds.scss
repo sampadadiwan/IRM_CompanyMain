@@ -646,6 +646,15 @@ ul.vesting_schedule {
   // vertical-align: middle;
 }
 
+.side-by-side-container {
+  display: flex; /* Use flexbox to create a flexible container */
+}
+
+.side-by-side-view {
+  flex: 1; /* Make each view take up equal space within the container */
+  /* Add any other desired styles for your views */
+}
+
 .grid-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -654,7 +663,7 @@ ul.vesting_schedule {
 
 .jstree-children {
   width: 100%;
-  overflow: hidden; 
+  overflow: hidden;
   text-overflow: ellipsis;
 }
 

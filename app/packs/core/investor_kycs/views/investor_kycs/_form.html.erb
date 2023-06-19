@@ -51,11 +51,19 @@
     <div class="alert alert-info">
       Please upload a clear image of your PAN card
     </div>
-
-    <%= render "layouts/single_upload", form: form, field_label: "Upload PAN Card",
-                            for_model: "investor_kyc", field_name: "pan_card",
-                            model: investor_kyc %>
-
+    <div>
+    <% pan_label="Upload PAN Card" %>
+    <% if investor_kyc.pan_card.present? %>
+      <% pan_label="Update PAN Card" %>
+      <%= link_to "PAN Card", investor_kyc.pan_card.url, target: "_blank" %>
+      <br>
+      <%= image_tag investor_kyc.pan_card_url,
+      style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" %>
+    <% end %>
+      <%= render "layouts/single_upload", form: form, field_label: pan_label,
+                          for_model: "investor_kyc", field_name: "pan_card",
+                          model: investor_kyc %>
+    </div>
   </div>
 
   <% if current_user.entity_id == investor_kyc.entity_id %>
@@ -87,10 +95,19 @@
   </div>
 
   <div class="form-group">
-    <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image (jpg or png only)",
-                            for_model: "investor_kyc", field_name: "signature",
-                            model: investor_kyc, allowed_types: ['image/*'].freeze  %>
-
+    <div>
+    <% sign_label="Upload Signature Image (jpg or png only)" %>
+    <% if investor_kyc.signature.present? %>
+    <% sign_label="Update Signature Image (jpg or png only)" %>
+      <%= link_to "Signature", investor_kyc.signature.url, target: "_blank" %>
+      <br>
+      <%= image_tag investor_kyc.signature_url,
+        style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" %>
+    <% end %>
+      <%= render "layouts/single_upload", form: form, field_label: sign_label,
+                    for_model: "investor_kyc", field_name: "signature",
+                    model: investor_kyc, allowed_types: ['image/*'].freeze  %>
+    </div>
   </div>
 
 

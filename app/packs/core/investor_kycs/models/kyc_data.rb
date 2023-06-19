@@ -1,5 +1,6 @@
 class KycData < ApplicationRecord
   include JsonTable
+
   belongs_to :investor_kyc
   belongs_to :entity
 
@@ -81,6 +82,14 @@ class KycData < ApplicationRecord
       Json2table.get_html_table(response['download_response']&.except("images"), JsonTable::TABLE_OPTIONS)
     else
       Json2table.get_html_table(response, JsonTable::TABLE_OPTIONS)
+    end
+  end
+
+  def get_image_data
+    if source == "ckyc" && response.present?
+      response.dig('download_response', 'images')
+    else
+      []
     end
   end
 end

@@ -77,6 +77,9 @@
       </td>
       <td>
         <%= investor_kyc.pan_card.present? ? link_to(investor_kyc.PAN, investor_kyc.pan_card.url, target: "_blank") : investor_kyc.PAN   %>
+        <hr>
+        <%= image_tag investor_kyc.pan_card_url,
+          style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if investor_kyc.pan_card.present? %>
       </td>
     </tr>
 

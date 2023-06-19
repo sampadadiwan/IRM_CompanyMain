@@ -99,8 +99,12 @@ class InvestorKycsController < ApplicationController
   def assign_kyc_data
     @investor_kyc = InvestorKyc.find(investor_kyc_params[:id])
     authorize(@investor_kyc)
+    if investor_kyc_params[:kyc_data_id].present?
+      @kyc_data = @investor_kyc.kyc_datas.find(investor_kyc_params[:kyc_data_id])
+      @investor_kyc.assign_kyc_data(@kyc_data)
+    end
     respond_to do |format|
-      if @investor_kyc.update(investor_kyc_params)
+      if @investor_kyc.save
         format.html { redirect_to edit_investor_kyc_path(@investor_kyc), notice: "Investor kyc was successfully updated." }
       else
         format.html { redirect_to edit_investor_kyc_path(@investor_kyc), status: :unprocessable_entity }
@@ -162,6 +166,6 @@ class InvestorKycsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_kyc_params
-    params.require(:investor_kyc).permit(:id, :investor_id, :entity_id, :user_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :video, :phone, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:investor_kyc).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :video, :phone, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

@@ -80,4 +80,28 @@ class InvestorKyc < ApplicationRecord
   def expired?
     expiry_date ? expiry_date < Time.zone.today : false
   end
+
+  def assign_kyc_data(kyc_data)
+    self.full_name = kyc_data.full_name
+    self.address = kyc_data.perm_address
+    self.corr_address = kyc_data.corr_address
+
+    kyc_data.get_image_data.each do |image_data|
+      imgtype = image_data['image_type']
+      file_name = "#{kyc_data.source.upcase}Data-#{id}-#{full_name.delete('/')}-#{imgtype}.png"
+      file_path = "tmp/#{file_name}"
+      if imgtype.casecmp?("signature")
+        Rails.logger.debug { "Uploading new image - #{file_name}" }
+        Rails.root.join(file_path).binwrite(Base64.decode64(image_data['data']))
+        self.signature = File.open(file_path, "rb")
+      elsif imgtype.casecmp?("pan")
+        Rails.logger.debug { "Uploading new image - #{file_name}" }
+        Rails.root.join(file_path).binwrite(Base64.decode64(image_data['data']))
+        self.pan_card = File.open(file_path, "rb")
+      end
+      FileUtils.rm_f(file_path)
+    rescue StandardError => e # caught as kyc can have improper base64 data
+      Rails.logger.error { "Error while uploading file #{file_name} #{e.message}" }
+    end
+  end
 end

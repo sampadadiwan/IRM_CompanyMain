@@ -1,17 +1,3 @@
 <%= render "/layouts/alerts" %>
 
 <%= render "kyc_datas/show", kyc_data: @kyc_data %>
-<div>
-    <p>
-    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseResponse" aria-expanded="false" aria-controls="collapseResponse">
-            Show Response
-        </button>
-        </p>
-    <div class="collapse" id="collapseResponse">
-    <big>Response:</big>
-    <br>
-        <div class="card card-body">
-            <%= @kyc_data.get_json_table.html_safe %>
-        </div>
-    </div>
-</div>

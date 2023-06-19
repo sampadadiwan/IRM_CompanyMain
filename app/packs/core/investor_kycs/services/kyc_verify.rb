@@ -180,10 +180,10 @@ class KycVerify
             image_type: "PAN", type: "jpg/pdf", data: Base64.encode64(File.read("public/img/whatsappQR.png"))
           },
           {
-            image_type: "AADHAAR/PASSPORT/VOTER/DL", type: "jpg/pdf", data: "{BASE64}"
+            image_type: "AADHAAR/PASSPORT/VOTER/DL", type: "jpg/pdf", data: Base64.encode64(File.read("public/img/logo_trans.png"))
           },
           {
-            image_type: "SIGNATURE", type: "jpg/pdf", data: "{BASE64}"
+            image_type: "SIGNATURE", type: "jpg/pdf", data: Base64.encode64(File.read("public/img/logo_trans.old.png"))
           }
         ]
       }

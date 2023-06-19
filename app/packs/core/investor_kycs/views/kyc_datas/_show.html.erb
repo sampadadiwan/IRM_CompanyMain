@@ -88,5 +88,35 @@
 
   </table>
 
+<div>
+    <p>
+    <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#imgCollapseResponse-<%= kyc_data.id %>" aria-expanded="false" aria-controls="imgCollapseResponse-<%= kyc_data.id %>">
+            Show Images
+    </button>
+    </p>
+</div>
+
+<div>
+    <div class="collapse" id="imgCollapseResponse-<%= kyc_data.id %>">
+    <big>Images:</big>
+    <br>
+        <div class="card card-body">
+            <% kyc_data.get_image_data.each do |img_hash| %>
+            <div>
+                <%= img_hash['image_type'].gsub("/"," / ").titleize+" :" %>
+                <br>
+                <%= image_tag src="data:image/jpeg;base64,#{img_hash['data']}",
+                width: 300,
+                height: 300,
+                class: "img-thumbnail file-upload-preview"  %>
+                <hr>
+            </div>
+            <% end %>
+        </div>
+    </div>
+    <br>
+</div>
+
+
 
 

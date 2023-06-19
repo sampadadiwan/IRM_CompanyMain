@@ -65,3 +65,9 @@ Scenario Outline: Import Fund investors
   And the investors must have the data in the sheet
   And the investors must be added to the fund
 
+Scenario Outline: Create investor kyc
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  And Given Entity has ckyc_kra_enabled set to true
+  And I create a new InvestorKyc with pan "ABCD1234E"
+  Then I should see ckyc and kra data comparison page
+  Then I select one and see the edit page and save
