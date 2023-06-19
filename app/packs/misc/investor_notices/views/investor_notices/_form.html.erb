@@ -85,9 +85,8 @@
               <small>Generate Notices for all investors of the selected Owner</small>
             </div>
 
-            <div>
-
-              <h1>Items</h1>
+            <div class="associated_entity">
+            
               <div id='investor_notice_items'>
                 <%= form.fields_for :investor_notice_items do |field| %>
                   <%= render 'investor_notice_item_fields', :f => field %>
@@ -97,7 +96,7 @@
               </div>
                 
               <div class="form-group">
-                <%= link_to_add_association 'Add Field', form, :investor_notice_items, class: "btn btn-outline-primary" %>
+                <%= link_to_add_association 'Add Line Item', form, :investor_notice_items, class: "btn btn-outline-primary" %>
                 <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
               </div>
 
