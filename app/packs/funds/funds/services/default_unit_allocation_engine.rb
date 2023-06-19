@@ -37,7 +37,7 @@ class DefaultUnitAllocationEngine
 
       quantity = price_cents.positive? ? (amount_cents / (price_cents + premium_cents)) : 0
 
-      fund_unit = new_fund_unit(capital_remittance, capital_call, unit_type, quantity, price_cents, premium_cents, reason)
+      fund_unit = new_fund_unit(capital_remittance, unit_type, quantity, price_cents, premium_cents, reason)
 
       [fund_unit, msg]
     else
@@ -51,7 +51,7 @@ class DefaultUnitAllocationEngine
     end
   end
 
-  def new_fund_unit(capital_remittance, capital_call, unit_type, quantity, price_cents, premium_cents, reason)
+  def new_fund_unit(capital_remittance, unit_type, quantity, price_cents, premium_cents, reason)
     fund_unit = find_or_new_remittance(capital_remittance, unit_type)
 
     # Update quantity
@@ -60,7 +60,7 @@ class DefaultUnitAllocationEngine
     fund_unit.premium = (premium_cents / 100)
     fund_unit.total_premium_cents = (premium_cents * quantity)
     fund_unit.reason = reason
-    fund_unit.issue_date = [capital_remittance.payment_date, capital_call.due_date].max
+    fund_unit.issue_date = [capital_remittance.payment_date, capital_remittance.capital_call.due_date].max
 
     fund_unit.save
     fund_unit
