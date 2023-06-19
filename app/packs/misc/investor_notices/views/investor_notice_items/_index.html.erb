@@ -1,0 +1,28 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Investor Notice Items</h1>
+  <%= link_to "New Investor Notice Item", new_investor_notice_item_path, {class: "btn btn-primary"}  %>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="investor_notice_items" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          Title
+        </th>
+        <th>
+          Details
+        </th>
+        <th>
+          Link
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% investor_notice_items.each do |investor_notice_item| %>
+        <%= render investor_notice_item %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

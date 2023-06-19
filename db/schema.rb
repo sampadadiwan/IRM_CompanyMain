@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_06_18_093407) do
+ActiveRecord::Schema[7.0].define(version: 2023_06_19_163518) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1559,6 +1559,19 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_18_093407) do
     t.index ["investor_notice_id"], name: "index_investor_notice_entries_on_investor_notice_id"
   end
 
+  create_table "investor_notice_items", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "investor_notice_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "title"
+    t.text "details"
+    t.string "link"
+    t.integer "position"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_investor_notice_items_on_entity_id"
+    t.index ["investor_notice_id"], name: "index_investor_notice_items_on_investor_notice_id"
+  end
+
   create_table "investor_notices", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "owner_type"
@@ -2364,6 +2377,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_18_093407) do
   add_foreign_key "investor_notice_entries", "entities", column: "investor_entity_id"
   add_foreign_key "investor_notice_entries", "investor_notices"
   add_foreign_key "investor_notice_entries", "investors"
+  add_foreign_key "investor_notice_items", "entities"
+  add_foreign_key "investor_notice_items", "investor_notices"
   add_foreign_key "investor_notices", "entities"
   add_foreign_key "investors", "folders", column: "document_folder_id"
   add_foreign_key "investors", "form_types"

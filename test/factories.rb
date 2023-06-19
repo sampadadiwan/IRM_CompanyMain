@@ -1,4 +1,11 @@
 FactoryBot.define do
+  factory :investor_notice_item do
+    investor_notice { nil }
+    title { "MyString" }
+    details { "MyText" }
+    link { "MyString" }
+  end
+
   factory :kpi do
     entity { nil }
     name { "MyString" }

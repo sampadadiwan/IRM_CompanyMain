@@ -84,11 +84,25 @@
               <%= form.check_box :generate, class: "form-control form-checkbox"  %>
               <small>Generate Notices for all investors of the selected Owner</small>
             </div>
-            
 
-            <div class="form-group">
-              <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+            <div>
+
+              <h1>Items</h1>
+              <div id='investor_notice_items'>
+                <%= form.fields_for :investor_notice_items do |field| %>
+                  <%= render 'investor_notice_item_fields', :f => field %>
+                <% end %>
+                <div class='links'>
+                </div>
+              </div>
+                
+              <div class="form-group">
+                <%= link_to_add_association 'Add Field', form, :investor_notice_items, class: "btn btn-outline-primary" %>
+                <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+              </div>
+
             </div>
+            
           <% end %>
         </div>
     </div>

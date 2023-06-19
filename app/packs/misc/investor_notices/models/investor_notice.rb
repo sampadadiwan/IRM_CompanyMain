@@ -2,10 +2,12 @@ class InvestorNotice < ApplicationRecord
   belongs_to :entity
   belongs_to :owner, optional: true, polymorphic: true
   has_many :investor_notice_entries, dependent: :destroy
+  has_many :investor_notice_items, dependent: :destroy
+  accepts_nested_attributes_for :investor_notice_items, reject_if: :all_blank, allow_destroy: true
 
   has_rich_text :details
 
-  validates :title, :start_date, :end_date, :details, presence: true
+  validates :title, :start_date, :end_date, presence: true
 
   after_commit :update_investors
   after_commit :generate_investor_notice_entries, if: proc { |notice| notice.generate && notice.saved_change_to_generate? }

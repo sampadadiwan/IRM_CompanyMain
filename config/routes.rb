@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :investor_notice_items
   resources :kpis
   resources :kpi_reports
   namespace :admin do
