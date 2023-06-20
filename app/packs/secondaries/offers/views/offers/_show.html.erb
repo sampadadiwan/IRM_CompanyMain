@@ -26,6 +26,8 @@
         <%= link_to @offer.secondary_sale.name, @offer.secondary_sale %>
       </td>
     </tr>
+
+    <% if current_user %>
     <tr>
       <td>
         Quantity
@@ -221,8 +223,7 @@
       </tr>
 
       <%= display_custom_fields(@offer) if current_user %>
-      
-      <% if current_user %>
+    
 
         <tr>
             <td colspan="2" class="bg-primary"></td>
@@ -239,8 +240,7 @@
             </td>
         </tr>
 
-      <% end %>
-
+    
       <tr>
           <td>
           I agree to enter into the SPA
@@ -274,7 +274,9 @@
 
       <% end %>
 
-      
+
+      <% end %>
+  
 
     <% end %>
 
