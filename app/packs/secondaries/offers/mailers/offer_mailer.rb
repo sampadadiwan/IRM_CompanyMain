@@ -5,7 +5,7 @@ class OfferMailer < ApplicationMailer
   def notify_approval
     @offer = Offer.find params[:offer_id]
     emails = sandbox_email(@offer, @offer.user.email)
-    subject = "Your offer has been approved"
+    subject = "Your secondary sale offer"
     cc = @offer.entity.entity_setting.cc
     reply_to = cc
 
