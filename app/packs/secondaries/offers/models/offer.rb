@@ -128,7 +128,7 @@ class Offer < ApplicationRecord
   end
 
   def total_holdings_quantity
-    holding.user ? holding.user.holdings.eq_and_pref.sum(:quantity) : holding.investor.holdings.eq_and_pref.sum(:quantity)
+    holding.user ? holding.user.holdings.approved.eq_and_pref.sum(:quantity) : holding.investor.holdings.approved.eq_and_pref.sum(:quantity)
   end
 
   def allowed_quantity

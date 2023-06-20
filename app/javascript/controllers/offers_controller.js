@@ -8,7 +8,6 @@ export default class extends ServerDatatableController {
       {"data": "user"},
       {"data": "investor_name"},
       {"data": "quantity"},
-      {"data": "percentage"},
       {"data": "allocation_quantity"},
       {"data": "allocation_percentage"},
       {"data": "final_price"},
