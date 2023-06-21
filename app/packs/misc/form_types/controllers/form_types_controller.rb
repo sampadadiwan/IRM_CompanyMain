@@ -68,6 +68,6 @@ class FormTypesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def form_type_params
-    params.require(:form_type).permit(:name, form_custom_fields_attributes: %i[id name position help_text field_type meta_data required read_only has_attachment _destroy])
+    params.require(:form_type).permit(:name, form_custom_fields_attributes: %i[id name position help_text field_type meta_data required read_only has_attachment hide_user_ids _destroy])
   end
 end
