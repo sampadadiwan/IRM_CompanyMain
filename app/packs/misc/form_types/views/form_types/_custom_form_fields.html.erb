@@ -2,7 +2,7 @@
 <%= form.fields_for :properties, struct  do |builder| %>
     <% model.form_type.form_custom_fields.writable.each do |field| %>
         <%= render "form_custom_fields/#{field.field_type.underscore}", 
-                    field: field, f: builder, struct: struct %>
+                    field: field, f: builder, struct: struct if field.hide_user_ids.blank? || field.hide_user_ids.split(",").include?(current_user.id) %>
     <% end %>
 <% end %>
 

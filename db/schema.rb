@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_06_19_163518) do
+ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -993,6 +993,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_19_163518) do
     t.integer "position"
     t.text "help_text"
     t.boolean "read_only", default: false
+    t.string "hide_user_ids", limit: 50
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
   end
 
