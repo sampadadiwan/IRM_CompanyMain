@@ -1,4 +1,4 @@
-<div class="form-group">
+<div class="form-group <%= field.read_only ? 'hidden_form_field' : '' %>">
     <%= f.label field.name, field.name.humanize.titleize %>
     <%= f.text_field field.name, class: "form-control", required: field.required %>
     <small class="text-muted"><%= field.help_text %></small>

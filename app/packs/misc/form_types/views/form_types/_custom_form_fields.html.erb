@@ -1,8 +1,8 @@
 <% struct = OpenStruct.new(model.properties) %>
 <%= form.fields_for :properties, struct  do |builder| %>
-    <% model.form_type.form_custom_fields.writable.each do |field| %>
+    <% model.form_type.form_custom_fields.each do |field| %>
         <%= render "form_custom_fields/#{field.field_type.underscore}", 
-                    field: field, f: builder, struct: struct if field.show_user_ids.present? && field.show_user_ids.split(",").include?(current_user.id.to_s) %>
+                    field: field, f: builder, struct: struct if field.show_user_ids.blank? || field.show_user_ids.present? && field.show_user_ids.split(",").include?(current_user.id.to_s) %>
     
     <% end %>
 <% end %>

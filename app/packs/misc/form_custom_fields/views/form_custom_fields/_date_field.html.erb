@@ -1,4 +1,4 @@
-<div class="form-group">
+<div class="form-group <%= field.read_only ? 'hidden_form_field' : '' %>">
     <%= f.label field.name, field.name.humanize.titleize %>
     <% val = struct[field.name] ? Date.parse(struct[field.name]) : nil %>
     <%= f.date_field field.name, class: "form-control", required: field.required, value: val   %>
