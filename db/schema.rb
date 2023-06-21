@@ -993,7 +993,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
     t.integer "position"
     t.text "help_text"
     t.boolean "read_only", default: false
-    t.string "hide_user_ids", limit: 50
+    t.string "show_user_ids", limit: 50
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
   end
 
