@@ -131,6 +131,12 @@ class OffersController < ApplicationController
         format.html { redirect_to offer_url(@offer), notice: "Offer was successfully updated." }
         format.json { render :show, status: :ok, location: @offer }
       else
+        format.turbo_stream do
+          @offer.comments = "Error: #{@offer.errors.full_messages}"
+          render turbo_stream: [
+            turbo_stream.replace("tf_offer_#{@offer.id}", partial: "offers/final_offer", locals: { offer: @offer })
+          ]
+        end
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @offer.errors, status: :unprocessable_entity }
       end
