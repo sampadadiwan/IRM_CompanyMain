@@ -18,7 +18,7 @@ class UserPolicy < ApplicationPolicy
   end
 
   def show?
-    user.id == record.id || user.entity_id == record.entity_id
+    user.id == record.id || (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin))
   end
 
   def create?

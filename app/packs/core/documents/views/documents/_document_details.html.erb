@@ -21,7 +21,7 @@
         <div id="viewers-tab" class="tab-pane fade in show active">
           <div id="users" class="associated_entity">
             <% entity_id = policy(document).update? ? nil : current_user.entity_id   %>
-            <%= render "/users/index", users: document.viewed_by(entity_id:).includes(:entity) %>
+            <%= render "/users/index", users: policy_scope(document.viewed_by(entity_id:).includes(:entity)) %>
           </div>     
         </div>
 
