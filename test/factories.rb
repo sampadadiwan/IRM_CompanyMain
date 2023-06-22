@@ -631,6 +631,8 @@ FactoryBot.define do
     enable_units {true}
     enable_inv_opportunities {true}
     enable_fund_portfolios {true}
+    enable_kycs {true}
+    enable_kpis {true}
     currency { ENV["CURRENCY"].split(",")[rand(3)] }
     units { ENV["CURRENCY_UNITS"].split(",")[rand(3)] }
     sub_domain { rand(2) > 0 ? name.parameterize : nil }
