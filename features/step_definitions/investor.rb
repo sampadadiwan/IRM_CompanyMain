@@ -268,6 +268,10 @@ Then('Aml Report should be generated for each investor kyc') do
 end
 
 Given('Given Entity has ckyc_kra_enabled set to true') do
+  @entity.update(enable_kycs: true)
+  @user.permissions.set(:enable_kycs)
+  @user.save!
+  @user.reload
   @entity.entity_setting.update(ckyc_kra_enabled: true, fi_code: "123456", aml_enabled: true)
   @investor = FactoryBot.create(:investor, entity: @entity, investor_entity: Entity.first)
 end
@@ -277,7 +281,7 @@ Given('I create a new InvestorKyc with pan {string}') do |string|
   sleep(2)
   click_on("New Investor Kyc")
   sleep(2)
-  fill_in('investor_kyc_PAN', with: "PANNUMBER")
+  fill_in('investor_kyc_PAN', with: "PANNUMBER1")
   click_on("Next")
   sleep(3)
 end
@@ -290,9 +294,9 @@ end
 
 Then('I select one and see the edit page and save') do
   click_on("Select CKYC Data")
-  sleep(3) #image saving may take time
+  sleep(4) #image saving may take time
   click_on("Save")
-  sleep(2)
+  sleep(3)
   expect(page).to have_content("Investor kyc was successfully updated")
 end
 

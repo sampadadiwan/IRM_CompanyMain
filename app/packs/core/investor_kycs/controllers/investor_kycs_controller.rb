@@ -6,6 +6,7 @@ class InvestorKycsController < ApplicationController
   def index
     @investor = nil
     @investor_kycs = policy_scope(InvestorKyc)
+    authorize(InvestorKyc)
     if params[:investor_id]
       @investor = Investor.find(params[:investor_id])
       @investor_kycs = @investor_kycs.where(investor_id: params[:investor_id])
