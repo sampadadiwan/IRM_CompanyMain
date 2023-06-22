@@ -56,26 +56,32 @@ module UpdateInvestor
 
     # Moves user to a new investor of the input entity
     # user: The user we want to move into his own Investor
-    # entity: The entity we want to create the investor in
     # investor_name: The name of the investor we want to create, leave blank if you want to default to user full_name
     def self.new_investor_for_employee(user, investor_name = nil)
       investor_name ||= user.full_name
 
       user.holdings.each do |h|
+        # Create the new investor
         investor = Investor.find_or_create_by(investor_name:, entity_id: h.entity_id, category: "Family Office")
         Rails.logger.debug investor.errors.full_messages
+        # Move the user to the investor_entity
         user.entity_id = investor.investor_entity_id
         user.save
-
+        # Ensure the user has access 
         InvestorAccess.create(investor_id: investor.id, investor_entity_id: investor.investor_entity_id, entity_id: investor.entity_id, user_id: user.id, approved: true, first_name: user.first_name, last_name: user.last_name, email: user.email)
-
+        # Update the holding with this new investor
         h.update_columns(investor_id: investor.id, holding_type: "Investor")
       end
 
-      user.offers.each do |o|
+      user.offers.each do |o|        
         investor = Investor.find_or_create_by(investor_name:, investor_entity_id: user.entity_id, category: "Family Office", entity: o.entity)
+        # Update the offer with this new investor
         o.update_column(:investor_id, investor.id)
       end
+
+      # This is critical, as if we dont change the roles, the user will not be able to access the offers
+      user.remove_role :holding
+      user.add_role :investor
     end
   end
 

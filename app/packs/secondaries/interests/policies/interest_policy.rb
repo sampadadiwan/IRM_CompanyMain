@@ -16,7 +16,7 @@ class InterestPolicy < SaleBasePolicy
   end
 
   def owner?
-    user.entity_id == record.interest_entity_id
+    record && user.entity_id == record.interest_entity_id
   end
 
   def matched_offer?
