@@ -56,6 +56,7 @@ Rails/SkipsModelValidations:
     - 'app/packs/misc/approvals/controllers/approvals_controller.rb'
     - 'app/packs/funds/funds/models/fund.rb'
     - 'app/packs/core/investors/models/investor.rb'
+    - 'app/packs/core/investors/models/concerns/update_investor.rb'
     - 'app/packs/funds/capital_calls/jobs/capital_call_job.rb'
     - 'app/packs/core/folders/models/folder.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/fund_raise_allocation_job.rb'

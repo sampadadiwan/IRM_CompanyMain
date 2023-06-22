@@ -1,0 +1,115 @@
+module UpdateInvestor
+  extend ActiveSupport::Concern
+
+  included do
+    after_commit :update_association_name
+
+    # Be very careful using this method, it is used to move all investors associations to a new investor
+    def self.merge(old_investor, new_investor)
+      raise "Cannot merge investors from different entities" if old_investor.entity_id != new_investor.entity_id
+
+      # Fund related stuff
+      old_investor.investor_kycs.update_all(investor_name: new_investor.investor_name, investor_id: new_investor.id)
+      old_investor.capital_commitments.update_all(investor_name: new_investor.investor_name, investor_id: new_investor.id)
+      old_investor.expression_of_interests.update_all(investor_id: new_investor.id)
+
+      old_investor.capital_distribution_payments.update_all(investor_name: new_investor.investor_name, investor_id: new_investor.id)
+      old_investor.capital_remittances.update_all(investor_name: new_investor.investor_name, investor_id: new_investor.id)
+      old_investor.aggregate_portfolio_investments.update_all(portfolio_company_name: new_investor.investor_name, portfolio_company_id: new_investor.id)
+      old_investor.portfolio_investments.update_all(portfolio_company_name: new_investor.investor_name, portfolio_company_id: new_investor.id)
+
+      old_investor.fund_units.update_all(investor_id: new_investor.id)
+      old_investor.aml_reports.update_all(investor_id: new_investor.id)
+      old_investor.approval_responses.update_all(investor_id: new_investor.id)
+
+      # Startup
+      old_investor.aggregate_investments.update_all(investor_id: new_investor.id)
+      old_investor.investments.update_all(investor_id: new_investor.id)
+      old_investor.holdings.update_all(investor_id: new_investor.id)
+      old_investor.offers.update_all(investor_id: new_investor.id)
+
+      # Other stuff
+      old_investor.messages.update_all(investor_id: new_investor.id)
+      old_investor.notes.update_all(investor_id: new_investor.id)
+      old_investor.deal_investors.update_all(investor_name: new_investor.investor_name, investor_id: new_investor.id, investor_entity_id: new_investor.investor_entity_id)
+
+      # Folder names need to be updates
+      new_investor.update_folder_names
+
+      # Also move the access, rights and users
+      old_investor.investor_accesses.update_all(investor_id: new_investor.id, investor_entity_id: new_investor.investor_entity_id)
+
+      # We need to be careful about access rights, cannot blindly update
+      old_investor.access_rights.each do |old_ar|
+        if old_ar.owner.access_rights.where(access_to_investor_id: new_investor.id).any?
+          # The new investor already has access, so we can delete the old one
+          old_ar.destroy
+        else
+          # The new investor does not have access, so we can update the old one
+          old_ar.update_column(:access_to_investor_id, new_investor.id)
+        end
+      end
+
+      old_investor.investor_entity.employees.update_all(entity_id: new_investor.investor_entity_id)
+      old_investor.update_column(:investor_name, "#{old_investor.investor_name} - Defunct/Inactive")
+    end
+
+    # Moves user to a new investor of the input entity
+    # user: The user we want to move into his own Investor
+    # entity: The entity we want to create the investor in
+    # investor_name: The name of the investor we want to create, leave blank if you want to default to user full_name
+    def self.new_investor_for_employee(user, investor_name = nil)
+      investor_name ||= user.full_name
+
+      user.holdings.each do |h|
+        investor = Investor.find_or_create_by(investor_name:, entity_id: h.entity_id, category: "Family Office")
+        Rails.logger.debug investor.errors.full_messages
+        user.entity_id = investor.investor_entity_id
+        user.save
+
+        InvestorAccess.create(investor_id: investor.id, investor_entity_id: investor.investor_entity_id, entity_id: investor.entity_id, user_id: user.id, approved: true, first_name: user.first_name, last_name: user.last_name, email: user.email)
+
+        h.update_columns(investor_id: investor.id, holding_type: "Investor")
+      end
+
+      user.offers.each do |o|
+        investor = Investor.find_or_create_by(investor_name:, investor_entity_id: user.entity_id, category: "Family Office", entity: o.entity)
+        o.update_column(:investor_id, investor.id)
+      end
+    end
+  end
+
+  # Some associations cache the investor_name, so update that if the name changes here.
+
+  def update_association_name
+    if saved_change_to_investor_name
+      investor_kycs.update_all(investor_name:)
+      capital_commitments.update_all(investor_name:)
+      capital_distribution_payments.update_all(investor_name:)
+      capital_remittances.update_all(investor_name:)
+      aggregate_portfolio_investments.update_all(portfolio_company_name: investor_name)
+      portfolio_investments.update_all(portfolio_company_name: investor_name)
+      deal_investors.update_all(investor_name:)
+      update_folder_names
+    end
+  end
+
+  # Some folder names have the investor name in it, so if that changes, we need to change folder names
+  def update_folder_names
+    capital_commitments.each do |cc|
+      cc.document_folder.name = cc.folder_path.split("/")[-1]
+      cc.document_folder.set_defaults
+      cc.document_folder.save
+    end
+    capital_remittances.each do |cc|
+      cc.document_folder.name = cc.folder_path.split("/")[-1]
+      cc.document_folder.set_defaults
+      cc.document_folder.save
+    end
+    capital_distribution_payments.each do |cc|
+      cc.document_folder.name = cc.folder_path.split("/")[-1]
+      cc.document_folder.set_defaults
+      cc.document_folder.save
+    end
+  end
+end
