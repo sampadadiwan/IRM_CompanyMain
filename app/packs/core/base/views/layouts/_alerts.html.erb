@@ -3,4 +3,5 @@
     <% if notice %> <div id="notice" class="alert alert-info"><%= notice %></div> <% end %>
     <% if alert %> <div id="alert" class="alert alert-danger"><%= alert %></div> <% end %>
   </div>
+  <%= render "/layouts/display_status" if params[:display_status].present? %>
 <% end %>

@@ -5,6 +5,8 @@ class FundUnitSetting < ApplicationRecord
   belongs_to :entity
   belongs_to :fund
 
+  validates :name, length: { maximum: 15 }
+
   def to_s
     name
   end

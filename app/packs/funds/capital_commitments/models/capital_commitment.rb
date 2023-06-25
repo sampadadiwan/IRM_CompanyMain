@@ -59,6 +59,10 @@ class CapitalCommitment < ApplicationRecord
   validates :folio_id, :fund_close, :commitment_type, presence: true
   validates_uniqueness_of :folio_id, scope: :fund_id, unless: :imported
 
+  validates :commitment_type, length: { maximum: 10 }
+  validates :folio_currency, length: { maximum: 5 }
+  validates :investor_signature_types, :folio_id, :virtual_bank_account, length: { maximum: 20 }
+
   delegate :currency, to: :fund
 
   counter_culture :fund,

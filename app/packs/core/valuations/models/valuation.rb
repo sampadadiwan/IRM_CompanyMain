@@ -4,6 +4,9 @@ class Valuation < ApplicationRecord
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true, touch: true
+  validates :category, length: { maximum: 10 }
+  validates :sub_category, length: { maximum: 100 }
+
   include FileUploader::Attachment(:report)
 
   monetize :valuation_cents, :per_share_value_cents,

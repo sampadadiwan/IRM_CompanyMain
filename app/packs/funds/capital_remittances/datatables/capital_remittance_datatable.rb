@@ -1,16 +1,16 @@
 class CapitalRemittanceDatatable < AjaxDatatablesRails::ActiveRecord
   def view_columns
     @view_columns ||= {
-      id: { source: "CapitalRemittance.id", searchable: false },
-      investor_name: { source: "CapitalRemittance.investor_name", searchable: true },
-      folio_id: { source: "CapitalRemittance.folio_id", searchable: true },
-      call_amount: { source: "CapitalRemittance.call_amount_cents", searchable: false },
-      collected_amount: { source: "CapitalRemittance.collected_amount_cents", searchable: false },
-      due_amount: { source: "", orderable: false, searchable: false },
-      status: { source: "CapitalRemittance.status", searchable: true },
-      verified: { source: "CapitalRemittance.verified", searchable: false },
-      payment_date: { source: "CapitalRemittance.payment_date", searchable: false },
-      dt_actions: { source: "", orderable: false, searchable: false }
+      id: { source: "CapitalRemittance.id" },
+      investor_name: { source: "CapitalRemittance.investor_name" },
+      folio_id: { source: "CapitalRemittance.folio_id" },
+      call_amount: { source: "CapitalRemittance.call_amount_cents" },
+      collected_amount: { source: "CapitalRemittance.collected_amount_cents" },
+      due_amount: { source: "", orderable: false },
+      status: { source: "CapitalRemittance.status" },
+      verified: { source: "CapitalRemittance.verified" },
+      payment_date: { source: "CapitalRemittance.payment_date" },
+      dt_actions: { source: "", orderable: false }
     }
   end
 
@@ -39,5 +39,9 @@ class CapitalRemittanceDatatable < AjaxDatatablesRails::ActiveRecord
   def get_raw_records
     # insert query here
     capital_remittances
+  end
+
+  def search_for
+    []
   end
 end

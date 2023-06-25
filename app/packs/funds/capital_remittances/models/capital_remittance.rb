@@ -31,6 +31,10 @@ class CapitalRemittance < ApplicationRecord
   validates_uniqueness_of :folio_id, scope: :capital_call_id
   validates :folio_committed_amount_cents, :folio_call_amount_cents, numericality: { greater_than: 0 }
 
+  validates :status, length: { maximum: 10 }
+  validates :folio_id, length: { maximum: 20 }
+  validates :investor_name, length: { maximum: 255 }
+
   before_save :set_call_amount
 
   counter_culture :capital_call, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },

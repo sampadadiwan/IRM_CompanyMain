@@ -1,202 +1,213 @@
 <%= render "/layouts/alerts" %>
-<table class="table table-bordered dataTable">
-  <tr>
-    <td>
-      Entity
-    </td>
-    <td>
-      <%= @portfolio_investment.entity.name %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Fund
-    </td>
-    <td>
-      <%= link_to @portfolio_investment.fund %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Company Name
-    </td>
-    <td>
-      <%= link_to @portfolio_investment.portfolio_company %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Investment Date
-    </td>
-    <td>
-      <%= l @portfolio_investment.investment_date if @portfolio_investment.investment_date %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Amount
-    </td>
-    <td>
-      <%= money_to_currency @portfolio_investment.amount, params %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Quantity
-    </td>
-    <td>
-      <%= @portfolio_investment.quantity %>
-    </td>
-  </tr>
 
-  <% if @portfolio_investment.buy? %>
-  <tr>
-    <td>
-      Cost
-    </td>
-    <td>
-      <%= money_to_currency @portfolio_investment.cost, params %>
-    </td>
-  </tr>
-  <% end %>
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Portfolio Investment: <%= @portfolio_investment.portfolio_company_name %></h6>
+      <span>
+      </span>
+  </div>
+  <div class="card-body show_details">
+    <table class="table table-bordered dataTable">
+      <tr>
+        <td>
+          Entity
+        </td>
+        <td>
+          <%= @portfolio_investment.entity.name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Fund
+        </td>
+        <td>
+          <%= link_to @portfolio_investment.fund %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Company Name
+        </td>
+        <td>
+          <%= link_to @portfolio_investment.portfolio_company %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Investment Date
+        </td>
+        <td>
+          <%= l @portfolio_investment.investment_date if @portfolio_investment.investment_date %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Amount
+        </td>
+        <td>
+          <%= money_to_currency @portfolio_investment.amount, params %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Quantity
+        </td>
+        <td>
+          <%= @portfolio_investment.quantity %>
+        </td>
+      </tr>
 
-  <tr>
-    <td>
-      FMV
-    </td>
-    <td>
-      <%= money_to_currency @portfolio_investment.fmv, params %>
-    </td>
-  </tr>
+      <% if @portfolio_investment.buy? %>
+      <tr>
+        <td>
+          Cost
+        </td>
+        <td>
+          <%= money_to_currency @portfolio_investment.cost, params %>
+        </td>
+      </tr>
+      <% end %>
 
-  <% if @portfolio_investment.sell? %>
-  <tr>
-    <td>
-      FIFO Cost of Sold
-    </td>
-    <td>
-      <%= money_to_currency @portfolio_investment.cost_of_sold, params %>
-    </td>
-  </tr>
-  <% end %>
+      <tr>
+        <td>
+          FMV
+        </td>
+        <td>
+          <%= money_to_currency @portfolio_investment.fmv, params %>
+        </td>
+      </tr>
 
-  <tr>
-    <td>
-      For
-    </td>
-    <td>
-      <%= @portfolio_investment.commitment_type %>
-    </td>
-  </tr>
+      <% if @portfolio_investment.sell? %>
+      <tr>
+        <td>
+          FIFO Cost of Sold
+        </td>
+        <td>
+          <%= money_to_currency @portfolio_investment.cost_of_sold, params %>
+        </td>
+      </tr>
+      <% end %>
 
-  <% if @portfolio_investment.CoInvest? %>
-  <tr>
-    <td>
-      Folio
-    </td>
-    <td>
-      <%= link_to @portfolio_investment.capital_commitment %>
-    </td>
-  </tr>
-  <% end %>
+      <tr>
+        <td>
+          For
+        </td>
+        <td>
+          <%= @portfolio_investment.commitment_type %>
+        </td>
+      </tr>
 
-  
-  <tr>
-    <td>
-      Category
-    </td>
-    <td>
-      <%= @portfolio_investment.category %>
-    </td>
-  </tr>
+      <% if @portfolio_investment.CoInvest? %>
+      <tr>
+        <td>
+          Folio
+        </td>
+        <td>
+          <%= link_to @portfolio_investment.capital_commitment %>
+        </td>
+      </tr>
+      <% end %>
 
-  
-  <tr>
-    <td>
-      Sub Category
-    </td>
-    <td>
-      <%= @portfolio_investment.sub_category %>
-    </td>
-  </tr>
-  
-  <tr>
-    <td>
-      Sector
-    </td>
-    <td>
-      <%= @portfolio_investment.sector %>
-    </td>
-  </tr>
-  
-  <tr>
-    <td>
-      Investment Domicile
-    </td>
-    <td>
-      <%= @portfolio_investment.investment_domicile %>
-    </td>
-  </tr>
-  
-  <tr>
-    <td>
-      Startup
-    </td>
-    <td>
-      <%= display_boolean @portfolio_investment.startup %>
-    </td>
-  </tr>
-  
+      
+      <tr>
+        <td>
+          Category
+        </td>
+        <td>
+          <%= @portfolio_investment.category %>
+        </td>
+      </tr>
 
-  <tr>
-    <td>
-      Notes
-    </td>
-    <td>
-      <%= @portfolio_investment.notes %>
-    </td>
-  </tr>
+      
+      <tr>
+        <td>
+          Sub Category
+        </td>
+        <td>
+          <%= @portfolio_investment.sub_category %>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>
+          Sector
+        </td>
+        <td>
+          <%= @portfolio_investment.sector %>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>
+          Investment Domicile
+        </td>
+        <td>
+          <%= @portfolio_investment.investment_domicile %>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>
+          Startup
+        </td>
+        <td>
+          <%= display_boolean @portfolio_investment.startup %>
+        </td>
+      </tr>
+      
 
-  <% if params[:debug].present? && @portfolio_investment.buy? %>
-  <tr>
-    <td>
-      Sold Quantity
-    </td>
-    <td>
-      <%= @portfolio_investment.sold_quantity %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Net Quantity
-    </td>
-    <td>
-      <%= @portfolio_investment.net_quantity %>
-    </td>
-  </tr>
-  <% end %>
+      <tr>
+        <td>
+          Notes
+        </td>
+        <td>
+          <%= @portfolio_investment.notes %>
+        </td>
+      </tr>
 
-  <% if params[:debug].present? && @portfolio_investment.sell? %>
-  <tr>
-    <td>
-      Cost of Sold
-    </td>
-    <td>
-      <%= money_to_currency @portfolio_investment.cost_of_sold, params %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Gain
-    </td>
-    <td>
-      <%= money_to_currency @portfolio_investment.gain, params %>
-    </td>
-  </tr>
-  <% end %>
+      <% if params[:debug].present? && @portfolio_investment.buy? %>
+      <tr>
+        <td>
+          Sold Quantity
+        </td>
+        <td>
+          <%= @portfolio_investment.sold_quantity %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Net Quantity
+        </td>
+        <td>
+          <%= @portfolio_investment.net_quantity %>
+        </td>
+      </tr>
+      <% end %>
+
+      <% if params[:debug].present? && @portfolio_investment.sell? %>
+      <tr>
+        <td>
+          Cost of Sold
+        </td>
+        <td>
+          <%= money_to_currency @portfolio_investment.cost_of_sold, params %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Gain
+        </td>
+        <td>
+          <%= money_to_currency @portfolio_investment.gain, params %>
+        </td>
+      </tr>
+      <% end %>
 
 
-</table>
+    </table>
+  </div>
+</div>
+
 <div>
     <%= link_to "Edit", edit_portfolio_investment_path(@portfolio_investment), {class: "btn btn-outline-primary"} if policy(@portfolio_investment).update? %> 
     <%= button_to "Delete", @portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@portfolio_investment).destroy? %>

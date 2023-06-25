@@ -174,10 +174,8 @@ video { float: none; }
 
 
 .nav-link.active {
-  background-color: #4e73df !important;
-  // color: #4e73df !important;
+  background-color: #6484e3 !important;
   color: white !important;
-  font-weight: 600;
 }
 
 .nav-tabs .nav-link {
@@ -683,6 +681,20 @@ ul.vesting_schedule {
   font-size: 60% !important;
 }
 
+.sidebar a:hover {
+    color: rgb(255, 115, 0) !important;
+    font-weight: bold !important;
+}
+
+.topbar a span:hover {
+  color: rgb(255, 115, 0) !important;
+}
+  
 .hidden_form_field {
   display: none;
+}
+
+.modal-body {
+  padding-top: 2rem !important;
+  padding-bottom: 2rem !important;
 }

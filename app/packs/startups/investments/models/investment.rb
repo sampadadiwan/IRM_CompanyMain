@@ -30,6 +30,12 @@ class Investment < ApplicationRecord
 
   has_many :holdings, dependent: :destroy
   validates :investment_date, :quantity, :investment_instrument, :price, presence: true
+  validates :investment_type, :investor_type, :investment_instrument, :category, length: { maximum: 100 }
+  validates :status, length: { maximum: 20 }
+  validates :currency, length: { maximum: 10 }
+  validates :units, length: { maximum: 15 }
+  validates :spv, :anti_dilution, length: { maximum: 50 }
+  validates :liq_pref_type, length: { maximum: 25 }
 
   validate :validate_option_pool, if: -> { investment_instrument == 'Options' }
 

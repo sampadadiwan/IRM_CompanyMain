@@ -17,15 +17,20 @@
         <% else %>
             <% hide_fund_docs = current_user.investor_advisor? %>
             <%= link_to "Documents", documents_path(entity_id: entity.id, hide_fund_docs:) , {class: "btn btn-outline-primary"}%>
-            
-            <%= link_to "Investments", dashboard_entities_path(entity_id: entity.id, dashboard: "investor_dashboard") , 
-                    {id: "investments_entity_#{entity.id}", class: "btn btn-outline-success"} if current_user.enable_investments && entity.entity_type != "Investment Fund" %>
 
             <%= link_to "Tasks", tasks_path(entity_id: entity.id) , 
                     {id: "tasks_#{entity.id}", class: "btn btn-outline-primary"}%>
 
+
+            <%= link_to "Investments", dashboard_entities_path(entity_id: entity.id, dashboard: "investor_dashboard") , 
+                    {id: "investments_entity_#{entity.id}", class: "btn btn-outline-success"} if current_user.enable_investments && entity.entity_type != "Investment Fund" %>
+
+            
             <%= link_to "Kpis", kpi_reports_path(entity_id: entity.id, grid_view: true), 
                     {id: "kpis_#{entity.id}", class: "btn btn-outline-success"} if entity.enable_kpis %>
+
+            <%= link_to "Approvals", approvals_path(entity_id: entity.id), 
+                    {id: "approvals_#{entity.id}", class: "btn btn-outline-success"} %>
 
             <%= link_to "Investment Opportunities", investment_opportunities_path(entity_id: entity.id) , 
                     {id: "io_#{entity.id}", class: "btn btn-outline-success"} if entity.entity_type == "Investment Fund" && entity.enable_inv_opportunities %>

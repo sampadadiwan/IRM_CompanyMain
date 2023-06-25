@@ -7,6 +7,8 @@ class Entity < ApplicationRecord
   update_index('entity') { self }
 
   validates :name, :entity_type, presence: true
+  validates :entity_type, length: { maximum: 25 }
+  validates :currency, length: { maximum: 10 }
 
   has_rich_text :details
   belongs_to :parent_entity, class_name: "Entity", optional: true
@@ -84,7 +86,7 @@ class Entity < ApplicationRecord
   monetize :total_investments, as: "total", with_model_currency: :currency
   monetize :per_share_value_cents, with_model_currency: :currency
 
-  TYPES = ["Investor", "Investor Advisor", "Company", "Holding", "Investment Advisor", "Family Office", "Investment Fund", "Consulting"].freeze
+  TYPES = ["Investor", "Investor Advisor", "Company", "Holding", "Investment Advisor", "Family Office", "Investment Fund"].freeze
   SECONDARY_BUYERS = ["Investor", "Investment Advisor", "Family Office"].freeze
 
   FUNDING_UNITS = %w[Lakhs Crores].freeze
@@ -92,7 +94,6 @@ class Entity < ApplicationRecord
 
   scope :holdings, -> { where(entity_type: "Holding") }
   scope :vcs, -> { where(entity_type: "Investor") }
-  scope :consulting, -> { where(entity_type: "Consulting") }
   scope :startups, -> { where(entity_type: "Company") }
   scope :investment_advisors, -> { where(entity_type: "Investment Advisor") }
   scope :investor_advisors, -> { where(entity_type: "Investor Advisor") }

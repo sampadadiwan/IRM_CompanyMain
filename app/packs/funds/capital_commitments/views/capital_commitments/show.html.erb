@@ -1,430 +1,444 @@
 <%= render "/layouts/alerts" %>
 <%= render "/capital_commitments/capital_commitment_stats", capital_commitment: @capital_commitment %>
-<table class="table dataTable">
-  <tr class="collapse multi-collapse">
-    <td>
-      Entity
-    </td>
-    <td>
-      <%= @capital_commitment.entity.name %>
-    </td>
-  </tr>
 
-  <tr class="collapse multi-collapse">
-    <td>
-      Fund
-    </td>
-    <td>
-      <%= link_to @capital_commitment.fund.name, @capital_commitment.fund %>
-    </td>
-  </tr>
+<% if current_user.entity_id == @capital_commitment.entity_id %>
 
-  <tr class="collapse multi-collapse">
-    <td>
-      Type
-    </td>
-    <td>
-      <%= @capital_commitment.commitment_type %>
-      <% if @capital_commitment.feeder_fund %>
-        <br>
-        <span class="badge badge-success">Feeder Fund</span>
-      <% end %>
-    </td>
-  </tr>
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Commitment: <%= @capital_commitment.investor_name %></h6>
+      <span>
+        <a class="btn btn-outline-primary show_details_link" data-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a>
+      </span>
+  </div>
+  <div class="card-body collapse show_details">
 
-  
-  <tr class="collapse multi-collapse">
-    <td>
-      Investor
-    </td>
-    <td>
-      <%= link_to @capital_commitment.investor_name, investor_path(id: @capital_commitment.investor_id) %>
-    </td>
-  </tr>
-  
-  <% if @capital_commitment.commitment_date %>
-    <tr class="collapse multi-collapse">
+  <table class="table table-bordered dataTable">
+    <tr class="">
       <td>
-        Date
+        Entity
       </td>
       <td>
-        <%= l @capital_commitment.commitment_date %>
+        <%= @capital_commitment.entity.name %>
       </td>
     </tr>
-  <% end %>
-  
-    <tr class="collapse multi-collapse">
-      <td>
-        Folio Id
-      </td>
-      <td>
-        <%= @capital_commitment.folio_id %>
-      </td>
-    </tr>
-  
-  <% if @capital_commitment.virtual_bank_account.present? %>
-    <tr class="collapse multi-collapse">
-      <td>
-        Virtual Bank Account
-      </td>
-      <td>
-        <%= @capital_commitment.virtual_bank_account %>
-      </td>
-    </tr>
-  <% end %>
 
-  <tr class="collapse multi-collapse">
-    <td>
-      Fund Close
-    </td>
-    <td>
-      <%= @capital_commitment.fund_close %>
-    </td>
-  </tr>
-  
-  <tr class="collapse multi-collapse">
-    <td>
-      Linked KYC
-    </td>
-    <td>
-      <% if @capital_commitment.investor_kyc %>
-        <%= link_to @capital_commitment.investor_kyc.full_name, @capital_commitment.investor_kyc %>
-        <br>
-        <% if @capital_commitment.investor_kyc.verified %>
-          <span class="badge bg-success">Verified</span>
-        <% else %>
-          <span class="badge bg-warning">Not Verified</span>
+    <tr class="">
+      <td>
+        Fund
+      </td>
+      <td>
+        <%= link_to @capital_commitment.fund.name, @capital_commitment.fund %>
+      </td>
+    </tr>
+
+    <tr class="">
+      <td>
+        Type
+      </td>
+      <td>
+        <%= @capital_commitment.commitment_type %>
+        <% if @capital_commitment.feeder_fund %>
+          <br>
+          <span class="badge badge-success">Feeder Fund</span>
         <% end %>
-      <% else %>
-        <span class="badge bg-danger">No KYC</span>
-      <% end %>
-    </td>
-  </tr>
-
-  
-  <% if @capital_commitment.fund.unit_types.present? %>
-  
-  <tr class="collapse multi-collapse">
-    <td>
-      Unit Type
-    </td>
-    <td>
-      <%= @capital_commitment.unit_type %>
-    </td>
-  </tr>
-
-  <tr class="collapse multi-collapse">
-    <td>
-      Total Units
-    </td>
-    <td>
-      <%= @capital_commitment.total_fund_units_quantity %>
-    </td>
-  </tr>
-
-  <% end %>
-
-  <% if @capital_commitment.adjustment_amount_cents > 0 || @capital_commitment.foreign_currency? %>
-  
-    <tr class="collapse multi-collapse">
-      <td>
-        Folio Currency
-      </td>
-      <td>
-        <%= @capital_commitment.folio_currency %>
       </td>
     </tr>
 
-    <tr class="collapse multi-collapse">
+    
+    <tr class="">
       <td>
-        Folio Committed Amount
+        Investor
       </td>
       <td>
-        <%= money_to_currency @capital_commitment.folio_committed_amount, params %>
+        <%= link_to @capital_commitment.investor_name, investor_path(id: @capital_commitment.investor_id) %>
       </td>
     </tr>
-     
-    <% if @capital_commitment.adjustment_amount_cents != 0 %>
-
-      <tr class="collapse multi-collapse">
+    
+    <% if @capital_commitment.commitment_date %>
+      <tr class="">
         <td>
-          Original Folio Committed Amount
+          Date
         </td>
         <td>
-          <%= money_to_currency @capital_commitment.orig_folio_committed_amount, params %>
-        </td>
-      </tr>
-
-      <tr class="collapse multi-collapse">
-        <td>
-          Adjustment Folio Amount
-        </td>
-        <td>
-          <%= money_to_currency @capital_commitment.adjustment_folio_amount, params %>
+          <%= l @capital_commitment.commitment_date %>
         </td>
       </tr>
-
-      <tr class="collapse multi-collapse">
+    <% end %>
+    
+      <tr class="">
         <td>
-          Adjustment Amount
+          Folio Id
         </td>
         <td>
-          <%= money_to_currency @capital_commitment.adjustment_amount, params %>
+          <%= @capital_commitment.folio_id %>
         </td>
       </tr>
+    
+    <% if @capital_commitment.virtual_bank_account.present? %>
+      <tr class="">
+        <td>
+          Virtual Bank Account
+        </td>
+        <td>
+          <%= @capital_commitment.virtual_bank_account %>
+        </td>
+      </tr>
+    <% end %>
+
+    <tr class="">
+      <td>
+        Fund Close
+      </td>
+      <td>
+        <%= @capital_commitment.fund_close %>
+      </td>
+    </tr>
+    
+    <tr class="">
+      <td>
+        Linked KYC
+      </td>
+      <td>
+        <% if @capital_commitment.investor_kyc %>
+          <%= link_to @capital_commitment.investor_kyc.full_name, @capital_commitment.investor_kyc %>
+          <br>
+          <% if @capital_commitment.investor_kyc.verified %>
+            <span class="badge bg-success">Verified</span>
+          <% else %>
+            <span class="badge bg-warning">Not Verified</span>
+          <% end %>
+        <% else %>
+          <span class="badge bg-danger">No KYC</span>
+        <% end %>
+      </td>
+    </tr>
+
+    
+    <% if @capital_commitment.fund.unit_types.present? %>
+    
+    <tr class="">
+      <td>
+        Unit Type
+      </td>
+      <td>
+        <%= @capital_commitment.unit_type %>
+      </td>
+    </tr>
+
+    <tr class="">
+      <td>
+        Total Units
+      </td>
+      <td>
+        <%= @capital_commitment.total_fund_units_quantity %>
+      </td>
+    </tr>
 
     <% end %>
 
-  <% end %>
+    <% if @capital_commitment.adjustment_amount_cents > 0 || @capital_commitment.foreign_currency? %>
+    
+      <tr class="">
+        <td>
+          Folio Currency
+        </td>
+        <td>
+          <%= @capital_commitment.folio_currency %>
+        </td>
+      </tr>
 
-  <tr class="collapse multi-collapse">
-    <td>
-      Committed Amount
-    </td>
-    <td>
-      <%= money_to_currency @capital_commitment.committed_amount, params %>
-      <% if @capital_commitment.foreign_currency? %>
-        <br>
-        Adjustments + Original
-        <br>
-        <%= money_to_currency(@capital_commitment.adjustment_amount, params) %> + 
-        <%= money_to_currency(@capital_commitment.orig_committed_amount, params) %> 
+      <tr class="">
+        <td>
+          Folio Committed Amount
+        </td>
+        <td>
+          <%= money_to_currency @capital_commitment.folio_committed_amount, params %>
+        </td>
+      </tr>
+      
+      <% if @capital_commitment.adjustment_amount_cents != 0 %>
+
+        <tr class="">
+          <td>
+            Original Folio Committed Amount
+          </td>
+          <td>
+            <%= money_to_currency @capital_commitment.orig_folio_committed_amount, params %>
+          </td>
+        </tr>
+
+        <tr class="">
+          <td>
+            Adjustment Folio Amount
+          </td>
+          <td>
+            <%= money_to_currency @capital_commitment.adjustment_folio_amount, params %>
+          </td>
+        </tr>
+
+        <tr class="">
+          <td>
+            Adjustment Amount
+          </td>
+          <td>
+            <%= money_to_currency @capital_commitment.adjustment_amount, params %>
+          </td>
+        </tr>
+
       <% end %>
-    </td>
-  </tr>
 
+    <% end %>
 
-  <tr class="collapse multi-collapse">
-    <td>
-      Called Amount
-    </td>
-    <td>
-      <%= money_to_currency @capital_commitment.call_amount, params %>
-    </td>
-  </tr>
-
-  <tr class="collapse multi-collapse">
-    <td>
-      Collected Amount
-    </td>
-    <td>
-      <%= money_to_currency @capital_commitment.collected_amount, params %>      
-    </td>
-  </tr>
-
-
-  <tr class="collapse multi-collapse">
-    <td>
-      Called - Collected
-    </td>
-    <td>
-      <span class="<%= @capital_commitment.pending_call_amount != 0 ? 'text-danger': '' %>"><%= money_to_currency @capital_commitment.pending_call_amount, params %></span>
-
-      <div class="progress">
-        <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= @capital_commitment.percentage_pending_call %>%" aria-valuenow="<%=@capital_commitment.percentage_pending_call%>" aria-valuemin="0" aria-valuemax="100">
-          <%= @capital_commitment.percentage_pending_call %> % Paid
-        </div>
-      </div>
-    </td>
-  </tr>
-
-  <tr class="collapse multi-collapse">
-    <td>
-      Committed - Collected
-    </td>
-    <td>
-      <%= money_to_currency @capital_commitment.pending_committed_amount, params %>
-
-      <div class="progress">
-        <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= @capital_commitment.percentage_pending_committed %>%" aria-valuenow="<%=@capital_commitment.percentage_pending_committed%>" aria-valuemin="0" aria-valuemax="100">
-          <%= @capital_commitment.percentage_pending_committed %> % Collected
-        </div>
-      </div>
-
-    </td>
-  </tr>
-
-  <tr class="collapse multi-collapse">
-    <td>
-      Distributed Amount
-    </td>
-    <td>
-      <%= money_to_currency @capital_commitment.distribution_amount, params %>
-    </td>
-  </tr>
-
-  <tr class="collapse multi-collapse">
-    <td>
-      Onboarding Complete
-    </td>
-    <td>
-      <%= display_boolean @capital_commitment.onboarding_completed %>
-    </td>
-  </tr>
-
-
-  <% if @capital_commitment.entity.enable_account_entries %>
-    <tr class="collapse multi-collapse">
+    <tr class="">
       <td>
-        Total Allocated Expense
+        Committed Amount
       </td>
       <td>
-        <%= money_to_currency @capital_commitment.total_allocated_expense, params %>
+        <%= money_to_currency @capital_commitment.committed_amount, params %>
+        <% if @capital_commitment.foreign_currency? %>
+          <br>
+          Adjustments + Original
+          <br>
+          <%= money_to_currency(@capital_commitment.adjustment_amount, params) %> + 
+          <%= money_to_currency(@capital_commitment.orig_committed_amount, params) %> 
+        <% end %>
       </td>
     </tr>
 
-    <tr class="collapse multi-collapse">
+
+    <tr class="">
       <td>
-        Total Allocated Income
+        Called Amount
       </td>
       <td>
-        <%= money_to_currency @capital_commitment.total_allocated_income, params %>
+        <%= money_to_currency @capital_commitment.call_amount, params %>
       </td>
     </tr>
-  <% end %>
-  
-  
-  <%= display_custom_fields(@capital_commitment, collapsed: true) if current_user %>
 
-  <tr class="collapse multi-collapse">
-    <td>
-      Investor Signatory
-    </td>
-    <td>
-      <%= @capital_commitment.investor_signatory.full_name if @capital_commitment.investor_signatory %>
-    </td>
-  </tr>
+    <tr class="">
+      <td>
+        Collected Amount
+      </td>
+      <td>
+        <%= money_to_currency @capital_commitment.collected_amount, params %>      
+      </td>
+    </tr>
 
-  <tr  class="collapse multi-collapse">
-    <td>
-      Investor Signature Type
-    </td>
-    <td>
-      <%= @capital_commitment.investor_signature_types&.capitalize %>
-    </td>
-  </tr>
-  
-  <tr  class="collapse multi-collapse">
-    <td>
-      Notes
-    </td>
-    <td>
-      <%= @capital_commitment.notes.html_safe if @capital_commitment.notes %>
-    </td>
-  </tr>
 
-  <% if params[:debug].present? %>
-  <tr class="collapse multi-collapse btn-outline-primary">
-    <td colspan="2">
-    </td>
-  </tr>
-  
-  <% 
-    end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Time.zone.today 
-    cc_calcs = CapitalCommitmentCalcs.new(@capital_commitment, end_date)
-  %>
+    <tr class="">
+      <td>
+        Called - Collected
+      </td>
+      <td>
+        <span class="<%= @capital_commitment.pending_call_amount != 0 ? 'text-danger': '' %>"><%= money_to_currency @capital_commitment.pending_call_amount, params %></span>
 
-        <tr class="collapse multi-collapse">
-          <td>
-            Cash In Hand
-          </td>
-          <td>
-            <%= currency_from_cents cc_calcs.cash_in_hand_cents, @capital_commitment.fund.currency, params  %>
-          </td>
-        </tr>
+        <div class="progress">
+          <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= @capital_commitment.percentage_pending_call %>%" aria-valuenow="<%=@capital_commitment.percentage_pending_call%>" aria-valuemin="0" aria-valuemax="100">
+            <%= @capital_commitment.percentage_pending_call %> % Paid
+          </div>
+        </div>
+      </td>
+    </tr>
 
-        <tr class="collapse multi-collapse">
-          <td>
-            Net Current Assets
-          </td>
-          <td>
-            <%= currency_from_cents cc_calcs.net_current_assets_cents, @capital_commitment.fund.currency, params  %>
-          </td>
-        </tr>
+    <tr class="">
+      <td>
+        Committed - Collected
+      </td>
+      <td>
+        <%= money_to_currency @capital_commitment.pending_committed_amount, params %>
 
-        <tr class="collapse multi-collapse">
-          <td>
-            Esitmated Carry
-          </td>
-          <td>
-            <%= currency_from_cents cc_calcs.estimated_carry_cents, @capital_commitment.fund.currency, params  %>
-          </td>
-        </tr>
+        <div class="progress">
+          <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= @capital_commitment.percentage_pending_committed %>%" aria-valuenow="<%=@capital_commitment.percentage_pending_committed%>" aria-valuemin="0" aria-valuemax="100">
+            <%= @capital_commitment.percentage_pending_committed %> % Collected
+          </div>
+        </div>
 
-        
+      </td>
+    </tr>
 
-        <tr class="collapse multi-collapse">
-          <td>
-            Collected
-          </td>
-          <td>
-            <%= currency_from_cents cc_calcs.collected_cents, @capital_commitment.fund.currency, params  %>
-          </td>
-        </tr>
+    <tr class="">
+      <td>
+        Distributed Amount
+      </td>
+      <td>
+        <%= money_to_currency @capital_commitment.distribution_amount, params %>
+      </td>
+    </tr>
 
-        <tr class="collapse multi-collapse">
-          <td>
-            DPI
-          </td>
-          <td>
-            <%= currency_from_cents cc_calcs.dpi, @capital_commitment.fund.currency, params  %>
-          </td>
-        </tr>
+    <tr class="">
+      <td>
+        Onboarding Complete
+      </td>
+      <td>
+        <%= display_boolean @capital_commitment.onboarding_completed %>
+      </td>
+    </tr>
 
-        <tr class="collapse multi-collapse">
-          <td>
-            RVPI
-          </td>
-          <td>
-            <%= currency_from_cents cc_calcs.rvpi, @capital_commitment.fund.currency, params  %>
-          </td>
-        </tr>
 
-        <tr class="collapse multi-collapse">
-          <td>
-            TVPI
-          </td>
-          <td>
-            <%= currency_from_cents cc_calcs.tvpi, @capital_commitment.fund.currency, params  %>
-          </td>
-        </tr>
+    <% if @capital_commitment.entity.enable_account_entries %>
+      <tr class="">
+        <td>
+          Total Allocated Expense
+        </td>
+        <td>
+          <%= money_to_currency @capital_commitment.total_allocated_expense, params %>
+        </td>
+      </tr>
 
-        <tr class="collapse multi-collapse">
-          <td>
-            FMV
-          </td>
-          <td>
-            <%= currency_from_cents cc_calcs.fmv_on_date, @capital_commitment.fund.currency, params  %>
-          </td>
-        </tr>
+      <tr class="">
+        <td>
+          Total Allocated Income
+        </td>
+        <td>
+          <%= money_to_currency @capital_commitment.total_allocated_income, params %>
+        </td>
+      </tr>
+    <% end %>
+    
+    
+    <%= display_custom_fields(@capital_commitment, collapsed: true) if current_user %>
 
-        
-        <tr class="collapse multi-collapse">
-          <td>
-            Gross XIRR
-          </td>
-          <td>
-            <%= currency_from_cents cc_calcs.xirr, @capital_commitment.fund.currency, params  %>
-          </td>
-        </tr>
+    <tr class="">
+      <td>
+        Investor Signatory
+      </td>
+      <td>
+        <%= @capital_commitment.investor_signatory.full_name if @capital_commitment.investor_signatory %>
+      </td>
+    </tr>
 
-        <tr class="collapse multi-collapse">
-          <td>
-            Net XIRR
-          </td>
-          <td>
-            <%= currency_from_cents cc_calcs.xirr(net_irr: true), @capital_commitment.fund.currency, params  %>
-          </td>
-        </tr>
+    <tr  class="">
+      <td>
+        Investor Signature Type
+      </td>
+      <td>
+        <%= @capital_commitment.investor_signature_types&.capitalize %>
+      </td>
+    </tr>
+    
+    <tr  class="">
+      <td>
+        Notes
+      </td>
+      <td>
+        <%= @capital_commitment.notes.html_safe if @capital_commitment.notes %>
+      </td>
+    </tr>
 
-  <% end %>
+    <% if params[:debug].present? %>
+    <tr class=" btn-outline-primary">
+      <td colspan="2">
+      </td>
+    </tr>
+    
+    <% 
+      end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Time.zone.today 
+      cc_calcs = CapitalCommitmentCalcs.new(@capital_commitment, end_date)
+    %>
 
-</table>
+          <tr class="">
+            <td>
+              Cash In Hand
+            </td>
+            <td>
+              <%= currency_from_cents cc_calcs.cash_in_hand_cents, @capital_commitment.fund.currency, params  %>
+            </td>
+          </tr>
+
+          <tr class="">
+            <td>
+              Net Current Assets
+            </td>
+            <td>
+              <%= currency_from_cents cc_calcs.net_current_assets_cents, @capital_commitment.fund.currency, params  %>
+            </td>
+          </tr>
+
+          <tr class="">
+            <td>
+              Esitmated Carry
+            </td>
+            <td>
+              <%= currency_from_cents cc_calcs.estimated_carry_cents, @capital_commitment.fund.currency, params  %>
+            </td>
+          </tr>
+
+          
+
+          <tr class="">
+            <td>
+              Collected
+            </td>
+            <td>
+              <%= currency_from_cents cc_calcs.collected_cents, @capital_commitment.fund.currency, params  %>
+            </td>
+          </tr>
+
+          <tr class="">
+            <td>
+              DPI
+            </td>
+            <td>
+              <%= currency_from_cents cc_calcs.dpi, @capital_commitment.fund.currency, params  %>
+            </td>
+          </tr>
+
+          <tr class="">
+            <td>
+              RVPI
+            </td>
+            <td>
+              <%= currency_from_cents cc_calcs.rvpi, @capital_commitment.fund.currency, params  %>
+            </td>
+          </tr>
+
+          <tr class="">
+            <td>
+              TVPI
+            </td>
+            <td>
+              <%= currency_from_cents cc_calcs.tvpi, @capital_commitment.fund.currency, params  %>
+            </td>
+          </tr>
+
+          <tr class="">
+            <td>
+              FMV
+            </td>
+            <td>
+              <%= currency_from_cents cc_calcs.fmv_on_date, @capital_commitment.fund.currency, params  %>
+            </td>
+          </tr>
+
+          
+          <tr class="">
+            <td>
+              Gross XIRR
+            </td>
+            <td>
+              <%= currency_from_cents cc_calcs.xirr, @capital_commitment.fund.currency, params  %>
+            </td>
+          </tr>
+
+          <tr class="">
+            <td>
+              Net XIRR
+            </td>
+            <td>
+              <%= currency_from_cents cc_calcs.xirr(net_irr: true), @capital_commitment.fund.currency, params  %>
+            </td>
+          </tr>
+
+    <% end %>
+
+  </table>
+
+  </div>
+</div>
+
+<% end %>
+
 <div>
-
-  <% if current_user.entity_id == @capital_commitment.entity_id %>
-      <button class="btn btn-outline-primary" type="button" data-toggle="collapse" data-target=".multi-collapse"    aria-expanded="false" aria-controls="multi-collapse">Details</button> 
-  <% end %>
 
   <% if policy(@capital_commitment).update? %>
     <%= link_to "Edit" , edit_capital_commitment_path(@capital_commitment), {class: "btn btn-outline-primary" } %>

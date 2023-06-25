@@ -15,6 +15,9 @@ class FundingRound < ApplicationRecord
   has_one :option_pool, dependent: :destroy
 
   validates :name, :currency, :pre_money_valuation, :pre_money_valuation_cents, :status, presence: true
+  validates :currency, length: { maximum: 5 }
+  validates :liq_pref_type, length: { maximum: 25 }
+  validates :anti_dilution, length: { maximum: 50 }
 
   scope :open, -> { where(status: "Open") }
 

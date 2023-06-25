@@ -6,6 +6,7 @@ class CapitalRemittanceIndex < Chewy::Index
   field :fund_id
   field :folio_id
   field :capital_call_id
+  field :capital_commitment_id
   field :status
   field :capital_call_name, value: ->(f) { f.capital_call.name }
   field :fund_name, value: ->(f) { f.fund.name }

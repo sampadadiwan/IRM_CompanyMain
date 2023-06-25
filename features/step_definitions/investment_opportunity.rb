@@ -32,6 +32,7 @@
   
   Then('I should see the investment_opportunity details on the details page') do
     visit(investment_opportunity_path(@investment_opportunity))
+    find(".show_details_link").click
     expect(page).to have_content(@investment_opportunity.company_name)
     expect(page).to have_content(money_to_currency @investment_opportunity.fund_raise_amount)
     expect(page).to have_content(money_to_currency @investment_opportunity.min_ticket_size)

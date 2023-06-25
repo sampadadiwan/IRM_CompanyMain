@@ -26,8 +26,8 @@ Scenario Outline: View sale - externally visible, but no access
 
   Examples:
   	|user	    |entity               |sale                                     |msg	|
-  	|  	        |entity_type=Company  |name=Grand Sale;visible_externally=true  |Secondary sale was successfully created|
-    |  	        |entity_type=Company  |name=Winter Sale;visible_externally=true |Secondary sale was successfully created|
+  	|  	        |entity_type=Company  |name=Grand Sale  |Secondary sale was successfully created|
+    |  	        |entity_type=Company  |name=Winter Sale |Secondary sale was successfully created|
 
 Scenario Outline: View sale - with access
   Given there is a user "first_name=Emp1" for an entity "<entity>"
@@ -40,8 +40,8 @@ Scenario Outline: View sale - with access
 
   Examples:
   	|access	    |entity               |sale                                     |msg	|
-  	|Buyer      |entity_type=Company  |name=Grand Sale;visible_externally=false  |Secondary sale was successfully created|
-    |Seller     |entity_type=Company  |name=Winter Sale;visible_externally=true |Secondary sale was successfully created|
+  	|Buyer      |entity_type=Company  |name=Grand Sale  |Secondary sale was successfully created|
+    |Seller     |entity_type=Company  |name=Winter Sale |Secondary sale was successfully created|
 
 
 Scenario Outline: View sale - make offer
@@ -63,8 +63,8 @@ Scenario Outline: View sale - make offer
 
   Examples:
   	|user	      |entity               |sale                                     |msg	|
-  	|  	        |entity_type=Company  |name=Grand Sale;visible_externally=true  |Secondary sale was successfully created|
-    |  	        |entity_type=Company  |name=Winter Sale;visible_externally=true |Secondary sale was successfully created|
+  	|  	        |entity_type=Company  |name=Grand Sale  |Secondary sale was successfully created|
+    |  	        |entity_type=Company  |name=Winter Sale |Secondary sale was successfully created|
 
 
 Scenario Outline: Express Interest

@@ -1,150 +1,157 @@
-<table class="table dataTable">
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Call: <%= capital_call.name %></h6>
+      <span>
+        <a class="btn btn-outline-primary show_details_link" data-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a>
+      </span>
+  </div>
+  <div class="card-body collapse show_details">
 
-    <tr class="collapse multi-collapse">
-      <td>
-        Entity
-      </td>
-      <td>
-        <%= capital_call.entity.name %>
-      </td>
-    </tr>
-    <tr class="collapse multi-collapse">
-      <td>
-        Fund
-      </td>
-      <td>
-        <%= link_to capital_call.fund.name, capital_call.fund %>
-      </td>
-    </tr>
-    <tr class="collapse multi-collapse">
-      <td>
-        Name
-      </td>
-      <td>
-        <%= capital_call.name %>
-      </td>
-    </tr>
-
-    <tr class="collapse multi-collapse">
-      <td>
-        Call Date
-      </td>
-      <td>
-        <%= l capital_call.call_date %>
-      </td>
-    </tr>
-    <tr class="collapse multi-collapse">
-      <td>
-        Due Date
-      </td>
-      <td>
-        <%= l capital_call.due_date %>
-      </td>
-    </tr>
-
-
-    <% if current_user.entity_id == capital_call.entity_id %>
-    <tr class="collapse multi-collapse">
-      <td>
-        Type
-      </td>
-      <td>
-        <%= capital_call.commitment_type %>
-      </td>
-    </tr>
-    <tr class="collapse multi-collapse">
-      <td>
-        Percentage Called
-      </td>
-      <td>
-        <%= capital_call.percentage_called %> %
-      </td>
-    </tr>
-
-    <tr class="collapse multi-collapse">
-      <td>
-        Applicable To Close
-      </td>
-      <td>
-        <%= capital_call.fund_closes %>
-      </td>
-    </tr>
-
-    <% if capital_call.fund.unit_types.present? %>
-      <% capital_call.unit_prices.each do |unit_type, unit_price| %>
-
-        <tr class="collapse multi-collapse">
-          <td>
-            <%= unit_type %>
-          </td>
-          <td>
-            Price: <%= unit_price['price'] %>, 
-            Premium: <%= unit_price['premium'] %>
-          </td>
-        </tr>
-
-      <% end %>  
-    <% end %>
-
-    <% if current_user %>
-
-        <tr class="collapse multi-collapse">
-          <td>
-            Approved
-          </td>
-          <td>
-            <%= display_boolean capital_call.approved %>
-          </td>
-        </tr>
-        <tr class="collapse multi-collapse">
-          <td>
-              Call Amount
-          </td>
-          <td>
-              <%= money_to_currency capital_call.call_amount, params %>
-          </td>
-        </tr>
-        <tr class="collapse multi-collapse">
+  <table class="table table-bordered dataTable">
+      <tr class="">
         <td>
-            Collected Amount
+          Entity
         </td>
         <td>
-            <%= money_to_currency capital_call.collected_amount, params %>
-            
-            <div class="progress">
-                <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_call.percentage_raised %>%" aria-valuenow="<%=capital_call.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
-                    <%= capital_call.percentage_raised %> %
-                </div>
-            </div>
-        
+          <%= capital_call.entity.name %>
         </td>
-        </tr>
-
-        <tr class="collapse multi-collapse">
+      </tr>
+      <tr class="">
         <td>
-            Due Amount
+          Fund
         </td>
         <td>
-            <%= money_to_currency capital_call.due_amount, params %>        
+          <%= link_to capital_call.fund.name, capital_call.fund %>
         </td>
-        </tr>
+      </tr>
+      <tr class="">
+        <td>
+          Name
+        </td>
+        <td>
+          <%= capital_call.name %>
+        </td>
+      </tr>
 
-    <% end %>
+      <tr class="">
+        <td>
+          Call Date
+        </td>
+        <td>
+          <%= l capital_call.call_date %>
+        </td>
+      </tr>
+      <tr class="">
+        <td>
+          Due Date
+        </td>
+        <td>
+          <%= l capital_call.due_date %>
+        </td>
+      </tr>
 
-    <%= display_custom_fields(capital_call) if current_user %>
-    <% end %>
-    
 
-    <tr class="collapse multi-collapse">
-      <td>
-        Notes
-      </td>
-      <td>
-        <%= capital_call.notes.html_safe if capital_call.notes %>
-      </td>
-    </tr>
+      <% if current_user.entity_id == capital_call.entity_id %>
+      <tr class="">
+        <td>
+          Type
+        </td>
+        <td>
+          <%= capital_call.commitment_type %>
+        </td>
+      </tr>
+      <tr class="">
+        <td>
+          Percentage Called
+        </td>
+        <td>
+          <%= capital_call.percentage_called %> %
+        </td>
+      </tr>
 
-    
+      <tr class="">
+        <td>
+          Applicable To Close
+        </td>
+        <td>
+          <%= capital_call.fund_closes %>
+        </td>
+      </tr>
 
+      <% if capital_call.fund.unit_types.present? %>
+        <% capital_call.unit_prices.each do |unit_type, unit_price| %>
 
+          <tr class="">
+            <td>
+              <%= unit_type %>
+            </td>
+            <td>
+              Price: <%= unit_price['price'] %>, 
+              Premium: <%= unit_price['premium'] %>
+            </td>
+          </tr>
+
+        <% end %>  
+      <% end %>
+
+      <% if current_user %>
+
+          <tr class="">
+            <td>
+              Approved
+            </td>
+            <td>
+              <%= display_boolean capital_call.approved %>
+            </td>
+          </tr>
+          <tr class="">
+            <td>
+                Call Amount
+            </td>
+            <td>
+                <%= money_to_currency capital_call.call_amount, params %>
+            </td>
+          </tr>
+          <tr class="">
+          <td>
+              Collected Amount
+          </td>
+          <td>
+              <%= money_to_currency capital_call.collected_amount, params %>
+              
+              <div class="progress">
+                  <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= capital_call.percentage_raised %>%" aria-valuenow="<%=capital_call.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
+                      <%= capital_call.percentage_raised %> %
+                  </div>
+              </div>
+          
+          </td>
+          </tr>
+
+          <tr class="">
+          <td>
+              Due Amount
+          </td>
+          <td>
+              <%= money_to_currency capital_call.due_amount, params %>        
+          </td>
+          </tr>
+
+      <% end %>
+
+      <%= display_custom_fields(capital_call) if current_user %>
+      <% end %>
+      
+
+      <tr class="">
+        <td>
+          Notes
+        </td>
+        <td>
+          <%= capital_call.notes.html_safe if capital_call.notes %>
+        </td>
+      </tr>
   </table>
+
+  </div>
+</div>

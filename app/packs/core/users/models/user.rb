@@ -41,6 +41,10 @@ class User < ApplicationRecord
   validates :first_name, :last_name, presence: true
   validates :email, format: { with: /\A[^@\s]+@[^@\s]+\z/ }, presence: true
   validates :call_code, presence: true, if: -> { phone.present? }
+  validates :phone, length: { maximum: 100 }
+  validates :curr_role, :dept, length: { maximum: 20 }
+  validates :entity_type, length: { maximum: 25 }
+  validates :call_code, length: { maximum: 3 }
 
   before_create :setup_defaults
   after_create :update_investor_access
@@ -172,6 +176,10 @@ class User < ApplicationRecord
 
   def investor_advisor
     entity.investor_advisors.where(user_id: id).first
+  end
+
+  def send_magic_link
+    UserMailer.with(id:).magic_link.deliver_later
   end
 
   private

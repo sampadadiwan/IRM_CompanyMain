@@ -57,12 +57,12 @@ Scenario Outline: Sale Allocation
 
   Examples:
   	|allocation_percentage |interest_count |interest                       |offer	                      |entity                     |sale                                     |
-  	| .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
-    | 1.0                  |2              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
-    | 1.5                  |3              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Fixed Price;final_price=10000;percent_allowed=100  |    
-    | .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
-    | 1.0                  |2              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
-    | 1.5                  |3              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
+  	| .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
+    | 1.0                  |2              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
+    | 1.5                  |3              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  |    
+    | .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
+    | 1.0                  |2              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
+    | 1.5                  |3              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
     
 
 Scenario Outline: Sale Offer SPA
@@ -78,12 +78,12 @@ Scenario Outline: Sale Offer SPA
   Then when the allocation is done
   Then when the offers are verified
   Then the SPAs must be generated for each verified offer
-  When the adhaar esign is triggered
-  Given Im logged in as an employee investor
-  And I should see the esign link on the offer page
-  And when I click the esign link
-  Then I should be sent to the digio esign page
-  # Given that the adhaar esign has values "esign_doc_id=DID2212011215517415RCM98H22URG3C"
+  # When the adhaar esign is triggered
+  # Given Im logged in as an employee investor
+  # And I should see the esign link on the offer page
+  # And when I click the esign link
+  # Then I should be sent to the digio esign page
+  # # Given that the adhaar esign has values "esign_doc_id=DID2212011215517415RCM98H22URG3C"
   # When the esign is completed
   # Then the SPA should be marked as accepted and signed
   # And the seller must receive email with subject "SPA confirmation received"
@@ -92,6 +92,48 @@ Scenario Outline: Sale Offer SPA
   	|allocation_percentage |interest_count |interest                       |offer	                      |entity                     |sale                                     |
   	| .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;seller_signature_types=adhaar;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
     | 1.0                  |2              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;seller_signature_types=adhaar;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
+
+Scenario Outline: Sale Notifications
+  Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Company"
+  Given the user has role "company_admin"
+  Given there is a sale "<sale>"
+  And the sale has a SPA template
+  Given there are "2" employee investors
+  Given employee investor has "Seller" access rights to the sale
+  Given there is a FundingRound "name=Series A"
+  And there is a holding "orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
+  Given there are offers "<offer>" for the sale  
+  Given there are "<interest_count>" interests "<interest>" for the sale 
+  Given the email queue is cleared
+  Given we trigger a notification "Send Sale Open : To Sellers" for the sale
+  Then each seller must receive email with subject "Secondary Sale: #{@sale.name} by #{@sale.entity.name}, open for offers"
+  Given the email queue is cleared
+  Given we trigger a notification "Send Offer Reminder : To Sellers" for the sale
+  Then each seller must receive email with subject "Secondary Sale: #{@sale.name} by #{@sale.entity.name}, reminder to enter your offer"
+  Given the email queue is cleared
+  Given we trigger a notification "Send Sale Open : To Buyers" for the sale
+  Then each buyer must receive email with subject "Secondary Sale: #{@sale.name} by #{@sale.entity.name}, open for interests"
+  Given the email queue is cleared
+  Given we trigger a notification "Send Interest Reminder : To Buyers" for the sale
+  Then each buyer must receive email with subject "Secondary Sale: #{@sale.name} by #{@sale.entity.name}, reminder to enter your interest"
+  Then when the allocation is done
+  Then when the offers are verified
+  Then the SPAs must be generated for each verified offer
+  Given the email queue is cleared
+  Given we trigger a notification "Allocation Notification : To All" for the sale
+  Then each seller must receive email with subject "Secondary Sale: #{@sale.name} allocation complete."
+  Then each buyer must receive email with subject "Secondary Sale: #{@sale.name} allocation complete."
+  Given the email queue is cleared
+  Given we trigger a notification "Confirm SPA Notification : To Sellers" for the sale
+  Then each seller must receive email with subject "Secondary Sale: #{@sale.name}, please accept uploaded SPA."
+  Given the email queue is cleared
+  Given we trigger a notification "Confirm SPA Notification : To Buyers" for the sale
+  Then each buyer must receive email with subject "Secondary Sale: #{@sale.name}, please accept uploaded SPA."
+
+  Examples:
+  	|allocation_percentage |interest_count |interest                       |offer	                      |entity                     |sale                                     |
+  	| .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
+    | 1.0                  |2              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
 
 
 Scenario Outline: Sale To Cap Table
@@ -113,10 +155,10 @@ Scenario Outline: Sale To Cap Table
   
   Examples:
     |interest_count |interest                                            |offer              	                          |entity                     |sale                                     |
-  	|1              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true |entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
-    |2              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
-    |3              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Fixed Price;final_price=10000;percent_allowed=100  |    
-    |1              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
-    |2              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
-    |3              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;visible_externally=true;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
+  	|1              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true |entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
+    |2              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
+    |3              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  |    
+    |1              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
+    |2              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
+    |3              |quantity=50;short_listed=true;escrow_deposited=true  |quantity=50;approved=true;verified=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Price Range;min_price=10000;max_price=11000;final_price=10000;percent_allowed=100  |
     

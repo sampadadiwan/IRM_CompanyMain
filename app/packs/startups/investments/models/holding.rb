@@ -37,6 +37,10 @@ class Holding < ApplicationRecord
   validate :allocation_allowed, if: -> { investment_instrument == 'Options' }
   validates :vested_quantity, numericality: { less_than_or_equal_to: :orig_grant_quantity }
   validates :vested_quantity, numericality: { greater_than_or_equal_to: :excercised_quantity }
+  validates :holding_type, length: { maximum: 15 }
+  validates :employee_id, length: { maximum: 20 }
+  validates :department, length: { maximum: 25 }
+  validates :option_type, length: { maximum: 12 }
 
   def allocation_allowed
     errors.add(:option_pool, "Option pool required") if option_pool.nil?

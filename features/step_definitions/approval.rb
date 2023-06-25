@@ -23,6 +23,7 @@
   end
   
   Then('I should see the approval details on the details page') do
+    # find(".show_details_link").click
     expect(page).to have_content(@approval.title)
     expect(page).to have_content(@approval.due_date.strftime("%d/%m/%Y"))
     expect(page).to have_content(@approval.agreements_reference.body.to_plain_text)

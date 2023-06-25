@@ -1,276 +1,286 @@
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Offer: <%= @offer.user.full_name %></h6>
+      <span>
+      </span>
+  </div>
+  <div class="card-body show_details">
 
-  <table class="table table-bordered dataTable">
+    <table class="table table-bordered dataTable">
 
-    <tr>
-      <td>
-        User
-      </td>
-      <td>
-        <%= @offer.user.full_name %>
-        (<%= @offer.user.email %>)
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Entity
-      </td>
-      <td>
-        <%= @offer.entity.name %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Secondary Sale
-      </td>
-      <td>
-        <%= link_to @offer.secondary_sale.name, @offer.secondary_sale %>
-      </td>
-    </tr>
-
-    <% if current_user %>
-    <tr>
-      <td>
-        Quantity
-      </td>
-      <td>
-        <%= @offer.quantity %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Percentage
-      </td>
-      <td>
-        <%= @offer.percentage %>%
-          <% if @offer.percentage && @offer.percentage > @offer.secondary_sale.percent_allowed %>
-            <div>
-              <div class="badge badge-danger">Over Allowed Percentage</div>
-              The current sale allows you to sell only <%= @offer.secondary_sale.percent_allowed %>% of your holdings
-            </div>
-            <% end %>
-      </td>
-    </tr>
-
-
-    <tr>
-      <td>
-        Notes
-      </td>
-      <td>
-        <%= @offer.notes %>
-      </td>
-    </tr>
-    <tr id="approved">
-      <td>
-        Approved
-      </td>
-      <td class="approved">
-        <span class="badge <%= @offer.approved ? 'bg-success' : 'bg-warning' %>">
-          <%= @offer.approved ?  "Yes" : "No" %>
-        </span>
-      </td>
-
-    </tr>
-
-    <% if @offer.PAN  || params[:debug].present? %>
-      <tr>
-        <td colspan="2" class="bg-primary"></td>
-      </tr>
       <tr>
         <td>
-          Allocated Quantity
+          User
         </td>
         <td>
-          <%= @offer.allocation_quantity %>
+          <%= @offer.user.full_name %>
+          (<%= @offer.user.email %>)
         </td>
       </tr>
       <tr>
         <td>
-          Final Price
+          Entity
         </td>
         <td>
-          <%= @offer.final_price %>
+          <%= @offer.entity.name %>
         </td>
       </tr>
       <tr>
         <td>
-          Gross Amount
+          Secondary Sale
         </td>
         <td>
-          <%= money_to_currency @offer.allocation_amount, params %>
+          <%= link_to @offer.secondary_sale.name, @offer.secondary_sale %>
         </td>
       </tr>
-      <%
-        fees = @offer.compute_fees(@offer.secondary_sale.fees)
-        fee_amount = fees.sum(Money.new(0, @offer.entity.currency)) { |i| i[:fee] }
-      %>
+
+      <% if current_user %>
       <tr>
         <td>
-          Fees
+          Quantity
         </td>
         <td>
-          <%= money_to_currency fee_amount, params %>
+          <%= @offer.quantity %>
         </td>
       </tr>
       <tr>
         <td>
-          Net Amount
+          Percentage
         </td>
         <td>
-          <%= money_to_currency (@offer.allocation_amount - fee_amount), params %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Allocation %
-        </td>
-        <td>
-          <%= @offer.allocation_percentage %> %
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Aquirer
-        </td>
-        <td>
-          <%= link_to @offer.interest.aquirer_name, @offer.interest if @offer.interest %> 
-        </td>
-      </tr>
-
-
-      <tr>
-        <td colspan="2" class="bg-primary"></td>
-      </tr>
-      <tr>
-        <td>
-          Full Name
-        </td>
-        <td>
-          <%= @offer.full_name %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Address
-        </td>
-        <td>
-          <%= @offer.address %>
-        </td>
-      </tr>
-      
-      <tr>
-        <td>
-          PAN
-        </td>
-        <td>
-          <%= @offer.PAN %>          
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Pan Card
-        </td>
-        <td>
-          <%= link_to "Download Pan Card", @offer.pan_card_url, target: "_blank", class: "btn btn-outline-success" if @offer.pan_card.present? %>
-          <br>
-          <%= render "investor_kycs/pan_verification", model: @offer if current_user && !@offer.secondary_sale.disable_pan_kyc %>
-        </td>
-      </tr>
-
-
-      <tr>
-        <td>
-          Demat
-        </td>
-        <td>
-          <%= @offer.demat %>
-        </td>
-      </tr>
-      
-
-      <tr>
-        <td>
-          Bank Account Number
-        </td>
-        <td>
-          <%= @offer.bank_account_number %>
-
-          <br>
-          <%= render "investor_kycs/bank_verification", model: @offer if current_user && !@offer.secondary_sale.disable_bank_kyc %>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          IFSC Code
-        </td>
-        <td>
-          <%= @offer.ifsc_code %>
-        </td>
-      </tr>
-
-      <%= display_custom_fields(@offer) if current_user %>
-    
-
-        <tr>
-            <td colspan="2" class="bg-primary"></td>
-        </tr>
-
-
-        <tr>
-            <td>
-              Signature
-            </td>
-            <td>
-              <%= image_tag @offer.signature_url, 
-                style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if @offer.signature.present? %>
-            </td>
-        </tr>
-
-    
-      <tr>
-          <td>
-          I agree to enter into the SPA
-          </td>
-          <td>
-              <%= display_boolean @offer.final_agreement %>
-              <% if @offer.final_agreement_user %>
-                <div>
-                  <small class="text-grey">Accepted By: <%= @offer.final_agreement_user.full_name %></small>
-                </div>
+          <%= @offer.percentage %>%
+            <% if @offer.percentage && @offer.percentage > @offer.secondary_sale.percent_allowed %>
+              <div>
+                <div class="badge badge-danger">Over Allowed Percentage</div>
+                The current sale allows you to sell only <%= @offer.secondary_sale.percent_allowed %>% of your holdings
+              </div>
               <% end %>
-          </td>
+        </td>
       </tr>
 
 
+      <tr>
+        <td>
+          Notes
+        </td>
+        <td>
+          <%= @offer.notes %>
+        </td>
+      </tr>
+      <tr id="approved">
+        <td>
+          Approved
+        </td>
+        <td class="approved">
+          <span class="badge <%= @offer.approved ? 'bg-success' : 'bg-warning' %>">
+            <%= @offer.approved ?  "Yes" : "No" %>
+          </span>
+        </td>
+
+      </tr>
+
+      <% if @offer.PAN  || params[:debug].present? %>
+        <tr>
+          <td colspan="2" class="bg-primary"></td>
+        </tr>
+        <tr>
+          <td>
+            Allocated Quantity
+          </td>
+          <td>
+            <%= @offer.allocation_quantity %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Final Price
+          </td>
+          <td>
+            <%= @offer.final_price %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Gross Amount
+          </td>
+          <td>
+            <%= money_to_currency @offer.allocation_amount, params %>
+          </td>
+        </tr>
+        <%
+          fees = @offer.compute_fees(@offer.secondary_sale.fees)
+          fee_amount = fees.sum(Money.new(0, @offer.entity.currency)) { |i| i[:fee] }
+        %>
+        <tr>
+          <td>
+            Fees
+          </td>
+          <td>
+            <%= money_to_currency fee_amount, params %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Net Amount
+          </td>
+          <td>
+            <%= money_to_currency (@offer.allocation_amount - fee_amount), params %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Allocation %
+          </td>
+          <td>
+            <%= @offer.allocation_percentage %> %
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Aquirer
+          </td>
+          <td>
+            <%= link_to @offer.interest.aquirer_name, @offer.interest if @offer.interest %> 
+          </td>
+        </tr>
+
+
+        <tr>
+          <td colspan="2" class="bg-primary"></td>
+        </tr>
+        <tr>
+          <td>
+            Full Name
+          </td>
+          <td>
+            <%= @offer.full_name %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Address
+          </td>
+          <td>
+            <%= @offer.address %>
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            PAN
+          </td>
+          <td>
+            <%= @offer.PAN %>          
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Pan Card
+          </td>
+          <td>
+            <%= link_to "Download Pan Card", @offer.pan_card_url, target: "_blank", class: "btn btn-outline-success" if @offer.pan_card.present? %>
+            <br>
+            <%= render "investor_kycs/pan_verification", model: @offer if current_user && !@offer.secondary_sale.disable_pan_kyc %>
+          </td>
+        </tr>
+
+
+        <tr>
+          <td>
+            Demat
+          </td>
+          <td>
+            <%= @offer.demat %>
+          </td>
+        </tr>
+        
+
+        <tr>
+          <td>
+            Bank Account Number
+          </td>
+          <td>
+            <%= @offer.bank_account_number %>
+
+            <br>
+            <%= render "investor_kycs/bank_verification", model: @offer if current_user && !@offer.secondary_sale.disable_bank_kyc %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            IFSC Code
+          </td>
+          <td>
+            <%= @offer.ifsc_code %>
+          </td>
+        </tr>
+
+        <%= display_custom_fields(@offer) if current_user %>
       
-      <% if @offer.secondary_sale.spa.present? || @offer.spa.present? %>
 
           <tr>
-          <td colspan="2" class="bg-primary"></td>
-          </tr>      
-          <tr>
-          <td>
-              SPA
-          </td>
-          <td>
-              <%= link_to "Download SPA", @offer.spa.url(expires_in: 60*60*24*7), target: "_blank", class: "btn btn-outline-sm btn-outline-success" if @offer.spa %>
-              <span><%= "(Link expires in 7 days)" unless current_user %></span>              
-          </td>
+              <td colspan="2" class="bg-primary"></td>
           </tr>
 
-      <% end %>
+
+          <tr>
+              <td>
+                Signature
+              </td>
+              <td>
+                <%= image_tag @offer.signature_url, 
+                  style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if @offer.signature.present? %>
+              </td>
+          </tr>
+
+      
+        <tr>
+            <td>
+            I agree to enter into the SPA
+            </td>
+            <td>
+                <%= display_boolean @offer.final_agreement %>
+                <% if @offer.final_agreement_user %>
+                  <div>
+                    <small class="text-grey">Accepted By: <%= @offer.final_agreement_user.full_name %></small>
+                  </div>
+                <% end %>
+            </td>
+        </tr>
 
 
-      <% end %>
-  
+        
+        <% if @offer.secondary_sale.spa.present? || @offer.spa.present? %>
 
-    <% end %>
+            <tr>
+            <td colspan="2" class="bg-primary"></td>
+            </tr>      
+            <tr>
+            <td>
+                SPA
+            </td>
+            <td>
+                <%= link_to "Download SPA", @offer.spa.url(expires_in: 60*60*24*7), target: "_blank", class: "btn btn-outline-sm btn-outline-success" if @offer.spa %>
+                <span><%= "(Link expires in 7 days)" unless current_user %></span>              
+            </td>
+            </tr>
 
+        <% end %>
+
+
+        <% end %>
     
 
+      <% end %>
 
-  </table>
+      
+
+
+    </table>
+
+  </div>
+</div>

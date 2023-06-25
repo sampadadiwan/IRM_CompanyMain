@@ -19,6 +19,7 @@ class ShareTransfer < ApplicationRecord
   validates :transfer_date, :price, :quantity, presence: true
   validates :quantity, comparison: { less_than_or_equal_to: :from_investment_quantity }, if: -> { from_investment.present? }
   validates :quantity, comparison: { less_than_or_equal_to: :from_holding_quantity }, if: -> { from_holding.present? }
+  validates :transfer_type, length: { maximum: 10 }
 
   validate :check_valid
   def check_valid

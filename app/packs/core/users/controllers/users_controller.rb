@@ -1,16 +1,16 @@
 class UsersController < ApplicationController
-  # prepend_view_path 'app/packs/core/users/views'
+  before_action :authenticate_user!, except: %w[magic_link no_password_login welcome]
+  skip_before_action :verify_authenticity_token, only: %i[magic_link]
 
-  before_action :authenticate_user!, except: ["welcome"]
   before_action :set_user, only: %w[show update destroy edit]
-  after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona]
+  after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona magic_link no_password_login]
+
+  def welcome; end
 
   # GET /users or /users.json
   def index
     @users = policy_scope(User)
   end
-
-  def welcome; end
 
   def search
     query = params[:query]
@@ -22,6 +22,36 @@ class UsersController < ApplicationController
       render "index"
     else
       redirect_to users_path
+    end
+  end
+
+  def magic_link
+    @user = User.find_by(email: params[:user][:email]) if params[:user].present?
+    @user ||= nil
+    if @user.present?
+      @user.send_magic_link
+      redirect_to new_session_path(User, display_status: true), notice: "Login link sent, please check your mailbox."
+    else
+      redirect_to new_session_path(User), notice: "User not found. Please signup."
+    end
+  end
+
+  def no_password_login
+    if params[:signed_id]
+      # Find user by signed id, the signed_id is generated as per https://kukicola.io/posts/signed-urls-with-ruby/
+      @user = User.find_signed params[:signed_id]
+      if @user.present?
+        # Confirm user if not confirmed, as he has used his email to login
+        @user.confirm unless @user.confirmed?
+        # Sign in user
+        sign_in @user
+        # Redirect to root path
+        redirect_to root_path, notice: "Signed in successfully"
+      else
+        redirect_to new_session_path(User), notice: "Invalid login link"
+      end
+    else
+      redirect_to new_session_path(User), notice: "Invalid login link"
     end
   end
 

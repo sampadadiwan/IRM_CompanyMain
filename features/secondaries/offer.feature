@@ -13,8 +13,8 @@ Scenario Outline: See my holdings in a sale
   Then I should see only my holdings
 Examples:
     |user	      |entity               |sale                                     |quantity	|
-    |  	        |entity_type=Company  |name=Grand Sale;visible_externally=true  |100        |
-    |  	        |entity_type=Company  |name=Winter Sale;visible_externally=true |200        |
+    |  	        |entity_type=Company  |name=Grand Sale  |100        |
+    |  	        |entity_type=Company  |name=Winter Sale |200        |
 
 
 
@@ -46,8 +46,8 @@ Scenario Outline: Place an offer
 
 Examples:
     |user	    |entity               |sale                                                         |offer	             | total_quantity |
-    |  	        |entity_type=Company  |name=Grand Sale;visible_externally=true;percent_allowed=100  |quantity=100        | 100            |
-    |  	        |entity_type=Company  |name=Winter Sale;visible_externally=true;percent_allowed=100 |quantity=50         | 50             |
+    |  	        |entity_type=Company  |name=Grand Sale;percent_allowed=100  |quantity=100        | 100            |
+    |  	        |entity_type=Company  |name=Winter Sale;percent_allowed=100 |quantity=50         | 50             |
 
 
 
@@ -65,8 +65,8 @@ Scenario Outline: Place a wrong offer
 
 Examples:
     |user	    |entity               |sale                                                        |offer	              | msg |
-    |  	      |entity_type=Company  |name=Grand Sale;visible_externally=true;percent_allowed=50  |quantity=100;approved=false        | Over Allowed Percentage |
-    |  	      |entity_type=Company  |name=Winter Sale;visible_externally=true;percent_allowed=50 |quantity=200;approved=false        | is > total holdings   |
+    |  	      |entity_type=Company  |name=Grand Sale;percent_allowed=50  |quantity=100;approved=false        | Over Allowed Percentage |
+    |  	      |entity_type=Company  |name=Winter Sale;percent_allowed=50 |quantity=200;approved=false        | is > total holdings   |
 
 
 
@@ -85,8 +85,8 @@ Scenario Outline: Approve holdings as a company
   And the sales total_offered_quantity should be "200"  
 Examples:
     |user	    |entity               |sale                                                         |quantity	|
-    |  	        |entity_type=Company  |name=Grand Sale;visible_externally=true;percent_allowed=100  |100        |
-    |  	        |entity_type=Company  |name=Winter Sale;visible_externally=true;percent_allowed=100 |200        |
+    |  	        |entity_type=Company  |name=Grand Sale;percent_allowed=100  |100        |
+    |  	        |entity_type=Company  |name=Winter Sale;percent_allowed=100 |200        |
 
 
 

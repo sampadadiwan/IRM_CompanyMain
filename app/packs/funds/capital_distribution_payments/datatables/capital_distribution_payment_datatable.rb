@@ -34,4 +34,8 @@ class CapitalDistributionPaymentDatatable < AjaxDatatablesRails::ActiveRecord
     # insert query here
     capital_distribution_payments
   end
+
+  def search_for
+    []
+  end
 end

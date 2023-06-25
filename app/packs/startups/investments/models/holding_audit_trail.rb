@@ -8,6 +8,10 @@ class HoldingAuditTrail < ApplicationRecord
 
   after_initialize :init_dates
 
+  validates :action, length: { maximum: 20 }
+  validates :parent_id, length: { maximum: 50 }
+  validates :owner, length: { maximum: 30 }
+
   def init_dates
     self.created_at = Time.zone.now
     self.updated_at = Time.zone.now

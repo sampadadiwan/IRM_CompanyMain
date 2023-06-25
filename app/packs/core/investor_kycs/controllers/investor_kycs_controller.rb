@@ -7,6 +7,7 @@ class InvestorKycsController < ApplicationController
     @investor = nil
     @investor_kycs = policy_scope(InvestorKyc)
     authorize(InvestorKyc)
+    @investor_kycs = @investor_kycs.where(id: search_ids) if params[:search] && params[:search][:value].present?
     if params[:investor_id]
       @investor = Investor.find(params[:investor_id])
       @investor_kycs = @investor_kycs.where(investor_id: params[:investor_id])
@@ -29,22 +30,13 @@ class InvestorKycsController < ApplicationController
     end
   end
 
-  def search
-    query = params[:query]
-    if query.present?
-
-      entity_ids = [current_user.entity_id]
-
-      @investor_kycs = InvestorKycIndex.filter(terms: { entity_id: entity_ids })
-                                       .query(query_string: { fields: InvestorKycIndex::SEARCH_FIELDS,
-                                                              query:, default_operator: 'and' })
-                                       .page(params[:page])
-                                       .objects
-
-      render "index"
-    else
-      redirect_to investor_kycs_path(request.parameters)
-    end
+  def search_ids
+    # This is only when the datatable sends a search query
+    query = "#{params[:search][:value]}*"
+    entity_ids = [current_user.entity_id]
+    InvestorKycIndex.filter(terms: { entity_id: entity_ids })
+                    .query(query_string: { fields: InvestorKycIndex::SEARCH_FIELDS,
+                                           query:, default_operator: 'and' }).map(&:id)
   end
 
   # GET /investor_kycs/1 or /investor_kycs/1.json

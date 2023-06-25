@@ -301,7 +301,8 @@ Rails.application.routes.draw do
   end
 
   devise_for :users, controllers: {
-    registrations: "users/registrations",
+    # We no longer allow users to register on their own
+    # registrations: "users/registrations",
     passwords: "users/passwords",
     confirmations: 'users/confirmations'
   }
@@ -316,6 +317,8 @@ Rails.application.routes.draw do
 
   resources :users do
     get 'search', on: :collection
+    get 'no_password_login', on: :collection
+    post 'magic_link', on: :collection
     get 'welcome', on: :collection
     get 'set_persona', on: :collection
     post 'reset_password', on: :collection

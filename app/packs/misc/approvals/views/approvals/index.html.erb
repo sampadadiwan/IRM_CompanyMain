@@ -7,7 +7,9 @@
 
 <div class="table-responsive" data-controller="datatable">
 
-  <table id="approvals" class="table table-bordered dataTable">
+  <% show_stats = ["Company", "Investment Fund"].include?(current_user.entity_type) %>
+
+  <table id="approvals" class="table table-bordered dataTable jqDataTable">
     <thead>
       <tr>
         <th>
@@ -20,7 +22,7 @@
           Due Date
         </th>
 
-        <% if ["Company", "Investment Fund"].include?(current_user.entity_type) %>
+        <% if show_stats %>
           <th>
             Approved 
           </th>
@@ -39,7 +41,7 @@
     
     <tbody>
     <% @approvals.each do |approval| %>
-      <%= render approval %>
+      <%= render approval, show_stats: %>
     <% end %>
     </tbody>
   </table>

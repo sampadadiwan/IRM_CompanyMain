@@ -5,6 +5,7 @@ class EntitySetting < ApplicationRecord
   belongs_to :entity
 
   validate :validate_ckyc_kra_enabled
+  validates :from_email, length: { maximum: 100 }
   serialize :kpi_doc_list, Array
 
   def validate_ckyc_kra_enabled

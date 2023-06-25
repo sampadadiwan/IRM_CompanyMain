@@ -1,10 +1,10 @@
 class AmlReportIndex < Chewy::Index
-  SEARCH_FIELDS = %i[match_status status investor_name entity_name].freeze
+  SEARCH_FIELDS = %i[match_status name entity_name investor_name].freeze
 
   index_scope AmlReport.includes(:entity, :investor)
 
   field :match_status
-  field :status
+  field :name
   field :entity_name, value: ->(ar) { ar.entity.name if ar.entity }
   field :investor_name, value: ->(ar) { ar.investor.investor_name if ar.investor }
   field :entity_id

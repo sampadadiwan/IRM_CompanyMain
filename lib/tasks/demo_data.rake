@@ -481,12 +481,14 @@ namespace :irm do
 
       sale.reload
       Entity.investment_advisors.each do | advisor |
+        investor = FactoryBot.create(:investor, entity: sale.entity, investor_entity: advisor, investor_name: advisor.name, category: "Investment Advisor")
+
         qty = ((sale.total_offered_quantity / 100) - rand(10))*100
         price = rand(2) > 0 ? sale.min_price : sale.max_price
         short_listed = rand(4) > 0
         escrow_deposited = rand(2) > 0
         interest = FactoryBot.build(:interest, entity_id: sale.entity_id, 
-            interest_entity_id: advisor.id, secondary_sale: sale,
+            investor_id: investor.id, secondary_sale: sale,
             quantity: qty, price: price, user_id: advisor.employees.first.id, 
             short_listed: short_listed, escrow_deposited: escrow_deposited)
         

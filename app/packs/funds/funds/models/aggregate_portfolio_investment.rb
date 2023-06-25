@@ -11,6 +11,10 @@ class AggregatePortfolioInvestment < ApplicationRecord
   scope :pool, -> { where(commitment_type: 'Pool') }
   scope :co_invest, -> { where(commitment_type: 'CoInvest') }
 
+  validates :portfolio_company_name, length: { maximum: 100 }
+  validates :investment_type, length: { maximum: 120 }
+  validates :commitment_type, length: { maximum: 10 }
+
   before_create :update_name
   def update_name
     self.portfolio_company_name ||= portfolio_company.investor_name

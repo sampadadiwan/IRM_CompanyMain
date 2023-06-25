@@ -23,6 +23,9 @@ class CapitalDistributionPayment < ApplicationRecord
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :capital_distribution_id
 
+  validates :folio_id, length: { maximum: 20 }
+  validates :investor_name, length: { maximum: 255 }
+
   counter_culture :capital_distribution,
                   column_name: proc { |r| r.completed ? 'distribution_amount_cents' : nil },
                   delta_column: 'amount_cents',

@@ -20,14 +20,14 @@ class OfferPolicy < SaleBasePolicy
 
   def show?
     create? ||
-      (record.interest && record.interest.interest_entity_id == user.entity_id) ||
+      user.entity_id == record.entity_id ||
       sale_policy.owner? ||
       interest_policy.owner?
   end
 
   def create?
     if user.entity_id == record.entity_id
-      true
+      record.secondary_sale.manage_offers
     elsif user.has_cached_role?(:holding)
       record.holding.user_id == user.id && record.holding.entity_id == record.entity_id
     elsif user.has_cached_role?(:investor)
@@ -52,10 +52,7 @@ class OfferPolicy < SaleBasePolicy
   end
 
   def update?
-    (
-      (user.id == record.user_id) ||
-      (sale_policy.update? && record.secondary_sale.manage_offers) # && !record.approved
-    ) && !record.verified # && !record.secondary_sale.lock_allocations
+    create? && !record.verified # && !record.secondary_sale.lock_allocations
   end
 
   def allocation_form?

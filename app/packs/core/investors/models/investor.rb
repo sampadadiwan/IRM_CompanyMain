@@ -52,6 +52,9 @@ class Investor < ApplicationRecord
 
   validates :investor_name, uniqueness: { scope: :entity_id, message: "already exists as an investor. Duplicate Investor." }
   validates :investor_entity_id, uniqueness: { scope: :entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }
+  validates :category, length: { maximum: 100 }
+  validates :city, length: { maximum: 50 }
+  validates :tag_list, length: { maximum: 120 }
 
   scope :for, lambda { |user, startup_entity|
                 where(entity_id: startup_entity.id,

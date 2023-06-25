@@ -37,6 +37,12 @@ class SecondarySale < ApplicationRecord
   validates :min_price, :max_price, presence: true, if: -> { price_type == 'Price Range' }
   validates :max_price, numericality: { greater_than: :min_price }, if: -> { price_type == 'Price Range' }
 
+  validates :name, :support_email, length: { maximum: 255 }
+  validates :allocation_status, :sale_type, :show_quantity, length: { maximum: 10 }
+  validates :price_type, length: { maximum: 15 }
+  validates :name, length: { maximum: 255 }
+  validates :buyer_signature_types, :seller_signature_types, length: { maximum: 20 }
+
   before_save :set_defaults
   def set_defaults
     self.price_type ||= "Price Range"

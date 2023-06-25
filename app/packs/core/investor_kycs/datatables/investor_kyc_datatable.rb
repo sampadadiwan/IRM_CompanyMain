@@ -1,18 +1,18 @@
 class InvestorKycDatatable < AjaxDatatablesRails::ActiveRecord
   def view_columns
     @view_columns ||= {
-      id: { source: "InvestorKyc.id", searchable: false },
+      id: { source: "InvestorKyc.id" },
       full_name: { source: "InvestorKyc.full_name", orderable: true },
       investor_name: { source: "InvestorKyc.investor_name", orderable: true },
-      pan: { source: "InvestorKyc.PAN", searchable: true, orderable: true },
-      address: { source: "InvestorKyc.address", searchable: false },
-      bank_account_number: { source: "InvestorKyc.bank_account_number", searchable: false },
-      ifsc_code: { source: "InvestorKyc.ifsc_code", searchable: false },
-      pan_verified: { source: "InvestorKyc.pan_verified", searchable: false },
-      bank_verified: { source: "InvestorKyc.bank_verified", searchable: false },
-      verified: { source: "InvestorKyc.verified", searchable: false },
-      expired: { source: "InvestorKyc.expiry_date", searchable: false },
-      dt_actions: { source: "", orderable: false, searchable: false }
+      pan: { source: "InvestorKyc.PAN", orderable: true },
+      address: { source: "InvestorKyc.address" },
+      bank_account_number: { source: "InvestorKyc.bank_account_number" },
+      ifsc_code: { source: "InvestorKyc.ifsc_code" },
+      pan_verified: { source: "InvestorKyc.pan_verified" },
+      bank_verified: { source: "InvestorKyc.bank_verified" },
+      verified: { source: "InvestorKyc.verified" },
+      expired: { source: "InvestorKyc.expiry_date" },
+      dt_actions: { source: "", orderable: false }
     }
   end
 
@@ -43,5 +43,9 @@ class InvestorKycDatatable < AjaxDatatablesRails::ActiveRecord
   def get_raw_records
     # insert query here
     investor_kycs
+  end
+
+  def search_for
+    []
   end
 end

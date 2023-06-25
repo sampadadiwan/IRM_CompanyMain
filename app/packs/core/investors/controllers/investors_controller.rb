@@ -6,8 +6,18 @@ class InvestorsController < ApplicationController
   def index
     @investors = policy_scope(Investor)
     authorize(Investor)
-
     @investors = @investors.where(category: params[:category]) if params[:category]
+
+    if params[:search] && params[:search][:value].present?
+      # This is only when the datatable sends a search query
+      query = "#{params[:search][:value]}*"
+
+      ids = InvestorIndex.filter(terms: { _id: @investors.pluck(:id) })
+                         .query(query_string: { fields: InvestorIndex::SEARCH_FIELDS,
+                                                query:, default_operator: 'and' }).map(&:id)
+
+      @investors = Investor.where(id: ids)
+    end
 
     @investors = @investors.page(params[:page]) if params[:all].blank?
     respond_to do |format|

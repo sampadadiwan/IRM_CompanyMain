@@ -8,6 +8,8 @@ class InvestorNotice < ApplicationRecord
   has_rich_text :details
 
   validates :title, :start_date, :end_date, presence: true
+  validates :btn_label, length: { maximum: 40 }
+  validates :category, length: { maximum: 30 }
 
   after_commit :update_investors
   after_commit :generate_investor_notice_entries, if: proc { |notice| notice.generate && notice.saved_change_to_generate? }

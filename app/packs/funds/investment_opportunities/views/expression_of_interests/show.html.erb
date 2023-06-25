@@ -1,101 +1,111 @@
 <%= render "/layouts/alerts" %>
 
-  <table class="table table-bordered dataTable">
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Interest: <%= @expression_of_interest.investor.investor_name %></h6>
+      <span>
+        
+      </span>
+  </div>
+  <div class="card-body show_details">
+    <table class="table table-bordered dataTable">
 
-    <tr>
-      <td>
-        Investment Fund
-      </td>
-      <td>
-        <%= @expression_of_interest.entity.name %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Created By
-      </td>
-      <td>
-        <%= @expression_of_interest.user.full_name %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Investor
-      </td>
-      <td>
-        <%= @expression_of_interest.investor.investor_name %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Signatory
-      </td>
-      <td>
-        <%= @expression_of_interest.investor_signatory.full_name if @expression_of_interest.investor_signatory %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Investment Opportunity
-      </td>
-      <td>
-        <%= link_to @expression_of_interest.investment_opportunity.company_name,
-          @expression_of_interest.investment_opportunity %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Amount
-      </td>
-      <td>
-        <%= money_to_currency @expression_of_interest.amount, params %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Approved
-      </td>
-      <td>
-        <%= display_boolean @expression_of_interest.approved %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Verified
-      </td>
-      <td>
-        <%= display_boolean @expression_of_interest.verified %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Allocation Percentage
-      </td>
-      <td>
-        <%= @expression_of_interest.allocation_percentage %> %
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Allocation Amount
-      </td>
-      <td>
-        <%= money_to_currency @expression_of_interest.allocation_amount, params %>
-      </td>
-    </tr>
+      <tr>
+        <td>
+          Investment Fund
+        </td>
+        <td>
+          <%= @expression_of_interest.entity.name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Created By
+        </td>
+        <td>
+          <%= @expression_of_interest.user.full_name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Investor
+        </td>
+        <td>
+          <%= @expression_of_interest.investor.investor_name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Signatory
+        </td>
+        <td>
+          <%= @expression_of_interest.investor_signatory.full_name if @expression_of_interest.investor_signatory %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Investment Opportunity
+        </td>
+        <td>
+          <%= link_to @expression_of_interest.investment_opportunity.company_name,
+            @expression_of_interest.investment_opportunity %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Amount
+        </td>
+        <td>
+          <%= money_to_currency @expression_of_interest.amount, params %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Approved
+        </td>
+        <td>
+          <%= display_boolean @expression_of_interest.approved %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Verified
+        </td>
+        <td>
+          <%= display_boolean @expression_of_interest.verified %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Allocation Percentage
+        </td>
+        <td>
+          <%= @expression_of_interest.allocation_percentage %> %
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Allocation Amount
+        </td>
+        <td>
+          <%= money_to_currency @expression_of_interest.allocation_amount, params %>
+        </td>
+      </tr>
 
-    <tr>
-      <td>
-        Details
-      </td>
-      <td>
-        <%= @expression_of_interest.details %>
-      </td>
-    </tr>
+      <tr>
+        <td>
+          Details
+        </td>
+        <td>
+          <%= @expression_of_interest.details %>
+        </td>
+      </tr>
 
 
 
-  </table>
+    </table>
+  </div>
+</div>
 
 
   <div>

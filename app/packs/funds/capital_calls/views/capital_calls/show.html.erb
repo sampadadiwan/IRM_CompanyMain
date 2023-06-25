@@ -3,7 +3,6 @@
 <%= render "/capital_calls/show", capital_call: @capital_call %>
 
   <div>
-    <button class="btn btn-outline-primary" type="button" data-toggle="collapse" data-target=".multi-collapse"    aria-expanded="false" aria-controls="multi-collapse">Details</button> 
 
     <% if policy(@capital_call).update? %>
       <%= link_to "Edit" , edit_capital_call_path(@capital_call), {class: "btn btn-outline-primary" } %> 

@@ -25,7 +25,7 @@ Scenario Outline: Express Interest
 
   Examples:
   	|user	    |entity                     |sale                                     |
-  	|  	        |entity_type=Investment Advisor        |name=Grand Sale;visible_externally=true  |
-    |  	        |entity_type=Family Office  |name=Winter Sale;visible_externally=true |
+  	|  	        |entity_type=Investment Advisor        |name=Grand Sale  |
+    |  	        |entity_type=Family Office  |name=Winter Sale |
 
 

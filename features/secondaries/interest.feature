@@ -8,7 +8,9 @@ Scenario Outline: Create new interest
   Given there is a FundingRound "name=Series A"
   And there is a holding "approved=true;orig_grant_quantity=110;investment_instrument=Equity" for each employee investor
   And there is an "approved" offer "quantity=110" for each employee investor
-  Given Im logged in as a user "first_name=Buyer" for an entity "entity_type=Investment Advisor"
+  Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Investor"
+  Given my firm is an investor in the company
+  And the investor has "Buyer" access rights to the sale
   And I am at the sales details page
   Then I should see only relevant sales details
   Then I should not see the private files
@@ -33,9 +35,9 @@ Scenario Outline: Create new interest
   
 Examples:
     |user	    |entity               |sale                                                                     |quantity	|
-    |  	        |entity_type=Company  |visible_externally=true;percent_allowed=100;min_price=120;max_price=180;price_type=Price Range  |100        |
-    |  	        |entity_type=Company  |visible_externally=true;percent_allowed=100;min_price=130;max_price=200;price_type=Price Range  |200        |
-    |  	        |entity_type=Company  |visible_externally=true;percent_allowed=100;final_price=150;price_type=Fixed Price  |200        |
+    |  	        |entity_type=Company  |percent_allowed=100;min_price=120;max_price=180;price_type=Price Range  |100        |
+    |  	        |entity_type=Company  |percent_allowed=100;min_price=130;max_price=200;price_type=Price Range  |200        |
+    |  	        |entity_type=Company  |percent_allowed=100;final_price=150;price_type=Fixed Price  |200        |
 
 
 Scenario Outline: Create new interest for indicative sale
@@ -43,7 +45,9 @@ Scenario Outline: Create new interest for indicative sale
   Given there are "2" employee investors
   Given there is a sale "<sale>"
   Given there is a FundingRound "name=Series A"
-  Given Im logged in as a user "first_name=Buyer" for an entity "entity_type=Investment Advisor"
+  Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Investor"
+  Given my firm is an investor in the company
+  And the investor has "Buyer" access rights to the sale  
   And I am at the sales details page
   Then I should see only relevant sales details
   Then I should not see the private files
@@ -63,13 +67,11 @@ Scenario Outline: Create new interest for indicative sale
   And I visit the interest details page
   When I click "Documents"
   And I should see the document details on the details page
-
-  
   
 Examples:
     |user	    |entity               |sale                                                                     |quantity	|
-    |  	        |entity_type=Company  |visible_externally=true;percent_allowed=100;min_price=130;max_price=200;price_type=Price Range;show_quantity=Indicative;indicative_quantity=100000  |200        |
-    |  	        |entity_type=Company  |visible_externally=true;percent_allowed=100;final_price=150;price_type=Fixed Price;show_quantity=Indicative;indicative_quantity=100000  |200        |
+    |  	        |entity_type=Company  |percent_allowed=100;min_price=130;max_price=200;price_type=Price Range;show_quantity=Indicative;indicative_quantity=100000  |200        |
+    |  	        |entity_type=Company  |percent_allowed=100;final_price=150;price_type=Fixed Price;show_quantity=Indicative;indicative_quantity=100000  |200        |
 
 
 
@@ -95,8 +97,8 @@ Scenario Outline: Create new interest and check obfuscation
   
 Examples:
     |user	    |entity               |sale                                                                     |quantity	|
-    |  	        |entity_type=Company  |visible_externally=true;percent_allowed=100;min_price=120;max_price=180  |100        |
-    |  	        |entity_type=Company  |visible_externally=true;percent_allowed=100;min_price=130;max_price=200  |200        |
+    |  	        |entity_type=Company  |percent_allowed=100;min_price=120;max_price=180  |100        |
+    |  	        |entity_type=Company  |percent_allowed=100;min_price=130;max_price=200  |200        |
 
 
 Scenario Outline: Create new interest which is escrow approved
@@ -115,5 +117,5 @@ Scenario Outline: Create new interest which is escrow approved
   
 Examples:
     |user	    |entity               |sale                                                                     |quantity	|
-    |  	        |entity_type=Company  |visible_externally=true;percent_allowed=100;min_price=120;max_price=180  |100        |
-    |  	        |entity_type=Company  |visible_externally=true;percent_allowed=100;min_price=130;max_price=200  |200        |
+    |  	        |entity_type=Company  |percent_allowed=100;min_price=120;max_price=180  |100        |
+    |  	        |entity_type=Company  |percent_allowed=100;min_price=130;max_price=200  |200        |

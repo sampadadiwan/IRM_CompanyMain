@@ -42,6 +42,11 @@ class Fund < ApplicationRecord
            :co_invest_call_amount_cents, :co_invest_committed_amount_cents, :co_invest_collected_amount_cents, :co_invest_distribution_amount_cents, :total_units_premium_cents, with_currency: ->(i) { i.currency }
 
   validates :name, :currency, presence: true
+  validates :unit_types, :commitment_doc_list, :sponsor_name, :manager_name, :trustee_name, :contact_name, :contact_email, length: { maximum: 100 }
+  validates :name, :tag_list, length: { maximum: 255 }
+  validates :registration_number, :fund_signature_types, :investor_signature_types, length: { maximum: 20 }
+  validates :category, length: { maximum: 15 }
+  validates :sub_category, length: { maximum: 40 }
 
   def generate_fund_ratios(user_id, end_date, generate_for_commitments: false)
     FundRatiosJob.perform_later(id, nil, end_date, user_id, generate_for_commitments)
@@ -60,7 +65,7 @@ class Fund < ApplicationRecord
   end
 
   def investors
-    Investor.owner_access_rights(self, "Investor")
+    Investor.owner_access_rights(self, nil)
   end
 
   def to_s

@@ -27,7 +27,8 @@ class CapitalDistribution < ApplicationRecord
 
   validates :gross_amount_cents, numericality: { greater_than: 0 }
   validates_uniqueness_of :title, scope: :fund_id
-
+  validates :title, length: { maximum: 255 }
+  validates :commitment_type, length: { maximum: 10 }
   validates :distribution_date, presence: true
   validates :capital_commitment, presence: true, if: proc { |cd| cd.CoInvest? }
 

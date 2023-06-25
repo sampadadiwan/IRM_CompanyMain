@@ -73,7 +73,7 @@
 
     <% if user.id.present? %>
       <%= form.label :roles %>
-      <%= form.select :roles, ["company_admin", "approver"], {selected: user.roles.collect(&:name), include_hidden: false}, class: "form-control select2", multiple: true, name: "user[role_name][]" %>
+      <%= form.select :roles, ["company_admin"], {selected: user.roles.collect(&:name), include_hidden: false}, class: "form-control select2", multiple: true, name: "user[role_name][]" %>
     <% end %>
 
     <div class="associated_entity">

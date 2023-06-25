@@ -18,6 +18,9 @@ class InvestmentOpportunity < ApplicationRecord
             :currency, :last_date, presence: true
 
   validates :fund_raise_amount, :min_ticket_size, numericality: { greater_than: 0 }
+  validates :company_name, length: { maximum: 100 }
+  validates :currency, length: { maximum: 10 }
+  validates :tag_list, length: { maximum: 120 }
 
   include FileUploader::Attachment(:logo)
   include FileUploader::Attachment(:video)

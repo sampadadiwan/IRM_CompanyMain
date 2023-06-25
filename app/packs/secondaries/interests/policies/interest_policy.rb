@@ -4,7 +4,7 @@ class InterestPolicy < SaleBasePolicy
       if user.curr_role.to_sym == :employee
         user.has_cached_role?(:company_admin) ? scope.where(entity_id: user.entity_id) : scope.for_employee(user)
       elsif user.curr_role.to_sym == :investor
-        scope.where("interest_entity_id=?", user.entity_id)
+        for_investor(user)
       else
         scope.none
       end

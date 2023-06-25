@@ -3,6 +3,7 @@ class ApplicationDecorator < Draper::Decorator
 
   delegate :display_boolean, to: :h
   delegate :money_to_currency, to: :h
+  delegate :custom_format_number, to: :h
 
   def display_date(val)
     h.l(val) if val

@@ -28,6 +28,9 @@ class Deal < ApplicationRecord
   has_many :tasks, as: :owner, dependent: :destroy
 
   validates :name, :amount_cents, :status, :currency, presence: true
+  validates :status, length: { maximum: 20 }
+  validates :currency, length: { maximum: 10 }
+  validates :units, length: { maximum: 15 }
 
   STATUS = %w[Open Closed].freeze
   ACTIVITIES = Rack::Utils.parse_nested_query(ENV["DEAL_ACTIVITIES"].tr(":", "=").tr(",", "&"))

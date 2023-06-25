@@ -1,6 +1,15 @@
-  <table class="table dataTable">
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Fund: <%= fund.name %></h6>
+      <span>
+        <a class="btn btn-outline-primary show_details_link" data-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a>
+      </span>
+  </div>
+  <div class="card-body collapse show_details">
 
-      <tr class="collapse multi-collapse">
+  <table class="table table-bordered dataTable">
+
+      <tr>
         <td class="show_page_label">
           Name
         </td>
@@ -9,7 +18,7 @@
         </td>
       </tr>
 
-      <tr class="collapse multi-collapse">
+      <tr>
         <td>
           Currency
         </td>
@@ -18,7 +27,7 @@
         </td>
       </tr>
       
-      <tr class="collapse multi-collapse">
+      <tr>
         <td>
           Tag List
         </td>
@@ -27,7 +36,7 @@
         </td>
       </tr>
 
-      <tr class="collapse multi-collapse">
+      <tr>
         <td>
           Details
         </td>
@@ -36,7 +45,7 @@
         </td>
       </tr>
 
-      <tr class="collapse multi-collapse">
+      <tr>
         <td>
           Entity
         </td>
@@ -47,7 +56,7 @@
 
       <% if fund.unit_types.present? %>
 
-          <tr class="collapse multi-collapse">
+          <tr>
             <td>
               Unit Types
             </td>
@@ -60,7 +69,7 @@
       
 
       <% if policy(fund).update? %>
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Committed Amount
           </td>
@@ -69,7 +78,7 @@
           </td>
         </tr>
         
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Capital Call Amount
           </td>
@@ -78,7 +87,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Collected Amount
           </td>
@@ -87,7 +96,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Pending Call Amount
           </td>
@@ -96,7 +105,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Payments Distributed
           </td>
@@ -108,7 +117,7 @@
 
         <% if fund.co_invest_committed_amount_cents > 0 %>
 
-          <tr class="collapse multi-collapse">
+          <tr>
             <td>
               Co Invest Committed Amount
             </td>
@@ -117,7 +126,7 @@
             </td>
           </tr>
           
-          <tr class="collapse multi-collapse">
+          <tr>
             <td>
               Co Invest Call Amount
             </td>
@@ -126,7 +135,7 @@
             </td>
           </tr>
 
-          <tr class="collapse multi-collapse">
+          <tr>
             <td>
               Co Invest Collected Amount
             </td>
@@ -135,7 +144,7 @@
             </td>
           </tr>
 
-          <tr class="collapse multi-collapse">
+          <tr>
             <td>
               Co Invest Payments Distributed
             </td>
@@ -150,7 +159,7 @@
 
         <% if fund.unit_types.present? %>
 
-          <tr class="collapse multi-collapse">
+          <tr>
             <td>
               Unit Premiums
             </td>
@@ -163,7 +172,7 @@
 
         <%= display_custom_fields(fund,collapsed: true) if current_user %>
         
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Commitment Document List
           </td>
@@ -173,7 +182,7 @@
         </tr>
 
         <% if fund.fund_signatory %>
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Fund Signatory
           </td>
@@ -184,7 +193,7 @@
         <% end %>
 
         <% if fund.trustee_signatory %>
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Trustee Signatory
           </td>
@@ -194,7 +203,7 @@
         </tr>
         <% end %>    
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Investor Signature Type
           </td>
@@ -202,7 +211,7 @@
             <%= fund.investor_signature_types&.capitalize %>
           </td>
         </tr>
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Fund Signature Type
           </td>
@@ -210,7 +219,7 @@
             <%= fund.fund_signature_types&.capitalize %>
           </td>
         </tr>
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Show Valuations to LPs 
           </td>
@@ -218,7 +227,7 @@
             <%= display_boolean fund.show_valuations %>
           </td>
         </tr>
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Show Fund Ratios to LPs
           </td>
@@ -229,7 +238,7 @@
       <% end %>
 
       <% if params[:debug].present? %>
-        <tr class="collapse multi-collapse btn-primary">
+        <tr class="btn-primary">
           <td colspan="2">
           </td>
         </tr>
@@ -238,7 +247,7 @@
           end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Time.zone.today 
           fund_portfolio_calcs = FundPortfolioCalcs.new(fund, end_date)
         %>
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Total Investment Cost
           </td>
@@ -247,7 +256,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             FMV 
           </td>
@@ -256,7 +265,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Total Investment Sold
           </td>
@@ -265,7 +274,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Distribution
           </td>
@@ -274,7 +283,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Reinvested Capital
           </td>
@@ -284,7 +293,7 @@
         </tr>
 
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Cash In Hand
           </td>
@@ -293,7 +302,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Net Current Assets
           </td>
@@ -302,7 +311,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Esitmated Carry
           </td>
@@ -311,7 +320,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Total Value
           </td>
@@ -322,7 +331,7 @@
 
         
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Net Total Value
           </td>
@@ -331,7 +340,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Collected 
           </td>
@@ -340,7 +349,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             DPI
           </td>
@@ -349,7 +358,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             RVPI
           </td>
@@ -358,7 +367,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             TVPI
           </td>
@@ -367,7 +376,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             FMV
           </td>
@@ -376,13 +385,13 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse btn-primary">
+        <tr class="btn-primary">
           <td colspan="2">
           </td>
         </tr>
         
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Gross Portfolio IRR
           </td>
@@ -392,7 +401,7 @@
         </tr>
 
         <% fund_portfolio_calcs.portfolio_company_irr.each do |portfolio_company_id, xirr| %>
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             portfolio_company_id
           </td>
@@ -402,7 +411,7 @@
         </tr>
         <% end %>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Gross XIRR
           </td>
@@ -411,7 +420,7 @@
           </td>
         </tr>
 
-        <tr class="collapse multi-collapse">
+        <tr>
           <td>
             Net XIRR
           </td>
@@ -422,12 +431,12 @@
       
       <% end %>
 
-      <tr class="collapse multi-collapse btn-primary">
+      <tr class="btn-primary">
           <td colspan="2">
           </td>
       </tr>
 
-      <tr class="collapse multi-collapse">
+      <tr>
           <td>
             Registration Number
           </td>
@@ -436,7 +445,7 @@
           </td>
       </tr>
 
-      <tr class="collapse multi-collapse">
+      <tr>
           <td>
             Category
           </td>
@@ -445,7 +454,7 @@
           </td>
       </tr>
 
-      <tr class="collapse multi-collapse">
+      <tr>
           <td>
             Sub Category
           </td>
@@ -454,7 +463,7 @@
           </td>
       </tr>
 
-      <tr class="collapse multi-collapse">
+      <tr>
           <td>
             Sponsor Name
           </td>
@@ -463,7 +472,7 @@
           </td>
       </tr>
 
-      <tr class="collapse multi-collapse">
+      <tr>
           <td>
             Manager Name
           </td>
@@ -472,7 +481,7 @@
           </td>
       </tr>
 
-      <tr class="collapse multi-collapse">
+      <tr>
           <td>
             Contact Name
           </td>
@@ -481,7 +490,7 @@
           </td>
       </tr>
 
-      <tr class="collapse multi-collapse">
+      <tr>
           <td>
             Contact Email
           </td>
@@ -491,3 +500,6 @@
       </tr>
 
   </table>
+
+  </div>
+</div>

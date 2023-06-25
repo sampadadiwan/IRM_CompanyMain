@@ -1,288 +1,299 @@
-<table class="table table-bordered dataTable">
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Interest: <%= interest.secondary_sale.name %></h6>
+      <span>
+      </span>
+  </div>
+  <div class="card-body show_details">
 
-    <tr>
-      <td>
-        Offer Entity
-      </td>
-      <td>
-        <%= interest.entity.name %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Secondary Sale
-      </td>
-      <td>
-        <%= link_to interest.secondary_sale.name, interest.secondary_sale %> : 
-        <%= l interest.secondary_sale.start_date %> - <%= l interest.secondary_sale.end_date %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Quantity
-      </td>
-      <td>
-        <%= interest.quantity %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Price
-      </td>
-      <td>
-        <%= interest.price %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Details
-      </td>
-      <td>
-        <%= interest.details %>
-      </td>
-    </tr>
-    
-    <tr id="short_listed">
-      <td>
-        Shortlisted
-      </td>
-      <td>
-        <span class="badge <%= interest.short_listed? ? 'bg-success' : 'bg-warning' %>">
-          <%= interest.short_listed? ? "Yes" : "No" %>
-        </span>
-      </td>
-    </tr>
-    <tr id="escrow_deposited">
-      <td>
-        Escrow Deposited
-      </td>
-      <td>
-        <span class="badge <%= interest.escrow_deposited? ? 'bg-success' : 'bg-warning' %>">
-          <%= interest.escrow_deposited? ? "Yes" : "No" %>
-        </span>
-      </td>
-    </tr>
+    <table class="table table-bordered dataTable">
 
-    <!-- <tr id="finalized">
-      <td>
-        Finalized
-      </td>
-      <td>
-        <span class="badge <%= interest.finalized? ? 'bg-success' : 'bg-warning' %>">
-          <%= interest.finalized? ? "Yes" : "No" %>
-        </span>
-      </td>
-    </tr> -->
-
-    <% if current_user %>
-    <tr>
-      <td>
-        User
-      </td>
-      <td>
-        <%= interest.user_id == current_user.id || interest.escrow_deposited? ? interest.user.full_name + " " + interest.user.email : ENV["OBFUSCATION"] %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Interest Entity
-      </td>
-      <td>
-        <%= interest.user_id == current_user.id || interest.escrow_deposited? ? interest.interest_entity.name : ENV["OBFUSCATION"] %>
-      </td>
-    </tr>
-    <% end %>
-
-
-    <% if interest.secondary_sale.lock_allocations %>
-    <tr>
-      <td colspan="2" class="bg-primary"></td>
-    </tr>
-    <tr>
-      <td>
-        Allocated Quantity
-      </td>
-      <td>
-        <%= interest.allocation_quantity %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Final Price
-      </td>
-      <td>
-        <%= interest.final_price %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Allocation Amount
-      </td>
-      <td>
-        <%= money_to_currency interest.allocation_amount, params %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Allocation %
-      </td>
-      <td>
-        <%= interest.allocation_percentage %> %
-      </td>
-    </tr>
-  <% end %>
-    
-
-    <% if interest.secondary_sale.finalized || params[:debug].present? %>
-
-      <tr>
-        <td colspan="2" class="bg-primary"></td>
-      </tr>
-      <tr>
-        <td>
-          Mapped Offer Quantity
-        </td>
-        <td>
-          <%= interest.offer_quantity %> 
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Allocation - Mapped
-        </td>
-        <td>
-          <%= interest.allocation_delta %> 
-        </td>
-      </tr>
-
-    <% end %>
-
-    <% if interest.buyer_entity_name.present? %>
-
-      <tr>
-        <td colspan="2" class="bg-primary"></td>
-      </tr>
-      <tr>
-        <td>
-          Buyer Entity Name
-        </td>
-        <td>
-          <%= interest.buyer_entity_name %> 
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Contact Name
-        </td>
-        <td>
-          <%= interest.contact_name %> 
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Contact Email
-        </td>
-        <td>
-          <%= interest.email %> 
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Address
-        </td>
-        <td>
-          <%= interest.address %> 
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          City
-        </td>
-        <td>
-          <%= interest.city %> 
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          PAN
-        </td>
-        <td>
-          <%= interest.PAN %> 
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Demat
-        </td>
-        <td>
-          <%= interest.demat %> 
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Bank Account Number
-        </td>
-        <td>
-          <%= interest.bank_account_number %> 
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          IFSC Code
-        </td>
-        <td>
-          <%= interest.ifsc_code %> 
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Signature
-        </td>
-        <td>
-          <%= image_tag interest.signature_url, 
-            style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if interest.signature.present? %>
-        </td>
-    </tr>
-
-      
-      <% if interest.secondary_sale.spa.present? || interest.spa.present? %>
-
-        <tr>
-          <td colspan="2" class="bg-primary"></td>
-        </tr>      
         <tr>
           <td>
-            SPA
+            Offer Entity
           </td>
           <td>
-            <%= link_to "Download SPA", interest.spa.url, target: "_blank", class: "btn btn-outline-sm btn-outline-primary" if interest.spa.present? %>
+            <%= interest.entity.name %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Secondary Sale
+          </td>
+          <td>
+            <%= link_to interest.secondary_sale.name, interest.secondary_sale %> : 
+            <%= l interest.secondary_sale.start_date %> - <%= l interest.secondary_sale.end_date %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Quantity
+          </td>
+          <td>
+            <%= interest.quantity %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Price
+          </td>
+          <td>
+            <%= interest.price %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Details
+          </td>
+          <td>
+            <%= interest.details %>
+          </td>
+        </tr>
+        
+        <tr id="short_listed">
+          <td>
+            Shortlisted
+          </td>
+          <td>
+            <span class="badge <%= interest.short_listed? ? 'bg-success' : 'bg-warning' %>">
+              <%= interest.short_listed? ? "Yes" : "No" %>
+            </span>
+          </td>
+        </tr>
+        <tr id="escrow_deposited">
+          <td>
+            Escrow Deposited
+          </td>
+          <td>
+            <span class="badge <%= interest.escrow_deposited? ? 'bg-success' : 'bg-warning' %>">
+              <%= interest.escrow_deposited? ? "Yes" : "No" %>
+            </span>
           </td>
         </tr>
 
+        <!-- <tr id="finalized">
+          <td>
+            Finalized
+          </td>
+          <td>
+            <span class="badge <%= interest.finalized? ? 'bg-success' : 'bg-warning' %>">
+              <%= interest.finalized? ? "Yes" : "No" %>
+            </span>
+          </td>
+        </tr> -->
+
+        <% if current_user %>
+        <tr>
+          <td>
+            User
+          </td>
+          <td>
+            <%= interest.user_id == current_user.id || interest.escrow_deposited? ? interest.user.full_name + " " + interest.user.email : ENV["OBFUSCATION"] %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Interest Entity
+          </td>
+          <td>
+            <%= interest.user_id == current_user.id || interest.escrow_deposited? ? interest.investor.investor_name : ENV["OBFUSCATION"] %>
+          </td>
+        </tr>
+        <% end %>
+
+
+        <% if interest.secondary_sale.lock_allocations %>
+        <tr>
+          <td colspan="2" class="bg-primary"></td>
+        </tr>
+        <tr>
+          <td>
+            Allocated Quantity
+          </td>
+          <td>
+            <%= interest.allocation_quantity %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Final Price
+          </td>
+          <td>
+            <%= interest.final_price %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Allocation Amount
+          </td>
+          <td>
+            <%= money_to_currency interest.allocation_amount, params %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Allocation %
+          </td>
+          <td>
+            <%= interest.allocation_percentage %> %
+          </td>
+        </tr>
       <% end %>
+        
 
-      <tr>
-        <td>
-          I agree to enter into the SPA
-        </td>
-        <td>
-          <span class="badge <%= interest.final_agreement ? 'bg-success' : 'bg-warning' %>">
-            <%= interest.final_agreement ? "Yes" : "No" %>
-          </span>
-          <% if interest.final_agreement_user %>
-            <small>Accepted By: <%= interest.final_agreement_user.full_name %></small>
+        <% if interest.secondary_sale.finalized || params[:debug].present? %>
+
+          <tr>
+            <td colspan="2" class="bg-primary"></td>
+          </tr>
+          <tr>
+            <td>
+              Mapped Offer Quantity
+            </td>
+            <td>
+              <%= interest.offer_quantity %> 
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Allocation - Mapped
+            </td>
+            <td>
+              <%= interest.allocation_delta %> 
+            </td>
+          </tr>
+
+        <% end %>
+
+        <% if interest.buyer_entity_name.present? %>
+
+          <tr>
+            <td colspan="2" class="bg-primary"></td>
+          </tr>
+          <tr>
+            <td>
+              Buyer Entity Name
+            </td>
+            <td>
+              <%= interest.buyer_entity_name %> 
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Contact Name
+            </td>
+            <td>
+              <%= interest.contact_name %> 
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Contact Email
+            </td>
+            <td>
+              <%= interest.email %> 
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Address
+            </td>
+            <td>
+              <%= interest.address %> 
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              City
+            </td>
+            <td>
+              <%= interest.city %> 
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              PAN
+            </td>
+            <td>
+              <%= interest.PAN %> 
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Demat
+            </td>
+            <td>
+              <%= interest.demat %> 
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Bank Account Number
+            </td>
+            <td>
+              <%= interest.bank_account_number %> 
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              IFSC Code
+            </td>
+            <td>
+              <%= interest.ifsc_code %> 
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Signature
+            </td>
+            <td>
+              <%= image_tag interest.signature_url, 
+                style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if interest.signature.present? %>
+            </td>
+        </tr>
+
+          
+          <% if interest.secondary_sale.spa.present? || interest.spa.present? %>
+
+            <tr>
+              <td colspan="2" class="bg-primary"></td>
+            </tr>      
+            <tr>
+              <td>
+                SPA
+              </td>
+              <td>
+                <%= link_to "Download SPA", interest.spa.url, target: "_blank", class: "btn btn-outline-sm btn-outline-primary" if interest.spa.present? %>
+              </td>
+            </tr>
+
           <% end %>
-        </td>
-      </tr>
 
-    <% end %>
+          <tr>
+            <td>
+              I agree to enter into the SPA
+            </td>
+            <td>
+              <span class="badge <%= interest.final_agreement ? 'bg-success' : 'bg-warning' %>">
+                <%= interest.final_agreement ? "Yes" : "No" %>
+              </span>
+              <% if interest.final_agreement_user %>
+                <small>Accepted By: <%= interest.final_agreement_user.full_name %></small>
+              <% end %>
+            </td>
+          </tr>
 
-    <%= display_custom_fields(interest) if current_user %>
+        <% end %>
 
-  </table>
+        <%= display_custom_fields(interest) if current_user %>
+
+    </table>
+
+  </div>
+</div>

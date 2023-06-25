@@ -7,6 +7,9 @@ class FundUnit < ApplicationRecord
   belongs_to :investor
   belongs_to :owner, polymorphic: true, optional: true
 
+  validates :unit_type, length: { maximum: 10 }
+  validates :owner_type, length: { maximum: 255 }
+
   monetize :total_premium_cents, with_currency: ->(i) { i.fund.currency }
 
   counter_culture :owner, column_name: 'units_quantity', delta_column: 'quantity'

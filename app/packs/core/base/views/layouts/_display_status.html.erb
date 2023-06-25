@@ -1,0 +1,22 @@
+<% msg = notice || alert %>
+
+<div class="modal fade" id="alertPopupModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header text-primary">
+                <h5 class="modal-title" id="title">Status</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body" id="msg"><%=msg%></div>
+            <div class="modal-footer">
+                <button id="display_status_ok" class="btn btn-outline-primary" type="button" data-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+

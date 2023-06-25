@@ -23,8 +23,11 @@ class PortfolioInvestment < ApplicationRecord
   scope :co_invest, -> { where(commitment_type: 'CoInvest') }
 
   validates :capital_commitment_id, presence: true, if: proc { |p| p.commitment_type == "CoInvest" }
-
   validate :sell_quantity_allowed
+  validates :portfolio_company_name, length: { maximum: 100 }
+  validates :category, length: { maximum: 15 }
+  validates :sub_category, :sector, length: { maximum: 100 }
+  validates :investment_domicile, length: { maximum: 10 }
 
   SECTORS = ENV["SECTORS"].split(",").sort
   CATEGORIES = JSON.parse(ENV.fetch("PORTFOLIO_CATEGORIES", nil))

@@ -72,6 +72,9 @@ class AccessRight < ApplicationRecord
     where("access_rights.user_id=? and access_rights.entity_id=?", user.id, user.entity_id)
   }
 
+  validates :access_to_email, length: { maximum: 30 }
+  validates :access_type, length: { maximum: 25 }
+  validates :access_to_category, length: { maximum: 20 }
   validate :any_present?
 
   def any_present?

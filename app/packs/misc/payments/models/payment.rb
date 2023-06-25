@@ -22,4 +22,5 @@ class Payment < ApplicationRecord
   belongs_to :user
 
   validates :amount, :plan, presence: true
+  validates :plan, length: { maximum: 30 }
 end

@@ -8,6 +8,8 @@ class Task < ApplicationRecord
   belongs_to :assigned_to, class_name: "User", optional: true
   belongs_to :owner, polymorphic: true, optional: true
 
+  validates :tags, length: { maximum: 50 }
+
   has_many :reminders, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :reminders, allow_destroy: true
 

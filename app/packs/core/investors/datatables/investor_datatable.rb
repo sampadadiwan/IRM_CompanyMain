@@ -1,13 +1,13 @@
 class InvestorDatatable < AjaxDatatablesRails::ActiveRecord
   def view_columns
     @view_columns ||= {
-      id: { source: "Investor.id", searchable: false },
+      id: { source: "Investor.id" },
       investor_name: { source: "Investor.investor_name", orderable: true },
       category: { source: "Investor.category",  orderable: true },
       tag_list: { source: "Investor.tag_list",  orderable: true },
       city: { source: "Investor.city", orderable: true },
-      access: { source: "", orderable: false, searchable: false },
-      dt_actions: { source: "", orderable: false, searchable: false }
+      access: { source: "", orderable: false },
+      dt_actions: { source: "", orderable: false }
     }
   end
 
@@ -33,5 +33,9 @@ class InvestorDatatable < AjaxDatatablesRails::ActiveRecord
   def get_raw_records
     # insert query here
     investors
+  end
+
+  def search_for
+    []
   end
 end
