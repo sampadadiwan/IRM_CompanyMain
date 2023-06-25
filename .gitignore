@@ -69,3 +69,5 @@ token.yaml
 config/google-config.json
 cuc.out
 *:Zone.Identifier
+prod.dump.sql
+dev.sql

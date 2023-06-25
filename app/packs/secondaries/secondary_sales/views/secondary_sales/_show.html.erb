@@ -1,303 +1,314 @@
 <% cache [secondary_sale, current_user, current_user.entity_id == secondary_sale.entity_id] do %>
 
-  <table class="table table-bordered dataTable">
-    <tr>
-        <td>
-          Entity
-        </td>
-        <td>
-          <%= secondary_sale.entity.name %>
-        </td>
-    </tr>
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Secondary Sale: <%= secondary_sale.name %></h6>
+      <span>
+        <a class="btn btn-outline-primary show_details_link" data-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a>
+      </span>
+  </div>
+  <div class="card-body collapse show_details">
 
-    <tr>
-      <td>
-        Support Email
-      </td>
-      <td>
-        <a href="mailto:<%=secondary_sale.support_email%>" target="_blank">
-          <%= secondary_sale.support_email %>
-        </a>
-        <br>
-        <div class="badge badge-success">
-          Send your queries here
-        </div> 
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        Name
-      </td>
-      <td>
-        <%= secondary_sale.name %>
-      </td>
-    </tr>
-    <tr class="collapse multi-collapse">
-      <td>
-        Start Date
-      </td>
-      <td>
-        <%= l secondary_sale.start_date %>
-      </td>
-    </tr>
-    <tr class="collapse multi-collapse">
-      <td>
-        Offer End Date
-      </td>
-      <td>
-        <%= l secondary_sale.offer_end_date if secondary_sale.offer_end_date %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        End Date
-      </td>
-      <td>
-        <%= l secondary_sale.end_date %>
-      </td>
-    </tr>
-    <% unless Pundit.policy(current_user, secondary_sale).show_interest? %>
-      <tr id="percent_allowed">
-        <td>
-          Percent Allowed
-        </td>
-        <td>
-          <%= secondary_sale.percent_allowed %> %
-        </td>
+    <table class="table table-bordered dataTable">
+      <tr>
+          <td>
+            Entity
+          </td>
+          <td>
+            <%= secondary_sale.entity.name %>
+          </td>
       </tr>
-    <% end %>
-
-    
-
-
-    <% if secondary_sale.final_price > 0 %>
-    <tr>
-      <td>
-        Final Price
-      </td>
-      <td>
-        <%= custom_format_number secondary_sale.final_price, params %>
-      </td>
-    </tr>
-    <% else %>
-
-    <% if secondary_sale.price_type == "Price Range" %>
 
       <tr>
         <td>
-          Price Type
+          Support Email
         </td>
         <td>
-          <%= secondary_sale.price_type %>
+          <a href="mailto:<%=secondary_sale.support_email%>" target="_blank">
+            <%= secondary_sale.support_email %>
+          </a>
+          <br>
+          <div class="badge badge-success">
+            Send your queries here
+          </div> 
         </td>
       </tr>
 
       <tr>
         <td>
-          Min Price
+          Name
         </td>
         <td>
-          <%= custom_format_number secondary_sale.min_price, params %>
+          <%= secondary_sale.name %>
+        </td>
+      </tr>
+      <tr class="">
+        <td>
+          Start Date
+        </td>
+        <td>
+          <%= l secondary_sale.start_date %>
+        </td>
+      </tr>
+      <tr class="">
+        <td>
+          Offer End Date
+        </td>
+        <td>
+          <%= l secondary_sale.offer_end_date if secondary_sale.offer_end_date %>
         </td>
       </tr>
 
       <tr>
         <td>
-          Max Price
+          End Date
         </td>
         <td>
-          <%= custom_format_number secondary_sale.max_price, params %>
+          <%= l secondary_sale.end_date %>
         </td>
       </tr>
+      <% unless Pundit.policy(current_user, secondary_sale).show_interest? %>
+        <tr id="percent_allowed">
+          <td>
+            Percent Allowed
+          </td>
+          <td>
+            <%= secondary_sale.percent_allowed %> %
+          </td>
+        </tr>
+      <% end %>
+
       
-    <% end %>
 
-    <% end %>
 
-    <tr>
-      <td>
-        Active
-      </td>
-      <td>
-        <%= display_boolean secondary_sale.active? %>
-      </td>
-    </tr>
+      <% if secondary_sale.final_price > 0 %>
+        <tr>
+          <td>
+            Final Price
+          </td>
+          <td>
+            <%= custom_format_number secondary_sale.final_price, params %>
+          </td>
+        </tr>
+      <% else %>
 
-    <% if current_user.entity_id == secondary_sale.entity_id %>
+        <% if secondary_sale.price_type == "Price Range" %>
 
-    <tr>
-      <td>
-        Total Offered
-      </td>
-      <td>
-        
-        <% if secondary_sale.sale_type == "Tranche" %>
-          <table class="table-bordered">
-            <tr>
-              <th>Funding Round</th><th>Quantity</th>
-            </tr>
-            <% secondary_sale.offers_by_funding_round.each do |fr, qty| %>
-                <tr>
-                  <td><%= fr %></td> <td><%= qty %></td>
-                </tr>
-            <% end %>
-            <tr>
-              <td><b>Total</b></td> 
-              <td><b><%= custom_format_number secondary_sale.total_offered_quantity, params %></b></td>
-            </tr>
-          </table>
-        <% else %>
-          <%= custom_format_number secondary_sale.display_quantity, params %>
+          <tr>
+            <td>
+              Price Type
+            </td>
+            <td>
+              <%= secondary_sale.price_type %>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Min Price
+            </td>
+            <td>
+              <%= custom_format_number secondary_sale.min_price, params %>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Max Price
+            </td>
+            <td>
+              <%= custom_format_number secondary_sale.max_price, params %>
+            </td>
+          </tr>
+          
         <% end %>
 
+        <% end %>
 
-        <div>
-          <% secondary_sale.display_amounts.each_with_index do |amount, idx| %>
-            <%= money_to_currency amount, params %> 
-            <%= "-" if idx == 0 && secondary_sale.display_amounts.length > 1 %>
-          <% end %>
-        </div>
-      </td>
-    </tr>
+        <tr>
+          <td>
+            Active
+          </td>
+          <td>
+            <%= display_boolean secondary_sale.active? %>
+          </td>
+        </tr>
 
-    <tr class="collapse multi-collapse">
-      <td>
-        Buyer Doc List
-      </td>
-      <td>
-        <%= secondary_sale.buyer_doc_list %>
-      </td>
-    </tr>
-    <tr class="collapse multi-collapse">
-      <td>
-        Seller Doc List
-      </td>
-      <td>
-        <%= secondary_sale.seller_doc_list %>
-      </td>
-    </tr>
+        <% if current_user.entity_id == secondary_sale.entity_id %>
 
-
-    <tr>
-      <td>
-        Actual Offered Quantity
-      </td>
-      <td>
-        <%= custom_format_number secondary_sale.total_offered_quantity, params %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        Shortlisted Interest Quantity
-      </td>
-      <td>
-          <ul>
-            <li>
-              Total: <%= custom_format_number secondary_sale.total_interest_quantity, params %>
-            </li>
-            <% price_qty = secondary_sale.interests.short_listed.group(:price).sum(:quantity).sort.to_h %>
-            <% price_qty.each do |price, qty| %>
-              <li>
-                <%= qty %> @ <%= price %> 
-              </li>
+        <tr>
+          <td>
+            Total Offered
+          </td>
+          <td>
+            
+            <% if secondary_sale.sale_type == "Tranche" %>
+              <table class="table-bordered">
+                <tr>
+                  <th>Funding Round</th><th>Quantity</th>
+                </tr>
+                <% secondary_sale.offers_by_funding_round.each do |fr, qty| %>
+                    <tr>
+                      <td><%= fr %></td> <td><%= qty %></td>
+                    </tr>
+                <% end %>
+                <tr>
+                  <td><b>Total</b></td> 
+                  <td><b><%= custom_format_number secondary_sale.total_offered_quantity, params %></b></td>
+                </tr>
+              </table>
+            <% else %>
+              <%= custom_format_number secondary_sale.display_quantity, params %>
             <% end %>
-          </ul>
-      </td>
-    </tr>
-
-    <tr id="visible_externally"  class="collapse multi-collapse">
-      <td>
-        Visible Externally
-      </td>
-      <td>
-        <%= display_boolean secondary_sale.visible_externally %>
-      </td>
-    </tr>
-
-    <% end %>
-
-    <% if current_user.entity_id == secondary_sale.entity_id && secondary_sale.allocation_status.present? %>
-
-      <tr>
-        <td colspan="2" class="bg-primary"></td>
-      </tr>
-
-      <tr>
-        <td>
-          Clearing Price
-        </td>
-        <td>
-          <%= custom_format_number secondary_sale.clearing_price, params %>
-        </td>
-      </tr>
 
 
-      <tr>
-        <td>
-          Allocated Offer Quantity
-        </td>
-        <td>
-          <%= custom_format_number secondary_sale.offer_allocation_quantity, params %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Allocated Offer Amount
-        </td>
-        <td>
-          <%= money_to_currency secondary_sale.allocation_offer_amount, params %>
-        </td>
-      </tr>
-      
-
-      <tr>
-        <td>
-          Allocated Interest Quantity
-        </td>
-        <td>
-          <%= custom_format_number secondary_sale.interest_allocation_quantity, params %>
-        </td>
-      </tr>
-      
-      <tr>
-        <td>
-          Allocated Interest Amount
-        </td>
-        <td>
-          <%= money_to_currency secondary_sale.allocation_interest_amount, params %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Interest Allocation
-        </td>
-        <td>
-            <% secondary_sale.cmf_allocation_percentage.each do |k,v| %>
-              <% if k == "" %>
-                <div><%= "#{v.round(2)} %" %> </div>
-              <% else %>
-                <div><%= "#{k} = #{v.round(2)} %" %> </div>
+            <div>
+              <% secondary_sale.display_amounts.each_with_index do |amount, idx| %>
+                <%= money_to_currency amount, params %> 
+                <%= "-" if idx == 0 && secondary_sale.display_amounts.length > 1 %>
               <% end %>
-            <% end %>
-        </td>
-      </tr>
+            </div>
+          </td>
+        </tr>
+
+        <tr class="">
+          <td>
+            Buyer Doc List
+          </td>
+          <td>
+            <%= secondary_sale.buyer_doc_list %>
+          </td>
+        </tr>
+        <tr class="">
+          <td>
+            Seller Doc List
+          </td>
+          <td>
+            <%= secondary_sale.seller_doc_list %>
+          </td>
+        </tr>
+
+
+        <tr>
+          <td>
+            Actual Offered Quantity
+          </td>
+          <td>
+            <%= custom_format_number secondary_sale.total_offered_quantity, params %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Shortlisted Interest Quantity
+          </td>
+          <td>
+              <ul>
+                <li>
+                  Total: <%= custom_format_number secondary_sale.total_interest_quantity, params %>
+                </li>
+                <% price_qty = secondary_sale.interests.short_listed.group(:price).sum(:quantity).sort.to_h %>
+                <% price_qty.each do |price, qty| %>
+                  <li>
+                    <%= qty %> @ <%= price %> 
+                  </li>
+                <% end %>
+              </ul>
+          </td>
+        </tr>
+
+        <tr id="visible_externally"  class="">
+          <td>
+            Visible Externally
+          </td>
+          <td>
+            <%= display_boolean secondary_sale.visible_externally %>
+          </td>
+        </tr>
+
+      <% end %>
+
+      <% if current_user.entity_id == secondary_sale.entity_id && secondary_sale.allocation_status.present? %>
+
+        <tr>
+          <td colspan="2" class="bg-primary"></td>
+        </tr>
+
+        <tr>
+          <td>
+            Clearing Price
+          </td>
+          <td>
+            <%= custom_format_number secondary_sale.clearing_price, params %>
+          </td>
+        </tr>
+
+
+        <tr>
+          <td>
+            Allocated Offer Quantity
+          </td>
+          <td>
+            <%= custom_format_number secondary_sale.offer_allocation_quantity, params %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Allocated Offer Amount
+          </td>
+          <td>
+            <%= money_to_currency secondary_sale.allocation_offer_amount, params %>
+          </td>
+        </tr>
+        
+
+        <tr>
+          <td>
+            Allocated Interest Quantity
+          </td>
+          <td>
+            <%= custom_format_number secondary_sale.interest_allocation_quantity, params %>
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            Allocated Interest Amount
+          </td>
+          <td>
+            <%= money_to_currency secondary_sale.allocation_interest_amount, params %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Interest Allocation
+          </td>
+          <td>
+              <% secondary_sale.cmf_allocation_percentage.each do |k,v| %>
+                <% if k == "" %>
+                  <div><%= "#{v.round(2)} %" %> </div>
+                <% else %>
+                  <div><%= "#{k} = #{v.round(2)} %" %> </div>
+                <% end %>
+              <% end %>
+          </td>
+        </tr>
+        
+
+        <tr>
+          <td colspan="2" class="bg-primary"></td>
+        </tr>
+      <% end %>
+
       
 
-      <tr>
-        <td colspan="2" class="bg-primary"></td>
-      </tr>
-    <% end %>
 
-    
+      <%= display_custom_fields(secondary_sale, collapsed: true) if current_user %>
 
-
-    <%= display_custom_fields(secondary_sale, collapsed: true) if current_user %>
-
-  </table>
+    </table>
+  </div>
+</div>
 
 <% end %>

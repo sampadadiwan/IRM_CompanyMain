@@ -14,7 +14,7 @@
             <!-- Nav Item - Dashboard -->
             <li class="nav-item">
                 <a class="nav-link" href="/entities/dashboard" >
-                    <i class="fas fa-lg fa-fw fa-tachometer-alt"></i>
+                    <i class="fas fa-xl fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
 
                 
@@ -23,13 +23,13 @@
             <% if current_user && current_user.has_cached_role?(:super) %>
                 <li class="nav-item">
                     <a class="nav-link" href="/admin">
-                        <i class="fas fa-lg fa-fw fa-key"></i>
+                        <i class="fas fa-xl fa-fw fa-key"></i>
                         <span>Admin</span></a>
                 </li>
 
                 <li class="nav-item">
                     <a class="nav-link" href="/blazer">
-                        <i class="fas fa-lg fa-fw fa-file-lines"></i>
+                        <i class="fas fa-xl fa-fw fa-file-lines"></i>
                         <span>Reports</span></a>
                 </li>                
             <% end %>
@@ -38,12 +38,12 @@
                 <li class="nav-item">
                         
                     <a class="nav-link" href="/holdings">
-                        <i class="fas fa-lg fa-fw fa-money-bill"></i>
+                        <i class="fas fa-xl fa-fw fa-money-bill"></i>
                         <span>Holdings</span>
                     </a>
 
                     <a class="nav-link" href="/offers">
-                        <i class="fas fa-lg fa-fw fa-file-import"></i>
+                        <i class="fas fa-xl fa-fw fa-file-import"></i>
                         <span>Offers</span>
                     </a>
 
@@ -52,19 +52,19 @@
 
             <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role) && Entity::SECONDARY_BUYERS.include?(current_user.entity_type) %>
                 <!-- Divider -->
-                <hr class="sidebar-divider">
+                <hr class="sidebar-divider my-0">
                 <%= render "layouts/sidebars/sidebar_investor" %>                
             <% end %>
 
             <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && current_user.entity_type == "Investment Fund" %>
                 <!-- Divider -->
-                <hr class="sidebar-divider">
+                <hr class="sidebar-divider my-0">
                 <%= render "layouts/sidebars/sidebar_fund" %>
             <% end %>
 
             <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && current_user.entity_type == "Company" %>
                 <!-- Divider -->
-                <hr class="sidebar-divider">
+                <hr class="sidebar-divider my-0">
                 <%= render "layouts/sidebars/sidebar_startup" %>
             <% end %>
 
@@ -72,7 +72,7 @@
             <% if current_user && current_user.enable_funds %>
                 <li class="nav-item">                
                     <a class="nav-link" href="/funds" data-toggle="collapse" data-target="#fundMenus">
-                        <i class="fas fa-lg fa-fw fa-dollar"></i>
+                        <i class="fas fa-xl fa-fw fa-dollar"></i>
                         <span>Funds</span>
                     </a>
 
@@ -90,7 +90,7 @@
             <% if current_user && current_user.enable_inv_opportunities %>
                 <li class="nav-item"> 
                     <a class="nav-link collapsed" href="/investment_opportunities">
-                        <i class="fas fa-lg fa-fw fa-funnel-dollar"></i>
+                        <i class="fas fa-xl fa-fw fa-funnel-dollar"></i>
                         <span>Investment Opportunities</span>
                     </a>
                 </li>
@@ -100,7 +100,7 @@
             <% if current_user &&  ["Investment Fund", "Company"].include?(current_user.entity_type) %>
                 <li class="nav-item"> 
                     <a class="nav-link" href="/aggregate_investments" data-toggle="collapse" data-target="#taskMenus">
-                        <i class="fas fa-lg fa-fw fa-check"></i>
+                        <i class="fas fa-xl fa-fw fa-check"></i>
                         <span>Tasks</span>
                     </a>
 
@@ -115,7 +115,7 @@
             <% end %>
 
             <!-- Divider -->
-            <hr class="sidebar-divider d-none d-md-block">
+            <hr class="sidebar-divider">
 
             <!-- Sidebar Toggler (Sidebar) -->
             <div class="text-center d-none d-md-inline">

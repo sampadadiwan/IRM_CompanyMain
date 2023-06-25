@@ -50,6 +50,10 @@ Given('there is another user {string} for another entity {string}') do |arg1, ar
   @another_entity.reload
 end
 
+Given('the other entity is an investor with category {string}') do |category|
+  FactoryBot.create(:investor, entity: @entity, investor_entity: @another_entity, investor_name: @another_entity.name, category:)
+end
+
 Then(/^the email has the profile in the body$/) do
   current_email.body.should include("Profile")
   current_email.body.should include("Known As")
@@ -173,4 +177,9 @@ end
 
 Then('sleep {string}') do |arg|
   sleep(arg.to_i)
+end
+
+Given('the email queue is cleared') do
+  puts "######### clearing all emails #########"
+  clear_emails
 end

@@ -1,0 +1,20 @@
+<h3>Dear <%= @user.full_name %></h3>
+
+<p>
+    Please click on the link below to login, note this link will expire in 5 mins.
+</p>
+
+<% 
+    @current_entity ||= nil
+    subdomain = @current_entity ? @current_entity.sub_domain : nil 
+    # https://kukicola.io/posts/signed-urls-with-ruby/
+    signed_id = @user.signed_id(expires_in: 5.minutes)
+%>
+
+<p class="btn btn-outline-primary">
+    <%= link_to 'Click To Login', no_password_login_users_url(signed_id:, subdomain:) %>
+</p>
+
+<p>
+    Please do NOT share this email with others.
+</p>

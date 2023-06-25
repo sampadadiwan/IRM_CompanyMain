@@ -31,6 +31,9 @@ class Document < ApplicationRecord
   has_rich_text :text
 
   validates :name, :file, presence: true
+  validates :owner_tag, length: { maximum: 40 }
+  validates :signature_type, length: { maximum: 100 }
+  validates :tag_list, length: { maximum: 120 }
 
   delegate :full_path, to: :folder, prefix: :folder
   before_validation :setup_folder, :setup_entity

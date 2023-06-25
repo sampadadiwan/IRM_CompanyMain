@@ -82,11 +82,11 @@
             <div class="form-group">
               <%= form.label :generate, "Generate For Investors" %>
               <%= form.check_box :generate, class: "form-control form-checkbox"  %>
-              <small>Generate Notices for all investors of the selected Owner</small>
+              <small>Generate Notices for all investors of the selected <%= investor_notice.owner.class.name %></small>
             </div>
 
             <div class="associated_entity">
-            
+
               <div id='investor_notice_items'>
                 <%= form.fields_for :investor_notice_items do |field| %>
                   <%= render 'investor_notice_item_fields', :f => field %>

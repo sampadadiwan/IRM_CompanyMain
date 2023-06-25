@@ -26,6 +26,21 @@ Scenario Outline: Login Successfully
     |  	    |Signed in successfully|
 
 
+Scenario Outline: Login Successfully, without password
+  Given there is a user "<user>" for an entity ""
+  And I am at the login page
+  When I fill and submit the login without password
+  Then I should see the "<msg>"
+  And the user receives an email with "<subject>" in the subject
+  And when I click on the link in the email "<link>"
+  Then I should see the "<login_msg>"
+  And the user should be confirmed
+
+  Examples:
+  	|user	  |login_msg	            | subject                         | link         | msg |
+  	|  	    |Signed in successfully| Login Link: Expires in 5 minutes |Click To Login|Login link sent, please check your mailbox.|
+    |  	    |Signed in successfully| Login Link: Expires in 5 minutes |Click To Login|Login link sent, please check your mailbox.|
+
 Scenario Outline: Login Incorrectly
   Given there is a user "<user>"
   And I am at the login page

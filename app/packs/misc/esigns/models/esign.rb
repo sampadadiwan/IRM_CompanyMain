@@ -5,6 +5,9 @@ class Esign < ApplicationRecord
   belongs_to :owner, polymorphic: true
   acts_as_list scope: :owner, column: :sequence_no
 
+  validates :status, length: { maximum: 100 }
+  validates :signature_type, :string, length: { maximum: 10 }
+
   scope :not_completed, -> { where(completed: false) }
   scope :completed, -> { where(completed: true) }
   scope :for_signature_type, ->(signature_type) { where(signature_type: signature_type.to_s) }

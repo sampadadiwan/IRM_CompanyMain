@@ -22,10 +22,12 @@ class CapitalCall < ApplicationRecord
   has_many :capital_remittances, dependent: :destroy
   validates_uniqueness_of :name, scope: :fund_id
   validates :name, :due_date, :call_date, :percentage_called, :fund_closes, :commitment_type, presence: true
-  validates :percentage_called, numericality: { in: 0..100 }
+  # validates :percentage_called, numericality: { in: 0..100 }
 
   monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
 
+  validates :commitment_type, length: { maximum: 10 }
+  validates :name, :fund_closes, length: { maximum: 255 }
   # This is a list of commitments for which this call is applicable
   def applicable_to
     commitments = Pool? ? fund.capital_commitments.pool : fund.capital_commitments.co_invest

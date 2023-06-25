@@ -25,6 +25,7 @@ class CapitalRemittancePayment < ApplicationRecord
                   execute_after_commit: true
 
   validates_uniqueness_of :reference_no, scope: :fund_id, if: -> { reference_no.present? }
+  validates :reference_no, length: { maximum: 40 }
 
   delegate :to_s, to: :amount
 

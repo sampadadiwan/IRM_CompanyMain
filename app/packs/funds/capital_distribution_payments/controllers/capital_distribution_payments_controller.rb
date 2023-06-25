@@ -4,6 +4,9 @@ class CapitalDistributionPaymentsController < ApplicationController
   # GET /capital_distribution_payments or /capital_distribution_payments.json
   def index
     @capital_distribution_payments = policy_scope(CapitalDistributionPayment).includes(:entity, :fund, :capital_distribution, :capital_commitment)
+
+    @capital_distribution_payments = @capital_distribution_payments.where(id: search_ids) if params[:search] && params[:search][:value].present?
+
     @capital_distribution_payments = @capital_distribution_payments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
 
     @capital_distribution_payments = @capital_distribution_payments.where(capital_distribution_id: params[:capital_distribution_id]) if params[:capital_distribution_id].present?
@@ -19,35 +22,23 @@ class CapitalDistributionPaymentsController < ApplicationController
     end
   end
 
-  def search
-    query = params[:query]
+  def search_ids
+    # This is only when the datatable sends a search query
+    query = "#{params[:search][:value]}*"
+    term = { entity_id: current_user.entity_id }
 
-    if query.present?
-      if params[:fund_id].present?
-        # Search in fund provided user is authorized
-        @fund = Fund.find(params[:fund_id])
-        authorize(@fund, :show?)
-        term = { fund_id: @fund.id }
-      elsif params[:capital_distribution_id].present?
-        # Search in fund provided user is authorized
-        @capital_distribution = CapitalDistribution.find(params[:capital_distribution_id])
-        authorize(@capital_distribution, :show?)
-        term = { capital_distribution_id: @capital_distribution.id }
-      else
-        # Search in users entity only
-        term = { entity_id: current_user.entity_id }
-      end
+    # Here we search for all the CapitalCommitments that belong to the entity of the current user
 
-      @capital_distribution_payments =
-        CapitalDistributionPaymentIndex.filter(term:)
-                                       .query(query_string: { fields: CapitalDistributionPaymentIndex::SEARCH_FIELDS,
-                                                              query:, default_operator: 'and' })
+    index_search = CapitalDistributionPaymentIndex.filter(term:)
+                                                  .query(query_string: { fields: CapitalDistributionPaymentIndex::SEARCH_FIELDS,
+                                                                         query:, default_operator: 'and' })
 
-      @capital_distribution_payments = @capital_distribution_payments.objects
-      render "index"
-    else
-      redirect_to capital_distribution_payments_path(params.to_enum.to_h)
-    end
+    # Filter by fund, capital_distribution and capital_commitment
+    index_search = index_search.filter(term: { fund_id: params[:fund_id] }) if params[:fund_id].present?
+    index_search = index_search.filter(term: { capital_distribution_id: params[:capital_distribution_id] }) if params[:capital_distribution_id].present?
+    index_search = index_search.filter(term: { capital_commitment_id: params[:capital_commitment_id] }) if params[:capital_commitment_id].present?
+
+    index_search.map(&:id)
   end
 
   # GET /capital_distribution_payments/1 or /capital_distribution_payments/1.json

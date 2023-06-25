@@ -1,115 +1,127 @@
-<table class="table table-bordered dataTable">
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Payment: <%= capital_distribution_payment.investor_name %></h6>
+      <span>
+        <%# <a class="btn btn-outline-primary show_details_link" data-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a> %>
+      </span>
+  </div>
+  <div class="card-body show_details">
 
-    <tr>
-      <td>
-        Fund
-      </td>
-      <td>
-        <%= link_to capital_distribution_payment.fund.name, capital_distribution_payment.fund %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Entity
-      </td>
-      <td>
-        <%= capital_distribution_payment.entity.name %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Capital Distribution
-      </td>
-      <td>
-        <%= link_to capital_distribution_payment.capital_distribution.title, capital_distribution_payment.capital_distribution %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Investor
-      </td>
-      <td>
-        <%= capital_distribution_payment.investor_name %>
-      </td>
-    </tr>
+    <table class="table table-bordered dataTable">
 
-    <tr>
-      <td>
-        Commitment
-      </td>
-      <td>
-        <%= link_to capital_distribution_payment.capital_commitment %>
-      </td>
-    </tr>
+        <tr>
+          <td>
+            Fund
+          </td>
+          <td>
+            <%= link_to capital_distribution_payment.fund.name, capital_distribution_payment.fund %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Entity
+          </td>
+          <td>
+            <%= capital_distribution_payment.entity.name %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Capital Distribution
+          </td>
+          <td>
+            <%= link_to capital_distribution_payment.capital_distribution.title, capital_distribution_payment.capital_distribution %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Investor
+          </td>
+          <td>
+            <%= capital_distribution_payment.investor_name %>
+          </td>
+        </tr>
 
-    <tr>
-      <td>
-        Amount
-      </td>
-      <td>
-        <%= money_to_currency capital_distribution_payment.amount, params %>
-      </td>
-    </tr>
+        <tr>
+          <td>
+            Commitment
+          </td>
+          <td>
+            <%= link_to capital_distribution_payment.capital_commitment %>
+          </td>
+        </tr>
 
-    <% if capital_distribution_payment.folio_amount != capital_distribution_payment.amount %>
-    <tr>
-      <td>
-        Folio Amount
-      </td>
-      <td>
-        <%= money_to_currency capital_distribution_payment.folio_amount, params %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Exchange Rate
-      </td>
-      <td>
-        <%= link_to capital_distribution_payment.exchange_rate if capital_distribution_payment.exchange_rate %>
-      </td>
-    </tr>
+        <tr>
+          <td>
+            Amount
+          </td>
+          <td>
+            <%= money_to_currency capital_distribution_payment.amount, params %>
+          </td>
+        </tr>
 
-    <% end %>
+        <% if capital_distribution_payment.folio_amount != capital_distribution_payment.amount %>
+        <tr>
+          <td>
+            Folio Amount
+          </td>
+          <td>
+            <%= money_to_currency capital_distribution_payment.folio_amount, params %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Exchange Rate
+          </td>
+          <td>
+            <%= link_to capital_distribution_payment.exchange_rate if capital_distribution_payment.exchange_rate %>
+          </td>
+        </tr>
 
-    <% if capital_distribution_payment.entity.enable_units %>
-    <tr>
-      <td>
-        Units Redeemed
-      </td>
-      <td>
-        <%= capital_distribution_payment.units_quantity %>
-      </td>
-    </tr>
-    <% end %>
+        <% end %>
 
-    <tr>
-      <td>
-        Payment Date
-      </td>
-      <td>
-        <%= l capital_distribution_payment.payment_date if capital_distribution_payment.payment_date %>
-      </td>
-    </tr>
+        <% if capital_distribution_payment.entity.enable_units %>
+        <tr>
+          <td>
+            Units Redeemed
+          </td>
+          <td>
+            <%= capital_distribution_payment.units_quantity %>
+          </td>
+        </tr>
+        <% end %>
 
-    <tr>
-      <td>
-        Completed
-      </td>
-      <td>
-        <%= display_boolean capital_distribution_payment.completed %>
-      </td>
-    </tr>
+        <tr>
+          <td>
+            Payment Date
+          </td>
+          <td>
+            <%= l capital_distribution_payment.payment_date if capital_distribution_payment.payment_date %>
+          </td>
+        </tr>
 
-    <% if capital_distribution_payment.exchange_rate %>
-    <tr>
-      <td>
-        Exchange Rate
-      </td>
-      <td>
-        <%= link_to capital_distribution_payment.exchange_rate %>
-      </td>
-    </tr>
-    <% end %>
+        <tr>
+          <td>
+            Completed
+          </td>
+          <td>
+            <%= display_boolean capital_distribution_payment.completed %>
+          </td>
+        </tr>
+
+        <% if capital_distribution_payment.exchange_rate %>
+        <tr>
+          <td>
+            Exchange Rate
+          </td>
+          <td>
+            <%= link_to capital_distribution_payment.exchange_rate %>
+          </td>
+        </tr>
+        <% end %>
 
 
-  </table>
+    </table>
+
+  </div>
+</div>

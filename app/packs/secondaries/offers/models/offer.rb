@@ -65,6 +65,14 @@ class Offer < ApplicationRecord
 
   validate :check_quantity
   validate :sale_active, on: :create
+  validates :offer_type, :PAN, length: { maximum: 15 }
+  validates :bank_account_number, :demat, length: { maximum: 40 }
+  validates :ifsc_code, :city, :seller_signature_types, length: { maximum: 20 }
+
+  validates :bank_name, length: { maximum: 50 }
+  validates :buyer_confirmation, :esign_provider, length: { maximum: 10 }
+  validates :acquirer_name, length: { maximum: 255 }
+  validates :full_name, length: { maximum: 100 }
 
   monetize :amount_cents, :allocation_amount_cents, with_currency: ->(o) { o.entity.currency }
 
@@ -93,6 +101,7 @@ class Offer < ApplicationRecord
     self.docs_uploaded_check ||= {}
     self.bank_verification_response ||= {}
     self.pan_verification_response ||= {}
+    self.offer_type ||= holding.holding_type
 
     set_custom_matching_vals
   end

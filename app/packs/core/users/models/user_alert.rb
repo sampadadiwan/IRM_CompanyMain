@@ -3,6 +3,7 @@ class UserAlert < ApplicationRecord
   belongs_to :entity
 
   after_save_commit :broadcast_ua, on: %i[create update]
+  validates :level, length: { maximum: 8 }
 
   def broadcast
     broadcast_replace_to [user, "user_alert"],

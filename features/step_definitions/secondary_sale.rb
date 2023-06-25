@@ -45,6 +45,7 @@
   
   Then('I should see the sale details on the details page') do
     visit(secondary_sale_path(@sale))
+    find(".show_details_link").click
     @input_sale ||= @sale # This is for times when the sale is not created from the ui in tests
 
     expect(page).to have_content(@input_sale.name)
@@ -79,7 +80,7 @@
     @sale = SecondarySale.first
     puts "\n####Visible Sale####\n"
     puts "visible_externally = #{@sale.visible_externally}"
-    click_on("Details")
+    find(".show_details_link").click
     @sale.visible_externally.should == true
     within("tr#visible_externally") do
         expect(page).to have_content("Yes")
@@ -380,8 +381,22 @@ Given('there are {string} interests {string} for the sale') do |count, args|
 
   (1..count.to_i).each do
     investor_entity = FactoryBot.create(:entity, entity_type: "Family Office")
+    investor = FactoryBot.create(:investor, entity: @sale.entity, investor_entity: investor_entity)
+    
+    ar = AccessRight.create(owner: @sale, access_type: "SecondarySale", metadata: "Buyer",
+    entity: @entity, access_to_investor_id: investor.id)
+
+    puts "\n####AccessRight####\n"
+    puts ar.to_json
+    
+
     user = FactoryBot.create(:user, entity: investor_entity)
-    # investor = Investor.create(entity: @entity, investor_entity:)
+    ia = InvestorAccess.create!(entity: @entity, investor: investor,
+        first_name: user.first_name, last_name: user.last_name,
+        email: user.email, granter: user, approved: true )
+
+    puts "\n####Investor Access####\n"
+    puts ia.to_json
 
     interest = Interest.new(secondary_sale: @sale, 
                   user: user, 
@@ -576,7 +591,7 @@ end
 
 
 Given('the sale has a SPA template') do
-  doc = Document.new(entity_id: @sale.entity_id, owner: @sale, name: "SPA", user: User.first, owner_tag: "Seller Template")
+  doc = Document.new(entity_id: @sale.entity_id, owner: @sale, name: "SPA", user: User.first, owner_tag: "Offer Template")
   doc.file = File.open("public/sample_uploads/Purchase-Agreement-1.docx", "rb")
   doc.save!
 end
@@ -591,7 +606,60 @@ end
 Then('the SPAs must be generated for each verified offer') do
   @sale.reload
   @sale.offers.verified.each do |offer|
-    offer.documents.where(name: "SPA").should_not == nil
+    offer.documents.where(name: "SPA").should_not == []
+  end
+end
+
+Given('we trigger a notification {string} for the sale') do |notification|
+  puts "\nTriggering notification #{notification}"
+  visit secondary_sale_path(@sale)
+  sleep 1
+  click_on "Notifications"
+  click_on notification
+  sleep 1
+  click_on "Proceed"
+  sleep 1
+end
+
+Then('each seller must receive email with subject {string}') do |eval_subject|
+  subject = eval("\"" + eval_subject + "\"")
+
+  all_emails = @sale.investor_users("Seller").collect(&:email).flatten +
+                 @sale.employee_users("Seller").collect(&:email).flatten
+
+  puts "All emails #{all_emails.uniq}"
+
+  @sale.investor_users("Seller").collect(&:email).each do |email|
+    puts "Checking investor email #{email} with subject #{subject}"
+    open_email(email)
+    expect(current_email.subject).to eq subject
+  end
+
+  @sale.employee_users("Seller").collect(&:email).each do |email|
+    puts "Checking employee email #{email} with subject #{subject}"
+    open_email(email)
+    expect(current_email.subject).to eq subject
+  end
+end
+
+Then('each buyer must receive email with subject {string}') do |eval_subject|
+  subject = eval("\"" + eval_subject + "\"")
+
+  all_emails = @sale.investor_users("Buyer").collect(&:email).flatten +
+                 @sale.employee_users("Buyer").collect(&:email).flatten
+
+  puts "All emails #{all_emails.uniq}"
+
+  @sale.investor_users("Buyer").collect(&:email).each do |email|
+    puts "Checking investor email #{email} with subject #{subject}"
+    open_email(email)
+    expect(current_email.subject).to eq subject
+  end
+
+  @sale.employee_users("Buyer").collect(&:email).each do |email|
+    puts "Checking employee email #{email} with subject #{subject}"
+    open_email(email)
+    expect(current_email.subject).to eq subject
   end
 end
 

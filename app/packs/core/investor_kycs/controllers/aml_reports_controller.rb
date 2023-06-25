@@ -6,6 +6,7 @@ class AmlReportsController < ApplicationController
   def index
     @aml_reports = policy_scope(AmlReport)
     authorize(AmlReport)
+    @aml_reports = @aml_reports.where(id: search_ids) if params[:search] && params[:search][:value].present?
     @aml_reports = @aml_reports.where(investor_kyc_id: params[:investor_kyc_id]) if params[:investor_kyc_id]
 
     @aml_reports = @aml_reports.where(match_status: params[:match_status]) if params[:match_status].present?
@@ -18,22 +19,12 @@ class AmlReportsController < ApplicationController
     end
   end
 
-  def search
-    query = params[:query]
-    if query.present?
-
-      entity_ids = [current_user.entity_id]
-
-      @aml_reports = AmlReport.filter(terms: { entity_id: entity_ids })
-                              .query(query_string: { fields: AmlReportIndex::SEARCH_FIELDS,
-                                                     query:, default_operator: 'and' })
-                              .page(params[:page])
-                              .objects
-
-      render "index"
-    else
-      redirect_to aml_reports_path(request.parameters)
-    end
+  def search_ids
+    query = "#{params[:search][:value]}*"
+    entity_ids = [current_user.entity_id]
+    @aml_reports = AmlReportIndex.filter(terms: { entity_id: entity_ids })
+                                 .query(query_string: { fields: AmlReportIndex::SEARCH_FIELDS,
+                                                        query:, default_operator: 'and' }).map(&:id)
   end
 
   # GET /aml_reports/1 or /aml_reports/1.json or /aml_reports/1.pdf

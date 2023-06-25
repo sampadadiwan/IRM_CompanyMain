@@ -41,6 +41,7 @@ end
 
 Then('I should see the investor details on the details page') do
   visit investor_path(@investor)
+  find(".show_details_link").click
   expect(page).to have_content(@investor.investor_name)
   expect(page).to have_content(@investor.category)
   expect(page).to have_content(@investor.entity.name)

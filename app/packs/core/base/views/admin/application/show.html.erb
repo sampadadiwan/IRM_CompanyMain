@@ -29,6 +29,15 @@ as well as a link to its edit page.
       [:edit, namespace, page.resource],
       class: "btn btn-outline-success",
     ) if valid_action?(:edit) && show_action?(:edit, page.resource) %>
+
+    <%= link_to(
+            t("administrate.actions.destroy"),
+            [namespace, page.resource],
+            class: "btn btn-outline-danger",
+            method: :delete,
+            data: { confirm: t("administrate.actions.confirm") }
+          ) if show_action? :destroy, page.resource %>
+
   </div>
 </header>
 

@@ -5,14 +5,11 @@
   <%= render "/funds/fund_investor_stats", fund: @fund %>
 <% end %>
 
-<%= render "funds/show", fund: @fund %>
-
+<% if current_user.entity_id == @fund.entity_id %>
+  <%= render "funds/show", fund: @fund %>
+<% end %>
 
   <div>
-
-    <% if current_user.entity_id == @fund.entity_id %>
-      <button class="btn btn-outline-primary" type="button" data-toggle="collapse" data-target=".multi-collapse"    aria-expanded="false" aria-controls="multi-collapse">Details</button>
-    <% end %>
 
     <% if policy(@fund).update? %>
 

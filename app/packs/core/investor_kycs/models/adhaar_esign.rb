@@ -14,6 +14,7 @@ class AdhaarEsign < ApplicationRecord
   belongs_to :owner, polymorphic: true, optional: true
 
   validate :ensure_owner_callback
+  validates :esign_doc_id, length: { maximum: 100 }
 
   def initialize(params)
     super(params)

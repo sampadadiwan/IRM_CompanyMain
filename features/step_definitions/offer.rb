@@ -131,6 +131,11 @@
   
   
   Then('I should see the offer details') do
+    if page.has_css?("#display_status_ok") 
+      sleep(1)
+      find("#display_status_ok").click
+    end
+
     expect(page).to have_content(@user.full_name)
     expect(page).to have_content(@entity.name)
     expect(page).to have_content(@sale.name)

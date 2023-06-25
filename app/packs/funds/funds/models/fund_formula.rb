@@ -7,6 +7,10 @@ class FundFormula < ApplicationRecord
 
   scope :enabled, -> { where(enabled: true) }
 
+  validates :name, :entry_type, length: { maximum: 50 }
+  validates :rule_type, length: { maximum: 20 }
+  validates :commitment_type, length: { maximum: 10 }
+
   delegate :to_s, to: :name
 
   before_save :sanitize_name

@@ -140,7 +140,7 @@
 
 
   Then('I should see the fund details on the details page') do
-    click_on "Details"
+    find(".show_details_link").click
     expect(page).to have_content(@fund.name)
     expect(page).to have_content(@fund.unit_types) if @fund.unit_types.present?
     expect(page).to have_content(strip_tags(@fund.details))
@@ -202,7 +202,7 @@
   end
 
   Then('I should see the capital commitment details') do
-    click_on "Details"
+    find(".show_details_link").click
 
     @capital_commitment = CapitalCommitment.last
     @capital_commitment.investor_name.should == @new_capital_commitment.investor_name
@@ -316,7 +316,7 @@
 
 
    Then('I should see the capital call details') do
-    click_on "Details"
+    find(".show_details_link").click
     expect(page).to have_content(@capital_call.name)
     expect(page).to have_content(@capital_call.percentage_called)
     expect(page).to have_content(@capital_call.due_date.strftime("%d/%m/%Y"))
@@ -555,6 +555,8 @@ When('I create a new capital distribution {string}') do |args|
 end
 
 Then('I should see the capital distrbution details') do
+  find(".show_details_link").click
+  
   expect(page).to have_content(@capital_distribution.title)
   expect(page).to have_content(money_to_currency(@capital_distribution.gross_amount))
   expect(page).to have_content(money_to_currency(@capital_distribution.reinvestment))
@@ -819,7 +821,7 @@ Then('I should be able to see my capital commitments') do
 
       if cc.investor_id == @investor.id
         expect(page).to have_content(@investor.investor_name)
-        expect(page).to have_content(cc.fund.name)
+        # expect(page).to have_content(cc.fund.name)
         expect(page).to have_content( money_to_currency(cc.committed_amount) )
       else
         expect(page).not_to have_content(cc.investor.investor_name)

@@ -23,6 +23,8 @@ class DealInvestor < ApplicationRecord
 
   validates :status, :primary_amount_cents, :pre_money_valuation, presence: true
   validates :investor_id, uniqueness: { scope: :deal_id, message: "already added to this deal. Duplicate Investor." }
+  validates :status, :tier, length: { maximum: 20 }
+  validates :company_advisor, :investor_advisor, length: { maximum: 100 }
 
   STATUS = %w[Active Pending Declined].freeze
 

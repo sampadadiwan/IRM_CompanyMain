@@ -25,6 +25,7 @@ class ImportUpload < ApplicationRecord
   belongs_to :user
 
   validates :import_file_data, presence: true
+  validates :import_type, length: { maximum: 50 }
 
   include FileUploader::Attachment(:import_file)
   include FileUploader::Attachment(:import_results)

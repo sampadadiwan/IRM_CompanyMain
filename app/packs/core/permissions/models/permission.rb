@@ -20,6 +20,8 @@ class Permission < ApplicationRecord
   belongs_to :entity
   belongs_to :granted_by, class_name: "User"
 
+  validates :role, length: { maximum: 20 }
+
   flag :permissions, %i[read write]
 
   def self.list(klass, user)

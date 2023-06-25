@@ -1,76 +1,84 @@
 
 <%- flash.each do |name, msg| -%>
-    <%= content_tag :div, msg, :id => "flash_#{name}", class: "text-center alert alert-info" if msg.is_a?(String) %>
+    <%= content_tag :div, msg, :id => "flash_#{name}", class: "text-center alert alert-info login_flash" if msg.is_a?(String) %>
 <%- end -%>  
 
-<%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+<%= render "/layouts/display_status" if (notice || alert) && params[:display_status].present? %>
 
-    <div class="container" data-turbo='false'>
+<div data-controller="login">
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
 
-        <!-- Outer Row -->
-        <div class="row justify-content-center">
+        <div class="container" data-turbo='false'>
 
-            <div class="col-xl-10 col-lg-12 col-md-9">
+            <!-- Outer Row -->
+            <div class="row justify-content-center">
 
-                <div class="card o-hidden border-0 shadow-lg my-5">
-                    <div class="card-body p-0">
-                        <!-- Nested Row within Card Body -->
-                        <div class="row">
-                            <div class="col-lg-6 d-none d-lg-block bg-login-image">
-                                <%= render "devise/shared/company_logo" %>
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="p-5">
-                                    <div class="text-center">
-                                        <h1 class="h4 text-gray-900 mb-4">
-                                            Welcome To <%= @current_entity ? @current_entity.name : "Cap Hive" %>
-                                        </h1>
-                                    </div>
-                                    <form class="user">
-                                        <div class="form-group">
-                                            <input type="email" class="form-control form-control-user"
-                                                id="user_email" aria-describedby="emailHelp"
-                                                required="required" 
-                                                name="user[email]", value="<%=params[:email]%>"
-                                                placeholder="Enter Email Address...">
+                <div class="col-xl-10 col-lg-12 col-md-9">
+
+                    <div class="card o-hidden border-0 shadow-lg my-5">
+                        <div class="card-body p-0">
+                            <!-- Nested Row within Card Body -->
+                            <div class="row">
+                                <div class="col-lg-6 d-none d-lg-block bg-login-image">
+                                    <%= render "devise/shared/company_logo" %>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="p-5">
+                                        <div class="text-center">
+                                            <h1 class="h4 text-gray-900 mb-4">
+                                                Welcome To <%= @current_entity ? @current_entity.name : "Cap Hive" %>
+                                            </h1>
                                         </div>
-                                        <div class="form-group" data-controller="login">
-                                            <input type="password" class="form-control form-control-user"
-                                              name="user[password]" required="required" 
-                                              id="user_password" placeholder="Password">
-                                            <i class="far fa-eye" id="togglePassword" style="float:right; margin-top: -25px; margin-right: 5px; cursor: pointer;"></i>
+                                        <form class="user">
+                                            <div class="form-group">
+                                                <input type="email" class="form-control form-control-user"
+                                                    id="user_email" aria-describedby="emailHelp"
+                                                    required="required" 
+                                                    name="user[email]", value="<%=params[:email]%>"
+                                                    placeholder="Enter Email Address...">
+                                            </div>
+                                            <div class="form-group">
+                                                <input type="password" class="form-control form-control-user"
+                                                name="user[password]" required="required" 
+                                                id="user_password" placeholder="Password">
+                                                <i class="far fa-eye" id="togglePassword" style="float:right; margin-top: -25px; margin-right: 5px; cursor: pointer;"></i>
+                                                
+
+                                            </div>
+                                            <div class="form-group">
+                                                    <input type="checkbox"  
+                                                    id="user_remember_me" name="user[remember_me]">
+                                                    <label for="user_remember_me">Remember
+                                                        Me</label>
+                                            </div>
                                             
+                                            <span>
+                                                <input type="submit" name="login" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
+                                                value="Log In" data-disable-with="Log in">
+                                                <input type="button" name="login_wo_pw" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
+                                                value="Log In Without Password" data-disable-with="Log in"
+                                                data-action="click->login#no_password">
+                                            </span>
 
-                                        </div>
-                                        <div class="form-group">
-                                                <input type="checkbox"  
-                                                id="user_remember_me" name="user[remember_me]">
-                                                <label for="user_remember_me">Remember
-                                                    Me</label>
+                                        </form>
+                                        <hr>
+                                        <div class="text-center">
+                                            <%= render "devise/shared/links" %>
                                         </div>
                                         
-                                        <input type="submit" name="commit" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
-                                          value="Log in" data-disable-with="Log in">
-
-                                    </form>
-                                    <hr>
-                                    <div class="text-center">
-                                        <%= render "devise/shared/links" %>
                                     </div>
-                                    
                                 </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
 
             </div>
 
         </div>
 
-    </div>
-
-<% end %>
-
+    <% end %>
+</div>
 
 

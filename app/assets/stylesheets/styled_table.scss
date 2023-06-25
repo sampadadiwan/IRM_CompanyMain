@@ -33,6 +33,13 @@ table.action_table {
   }
 }
 
+
+.card-body {
+  table.dataTable {
+    overflow: auto !important;
+  }
+}
+
   /*
  * This combined file was created by the DataTables downloader builder:
  *   https://datatables.net/download

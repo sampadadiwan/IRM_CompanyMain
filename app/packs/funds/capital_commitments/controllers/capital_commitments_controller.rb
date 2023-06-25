@@ -7,6 +7,9 @@ class CapitalCommitmentsController < ApplicationController
   # GET /capital_commitments or /capital_commitments.json
   def index
     @capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc)
+
+    @capital_commitments = @capital_commitments.where(id: search_ids) if params[:search] && params[:search][:value].present?
+
     @capital_commitments = @capital_commitments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @capital_commitments = @capital_commitments.where(investor_id: params[:investor_id]) if params[:investor_id].present?
     @capital_commitments = @capital_commitments.where(onboarding_completed: params[:onboarding_completed]) if params[:onboarding_completed].present?
@@ -20,33 +23,22 @@ class CapitalCommitmentsController < ApplicationController
     end
   end
 
-  def report
-    render params[:report]
+  def search_ids
+    # This is only when the datatable sends a search query
+    query = "#{params[:search][:value]}*"
+    term = { entity_id: current_user.entity_id }
+
+    # Here we search for all the CapitalCommitments that belong to the entity of the current user
+    index_search = CapitalCommitmentIndex.filter(term:)
+                                         .query(query_string: { fields: CapitalCommitmentIndex::SEARCH_FIELDS,
+                                                                query:, default_operator: 'and' })
+    index_search = index_search.filter(term: { fund_id: params[:fund_id] }) if params[:fund_id].present?
+
+    index_search.map(&:id)
   end
 
-  def search
-    query = params[:query] || params[:search][:value]
-
-    if query.present?
-      if params[:fund_id].present?
-        # Search in fund provided user is authorized
-        @fund = Fund.find(params[:fund_id])
-        authorize(@fund, :show?)
-        term = { fund_id: @fund.id }
-      else
-        # Search in users entity only
-        term = { entity_id: current_user.entity_id }
-      end
-
-      @capital_commitments = CapitalCommitmentIndex.filter(term:)
-                                                   .query(query_string: { fields: CapitalCommitmentIndex::SEARCH_FIELDS,
-                                                                          query:, default_operator: 'and' })
-
-      @capital_commitments = @capital_commitments.objects
-      render "search"
-    else
-      redirect_to capital_commitments_path(params.to_enum.to_h)
-    end
+  def report
+    render params[:report]
   end
 
   # GET /capital_commitments/1 or /capital_commitments/1.json

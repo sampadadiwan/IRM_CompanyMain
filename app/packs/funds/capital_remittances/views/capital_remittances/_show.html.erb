@@ -1,183 +1,192 @@
-<table class="table table-bordered dataTable">
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Remittance: <%= capital_remittance.investor_name %></h6>
+      <span>
+      </span>
+  </div>
+  <div class="card-body show_details">
+    <table class="table table-bordered dataTable">
 
-    <tr>
-      <td>
-        Entity
-      </td>
-      <td>
-        <%= capital_remittance.entity.name %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Fund
-      </td>
-      <td>
-        <%= link_to capital_remittance.fund.name, capital_remittance.fund %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Capital Call
-      </td>
-      <td>
-        <%= link_to capital_remittance.capital_call.name, capital_call_url(capital_remittance.capital_call, tab: "remittances-tab") %>
-      </td>
-    </tr>
+        <tr>
+          <td>
+            Entity
+          </td>
+          <td>
+            <%= capital_remittance.entity.name %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Fund
+          </td>
+          <td>
+            <%= link_to capital_remittance.fund.name, capital_remittance.fund %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Capital Call
+          </td>
+          <td>
+            <%= link_to capital_remittance.capital_call.name, capital_call_url(capital_remittance.capital_call, tab: "remittances-tab") %>
+          </td>
+        </tr>
 
-    <tr>
-      <td>
-        Due Date
-      </td>
-      <td>
-        <%= l capital_remittance.capital_call.due_date %>
-      </td>
-    </tr>    
+        <tr>
+          <td>
+            Due Date
+          </td>
+          <td>
+            <%= l capital_remittance.capital_call.due_date %>
+          </td>
+        </tr>    
 
-    <tr>
-      <td>
-        Payment Date
-      </td>
-      <td>
-        <%= l capital_remittance.payment_date if capital_remittance.payment_date %>
-      </td>
-    </tr>
+        <tr>
+          <td>
+            Payment Date
+          </td>
+          <td>
+            <%= l capital_remittance.payment_date if capital_remittance.payment_date %>
+          </td>
+        </tr>
 
-    <tr>
-      <td>
-        Investor
-      </td>
-      <td>
-        <% if current_user %>
-          <%= link_to capital_remittance.investor_name, investor_url(id: capital_remittance.investor_id) %>
-        <% else %>
-          <%= capital_remittance.investor_name %>
+        <tr>
+          <td>
+            Investor
+          </td>
+          <td>
+            <% if current_user %>
+              <%= link_to capital_remittance.investor_name, investor_url(id: capital_remittance.investor_id) %>
+            <% else %>
+              <%= capital_remittance.investor_name %>
+            <% end %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Folio No
+          </td>
+          <td>
+            <%= link_to capital_remittance.folio_id, capital_remittance.capital_commitment %>
+          </td>
+        </tr> 
+        
+        <tr>
+          <td>
+            Call Amount
+          </td>
+          <td>
+            <%= money_to_currency capital_remittance.call_amount, params %>
+          </td>
+        </tr>
+
+        <% if capital_remittance.call_amount != capital_remittance.folio_call_amount %>
+        <tr>
+          <td>
+            Folio Call Amount
+          </td>
+          <td>
+            <%= money_to_currency capital_remittance.folio_call_amount, params %>
+          </td>
+        </tr>
         <% end %>
-      </td>
-    </tr>
+        
+        <tr>
+          <td>
+            Collected Amount
+          </td>
+          <td>
+            <%= money_to_currency capital_remittance.collected_amount, params %>
+          </td>
+        </tr>
 
-    <tr>
-      <td>
-        Folio No
-      </td>
-      <td>
-        <%= link_to capital_remittance.folio_id, capital_remittance.capital_commitment %>
-      </td>
-    </tr> 
-    
-    <tr>
-      <td>
-        Call Amount
-      </td>
-      <td>
-        <%= money_to_currency capital_remittance.call_amount, params %>
-      </td>
-    </tr>
+        <% if capital_remittance.collected_amount != capital_remittance.folio_collected_amount %>
+        <tr>
+          <td>
+            Folio Collected Amount
+          </td>
+          <td>
+            <%= money_to_currency capital_remittance.folio_collected_amount, params %>
+          </td>
+        </tr>
 
-    <% if capital_remittance.call_amount != capital_remittance.folio_call_amount %>
-    <tr>
-      <td>
-        Folio Call Amount
-      </td>
-      <td>
-        <%= money_to_currency capital_remittance.folio_call_amount, params %>
-      </td>
-    </tr>
-    <% end %>
-    
-    <tr>
-      <td>
-        Collected Amount
-      </td>
-      <td>
-        <%= money_to_currency capital_remittance.collected_amount, params %>
-      </td>
-    </tr>
-
-    <% if capital_remittance.collected_amount != capital_remittance.folio_collected_amount %>
-    <tr>
-      <td>
-        Folio Collected Amount
-      </td>
-      <td>
-        <%= money_to_currency capital_remittance.folio_collected_amount, params %>
-      </td>
-    </tr>
-
-    <tr>
-      <td>
-        Exchange Rate
-      </td>
-      <td>
-        <%= link_to capital_remittance.exchange_rate if capital_remittance.exchange_rate %>
-      </td>
-    </tr>
-
-    <% end %>
-
-    <% if capital_remittance.entity.enable_units %>
-    <tr>
-      <td>
-        Units Issues
-      </td>
-      <td>
-        <%= capital_remittance.units_quantity %>
-      </td>
-    </tr>
-    <% end %>
-    
-    <% if current_user %>
-    
-      <tr>
-        <td>
-          Verified
-        </td>
-        <td>
-          <%= display_boolean(capital_remittance.verified) %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Status
-        </td>
-        <td>
-          <%= render DisplayBooleanComponent.new(bool: capital_remittance.status == "Paid").
-          with_content(capital_remittance.status) if capital_remittance.status %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Notification Sent
-        </td>
-        <td>
-          <%= display_boolean capital_remittance.notification_sent %>
-        </td>
-      </tr>
-
-      <tr>
-        <td>
-          Notes
-        </td>
-        <td>
-          <%= capital_remittance.notes&.html_safe %>
-        </td>
-      </tr>
-
-      <% if capital_remittance.exchange_rate %>
         <tr>
           <td>
             Exchange Rate
           </td>
           <td>
-            <%= link_to capital_remittance.exchange_rate %>
+            <%= link_to capital_remittance.exchange_rate if capital_remittance.exchange_rate %>
           </td>
         </tr>
-      <% end %>
 
-    <% end %>
+        <% end %>
 
-    <%= display_custom_fields(capital_remittance) if current_user %>
+        <% if capital_remittance.entity.enable_units %>
+        <tr>
+          <td>
+            Units Issues
+          </td>
+          <td>
+            <%= capital_remittance.units_quantity %>
+          </td>
+        </tr>
+        <% end %>
+        
+        <% if current_user %>
+        
+          <tr>
+            <td>
+              Verified
+            </td>
+            <td>
+              <%= display_boolean(capital_remittance.verified) %>
+            </td>
+          </tr>
 
-  </table>
+          <tr>
+            <td>
+              Status
+            </td>
+            <td>
+              <%= render DisplayBooleanComponent.new(bool: capital_remittance.status == "Paid").
+              with_content(capital_remittance.status) if capital_remittance.status %>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Notification Sent
+            </td>
+            <td>
+              <%= display_boolean capital_remittance.notification_sent %>
+            </td>
+          </tr>
+
+          <tr>
+            <td>
+              Notes
+            </td>
+            <td>
+              <%= capital_remittance.notes&.html_safe %>
+            </td>
+          </tr>
+
+          <% if capital_remittance.exchange_rate %>
+            <tr>
+              <td>
+                Exchange Rate
+              </td>
+              <td>
+                <%= link_to capital_remittance.exchange_rate %>
+              </td>
+            </tr>
+          <% end %>
+
+        <% end %>
+
+        <%= display_custom_fields(capital_remittance) if current_user %>
+
+    </table>
+  </div>
+</div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
+ActiveRecord::Schema[7.0].define(version: 2023_06_25_084936) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -58,7 +58,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
     t.date "reporting_date"
     t.string "entry_type", limit: 50
     t.string "name", limit: 100
-    t.decimal "amount_cents", precision: 27, scale: 4, default: "0.0"
+    t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
     t.text "notes"
     t.text "properties"
     t.datetime "created_at", null: false
@@ -69,7 +69,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
     t.string "parent_type"
     t.bigint "parent_id"
     t.boolean "generated", default: false
-    t.decimal "folio_amount_cents", precision: 27, scale: 4, default: "0.0"
+    t.decimal "folio_amount_cents", precision: 30, scale: 8, default: "0.0"
     t.bigint "exchange_rate_id"
     t.string "commitment_type", limit: 10, default: "Pool"
     t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative"], name: "idx_account_entries_reporting_date_uniq", unique: true
@@ -227,7 +227,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
     t.decimal "sold_quantity", precision: 20, scale: 2, default: "0.0"
     t.decimal "sold_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "cost_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "investment_type", limit: 20
+    t.string "investment_type"
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
     t.string "commitment_type", limit: 10, default: "Pool"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
@@ -393,7 +393,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
     t.date "call_date"
     t.bigint "document_folder_id"
     t.text "unit_prices"
-    t.string "fund_closes", limit: 100
+    t.string "fund_closes"
     t.string "commitment_type", limit: 10, default: "Pool"
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
@@ -435,7 +435,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
     t.decimal "total_allocated_income_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_allocated_expense_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
-    t.string "fund_close", limit: 30
+    t.string "fund_close"
     t.string "virtual_bank_account", limit: 20
     t.string "folio_currency", limit: 5
     t.decimal "folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -837,10 +837,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
     t.string "entity_bcc"
     t.string "reply_to"
     t.string "cc"
-    t.string "sandbox_numbers"
     t.string "individual_kyc_doc_list"
     t.string "non_individual_kyc_doc_list"
     t.boolean "aml_enabled", default: false
+    t.string "sandbox_numbers"
     t.string "fi_code"
     t.boolean "ckyc_kra_enabled", default: false
     t.string "kpi_doc_list"
@@ -1357,6 +1357,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
     t.string "buyer_signature_types", limit: 20, default: ""
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
+    t.bigint "investor_id"
     t.index ["custom_matching_vals"], name: "index_interests_on_custom_matching_vals"
     t.index ["deleted_at"], name: "index_interests_on_deleted_at"
     t.index ["document_folder_id"], name: "index_interests_on_document_folder_id"
@@ -1365,6 +1366,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
     t.index ["form_type_id"], name: "index_interests_on_form_type_id"
     t.index ["funding_round_id"], name: "index_interests_on_funding_round_id"
     t.index ["interest_entity_id"], name: "index_interests_on_interest_entity_id"
+    t.index ["investor_id"], name: "index_interests_on_investor_id"
     t.index ["secondary_sale_id"], name: "index_interests_on_secondary_sale_id"
     t.index ["user_id"], name: "index_interests_on_user_id"
   end
@@ -1485,7 +1487,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
     t.string "first_name"
     t.string "last_name"
     t.boolean "send_confirmation", default: false
-    t.bigint "investor_entity_id", null: false
+    t.bigint "investor_entity_id"
     t.boolean "is_investor_advisor", default: false
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
     t.index ["email"], name: "index_investor_accesses_on_email"
@@ -1611,7 +1613,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
     t.string "tag_list", limit: 120
     t.boolean "imported", default: false
     t.bigint "document_folder_id"
-    t.string "sub_category", limit: 50
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
@@ -1759,7 +1760,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
     t.text "bank_verification_response"
     t.string "bank_verification_status"
     t.string "full_name", limit: 100
-    t.string "demat", limit: 20
+    t.string "demat", limit: 40
     t.string "city", limit: 20
     t.bigint "final_agreement_user_id"
     t.string "custom_matching_vals"
@@ -2355,6 +2356,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
   add_foreign_key "interests", "folders", column: "document_folder_id"
   add_foreign_key "interests", "form_types"
   add_foreign_key "interests", "funding_rounds"
+  add_foreign_key "interests", "investors"
   add_foreign_key "interests", "secondary_sales"
   add_foreign_key "interests", "users"
   add_foreign_key "interests", "users", column: "final_agreement_user_id"
@@ -2368,6 +2370,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_21_134158) do
   add_foreign_key "investment_snapshots", "investors"
   add_foreign_key "investments", "aggregate_investments"
   add_foreign_key "investments", "funding_rounds"
+  add_foreign_key "investor_accesses", "entities", column: "investor_entity_id"
   add_foreign_key "investor_advisors", "entities"
   add_foreign_key "investor_advisors", "users"
   add_foreign_key "investor_kycs", "entities"

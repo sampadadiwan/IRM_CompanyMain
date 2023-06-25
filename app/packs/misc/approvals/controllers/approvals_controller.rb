@@ -10,6 +10,7 @@ class ApprovalsController < ApplicationController
                    Approval.for_investor(current_user)
                  end
 
+    @approvals = @approvals.where(entity_id: params[:entity_id]) if params[:entity_id].present?
     @approvals = @approvals.includes(:entity)
   end
 

@@ -1,82 +1,93 @@
 <%= render "/layouts/alerts" %>
-<table class="table table-bordered dataTable">
-  <tr>
-    <td>
-      Fund
-    </td>
-    <td>
-      <%= link_to @capital_remittance_payment.fund.name, @capital_remittance_payment.fund  %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Capital Remittance
-    </td>
-    <td>
-      <%= link_to "Capital Remittance", @capital_remittance_payment.capital_remittance %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Entity
-    </td>
-    <td>
-      <%= @capital_remittance_payment.entity.name %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Amount
-    </td>
-    <td>
-      <%= money_to_currency @capital_remittance_payment.amount, params %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Payment Date
-    </td>
-    <td>
-      <%= l @capital_remittance_payment.payment_date if @capital_remittance_payment.payment_date%>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Reference No
-    </td>
-    <td>
-      <%= @capital_remittance_payment.reference_no %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Payment Proof
-    </td>
-    <td>
-      <%= link_to "Download Payment Proof", @capital_remittance_payment.payment_proof_url, target: "_blank", class: "btn btn-outline-success" if @capital_remittance_payment.payment_proof.present? %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Notes
-    </td>
-    <td>
-      <%= @capital_remittance_payment.notes&.html_safe %>
-    </td>
-  </tr>
 
-  <% if @capital_remittance_payment.exchange_rate %>
-    <tr>
-      <td>
-        Exchange Rate
-      </td>
-      <td>
-        <%= link_to @capital_remittance_payment.exchange_rate %>
-      </td>
-    </tr>
-  <% end %>
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Payment: <%= l @capital_remittance_payment.payment_date if @capital_remittance_payment.payment_date %></h6>
+      <span>
+      </span>
+  </div>
+  <div class="card-body show_details">
+    <table class="table table-bordered dataTable">
+      <tr>
+        <td>
+          Fund
+        </td>
+        <td>
+          <%= link_to @capital_remittance_payment.fund.name, @capital_remittance_payment.fund  %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Capital Remittance
+        </td>
+        <td>
+          <%= link_to "Capital Remittance", @capital_remittance_payment.capital_remittance %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Entity
+        </td>
+        <td>
+          <%= @capital_remittance_payment.entity.name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Amount
+        </td>
+        <td>
+          <%= money_to_currency @capital_remittance_payment.amount, params %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Payment Date
+        </td>
+        <td>
+          <%= l @capital_remittance_payment.payment_date if @capital_remittance_payment.payment_date%>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Reference No
+        </td>
+        <td>
+          <%= @capital_remittance_payment.reference_no %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Payment Proof
+        </td>
+        <td>
+          <%= link_to "Download Payment Proof", @capital_remittance_payment.payment_proof_url, target: "_blank", class: "btn btn-outline-success" if @capital_remittance_payment.payment_proof.present? %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Notes
+        </td>
+        <td>
+          <%= @capital_remittance_payment.notes&.html_safe %>
+        </td>
+      </tr>
 
-</table>
+      <% if @capital_remittance_payment.exchange_rate %>
+        <tr>
+          <td>
+            Exchange Rate
+          </td>
+          <td>
+            <%= link_to @capital_remittance_payment.exchange_rate %>
+          </td>
+        </tr>
+      <% end %>
+
+    </table>
+  </div>
+</div>
+
 <div>
   <% if policy(@capital_remittance_payment).update? %>
     <%= link_to "Edit", edit_capital_remittance_payment_path(@capital_remittance_payment), {class: "btn btn-outline-primary"} %>

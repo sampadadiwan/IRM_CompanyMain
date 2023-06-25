@@ -4,6 +4,7 @@ class CapitalDistributionPaymentIndex < Chewy::Index
   index_scope CapitalDistributionPayment.includes(:entity, :fund, :capital_distribution)
   field :entity_id
   field :capital_distribution_id
+  field :capital_commitment_id
   field :fund_id
   field :folio_id
   field :fund_name, value: ->(f) { f.fund.name }

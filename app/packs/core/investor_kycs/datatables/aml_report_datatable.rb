@@ -1,13 +1,13 @@
 class AmlReportDatatable < AjaxDatatablesRails::ActiveRecord
   def view_columns
     @view_columns ||= {
-      id: { source: "AmlReport.id", searchable: false },
+      id: { source: "AmlReport.id" },
       name: { source: "AmlReport.name", orderable: true },
       match_status: { source: "AmlReport.match_status", orderable: true },
       approved: { source: "AmlReport.approved", orderable: true },
-      types: { source: "AmlReport.types", searchable: false, orderable: false },
-      associates: { source: "", searchable: false, orderable: false },
-      dt_actions: { source: "", orderable: false, searchable: false }
+      types: { source: "AmlReport.types", orderable: false },
+      associates: { source: "", orderable: false },
+      dt_actions: { source: "", orderable: false }
     }
   end
 
@@ -33,5 +33,9 @@ class AmlReportDatatable < AjaxDatatablesRails::ActiveRecord
   def get_raw_records
     # insert query here
     aml_reports
+  end
+
+  def search_for
+    []
   end
 end

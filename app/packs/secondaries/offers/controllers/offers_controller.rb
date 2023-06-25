@@ -100,7 +100,7 @@ class OffersController < ApplicationController
     @offer.final_agreement_user_id = current_user.id
     @offer.save!
     respond_to do |format|
-      format.html { redirect_to offer_url(@offer), notice: "Offer was successfully updated. Your acceptance has been recorded" }
+      format.html { redirect_to offer_url(@offer, display_status: true), notice: "Offer was successfully updated. Your acceptance has been recorded" }
       format.json { @offer.to_json }
     end
   end
@@ -171,7 +171,7 @@ class OffersController < ApplicationController
 
     respond_to do |format|
       if @offer.update(offer_params)
-        format.html { redirect_to offer_url(@offer), notice: "Offer was successfully updated. You will be notified on next steps." }
+        format.html { redirect_to offer_url(@offer, display_status: true), notice: "Offer was successfully updated. You will be notified on next steps." }
         format.json { render :show, status: :ok, location: @offer }
       else
         format.html { render :edit, status: :unprocessable_entity }

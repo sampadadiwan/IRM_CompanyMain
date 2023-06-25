@@ -1,134 +1,144 @@
 <%= render "/layouts/alerts" %>
-<table class="table table-bordered dataTable">
-  <tr>
-    <td>
-      Entity
-    </td>
-    <td>
-      <%= @aggregate_portfolio_investment.entity.name %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Fund
-    </td>
-    <td>
-      <%= link_to @aggregate_portfolio_investment.fund %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Portfolio Company
-    </td>
-    <td>
-      <%= link_to @aggregate_portfolio_investment.portfolio_company %>
-    </td>
-  </tr>
 
-  <tr>
-    <td>
-      Investment Type
-    </td>
-    <td>
-      <%= @aggregate_portfolio_investment.investment_type %>
-    </td>
-  </tr>
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Aggregate Investment: <%= @aggregate_portfolio_investment.portfolio_company_name %></h6>
+      <span>
+      </span>
+  </div>
+  <div class="card-body show_details">
+    <table class="table table-bordered dataTable">
+      <tr>
+        <td>
+          Entity
+        </td>
+        <td>
+          <%= @aggregate_portfolio_investment.entity.name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Fund
+        </td>
+        <td>
+          <%= link_to @aggregate_portfolio_investment.fund %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Portfolio Company
+        </td>
+        <td>
+          <%= link_to @aggregate_portfolio_investment.portfolio_company %>
+        </td>
+      </tr>
 
-  <tr>
-    <td>
-      For
-    </td>
-    <td>
-      <%= @aggregate_portfolio_investment.commitment_type %>
-    </td>
-  </tr>
+      <tr>
+        <td>
+          Investment Type
+        </td>
+        <td>
+          <%= @aggregate_portfolio_investment.investment_type %>
+        </td>
+      </tr>
 
-  <tr>
-    <td>
-      Current Quantity
-    </td>
-    <td>
-      <%= @aggregate_portfolio_investment.quantity %>
-    </td>
-  </tr>
-  
-  <tr>
-    <td>
-      Avg Cost Per Share
-    </td>
-    <td>
-      <%= money_to_currency @aggregate_portfolio_investment.avg_cost, params %>
-    </td>
-  </tr>
+      <tr>
+        <td>
+          For
+        </td>
+        <td>
+          <%= @aggregate_portfolio_investment.commitment_type %>
+        </td>
+      </tr>
 
-  
-  <tr>
-    <td>
-      Bought Quantity
-    </td>
-    <td>
-      <%= @aggregate_portfolio_investment.bought_quantity %>
-    </td>
-  </tr>
+      <tr>
+        <td>
+          Current Quantity
+        </td>
+        <td>
+          <%= @aggregate_portfolio_investment.quantity %>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>
+          Avg Cost Per Share
+        </td>
+        <td>
+          <%= money_to_currency @aggregate_portfolio_investment.avg_cost, params %>
+        </td>
+      </tr>
 
-  <tr>
-    <td>
-      Bought Amount
-    </td>
-    <td>
-      <%= money_to_currency @aggregate_portfolio_investment.bought_amount, params %>
-    </td>
-  </tr>
+      
+      <tr>
+        <td>
+          Bought Quantity
+        </td>
+        <td>
+          <%= @aggregate_portfolio_investment.bought_quantity %>
+        </td>
+      </tr>
 
-
-  <tr>
-    <td>
-      Sold Quantity
-    </td>
-    <td>
-      <%= @aggregate_portfolio_investment.sold_quantity %>
-    </td>
-  </tr>
-
-  <tr>
-    <td>
-      Sold Amount
-    </td>
-    <td>
-      <%= money_to_currency @aggregate_portfolio_investment.sold_amount, params %>
-    </td>
-  </tr>
-
-  <tr>
-    <td>
-      Cost Of Sold (FIFO)
-    </td>
-    <td>
-      <%= money_to_currency @aggregate_portfolio_investment.cost_of_sold, params %>
-    </td>
-  </tr>
+      <tr>
+        <td>
+          Bought Amount
+        </td>
+        <td>
+          <%= money_to_currency @aggregate_portfolio_investment.bought_amount, params %>
+        </td>
+      </tr>
 
 
+      <tr>
+        <td>
+          Sold Quantity
+        </td>
+        <td>
+          <%= @aggregate_portfolio_investment.sold_quantity %>
+        </td>
+      </tr>
 
-  <tr>
-    <td>
-      FMV
-    </td>
-    <td>
-      <%= money_to_currency @aggregate_portfolio_investment.fmv, params %>
-    </td>
-  </tr>
+      <tr>
+        <td>
+          Sold Amount
+        </td>
+        <td>
+          <%= money_to_currency @aggregate_portfolio_investment.sold_amount, params %>
+        </td>
+      </tr>
 
-  <tr>
-    <td>
-      Cost
-    </td>
-    <td>
-      <%= money_to_currency @aggregate_portfolio_investment.cost, params %>
-    </td>
-  </tr>
+      <tr>
+        <td>
+          Cost Of Sold (FIFO)
+        </td>
+        <td>
+          <%= money_to_currency @aggregate_portfolio_investment.cost_of_sold, params %>
+        </td>
+      </tr>
 
-</table>
+
+
+      <tr>
+        <td>
+          FMV
+        </td>
+        <td>
+          <%= money_to_currency @aggregate_portfolio_investment.fmv, params %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Cost
+        </td>
+        <td>
+          <%= money_to_currency @aggregate_portfolio_investment.cost, params %>
+        </td>
+      </tr>
+
+    </table>
+  </div>
+</div>
 
 <div class="associated_entity">
   <%= button_to "Delete", @aggregate_portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all buy and sell transactions associated with this aggregate portfolio entry?"} if policy(@aggregate_portfolio_investment).destroy? %> 

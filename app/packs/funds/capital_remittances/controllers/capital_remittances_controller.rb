@@ -4,6 +4,9 @@ class CapitalRemittancesController < ApplicationController
   # GET /capital_remittances or /capital_remittances.json
   def index
     @capital_remittances = policy_scope(CapitalRemittance).includes(:fund, :capital_call, :entity, capital_commitment: :fund)
+
+    @capital_remittances = @capital_remittances.where(id: search_ids) if params[:search] && params[:search][:value].present?
+
     @capital_remittances = @capital_remittances.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @capital_remittances = @capital_remittances.where(status: params[:status]) if params[:status].present?
     @capital_remittances = @capital_remittances.where(verified: params[:verified] == "true") if params[:verified].present?
@@ -19,34 +22,23 @@ class CapitalRemittancesController < ApplicationController
     end
   end
 
-  def search
-    query = params[:query]
+  def search_ids
+    # This is only when the datatable sends a search query
+    query = "#{params[:search][:value]}*"
+    term = { entity_id: current_user.entity_id }
 
-    if query.present?
-      if params[:fund_id].present?
-        # Search in fund provided user is authorized
-        @fund = Fund.find(params[:fund_id])
-        authorize(@fund, :show?)
-        term = { fund_id: @fund.id }
-      elsif params[:capital_call_id].present?
-        # Search in fund provided user is authorized
-        @capital_call = CapitalCall.find(params[:capital_call_id])
-        authorize(@capital_call, :show?)
-        term = { capital_call_id: @capital_call.id }
-      else
-        # Search in users entity only
-        term = { entity_id: current_user.entity_id }
-      end
+    # Here we search for all the CapitalCommitments that belong to the entity of the current user
 
-      @capital_remittances = CapitalRemittanceIndex.filter(term:)
-                                                   .query(query_string: { fields: CapitalRemittanceIndex::SEARCH_FIELDS,
-                                                                          query:, default_operator: 'and' })
+    index_search = CapitalRemittanceIndex.filter(term:)
+                                         .query(query_string: { fields: CapitalRemittanceIndex::SEARCH_FIELDS,
+                                                                query:, default_operator: 'and' })
 
-      @capital_remittances = @capital_remittances.objects
-      render "index"
-    else
-      redirect_to capital_remittances_path(params.to_enum.to_h)
-    end
+    # Filter by fund, capital_distribution and capital_commitment
+    index_search = index_search.filter(term: { fund_id: params[:fund_id] }) if params[:fund_id].present?
+    index_search = index_search.filter(term: { capital_call_id: params[:capital_call_id] }) if params[:capital_call_id].present?
+    index_search = index_search.filter(term: { capital_commitment_id: params[:capital_commitment_id] }) if params[:capital_commitment_id].present?
+
+    index_search.map(&:id)
   end
 
   # GET /capital_remittances/1 or /capital_remittances/1.json

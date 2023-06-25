@@ -139,7 +139,6 @@ class SecondarySalesController < ApplicationController
 
   def make_visible
     @secondary_sale.visible_externally = !@secondary_sale.visible_externally
-    @secondary_sale.notify_investment_advisors if @secondary_sale.visible_externally
 
     respond_to do |format|
       if @secondary_sale.save

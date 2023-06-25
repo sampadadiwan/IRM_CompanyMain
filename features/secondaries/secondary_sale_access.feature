@@ -123,7 +123,7 @@ Scenario Outline: Access sale as Holding User
 
   Examples:
   	|user	    |entity               |sale             |
-    |  	        |entity_type=Company  |name=Grand Sale;visible_externally=true  |
+    |  	        |entity_type=Company  |name=Grand Sale  |
     |  	        |entity_type=Company  |name=Winter Sale;visible_externally=false |
 
 Scenario Outline: Access as Buyer Investor User

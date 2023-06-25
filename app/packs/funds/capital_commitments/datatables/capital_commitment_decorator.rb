@@ -1,6 +1,4 @@
 class CapitalCommitmentDecorator < ApplicationDecorator
-  delegate :last_name, :bio
-
   def percentage
     "#{object.percentage.round(2)} %"
   end
@@ -25,9 +23,6 @@ class CapitalCommitmentDecorator < ApplicationDecorator
     params[:show_docs].present? ? object.documents.collect(&:name).join(", ") : ""
   end
 
-  # Just an example of a complex method you can add to you decorator
-  # To render it in a datatable just add a column 'dt_actions' in
-  # 'view_columns' and 'data' methods and call record.decorate.dt_actions
   def dt_actions
     links = []
     links << h.link_to('Show', h.capital_commitment_path(object), class: "btn btn-outline-primary")

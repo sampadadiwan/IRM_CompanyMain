@@ -5,6 +5,7 @@ class ExchangeRate < ApplicationRecord
   scope :latest, -> { where(latest: true) }
   validates :from, :to, :as_of, presence: true
   validates :rate, numericality: { greater_than: 0 }
+  validates :from, :to, length: { maximum: 5 }
 
   before_save :set_latest
   def set_latest

@@ -1,22 +1,22 @@
 class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
   def view_columns
     @view_columns ||= {
-      id: { source: "CapitalCommitment.id", searchable: false },
+      id: { source: "CapitalCommitment.id" },
       folio_id: { source: "CapitalCommitment.folio_id", orderable: true },
       commitment_type: { source: "CapitalCommitment.commitment_type", orderable: true },
       unit_type: { source: "CapitalCommitment.unit_type", orderable: true },
       investor_name: { source: "CapitalCommitment.investor_name", orderable: true },
       full_name: { source: "InvestorKyc.full_name", orderable: true },
-      fund_name: { source: "Fund.name", searchable: false, orderable: true },
-      committed_amount: { source: "CapitalCommitment.committed_amount_cents", searchable: false },
-      collected_amount: { source: "CapitalCommitment.collected_amount_cents", searchable: false },
-      pending_amount: { source: "CapitalCommitment.collected_amount_cents", searchable: false },
-      call_amount: { source: "CapitalCommitment.call_amount_cents", searchable: false },
-      distribution_amount: { source: "CapitalCommitment.distribution_amount_cents", searchable: false },
-      percentage: { source: "CapitalCommitment.percentage", searchable: false },
-      onboarding_completed: { source: "CapitalCommitment.onboarding_completed", searchable: false },
-      document_names: { source: "", orderable: false, searchable: false },
-      dt_actions: { source: "", orderable: false, searchable: false }
+      fund_name: { source: "Fund.name", orderable: true },
+      committed_amount: { source: "CapitalCommitment.committed_amount_cents" },
+      collected_amount: { source: "CapitalCommitment.collected_amount_cents" },
+      pending_amount: { source: "CapitalCommitment.collected_amount_cents" },
+      call_amount: { source: "CapitalCommitment.call_amount_cents" },
+      distribution_amount: { source: "CapitalCommitment.distribution_amount_cents" },
+      percentage: { source: "CapitalCommitment.percentage" },
+      onboarding_completed: { source: "CapitalCommitment.onboarding_completed" },
+      document_names: { source: "", orderable: false },
+      dt_actions: { source: "", orderable: false }
     }
   end
 
@@ -56,5 +56,9 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
     else
       capital_commitments.left_joins(:investor_kyc)
     end
+  end
+
+  def search_for
+    []
   end
 end

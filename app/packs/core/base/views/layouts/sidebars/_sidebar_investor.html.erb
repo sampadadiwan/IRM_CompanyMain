@@ -3,27 +3,27 @@
         
         <% if current_user.enable_investments %>
             <a class="nav-link" href="/entities/investor_entities">
-                <i class="fas fa-lg fa-fw fa-money-bill"></i>
+                <i class="fas fa-xl fa-fw fa-money-bill"></i>
                 <span>Investments</span>
             </a>
         <% end %>
 
         <% if current_user.enable_deals %>
             <a class="nav-link" href="/deal_investors?for_investor=true">
-                <i class="fas fa-lg fa-fw fa-briefcase"></i>
+                <i class="fas fa-xl fa-fw fa-briefcase"></i>
                 <span>Deals</span>
             </a>
         <% end %>
 
         <% if current_user.enable_secondary_sale %>
             <a class="nav-link" href="/secondary_sales">
-                <i class="fas fa-lg fa-fw fa-briefcase"></i>
+                <i class="fas fa-xl fa-fw fa-briefcase"></i>
                 <span>Secondary Sales</span>
             </a>
         <% end %>
 
         <a class="nav-link" href="/approvals">
-            <i class="fas fa-lg fa-fw fa-stamp"></i>
+            <i class="fas fa-xl fa-fw fa-stamp"></i>
             <span>Approvals</span>                        
         </a>
 

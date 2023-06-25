@@ -7,4 +7,7 @@ class FundRatio < ApplicationRecord
   belongs_to :capital_commitment, optional: true
   belongs_to :valuation, optional: true
   belongs_to :owner, polymorphic: true, optional: true
+
+  validates :display_value, length: { maximum: 50 }
+  validates :name, :owner_type, length: { maximum: 255 }
 end

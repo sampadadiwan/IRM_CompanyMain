@@ -4,6 +4,9 @@ export default class extends Controller {
 
     connect() {
         console.log("confirm connect");
+        if( $("#alertPopupModal").length ) {
+            this.popup_status();
+        }
     }
 
     popup(event) { 
@@ -71,6 +74,10 @@ export default class extends Controller {
         // $(copyText).css({'color': 'blue', 'font-weight': '500'});
         $(copyText).animate({color:'blue', 'font-size': '110%'}, 1000);
         $(notifyText).text(`Copied ${copyText.innerHTML}`);
+    }
+
+    popup_status(event) {
+        $('#alertPopupModal').modal({});
     }
 
 }

@@ -6,6 +6,7 @@ class Interest < ApplicationRecord
   include ForInvestor
 
   belongs_to :user
+  belongs_to :investor
   belongs_to :final_agreement_user, class_name: "User", optional: true
   belongs_to :secondary_sale, touch: true
   belongs_to :interest_entity, class_name: "Entity"
@@ -25,6 +26,13 @@ class Interest < ApplicationRecord
   validates :price, comparison: { greater_than_or_equal_to: :min_price }, if: -> { secondary_sale.price_type == 'Price Range' }
 
   validates :price, comparison: { equal_to: :final_price }, if: -> { secondary_sale.price_type == 'Fixed Price' }
+
+  validates :buyer_entity_name, length: { maximum: 100 }
+  validates :contact_name, length: { maximum: 50 }
+  validates :email, length: { maximum: 40 }
+  validates :PAN, length: { maximum: 15 }
+  validates :demat, :buyer_signature_types, :city, :ifsc_code, length: { maximum: 20 }
+  validates :bank_account_number, length: { maximum: 15 }
 
   delegate :display_quantity, to: :secondary_sale
   delegate :min_price, to: :secondary_sale
@@ -76,8 +84,10 @@ class Interest < ApplicationRecord
   end
 
   def set_defaults
-    self.interest_entity_id ||= user.entity_id
     self.entity_id ||= secondary_sale.entity_id
+    self.investor ||= entity.investors.where(investor_entity_id: user.entity_id).first
+    self.interest_entity_id ||= investor.investor_entity_id
+
     self.amount_cents = quantity * final_price * 100 if final_price.positive?
     self.allocation_amount_cents = allocation_quantity * final_price * 100 if final_price.positive?
 
