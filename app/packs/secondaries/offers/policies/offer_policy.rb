@@ -28,10 +28,13 @@ class OfferPolicy < SaleBasePolicy
   def create?
     if user.entity_id == record.entity_id
       record.secondary_sale.manage_offers
-    elsif user.has_cached_role?(:holding)
-      record.holding.user_id == user.id && record.holding.entity_id == record.entity_id
+    
     elsif user.has_cached_role?(:investor)
       record.holding.investor.investor_entity_id == user.entity_id
+
+    elsif user.has_cached_role?(:holding)
+      record.holding.user_id == user.id && record.holding.entity_id == record.entity_id
+    
     else
       false
     end
@@ -43,6 +46,7 @@ class OfferPolicy < SaleBasePolicy
 
   def accept_spa?
     ((record.holding.user_id == user.id) ||
+    (record.investor && record.investor.investor_entity_id == user.entity_id) ||
      (user.entity_id == record.entity_id && record.secondary_sale.manage_offers)) &&
       (record.verified && !record.final_agreement)
   end
