@@ -43,6 +43,10 @@ class ApplicationPolicy
     extenal ? extenal.set?(action) : false
   end
 
+  def super_user?
+    user.curr_role == "super"
+  end
+
   class Scope
     def initialize(user, scope)
       @user = user
@@ -51,6 +55,10 @@ class ApplicationPolicy
 
     def resolve
       scope.all
+    end
+
+    def resolve_admin
+      scope.joins(:entity).where('entities.enable_support': true)
     end
 
     private

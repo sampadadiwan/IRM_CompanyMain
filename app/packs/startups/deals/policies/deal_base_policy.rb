@@ -15,7 +15,7 @@ class DealBasePolicy < ApplicationPolicy
         end
       end
     else
-      false
+      super_user?
     end
   end
 end

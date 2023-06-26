@@ -10,7 +10,7 @@ class OptionPoolPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id) || user.holdings.where(entity_id: record.entity_id).present?
+    (user.entity_id == record.entity_id) || user.holdings.where(entity_id: record.entity_id).present? || super_user?
   end
 
   def create?
@@ -22,7 +22,7 @@ class OptionPoolPolicy < ApplicationPolicy
   end
 
   def update?
-    create? && !record.approved
+    (create? || super_user?) && !record.approved
   end
 
   def edit?

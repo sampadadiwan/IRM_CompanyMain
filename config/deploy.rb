@@ -3,7 +3,7 @@ lock "~> 3.17.2"
 
 set :application, "IRM"
 set :repo_url, "git@github.com:thimmaiah/IRM.git"
-set :branch, 'toggle_show'
+set :branch, 'enable_support'
 
 # Default branch is :master
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp

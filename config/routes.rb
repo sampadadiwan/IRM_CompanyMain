@@ -4,7 +4,7 @@ Rails.application.routes.draw do
   resources :kpi_reports
   namespace :admin do
     namespace :paper_trail do
-      resources :versions
+      resources :versions, except: :index
     end
     resources :investors
     resources :users
@@ -21,7 +21,7 @@ Rails.application.routes.draw do
     resources :folders
     resources :investor_accesses
     resources :secondary_sales
-    resources :roles
+    resources :roles, except: :index
     resources :funding_rounds
     resources :option_pools
     resources :excercises
@@ -302,7 +302,7 @@ Rails.application.routes.draw do
 
   devise_for :users, controllers: {
     # We no longer allow users to register on their own
-    # registrations: "users/registrations",
+    registrations: "users/registrations",
     passwords: "users/passwords",
     confirmations: 'users/confirmations'
   }

@@ -10,7 +10,7 @@ class AccessRightPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id)
+    (user.entity_id == record.entity_id) || super_user?
   end
 
   def create?
@@ -22,7 +22,7 @@ class AccessRightPolicy < ApplicationPolicy
   end
 
   def update?
-    create? || Pundit.policy(user, record.owner).update?
+    create? || Pundit.policy(user, record.owner).update? || super_user?
   end
 
   def start_deal?

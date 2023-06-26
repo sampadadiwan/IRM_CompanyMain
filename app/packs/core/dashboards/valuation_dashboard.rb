@@ -10,9 +10,9 @@ class ValuationDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     entity: Field::BelongsTo,
     owner: Field::Polymorphic,
+    owner_type: Field::String,
     id: Field::Number,
     valuation_date: Field::Date,
-    portfolio_fmv_valuation_cents: Field::String,
     valuation_cents: Field::String,
     per_share_value_cents: Field::String,
     created_at: Field::DateTime,
@@ -25,11 +25,11 @@ class ValuationDashboard < Administrate::BaseDashboard
   # By default, it's limited to four items to reduce clutter on index pages.
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
+    id
     entity
-    owner
+    owner_type
     valuation_date
     valuation_cents
-    portfolio_fmv_valuation_cents
     per_share_value_cents
   ].freeze
 
@@ -41,7 +41,6 @@ class ValuationDashboard < Administrate::BaseDashboard
     id
     valuation_date
     valuation_cents
-    portfolio_fmv_valuation_cents
     per_share_value_cents
     created_at
     updated_at
@@ -55,7 +54,6 @@ class ValuationDashboard < Administrate::BaseDashboard
     owner
     valuation_date
     valuation_cents
-    portfolio_fmv_valuation_cents
     per_share_value_cents
   ].freeze
 

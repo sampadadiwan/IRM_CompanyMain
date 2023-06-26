@@ -70,7 +70,4 @@ class InvestorDashboard < Administrate::BaseDashboard
   # Overwrite this method to customize how investors are displayed
   # across all pages of the admin dashboard.
   #
-  def display_resource(investor)
-    investor.investor_name.last(3).rjust(investor.investor_name.length, '*')
-  end
 end

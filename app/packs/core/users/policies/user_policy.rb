@@ -7,6 +7,10 @@ class UserPolicy < ApplicationPolicy
         scope.where(entity_id: user.entity_id)
       end
     end
+
+    def resolve_admin
+      scope.all
+    end
   end
 
   def index?
@@ -18,7 +22,7 @@ class UserPolicy < ApplicationPolicy
   end
 
   def show?
-    user.id == record.id || (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin))
+    user.id == record.id || (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)) || super_user?
   end
 
   def create?
@@ -31,7 +35,7 @@ class UserPolicy < ApplicationPolicy
 
   def update?
     user.id == record.id ||
-      create?
+      create? || super_user?
   end
 
   def edit?
@@ -39,6 +43,6 @@ class UserPolicy < ApplicationPolicy
   end
 
   def destroy?
-    false
+    super_user?
   end
 end

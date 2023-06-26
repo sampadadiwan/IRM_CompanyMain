@@ -13,7 +13,7 @@ class SaleBasePolicy < ApplicationPolicy
         end
       end
     else
-      false
+      super_user?
     end
   end
 

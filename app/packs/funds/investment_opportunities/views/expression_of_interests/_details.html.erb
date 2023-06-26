@@ -2,7 +2,7 @@
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
-    <% if expression_of_interest.entity.enable_investor_kyc %>
+    <% if expression_of_interest.entity.enable_kycs %>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#kycs-tab" 
                 data-action="click->tabdetails#loadData">
         KYC

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_06_25_084936) do
+ActiveRecord::Schema[7.0].define(version: 2023_06_25_160534) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -803,7 +803,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_25_084936) do
     t.integer "units", default: 0
     t.boolean "enable_options", default: false
     t.boolean "enable_captable", default: false
-    t.boolean "enable_investor_kyc", default: false
     t.string "sub_domain"
     t.text "logo_data"
     t.boolean "activity_docs_required_for_completion", default: false
@@ -814,6 +813,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_25_084936) do
     t.boolean "enable_fund_portfolios", default: false
     t.boolean "enable_kpis", default: false
     t.boolean "enable_kycs", default: false
+    t.boolean "enable_support", default: false
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
@@ -1337,7 +1337,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_25_084936) do
     t.string "buyer_entity_name", limit: 100
     t.text "address"
     t.string "contact_name", limit: 50
-    t.string "email", limit: 40
+    t.string "email"
     t.string "PAN", limit: 15
     t.boolean "final_agreement", default: false
     t.text "properties"

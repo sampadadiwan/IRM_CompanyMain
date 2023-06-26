@@ -22,7 +22,7 @@ class OfferPolicy < SaleBasePolicy
     create? ||
       user.entity_id == record.entity_id ||
       sale_policy.owner? ||
-      interest_policy.owner?
+      interest_policy.owner? || super_user?
   end
 
   def create?
@@ -52,7 +52,7 @@ class OfferPolicy < SaleBasePolicy
   end
 
   def update?
-    create? && !record.verified # && !record.secondary_sale.lock_allocations
+    (create? || super_user?) && !record.verified # && !record.secondary_sale.lock_allocations
   end
 
   def allocation_form?

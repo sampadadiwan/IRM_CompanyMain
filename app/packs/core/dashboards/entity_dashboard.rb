@@ -8,6 +8,7 @@ class EntityDashboard < Administrate::BaseDashboard
   # which determines how the attribute is displayed
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
+    parent_entity: Field::BelongsTo.with_options(class_name: "Entity"),
     documents: Field::HasMany,
     employees: Field::HasMany,
     investors: Field::HasMany,
@@ -40,9 +41,9 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_fund_portfolios: Field::BooleanEmoji,
     enable_options: Field::BooleanEmoji,
     enable_captable: Field::BooleanEmoji,
-    enable_investor_kyc: Field::BooleanEmoji,
     enable_kpis: Field::BooleanEmoji,
     enable_kycs: Field::BooleanEmoji,
+    enable_support: Field::BooleanEmoji,
     enable_inv_opportunities: Field::BooleanEmoji
   }.freeze
 
@@ -64,7 +65,6 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_account_entries
     enable_units
     enable_fund_portfolios
-    enable_investor_kyc
     enable_kpis
     enable_kycs
   ].freeze
@@ -74,6 +74,7 @@ class EntityDashboard < Administrate::BaseDashboard
   SHOW_PAGE_ATTRIBUTES = %i[
     id
     name
+    parent_entity
     sub_domain
     url
     category
@@ -97,9 +98,9 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_inv_opportunities
     enable_options
     enable_captable
-    enable_investor_kyc
     enable_kpis
     enable_kycs
+    enable_support
     employees
     investors
     investor_entities
@@ -113,6 +114,7 @@ class EntityDashboard < Administrate::BaseDashboard
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
     name
+    parent_entity
     sub_domain
     url
     currency
@@ -133,9 +135,9 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_inv_opportunities
     enable_options
     enable_captable
-    enable_investor_kyc
     enable_kpis
     enable_kycs
+    enable_support
     activity_docs_required_for_completion
     activity_details_required_for_na
     entity_setting

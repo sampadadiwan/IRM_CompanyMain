@@ -14,7 +14,7 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def show?
-    if user.entity_id == record.entity_id && user.enable_investments
+    if (user.entity_id == record.entity_id && user.enable_investments) || super_user?
       true
     else
       user.enable_investments &&

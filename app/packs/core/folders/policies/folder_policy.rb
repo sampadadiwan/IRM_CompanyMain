@@ -10,7 +10,7 @@ class FolderPolicy < ApplicationPolicy
   end
 
   def show?
-    user.entity_id == record.entity_id
+    user.entity_id == record.entity_id || super_user?
   end
 
   def download?
@@ -26,7 +26,7 @@ class FolderPolicy < ApplicationPolicy
   end
 
   def update?
-    create? && !record.system?
+    (create? || super_user?) && !record.system?
   end
 
   def edit?

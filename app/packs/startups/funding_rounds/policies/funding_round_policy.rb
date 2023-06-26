@@ -10,7 +10,7 @@ class FundingRoundPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id)
+    (user.entity_id == record.entity_id) || super_user?
   end
 
   def create?
@@ -22,15 +22,15 @@ class FundingRoundPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    create? || super_user?
   end
 
   def edit?
-    create?
+    update?
   end
 
   def destroy?
-    create?
+    update?
   end
 
   def approve_all_holdings?

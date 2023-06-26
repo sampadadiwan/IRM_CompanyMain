@@ -28,6 +28,7 @@ class DealInvestorDashboard < Administrate::BaseDashboard
   # By default, it's limited to four items to reduce clutter on index pages.
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
+    id
     deal
     investor
     entity
@@ -75,8 +76,8 @@ class DealInvestorDashboard < Administrate::BaseDashboard
   # Overwrite this method to customize how deal investors are displayed
   # across all pages of the admin dashboard.
   #
-  def display_resource(deal_investor)
-    ob = deal_investor.investor_name
-    ob.to_s.last(3).rjust(ob.to_s.length, '*')
-  end
+  # def display_resource(deal_investor)
+  #   ob = deal_investor.investor_name
+  #   ob.to_s.last(3).rjust(ob.to_s.length, '*')
+  # end
 end

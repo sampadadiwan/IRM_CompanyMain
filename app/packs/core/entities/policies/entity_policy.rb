@@ -4,8 +4,13 @@ class EntityPolicy < ApplicationPolicy
       if user.curr_role.to_sym == :investor
         scope.for_investor(user)
       else
-        scope.all
+        scope.none
       end
+    end
+
+    def resolve_admin
+      #scope.where(enable_support: true)
+      scope.all
     end
   end
 
@@ -22,7 +27,7 @@ class EntityPolicy < ApplicationPolicy
   end
 
   def show?
-    if user.entity_id == record.id
+    if user.entity_id == record.id || super_user?
       true
     else
       user.entity_id != record.id
@@ -38,7 +43,7 @@ class EntityPolicy < ApplicationPolicy
   end
 
   def update?
-    user.entity_id == record.id && user.curr_role != "holding" && user.has_cached_role?(:company_admin)
+    ((user.entity_id == record.id) && user.curr_role != "holding" && user.has_cached_role?(:company_admin)) || super_user?
   end
 
   def edit?

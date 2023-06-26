@@ -9,6 +9,7 @@ class AccessRightDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     owner: Field::Polymorphic,
+    owner_type: Field::String,
     entity: Field::BelongsTo,
     investor: Field::BelongsTo,
     id: Field::Number,
@@ -26,7 +27,8 @@ class AccessRightDashboard < Administrate::BaseDashboard
   # By default, it's limited to four items to reduce clutter on index pages.
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
-    owner
+    id
+    owner_type
     entity
     investor
     access_to_category
