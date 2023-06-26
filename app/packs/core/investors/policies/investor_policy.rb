@@ -1,10 +1,4 @@
 class InvestorPolicy < ApplicationPolicy
-  class Scope < Scope
-    def resolve
-      scope.where(entity_id: user.entity_id)
-    end
-  end
-
   def index?
     user.enable_investors
   end

@@ -1,9 +1,13 @@
 class ApprovalResponsePolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      scope.where(entity_id: user.entity_id).or(
-        scope.where(response_entity_id: user.entity_id)
-      )
+      if user.entity_type == "Group Company"
+        scope.where(entity_id: user.entity.child_ids)
+      else
+        scope.where(entity_id: user.entity_id).or(
+          scope.where(response_entity_id: user.entity_id)
+        )
+      end
     end
   end
 

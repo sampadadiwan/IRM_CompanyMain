@@ -1,15 +1,4 @@
 class DocumentPolicy < ApplicationPolicy
-  class Scope < Scope
-    def resolve
-      case user.curr_role
-      when "consultant"
-        scope.joins(:permissions).where("permissions.user_id=?", user.id)
-      else
-        scope.where(entity_id: user.entity_id)
-      end
-    end
-  end
-
   def index?
     user.enable_documents
   end

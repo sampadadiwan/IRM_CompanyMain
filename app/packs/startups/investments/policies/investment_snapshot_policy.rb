@@ -1,10 +1,4 @@
 class InvestmentSnapshotPolicy < ApplicationPolicy
-  class Scope < Scope
-    def resolve
-      scope.where(entity_id: user.entity_id) if user.curr_role == "company"
-    end
-  end
-
   def index?
     user.enable_investments
   end

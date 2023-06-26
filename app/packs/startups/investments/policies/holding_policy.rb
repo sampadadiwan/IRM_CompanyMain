@@ -1,15 +1,19 @@
 class HoldingPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      case user.curr_role
-      when "employee"
-        scope.where("entity_id=?", user.entity_id)
-      when "holding"
-        scope.approved.where("user_id=?", user.id)
-      when "investor"
-        scope.joins(:investor).where("investors.investor_entity_id=?", user.entity_id)
+      if user.entity_type == "Group Company"
+        scope.where(entity_id: user.entity.child_ids)
       else
-        scope.none
+        case user.curr_role
+        when "employee"
+          scope.where("entity_id=?", user.entity_id)
+        when "holding"
+          scope.approved.where("user_id=?", user.id)
+        when "investor"
+          scope.joins(:investor).where("investors.investor_entity_id=?", user.entity_id)
+        else
+          scope.none
+        end
       end
     end
   end

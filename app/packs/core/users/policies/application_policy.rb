@@ -59,7 +59,11 @@ class ApplicationPolicy
     end
 
     def resolve
-      scope.all
+      if user.entity_type == "Group Company"
+        scope.where(entity_id: user.entity.child_ids)
+      else
+        scope.where(entity_id: user.entity_id)
+      end
     end
 
     def resolve_admin

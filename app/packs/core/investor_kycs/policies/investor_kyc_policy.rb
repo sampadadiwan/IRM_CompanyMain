@@ -1,7 +1,9 @@
 class InvestorKycPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if %i[employee].include? user.curr_role.to_sym
+      if user.entity_type == "Group Company"
+        scope.where(entity_id: user.entity.child_ids)
+      elsif %i[employee].include? user.curr_role.to_sym
         if user.investor_advisor?
           # We cant show them all the KYCs, only the ones for the funds they have been permissioned
           fund_ids = Fund.for_employee(user).pluck(:id)
