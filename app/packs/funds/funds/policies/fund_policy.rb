@@ -5,6 +5,8 @@ class FundPolicy < FundBasePolicy
         scope.where(entity_id: user.entity_id)
       elsif user.curr_role == "employee" && user.entity_type == "Investment Fund"
         scope.for_employee(user)
+      elsif user.entity_type == "Group Company"
+        scope.for_parent_employee(user)
       else
         scope.for_investor(user)
       end
@@ -57,8 +59,7 @@ class FundPolicy < FundBasePolicy
 
   def create?
     user.enable_funds &&
-      permissioned_employee? &&
-      user.entity_type == "Investment Fund"
+      permissioned_employee?(:create)
   end
 
   def new?

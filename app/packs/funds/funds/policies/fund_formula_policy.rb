@@ -5,6 +5,8 @@ class FundFormulaPolicy < ApplicationPolicy
         scope.where(entity_id: user.entity_id)
       elsif user.curr_role == 'employee' && user.entity_type == "Investment Fund"
         scope.for_employee(user)
+      elsif user.entity_type == "Group Company"
+        scope.for_parent_employee(user)
       else
         scope.for_investor(user)
       end

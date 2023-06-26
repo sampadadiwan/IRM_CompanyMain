@@ -5,6 +5,8 @@ class CapitalRemittancePaymentPolicy < FundBasePolicy
         scope.where(entity_id: user.entity_id)
       elsif user.curr_role.to_sym == :employee
         scope.for_employee(user)
+      elsif user.entity_type == "Group Company"
+        scope.for_parent_employee(user)
       else
         scope.none
       end

@@ -15,15 +15,28 @@ module ForInvestor
       end
     end
 
-    scope :for_employee, lambda { |user|
+    scope :for_parent_employee, lambda { |user|
       join_clause = if instance_methods.include?(:access_rights)
-                      joins(:access_rights)
+                      joins(:entity)
                     else
-                      joins(parent_class_type.name.underscore => :access_rights)
+                      joins(parent_class_type.name.underscore.to_sym)
                     end
-
-      join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
+      if user.has_cached_role?(:company_admin)
+        join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id in (?)", user.entity.child_ids)
+      else
+        join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id in (?) and access_rights.user_id=?", user.entity.child_ids, user.id)
+      end
     }
+
+    scope :for_employee, lambda { |user|
+                           join_clause = if instance_methods.include?(:access_rights)
+                                           joins(:access_rights)
+                                         else
+                                           joins(parent_class_type.name.underscore => :access_rights)
+                                         end
+
+                           join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
+                         }
 
     # Some models have a belongs_to :investor association
     scope :for_investor, lambda { |user|

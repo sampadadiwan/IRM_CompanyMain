@@ -78,32 +78,25 @@ class User < ApplicationRecord
   end
 
   def setup_defaults
-    if entity
-      if entity.entity_type == "Company"
-        add_role :employee
-        add_role :holding
-        self.curr_role = :employee
-      elsif entity.entity_type == "Holding"
-        add_role :holding
-        self.curr_role = :holding
-      elsif ["Investor", "Investment Advisor", "Family Office"].include?(entity.entity_type) || InvestorAccess.where(user_id: id).first.present?
-        add_role :investor
-        self.curr_role ||= :investor
-      elsif ["Investor Advisor"].include?(entity.entity_type)
-        add_role :investor
-        add_role :investor_advisor
-        self.curr_role ||= :investor
-        # This is specifically set for Investor Advisors. It is the orig entity_id of the advisor, and cannot change
-        self.advisor_entity_id = entity_id
-      elsif ["Investment Fund"].include?(entity.entity_type)
-        add_role :employee
-        self.curr_role = :employee
-      else
-        add_role :consultant
-        self.curr_role = :consultant
-      end
-    else
-      self.curr_role ||= :user
+    if entity.entity_type == "Company"
+      add_role :employee
+      add_role :holding
+      self.curr_role = :employee
+    elsif entity.entity_type == "Holding"
+      add_role :holding
+      self.curr_role = :holding
+    elsif ["Investor", "Investment Advisor", "Family Office"].include?(entity.entity_type) || InvestorAccess.where(user_id: id).first.present?
+      add_role :investor
+      self.curr_role ||= :investor
+    elsif ["Investor Advisor"].include?(entity.entity_type)
+      add_role :investor
+      add_role :investor_advisor
+      self.curr_role ||= :investor
+      # This is specifically set for Investor Advisors. It is the orig entity_id of the advisor, and cannot change
+      self.advisor_entity_id = entity_id
+    elsif ["Investment Fund", "Group Company"].include?(entity.entity_type)
+      add_role :employee
+      self.curr_role = :employee
     end
 
     self.permissions = User.permissions.keys if permissions.blank?

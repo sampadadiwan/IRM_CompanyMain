@@ -12,8 +12,28 @@ class FundBasePolicy < ApplicationPolicy
           @fund.present?
         end
       end
+    elsif user.entity_type == "Group Company"
+      permissioned_parent_employee?(perm)
     else
-      user.has_cached_role?(:super)
+      super_user?
+    end
+  end
+
+  def permissioned_parent_employee?(perm = nil)
+    if user.entity.child_ids.include?(record.entity_id)
+      if user.has_cached_role?(:company_admin)
+        true
+      else
+        fund_id = record.instance_of?(Fund) ? record.id : record.fund_id
+        @fund ||= Fund.for_parent_company_employee(user).includes(:access_rights).where("funds.id=?", fund_id).first
+        if perm
+          @fund.present? && @fund.access_rights[0].permissions.set?(perm)
+        else
+          @fund.present?
+        end
+      end
+    else
+      super_user?
     end
   end
 

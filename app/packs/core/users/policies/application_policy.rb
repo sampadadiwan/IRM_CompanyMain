@@ -44,7 +44,12 @@ class ApplicationPolicy
   end
 
   def super_user?
-    user.curr_role == "super"
+    user.has_cached_role(:super)
+  end
+
+  def belongs_to_entity?(user, record)
+    user.entity_id == record.entity_id ||
+      (user.entity_type == "Group Company" && user.entity.child_ids.include?(record.entity_id))
   end
 
   class Scope

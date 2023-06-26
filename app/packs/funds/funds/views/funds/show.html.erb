@@ -5,7 +5,7 @@
   <%= render "/funds/fund_investor_stats", fund: @fund %>
 <% end %>
 
-<% if current_user.entity_id == @fund.entity_id %>
+<% if current_user.entity_id == @fund.entity_id || current_user.entity.child_ids.include?(@fund.entity_id) %>
   <%= render "funds/show", fund: @fund %>
 <% end %>
 

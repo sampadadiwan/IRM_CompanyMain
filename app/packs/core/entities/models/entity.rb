@@ -12,6 +12,7 @@ class Entity < ApplicationRecord
 
   has_rich_text :details
   belongs_to :parent_entity, class_name: "Entity", optional: true
+  has_many :children, class_name: "Entity", foreign_key: "parent_entity_id", dependent: :destroy
 
   has_one :entity_setting, dependent: :destroy
   accepts_nested_attributes_for :entity_setting, allow_destroy: true
@@ -86,7 +87,7 @@ class Entity < ApplicationRecord
   monetize :total_investments, as: "total", with_model_currency: :currency
   monetize :per_share_value_cents, with_model_currency: :currency
 
-  TYPES = ["Investor", "Investor Advisor", "Company", "Holding", "Investment Advisor", "Family Office", "Investment Fund"].freeze
+  TYPES = ["Investor", "Investor Advisor", "Company", "Holding", "Investment Advisor", "Family Office", "Investment Fund", "Group Company"].freeze
   SECONDARY_BUYERS = ["Investor", "Investment Advisor", "Family Office"].freeze
 
   FUNDING_UNITS = %w[Lakhs Crores].freeze

@@ -12,8 +12,28 @@ class IoBasePolicy < ApplicationPolicy
           @investment_opportunity.present?
         end
       end
+    elsif user.entity_type == "Group Company"
+      permissioned_parent_employee?(perm)
     else
-      false
+      super_user?
+    end
+  end
+
+  def permissioned_parent_employee?(perm = nil)
+    if user.entity.child_ids.include?(record.entity_id)
+      if user.has_cached_role?(:company_admin)
+        true
+      else
+        investment_opportunity_id = record.instance_of?(InvestmentOpportunity) ? record.id : record.investment_opportunity_id
+        @investment_opportunity ||= InvestmentOpportunity.for_parent_company_employee(user).includes(:access_rights).where("investment_opportunities.id=?", investment_opportunity_id).first
+        if perm
+          @investment_opportunity.present? && @investment_opportunity.access_rights[0].permissions.set?(perm)
+        else
+          @investment_opportunity.present?
+        end
+      end
+    else
+      user.has_cached_role?(:super)
     end
   end
 
