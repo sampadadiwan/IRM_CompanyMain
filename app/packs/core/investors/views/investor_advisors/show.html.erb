@@ -18,6 +18,14 @@
   </tr>
   <tr>
     <td>
+      Allowed Roles
+    </td>
+    <td>
+      <%= @investor_advisor.allowed_roles.map{|r| r.humanize.titleize}.join(", ") %>
+    </td>
+  </tr>
+  <tr>
+    <td>
       Permissions
     </td>
     <td>

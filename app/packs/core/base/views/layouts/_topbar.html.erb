@@ -69,7 +69,7 @@
                     (   
                         current_user.has_cached_role?(:investor) || 
                         current_user.has_cached_role?(:holding) 
-                    ) || (current_user && current_user.has_cached_role?(:consultant))  %>
+                    )  %>
                     <div class="topbar-divider "></div>
                     <%= render "/layouts/persona" %>
                 <% end %>

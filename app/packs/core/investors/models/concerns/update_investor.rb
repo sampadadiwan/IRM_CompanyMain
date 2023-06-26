@@ -73,7 +73,7 @@ module UpdateInvestor
         h.update_columns(investor_id: investor.id, holding_type: "Investor")
       end
 
-      user.offers.each do |o|        
+      user.offers.each do |o|
         investor = Investor.find_or_create_by(investor_name:, investor_entity_id: user.entity_id, category: "Family Office", entity: o.entity)
         # Update the offer with this new investor
         o.update_column(:investor_id, investor.id)

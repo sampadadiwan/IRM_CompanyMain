@@ -72,8 +72,10 @@
   <% if current_user.has_cached_role?(:company_admin) %>
 
     <% if user.id.present? %>
+    <div class="form-group">
       <%= form.label :roles %>
       <%= form.select :roles, ["company_admin"], {selected: user.roles.collect(&:name), include_hidden: false}, class: "form-control select2", multiple: true, name: "user[role_name][]" %>
+    </div>
     <% end %>
 
     <div class="associated_entity">

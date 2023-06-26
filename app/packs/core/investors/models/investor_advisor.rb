@@ -17,6 +17,8 @@ class InvestorAdvisor < ApplicationRecord
   before_validation :ensure_user
   validates_uniqueness_of :email, scope: :entity_id
 
+  serialize :allowed_roles, Array
+
   def ensure_user
     self.user = User.find_by(email:)
 
@@ -31,12 +33,13 @@ class InvestorAdvisor < ApplicationRecord
     user.entity_type = user.entity.entity_type
     user.setup_defaults
 
-    # case user.entity_type
-    # when "Investor", "Investor Advisor", "Family Office"
-    #   user.curr_role = :investor
-    # when "Company", "Investment Fund"
-    #   user.curr_role = :employee
-    # end
+    # Add the roles specified in the allowed_roles
+    user.roles.delete_all
+    allowed_roles.each do |role|
+      user.add_role(role)
+    end
+    user.add_role(:investor_advisor)
+
     user.save
   end
 
