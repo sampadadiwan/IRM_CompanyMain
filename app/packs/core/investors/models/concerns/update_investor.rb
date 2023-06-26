@@ -67,7 +67,7 @@ module UpdateInvestor
         # Move the user to the investor_entity
         user.entity_id = investor.investor_entity_id
         user.save
-        # Ensure the user has access 
+        # Ensure the user has access
         InvestorAccess.create(investor_id: investor.id, investor_entity_id: investor.investor_entity_id, entity_id: investor.entity_id, user_id: user.id, approved: true, first_name: user.first_name, last_name: user.last_name, email: user.email)
         # Update the holding with this new investor
         h.update_columns(investor_id: investor.id, holding_type: "Investor")

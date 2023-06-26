@@ -140,14 +140,34 @@
 
          <tr>
             <td>
+               Support Enabled
+            </td>
+            <td>
+               <%= display_boolean @entity.enable_support %>
+            </td>
+         </tr>
+
+         <tr>
+            <td>
                Access Enabled
             </td>
             <td>
                <%= "Documents," if @entity.enable_documents %>
                <%= "Deals," if @entity.enable_deals %>
+               <%= "Funds," if @entity.enable_funds %>
+               <%= "Investment Opportunities," if @entity.enable_inv_opportunities %>
                <%= "Investments," if @entity.enable_investments %>
                <%= "Holdings," if @entity.enable_holdings %>
                <%= "Secondary Sale," if @entity.enable_secondary_sale %>
+               <%= "KPIs," if @entity.enable_kpis %>
+               <%= "KYCs," if @entity.enable_kycs %>
+
+               <%= "Fund Portfolios," if @entity.enable_fund_portfolios %>
+               <%= "Units," if @entity.enable_units %>
+               <%= "Account Entries," if @entity.enable_account_entries %>
+               <%= "Investors," if @entity.enable_investors %>
+               <%= "Option Pools," if @entity.enable_options %>
+               <%= "Cap Table" if @entity.enable_captable %>
             </td>
          </tr>
 

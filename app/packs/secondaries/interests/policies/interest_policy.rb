@@ -16,7 +16,7 @@ class InterestPolicy < SaleBasePolicy
   end
 
   def owner?
-    record && user.entity_id == record.interest_entity_id
+    (record && user.entity_id == record.interest_entity_id) || super_user?
   end
 
   def matched_offer?
@@ -50,7 +50,7 @@ class InterestPolicy < SaleBasePolicy
   end
 
   def update?
-    (create? ||
+    (create? || super_user? ||
       user.entity_id == record.interest_entity_id ||
      (sale_policy.update? && record.secondary_sale.manage_interests)
     ) && !record.finalized

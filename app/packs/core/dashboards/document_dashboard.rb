@@ -20,13 +20,13 @@ class DocumentDashboard < Administrate::BaseDashboard
     rich_text_text: RichTextAreaField,
     id: Field::Number,
     file: Field::Shrine,
-    name: ObfuscatedField,
+    name: Field::String,
     text: Field::String,
     tag_list: Field::String,
+    owner_tag: Field::String,
     download: Field::BooleanEmoji,
     printing: Field::BooleanEmoji,
-    signature_enabled: Field::BooleanEmoji,
-    signed_by_accept: Field::BooleanEmoji,
+    orignal: Field::BooleanEmoji,
     created_at: Field::DateTime,
     updated_at: Field::DateTime
   }.freeze
@@ -41,9 +41,9 @@ class DocumentDashboard < Administrate::BaseDashboard
     name
     download
     printing
-    signature_enabled
-    signed_by_accept
+    orignal
     tag_list
+    owner_tag
     folder
     entity
     created_at
@@ -60,8 +60,7 @@ class DocumentDashboard < Administrate::BaseDashboard
     name
     download
     printing
-    signature_enabled
-    signed_by_accept
+    orignal
     tag_list
     file
     created_at
@@ -77,8 +76,7 @@ class DocumentDashboard < Administrate::BaseDashboard
     name
     download
     printing
-    signature_enabled
-    signed_by_accept
+    orignal
     tag_list
     rich_text_text
   ].freeze

@@ -17,6 +17,7 @@ class CapitalCommitmentDashboard < Administrate::BaseDashboard
     collected_amount_cents: Field::String.with_options(searchable: false),
     notes: Field::Text,
     investor_signature_types: Field::String,
+    folio_id: Field::String,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     properties: Field::Text,
@@ -29,6 +30,8 @@ class CapitalCommitmentDashboard < Administrate::BaseDashboard
   # By default, it's limited to four items to reduce clutter on index pages.
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
+    id
+    folio_id
     entity
     investor
     fund
@@ -43,6 +46,7 @@ class CapitalCommitmentDashboard < Administrate::BaseDashboard
     investor
     fund
     id
+    folio_id
     committed_amount_cents
     collected_amount_cents
     notes
@@ -61,6 +65,7 @@ class CapitalCommitmentDashboard < Administrate::BaseDashboard
     entity
     investor
     fund
+    folio_id
     committed_amount_cents
     collected_amount_cents
     notes

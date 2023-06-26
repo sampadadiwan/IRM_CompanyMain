@@ -21,7 +21,7 @@ class HoldingPolicy < ApplicationPolicy
   def show?
     (user.enable_holdings && user.entity_id == record.entity_id && user.has_cached_role?(:employee)) ||
       (user.id == record.user_id && user.has_cached_role?(:holding)) ||
-      (user.entity_id == record.investor.investor_entity_id && user.has_cached_role?(:investor))
+      (user.entity_id == record.investor.investor_entity_id && user.has_cached_role?(:investor)) || super_user?
   end
 
   def offer?
@@ -43,7 +43,7 @@ class HoldingPolicy < ApplicationPolicy
 
   def update?
     # Only employee holdings can be and only if its not excercised
-    create? &&
+    (create? || super_user?) &&
       record.holding_type != "Investor" &&
       (record.excercised_quantity.zero? || record.manual_vesting) &&
       !record.cancelled

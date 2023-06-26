@@ -8,7 +8,6 @@ class FolderDashboard < Administrate::BaseDashboard
   # which determines how the attribute is displayed
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
-    parent: Field::BelongsTo,
     entity: Field::BelongsTo,
     documents: Field::HasMany,
     id: Field::Number,
@@ -27,7 +26,6 @@ class FolderDashboard < Administrate::BaseDashboard
   # Feel free to add, remove, or rearrange items.
   COLLECTION_ATTRIBUTES = %i[
     id
-    parent
     entity
     full_path
     level
@@ -37,11 +35,9 @@ class FolderDashboard < Administrate::BaseDashboard
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
-    parent
     entity
     id
     name
-    parent_id
     full_path
     level
     created_at
@@ -54,10 +50,8 @@ class FolderDashboard < Administrate::BaseDashboard
   # an array of attributes that will be displayed
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
-    parent
     entity
     name
-    parent_id
   ].freeze
 
   # COLLECTION_FILTERS

@@ -10,7 +10,7 @@ class InvestorAccessPolicy < ApplicationPolicy
   end
 
   def show?
-    user.entity_id == record.entity_id || user.entity_id == record.investor.investor_entity_id
+    user.entity_id == record.entity_id || user.entity_id == record.investor.investor_entity_id || super_user?
   end
 
   def create?
@@ -26,7 +26,7 @@ class InvestorAccessPolicy < ApplicationPolicy
   end
 
   def update?
-    user.entity_id == record.entity_id
+    user.entity_id == record.entity_id || super_user?
   end
 
   def approve?
@@ -38,10 +38,10 @@ class InvestorAccessPolicy < ApplicationPolicy
   end
 
   def destroy?
-    create?
+    create? || super_user?
   end
 
   def notify_kyc_required?
-    update? && record.approved && record.entity.enable_investor_kyc
+    update? && record.approved && record.entity.enable_kycs
   end
 end

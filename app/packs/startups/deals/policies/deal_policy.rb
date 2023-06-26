@@ -59,7 +59,7 @@ class DealPolicy < ApplicationPolicy
         end
       end
     else
-      false
+      user.has_cached_role?(:super)
     end
   end
 end

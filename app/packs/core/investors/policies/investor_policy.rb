@@ -11,11 +11,11 @@ class InvestorPolicy < ApplicationPolicy
 
   def show?
     user.enable_investors &&
-      (user.entity_id == record.entity_id || user.entity_id == record.investor_entity_id)
+      (user.entity_id == record.entity_id || user.entity_id == record.investor_entity_id || super_user?)
   end
 
   def create?
-    user.enable_investors && user.entity_id == record.entity_id
+    (user.enable_investors && user.entity_id == record.entity_id)
   end
 
   def new?
@@ -23,18 +23,18 @@ class InvestorPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    create? || super_user?
   end
 
   def merge?
-    true
+    update?
   end
 
   def edit?
-    create?
+    update?
   end
 
   def destroy?
-    false
+    update?
   end
 end

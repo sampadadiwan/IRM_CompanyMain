@@ -88,7 +88,8 @@ namespace :irm do
       end
     end
     
-    user = FactoryBot.create(:user, entity: nil, first_name: "Super", last_name: "Admin", email: "admin@altx.com", curr_role: :super)
+    entity = FactoryBot.create(:entity, entity_type: "Company")
+    user = FactoryBot.create(:user, entity:, first_name: "Super", last_name: "Admin", email: "admin@altx.com", curr_role: :super)
     user.add_role(:super)
   rescue Exception => e
     puts e.backtrace.join("\n")

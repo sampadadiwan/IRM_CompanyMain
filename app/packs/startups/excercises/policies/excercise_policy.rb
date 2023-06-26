@@ -14,7 +14,7 @@ class ExcercisePolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id) || user.id == record.user_id
+    (user.entity_id == record.entity_id) || (user.id == record.user_id) || super_user?
   end
 
   def create?
@@ -26,7 +26,7 @@ class ExcercisePolicy < ApplicationPolicy
   end
 
   def update?
-    create? && !record.approved
+    (create? || super_user?) && !record.approved
   end
 
   def edit?

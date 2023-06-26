@@ -1,6 +1,8 @@
 module Users
   class RegistrationsController < Devise::RegistrationsController
     prepend_before_action :require_no_authentication, only: %i[new cancel]
+    # Dont allow users to sign up on their own
+    before_action :authenticate_user!
 
     # POST /resource
     def create
