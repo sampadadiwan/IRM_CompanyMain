@@ -10,11 +10,11 @@ class InvestorNoticeEntryPolicy < ApplicationPolicy
   end
 
   def show?
-    user.entity_id == record.entity_id || user.entity_id == record.investor_entity_id
+    belongs_to_entity?(user, record) || user.entity_id == record.investor_entity_id
   end
 
   def create?
-    user.entity_id == record.entity_id
+    belongs_to_entity?(user, record)
   end
 
   def new?

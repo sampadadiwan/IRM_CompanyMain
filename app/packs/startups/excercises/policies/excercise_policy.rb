@@ -14,7 +14,7 @@ class ExcercisePolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id) || (user.id == record.user_id) || super_user?
+    belongs_to_entity?(user, record) || (user.id == record.user_id) || super_user?
   end
 
   def create?
@@ -38,6 +38,6 @@ class ExcercisePolicy < ApplicationPolicy
   end
 
   def approve?
-    user.has_cached_role?(:approver) && user.entity_id == record.entity_id
+    user.has_cached_role?(:approver) && belongs_to_entity?(user, record)
   end
 end

@@ -14,7 +14,7 @@ class TaskPolicy < ApplicationPolicy
   end
 
   def create?
-    if user.entity_id == record.entity_id
+    if belongs_to_entity?(user, record)
       true
     else
       user.entity_id == record.for_entity_id

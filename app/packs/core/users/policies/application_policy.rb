@@ -44,7 +44,7 @@ class ApplicationPolicy
   end
 
   def super_user?
-    user.has_cached_role(:super)
+    user.has_cached_role?(:super)
   end
 
   def belongs_to_entity?(user, record)

@@ -17,7 +17,7 @@ class DocumentPolicy < ApplicationPolicy
   def show?
     record.public_visibility ||
       (user && (
-        (user.enable_documents && user.entity_id == record.entity_id) ||
+        (user.enable_documents && belongs_to_entity?(user, record)) ||
         (user.enable_documents && show_investor? && !user.investor_advisor?) ||
         (record.owner && owner_policy.show?) ||
         allow_external?(:read) || super_user?
@@ -29,7 +29,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id && user.enable_documents) ||
+    (belongs_to_entity?(user, record) && user.enable_documents) ||
       (record.owner && owner_policy.update?) ||
       # The DealInvestor/CapitalCommitment are cases where other users can attach documents to the document owner which is not created by them
       (record.owner && record.owner_type == "DealInvestor" && owner_policy.show?) ||

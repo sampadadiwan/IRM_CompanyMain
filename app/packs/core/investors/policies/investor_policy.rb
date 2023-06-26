@@ -11,11 +11,11 @@ class InvestorPolicy < ApplicationPolicy
 
   def show?
     user.enable_investors &&
-      (user.entity_id == record.entity_id || user.entity_id == record.investor_entity_id || super_user?)
+      (belongs_to_entity?(user, record) || user.entity_id == record.investor_entity_id || super_user?)
   end
 
   def create?
-    (user.enable_investors && user.entity_id == record.entity_id)
+    (user.enable_investors && belongs_to_entity?(user, record))
   end
 
   def new?

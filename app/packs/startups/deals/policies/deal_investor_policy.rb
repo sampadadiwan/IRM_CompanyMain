@@ -21,7 +21,7 @@ class DealInvestorPolicy < DealBasePolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id) && DealPolicy.new(user, record.deal).update?
+    belongs_to_entity?(user, record) && DealPolicy.new(user, record.deal).update?
   end
 
   def new?

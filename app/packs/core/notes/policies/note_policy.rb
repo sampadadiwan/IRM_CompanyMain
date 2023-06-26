@@ -11,11 +11,11 @@ class NotePolicy < ApplicationPolicy
 
   def show?
     user.enable_investors &&
-      (user.entity_id == record.entity_id)
+      belongs_to_entity?(user, record)
   end
 
   def create?
-    (user.entity_id == record.entity_id)
+    belongs_to_entity?(user, record)
   end
 
   def new?

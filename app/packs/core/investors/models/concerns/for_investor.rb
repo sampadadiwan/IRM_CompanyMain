@@ -15,28 +15,32 @@ module ForInvestor
       end
     end
 
-    scope :for_parent_employee, lambda { |user|
-      join_clause = if instance_methods.include?(:access_rights)
+    scope :for_company_admin, lambda { |user|
+      join_clause = if parent_class_type.name == name
                       joins(:entity)
                     else
                       joins(parent_class_type.name.underscore.to_sym)
                     end
-      if user.has_cached_role?(:company_admin)
+
+      if user.entity_type == "Group Company"
         join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id in (?)", user.entity.child_ids)
       else
-        join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id in (?) and access_rights.user_id=?", user.entity.child_ids, user.id)
+        join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id = ?", user.entity_id)
       end
     }
 
     scope :for_employee, lambda { |user|
-                           join_clause = if instance_methods.include?(:access_rights)
-                                           joins(:access_rights)
-                                         else
-                                           joins(parent_class_type.name.underscore => :access_rights)
-                                         end
-
-                           join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
-                         }
+      join_clause = if instance_methods.include?(:access_rights)
+                      joins(:access_rights)
+                    else
+                      joins(parent_class_type.name.underscore => :access_rights)
+                    end
+      if user.entity_type == "Group Company"
+        join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id in (?) and access_rights.user_id=?", user.entity.child_ids, user.id)
+      else
+        join_clause.where("#{parent_class_type.name.underscore.pluralize}.entity_id=? and access_rights.user_id=?", user.entity_id, user.id)
+      end
+    }
 
     # Some models have a belongs_to :investor association
     scope :for_investor, lambda { |user|

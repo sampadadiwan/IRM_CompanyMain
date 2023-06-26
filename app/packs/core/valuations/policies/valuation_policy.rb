@@ -10,12 +10,12 @@ class ValuationPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id) ||
+    belongs_to_entity?(user, record) ||
       (record.owner && owner_policy.show?) || super_user?
   end
 
   def create?
-    (user.entity_id == record.entity_id)
+    belongs_to_entity?(user, record)
   end
 
   def new?

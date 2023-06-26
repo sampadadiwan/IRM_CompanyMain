@@ -22,7 +22,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def show_detail_tabs?
-    user.entity_id == record.entity_id
+    belongs_to_entity?(user, record)
   end
 
   def create?
@@ -46,7 +46,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def permissioned_employee?(perm = nil)
-    if user.entity_id == record.entity_id
+    if belongs_to_entity?(user, record)
       if user.has_cached_role?(:company_admin)
         true
       else

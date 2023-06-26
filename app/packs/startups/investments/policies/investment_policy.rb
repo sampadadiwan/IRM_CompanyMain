@@ -14,7 +14,7 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def show?
-    if (user.entity_id == record.entity_id && user.enable_investments) || super_user?
+    if (belongs_to_entity?(user, record) && user.enable_investments) || super_user?
       true
     else
       user.enable_investments &&
@@ -28,7 +28,7 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id && user.enable_investments)
+    (belongs_to_entity?(user, record) && user.enable_investments)
   end
 
   def new?

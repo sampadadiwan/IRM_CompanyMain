@@ -19,7 +19,7 @@ class MessagePolicy < ApplicationPolicy
 
   def create?
     Rails.logger.debug record.to_json
-    if user.entity_id == record.entity_id
+    if belongs_to_entity?(user, record)
       true
     else
       record.owner &&
