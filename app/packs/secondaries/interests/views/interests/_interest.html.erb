@@ -15,7 +15,7 @@
     <%= number_to_currency interest.price %>
   </td>
 
-  <% if secondary_sale && belongs_to_entity_id?(user, secondary_sale.entity_id) %>    
+  <% if secondary_sale && belongs_to_entity_id?(current_user, secondary_sale.entity_id) %>    
     <td>
       <%= custom_format_number interest.allocation_quantity, params %>
     </td>
