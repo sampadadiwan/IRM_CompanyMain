@@ -46,7 +46,6 @@ class InvestmentOpportunitiesController < ApplicationController
   # POST /investment_opportunities or /investment_opportunities.json
   def create
     @investment_opportunity = InvestmentOpportunity.new(investment_opportunity_params)
-    @investment_opportunity.entity_id = current_user.entity_id
     authorize @investment_opportunity
 
     setup_doc_user(@investment_opportunity)

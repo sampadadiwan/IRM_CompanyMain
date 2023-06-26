@@ -11,4 +11,9 @@ module ApplicationHelper
     parts = path_name.split("/")
     parts.length > length ? parts[-length..].join("/") : path_name
   end
+
+  def belongs_to_entity_id?(user, entity_id)
+    user.entity_id == entity_id ||
+      (user.entity_type == "Group Company" && user.entity.child_ids.include?(entity_id))
+  end
 end

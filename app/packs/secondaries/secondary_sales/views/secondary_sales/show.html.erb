@@ -148,6 +148,6 @@
   </div>
 
   <%= render "/layouts/steps", steps: ["Setup Access Rights", "View / Approve Offers", 
-             "View / Shortlist Interests", "Finalize Sale Price", "Allocate Sale & Edit Allocations"].freeze if @secondary_sale.entity_id == current_user.entity_id %>
+             "View / Shortlist Interests", "Finalize Sale Price", "Allocate Sale & Edit Allocations"].freeze if belongs_to_entity_id?(current_user, @secondary_sale.entity_id) %>
 
   <%= render "/secondary_sales/secondary_sale_details" , secondary_sale: @secondary_sale %>

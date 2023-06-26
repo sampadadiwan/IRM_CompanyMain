@@ -16,7 +16,7 @@ module AccessRightsHelper
       Rails.logger.debug { "AccessRightsHelper:  default called with #{access_right_params}" }
       # This is not for access_to_category or access_to_investor_id
       access_right = AccessRight.new(access_right_params)
-      access_right.entity_id = current_user.entity_id
+      access_right.entity_id = access_right.owner&.entity_id || current_user.entity_id
       authorize access_right
       access_rights << access_right
       # owner = access_right.owner
@@ -40,7 +40,7 @@ module AccessRightsHelper
 
         access_right = AccessRight.new(access_right_params)
         access_right.access_to_investor_id = investor_id
-        access_right.entity_id = current_user.entity_id
+        access_right.entity_id = access_right.owner&.entity_id || current_user.entity_id
         authorize access_right
         # owner.access_rights << access_right
         access_rights << access_right
@@ -63,7 +63,7 @@ module AccessRightsHelper
 
         access_right = AccessRight.new(access_right_params)
         access_right.user_id = user_id
-        access_right.entity_id = current_user.entity_id
+        access_right.entity_id = access_right.owner&.entity_id || current_user.entity_id
         authorize access_right
         # owner.access_rights << access_right
         access_rights << access_right
@@ -84,7 +84,7 @@ module AccessRightsHelper
       access_right_params[:access_to_category].each do |category|
         access_right = AccessRight.new(access_right_params)
         access_right.access_to_category = category
-        access_right.entity_id = current_user.entity_id
+        access_right.entity_id = access_right.owner&.entity_id || current_user.entity_id
         authorize access_right
         # owner.access_rights << access_right
         access_rights << access_right

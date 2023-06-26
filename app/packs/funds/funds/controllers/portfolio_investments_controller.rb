@@ -15,7 +15,7 @@ class PortfolioInvestmentsController < ApplicationController
   # GET /portfolio_investments/new
   def new
     @portfolio_investment = PortfolioInvestment.new(portfolio_investment_params)
-    @portfolio_investment.entity_id ||= current_user.entity_id
+    @portfolio_investment.entity_id = @portfolio_investment.fund.entity_id
     @portfolio_investment.investment_date ||= Time.zone.today
 
     authorize @portfolio_investment

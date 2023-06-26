@@ -14,7 +14,7 @@
 
   <td>
     <%= document.folder_full_path.truncate(80) %>  
-    <% if document.entity_id == current_user.entity_id %>  
+    <% if belongs_to_entity_id?(current_user, document.entity_id) %>  
       <span class="float-right">
         <%= link_to "View Docs", documents_path(folder_id: document.folder_id), 
                                   class: "badge badge-primary" %>

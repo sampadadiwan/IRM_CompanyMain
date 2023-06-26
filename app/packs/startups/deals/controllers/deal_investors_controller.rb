@@ -45,7 +45,7 @@ class DealInvestorsController < ApplicationController
   # POST /deal_investors or /deal_investors.json
   def create
     @deal_investor = DealInvestor.new(deal_investor_params)
-    @deal_investor.entity_id = current_user.entity_id
+    @deal_investor.entity_id = @deal_investor.deal.entity_id
     # This is required after the money gem was installed
     @deal_investor.primary_amount = deal_investor_params[:primary_amount].to_d
     @deal_investor.secondary_investment = deal_investor_params[:secondary_investment].to_d

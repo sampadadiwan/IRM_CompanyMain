@@ -28,7 +28,7 @@
 
     <%= link_to "Potential Matches", 
         search_offers_path(query: @interest.custom_matching_vals, secondary_sale_id: @interest.secondary_sale_id, finalize_allocation: true), 
-        {class: "btn btn-outline-primary" } if current_user && @interest.entity_id == current_user.entity_id %> 
+        {class: "btn btn-outline-primary" } if current_user && belongs_to_entity_id?(current_user, @interest.entity_id) %> 
   </div>
 
   <%= render "interests/interest_details", interest: @interest %>

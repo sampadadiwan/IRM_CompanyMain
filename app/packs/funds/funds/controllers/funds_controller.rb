@@ -47,7 +47,6 @@ class FundsController < ApplicationController
   # POST /funds or /funds.json
   def create
     @fund = Fund.new(fund_params)
-    @fund.entity_id = current_user.entity_id
     authorize(@fund)
     respond_to do |format|
       if @fund.save
@@ -62,7 +61,6 @@ class FundsController < ApplicationController
 
   # PATCH/PUT /funds/1 or /funds/1.json
   def update
-    @fund.entity_id = current_user.entity_id
     respond_to do |format|
       if @fund.update(fund_params)
         format.html { redirect_to fund_url(@fund), notice: "Fund was successfully updated." }
@@ -133,7 +131,6 @@ class FundsController < ApplicationController
     from_fund.fund_formulas.order(sequence: :asc).each do |ff|
       new_ff = ff.dup
       new_ff.fund = @fund
-      new_ff.entity_id = current_user.entity_id
       new_ff.save
     end
 

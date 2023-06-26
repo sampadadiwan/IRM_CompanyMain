@@ -83,7 +83,7 @@
             </div>
           <% end %>
 
-          <% investors = current_user.entity.investors.not_advisors  %>
+          <% investors = access_right.owner_type == "Entity" ? access_right.owner.investors.not_advisors :  access_right.owner.entity.investors.not_advisors %>
           <div class="form-group" id="investor_form_group">
             <%= form.label :access_to_investor_id, "Select Stakeholder" %>
             <%= form.select :access_to_investor_id, investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, 

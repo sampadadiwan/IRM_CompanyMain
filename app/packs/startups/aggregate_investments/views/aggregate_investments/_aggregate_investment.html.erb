@@ -14,7 +14,7 @@
     <%= aggregate_investment.investor.category %>
 </td>  
 <td>
-    <%= current_user.entity_id == aggregate_investment.entity_id ? 
+    <%= belongs_to_entity_id?(current_user, aggregate_investment.entity_id) ? 
         link_to(aggregate_investment.investor_name, aggregate_investment.investor) :
         aggregate_investment.investor_name %>
 </td>  

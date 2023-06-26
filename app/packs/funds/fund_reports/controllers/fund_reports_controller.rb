@@ -19,7 +19,7 @@ class FundReportsController < ApplicationController
   # GET /fund_reports/new
   def new
     @fund_report = FundReport.new
-    @fund_report.entity_id = current_user.entity_id
+    @fund_report.entity_id = @fund_report.fund.entity_id
     @fund_report.start_date ||= Time.zone.today - 3.months
     @fund_report.end_date ||= Time.zone.today
     authorize @fund_report
@@ -31,7 +31,7 @@ class FundReportsController < ApplicationController
   # POST /fund_reports or /fund_reports.json
   def create
     @fund_report = FundReport.new(fund_report_params)
-    @fund_report.entity_id = current_user.entity_id
+    @fund_report.entity_id = @fund_report.fund.entity_id
     authorize @fund_report
 
     respond_to do |format|

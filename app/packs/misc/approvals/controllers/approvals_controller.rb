@@ -34,7 +34,6 @@ class ApprovalsController < ApplicationController
   # POST /approvals or /approvals.json
   def create
     @approval = Approval.new(approval_params)
-    @approval.entity_id = current_user.entity_id
     authorize @approval
     respond_to do |format|
       if @approval.save

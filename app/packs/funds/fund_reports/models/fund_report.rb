@@ -1,4 +1,6 @@
 class FundReport < ApplicationRecord
+  include ForInvestor
+
   belongs_to :fund
   belongs_to :entity
 

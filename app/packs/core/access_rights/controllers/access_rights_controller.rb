@@ -90,7 +90,7 @@ class AccessRightsController < ApplicationController
   # PATCH/PUT /access_rights/1 or /access_rights/1.json
   def update
     authorize @access_right
-    
+
     respond_to do |format|
       if @access_right.update(access_right_params)
         format.html { redirect_to access_right_url(@access_right), notice: "Access right was successfully updated." }

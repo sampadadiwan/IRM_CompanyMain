@@ -99,7 +99,7 @@ class DocumentsController < ApplicationController
   # POST /documents or /documents.json
   def create
     @document = Document.new(document_params)
-    @document.entity_id = current_user.entity_id
+    @document.entity_id = @document.owner&.entity_id || current_user.entity_id
     @document.user_id = current_user.id
     authorize @document
 
