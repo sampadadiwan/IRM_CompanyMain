@@ -4,7 +4,7 @@ class FundPolicy < FundBasePolicy
   end
 
   def report?
-    update?
+    show?
   end
 
   def allocate?
@@ -40,7 +40,7 @@ class FundPolicy < FundBasePolicy
   end
 
   def timeline?
-    update?
+    show?
   end
 
   def create?

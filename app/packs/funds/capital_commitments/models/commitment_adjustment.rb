@@ -1,5 +1,6 @@
 class CommitmentAdjustment < ApplicationRecord
   include WithExchangeRate
+  include ForInvestor
   belongs_to :entity
   belongs_to :fund
   belongs_to :capital_commitment
