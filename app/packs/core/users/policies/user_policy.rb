@@ -26,11 +26,11 @@ class UserPolicy < ApplicationPolicy
   end
 
   def create?
-    belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)
+    belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin) || super_user?
   end
 
   def new?
-    user.has_cached_role?(:company_admin)
+    user.has_cached_role?(:company_admin) || super_user?
   end
 
   def update?
