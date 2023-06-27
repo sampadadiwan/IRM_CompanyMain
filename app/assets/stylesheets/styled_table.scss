@@ -26,6 +26,16 @@ table.dataTable {
     }
 }
 
+.no_hover_table {
+  tbody tr:nth-child(even):hover td{
+    background-color: white !important;
+  }
+  
+  tbody tr:nth-child(odd):hover td {
+      background-color: white !important;
+  }
+}
+
 table.action_table {
   tbody tr td:last-child {
     width: 1%;
