@@ -36,7 +36,8 @@ class User < ApplicationRecord
          :recoverable, :rememberable, :validatable, :confirmable
 
   # Only if this user is an employee of the entity
-  belongs_to :entity, optional: true
+  belongs_to :entity
+  belongs_to :advisor_entity, class_name: "Entity", optional: true
 
   validates :first_name, :last_name, presence: true
   validates :email, format: { with: /\A[^@\s]+@[^@\s]+\z/ }, presence: true
@@ -173,6 +174,10 @@ class User < ApplicationRecord
 
   def send_magic_link
     UserMailer.with(id:).magic_link.deliver_later
+  end
+
+  def show_all_cols?
+    entity_type == "Group Company"
   end
 
   private

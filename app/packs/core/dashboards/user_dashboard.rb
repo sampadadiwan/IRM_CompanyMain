@@ -9,6 +9,7 @@ class UserDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     entity: Field::BelongsTo,
+    advisor_entity: Field::BelongsTo, class_name: "Entity",
     id: Field::Number,
     sign_in_count: Field::Number,
     first_name: Field::String,
@@ -58,6 +59,7 @@ class UserDashboard < Administrate::BaseDashboard
     sign_in_count
     confirmed_at
     curr_role
+    advisor_entity
     roles
     permissions
   ].freeze
@@ -75,6 +77,7 @@ class UserDashboard < Administrate::BaseDashboard
     phone
     active
     curr_role
+    advisor_entity
     roles
   ].freeze
 
