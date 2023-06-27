@@ -38,12 +38,20 @@
     <% if lazy_load_data %>
       <a class="load_data_link" data-action="click->remittances#loadData"><span>Load Data</span></a>
     <% end %>
+
+    <% col_set = column_set(current_user, params[:cols]) %>
+    <%= custom_columns(current_user, params[:cols]) %>
   
     <table id="capital_remittances" class="table table-bordered dataTable action_table" 
         data-source="<%= data_source %>" style="width:100%" >
     
       <thead>
         <tr>
+          <% if col_set == "all" %>
+          <th>
+              Fund
+          </th>
+          <% end %>
           <th>
             Investor
           </th>
