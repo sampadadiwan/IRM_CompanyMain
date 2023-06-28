@@ -32,7 +32,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def new?
-    create?
+    create? && user.has_cached_role?(:company_admin)
   end
 
   def toggle_verified?

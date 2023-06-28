@@ -46,7 +46,6 @@ class Document < ApplicationRecord
   include FileUploader::Attachment(:file)
 
   scope :generated, -> { where(owner_tag: "Generated") }
-  
 
   def to_s
     name
@@ -129,5 +128,4 @@ class Document < ApplicationRecord
   def update_owner
     owner.document_changed(self) if owner.respond_to? :document_changed
   end
-  
 end
