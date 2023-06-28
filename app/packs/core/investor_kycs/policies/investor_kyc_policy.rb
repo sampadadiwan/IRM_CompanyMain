@@ -20,23 +20,25 @@ class InvestorKycPolicy < ApplicationPolicy
 
   def show?
     user.enable_kycs && (
-    belongs_to_entity?(user, record) ||
+      (belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :read)) ||
       user.entity_id == record.investor.investor_entity_id
-  )
+    )
   end
 
-  def create?
-    (belongs_to_entity?(user, record) ||
-      user.entity_id == record.investor.investor_entity_id) &&
+  def create?(emp_perm = :create)
+    (
+      (belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, emp_perm)) ||
+      user.entity_id == record.investor&.investor_entity_id
+    ) &&
       !user.investor_advisor? # IAs can't create / update KYCs
   end
 
   def new?
-    create? && user.has_cached_role?(:company_admin)
+    create?
   end
 
   def toggle_verified?
-    belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)
+    belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :approve)
   end
 
   def generate_new_aml_report?
@@ -56,7 +58,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def update?
-    create? && !record.verified
+    create?(:update) && !record.verified
   end
 
   def edit?
@@ -64,6 +66,6 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def destroy?
-    update?
+    create?(:destroy) && !record.verified
   end
 end

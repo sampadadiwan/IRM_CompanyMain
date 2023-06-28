@@ -9,8 +9,9 @@
     </h1>
 
     <span>
+    <% investor = Investor.new(entity_id: current_user.entity_id) %>
     <%= link_to "New Stakeholder" , new_investor_path("investor[entity_id]": current_user.entity_id),
-      {class: "btn btn-outline-primary" } %>
+      {class: "btn btn-outline-primary" } if policy(investor).new? %>
 
     <%= link_to "All Notes" , notes_path, {class: "btn btn-outline-success" } %>
 

@@ -78,15 +78,25 @@
     </div>
     <% end %>
 
-    <div class="associated_entity">
+    <div class="associated_entity row">
     <% User.permissions.pairs.each do |key, val| %>
       <% if user.entity.send(val) %>
-        <div class="form-group">
-          <%= form.label :permissions, key %>
+        <div class="form-group col">
+          <%= form.label :permissions, key.titleize, class: "no-wrap" %>
           <%= form.check_box :permissions, {name: "user[permissions][]",
-              val: val, id: "permissions_#{val}", class: "form-control form-checkbox"}, val, nil   %>
+              val: val, id: "permissions_#{val}", class: "form-control row-checkbox"}, val, nil   %>
         </div>
         <% end %>
+    <% end %>
+    </div>
+    
+    <div class="associated_entity row">
+    <% User.extended_permissions.pairs.each do |key, val| %>
+      <div class="form-group col">
+          <%= form.label :extended_permissions, key.titleize, class: "no-wrap" %>
+          <%= form.check_box :extended_permissions, {name: "user[extended_permissions][]",
+              val: val, id: "extended_permissions#{val}", class: "form-control row-checkbox"}, val, nil   %>
+      </div>      
     <% end %>
     </div>
 
