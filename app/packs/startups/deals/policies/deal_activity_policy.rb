@@ -1,7 +1,11 @@
 class DealActivityPolicy < DealBasePolicy
   class Scope < Scope
     def resolve
-      scope.joins(:deal_investor).where("deal_activities.entity_id=? or deal_investors.investor_entity_id=?", user.entity_id, user.entity_id)
+      if user.entity_type == "Group Company"
+        scope.where(entity_id: user.entity.child_ids)
+      else
+        scope.joins(:deal_investor).where("deal_activities.entity_id=? or deal_investors.investor_entity_id=?", user.entity_id, user.entity_id)
+      end
     end
   end
 

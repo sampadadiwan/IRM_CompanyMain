@@ -56,7 +56,7 @@ class TasksController < ApplicationController
   # GET /tasks/new
   def new
     @task = params[:task] ? Task.new(task_params) : Task.new
-    @task.entity_id ||= current_user.entity_id
+    @task.entity_id ||= @task.owner&.entity_id || current_user.entity_id
     @task.due_date = Time.zone.today + 1.week
     @task.user = current_user
     authorize @task
@@ -72,7 +72,7 @@ class TasksController < ApplicationController
   def create
     @task = Task.new(task_params)
     @task.entity_id = @task.owner ? @task.owner.entity_id : @task.entity_id || current_user.entity_id
-    @task.for_entity_id ||= current_user.entity_id
+    @task.for_entity_id ||= @task.owner.entity_id || current_user.entity_id
     @task.user = current_user
 
     authorize @task

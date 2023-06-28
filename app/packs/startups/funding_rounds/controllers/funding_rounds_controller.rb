@@ -39,7 +39,6 @@ class FundingRoundsController < ApplicationController
 
   # PATCH/PUT /funding_rounds/1 or /funding_rounds/1.json
   def update
-    @funding_round.entity_id = current_user.entity_id
     respond_to do |format|
       if @funding_round.update(funding_round_params)
         format.html { redirect_to funding_round_url(@funding_round), notice: "Funding round was successfully updated." }

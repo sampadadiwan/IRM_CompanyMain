@@ -32,7 +32,7 @@
           Deal
         </td>
         <td>
-          <%= current_user.entity_id == @deal_activity.entity_id ? 
+          <%= belongs_to_entity_id?(current_user, @deal_activity.entity_id) ? 
               link_to(@deal_activity.deal_name, deal_path(@deal_activity.deal, grid_view: true)) :
               @deal_activity.deal_name %>
         </td>    

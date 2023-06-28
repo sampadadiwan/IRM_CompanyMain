@@ -99,7 +99,7 @@ class DocumentsController < ApplicationController
   # POST /documents or /documents.json
   def create
     @document = Document.new(document_params)
-    @document.entity_id = current_user.entity_id
+    @document.entity_id = @document.owner&.entity_id || current_user.entity_id
     @document.user_id = current_user.id
     authorize @document
 
@@ -122,7 +122,6 @@ class DocumentsController < ApplicationController
 
   # PATCH/PUT /documents/1 or /documents/1.json
   def update
-    @document.signed_by_id = current_user.id if @document.signed_by_id
     respond_to do |format|
       if @document.update(document_params)
         format.html { redirect_to document_url(@document), notice: "Document was successfully updated." }

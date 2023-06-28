@@ -13,14 +13,6 @@
     if current_user.has_cached_role?(:holding) 
       personas << ["My Holdings", :holding] 
     end
-
-    if current_user.has_cached_role?(:consultant) 
-      personas << ["Consultant", :consultant] 
-      if personas.length == 1 && current_user.roles.count > 1
-        personas << ["Default", current_user.roles.first.name.to_sym] 
-      end
-    end
-
     
   %>
   <div class="form-group" data-controller="persona">

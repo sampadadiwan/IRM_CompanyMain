@@ -1,9 +1,9 @@
 <tr id="<%= dom_id deal_investor %>">
     <td>
-        <% if deal_investor.entity_id == current_user.entity_id %>
-        <%= link_to deal_investor.deal_name, deal_investor.deal %>
+        <% if belongs_to_entity_id?(current_user, deal_investor.entity_id) %>
+            <%= link_to deal_investor.deal_name, deal_investor.deal %>
         <% else %>
-        <%= deal_investor.deal_name %>
+            <%= deal_investor.deal_name %>
         <% end %>
         
     </td>
@@ -11,7 +11,7 @@
         <%= l deal_investor.deal.start_date if deal_investor.deal.start_date  %>
     </td>
     <td>
-        <%= current_user.entity_id == deal_investor.entity_id ? 
+        <%= belongs_to_entity_id?(current_user, deal_investor.entity_id) ? 
             link_to(deal_investor.investor_name, deal_investor) : deal_investor.investor_name %>
         <div>
             <span class="badge <%= status_badge(deal_investor) %>">

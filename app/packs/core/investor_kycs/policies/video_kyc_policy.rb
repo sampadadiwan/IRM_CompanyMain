@@ -14,12 +14,12 @@ class VideoKycPolicy < ApplicationPolicy
   end
 
   def show?
-    user.entity_id == record.entity_id ||
+    belongs_to_entity?(user, record) ||
       user.id == record.user_id
   end
 
   def create?
-    (user.entity_id == record.entity_id) ||
+    belongs_to_entity?(user, record) ||
       user.id == record.user_id
   end
 

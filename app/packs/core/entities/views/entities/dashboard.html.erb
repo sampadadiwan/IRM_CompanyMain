@@ -15,7 +15,7 @@
             <%= render "holding_dashboard" %>
         <% elsif current_user.entity_type == "Company" %>
             <%= render "cxo_dashboard" %>        
-        <% elsif current_user.entity_type == "Investment Fund" %>
+        <% elsif ["Investment Fund", "Group Company"].include? current_user.entity_type %>
             <%= render "fm_dashboard" %>
         <% elsif current_user.entity_type == "Family Office" || current_user.entity_type == "Investment Advisor" %>
             <%= render "investment_advisor_dashboard" %>

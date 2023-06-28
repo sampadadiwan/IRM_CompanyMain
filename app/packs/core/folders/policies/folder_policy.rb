@@ -1,16 +1,10 @@
 class FolderPolicy < ApplicationPolicy
-  class Scope < Scope
-    def resolve
-      scope.where(entity_id: user.entity_id)
-    end
-  end
-
   def index?
     true
   end
 
   def show?
-    user.entity_id == record.entity_id || super_user?
+    belongs_to_entity?(user, record) || super_user?
   end
 
   def download?
@@ -18,7 +12,7 @@ class FolderPolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id)
+    belongs_to_entity?(user, record)
   end
 
   def new?

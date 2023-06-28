@@ -1,10 +1,4 @@
 class MessagePolicy < ApplicationPolicy
-  class Scope < Scope
-    def resolve
-      scope.where(entity_id: user.entity_id)
-    end
-  end
-
   def index?
     true
   end
@@ -19,7 +13,7 @@ class MessagePolicy < ApplicationPolicy
 
   def create?
     Rails.logger.debug record.to_json
-    if user.entity_id == record.entity_id
+    if belongs_to_entity?(user, record)
       true
     else
       record.owner &&

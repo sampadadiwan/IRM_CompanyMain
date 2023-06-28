@@ -9,7 +9,7 @@ class EntityPolicy < ApplicationPolicy
     end
 
     def resolve_admin
-      #scope.where(enable_support: true)
+      # scope.where(enable_support: true)
       scope.all
     end
   end

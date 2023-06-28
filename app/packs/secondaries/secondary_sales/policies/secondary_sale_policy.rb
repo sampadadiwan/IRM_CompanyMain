@@ -1,18 +1,18 @@
 class SecondarySalePolicy < SaleBasePolicy
-  class Scope < Scope
-    def resolve
-      case user.curr_role.to_sym
-      when :employee
-        user.has_cached_role?(:company_admin) ? scope.where(entity_id: user.entity_id) : scope.for_employee(user)
-      when :holding
-        scope.for_investor(user).distinct
-      when :investor
-        scope.for_investor(user)
-      else
-        scope.none
-      end
-    end
-  end
+  # class Scope < Scope
+  #   def resolve
+  #     case user.curr_role.to_sym
+  #     when :employee
+  #       user.has_cached_role?(:company_admin) ? scope.where(entity_id: user.entity_id) : scope.for_employee(user)
+  #     when :holding
+  #       scope.for_investor(user).distinct
+  #     when :investor
+  #       scope.for_investor(user)
+  #     else
+  #       scope.none
+  #     end
+  #   end
+  # end
 
   def index?
     user.enable_secondary_sale
@@ -61,7 +61,7 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def show?
-    if user.entity_id == record.entity_id && user.enable_secondary_sale
+    if belongs_to_entity?(user, record) && user.enable_secondary_sale
       true
     else
       (permissioned_investor? ||

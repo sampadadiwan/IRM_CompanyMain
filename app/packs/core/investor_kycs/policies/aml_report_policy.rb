@@ -15,7 +15,7 @@ class AmlReportPolicy < ApplicationPolicy
 
   # investor can see investor kyc but not aml report
   def show?
-    index? && user.entity_id == record.entity_id
+    index? && belongs_to_entity?(user, record)
   end
 
   def create?
@@ -27,7 +27,7 @@ class AmlReportPolicy < ApplicationPolicy
   end
 
   def generate_new?
-    index? && user.entity_id == record.entity_id
+    index? && belongs_to_entity?(user, record)
   end
 
   def toggle_approved?

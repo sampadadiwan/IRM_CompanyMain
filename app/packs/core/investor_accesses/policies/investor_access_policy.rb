@@ -1,20 +1,14 @@
 class InvestorAccessPolicy < ApplicationPolicy
-  class Scope < Scope
-    def resolve
-      scope.where(entity_id: user.entity_id)
-    end
-  end
-
   def index?
     true
   end
 
   def show?
-    user.entity_id == record.entity_id || user.entity_id == record.investor.investor_entity_id || super_user?
+    belongs_to_entity?(user, record) || user.entity_id == record.investor.investor_entity_id || super_user?
   end
 
   def create?
-    user.entity_id == record.entity_id
+    belongs_to_entity?(user, record)
   end
 
   def request_access?
@@ -26,7 +20,7 @@ class InvestorAccessPolicy < ApplicationPolicy
   end
 
   def update?
-    user.entity_id == record.entity_id || super_user?
+    belongs_to_entity?(user, record) || super_user?
   end
 
   def approve?

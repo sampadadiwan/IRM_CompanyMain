@@ -28,7 +28,7 @@ class FoldersController < ApplicationController
   # POST /folders or /folders.json
   def create
     @folder = Folder.new(folder_params)
-    @folder.entity_id = current_user.entity_id
+    @folder.entity_id = @folder.parent.entity_id
     authorize @folder
 
     setup_doc_user(@folder)

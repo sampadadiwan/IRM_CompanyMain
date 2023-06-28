@@ -15,7 +15,7 @@ Scenario Outline: Login Successfully
     |system_created=true|entity_type=Company  |Please change your password at the earliest|
 
 Scenario Outline: Login Successfully
-  Given there is a user "<user>"
+  Given there is a user "<user>" for an entity ""
   And I am at the login page
   When I fill and submit the login page
   Then I should see the "<msg>"
@@ -42,7 +42,7 @@ Scenario Outline: Login Successfully, without password
     |  	    |Signed in successfully| Login Link: Expires in 5 minutes |Click To Login|Login link sent, please check your mailbox.|
 
 Scenario Outline: Login Incorrectly
-  Given there is a user "<user>"
+  Given there is a user "<user>" for an entity ""
   And I am at the login page
   When I fill the password incorrectly and submit the login page
   Then I should see the "<msg>"

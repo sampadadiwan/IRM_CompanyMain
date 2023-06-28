@@ -1,16 +1,4 @@
 class InterestPolicy < SaleBasePolicy
-  class Scope < Scope
-    def resolve
-      if user.curr_role.to_sym == :employee
-        user.has_cached_role?(:company_admin) ? scope.where(entity_id: user.entity_id) : scope.for_employee(user)
-      elsif user.curr_role.to_sym == :investor
-        for_investor(user)
-      else
-        scope.none
-      end
-    end
-  end
-
   def index?
     user.enable_secondary_sale
   end
@@ -25,18 +13,18 @@ class InterestPolicy < SaleBasePolicy
 
   def show?
     (user.entity_id == record.interest_entity_id) ||
-      (user.entity_id == record.entity_id) ||
+      belongs_to_entity?(user, record) ||
       sale_policy.owner? ||
       owner? ||
       matched_offer? # The matched offers user can see the interest
   end
 
   def short_list?
-    user.has_cached_role?(:approver) && (user.entity_id == record.entity_id)
+    user.has_cached_role?(:approver) && belongs_to_entity?(user, record)
   end
 
   def unscramble?
-    (record.escrow_deposited? && user.entity_id == record.entity_id) || # Escrow is deposited
+    (record.escrow_deposited? && belongs_to_entity?(user, record)) || # Escrow is deposited
       user.entity_id == record.interest_entity_id || # Interest is by this entity
       permissioned_investor?(:seller) # Is a seller added by the company for this sale
   end

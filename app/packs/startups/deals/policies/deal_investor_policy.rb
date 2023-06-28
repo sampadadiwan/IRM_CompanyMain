@@ -1,7 +1,9 @@
 class DealInvestorPolicy < DealBasePolicy
   class Scope < Scope
     def resolve
-      if %w[employee].include?(user.curr_role) && user.has_cached_role?(:company_admin)
+      if user.entity_type == "Group Company"
+        scope.where(entity_id: user.entity.child_ids)
+      elsif %w[employee].include?(user.curr_role) && user.has_cached_role?(:company_admin)
         scope.where(entity_id: user.entity_id)
       elsif %w[employee].include? user.curr_role
         scope.for_employee(user)
@@ -21,7 +23,7 @@ class DealInvestorPolicy < DealBasePolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id) && DealPolicy.new(user, record.deal).update?
+    belongs_to_entity?(user, record) && DealPolicy.new(user, record.deal).update?
   end
 
   def new?

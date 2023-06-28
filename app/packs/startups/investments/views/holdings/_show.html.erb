@@ -17,7 +17,7 @@
           <%=  @holding.user.full_name %>, <%= @holding.user.email %>
         <% else %>
 
-          <%= current_user.entity_id == @holding.entity_id ?  
+          <%= belongs_to_entity_id?(current_user, @holding.entity_id) ?  
               link_to(@holding.investor.investor_name, @holding.investor) : @holding.investor.investor_name  %>
 
         <% end %>

@@ -1,20 +1,14 @@
 class NudgePolicy < ApplicationPolicy
-  class Scope < Scope
-    def resolve
-      scope.where(entity_id: user.entity_id)
-    end
-  end
-
   def index?
     true
   end
 
   def show?
-    (user.entity_id == record.entity_id)
+    belongs_to_entity?(user, record)
   end
 
   def create?
-    (user.entity_id == record.entity_id)
+    belongs_to_entity?(user, record)
   end
 
   def new?

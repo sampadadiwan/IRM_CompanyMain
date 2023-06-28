@@ -5,7 +5,7 @@
       Deal
     </td>
     <td>
-      <%= current_user.entity_id == deal_investor.entity_id ?
+      <%= belongs_to_entity_id?(current_user, deal_investor.entity_id) ?
         link_to(deal_investor.deal_name, deal_investor.deal) : 
         deal_investor.deal_name %>
     </td>
@@ -15,7 +15,7 @@
       Investor
     </td>
     <td>
-      <%= current_user.entity_id == deal_investor.entity_id ?
+      <%= belongs_to_entity_id?(current_user, deal_investor.entity_id) ?
           link_to(deal_investor.investor_name, deal_investor.investor) :
           deal_investor.investor_name %>
     </td>

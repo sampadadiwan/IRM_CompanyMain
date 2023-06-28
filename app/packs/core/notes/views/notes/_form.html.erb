@@ -23,7 +23,8 @@
   <div class="form-group">
     <%= form.label :investor %>
     <%= form.text_field :investor_name, class: "form-control", disabled: "disabled", value: @note.investor.investor_name  %>
-    <%= form.number_field :investor_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
   </div>
   
   <% else %>

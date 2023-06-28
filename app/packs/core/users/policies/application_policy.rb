@@ -44,7 +44,12 @@ class ApplicationPolicy
   end
 
   def super_user?
-    user.curr_role == "super"
+    user.has_cached_role?(:super)
+  end
+
+  def belongs_to_entity?(user, record)
+    user.entity_id == record.entity_id ||
+      (user.entity_type == "Group Company" && user.entity.child_ids.include?(record.entity_id))
   end
 
   class Scope
@@ -54,7 +59,11 @@ class ApplicationPolicy
     end
 
     def resolve
-      scope.all
+      if user.entity_type == "Group Company"
+        scope.where(entity_id: user.entity.child_ids)
+      else
+        scope.where(entity_id: user.entity_id)
+      end
     end
 
     def resolve_admin

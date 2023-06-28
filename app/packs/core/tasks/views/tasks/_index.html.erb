@@ -4,7 +4,7 @@
     <% unless search %>
       
     <h6 class="m-0 font-weight-bold text-primary">
-        <% show_for = for_entity.id == current_user.entity_id ? nil : for_entity %>
+        <% show_for = belongs_to_entity_id?(current_user, for_entity.id) ? nil : for_entity %>
         <%= link_to "Show All" , tasks_path(for_entity_id: show_for&.id, 
                                         entity_id: params[:entity_id],
                                         assigned_to_id: params[:assigned_to_id],

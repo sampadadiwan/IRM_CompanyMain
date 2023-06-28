@@ -3,7 +3,7 @@ class AggregatePortfolioInvestmentsController < ApplicationController
 
   # GET /aggregate_portfolio_investments or /aggregate_portfolio_investments.json
   def index
-    @aggregate_portfolio_investments = policy_scope(AggregatePortfolioInvestment)
+    @aggregate_portfolio_investments = policy_scope(AggregatePortfolioInvestment).includes(:fund, :portfolio_company)
     @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @aggregate_portfolio_investments = @aggregate_portfolio_investments.where(portfolio_company_id: params[:investor_id]) if params[:investor_id].present?
   end

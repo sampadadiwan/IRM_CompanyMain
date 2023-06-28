@@ -1,7 +1,9 @@
 class ExcercisePolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:employee)
+      if user.entity_type == "Group Company"
+        scope.where(entity_id: user.entity.child_ids)
+      elsif user.has_cached_role?(:employee)
         scope.where(entity_id: user.entity_id)
       else
         scope.where(user_id: user.id)
@@ -14,7 +16,7 @@ class ExcercisePolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id) || (user.id == record.user_id) || super_user?
+    belongs_to_entity?(user, record) || (user.id == record.user_id) || super_user?
   end
 
   def create?
@@ -38,6 +40,6 @@ class ExcercisePolicy < ApplicationPolicy
   end
 
   def approve?
-    user.has_cached_role?(:approver) && user.entity_id == record.entity_id
+    user.has_cached_role?(:approver) && belongs_to_entity?(user, record)
   end
 end

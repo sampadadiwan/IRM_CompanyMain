@@ -9,12 +9,12 @@
         <%= link_to(deal_activity.title, deal_activity) %>
     </td>
     <td class="hideMobP">
-        <%= current_user.entity_id == deal_activity.entity_id ? 
+        <%= belongs_to_entity_id?(current_user, deal_activity.entity_id) ? 
                 link_to(deal_activity.deal_name, deal_activity.deal) : deal_activity.deal_name %>
         
     </td>
     <td class="hideMobP">
-        <%= current_user.entity_id == deal_activity.entity_id && deal_activity.deal_investor ? 
+        <%= belongs_to_entity_id?(current_user, deal_activity.entity_id) && deal_activity.deal_investor ? 
             link_to(deal_activity.investor_name, deal_activity.deal_investor) : deal_activity.investor_name %>
     </td>
     <td class="hideMobP">

@@ -34,7 +34,7 @@ class DealActivitiesController < ApplicationController
   # GET /deal_activities/new
   def new
     @deal_activity = DealActivity.new(deal_activity_params)
-    @deal_activity.entity_id = current_user.entity_id
+    @deal_activity.entity_id = @deal_activity.deal.entity_id
     authorize @deal_activity
   end
 
@@ -46,7 +46,7 @@ class DealActivitiesController < ApplicationController
   # POST /deal_activities or /deal_activities.json
   def create
     @deal_activity = DealActivity.new(deal_activity_params)
-    @deal_activity.entity_id = current_user.entity_id
+    @deal_activity.entity_id = @deal_activity.deal.entity_id
     authorize @deal_activity
 
     @deal_activity.has_documents_nested_attributes = true if params[:deal_activity] && params[:deal_activity][:documents_attributes].present?

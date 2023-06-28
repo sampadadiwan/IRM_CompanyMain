@@ -1,22 +1,10 @@
 class FundPolicy < FundBasePolicy
-  class Scope < Scope
-    def resolve
-      if user.has_cached_role?(:company_admin) && user.entity_type == "Investment Fund"
-        scope.where(entity_id: user.entity_id)
-      elsif user.curr_role == "employee" && user.entity_type == "Investment Fund"
-        scope.for_employee(user)
-      else
-        scope.for_investor(user)
-      end
-    end
-  end
-
   def index?
     user.enable_funds
   end
 
   def report?
-    update?
+    show?
   end
 
   def allocate?
@@ -52,13 +40,12 @@ class FundPolicy < FundBasePolicy
   end
 
   def timeline?
-    update?
+    show?
   end
 
   def create?
     user.enable_funds &&
-      permissioned_employee? &&
-      user.entity_type == "Investment Fund"
+      permissioned_employee?(:create)
   end
 
   def new?

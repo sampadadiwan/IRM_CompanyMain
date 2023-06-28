@@ -1,7 +1,9 @@
 class InvestmentPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.curr_role == "employee"
+      if user.entity_type == "Group Company"
+        scope.where(entity_id: user.entity.child_ids)
+      elsif user.curr_role == "employee"
         scope.where(entity_id: user.entity_id)
       else
         scope.for_investor_all(user)
@@ -14,7 +16,7 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def show?
-    if (user.entity_id == record.entity_id && user.enable_investments) || super_user?
+    if (belongs_to_entity?(user, record) && user.enable_investments) || super_user?
       true
     else
       user.enable_investments &&
@@ -28,7 +30,7 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id && user.enable_investments)
+    (belongs_to_entity?(user, record) && user.enable_investments)
   end
 
   def new?

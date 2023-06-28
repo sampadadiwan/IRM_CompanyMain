@@ -1,7 +1,9 @@
 class InvestorKycPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if %i[employee].include? user.curr_role.to_sym
+      if user.entity_type == "Group Company"
+        scope.where(entity_id: user.entity.child_ids)
+      elsif %i[employee].include? user.curr_role.to_sym
         if user.investor_advisor?
           # We cant show them all the KYCs, only the ones for the funds they have been permissioned
           fund_ids = Fund.for_employee(user).pluck(:id)
@@ -21,13 +23,13 @@ class InvestorKycPolicy < ApplicationPolicy
 
   def show?
     user.enable_kycs && (
-    user.entity_id == record.entity_id ||
+    belongs_to_entity?(user, record) ||
       user.entity_id == record.investor.investor_entity_id
   )
   end
 
   def create?
-    (user.entity_id == record.entity_id ||
+    (belongs_to_entity?(user, record) ||
       user.entity_id == record.investor.investor_entity_id) &&
       !user.investor_advisor? # IAs can't create / update KYCs
   end
@@ -37,7 +39,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def toggle_verified?
-    user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)
+    belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)
   end
 
   def generate_new_aml_report?
@@ -45,15 +47,15 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def assign_kyc_data?
-    user.entity_id == record.entity_id
+    belongs_to_entity?(user, record)
   end
 
   def compare_kyc_datas?
-    user.entity_id == record.entity_id
+    belongs_to_entity?(user, record)
   end
 
   def generate_new_kyc_data?
-    user.entity_id == record.entity_id
+    belongs_to_entity?(user, record)
   end
 
   def update?

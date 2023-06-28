@@ -45,7 +45,7 @@
 
     <% end %>
 
-    <% if @folder.entity_id == current_user.entity_id %>
+    <% if belongs_to_entity_id?(current_user, @folder.entity_id) %>
       <tr>
           <td>
             Defaults 

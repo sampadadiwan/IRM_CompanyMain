@@ -1,21 +1,15 @@
 class ApprovalPolicy < ApplicationPolicy
-  class Scope < Scope
-    def resolve
-      scope.where(entity_id: user.entity_id)
-    end
-  end
-
   def index?
     true
   end
 
   def show?
-    (user.entity_id == record.entity_id) ||
+    belongs_to_entity?(user, record) ||
       Approval.for_investor(user).where(id: record.id).present?
   end
 
   def create?
-    (user.entity_id == record.entity_id) &&
+    belongs_to_entity?(user, record) &&
       (user.curr_role = "company_admin")
   end
 

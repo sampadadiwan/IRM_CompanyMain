@@ -88,7 +88,7 @@ class InvestorAccessesController < ApplicationController
   # POST /investor_accesses or /investor_accesses.json
   def create
     @investor_access = InvestorAccess.new(investor_access_params)
-    @investor_access.entity_id = current_user.entity_id
+    @investor_access.entity_id = @investor_access.investor.entity_id
     @investor_access.granted_by = current_user.id
 
     authorize @investor_access

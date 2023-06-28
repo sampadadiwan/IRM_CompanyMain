@@ -1,7 +1,7 @@
 <% investor_view ||= false %>
 <tr id="holding_<%= holding.id %>">
   <td class="hideMobP">
-    <%= current_user.entity_id == holding.entity_id ?  
+    <%= belongs_to_entity_id?(current_user, holding.entity_id)  ?  
         link_to(holding.funding_round.name, holding.funding_round) : holding.funding_round.name  %>
   </td>
   <td class="hideMobP">

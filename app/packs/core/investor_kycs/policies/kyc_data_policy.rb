@@ -14,7 +14,7 @@ class KycDataPolicy < ApplicationPolicy
   end
 
   def show?
-    user.entity_id == record.entity_id
+    belongs_to_entity?(user, record)
   end
 
   def create?
@@ -22,11 +22,11 @@ class KycDataPolicy < ApplicationPolicy
   end
 
   def compare_ckyc_kra?
-    user.entity_id == record.entity_id
+    belongs_to_entity?(user, record)
   end
 
   def generate_new?
-    user.entity_id == record.entity_id
+    belongs_to_entity?(user, record)
   end
 
   def new?

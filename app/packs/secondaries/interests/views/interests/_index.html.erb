@@ -28,7 +28,7 @@
             <th>
                 Interest Price
             </th>
-            <% if secondary_sale && secondary_sale.entity_id == current_user.entity_id %>
+            <% if secondary_sale && belongs_to_entity_id?(current_user, secondary_sale.entity_id) %>
             
                 <th>
                     Potential Allocation

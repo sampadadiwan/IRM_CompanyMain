@@ -1,6 +1,20 @@
 class SaleBasePolicy < ApplicationPolicy
+  class Scope < Scope
+    def resolve
+      if user.has_cached_role?(:company_admin) && ["Company", "Group Company"].include?(user.entity_type)
+        scope.for_company_admin(user)
+      elsif user.curr_role == 'employee' && ["Company", "Group Company"].include?(user.entity_type)
+        scope.for_employee(user)
+      elsif user.curr_role == 'holding'
+        scope.for_investor(user).distinct
+      else
+        scope.for_investor(user)
+      end
+    end
+  end
+
   def permissioned_employee?(perm = nil)
-    if user.entity_id == record.entity_id
+    if belongs_to_entity?(user, record)
       if user.has_cached_role?(:company_admin)
         true
       else
@@ -28,7 +42,7 @@ class SaleBasePolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)) ||
+    (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) ||
       permissioned_employee?(:create)
   end
 end

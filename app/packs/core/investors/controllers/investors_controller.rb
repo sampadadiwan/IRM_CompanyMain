@@ -4,7 +4,7 @@ class InvestorsController < ApplicationController
 
   # GET /investors or /investors.json
   def index
-    @investors = policy_scope(Investor)
+    @investors = policy_scope(Investor).joins(:entity)
     authorize(Investor)
     @investors = @investors.where(category: params[:category]) if params[:category]
 

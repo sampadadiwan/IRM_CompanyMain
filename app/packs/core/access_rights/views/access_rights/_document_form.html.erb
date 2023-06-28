@@ -56,7 +56,7 @@
             "data-action": "change->access#addErrorCheck"  %>
           </div>
           
-          <% investors = current_user.entity.investors  %>
+          <% investors = access_right.owner.entity.investors  %>
           
           <div class="form-group" id="investor_form_group">
             <%= form.label :access_to_investor_id, "Select Stakeholder" %>

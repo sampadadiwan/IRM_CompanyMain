@@ -1,16 +1,10 @@
 class AggregateInvestmentPolicy < ApplicationPolicy
-  class Scope < Scope
-    def resolve
-      scope.where(entity_id: user.entity_id)
-    end
-  end
-
   def index?
     true
   end
 
   def show?
-    if user.entity_id == record.entity_id
+    if belongs_to_entity?(user, record)
       true
     else
       user.enable_investments &&

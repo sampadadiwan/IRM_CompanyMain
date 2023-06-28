@@ -2,6 +2,7 @@ class InvestorDatatable < AjaxDatatablesRails::ActiveRecord
   def view_columns
     @view_columns ||= {
       id: { source: "Investor.id" },
+      entity_name: { source: "Entity.name" },
       investor_name: { source: "Investor.investor_name", orderable: true },
       category: { source: "Investor.category",  orderable: true },
       tag_list: { source: "Investor.tag_list",  orderable: true },
@@ -15,6 +16,7 @@ class InvestorDatatable < AjaxDatatablesRails::ActiveRecord
     records.map do |record|
       {
         id: record.id,
+        entity_name: record.entity.name,
         investor_name: record.investor_name,
         category: record.category,
         tag_list: record.tag_list,

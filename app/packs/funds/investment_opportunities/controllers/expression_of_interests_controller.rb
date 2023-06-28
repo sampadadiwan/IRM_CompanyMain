@@ -15,7 +15,7 @@ class ExpressionOfInterestsController < ApplicationController
     @expression_of_interest = ExpressionOfInterest.new(expression_of_interest_params)
     @expression_of_interest.entity_id = @expression_of_interest.investment_opportunity.entity_id
     if current_user.entity_id != @expression_of_interest.entity_id
-      @expression_of_interest.eoi_entity_id = current_user.entity_id
+      @expression_of_interest.eoi_entity_id = @expression_of_interest.investment_opportunity.entity_id
       @expression_of_interest.investor = @expression_of_interest.entity.investors.where(investor_entity_id: current_user.entity_id).first
     end
     @expression_of_interest.amount = @expression_of_interest.investment_opportunity.min_ticket_size

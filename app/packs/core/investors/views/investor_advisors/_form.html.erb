@@ -32,6 +32,11 @@
   </div>
 
   <div class="form-group">
+      <%= form.label :allowed_roles %>
+      <%= form.select :allowed_roles, ["company_admin", "approver", "employee"], {selected: investor_advisor.allowed_roles, include_hidden: false}, class: "form-control select2", multiple: true, name: "investor_advisor[allowed_roles][]" %>
+  </div>
+
+  <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-primary"}%>
   </div>
 <% end %>

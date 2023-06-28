@@ -10,11 +10,11 @@ class OptionPoolPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id) || user.holdings.where(entity_id: record.entity_id).present? || super_user?
+    belongs_to_entity?(user, record) || user.holdings.where(entity_id: record.entity_id).present? || super_user?
   end
 
   def create?
-    (user.entity_id == record.entity_id)
+    belongs_to_entity?(user, record)
   end
 
   def new?

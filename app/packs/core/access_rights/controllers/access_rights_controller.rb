@@ -90,7 +90,6 @@ class AccessRightsController < ApplicationController
   # PATCH/PUT /access_rights/1 or /access_rights/1.json
   def update
     authorize @access_right
-    @access_right.entity_id = current_user.entity_id
 
     respond_to do |format|
       if @access_right.update(access_right_params)

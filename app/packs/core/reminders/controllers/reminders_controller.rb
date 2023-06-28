@@ -19,7 +19,7 @@ class RemindersController < ApplicationController
   # GET /reminders/new
   def new
     @reminder = Reminder.new(reminder_params)
-    @reminder.entity_id = current_user.entity_id
+    @reminder.entity_id = @reminder.owner.entity_id
     @reminder.due_date = Time.zone.today + 7.days
     @reminder.email = current_user.email
 
@@ -32,7 +32,7 @@ class RemindersController < ApplicationController
   # POST /reminders or /reminders.json
   def create
     @reminder = Reminder.new(reminder_params)
-    @reminder.entity_id = current_user.entity_id
+    @reminder.entity_id = @reminder.owner.entity_id
     authorize @reminder
 
     respond_to do |format|

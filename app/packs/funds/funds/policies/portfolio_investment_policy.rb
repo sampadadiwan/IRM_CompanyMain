@@ -1,26 +1,16 @@
-class PortfolioInvestmentPolicy < ApplicationPolicy
-  class Scope < Scope
-    def resolve
-      if user.has_cached_role?(:company_admin) && user.entity_type == "Investment Fund"
-        scope.where(entity_id: user.entity_id)
-      elsif user.curr_role == 'employee' && user.entity_type == "Investment Fund"
-        scope.for_employee(user)
-      else
-        scope.for_investor(user)
-      end
-    end
-  end
-
+class PortfolioInvestmentPolicy < FundBasePolicy
   def index?
     true
   end
 
   def show?
-    (user.entity_id == record.entity_id)
+    user.enable_funds &&
+      permissioned_employee?
   end
 
   def create?
-    (user.entity_id == record.entity_id)
+    user.enable_funds &&
+      permissioned_employee?
   end
 
   def new?

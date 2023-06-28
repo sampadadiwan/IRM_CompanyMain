@@ -1,6 +1,18 @@
 class IoBasePolicy < ApplicationPolicy
+  class Scope < Scope
+    def resolve
+      if user.has_cached_role?(:company_admin) && ["Investment Fund", "Group Company"].include?(user.entity_type)
+        scope.for_company_admin(user)
+      elsif user.curr_role == 'employee' && ["Investment Fund", "Group Company"].include?(user.entity_type)
+        scope.for_employee(user)
+      else
+        scope.for_investor(user)
+      end
+    end
+  end
+
   def permissioned_employee?(perm = nil)
-    if user.entity_id == record.entity_id
+    if belongs_to_entity?(user, record)
       if user.has_cached_role?(:company_admin)
         true
       else
@@ -13,12 +25,12 @@ class IoBasePolicy < ApplicationPolicy
         end
       end
     else
-      false
+      super_user?
     end
   end
 
   def permissioned_investor?
-    if user.entity_id == record.entity_id
+    if belongs_to_entity?(user, record)
       false
     else
       @pi_record ||= record.class.for_investor(user).where("#{record.class.table_name}.id=?", record.id)
@@ -27,7 +39,7 @@ class IoBasePolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id && user.has_cached_role?(:company_admin)) ||
+    (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) ||
       permissioned_employee?(:create)
   end
 end

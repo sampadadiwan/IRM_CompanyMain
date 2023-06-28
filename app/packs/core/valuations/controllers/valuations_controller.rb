@@ -22,7 +22,7 @@ class ValuationsController < ApplicationController
   # GET /valuations/new
   def new
     @valuation = Valuation.new(valuation_params)
-    @valuation.entity_id = current_user.entity_id
+    @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
     @valuation.valuation_date = Time.zone.today
     authorize @valuation
     setup_custom_fields(@valuation)
@@ -36,7 +36,7 @@ class ValuationsController < ApplicationController
   # POST /valuations or /valuations.json
   def create
     @valuation = Valuation.new(valuation_params)
-    @valuation.entity_id = current_user.entity_id
+    @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
     @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
     @valuation.valuation_cents = valuation_params[:valuation].to_f * 100
     authorize @valuation

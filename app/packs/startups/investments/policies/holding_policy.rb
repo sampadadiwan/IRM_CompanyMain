@@ -1,15 +1,19 @@
 class HoldingPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      case user.curr_role
-      when "employee"
-        scope.where("entity_id=?", user.entity_id)
-      when "holding"
-        scope.approved.where("user_id=?", user.id)
-      when "investor"
-        scope.joins(:investor).where("investors.investor_entity_id=?", user.entity_id)
+      if user.entity_type == "Group Company"
+        scope.where(entity_id: user.entity.child_ids)
       else
-        scope.none
+        case user.curr_role
+        when "employee"
+          scope.where("entity_id=?", user.entity_id)
+        when "holding"
+          scope.approved.where("user_id=?", user.id)
+        when "investor"
+          scope.joins(:investor).where("investors.investor_entity_id=?", user.entity_id)
+        else
+          scope.none
+        end
       end
     end
   end
@@ -19,7 +23,7 @@ class HoldingPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.enable_holdings && user.entity_id == record.entity_id && user.has_cached_role?(:employee)) ||
+    (user.enable_holdings && belongs_to_entity?(user, record) && user.has_cached_role?(:employee)) ||
       (user.id == record.user_id && user.has_cached_role?(:holding)) ||
       (user.entity_id == record.investor.investor_entity_id && user.has_cached_role?(:investor)) || super_user?
   end
@@ -34,7 +38,7 @@ class HoldingPolicy < ApplicationPolicy
   end
 
   def create?
-    (user.entity_id == record.entity_id && user.enable_holdings)
+    (belongs_to_entity?(user, record) && user.enable_holdings)
   end
 
   def new?

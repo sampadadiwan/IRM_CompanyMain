@@ -1,49 +1,38 @@
 class OfferPolicy < SaleBasePolicy
-  class Scope < Scope
-    def resolve
-      case user.curr_role.to_sym
-      when :employee
-        user.has_cached_role?(:company_admin) ? scope.where(entity_id: user.entity_id) : scope.for_employee(user)
-      when :holding
-        scope.where(user_id: user.id)
-      when :investor
-        scope.for_investor(user)
-      else
-        scope.none
-      end
-    end
-  end
-
   def index?
     user.enable_secondary_sale
   end
 
   def show?
     create? ||
-      user.entity_id == record.entity_id ||
+      belongs_to_entity?(user, record) ||
       sale_policy.owner? ||
       interest_policy.owner? || super_user?
   end
 
   def create?
-    if user.entity_id == record.entity_id
+    if belongs_to_entity?(user, record)
       record.secondary_sale.manage_offers
-    elsif user.has_cached_role?(:holding)
-      record.holding.user_id == user.id && record.holding.entity_id == record.entity_id
+
     elsif user.has_cached_role?(:investor)
       record.holding.investor.investor_entity_id == user.entity_id
+
+    elsif user.has_cached_role?(:holding)
+      record.holding.user_id == user.id && record.holding.entity_id == record.entity_id
+
     else
       false
     end
   end
 
   def approve?
-    user.has_cached_role?(:approver) && (user.entity_id == record.entity_id)
+    user.has_cached_role?(:approver) && belongs_to_entity?(user, record)
   end
 
   def accept_spa?
     ((record.holding.user_id == user.id) ||
-     (user.entity_id == record.entity_id && record.secondary_sale.manage_offers)) &&
+    (record.investor && record.investor.investor_entity_id == user.entity_id) ||
+     (belongs_to_entity?(user, record) && record.secondary_sale.manage_offers)) &&
       (record.verified && !record.final_agreement)
   end
 

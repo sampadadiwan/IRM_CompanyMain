@@ -1,7 +1,9 @@
 class DealPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if %w[employee].include?(user.curr_role) && user.has_cached_role?(:company_admin)
+      if user.entity_type == "Group Company"
+        scope.where(entity_id: user.entity.child_ids)
+      elsif %w[employee].include?(user.curr_role) && user.has_cached_role?(:company_admin)
         scope.where(entity_id: user.entity_id)
       elsif %w[employee].include? user.curr_role
         scope.for_employee(user)
@@ -22,7 +24,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def show_detail_tabs?
-    user.entity_id == record.entity_id
+    belongs_to_entity?(user, record)
   end
 
   def create?
@@ -46,7 +48,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def permissioned_employee?(perm = nil)
-    if user.entity_id == record.entity_id
+    if belongs_to_entity?(user, record)
       if user.has_cached_role?(:company_admin)
         true
       else
