@@ -54,6 +54,12 @@ class Investor < ApplicationRecord
   validates :investor_entity_id, uniqueness: { scope: :entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }
   validates :category, length: { maximum: 100 }
   validates :city, length: { maximum: 50 }
+  validates :pan, length: { maximum: 15 }
+  # We did not have PAN as mandatory before. But we need to make it mandatory, without forcing update to existing data. Hence this check for data created after PAN_MANDATORY_AFTER date
+  validates :pan, presence: true, if: proc { |e| (e.created_at && e.created_at >= Entity::PAN_MANDATORY_AFTER) || (e.new_record? && Time.zone.today >= Entity::PAN_MANDATORY_AFTER) }
+
+  validates_uniqueness_of :pan, scope: :entity_id, allow_blank: true, allow_nil: true, message: "already exists as an investor. Duplicate Investor."
+
   validates :tag_list, length: { maximum: 120 }
 
   scope :for, lambda { |user, startup_entity|
@@ -103,8 +109,9 @@ class Investor < ApplicationRecord
 
     # Ensure we have an investor entity
     if investor_entity_id.blank?
-      e = Entity.where(name: investor_name.strip).first
-      e ||= Entity.create(name: investor_name.strip, entity_type: "Investor")
+      e = pan ? Entity.where(name: pan.strip).first : nil
+      e ||= Entity.where(name: investor_name.strip).first
+      e ||= Entity.create(name: investor_name.strip, entity_type: "Investor", pan:)
 
       setup_permissions(e)
       e.save

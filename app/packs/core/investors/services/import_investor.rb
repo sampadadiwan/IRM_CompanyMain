@@ -1,7 +1,7 @@
 class ImportInvestor < ImportUtil
   include Interactor
 
-  STANDARD_HEADERS = %w[Name Category Tags City].freeze
+  STANDARD_HEADERS = %w[Name PAN Category Tags City].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -17,6 +17,8 @@ class ImportInvestor < ImportUtil
     # puts "processing #{user_data}"
     saved = true
     investor_name = user_data['Name'].strip
+    pan = user_data['PAN'].strip
+
     investor = Investor.where(investor_name:, entity_id: import_upload.entity_id).first
     if investor.present?
       Rails.logger.debug { "Investor with name investor_name already exists for entity #{import_upload.entity_id}" }
@@ -24,7 +26,7 @@ class ImportInvestor < ImportUtil
     else
 
       Rails.logger.debug user_data
-      investor = Investor.new(investor_name:, tag_list: user_data["Tags"],
+      investor = Investor.new(investor_name:, pan:, tag_list: user_data["Tags"],
                               category: user_data["Category"].strip, city: user_data["City"],
                               entity_id: import_upload.entity_id, imported: true)
 

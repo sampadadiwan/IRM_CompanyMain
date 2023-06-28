@@ -202,15 +202,17 @@ namespace :irm do
       
       round = FactoryBot.create(:funding_round, entity: e)
       Entity.vcs.each do |vc|
-        inv = FactoryBot.create(:investor, entity: e, investor_entity: vc, tag_list: [tags.sample, tags.sample].join(","))
-        puts "Investor #{inv.id}"
+        inv = FactoryBot.build(:investor, entity: e, investor_entity: vc, tag_list: [tags.sample, tags.sample].join(","))
+        puts "Investor #{inv.entity_id} #{inv.pan}"
 
-        doc = Document.create!(entity: inv.entity, owner: inv, name: Faker::Company.catch_phrase, 
-                text: Faker::Company.catch_phrase, user: inv.entity.employees.sample,
-                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
+        if inv.save!
+          doc = Document.create!(entity: inv.entity, owner: inv, name: Faker::Company.catch_phrase, 
+                  text: Faker::Company.catch_phrase, user: inv.entity.employees.sample,
+                  file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
 
-        inv.investor_entity.employees.each do |user|
-          InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
+          inv.investor_entity.employees.each do |user|
+            InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
+          end
         end
       end
       
@@ -222,19 +224,21 @@ namespace :irm do
       
       round = FactoryBot.create(:funding_round, entity: e)
       Entity.family_offices.each do |fo|
-        inv = FactoryBot.create(:investor, entity: e, investor_entity: fo, tag_list: [tags.sample, tags.sample].join(","))
-        puts "Investor #{inv.id}"
+        inv = FactoryBot.build(:investor, entity: e, investor_entity: fo, tag_list: [tags.sample, tags.sample].join(","))
+        puts "Investor #{inv.entity_id} #{inv.pan}"
 
-        doc = Document.create!(entity: inv.entity, owner: inv, name: Faker::Company.catch_phrase, 
-                text: Faker::Company.catch_phrase, user: inv.entity.employees.sample,
-                file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
+        if inv.save!
+          doc = Document.create!(entity: inv.entity, owner: inv, name: Faker::Company.catch_phrase, 
+                  text: Faker::Company.catch_phrase, user: inv.entity.employees.sample,
+                  file: File.new("public/sample_uploads/#{files[rand(4)]}", "r")) if rand(2) > 0
 
 
-        inv.investor_entity.employees.each do |user|
-          InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
+          inv.investor_entity.employees.each do |user|
+            InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
+          end
+
+          FactoryBot.create(:investor_kyc, entity: e, investor: inv)
         end
-
-        FactoryBot.create(:investor_kyc, entity: e, investor: inv)
       end
 
       
@@ -482,22 +486,26 @@ namespace :irm do
 
       sale.reload
       Entity.investment_advisors.each do | advisor |
-        investor = FactoryBot.create(:investor, entity: sale.entity, investor_entity: advisor, investor_name: advisor.name, category: "Investment Advisor")
-
-        qty = ((sale.total_offered_quantity / 100) - rand(10))*100
-        price = rand(2) > 0 ? sale.min_price : sale.max_price
-        short_listed = rand(4) > 0
-        escrow_deposited = rand(2) > 0
-        interest = FactoryBot.build(:interest, entity_id: sale.entity_id, 
-            investor_id: investor.id, secondary_sale: sale,
-            quantity: qty, price: price, user_id: advisor.employees.first.id, 
-            short_listed: short_listed, escrow_deposited: escrow_deposited)
+        investor = FactoryBot.build(:investor, entity: sale.entity, investor_entity: advisor, investor_name: advisor.name, category: "Investment Advisor")
         
-        interest.signature = File.open("public/sample_uploads/signature2.png", "rb")
-        interest.properties = {"city": ["Bangalore", "Mumbai", "Chennai", "Delhi"][rand(4)], "domicile": ["India", "Foreign"][rand(2)], "dp_name": ["NSDL", "CDSL"][rand(2)] }
+        if investor.save
+          qty = ((sale.total_offered_quantity / 100) - rand(10))*100
+          price = rand(2) > 0 ? sale.min_price : sale.max_price
+          short_listed = rand(4) > 0
+          escrow_deposited = rand(2) > 0
+          interest = FactoryBot.build(:interest, entity_id: sale.entity_id, 
+              investor_id: investor.id, secondary_sale: sale,
+              quantity: qty, price: price, user_id: advisor.employees.first.id, 
+              short_listed: short_listed, escrow_deposited: escrow_deposited)
+          
+          interest.signature = File.open("public/sample_uploads/signature2.png", "rb")
+          interest.properties = {"city": ["Bangalore", "Mumbai", "Chennai", "Delhi"][rand(4)], "domicile": ["India", "Foreign"][rand(2)], "dp_name": ["NSDL", "CDSL"][rand(2)] }
 
-        interest.save!
-        puts interest.to_json
+          interest.save!
+          puts interest.to_json
+        end
+
+        
       end
       
     end

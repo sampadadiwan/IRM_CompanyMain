@@ -220,7 +220,7 @@ FactoryBot.define do
     entity { Entity.where(enable_investor_kyc: true).sample }
     investor { entity.investors.sample }
     full_name { Faker::Name.name }
-    PAN {(0...10).map { (65 + rand(26)).chr }.join}
+    PAN { [*('A'..'Z'),*('0'..'9')].shuffle[0,10].join }
     address { Faker::Address.full_address }
     bank_account_number  {Faker::Bank.account_number}
     ifsc_code {Faker::Bank.swift_bic}
@@ -469,12 +469,12 @@ FactoryBot.define do
     demat {Faker::Number.number(digits: 10)}
     contact_name {Faker::Name.name}
     email {Faker::Internet.email}
-    PAN {Faker::Number.number(digits: 10)}
+    PAN { [*('A'..'Z'),*('0'..'9')].shuffle[0,10].join }
   end
 
 
   factory :offer do
-    PAN {(0...10).map { (65 + rand(26)).chr }.join}
+    PAN { [*('A'..'Z'),*('0'..'9')].shuffle[0,10].join }
     address { Faker::Address.full_address }
     city {Faker::Address.city.truncate(20)}
     demat {Faker::Number.number(digits: 10)}
@@ -586,6 +586,7 @@ FactoryBot.define do
   factory :investor do
     investor_entity_id { Entity.startups.sample.id }
     entity_id { Entity.startups.sample.id }
+    pan { investor_entity.pan }
     category { ["Lead Investor", "Co-Investor"][rand(2)] }
     city {Faker::Address.city.truncate(20)}
   end
@@ -617,6 +618,7 @@ FactoryBot.define do
 
   factory :entity do
     name { Faker::Company.name }
+    pan { [*('A'..'Z'),*('0'..'9')].shuffle[0,10].join }
     category { Faker::Company.industry }
     url { "https://#{Faker::Internet.domain_name}" }
     entity_type { Entity::TYPES[rand(Entity::TYPES.length)] }

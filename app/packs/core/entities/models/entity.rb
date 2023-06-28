@@ -1,4 +1,6 @@
 class Entity < ApplicationRecord
+  PAN_MANDATORY_AFTER = Date.parse("27-06-2023")
+
   include Trackable
   include EntityMerge
   # encrypts :name, deterministic: true
@@ -7,6 +9,14 @@ class Entity < ApplicationRecord
   update_index('entity') { self }
 
   validates :name, :entity_type, presence: true
+  validates_uniqueness_of :sub_domain, scope: :parent_entity_id, allow_blank: true
+  validates_uniqueness_of :pan, allow_blank: true, allow_nil: true
+  # We did not have PAN as mandatory before. But we need to make it mandatory, without forcing update to existing data. Hence this check for data created after PAN_MANDATORY_AFTER date
+  validates :pan, presence: true, if: proc { |e| (e.created_at && e.created_at >= PAN_MANDATORY_AFTER) || (e.new_record? && Time.zone.today >= PAN_MANDATORY_AFTER) }
+
+  validates_uniqueness_of :name
+
+  validates :name, length: { maximum: 255 }
   validates :entity_type, length: { maximum: 25 }
   validates :currency, length: { maximum: 10 }
 

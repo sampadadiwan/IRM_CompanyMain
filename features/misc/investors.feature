@@ -3,6 +3,7 @@ Feature: Investor
 
 Scenario Outline: Create new investor
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   And I am at the investor page
   When I create a new investor "<investor>"
   Then I should see the "<msg>"
@@ -18,6 +19,7 @@ Scenario Outline: Create new investor
 
 Scenario Outline: Create new investor from exiting entity
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given there is an existing investor entity "<investor>"
   And I am at the investor page
   When I create a new investor "<investor>" for the existing investor entity
@@ -34,6 +36,7 @@ Scenario Outline: Create new investor from exiting entity
 
 Scenario Outline: Import investor access
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
+  Given the user has role "company_admin"
   And Given I upload an investors file for the company
   And Given I upload an investor access file for employees
   Then I should see the "Import upload was successfully created"
@@ -42,6 +45,7 @@ Scenario Outline: Import investor access
 
 Scenario Outline: Import investor kycs
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
   And Given I upload an investors file for the company
   And Given I upload an investor kyc file for employees
   Then I should see the "Import upload was successfully created"
@@ -51,6 +55,7 @@ Scenario Outline: Import investor kycs
 
 Scenario Outline: Import investors
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
+  Given the user has role "company_admin"
   And Given I upload an investors file for the company
   Then I should see the "Import upload was successfully created"
   Then There should be "6" investors created
@@ -58,6 +63,7 @@ Scenario Outline: Import investors
 
 Scenario Outline: Import Fund investors
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
   Given there is a fund "name=Tech Fund" for the entity
   And Given I upload an investors file for the fund
   Then I should see the "Import upload was successfully created"

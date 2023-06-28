@@ -6,6 +6,7 @@ class InvestorsController < ApplicationController
   def index
     @investors = policy_scope(Investor).joins(:entity)
     authorize(Investor)
+
     @investors = @investors.where(category: params[:category]) if params[:category]
 
     if params[:search] && params[:search][:value].present?
@@ -129,6 +130,6 @@ class InvestorsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def investor_params
     params.require(:investor).permit(:investor_entity_id, :tag_list, :investor_name, :form_type_id,
-                                     :entity_id, :category, :city, properties: {})
+                                     :pan, :entity_id, :category, :city, properties: {})
   end
 end
