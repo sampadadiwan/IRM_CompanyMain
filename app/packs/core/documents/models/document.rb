@@ -6,6 +6,7 @@ class Document < ApplicationRecord
 
   SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
 
+  MODELS_WITH_DOCS = %w[Fund CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDitribution CapitalDitributionPayment Deal DealInvestor InvestmentOpportunity ExpressionOfInterest].freeze
   serialize :signature_type
 
   # Make all models searchable
@@ -45,6 +46,7 @@ class Document < ApplicationRecord
   include FileUploader::Attachment(:file)
 
   scope :generated, -> { where(owner_tag: "Generated") }
+  
 
   def to_s
     name
@@ -127,4 +129,5 @@ class Document < ApplicationRecord
   def update_owner
     owner.document_changed(self) if owner.respond_to? :document_changed
   end
+  
 end

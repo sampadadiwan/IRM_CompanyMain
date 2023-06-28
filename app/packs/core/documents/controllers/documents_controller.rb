@@ -33,19 +33,16 @@ class DocumentsController < ApplicationController
       @folder = Folder.find(params[:folder_id])
 
       # Ensure that the IA user has access to the folder, as IAs can only access certain funds/deals etc
-      authorize(@folder.owner, :show?) if @folder.owner && current_user.investor_advisor?
+      authorize(@folder.owner, :show?) if @folder.owner # && current_user.investor_advisor?
 
-      # folder_ids = @folder.descendant_ids << params[:folder_id]
-      # @documents = @documents.where(folder_id: folder_ids)
-      # Is this more efficient than the query above?
       @documents = @documents.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
       @documents = @documents.or(Document.where(folder_id: params[:folder_id]))
     elsif current_user.investor_advisor?
       raise Pundit::NotAuthorizedError, "Advisors can access documents only in specific folders"
+    else
+      # This is specifically for investor advisors, who should not be able to see the docs for other funds
+      @documents = @documents.where(owner_type: nil)  unless current_user.has_cached_role?(:company_admin) # if params[:hide_fund_docs] == "true"
     end
-
-    # This is specifically for investor advisors, who should not be able to see the docs for other funds
-    @documents = @documents.where.not(owner_type: %w[Fund CapitalCommitment CapitalRemittance]).or(@documents.where(owner_type: nil)) if params[:hide_fund_docs] == "true"
 
     # Newest docs first
     @documents = @documents.includes(:folder).order(id: :desc)

@@ -3,6 +3,7 @@ Feature: Document
 
 Scenario Outline: Create new document
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given the entity has a folder "name=Test Folder"
   And I am at the documents page
   When I create a new document "<document>"
@@ -19,6 +20,7 @@ Scenario Outline: Create new document
 
 Scenario Outline: Create new document with folder access
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given the entity has a folder "name=Test Folder"
   Given the folder has access rights "<access_rights>"
   And I am at the documents page
@@ -34,6 +36,7 @@ Scenario Outline: Create new document with folder access
 
 Scenario Outline: Create new document with folder access later
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given the entity has a folder "name=Test Folder"
   Given the entity has a child folder "name=Child Folder"
   And I am at the documents page
@@ -90,6 +93,7 @@ Examples:
 
 Scenario Outline: Add Sale documents
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   And I am at the sales page
   Given there is a sale "<sale>"
   Given there is an existing investor "" with "1" users
@@ -113,6 +117,7 @@ Scenario Outline: Add Sale documents
 
 Scenario Outline: Add Offer documents
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given there is a sale "<sale>"
   Given there are "1" employee investors
   Given there is a FundingRound "name=Series A"
@@ -135,6 +140,7 @@ Scenario Outline: Add Offer documents
 
 Scenario Outline: Add Interest documents
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given there is a sale "<sale>"
   Given there are "1" employee investors
   Given there is a FundingRound "name=Series A"

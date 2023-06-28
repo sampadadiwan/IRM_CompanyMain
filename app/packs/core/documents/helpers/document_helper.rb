@@ -6,7 +6,7 @@ module DocumentHelper
     entity_id = params[:entity_id].present? ? params[:entity_id].to_i : current_user.entity_id
 
     # If the user is from the same company show him all the folders
-    if belongs_to_entity_id?(current_user, entity_id)
+    if belongs_to_entity_id?(current_user, entity_id) && current_user.has_cached_role?(:company_admin)
       folders = if params[:folder_id].present?
                   Folder.find(params[:folder_id]).subtree.order(:name).arrange
                 else
