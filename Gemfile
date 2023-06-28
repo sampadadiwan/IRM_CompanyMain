@@ -86,6 +86,7 @@ gem 'google_drive'
 # Admin screens
 gem "administrate"
 gem 'administrate-field-active_storage'
+gem 'administrate-field-belongs_to_search'
 gem 'administrate-field-boolean_emoji', '~> 0.3.0'
 gem 'administrate-field-shrine'
 

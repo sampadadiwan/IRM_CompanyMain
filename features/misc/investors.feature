@@ -67,6 +67,7 @@ Scenario Outline: Import Fund investors
 
 Scenario Outline: Create investor kyc
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
   And Given Entity has ckyc_kra_enabled set to true
   And I create a new InvestorKyc with pan "ABCD1234E"
   Then I should see ckyc and kra data comparison page
