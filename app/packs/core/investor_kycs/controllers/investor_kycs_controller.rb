@@ -80,7 +80,11 @@ class InvestorKycsController < ApplicationController
     respond_to do |format|
       if @investor_kyc.save
         format.html do
-          redirect_to compare_ckyc_kra_kyc_datas_path(investor_kyc_id: @investor_kyc.id)
+          if commit_param == "Continue without CKYC/KRA"
+            redirect_to edit_investor_kyc_path(@investor_kyc)
+          else
+            redirect_to compare_ckyc_kra_kyc_datas_path(investor_kyc_id: @investor_kyc.id)
+          end
         end
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -95,6 +99,11 @@ class InvestorKycsController < ApplicationController
     if investor_kyc_params[:kyc_data_id].present?
       @kyc_data = @investor_kyc.kyc_datas.find(investor_kyc_params[:kyc_data_id])
       @investor_kyc.assign_kyc_data(@kyc_data)
+    else
+      @investor_kyc.assign_attributes(investor_kyc_params)
+      # when CKYC/KRA data is selected once and user goes back then selects no data the images need to be removed (sending nil is not allowed in params)
+      @investor_kyc.signature = nil
+      @investor_kyc.pan_card = nil
     end
     respond_to do |format|
       if @investor_kyc.save
@@ -160,5 +169,9 @@ class InvestorKycsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def investor_kyc_params
     params.require(:investor_kyc).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :video, :phone, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+  end
+
+  def commit_param
+    params.require(:commit)
   end
 end
