@@ -1,4 +1,12 @@
 <tr id="<%= dom_id fund_unit %>">
+  <% if params[:cols] == "all" %>
+  <td>
+    <%= fund_unit.fund %>
+  </td>
+  <td>
+    <%= link_to fund_unit.investor %>
+  </td>
+  <% end %>
   <td>
     <%= fund_unit.unit_type %>
   </td>

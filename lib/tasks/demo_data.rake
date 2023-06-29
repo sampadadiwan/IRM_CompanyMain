@@ -580,6 +580,11 @@ namespace :irm do
 
             FactoryBot.create(:capital_remittance_payment, capital_remittance: cr, folio_amount_cents: cr.call_amount_cents,  payment_date: cr.capital_call.due_date, fund: cr.fund, entity: cr.entity)
 
+            if rand(2) > 0
+              cr.update(verified: true)
+              FundUnitsJob.perform_now(cd.capital_call_is, "CapitalCall", "For Call", 1)
+            end
+
           end
         end
 
