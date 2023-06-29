@@ -90,21 +90,28 @@
     <% end %>
     </div>
     
-    <div class="associated_entity row">
-    <% User.extended_permissions.pairs.each do |key, val| %>
-      <div class="form-group col">
-          <%= form.label :extended_permissions, key.titleize, class: "no-wrap" %>
-          <%= form.check_box :extended_permissions, {name: "user[extended_permissions][]",
-              val: val, id: "extended_permissions#{val}", class: "form-control row-checkbox"}, val, nil   %>
-      </div>      
+    <% unless user.has_cached_role?(:company_admin) %>
+      <div class="associated_entity row">
+      <% User.extended_permissions.pairs.each do |key, val| %>
+        <div class="form-group col">
+            <%= form.label :extended_permissions, key.titleize, class: "no-wrap" %>
+            <%= form.check_box :extended_permissions, {name: "user[extended_permissions][]",
+                val: val, id: "extended_permissions#{val}", class: "form-control row-checkbox"}, val, nil   %>
+        </div>      
+      <% end %>
+      </div>
     <% end %>
-    </div>
 
   <% end %>
 
   <div class="form-group">
     <%= form.label :whatsapp_enabled %>
     <%= form.check_box :whatsapp_enabled, class: "form-control form-checkbox" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :enable_support %>
+    <%= form.check_box :enable_support, class: "form-control form-checkbox" %>
   </div>
 
   <% if Entity::SECONDARY_BUYERS.include? user.entity&.entity_type %>

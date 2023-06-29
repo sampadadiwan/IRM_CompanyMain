@@ -1,5 +1,5 @@
 class Entity < ApplicationRecord
-  PAN_MANDATORY_AFTER = Date.parse("27-06-2023")
+  PAN_MANDATORY_AFTER = Date.parse("01-07-2023")
 
   include Trackable
   include EntityMerge
