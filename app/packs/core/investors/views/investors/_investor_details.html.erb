@@ -180,7 +180,7 @@
 
         <div id="commitments-tab" class="tab-pane fade in">
             <div id="commitments" class="associated_entity">
-              <%= render "/capital_commitments/index", investor: investor,
+              <%= render "/capital_commitments/index", investor: investor, cols: "all",
                   lazy_load_data: true, data_source: capital_commitments_path(investor_id: investor.id, all: true) %>
             </div>     
         </div>

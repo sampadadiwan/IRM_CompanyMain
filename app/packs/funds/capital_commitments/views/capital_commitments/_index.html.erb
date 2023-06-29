@@ -1,5 +1,5 @@
             
-<% fund ||= nil %>        
+<% fund ||= nil; cols ||= params[:cols] %>        
 <% data_source ||= capital_commitments_path(params, format: :json, all: true) %>    
 <% lazy_load_data ||= false %>
 
@@ -11,8 +11,8 @@
         <a class="load_data_link" data-action="click->commitments#loadData"><span>Load Data</span></a>
     <% end %>
 
-    <% col_set = column_set(current_user, params[:cols]) %>
-    <%= custom_columns(current_user, params[:cols]) %>
+    <% col_set = column_set(current_user, cols) %>
+    <%= custom_columns(current_user, cols) %>
     
     <table id="capital_commitments" class="table table-bordered dataTable action_table" 
         data-source="<%= data_source %>" >

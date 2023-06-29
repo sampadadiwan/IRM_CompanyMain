@@ -1,4 +1,9 @@
-<% data_source ||= investors_path(params, format: :json, all: true) %>    
+<% 
+  qs = params.to_enum.to_h
+  qs[:format] = :json
+  qs[:all] =  true
+  data_source ||= investors_path(qs) 
+%>    
 <% lazy_load_data ||= false %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
