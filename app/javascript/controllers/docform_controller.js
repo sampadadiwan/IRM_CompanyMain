@@ -7,6 +7,7 @@ export default class extends Controller {
     this.onOrignalChange();
     this.onPdfOptChange();    
     this.checkOtherName();
+    this.showSignature();
   }
 
   onOrignalChange(event) {
@@ -44,6 +45,16 @@ export default class extends Controller {
       } else {
         $("#other_name").hide();
       }
+    }
+  }
+
+  showSignature() {
+    console.log("showSignature");
+    console.log($("#document_template").val());
+    if($("#document_template").is(':checked')) {
+      $("#add_signature_btn").show();
+    } else {
+      $("#add_signature_btn").hide();
     }
   }
 

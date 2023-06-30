@@ -13,9 +13,6 @@ class DocumentPolicy < ApplicationPolicy
       ))
   end
 
-  def sign?
-    record.signature_enabled && record.signed_by_id.blank? && show?
-  end
 
   def create?
     (belongs_to_entity?(user, record) && user.enable_documents) ||

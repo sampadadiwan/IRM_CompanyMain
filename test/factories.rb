@@ -1,4 +1,14 @@
 FactoryBot.define do
+  factory :e_signature do
+    entity { nil }
+    user { nil }
+    label { nil }
+    signature_type { "Adhaar" }
+    owner { nil }
+    status { "Pending" }
+  end
+
+
   factory :investor_notice_item do
     investor_notice { nil }
     title { "MyString" }

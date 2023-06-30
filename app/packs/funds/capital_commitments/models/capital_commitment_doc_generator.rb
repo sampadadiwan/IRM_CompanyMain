@@ -88,20 +88,22 @@ class CapitalCommitmentDocGenerator
     end
   end
 
-  def upload(document, capital_commitment)
+  def upload(doc_template, capital_commitment)
     file_name = "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf"
     Rails.logger.debug { "Uploading generated file #{file_name} to folio #{capital_commitment.folio_id} " }
 
-    signed_document = Document.new(document.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
+    generated_document = Document.new(doc_template.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
 
-    signed_document.name = document.name
-    signed_document.file = File.open(file_name, "rb")
-    signed_document.from_template = document
-    signed_document.owner = capital_commitment
-    signed_document.owner_tag = "Generated"
-    signed_document.send_email = false
+    generated_document.name = doc_template.name
+    generated_document.file = File.open(file_name, "rb")
+    generated_document.from_template = doc_template
+    generated_document.owner = capital_commitment
+    generated_document.owner_tag = "Generated"
+    generated_document.send_email = false
 
-    signed_document.save
+    generated_document.e_signatures = doc_template.e_signatures_for(capital_commitment) || []
+
+    generated_document.save
   end
 
   def add_image2(context, field_name, image)

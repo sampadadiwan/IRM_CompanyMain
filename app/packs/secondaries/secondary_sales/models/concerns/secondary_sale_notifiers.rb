@@ -65,20 +65,15 @@ module SecondarySaleNotifiers
   end
 
   def notify_spa_sellers
-    if seller_signature_types.include?("adhaar")
-      # Trigger the Signature Job - this will cause all the adhaar signature requests to go out
-      OfferSpaSignatureJob.perform_later(id, nil)
-    else
-      # Send email to only those who are verified but not confirmed SPA
-      offers.verified.each do |offer|
-        email = offer.offer_type == "Employee" ? offer.user.email : offer.investor.emails("All").join(",")
-        SecondarySaleMailer.with(id:, email:).notify_spa_offers.deliver_later
-      end
+    # Send email to only those who are verified but not confirmed SPA
+    offers.verified.each do |offer|
+      email = offer.offer_type == "Employee" ? offer.user.email : offer.investor.emails("All").join(",")
+      SecondarySaleMailer.with(id:, email:).notify_spa_offers.deliver_later
+    end
 
-      interests.short_listed.each do |interest|
-        email = interest.investor.emails("All").join(",")
-        SecondarySaleMailer.with(id:, email:).notify_spa_offers.deliver_later
-      end
+    interests.short_listed.each do |interest|
+      email = interest.investor.emails("All").join(",")
+      SecondarySaleMailer.with(id:, email:).notify_spa_offers.deliver_later
     end
   end
 end

@@ -1,5 +1,5 @@
 class ExpressionOfInterestsController < ApplicationController
-  before_action :set_expression_of_interest, only: %i[show edit update destroy approve allocation_form allocate generate_documentation generate_esign_link]
+  before_action :set_expression_of_interest, only: %i[show edit update destroy approve allocation_form allocate generate_documentation]
 
   # GET /expression_of_interests or /expression_of_interests.json
   def index
@@ -61,11 +61,6 @@ class ExpressionOfInterestsController < ApplicationController
   def generate_documentation
     EoiDocJob.perform_later(@expression_of_interest.id, current_user.id)
     redirect_to expression_of_interest_url(@expression_of_interest), notice: "Documentation generation started, please check back in a few mins."
-  end
-
-  def generate_esign_link
-    EoiGenerateEsignJob.perform_later(@expression_of_interest.id)
-    redirect_to expression_of_interest_url(@expression_of_interest), notice: "Esign generation started, please check back in a few mins."
   end
 
   def approve

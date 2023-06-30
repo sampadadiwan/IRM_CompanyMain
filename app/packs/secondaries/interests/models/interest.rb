@@ -31,7 +31,7 @@ class Interest < ApplicationRecord
   validates :contact_name, length: { maximum: 50 }
   validates :email, length: { maximum: 100 }
   validates :PAN, length: { maximum: 15 }
-  validates :demat, :buyer_signature_types, :city, :ifsc_code, length: { maximum: 20 }
+  validates :demat, :city, :ifsc_code, length: { maximum: 20 }
   validates :bank_account_number, length: { maximum: 15 }
 
   delegate :display_quantity, to: :secondary_sale
@@ -136,7 +136,4 @@ class Interest < ApplicationRecord
     end
   end
 
-  def buyer_signature_types
-    self[:buyer_signature_types].presence || secondary_sale&.buyer_signature_types
-  end
 end

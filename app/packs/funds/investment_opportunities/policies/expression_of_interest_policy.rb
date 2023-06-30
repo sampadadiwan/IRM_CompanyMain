@@ -24,11 +24,6 @@ class ExpressionOfInterestPolicy < IoBasePolicy
     update? && !record.esign_completed
   end
 
-  def generate_esign_link?
-    update? &&
-      record.esigns.count.zero? && !record.esign_completed
-  end
-
   def destroy?
     permissioned_employee?(:destroy)
   end

@@ -8,8 +8,6 @@ class Offer < ApplicationRecord
   # Make all models searchable
   update_index('offer') { self }
 
-  attr_accessor :signatory_ids_map
-
   belongs_to :user
   belongs_to :final_agreement_user, class_name: "User", optional: true
   belongs_to :investor
@@ -67,7 +65,7 @@ class Offer < ApplicationRecord
   validate :sale_active, on: :create
   validates :offer_type, :PAN, length: { maximum: 15 }
   validates :bank_account_number, :demat, length: { maximum: 40 }
-  validates :ifsc_code, :city, :seller_signature_types, length: { maximum: 20 }
+  validates :ifsc_code, :city, length: { maximum: 20 }
 
   validates :bank_name, length: { maximum: 50 }
   validates :buyer_confirmation, :esign_provider, length: { maximum: 10 }
@@ -227,29 +225,11 @@ class Offer < ApplicationRecord
 
   ################# eSign stuff follows ###################
 
-  def seller_signature_types
-    self[:seller_signature_types].presence || secondary_sale&.seller_signature_types
+  def buyer_signatory
+    interest&.user
   end
 
-  # TODO: - who is the interest signatory?
-  def signatory_ids(type = nil)
-    if @signatory_ids_map.blank?
-      @signatory_ids_map = { adhaar: [], dsc: [] }
-      @signatory_ids_map[:adhaar] << user.id if seller_signature_types.include?("adhaar")
-      if interest
-        @signatory_ids_map[:adhaar] << interest.user.id if interest.buyer_signature_types.include?("adhaar")
-        @signatory_ids_map[:dsc] << interest.user.id if interest.buyer_signature_types.include?("dsc")
-      end
-    end
-    type ? @signatory_ids_map[type.to_sym] : @signatory_ids_map
-  end
-
-  def signature_link(user)
-    # Substitute the phone number required in the link
-    OfferEsignProvider.new(self).signature_link(user)
-  end
-
-  def signature_completed(signature_type, document_id, file)
-    OfferEsignProvider.new(self).signature_completed(signature_type, document_id, file)
+  def seller_signatory
+    user
   end
 end

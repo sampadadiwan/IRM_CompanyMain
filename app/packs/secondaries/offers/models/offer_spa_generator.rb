@@ -5,9 +5,6 @@ class OfferSpaGenerator
   attr_accessor :working_dir
 
   def initialize(offer, template)
-    # Cleanup esigns first
-    OfferEsignProvider.new(offer).cleanup_prev
-
     create_working_dir(offer)
     template_path ||= download_template(template)
     generate(offer, template, template_path)

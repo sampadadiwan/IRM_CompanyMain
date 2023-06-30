@@ -13,9 +13,6 @@ class CapitalCommitmentDocJob < ApplicationJob
       if @templates.present?
         Rails.logger.debug { "Generating documents for #{@investor.investor_name}, for fund #{@fund.name}" }
 
-        # Ensure that any prev esigns are deleted for this capital comittment
-        CapitalCommitmentEsignProvider.new(@capital_commitment).cleanup_prev
-
         @templates.each do |fund_doc_template|
           Rails.logger.debug { "Generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@capital_commitment.investor_kyc.full_name}" }
           # Delete any existing signed documents

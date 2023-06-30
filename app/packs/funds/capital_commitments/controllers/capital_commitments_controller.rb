@@ -1,6 +1,6 @@
 class CapitalCommitmentsController < ApplicationController
   before_action :set_capital_commitment, only: %i[show edit update destroy generate_documentation
-                                                  generate_esign_link report generate_soa generate_soa_form]
+                                                  report generate_soa generate_soa_form]
 
   after_action :verify_policy_scoped, only: []
 
@@ -54,11 +54,6 @@ class CapitalCommitmentsController < ApplicationController
   def generate_soa
     CapitalCommitmentSoaJob.perform_later(@capital_commitment.id, params[:start_date], params[:end_date], user_id: current_user.id, template_name: params[:template_name])
     redirect_to capital_commitment_url(@capital_commitment), notice: "Documentation generation started, please check back in a few mins."
-  end
-
-  def generate_esign_link
-    CapitalCommitmentGenerateEsignJob.perform_later(@capital_commitment.id)
-    redirect_to capital_commitment_url(@capital_commitment), notice: "Esign generation started, please check back in a few mins."
   end
 
   # GET /capital_commitments/new
@@ -130,6 +125,6 @@ class CapitalCommitmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_commitment_params
-    params.require(:capital_commitment).permit(:entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :notes, :folio_id, :investor_signatory_id, :investor_kyc_id, :onboarding_completed, :form_type_id, :unit_type, :fund_close, :investor_signature_types, :virtual_bank_account, :folio_currency, :feeder_fund, :folio_committed_amount, :commitment_type, :commitment_date, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:capital_commitment).permit(:entity_id, :investor_id, :fund_id, :committed_amount, :collected_amount, :notes, :folio_id, :investor_signatory_id, :investor_kyc_id, :onboarding_completed, :form_type_id, :unit_type, :fund_close, :virtual_bank_account, :folio_currency, :feeder_fund, :folio_committed_amount, :commitment_type, :commitment_date, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

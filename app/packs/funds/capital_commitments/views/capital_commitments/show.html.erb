@@ -307,14 +307,6 @@
       </td>
     </tr>
 
-    <tr  class="">
-      <td>
-        Investor Signature Type
-      </td>
-      <td>
-        <%= @capital_commitment.investor_signature_types&.capitalize %>
-      </td>
-    </tr>
     
     <tr  class="">
       <td>
@@ -468,12 +460,6 @@
         <%= link_to "Generate SOA", 
         generate_soa_form_capital_commitment_path(@capital_commitment), 
         class: "dropdown-item" if policy(@capital_commitment).generate_soa? %>
-
-        <%= button_to "Generate Esign Link", 
-        generate_esign_link_capital_commitment_path(@capital_commitment), 
-        method: :patch, class: "dropdown-item" , 
-        form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-        msg: "Generate esign link for this capital commitment. This will trigger the eSign process. Proceed?"} if policy(@capital_commitment).generate_esign_link? %>
         
       </div>
     </div>

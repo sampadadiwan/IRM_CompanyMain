@@ -4,6 +4,7 @@ class CapitalCommitment < ApplicationRecord
   include WithCustomField
   include Trackable
   include ActivityTrackable
+
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
   include ForInvestor
@@ -61,7 +62,7 @@ class CapitalCommitment < ApplicationRecord
 
   validates :commitment_type, length: { maximum: 10 }
   validates :folio_currency, length: { maximum: 5 }
-  validates :investor_signature_types, :folio_id, :virtual_bank_account, length: { maximum: 20 }
+  validates :folio_id, :virtual_bank_account, length: { maximum: 20 }
 
   delegate :currency, to: :fund
 
@@ -199,30 +200,6 @@ class CapitalCommitment < ApplicationRecord
 
   ################# eSign stuff follows ###################
 
-  def investor_signature_types
-    self[:investor_signature_types].presence || fund.investor_signature_types
-  end
-
-  def signatory_ids(type = nil)
-    if @signatory_ids_map.blank?
-      @signatory_ids_map = { adhaar: [], dsc: [] }
-      @signatory_ids_map[:adhaar] << investor_signatory_id if investor_signature_types&.include?("adhaar")
-      @signatory_ids_map[:adhaar] << fund.fund_signatory_id if fund.fund_signature_types&.include?("adhaar")
-      @signatory_ids_map[:adhaar] << fund.trustee_signatory_id if fund.fund_signature_types&.include?("adhaar")
-      @signatory_ids_map[:adhaar].compact!
-    end
-    type ? @signatory_ids_map[type.to_sym] : @signatory_ids_map
-  end
-
-  def signature_link(user, document_id = nil)
-    # Substitute the phone number required in the link
-    CapitalCommitmentEsignProvider.new(self).signature_link(user, document_id)
-  end
-
-  def signature_completed(signature_type, document_id, file)
-    CapitalCommitmentEsignProvider.new(self).signature_completed(signature_type, document_id, file)
-  end
-
   ###########################################################
   # Account Entry Stuff
   ###########################################################
@@ -268,4 +245,6 @@ class CapitalCommitment < ApplicationRecord
   def fund_unit_setting
     fund.fund_unit_settings.where(name: unit_type).last
   end
+
+  delegate :fund_signatory, to: :fund
 end

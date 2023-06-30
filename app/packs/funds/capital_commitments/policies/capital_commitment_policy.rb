@@ -32,21 +32,11 @@ class CapitalCommitmentPolicy < FundBasePolicy
     update? && record.investor_kyc&.verified
   end
 
-  def generate_esign_link?
-    update? &&
-      record.signatory_ids(:adhaar).present? &&
-      record.esigns.count.zero? && !record.esign_completed
-  end
-
   def edit?
     update?
   end
 
   def destroy?
     permissioned_employee?(:destroy)
-  end
-
-  def esign?
-    record.signatory_ids(:adhaar).include?(user.id) && record.esign_required && !record.esign_completed
   end
 end

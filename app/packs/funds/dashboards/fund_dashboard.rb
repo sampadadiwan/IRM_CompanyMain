@@ -23,8 +23,6 @@ class FundDashboard < Administrate::BaseDashboard
     details: Field::Text,
     collected_amount_cents: Field::String.with_options(searchable: false),
     tag_list: Field::String,
-    fund_signature_types: Field::String,
-    investor_signature_types: Field::String,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     call_amount_cents: Field::String.with_options(searchable: false),
@@ -57,8 +55,6 @@ class FundDashboard < Administrate::BaseDashboard
     details
     collected_amount_cents
     tag_list
-    fund_signature_types
-    investor_signature_types
     created_at
     updated_at
     call_amount_cents
@@ -86,9 +82,7 @@ class FundDashboard < Administrate::BaseDashboard
     details
     collected_amount_cents
     tag_list
-    fund_signature_types
-    investor_signature_types
-
+    
     call_amount_cents
     distribution_amount_cents
   ].freeze

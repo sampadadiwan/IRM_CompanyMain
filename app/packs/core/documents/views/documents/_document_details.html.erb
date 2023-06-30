@@ -1,8 +1,17 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
+      
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#viewers-tab">Viewed By</a>
+      
       <% if document.entity_id == current_user&.entity_id %>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
+        
+        <% if document.e_signatures.present? %>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#signatures-tab">
+          Signatures
+        </a>
+        <% end %>
+
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#reminders-tab" 
             data-action="click->tabdetails#loadData">
           Reminders
@@ -12,6 +21,7 @@
           data-action="click->tabdetails#loadData">
         Tasks
       </a>
+
       
     </nav>
   
@@ -66,6 +76,12 @@
             <% end %>
             <%= turbo_frame_tag "reminders_list", target: "_top" do %>
             <% end %>
+          </div>     
+        </div>
+
+        <div id="signatures-tab" class="tab-pane fade">
+          <div id="e_signatures" class="associated_entity">
+            <%= render "/e_signatures/index", e_signatures: policy_scope(document.e_signatures) %>
           </div>     
         </div>
 

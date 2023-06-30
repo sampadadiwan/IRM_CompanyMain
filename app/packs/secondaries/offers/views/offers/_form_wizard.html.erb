@@ -149,7 +149,6 @@
                     <% end %>
 
                     
-                    <% if offer.secondary_sale.seller_signature_types.include?("image") %>
                     <div class="form-group">
 
                         <%= render "layouts/single_upload", form: form, 
@@ -158,7 +157,6 @@
                         model: offer, allowed_types: ['image/*'].freeze %>
                     
                     </div>
-                    <% end %>
 
                     <div class="form-group">
                         <%= render "layouts/single_upload", form: form, field_label: "Upload PAN Card (any format)", 

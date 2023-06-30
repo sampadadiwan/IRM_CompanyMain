@@ -12,9 +12,6 @@ class EoiDocJob < ApplicationJob
 
       Rails.logger.debug { "Generating documents for #{@investor.investor_name}, for investment_opportunity #{@investment_opportunity.company_name}" }
 
-      # Ensure that any prev esigns are deleted for this capital comittment
-      EoiEsignProvider.new(@expression_of_interest).cleanup_prev
-
       @expression_of_interest.investor_kycs.verified.each do |kyc|
         @templates.each do |investment_opportunity_doc_template|
           Rails.logger.debug { "Generating #{investment_opportunity_doc_template.name} for investment_opportunity #{@investment_opportunity.company_name}, for user #{kyc.full_name}" }

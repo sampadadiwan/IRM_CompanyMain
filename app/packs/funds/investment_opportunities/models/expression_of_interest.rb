@@ -59,24 +59,4 @@ class ExpressionOfInterest < ApplicationRecord
   end
 
   ################# eSign stuff follows ###################
-
-  def investor_signature_types; end
-
-  def signatory_ids(type = nil)
-    if @signatory_ids_map.blank?
-      @signatory_ids_map = { adhaar: [], dsc: [] }
-      @signatory_ids_map[:adhaar] << investor_signatory_id
-      @signatory_ids_map[:adhaar].compact!
-    end
-    type ? @signatory_ids_map[type.to_sym] : @signatory_ids_map
-  end
-
-  def signature_link(user, document_id = nil)
-    # Substitute the phone number required in the link
-    EoiEsignProvider.new(self).signature_link(user, document_id)
-  end
-
-  def signature_completed(signature_type, document_id, file)
-    EoiEsignProvider.new(self).signature_completed(signature_type, document_id, file)
-  end
 end

@@ -150,8 +150,7 @@ class FundsController < ApplicationController
   def fund_params
     params.require(:fund).permit(:name, :committed_amount, :details, :collected_amount, :commitment_doc_list,
                                  :entity_id, :tag_list, :show_valuations, :show_fund_ratios,
-                                 :investor_signature_types, :fund_signature_types, :currency,
-                                 :unit_types, :units_allocation_engine, :form_type_id,
+                                 :currency, :unit_types, :units_allocation_engine, :form_type_id,
                                  :registration_number, :category, :sub_category, :sponsor_name, :manager_name,
                                  :trustee_name, :contact_name, :contact_email,
                                  :fund_signatory_id, :trustee_signatory_id, properties: {})

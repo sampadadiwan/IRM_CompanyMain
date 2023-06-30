@@ -39,31 +39,12 @@
       form_class: "deleteButton" if Pundit.policy(current_user, @offer).approve? %>
 
 
-      <%= button_to "Generate Esign Link", 
-        generate_esign_link_offer_path(@offer), 
-        method: :patch, class: "btn btn-outline-success" , 
+    <%= button_to "Accept SPA" , accept_spa_offer_path(@offer), method: :patch, 
+        class: "btn btn-outline-success" , id: 'accept_spa_btn',
         form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-        msg: "Generate esign link for this Offer. This will trigger the eSign process. Proceed?"} if policy(@offer).generate_esign_link? %>
+        msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(@offer).accept_spa? %>
 
-
-      <% if @offer.esign_required && 
-            !@offer.esign_completed && 
-            params[:signature_completed].blank? %>
-            
-        
-        <% @offer.signature_link(current_user).each do |esign| %>
-          <%= link_to "eSign SPA", esign.link, 
-                    class: "btn btn-outline-success" %>
-        <% end %>
-
-      <% else %>
-        <%= button_to "Accept SPA" , accept_spa_offer_path(@offer), method: :patch, 
-            class: "btn btn-outline-success" , id: 'accept_spa_btn',
-            form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-            msg: "This will mark your acceptance of the SPA. Proceed?"} if policy(@offer).accept_spa? %>
-
-      <% end %>
-
+      
     
     <%= link_to "Secondary Sale" , secondary_sale_path(@offer.secondary_sale), {class: "btn btn-outline-primary" } %>
   </div>

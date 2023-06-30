@@ -68,9 +68,6 @@
     <% if params[:external] == "true" %>
       <%= form.text_field :orignal, class: "form-control", hidden:true, value: true  %>
     <% else %>
-
-    
-    <div>
       <div class="form-group nonpdf">
         <%= form.label :orignal, "Allow Orignal Format Download" %>
         <%= form.check_box :orignal, class: "form-control form-checkbox", 
@@ -103,19 +100,39 @@
         <%= form.check_box :send_email, class: "form-control form-checkbox" %>
         <small class="text-muted">Send email notification to users who can view this document</small>
       </div>
-    </div>
+
+
+      <div class="form-group">
+        <%= form.label :template %>
+        <%= form.check_box :template, class: "form-control form-checkbox", "data-action":  "click->docform#showSignature" %>
+        <small class="text-muted">Mark this document as a template for document generation.</small>
+      </div>
+
     <% end %>
 
-    <%= custom_form_fields(document, form) %>
+      <%= custom_form_fields(document, form) %>
 
-    <div class="form-group">
-      <%= form.label :description %>
-      <%= form.rich_text_area :text, class: "form-control trix-content"  %>
-    </div>
-  </div>
+      <div class="form-group">
+        <%= form.label :description %>
+        <%= form.rich_text_area :text, class: "form-control trix-content"  %>
+      </div>
+    
 
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+
+      <div id='e_signatures'>
+        <% @labels = @document.owner.respond_to?(:signature_labels) ? @document.owner.signature_labels : nil %>
+        <%= form.fields_for :e_signatures do |f| %>
+          <%= render 'e_signature_fields', f: %>
+        <% end %>
+        <div class='links'>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <%= link_to_add_association 'Add Signature', form, :e_signatures, class: "btn btn-outline-primary", id: "add_signature_btn" %>
+        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      </div>
+
   </div>
 <% end %>
 

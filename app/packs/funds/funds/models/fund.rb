@@ -44,7 +44,7 @@ class Fund < ApplicationRecord
   validates :name, :currency, presence: true
   validates :unit_types, :commitment_doc_list, :sponsor_name, :manager_name, :trustee_name, :contact_name, :contact_email, length: { maximum: 100 }
   validates :name, :tag_list, length: { maximum: 255 }
-  validates :registration_number, :fund_signature_types, :investor_signature_types, length: { maximum: 20 }
+  validates :registration_number, length: { maximum: 20 }
   validates :category, length: { maximum: 15 }
   validates :sub_category, length: { maximum: 40 }
 
@@ -94,6 +94,10 @@ class Fund < ApplicationRecord
   TEMPLATE_TAGS = ["Commitment Template", "Call Template", "SOA Template"].freeze
   def document_tags
     TEMPLATE_TAGS
+  end
+
+  def signature_labels
+    ["Investor Signatory", "Fund Signatory", "Other"]
   end
 
   def current_fund_ratios(valuation = nil)

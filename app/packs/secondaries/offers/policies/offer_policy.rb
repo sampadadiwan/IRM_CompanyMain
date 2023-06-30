@@ -69,17 +69,4 @@ class OfferPolicy < SaleBasePolicy
     @interest_policy ||= InterestPolicy.new(user, record.interest)
     @interest_policy
   end
-
-  def generate_esign_link?
-    record.entity_id == user.entity_id &&
-      record.signatory_ids(:adhaar).present? &&
-      record.esigns.count.zero?
-  end
-
-  def esign?
-    record.spa.present? &&
-      record.signatory_ids(:adhaar).include?(user.id) &&
-      record.esign_required &&
-      !record.esign_completed
-  end
 end

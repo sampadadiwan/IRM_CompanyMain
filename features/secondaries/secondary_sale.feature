@@ -90,8 +90,8 @@ Scenario Outline: Sale Offer SPA
   
   Examples:
   	|allocation_percentage |interest_count |interest                       |offer	                      |entity                     |sale                                     |
-  	| .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;seller_signature_types=adhaar;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
-    | 1.0                  |2              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;seller_signature_types=adhaar;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
+  	| .5                   |1              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
+    | 1.0                  |2              |quantity=50;short_listed=true  |quantity=50;approved=true  	|entity_type=Advisor        |name=Grand Sale;price_type=Fixed Price;final_price=10000;percent_allowed=100  |
 
 Scenario Outline: Sale Notifications
   Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Company"

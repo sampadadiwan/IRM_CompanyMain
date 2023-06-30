@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_06_29_032841) do
+ActiveRecord::Schema[7.0].define(version: 2023_06_30_050627) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -740,12 +740,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_29_032841) do
     t.boolean "orignal", default: false
     t.bigint "user_id", null: false
     t.boolean "signature_enabled", default: false
-    t.bigint "signed_by_id"
     t.bigint "from_template_id"
-    t.boolean "signed_by_accept", default: false
-    t.boolean "adhaar_esign_enabled", default: false
-    t.boolean "adhaar_esign_completed", default: false
-    t.string "signature_type", limit: 100
     t.boolean "locked", default: false
     t.boolean "public_visibility", default: false
     t.string "tag_list", limit: 120
@@ -757,8 +752,24 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_29_032841) do
     t.index ["form_type_id"], name: "index_documents_on_form_type_id"
     t.index ["from_template_id"], name: "index_documents_on_from_template_id"
     t.index ["owner_type", "owner_id"], name: "index_documents_on_owner"
-    t.index ["signed_by_id"], name: "index_documents_on_signed_by_id"
     t.index ["user_id"], name: "index_documents_on_user_id"
+  end
+
+  create_table "e_signatures", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "user_id"
+    t.string "label", limit: 20
+    t.string "signature_type", limit: 10
+    t.integer "position"
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.text "notes"
+    t.string "status", limit: 10
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_e_signatures_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_e_signatures_on_owner"
+    t.index ["user_id"], name: "index_e_signatures_on_user_id"
   end
 
   create_table "entities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1140,7 +1151,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_29_032841) do
     t.bigint "funding_round_id"
     t.boolean "show_valuations", default: false
     t.boolean "show_fund_ratios", default: false
-    t.string "fund_signature_types", limit: 20
     t.string "investor_signature_types", limit: 20
     t.bigint "fund_signatory_id"
     t.bigint "trustee_signatory_id"
@@ -1355,7 +1365,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_29_032841) do
     t.string "ifsc_code", limit: 20
     t.bigint "final_agreement_user_id"
     t.string "custom_matching_vals"
-    t.string "buyer_signature_types", limit: 20, default: ""
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
     t.bigint "investor_id"
@@ -1771,7 +1780,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_29_032841) do
     t.boolean "esign_completed", default: false
     t.string "esign_provider", limit: 10
     t.string "esign_link"
-    t.string "seller_signature_types", limit: 20, default: ""
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
@@ -1981,8 +1989,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_29_032841) do
     t.boolean "disable_bank_kyc", default: false
     t.text "custom_matching_fields"
     t.text "cmf_allocation_percentage"
-    t.string "buyer_signature_types", limit: 20, default: ""
-    t.string "seller_signature_types", limit: 20, default: ""
     t.bigint "document_folder_id"
     t.index ["deleted_at"], name: "index_secondary_sales_on_deleted_at"
     t.index ["document_folder_id"], name: "index_secondary_sales_on_document_folder_id"
@@ -2300,7 +2306,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_29_032841) do
   add_foreign_key "documents", "folders"
   add_foreign_key "documents", "form_types"
   add_foreign_key "documents", "users"
-  add_foreign_key "documents", "users", column: "signed_by_id"
+  add_foreign_key "e_signatures", "entities"
+  add_foreign_key "e_signatures", "users"
   add_foreign_key "entity_settings", "entities"
   add_foreign_key "esigns", "documents"
   add_foreign_key "esigns", "entities"

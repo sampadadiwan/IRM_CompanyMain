@@ -13,8 +13,6 @@ class SecondarySale < ApplicationRecord
 
   SALE_TYPES = %w[Regular Tranche].freeze
 
-  # buyer_signature_types & seller_signature_types can be set to image,adhar,dsc
-
   belongs_to :entity
 
   include FileUploader::Attachment(:spa)
@@ -41,8 +39,7 @@ class SecondarySale < ApplicationRecord
   validates :allocation_status, :sale_type, :show_quantity, length: { maximum: 10 }
   validates :price_type, length: { maximum: 15 }
   validates :name, length: { maximum: 255 }
-  validates :buyer_signature_types, :seller_signature_types, length: { maximum: 20 }
-
+  
   before_save :set_defaults
   def set_defaults
     self.price_type ||= "Price Range"
@@ -95,6 +92,10 @@ class SecondarySale < ApplicationRecord
 
   def document_tags
     ["Buyer", "Offer Template", "Seller"]
+  end
+
+  def signature_labels
+    ["Buyer Signatory", "Seller Signatory", "Other"]
   end
 
   def buyer_investors

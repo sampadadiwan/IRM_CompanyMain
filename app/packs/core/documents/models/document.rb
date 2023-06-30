@@ -3,6 +3,7 @@ class Document < ApplicationRecord
   include Impressionable
   include WithCustomField
   include InvestorsGrantedAccess
+  include WithESignatures
 
   SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
 
@@ -33,7 +34,6 @@ class Document < ApplicationRecord
 
   validates :name, :file, presence: true
   validates :owner_tag, length: { maximum: 40 }
-  validates :signature_type, length: { maximum: 100 }
   validates :tag_list, length: { maximum: 120 }
 
   delegate :full_path, to: :folder, prefix: :folder
@@ -66,7 +66,9 @@ class Document < ApplicationRecord
   def setup_folder
     self.folder = owner.document_folder if folder.nil? && owner
     self.owner ||= folder.owner
-    self.template = owner_tag&.include?("Template")
+    # This marks the document as a template. Templates are used in document (mail merge) generation
+    # Templates can also have optional e_signatures, which cause the generated documents to be signed
+    self.template ||= owner_tag&.include?("Template")
   end
 
   def setup_entity

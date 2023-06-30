@@ -1,0 +1,34 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">E Signatures</h1>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="e_signatures" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Sequence
+        </th>
+        <th>
+          User
+        </th>
+        <th>
+          Label
+        </th>
+        <th>
+          Signature Type
+        </th>
+        
+        <th>
+          Status
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% e_signatures.each do |e_signature| %>
+        <%= render e_signature %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
