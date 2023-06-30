@@ -54,10 +54,10 @@
           </a>
       <% end %>
 
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab"
+      <% if policy(fund).grant_access_rights? %>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab"
               data-action="click->tabdetails#loadData">Access</a>
-
-
+      <% end %>
 
     </nav>
 

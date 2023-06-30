@@ -89,6 +89,8 @@
 
             <% end %>
 
+            <%= link_to "Investors", investors_path(owner_type: "Fund", owner_id: @fund.id), {class: "dropdown-item" } if current_user.enable_investors %>
+
             <% if @fund.entity.enable_units %>
               <div class="dropdown-divider"></div>
               <%= link_to "Fund Unit Settings" , fund_unit_settings_path(fund_id: @fund.id), {class: "dropdown-item" } %>
@@ -154,6 +156,5 @@
 
   </div>
 
-  <% cache_if(current_user.entity_id == @fund.entity_id, [@fund, "FundDetails"]) do %>
-    <%= render "/funds/fund_details", fund: @fund %>
-  <% end %>
+  <%= render "/funds/fund_details", fund: @fund %>
+  

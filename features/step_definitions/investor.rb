@@ -12,6 +12,7 @@ When('I create a new investor {string}') do |arg1|
     find('ui-menu-item-wrapper', text: @investor_entity.name).click
   end
   fill_in('investor_investor_name', with: @investor_entity.name)
+  fill_in('investor_pan', with: @investor_entity.pan)
   select("Founder", from: "investor_category")
 
   click_on("Save")
@@ -141,8 +142,9 @@ Given('Given I upload an investor access file for employees') do
   # Sidekiq.redis(&:flushdb)
 
   visit(investor_path(Investor.first))
-  click_on("Employee Users")
-  click_on("Upload Employee Users")
+  find("#stakeholder_users_tab").click
+  find("#upload_stakeholder_users").click
+
   fill_in('import_upload_name', with: "Test Investor Access Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
   sleep(1)

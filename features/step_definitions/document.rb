@@ -16,7 +16,7 @@
   end
 
   Given('I should not have access to the document') do
-    Pundit.policy(@user, @document).show?.should == true
+    Pundit.policy(@user, @document).show?.should == false
   end
   
   Then('another user has {string} access to the document') do |arg|

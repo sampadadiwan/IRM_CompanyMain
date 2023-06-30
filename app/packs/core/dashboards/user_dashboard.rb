@@ -9,7 +9,7 @@ class UserDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     entity: Field::BelongsTo,
-    advisor_entity: Field::BelongsTo, class_name: "Entity",
+    advisor_entity: Field::BelongsToSearch.with_options(class_name: "Entity", searchable: false),
     id: Field::Number,
     sign_in_count: Field::Number,
     first_name: Field::String,
@@ -22,6 +22,7 @@ class UserDashboard < Administrate::BaseDashboard
     password_confirmation: Field::String.with_options(searchable: false),
     phone: Field::String,
     active: Field::BooleanEmoji,
+    enable_support: Field::BooleanEmoji,
     confirmed_at: Field::DateTime,
     roles: Field::HasMany,
     curr_role: Field::Select.with_options(collection: Role.all.collect(&:name))
@@ -56,6 +57,7 @@ class UserDashboard < Administrate::BaseDashboard
     email
     phone
     active
+    enable_support
     sign_in_count
     confirmed_at
     curr_role
@@ -76,6 +78,7 @@ class UserDashboard < Administrate::BaseDashboard
     password_confirmation
     phone
     active
+    enable_support
     curr_role
     advisor_entity
     roles

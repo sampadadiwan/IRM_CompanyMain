@@ -6,7 +6,7 @@ Scenario Outline: Access Document employee
   Given there is another user "first_name=Investor" for another entity "entity_type=Investor"
   And another entity is an investor "category=Lead Investor" in entity
   And given there is a document "<document>" for the entity 
-  And I should have access to the document
+  And I should not have access to the document
 
   Examples:
   	|user	    |entity               |document                     |

@@ -18,6 +18,7 @@ class InvestorDashboard < Administrate::BaseDashboard
     category: Field::String,
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
+    pan: Field::String,
     investor_name: Field::String
   }.freeze
 
@@ -29,6 +30,7 @@ class InvestorDashboard < Administrate::BaseDashboard
   COLLECTION_ATTRIBUTES = %i[
     id
     investor_name
+    pan
     entity
     category
   ].freeze
@@ -36,6 +38,8 @@ class InvestorDashboard < Administrate::BaseDashboard
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   SHOW_PAGE_ATTRIBUTES = %i[
+    investor_name
+    pan
     investor_entity
     entity
     access_rights
@@ -43,7 +47,6 @@ class InvestorDashboard < Administrate::BaseDashboard
     category
     created_at
     updated_at
-    investor_name
   ].freeze
 
   # FORM_ATTRIBUTES

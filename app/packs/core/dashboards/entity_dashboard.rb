@@ -17,6 +17,7 @@ class EntityDashboard < Administrate::BaseDashboard
     investments: Field::HasMany,
     id: Field::Number,
     name: Field::String,
+    pan: Field::String,
     sub_domain: Field::String,
     url: Field::String,
     category: Field::String,
@@ -74,6 +75,7 @@ class EntityDashboard < Administrate::BaseDashboard
   SHOW_PAGE_ATTRIBUTES = %i[
     id
     name
+    pan
     parent_entity
     sub_domain
     url
@@ -114,6 +116,7 @@ class EntityDashboard < Administrate::BaseDashboard
   # on the model's form (`new` and `edit`) pages.
   FORM_ATTRIBUTES = %i[
     name
+    pan
     parent_entity
     sub_domain
     url

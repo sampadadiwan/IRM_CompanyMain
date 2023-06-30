@@ -63,4 +63,8 @@ class FundPolicy < FundBasePolicy
   def destroy?
     permissioned_employee?(:destroy)
   end
+
+  def grant_access_rights?
+    user.has_cached_role?(:company_admin)
+  end
 end

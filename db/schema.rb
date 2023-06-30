@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_06_26_051356) do
+ActiveRecord::Schema[7.0].define(version: 2023_06_29_032841) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -814,6 +814,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_26_051356) do
     t.boolean "enable_kpis", default: false
     t.boolean "enable_kycs", default: false
     t.boolean "enable_support", default: false
+    t.string "pan", limit: 15
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
@@ -1614,6 +1615,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_26_051356) do
     t.string "tag_list", limit: 120
     t.boolean "imported", default: false
     t.bigint "document_folder_id"
+    t.string "pan", limit: 15
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
@@ -2134,6 +2136,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_06_26_051356) do
     t.bigint "advisor_entity_id"
     t.bigint "investor_advisor_id"
     t.string "call_code", limit: 3, default: "91"
+    t.integer "extended_permissions", default: 0
+    t.boolean "enable_support"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true

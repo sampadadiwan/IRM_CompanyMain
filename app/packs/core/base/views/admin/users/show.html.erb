@@ -1,0 +1,63 @@
+<%#
+# Show
+
+This view is the template for the show page.
+It renders the attributes of a resource,
+as well as a link to its edit page.
+
+## Local variables:
+
+- `page`:
+  An instance of [Administrate::Page::Show][1].
+  Contains methods for accessing the resource to be displayed on the page,
+  as well as helpers for describing how each attribute of the resource
+  should be displayed.
+
+[1]: http://www.rubydoc.info/gems/administrate/Administrate/Page/Show
+%>
+
+<% content_for(:title) { t("administrate.actions.show_resource", name: page.page_title) } %>
+
+<header class="main-content__header" role="banner">
+  <h1 class="main-content__page-title">
+    <%= content_for(:title) %>
+  </h1>
+
+  <div>
+    <%= link_to(
+      t("administrate.actions.edit_resource", name: page.page_title),
+      [:edit, namespace, page.resource],
+      class: "btn btn-outline-success",
+    ) if valid_action?(:edit) && show_action?(:edit, page.resource) %>
+
+    <%= link_to(
+            t("administrate.actions.destroy"),
+            [namespace, page.resource],
+            class: "btn btn-outline-danger",
+            method: :delete,
+            data: { confirm: t("administrate.actions.confirm") }
+          ) if show_action? :destroy, page.resource %>
+
+      <%= link_to 'Click To Login', no_password_login_users_url(signed_id: page.resource.signed_id(expires_in: 5.minutes), subdomain: nil), class: "btn btn-outline-primary" if page.resource.enable_support %>
+
+  </div>
+</header>
+
+<section class="main-content__body">
+  <table class="table table-bordered dataTable ">
+    <% page.attributes.each do |attribute| %>
+      <tr>
+
+        <td id="<%= attribute.name %>">
+        <%= t(
+          "helpers.label.#{resource_name}.#{attribute.name}",
+          default: page.resource.class.human_attribute_name(attribute.name),
+        ) %>
+        </td>
+
+        <td><%= render_field attribute, page: page %></td>
+
+      </tr>
+    <% end %>
+  </table>
+</section>

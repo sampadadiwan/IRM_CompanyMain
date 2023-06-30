@@ -6,7 +6,16 @@ class InvestorsController < ApplicationController
   def index
     @investors = policy_scope(Investor).joins(:entity)
     authorize(Investor)
+
     @investors = @investors.where(category: params[:category]) if params[:category]
+    if params[:owner_id].present? && params[:owner_type].present?
+      owner = params[:owner_type].constantize.find(params[:owner_id])
+      authorize(owner, :show?)
+      @investors = owner.investors
+    elsif !current_user.has_cached_role?(:company_admin)
+      # No owner, he must be company admin or employee with investor access, else show nothing
+      @investors = Investor.none
+    end
 
     if params[:search] && params[:search][:value].present?
       # This is only when the datatable sends a search query
@@ -19,6 +28,7 @@ class InvestorsController < ApplicationController
       @investors = Investor.where(id: ids)
     end
 
+    @investors = @investors.joins(:entity)
     @investors = @investors.page(params[:page]) if params[:all].blank?
     respond_to do |format|
       format.html
@@ -129,6 +139,6 @@ class InvestorsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def investor_params
     params.require(:investor).permit(:investor_entity_id, :tag_list, :investor_name, :form_type_id,
-                                     :entity_id, :category, :city, properties: {})
+                                     :pan, :entity_id, :category, :city, properties: {})
   end
 end

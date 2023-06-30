@@ -76,6 +76,19 @@
           </td>
         </tr>
 
+        <% unless @user.has_cached_role?(:company_admin) %>
+        <tr>
+          <td>
+            Extended Permissions
+          </td>
+          <td>
+            <% @user.extended_permissions.map{|p| p.to_s.titleize}.each do |permission| %>
+              <span class="badge badge-success"><%= permission %></span>
+            <% end %>
+          </td>
+        </tr>
+        <% end %>
+
         <% if Entity::SECONDARY_BUYERS.include? @user.entity&.entity_type %>
           <tr>
             <td>
@@ -93,6 +106,15 @@
           </td>
           <td>
             <%= display_boolean @user.whatsapp_enabled %>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            Support Enabled
+          </td>
+          <td>
+            <%= display_boolean @user.enable_support %>
           </td>
         </tr>
 

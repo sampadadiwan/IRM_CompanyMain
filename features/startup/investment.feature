@@ -34,6 +34,7 @@ Scenario Outline: Create new investment Option Fails
 
 Scenario Outline: Create new investment Options
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given a esop pool "name=Pool 1;approved=true" is created with vesting schedule "12:20,24:30,36:50"
   Given there is an existing investor "<investor>"
   And I am at the investments page
@@ -53,6 +54,7 @@ Examples:
 
 Scenario Outline: Create new investment
   Given Im logged in as a user "last_name=Tester" for an entity "entity_type=Company"
+  Given the user has role "company_admin"
   Given a esop pool "name=Pool 1;approved=true" is created with vesting schedule "12:20,24:30,36:50"
   Given there is an existing investor ""
   And I am at the investments page
@@ -65,6 +67,7 @@ Scenario Outline: Create new investment
 
 Scenario Outline: Edit investment
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given there is an existing investor "<investor>"
   And I am at the investments page
   And I create an investment "<investment>"
@@ -87,6 +90,7 @@ Scenario Outline: Edit investment
 
 Scenario Outline: Create new holding
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
+  Given the user has role "company_admin"
   Given there are "2" employee investors
   Given there is a FundingRound "name=Series A"
   And Given I create a holding for each employee with quantity "100"

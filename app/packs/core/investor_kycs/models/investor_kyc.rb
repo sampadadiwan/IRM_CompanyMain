@@ -4,6 +4,7 @@ class InvestorKyc < ApplicationRecord
   include WithCustomField
   include Trackable
   include WithFolder
+  include ForInvestor
 
   belongs_to :investor
   belongs_to :entity

@@ -19,6 +19,7 @@ export default class extends Controller {
             select: function (event, ui) {
                 ui.item.label = ui.item.investor_name;
                 $("#investor_investor_entity_id").val(ui.item.id);
+                $("#investor_pan").val(ui.item.pan);
             }
         });
 

@@ -1,4 +1,9 @@
-<% data_source ||= investors_path(params, format: :json, all: true) %>    
+<% 
+  qs = params.to_enum.to_h
+  qs[:format] = :json
+  qs[:all] =  true
+  data_source ||= investors_path(qs) 
+%>    
 <% lazy_load_data ||= false %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -9,8 +14,9 @@
     </h1>
 
     <span>
+    <% investor = Investor.new(entity_id: current_user.entity_id) %>
     <%= link_to "New Stakeholder" , new_investor_path("investor[entity_id]": current_user.entity_id),
-      {class: "btn btn-outline-primary" } %>
+      {class: "btn btn-outline-primary" } if policy(investor).new? %>
 
     <%= link_to "All Notes" , notes_path, {class: "btn btn-outline-success" } %>
 

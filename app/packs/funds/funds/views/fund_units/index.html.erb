@@ -1,5 +1,5 @@
 <%= render "/layouts/alerts" %>
 
 <%= turbo_frame_tag "fund_units_list", target: "_top" do %>
-  <%= render "/fund_units/index", fund_units: @fund_units %>
+  <%= render "/fund_units/index", fund_units: @fund_units, cols: params[:cols] %>
 <% end %>

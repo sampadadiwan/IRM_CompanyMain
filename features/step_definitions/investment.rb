@@ -178,7 +178,14 @@ Given('Given I create a holding for each employee with quantity {string}') do |a
   @holding_orig_grant_quantity = arg.to_i
   @entity.investor_accesses.each do |emp|
     visit(investor_url(@holdings_investor))
-    click_on("Employee Users")
+    
+    if page.has_link?("Employee Users")
+      page.click_link("Employee Users")
+    end
+    if page.has_link?("Stakeholder Users")
+      page.click_link("Stakeholder Users")
+    end
+    
     find("#investor_access_#{emp.id}").click_link("Add Holding")
     fill_in('holding_orig_grant_quantity', with: @holding_orig_grant_quantity)
     fill_in('holding_price', with: 1000*emp.user_id)

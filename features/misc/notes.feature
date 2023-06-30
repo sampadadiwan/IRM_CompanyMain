@@ -3,6 +3,7 @@ Feature: Note
 
 Scenario Outline: Create new note
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given there is an existing investor ""
   And I am at the investor page
   When I create a new note "Hi, How are you?"

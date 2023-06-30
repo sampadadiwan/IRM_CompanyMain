@@ -165,6 +165,7 @@
           <%= link_to "View Allocations", finalize_allocation_investment_opportunity_path(@investment_opportunity),
               class: "dropdown-item" %>
     
+          <%= link_to "Investors", investors_path(owner_type: "InvestmentOpportunity", owner_id: @investment_opportunity.id), {class: "dropdown-item" } if current_user.enable_investors %>
                     
         </div>
       </div>
