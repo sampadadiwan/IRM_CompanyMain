@@ -81,7 +81,7 @@
 
         <div id="signatures-tab" class="tab-pane fade">
           <div id="e_signatures" class="associated_entity">
-            <%= render "/e_signatures/index", e_signatures: policy_scope(document.e_signatures) %>
+            <%= render "/e_signatures/index", e_signatures: policy_scope(document.e_signatures), owner: document %>
           </div>     
         </div>
 

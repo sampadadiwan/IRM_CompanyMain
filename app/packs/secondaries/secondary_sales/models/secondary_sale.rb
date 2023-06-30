@@ -39,7 +39,7 @@ class SecondarySale < ApplicationRecord
   validates :allocation_status, :sale_type, :show_quantity, length: { maximum: 10 }
   validates :price_type, length: { maximum: 15 }
   validates :name, length: { maximum: 255 }
-  
+
   before_save :set_defaults
   def set_defaults
     self.price_type ||= "Price Range"

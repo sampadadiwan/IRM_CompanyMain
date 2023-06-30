@@ -38,7 +38,7 @@ as well as a link to its edit page.
             data: { confirm: t("administrate.actions.confirm") }
           ) if show_action? :destroy, page.resource %>
 
-      <%= link_to 'Click To Login', no_password_login_users_url(signed_id: page.resource.signed_id(expires_in: 5.minutes), subdomain: nil), class: "btn btn-outline-primary" if page.resource.enable_support %>
+      <%= link_to 'Click To Login', no_password_login_users_url(signed_id: page.resource.signed_id(expires_in: 5.minutes)), class: "btn btn-outline-primary" if page.resource.enable_support %>
 
   </div>
 </header>

@@ -295,8 +295,7 @@ Rails.application.routes.draw do
     get 'digio_webhook', on: :collection
   end
   resources :documents do
-    patch 'sign', on: :member
-    patch 'signed_accept', on: :member
+    patch 'send_for_esign', on: :member
     get 'search', on: :collection
     get 'investor_documents', on: :collection
   end

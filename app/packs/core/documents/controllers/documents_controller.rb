@@ -3,7 +3,7 @@ class DocumentsController < ApplicationController
 
   include ActiveStorage::SetCurrent
 
-  before_action :set_document, only: %w[show update destroy edit sign]
+  before_action :set_document, only: %w[show update destroy edit send_for_esign]
   after_action :verify_authorized, except: %i[index search investor_documents]
   after_action :verify_policy_scoped, only: []
   # skip_before_action :authenticate_user!, :only => [:show]
@@ -79,6 +79,14 @@ class DocumentsController < ApplicationController
 
   # GET /documents/1 or /documents/1.json
   def show; end
+
+  def send_for_esign
+    if @document.send_for_esign(params[:force])
+      redirect_to document_url(@document), notice: "Document was successfully sent for e-signature."
+    else
+      redirect_to document_url(@document, display_status: true), alert: "Document was NOT sent for e-signature."
+    end
+  end
 
   # GET /documents/new
   def new

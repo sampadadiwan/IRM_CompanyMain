@@ -22,8 +22,8 @@ module WithESignatures
       e_signatures.map do |e_signature|
         es = e_signature.dup
         method = e_signature.label.delete(' ').underscore
-        if model.respond_to?(method) 
-          es.user = model.send(method) 
+        if model.respond_to?(method)
+          es.user = model.send(method)
         else
           es.user = User.where(email: e_signature.notes).last
           es.notes += " Invalid email, user not found." unless es.user
@@ -39,5 +39,17 @@ module WithESignatures
 
   def stamp_papers
     owner.stamp_papers if stamp_paper?
+  end
+
+  # This can be called from the controller to send the document for e-signing
+  def send_for_esign(_force = false)
+    if signature_enabled
+      Rails.logger.debug { "Signature enabled for #{name}, sending for e-signing" }
+      # Tell the provider to send it for e-signing
+      true
+    else
+      Rails.logger.debug { "Signature not enabled for #{name}" }
+      false
+    end
   end
 end

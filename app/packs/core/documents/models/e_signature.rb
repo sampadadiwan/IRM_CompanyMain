@@ -10,4 +10,10 @@ class ESignature < ApplicationRecord
   def setup_entity
     self.entity_id = owner.entity_id
   end
+
+  after_save :update_owner
+  def update_owner
+    owner.signature_enabled = true
+    owner.save
+  end
 end

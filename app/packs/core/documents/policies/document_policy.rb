@@ -13,7 +13,6 @@ class DocumentPolicy < ApplicationPolicy
       ))
   end
 
-
   def create?
     (belongs_to_entity?(user, record) && user.enable_documents) ||
       (record.owner && owner_policy.update?) ||
@@ -32,6 +31,10 @@ class DocumentPolicy < ApplicationPolicy
       (record.owner && owner_policy.update?) ||
       allow_external?(:write)
     ) && !record.locked # Ensure locked documents cannot be changed
+  end
+
+  def send_for_esign?
+    update? && !record.sent_for_esign
   end
 
   def edit?

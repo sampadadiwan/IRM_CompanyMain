@@ -135,5 +135,4 @@ class Interest < ApplicationRecord
       [user.email]
     end
   end
-
 end

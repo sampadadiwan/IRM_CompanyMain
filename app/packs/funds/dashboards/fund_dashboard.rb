@@ -82,7 +82,7 @@ class FundDashboard < Administrate::BaseDashboard
     details
     collected_amount_cents
     tag_list
-    
+
     call_amount_cents
     distribution_amount_cents
   ].freeze
