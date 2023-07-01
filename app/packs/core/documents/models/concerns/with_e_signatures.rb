@@ -42,14 +42,39 @@ module WithESignatures
   end
 
   # This can be called from the controller to send the document for e-signing
-  def send_for_esign(_force = false)
+  def send_for_esign(force: false)
     if signature_enabled
       Rails.logger.debug { "Signature enabled for #{name}, sending for e-signing" }
-      # Tell the provider to send it for e-signing
-      true
+      if !sent_for_esign || force
+        Rails.logger.debug { "Sending #{name} #{id} for e-signing" }
+        # Tell the provider to send it for e-signing
+        true
+      else
+        false
+      end
     else
       Rails.logger.debug { "Signature not enabled for #{name}" }
       false
+    end
+  end
+
+  def signature_completed(signed_doc_from_provider, replace: false)
+    if replace
+      # We replace the file in the orig document
+      self.file = File.open(signed_doc_from_provider, "rb")
+      self.owner_tag = "Signed"
+      save
+    else
+      # We create a new document, and leave the old one intact.
+      signed_doc = Document.new(attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
+
+      signed_doc.file = File.open(signed_doc_from_provider, "rb")
+      signed_doc.from_template = self
+      signed_doc.owner = owner
+      signed_doc.owner_tag = "Signed"
+      signed_doc.send_email = false
+      signed_doc.locked = true
+      signed_doc.save
     end
   end
 end

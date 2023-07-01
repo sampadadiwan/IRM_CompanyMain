@@ -81,7 +81,7 @@ class DocumentsController < ApplicationController
   def show; end
 
   def send_for_esign
-    if @document.send_for_esign(params[:force])
+    if @document.send_for_esign(force: params[:force])
       redirect_to document_url(@document), notice: "Document was successfully sent for e-signature."
     else
       redirect_to document_url(@document, display_status: true), alert: "Document was NOT sent for e-signature."

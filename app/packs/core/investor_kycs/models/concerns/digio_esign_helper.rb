@@ -84,7 +84,7 @@ class DigioEsignHelper
     users = User.where(id: user_ids.split(","))
     users.each do |u|
       ret << {
-        identifier: u.phone,
+        identifier: u.email,
         name: u.full_name,
         sign_type: "aadhaar"
         # reason:
