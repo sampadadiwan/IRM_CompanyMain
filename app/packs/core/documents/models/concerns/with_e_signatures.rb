@@ -58,6 +58,7 @@ module WithESignatures
     end
   end
 
+  # called by the provider once esign is completed
   def signature_completed(signed_doc_from_provider, replace: false)
     if replace
       # We replace the file in the orig document

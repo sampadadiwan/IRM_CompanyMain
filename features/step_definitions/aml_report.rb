@@ -11,12 +11,14 @@ Given('there is an investor {string} with investor kyc and aml report for the en
   @investor = if Investor.exists?(args_temp)
     Investor.find_by(args_temp)
   else
+    FactoryBot.create(:entity, entity_type: "Investor")
     FactoryBot.build(:investor)
   end
   key_values(@investor, arg1)
   @investor.entity_id = @investor_entity.id
-  @investor.investor_entity_id = FactoryBot.create(:entity).id
+  @investor.investor_entity_id = 
   @investor.save!
+
   RSpec::Mocks.with_temporary_scope do
     @investor_kyc = FactoryBot.build(:investor_kyc, investor: @investor, entity: @investor_entity)
     aml_report = FactoryBot.create(:aml_report, investor: @investor, entity: @investor_entity, investor_kyc: @investor_kyc, name: @investor_kyc.full_name)

@@ -1,7 +1,7 @@
 class ImportPortfolioInvestment < ImportUtil
   include Interactor
 
-  STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount",
+  STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Pan", "Investment Date",	"Amount",
                       "Quantity",	"Category", "Sub Category", "Sector", "Startup", "Investment Domicile", "Notes", "Type", "Folio No"].freeze
 
   def standard_headers
@@ -16,7 +16,35 @@ class ImportPortfolioInvestment < ImportUtil
   end
 
   def save_portfolio_investment(user_data, import_upload, custom_field_headers)
+    portfolio_company_name, pan, investment_date, amount_cents, quantity, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, folio_id, capital_commitment = inputs(user_data, import_upload)
+
+    portfolio_investment = PortfolioInvestment.find_or_initialize_by(
+      portfolio_company_name:, investment_date:, category:, sub_category:, amount_cents:, quantity:, sector:, startup:, capital_commitment:, commitment_type:, investment_domicile:, fund:, entity_id: fund.entity_id
+    )
+
+    if portfolio_investment.new_record?
+
+      Rails.logger.debug user_data
+      # Setup the portfolio_company if required
+      portfolio_company = fund.entity.investors.portfolio_companies.where(pan:).first
+      if portfolio_company.nil?
+        # Create the portfolio_company
+        portfolio_company = fund.entity.investors.create!(investor_name: portfolio_company_name, category: "Portfolio Company", pan:)
+      end
+      # Save the PortfolioInvestment
+      setup_custom_fields(user_data, portfolio_investment, custom_field_headers)
+      portfolio_investment.notes = user_data["Notes"]
+      portfolio_investment.portfolio_company = portfolio_company
+      Rails.logger.debug { "Saving PortfolioInvestment with name '#{portfolio_investment.portfolio_company_name}'" }
+      portfolio_investment.save!
+    else
+      raise "PortfolioInvestment already exists"
+    end
+  end
+
+  def inputs(user_data, import_upload)
     portfolio_company_name = user_data['Portfolio Company Name'].strip
+    pan = user_data['Pan'].strip
     investment_date = user_data["Investment Date"]
     amount_cents = user_data["Amount"].to_d * 100
     quantity = user_data["Quantity"].to_d
@@ -30,28 +58,7 @@ class ImportPortfolioInvestment < ImportUtil
     folio_id = user_data["Folio No"].presence
     capital_commitment = commitment_type == "CoInvest" ? fund.capital_commitments.where(folio_id:).first : nil
 
-    portfolio_investment = PortfolioInvestment.find_or_initialize_by(
-      portfolio_company_name:, investment_date:, category:, sub_category:, amount_cents:, quantity:, sector:, startup:, capital_commitment:, commitment_type:, investment_domicile:, fund:, entity_id: fund.entity_id
-    )
-
-    if portfolio_investment.new_record?
-
-      Rails.logger.debug user_data
-      # Setup the portfolio_company if required
-      portfolio_company = fund.entity.investors.portfolio_companies.where(investor_name: portfolio_company_name).first
-      if portfolio_company.nil?
-        # Create the portfolio_company
-        portfolio_company = fund.entity.investors.create!(investor_name: portfolio_company_name, category: "Portfolio Company")
-      end
-      # Save the PortfolioInvestment
-      setup_custom_fields(user_data, portfolio_investment, custom_field_headers)
-      portfolio_investment.notes = user_data["Notes"]
-      portfolio_investment.portfolio_company = portfolio_company
-      Rails.logger.debug { "Saving PortfolioInvestment with name '#{portfolio_investment.portfolio_company_name}'" }
-      portfolio_investment.save!
-    else
-      raise "PortfolioInvestment already exists"
-    end
+    [portfolio_company_name, pan, investment_date, amount_cents, quantity, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, folio_id, capital_commitment]
   end
 
   def process_row(headers, custom_field_headers, row, import_upload, _context)

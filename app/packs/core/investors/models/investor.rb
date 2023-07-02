@@ -56,7 +56,7 @@ class Investor < ApplicationRecord
   validates :city, length: { maximum: 50 }
   validates :pan, length: { maximum: 15 }
   # We did not have PAN as mandatory before. But we need to make it mandatory, without forcing update to existing data. Hence this check for data created after PAN_MANDATORY_AFTER date
-  validates :pan, presence: true, if: proc { |e| (e.created_at && e.created_at >= Entity::PAN_MANDATORY_AFTER) || (e.new_record? && Time.zone.today >= Entity::PAN_MANDATORY_AFTER) }
+  validates :pan, presence: true, if: proc { |e| (e.created_at && e.created_at >= Entity::PAN_MANDATORY_AFTER) || ((e.new_record? && Time.zone.today >= Entity::PAN_MANDATORY_AFTER) && !e.is_holdings_entity && !e.is_trust) }
 
   validates_uniqueness_of :pan, scope: :entity_id, allow_blank: true, allow_nil: true, message: "already exists as an investor. Duplicate Investor."
 
@@ -118,6 +118,8 @@ class Investor < ApplicationRecord
 
       self.investor_entity = e
     end
+
+    self.pan ||= investor_entity.pan
   end
 
   def setup_permissions(investor_entity)

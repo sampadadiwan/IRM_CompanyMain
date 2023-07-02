@@ -65,18 +65,18 @@
 
             <% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role]) do %>
 
-                <% if current_user && current_user.has_cached_role?(:employee) && 
+                
+
+                <% if current_user && current_user.advisor_entity_id.present? %>
+                    <div class="topbar-divider "></div>
+                    <%= render "/investor_advisors/personas" %>
+                <% elsif current_user && current_user.has_cached_role?(:employee) && 
                     (   
                         current_user.has_cached_role?(:investor) || 
                         current_user.has_cached_role?(:holding) 
                     )  %>
                     <div class="topbar-divider "></div>
-                    <%= render "/layouts/persona" %>
-                <% end %>
-
-                <% if current_user && current_user.advisor_entity_id.present? %>
-                    <div class="topbar-divider "></div>
-                    <%= render "/investor_advisors/personas" %>
+                    <%= render "/layouts/persona" %>                
                 <% end %>
 
                 <div class="topbar-divider d-none d-sm-block"></div>
