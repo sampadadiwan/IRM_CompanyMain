@@ -3,6 +3,7 @@ Feature: Approval
 
 Scenario Outline: Create new approval
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   And I am at the approvals page
   When I create a new approval "<approval>"
   Then I should see the "<msg>"
@@ -19,6 +20,7 @@ Scenario Outline: Create new approval
 
 Scenario Outline: Edit approval
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   And I am at the approvals page
   When I create a new approval "<approval>"
   Then I should see the "<msg>"
@@ -35,6 +37,7 @@ Scenario Outline: Edit approval
 
 Scenario Outline: Grant Access Rights to approval
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given the user has role "approver"
   Given there is an existing investor "" with "2" users
   Given there is an existing investor "" with "2" users
@@ -53,6 +56,7 @@ Scenario Outline: Grant Access Rights to approval
 
 Scenario Outline: Grant Access Rights to approval after approved
   Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
   Given the user has role "approver"
   Given there is an existing investor "" with "2" users
   Given there is an existing investor "" with "2" users
@@ -75,7 +79,6 @@ Scenario Outline: Grant Access Rights to approval after approved
 
 Scenario Outline: Provide approval response
   Given there is a user "<user>" for an entity "<entity>"
-  Given the user has role "approver"
   Given there is an existing investor "" with "2" users
   Given there is an approval "<approval>" for the entity
   Given the investors are added to the approval  

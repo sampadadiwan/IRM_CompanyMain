@@ -16,7 +16,7 @@ class ApprovalPolicy < ApplicationPolicy
   end
 
   def new?
-    create?
+    user.entity.enable_approvals && (user.curr_role = "company_admin")
   end
 
   def update?
