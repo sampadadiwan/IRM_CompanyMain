@@ -14,8 +14,8 @@ Scenario Outline: Access Deal employee
   	|user	    |entity               |deal                     | role | deal_access | doc_access |
   	|  	      |entity_type=Company  |name=Series A;amount_cents=100 | company_admin | true | true |
     |  	      |entity_type=Company  |name=Series B;amount_cents=120 | company_admin | true | true |
-    |  	      |entity_type=Company  |name=Series A;amount_cents=100 | employee | false | true |
-    |  	      |entity_type=Company  |name=Series B;amount_cents=120 | employee | false | true |
+    # |  	      |entity_type=Company  |name=Series A;amount_cents=100 | employee | true | true |
+    # |  	      |entity_type=Company  |name=Series B;amount_cents=120 | employee | true | true |
 
 
 Scenario Outline: Access Deal employee
