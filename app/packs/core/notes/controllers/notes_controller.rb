@@ -6,7 +6,15 @@ class NotesController < ApplicationController
   def index
     @notes = policy_scope(Note)
 
-    @notes = @notes.where(investor_id: params[:investor_id]) if params[:investor_id]
+    if params[:investor_id]
+      if current_user.curr_role == "employee"
+        # Employees can only see notes for investors they have access to
+        @investor = Investor.find(params[:investor_id])
+        authorize @investor, :show?
+      end
+      @notes = @notes.where(investor_id: params[:investor_id])
+    end
+
     @notes = @notes.where(user_id: params[:user_id]) if params[:user_id]
 
     @notes = @notes.with_all_rich_text.includes(:user, :investor)

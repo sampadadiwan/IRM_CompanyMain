@@ -1,10 +1,11 @@
 class InvestorAccessPolicy < ApplicationPolicy
   def index?
-    true
+    user.has_cached_role?(:company_admin)
   end
 
   def show?
-    belongs_to_entity?(user, record) || user.entity_id == record.investor.investor_entity_id || super_user?
+    (user.has_cached_role?(:company_admin) &&
+      (belongs_to_entity?(user, record) || user.entity_id == record.investor.investor_entity_id)) || super_user?
   end
 
   def create?
