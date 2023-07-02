@@ -1,20 +1,22 @@
 class ApprovalPolicy < ApplicationPolicy
   def index?
-    true
+    user.entity.enable_approvals
   end
 
   def show?
-    belongs_to_entity?(user, record) ||
-      Approval.for_investor(user).where(id: record.id).present?
+    user.entity.enable_approvals &&
+      (belongs_to_entity?(user, record) ||
+        Approval.for_investor(user).where(id: record.id).present?)
   end
 
   def create?
-    belongs_to_entity?(user, record) &&
+    user.entity.enable_approvals &&
+      belongs_to_entity?(user, record) &&
       (user.curr_role = "company_admin")
   end
 
   def new?
-    (user.curr_role = "company_admin")
+    create?
   end
 
   def update?

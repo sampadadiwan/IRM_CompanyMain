@@ -134,6 +134,7 @@ class Investor < ApplicationRecord
 
     investor_entity.enable_funds = entity.enable_funds if entity.enable_funds
     investor_entity.enable_kpis = entity.enable_kpis if entity.enable_kpis
+    investor_entity.enable_approvals = entity.enable_kpis if entity.enable_approvals
     investor_entity.enable_inv_opportunities = entity.enable_inv_opportunities if entity.enable_inv_opportunities
   end
 

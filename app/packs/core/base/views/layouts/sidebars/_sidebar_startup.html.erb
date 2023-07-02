@@ -14,7 +14,9 @@
                         New Stakeholder</a>
                     <a class="collapse-item" href="/investors">View Stakeholders</a>
                     <a class="collapse-item" href="/kpi_reports">Kpis</a>
-                    <a class="collapse-item" href="/approvals">Approvals</a>
+                    <% if current_user.enable_approvals %>
+                        <a class="collapse-item" href="/approvals">Approvals</a>
+                    <% end %>
                     <a class="collapse-item" href="/notes">Notes</a>
                     <a class="collapse-item" href="/investor_accesses?approved=false">Pending Access</a>
                 </div>
