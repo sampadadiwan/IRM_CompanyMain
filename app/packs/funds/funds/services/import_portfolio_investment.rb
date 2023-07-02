@@ -16,7 +16,7 @@ class ImportPortfolioInvestment < ImportUtil
   end
 
   def save_portfolio_investment(user_data, import_upload, custom_field_headers)
-    portfolio_company_name, pan, investment_date, amount_cents, quantity, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, folio_id, capital_commitment = inputs(user_data, import_upload)
+    portfolio_company_name, pan, investment_date, amount_cents, quantity, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, capital_commitment = inputs(user_data, import_upload)
 
     portfolio_investment = PortfolioInvestment.find_or_initialize_by(
       portfolio_company_name:, investment_date:, category:, sub_category:, amount_cents:, quantity:, sector:, startup:, capital_commitment:, commitment_type:, investment_domicile:, fund:, entity_id: fund.entity_id
@@ -58,7 +58,7 @@ class ImportPortfolioInvestment < ImportUtil
     folio_id = user_data["Folio No"].presence
     capital_commitment = commitment_type == "CoInvest" ? fund.capital_commitments.where(folio_id:).first : nil
 
-    [portfolio_company_name, pan, investment_date, amount_cents, quantity, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, folio_id, capital_commitment]
+    [portfolio_company_name, pan, investment_date, amount_cents, quantity, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, capital_commitment]
   end
 
   def process_row(headers, custom_field_headers, row, import_upload, _context)
