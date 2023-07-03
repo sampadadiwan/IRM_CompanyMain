@@ -34,7 +34,7 @@ class InvestorKycDatatable < AjaxDatatablesRails::ActiveRecord
         bank_verified: record.decorate.display_boolean(record.bank_verified),
         verified: record.decorate.display_boolean(record.verified),
         expired: record.decorate.expired,
-        committed_amount: record.decorate.committed_amount,
+        committed_amount: record.decorate.money_to_currency(record.custom_committed_amount, params),
         collected_amount: record.decorate.money_to_currency(record.collected_amount, params),
         call_amount: record.decorate.money_to_currency(record.call_amount, params),
         distribution_amount: record.decorate.money_to_currency(record.distribution_amount, params),

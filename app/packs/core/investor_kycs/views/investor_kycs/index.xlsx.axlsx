@@ -9,6 +9,6 @@ wb.add_worksheet(name: "InvestorKyc") do |sheet|
   # Create entries for each item
   @investor_kycs.each do |cc|
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
-    sheet.add_row [cc.investor.investor_name, cc.full_name, cc.PAN, cc.address, cc.bank_account_number, cc.ifsc_code, cc.committed_amount.to_f, cc.call_amount.to_f, cc.collected_amount.to_f, cc.distribution_amount.to_f] + custom_field_values
+    sheet.add_row [cc.investor.investor_name, cc.full_name, cc.PAN, cc.address, cc.bank_account_number, cc.ifsc_code, cc.custom_committed_amount.to_f, cc.call_amount.to_f, cc.collected_amount.to_f, cc.distribution_amount.to_f] + custom_field_values
   end
 end

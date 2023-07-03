@@ -172,8 +172,7 @@
         Committed Amount
       </td>
       <td>
-      <% committed_amount =  investor_kyc.properties["committed_amount"].present? ? Money.new(investor_kyc.properties["committed_amount"].to_f * 100, investor_kyc.entity.currency) : investor_kyc.committed_amount %>
-        <%= money_to_currency committed_amount, params %>
+        <%= money_to_currency investor_kyc.custom_committed_amount, params %>
       </td>
     </tr>
 

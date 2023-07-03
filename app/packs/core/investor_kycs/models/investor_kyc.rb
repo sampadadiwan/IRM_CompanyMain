@@ -48,6 +48,10 @@ class InvestorKyc < ApplicationRecord
     self.investor_name = investor.investor_name
   end
 
+  def custom_committed_amount
+    properties["committed_amount"].present? ? Money.new(properties["committed_amount"].to_f * 100, entity.currency) : committed_amount
+  end
+
   def folder_path
     "#{investor.folder_path}/KYC-#{id}/#{full_name.delete('/')}"
   end
