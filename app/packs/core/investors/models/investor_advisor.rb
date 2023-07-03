@@ -30,24 +30,31 @@ class InvestorAdvisor < ApplicationRecord
   def switch(user)
     user.entity_id = entity_id
     user.investor_advisor_id = id
+    user.setup_defaults
+    user.save
 
     # Add the roles specified in the allowed_roles
     user.roles.delete_all
-    user.setup_defaults
     allowed_roles.each do |role|
       user.add_role(role)
     end
 
     # Ensure he has the investor advisor role
     user.add_role(:investor_advisor)
-
-    user.save
   end
 
   def self.revert(user)
     user.entity_id = user.advisor_entity_id
     user.investor_advisor_id = nil
     user.save
+
+    # Reset the roles to the ones specified in the advisor_entity_roles
+    user.roles.delete_all
+    user.advisor_entity_roles&.split(",")&.each do |role|
+      user.add_role(role)
+    end
+
+    user.add_role(:investor_advisor)
   end
 
   after_destroy :remove_access_rights

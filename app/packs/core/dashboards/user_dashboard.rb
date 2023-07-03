@@ -10,6 +10,7 @@ class UserDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     entity: Field::BelongsTo,
     advisor_entity: Field::BelongsToSearch.with_options(class_name: "Entity", searchable: false),
+    advisor_entity_roles: Field::String,
     id: Field::Number,
     sign_in_count: Field::Number,
     first_name: Field::String,
@@ -62,6 +63,7 @@ class UserDashboard < Administrate::BaseDashboard
     confirmed_at
     curr_role
     advisor_entity
+    advisor_entity_roles
     roles
     permissions
   ].freeze
@@ -81,6 +83,7 @@ class UserDashboard < Administrate::BaseDashboard
     enable_support
     curr_role
     advisor_entity
+    advisor_entity_roles
     roles
   ].freeze
 

@@ -103,6 +103,7 @@ class Entity < ApplicationRecord
   FUNDING_UNITS = %w[Lakhs Crores].freeze
   PLANS = ENV['PLANS'].split(",")
 
+  default_scope { order(name: :asc) }
   scope :holdings, -> { where(entity_type: "Holding") }
   scope :vcs, -> { where(entity_type: "Investor") }
   scope :startups, -> { where(entity_type: "Company") }
