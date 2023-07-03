@@ -4,5 +4,10 @@ class AddRollupsToInvestorKyc < ActiveRecord::Migration[7.0]
     add_column :investor_kycs, :call_amount_cents, :decimal, precision: 20, scale: 2, default: "0.0"
     add_column :investor_kycs, :collected_amount_cents, :decimal, precision: 20, scale: 2, default: "0.0"
     add_column :investor_kycs, :distribution_amount_cents, :decimal, precision: 20, scale: 2, default: "0.0"
+
+    # Trigger rollups
+    CapitalRemittance.counter_culture_fix_counts
+    CapitalDistributionPayment.counter_culture_fix_counts
+    CapitalCommitment.counter_culture_fix_counts
   end
 end

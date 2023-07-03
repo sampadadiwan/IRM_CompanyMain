@@ -55,6 +55,10 @@ class CapitalRemittance < ApplicationRecord
                                        delta_column: 'call_amount_cents',
                                        execute_after_commit: true
 
+  counter_culture %i[capital_commitment investor_kyc], column_name: 'call_amount_cents',
+                                                       delta_column: 'call_amount_cents',
+                                                       execute_after_commit: true
+
   counter_culture :fund, column_name: proc { |r| r.capital_commitment.Pool? ? 'call_amount_cents' : 'co_invest_call_amount_cents' },
                          delta_column: 'call_amount_cents',
                          column_names: lambda {
@@ -79,6 +83,13 @@ class CapitalRemittance < ApplicationRecord
                                          ["capital_remittances.verified = ?", true] => 'collected_amount_cents'
                                        },
                                        execute_after_commit: true
+
+  counter_culture %i[capital_commitment investor_kyc], column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
+                                                       delta_column: 'collected_amount_cents',
+                                                       column_names: {
+                                                         ["capital_remittances.verified = ?", true] => 'collected_amount_cents'
+                                                       },
+                                                       execute_after_commit: true
 
   counter_culture :fund, column_name:
                         proc { |r| r.verified && r.capital_commitment.Pool? ? 'collected_amount_cents' : nil },

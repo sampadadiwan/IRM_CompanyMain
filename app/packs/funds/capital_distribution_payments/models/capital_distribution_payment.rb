@@ -55,6 +55,10 @@ class CapitalDistributionPayment < ApplicationRecord
                   column_name: 'distribution_amount_cents',
                   delta_column: 'amount_cents'
 
+  counter_culture %i[capital_commitment investor_kyc],
+                  column_name: 'distribution_amount_cents',
+                  delta_column: 'amount_cents'
+
   scope :completed, -> { where(completed: true) }
   scope :incomplete, -> { where(completed: false) }
   scope :pool, -> { joins(:capital_commitment).where("capital_commitments.commitment_type=?", "Pool") }
