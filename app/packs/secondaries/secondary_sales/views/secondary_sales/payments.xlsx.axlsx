@@ -11,23 +11,23 @@ wb.add_worksheet(name: "Offers") do |sheet|
       fees = o.compute_fees(@fees)
       fee_amount = fees.sum { |i| i[:fee] }
 
-      sheet.add_row [o.full_name, custom_format_number(o.allocation_quantity, params),
-                     o.final_price, money_to_currency(o.allocation_amount, params), money_to_currency(fee_amount, params), money_to_currency(o.allocation_amount - fee_amount, params),
-                     o.bank_account_number, o.ifsc_code,
-                     o.PAN, buyer_entity_name, o.interest.bank_account_number, o.interest.ifsc_code]
+      sheet.add_row [o.full_name, o.allocation_quantity,
+                     o.final_price, o.allocation_amount.to_f, fee_amount.to_f, (o.allocation_amount - fee_amount).to_f,
+                     o.bank_account_number&.to_s, o.ifsc_code,
+                     o.PAN, buyer_entity_name, o.interest.bank_account_number&.to_s, o.interest.ifsc_code]
     end
 
     buyer_hash[:fees].each do |advisor_name, fee|
       sheet.add_row ["Advisor Fee: #{advisor_name}", "", "", "",
                      "#{fee[:fee].amount} : #{fee[:fee].amount_label}",
-                     money_to_currency(fee[:fee_amount], params),
+                     fee[:fee_amount].to_f,
                      fee[:fee].bank_account_number, fee[:fee].ifsc_code, "",
                      buyer_entity_name]
     end
 
     sheet.add_row ["Total", "", "", "",
                    "",
-                   money_to_currency(buyer_hash[:total_allocation_amount]),
+                   buyer_hash[:total_allocation_amount].to_f,
                    "", "", "",
                    buyer_entity_name]
 

@@ -76,6 +76,28 @@ class CapitalCommitment < ApplicationRecord
                     }
                   }
 
+  # Add the counters for the investor kyc.
+  # Note - these counters are run delayed, they are not realtime
+  counter_culture :investor_kyc,
+                  column_name: 'collected_amount_cents',
+                  delta_column: 'collected_amount_cents',
+                  execute_after_commit: true
+
+  counter_culture :investor_kyc,
+                  column_name: 'call_amount_cents',
+                  delta_column: 'call_amount_cents',
+                  execute_after_commit: true
+
+  counter_culture :investor_kyc,
+                  column_name: 'committed_amount_cents',
+                  delta_column: 'committed_amount_cents',
+                  execute_after_commit: true
+
+  counter_culture :investor_kyc,
+                  column_name: 'distribution_amount_cents',
+                  delta_column: 'distribution_amount_cents',
+                  execute_after_commit: true
+
   before_save :set_investor_name
   def set_investor_name
     self.investor_name = investor.investor_name

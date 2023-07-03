@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_03_032042) do
+ActiveRecord::Schema[7.0].define(version: 2023_07_03_122648) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1367,6 +1367,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_03_032042) do
     t.string "ifsc_code", limit: 20
     t.bigint "final_agreement_user_id"
     t.string "custom_matching_vals"
+    t.string "buyer_signature_types", limit: 20, default: ""
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
     t.bigint "investor_id"
@@ -1553,6 +1554,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_03_032042) do
     t.string "residency", limit: 10
     t.datetime "birth_date"
     t.text "corr_address"
+    t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
@@ -1774,7 +1779,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_03_032042) do
     t.text "bank_verification_response"
     t.string "bank_verification_status"
     t.string "full_name", limit: 100
-    t.string "demat", limit: 40
+    t.string "demat", limit: 50
     t.string "city", limit: 20
     t.bigint "final_agreement_user_id"
     t.string "custom_matching_vals"
@@ -1782,6 +1787,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_03_032042) do
     t.boolean "esign_completed", default: false
     t.string "esign_provider", limit: 10
     t.string "esign_link"
+    t.string "seller_signature_types", limit: 20, default: ""
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
@@ -1991,6 +1997,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_03_032042) do
     t.boolean "disable_bank_kyc", default: false
     t.text "custom_matching_fields"
     t.text "cmf_allocation_percentage"
+    t.string "buyer_signature_types", limit: 20, default: ""
+    t.string "seller_signature_types", limit: 20, default: ""
     t.bigint "document_folder_id"
     t.index ["deleted_at"], name: "index_secondary_sales_on_deleted_at"
     t.index ["document_folder_id"], name: "index_secondary_sales_on_document_folder_id"

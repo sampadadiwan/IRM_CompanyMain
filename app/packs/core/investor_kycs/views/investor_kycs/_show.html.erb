@@ -165,14 +165,47 @@
       </td>
     </tr>
 
+
+
     <tr>
       <td>
-        Comments
+        Committed Amount
       </td>
       <td>
-        <%= investor_kyc.comments %>
+        <%= money_to_currency investor_kyc.committed_amount, params %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Collected Amount
+      </td>
+      <td>
+        <%= money_to_currency investor_kyc.collected_amount, params %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Called Amount
+      </td>
+      <td>
+        <%= money_to_currency investor_kyc.call_amount, params %>
+      </td>
+    </tr>
+
+
+    <tr>
+      <td>
+        Distributed Amount
+      </td>
+      <td>
+        <%= money_to_currency investor_kyc.distribution_amount, params %>
+      </td>
+    </tr>
+
+
+
 
 
     <% if investor_kyc.video && current_user %>

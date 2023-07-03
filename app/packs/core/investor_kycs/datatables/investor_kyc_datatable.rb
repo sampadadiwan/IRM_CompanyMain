@@ -12,6 +12,10 @@ class InvestorKycDatatable < AjaxDatatablesRails::ActiveRecord
       bank_verified: { source: "InvestorKyc.bank_verified" },
       verified: { source: "InvestorKyc.verified" },
       expired: { source: "InvestorKyc.expiry_date" },
+      committed_amount: { source: "InvestorKyc.committed_amount_cents" },
+      collected_amount: { source: "InvestorKyc.collected_amount_cents" },
+      call_amount: { source: "InvestorKyc.call_amount_cents" },
+      distribution_amount: { source: "InvestorKyc.distribution_amount_cents" },
       dt_actions: { source: "", orderable: false }
     }
   end
@@ -30,6 +34,10 @@ class InvestorKycDatatable < AjaxDatatablesRails::ActiveRecord
         bank_verified: record.decorate.display_boolean(record.bank_verified),
         verified: record.decorate.display_boolean(record.verified),
         expired: record.decorate.expired,
+        committed_amount: record.decorate.money_to_currency(record.committed_amount, params),
+        collected_amount: record.decorate.money_to_currency(record.collected_amount, params),
+        call_amount: record.decorate.money_to_currency(record.call_amount, params),
+        distribution_amount: record.decorate.money_to_currency(record.distribution_amount, params),
         dt_actions: record.decorate.dt_actions,
         DT_RowId: "investor_kyc_#{record.id}" # This will automagically set the id attribute on the corresponding <tr> in the datatable
       }

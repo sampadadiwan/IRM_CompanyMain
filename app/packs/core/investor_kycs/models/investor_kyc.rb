@@ -36,6 +36,10 @@ class InvestorKyc < ApplicationRecord
   serialize :pan_verification_response, Hash
   serialize :bank_verification_response, Hash
 
+  monetize :committed_amount_cents, :collected_amount_cents,
+           :call_amount_cents, :distribution_amount_cents,
+           with_currency: ->(i) { i.entity.currency }
+
   attr_accessor :user_id
 
   before_save :set_investor_name
