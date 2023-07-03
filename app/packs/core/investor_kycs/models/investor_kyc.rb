@@ -36,6 +36,7 @@ class InvestorKyc < ApplicationRecord
   serialize :pan_verification_response, Hash
   serialize :bank_verification_response, Hash
 
+  # Note this rollups work only where Fund and Entity currency are the same.
   monetize :committed_amount_cents, :collected_amount_cents,
            :call_amount_cents, :distribution_amount_cents,
            with_currency: ->(i) { i.entity.currency }
