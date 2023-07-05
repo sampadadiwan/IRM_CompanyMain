@@ -83,6 +83,6 @@ class InvestorAdvisorsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_advisor_params
-    params.require(:investor_advisor).permit(:entity_id, :user_id, :email, allowed_roles: [], permissions: [])
+    params.require(:investor_advisor).permit(:entity_id, :user_id, :email, allowed_roles: [], permissions: [], extended_permissions: [])
   end
 end

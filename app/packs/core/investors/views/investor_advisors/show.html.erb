@@ -34,6 +34,18 @@
       <% end %>
     </td>
   </tr>
+
+  <tr>
+    <td>
+      Extended Permissions
+    </td>
+    <td>
+      <% @investor_advisor.extended_permissions.map{|p| p.to_s.titleize}.each do |permission| %>
+        <span class="badge badge-success"><%= permission %></span>
+      <% end %>
+    </td>
+  </tr>
+
 </table>
 <div>
   <%= link_to "Edit", edit_investor_advisor_path(@investor_advisor), {class: "btn btn-outline-primary"} %> 

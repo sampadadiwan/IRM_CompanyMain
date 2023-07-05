@@ -19,16 +19,25 @@
     <%= form.text_field :email, class: "form-control"  %>
   </div>
 
-  <div class="associated_entity">
+  <div class="associated_entity row">
     <% InvestorAdvisor.permissions.pairs.each do |key, val| %>
       <% if investor_advisor.entity.send(val) %>
-        <div class="form-group">
-          <%= form.label :permissions, key %>
+        <div class="form-group col">
+          <%= form.label :permissions, key.titleize, class: "no-wrap" %>
           <%= form.check_box :permissions, {name: "investor_advisor[permissions][]",
-              val: val, id: "permissions_#{val}", class: "form-control form-checkbox"}, val, nil   %>
+              val: val, id: "permissions_#{val}", class: "form-control row-checkbox"}, val, nil   %>
         </div>
         <% end %>
     <% end %>
+
+      <% InvestorAdvisor.extended_permissions.pairs.each do |key, val| %>
+        <div class="form-group col">
+            <%= form.label :extended_permissions, key.titleize, class: "no-wrap" %>
+            <%= form.check_box :extended_permissions, {name: "investor_advisor[extended_permissions][]",
+                val: val, id: "extended_permissions#{val}", class: "form-control row-checkbox"}, val, nil   %>
+        </div>      
+      <% end %>
+
   </div>
 
   <div class="form-group">

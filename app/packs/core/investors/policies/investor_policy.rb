@@ -31,4 +31,8 @@ class InvestorPolicy < ApplicationPolicy
   def destroy?
     update?(:destroy)
   end
+
+  def upload?
+    user.enable_investors && company_admin_or_emp_crud?(user, Investor.new, :create)
+  end
 end

@@ -64,4 +64,8 @@ module UserEnabled
   def get_permissions
     investor_advisor? ? investor_advisor.permissions : permissions
   end
+
+  def get_extended_permissions
+    investor_advisor? ? investor_advisor.extended_permissions : extended_permissions
+  end
 end

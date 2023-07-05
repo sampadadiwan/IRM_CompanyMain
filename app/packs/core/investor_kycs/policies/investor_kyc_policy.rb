@@ -3,11 +3,10 @@ class InvestorKycPolicy < ApplicationPolicy
     def resolve
       if user.entity_type == "Group Company" || user.has_cached_role?(:company_admin)
         scope.for_company_admin(user)
-      elsif %i[employee].include? user.curr_role.to_sym
+      elsif user.has_cached_role?(:employee)
         # We cant show them all the KYCs, only the ones for the funds they have been permissioned
         fund_ids = Fund.for_employee(user).pluck(:id)
         scope.joins(investor: [capital_commitments: :fund]).where('funds.id': fund_ids)
-
       else
         scope.where('investors.investor_entity_id': user.entity_id)
       end
