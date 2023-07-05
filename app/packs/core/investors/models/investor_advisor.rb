@@ -51,7 +51,7 @@ class InvestorAdvisor < ApplicationRecord
     # Reset the roles to the ones specified in the advisor_entity_roles
     user.roles.delete_all
     user.advisor_entity_roles&.split(",")&.each do |role|
-      user.add_role(role)
+      user.add_role(role.strip)
     end
 
     user.add_role(:investor_advisor)

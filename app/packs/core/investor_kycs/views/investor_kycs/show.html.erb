@@ -9,7 +9,9 @@
 
     <%= button_to "Delete" , @investor_kyc, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup" , turbo:false} if policy(@investor_kyc).destroy? %>
   
-    <%= button_to "Toggle Verified" , toggle_verified_investor_kyc_path(@investor_kyc), method: :put, class: "btn btn-outline-primary" , form_class: "deleteButton" if policy(@investor_kyc).toggle_verified? %>
+    <% label = @investor_kyc.verified ? "UnVerify" : "Verify" %>
+    <% label_class = @investor_kyc.verified ? "btn btn-outline-warning" : "btn btn-outline-success" %>
+    <%= button_to label, toggle_verified_investor_kyc_path(@investor_kyc), method: :put, class: label_class, form_class: "deleteButton" if policy(@investor_kyc).toggle_verified? %>
 
   </div>
 

@@ -28,8 +28,7 @@ class InvestorKycPolicy < ApplicationPolicy
     (
       (belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, emp_perm)) ||
       user.entity_id == record.investor&.investor_entity_id
-    ) &&
-      !user.investor_advisor? # IAs can't create / update KYCs
+    )
   end
 
   def new?
