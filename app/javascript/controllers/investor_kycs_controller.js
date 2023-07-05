@@ -9,7 +9,7 @@ export default class extends ServerDatatableController {
       {"data": "full_name"},
       {"data": "pan"},
       {"data": "pan_verified"},
-      {"data": "address"},
+      // {"data": "address"},
       // {"data": "bank_account_number"},
       // {"data": "ifsc_code"},
       {"data": "committed_amount"},
