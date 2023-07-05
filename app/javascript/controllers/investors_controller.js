@@ -4,6 +4,7 @@ import  ServerDatatableController from "controllers/server_datatable_controller"
 export default class extends ServerDatatableController {
   default = [
     {"data": "investor_name"},
+    {"data": "pan"},
     {"data": "tag_list"},
     {"data": "category"},
     {"data": "city"},
@@ -14,6 +15,7 @@ export default class extends ServerDatatableController {
   all = [
     {"data": "entity_name"},
     {"data": "investor_name"},
+    {"data": "pan"},
     {"data": "tag_list"},
     {"data": "category"},
     {"data": "city"},
