@@ -3,7 +3,7 @@ class IoBasePolicy < ApplicationPolicy
     def resolve
       if user.has_cached_role?(:company_admin) && ["Investment Fund", "Group Company"].include?(user.entity_type)
         scope.for_company_admin(user)
-      elsif user.curr_role == 'employee' && ["Investment Fund", "Group Company"].include?(user.entity_type)
+      elsif user.has_cached_role?(:employee) && ["Investment Fund", "Group Company"].include?(user.entity_type)
         scope.for_employee(user)
       else
         scope.for_investor(user)
