@@ -1,10 +1,10 @@
-<% cache([current_user.entity, "FMDashBoardStats"], expires_in: 24.hour) do %>
-    <%= render "entities/fm_dashboard_stats" %>
+<% unless current_user.investor_advisor? %>
+    <% cache([current_user.entity, "FMDashBoardStats"], expires_in: 24.hour) do %>
+        <%= render "entities/fm_dashboard_stats" %>
+    <% end %>
 <% end %>
 
     <div class="associated_entity">
-        
-        <%#= render "funds/dashboard/investor_commitments", fund: current_user.entity.funds.last %>
         <%= render "/funds/index",  
             funds: policy_scope(Fund).includes(:entity) if current_user.enable_funds %>
     </div>
@@ -14,7 +14,10 @@
             investment_opportunities: policy_scope(InvestmentOpportunity) if current_user.enable_inv_opportunities %>
     </div>
 
-<%= render "entities/dashboard/notes" if current_user.enable_investors %>
-<%= render "entities/dashboard/investors" if current_user.enable_investors %>
-<%= render "entities/dashboard/timeline" %>
+    <%= render "entities/dashboard/notes" if current_user.enable_investors %>
+    <%= render "entities/dashboard/investors" if current_user.enable_investors %>
+    
+<% unless current_user.investor_advisor? %>
+    <%= render "entities/dashboard/timeline" %>
+<% end %>
 

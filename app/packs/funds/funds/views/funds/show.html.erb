@@ -89,8 +89,7 @@
 
             <% end %>
 
-            <%= link_to "Investors", investors_path(owner_type: "Fund", owner_id: @fund.id), {class: "dropdown-item" } if policy(Investor.new).upload? %>
-
+            
             <% if @fund.entity.enable_units %>
               <div class="dropdown-divider"></div>
               <%= link_to "Fund Unit Settings" , fund_unit_settings_path(fund_id: @fund.id), {class: "dropdown-item" } %>
@@ -100,6 +99,8 @@
             <% end %>
 
             <div class="dropdown-divider"></div>
+
+            <%= link_to "View Investors", investors_path(owner_type: "Fund", owner_id: @fund.id), {class: "dropdown-item" } if current_user.enable_investors %>
 
             <% if policy(@fund).update? %>
               <%

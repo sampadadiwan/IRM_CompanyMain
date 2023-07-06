@@ -4,7 +4,7 @@
                     data-toggle="collapse" data-target=".pan_verification_response">
                 Verified
               </span>
-            <% else %>
+            <% elsif model.pan_verification_status %>
               <span class="badge badge-danger" type="button" 
                     data-toggle="collapse" data-target=".pan_verification_response">
                   <%= model.pan_verification_status %>
