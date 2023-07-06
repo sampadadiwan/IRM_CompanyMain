@@ -6,7 +6,7 @@ namespace :db do  desc "Backup database to AWS-S3"
       db_config = ActiveRecord::Base.configurations.configs_for(env_name: Rails.env)
   
       # process backup
-      `mysqldump -u #{Rails.application.credentials[:DB_USER]} -p#{Rails.application.credentials[:DB_PASS]} -h#{Rails.application.credentials[:DB_HOST]} -i -c -q --lock-tables=false IRM_#{Rails.env} > tmp/#{backup_filename}`
+      `mysqldump -u #{Rails.application.credentials[:DB_USER]} -p#{Rails.application.credentials[:DB_PASS]} -h#{Rails.application.credentials[:DB_HOST]} -i -c -q --single-transaction --lock-tables=false IRM_#{Rails.env} > tmp/#{backup_filename}`
 
       size_kb = File.size("tmp/#{backup_filename}").to_f / 1024
 
