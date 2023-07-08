@@ -15,13 +15,6 @@ module DocumentHelper
     else
       # If the user is NOT from the same company show him only the folders for the documents he has access to
 
-      # Documents are paginated, but we want to show folders for all documents
-      # This is to ensure pagination does not cause folders to not show up in the tree view
-      if params[:folder_id].present?
-        documents = documents.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
-        # documents = documents.or(Document.where(folder_id: params[:folder_id]))
-      end
-
       aids = with_ancestor_ids(documents)
 
       if params[:folder_id].present?

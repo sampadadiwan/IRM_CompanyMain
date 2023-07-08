@@ -63,10 +63,10 @@ class DocumentsController < ApplicationController
       @documents = policy_scope(Document)
       authorize(Document)
     end
-
+    # Filter by owner_tag
     @documents = @documents.where(owner_tag: params[:owner_tag]) if params[:owner_tag].present?
-    # This is specifically for investor advisors, who should not be able to see the docs for other funds
-    @documents = @documents.where(owner_type: nil) unless current_user.has_cached_role?(:company_admin)
+    # This is specifically for non company_admins
+    @documents = @documents.where(user_id: current_user.id) unless current_user.has_cached_role?(:company_admin)
 
     # Newest docs first
     @documents = @documents.includes(:folder).order(id: :desc)
@@ -81,7 +81,7 @@ class DocumentsController < ApplicationController
         @documents = policy_scope(Document)
       else
         # Ensure that the IA user has access to the folder, as IAs can only access certain funds/deals etc
-        authorize(@folder.owner, :show?) if @folder.owner # && current_user.investor_advisor?
+        authorize(@folder, :show?) || authorize(@folder&.owner, :show?)
         @documents = Document.for_investor(current_user, @folder.entity)
       end
 
@@ -91,16 +91,14 @@ class DocumentsController < ApplicationController
         @documents = @documents.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
         @documents = @documents.or(Document.where(folder_id: params[:folder_id]))
       end
+      # Newest docs first
+      @documents = @documents.includes(:folder).order(id: :desc)
 
-    elsif current_user.investor_advisor?
-      raise Pundit::NotAuthorizedError, "Advisors can access documents only in specific folders"
     else
-      # This is specifically for investor advisors, who should not be able to see the docs for other funds
-      @documents = @documents.where(owner_type: nil) unless current_user.has_cached_role?(:company_admin)
+      # Newest docs first
+      @documents = Document.none
     end
 
-    # Newest docs first
-    @documents = @documents.includes(:folder).order(id: :desc)
     @no_folders = false
     render "index"
   end

@@ -4,7 +4,11 @@ class FolderPolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record) || super_user?
+    if user.investor_advisor?
+      belongs_to_entity?(user, record) && Pundit.policy(user, record&.owner).show?
+    else
+      belongs_to_entity?(user, record) || super_user?
+    end
   end
 
   def download?
