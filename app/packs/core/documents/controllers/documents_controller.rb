@@ -77,13 +77,18 @@ class DocumentsController < ApplicationController
       @folder = Folder.find(params[:folder_id])
       @entity = @folder.entity
 
-      # Ensure that the IA user has access to the folder, as IAs can only access certain funds/deals etc
-      authorize(@folder.owner, :show?) if @folder.owner # && current_user.investor_advisor?
+      if @folder.entity_id == current_user.entity_id
+        @documents = policy_scope(Document)
+      else
+        # Ensure that the IA user has access to the folder, as IAs can only access certain funds/deals etc
+        authorize(@folder.owner, :show?) if @folder.owner # && current_user.investor_advisor?
+        @documents = Document.for_investor(current_user, @folder.entity)
+      end
 
       if params[:no_folders].present?
-        @documents = Document.where(folder_id: params[:folder_id])
+        @documents = @documents.where(folder_id: params[:folder_id])
       else
-        @documents = Document.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
+        @documents = @documents.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
         @documents = @documents.or(Document.where(folder_id: params[:folder_id]))
       end
 
