@@ -55,7 +55,7 @@ class DocumentsController < ApplicationController
         @documents = policy_scope(Document)
       else
         # Ensure that the IA user has access to the folder, as IAs can only access certain funds/deals etc
-        authorize(@folder, :show?) || authorize(@folder&.owner, :show?)
+        Pundit.policy(current_user, @folder).show? || (@folder.owner && Pundit.policy(current_user, @folder.owner).show?)
         @documents = Document.for_investor(current_user, @folder.entity)
       end
 
