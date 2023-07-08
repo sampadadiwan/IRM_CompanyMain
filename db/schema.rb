@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_05_153101) do
+ActiveRecord::Schema[7.0].define(version: 2023_07_08_065848) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1558,6 +1558,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_05_153101) do
     t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.boolean "docs_completed", default: false
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"

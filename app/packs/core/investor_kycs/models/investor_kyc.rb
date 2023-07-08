@@ -119,4 +119,23 @@ class InvestorKyc < ApplicationRecord
       Rails.logger.error { "Error while uploading file #{file_name} #{e.message}" }
     end
   end
+
+  # Ovveride the include with_folder method
+  def document_changed(document)
+    grant_access_rights_to_investor(document)
+    # Check if all the required docs have been uploaded
+    self.docs_completed = docs_completed?
+    save
+  end
+
+  # Check if all the required docs have been uploaded
+  def docs_completed?
+    # The required_docs depend on the kyc_type
+    required_docs = individual? ? entity.entity_setting.individual_kyc_doc_list : entity.entity_setting.non_individual_kyc_doc_list
+
+    required_docs = Set.new(required_docs.split(",").map(&:strip))
+    uploaded_docs = Set.new(documents.pluck(:name))
+    # Sometimes other docs are also uploaded - so we check for subset
+    required_docs.present? && required_docs.subset?(uploaded_docs)
+  end
 end
