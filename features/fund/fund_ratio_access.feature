@@ -10,12 +10,12 @@ Scenario Outline: Access Fund Ratios as company admin
 
   Examples:
   	|user	               |entity               |role |crud|investor|boolean|
-  	|first_name=AdminUser|entity_type=Company;name=TestCompany123  |company_admin|"index,show"|investor_name=Investor12|true|
-  	|first_name=AdminUser|entity_type=Company;name=TestCompany123  |company_admin|"create,new,update,edit,destroy"|investor_name=Investor12|false|
-    |first_name=approver  |entity_type=Company;name=TestCompany223  |approver |"index,show"|investor_name=Investor22|true|
-    |first_name=approver  |entity_type=Company;name=TestCompany223  |approver |"create,new,update,edit,destroy"|investor_name=Investor22|false|
-    |first_name=signatory  |entity_type=Company;name=TestCompany323  |signatory |"index,show"|investor_name=Investor32|true|
-    |first_name=signatory  |entity_type=Company;name=TestCompany323  |signatory |"create,new,update,edit,destroy"|investor_name=Investor32|false|
+  	|first_name=AdminUser|entity_type=Company;name=TestCompany101  |company_admin|"index,show"|investor_name=Investor12|true|
+  	|first_name=AdminUser|entity_type=Company;name=TestCompany102  |company_admin|"create,new,update,edit,destroy"|investor_name=Investor12|false|
+    |first_name=approver  |entity_type=Company;name=TestCompany201  |approver |"index,show"|investor_name=Investor22|true|
+    |first_name=approver  |entity_type=Company;name=TestCompany202  |approver |"create,new,update,edit,destroy"|investor_name=Investor22|false|
+    |first_name=signatory  |entity_type=Company;name=TestCompany301  |signatory |"index,show"|investor_name=Investor32|true|
+    |first_name=signatory  |entity_type=Company;name=TestCompany302  |signatory |"create,new,update,edit,destroy"|investor_name=Investor32|false|
 
 Scenario Outline: Access Fund Ratios as Other User
   Given there is a user "<user>" for an entity "<entity>"
@@ -27,6 +27,6 @@ Scenario Outline: Access Fund Ratios as Other User
 
   Examples:
   |user	               |entity               |role |crud|investor|another_user|
-  |first_name=AdminUser|entity_type=Company;name=TestCompany123  |company_admin|"show,create,new,update,edit,destroy"|investor_name=Investor12|first_name=Investor2|
-  |first_name=approver  |entity_type=Company;name=TestCompany223  |approver |"show,create,new,update,edit,destroy"|investor_name=Investor22|first_name=Investor2|
-  |first_name=signatory  |entity_type=Company;name=TestCompany323  |signatory |"show,create,new,update,edit,destroy"|investor_name=Investor32|first_name=Investor2|
+  |first_name=AdminUser|entity_type=Company;name=TestCompany303  |company_admin|"show,create,new,update,edit,destroy"|investor_name=Investor12|first_name=Investor2|
+  |first_name=approver  |entity_type=Company;name=TestCompany203  |approver |"show,create,new,update,edit,destroy"|investor_name=Investor22|first_name=Investor2|
+  |first_name=signatory  |entity_type=Company;name=TestCompany304  |signatory |"show,create,new,update,edit,destroy"|investor_name=Investor32|first_name=Investor2|

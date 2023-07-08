@@ -12,6 +12,7 @@ every 1.day, at: '02:01 am' do
   runner "Entity.recompute_all"
   # runner "InvestmentSnapshotJob.perform_now"
   # runner "ResendConfirmationJob.perform_now"
+  runner "DocumentEsignUpdateJob.perform_now"
 end
 
 every 1.hour do

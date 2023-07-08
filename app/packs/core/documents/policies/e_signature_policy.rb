@@ -21,7 +21,7 @@ class ESignaturePolicy < ApplicationPolicy
   end
 
   def edit?
-    update?
+    update? && !record.owner.sent_for_esign && record.status.nil?
   end
 
   def destroy?

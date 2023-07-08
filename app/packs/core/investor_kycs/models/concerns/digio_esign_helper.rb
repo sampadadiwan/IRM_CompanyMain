@@ -13,14 +13,17 @@ class DigioEsignHelper
     @debug = Rails.env.development?
   end
 
-  def sign(user_ids, file_name, file_path, reason)
+  def sign(document)
     # Open the file you wish to encode
-    data = File.read(file_path)
-
+    tmpfile = document.file.download
+    data = File.read(tmpfile.path)
     # Encode the puppy
     encoded_file = Base64.strict_encode64(data)
-
-    body = prepare_data(user_ids, file_name, encoded_file, reason)
+    tmpfile.close
+    tmpfile.unlink
+    # fetch from esign
+    display_on_page = doc.display_on_page || "last"
+    body = prepare_data(document.e_signatures, document.name, encoded_file, display_on_page)
 
     response = HTTParty.post(
       "#{BASE_URL}/v2/client/document/uploadpdf",
@@ -68,27 +71,33 @@ class DigioEsignHelper
 
   #   private
 
-  def prepare_data(user_ids, file_name, encoded_file, reason)
+  def prepare_data(esigns, file_name, encoded_file, display_on_page = "last")
     {
-      signers: prep_user_data(user_ids, reason),
+      signers: prep_user_data(esigns),
       expire_in_days: 10,
-      notify_signers: false,
-      send_sign_link: false,
+      notify_signers: true,
+      send_sign_link: true,
+      # true only needed for widget
+      generate_access_token: false,
+      display_on_page:,
       file_name:,
       file_data: encoded_file
     }
   end
 
-  def prep_user_data(user_ids, _reason)
+  def prep_user_data(esigns)
     ret = []
-    users = User.where(id: user_ids.split(","))
-    users.each do |u|
-      ret << {
+    esigns.order(:position).each do |esign|
+      u = esign.user
+      sign_type = esign.signature_type.downcase || "aadhaar"
+      reason = nil # fetch from esign or doc
+      hash = {
         identifier: u.email,
         name: u.full_name,
-        sign_type: "aadhaar"
-        # reason:
+        sign_type:
       }
+      hash[:reason] = reason if reason.present?
+      ret << hash
     end
     ret
   end

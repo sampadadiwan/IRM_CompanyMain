@@ -10,10 +10,10 @@ Scenario Outline: Access Aml Report as company admin
 
   Examples:
   	|user	               |entity               |role |crud|investor|boolean|aml_enabled|
-  	|first_name=AdminUser|entity_type=Company;name=TestCompany123  |company_admin|"index,show,toggle_approved,generate_new"|investor_name=Investor12|true|true|# not relevant as we have removed admin condition for now
-  	|first_name=AdminUser|entity_type=Company;name=TestCompany123  |company_admin|"index,show,toggle_approved,generate_new"|investor_name=Investor12|false|false|
-    |first_name=approver  |entity_type=Company;name=TestCompany223  |approver |"index,show,toggle_approved,generate_new"|investor_name=Investor22|true|true|
-    |first_name=signatory  |entity_type=Company;name=TestCompany323  |signatory |"index,show,toggle_approved,generate_new"|investor_name=Investor32|true|true|
+  	|first_name=AdminUser|entity_type=Company;name=TestCompany901  |company_admin|"index,show,toggle_approved,generate_new"|investor_name=Investor101|true|true|# not relevant as we have removed admin condition for now
+  	|first_name=AdminUser|entity_type=Company;name=TestCompany902 |company_admin|"index,show,toggle_approved,generate_new"|investor_name=Investor102|false|false|
+    |first_name=approver  |entity_type=Company;name=TestCompany903  |approver |"index,show,toggle_approved,generate_new"|investor_name=Investor202|true|true|
+    |first_name=signatory  |entity_type=Company;name=TestCompany904  |signatory |"index,show,toggle_approved,generate_new"|investor_name=Investor302|true|true|
 
 Scenario Outline: Access Aml Report as Other User
   Given there is a user "<user>" for an entity "<entity>"
@@ -24,9 +24,9 @@ Scenario Outline: Access Aml Report as Other User
 
   Examples:
   |user	               |entity               |role |crud|investor|another_user|
-  |first_name=AdminUser|entity_type=Company;name=TestCompany123  |company_admin|"index,show,create,toggle_approved,generate_new"|investor_name=Investor12|first_name=Investor2|
-  |first_name=approver  |entity_type=Company;name=TestCompany223  |approver |"index,show,create,toggle_approved,generate_new"|investor_name=Investor22|first_name=Investor2|
-  |first_name=signatory  |entity_type=Company;name=TestCompany323  |signatory |"index,show,create,toggle_approved,generate_new"|investor_name=Investor32|first_name=Investor2|
+  |first_name=AdminUser|entity_type=Company;name=TestCompany801  |company_admin|"index,show,create,toggle_approved,generate_new"|investor_name=Investor112|first_name=Investor21|
+  |first_name=approver  |entity_type=Company;name=TestCompany802  |approver |"index,show,create,toggle_approved,generate_new"|investor_name=Investor212|first_name=Investor22|
+  |first_name=signatory  |entity_type=Company;name=TestCompany803  |signatory |"index,show,create,toggle_approved,generate_new"|investor_name=Investor312|first_name=Investor23|
 
 Scenario Outline: Auto Create new Aml Report
   Given Im logged in as a user "<user>" for an entity "<entity>"

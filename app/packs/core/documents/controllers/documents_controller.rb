@@ -3,12 +3,47 @@ class DocumentsController < ApplicationController
 
   include ActiveStorage::SetCurrent
 
-  before_action :set_document, only: %w[show update destroy edit send_for_esign]
-  after_action :verify_authorized, except: %i[index search investor folder]
+  skip_before_action :verify_authenticity_token, :set_current_entity, :authenticate_user!, :set_search_controller, :set_paper_trail_whodunnit, only: %i[signature_progress]
+
+  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates]
+  after_action :verify_authorized, except: %i[index search investor folder signature_progress]
+
   after_action :verify_policy_scoped, only: []
   # skip_before_action :authenticate_user!, :only => [:show]
 
   impressionist actions: [:show]
+
+  def signature_progress
+    # Check response  - if contains proper info then update doc esign status
+    # if not then just respond with 200 OK
+    if params.dig('payload', 'document', 'id').present?
+      doc = Document.find(params.dig('payload', 'document', 'id'))
+      params['payload']['document']['signing_parties'].each do |signer|
+        user = User.find_by(email: signer['identifier'])
+        if user
+          esign = doc.e_signatures.find_by(user_id: user.id)
+          if esign.present? && (esign.status != signer['status'])
+            esign.add_api_update(params['payload'])
+            esign.update(status: signer['status'], api_updates: esign.api_updates)
+            message = "Document - #{doc.name}'s E-Sign status updated"
+            UserAlert.new(user_id: user.id, message:, level: "success").broadcast
+          else
+            Rails.logger.error { "E-Sign not found for #{doc.name} and user #{user.name} - #{JSON.parse(response.body)}" }
+          end
+        else
+          Rails.logger.error { "User not found for #{doc.name} with identifier #{signer['identifier']} - #{JSON.parse(response.body)}" }
+        end
+      end
+    end
+
+    # Always respond with 200 OK - Expected from Digio
+    render json: "Ok", status: :ok
+  end
+
+  def fetch_esign_updates
+    DocumentEsignUpdateJob.new.perform(@document.id)
+    redirect_to document_url(@document), notice: "Fetching Updates for E-Signatures"
+  end
 
   # GET /documents or /documents.json
   def index
@@ -91,7 +126,7 @@ class DocumentsController < ApplicationController
 
   def send_for_esign
     if @document.send_for_esign(force: params[:force])
-      redirect_to document_url(@document), notice: "Document was successfully sent for e-signature."
+      redirect_to document_url(@document), notice: "Document was queued for e-signature."
     else
       redirect_to document_url(@document, display_status: true), alert: "Document was NOT sent for e-signature."
     end
@@ -198,7 +233,7 @@ class DocumentsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def document_params
     params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id, :tag_list, :template,
-                                     :signature_enabled, :public_visibility, :send_email,
+                                     :signature_enabled, :public_visibility, :send_email, :display_on_page,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag,
                                      :tag_list, :folder_id, :file, properties: {},  e_signatures_attributes: %i[id user_id label signature_type notes _destroy])
   end

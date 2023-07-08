@@ -2,10 +2,10 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
 
-  connect() {    
-    console.log("DocForm controller loaded");    
+  connect() {
+    console.log("DocForm controller loaded");
     this.onOrignalChange();
-    this.onPdfOptChange();    
+    this.onPdfOptChange();
     this.checkOtherName();
     this.showSignature();
   }
@@ -53,8 +53,10 @@ export default class extends Controller {
     console.log($("#document_template").val());
     if($("#document_template").is(':checked')) {
       $("#add_signature_btn").show();
+      $("#sign_display_on_page").show();
     } else {
       $("#add_signature_btn").hide();
+      $("#sign_display_on_page").hide();
     }
   }
 

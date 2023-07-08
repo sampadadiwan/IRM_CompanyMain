@@ -48,8 +48,10 @@ module WithESignatures
       if !sent_for_esign || force
         Rails.logger.debug { "Sending #{name} #{id} for e-signing" }
         # Tell the provider to send it for e-signing
+        DigioEsignJob.perform_later(id)
         true
       else
+        Rails.logger.debug { "Document #{name} #{id} already queued for e-signing" }
         false
       end
     else
@@ -66,9 +68,9 @@ module WithESignatures
       self.owner_tag = "Signed"
       save
     else
+      update(esign_status: "Completed")
       # We create a new document, and leave the old one intact.
       signed_doc = Document.new(attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
-
       signed_doc.file = File.open(signed_doc_from_provider, "rb")
       signed_doc.from_template = self
       signed_doc.owner = owner

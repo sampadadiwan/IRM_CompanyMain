@@ -296,6 +296,8 @@ Rails.application.routes.draw do
   end
   resources :documents do
     patch 'send_for_esign', on: :member
+    get 'signature_progress', on: :collection
+    get 'fetch_esign_updates', on: :member
     get 'search', on: :collection
     get 'investor', on: :collection
     get 'folder', on: :collection

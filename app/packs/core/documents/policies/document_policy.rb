@@ -34,7 +34,11 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def send_for_esign?
-    update? && !record.sent_for_esign
+    update? && !record.sent_for_esign && record.e_signatures.all? { |esign| esign.user&.email.present? }
+  end
+
+  def fetch_esign_updates?
+    update? && record.sent_for_esign
   end
 
   def edit?

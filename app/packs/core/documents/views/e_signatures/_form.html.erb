@@ -7,7 +7,7 @@
     </div>
     <% end %>
 
-    
+
     <div class="form-group col">
       <%= f.label :label %>
       <% if labels %>
@@ -19,7 +19,7 @@
 
     <div class="form-group col">
       <%= f.label :signature_type %>
-      <%= f.select :signature_type, ["Aadhaar", "DSC", "Electronic"], {}, class: "form-control"  %>
+      <%= f.select :signature_type, ["Aadhaar", "Electronic"], {}, class: "form-control"  %>
     </div>
 
     <div class="form-group col">
@@ -27,7 +27,7 @@
       <%= f.text_field :notes, class: "form-control"  %>
     </div>
 
-      <div class="form-group col">    
+      <div class="form-group col">
         <%= f.label :none, "&nbsp;".html_safe %>
         <%= link_to_remove_association "Delete" , f, class: "btn btn-outline-danger" %>
       </div>

@@ -3,7 +3,7 @@ Given('there is an investor {string} with investor kyc and aml report for the en
   @investor_entity = if Entity.exists?(args_temp)
     Entity.find_by(args_temp)
   else
-    FactoryBot.build(:entity)
+    FactoryBot.build(:entity, entity_type: "InvestmentFund")
   end
   key_values(@investor_entity, arg2)
   @investor_entity.save!
@@ -11,12 +11,10 @@ Given('there is an investor {string} with investor kyc and aml report for the en
   @investor = if Investor.exists?(args_temp)
     Investor.find_by(args_temp)
   else
-    FactoryBot.create(:entity, entity_type: "Investor")
-    FactoryBot.build(:investor)
+    tmpentity = FactoryBot.create(:entity, entity_type: "Investor",  pan: Faker::Alphanumeric.alphanumeric(number: 10))
+    FactoryBot.build(:investor, entity: @investor_entity, investor_entity:tmpentity)
   end
   key_values(@investor, arg1)
-  @investor.entity_id = @investor_entity.id
-  @investor.investor_entity_id = 
   @investor.save!
 
   RSpec::Mocks.with_temporary_scope do
@@ -45,7 +43,7 @@ Then('{string} has {string} "{string}" access to the aml_report of investor {str
     FactoryBot.build(:investor)
   end
   @investor.entity_id = @investor_entity.id
-  @investor.investor_entity_id = FactoryBot.create(:entity).id
+  @investor.investor_entity_id = FactoryBot.create(:entity, pan: Faker::Alphanumeric.alphanumeric(number: 10), entity_type: "InvestmentFund").id
   key_values(@investor, arg4)
   @investor.save!
   accesses.split(',').each do |access|
@@ -58,7 +56,7 @@ Given('the entity {string} has aml enabled {string}') do |args, boolean|
   @entity = if Entity.exists?(args_temp)
     Entity.find_by(args_temp)
   else
-    FactoryBot.build(:Entity)
+    FactoryBot.build(:entity, pan: Faker::Alphanumeric.alphanumeric(number: 10))
   end
   key_values(@entity, args)
   @entity.entity_setting.aml_enabled = boolean
@@ -70,7 +68,7 @@ Then('there is an investor {string} for the entity {string} with investor kyc an
   @investor_entity = if Entity.exists?(args_temp)
     Entity.find_by(args_temp)
   else
-    FactoryBot.build(:entity)
+    FactoryBot.build(:entity,  pan: Faker::Alphanumeric.alphanumeric(number: 10))
   end
   key_values(@investor_entity, arg2)
   @investor_entity.save!
@@ -78,7 +76,7 @@ Then('there is an investor {string} for the entity {string} with investor kyc an
   @investor = if Investor.exists?(args_temp)
     Investor.find_by(args_temp)
   else
-    FactoryBot.build(:investor, investor_entity_id: FactoryBot.create(:entity).id, entity_id: @investor_entity.id)
+    FactoryBot.build(:investor, investor_entity_id: FactoryBot.create(:entity,  pan: Faker::Alphanumeric.alphanumeric(number: 10), entity_type: "InvestmentFund").id, entity_id: @investor_entity.id)
   end
   key_values(@investor, arg1)
   @investor.entity_id = @investor_entity.id
@@ -110,7 +108,7 @@ Then('there is an investor {string} for the entity {string} with investor kyc an
   @investor_entity = if Entity.exists?(args_temp)
     Entity.find_by(args_temp)
   else
-    FactoryBot.build(:entity)
+    FactoryBot.build(:entity,  pan: Faker::Alphanumeric.alphanumeric(number: 10), entity_type: "InvestmentFund")
   end
   key_values(@investor_entity, arg2)
   @investor_entity.save!
@@ -118,7 +116,7 @@ Then('there is an investor {string} for the entity {string} with investor kyc an
   @investor = if Investor.exists?(args_temp)
     Investor.find_by(args_temp)
   else
-    FactoryBot.build(:investor, investor_entity_id: FactoryBot.create(:entity).id, entity_id: @investor_entity.id)
+    FactoryBot.build(:investor, investor_entity_id: FactoryBot.create(:entity,  pan: Faker::Alphanumeric.alphanumeric(number: 10), entity_type: "InvestmentFund").id, entity_id: @investor_entity.id)
   end
   key_values(@investor, arg1)
   @investor.entity_id = @investor_entity.id

@@ -16,4 +16,12 @@ class ESignature < ApplicationRecord
     owner.signature_enabled = true
     owner.save
   end
+
+  def add_api_update(update_data)
+    if api_updates.present?
+      api_updates + update_data.to_s
+    else
+      self.api_updates = update_data.to_s
+    end
+  end
 end
