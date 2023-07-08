@@ -61,8 +61,6 @@ Rails.application.routes.draw do
   resources :fund_units
   resources :fund_ratios
   resources :capital_remittance_payments
-  resources :esigns
-  resources :signature_workflows
   resources :investor_notice_entries
   resources :investor_notices
   resources :fees
@@ -290,10 +288,6 @@ Rails.application.routes.draw do
     post 'recompute_percentage', on: :collection
   end
 
-  resources :adhaar_esigns do
-    get 'completed', on: :member
-    get 'digio_webhook', on: :collection
-  end
   resources :documents do
     patch 'send_for_esign', on: :member
     get 'signature_progress', on: :collection

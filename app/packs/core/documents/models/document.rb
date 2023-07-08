@@ -17,7 +17,6 @@ class Document < ApplicationRecord
   has_many :permissions, as: :owner, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
   belongs_to :user
-  has_one :adhaar_esign
 
   belongs_to :entity, touch: true
   belongs_to :folder

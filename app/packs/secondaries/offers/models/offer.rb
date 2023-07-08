@@ -13,8 +13,6 @@ class Offer < ApplicationRecord
   belongs_to :investor
   belongs_to :entity, touch: true
   belongs_to :secondary_sale, touch: true
-  has_many :esigns, -> { order("sequence_no asc") }, as: :owner
-  has_many :signature_workflows, as: :owner
 
   counter_culture :interest,
                   column_name: proc { |o| o.approved ? 'offer_quantity' : nil },
@@ -37,7 +35,6 @@ class Offer < ApplicationRecord
   belongs_to :buyer, class_name: "Entity", optional: true
 
   has_many :messages, as: :owner, dependent: :destroy
-  has_many :adhaar_esigns, as: :owner, dependent: :destroy
 
   include FileUploader::Attachment(:signature)
   include FileUploader::Attachment(:spa)

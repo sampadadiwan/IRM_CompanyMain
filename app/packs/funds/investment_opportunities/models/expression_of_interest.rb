@@ -10,9 +10,6 @@ class ExpressionOfInterest < ApplicationRecord
   has_rich_text :details
   serialize :properties, Hash
 
-  has_many :adhaar_esigns, as: :owner
-  has_many :esigns, -> { order("sequence_no asc") }, as: :owner
-  has_many :signature_workflows, as: :owner
   has_many :investor_kycs, through: :investor
   belongs_to :investor_signatory, class_name: "User", optional: true
 
