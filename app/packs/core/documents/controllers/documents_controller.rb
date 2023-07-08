@@ -2,7 +2,7 @@ class DocumentsController < ApplicationController
   # prepend_view_path 'app/packs/core/documents/views'
 
   include ActiveStorage::SetCurrent
-
+  include DocumentHelper
   skip_before_action :verify_authenticity_token, :set_current_entity, :authenticate_user!, :set_search_controller, :set_paper_trail_whodunnit, only: %i[signature_progress]
 
   before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates]
@@ -16,33 +16,7 @@ class DocumentsController < ApplicationController
   def signature_progress
     # Check response  - if contains proper info then update doc esign status
     # if not then just respond with 200 OK
-    if params.dig('payload', 'document', 'id').present?
-      doc = Document.find(params.dig('payload', 'document', 'id'))
-      params['payload']['document']['signing_parties'].each do |signer|
-        user = User.find_by(email: signer['identifier'])
-        if user
-          esign = doc.e_signatures.find_by(user_id: user.id)
-          if esign.present? && (esign.status != signer['status'])
-            esign.add_api_update(params['payload'])
-            esign.update(status: signer['status'], api_updates: esign.api_updates)
-            message = "Document - #{doc.name}'s E-Sign status updated"
-            logger.info message
-            # UserAlert.new(user_id: user.id, message:, level: "success").broadcast
-          else
-            e = StandardError.new("E-Sign not found for #{doc.name} and user #{user.name} - #{JSON.parse(response.body)}")
-            ExceptionNotifier.notify_exception(e)
-            logger.error e.backtrace.join("\n")
-            # raise e
-          end
-        else
-          e = StandardError.new("User not found for #{doc.name} with identifier #{signer['identifier']} - #{JSON.parse(response.body)}")
-          ExceptionNotifier.notify_exception(e)
-          logger.error e.backtrace.join("\n")
-          # raise e
-        end
-      end
-    end
-
+    update_signature_progress(params)
     # Always respond with 200 OK - Expected from Digio
     render json: "Ok", status: :ok
   end

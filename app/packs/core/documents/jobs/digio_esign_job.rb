@@ -10,7 +10,7 @@ class DigioEsignJob < ApplicationJob
       else
         e = StandardError.new("Error sending #{doc.name} for e-signing - #{JSON.parse(response.body)}")
         ExceptionNotifier.notify_exception(e)
-        logger.error e.backtrace.join("\n")
+        logger.error e.message
         doc.update(sent_for_esign: true, esign_status: "failed", provider_doc_id: JSON.parse(response.body)["id"])
 
         doc.e_signatures.each do |esign|

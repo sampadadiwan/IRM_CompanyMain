@@ -27,13 +27,13 @@ class EsignUpdateJob < ApplicationJob
             else
               e = StandardError.new("E-Sign not found for #{doc.name} and user #{user.name} - #{JSON.parse(response.body)}")
               ExceptionNotifier.notify_exception(e)
-              logger.error e.backtrace.join("\n")
+              logger.error e.message
               # raise e
             end
           else
             e = StandardError.new("User not found for #{doc.name} with identifier #{signer['identifier']} - #{JSON.parse(response.body)}")
             ExceptionNotifier.notify_exception(e)
-            logger.error e.backtrace.join("\n")
+            logger.error e.message
             # raise e
           end
         end
@@ -47,11 +47,12 @@ class EsignUpdateJob < ApplicationJob
   # rubocop:enable Metrics/method_length
 
   def signature_completed(doc)
-    tmpfile = Tempfile.new("#{doc.name}.pdf")
-    tmpfile.write(DigioEsignHelper.new.download(doc.provider_doc_id).body)
+    tmpfile = Tempfile.new("#{doc.name}.pdf", encoding: 'ascii-8bit')
+    content = DigioEsignHelper.new.download(doc.provider_doc_id).body
+    tmpfile.write(content)
     doc.signature_completed(tmpfile.path)
-    tempfile.close
-    tempfile.unlink
+    tmpfile.close
+    tmpfile.unlink
   end
 
   def signatures_failed(doc, response)
@@ -62,7 +63,7 @@ class EsignUpdateJob < ApplicationJob
       esign.add_api_update(JSON.parse(response.body))
       esign.save!
     end
-    logger.error e.backtrace.join("\n")
+    logger.error e.message
     # raise e
   end
 end

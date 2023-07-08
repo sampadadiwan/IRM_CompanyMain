@@ -36,4 +36,33 @@ module DocumentHelper
     ids = documents.joins(:folder).pluck("documents.folder_id, folders.ancestry")
     ids.map { |p| p[1] ? (p[1].split("/") << p[0]) : [p[0]] }.flatten.map(&:to_i).uniq
   end
+
+  def update_signature_progress(params)
+    if params.dig('payload', 'document', 'id').present?
+      doc = Document.find_by(provider_doc_id: params.dig('payload', 'document', 'id'))
+      params['payload']['document']['signing_parties'].each do |signer|
+        user = User.find_by(email: signer['identifier'])
+        if user
+          esign = doc&.e_signatures&.find_by(user_id: user.id)
+          if esign.present? && (esign.status != signer['status'])
+            esign.add_api_update(params['payload'])
+            esign.update(status: signer['status'], api_updates: esign.api_updates)
+            message = "Document - #{doc.name}'s E-Sign status updated"
+            logger.info message
+            # UserAlert.new(user_id: user.id, message:, level: "success").broadcast
+          else
+            e = StandardError.new("E-Sign not found for #{doc&.name} and user #{user&.name} - #{response.body}")
+            ExceptionNotifier.notify_exception(e)
+            logger.error e.message
+            # raise e
+          end
+        else
+          e = StandardError.new("User not found for #{doc&.name} with identifier #{signer['identifier']} - #{response.body}")
+          ExceptionNotifier.notify_exception(e)
+          logger.error e.message
+          # raise e
+        end
+      end
+    end
+  end
 end
