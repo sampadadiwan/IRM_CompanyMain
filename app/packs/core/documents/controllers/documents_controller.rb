@@ -26,12 +26,19 @@ class DocumentsController < ApplicationController
             esign.add_api_update(params['payload'])
             esign.update(status: signer['status'], api_updates: esign.api_updates)
             message = "Document - #{doc.name}'s E-Sign status updated"
-            UserAlert.new(user_id: user.id, message:, level: "success").broadcast
+            logger.info message
+            # UserAlert.new(user_id: user.id, message:, level: "success").broadcast
           else
-            Rails.logger.error { "E-Sign not found for #{doc.name} and user #{user.name} - #{JSON.parse(response.body)}" }
+            e = StandardError.new("E-Sign not found for #{doc.name} and user #{user.name} - #{JSON.parse(response.body)}")
+            ExceptionNotifier.notify_exception(e)
+            logger.error e.backtrace.join("\n")
+            # raise e
           end
         else
-          Rails.logger.error { "User not found for #{doc.name} with identifier #{signer['identifier']} - #{JSON.parse(response.body)}" }
+          e = StandardError.new("User not found for #{doc.name} with identifier #{signer['identifier']} - #{JSON.parse(response.body)}")
+          ExceptionNotifier.notify_exception(e)
+          logger.error e.backtrace.join("\n")
+          # raise e
         end
       end
     end

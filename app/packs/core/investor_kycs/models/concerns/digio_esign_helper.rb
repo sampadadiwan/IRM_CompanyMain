@@ -22,7 +22,7 @@ class DigioEsignHelper
     tmpfile.close
     tmpfile.unlink
     # fetch from esign
-    display_on_page = doc.display_on_page || "last"
+    display_on_page = document.display_on_page || "last"
     body = prepare_data(document.e_signatures, document.name, encoded_file, display_on_page)
 
     response = HTTParty.post(
