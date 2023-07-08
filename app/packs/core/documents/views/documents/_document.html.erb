@@ -8,7 +8,7 @@
       <% end %>
   </td>  
   <td class="hideMobP">
-    <%= raw document.tag_list.split(",").collect{|tag| link_to(tag.strip, search_documents_path(query: tag.strip))}.join(", ")  if document.tag_list %>
+    <%= document.tag_list %>
     <%= document.owner_tag %>
   </td>  
 

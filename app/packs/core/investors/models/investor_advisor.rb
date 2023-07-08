@@ -46,6 +46,7 @@ class InvestorAdvisor < ApplicationRecord
   def self.revert(user)
     user.entity_id = user.advisor_entity_id
     user.investor_advisor_id = nil
+    user.setup_defaults
     user.save
 
     # Reset the roles to the ones specified in the advisor_entity_roles

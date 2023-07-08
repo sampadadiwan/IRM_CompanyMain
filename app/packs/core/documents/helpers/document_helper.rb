@@ -22,7 +22,7 @@ module DocumentHelper
         # documents = documents.or(Document.where(folder_id: params[:folder_id]))
       end
 
-      aids = with_ancestor_ids(documents.per(FIXNUM_MAX))
+      aids = with_ancestor_ids(documents)
 
       if params[:folder_id].present?
         # We need to show only the descendants of parent, but we also want to show only those folder for which the user has documents that he can see.
