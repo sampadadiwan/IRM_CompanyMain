@@ -414,9 +414,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
     t.datetime "updated_at", null: false
     t.text "properties"
     t.bigint "form_type_id"
-    t.decimal "percentage", precision: 20, scale: 10, default: "0.0"
+    t.decimal "percentage", precision: 11, scale: 8, default: "0.0"
     t.bigint "ppm_number", default: 0
-    t.string "investor_signature_types", limit: 20
     t.string "folio_id", limit: 20
     t.bigint "investor_signatory_id"
     t.boolean "esign_required", default: false
@@ -740,12 +739,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
     t.boolean "orignal", default: false
     t.bigint "user_id", null: false
     t.boolean "signature_enabled", default: false
-    t.bigint "signed_by_id"
     t.bigint "from_template_id"
-    t.boolean "signed_by_accept", default: false
-    t.boolean "adhaar_esign_enabled", default: false
-    t.boolean "adhaar_esign_completed", default: false
-    t.string "signature_type", limit: 100
     t.boolean "locked", default: false
     t.boolean "public_visibility", default: false
     t.string "tag_list", limit: 120
@@ -761,7 +755,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
     t.index ["form_type_id"], name: "index_documents_on_form_type_id"
     t.index ["from_template_id"], name: "index_documents_on_from_template_id"
     t.index ["owner_type", "owner_id"], name: "index_documents_on_owner"
-    t.index ["signed_by_id"], name: "index_documents_on_signed_by_id"
     t.index ["user_id"], name: "index_documents_on_user_id"
   end
 
@@ -864,9 +857,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
     t.string "individual_kyc_doc_list"
     t.string "non_individual_kyc_doc_list"
     t.boolean "aml_enabled", default: false
+    t.string "sandbox_numbers"
     t.string "fi_code"
     t.boolean "ckyc_kra_enabled", default: false
-    t.string "sandbox_numbers"
     t.string "kpi_doc_list"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
@@ -1042,7 +1035,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
     t.boolean "enabled", default: false
     t.string "entry_type", limit: 50
     t.boolean "roll_up", default: true
-    t.string "commitment_type", limit: 10
+    t.string "commitment_type", limit: 10, default: "All"
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
   end
@@ -1163,8 +1156,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
     t.bigint "funding_round_id"
     t.boolean "show_valuations", default: false
     t.boolean "show_fund_ratios", default: false
-    t.string "fund_signature_types", limit: 20
-    t.string "investor_signature_types", limit: 20
     t.bigint "fund_signatory_id"
     t.bigint "trustee_signatory_id"
     t.string "currency", limit: 5, null: false
@@ -1507,8 +1498,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "deleted_at"
-    t.string "first_name", limit: 20
-    t.string "last_name", limit: 20
+    t.string "first_name"
+    t.string "last_name"
     t.boolean "send_confirmation", default: false
     t.bigint "investor_entity_id"
     t.boolean "is_investor_advisor", default: false
@@ -1791,7 +1782,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
     t.text "bank_verification_response"
     t.string "bank_verification_status"
     t.string "full_name", limit: 100
-    t.string "demat", limit: 20
+    t.string "demat", limit: 50
     t.string "city", limit: 20
     t.bigint "final_agreement_user_id"
     t.string "custom_matching_vals"
@@ -2062,17 +2053,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
     t.index ["owner_type", "owner_id"], name: "index_signature_workflows_on_owner"
   end
 
-  create_table "stamp_papers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "entity_id", null: false
-    t.text "notes"
-    t.string "tags"
-    t.string "sign_on_page", limit: 5
-    t.string "note_on_page", limit: 5
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["entity_id"], name: "index_stamp_papers_on_entity_id"
-  end
-
   create_table "taggings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "tag_id"
     t.string "taggable_type"
@@ -2337,7 +2317,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
   add_foreign_key "documents", "folders"
   add_foreign_key "documents", "form_types"
   add_foreign_key "documents", "users"
-  add_foreign_key "documents", "users", column: "signed_by_id"
   add_foreign_key "e_signatures", "entities"
   add_foreign_key "e_signatures", "users"
   add_foreign_key "entity_settings", "entities"
@@ -2381,6 +2360,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
   add_foreign_key "funds", "entities"
   add_foreign_key "funds", "folders", column: "data_room_folder_id"
   add_foreign_key "funds", "folders", column: "document_folder_id"
+  add_foreign_key "funds", "funding_rounds"
   add_foreign_key "funds", "users", column: "fund_signatory_id"
   add_foreign_key "funds", "users", column: "trustee_signatory_id"
   add_foreign_key "holding_actions", "entities"
@@ -2406,6 +2386,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
   add_foreign_key "investment_opportunities", "entities"
   add_foreign_key "investment_opportunities", "folders", column: "document_folder_id"
   add_foreign_key "investment_opportunities", "form_types"
+  add_foreign_key "investment_opportunities", "funding_rounds"
   add_foreign_key "investment_snapshots", "entities"
   add_foreign_key "investment_snapshots", "funding_rounds"
   add_foreign_key "investment_snapshots", "investments"
@@ -2463,6 +2444,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
   add_foreign_key "portfolio_attributions", "funds"
   add_foreign_key "portfolio_attributions", "portfolio_investments", column: "bought_pi_id"
   add_foreign_key "portfolio_attributions", "portfolio_investments", column: "sold_pi_id"
+  add_foreign_key "portfolio_investments", "aggregate_portfolio_investments"
   add_foreign_key "portfolio_investments", "capital_commitments"
   add_foreign_key "portfolio_investments", "entities"
   add_foreign_key "portfolio_investments", "folders", column: "document_folder_id"
@@ -2485,7 +2467,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
   add_foreign_key "share_transfers", "users", column: "transfered_by_id"
   add_foreign_key "signature_workflows", "documents"
   add_foreign_key "signature_workflows", "entities"
-  add_foreign_key "stamp_papers", "entities"
   add_foreign_key "taggings", "tags"
   add_foreign_key "tasks", "entities"
   add_foreign_key "tasks", "form_types"
