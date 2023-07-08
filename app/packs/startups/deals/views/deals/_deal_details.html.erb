@@ -37,7 +37,7 @@
       </div>
       <div id="docs-tab" class="tab-pane fade">
         <div id="docs" class="associated_entity">
-          <%= link_to documents_path(entity_id: deal.entity_id, folder_id: deal.document_folder.id), 
+          <%= link_to folder_documents_path(entity_id: deal.entity_id, folder_id: deal.document_folder.id), 
                                      class: "load_data_link", 
                                      data: { turbo_frame: 'documents_tree_frame' } do %>
               <span>Loading...</span>

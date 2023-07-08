@@ -1,7 +1,7 @@
 
 <tr id="<%= dom_id folder %>">
 <td>
-    <%= link_to folder.name, documents_path(folder_id: folder.id) %>
+    <%= link_to folder.name, folder_documents_path(folder_id: folder.id) %>
     <% if folder.system? %>
         </br><span class="badge badge-warning">System</span>
     <% else %>

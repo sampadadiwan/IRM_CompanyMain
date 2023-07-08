@@ -1,4 +1,6 @@
-<% @entity ||= nil %>
+<% 
+  @entity ||= nil   
+%>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <% if params[:folder_id].present? %>
     <% 
@@ -59,7 +61,7 @@
       end
     %>
     <%= link_to "Data Room", 
-        documents_path(entity_id: @deal.entity_id, folder_id: @deal.data_room_folder_id, parent_folder_id: @deal.document_folder.id), {class: "btn btn-outline-primary" }  if @deal %>
+        folder_documents_path(entity_id: @deal.entity_id, folder_id: @deal.data_room_folder_id, parent_folder_id: @deal.document_folder.id), {class: "btn btn-outline-primary" }  if @deal %>
 
   </span>
 </div>

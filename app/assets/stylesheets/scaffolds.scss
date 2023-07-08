@@ -700,9 +700,11 @@ ul.vesting_schedule {
 }
 
 .row-checkbox {
+  min-width: 20px !important;
   width: auto !important;
 }
 
 .no-wrap {
   white-space: nowrap;
 }
+

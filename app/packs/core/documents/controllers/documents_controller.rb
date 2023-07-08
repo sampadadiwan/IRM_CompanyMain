@@ -4,7 +4,7 @@ class DocumentsController < ApplicationController
   include ActiveStorage::SetCurrent
 
   before_action :set_document, only: %w[show update destroy edit send_for_esign]
-  after_action :verify_authorized, except: %i[index search investor_documents]
+  after_action :verify_authorized, except: %i[index search investor folder]
   after_action :verify_policy_scoped, only: []
   # skip_before_action :authenticate_user!, :only => [:show]
 
@@ -15,41 +15,50 @@ class DocumentsController < ApplicationController
     if params[:owner_id].present? && params[:owner_type].present?
       # This is typicaly for investors to view documents of a sale, offer, commitment etc
       owner_documents
-    elsif params[:entity_id].present?
-      # This is typicaly for investors to view another entity's documents
-      entity_documents
     else
       # See your own docs
       @entity = current_user.entity
       @documents = policy_scope(Document)
       authorize(Document)
-      @show_steps = true
     end
 
     @documents = @documents.where(owner_tag: params[:owner_tag]) if params[:owner_tag].present?
+    # This is specifically for investor advisors, who should not be able to see the docs for other funds
+    @documents = @documents.where(owner_type: nil) unless current_user.has_cached_role?(:company_admin)
 
-    # Display docs of the folder and its children, like for data room
+    # Newest docs first
+    @documents = @documents.includes(:folder).order(id: :desc)
+  end
+
+  def folder
     if params[:folder_id].present?
       @folder = Folder.find(params[:folder_id])
+      @entity = @folder.entity
 
       # Ensure that the IA user has access to the folder, as IAs can only access certain funds/deals etc
       authorize(@folder.owner, :show?) if @folder.owner # && current_user.investor_advisor?
 
-      @documents = @documents.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
-      @documents = @documents.or(Document.where(folder_id: params[:folder_id]))
+      if params[:no_folders].present?
+        @documents = Document.where(folder_id: params[:folder_id])
+      else
+        @documents = Document.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
+        @documents = @documents.or(Document.where(folder_id: params[:folder_id]))
+      end
+
     elsif current_user.investor_advisor?
       raise Pundit::NotAuthorizedError, "Advisors can access documents only in specific folders"
     else
       # This is specifically for investor advisors, who should not be able to see the docs for other funds
-      @documents = @documents.where(owner_type: nil)  unless current_user.has_cached_role?(:company_admin) # if params[:hide_fund_docs] == "true"
+      @documents = @documents.where(owner_type: nil) unless current_user.has_cached_role?(:company_admin)
     end
 
     # Newest docs first
     @documents = @documents.includes(:folder).order(id: :desc)
-    @documents = @documents.page(params[:page]) if params[:all].blank?
+    @no_folders = false
+    render "index"
   end
 
-  def investor_documents
+  def investor
     if params[:entity_id].present?
       @entity = Entity.find(params[:entity_id])
       @documents = Document.for_investor(current_user, @entity)
@@ -166,12 +175,7 @@ class DocumentsController < ApplicationController
     # We are trying to get documents that belong to some entity
     @entity = Entity.find(params[:entity_id])
     # Show all the documents for the investor for that entity
-    @documents = if current_user.entity_id == @entity.id
-                   @entity.documents
-                 else
-                   Document.for_investor(current_user, @entity)
-                 end
-    @show_steps = false
+    @documents = Document.entity_documents(current_user, @entity.id)
   end
 
   def owner_documents
@@ -183,7 +187,7 @@ class DocumentsController < ApplicationController
       @entity = @owner.entity
 
       @documents = if policy(@owner).show?
-                     Document.where(owner_id: params[:owner_id], owner_type: params[:owner_type])
+                     Document.owner_documents(@owner)
                    else
                      Document.none
                    end

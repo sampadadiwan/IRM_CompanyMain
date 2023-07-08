@@ -297,7 +297,9 @@ Rails.application.routes.draw do
   resources :documents do
     patch 'send_for_esign', on: :member
     get 'search', on: :collection
-    get 'investor_documents', on: :collection
+    get 'investor', on: :collection
+    get 'folder', on: :collection
+    get 'owner', on: :collection
   end
 
   devise_for :users, controllers: {

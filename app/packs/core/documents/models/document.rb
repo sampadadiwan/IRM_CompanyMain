@@ -4,6 +4,7 @@ class Document < ApplicationRecord
   include WithCustomField
   include InvestorsGrantedAccess
   include WithESignatures
+  include DocumentScope
 
   SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
 
@@ -103,18 +104,6 @@ class Document < ApplicationRecord
 
     end
   end
-
-  scope :for_investor, lambda { |user, entity|
-    joins(:access_rights)
-      .merge(AccessRight.access_filter(user))
-      .joins(entity: :investors)
-      # Ensure that the user is an investor and tis investor has been given access rights
-      .where("entities.id=?", entity.id)
-      .where("investors.investor_entity_id=?", user.entity_id)
-      # Ensure this user has investor access
-      .joins(entity: :investor_accesses)
-      .merge(InvestorAccess.approved_for_user(user))
-  }
 
   def video?
     file&.mime_type&.include?('video')

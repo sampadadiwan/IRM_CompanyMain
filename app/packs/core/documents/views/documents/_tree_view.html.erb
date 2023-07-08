@@ -35,7 +35,10 @@
             </div>
             <div class="card-body">
                 <%= turbo_frame_tag "documents_frame", target: "_top" do %>
-                    <% documents = documents.where(folder_id: params[:folder_id]) if params[:folder_id].present? %>
+                    <%                         
+                        documents = documents.where(folder_id: params[:folder_id]) if params[:folder_id].present? 
+                        documents = documents.page(params[:page]) if params[:all].blank?                        
+                    %>
                     <%= render "documents/index", documents: documents, entity: entity, owner: @owner %>
                     <%= paginate documents, data: {turbo_frame: 'documents_frame'} %>                
                 <% end %>

@@ -8,9 +8,9 @@ every 1.day, at: '02:01 am' do
 
   runner "ElasticImporterJob.perform_now"
   runner "VestedJob.perform_now"
-  runner "ClearMessagesCountJob.perform_now"
+  # runner "ClearMessagesCountJob.perform_now"
   runner "Entity.recompute_all"
-  runner "InvestmentSnapshotJob.perform_now"
+  # runner "InvestmentSnapshotJob.perform_now"
   # runner "ResendConfirmationJob.perform_now"
 end
 

@@ -56,6 +56,6 @@ class ImportInvestorAccess < ImportUtil
                             send_confirmation: user_data["Send Confirmation Email"] == "Yes")
 
     Rails.logger.debug { "Saving InvestorAccess with email '#{ia.email}'" }
-    ia.save
+    ia.save!
   end
 end
