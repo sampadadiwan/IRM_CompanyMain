@@ -582,7 +582,7 @@ namespace :irm do
 
             if rand(2) > 0
               cr.update(verified: true)
-              FundUnitsJob.perform_now(cd.capital_call_is, "CapitalCall", "For Call", 1)
+              FundUnitsJob.perform_now(cr.capital_call_id, "CapitalCall", "For Call", 1)
             end
 
           end
