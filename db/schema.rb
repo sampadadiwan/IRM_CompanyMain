@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
+ActiveRecord::Schema[7.0].define(version: 2023_07_11_030424) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -230,6 +230,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
     t.string "investment_type"
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
     t.string "commitment_type", limit: 10, default: "Pool"
+    t.string "investment_domicile", limit: 10
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
@@ -416,6 +417,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
     t.bigint "form_type_id"
     t.decimal "percentage", precision: 11, scale: 8, default: "0.0"
     t.bigint "ppm_number", default: 0
+    t.string "investor_signature_types", limit: 20
     t.string "folio_id", limit: 20
     t.bigint "investor_signatory_id"
     t.boolean "esign_required", default: false
@@ -1156,6 +1158,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
     t.bigint "funding_round_id"
     t.boolean "show_valuations", default: false
     t.boolean "show_fund_ratios", default: false
+    t.string "investor_signature_types", limit: 20
     t.bigint "fund_signatory_id"
     t.bigint "trustee_signatory_id"
     t.string "currency", limit: 5, null: false
@@ -1782,7 +1785,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_08_073247) do
     t.text "bank_verification_response"
     t.string "bank_verification_status"
     t.string "full_name", limit: 100
-    t.string "demat", limit: 50
+    t.string "demat", limit: 40
     t.string "city", limit: 20
     t.bigint "final_agreement_user_id"
     t.string "custom_matching_vals"

@@ -72,7 +72,7 @@ class PortfolioInvestment < ApplicationRecord
   scope :sells, -> { where("portfolio_investments.quantity < 0") }
 
   def setup_aggregate
-    self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, investment_type:, commitment_type:) if aggregate_portfolio_investment_id.blank?
+    self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, investment_type:, commitment_type:, investment_domicile:) if aggregate_portfolio_investment_id.blank?
   end
 
   before_create :update_name
