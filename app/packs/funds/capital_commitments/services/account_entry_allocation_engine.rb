@@ -140,7 +140,6 @@ class AccountEntryAllocationEngine
 
         # This will create the AggregatePortfolioInvestment as of the end date, it will be used in the formulas
         api = orig_api.as_of(@end_date)
-
         ae = create_account_entry(ae, fund_formula, capital_commitment, orig_api, binding)
       end
 
@@ -164,7 +163,7 @@ class AccountEntryAllocationEngine
     account_entry.generated = true
     account_entry.commitment_type = fund_formula.commitment_type
 
-    account_entry.save
+    account_entry.save!
     @helper.add_to_computed_fields_cache(capital_commitment, account_entry)
 
     account_entry

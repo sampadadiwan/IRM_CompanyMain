@@ -47,9 +47,10 @@
                     <% end %>
                   </div>
 
+                  <% currencies = fund.entity.exchange_rates.pluck(:from).uniq << fund.entity.currency %>
                   <div class="form-group">
                     <%= form.label :currency %>
-                    <%= form.text_field :currency, class: "form-control"  %>
+                    <%= form.select :currency, currencies, {}, class: "form-control"  %>
                   </div>
 
                   <% if fund.entity.enable_units %>

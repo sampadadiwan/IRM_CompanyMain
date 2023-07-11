@@ -11,7 +11,8 @@
 
     click_on("New Fund")
     fill_in('fund_name', with: @fund.name)
-    fill_in('fund_currency', with: @fund.currency)
+    select(@fund.currency, from: "fund_currency")
+    # fill_in('fund_currency', with: @fund.currency)
     fill_in('fund_unit_types', with: @fund.unit_types) if @fund.entity.enable_units
     # fill_in('fund_details', with: @fund.details)
     find('trix-editor').click.set(@fund.details)
