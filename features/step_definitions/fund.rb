@@ -1112,6 +1112,7 @@ Then('Given I upload {string} file for the remittances of the capital call') do 
   visit(capital_call_path(@fund.capital_calls.first))
   click_on("Remittances")
   sleep(1)
+  click_on("Upload / Download")
   click_on("Upload Payments")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
