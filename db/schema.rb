@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_11_030424) do
+ActiveRecord::Schema[7.0].define(version: 2023_07_12_133328) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -396,6 +396,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_11_030424) do
     t.text "unit_prices"
     t.string "fund_closes"
     t.string "commitment_type", limit: 10, default: "Pool"
+    t.boolean "add_setup_fees", default: false
+    t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_calls_on_document_folder_id"
@@ -581,6 +583,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_11_030424) do
     t.decimal "folio_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "exchange_rate_id"
+    t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"

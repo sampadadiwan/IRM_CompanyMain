@@ -39,6 +39,8 @@ class CapitalCallJob < ApplicationJob
                                    payment_date: @capital_call.due_date,
                                    status:, verified: @capital_call.generate_remittances_verified)
 
+        cr.fee_cents = setup_fees(@capital_call, capital_commitment)
+
         cr.set_call_amount
         cr.run_callbacks(:save) { false }
         cr.run_callbacks(:create) { false }
@@ -57,15 +59,31 @@ class CapitalCallJob < ApplicationJob
     # Generate any payments for the imported remittances if required
     generate_remittance_payments
 
-    # Update the search index
-    CapitalRemittanceIndex.import(@capital_call.capital_remittances)
     # Update the counter caches
-    CapitalRemittance.counter_culture_fix_counts only: :capital_call, where: { id: @capital_call.id }
-    CapitalRemittance.counter_culture_fix_counts only: :capital_commitment, where: { fund_id: @capital_call.fund_id }
-    CapitalRemittance.counter_culture_fix_counts only: :fund, where: { id: @capital_call.fund_id }
+    update_counters(@capital_call)
 
     # Mark all remittances for this call as paid if the called - collected < 100 cents
     CapitalRemittance.where(capital_call_id: @capital_call.id).where("ABS(capital_remittances.collected_amount_cents - capital_remittances.call_amount_cents) <= 100").update_all(status: "Paid")
+  end
+
+  def setup_fees(capital_call, capital_commitment)
+    if capital_call.add_setup_fees
+      # We need to extract the Setup Fees that were allocated to the commitment and ensure its added here for payment
+
+      setup_fees_account_entry = capital_commitment.account_entries.where("account_entries.reporting_date <=? and account_entries.name in (?)", capital_call.call_date, ["Setup Fees", "Setup Fee"]).order("account_entries.reporting_date desc").first
+
+      setup_fees_account_entry ? setup_fees_account_entry.amount_cents : 0
+    else
+      0
+    end
+  end
+
+  def update_counters(capital_call)
+    # Update the search index
+    CapitalRemittanceIndex.import(capital_call.capital_remittances)
+    CapitalRemittance.counter_culture_fix_counts only: :capital_call, where: { id: capital_call.id }
+    CapitalRemittance.counter_culture_fix_counts only: :capital_commitment, where: { fund_id: capital_call.fund_id }
+    CapitalRemittance.counter_culture_fix_counts only: :fund, where: { id: capital_call.fund_id }
   end
 
   def generate_remittance_payments

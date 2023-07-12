@@ -69,6 +69,17 @@
         </td>
       </tr>
 
+      <% if capital_call.add_setup_fees %>
+        <tr class="">
+          <td>
+            Add Setup Fees
+          </td>
+          <td>
+            <%= display_boolean capital_call.add_setup_fees %> 
+          </td>
+        </tr>
+      <% end %>
+
       <tr class="">
         <td>
           Applicable To Close
@@ -112,6 +123,20 @@
                 <%= money_to_currency capital_call.call_amount, params %>
             </td>
           </tr>
+
+          <% if capital_call.add_setup_fees %>
+      
+            <tr class="">
+              <td>
+                Fees
+              </td>
+              <td>
+                <%= money_to_currency capital_call.fee, params %> 
+              </td>
+            </tr>
+
+          <% end %>
+          
           <tr class="">
           <td>
               Collected Amount

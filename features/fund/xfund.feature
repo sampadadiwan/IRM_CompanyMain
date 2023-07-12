@@ -110,7 +110,7 @@ Scenario Outline: Create new capital call
   Given the fund has capital call template
   Given the investors are added to the fund  
   Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
-  When I create a new capital call "percentage_called=20"
+  When I create a new capital call "<call>"
   Then I should see the capital call details
   Then when the capital call is approved
   Then the corresponding remittances should be created
@@ -129,9 +129,9 @@ Scenario Outline: Create new capital call
 
   
   Examples:
-  	|entity                                 |fund                 |msg	|
-  	|entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
-    |entity_type=Investment Fund;enable_funds=true;enable_units=true  |name=Merger Fund;unit_types=Series A,Series B    |Fund was successfully created|
+  	|entity                                         |fund                |msg	| call |
+  	|entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created| percentage_called=20 |
+    |entity_type=Investment Fund;enable_funds=true;enable_units=true  |name=Merger Fund;unit_types=Series A,Series B    |Fund was successfully created| percentage_called=20;add_setup_fees=true |
 
 
 Scenario Outline: Create new capital distrbution

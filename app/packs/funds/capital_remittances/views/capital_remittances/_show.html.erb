@@ -81,15 +81,37 @@
           </td>
         </tr>
 
-        <% if capital_remittance.call_amount != capital_remittance.folio_call_amount %>
+        <% if capital_remittance.fee_cents > 0 %>
         <tr>
           <td>
-            Folio Call Amount
+            Fees
           </td>
           <td>
-            <%= money_to_currency capital_remittance.folio_call_amount, params %>
+            <%= money_to_currency capital_remittance.fee, params %>
           </td>
         </tr>
+        <% end %>
+
+        <% if capital_remittance.call_amount != capital_remittance.folio_call_amount %>
+          <tr>
+            <td>
+              Folio Call Amount
+            </td>
+            <td>
+              <%= money_to_currency capital_remittance.folio_call_amount, params %>
+            </td>
+          </tr>
+
+          <% if capital_remittance.fee_cents > 0 %>
+          <tr>
+            <td>
+              Folio Fees
+            </td>
+            <td>
+              <%= money_to_currency capital_remittance.folio_fee, params %>
+            </td>
+          </tr>
+          <% end %>
         <% end %>
         
         <tr>

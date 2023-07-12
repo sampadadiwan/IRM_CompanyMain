@@ -24,8 +24,8 @@ class CapitalRemittance < ApplicationRecord
   scope :pool, -> { joins(:capital_commitment).where("capital_commitments.commitment_type=?", "Pool") }
   scope :co_invest, -> { joins(:capital_commitment).where("capital_commitments.commitment_type=?", "CoInvest") }
 
-  monetize :call_amount_cents, :collected_amount_cents, :committed_amount_cents, with_currency: ->(i) { i.fund.currency }
-  monetize :folio_call_amount_cents, :folio_collected_amount_cents, :folio_committed_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
+  monetize :call_amount_cents, :fee_cents, :collected_amount_cents, :committed_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :folio_call_amount_cents, :folio_fee_cents, :folio_collected_amount_cents, :folio_committed_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
 
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :capital_call_id
@@ -36,6 +36,14 @@ class CapitalRemittance < ApplicationRecord
   validates :investor_name, length: { maximum: 255 }
 
   before_save :set_call_amount
+
+  # TODO: - should we show fees for only verified ones or for all?
+  counter_culture :capital_call, column_name: proc { |r| r.verified ? 'fee_cents' : nil },
+                                 delta_column: 'fee_cents',
+                                 column_names: {
+                                   ["capital_remittances.verified = ?", true] => 'fee_cents'
+                                 },
+                                 execute_after_commit: true
 
   counter_culture :capital_call, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                                  delta_column: 'collected_amount_cents',
@@ -123,11 +131,14 @@ class CapitalRemittance < ApplicationRecord
 
   def calc_call_amount_cents
     # Get the call amount in the folio_currency
-    self.folio_call_amount_cents = capital_call.percentage_called * capital_commitment.folio_committed_amount_cents / 100.0
+    self.folio_call_amount_cents = capital_call.percentage_called * capital_commitment.folio_committed_amount_cents / 100.0 if folio_call_amount_cents.zero?
 
     # Now compute the call amount in the fund currency.
     # Note the call amount is also subject to FX rate changes, but only for the due amount, collected amount has already been collected at the prevailing FX rate, hence is not subject to FX
     self.call_amount_cents = collected_amount_cents + convert_currency(capital_commitment.folio_currency, fund.currency, folio_due_amount.cents, payment_date)
+
+    # Also for some calls, fees will be included so we convert to folio_currency
+    self.folio_fee_cents = fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, fee_cents, payment_date) : 0
   end
 
   def send_notification
@@ -153,7 +164,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def set_status
-    self.status = if (call_amount_cents - collected_amount_cents).abs < 100
+    self.status = if due_amount.to_f.abs < 100
                     "Paid"
                   else
                     "Pending"
@@ -161,7 +172,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def due_amount
-    call_amount - collected_amount
+    call_amount + fee - collected_amount
   end
 
   def folio_due_amount

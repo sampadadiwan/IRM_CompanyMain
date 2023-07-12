@@ -269,6 +269,8 @@
     fill_in('capital_call_due_date', with: @capital_call.due_date)
     select(@capital_call.fund_closes[0], from: 'capital_call_fund_closes')
 
+    check "capital_call_add_setup_fees" if @capital_call.add_setup_fees
+
     if @fund.entity.enable_units
       @fund.unit_types.split(",").each do |unit_type|
         unit_type = unit_type.strip

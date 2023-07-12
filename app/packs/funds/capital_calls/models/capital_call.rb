@@ -24,7 +24,7 @@ class CapitalCall < ApplicationRecord
   validates :name, :due_date, :call_date, :percentage_called, :fund_closes, :commitment_type, presence: true
   # validates :percentage_called, numericality: { in: 0..100 }
 
-  monetize :call_amount_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :call_amount_cents, :fee_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
 
   validates :commitment_type, length: { maximum: 10 }
   validates :name, :fund_closes, length: { maximum: 255 }

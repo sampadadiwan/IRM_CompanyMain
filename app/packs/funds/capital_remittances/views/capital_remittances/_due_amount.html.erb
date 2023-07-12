@@ -2,7 +2,12 @@
     <div class="hideMobP">
       <small class="text-muted hideMobP">
       <%= money_to_currency capital_remittance.folio_committed_amount, params %> x 
-      <%= capital_remittance.capital_call.percentage_called %> % -
+      <%= capital_remittance.capital_call.percentage_called %> % 
+      <% if capital_remittance.capital_call.add_setup_fees %>
+      +
+      <%= money_to_currency capital_remittance.folio_fee, params %> 
+      <% end %>
+      -
       <%= money_to_currency capital_remittance.folio_collected_amount, params %>
       </small>
 </div>

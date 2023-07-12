@@ -87,6 +87,18 @@
   <%= custom_form_fields(capital_call, form) %>
 
   <div class="form-group">
+    <%= form.label :generate_remittances %>
+    <%= form.check_box :generate_remittances, class: "form-control form-checkbox" %>
+    <small class="text-muted">UnCheck if you want to manually upload remittances</small>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :add_setup_fees %>
+    <%= form.check_box :add_setup_fees, class: "form-control form-checkbox" %>
+    <small class="text-muted">Check to add the setup fees to the call amounts. Notes Account Entry for setup fees should already be geenrated / uploaded prior to the call</small>
+  </div>
+
+  <div class="form-group">
     <%= form.label :notes, "Notes (Will be inserted into the email sent to investors)" %>
     <%= form.rich_text_area :notes, class: "form-control"  %>
   </div>
