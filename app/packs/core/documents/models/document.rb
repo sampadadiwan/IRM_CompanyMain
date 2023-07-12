@@ -7,6 +7,7 @@ class Document < ApplicationRecord
   include DocumentScope
 
   SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
+  SKIP_ESIGN_UPDATE_STATUSES = %w[Cancelled Completed cancelled completed].freeze
 
   MODELS_WITH_DOCS = %w[Fund CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDitribution CapitalDitributionPayment Deal DealInvestor InvestmentOpportunity ExpressionOfInterest].freeze
 
@@ -45,6 +46,10 @@ class Document < ApplicationRecord
   include FileUploader::Attachment(:file)
 
   scope :generated, -> { where(owner_tag: "Generated") }
+  scope :template, -> { where(template: true) }
+  scope :not_template, -> { where(template: [nil, false]) }
+  scope :sent_for_esign, -> { where(sent_for_esign: true) }
+  scope :not_sent_for_esign, -> { where(sent_for_esign: [nil, false]) }
 
   def to_s
     name

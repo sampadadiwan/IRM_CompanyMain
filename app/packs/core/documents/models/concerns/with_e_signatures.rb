@@ -37,18 +37,14 @@ module WithESignatures
     owner.respond_to?(:stamp_paper?) && owner&.stamp_paper?
   end
 
-  def stamp_papers
-    owner.stamp_papers if stamp_paper?
-  end
-
   # This can be called from the controller to send the document for e-signing
-  def send_for_esign(force: false)
+  def send_for_esign(force: false, user_id: nil)
     if signature_enabled
       Rails.logger.debug { "Signature enabled for #{name}, sending for e-signing" }
       if !sent_for_esign || force
         Rails.logger.debug { "Sending #{name} #{id} for e-signing" }
         # Tell the provider to send it for e-signing
-        DigioEsignJob.perform_later(id)
+        DigioEsignJob.perform_later(id, user_id)
         true
       else
         Rails.logger.debug { "Document #{name} #{id} already queued for e-signing" }

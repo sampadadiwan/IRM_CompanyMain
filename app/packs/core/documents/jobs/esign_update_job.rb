@@ -40,7 +40,7 @@ class EsignUpdateJob < ApplicationJob
         signed_esigns = doc.e_signatures.reload.where.not(status: "signed")
         signature_completed(doc) if signed_esigns.count < 1
       else
-        signatures_failed(doc, response)
+        signatures_failed(doc, JSON.parse(response.body))
       end
     end
   end
@@ -56,11 +56,11 @@ class EsignUpdateJob < ApplicationJob
   end
 
   def signatures_failed(doc, response)
-    e = StandardError.new("Error getting status for #{doc.name} - #{JSON.parse(response.body)}")
+    e = StandardError.new("Error getting status for #{doc.name} - #{response}")
     ExceptionNotifier.notify_exception(e)
-
+    doc.update(esign_status: "failed")
     doc.e_signatures.each do |esign|
-      esign.add_api_update(JSON.parse(response.body))
+      esign.add_api_update(response)
       esign.save!
     end
     logger.error e.message

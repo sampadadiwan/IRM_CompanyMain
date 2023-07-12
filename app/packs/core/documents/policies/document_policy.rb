@@ -34,11 +34,23 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def send_for_esign?
-    update? && !record.sent_for_esign && record.e_signatures.all? { |esign| esign.user&.email.present? }
+    update? && !record.sent_for_esign && record.e_signatures.all? { |esign| esign.user&.email.present? } && record.esign_status&.downcase != "cancelled"
+  end
+
+  def force_send_for_esign?
+    update? && record.sent_for_esign && record.e_signatures.all? { |esign| esign.user&.email.present? } && user.has_cached_role?(:company_admin)
+  end
+
+  def send_all_for_esign?
+    user.enable_documents && user.has_cached_role?(:company_admin)
+  end
+
+  def cancel_esign?
+    update? && user.has_cached_role?(:company_admin)
   end
 
   def fetch_esign_updates?
-    update? && record.sent_for_esign
+    update? && record.sent_for_esign && record.esign_status&.downcase != "cancelled"
   end
 
   def edit?

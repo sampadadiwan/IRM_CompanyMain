@@ -5,7 +5,7 @@ class DocumentsController < ApplicationController
   include DocumentHelper
   skip_before_action :verify_authenticity_token, :set_current_entity, :authenticate_user!, :set_search_controller, :set_paper_trail_whodunnit, only: %i[signature_progress]
 
-  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates]
+  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign]
   after_action :verify_authorized, except: %i[index search investor folder signature_progress]
 
   after_action :verify_policy_scoped, only: []
@@ -109,10 +109,36 @@ class DocumentsController < ApplicationController
   def show; end
 
   def send_for_esign
-    if @document.send_for_esign(force: params[:force])
+    if @document.send_for_esign(user_id: current_user.id)
       redirect_to document_url(@document), notice: "Document was queued for e-signature."
     else
       redirect_to document_url(@document, display_status: true), alert: "Document was NOT sent for e-signature."
+    end
+  end
+
+  def force_send_for_esign
+    if @document.send_for_esign(force: params[:force], user_id: current_user.id)
+      redirect_to document_url(@document), notice: "Document was queued for e-signature."
+    else
+      redirect_to document_url(@document, display_status: true), alert: "Document was NOT sent for e-signature."
+    end
+  end
+
+  def send_all_for_esign
+    authorize(Document)
+    # Select Docs that are not templates, have not been sent for esign and are generated from a template
+    Document.where(entity_id: params[:entity_id]).not_template.not_sent_for_esign.where.not(from_template_id: nil).each do |document|
+      document.send_for_esign(force: params[:force]) unless Document::SKIP_ESIGN_UPDATE_STATUSES.include?(document.esign_status)
+    end
+    UserAlert.new(user_id: current_user.id, message: "Documents were queued for e-signature.", level: "success").broadcast
+  end
+
+  # allows to add a button to cancel esigning on document
+  def cancel_esign
+    if @document.update(esign_status: "cancelled")
+      redirect_to document_url(@document), notice: "Document's E-Signature(s) was cancelled"
+    else
+      redirect_to document_url(@document, display_status: true), alert: "Error cancelling E-Signature(s)"
     end
   end
 

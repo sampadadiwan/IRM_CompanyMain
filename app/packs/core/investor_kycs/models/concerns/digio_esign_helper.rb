@@ -22,8 +22,8 @@ class DigioEsignHelper
     tmpfile.close
     tmpfile.unlink
     # fetch from esign
-    display_on_page = document.display_on_page || "last"
-    body = prepare_data(document.e_signatures, document.name, encoded_file, display_on_page)
+    display_on_page = document.display_on_page&.downcase || "last"
+    body = prepare_data(document, document.name, encoded_file, display_on_page)
 
     response = HTTParty.post(
       "#{BASE_URL}/v2/client/document/uploadpdf",
@@ -71,9 +71,9 @@ class DigioEsignHelper
 
   #   private
 
-  def prepare_data(esigns, file_name, encoded_file, display_on_page = "last")
+  def prepare_data(doc, file_name, encoded_file, display_on_page = "last")
     {
-      signers: prep_user_data(esigns),
+      signers: prep_user_data(doc.e_signatures),
       expire_in_days: 10,
       notify_signers: true,
       send_sign_link: true,

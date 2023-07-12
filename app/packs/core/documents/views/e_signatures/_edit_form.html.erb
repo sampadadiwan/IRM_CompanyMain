@@ -1,0 +1,48 @@
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">E-Signature</h6>
+  </div>
+  <div class="card-body">
+  <% labels ||= nil %>
+  <%= form_with(model: e_signature, validate: true) do |f| %>
+  <div class='nested-fields form-row'>
+      <% if f.object.user %>
+      <div class="form-group col">
+        <%= f.label :user_id %>
+        <%= f.text_field :user_id, class: "form-control", disabled: true, value: f.object.user.full_name %>
+      </div>
+      <% end %>
+
+
+      <div class="form-group col">
+        <%= f.label :label %>
+        <% if labels %>
+          <%= f.select :label, labels, {}, class: "form-control"  %>
+        <% else %>
+          <%= f.text_field :label, class: "form-control"  %>
+        <% end %>
+      </div>
+
+      <div class="form-group col">
+        <%= f.label :signature_type %>
+        <%= f.select :signature_type, ["Aadhaar", "Electronic"], {}, class: "form-control"  %>
+      </div>
+
+      <div class="form-group col">
+        <%= f.label :notes %>
+        <%= f.text_field :notes, class: "form-control"  %>
+      </div>
+
+      <div class="form-group col">
+        <%= f.label :status %>
+        <%= f.text_field :status, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= f.submit "Save", {class: "btn btn-outline-primary"} %>
+      </div>
+    </div>
+<% end %>
+
+  </div>
+</div>

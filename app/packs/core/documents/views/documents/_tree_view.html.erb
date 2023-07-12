@@ -9,38 +9,45 @@
     <div class="col-lg-4 mb-4">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <span class="m-0 font-weight-bold text-primary">Folders</span> 
+                <span class="m-0 font-weight-bold text-primary">Folders</span>
             </div>
             <div class="card-body">
                 <div id="tree_view" class="tree_view" data-controller="treeview">
                     <% if params[:page].blank? %>
-                        <% folders = get_tree_view_folders(params, current_user, @entity, @documents) %>                    
-                        <%= render "folders/tree_view", folders: folders  %>                    
+                        <% folders = get_tree_view_folders(params, current_user, @entity, @documents) %>
+                        <%= render "folders/tree_view", folders: folders  %>
                     <% end %>
                 </div>
             </div>
         </div>
     </div>
     <% end %>
-    
+
     <div class="<%= doc_index_class %>">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <span class="m-0 font-weight-bold text-primary">Documents</span>
-                
-                <%= link_to "Index", documents_path(entity_id:params[:entity_id], all: true, format: :xlsx), class: "btn btn-outline-sm btn-outline-primary float-right"  %>               
-                
-                <%= link_to "All Documents", documents_path(entity_id:params[:entity_id]), class: "btn btn-outline-sm btn-outline-primary float-right"  %>
-                
+                <br>
+                <div class="side-by-side-container">
+                    <div class="side-by-side-view" style="width:49%">
+                        <span class="m-0 font-weight-bold text-primary">Documents</span>
+                    </div>
+                    <div class="side-by-side-view" style="width:49%">
+                        <div class="d-sm-flex align-items-center justify-content-end mb-4">
+                            <%= link_to "Index", documents_path(entity_id:params[:entity_id], all: true, format: :xlsx), class: "btn btn-outline-sm btn-outline-primary float-right"  %>
+                            <%= link_to "All Documents", documents_path(entity_id:params[:entity_id]), class: "btn btn-outline-sm btn-outline-primary float-right"  %>
+                            <%= button_to "Send All for eSignatures" , send_all_for_esign_documents_path(entity_id:params[:entity_id]), {class: "btn btn-outline-sm btn-outline-primary", method: :patch} if params[:entity_id].present? && policy(Document).send_all_for_esign? %>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <%= turbo_frame_tag "documents_frame", target: "_top" do %>
-                    <%                         
-                        documents = documents.where(folder_id: params[:folder_id]) if params[:folder_id].present? 
-                        documents = documents.page(params[:page]) if params[:all].blank?                        
+                    <%
+                        documents = documents.where(folder_id: params[:folder_id]) if params[:folder_id].present?
+                        documents = documents.page(params[:page]) if params[:all].blank?
                     %>
                     <%= render "documents/index", documents: documents, entity: entity, owner: @owner %>
-                    <%= paginate documents, data: {turbo_frame: 'documents_frame'} %>                
+                    <%= paginate documents, data: {turbo_frame: 'documents_frame'} %>
                 <% end %>
             </div>
         </div>

@@ -117,6 +117,13 @@
         <%= form.rich_text_area :text, class: "form-control trix-content"  %>
       </div>
 
+      <div id="sign_display_on_page">
+        <hr>
+        <h5> E-Signatures </h5>
+        <%= form.label :esign_display_on_page %>
+        <%= form.select :display_on_page, ["Last", "All"], {}, class: "form-control" %>
+        <br>
+      </div>
 
       <div id='e_signatures'>
         <% @labels = @document.owner.respond_to?(:signature_labels) ? @document.owner.signature_labels : nil %>
@@ -125,11 +132,6 @@
         <% end %>
         <div class='links'>
         </div>
-      </div>
-
-      <div class="form-group col",  id="sign_display_on_page">
-        <%= form.label :esign_display_on_page %>
-        <%= form.select :display_on_page, ["Last", "All"], {}, class: "form-control" %>
       </div>
 
       <div class="form-group">

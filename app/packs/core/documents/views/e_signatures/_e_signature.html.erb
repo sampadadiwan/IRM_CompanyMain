@@ -3,7 +3,7 @@
   <td>
     <%= e_signature.position %>
   </td>
-  
+
   <td>
     <%= e_signature.user %>
   </td>
@@ -13,11 +13,12 @@
   <td>
     <%= e_signature.signature_type %>
   </td>
-  
+
   <td>
     <%= e_signature.status %>
   </td>
   <td>
     <%= link_to "Show", e_signature , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Edit", edit_e_signature_path(e_signature) , {class: "btn btn-outline-primary"} if policy(e_signature).edit?%>
   </td>
 </tr>

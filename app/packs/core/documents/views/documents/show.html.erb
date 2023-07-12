@@ -20,14 +20,14 @@
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
                    <%= @document.name.capitalize.titleize %>
-                   : <%= pluralize @document.impressions_count, "View" %>                  
+                   : <%= pluralize @document.impressions_count, "View" %>
                </h6>
             </div>
             <div class="card-body">
                <table class="table table-bordered dataTable ">
 
-               
-                  <% if @document.orignal %>                     
+
+                  <% if @document.orignal %>
                      <tr>
                         <td>
                            Download
@@ -36,9 +36,9 @@
                            <%= link_to @document.file_url(), class: "btn btn-outline-success", target: "_blank" do %>
                               <%= @document.name.capitalize.titleize %>
                               <i class="fas fa-download fa-xl"></i>
-                           <% end %>      
+                           <% end %>
                         </td>
-                     </tr>    
+                     </tr>
                   <% end %>
 
                   <% if @document.from_template_id %>
@@ -63,10 +63,10 @@
                      </td>
                      <td>
                         <%= @document&.folder.full_path %>
-                        <%= link_to "View Docs", folder_documents_path(folder_id: @document.folder_id), 
+                        <%= link_to "View Docs", folder_documents_path(folder_id: @document.folder_id),
                               class: "badge badge-primary" %>
                         <%= link_to "View Folder", folder_path(id: @document.folder_id),
-                              class: "badge badge-success" %>                    
+                              class: "badge badge-success" %>
                      </td>
                   </tr>
                   <tr>
@@ -87,7 +87,7 @@
                         <%= l @document.created_at, format: :default %>
                      </td>
                   </tr>
-                  
+
                   <tr>
                      <td>
                         Belongs To
@@ -96,19 +96,19 @@
                         <%= link_to @document.owner_type, [@document.owner, tab: "docs-tab"] if @document.owner %>
                      </td>
                   </tr>
-               
+
                   <% if current_user && current_user.entity_id == @document.entity_id %>
 
                   <tr>
                      <td>
-                        Allow 
+                        Allow
                      </td>
                      <td>
-                        Download <%= display_boolean @document.download %>     
-                        &nbsp;&nbsp; Printing <%= display_boolean @document.printing %>   
-                        &nbsp;&nbsp; Original <%= display_boolean @document.orignal  %>                                
+                        Download <%= display_boolean @document.download %>
+                        &nbsp;&nbsp; Printing <%= display_boolean @document.printing %>
+                        &nbsp;&nbsp; Original <%= display_boolean @document.orignal  %>
                         &nbsp;&nbsp; Public <%= display_boolean @document.public_visibility  %>
-                        &nbsp;&nbsp; Send Email <%= display_boolean @document.send_email  %> 
+                        &nbsp;&nbsp; Send Email <%= display_boolean @document.send_email  %>
                      </td>
                   </tr>
 
@@ -119,21 +119,32 @@
                         Uploaded By
                      </td>
                      <td>
-                        <%= @document.user.full_name  %> | <%= @document.user.email  %>                                                  
+                        <%= @document.user.full_name  %> | <%= @document.user.email  %>
                      </td>
                   </tr>
 
                   <%= display_custom_fields(@document) if current_user %>
 
                   <% end %>
-                  
+
                   <% if @document.text.present? %>
                   <tr>
                      <td>
                         Details
                      </td>
                      <td>
-                        <%= @document.text %>                        
+                        <%= @document.text %>
+                     </td>
+                  </tr>
+                  <% end %>
+
+                  <% if !@document.template && @document.e_signatures.present? %>
+                  <tr>
+                     <td>
+                        E-Signature status
+                     </td>
+                     <td>
+                        <%= @document.esign_status&.titleize %>
                      </td>
                   </tr>
                   <% end %>
@@ -147,10 +158,10 @@
 </div>
 
 <% if current_user && policy(@document).update? %>
-   <div style="display: inline-block;">      
-      <%= link_to "Edit", edit_document_path(@document), {class: "btn btn-outline-primary"} %> 
-      <%= link_to "All Documents", documents_path, {class: "btn btn-outline-success"} %> 
-      <%= button_to "Delete", @document, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@document).destroy? %> 
+   <div style="display: inline-block;">
+      <%= link_to "Edit", edit_document_path(@document), {class: "btn btn-outline-primary"} %>
+      <%= link_to "All Documents", documents_path, {class: "btn btn-outline-success"} %>
+      <%= button_to "Delete", @document, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@document).destroy? %>
    </div>
 <% end %>
 

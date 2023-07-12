@@ -1,3 +1,5 @@
 <h1>Editing E Signature</h1>
+<%= form_with(model: @e_signature, validate: true) do |form| %>
+    <%=render "edit_form", e_signature: @e_signature, f: form %>
+<% end %>
 
-<%=render "form", e_signature: @e_signature %>

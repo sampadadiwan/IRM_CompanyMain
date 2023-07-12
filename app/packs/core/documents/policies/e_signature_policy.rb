@@ -21,7 +21,7 @@ class ESignaturePolicy < ApplicationPolicy
   end
 
   def edit?
-    update? && !record.owner.sent_for_esign && record.status.nil?
+    update? && (!record.owner.sent_for_esign || user.has_cached_role?(:company_admin))
   end
 
   def destroy?

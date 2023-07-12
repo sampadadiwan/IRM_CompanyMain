@@ -8,10 +8,11 @@ class DocumentEsignUpdateJob < ApplicationJob
   # Or it can be called with a document_id to update a single document
   def perform(document_id)
     Chewy.strategy(:sidekiq) do
-      docs = Document.where('created_at > ?', 10.days.ago.beginning_of_day).where(sent_for_esign: true).where.not(esign_status: "Completed")
+      docs = Document.where('created_at > ?', 10.days.ago.beginning_of_day).sent_for_esign
       docs = Document.where(id: [document_id]) if document_id.present?
       docs.each do |doc|
-        EsignUpdateJob.perform_later(doc.id)
+        # .where.not query skips nil esign statuses
+        EsignUpdateJob.perform_later(doc.id) unless Document::SKIP_ESIGN_UPDATE_STATUSES.include?(doc.esign_status)
       end
     end
   end

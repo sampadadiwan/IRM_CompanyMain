@@ -11,6 +11,11 @@ class ESignature < ApplicationRecord
     self.entity_id = owner.entity_id
   end
 
+  before_save :update_status
+  def update_status
+    self.status = nil if signature_type_changed?
+  end
+
   after_save :update_owner
   def update_owner
     owner.signature_enabled = true

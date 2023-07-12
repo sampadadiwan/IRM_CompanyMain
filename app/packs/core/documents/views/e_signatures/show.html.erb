@@ -1,4 +1,6 @@
 <%= render "/layouts/alerts" %>
+<h1> E Signature </h1>
+<div>
 <table class="table table-bordered dataTable">
   <tr>
     <td>
@@ -65,3 +67,5 @@
     </td>
   </tr>
 </table>
+<%= link_to "Edit", edit_e_signature_path(@e_signature), {class: "btn btn-outline-primary"} %>
+</div>
