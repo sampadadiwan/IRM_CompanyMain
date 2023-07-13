@@ -261,7 +261,9 @@ class AccountEntryAllocationEngine
     # Create variables available to eval here from all the cached fields
     # This is what allows formulas to have things line @cash_in_hand or @units
     cached_commitment_fields.keys.sort.each do |f|
-      variable_name = f.delete('.&')
+      # variable names cannot be created with special chars - so delete them
+      variable_name = f.delete('.&:')
+      # Use meta programming to setup an instance variable
       instance_variable_set("@#{variable_name}", cached_commitment_fields[f])
       Rails.logger.debug { "Setting up variable @#{variable_name} to #{cached_commitment_fields[f]}" }
     end

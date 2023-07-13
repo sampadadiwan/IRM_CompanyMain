@@ -1,4 +1,4 @@
-<%
+  <%
   start_date ||= Time.zone.today.beginning_of_quarter
   end_date ||= Time.zone.today.end_of_quarter
 %>
@@ -9,14 +9,6 @@
     <h1 class="h3 mb-0 text-gray-800">Allocate Account Entries For : <%= @fund.name %> </h1>
 </div>
 
-
-<% if params[:fund_formula_id].present? %>
-  <div class="alert alert-info">
-    <% fund_formula = FundFormula.find(params[:fund_formula_id]) %>
-    Run Formula: <%= fund_formula.name %> <br>
-    Formula: <%= fund_formula.formula %>
-  </div>
-<% end %>
 
 <%= form_with(model: @fund, url: allocate_fund_path(@fund), method: :patch) do |form| %>
   
