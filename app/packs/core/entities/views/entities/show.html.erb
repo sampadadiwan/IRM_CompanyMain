@@ -80,23 +80,33 @@
          </tr>
 
          <% if @entity.enable_kycs %>
-         <tr>
-            <td>
-               KYC Document List (Individual)
-            </td>
-            <td>
-               <%= @entity.entity_setting.individual_kyc_doc_list %>
-            </td>
-         </tr>
+            <tr>
+               <td>
+                  KYC Document List (Individual)
+               </td>
+               <td>
+                  <%= @entity.entity_setting.individual_kyc_doc_list %>
+               </td>
+            </tr>
 
-         <tr>
-            <td>
-               KYC Document List (Non Individual)
-            </td>
-            <td>
-               <%= @entity.entity_setting.non_individual_kyc_doc_list %>
-            </td>
-         </tr>
+            <tr>
+               <td>
+                  KYC Document List (Non Individual)
+               </td>
+               <td>
+                  <%= @entity.entity_setting.non_individual_kyc_doc_list %>
+               </td>
+            </tr>
+
+            <tr>
+               <td>
+                  KYC Documents Note
+               </td>
+               <td>
+                  <%= @entity.entity_setting.kyc_docs_note.html_safe %>
+               </td>
+            </tr>
+
          <% end %>
 
          <% if @entity.enable_kpis %>

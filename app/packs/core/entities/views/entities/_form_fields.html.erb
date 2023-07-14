@@ -39,6 +39,13 @@
       <%= entity_setting_subform.text_field :non_individual_kyc_doc_list, class: "form-control"  %>
       <small>Comma separated list of documents to be uploaded for Non Individual KYC</small>
     </div>
+
+    <div class="form-group">
+      <%= entity_setting_subform.label :kyc_docs_note %>
+      <%= entity_setting_subform.rich_text_area :kyc_docs_note, class: "form-control"  %>
+      <small>Instructions to users to upload the KYC documents.</small>
+    </div>
+
     <% end %>
 
     <% if entity.enable_kpis %>

@@ -14,10 +14,17 @@
         <div class="card-body">
             <table class="table table-bordered  dataTable">
                 <% (@document.owner.document_list - ["Other"]).each do |name| %>
-                <tr>
-                    <td><%= name %></td>
-                </tr>
+                  <tr>
+                      <td><%= name %></td>
+                  </tr>
                 <% end %>
+
+                <% if @document.entity.entity_setting.kyc_docs_note.present? %>
+                  <tr>
+                      <td><%= @document.entity.entity_setting.kyc_docs_note.html_safe %></td>
+                  </tr>
+                <% end %>
+                
             </table>
         </div>
       </div>
