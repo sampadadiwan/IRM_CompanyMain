@@ -289,6 +289,36 @@ Given('I create a new InvestorKyc with pan {string}') do |string|
   sleep(3)
 end
 
+Given('I create a new InvestorKyc') do ||
+  @investor_kyc = FactoryBot.create(:investor_kyc, entity: @entity)
+  puts "\n########### KYC ############"
+  puts @investor_kyc.to_json
+
+
+  visit(investor_kycs_path)
+  click_on("New Investor Kyc")  
+  select(@investor_kyc.investor.investor_name, from: "investor_kyc_investor_id")
+  fill_in('investor_kyc_full_name', with: @investor_kyc.full_name)
+  select(@investor_kyc.residency.titleize, from: "investor_kyc_residency")
+  fill_in('investor_kyc_PAN', with: @investor_kyc.PAN)
+  fill_in('investor_kyc_birth_date', with: @investor_kyc.birth_date)
+  
+  click_on("Next")
+  sleep(1)
+  fill_in('investor_kyc_address', with: @investor_kyc.address)
+  fill_in('investor_kyc_corr_address', with: @investor_kyc.corr_address)
+  fill_in('investor_kyc_bank_account_number', with: @investor_kyc.bank_account_number)
+  fill_in('investor_kyc_ifsc_code', with: @investor_kyc.ifsc_code)
+  click_on("Next")
+  sleep(1)
+  
+  fill_in('investor_kyc_expiry_date', with: @investor_kyc.expiry_date)
+  fill_in('investor_kyc_comments', with: @investor_kyc.comments)
+  click_on("Save")
+  sleep(1)
+  
+end
+
 Then('I should see ckyc and kra data comparison page') do
   expect(page).to have_content("CKYC")
   expect(page).to have_content("KRA")
@@ -303,3 +333,38 @@ Then('I select one and see the edit page and save') do
   expect(page).to have_content("Investor kyc was successfully updated")
 end
 
+
+
+Then('I should be on the new documents page') do
+  sleep(1)
+  click_on("Ok")
+  expect(current_path).to eq(new_document_path())
+end
+
+Then('when I upload the document for the kyc') do
+  @document = FactoryBot.build(:document, entity: @entity, user: @entity.employees.sample)
+
+  fill_in("document_name", with: @document.name)
+
+  fill_in("document_tag_list", with: @document.tag_list.join(",")) if @document.tag_list.present?
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
+
+  sleep(3)
+  click_on("Save")
+  sleep(4)
+    
+end
+
+Then('I should see the investor kyc details on the details page') do
+  expect(page).to have_content(@investor_kyc.entity.name)
+  expect(page).to have_content(@investor_kyc.residency.titleize)
+  expect(page).to have_content(@investor_kyc.kyc_type.titleize)
+  expect(page).to have_content(@investor_kyc.investor.investor_name)
+  expect(page).to have_content(@investor_kyc.PAN)
+  expect(page).to have_content(@investor_kyc.full_name)
+  expect(page).to have_content(@investor_kyc.birth_date.strftime("%d %B, %Y")) if @investor_kyc.birth_date
+  expect(page).to have_content(@investor_kyc.address)
+  expect(page).to have_content(@investor_kyc.corr_address)
+  expect(page).to have_content(@investor_kyc.bank_account_number)
+  expect(page).to have_content(@investor_kyc.ifsc_code)
+end

@@ -227,13 +227,18 @@ FactoryBot.define do
 
 
   factory :investor_kyc do
-    entity { Entity.where(enable_investor_kyc: true).sample }
-    investor { entity.investors.sample }
+    # entity { Entity.where(enable_kycs: true).sample }
+    investor { entity.investors.sample if entity }
     full_name { Faker::Name.name }
+    residency { ["domestic", "foreign"].sample }
     PAN { [*('A'..'Z'),*('0'..'9')].shuffle[0,10].join }
     address { Faker::Address.full_address }
+    corr_address { Faker::Address.full_address }
     bank_account_number  {Faker::Bank.account_number}
     ifsc_code {Faker::Bank.swift_bic}
+    birth_date { Time.zone.today - rand(36).years }
+    expiry_date { Time.zone.today + rand(36).months }
+    comments { Faker::Company.buzzword }
   end
 
   factory :aml_report do

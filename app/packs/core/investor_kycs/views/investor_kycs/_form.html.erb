@@ -1,3 +1,21 @@
+<div class="wizard_container" data-controller="wizard">
+  <div class="stepwizard hidden">
+      <div class="stepwizard-row setup-panel">
+          <div class="stepwizard-step">
+              <a href="#step-1" type="button" class="btn btn-outline-primary btn-outline-primary btn-outline-circle">1</a>
+              <p>Step 1</p>
+          </div>
+          <div class="stepwizard-step">
+              <a href="#step-2" type="button" class="btn btn-outline-primary btn-outline-circle" disabled="disabled">2</a>
+              <p>Step 2</p>
+          </div>
+          <div class="stepwizard-step">
+              <a href="#step-3" type="button" class="btn btn-outline-primary btn-outline-circle" disabled="disabled">3</a>
+              <p>Step 3</p>
+          </div>
+      </div>
+  </div>
+
 <%= form_with(model: investor_kyc, validate: true) do |form| %>
   <% if investor_kyc.errors.any? %>
     <div class="alert alert-danger">
@@ -11,151 +29,171 @@
     </div>
   <% end %>
 
-  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-  <% if investor_kyc.investor_id.present? %>
-    <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
-  <% else %>
-    <div class="form-group">
-      <%= form.label :investor_id %>
-      <%= form.select :investor_id, investor_kyc.entity.investors.map{|i| [i.investor_name, i.id]}, {}, class: "form-control select2"  %>
-    </div>
-  <% end %>
 
-  <div class="form-group">
-    <%= form.label :kyc_type %>
-    <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control"  %>
-  </div>
+  <div class="row setup-content" id="step-1">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header"> 1. Fund Details </div>
+        <div class="card-body">
 
-  <div class="form-group">
-    <%= form.label :residency %>
-    <%= form.select :residency, InvestorKyc.residencies.invert, {include_blank: true}, class: "form-control"  %>
-  </div>
+            <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+            <% if investor_kyc.investor_id.present? %>
+              <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
+            <% else %>
+              <div class="form-group">
+                <%= form.label :investor_id %>
+                <%= form.select :investor_id, investor_kyc.entity.investors.map{|i| [i.investor_name, i.id]}, {}, class: "form-control select2"  %>
+              </div>
+            <% end %>
 
-  <div class="form-group">
-    <%= form.label :full_name %>
-    <%= form.text_field :full_name, class: "form-control"  %>
-  </div>
+            <div class="form-group">
+              <%= form.label :kyc_type %>
+              <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control"  %>
+            </div>
 
-  <div class="form-group">
-    <%= form.label :date_of_birth %>
-    <%= form.date_field :birth_date, class: "form-control"  %>
-  </div>
+            <div class="form-group">
+              <%= form.label :residency %>
+              <%= form.select :residency, InvestorKyc.residencies.invert, {include_blank: true}, class: "form-control"  %>
+            </div>
 
-  <div class="form-group">
-    <%= form.label :PAN %>
-    <%= form.text_field :PAN, class: "form-control"  %>
-  </div>
+            <div class="form-group">
+              <%= form.label :full_name %>
+              <%= form.text_field :full_name, class: "form-control"  %>
+            </div>
 
-  <div class="form-group">
+            <div class="form-group">
+              <%= form.label :date_of_birth %>
+              <%= form.date_field :birth_date, class: "form-control"  %>
+            </div>
 
-    <div class="alert alert-info">
-      Please upload a clear image of your PAN card
-    </div>
-    <div>
-    <% pan_label="Upload PAN Card" %>
-    <% if investor_kyc.pan_card.present? %>
-      <% pan_label="Update PAN Card" %>
-      <%= link_to "PAN Card", investor_kyc.pan_card.url, target: "_blank" %>
-      <br>
-      <%= image_tag investor_kyc.pan_card_url,
-      style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" %>
-    <% end %>
-      <%= render "layouts/single_upload", form: form, field_label: pan_label,
-                          for_model: "investor_kyc", field_name: "pan_card",
-                          model: investor_kyc %>
-    </div>
-  </div>
+            <div class="form-group">
+              <%= form.label :PAN %>
+              <%= form.text_field :PAN, class: "form-control"  %>
+            </div>
 
-  <% if current_user.entity_id == investor_kyc.entity_id %>
-    <div class="form-group">
-      <%= form.label :pan_verified %>
-      <%= form.check_box :pan_verified, class: "form-control form-checkbox"  %>
-    </div>
-  <% end %>
+            <div class="form-group">
 
+              <div class="alert alert-info">
+                Please upload a clear image of your PAN card
+              </div>
+              <div>
+                <% pan_label="Upload PAN Card" %>
+                <% if investor_kyc.pan_card.present? %>
+                  <% pan_label="Update PAN Card" %>
+                  <%= link_to "PAN Card", investor_kyc.pan_card.url, target: "_blank" %>
+                  <br>
+                  <%= image_tag investor_kyc.pan_card_url,
+                  style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" %>
+                <% end %>
+                  <%= render "layouts/single_upload", form: form, field_label: pan_label,
+                                      for_model: "investor_kyc", field_name: "pan_card",
+                                      model: investor_kyc %>
+              </div>
 
-  <div class="form-group">
-    <%= form.label :permanent_address %>
-    <%= form.text_area :address, class: "form-control"  %>
-  </div>
+              <% if current_user.entity_id == investor_kyc.entity_id %>
+                <div class="form-group">
+                  <%= form.label :pan_verified %>
+                  <%= form.check_box :pan_verified, class: "form-control form-checkbox"  %>
+                </div>
+              <% end %>
 
-  <div class="form-group">
-    <%= form.label :correspondence_address %>
-    <%= form.text_area :corr_address, class: "form-control"  %>
-  </div>
+            </div>
 
-  <div class="form-group">
-    <%= form.label :bank_account_number %>
-    <%= form.text_field :bank_account_number, class: "form-control"  %>
-  </div>
+            <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
 
-  <div class="form-group">
-    <%= form.label :ifsc_code %>
-    <%= form.text_field :ifsc_code, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <div>
-    <% sign_label="Upload Signature Image (jpg or png only)" %>
-    <% if investor_kyc.signature.present? %>
-    <% sign_label="Update Signature Image (jpg or png only)" %>
-      <%= link_to "Signature", investor_kyc.signature.url, target: "_blank" %>
-      <br>
-      <%= image_tag investor_kyc.signature_url,
-        style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" %>
-    <% end %>
-      <%= render "layouts/single_upload", form: form, field_label: sign_label,
-                    for_model: "investor_kyc", field_name: "signature",
-                    model: investor_kyc, allowed_types: ['image/*'].freeze  %>
-    </div>
-  </div>
-
-
-  <!-- div class="form-group">
-    <div class="alert alert-info">
-      Please upload a video where you are holding your PAN Card saying:
-
-      <div class="alert alert-success">
-      "My name is [NAME] and my PAN is [PAN number].  I confirm the KYC details provided by me for subscribing to the fund by <%= investor_kyc.entity.name %>
-      on <%= Time.zone.today.to_formatted_s(:long) %>"
+        </div>
       </div>
-      Kindly make sure your full face and the PAN card are clearly visible in the video.
     </div>
-
-    <%#= render "layouts/single_upload", form: form, field_label: "Upload KYC Video (mp4 only)",
-                            for_model: "investor_kyc", field_name: "video",
-                            model: investor_kyc, allowed_types: ['video/*'].freeze %>
-
-
-  </div -->
-
-  <% if current_user.entity_id == investor_kyc.entity_id  %>
-
-    <div class="form-group">
-      <%= form.label :bank_verified %>
-      <%= form.check_box :bank_verified, class: "form-control form-checkbox"  %>
-    </div>
-    
-
-  <% end %>
-
-
-  <%= custom_form_fields(investor_kyc, form) %>
-
-  <%= render "layouts/multi_upload", form: form, title: "Documents",
-              for_model: "investor_kyc" %>
-
-  <div class="form-group">
-    <%= form.label :expiry_date %>
-    <%= form.date_field :expiry_date, class: "form-control"  %>
   </div>
 
-  <div class="form-group">
-    <%= form.label :comments %>
-    <%= form.text_area :comments, class: "form-control"  %>
+  <div class="row setup-content" id="step-2">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header"> 2. Fund Details </div>
+        <div class="card-body">
+
+          <div class="form-group">
+            <%= form.label :permanent_address %>
+            <%= form.text_area :address, class: "form-control"  %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :correspondence_address %>
+            <%= form.text_area :corr_address, class: "form-control"  %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :bank_account_number %>
+            <%= form.text_field :bank_account_number, class: "form-control"  %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :ifsc_code %>
+            <%= form.text_field :ifsc_code, class: "form-control"  %>
+          </div>
+
+          <% if current_user.entity_id == investor_kyc.entity_id  %>
+            <div class="form-group">
+              <%= form.label :bank_verified %>
+              <%= form.check_box :bank_verified, class: "form-control form-checkbox"  %>
+            </div>            
+          <% end %>
+
+          <div class="form-group">
+            <div>
+              <% sign_label="Upload Signature Image (jpg or png only)" %>
+              <% if investor_kyc.signature.present? %>
+              <% sign_label="Update Signature Image (jpg or png only)" %>
+                <%= link_to "Signature", investor_kyc.signature.url, target: "_blank" %>
+                <br>
+                <%= image_tag investor_kyc.signature_url,
+                  style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" %>
+              <% end %>
+              <%= render "layouts/single_upload", form: form, field_label: sign_label,
+                            for_model: "investor_kyc", field_name: "signature",
+                            model: investor_kyc, allowed_types: ['image/*'].freeze  %>
+            </div>
+
+
+
+            <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
+
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+
+  <div class="row setup-content" id="step-3">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header"> 1. Fund Details </div>
+        <div class="card-body">
+  
+          <%= custom_form_fields(investor_kyc, form) %>
+
+          <%# = render "layouts/multi_upload", form: form, title: "Documents",
+                      for_model: "investor_kyc" %>
+
+          <div class="form-group">
+            <%= form.label :expiry_date %>
+            <%= form.date_field :expiry_date, class: "form-control"  %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :comments %>
+            <%= form.text_area :comments, class: "form-control"  %>
+          </div>
+
+          <div class="form-group">
+            <%= form.submit "Save", {class: "btn btn-outline-primary btn-lg"}%>
+          </div>
+
+        </div>
+      </div>
+    </div>
   </div>
 <% end %>
+
+</div>

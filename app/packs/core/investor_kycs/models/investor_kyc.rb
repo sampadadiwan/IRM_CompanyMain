@@ -132,10 +132,13 @@ class InvestorKyc < ApplicationRecord
   def docs_completed?
     # The required_docs depend on the kyc_type
     required_docs = individual? ? entity.entity_setting.individual_kyc_doc_list : entity.entity_setting.non_individual_kyc_doc_list
-
-    required_docs = Set.new(required_docs.split(",").map(&:strip))
-    uploaded_docs = Set.new(documents.pluck(:name))
-    # Sometimes other docs are also uploaded - so we check for subset
-    required_docs.present? && required_docs.subset?(uploaded_docs)
+    if required_docs.present?
+      required_docs = Set.new(required_docs.split(",").map(&:strip))
+      uploaded_docs = Set.new(documents.pluck(:name))
+      # Sometimes other docs are also uploaded - so we check for subset
+      required_docs.present? && required_docs.subset?(uploaded_docs)
+    else
+      false
+    end
   end
 end
