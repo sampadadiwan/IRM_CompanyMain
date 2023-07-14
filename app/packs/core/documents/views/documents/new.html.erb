@@ -1,4 +1,29 @@
 <%= render "/layouts/alerts" %>
-<div>
-    <%= render "form", document: @document %>
-</div>
+<% if @document.owner && @document.owner.document_list.present? %>
+  <div class="row">
+    <div class="col-lg-7 mb-4">
+      <%= render "form", document: @document %>
+    </div>
+    <div class="col-lg-5 mb-4">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Documents To Upload
+          </h6>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered  dataTable">
+                <% (@document.owner.document_list - ["Other"]).each do |name| %>
+                <tr>
+                    <td><%= name %></td>
+                </tr>
+                <% end %>
+            </table>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <div>
+      <%= render "form", document: @document %>
+    </div>
+  <% end %>
