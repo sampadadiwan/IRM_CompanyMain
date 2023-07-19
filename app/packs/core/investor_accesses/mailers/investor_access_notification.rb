@@ -1,9 +1,6 @@
-class InvestorAccessNotification < Noticed::Base
+class InvestorAccessNotification < BaseNotification
   # Add your delivery methods
-  deliver_by :database
-  deliver_by :email, mailer: "InvestorAccessMailer", method: :notify_access, format: :email_data
-  deliver_by :whats_app, class: "DeliveryMethods::WhatsApp"
-  deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
+  deliver_by :email, mailer: "InvestorAccessMailer", method: :email_method, format: :email_data
 
   # Add required params
   param :investor_access_id

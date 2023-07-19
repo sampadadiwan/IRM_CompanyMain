@@ -1,9 +1,6 @@
-class HoldingNotification < Noticed::Base
+class HoldingNotification < BaseNotification
   # Add your delivery methods
-  deliver_by :database
   deliver_by :email, mailer: "HoldingMailer", method: :email_method, format: :email_data
-  deliver_by :whats_app, class: "DeliveryMethods::WhatsApp"
-  deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
 
   # Add required params
   param :holding_id

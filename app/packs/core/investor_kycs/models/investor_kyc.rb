@@ -82,7 +82,7 @@ class InvestorKyc < ApplicationRecord
     # InvestorKycMailer.with(id:).notify_kyc_updated.deliver_later
     users = User.where(email: entity.entity_setting.cc&.split(","))
     users.each do |user|
-      InvestorKycNotification.with(investor_kyc_id: id, type: "Updated").deliver_later(user)
+      InvestorKycNotification.with(entity_id:, investor_kyc_id: id, email_method: :notify_kyc_updated, msg: "KYC updated for #{full_name}").deliver_later(user)
     end
   end
 

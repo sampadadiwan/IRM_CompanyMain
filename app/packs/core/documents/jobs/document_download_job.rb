@@ -19,7 +19,7 @@ class DocumentDownloadJob < ApplicationJob
         end
 
         uploaded_document = upload(user, folder, zip_file.path)
-        DocumentDownloadNotification.with(document_id: uploaded_document.id, msg: "Zipfile of folder #{folder.name} created. Please download.").deliver(user)
+        DocumentDownloadNotification.with(entity_id:, document_id: uploaded_document.id, msg: "Zipfile of folder #{folder.name} created. Please download.").deliver(user)
       end
 
       Rails.logger.debug { "Removing tmp folder #{@tmp_dir}" }

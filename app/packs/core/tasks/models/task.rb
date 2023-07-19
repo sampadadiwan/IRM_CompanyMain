@@ -26,6 +26,6 @@ class Task < ApplicationRecord
 
   after_commit :send_notification
   def send_notification
-    TaskNotification.with(task_id: id).deliver(user)
+    TaskNotification.with(entity_id:, task_id: id).deliver(user)
   end
 end

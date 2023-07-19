@@ -3,11 +3,8 @@
 # TaskNotification.with(task_id: @task.id).deliver_later(current_user)
 # TaskNotification.with(task_id: @task.id).deliver(current_user)
 
-class TaskNotification < Noticed::Base
-  # Add your delivery methods
-  deliver_by :database
+class TaskNotification < BaseNotification
   deliver_by :email, mailer: "TasksMailer", method: :send_notification
-  deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
   # Add required params
   param :task_id
 

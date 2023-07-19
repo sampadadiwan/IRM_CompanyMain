@@ -10,7 +10,7 @@ module SecondarySaleNotifiers
                 employee_users("Buyer").uniq
 
     all_users.uniq.each do |user|
-      SecondarySaleNotification.with(secondary_sale_id: id, email: user.email, email_method: :notify_open_for_interests, msg: "Secondary Sale: #{name} by #{entity.name}, open for interests").deliver_later(user)
+      SecondarySaleNotification.with(entity_id:, secondary_sale_id: id, email: user.email, email_method: :notify_open_for_interests, msg: "Secondary Sale: #{name} by #{entity.name}, open for interests").deliver_later(user)
     end
   end
 
@@ -20,7 +20,7 @@ module SecondarySaleNotifiers
                 employee_users("Buyer").uniq
 
     all_users.uniq.each do |user|
-      SecondarySaleNotification.with(secondary_sale_id: id, email: user.email, email_method: :notify_closing_interests, msg: "Secondary Sale: #{name} by #{entity.name}, reminder to enter your interest").deliver_later(user)
+      SecondarySaleNotification.with(entity_id:, secondary_sale_id: id, email: user.email, email_method: :notify_closing_interests, msg: "Secondary Sale: #{name} by #{entity.name}, reminder to enter your interest").deliver_later(user)
     end
   end
 
@@ -30,7 +30,7 @@ module SecondarySaleNotifiers
                 employee_users("Seller").uniq
 
     all_users.uniq.each do |user|
-      SecondarySaleNotification.with(secondary_sale_id: id, email: user.email, email_method: :notify_open_for_offers, msg: "Secondary Sale: #{name} by #{entity.name}, open for offers").deliver_later(user)
+      SecondarySaleNotification.with(entity_id:, secondary_sale_id: id, email: user.email, email_method: :notify_open_for_offers, msg: "Secondary Sale: #{name} by #{entity.name}, open for offers").deliver_later(user)
     end
   end
 
@@ -40,7 +40,7 @@ module SecondarySaleNotifiers
                 employee_users("Seller").uniq
 
     all_users.uniq.each do |user|
-      SecondarySaleNotification.with(secondary_sale_id: id, email: user.email, email_method: :notify_closing_offers, msg: "Secondary Sale: #{name} by #{entity.name}, reminder to enter your offer").deliver_later(user)
+      SecondarySaleNotification.with(entity_id:, secondary_sale_id: id, email: user.email, email_method: :notify_closing_offers, msg: "Secondary Sale: #{name} by #{entity.name}, reminder to enter your offer").deliver_later(user)
     end
   end
 
@@ -49,13 +49,13 @@ module SecondarySaleNotifiers
     offers.verified.each do |offer|
       email_users = offer.offer_type == "Employee" ? [offer.user] : [offer.investor.approved_users]
       email_users.each do |user|
-        SecondarySaleNotification.with(secondary_sale_id: id, email_method: :notify_allocation_offers, msg: "Secondary Sale: #{name} allocation complete").deliver_later(user)
+        SecondarySaleNotification.with(entity_id:, secondary_sale_id: id, email_method: :notify_allocation_offers, msg: "Secondary Sale: #{name} allocation complete").deliver_later(user)
       end
     end
 
     interests.short_listed.each do |interest|
       interest.investor.approved_users.each do |user|
-        SecondarySaleNotification.with(secondary_sale_id: id, email_method: :notify_allocation_interests, msg: "Secondary Sale: #{name} allocation complete").deliver_later(user)
+        SecondarySaleNotification.with(entity_id:, secondary_sale_id: id, email_method: :notify_allocation_interests, msg: "Secondary Sale: #{name} allocation complete").deliver_later(user)
       end
     end
   end
@@ -63,7 +63,7 @@ module SecondarySaleNotifiers
   def notify_spa_buyers
     interests.short_listed.not_final_agreement.each do |interest|
       interest.investor.approved_users.each do |user|
-        SecondarySaleNotification.with(secondary_sale_id: id, email_method: :notify_spa_interests, msg: "Secondary Sale: #{name}, please accept uploaded SPA.").deliver_later(user)
+        SecondarySaleNotification.with(entity_id:, secondary_sale_id: id, email_method: :notify_spa_interests, msg: "Secondary Sale: #{name}, please accept uploaded SPA.").deliver_later(user)
       end
     end
   end
@@ -73,7 +73,7 @@ module SecondarySaleNotifiers
     offers.verified.each do |offer|
       email_users = offer.offer_type == "Employee" ? [offer.user] : [offer.investor.approved_users]
       email_users.each do |user|
-        SecondarySaleNotification.with(secondary_sale_id: id, email_method: :notify_spa_offers, msg: "Secondary Sale: #{name}, please accept uploaded SPA.").deliver_later(user)
+        SecondarySaleNotification.with(entity_id:, secondary_sale_id: id, email_method: :notify_spa_offers, msg: "Secondary Sale: #{name}, please accept uploaded SPA.").deliver_later(user)
       end
     end
   end

@@ -81,7 +81,7 @@ class Document < ApplicationRecord
 
   def send_notification_for_owner
     notification_users.each do |user|
-      DocumentNotification.with(document_id: id).deliver_later(user)
+      DocumentNotification.with(entity_id:, document_id: id).deliver_later(user)
     end
   end
 

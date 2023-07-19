@@ -69,7 +69,7 @@ class CapitalCall < ApplicationRecord
   def notify_capital_call
     capital_remittances.pending.each do |cr|
       cr.investor.approved_users.each do |user|
-        CapitalRemittanceNotification.with(capital_remittance_id: cr.id, email_method: :notify_capital_remittance, msg: "New Capital Call: #{name}").deliver_later(user)
+        CapitalRemittanceNotification.with(entity_id:, capital_remittance_id: cr.id, email_method: :notify_capital_remittance, msg: "New Capital Call: #{name}").deliver_later(user)
       end
     end
   end
@@ -77,7 +77,7 @@ class CapitalCall < ApplicationRecord
   def reminder_capital_call
     capital_remittances.pending.each do |cr|
       cr.investor.approved_users.each do |user|
-        CapitalRemittanceNotification.with(capital_remittance_id: cr.id, email_method: :reminder_capital_remittance, msg: "Reminder for Capital Call: #{name}").deliver_later(user)
+        CapitalRemittanceNotification.with(entity_id:, capital_remittance_id: cr.id, email_method: :reminder_capital_remittance, msg: "Reminder for Capital Call: #{name}").deliver_later(user)
       end
     end
   end

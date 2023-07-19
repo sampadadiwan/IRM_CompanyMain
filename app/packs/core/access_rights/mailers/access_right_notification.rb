@@ -1,9 +1,6 @@
-class AccessRightNotification < Noticed::Base
+class AccessRightNotification < BaseNotification
   # Add your delivery methods
-  deliver_by :database
   deliver_by :email, mailer: "AccessRightsMailer", method: :send_notification, format: :email_data, delay: rand(30).seconds
-  deliver_by :whats_app, class: "DeliveryMethods::WhatsApp", delay: rand(30).seconds
-  deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
 
   # Add required params
   param :access_right_id

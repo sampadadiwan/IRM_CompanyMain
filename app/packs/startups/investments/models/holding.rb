@@ -60,22 +60,22 @@ class Holding < ApplicationRecord
   end
 
   def notify_approval
-    HoldingNotification.with(holding_id: id, email_method: :notify_approval, msg: "Your #{investment_instrument} have been approved").deliver_later(user)
+    HoldingNotification.with(entity_id:, holding_id: id, email_method: :notify_approval, msg: "Your #{investment_instrument} have been approved").deliver_later(user)
   end
 
   def notify_cancellation
     label = cancelled ? "Cancelled" : nil
     label ||= lapsed ? "Lapsed" : "Updated"
 
-    HoldingNotification.with(holding_id: id, email_method: :notify_cancellation, msg: "Your #{investment_instrument} have been #{label}").deliver_later(user)
+    HoldingNotification.with(entity_id:, holding_id: id, email_method: :notify_cancellation, msg: "Your #{investment_instrument} have been #{label}").deliver_later(user)
   end
 
   def notify_lapsed
-    HoldingNotification.with(holding_id: id, email_method: :notify_lapsed, msg: "Your #{investment_instrument} have lapsed").deliver_later(user)
+    HoldingNotification.with(entity_id:, holding_id: id, email_method: :notify_lapsed, msg: "Your #{investment_instrument} have lapsed").deliver_later(user)
   end
 
   def notify_lapse_upcoming
-    HoldingNotification.with(holding_id: id, email_method: :notify_lapse_upcoming, msg: "Your #{investment_instrument} will lapse in #{days_to_lapse} days").deliver_later(user)
+    HoldingNotification.with(entity_id:, holding_id: id, email_method: :notify_lapse_upcoming, msg: "Your #{investment_instrument} will lapse in #{days_to_lapse} days").deliver_later(user)
   end
 
   before_save :update_quantity

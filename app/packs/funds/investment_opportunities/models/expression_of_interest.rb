@@ -45,7 +45,7 @@ class ExpressionOfInterest < ApplicationRecord
   before_save :notify_approved
   def notify_approved
     investor.approved_users.each do |user|
-      ExpressionOfInterestNotification.with(expression_of_interest_id: id).deliver_later(user) if approved && approved_changed?
+      ExpressionOfInterestNotification.with(entity_id:, expression_of_interest_id: id).deliver_later(user) if approved && approved_changed?
     end
   end
 

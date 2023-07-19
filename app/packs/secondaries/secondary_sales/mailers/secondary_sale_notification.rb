@@ -1,17 +1,10 @@
-class SecondarySaleNotification < Noticed::Base
+class SecondarySaleNotification < BaseNotification
   # Add your delivery methods
-  deliver_by :database
   deliver_by :email, mailer: "SecondarySaleMailer", method: :email_method, format: :email_data
-  deliver_by :whats_app, class: "DeliveryMethods::WhatsApp"
-  deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
 
   # Add required params
   param :secondary_sale_id
   param :email_method
-
-  def email_method
-    params[:email_method]
-  end
 
   def email_data
     {

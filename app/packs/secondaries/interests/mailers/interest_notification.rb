@@ -1,9 +1,6 @@
-class InterestNotification < Noticed::Base
+class InterestNotification < BaseNotification
   # Add your delivery methods
-  deliver_by :database
   deliver_by :email, mailer: "InterestMailer", method: :email_method, format: :email_data
-  deliver_by :whats_app, class: "DeliveryMethods::WhatsApp"
-  deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
 
   # Add required params
   param :interest_id

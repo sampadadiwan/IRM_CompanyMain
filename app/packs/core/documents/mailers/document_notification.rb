@@ -3,12 +3,9 @@
 # DocumentNotification.with(document_id: @document.id, msg: "Please View").deliver_later(current_user)
 # DocumentNotification.with(document_id: @document.id, msg: "Please View").deliver(current_user)
 
-class DocumentNotification < Noticed::Base
+class DocumentNotification < BaseNotification
   # Add your delivery methods
-  deliver_by :database
   deliver_by :email, mailer: "DocumentMailer", method: :notify_new_document, format: :email_data
-  deliver_by :whats_app, class: "DeliveryMethods::WhatsApp"
-  deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
 
   # Add required params
   param :document_id

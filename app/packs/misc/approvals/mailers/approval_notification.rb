@@ -3,12 +3,9 @@
 # ApprovalNotification.with(approval_id: @approval.id, msg: "Please View").deliver_later(current_user)
 # ApprovalNotification.with(approval_id: @approval.id, msg: "Please View").deliver(current_user)
 
-class ApprovalNotification < Noticed::Base
+class ApprovalNotification < BaseNotification
   # Add your delivery methods
-  deliver_by :database
   deliver_by :email, mailer: "ApprovalMailer", method: :email_method, format: :email_data
-  deliver_by :whats_app, class: "DeliveryMethods::WhatsApp"
-  deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
 
   # Add required params
   param :approval_response_id

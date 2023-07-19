@@ -12,7 +12,7 @@ class Reminder < ApplicationRecord
   def send_reminder
     email.split(",").each do |user_email|
       user = User.find_by(email: user_email.strip)
-      ReminderNotification.with(reminder_id: id).deliver_later(user) if user
+      ReminderNotification.with(entity_id:, reminder_id: id).deliver_later(user) if user
     end
   end
 end

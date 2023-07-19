@@ -98,7 +98,7 @@ class InvestorAccess < ApplicationRecord
   end
 
   def send_notification
-    InvestorAccessNotification.with(investor_access_id: id).deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
+    InvestorAccessNotification.with(entity_id:, investor_access_id: id, email_method: :notify_access, msg: "Investor Access Granted to #{entity.name}").deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
   end
 
   def send_notification_if_changed
@@ -106,6 +106,6 @@ class InvestorAccess < ApplicationRecord
   end
 
   def notify_kyc_required
-    InvestorKycNotification.with(investor_access_id: id, type: "Create").deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
+    InvestorAccessNotification.with(entity_id:, investor_access_id: id, email_method: :notify_kyc_required, msg: "Investor KYC required for #{entity.name}").deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
   end
 end

@@ -3,12 +3,9 @@
 # CapitalDistributionPaymentNotification.with(capital_distribution_payment_id: @capital_distribution_payment.id, msg: "Please View").deliver_later(current_user)
 # CapitalDistributionPaymentNotification.with(capital_distribution_payment_id: @capital_distribution_payment.id, msg: "Please View").deliver(current_user)
 
-class CapitalDistributionPaymentNotification < Noticed::Base
+class CapitalDistributionPaymentNotification < BaseNotification
   # Add your delivery methods
-  deliver_by :database
   deliver_by :email, mailer: "CapitalDistributionPaymentsMailer", method: :send_notification, format: :email_data
-  deliver_by :whats_app, class: "DeliveryMethods::WhatsApp"
-  deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
 
   # Add required params
   param :capital_distribution_payment_id

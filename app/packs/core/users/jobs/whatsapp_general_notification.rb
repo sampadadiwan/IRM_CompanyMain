@@ -14,9 +14,9 @@ class WhatsappGeneralNotification < ApplicationJob
       return
     end
 
-    whnos = ApplicationMailer.new.sandbox_whatsapp_numbers(user, [user.phone_with_call_code])
-    whnos.each do |whno|
-      self.class.send_message(entity_name, message, link, whno)
+    whatsapp_numbers = ApplicationMailer.new.sandbox_whatsapp_numbers(user, [user.phone_with_call_code])
+    whatsapp_numbers.each do |whatsapp_number|
+      self.class.send_message(entity_name, message, link, whatsapp_number)
     end
   end
 

@@ -28,11 +28,11 @@ class ApprovalResponse < ApplicationRecord
 
       if status == "Pending"
         investor.approved_users.each do |user|
-          ApprovalNotification.with(approval_response_id: id, email_method: :notify_new_approval, msg: "Approval Required: #{approval.title}").deliver_later(user) unless notification_sent
+          ApprovalNotification.with(entity_id:, approval_response_id: id, email_method: :notify_new_approval, msg: "Approval Required: #{approval.title}").deliver_later(user) unless notification_sent
         end
       else
         investor.approved_users.each do |user|
-          ApprovalNotification.with(approval_response_id: id, email_method: :notify_approval_response, msg: "Approval #{status} by #{investor.investor_name}: #{approval.title}").deliver_later(user)
+          ApprovalNotification.with(entity_id:, approval_response_id: id, email_method: :notify_approval_response, msg: "Approval #{status} by #{investor.investor_name}: #{approval.title}").deliver_later(user)
         end
       end
 

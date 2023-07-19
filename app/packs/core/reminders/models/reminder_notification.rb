@@ -3,12 +3,9 @@
 # ReminderNotification.with(reminder_id: @reminder.id, msg: "Please View").deliver_later(current_user)
 # ReminderNotification.with(reminder_id: @reminder.id, msg: "Please View").deliver(current_user)
 
-class ReminderNotification < Noticed::Base
+class ReminderNotification < BaseNotification
   # Add your delivery methods
-  deliver_by :database
   deliver_by :email, mailer: "ReminderMailer", method: :send_reminder, format: :email_data
-  deliver_by :whats_app, class: "DeliveryMethods::WhatsApp"
-  deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
 
   # Add required params
   param :reminder_id

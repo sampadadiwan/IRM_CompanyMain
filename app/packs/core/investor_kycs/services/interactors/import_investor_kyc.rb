@@ -2,7 +2,7 @@ class ImportInvestorKyc < ImportUtil
   include Interactor
 
   STANDARD_HEADERS = ["Investor", "Full Name", "PAN", "Address",
-                      "Bank Account", "IFSC Code", "Verified"].freeze
+                      "Bank Account", "IFSC Code", "Verified", "Update Only"].freeze
 
   def standard_headers
     STANDARD_HEADERS
