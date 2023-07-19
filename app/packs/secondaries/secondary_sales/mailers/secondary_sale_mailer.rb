@@ -3,20 +3,17 @@ class SecondarySaleMailer < ApplicationMailer
   helper ApplicationHelper
 
   def notify_open_for_interests
-    @secondary_sale = SecondarySale.find(params[:id])
-    email = params[:email]
+    @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+    email = User.find(params[:user_id]).email
 
-    Rails.logger.debug { "notify_open_for_interests: sending mail to #{email}" }
     mail(from: from_email(@secondary_sale.entity), to: sandbox_email(@secondary_sale, email),
          cc: @secondary_sale.entity.entity_setting.cc,
          subject: "Secondary Sale: #{@secondary_sale.name} by #{@secondary_sale.entity.name}, open for interests")
   end
 
   def notify_closing_interests
-    @secondary_sale = SecondarySale.find(params[:id])
-    email = params[:email]
-
-    Rails.logger.debug { "notify_closing_interests: sending mail to #{email}" }
+    @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+    email = User.find(params[:user_id]).email
 
     mail(from: from_email(@secondary_sale.entity), to: sandbox_email(@secondary_sale, email),
          cc: @secondary_sale.entity.entity_setting.cc,
@@ -24,10 +21,8 @@ class SecondarySaleMailer < ApplicationMailer
   end
 
   def notify_open_for_offers
-    @secondary_sale = SecondarySale.find(params[:id])
-    email = params[:email]
-
-    Rails.logger.debug { "notify_open_for_offers: Sending mail to #{email}" }
+    @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+    email = User.find(params[:user_id]).email
 
     mail(from: from_email(@secondary_sale.entity),
          to: sandbox_email(@secondary_sale, email),
@@ -36,11 +31,8 @@ class SecondarySaleMailer < ApplicationMailer
   end
 
   def notify_closing_offers
-    @secondary_sale = SecondarySale.find(params[:id])
-
-    email = params[:email]
-
-    Rails.logger.debug { "notify_closing_offers: Sending mail to #{email}" }
+    @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+    email = User.find(params[:user_id]).email
 
     mail(from: from_email(@secondary_sale.entity),
          to: sandbox_email(@secondary_sale, email),
@@ -49,11 +41,8 @@ class SecondarySaleMailer < ApplicationMailer
   end
 
   def notify_allocation_offers
-    @secondary_sale = SecondarySale.find(params[:id])
-
-    email = params[:email]
-
-    Rails.logger.debug { "notify_closing_offers: Sending mail to #{email}" }
+    @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+    email = User.find(params[:user_id]).email
 
     mail(from: from_email(@secondary_sale.entity),
          to: sandbox_email(@secondary_sale, email),
@@ -62,19 +51,18 @@ class SecondarySaleMailer < ApplicationMailer
   end
 
   def notify_allocation_interests
-    @secondary_sale = SecondarySale.find(params[:id])
+    @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+    email = User.find(params[:user_id]).email
 
-    interests_emails = @secondary_sale.interests.short_listed.collect(&:notification_emails).flatten
-
-    all_emails = interests_emails
-    mail(from: from_email(@secondary_sale.entity), to: ENV.fetch('SUPPORT_EMAIL', nil),
-         bcc: sandbox_email(@secondary_sale, all_emails.join(',')),
+    mail(from: from_email(@secondary_sale.entity),
+         to: sandbox_email(@secondary_sale, email),
+         cc: @secondary_sale.entity.entity_setting.cc,
          subject: "Secondary Sale: #{@secondary_sale.name} allocation complete.")
   end
 
   def notify_spa_offers
-    @secondary_sale = SecondarySale.find(params[:id])
-    email = params[:email]
+    @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+    email = User.find(params[:user_id]).email
 
     Rails.logger.debug { "notify_spa_offers: Sending mail to #{email}" }
 
@@ -85,8 +73,8 @@ class SecondarySaleMailer < ApplicationMailer
   end
 
   def notify_spa_interests
-    @secondary_sale = SecondarySale.find(params[:id])
-    email = params[:email]
+    @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+    email = User.find(params[:user_id]).email
 
     Rails.logger.debug { "notify_spa_interests: Sending mail to #{email}" }
 

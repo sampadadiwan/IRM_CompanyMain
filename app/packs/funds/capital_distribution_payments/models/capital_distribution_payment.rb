@@ -83,7 +83,11 @@ class CapitalDistributionPayment < ApplicationRecord
 
   after_commit :send_notification, if: :completed
   def send_notification
-    CapitalDistributionPaymentsMailer.with(id:).send_notification.deliver_later if saved_change_to_completed? && capital_distribution.approved && !capital_distribution.manual_generation
+    if saved_change_to_completed? && capital_distribution.approved && !capital_distribution.manual_generation
+      investor.approved_users.each do |user|
+        CapitalDistributionPaymentNotification.with(capital_distribution_payment_id: id).deliver_later(user)
+      end
+    end
   end
 
   def to_s

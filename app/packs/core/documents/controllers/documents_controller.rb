@@ -37,6 +37,9 @@ class DocumentsController < ApplicationController
       @documents = policy_scope(Document)
       authorize(Document)
     end
+
+    @folder = Folder.find(params[:folder_id]) if params[:folder_id].present?
+
     # Filter by owner_tag
     @documents = @documents.where(owner_tag: params[:owner_tag]) if params[:owner_tag].present?
     # This is specifically for non company_admins
@@ -245,6 +248,7 @@ class DocumentsController < ApplicationController
     params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id, :tag_list, :template,
                                      :signature_enabled, :public_visibility, :send_email, :display_on_page,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag,
-                                     :tag_list, :folder_id, :file, properties: {},  e_signatures_attributes: %i[id user_id label signature_type notes _destroy])
+                                     :tag_list, :folder_id, :file, properties: {},  e_signatures_attributes: %i[id user_id label signature_type notes _destroy],
+                                                                   stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy])
   end
 end

@@ -45,16 +45,28 @@ class InvestmentOpportunity < ApplicationRecord
     %w[Template Document]
   end
 
+  def document_list
+    nil
+  end
+
   def investors
     Investor.owner_access_rights(self, nil)
   end
 
   def notify_open_for_interests
-    InvestmentOpportunityMailer.with(id:).notify_open_for_interests.deliver_later
+    investors.each do |investor|
+      investor.approved_users.each do |user|
+        InvestmentOpportunityNotification.with(investment_opportunity_id: id, email_method: :notify_open_for_interests, msg: "New Investment Opportunity: #{name}").deliver_later(user)
+      end
+    end
   end
 
   def notify_allocation
-    InvestmentOpportunityMailer.with(id:).notify_allocation.deliver_later
+    investors.each do |investor|
+      investor.approved_users.each do |user|
+        InvestmentOpportunityNotification.with(investment_opportunity_id: id, email_method: :notify_allocation, msg: "Allocation completed for Investment Opportunity: #{name}").deliver_later(user)
+      end
+    end
   end
 
   def percentage_raised

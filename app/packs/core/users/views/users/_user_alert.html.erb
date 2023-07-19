@@ -1,5 +1,5 @@
 <div id="user_alert" class="page_alerts">
     <div class="alert alert-<%= user_alert.level %>">
-        <%= user_alert.message %>
+        <%= user_alert.message.html_safe %>
     </div>
 </div>

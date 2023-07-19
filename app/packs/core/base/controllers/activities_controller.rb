@@ -1,4 +1,4 @@
-class NotificationsController < ApplicationController
+class ActivitiesController < ApplicationController
   after_action :verify_policy_scoped, except: :index
 
   def index

@@ -92,7 +92,7 @@ class CapitalCommitmentDocGenerator
     file_name = "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf"
     Rails.logger.debug { "Uploading generated file #{file_name} to folio #{capital_commitment.folio_id} " }
 
-    generated_document = Document.new(doc_template.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
+    generated_document = Document.new(doc_template.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id", "display_on_page"))
 
     generated_document.name = doc_template.name
     generated_document.file = File.open(file_name, "rb")
@@ -102,6 +102,7 @@ class CapitalCommitmentDocGenerator
     generated_document.send_email = false
 
     generated_document.e_signatures = doc_template.e_signatures_for(capital_commitment) || []
+    generated_document.stamp_papers = doc_template.stamp_papers_for(capital_commitment) || []
 
     generated_document.save
   end

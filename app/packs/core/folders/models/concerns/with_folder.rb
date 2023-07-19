@@ -15,6 +15,10 @@ module WithFolder
     :regular
   end
 
+  def document_list
+    nil
+  end
+
   def document_folder
     super || setup_document_folder
   end

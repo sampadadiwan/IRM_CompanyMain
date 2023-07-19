@@ -34,7 +34,17 @@
         </td>
       </tr>
 
-      <% if current_user %>
+      <tr id="approved">
+        <td>
+          Approved
+        </td>
+        <td class="approved">
+          <span class="badge <%= @offer.approved ? 'bg-success' : 'bg-warning' %>">
+            <%= @offer.approved ?  "Yes" : "No" %>
+          </span>
+        </td>
+      </tr>
+      
       <tr>
         <td>
           Quantity
@@ -43,6 +53,9 @@
           <%= @offer.quantity %>
         </td>
       </tr>
+
+      <% if current_user %>
+      
       <tr>
         <td>
           Percentage
@@ -67,17 +80,7 @@
           <%= @offer.notes %>
         </td>
       </tr>
-      <tr id="approved">
-        <td>
-          Approved
-        </td>
-        <td class="approved">
-          <span class="badge <%= @offer.approved ? 'bg-success' : 'bg-warning' %>">
-            <%= @offer.approved ?  "Yes" : "No" %>
-          </span>
-        </td>
-
-      </tr>
+      
 
       <% if @offer.PAN  || params[:debug].present? %>
         <tr>

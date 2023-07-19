@@ -130,23 +130,6 @@ class AccessRight < ApplicationRecord
     emails
   end
 
-  # Emails of all holding investor users
-  def holding_employees_emails
-    emails = []
-
-    if access_to_investor_id.present? && investor.is_holdings_entity
-      # Get all the investor employees emails
-      emails = investor.investor_entity.employees.collect(&:email)
-    elsif access_to_category.present?
-      # Get all the investors entity employees and get the email addresses
-      Investor.where(entity_id:, category: access_to_category, is_holdings_entity: true).find_each do |investor|
-        emails += investor.investor_entity.employees.collect(&:email)
-      end
-    end
-
-    emails
-  end
-
   def employee_users(metadata)
     User.joins(entity: :investees).where("investors.is_holdings_entity=? and investors.entity_id=?", true, entity_id).merge(Investor.with_access_rights(self, metadata))
   end
@@ -162,13 +145,21 @@ class AccessRight < ApplicationRecord
   after_create_commit :send_notification
   def send_notification
     if notify && (owner_type != "Document" || owner.send_email)
-      if Rails.env.test?
-        AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later
-      else
-        # Send notification for all but Documents should not get notification unless send_email flag is set
-        # Add jitter to the emails, so we dont flood aws SES
-        AccessRightsMailer.with(access_right_id: id).notify_access.deliver_later(wait_until: rand(60).seconds.from_now)
+      users.each do |user|
+        AccessRightNotification.with(access_right_id: id).deliver_later(user)
       end
+    end
+  end
+
+  def users
+    if user_id.present?
+      [user]
+    elsif access_to_investor_id.present?
+      investor.approved_users
+    elsif access_to_category.present?
+      User.joins(investor_accesses: :investor).where(entity_id:, 'investors.category': access_to_category).where("investor_accesses.approved = ? OR investors.is_holdings_entity = ?", true, true)
+    else
+      []
     end
   end
 

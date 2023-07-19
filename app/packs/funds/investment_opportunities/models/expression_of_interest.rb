@@ -44,7 +44,9 @@ class ExpressionOfInterest < ApplicationRecord
 
   before_save :notify_approved
   def notify_approved
-    ExpressionOfInterestMailer.with(id:).notify_approved.deliver_later if approved && approved_changed?
+    investor.approved_users.each do |user|
+      ExpressionOfInterestNotification.with(expression_of_interest_id: id).deliver_later(user) if approved && approved_changed?
+    end
   end
 
   def folder_path

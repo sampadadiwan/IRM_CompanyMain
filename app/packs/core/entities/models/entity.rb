@@ -92,6 +92,9 @@ class Entity < ApplicationRecord
   has_many :portfolio_investments
   has_many :aggregate_portfolio_investments
 
+  # Noticed gem
+  has_many :notifications, as: :recipient, dependent: :destroy
+
   include FileUploader::Attachment(:logo)
 
   monetize :total_investments, as: "total", with_model_currency: :currency

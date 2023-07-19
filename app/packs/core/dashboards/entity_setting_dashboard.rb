@@ -20,6 +20,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     aml_enabled: Field::BooleanEmoji,
     ckyc_kra_enabled: Field::BooleanEmoji,
     fi_code: Field::String,
+    stamp_paper_tags: Field::String,
     entity: Field::BelongsTo,
     last_snapshot_on: Field::Date,
     snapshot_frequency_months: Field::Number,
@@ -42,6 +43,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     aml_enabled
     ckyc_kra_enabled
     fi_code
+    stamp_paper_tags
     entity
     snapshot_frequency_months
     last_snapshot_on
@@ -68,6 +70,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     aml_enabled
     ckyc_kra_enabled
     fi_code
+    stamp_paper_tags
     snapshot_frequency_months
     last_snapshot_on
     trial
@@ -90,6 +93,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     aml_enabled
     ckyc_kra_enabled
     fi_code
+    stamp_paper_tags
     last_snapshot_on
     snapshot_frequency_months
     trial

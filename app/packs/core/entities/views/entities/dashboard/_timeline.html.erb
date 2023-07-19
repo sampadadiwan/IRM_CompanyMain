@@ -3,7 +3,7 @@
     
     <% if PublicActivity::Activity.where(entity_id: current_user.entity_id).count > 0 %>
         <% activities = PublicActivity::Activity.where(entity_id: current_user.entity_id).includes(:trackable, :owner).order(id: :desc).limit(10) %>            
-        <%= render "notifications/timeline", activities: activities if activities %>
+        <%= render "activities/timeline", activities: activities if activities %>
     <% end %>
 
 <% end %>

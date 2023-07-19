@@ -97,6 +97,10 @@ Then('there is an investor {string} for the entity {string} with investor kyc an
   sleep(3)
   click_on("Select CKYC Data")
   sleep(3)
+  click_on("Next")
+  sleep(1)
+  click_on("Next")
+  sleep(1)  
   click_on("Save")
   sleep(3)
   InvestorKyc.where(PAN: pan).last.aml_reports.count.should > 0

@@ -336,6 +336,8 @@ GEM
       warden (~> 1.2.3)
     diff-lcs (1.5.0)
     docile (1.4.0)
+    domain_name (0.5.20190701)
+      unf (>= 0.0.5, < 1.0.0)
     dotenv (2.8.1)
     dotenv-rails (2.8.1)
       dotenv (= 2.8.1)
@@ -398,6 +400,9 @@ GEM
     faraday-retry (1.0.3)
     fastimage (2.2.6)
     ffi (1.15.5)
+    ffi-compiler (1.0.1)
+      ffi (>= 1.0.0)
+      rake
     foreman (0.87.2)
     globalid (1.1.0)
       activesupport (>= 5.0)
@@ -437,6 +442,14 @@ GEM
     hightop (0.3.0)
       activesupport (>= 5.2)
     htmlentities (4.3.4)
+    http (5.1.1)
+      addressable (~> 2.8)
+      http-cookie (~> 1.0)
+      http-form_data (~> 2.2)
+      llhttp-ffi (~> 0.4.0)
+    http-cookie (1.0.5)
+      domain_name (~> 0.5)
+    http-form_data (2.3.0)
     httparty (0.21.0)
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
@@ -488,6 +501,9 @@ GEM
     letter_opener (1.8.1)
       launchy (>= 2.2, < 3)
     libreconv (0.9.5)
+    llhttp-ffi (0.4.0)
+      ffi-compiler (~> 1.0)
+      rake (~> 13.0)
     loofah (2.21.3)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
@@ -496,6 +512,8 @@ GEM
       net-imap
       net-pop
       net-smtp
+    mail-logger (0.0.4)
+      mail
     marcel (1.0.2)
     marginalia (1.11.1)
       actionpack (>= 5.2)
@@ -540,6 +558,9 @@ GEM
     nio4r (2.5.9)
     nokogiri (1.15.2-x86_64-linux)
       racc (~> 1.4)
+    noticed (1.6.3)
+      http (>= 4.0.0)
+      rails (>= 5.2.0)
     odf-report (0.7.3)
       mime-types
       nokogiri (>= 1.10.0)
@@ -766,6 +787,9 @@ GEM
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     uber (0.1.0)
+    unf (0.1.4)
+      unf_ext
+    unf_ext (0.0.8.2)
     unicode-display_width (2.4.2)
     uniform_notifier (1.16.0)
     uppy-s3_multipart (1.2.1)
@@ -872,12 +896,14 @@ DEPENDENCIES
   kaminari
   letter_opener
   libreconv
+  mail-logger
   marcel
   marginalia (~> 1.11)
   money-rails (~> 1.12)
   mysql2 (~> 0.5)
   net-ssh (= 7.0.0.beta1)
   newrelic_rpm
+  noticed
   odf-report
   overcommit (~> 0.58.0)
   packwerk

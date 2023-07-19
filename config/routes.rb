@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   resources :e_signatures
+  resources :stamp_papers
   resources :investor_notice_items
   resources :kpis
   resources :kpi_reports
@@ -252,7 +253,9 @@ Rails.application.routes.draw do
   resources :access_rights do
     get 'search', on: :collection
   end
-  resources :notifications
+  resources :notifications do
+    get 'mark_as_read', on: :member
+  end
 
   resources :messages do
     post 'mark_as_task', on: :member

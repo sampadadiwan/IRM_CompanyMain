@@ -49,7 +49,11 @@ class Excercise < ApplicationRecord
   end
 
   def notify_excercise
-    ExcerciseMailer.with(excercise_id: id).notify_excercise.deliver_later
+    ExcerciseNotification.with(excercise_id: id, email_method: :notify_excercise, msg: "Exercise of Option").deliver_later(user)
+  end
+
+  def notify_approval
+    ExcerciseNotification.with(excercise_id: id, email_method: :notify_approval, msg: "Exercise of Option Approved").deliver_later(user)
   end
 
   def folder_path

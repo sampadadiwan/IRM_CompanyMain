@@ -72,7 +72,7 @@ class DigioEsignHelper
   #   private
 
   def prepare_data(doc, file_name, encoded_file, display_on_page = "last")
-    {
+    data = {
       signers: prep_user_data(doc.e_signatures),
       expire_in_days: 10,
       notify_signers: true,
@@ -83,6 +83,22 @@ class DigioEsignHelper
       file_name:,
       file_data: encoded_file
     }
+    if doc.stamp_papers.present?
+      tags = {}
+      doc.stamp_papers.each do |stamp_paper|
+        stamp_paper.tags.split(",").each do |tag|
+          tags[tag.split(":").first.strip] = tag.split(":").last.strip.to_i
+        end
+      end
+      stamp_paper = doc.stamp_papers.first
+      data[:estamp_request] = {
+        tags:,
+        sign_on_page: stamp_paper.sign_on_page.upcase,
+        note_content: stamp_paper.notes,
+        note_on_page: stamp_paper.note_on_page.upcase
+      }
+    end
+    data
   end
 
   def prep_user_data(esigns)

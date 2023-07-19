@@ -15,6 +15,8 @@ gem "audited", "~> 5.0"
 gem "mysql2", "~> 0.5"
 
 gem "json2table"
+gem 'mail-logger'
+gem "noticed"
 
 # To convert Doc into PDF
 gem 'libreconv'

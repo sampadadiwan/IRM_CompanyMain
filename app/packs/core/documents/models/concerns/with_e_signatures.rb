@@ -4,9 +4,10 @@ module WithESignatures
   included do
     # Document can have many e_signatures attached
     has_many :e_signatures, as: :owner, dependent: :destroy
+    has_many :stamp_papers, as: :owner, dependent: :destroy
     # Template can be setup with e_signatures required for generated docs
-    accepts_nested_attributes_for :e_signatures, allow_destroy: true
-    validates_associated :e_signatures
+    accepts_nested_attributes_for :e_signatures, :stamp_papers, allow_destroy: true
+    validates_associated :e_signatures, :stamp_papers
   end
 
   def esign?
@@ -33,8 +34,8 @@ module WithESignatures
     end
   end
 
-  def stamp_paper?
-    owner.respond_to?(:stamp_paper?) && owner&.stamp_paper?
+  def stamp_papers_for(model)
+    stamp_papers.map(&:dup) if stamp_papers && model
   end
 
   # This can be called from the controller to send the document for e-signing

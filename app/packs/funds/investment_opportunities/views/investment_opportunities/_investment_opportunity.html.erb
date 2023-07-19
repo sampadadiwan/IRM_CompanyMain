@@ -3,7 +3,7 @@
     <%= investment_opportunity.company_name %>
   </td>
   <td>
-    <%= raw investment_opportunity.tag_list.split(",").collect{|tag| link_to(tag, search_investment_opportunities_path(query: tag))}.join(", ") if investment_opportunity.tag_list.present? %>
+    <%= investment_opportunity.tag_list %>
   </td>
   <td>
     <%= money_to_currency investment_opportunity.fund_raise_amount, params %>

@@ -5,7 +5,7 @@ class NotifyExcerciseApproval
     Rails.logger.debug "Interactor: NotifyExcerciseApproval called"
 
     if context.excercise.present?
-      ExcerciseMailer.with(excercise_id: context.excercise.id).notify_approval.deliver_later
+      context.excercise.notify_approval
     else
       Rails.logger.debug "No Excercise specified"
       context.fail!(message: "No Excercise specified")

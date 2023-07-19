@@ -3,10 +3,11 @@ class ExpressionOfInterestMailer < ApplicationMailer
   helper ApplicationHelper
 
   def notify_approved
-    @expression_of_interest = ExpressionOfInterest.find(params[:id])
+    @expression_of_interest = ExpressionOfInterest.find(params[:expression_of_interest_id])
+    @user = User.find(params[:user_id])
 
     # Get all emails of investors & holding company employees
-    emails = sandbox_email(@expression_of_interest, @expression_of_interest.user.email)
+    emails = sandbox_email(@expression_of_interest, @user.email)
     @entity = @expression_of_interest.entity
     cc = @entity.entity_setting.cc
     reply_to = cc

@@ -54,9 +54,15 @@ export default class extends Controller {
     if($("#document_template").is(':checked')) {
       $("#add_signature_btn").show();
       $("#sign_display_on_page").show();
+      $("#add_stamp_paper_btn").show();
+      $("#stamp_papers").show();
+      $("#e_signatures").show();
     } else {
       $("#add_signature_btn").hide();
       $("#sign_display_on_page").hide();
+      $("#add_stamp_paper_btn").hide();
+      $("#stamp_papers").hide();
+      $("#e_signatures").hide();
     }
   }
 

@@ -5,7 +5,7 @@
 <td>
     <%= investor.pan %>
 </td>  
-<td class="hideMobP hideTab">
+<td>
   <%= raw investor.tag_list&.split(",").collect{|tag| link_to(tag, search_investors_path(query: tag))}.join(", ") if investor.tag_list %>
 </td>  
 <td>
@@ -14,7 +14,7 @@
 <td>
   <%= investor.city %>
 </td>
-<td class="hideMobP">
+<td>
   <%= render "/investors/access", investor: investor %>
 </td>  
 <td>

@@ -3,8 +3,9 @@ class CapitalDistributionPaymentsMailer < ApplicationMailer
   helper ApplicationHelper
 
   def send_notification
-    @capital_distribution_payment = CapitalDistributionPayment.find params[:id]
-    emails = sandbox_email(@capital_distribution_payment, @capital_distribution_payment.investor.emails_for(@capital_distribution_payment.fund))
+    @capital_distribution_payment = CapitalDistributionPayment.find params[:capital_distribution_payment_id]
+    @user = User.find params[:user_id]
+    emails = sandbox_email(@capital_distribution_payment, @user.email)
 
     @entity = @capital_distribution_payment.entity
     cc = @entity.entity_setting.cc

@@ -98,7 +98,7 @@ class InvestorAccess < ApplicationRecord
   end
 
   def send_notification
-    InvestorAccessMailer.with(investor_access_id: id).notify_access.deliver_later if URI::MailTo::EMAIL_REGEXP.match?(email)
+    InvestorAccessNotification.with(investor_access_id: id).deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
   end
 
   def send_notification_if_changed
@@ -106,6 +106,6 @@ class InvestorAccess < ApplicationRecord
   end
 
   def notify_kyc_required
-    InvestorKycMailer.with(investor_access_id: id).notify_kyc_required.deliver_later if URI::MailTo::EMAIL_REGEXP.match?(email)
+    InvestorKycNotification.with(investor_access_id: id, type: "Create").deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
   end
 end

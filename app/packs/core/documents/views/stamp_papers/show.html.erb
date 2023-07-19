@@ -1,0 +1,53 @@
+<%= render "/layouts/alerts" %>
+<h1>Stamp Paper</h1>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @stamp_paper.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Tags
+    </td>
+    <td>
+      <%= @stamp_paper.tags %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Sign On Page
+    </td>
+    <td>
+      <%= @stamp_paper.sign_on_page %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Notes
+    </td>
+    <td>
+      <%= @stamp_paper.notes %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Note On Page
+    </td>
+    <td>
+      <%= @stamp_paper.note_on_page %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Owner
+    </td>
+    <td>
+      <%= link_to @stamp_paper.owner %>
+    </td>
+  </tr>
+</table>
+    <%= link_to "Edit", edit_stamp_paper_path(@stamp_paper) , {class: "btn btn-outline-primary"} if policy(@stamp_paper).edit?%>

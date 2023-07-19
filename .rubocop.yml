@@ -52,6 +52,7 @@ Lint/UselessAssignment:
 
 Rails/SkipsModelValidations:
   Exclude:
+    - 'app/packs/core/notifications/controllers/notifications_controller.rb'
     - 'app/packs/misc/approvals/mailers/approval_mailer.rb'
     - 'app/packs/misc/approvals/controllers/approvals_controller.rb'
     - 'app/packs/funds/funds/models/fund.rb'
@@ -102,6 +103,7 @@ Lint/MissingSuper:
 Rails/OutputSafety:
   Exclude:
     - 'config/initializers/client_side_validations.rb'
+    - 'app/notifications/delivery_methods/user_alerts.rb'
     
 Style/OptionalBooleanParameter:
   Exclude:

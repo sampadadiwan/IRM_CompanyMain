@@ -64,9 +64,7 @@
 
 
             <% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role]) do %>
-
                 
-
                 <% if current_user && current_user.advisor_entity_id.present? %>
                     <div class="topbar-divider "></div>
                     <%= render "/investor_advisors/personas" %>
@@ -153,22 +151,33 @@
                         
                     </li>
                 <% end %>
-
-
+                
                 <div class="topbar-divider "></div>
                         
                 <!-- Nav Item - User Information -->
+                <% if current_user %>
+                <% notification_count = current_user.notifications.unread.count + current_user.entity.notifications.unread.count %>
+
                 <li class="nav-item dropdown no-arrow">
                     <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <span class="mr-2 d-none d-lg-inline text-gray-600 small"><%= current_user.name if current_user %></span>
+                        <span class="mr-2 d-none d-lg-inline text-gray-600 small"><%= current_user.name %></span>
+                        <% if notification_count > 0 %>
+                            <span class="badge badge-info"> <%= notification_count %> </span>
+                        <% end %>
                     </a>
                     <!-- Dropdown - User Information -->
                     <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                         aria-labelledby="userDropdown">
-                        <a class="dropdown-item" href="<%= user_path(current_user) if current_user %>">
+                        <a class="dropdown-item" href="<%= user_path(current_user) %>">
                             <i class="fas fa-user fa-sm fa-fw text-gray-400"></i>
                             Profile
+                        </a>
+                        
+                        <a class="dropdown-item" href="<%= notifications_path %>">
+                            <i class="fas fa-message fa-sm fa-fw text-gray-400"></i>
+                            Notifications
+                            <span class="badge badge-info"> <%= notification_count %> </span>
                         </a>
                     
                         <div class="dropdown-divider"></div>
@@ -178,6 +187,7 @@
                         </a>
                     </div>
                 </li>
+                <% end %>
 
             <% end %> <!-- End cache -->
         </ul>

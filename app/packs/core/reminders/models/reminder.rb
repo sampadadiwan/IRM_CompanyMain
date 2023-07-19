@@ -10,6 +10,9 @@ class Reminder < ApplicationRecord
   scope :due_today, -> { where("due_date <= ?", Time.zone.today) }
 
   def send_reminder
-    ReminderMailer.with(id:).send_reminder.deliver_later
+    email.split(",").each do |user_email|
+      user = User.find_by(email: user_email.strip)
+      ReminderNotification.with(reminder_id: id).deliver_later(user) if user
+    end
   end
 end

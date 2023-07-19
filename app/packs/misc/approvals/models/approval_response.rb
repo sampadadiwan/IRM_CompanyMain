@@ -25,18 +25,17 @@ class ApprovalResponse < ApplicationRecord
   def send_notification
     # send notification to the investor only if the approval is approved
     if approval.approved
-      if Rails.env.test?
-        if status == "Pending"
-          ApprovalMailer.with(id:).notify_new_approval.deliver_later unless notification_sent
-        else
-          ApprovalMailer.with(id:).notify_approval_response.deliver_later
+
+      if status == "Pending"
+        investor.approved_users.each do |user|
+          ApprovalNotification.with(approval_response_id: id, email_method: :notify_new_approval, msg: "Approval Required: #{approval.title}").deliver_later(user) unless notification_sent
         end
-      elsif status == "Pending"
-        ApprovalMailer.with(id:).notify_new_approval.deliver_later(wait_until: rand(30).seconds.from_now) unless notification_sent
-      # Add jitter to the email delivery to avoid flooding the mail server
       else
-        ApprovalMailer.with(id:).notify_approval_response.deliver_later(wait_until: rand(30).seconds.from_now)
+        investor.approved_users.each do |user|
+          ApprovalNotification.with(approval_response_id: id, email_method: :notify_approval_response, msg: "Approval #{status} by #{investor.investor_name}: #{approval.title}").deliver_later(user)
+        end
       end
+
     end
   end
 end

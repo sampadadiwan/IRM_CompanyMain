@@ -2,13 +2,14 @@ class ApprovalMailer < ApplicationMailer
   helper ApplicationHelper
 
   def notify_new_approval
-    @approval_response = ApprovalResponse.find params[:id]
+    @approval_response = ApprovalResponse.find params[:approval_response_id]
     @approval = @approval_response.approval
+    @user = User.find params[:user_id]
 
     if @approval_response.status == "Pending"
       # Get all emails of investors
       investor_emails = sandbox_email(@approval_response,
-                                      @approval_response.investor.investor_accesses.collect(&:email).flatten.join(","))
+                                      @user.email)
 
       if investor_emails.present?
         # Mark notification_sent as true
@@ -26,10 +27,12 @@ class ApprovalMailer < ApplicationMailer
   end
 
   def notify_approval_response
-    @approval_response = ApprovalResponse.find params[:id]
+    @approval_response = ApprovalResponse.find params[:approval_response_id]
+    @user = User.find params[:user_id]
+
     # Get all emails of investors
     investor_emails = sandbox_email(@approval_response,
-                                    @approval_response.investor.emails)
+                                    @user.email)
 
     cc_emails = @approval_response.entity.employees.collect(&:email) << @approval_response.entity.entity_setting.cc
 

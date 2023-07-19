@@ -80,7 +80,17 @@ class Document < ApplicationRecord
   end
 
   def send_notification_for_owner
-    DocumentMailer.with(id:).notify_new_document_to_investors.deliver_later if owner_tag != "Template" && send_email
+    notification_users.each do |user|
+      DocumentNotification.with(document_id: id).deliver_later(user)
+    end
+  end
+
+  # TODO: This is really inefficient
+  def notification_users
+    users = access_rights.map(&:users).flatten
+    users += self.owner.access_rights.map(&:users).flatten if %w[Fund Deal SecondarySale InvestmentOpportunity].include? owner_type
+
+    users.uniq
   end
 
   def setup_access_rights

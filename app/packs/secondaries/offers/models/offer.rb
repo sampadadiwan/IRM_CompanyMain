@@ -141,12 +141,12 @@ class Offer < ApplicationRecord
   end
 
   def notify_approval
-    OfferMailer.with(offer_id: id).notify_approval.deliver_later unless secondary_sale.no_offer_emails
+    OfferNotification.with(offer_id: id, email_method: :notify_approval, msg: "Offer for #{secondary_sale.name} has been approved").deliver_later(user) unless secondary_sale.no_offer_emails
   end
 
   after_commit :notify_accept_spa, if: proc { |o| o.final_agreement && o.saved_change_to_final_agreement? }
   def notify_accept_spa
-    OfferMailer.with(offer_id: id).notify_accept_spa.deliver_later unless secondary_sale.no_offer_emails
+    OfferNotification.with(offer_id: id, email_method: :notify_accept_spa, msg: "SPA confirmation received for #{secondary_sale.name}").deliver_later(user) unless secondary_sale.no_offer_emails
   end
 
   def folder_path

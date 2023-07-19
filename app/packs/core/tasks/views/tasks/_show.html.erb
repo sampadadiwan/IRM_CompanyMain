@@ -1,96 +1,106 @@
-<table class="table table-bordered dataTable">
 
-    <tr>
-      <td>
-        Details
-      </td>
-      <td>
-        <%= task.details.html_safe if task.details %>
-      </td>
-    </tr>
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+          Task
+      </h6>
+  </div>
+  <div class="card-body">        
+    <table class="table table-bordered dataTable">
 
-    <% if task.tags.present? %>
-    <tr>
-      <td>
-        Tags
-      </td>
-      <td>
-        <%= task.tags %>
-      </td>
-    </tr>
-    <% end %>
+        <tr>
+          <td>
+            Details
+          </td>
+          <td>
+            <%= task.details.html_safe if task.details %>
+          </td>
+        </tr>
 
-    <tr>
-      <td>
-        Response
-      </td>
-      <td>
-        <%= task.response.html_safe if task.response %>
-      </td>
-    </tr>
-    
-    <tr>
-      <td>
-        Entity
-      </td>
-      <td>
-        <%= task.entity.name %>
-      </td>
-    </tr>
-    <% if task.entity != task.for_entity %>
-    <tr>
-      <td>
-        For
-      </td>
-      <td>
-        <%= task.for_entity.name %>
-      </td>
-    </tr>
-    <% end %>
-    <tr>
-      <td>
-        Linked To
-      </td>
-      <td>
-        <%= link_to task.owner if task.owner %>
-      </td>
-    </tr>
+        <% if task.tags.present? %>
+        <tr>
+          <td>
+            Tags
+          </td>
+          <td>
+            <%= task.tags %>
+          </td>
+        </tr>
+        <% end %>
 
-    <tr>
-      <td>
-        Due Date
-      </td>
-      <td>
-        <%= l task.due_date if task.due_date %>
-      </td>
-    </tr>
+        <tr>
+          <td>
+            Response
+          </td>
+          <td>
+            <%= task.response.html_safe if task.response %>
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            Entity
+          </td>
+          <td>
+            <%= task.entity.name %>
+          </td>
+        </tr>
+        <% if task.entity != task.for_entity %>
+        <tr>
+          <td>
+            For
+          </td>
+          <td>
+            <%= task.for_entity.name %>
+          </td>
+        </tr>
+        <% end %>
+        <tr>
+          <td>
+            Linked To
+          </td>
+          <td>
+            <%= link_to task.owner if task.owner %>
+          </td>
+        </tr>
 
-    <tr>
-      <td>
-        Completed
-      </td>
-      <td>
-        <%= display_boolean(task.completed) %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        User
-      </td>
-      <td>
-        <%= task.user.full_name %>
-      </td>
-    </tr>
+        <tr>
+          <td>
+            Due Date
+          </td>
+          <td>
+            <%= l task.due_date if task.due_date %>
+          </td>
+        </tr>
 
-    <tr>
-      <td>
-        Assigned To
-      </td>
-      <td>
-        <%= task.assigned_to.full_name if task.assigned_to %>
-      </td>
-    </tr>
+        <tr>
+          <td>
+            Completed
+          </td>
+          <td>
+            <%= display_boolean(task.completed) %>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            User
+          </td>
+          <td>
+            <%= task.user.full_name %>
+          </td>
+        </tr>
 
-    <%= display_custom_fields(task) if current_user %>
+        <tr>
+          <td>
+            Assigned To
+          </td>
+          <td>
+            <%= task.assigned_to.full_name if task.assigned_to %>
+          </td>
+        </tr>
 
-</table>
+        <%= display_custom_fields(task) if current_user %>
+
+    </table>
+  </div>
+</div>

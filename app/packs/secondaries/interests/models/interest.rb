@@ -67,20 +67,40 @@ class Interest < ApplicationRecord
                   delta_column: 'amount_cents'
 
   def notify_interest
-    InterestMailer.with(interest_id: id).notify_interest.deliver_later unless secondary_sale.no_interest_emails
+    unless secondary_sale.no_interest_emails
+      investor.approved_users.each do |user|
+        InterestNotification.with(interest_id: id, email_method: :notify_interest, msg: "Interest received for #{secondary_sale.name}").deliver_later(user)
+      end
+    end
   end
 
   def notify_shortlist
-    InterestMailer.with(interest_id: id).notify_shortlist.deliver_later if short_listed && saved_change_to_short_listed? && !secondary_sale.no_interest_emails
+    if short_listed && saved_change_to_short_listed? && !secondary_sale.no_interest_emails
+      investor.approved_users.each do |user|
+        InterestNotification.with(interest_id: id, email_method: :notify_shortlist, msg: "Interest shortlisted for #{secondary_sale.name}").deliver_later(user)
+      end
+    end
   end
 
   after_save :notify_accept_spa, if: proc { |o| o.final_agreement && o.saved_change_to_final_agreement? }
   def notify_accept_spa
-    InterestMailer.with(interest_id: id).notify_accept_spa.deliver_later unless secondary_sale.no_interest_emails
+    unless secondary_sale.no_interest_emails
+      investor.approved_users.each do |user|
+        InterestNotification.with(interest_id: id, email_method: :notify_accept_spa, msg: "SPA confirmation received for #{secondary_sale.name}").deliver_later(user)
+      end
+    end
   end
 
   def notify_finalized
-    InterestMailer.with(interest_id: id).notify_finalized.deliver_later if finalized && saved_change_to_finalized? && !secondary_sale.no_interest_emails
+    if finalized && saved_change_to_finalized? && !secondary_sale.no_interest_emails
+      investor.approved_users.each do |user|
+        InterestNotification.with(interest_id: id, email_method: :notify_finalized, msg: "Interest finalized for #{secondary_sale.name}").deliver_later(user)
+      end
+    end
+  end
+
+  def to_s
+    "#{investor.investor_name} - #{quantity} shares @ #{price}"
   end
 
   def set_defaults

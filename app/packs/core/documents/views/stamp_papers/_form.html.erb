@@ -1,0 +1,28 @@
+<% tags ||= nil %>
+<div class='nested-fields form-row'>
+    <div class="form-group col">
+      <%= f.label :tags %>
+      <%= f.text_field :tags, class: "form-control", placeholder:"GJ-100:1,KA_500:2"  %>
+      <small>Please follow format- `Tag:Quantity`</small>
+    </div>
+
+    <div class="form-group col">
+      <%= f.label :sign_on_page %>
+      <%= f.select :sign_on_page, ["FIRST" ,"LAST", "ALL"], {selected: "LAST"}, class: "form-control", multiple: false %>
+    </div>
+
+    <div class="form-group col">
+      <%= f.label :notes %>
+      <%= f.text_field :notes, class: "form-control"  %>
+    </div>
+
+    <div class="form-group col">
+      <%= f.label :note_on_page %>
+      <%= f.select :note_on_page, ["FIRST" ,"LAST", "ALL"], {selected: "LAST"}, class: "form-control", multiple: false   %>
+    </div>
+
+    <div class="form-group col">
+      <%= f.label :none, "&nbsp;".html_safe %>
+      <%= link_to_remove_association "Delete" , f, class: "btn btn-outline-danger" %>
+    </div>
+</div>

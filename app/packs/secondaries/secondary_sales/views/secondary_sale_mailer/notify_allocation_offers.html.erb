@@ -4,7 +4,7 @@
     The allocation process for the secondary sale <%= @secondary_sale.name %> has been completed. Please ensure that all the required documentation is has been uploaded by you, to finalize the sale.   
 </p>
 
-<% if @secondary_sale.seller_doc_list %>
+<% if @secondary_sale.seller_doc_list.present? %>
 <p>
     You will be required to upload the following documents: <%= @secondary_sale.seller_doc_list %>
 </p>

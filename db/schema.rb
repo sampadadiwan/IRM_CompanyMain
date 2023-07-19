@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_14_063333) do
+ActiveRecord::Schema[7.0].define(version: 2023_07_15_192635) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -452,7 +452,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_14_063333) do
     t.string "commitment_type", limit: 10, default: "Pool"
     t.boolean "feeder_fund", default: false
     t.date "commitment_date"
-    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
+    t.virtual "generated_deleted", type: :datetime, precision: nil, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
@@ -780,6 +780,20 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_14_063333) do
     t.index ["entity_id"], name: "index_e_signatures_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_e_signatures_on_owner"
     t.index ["user_id"], name: "index_e_signatures_on_user_id"
+  end
+
+  create_table "emailbutler_messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "uuid", null: false
+    t.string "mailer", null: false
+    t.string "action", null: false
+    t.json "params", null: false
+    t.string "send_to"
+    t.integer "status", default: 0, null: false
+    t.datetime "timestamp"
+    t.integer "lock_version"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["uuid"], name: "index_emailbutler_messages_on_uuid", unique: true
   end
 
   create_table "entities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1722,6 +1736,18 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_14_063333) do
     t.index ["entity_id"], name: "index_notes_on_entity_id"
     t.index ["investor_id"], name: "index_notes_on_investor_id"
     t.index ["user_id"], name: "index_notes_on_user_id"
+  end
+
+  create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "recipient_type", null: false
+    t.bigint "recipient_id", null: false
+    t.string "type", null: false
+    t.json "params"
+    t.datetime "read_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["read_at"], name: "index_notifications_on_read_at"
+    t.index ["recipient_type", "recipient_id"], name: "index_notifications_on_recipient"
   end
 
   create_table "nudges", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

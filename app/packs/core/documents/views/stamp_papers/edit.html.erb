@@ -1,0 +1,4 @@
+<h1>Editing E-Stamp Paper</h1>
+<%= form_with(model: @stamp_paper, validate: true) do |form| %>
+    <%=render "edit_form", stamp_paper: @stamp_paper, f: form %>
+<% end %>

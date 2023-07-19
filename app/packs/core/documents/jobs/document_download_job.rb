@@ -18,8 +18,8 @@ class DocumentDownloadJob < ApplicationJob
           add_documents(zipfile, user, folder_ids)
         end
 
-        link = upload(user, zip_file.path)
-        email_link(user, link)
+        uploaded_document = upload(user, folder, zip_file.path)
+        DocumentDownloadNotification.with(document_id: uploaded_document.id, msg: "Zipfile of folder #{folder.name} created. Please download.").deliver(user)
       end
 
       Rails.logger.debug { "Removing tmp folder #{@tmp_dir}" }
@@ -39,17 +39,13 @@ class DocumentDownloadJob < ApplicationJob
     Rails.logger.debug "Done with all docs"
   end
 
-  def upload(user, file)
+  def upload(user, folder, file)
     tmp_folder = user.entity.root_folder.children.where(entity_id: user.entity_id, name: "tmp").first_or_create
 
-    doc = Document.new(name: "Download-#{user.full_name}-#{rand(1000)}", folder: tmp_folder, entity: user.entity, orignal: true, user:)
+    doc = Document.new(name: "Download-#{folder.name}-#{user.full_name}-#{rand(1000)}", folder: tmp_folder, entity: user.entity, orignal: true, user:)
     doc.file = File.open(file, "rb")
     doc.save!
-    doc.file.url
-  end
-
-  def email_link(user, link)
-    DocumentMailer.with(user_id: user.id, link:).email_link.deliver_now
+    doc
   end
 
   def get_file_name(doc, tmp)

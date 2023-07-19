@@ -3,7 +3,7 @@ class TasksMailer < ApplicationMailer
   helper ApplicationHelper
 
   def send_notification
-    @task = Task.find params[:id]
+    @task = Task.find params[:task_id]
 
     if @task.assigned_to
       to_emails = @task.response.blank? ? @task.assigned_to.email : [@task.assigned_to.email, @task.user&.email].compact.join(",")
@@ -12,7 +12,9 @@ class TasksMailer < ApplicationMailer
       @entity = @task.entity
       cc = @entity.entity_setting.cc
 
-      reply_to = [@entity.entity_setting.reply_to, @task.assigned_to.email, @task.user&.email, "task-#{@task.id}@#{ENV.fetch('DOMAIN', nil)}"].filter(&:present?).join(",")
+      # reply_to = [@entity.entity_setting.reply_to, @task.assigned_to.email, @task.user&.email, "task-#{@task.id}@#{ENV.fetch('DOMAIN', nil)}"].filter(&:present?).join(",")
+
+      reply_to = [@entity.entity_setting.reply_to, @task.assigned_to.email, @task.user&.email].filter(&:present?).join(",")
 
       status = @task.completed ? "Closed" : "Open"
 

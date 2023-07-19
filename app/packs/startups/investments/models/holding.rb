@@ -60,19 +60,22 @@ class Holding < ApplicationRecord
   end
 
   def notify_approval
-    HoldingMailer.with(holding_id: id).notify_approval.deliver_later
+    HoldingNotification.with(holding_id: id, email_method: :notify_approval, msg: "Your #{investment_instrument} have been approved").deliver_later(user)
   end
 
   def notify_cancellation
-    HoldingMailer.with(holding_id: id).notify_cancellation.deliver_later
+    label = cancelled ? "Cancelled" : nil
+    label ||= lapsed ? "Lapsed" : "Updated"
+
+    HoldingNotification.with(holding_id: id, email_method: :notify_cancellation, msg: "Your #{investment_instrument} have been #{label}").deliver_later(user)
   end
 
   def notify_lapsed
-    HoldingMailer.with(holding_id: id).notify_lapsed.deliver_later
+    HoldingNotification.with(holding_id: id, email_method: :notify_lapsed, msg: "Your #{investment_instrument} have lapsed").deliver_later(user)
   end
 
   def notify_lapse_upcoming
-    HoldingMailer.with(holding_id: id).notify_lapse_upcoming.deliver_later
+    HoldingNotification.with(holding_id: id, email_method: :notify_lapse_upcoming, msg: "Your #{investment_instrument} will lapse in #{days_to_lapse} days").deliver_later(user)
   end
 
   before_save :update_quantity

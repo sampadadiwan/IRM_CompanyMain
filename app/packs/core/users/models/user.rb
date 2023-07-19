@@ -22,6 +22,9 @@ class User < ApplicationRecord
   has_many :excercises, dependent: :destroy
   has_many :investor_accesses, dependent: :destroy
 
+  # Noticed gem
+  has_many :notifications, as: :recipient, dependent: :destroy
+
   include FileUploader::Attachment(:signature)
 
   # Make all models searchable

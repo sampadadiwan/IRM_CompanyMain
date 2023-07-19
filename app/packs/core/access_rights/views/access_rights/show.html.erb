@@ -1,45 +1,35 @@
 <%= render "/layouts/alerts" %>
-
 <table class="table table-bordered dataTable ">
-
-          <tr>
-        <td>
-          Owner
-        </td>
-        <td>
-          <%= @access_right.owner.name %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Access To
-        </td>
-        <td>
-          <%= @access_right.access_to_label   %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Access Type
-        </td>
-        <td>
-          <%= @access_right.access_type %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Metadata
-        </td>
-        <td>
-          <%= @access_right.metadata %>
-        </td>    
-      </tr>
-    
-  
+  <tr>
+    <td>
+      <%= @access_right.owner_type %>
+    </td>
+    <td>
+      <%= link_to @access_right.owner.name, @access_right.owner if @access_right.owner %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Access To
+    </td>
+    <td>
+      <%= @access_right.access_to_label   %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Access Type
+    </td>
+    <td>
+      <%= @access_right.access_type %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Metadata
+    </td>
+    <td>
+      <%= @access_right.metadata %>
+    </td>
+  </tr>
 </table>
-
-
-<div>
-  <%= link_to "Edit", edit_access_right_path(@access_right), {class: "btn btn-outline-primary"} %> |
-  <%= button_to "Delete", @access_right, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton" %>
-</div>

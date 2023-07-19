@@ -8,6 +8,12 @@ class Task < ApplicationRecord
   belongs_to :assigned_to, class_name: "User", optional: true
   belongs_to :owner, polymorphic: true, optional: true
 
+  # Standard association for deleting notifications when you're the recipient
+  has_many :notifications, as: :recipient, dependent: :destroy
+
+  # Helper for associating and destroying Notification records where(params: {post: self})
+  has_noticed_notifications
+
   validates :tags, length: { maximum: 50 }
 
   has_many :reminders, as: :owner, dependent: :destroy
@@ -20,6 +26,6 @@ class Task < ApplicationRecord
 
   after_commit :send_notification
   def send_notification
-    TasksMailer.with(id:).send_notification.deliver_later
+    TaskNotification.with(task_id: id).deliver(user)
   end
 end

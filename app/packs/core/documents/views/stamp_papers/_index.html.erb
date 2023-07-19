@@ -1,0 +1,34 @@
+<% owner ||= nil %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">E Stamp Papers</h1>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="stamp_papers" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Owner
+        </th>
+        <th>
+          Tags
+        </th>
+        <th>
+          Sign on Page
+        </th>
+        <th>
+          Notes
+        </th>
+        <th>
+          Note on page
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% stamp_papers.each do |stamp_paper| %>
+        <%= render stamp_paper %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

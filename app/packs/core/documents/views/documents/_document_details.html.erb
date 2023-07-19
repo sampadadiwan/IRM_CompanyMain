@@ -1,38 +1,44 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
-      
+
       <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#viewers-tab">Viewed By</a>
-      
+
       <% if document.entity_id == current_user&.entity_id %>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
-        
+
         <% if document.e_signatures.present? %>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#signatures-tab">
           Signatures
         </a>
         <% end %>
 
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#reminders-tab" 
+        <% if document.stamp_papers.present? %>
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#stamp-papers-tab">
+          Stamp Papers
+        </a>
+        <% end %>
+
+        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#reminders-tab"
             data-action="click->tabdetails#loadData">
           Reminders
         </a>
       <% end %>
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab" 
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab"
           data-action="click->tabdetails#loadData">
         Tasks
       </a>
 
-      
+
     </nav>
-  
-  
+
+
     <div class="tab-content" data-controller="datatable">
 
         <div id="viewers-tab" class="tab-pane fade in show active">
           <div id="users" class="associated_entity">
             <% entity_id = policy(document).update? ? nil : current_user.entity_id   %>
             <%= render "/users/index", users: policy_scope(document.viewed_by(entity_id:).includes(:entity)) %>
-          </div>     
+          </div>
         </div>
 
         <% if policy(document).update? %>
@@ -40,51 +46,57 @@
             <% cache(document) do %>
               <div id="access_rights" class="associated_entity">
                 <%  access_right = AccessRight.new(
-                    owner_id: document.id, 
-                    access_type: "Document", 
-                    owner_type: "Document", 
-                    entity_id: document.entity_id) %> 
-                
+                    owner_id: document.id,
+                    access_type: "Document",
+                    owner_type: "Document",
+                    entity_id: document.entity_id) %>
+
                 <% params[:form_type] = "document_form" %>
                 <%= render "/access_rights/index", access_rights: document.access_rights.includes(:investor, :owner), access_right: access_right %>
               </div>
             <% end %>
           </div>
-        <% end %>        
+        <% end %>
 
         <div id="tasks-tab" class="tab-pane fade">
           <div id="tasks" class="associated_entity">
             <% investor = Investor.for(current_user, document.entity).first if !policy(document).update? %>
-            <%= link_to tasks_path( for_entity_id: investor&.investor_entity_id, 
+            <%= link_to tasks_path( for_entity_id: investor&.investor_entity_id,
                                     entity_id: document.entity_id,
-                                    owner_id: document.id, owner_type: "Document"), 
-                                    class: "load_data_link", 
+                                    owner_id: document.id, owner_type: "Document"),
+                                    class: "load_data_link",
                                     data: { turbo_frame: 'task_list' } do %>
               <span>Loading...</span>
             <% end %>
             <%= turbo_frame_tag "task_list", target: "_top" do %>
             <% end %>
-          </div>     
+          </div>
         </div>
 
         <div id="reminders-tab" class="tab-pane fade">
           <div id="reminders" class="associated_entity">
-            <%= link_to reminders_path( owner_id: document.id, owner_type: "Document", sent: false), 
-                                    class: "load_data_link", 
+            <%= link_to reminders_path( owner_id: document.id, owner_type: "Document", sent: false),
+                                    class: "load_data_link",
                                     data: { turbo_frame: 'reminders_list' } do %>
               <span>Loading...</span>
             <% end %>
             <%= turbo_frame_tag "reminders_list", target: "_top" do %>
             <% end %>
-          </div>     
+          </div>
         </div>
 
         <div id="signatures-tab" class="tab-pane fade">
           <div id="e_signatures" class="associated_entity">
             <%= render "/e_signatures/index", e_signatures: policy_scope(document.e_signatures), owner: document %>
-          </div>     
+          </div>
+        </div>
+
+        <div id="stamp-papers-tab" class="tab-pane fade">
+          <div id="stamp_papers" class="associated_entity">
+            <%= render "/stamp_papers/index", stamp_papers: policy_scope(document.stamp_papers), owner: document %>
+          </div>
         </div>
 
     </div>
-  
+
   </div>

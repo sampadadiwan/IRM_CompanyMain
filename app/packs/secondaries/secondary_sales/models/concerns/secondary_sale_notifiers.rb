@@ -6,74 +6,75 @@ module SecondarySaleNotifiers
 
   def notify_open_for_interests
     # Get all emails of investors & holding company employees
-    all_emails = investor_users("Buyer").collect(&:email).flatten +
-                 employee_users("Buyer").collect(&:emails).flatten
+    all_users = investor_users("Buyer").uniq +
+                employee_users("Buyer").uniq
 
-    all_emails.uniq.each do |email|
-      SecondarySaleMailer.with(id:, email:).notify_open_for_interests.deliver_later
-    end
-  end
-
-  def notify_open_for_offers
-    # Get all emails of investors & holding company employees
-    all_emails = investor_users("Seller").collect(&:email).flatten +
-                 employee_users("Seller").collect(&:email).flatten
-
-    all_emails.uniq.each do |email|
-      SecondarySaleMailer.with(id:, email:).notify_open_for_offers.deliver_later
-    end
-  end
-
-  def notify_closing_offers
-    # Get all emails of investors & holding company employees
-    all_emails = investor_users("Seller").collect(&:email).flatten +
-                 employee_users("Seller").collect(&:email).flatten
-
-    all_emails.uniq.each do |email|
-      SecondarySaleMailer.with(id:, email:).notify_closing_offers.deliver_later
+    all_users.uniq.each do |user|
+      SecondarySaleNotification.with(secondary_sale_id: id, email: user.email, email_method: :notify_open_for_interests, msg: "Secondary Sale: #{name} by #{entity.name}, open for interests").deliver_later(user)
     end
   end
 
   def notify_closing_interests
     # Get all emails of investors & holding company employees
-    all_emails = investor_users("Buyer").collect(&:email).flatten +
-                 employee_users("Buyer").collect(&:email).flatten
+    all_users = investor_users("Buyer").uniq +
+                employee_users("Buyer").uniq
 
-    all_emails.uniq.each do |email|
-      SecondarySaleMailer.with(id:, email:).notify_closing_interests.deliver_later
+    all_users.uniq.each do |user|
+      SecondarySaleNotification.with(secondary_sale_id: id, email: user.email, email_method: :notify_closing_interests, msg: "Secondary Sale: #{name} by #{entity.name}, reminder to enter your interest").deliver_later(user)
+    end
+  end
+
+  def notify_open_for_offers
+    # Get all emails of investors & holding company employees
+    all_users = investor_users("Seller").uniq +
+                employee_users("Seller").uniq
+
+    all_users.uniq.each do |user|
+      SecondarySaleNotification.with(secondary_sale_id: id, email: user.email, email_method: :notify_open_for_offers, msg: "Secondary Sale: #{name} by #{entity.name}, open for offers").deliver_later(user)
+    end
+  end
+
+  def notify_closing_offers
+    # Get all emails of investors & holding company employees
+    all_users = investor_users("Seller").uniq +
+                employee_users("Seller").uniq
+
+    all_users.uniq.each do |user|
+      SecondarySaleNotification.with(secondary_sale_id: id, email: user.email, email_method: :notify_closing_offers, msg: "Secondary Sale: #{name} by #{entity.name}, reminder to enter your offer").deliver_later(user)
     end
   end
 
   # Notify only verified offers and shortlisted interests
   def notify_allocation
     offers.verified.each do |offer|
-      email = offer.offer_type == "Employee" ? offer.user.email : offer.investor.emails("All").join(",")
-      SecondarySaleMailer.with(id:, email:).notify_allocation_offers.deliver_later
+      email_users = offer.offer_type == "Employee" ? [offer.user] : [offer.investor.approved_users]
+      email_users.each do |user|
+        SecondarySaleNotification.with(secondary_sale_id: id, email_method: :notify_allocation_offers, msg: "Secondary Sale: #{name} allocation complete").deliver_later(user)
+      end
     end
 
     interests.short_listed.each do |interest|
-      email = interest.investor.emails("All").join(",")
-      SecondarySaleMailer.with(id:, email:).notify_allocation_interests.deliver_later
+      interest.investor.approved_users.each do |user|
+        SecondarySaleNotification.with(secondary_sale_id: id, email_method: :notify_allocation_interests, msg: "Secondary Sale: #{name} allocation complete").deliver_later(user)
+      end
     end
   end
 
   def notify_spa_buyers
-    all_emails = interests.short_listed.not_final_agreement.collect(&:notification_emails).flatten
-    all_emails.uniq.each do |email|
-      SecondarySaleMailer.with(id:, email:).notify_spa_interests.deliver_later
+    interests.short_listed.not_final_agreement.each do |interest|
+      interest.investor.approved_users.each do |user|
+        SecondarySaleNotification.with(secondary_sale_id: id, email_method: :notify_spa_interests, msg: "Secondary Sale: #{name}, please accept uploaded SPA.").deliver_later(user)
+      end
     end
   end
 
   def notify_spa_sellers
     # Send email to only those who are verified but not confirmed SPA
     offers.verified.each do |offer|
-      email = offer.offer_type == "Employee" ? offer.user.email : offer.investor.emails("All").join(",")
-      SecondarySaleMailer.with(id:, email:).notify_spa_offers.deliver_later
-    end
-
-    interests.short_listed.each do |interest|
-      email = interest.investor.emails("All").join(",")
-      SecondarySaleMailer.with(id:, email:).notify_spa_offers.deliver_later
+      email_users = offer.offer_type == "Employee" ? [offer.user] : [offer.investor.approved_users]
+      email_users.each do |user|
+        SecondarySaleNotification.with(secondary_sale_id: id, email_method: :notify_spa_offers, msg: "Secondary Sale: #{name}, please accept uploaded SPA.").deliver_later(user)
+      end
     end
   end
 end

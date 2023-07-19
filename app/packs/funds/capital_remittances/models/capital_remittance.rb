@@ -142,7 +142,11 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def send_notification
-    CapitalRemittancesMailer.with(id:).send_notification.deliver_later if capital_call.approved && !capital_call.manual_generation
+    if capital_call.approved && !capital_call.manual_generation
+      investor.approved_users.each do |user|
+        CapitalRemittanceNotification.with(capital_remittance_id: id, email_method: :send_notification).deliver_later(user)
+      end
+    end
   end
 
   def payment_received_notification

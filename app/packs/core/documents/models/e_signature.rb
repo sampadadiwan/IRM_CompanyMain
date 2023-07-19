@@ -6,6 +6,8 @@ class ESignature < ApplicationRecord
   belongs_to :owner, polymorphic: true
   acts_as_list scope: :owner
 
+  scope :in_sequence, -> { order(:position) }
+
   before_validation :setup_entity
   def setup_entity
     self.entity_id = owner.entity_id

@@ -1,0 +1,35 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Recipient
+    </td>
+    <td>
+      <%= @notification.recipient_id %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Type
+    </td>
+    <td>
+      <%= @notification.type %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Params
+    </td>
+    <td>
+      <%= @notification.params %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Read At
+    </td>
+    <td>
+      <%= @notification.read_at %>
+    </td>
+  </tr>
+</table>

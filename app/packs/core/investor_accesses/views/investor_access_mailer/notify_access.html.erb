@@ -2,7 +2,7 @@
 
 <p>
 
-    You have been granted access <%= @investor_access.entity_name %>
+    You have been granted access to <%= @investor_access.entity_name %>
 
     <p class="btn btn-outline-primary"><%= link_to  "Login to Access", new_user_session_url(email: @investor_access.email, subdomain: @investor_access.entity.sub_domain) %></p>
 

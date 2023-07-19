@@ -1,4 +1,5 @@
 FactoryBot.define do
+
   factory :e_signature do
     entity { nil }
     user { nil }

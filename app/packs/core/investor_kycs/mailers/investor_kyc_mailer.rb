@@ -1,5 +1,6 @@
 class InvestorKycMailer < ApplicationMailer
   helper ApplicationHelper
+  helper CurrencyHelper
 
   def notify_kyc_required
     @investor_access = InvestorAccess.includes(:user).find params[:investor_access_id]
@@ -14,9 +15,10 @@ class InvestorKycMailer < ApplicationMailer
   end
 
   def notify_kyc_updated
-    @investor_kyc = InvestorKyc.find(params[:id])
+    @investor_kyc = InvestorKyc.find(params[:investor_kyc_id])
 
-    to_emails = @investor_kyc.entity.entity_setting.cc
+    @user = User.find(params[:user_id])
+    to_emails = [@user.email]
 
     email = sandbox_email(@investor_kyc, to_emails)
 
