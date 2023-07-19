@@ -28,7 +28,7 @@
         </tr>
         
         
-        <% if current_user && policy(approval).update? %>
+        <% if current_user && current_user.entity_id == approval.entity_id %>
 
         <tr>
             <td>
@@ -66,30 +66,17 @@
             </td>
         </tr>
         <% if current_user && current_user.entity_id == approval.entity_id %>
-        <tr>
-            <td>
-                Approved Count
-            </td>
-            <td class="approved_count">
-                <%= approval.approved_count %>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                Rejected Count
-            </td>
-            <td class="rejected_count">
-                <%= approval.rejected_count %>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                Pending Count
-            </td>
-            <td class="pending_count">
-                <%= approval.pending_count %>
-            </td>
-        </tr>
+            <% status_count = approval.approval_responses.group(:status).count %>
+            <% approval.response_status.split(",").each do |status| %>
+                <tr>
+                    <td>
+                        <%= status %>
+                    </td>
+                    <td class="<%=status.downcase%>_count">
+                        <%= status_count[status] || 0 %>
+                    </td>
+                </tr>
+            <% end %>
         <% end %>
 
         <%= display_custom_fields(@approval) if current_user %>

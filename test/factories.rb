@@ -380,7 +380,7 @@ FactoryBot.define do
     entity { Entity.startups.sample }
     approved_count { 0 }
     rejected_count { 0 }
-    response_status { "Approved,Rejected"}
+    response_status { "Approved,Rejected,Pending"}
   end
 
   factory :reminder do
