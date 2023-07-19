@@ -1,24 +1,6 @@
 class DocumentMailer < ApplicationMailer
   helper ApplicationHelper
 
-  def notify_new_document_to_investors
-    @document = Document.find params[:id]
-
-    if %w[Fund Deal SecondarySale InvestmentOpportunity].include? @document.owner_type
-      investors = @document.investors_granted_access
-      investors += @document.owner.investors_granted_access
-    else
-      investors = @document.access_rights.map(&:investor)
-    end
-
-    investors.uniq.compact.each do |investor|
-      DocumentMailer.with(document_id: params[:id], investor_id: investor.id).notify_new_document.deliver_later
-      numbers = User.where(id: investor.investor_accesses.approved.not_investor_advisors.pluck(:user_id), whatsapp_enabled: true).pluck(:phone)
-      numbers = sandbox_whatsapp_numbers(@document, numbers)
-      DocumentWhatsappNotifier.perform_later({ entity_name: @document.entity.name, doc_name: @document.name, doc_id: @document.id.to_s, whatsapp_nos: numbers }.stringify_keys)
-    end
-  end
-
   def notify_new_document
     @document = Document.find params[:document_id]
     @user = User.find(params[:user_id])
