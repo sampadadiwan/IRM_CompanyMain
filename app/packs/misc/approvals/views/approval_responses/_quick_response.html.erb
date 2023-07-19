@@ -1,0 +1,13 @@
+<%= form_with(model: approval_response, url: approve_approval_response_path(approval_response), 
+    method: :patch) do |form| %>
+
+    <div class="row">
+        <div class="form-group col-md-7">
+            <%= form.select :status, approval_response.approval.response_status.split(","), 
+                {include_blank: true}, class: "form-control", name: "status" %>
+        </div>
+        <div class="form-group col-md-2">
+            <%= form.submit "Submit", {class: "btn btn-outline-primary"}%>
+        </div>
+    </div>
+<% end %>

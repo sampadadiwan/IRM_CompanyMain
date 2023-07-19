@@ -13,7 +13,7 @@ class ApprovalResponse < ApplicationRecord
   counter_culture :approval, column_name: proc { |resp| resp.status == 'Pending' ? 'pending_count' : nil }
 
   validate :already_exists, on: :create
-  validates :status, length: { maximum: 10 }
+  validates :status, length: { maximum: 50 }
 
   scope :pending, -> { where("approval_responses.status=?", "Pending") }
 

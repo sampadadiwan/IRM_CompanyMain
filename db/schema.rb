@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_18_062625) do
+ActiveRecord::Schema[7.0].define(version: 2023_07_19_055608) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -264,7 +264,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_18_062625) do
     t.bigint "response_entity_id", null: false
     t.bigint "response_user_id"
     t.bigint "approval_id", null: false
-    t.string "status", limit: 10
+    t.string "status", limit: 50
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "investor_id", null: false
@@ -289,6 +289,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_18_062625) do
     t.bigint "form_type_id"
     t.date "due_date"
     t.bigint "document_folder_id"
+    t.string "response_status"
     t.index ["document_folder_id"], name: "index_approvals_on_document_folder_id"
     t.index ["entity_id"], name: "index_approvals_on_entity_id"
     t.index ["form_type_id"], name: "index_approvals_on_form_type_id"

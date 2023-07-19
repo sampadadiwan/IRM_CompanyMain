@@ -24,6 +24,11 @@
     <small class="text-muted">Date after which responses are not allowed</small>
   </div>
 
+  <div class="form-group">
+    <%= form.label :response_status %>
+    <%= form.text_field :response_status, class: "form-control"  %>
+    <small class="text-muted">Comma separated list of options for responses</small>
+  </div>
 
   <%= custom_form_fields(approval, form) %>
 

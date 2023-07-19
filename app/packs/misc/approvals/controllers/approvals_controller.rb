@@ -22,6 +22,7 @@ class ApprovalsController < ApplicationController
     @approval = Approval.new
     @approval.entity_id = current_user.entity_id
     @approval.due_date = Time.zone.today + 7.days
+    @approval.default_response_status
     authorize @approval
     setup_custom_fields(@approval)
   end
@@ -99,7 +100,7 @@ class ApprovalsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def approval_params
-    params.require(:approval).permit(:title, :agreements_reference, :entity_id, :approved_count,
+    params.require(:approval).permit(:title, :agreements_reference, :entity_id, :approved_count, :response_status,
                                      :approved, :due_date, :rejected_count, :form_type_id, properties: {})
   end
 end

@@ -10,10 +10,14 @@ class Approval < ApplicationRecord
   has_many :approval_investors, through: :approval_responses, class_name: "Investor", source: :investor
   has_many :pending_investors, -> { where('approval_responses.status': "Pending") }, through: :approval_responses, class_name: "Investor", source: :investor
 
-  validates :title, :due_date, presence: true
+  validates :title, :due_date, :response_status, presence: true
 
   def name
     title
+  end
+
+  def default_response_status
+    self.response_status = "Accepted,Rejected"
   end
 
   def folder_path

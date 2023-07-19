@@ -27,7 +27,18 @@
             </td>
         </tr>
         
+        
         <% if current_user && policy(approval).update? %>
+
+        <tr>
+            <td>
+                Response Status
+            </td>
+            <td>
+                <%= approval.response_status %>
+            </td>
+        </tr>
+        
         <tr>
             <td>
                 Approved
