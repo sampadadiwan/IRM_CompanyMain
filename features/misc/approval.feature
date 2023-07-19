@@ -85,11 +85,11 @@ Scenario Outline: Provide approval response
   Given Im logged in as an investor
   When I visit the approval details page
   Then I should see my approval response  
-  When I click "Approve"
+  When I select "Approved" for the approval response
   Then the approval response is "Approved"
   And the approved count of the approval is "1"
   And the rejected count of the approval is "0"
-  When I click "Reject"
+  When I select "Rejected" for the approval response
   Then the approval response is "Rejected"
   And the approved count of the approval is "0"
   And the rejected count of the approval is "1"

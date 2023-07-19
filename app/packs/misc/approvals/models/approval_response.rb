@@ -10,7 +10,7 @@ class ApprovalResponse < ApplicationRecord
 
   counter_culture :approval, column_name: proc { |resp| resp.status == 'Approved' ? 'approved_count' : nil }
   counter_culture :approval, column_name: proc { |resp| resp.status == 'Rejected' ? 'rejected_count' : nil }
-  counter_culture :approval, column_name: proc { |resp| resp.status == 'Pending' ? 'pending_count' : nil }
+  counter_culture :approval, column_name: proc { |resp| ['Approved', 'Rejected'].include?(resp.status) ?  nil : 'pending_count' }
 
   validate :already_exists, on: :create
   validates :status, length: { maximum: 50 }

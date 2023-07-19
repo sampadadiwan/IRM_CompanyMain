@@ -179,5 +179,9 @@
   end
   
   
+When('I select {string} for the approval response') do |response|
+  select(response, from: "approval_response_status")
+  click_on("Submit")
+end
   
   

@@ -17,7 +17,7 @@ class Approval < ApplicationRecord
   end
 
   def default_response_status
-    self.response_status = "Accepted,Rejected"
+    self.response_status = "Approved,Rejected"
   end
 
   def folder_path
