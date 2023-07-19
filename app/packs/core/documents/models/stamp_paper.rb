@@ -22,7 +22,7 @@ class StampPaper < ApplicationRecord
         # errors.add(:tags, "quantity should be greater than 0") if tag.split(':').last.to_i <= 0
       end
       all_tags.map { |tg| tg.split(':').first }.each do |tag|
-        errors.add(:tags, "should be one of #{entity.entity_setting.stamp_paper_tags}") unless entity.entity_setting.stamp_paper_tags.split(',').map(&:strip).include?(tag)
+        errors.add(:tags, "should be one of #{entity.entity_setting.stamp_paper_tags}") unless entity.entity_setting.stamp_paper_tags&.split(',')&.map(&:strip)&.include?(tag)
       end
     end
   end

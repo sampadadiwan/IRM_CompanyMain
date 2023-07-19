@@ -136,7 +136,7 @@
 
       <div id='stamp_papers', data-controller="stamppaperform">
       <hr>
-        <% @tags = @document.entity.entity_setting.respond_to?(:stamp_paper_tags) ? @document.entity.entity_setting.stamp_paper_tags.split(',') : "" %>
+        <% @tags = @document.entity.entity_setting.respond_to?(:stamp_paper_tags) ? @document.entity.entity_setting.stamp_paper_tags&.split(',') : "" %>
         <% if @tags.present? %>
           <p>Available Stamp-Papers- <%= @tags.join(", ") %> </p>
         <% end %>

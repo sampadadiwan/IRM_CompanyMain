@@ -6,7 +6,7 @@ end
 
 Given('I create an investment {string}') do |arg1|
   @funding_round ||= FundingRound.last.presence || FactoryBot.create(:funding_round, entity: @entity)
-  @investment = FactoryBot.build(:investment, entity: @entity, 
+  @investment = FactoryBot.build(:investment, entity: @entity, category: "Lead Investor",
                       investment_type: @funding_round.name, funding_round: @funding_round)
   @investment.currency = @entity.currency
   key_values(@investment, arg1)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_15_192635) do
+ActiveRecord::Schema[7.0].define(version: 2023_07_18_062625) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -452,7 +452,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_15_192635) do
     t.string "commitment_type", limit: 10, default: "Pool"
     t.boolean "feeder_fund", default: false
     t.date "commitment_date"
-    t.virtual "generated_deleted", type: :datetime, precision: nil, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
+    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
@@ -882,6 +882,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_15_192635) do
     t.boolean "ckyc_kra_enabled", default: false
     t.string "kpi_doc_list"
     t.text "kyc_docs_note"
+    t.string "stamp_paper_tags"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 
@@ -2087,6 +2088,20 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_15_192635) do
     t.index ["owner_type", "owner_id"], name: "index_signature_workflows_on_owner"
   end
 
+  create_table "stamp_papers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.text "notes"
+    t.string "tags"
+    t.string "sign_on_page", limit: 5
+    t.string "note_on_page", limit: 5
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_stamp_papers_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_stamp_papers_on_owner"
+  end
+
   create_table "taggings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "tag_id"
     t.string "taggable_type"
@@ -2501,6 +2516,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_15_192635) do
   add_foreign_key "share_transfers", "users", column: "transfered_by_id"
   add_foreign_key "signature_workflows", "documents"
   add_foreign_key "signature_workflows", "entities"
+  add_foreign_key "stamp_papers", "entities"
   add_foreign_key "taggings", "tags"
   add_foreign_key "tasks", "entities"
   add_foreign_key "tasks", "form_types"

@@ -141,6 +141,10 @@ Then('there is an investor {string} for the entity {string} with investor kyc an
   sleep(3)
   click_on("Continue without Selecting")
   sleep(3)
+  click_on("Next")
+  sleep(1)
+  click_on("Next")
+  sleep(1)  
   click_on("Save")
   InvestorKyc.where(PAN: pan).last.aml_reports.count.should == 0
   AmlReport.where(name: InvestorKyc.where(PAN: pan).last.full_name).count == 0
