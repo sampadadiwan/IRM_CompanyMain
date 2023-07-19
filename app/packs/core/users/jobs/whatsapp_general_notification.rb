@@ -1,0 +1,37 @@
+require 'uri'
+require 'net/http'
+
+class WhatsappGeneralNotification < ApplicationJob
+  TEMPLATE_NAME = ENV.fetch('CAPHIVE_NOTIFICATION')
+  # link eg - "documents/90"  (template url is http://dev.altconnects.com/{{1}})
+  def perform(entity_name, message, link, user_id)
+    user = User.find(user_id)
+    if user.blank?
+      Rails.logger.error "Error: User required to send Whatsapp Notification"
+      return
+    elsif user.present? && (!user.whatsapp_enabled || user.phone.blank?)
+      Rails.logger.error "Error: Whatsapp Not Enabled or Invalid Number for User ID #{user.id}"
+      return
+    end
+
+    whnos = ApplicationMailer.new.sandbox_whatsapp_numbers(user, [user.phone_with_call_code])
+    whnos.each do |whno|
+      self.class.send_message(entity_name, message, link, whno)
+    end
+  end
+
+  def self.send_message(entity_name, message, link, whatsapp_no)
+    url = URI(Rails.application.credentials[:WHATSAPP_API_ENDPOINT] + "/api/v1/sendTemplateMessage?whatsappNumber=#{whatsapp_no}")
+    broadcast_name = "General Notification Broadcast"
+    http = Net::HTTP.new(url.host, url.port)
+    http.use_ssl = true
+
+    request = Net::HTTP::Post.new(url)
+    request["content-type"] = 'text/json'
+    request["Authorization"] = Rails.application.credentials[:WHATSAPP_ACCESS_TOKEN]
+    request.body = "{\"parameters\":[{\"name\":\"entity\",\"value\":\"#{entity_name}\"},{\"name\":\"notification\",\"value\":\"#{message}\"},{\"name\":\"1\",\"value\":\"#{link}\"}],\"broadcast_name\":\"#{broadcast_name}\",\"template_name\":\"#{TEMPLATE_NAME}\"}"
+
+    response = http.request(request)
+    response.read_body
+  end
+end

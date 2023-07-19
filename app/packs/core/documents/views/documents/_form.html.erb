@@ -134,7 +134,7 @@
         </div>
       </div>
 
-      <div id='stamp_papers', data-controller="stamppaperform">
+      <div id='stamp_papers'>
       <hr>
         <% @tags = @document.entity.entity_setting.respond_to?(:stamp_paper_tags) ? @document.entity.entity_setting.stamp_paper_tags&.split(',') : "" %>
         <% if @tags.present? %>
@@ -147,7 +147,7 @@
 
       <div class="form-group">
         <%= link_to_add_association 'Add Signature', form, :e_signatures, class: "btn btn-outline-primary", id: "add_signature_btn" %>
-        <%= link_to_add_association 'Add Stamp Paper', form, :stamp_papers, class: "btn btn-outline-primary", "data-action":  "click->docform#disableAddStampPaper", id: "add_stamp_paper_btn" %>
+        <%= link_to_add_association 'Add Stamp Paper', form, :stamp_papers, class: "btn btn-outline-primary", id: "add_stamp_paper_btn" %>
         <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
       </div>
 
