@@ -23,9 +23,6 @@ class InterestMailer < ApplicationMailer
 
     mail(from: from_email(@interest.entity), to: emails, cc:, reply_to:,
          subject: "Interest Shortlisted for #{@interest.secondary_sale.name} ")
-
-    msg = "Interest Shortlisted for #{@interest.secondary_sale.name} from #{@interest.secondary_sale.entity.name}. #{secondary_sale_url(@interest.secondary_sale)}"
-    WhatsappSenderJob.new.perform(msg, @interest.user)
   end
 
   def notify_accept_spa
@@ -49,8 +46,5 @@ class InterestMailer < ApplicationMailer
 
     mail(from: from_email(@interest.entity), to: emails, cc:, reply_to:,
          subject: "Interest Finalized for #{@interest.secondary_sale.name} ")
-
-    msg = "Interest Finalized for #{@interest.secondary_sale.name} from #{@interest.secondary_sale.entity.name}. #{secondary_sale_url(@interest.secondary_sale)}"
-    WhatsappSenderJob.new.perform(msg, @interest.user)
   end
 end

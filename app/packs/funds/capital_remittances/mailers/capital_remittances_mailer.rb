@@ -26,11 +26,6 @@ class CapitalRemittancesMailer < ApplicationMailer
            subject: "Capital Call: #{@capital_remittance.entity.name}")
     end
 
-    # inv_advisors = investor.investor_advisors(@capital_remittance.fund)
-    # inv_advisors.each do |user|
-    #   CapitalRemittancesWhatsappNotifier.perform_later(user, @capital_remittance.id)
-    # end
-
     Chewy.strategy(:sidekiq) do
       @capital_remittance.notification_sent = true
       @capital_remittance.save
@@ -87,10 +82,5 @@ class CapitalRemittancesMailer < ApplicationMailer
            to: investor_emails, reply_to:, cc:,
            subject: "Payment Received. #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}")
     end
-
-    # inv_advisors = investor.investor_advisors(@capital_remittance.fund)
-    # inv_advisors.each do |user|
-    #   CapitalRemittancesWhatsappNotifier.perform_later(user, @capital_remittance.id, ENV.fetch('CAPITAL_REMITTANCE_PAYMENT_TEMPLATE'))
-    # end
   end
 end
