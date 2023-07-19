@@ -911,9 +911,9 @@ Then('when the capital call docs are generated') do
   CapitalCall.all.each do |cc|
     visit(capital_call_path(cc))
     click_on("Generate Documents")
-    sleep(1)
+    # sleep(1)
     # expect(page).to have_content("Documentation generation started")
-    sleep(10)
+    sleep(15)
     # expect(page).to have_content("Document #{@call_template.name} generated")
   end
 end

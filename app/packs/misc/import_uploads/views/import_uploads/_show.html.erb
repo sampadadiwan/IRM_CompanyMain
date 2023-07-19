@@ -132,9 +132,11 @@
       </td>
     </tr>
   </table>
+  <% if params[:debug] == "true" %>
   <div>
     <%= link_to "Edit" , edit_import_upload_path(import_upload), {class: "btn btn-outline-primary" } %> |
     <%= button_to "Delete" , import_upload, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton" %>
   </div>
+  <% end %>
 
 </div>

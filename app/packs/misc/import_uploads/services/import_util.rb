@@ -40,7 +40,10 @@ class ImportUtil
       p.workbook.add_worksheet(name: "Import Results") do |sheet|
         data.each_with_index do |row, idx|
           # skip header row
-          next if idx.zero?
+          if idx.zero?
+            sheet.add_row(headers)
+            next
+          end
 
           process_row(headers, custom_field_headers, row, import_upload, context)
           # add row to results sheet
