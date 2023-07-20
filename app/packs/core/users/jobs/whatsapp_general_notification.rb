@@ -29,9 +29,10 @@ class WhatsappGeneralNotification < ApplicationJob
     request = Net::HTTP::Post.new(url)
     request["content-type"] = 'text/json'
     request["Authorization"] = Rails.application.credentials[:WHATSAPP_ACCESS_TOKEN]
-    request.body = "{\"parameters\":[{\"name\":\"entity\",\"value\":\"#{entity_name}\"},{\"name\":\"notification\",\"value\":\"#{message}\"},{\"name\":\"1\",\"value\":\"#{link}\"}],\"broadcast_name\":\"#{broadcast_name}\",\"template_name\":\"#{TEMPLATE_NAME}\"}"
+    request.body = "{\"parameters\":[{\"name\":\"1\",\"value\":\"#{entity_name}\"},{\"name\":\"notification\",\"value\":\"#{message}\"},{\"name\":\"link\",\"value\":\"#{link}\"}],\"broadcast_name\":\"#{broadcast_name}\",\"template_name\":\"#{TEMPLATE_NAME}\"}"
 
     response = http.request(request)
+
     response.read_body
   end
 end
