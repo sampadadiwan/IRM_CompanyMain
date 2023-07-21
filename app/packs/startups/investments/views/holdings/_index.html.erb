@@ -49,6 +49,10 @@
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <% if @option_pool %>
                         <%= link_to "Download Excel", holdings_path(format: "xlsx", option_pool_id: @option_pool.id), class: "dropdown-item" %>
+                        
+                        
+                        <div class="dropdown-divider"></div>
+                        <%= link_to "All", holdings_path(option_pool_id: @option_pool.id, ), class: "dropdown-item" %>
 
                         <div class="dropdown-divider"></div>
 

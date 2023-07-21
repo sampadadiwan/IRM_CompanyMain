@@ -127,6 +127,10 @@ class Document < ApplicationRecord
     file&.mime_type&.include?('image')
   end
 
+  def uploaded_file_name
+    file.metadata['filename'] if file.metadata
+  end
+
   after_update :update_owner
   after_destroy :update_owner
   def update_owner

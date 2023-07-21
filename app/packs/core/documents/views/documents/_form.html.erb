@@ -59,8 +59,8 @@
 
 
 
-
-    <%= render "layouts/single_upload", form: form, field_label: "Upload File",
+    <% label = document.file.blank? ? "Upload File" : link_to("Uploaded File: #{document.uploaded_file_name}", document.file.url, target: "_blank") %>
+    <%= render "layouts/single_upload", form: form, field_label: label,
                               for_model: "document", field_name: "file",
                               model: document %>
 

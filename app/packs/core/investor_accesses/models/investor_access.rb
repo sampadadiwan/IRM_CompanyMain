@@ -90,8 +90,7 @@ class InvestorAccess < ApplicationRecord
       u.save
 
       # If this user was created in the process of investor access and is the only user, make him company admin
-      u.add_role :company_admin if u.entity.employees.count == 1
-
+      # u.add_role :company_admin if u.entity.employees.count == 1
     end
     self.user = u
     self.is_investor_advisor = user.investor_advisor?
