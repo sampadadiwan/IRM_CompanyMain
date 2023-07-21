@@ -19,10 +19,7 @@ class HoldingsController < ApplicationController
       @holdings = @holdings.where(option_pool_id: @option_pool.id)
     end
 
-    @holdings = @holdings.where(entity_id: params[:entity_id]) if params[:entity_id].present?
-    @holdings = @holdings.where(funding_round_id: params[:funding_round_id]) if params[:funding_round_id].present?
-    @holdings = @holdings.where(holding_type: params[:holding_type]) if params[:holding_type].present?
-    @holdings = @holdings.where(investment_instrument: params[:investment_instrument]) if params[:investment_instrument].present?
+    filter(params)
 
     @holdings = @holdings.page params[:page] unless request.format.xlsx?
 
@@ -35,6 +32,21 @@ class HoldingsController < ApplicationController
       format.html { render :index }
       format.json { render :index }
     end
+  end
+
+  def filter(params)
+    @holdings = @holdings.where(approved: params[:approved] == 'true') if params[:approved].present?
+    @holdings = @holdings.where(manual_vesting: params[:manual_vesting] == 'true') if params[:manual_vesting].present?
+    @holdings = @holdings.where("lapsed_quantity > 0") if params[:lapsed].present?
+    @holdings = @holdings.where("gross_unvested_quantity > 0") if params[:unvested].present?
+    @holdings = @holdings.where("net_avail_to_excercise_quantity > 0") if params[:avail_to_excercise].present?
+    @holdings = @holdings.where("cancelled_quantity > 0") if params[:cancelled].present?
+    @holdings = @holdings.where("excercised_quantity > 0") if params[:excercised].present?
+
+    @holdings = @holdings.where(entity_id: params[:entity_id]) if params[:entity_id].present?
+    @holdings = @holdings.where(funding_round_id: params[:funding_round_id]) if params[:funding_round_id].present?
+    @holdings = @holdings.where(holding_type: params[:holding_type]) if params[:holding_type].present?
+    @holdings = @holdings.where(investment_instrument: params[:investment_instrument]) if params[:investment_instrument].present?
   end
 
   def search

@@ -38,16 +38,46 @@
 
             <% end %>
 
-            <% if @option_pool %>
-                <%= link_to "Download Excel", holdings_path(format: "xlsx", option_pool_id: @option_pool.id),
-                    class: "btn btn-outline-success" %>
-            <% else %>
-                <%= link_to "Download Excel", holdings_path(format: "xlsx"), class: "btn btn-outline-success" %>
-            <% end %>
+            
+
+            <div class="btn-group">
+                <div class="dropdown">
+                <button class="btn btn-outline-success dropdown-toggle" type="button"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Reports
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <% if @option_pool %>
+                        <%= link_to "Download Excel", holdings_path(format: "xlsx", option_pool_id: @option_pool.id), class: "dropdown-item" %>
+
+                        <div class="dropdown-divider"></div>
+
+                        <%= link_to "Unvested", holdings_path(unvested: true, option_pool_id: @option_pool.id, ), class: "dropdown-item" %>
+                        <%= link_to "Available For Excercise", holdings_path(avail_to_excercise: true, option_pool_id: @option_pool.id), class: "dropdown-item" %>
+                        <%= link_to "Excercised", holdings_path(excercised: true, option_pool_id: @option_pool.id), class: "dropdown-item" %>
+                        
+                        <div class="dropdown-divider"></div>
+
+                        <%= link_to "Cancelled", holdings_path(cancelled: true, option_pool_id: @option_pool.id), class: "dropdown-item" %>
+                        <%= link_to "Lapsed", holdings_path(lapsed: true, option_pool_id: @option_pool.id), class: "dropdown-item" %>
+
+                        <div class="dropdown-divider"></div>
+
+                        <%= link_to "Approved", holdings_path(approved: true, option_pool_id: @option_pool.id), class: "dropdown-item" %>
+                        <%= link_to "UnApproved", holdings_path(approved: false, option_pool_id: @option_pool.id), class: "dropdown-item" %>
+
+                    <% else %>
+                        <%= link_to "Download Excel", holdings_path(format: "xlsx"), class: "dropdown-item" %>
+                    <% end %>
+
+                </div>
+                </div>
+            </div>
+
         </span>
     </span>
 </div>
-<% only_options ||= nil %>
+<% only_options ||= params[:option_pool_id].present? %>
 
 <div class="table-responsive">
 
