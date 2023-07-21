@@ -63,7 +63,9 @@ class AccountEntryAllocationEngine
     when "GenerateAccountEntry"
       generate_account_entries(fund_formula, fund_unit_settings)
     when "AllocatePortfolio"
-      allocate_portfolio_investments(fund_formula, fund_unit_settings)
+      allocate_aggregate_portfolios(fund_formula, fund_unit_settings)
+    when "AllocatePortfolioInvestment"
+      allocate_portfolios_investment(fund_formula, fund_unit_settings)
     when "Percentage"
       compute_custom_percentage(fund_formula)
     end
@@ -127,8 +129,8 @@ class AccountEntryAllocationEngine
 
   # Used to allocate the portfolio FMV and costs based on a formula
   # E.x capital_commitment.percentage * aggregate_portfolio_investments.fmv_cents / 100
-  def allocate_portfolio_investments(fund_formula, fund_unit_settings)
-    Rails.logger.debug { "allocate_portfolio_investments(#{fund_formula.name}, #{fund_unit_settings})" }
+  def allocate_aggregate_portfolios(fund_formula, fund_unit_settings)
+    Rails.logger.debug { "allocate_aggregate_portfolios(#{fund_formula.name}, #{fund_unit_settings})" }
 
     fund_formula.commitments.each do |capital_commitment|
       # This is used to generate instance variables from the cached computed values
@@ -143,9 +145,32 @@ class AccountEntryAllocationEngine
         ae = create_account_entry(ae, fund_formula, capital_commitment, orig_api, binding)
       end
 
-      cumulative_ae = capital_commitment.rollup_account_entries(nil, fund_formula.name, @start_date, @end_date) if fund_formula.roll_up
+      if fund_formula.roll_up
+        cumulative_ae = capital_commitment.rollup_account_entries(nil, fund_formula.name, @start_date, @end_date)
+        @helper.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
+      end
+    end
+  end
 
-      @helper.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
+  def allocate_portfolios_investment(fund_formula, fund_unit_settings)
+    Rails.logger.debug { "allocate_aggregate_portfolios(#{fund_formula.name}, #{fund_unit_settings})" }
+
+    fund_formula.commitments.each do |capital_commitment|
+      # This is used to generate instance variables from the cached computed values
+      fields = @helper.computed_fields_cache(capital_commitment)
+      portfolio_investments = capital_commitment.Pool? ? @fund.portfolio_investments.pool.where(investment_date: ..@end_date) : PortfolioInvestment.none
+
+      # Only pool PIs should be used to generate account_entries
+      portfolio_investments.each do |portfolio_investment|
+        ae = AccountEntry.new(name: portfolio_investment.to_s, entry_type: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", generated: true)
+
+        ae = create_account_entry(ae, fund_formula, capital_commitment, portfolio_investment, binding)
+      end
+
+      if fund_formula.roll_up
+        cumulative_ae = capital_commitment.rollup_account_entries(nil, fund_formula.name, @start_date, @end_date)
+        @helper.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
+      end
     end
   end
 

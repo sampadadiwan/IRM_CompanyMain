@@ -134,8 +134,12 @@ class PortfolioInvestment < ApplicationRecord
     quantity.positive? ? (amount_cents / quantity).abs : 0
   end
 
+  def buy_sell
+    buy? ? 'Buy' : 'Sell'
+  end
+
   def to_s
-    "#{portfolio_company_name} #{category} #{buy? ? 'Buy' : 'Sell'} #{quantity}"
+    "#{portfolio_company_name} #{category} : #{sub_category} #{buy_sell} #{investment_date}"
   end
 
   def folder_path

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_19_080920) do
+ActiveRecord::Schema[7.0].define(version: 2023_07_21_154418) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1054,7 +1054,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_19_080920) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "sequence", default: 0
-    t.string "rule_type", limit: 20
+    t.string "rule_type", limit: 30
     t.boolean "enabled", default: false
     t.string "entry_type", limit: 50
     t.boolean "roll_up", default: true

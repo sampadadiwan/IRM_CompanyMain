@@ -35,7 +35,7 @@
 
           <div class="form-group">
             <%= form.label :rule_type %>
-            <%= form.select :rule_type, ["AllocateAccountEntry", "AllocatePortfolio", "GenerateAccountEntry", "CumulateAccountEntry", "GenerateCustomField", "Percentage"], {}, class: "form-control", data: {action: "change->fund-formula#ruleTypeChanged"}   %>
+            <%= form.select :rule_type, ["AllocateAccountEntry", "AllocatePortfolio", "AllocatePortfolioInvestment", "GenerateAccountEntry", "CumulateAccountEntry", "GenerateCustomField", "Percentage"], {}, class: "form-control", data: {action: "change->fund-formula#ruleTypeChanged"}   %>
           </div>
 
           <div class="form-group">
@@ -121,6 +121,20 @@
                 <ul>
                   <li> Uses each Aggregate Portfolio Entry and allocates it to each commitment </li>
                   <li>api: The Aggregate Portfolio Investment (for a specific portfolio company) which has data (quantity, bought_quantity, bought_amount, sold_quantity, sold_amount, avg_cost_cents, cost_of_sold_cents) up till end_date </li>
+                  <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
+                  <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
+                  <li>fund_formula: The formula currently being run</li>
+                  <li>ae: The specific account entry being created for the commitment</li>
+                </ul>
+              </td>
+            </tr>
+
+            <tr id="AllocatePortfolioInvestment" class="explanation">
+              <td>Allocate Portfolio</td>
+              <td>
+                <ul>
+                  <li> Uses each Portfolio Investment and allocates it to each commitment </li>
+                  <li>portfolio_investment: The Portfolio Investment (for a specific portfolio company) which has data (quantity, bought_quantity, bought_amount, sold_quantity, sold_amount, avg_cost_cents, cost_of_sold_cents) up till end_date </li>
                   <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
                   <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
                   <li>fund_formula: The formula currently being run</li>
