@@ -193,11 +193,11 @@ class DocumentsController < ApplicationController
     if params[:commit] == "Save & Upload More"
       fields = %w[entity_id owner_id owner_type description owner_tag orignal download printing]
       dup = @document.duplicate(fields)
-      redirect_to new_document_url({ document: dup.attributes.slice(*fields) }), notice: "Document #{@document.name} was successfully updated. Please upload new document below."
+      redirect_to new_document_url({ document: dup.attributes.slice(*fields) }), notice: "Document #{@document.name} was successfully saved. Please upload new document below."
     elsif @document.owner
-      redirect_to [@document.owner, { tab: "docs-tab" }], notice: "Document was successfully created."
+      redirect_to [@document.owner, { tab: "docs-tab" }], notice: "Document was successfully saved."
     else
-      redirect_to document_url(@document), notice: "Document was successfully created."
+      redirect_to document_url(@document), notice: "Document was successfully saved."
     end
   end
 

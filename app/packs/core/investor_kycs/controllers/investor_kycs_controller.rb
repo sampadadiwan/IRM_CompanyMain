@@ -63,11 +63,7 @@ class InvestorKycsController < ApplicationController
 
     respond_to do |format|
       if @investor_kyc.save
-        if params[:commit] == "Save & Upload Documents"
-          format.html { redirect_to new_document_url(document: { entity_id: @investor_kyc.entity_id, owner_id: @investor_kyc.id, owner_type: "InvestorKyc" }, display_status: true), notice: "Investor kyc was successfully created. Please upload the required documents for the KYC." }
-        else
-          format.html { redirect_to investor_kyc_url(@investor_kyc, display_status: true), notice: "Investor kyc was successfully created. Please upload the required documents for the KYC." }
-        end
+        format.html { save_and_upload }
         format.json { render :show, status: :created, location: @investor_kyc }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -94,6 +90,14 @@ class InvestorKycsController < ApplicationController
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }
       end
+    end
+  end
+
+  def save_and_upload
+    if params[:commit] == "Save & Upload Documents"
+      redirect_to new_document_url(document: { entity_id: @investor_kyc.entity_id, owner_id: @investor_kyc.id, owner_type: "InvestorKyc" }, display_status: true), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC."
+    else
+      redirect_to investor_kyc_url(@investor_kyc, display_status: true), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC."
     end
   end
 
@@ -124,11 +128,7 @@ class InvestorKycsController < ApplicationController
     setup_doc_user(@investor_kyc)
     respond_to do |format|
       if @investor_kyc.update(investor_kyc_params)
-        if params[:commit] == "Save & Upload Documents"
-          format.html { redirect_to new_document_url(document: { entity_id: @investor_kyc.entity_id, owner_id: @investor_kyc.id, owner_type: "InvestorKyc" }, display_status: true), notice: "Investor kyc was successfully created. Please upload the required documents for the KYC." }
-        else
-          format.html { redirect_to investor_kyc_url(@investor_kyc, display_status: true), notice: "Investor kyc was successfully created. Please upload the required documents for the KYC." }
-        end
+        format.html { save_and_upload }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
         format.html { render :edit, status: :unprocessable_entity }
