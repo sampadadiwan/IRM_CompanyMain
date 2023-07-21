@@ -7,7 +7,7 @@ Scenario Outline: Create new document
   Given the entity has a folder "name=Test Folder"
   And I am at the documents page
   When I create a new document "<document>"
-  Then I should see the "Document was successfully created"
+  Then I should see the "Document was successfully saved"
   And an document should be created
   And I should see the document details on the details page
   And I should see the document in all documents page
@@ -25,7 +25,7 @@ Scenario Outline: Create new document with folder access
   Given the folder has access rights "<access_rights>"
   And I am at the documents page
   When I create a new document "<document>"
-  Then I should see the "Document was successfully created"
+  Then I should see the "Document was successfully saved"
   And an document should be created
   Then the document should have the same access rights as the folder
 
@@ -41,7 +41,7 @@ Scenario Outline: Create new document with folder access later
   Given the entity has a child folder "name=Child Folder"
   And I am at the documents page
   When I create a new document "<document>"
-  Then I should see the "Document was successfully created"
+  Then I should see the "Document was successfully saved"
   And an document should be created
   Given the folder has access rights "<access_rights>"
   Then the document should have the same access rights as the folder

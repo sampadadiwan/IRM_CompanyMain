@@ -314,7 +314,7 @@ Given('I create a new InvestorKyc') do ||
   
   fill_in('investor_kyc_expiry_date', with: @investor_kyc.expiry_date)
   fill_in('investor_kyc_comments', with: @investor_kyc.comments)
-  click_on("Save")
+  click_on("Save & Upload Documents")
   sleep(1)
   
 end
@@ -334,7 +334,7 @@ Then('I select one and see the edit page and save') do
   sleep(1)
   click_on("Save")
   sleep(3)
-  expect(page).to have_content("Investor kyc was successfully updated")
+  expect(page).to have_content("Investor kyc was successfully saved")
 end
 
 

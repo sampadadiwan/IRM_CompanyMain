@@ -24,7 +24,7 @@ Scenario Outline: Create new document for an investment_opportunity
   Given there is an existing investor "" with "1" users
   Given the investors are added to the investment_opportunity  
   When I upload a document for the investment_opportunity
-  Then I should see the "Document was successfully created"
+  Then I should see the "Document was successfully saved"
   Then The document must be created with the owner set to the investment_opportunity
   And an email must go out to the investors for the document
 

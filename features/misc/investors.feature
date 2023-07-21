@@ -76,10 +76,10 @@ Scenario Outline: Create investor kyc - no ckyc
   Given the user has role "company_admin"
   And Given I upload an investors file for the company
   Given I create a new InvestorKyc
-  Then I should see the "Investor kyc was successfully created. Please upload the required documents for the KYC."
+  Then I should see the "Investor kyc was successfully saved. Please upload the required documents for the KYC."
   And I should be on the new documents page
   And when I upload the document for the kyc
-  Then I should see the "Document was successfully created."
+  Then I should see the "Document was successfully saved."
   Then I should see the investor kyc details on the details page
 
 Scenario Outline: Create investor kyc
