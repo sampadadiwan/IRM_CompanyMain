@@ -124,12 +124,14 @@ class InvestorKyc < ApplicationRecord
   end
 
   # Ovveride the include with_folder method
+  # rubocop:disable Rails/SkipsModelValidations
   def document_changed(document)
     grant_access_rights_to_investor(document)
     # Check if all the required docs have been uploaded
-    self.docs_completed = docs_completed?
-    save
+    local_docs_completed = docs_completed?
+    update_column(:docs_completed, local_docs_completed) if local_docs_completed != docs_completed
   end
+  # rubocop:enable Rails/SkipsModelValidations
 
   # Check if all the required docs have been uploaded
   def docs_completed?

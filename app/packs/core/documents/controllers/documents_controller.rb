@@ -167,13 +167,7 @@ class DocumentsController < ApplicationController
 
     respond_to do |format|
       if @document.save
-        format.html do
-          if @document.owner
-            redirect_to [@document.owner, { tab: "docs-tab" }], notice: "Document was successfully created."
-          else
-            redirect_to document_url(@document), notice: "Document was successfully created."
-          end
-        end
+        format.html { save_and_upload }
         format.json { render :show, status: :created, location: @document }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -186,12 +180,24 @@ class DocumentsController < ApplicationController
   def update
     respond_to do |format|
       if @document.update(document_params)
-        format.html { redirect_to document_url(@document), notice: "Document was successfully updated." }
+        format.html { save_and_upload }
         format.json { render :show, status: :ok, location: @document }
       else
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @document.errors, status: :unprocessable_entity }
       end
+    end
+  end
+
+  def save_and_upload
+    if params[:commit] == "Save & Upload More"
+      fields = %w[entity_id owner_id owner_type description owner_tag orignal download printing]
+      dup = @document.duplicate(fields)
+      redirect_to new_document_url({ document: dup.attributes.slice(*fields) }), notice: "Document #{@document.name} was successfully updated. Please upload new document below."
+    elsif @document.owner
+      redirect_to [@document.owner, { tab: "docs-tab" }], notice: "Document was successfully created."
+    else
+      redirect_to document_url(@document), notice: "Document was successfully created."
     end
   end
 

@@ -131,6 +131,14 @@ class Document < ApplicationRecord
     file.metadata['filename'] if file.metadata
   end
 
+  def duplicate(required_attributes = nil)
+    doc = required_attributes ? Document.new(attributes.slice(*required_attributes)) : dup
+    doc.file_data = nil
+    doc.name = nil
+    doc.id = nil
+    doc
+  end
+
   after_update :update_owner
   after_destroy :update_owner
   def update_owner
