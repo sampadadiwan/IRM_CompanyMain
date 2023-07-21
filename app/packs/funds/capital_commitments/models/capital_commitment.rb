@@ -240,6 +240,10 @@ class CapitalCommitment < ApplicationRecord
     cae.last || AccountEntry.new(name:, fund_id:, amount_cents: 0)
   end
 
+  def get_account_entry(name, date)
+    account_entries.where(name:, reporting_date: ..date).order(reporting_date: :desc).first
+  end
+
   def fund_ratio(name, end_date)
     fund_ratios.where(name:, end_date: ..end_date).last
   end

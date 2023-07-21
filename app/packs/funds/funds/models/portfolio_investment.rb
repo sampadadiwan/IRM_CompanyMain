@@ -82,11 +82,15 @@ class PortfolioInvestment < ApplicationRecord
 
   before_save :compute_fmv
   def compute_fmv
-    last_valuation = portfolio_company.valuations.where(category:, sub_category:).order(valuation_date: :desc).first
-    self.fmv_cents = last_valuation ? quantity * last_valuation.per_share_value_cents : 0
+    self.fmv_cents = compute_fmv_cents_on(Time.zone.today)
     # For buys setup net_quantity, note sold_quantity is -ive
     self.net_quantity = quantity + sold_quantity if buy?
     self.gain_cents = fmv_cents.abs - cost_of_sold_cents if sell?
+  end
+
+  def compute_fmv_cents_on(date)
+    last_valuation = portfolio_company.valuations.where(category:, sub_category:, valuation_date: ..date).order(valuation_date: :desc).first
+    last_valuation ? quantity * last_valuation.per_share_value_cents : 0
   end
 
   after_commit :compute_avg_cost
