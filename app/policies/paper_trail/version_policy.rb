@@ -11,7 +11,7 @@ module PaperTrail
     end
 
     def show?
-      true
+      Pundit.policy(user, record.item).show?
     end
   end
 end
