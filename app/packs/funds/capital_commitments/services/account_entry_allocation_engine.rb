@@ -165,6 +165,7 @@ class AccountEntryAllocationEngine
         ae = AccountEntry.new(name: portfolio_investment.to_s, entry_type: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", generated: true)
 
         icp = capital_commitment.get_account_entry("Investable Capital Percentage", portfolio_investment.investment_date)
+
         fmv_cents = portfolio_investment.compute_fmv_cents_on(@end_date)
         ae = create_account_entry(ae, fund_formula, capital_commitment, portfolio_investment, binding)
       end

@@ -67,11 +67,11 @@ class CapitalRemittancesMailer < ApplicationMailer
   end
 
   def payment_received
-    @capital_remittance = CapitalRemittance.find(params[:id])
+    @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
+    @user = User.find(params[:user_id])
 
     # Get all emails of investors who have pending remittances
-    investor = @capital_remittance.investor
-    investor_emails = sandbox_email(@capital_remittance, investor.emails_for(@capital_remittance.fund))
+    investor_emails = sandbox_email(@capital_remittance, @user.email)
 
     @entity = @capital_remittance.entity
     cc = @entity.entity_setting.cc

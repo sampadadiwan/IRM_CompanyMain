@@ -150,7 +150,9 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def payment_received_notification
-    CapitalRemittancesMailer.with(id:).payment_received.deliver_later
+    investor.approved_users.each do |user|
+      CapitalRemittanceNotification.with(entity_id:, capital_remittance_id: id, email_method: :payment_received).deliver_later(user)
+    end
   end
 
   before_save :set_investor_name
