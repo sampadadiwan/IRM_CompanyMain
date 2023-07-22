@@ -1,12 +1,6 @@
 class AccountEntryAllocationEngine
   attr_accessor :cached_generated_fields
 
-  # This is to split the formula and retain the delimiters
-  # See https://stackoverflow.com/questions/18089562/how-do-i-keep-the-delimiters-when-splitting-a-ruby-string
-  FORMULA_DELIMS = %r{([%*+\-/()?:])} # %r{([?+|\-*/()%=]):} # ["+","-","*","/","(",")","%", "="]
-  FORMULA_DELIMS_NO_PAREN = %r{([%*+\-/?:])}
-  FORMULA_DELIMS_NO_PAREN_NO_COLON = %r{([%*+\-/?])}
-
   def initialize(fund, start_date, end_date, formula_id: nil, user_id: nil,
                  generate_soa: false, template_name: nil, fund_ratios: false)
     @fund = fund

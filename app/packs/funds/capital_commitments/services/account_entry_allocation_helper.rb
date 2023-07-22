@@ -1,4 +1,14 @@
 class AccountEntryAllocationHelper
+  # This is to split the formula and retain the delimiters
+  # See https://stackoverflow.com/questions/18089562/how-do-i-keep-the-delimiters-when-splitting-a-ruby-string
+  # This is used for simple formulas, see print_formula() below
+  FORMULA_DELIMS = %r{([%*+\-/()?:])}
+  # This one is used for complex formulas, where we need to split on spaces
+  FORMULA_DELIMS_WITH_SPACES = %r{( [%*+\-/()?:] )}
+  # These are just random delimiters, used to split the formula, which seem to work sometimes :(
+  FORMULA_DELIMS_NO_PAREN = %r{([%*+\-/?:])}
+  FORMULA_DELIMS_NO_PAREN_NO_COLON = %r{([%*+\-/?])}
+
   def initialize(engine, fund, start_date, end_date, user_id: nil)
     @engine = engine
     @fund = fund
@@ -73,15 +83,14 @@ class AccountEntryAllocationHelper
   def print_formula(fund_formula, bdg)
     printable = ""
     # We try and parse out each formula to print it so its values can be explained
-    [AccountEntryAllocationEngine::FORMULA_DELIMS,
-     AccountEntryAllocationEngine::FORMULA_DELIMS_NO_PAREN,
-     AccountEntryAllocationEngine::FORMULA_DELIMS_NO_PAREN_NO_COLON].each do |delims|
+    [FORMULA_DELIMS, FORMULA_DELIMS_WITH_SPACES, FORMULA_DELIMS_NO_PAREN, FORMULA_DELIMS_NO_PAREN_NO_COLON].each do |delims|
       # We need to use the FORMULA_DELIMS_NO_PAREN only if we cant parse with the FORMULA_DELIMS
       # Sometimes function calls with params, fail to be parsed for printing
-
+      printable_token = ""
       fund_formula.formula.split(delims).each do |token|
         # puts "token = #{token}"
-        pt = token.length > 1 ? safe_eval(token, bdg).to_s : token.to_s
+        printable_token = token
+        pt = token.strip.length > 1 ? safe_eval(token, bdg).to_s : token.to_s
         printable += " #{pt}"
       end
       # We have a printable formula with no errors, so break
@@ -89,6 +98,7 @@ class AccountEntryAllocationHelper
     rescue Exception => e
       Rails.logger.debug "##########Printable Error############"
       Rails.logger.debug fund_formula.formula
+      Rails.logger.error printable_token
       Rails.logger.error e.message
       Rails.logger.debug "##########Printable Error############"
       printable = ""
