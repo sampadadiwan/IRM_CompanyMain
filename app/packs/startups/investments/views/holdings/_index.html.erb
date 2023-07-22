@@ -21,8 +21,16 @@
                     "sample_upload": "HOLDINGS_SAMPLE"), 
                     { class: "btn btn-outline-primary"} if investor && import_upload %> 
 
+                <%= link_to "Upload Options Performance Data", 
+                new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
+                    "import_upload[owner_type]": "Entity", 
+                    "import_upload[import_type]": "OptionsCustomData", 
+                    "sample_upload": "OPTIONS_CUSTOM_DATA_SAMPLE"), 
+                    { class: "btn btn-outline-primary"} if investor && import_upload && @option_pool %> 
 
+        
                 <% if @option_pool && policy(@option_pool).approve_all_holdings? %>
+                
                     <%= button_to "Approve All Holdings" , 
                         approve_all_holdings_holdings_path(option_pool_id: @option_pool.id), 
                         method: :post, class: "btn btn-outline-success" , form_class: "deleteButton", 

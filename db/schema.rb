@@ -10,8 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_21_154418) do
-
+ActiveRecord::Schema[7.0].define(version: 2023_07_22_125856) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -152,7 +151,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_21_154418) do
     t.index ["trackable_id", "trackable_type"], name: "index_activities_on_trackable_id_and_trackable_type"
     t.index ["trackable_type", "trackable_id"], name: "index_activities_on_trackable"
   end
-
 
   create_table "admin_users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "email", default: "", null: false
@@ -755,7 +753,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_21_154418) do
     t.index ["owner_type", "owner_id"], name: "index_e_signatures_on_owner"
     t.index ["user_id"], name: "index_e_signatures_on_user_id"
   end
-
 
   create_table "entities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name"
@@ -1833,6 +1830,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_21_154418) do
     t.text "grant_letter_data"
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
+    t.text "formula"
     t.index ["deleted_at"], name: "index_option_pools_on_deleted_at"
     t.index ["document_folder_id"], name: "index_option_pools_on_document_folder_id"
     t.index ["entity_id"], name: "index_option_pools_on_entity_id"
@@ -2033,7 +2031,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_21_154418) do
     t.index ["to_user_id"], name: "index_share_transfers_on_to_user_id"
     t.index ["transfered_by_id"], name: "index_share_transfers_on_transfered_by_id"
   end
-
 
   create_table "stamp_papers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false

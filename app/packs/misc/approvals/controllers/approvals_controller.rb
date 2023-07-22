@@ -4,6 +4,7 @@ class ApprovalsController < ApplicationController
 
   # GET /approvals or /approvals.json
   def index
+    authorize Approval
     @approvals = if %w[employee].index(current_user.curr_role)
                    policy_scope(Approval)
                  else

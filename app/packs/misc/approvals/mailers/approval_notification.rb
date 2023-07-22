@@ -29,6 +29,6 @@ class ApprovalNotification < BaseNotification
   end
 
   def url
-    approval_path(id: params[:approval_response_id])
+    approval_response_path(id: params[:approval_response_id])
   end
 end

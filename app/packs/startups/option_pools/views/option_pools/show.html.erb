@@ -227,6 +227,22 @@
             </td>
           </tr>
         <% end %>
+
+
+        <% if @option_pool.formula.present? %>
+          <tr class="collapse multi-collapse">
+            <td>
+              Vesting Formula
+            </td>
+            <td>
+              <code>
+                <% @option_pool.formula.split("\n").each do |line| %>
+                  <%= line.gsub(' ', '&nbsp;').html_safe %><br>
+                <% end %>
+              </code>
+            </td>
+          </tr>
+        <% end %>
         
       <% end %>
 
