@@ -81,7 +81,11 @@ class ApplicationPolicy
     end
 
     def resolve_admin
-      scope.joins(:entity).where('entities.enable_support': true)
+      if instance_of?(::PaperTrail::VersionPolicy::Scope)
+        scope
+      else
+        scope.joins(:entity).where('entities.enable_support': true)
+      end
     end
 
     private
