@@ -32,12 +32,13 @@ SimpleCov.start
 # recommended as it will mask a lot of errors for you!
 #
 ActionController::Base.allow_rescue = false
+Cucumber::Rails::Database.autorun_database_cleaner = false
 
 # Remove/comment out the lines below if your app doesn't have a database.
 # For some databases (like MongoDB and CouchDB) you may need to use :truncation instead.
 
 begin
-  DatabaseCleaner.strategy = [:truncation, except: %w[abraham_histories blazer_audits blazer_checks blazer_dashboard_queries   blazer_dashboards blazer_queries  active_admin_comments video_kycs taggings tags admin_users active_storage_attachments active_storage_blobs active_storage_variant_records user_alerts impressions activities exception_tracks impressions investment_snapshots messages nudges reminders payments holding_actions holding_audit_trails deal_docs]]
+  DatabaseCleaner.strategy = [:truncation, except: %w[abraham_histories blazer_audits blazer_checks blazer_dashboard_queries   blazer_dashboards blazer_queries  active_admin_comments video_kycs taggings tags admin_users active_storage_attachments active_storage_blobs active_storage_variant_records user_alerts impressions activities exception_tracks impressions investment_snapshots messages nudges reminders payments holding_actions holding_audit_trails deal_docs kpi_reports share_transfers kpis action_mailbox_inbound_emails]]
 
   Chewy.strategy :bypass
 
@@ -49,8 +50,12 @@ rescue NameError => e
   raise "You need to add database_cleaner to your Gemfile (in the :test group) if you wish to use it."
 end
 
+Before do |scenario|
+  DatabaseCleaner.start
+end
+
 After do |scenario|
-  # DatabaseCleaner.clean
+  DatabaseCleaner.clean
   Sidekiq.redis(&:flushdb)
 
   if scenario.failed?
