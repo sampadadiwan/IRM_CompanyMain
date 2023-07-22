@@ -2190,7 +2190,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_21_154418) do
 
   create_table "versions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "item_type"
-    t.string "{:null=>false, :limit=>191}"
     t.bigint "item_id", null: false
     t.string "event", null: false
     t.string "whodunnit"
