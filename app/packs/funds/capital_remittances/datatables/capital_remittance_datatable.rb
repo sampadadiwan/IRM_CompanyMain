@@ -11,6 +11,7 @@ class CapitalRemittanceDatatable < AjaxDatatablesRails::ActiveRecord
       status: { source: "CapitalRemittance.status" },
       verified: { source: "CapitalRemittance.verified" },
       payment_date: { source: "CapitalRemittance.payment_date" },
+      created_by: { source: "CapitalRemittance.created_by" },
       dt_actions: { source: "", orderable: false }
     }
   end
@@ -22,6 +23,7 @@ class CapitalRemittanceDatatable < AjaxDatatablesRails::ActiveRecord
         fund_name: record.decorate.fund_link,
         payment_date: record.decorate.payment_date,
         folio_id: record.decorate.folio_id,
+        created_by: record.decorate.created_by,
         investor_name: record.decorate.investor_link,
         call_amount: record.decorate.money_to_currency(record.call_amount, params),
         collected_amount: record.decorate.money_to_currency(record.collected_amount, params),
