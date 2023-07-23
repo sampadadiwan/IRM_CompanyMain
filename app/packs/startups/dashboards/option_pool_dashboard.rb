@@ -17,6 +17,7 @@ class OptionPoolDashboard < Administrate::BaseDashboard
     certificate_signature_attachment: Field::HasOne,
     id: Field::Number,
     name: Field::String,
+    formula: Field::Text,
     start_date: Field::Date,
     number_of_options: Field::Number,
     excercise_price_cents: Field::Number,
@@ -59,6 +60,7 @@ class OptionPoolDashboard < Administrate::BaseDashboard
     excercise_period_months
     created_at
     updated_at
+    formula
     allocated_quantity
     excercised_quantity
     vested_quantity
@@ -83,6 +85,7 @@ class OptionPoolDashboard < Administrate::BaseDashboard
     vested_quantity
     lapsed_quantity
     approved
+    formula
   ].freeze
 
   # COLLECTION_FILTERS

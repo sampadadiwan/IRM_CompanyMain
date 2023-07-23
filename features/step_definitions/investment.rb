@@ -505,6 +505,7 @@ Given('Given I upload a holdings file') do
 
   @existing_user_count = User.count
   visit("/holdings")
+  click_on("Uploads")
   click_on("Upload Holdings")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/holdings.xlsx'), make_visible: true)

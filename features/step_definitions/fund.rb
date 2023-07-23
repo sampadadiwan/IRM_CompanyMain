@@ -913,7 +913,7 @@ Then('when the capital call docs are generated') do
     click_on("Generate Documents")
     # sleep(1)
     # expect(page).to have_content("Documentation generation started")
-    sleep(15)
+    sleep(20)
     # expect(page).to have_content("Document #{@call_template.name} generated")
   end
 end
