@@ -40,11 +40,13 @@ class Document < ApplicationRecord
   delegate :full_path, to: :folder, prefix: :folder
   before_validation :setup_folder, :setup_entity
 
-  after_save :send_notification_for_owner
-  after_create :setup_access_rights
+  
+  after_destroy :update_owner
   after_initialize :init
 
   include FileUploader::Attachment(:file)
+
+  after_create_commit  :after_commit_callbacks
 
   scope :generated, -> { where(owner_tag: "Generated") }
   scope :template, -> { where(template: true) }
@@ -54,6 +56,13 @@ class Document < ApplicationRecord
 
   def to_s
     name
+  end
+
+  # Sequence of callbacks is important here 
+  def after_commit_callbacks
+    setup_access_rights
+    update_owner
+    send_notification_for_owner
   end
 
   def init
@@ -140,8 +149,6 @@ class Document < ApplicationRecord
     doc
   end
 
-  after_update :update_owner
-  after_destroy :update_owner
   def update_owner
     owner.document_changed(self) if owner.respond_to? :document_changed
   end
