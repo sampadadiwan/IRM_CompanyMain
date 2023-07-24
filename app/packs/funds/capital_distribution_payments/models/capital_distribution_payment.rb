@@ -16,6 +16,7 @@ class CapitalDistributionPayment < ApplicationRecord
   belongs_to :investor
   belongs_to :capital_commitment
   has_one :investor_kyc, through: :capital_commitment
+  has_many :notifications, as: :recipient, dependent: :destroy
 
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }
   monetize :amount_cents, :cost_of_investment_cents, with_currency: ->(i) { i.fund.currency }

@@ -17,6 +17,7 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :investor
   belongs_to :exchange_rate, optional: true
   has_many :capital_remittance_payments, dependent: :destroy
+  has_many :notifications, as: :recipient, dependent: :destroy
 
   scope :paid, -> { where(status: "Paid") }
   scope :pending, -> { where(status: "Pending") }

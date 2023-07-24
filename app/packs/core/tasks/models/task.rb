@@ -11,9 +11,6 @@ class Task < ApplicationRecord
   # Standard association for deleting notifications when you're the recipient
   has_many :notifications, as: :recipient, dependent: :destroy
 
-  # Helper for associating and destroying Notification records where(params: {post: self})
-  has_noticed_notifications
-
   validates :tags, length: { maximum: 50 }
 
   has_many :reminders, as: :owner, dependent: :destroy

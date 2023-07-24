@@ -1,6 +1,8 @@
 class Reminder < ApplicationRecord
   belongs_to :entity
   belongs_to :owner, polymorphic: true
+  has_many :notifications, as: :recipient, dependent: :destroy
+
   NESTED_ATTRIBUTES = %i[id note due_date email _destroy].freeze
 
   validates :note,  presence: true

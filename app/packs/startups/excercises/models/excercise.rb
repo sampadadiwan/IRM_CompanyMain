@@ -10,6 +10,7 @@ class Excercise < ApplicationRecord
   has_one :created_holding, foreign_key: :created_from_excercise_id, class_name: "Holding", dependent: :destroy
   belongs_to :user
   belongs_to :option_pool
+  has_many :notifications, as: :recipient, dependent: :destroy
 
   include FileUploader::Attachment(:payment_proof)
 

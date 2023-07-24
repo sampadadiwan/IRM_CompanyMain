@@ -21,6 +21,7 @@ class AccessRight < ApplicationRecord
   belongs_to :granted_by, class_name: "User", optional: true
   # If this is a specific investor access
   belongs_to :investor, foreign_key: :access_to_investor_id, optional: true # , strict_loading: true
+  has_many :notifications, as: :recipient, dependent: :destroy
 
   delegate :name, to: :entity, prefix: :entity
   delegate :name, to: :owner, prefix: :owner

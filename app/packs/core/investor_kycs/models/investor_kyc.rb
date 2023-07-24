@@ -9,6 +9,7 @@ class InvestorKyc < ApplicationRecord
   belongs_to :investor
   belongs_to :entity
   has_many :capital_commitments
+  has_many :notifications, as: :recipient, dependent: :destroy
 
   has_many :aml_reports, dependent: :destroy
   has_many :kyc_datas, dependent: :destroy

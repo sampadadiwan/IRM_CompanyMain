@@ -12,6 +12,7 @@ class ExpressionOfInterest < ApplicationRecord
 
   has_many :investor_kycs, through: :investor
   belongs_to :investor_signatory, class_name: "User", optional: true
+  has_many :notifications, as: :recipient, dependent: :destroy
 
   validate :check_amount
   counter_culture :investment_opportunity,

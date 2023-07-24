@@ -13,6 +13,7 @@ class CapitalCall < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund, touch: true
+  has_many :notifications, as: :recipient, dependent: :destroy
 
   belongs_to :approved_by_user, class_name: "User", optional: true
   # Stores the prices for unit types for this call

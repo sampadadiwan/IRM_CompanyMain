@@ -32,6 +32,6 @@ class FolderPolicy < ApplicationPolicy
   end
 
   def destroy?
-    update?
+    false
   end
 end

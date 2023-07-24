@@ -13,6 +13,7 @@ class Offer < ApplicationRecord
   belongs_to :investor
   belongs_to :entity, touch: true
   belongs_to :secondary_sale, touch: true
+  has_many :notifications, as: :recipient, dependent: :destroy
 
   counter_culture :interest,
                   column_name: proc { |o| o.approved ? 'offer_quantity' : nil },

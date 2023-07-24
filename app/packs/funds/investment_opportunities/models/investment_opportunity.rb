@@ -7,11 +7,9 @@ class InvestmentOpportunity < ApplicationRecord
   update_index('investment_opportunity') { self }
 
   belongs_to :entity, touch: true
-
   has_many :access_rights, as: :owner, dependent: :destroy
-
   has_many :expression_of_interests, dependent: :destroy
-
+  has_many :notifications, as: :recipient, dependent: :destroy
   has_rich_text :details
 
   validates :company_name, :fund_raise_amount_cents, :min_ticket_size_cents,

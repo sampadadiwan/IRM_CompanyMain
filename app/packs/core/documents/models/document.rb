@@ -25,6 +25,7 @@ class Document < ApplicationRecord
   belongs_to :from_template, class_name: "Document", optional: true
 
   belongs_to :owner, polymorphic: true, optional: true, touch: true
+  has_many :notifications, as: :recipient, dependent: :destroy
 
   NESTED_ATTRIBUTES = %i[id name file tags owner_tag user_id].freeze
   counter_culture :entity

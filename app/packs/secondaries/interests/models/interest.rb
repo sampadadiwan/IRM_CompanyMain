@@ -15,6 +15,7 @@ class Interest < ApplicationRecord
   has_many :offers, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
   has_many :messages, as: :owner, dependent: :destroy
+  has_many :notifications, as: :recipient, dependent: :destroy
 
   include FileUploader::Attachment(:spa)
   include FileUploader::Attachment(:signature)

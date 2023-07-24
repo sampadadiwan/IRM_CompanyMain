@@ -21,6 +21,7 @@ class Holding < ApplicationRecord
 
   has_many :offers, dependent: :destroy
   has_many :excercises, dependent: :destroy
+  has_many :notifications, as: :recipient, dependent: :destroy
 
   # The Investment to which this is linked
   belongs_to :investment, optional: true

@@ -12,6 +12,7 @@ class InvestorAccess < ApplicationRecord
 
   belongs_to :user, optional: true, strict_loading: true, touch: true
   belongs_to :granter, class_name: "User", foreign_key: :granted_by, optional: true
+  has_many :notifications, as: :recipient, dependent: :destroy
 
   delegate :name, to: :entity, prefix: :entity
   delegate :investor_name, to: :investor
