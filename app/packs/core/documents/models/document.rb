@@ -40,7 +40,6 @@ class Document < ApplicationRecord
   delegate :full_path, to: :folder, prefix: :folder
   before_validation :setup_folder, :setup_entity
 
-  
   after_destroy :update_owner
   after_initialize :init
 
@@ -58,7 +57,7 @@ class Document < ApplicationRecord
     name
   end
 
-  # Sequence of callbacks is important here 
+  # Sequence of callbacks is important here
   def after_commit_callbacks
     setup_access_rights
     update_owner

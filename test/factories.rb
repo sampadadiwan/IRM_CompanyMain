@@ -415,6 +415,7 @@ FactoryBot.define do
     valuation_date { Date.today - rand(48).months }
     valuation_cents { rand(1..10) * 100000000 }
     per_share_value_cents { rand(1..10) * 100000 }
+    report { File.new("public/img/undraw_profile.svg", "r") }
   end
 
   factory :excercise do

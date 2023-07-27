@@ -7,6 +7,10 @@ class Valuation < ApplicationRecord
   validates :category, length: { maximum: 10 }
   validates :sub_category, length: { maximum: 100 }
 
+  # Ensure callback to the owner
+  after_save :update_owner
+  after_save :update_entity
+
   include FileUploader::Attachment(:report)
 
   monetize :valuation_cents, :per_share_value_cents,
@@ -18,7 +22,6 @@ class Valuation < ApplicationRecord
                             end
                           }
 
-  after_save :update_entity
   def update_entity
     if owner_type.blank?
       entity.per_share_value_cents = per_share_value_cents
@@ -26,10 +29,12 @@ class Valuation < ApplicationRecord
     end
   end
 
-  # Ensure callback to the owner
-  after_commit :update_owner
   def update_owner
-    owner.valuation_updated(self) if owner.respond_to?(:valuation_updated)
+    if (saved_change_to_valuation_cents? ||
+       saved_change_to_per_share_value_cents? ||
+       saved_change_to_valuation_date?) && owner.respond_to?(:valuation_updated)
+      owner.valuation_updated(self)
+    end
   end
 
   def instrument_type
