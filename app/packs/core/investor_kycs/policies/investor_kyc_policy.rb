@@ -31,6 +31,10 @@ class InvestorKycPolicy < ApplicationPolicy
     )
   end
 
+  def generate_docs?
+    (belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :read))
+  end
+
   def new?
     create?
   end

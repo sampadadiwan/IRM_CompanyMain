@@ -22,11 +22,19 @@
   <div class="form-group">
     <%= form.label :management_fee %>
     <%= form.number_field :management_fee, class: "form-control", step: :any  %>
+    <small class="text-muted">Management Fee as a %</small>
   </div>
 
   <div class="form-group">
     <%= form.label :setup_fee %>
     <%= form.number_field :setup_fee, class: "form-control", step: :any  %>
+    <small class="text-muted">Setup Fee as a %</small>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :carry %>
+    <%= form.number_field :carry, class: "form-control", step: :any  %>
+    <small class="text-muted">Carry as a %</small>
   </div>
 
   <%= custom_form_fields(fund_unit_setting, form) %>

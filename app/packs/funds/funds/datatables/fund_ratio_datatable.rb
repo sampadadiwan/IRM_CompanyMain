@@ -5,7 +5,7 @@ class FundRatioDatatable < AjaxDatatablesRails::ActiveRecord
       owner_name: { source: "", searchable: false, orderable: false },
       name: { source: "FundRatio.name", searchable: true, orderable: true },
       display_value: { source: "FundRatio.display_value", searchable: false, orderable: false },
-      created_at: { source: "FundRatio.created_at", orderable: true },
+      end_date: { source: "FundRatio.end_date", orderable: true },
       dt_actions: { source: "", orderable: false, searchable: false }
     }
   end
@@ -17,7 +17,7 @@ class FundRatioDatatable < AjaxDatatablesRails::ActiveRecord
         owner_name: record.decorate.owner_name,
         name: record.name,
         display_value: record.display_value,
-        created_at: record.created_at.strftime("%d %B, %Y - %I:%M:%S %p %Z(%:::z)"),
+        end_date: record.decorate.display_date(record.end_date),
         dt_actions: record.decorate.dt_actions,
         DT_RowId: "fund_ratio_#{record.id}" # This will automagically set the id attribute on the corresponding <tr> in the datatable
       }

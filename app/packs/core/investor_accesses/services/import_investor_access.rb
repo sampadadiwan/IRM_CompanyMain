@@ -1,5 +1,5 @@
 class ImportInvestorAccess < ImportUtil
-  STANDARD_HEADERS = ["Investor", "First Name", "Last Name", "Email", "Approved", "Send Confirmation Email"].freeze
+  STANDARD_HEADERS = ["Investor", "First Name", "Last Name", "Email", "Phone", "WhatsApp Enabled", "Approved", "Send Confirmation Email"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -49,8 +49,11 @@ class ImportInvestorAccess < ImportUtil
 
     Rails.logger.debug user_data
     approved = user_data["Approved"] ? user_data["Approved"].strip == "Yes" : false
+    whatsapp_enabled = user_data["WhatsApp Enabled"] ? user_data["WhatsApp Enabled"].strip == "Yes" : false
+
     ia = InvestorAccess.new(first_name: user_data["First Name"], last_name: user_data["Last Name"],
-                            email: user_data["Email"], approved:,
+                            email: user_data["Email"], phone: user_data["Phone"],
+                            approved:, whatsapp_enabled:,
                             entity_id: import_upload.entity_id, investor_id: investor.id,
                             granted_by: import_upload.user_id,
                             send_confirmation: user_data["Send Confirmation Email"] == "Yes")

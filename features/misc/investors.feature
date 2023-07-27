@@ -41,6 +41,7 @@ Scenario Outline: Import investor access
   And Given I upload an investor access file for employees
   Then I should see the "Import upload was successfully created"
   Then There should be "2" investor access created
+  And the investor accesses must have the data in the sheet
 
 
 Scenario Outline: Import investor kycs

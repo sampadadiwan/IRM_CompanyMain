@@ -1,12 +1,11 @@
 class AccountEntryAllocationEngine
   attr_accessor :cached_generated_fields
 
-  def initialize(fund, start_date, end_date, formula_id: nil, user_id: nil,
+  def initialize(fund, start_date, end_date, user_id: nil,
                  generate_soa: false, template_name: nil, fund_ratios: false)
     @fund = fund
     @start_date = start_date
     @end_date = end_date
-    @formula_id = formula_id
     @user_id = user_id
     @generate_soa = generate_soa
     @template_name = template_name
@@ -21,11 +20,6 @@ class AccountEntryAllocationEngine
     fund_unit_settings = FundUnitSetting.where(fund_id: @fund.id).index_by(&:name)
 
     formulas = FundFormula.enabled.where(fund_id: @fund.id).order(sequence: :asc)
-    if @formula_id.present?
-      formulas = formulas.where(id: @formula_id)
-      Rails.logger.debug { "##### Running only formula #{formulas}" }
-    end
-
     count = formulas.count
 
     formulas.each_with_index do |fund_formula, index|

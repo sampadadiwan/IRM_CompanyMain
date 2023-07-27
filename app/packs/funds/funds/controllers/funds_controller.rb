@@ -110,15 +110,15 @@ class FundsController < ApplicationController
       generate_soa = params[:generate_soa] == "1"
       fund_ratios = params[:fund_ratios] == "1"
       user_id = current_user.id
+
+      AllocationRun.create(entity_id: @fund.entity_id, fund_id: @fund.id, start_date:, end_date:, generate_soa:, template_name:, fund_ratios:, user_id: current_user.id)
     rescue StandardError
       Rails.logger.debug "allocate: Dates not sent properly"
     end
 
-    formula_id = params[:fund_formula_id]
-
     if start_date.present? && end_date.present?
       AccountEntryAllocationJob.perform_later(@fund.id, start_date, end_date,
-                                              formula_id:, user_id:, generate_soa:, template_name:, fund_ratios:)
+                                              user_id:, generate_soa:, template_name:, fund_ratios:)
       redirect_to(@fund, notice: "Fund account entries allocation in progress. Please wait for a few mins and refresh the page")
     else
       redirect_back(fallback_location: root_path, alert: "Please specify the start_date and end_date for allocation.")

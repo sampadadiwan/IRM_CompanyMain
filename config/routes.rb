@@ -141,6 +141,8 @@ Rails.application.routes.draw do
     put 'generate_new_aml_report', on: :member
     post 'compare_kyc_datas', on: :collection
     put 'assign_kyc_data', on: :member
+    get 'generate_docs', on: :member
+    patch 'generate_docs', on: :member
   end
 
   resources :aml_reports do
@@ -181,6 +183,7 @@ Rails.application.routes.draw do
   resources :vestings
   resources :option_pools do
     patch 'approve', on: :member
+    patch 'run_vesting', on: :member
   end
 
   resources :aggregate_investments do

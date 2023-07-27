@@ -77,6 +77,6 @@ class FundUnitSettingsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def fund_unit_setting_params
-    params.require(:fund_unit_setting).permit(:entity_id, :fund_id, :name, :management_fee, :setup_fee, :form_type_id, properties: {})
+    params.require(:fund_unit_setting).permit(:entity_id, :fund_id, :name, :management_fee, :setup_fee, :carry, :form_type_id, properties: {})
   end
 end

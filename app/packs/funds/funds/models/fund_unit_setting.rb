@@ -6,6 +6,7 @@ class FundUnitSetting < ApplicationRecord
   belongs_to :fund
 
   validates :name, length: { maximum: 15 }
+  validates_uniqueness_of :name, scope: :fund_id, message: "already exists for this fund"
 
   def to_s
     name

@@ -153,6 +153,31 @@ Given('Given I upload an investor access file for employees') do
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 
+Then('the investor accessess must have the data in the sheet') do
+  file = File.open('./public/sample_uploads/investor_access.xlsx', "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+
+  investor_accesses = @entity.investor_accesses
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    ia = investor_accesses[idx-1]
+    puts "Checking import of #{ia.investor.investor_name}"
+    ia.investor.investor_name.should == user_data["Investor"].strip
+    ia.email.should == user_data["Email"]
+    ia.first_name.should == user_data["First Name"]
+    ia.last_name.should == user_data["Last Name"]
+    ia.phone.should == user_data["Phone"]
+    ia.approved.should == (user_data["Approved"] == "Yes" ? true : false)
+    ia.whatsapp_enabled.should == (user_data["WhatsApp Enabled"] == "Yes" ? true : false)
+  end
+
+end
+
+
 Given('Given I upload an investor kyc file for employees') do
   # Sidekiq.redis(&:flushdb)
 

@@ -37,6 +37,10 @@ class OptionPoolPolicy < ApplicationPolicy
     update? && user.has_cached_role?(:approver)
   end
 
+  def run_vesting?
+    belongs_to_entity?(user, record)
+  end
+
   def approve_all_holdings?
     create? && user.has_cached_role?(:approver)
   end

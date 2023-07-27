@@ -103,3 +103,8 @@ en:
     update: 'Capital Distribution was updated'
     destroy: 'Capital Distribution was deleted'
     started: 'Capital Distribution was started' 
+
+  activerecord:
+    attributes:
+      fund_unit_setting:
+        name: "Class / Series / Unit Type"

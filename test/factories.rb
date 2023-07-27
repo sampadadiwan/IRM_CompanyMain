@@ -1,4 +1,15 @@
 FactoryBot.define do
+  factory :allocation_run do
+    entity { nil }
+    fund { nil }
+    user { nil }
+    start_date { "2023-07-27" }
+    end_date { "2023-07-27" }
+    fund_ratios { false }
+    generate_soa { false }
+    template_name { "MyString" }
+  end
+
 
   factory :e_signature do
     entity { nil }

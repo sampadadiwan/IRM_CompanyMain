@@ -1,7 +1,7 @@
 class ImportHolding < ImportUtil
   STANDARD_HEADERS = ["Funding Round or Option Pool", "Employee ID", "Email",
                       "First Name", "Last Name", "Founder or Employee", "Instrument", "Quantity",
-                      "Price", "Grant Date (mm/dd/yyyy)"].freeze
+                      "Price", "Grant Date (dd/mm/yyyy)", "Option Type", "Manual Vesting (Options Only)"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -66,12 +66,14 @@ class ImportHolding < ImportUtil
 
     fr, ep, grant_date = get_fr_ep(user_data, import_upload)
     price_cents = ep ? ep.excercise_price_cents : user_data["Price"].to_f * 100
+    manual_vesting = user_data["Manual Vesting (Options Only)"]
+    manual_vesting = manual_vesting.strip.casecmp("yes").zero? if manual_vesting.present?
 
     holding = Holding.new(user:, investor:, holding_type: user_data["Founder or Employee"],
                           entity_id: import_upload.owner_id, orig_grant_quantity: user_data["Quantity"],
                           price_cents:, employee_id: user_data["Employee ID"], department: user_data["Department"],
                           investment_instrument: user_data["Instrument"], funding_round: fr, option_pool: ep,
-                          import_upload_id: import_upload.id, grant_date:, approved: false,
+                          import_upload_id: import_upload.id, grant_date:, approved: false, manual_vesting:,
                           option_type: user_data["Option Type"], preferred_conversion: user_data["Preferred Conversion"])
 
     setup_custom_fields(user_data, holding, custom_field_headers)

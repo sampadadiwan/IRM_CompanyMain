@@ -10,7 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_22_182622) do
+ActiveRecord::Schema[7.0].define(version: 2023_07_27_072155) do
+  create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "controller_name"
+    t.string "action_name"
+    t.string "tour_name"
+    t.integer "creator_id", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
+    t.index ["created_at"], name: "index_abraham_histories_on_created_at"
+    t.index ["creator_id"], name: "index_abraham_histories_on_creator_id"
+    t.index ["updated_at"], name: "index_abraham_histories_on_updated_at"
+  end
+
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -152,6 +164,23 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_22_182622) do
     t.index ["trackable_type", "trackable_id"], name: "index_activities_on_trackable"
   end
 
+  create_table "adhaar_esigns", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "document_id", null: false
+    t.string "esign_doc_id", limit: 100
+    t.text "signed_file_url"
+    t.boolean "is_signed", default: false
+    t.text "esign_document_reponse"
+    t.text "esign_retrieve_reponse"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "owner_type"
+    t.bigint "owner_id"
+    t.index ["document_id"], name: "index_adhaar_esigns_on_document_id"
+    t.index ["entity_id"], name: "index_adhaar_esigns_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_adhaar_esigns_on_owner"
+  end
+
   create_table "admin_users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -205,6 +234,22 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_22_182622) do
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
+  end
+
+  create_table "allocation_runs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "user_id", null: false
+    t.date "start_date"
+    t.date "end_date"
+    t.boolean "fund_ratios"
+    t.boolean "generate_soa"
+    t.string "template_name", limit: 30
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_allocation_runs_on_entity_id"
+    t.index ["fund_id"], name: "index_allocation_runs_on_fund_id"
+    t.index ["user_id"], name: "index_allocation_runs_on_user_id"
   end
 
   create_table "aml_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -755,6 +800,20 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_22_182622) do
     t.index ["user_id"], name: "index_e_signatures_on_user_id"
   end
 
+  create_table "emailbutler_messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "uuid", null: false
+    t.string "mailer", null: false
+    t.string "action", null: false
+    t.json "params", null: false
+    t.string "send_to"
+    t.integer "status", default: 0, null: false
+    t.datetime "timestamp"
+    t.integer "lock_version"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["uuid"], name: "index_emailbutler_messages_on_uuid", unique: true
+  end
+
   create_table "entities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name"
     t.string "url"
@@ -1069,6 +1128,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_22_182622) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "carry", precision: 20, scale: 2, default: "0.0"
     t.index ["entity_id"], name: "index_fund_unit_settings_on_entity_id"
     t.index ["form_type_id"], name: "index_fund_unit_settings_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_unit_settings_on_fund_id"
@@ -1485,6 +1545,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_22_182622) do
     t.boolean "send_confirmation", default: false
     t.bigint "investor_entity_id"
     t.boolean "is_investor_advisor", default: false
+    t.string "phone", limit: 15
+    t.boolean "whatsapp_enabled", default: false
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
     t.index ["email"], name: "index_investor_accesses_on_email"
     t.index ["entity_id"], name: "index_investor_accesses_on_entity_id"
@@ -2033,6 +2095,23 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_22_182622) do
     t.index ["transfered_by_id"], name: "index_share_transfers_on_transfered_by_id"
   end
 
+  create_table "signature_workflows", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.bigint "entity_id", null: false
+    t.text "state"
+    t.string "status"
+    t.boolean "sequential", default: true
+    t.boolean "completed", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "paused", default: false
+    t.bigint "document_id"
+    t.index ["document_id"], name: "index_signature_workflows_on_document_id"
+    t.index ["entity_id"], name: "index_signature_workflows_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_signature_workflows_on_owner"
+  end
+
   create_table "stamp_papers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.text "notes"
@@ -2231,12 +2310,17 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_22_182622) do
   add_foreign_key "account_entries", "investors"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "adhaar_esigns", "documents"
+  add_foreign_key "adhaar_esigns", "entities"
   add_foreign_key "aggregate_investments", "entities"
   add_foreign_key "aggregate_investments", "funding_rounds"
   add_foreign_key "aggregate_investments", "investors"
   add_foreign_key "aggregate_portfolio_investments", "entities"
   add_foreign_key "aggregate_portfolio_investments", "funds"
   add_foreign_key "aggregate_portfolio_investments", "investors", column: "portfolio_company_id"
+  add_foreign_key "allocation_runs", "entities"
+  add_foreign_key "allocation_runs", "funds"
+  add_foreign_key "allocation_runs", "users"
   add_foreign_key "aml_reports", "entities"
   add_foreign_key "aml_reports", "investor_kycs"
   add_foreign_key "aml_reports", "investors"
@@ -2456,6 +2540,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_22_182622) do
   add_foreign_key "share_transfers", "users", column: "from_user_id"
   add_foreign_key "share_transfers", "users", column: "to_user_id"
   add_foreign_key "share_transfers", "users", column: "transfered_by_id"
+  add_foreign_key "signature_workflows", "documents"
+  add_foreign_key "signature_workflows", "entities"
   add_foreign_key "stamp_papers", "entities"
   add_foreign_key "taggings", "tags"
   add_foreign_key "tasks", "entities"

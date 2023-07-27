@@ -1,5 +1,5 @@
 class InvestorKycsController < ApplicationController
-  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_new_aml_report]
+  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report]
   after_action :verify_authorized, except: %i[index search]
 
   # GET /investor_kycs or /investor_kycs.json
@@ -147,6 +147,13 @@ class InvestorKycsController < ApplicationController
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }
       end
+    end
+  end
+
+  def generate_docs
+    if params["_method"] == "patch"
+      KycDocGenJob.perform_later(@investor_kyc.id, params[:document_template_ids], params[:start_date], params[:end_date], current_user.id)
+      redirect_to investor_kyc_url(@investor_kyc), notice: "Document generation in progress. Please check back in a few minutes."
     end
   end
 

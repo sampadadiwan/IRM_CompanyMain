@@ -18,6 +18,7 @@ class InvestorAccess < ApplicationRecord
   delegate :investor_name, to: :investor
 
   validates_uniqueness_of :email, scope: :investor_id
+  validates :phone, length: { maximum: 15 }
 
   counter_culture :entity, column_name: proc { |ia| ia.approved ? nil : 'pending_accesses_count' }
   counter_culture :investor, column_name: proc { |model| model.approved ? 'investor_access_count' : 'unapproved_investor_access_count' }
@@ -78,7 +79,8 @@ class InvestorAccess < ApplicationRecord
     u = User.find_by(email:)
     if u.blank?
       # Setup a new user for this investor_entity_id
-      u = User.new(first_name:, last_name:, email:, active: true, system_created: true,
+      u = User.new(first_name:, last_name:, email:, active: true,
+                   phone:, whatsapp_enabled:, system_created: true,
                    entity_id: investor.investor_entity_id, password: SecureRandom.hex(8))
 
       # Upload of IAs has a col to prevent confirmations, lets honour that

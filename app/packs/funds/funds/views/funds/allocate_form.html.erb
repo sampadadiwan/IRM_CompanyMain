@@ -12,9 +12,6 @@
 
 <%= form_with(model: @fund, url: allocate_fund_path(@fund), method: :patch) do |form| %>
   
-  <%= form.text_field :id, class: "form-control", hidden: true  %>
-  <%= form.text_field :formula_id, class: "form-control", hidden: true, value: params[:fund_formula_id], name: "fund_formula_id"  %>
-
   <div class="form-group">
     <%= form.label :start_date %>
     <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date  %>
@@ -47,3 +44,66 @@
     <%= form.submit "Allocate Now", {class: "btn btn-outline-primary"}%>
   </div>
 <% end %>
+
+<div class="associated_entity">
+
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Previous Runs</h1>
+  </div>
+
+  <table class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+          <th>
+            Start Date
+          </th>
+          <th>
+            End Date
+          </th>
+          <th>
+            Generate Fund Ratios
+          </th>
+          <th>
+            Generate SOA
+          </th>
+          <th>
+            Template
+          </th>
+          <th>
+            On
+          </th>
+          <th>
+            By
+          </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% @fund.allocation_runs.limit(20).each do |runs|  %>
+        <tr>
+          <td>
+            <%= l runs.start_date %>
+          </td>
+          <td>
+            <%= l runs.end_date %>
+          </td>
+          <td>
+            <%= display_boolean runs.fund_ratios %>
+          </td>
+          <td>
+            <%= display_boolean runs.generate_soa %>
+          </td>
+          <td>
+            <%= runs.template_name %>
+          </td>
+          <td>
+            <%= l runs.created_at %>
+          </td>
+          <td>
+            <%= runs.user.full_name %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

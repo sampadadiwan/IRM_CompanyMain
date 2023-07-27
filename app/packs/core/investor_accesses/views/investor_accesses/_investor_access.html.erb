@@ -12,9 +12,13 @@
     <%= investor_access.email %>
   </td>
   <td>
-    <span class="badge <%= investor_access.approved ? 'bg-success' : 'bg-warning' %>">
-      <%= investor_access.approved ? "Yes" : "No" %>
-    </span>
+    <%= investor_access.phone %>
+  </td>
+  <td>
+    <%= display_boolean investor_access.whatsapp_enabled %>
+  </td>
+  <td>
+    <%= display_boolean investor_access.approved %>
   </td>
   <td class="hideMobP">
     <%= investor_access.granter&.name %>

@@ -13,6 +13,8 @@
     <% label_class = @investor_kyc.verified ? "btn btn-outline-warning" : "btn btn-outline-success" %>
     <%= button_to label, toggle_verified_investor_kyc_path(@investor_kyc), method: :put, class: label_class, form_class: "deleteButton" if policy(@investor_kyc).toggle_verified? %>
 
+    <%= link_to "Generate Docs" , generate_docs_investor_kyc_path(@investor_kyc), {class: "btn btn-outline-primary" } if policy(@investor_kyc).generate_docs? %>
+
   </div>
 
 <%= render "investor_kycs/details", investor_kyc: @investor_kyc %>

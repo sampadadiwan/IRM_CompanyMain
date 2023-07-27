@@ -299,6 +299,12 @@
         data: {action: "click->confirm#popup", turbo:false, method: "patch",
         msg: "Please verify the details of this option pool. Once approved, the option pool cannot be modified."} if policy(@option_pool).approve?  %> 
 
+        
+    <%= button_to "Run Vesting Schedule", run_vesting_option_pool_path(@option_pool), 
+    method: :patch, class: "btn btn-outline-primary", 
+    data: {action: "click->confirm#popup", turbo:false, method: "patch",
+    msg: "The Vesting Schedule will be run."}  if policy(@option_pool).run_vesting? %> 
+
   </div>
 
   <% if belongs_to_entity_id?(current_user, @option_pool.entity_id) %>

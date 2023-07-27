@@ -1,5 +1,5 @@
 class OptionPoolsController < ApplicationController
-  before_action :set_option_pool, only: %i[show edit update destroy approve]
+  before_action :set_option_pool, only: %i[show edit update destroy approve run_vesting]
 
   # GET /option_pools or /option_pools.json
   def index
@@ -85,11 +85,22 @@ class OptionPoolsController < ApplicationController
           redirect_to option_pool_path(@option_pool),
                       notice: "Option pool was successfully approved."
         end
-        format.json { render :show, status: :created, location: @option_pool }
+        format.json { render :show, status: :ok, location: @option_pool }
       else
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @option_pool.errors, status: :unprocessable_entity }
       end
+    end
+  end
+
+  def run_vesting
+    VestedJob.perform_later(option_pool_id: @option_pool.id, user_id: current_user.id)
+    respond_to do |format|
+      format.html do
+        redirect_to option_pool_path(@option_pool, display_status: true),
+                    notice: "Option pool vesting job scheduled to run. Please check back in a few mins"
+      end
+      format.json { render :show, status: :ok, location: @option_pool }
     end
   end
 

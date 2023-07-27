@@ -16,10 +16,11 @@ Given('I create an investment {string}') do |arg1|
   
   click_on("New Investment")
 
-  select(@investment.investor.investor_name, from: "investment_investor_id")
-  select(@investment.category, from: "investment_category")
+  select(@investment.investor.investor_name, from: "investment_investor_id")  
   select(@investment.funding_round.name, from: "investment_funding_round_id")
   select(@investment.investment_instrument, from: "investment_investment_instrument")
+  select(@investment.category, from: "investment_category")
+
 
   fill_in('investment_quantity', with: @investment.quantity)
   fill_in('investment_price', with: @investment.price)

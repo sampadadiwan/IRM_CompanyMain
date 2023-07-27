@@ -146,6 +146,6 @@ class InvestorAccessesController < ApplicationController
   # Only allow a list of trusted parameters through.
   def investor_access_params
     params.require(:investor_access).permit(:investor_id, :user_id, :email, :approved, :send_confirmation,
-                                            :granted_by, :entity_id, :first_name, :last_name)
+                                            :phone, :whatsapp_enabled, :granted_by, :entity_id, :first_name, :last_name)
   end
 end

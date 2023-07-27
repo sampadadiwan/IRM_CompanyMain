@@ -49,7 +49,7 @@ Scenario Outline:  Options Approved
   Given there is a user "" for an entity "<entity>"
   Given a esop pool "<option_pool>" is created with vesting schedule "<schedule>"
   Given there are "1" employee investors
-  And there is an option holding "approved=true;orig_grant_quantity=1000;investment_instrument=Options" for each employee investor
+  And there is an option holding "approved=true;orig_grant_quantity=1000;investment_instrument=Options;option_type=Regular" for each employee investor
   And the option grant date is "<months>" ago
   Then the option pool must have "<option_pool_quantites>"
   Then the option holding must have "<holding_quantites>"
@@ -80,7 +80,7 @@ Scenario Outline:  Options vested
   Given there is a user "" for an entity "<entity>"
   Given a esop pool "<option_pool>" is created with vesting schedule "<schedule>"
   Given there are "1" employee investors
-  And there is an option holding "approved=true;orig_grant_quantity=1000;investment_instrument=Options" for each employee investor
+  And there is an option holding "approved=true;orig_grant_quantity=1000;investment_instrument=Options;option_type=Regular" for each employee investor
   And the option grant date is "<months>" ago
   Then the option pool must have "<option_pool_quantites>"
   Then the option holding must have "<holding_quantites>"
@@ -100,7 +100,7 @@ Scenario Outline:  Options lapsed
   Given there is a user "" for an entity "<entity>"
   Given a esop pool "<option_pool>" is created with vesting schedule "<schedule>"
   Given there are "1" employee investors
-  And there is an option holding "approved=true;orig_grant_quantity=1000;investment_instrument=Options" for each employee investor
+  And there is an option holding "approved=true;orig_grant_quantity=1000;investment_instrument=Options;option_type=Regular" for each employee investor
   And the option grant date is "<months>" ago
   Then the option holding must have "<holding_quantites>"
   Then the option pool must have "<option_pool_quantites>"
@@ -121,7 +121,7 @@ Scenario Outline:  Options Excercised
   Given there is a user "" for an entity "<entity>"
   Given a esop pool "<option_pool>" is created with vesting schedule "<schedule>"
   Given there are "1" employee investors
-  And there is an option holding "approved=true;orig_grant_quantity=1000;investment_instrument=Options" for each employee investor
+  And there is an option holding "approved=true;orig_grant_quantity=1000;investment_instrument=Options;option_type=Regular" for each employee investor
   And the option grant date is "<months>" ago
   Then the investment total quantity must be "10000"
   Then when the option is excercised "approved=false"
@@ -147,7 +147,7 @@ Scenario Outline:  Options cancelled
   Given there is a user "" for an entity "<entity>"
   Given a esop pool "<option_pool>" is created with vesting schedule "<schedule>"
   Given there are "1" employee investors
-  And there is an option holding "approved=true;orig_grant_quantity=1000;investment_instrument=Options" for each employee investor
+  And there is an option holding "approved=true;orig_grant_quantity=1000;investment_instrument=Options;option_type=Regular" for each employee investor
   And the option grant date is "<months>" ago
   And the option is cancelled "<cancel>"
   Then the option holding must have "<holding_quantites>"
@@ -175,7 +175,7 @@ Scenario Outline:  Options Excercised, Cancelled and Lapsed
   Given there is a user "" for an entity "<entity>"
   Given a esop pool "<option_pool>" is created with vesting schedule "<schedule>"
   Given there are "1" employee investors
-  And there is an option holding "approved=true;orig_grant_quantity=1000;investment_instrument=Options" for each employee investor
+  And there is an option holding "approved=true;orig_grant_quantity=1000;investment_instrument=Options;option_type=Regular" for each employee investor
   And the option grant date is "<months>" ago
   Then the investment total quantity must be "10000"
   Then when the option is excercised "approved=false;quantity=10"

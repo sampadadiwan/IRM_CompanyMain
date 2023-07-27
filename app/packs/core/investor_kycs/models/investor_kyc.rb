@@ -9,6 +9,11 @@ class InvestorKyc < ApplicationRecord
   belongs_to :investor
   belongs_to :entity
   has_many :capital_commitments
+  has_many :capital_remittances, through: :capital_commitments
+  has_many :capital_remittance_payments, through: :capital_commitments
+  has_many :capital_distribution_payments, through: :capital_commitments
+  has_many :account_entries, through: :capital_commitments
+
   has_many :notifications, as: :recipient, dependent: :destroy
 
   has_many :aml_reports, dependent: :destroy
@@ -55,6 +60,10 @@ class InvestorKyc < ApplicationRecord
 
   def folder_path
     "#{investor.folder_path}/KYC-#{id}/#{full_name.delete('/')}"
+  end
+
+  def to_s
+    "#{full_name} - #{self.PAN}"
   end
 
   def document_list

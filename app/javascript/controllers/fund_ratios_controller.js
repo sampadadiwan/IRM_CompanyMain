@@ -8,7 +8,7 @@ export default class extends ServerDatatableController {
       {"data": "owner_name"},
       {"data": "name"},
       {"data": "display_value"},
-      {"data": "created_at"},
+      {"data": "end_date"},
       {"data": "dt_actions"}
     ]
   }

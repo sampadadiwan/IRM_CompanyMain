@@ -29,7 +29,7 @@
       Management Fee
     </td>
     <td>
-      <%= @fund_unit_setting.management_fee %>
+      <%= @fund_unit_setting.management_fee %> % 
     </td>
   </tr>
   <tr>
@@ -37,7 +37,16 @@
       Setup Fee
     </td>
     <td>
-      <%= @fund_unit_setting.setup_fee %>
+      <%= @fund_unit_setting.setup_fee %> % 
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Carry
+    </td>
+    <td>
+      <%= @fund_unit_setting.carry %> % 
     </td>
   </tr>
 

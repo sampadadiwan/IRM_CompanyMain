@@ -7,6 +7,7 @@ class Holding < ApplicationRecord
   include WithCustomField
 
   OPTION_TYPES = ["Regular", "Phantom", "Equity SAR"].freeze
+  INVESTMENT_INSTRUMENTS = %w[Equity Options Preferred].freeze
 
   update_index('holding') { self }
 
@@ -42,6 +43,8 @@ class Holding < ApplicationRecord
   validates :employee_id, length: { maximum: 20 }
   validates :department, length: { maximum: 25 }
   validates :option_type, length: { maximum: 12 }
+  validates :investment_instrument, inclusion: { in: INVESTMENT_INSTRUMENTS }
+  validates :option_type, inclusion: { in: OPTION_TYPES }, if: -> { option_type.present? && investment_instrument == 'Options' }
 
   def allocation_allowed
     errors.add(:option_pool, "Option pool required") if option_pool.nil?
