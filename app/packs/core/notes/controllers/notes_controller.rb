@@ -40,7 +40,7 @@ class NotesController < ApplicationController
   # GET /notes/new
   def new
     @note = Note.new(note_params)
-    @note.entity_id = @note.investor.entity_id
+    @note.entity_id ||= @note.investor.entity_id
     @note.on = Time.zone.today
     @note.reminder = Reminder.new(entity_id: @note.entity_id)
     authorize @note
@@ -55,6 +55,7 @@ class NotesController < ApplicationController
   def create
     @note = Note.new(note_params)
     @note.user_id = current_user.id
+    @note.entity_id = current_user.entity_id
     if @note.reminder.email.present?
       @note.reminder.entity_id = @note.entity_id
       @note.reminder.note = "Reminder for #{@note}"
