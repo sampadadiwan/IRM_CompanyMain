@@ -2,6 +2,8 @@ class InvestorAccess < ApplicationRecord
   include Trackable
   include ActivityTrackable
 
+  attr_accessor :call_code
+
   # Make all models searchable
   update_index('investor_access') { self }
 
@@ -80,7 +82,7 @@ class InvestorAccess < ApplicationRecord
     if u.blank?
       # Setup a new user for this investor_entity_id
       u = User.new(first_name:, last_name:, email:, active: true,
-                   phone:, whatsapp_enabled:, system_created: true,
+                   call_code:, phone:, whatsapp_enabled:, system_created: true,
                    entity_id: investor.investor_entity_id, password: SecureRandom.hex(8))
 
       # Upload of IAs has a col to prevent confirmations, lets honour that

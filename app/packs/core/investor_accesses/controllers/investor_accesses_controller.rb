@@ -94,7 +94,7 @@ class InvestorAccessesController < ApplicationController
     authorize @investor_access
 
     respond_to do |format|
-      if @investor_access.save
+      if @investor_access.save!
         format.turbo_stream { render :create }
         format.html { redirect_to investor_access_path(@investor_access), notice: "Investor access was successfully created." }
         format.json { render :show, status: :created, location: @investor_access }
@@ -146,6 +146,6 @@ class InvestorAccessesController < ApplicationController
   # Only allow a list of trusted parameters through.
   def investor_access_params
     params.require(:investor_access).permit(:investor_id, :user_id, :email, :approved, :send_confirmation,
-                                            :phone, :whatsapp_enabled, :granted_by, :entity_id, :first_name, :last_name)
+                                            :phone, :whatsapp_enabled, :granted_by, :entity_id, :first_name, :last_name, :call_code)
   end
 end
