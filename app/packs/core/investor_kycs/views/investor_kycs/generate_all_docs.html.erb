@@ -1,0 +1,38 @@
+<%
+  start_date ||= Time.zone.today.beginning_of_quarter
+  end_date ||= Time.zone.today.end_of_quarter
+%>
+
+<%= render "/layouts/alerts" %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Generate Documents For <span class="text-danger">All</span> KYCs</h1>
+</div>
+
+
+<%= form_with(model: nil, url: generate_all_docs_investor_kycs_path(entity_id: params[:entity_id]), html: {method: :post, "data-turbo": false}, "data-turbo": false) do |form| %>
+  
+  <div class="form-group">
+    <%= form.label :start_date %>
+    <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :end_date %>
+    <%= form.date_field :end_date, class: "form-control", name: "end_date", value: end_date %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :template_name, "Template" %>
+    <%= form.select :template_name, current_user.entity.documents.template.map{|d| [d.name, d.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2", 
+    name: "document_template_ids[]", multiple: "multiple" %>
+    <small class="text-muted">Select the template to be used for document generation. </small>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Generate Now", {class: "btn btn-outline-primary", "data-turbo": false}%>
+    <br>
+    <small class="text-muted">All generated documents will be attached to the KYC.</small>
+  </div>
+<% end %>
+

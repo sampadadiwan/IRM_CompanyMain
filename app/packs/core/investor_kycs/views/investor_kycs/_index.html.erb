@@ -11,6 +11,8 @@
       %>
       <%= link_to "New Investor Kyc" , new_investor_kyc_path("investor_kyc[investor_id]": @investor&.id, "investor_kyc[entity_id]": entity_id), {class: "btn btn-outline-primary" } if policy(investor_kyc).new? %>
 
+      <%= link_to "Generate Kyc Docs", generate_all_docs_investor_kycs_path(entity_id:), class: "btn btn-outline-primary" if policy(investor_kyc).new? %>
+
       <div class="btn-group">
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle" type="button"

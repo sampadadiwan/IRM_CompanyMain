@@ -1,6 +1,8 @@
 class InvestorKycsController < ApplicationController
+  after_action :verify_policy_scoped, except: [:generate_all_docs]
+
   before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report]
-  after_action :verify_authorized, except: %i[index search]
+  after_action :verify_authorized, except: %i[index search generate_all_docs]
 
   # GET /investor_kycs or /investor_kycs.json
   def index
@@ -152,8 +154,19 @@ class InvestorKycsController < ApplicationController
 
   def generate_docs
     if params["_method"] == "patch"
-      KycDocGenJob.perform_later(@investor_kyc.id, params[:document_template_ids], params[:start_date], params[:end_date], current_user.id)
+      KycDocGenJob.perform_later(@investor_kyc.id, params[:document_template_ids],
+                                 params[:start_date], params[:end_date], user_id: current_user.id)
+
       redirect_to investor_kyc_url(@investor_kyc), notice: "Document generation in progress. Please check back in a few minutes."
+    end
+  end
+
+  def generate_all_docs
+    if request.post?
+      KycDocGenJob.perform_later(nil, params[:document_template_ids], params[:start_date], params[:end_date],
+                                 user_id: current_user.id, entity_id: params[:entity_id])
+
+      redirect_to investor_kycs_url, notice: "Document generation in progress. Please check back in a few minutes."
     end
   end
 

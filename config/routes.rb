@@ -141,8 +141,10 @@ Rails.application.routes.draw do
     put 'generate_new_aml_report', on: :member
     post 'compare_kyc_datas', on: :collection
     put 'assign_kyc_data', on: :member
-    get 'generate_docs', on: :member
-    patch 'generate_docs', on: :member
+    get 'generate_docs', on: :member # Just show the form
+    patch 'generate_docs', on: :member # Actually generate the docs
+    get 'generate_all_docs', on: :collection
+    post 'generate_all_docs', on: :collection # Generate docs for entire fund or entity
   end
 
   resources :aml_reports do

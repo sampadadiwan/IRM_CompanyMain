@@ -40,14 +40,14 @@
                             "import_upload[owner_type]": "Entity", 
                             "import_upload[import_type]": "Holding", 
                             "sample_upload": "HOLDINGS_SAMPLE"), 
-                            { class: "dropdown-item"} if investor && import_upload %> 
+                            { class: "dropdown-item"}  %> 
 
                         <%= link_to "Upload Options Performance Data", 
                         new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
                             "import_upload[owner_type]": "Entity", 
                             "import_upload[import_type]": "OptionsCustomData", 
                             "sample_upload": "OPTIONS_CUSTOM_DATA_SAMPLE"), 
-                            { class: "dropdown-item"} if investor && import_upload && @option_pool %> 
+                            { class: "dropdown-item"} if @option_pool %> 
 
                     </div>
                 </div>
