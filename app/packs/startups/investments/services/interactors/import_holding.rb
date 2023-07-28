@@ -78,7 +78,10 @@ class ImportHolding < ImportUtil
 
     setup_custom_fields(user_data, holding, custom_field_headers)
 
-    CreateHolding.call(holding:).holding
+    holding = CreateHolding.call(holding:).holding
+    raise holding.errors.full_messages.join(", ") unless holding.errors.empty?
+
+    holding
   end
 
   def get_fr_ep(user_data, import_upload)

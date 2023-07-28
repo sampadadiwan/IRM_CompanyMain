@@ -65,7 +65,7 @@
                               model: document %>
 
 
-    <% if params[:external] == "true" %>
+    <% if  document.owner && document.owner.entity_id != current_user.entity_id %>
       <%= form.text_field :orignal, class: "form-control", hidden:true, value: true  %>
     <% else %>
       <div class="form-group nonpdf">

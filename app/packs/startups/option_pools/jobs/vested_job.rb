@@ -18,7 +18,7 @@ class VestedJob < ApplicationJob
 
   # rubocop:disable Security/Eval
   def process_pool(pool)
-    pool.holdings.not_investors.not_lapsed.find_each(batch_size: 500) do |holding|
+    pool.holdings.approved.not_investors.not_lapsed.find_each(batch_size: 500) do |holding|
       if holding.manual_vesting
         # The formula is entered manually into the DB, users cannot enter it.
         vested_quantity = eval(holding.option_pool.formula)

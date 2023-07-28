@@ -12,10 +12,14 @@
     <%= investor_access.email %>
   </td>
   <td>
-    <%= investor_access.phone %>
+    <%= investor_access.user.phone %>
   </td>
   <td>
-    <%= display_boolean investor_access.whatsapp_enabled %>
+    <%= display_boolean investor_access.user.whatsapp_enabled %>
+    <% unless investor_access.user.whatsapp_enabled %>
+    <br>
+    <small class="text-muted"><%= "User must enable" %></small>
+    <% end %>
   </td>
   <td>
     <%= display_boolean investor_access.approved %>

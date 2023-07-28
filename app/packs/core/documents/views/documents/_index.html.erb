@@ -21,7 +21,6 @@
   <% end %>
 
   <% 
-    external = owner && owner.entity_id != current_user.entity_id 
     entity_id = @entity&.id
     entity_id ||= owner&.entity_id
     entity_id ||= current_user.entity_id
@@ -40,7 +39,7 @@
         "folder[parent_id]": @folder.id), 
         class: "btn btn-sm btn-outline-primary" if params[:folder_id].present? && policy(@folder).create?   %> 
 
-    <%= link_to "New Document", new_document_path(external: external, 
+    <%= link_to "New Document", new_document_path( 
                 document: doc_attributes, 
                 "document[folder_id]": params[:folder_id]), 
                 {class: "btn btn-sm  btn-outline-primary" }  if policy(document).create? %>

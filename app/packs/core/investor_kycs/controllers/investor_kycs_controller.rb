@@ -1,5 +1,5 @@
 class InvestorKycsController < ApplicationController
-  after_action :verify_policy_scoped, except: [:generate_all_docs]
+  after_action :verify_policy_scoped, only: [:index]
 
   before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report]
   after_action :verify_authorized, except: %i[index search generate_all_docs]
