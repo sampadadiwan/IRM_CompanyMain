@@ -80,18 +80,7 @@
     </div>
     <% end %>
 
-    <div class="associated_entity row">
-    <% User.permissions.pairs.each do |key, val| %>
-      <% if user.entity.send(val) %>
-        <div class="form-group col">
-          <%= form.label :permissions, key.titleize, class: "no-wrap" %>
-          <%= form.check_box :permissions, {name: "user[permissions][]",
-              val: val, id: "permissions_#{val}", class: "form-control row-checkbox"}, val, nil   %>
-        </div>
-        <% end %>
-    <% end %>
-    </div>
-    
+        
     <% unless user.has_cached_role?(:company_admin) %>
       <div class="associated_entity row">
       <% User.extended_permissions.pairs.each do |key, val| %>
@@ -129,6 +118,26 @@
 
   <%= form.text_field :entity_id, class: "form-control", hidden: true %>
 
+  <% if current_user.has_cached_role?(:company_admin) %>
+
+    <div class="divider">
+      <hr/>
+    </div>
+
+    <div class="associated_entity row">
+
+      <% User.permissions.pairs.each do |key, val| %>
+        <% if user.entity.send(val) %>
+          <div class="form-group col">
+            <%= form.label :permissions, key.titleize, class: "no-wrap" %>
+            <%= form.check_box :permissions, {name: "user[permissions][]",
+                val: val, id: "permissions_#{val}", class: "form-control row-checkbox"}, val, nil   %>
+          </div>
+          <% end %>
+      <% end %>
+    </div>
+
+  <% end %>
 
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-outline-primary"} %>
