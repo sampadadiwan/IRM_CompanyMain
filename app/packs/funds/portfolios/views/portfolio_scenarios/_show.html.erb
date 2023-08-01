@@ -1,0 +1,86 @@
+<div id="<%= dom_id(portfolio_scenario) %>" class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Scenario: <%= portfolio_scenario.name %></h6>
+      <span>
+      </span>
+  </div>
+  <div class="table-responsive card-body show_details">
+    <table class="table table-bordered dataTable no_hover_table">
+      <tr>
+        <td>
+          Entity
+        </td>
+        <td>
+          <%= portfolio_scenario.entity.name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Fund
+        </td>
+        <td>
+          <%= link_to portfolio_scenario.fund %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Name
+        </td>
+        <td>
+          <%= portfolio_scenario.name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          User
+        </td>
+        <td>
+          <%= portfolio_scenario.user.full_name %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Calculations
+        </td>
+        <td>
+          
+          <table class="table table-bordered dataTable no_hover_table">
+            <tr>
+              <td>Xirr</td>
+              <td><%= portfolio_scenario.calculations[:xirr] %></td>
+            </tr>
+            
+            <% if portfolio_scenario.calculations[:xirr_cash_flows] %>
+            <tr>
+              <td>Xirr Cash Flows</td>
+              <% table_options = { table_class: "table table-bordered dataTable collapse xirr_cash_flows_table" } %>
+              <td>
+                <small><a class="xirr_cash_flows_table show float-right" data-toggle="collapse" href=".xirr_cash_flows_table">Show More <i class="fa-solid fa-caret-down"></i></a></small>
+                <small><a class="xirr_cash_flows_table collapse float-right" data-toggle="collapse" href=".xirr_cash_flows_table">Show Less <i class="fa-solid fa-caret-up"></i></a></small>
+
+                <%= Json2table::get_html_table(portfolio_scenario.calculations[:xirr_cash_flows], table_options).html_safe %>
+              </td>
+            </tr>
+            <% end %>
+
+            <% if portfolio_scenario.calculations[:portfolio_company_irr] %>
+            <tr>
+              <td>Portfolio Irr</td>
+              <% table_options = { table_class: "table table-bordered dataTable collapse show portfolio_company_irr_table" } %>
+              <td>
+                
+                <small><a class="portfolio_company_irr_table collapse float-right" data-toggle="collapse" href=".portfolio_company_irr_table">Show More <i class="fa-solid fa-caret-down"></i></a></small>
+                <small><a class="portfolio_company_irr_table show float-right" data-toggle="collapse" href=".portfolio_company_irr_table">Show Less <i class="fa-solid fa-caret-up"></i></a></small>
+
+                <%= Json2table::get_html_table(portfolio_scenario.calculations[:portfolio_company_irr], table_options).html_safe %>
+              </td>
+            </tr>
+            <% end %>
+          </table>
+          
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>

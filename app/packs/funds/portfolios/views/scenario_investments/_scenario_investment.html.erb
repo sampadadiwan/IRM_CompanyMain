@@ -1,0 +1,24 @@
+<tr id="<%= dom_id scenario_investment %>">
+  <td>
+    <%= scenario_investment.user.full_name %>
+  </td>
+  <td>
+    <%= l scenario_investment.transaction_date %>
+  </td>
+  <td>
+    <%= link_to scenario_investment.portfolio_company.investor_name, scenario_investment.portfolio_company %>
+  </td>
+  <td>
+    <%= money_to_currency scenario_investment.price, params %>
+  </td>
+  <td>
+    <%= scenario_investment.quantity %>
+  </td>
+  <td>
+    <%= scenario_investment.notes %>
+  </td>
+  <td>
+    <%= link_to "Show", scenario_investment , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Edit", edit_scenario_investment_path(scenario_investment), {class: "btn btn-outline-success", data: { turbo_frame: 'new_scenario_investment' } } if policy(scenario_investment).update? %> 
+  </td>
+</tr>

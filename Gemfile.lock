@@ -27,7 +27,7 @@ GIT
 
 GIT
   remote: https://github.com/thimmaiah/xirr
-  revision: 59c72577347b7bd9c23197bb9de8eca4da4097f9
+  revision: e630a7cbe48dc0d2b6ce49097ca9010643e49ac2
   specs:
     xirr (0.6.1)
       RubyInline (~> 3)
@@ -43,7 +43,7 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
-    RubyInline (3.13.0)
+    RubyInline (3.14.0)
       ZenTest (~> 4.3)
     ZenTest (4.12.1)
     action_mailbox_amazon_ingress (0.1.3)
@@ -203,6 +203,7 @@ GEM
       erubi (~> 1.4)
       parser (>= 2.4)
       smart_properties
+    bigdecimal (3.1.4)
     bindex (0.8.1)
     binding_of_caller (1.0.0)
       debug_inspector (>= 0.0.1)
@@ -847,6 +848,7 @@ DEPENDENCIES
   awesome_print
   aws-sdk-s3
   better_errors
+  bigdecimal
   binding_of_caller
   blazer
   bootsnap

@@ -1,0 +1,36 @@
+class ScenarioInvestment < ApplicationRecord
+  include WithCustomField
+  include ForInvestor
+
+  belongs_to :entity
+  belongs_to :fund
+  belongs_to :portfolio_scenario
+  belongs_to :user
+  belongs_to :portfolio_company, class_name: 'Investor'
+
+  validates :transaction_date, presence: true
+  validates :price_cents, presence: true, numericality: { greater_than: 0 }
+  validates :category, length: { maximum: 15 }
+  validates :sub_category, length: { maximum: 100 }
+
+  monetize :price_cents, with_currency: ->(i) { i.fund.currency }
+
+  scope :buys, -> { where("scenario_investments.quantity > 0") }
+  scope :sells, -> { where("scenario_investments.quantity < 0") }
+
+  def to_portfolio_investment
+    pi = PortfolioInvestment.new(fund_id:, portfolio_company_id:, portfolio_company_name: portfolio_company.investor_name, investment_date: transaction_date, quantity:, amount_cents:, category:, sub_category:, created_at: transaction_date, commitment_type: "Pool")
+    pi.compute_fmv
+    pi.readonly!
+    pi
+  end
+
+  def amount_cents
+    price_cents * -quantity
+  end
+
+  # (1..100).each do |i|
+  #   fpc = FundPortfolioCalcs.new(Fund.find(4), (Date.today - i.days))
+  #   fpc.xirr
+  # end
+end

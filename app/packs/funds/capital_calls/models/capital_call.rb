@@ -43,7 +43,7 @@ class CapitalCall < ApplicationRecord
 
   after_commit :generate_capital_remittances
   def generate_capital_remittances
-    CapitalCallJob.set.perform_later(id, "Generate") if generate_remittances && saved_change_to_percentage_called?
+    CapitalCallJob.perform_later(id, "Generate") if generate_remittances && saved_change_to_percentage_called?
   end
 
   after_commit :send_notification, if: :approved

@@ -1,0 +1,9 @@
+<%= render "/layouts/alerts" %>
+
+<%= render "scenario_investments/show", scenario_investment: @scenario_investment %>
+
+<div>
+  <% if policy(@scenario_investment).destroy? %>
+  <%= button_to "Delete", @scenario_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <% end %>
+</div>

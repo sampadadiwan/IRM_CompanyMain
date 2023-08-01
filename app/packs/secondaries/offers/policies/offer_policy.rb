@@ -1,4 +1,18 @@
 class OfferPolicy < SaleBasePolicy
+  class Scope < Scope
+    def resolve
+      if user.has_cached_role?(:company_admin) && ["Company", "Group Company"].include?(user.entity_type)
+        scope.for_company_admin(user)
+      elsif user.has_cached_role?(:employee) && ["Company", "Group Company"].include?(user.entity_type)
+        scope.for_employee(user)
+      # elsif user.curr_role == 'holding'
+      #   scope.for_investor(user).distinct
+      else
+        user.entity.entity_type == "Holding" ? scope.where(user_id: user.id) : scope.for_investor(user)
+      end
+    end
+  end
+
   def index?
     user.enable_secondary_sale
   end

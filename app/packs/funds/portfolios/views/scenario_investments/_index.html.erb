@@ -1,0 +1,43 @@
+<% portfolio_scenario ||= nil %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Scenario Investments</h1>
+  <%= link_to "New Scenario Investment", new_scenario_investment_path("scenario_investment[portfolio_scenario_id]": portfolio_scenario.id), {class: "btn btn-outline-primary", data: { turbo_frame: 'new_scenario_investment' } } if portfolio_scenario %>
+</div>
+
+<%= turbo_frame_tag "new_scenario_investment" do %>
+<% end %>
+
+<div class="table-responsive" data-controller="datatable">
+  <table id="scenario_investments" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          User
+        </th>
+        <th>
+          Transaction Date
+        </th>
+        <th>
+          Portfolio Company
+        </th>
+        <th>
+          Price
+        </th>
+        <th>
+          Quantity
+        </th>
+        <th>
+          Notes
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody id="scenario_investments_table_body">
+      <% scenario_investments.each do |scenario_investment| %>
+        <%= render scenario_investment %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

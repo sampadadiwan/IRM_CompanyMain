@@ -25,6 +25,6 @@
   </td>  
 <% end -%>
   <td>
-    <%%= link_to "Show", <%= model_resource_name(singular_table_name) %> , {class: "btn btn-primary"}%>
+    <%%= link_to "Show", <%= model_resource_name(singular_table_name) %> , {class: "btn btn-outline-primary"}%>
   </td>
 </tr>

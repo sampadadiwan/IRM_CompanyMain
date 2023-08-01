@@ -1,4 +1,23 @@
 FactoryBot.define do
+  factory :scenario_investment do
+    entity { nil }
+    fund { nil }
+    portfolio_scenario { nil }
+    user { nil }
+    transaction_date { "2023-07-29" }
+    portfolio_company { nil }
+    price { "9.99" }
+    quantity { "9.99" }
+    notes { "MyText" }
+  end
+
+  factory :portfolio_scenario do
+    entity { nil }
+    fund { nil }
+    name { "MyString" }
+    user { nil }
+  end
+
   factory :allocation_run do
     entity { nil }
     fund { nil }

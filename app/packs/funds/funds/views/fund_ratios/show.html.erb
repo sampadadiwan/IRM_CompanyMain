@@ -71,6 +71,19 @@
       <%= @fund_ratio.notes %>
     </td>
   </tr>
+
+  <% if @fund_ratio.cash_flows %>
+  <tr>
+    <td>
+      Cash Flows
+    </td>
+    <td>
+      <% table_options = { table_class: "table table-bordered dataTable" } %>
+      <%= Json2table::get_html_table(@fund_ratio.cash_flows, table_options).html_safe %>
+    </td>
+  </tr>
+  <% end %>
+
 </table>
 <div>
   <%= link_to "Edit", edit_fund_ratio_path(@fund_ratio), {class: "btn btn-outline-primary"} if policy(@fund_ratio).update? %>

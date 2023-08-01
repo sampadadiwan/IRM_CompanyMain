@@ -1,0 +1,5 @@
+
+<%= turbo_stream.prepend('scenario_investments_table_body', 
+    partial: "scenario_investments/scenario_investment", locals: { scenario_investment: @scenario_investment }) %>
+
+<%= turbo_stream.replace('new_scenario_investment', partial: "scenario_investments/blank" ) %>

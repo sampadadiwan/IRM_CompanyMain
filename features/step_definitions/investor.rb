@@ -153,7 +153,7 @@ Given('Given I upload an investor access file for employees') do
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 
-Then('the investor accessess must have the data in the sheet') do
+Then('the investor accesses must have the data in the sheet') do
   file = File.open('./public/sample_uploads/investor_access.xlsx', "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
   headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
@@ -170,7 +170,7 @@ Then('the investor accessess must have the data in the sheet') do
     ia.email.should == user_data["Email"]
     ia.first_name.should == user_data["First Name"]
     ia.last_name.should == user_data["Last Name"]
-    ia.phone.should == user_data["Phone"]
+    ia.phone.should == user_data["Phone"]&.to_s
     ia.approved.should == (user_data["Approved"] == "Yes" ? true : false)
     ia.whatsapp_enabled.should == (user_data["WhatsApp Enabled"] == "Yes" ? true : false)
   end

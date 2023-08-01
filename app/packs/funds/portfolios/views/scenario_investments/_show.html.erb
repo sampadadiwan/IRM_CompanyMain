@@ -1,0 +1,83 @@
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Scenario Investment: <%= scenario_investment.portfolio_company.investor_name %></h6>
+      <span>
+      </span>
+  </div>
+  <div class="card-body show_details">
+    <table class="table table-bordered dataTable">
+      <tr>
+        <td>
+          Entity
+        </td>
+        <td>
+          <%= scenario_investment.entity.name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Fund
+        </td>
+        <td>
+          <%= link_to scenario_investment.fund %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Portfolio Scenario
+        </td>
+        <td>
+          <%= link_to scenario_investment.portfolio_scenario %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          User
+        </td>
+        <td>
+          <%= scenario_investment.user.full_name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Transaction Date
+        </td>
+        <td>
+          <%= scenario_investment.transaction_date %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Portfolio Company
+        </td>
+        <td>
+          <%= scenario_investment.portfolio_company.investor_name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Price
+        </td>
+        <td>
+          <%= money_to_currency scenario_investment.price, params %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Quantity
+        </td>
+        <td>
+          <%= scenario_investment.quantity %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Notes
+        </td>
+        <td>
+          <%= scenario_investment.notes %>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>

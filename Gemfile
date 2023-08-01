@@ -72,7 +72,9 @@ gem 'rupees', git: "https://github.com/thimmaiah/rupees.git"
 gem 'to_words'
 # gem 'razorpay'
 
+gem 'bigdecimal'
 gem 'xirr', git: "https://github.com/thimmaiah/xirr"
+# gem 'xirr', path: "/home/thimmaiah/work/xirr"
 # gem 'prometheus_exporter'
 
 # For verifying digital signatures in PDFs

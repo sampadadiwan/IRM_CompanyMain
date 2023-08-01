@@ -1,4 +1,9 @@
 Rails.application.routes.draw do
+  resources :scenario_investments
+  resources :portfolio_scenarios do
+    patch 'run', on: :member
+  end
+
   resources :e_signatures
   resources :stamp_papers
   resources :investor_notice_items

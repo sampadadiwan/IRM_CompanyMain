@@ -5,31 +5,41 @@ class CapitalCommitmentCalcs
   end
 
   def fmv_cents
-    ae = @capital_commitment.account_entries.where(name: "Portfolio FMV", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
-    ae&.amount_cents || 0
+    @fmv_cents ||= begin
+      ae = @capital_commitment.account_entries.where(name: "Portfolio FMV", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
+      ae&.amount_cents || 0
+    end
   end
 
   def cash_in_hand_cents
-    ae = @capital_commitment.account_entries.where(name: "Cash In Hand", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
-    ae&.amount_cents || 0
+    @cash_in_hand_cents ||= begin
+      ae = @capital_commitment.account_entries.where(name: "Cash In Hand", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
+      ae&.amount_cents || 0
+    end
   end
 
   def net_current_assets_cents
-    ae = @capital_commitment.account_entries.where(name: "Net Current Assets", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
-    ae&.amount_cents || 0
+    @net_current_assets_cents ||= begin
+      ae = @capital_commitment.account_entries.where(name: "Net Current Assets", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
+      ae&.amount_cents || 0
+    end
   end
 
   def estimated_carry_cents
-    ae = @capital_commitment.account_entries.where(name: "Estimated Carry", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
-    ae&.amount_cents || 0
+    @estimated_carry_cents ||= begin
+      ae = @capital_commitment.account_entries.where(name: "Estimated Carry", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
+      ae&.amount_cents || 0
+    end
   end
 
   def collected_cents
-    @capital_commitment.capital_remittances.verified.where(payment_date: ..@end_date).sum(:collected_amount_cents)
+    @collected_cents ||=
+      @capital_commitment.capital_remittances.verified.where(payment_date: ..@end_date).sum(:collected_amount_cents)
   end
 
   def distribution_cents
-    @capital_commitment.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:amount_cents)
+    @distribution_cents ||=
+      @capital_commitment.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:amount_cents)
   end
 
   def dpi
@@ -47,29 +57,38 @@ class CapitalCommitmentCalcs
   end
 
   def fmv_on_date
-    ae = @capital_commitment.account_entries.where(name: "Portfolio FMV", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
-    ae&.amount_cents || 0
+    @fmv_on_date ||= begin
+      ae = @capital_commitment.account_entries.where(name: "Portfolio FMV", cumulative: true, reporting_date: ..@end_date).order(reporting_date: :asc).last
+      ae&.amount_cents || 0
+    end
   end
 
-  def xirr(net_irr: false)
+  def xirr(net_irr: false, return_cash_flows: false)
     cf = Xirr::Cashflow.new
 
     @capital_commitment.capital_remittance_payments.where("capital_remittance_payments.payment_date <= ?", @end_date).each do |cr|
-      cf << Xirr::Transaction.new(-1 * cr.amount_cents, date: cr.payment_date)
+      cf << Xirr::Transaction.new(-1 * cr.amount_cents, date: cr.payment_date) if cr.amount_cents != 0
     end
 
     @capital_commitment.capital_distribution_payments.where("capital_distribution_payments.payment_date <= ?", @end_date).each do |cdp|
-      cf << Xirr::Transaction.new(cdp.amount_cents, date: cdp.payment_date)
+      cf << Xirr::Transaction.new(cdp.amount_cents, date: cdp.payment_date) if cdp.amount_cents != 0
     end
 
-    cf << Xirr::Transaction.new(fmv_on_date, date: @end_date)
-    cf << Xirr::Transaction.new(cash_in_hand_cents, date: @end_date)
-    cf << Xirr::Transaction.new(net_current_assets_cents, date: @end_date)
+    cf << Xirr::Transaction.new(fmv_on_date, date: @end_date) if fmv_on_date != 0
+    cf << Xirr::Transaction.new(cash_in_hand_cents, date: @end_date) if cash_in_hand_cents != 0
+    cf << Xirr::Transaction.new(net_current_assets_cents, date: @end_date) if net_current_assets_cents != 0
 
-    cf << Xirr::Transaction.new(estimated_carry_cents, date: @end_date) if net_irr
+    cf << Xirr::Transaction.new(estimated_carry_cents, date: @end_date) if net_irr && estimated_carry_cents != 0
 
     Rails.logger.debug { "capital_commitment.xirr cf: #{cf}" }
     Rails.logger.debug { "capital_commitment.xirr irr: #{cf.xirr}" }
-    (cf.xirr * 100).round(2)
+
+    lxirr = XirrApi.new.xirr(cf, "xirr_cc_#{@capital_commitment.id}_#{@end_date}") || 0
+    Rails.logger.debug { "cc.xirr irr: #{lxirr}" }
+    if return_cash_flows
+      [(lxirr * 100).round(2), cf]
+    else
+      (lxirr * 100).round(2)
+    end
   end
 end

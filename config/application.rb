@@ -42,7 +42,7 @@ module CapHive
 
     config.paths['app/views'].unshift("#{Rails.root}/app/packs/misc/views")
 
-    funds_view_paths = %w[funds capital_calls capital_commitments capital_distributions capital_distribution_payments capital_remittances investment_opportunities fund_reports]
+    funds_view_paths = %w[funds capital_calls capital_commitments capital_distributions portfolios capital_distribution_payments capital_remittances investment_opportunities fund_reports]
 
     funds_view_paths.each do |view_path|
       config.paths['app/views'].unshift("#{Rails.root}/app/packs/funds/#{view_path}/views")
@@ -76,7 +76,7 @@ module CapHive
 
     Rails.application.routes.default_url_options[:host] = ENV.fetch('HOST', nil)
 
-    config.active_record.yaml_column_permitted_classes = [BigDecimal, Date, ActiveSupport::HashWithIndifferentAccess, Time, Symbol, Roo::Link]
+    config.active_record.yaml_column_permitted_classes = [BigDecimal, Date, ActiveSupport::HashWithIndifferentAccess, Time, Symbol, Roo::Link, Xirr::Cashflow, Xirr::Transaction]
 
     config.action_mailer.smtp_settings = {
       address: "email-smtp.ap-south-1.amazonaws.com",

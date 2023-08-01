@@ -1,0 +1,31 @@
+<%= form_with(model: portfolio_scenario) do |form| %>
+  <% if portfolio_scenario.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(portfolio_scenario.errors.count, "error") %> prohibited this portfolio_scenario from being saved:</h2>
+
+      <ul>
+        <% portfolio_scenario.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :user_id, class: "form-control", hidden: true  %>
+
+  <div class="form-group">
+    <%= form.label :fund_id %>
+    <%= form.select :fund_id, current_user.entity.funds.map{|f| [f.name, f.id]}, {}, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :name %>
+    <%= form.text_field :name, class: "form-control"  %>
+  </div>
+
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+  </div>
+<% end %>

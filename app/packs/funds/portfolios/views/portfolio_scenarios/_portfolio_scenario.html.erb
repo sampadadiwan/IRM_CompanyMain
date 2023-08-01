@@ -1,0 +1,15 @@
+<tr id="<%= dom_id portfolio_scenario %>">
+  <td>
+    <%= portfolio_scenario.fund.name %>
+  </td>
+  <td>
+    <%= portfolio_scenario.name %>
+  </td>
+  <td>
+    <%= portfolio_scenario.user.full_name %>
+  </td>
+  <td>
+    <%= link_to "Show", portfolio_scenario , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Edit", edit_portfolio_scenario_path(portfolio_scenario), {class: "btn btn-outline-success"} if policy(portfolio_scenario).update? %> 
+  </td>
+</tr>
