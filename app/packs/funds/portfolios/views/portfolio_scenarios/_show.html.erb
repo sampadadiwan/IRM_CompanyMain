@@ -57,7 +57,7 @@
               <% table_options = { table_class: "table table-bordered dataTable collapse xirr_cash_flows_table" } %>
               <td>
                 <small><a class="xirr_cash_flows_table show float-right" data-toggle="collapse" href=".xirr_cash_flows_table">Show More <i class="fa-solid fa-caret-down"></i></a></small>
-                <small><a class="xirr_cash_flows_table collapse float-right" data-toggle="collapse" href=".xirr_cash_flows_table">Show Less <i class="fa-solid fa-caret-up"></i></a></small>
+                <small><a class="xirr_cash_flows_table collapse float-right text-success" data-toggle="collapse" href=".xirr_cash_flows_table">Show Less <i class="fa-solid fa-caret-up"></i></a></small>
 
                 <%= Json2table::get_html_table(portfolio_scenario.calculations[:xirr_cash_flows], table_options).html_safe %>
               </td>
@@ -71,7 +71,7 @@
               <td>
                 
                 <small><a class="portfolio_company_irr_table collapse float-right" data-toggle="collapse" href=".portfolio_company_irr_table">Show More <i class="fa-solid fa-caret-down"></i></a></small>
-                <small><a class="portfolio_company_irr_table show float-right" data-toggle="collapse" href=".portfolio_company_irr_table">Show Less <i class="fa-solid fa-caret-up"></i></a></small>
+                <small><a class="portfolio_company_irr_table show float-right text-success" data-toggle="collapse" href=".portfolio_company_irr_table">Show Less <i class="fa-solid fa-caret-up"></i></a></small>
 
                 <%= Json2table::get_html_table(portfolio_scenario.calculations[:portfolio_company_irr], table_options).html_safe %>
               </td>
