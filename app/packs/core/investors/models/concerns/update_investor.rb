@@ -88,7 +88,7 @@ module UpdateInvestor
   # Some associations cache the investor_name, so update that if the name changes here.
 
   def update_association_name
-    if saved_change_to_investor_name
+    if saved_change_to_investor_name?
       investor_kycs.update_all(investor_name:)
       capital_commitments.update_all(investor_name:)
       capital_distribution_payments.update_all(investor_name:)
@@ -97,6 +97,12 @@ module UpdateInvestor
       portfolio_investments.update_all(portfolio_company_name: investor_name)
       deal_investors.update_all(investor_name:)
       update_folder_names
+
+      # Check if investor entity has only one investor, and we changed its name
+      if Investor.where(investor_entity_id:).count == 1
+        # If so also update the entity name
+        investor_entity.update(name: investor_name)
+      end
     end
   end
 

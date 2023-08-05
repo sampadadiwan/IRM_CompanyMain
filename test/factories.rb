@@ -1,4 +1,14 @@
 FactoryBot.define do
+  factory :call_fee do
+    name { "MyString" }
+    start_date { "2023-08-03" }
+    end_date { "2023-08-03" }
+    notes { "MyString" }
+    entity { nil }
+    fund { nil }
+    capital_call { nil }
+  end
+
   factory :scenario_investment do
     entity { nil }
     fund { nil }
@@ -346,6 +356,7 @@ FactoryBot.define do
     due_date { Time.zone.today + 3.weeks }
     call_date { Time.zone.today + 3.weeks }
     name { "Capital Call #{Time.now.to_f}" }
+    call_basis { "Percentage of Commitment" }
     percentage_called { rand(1..4) * 10 }
     fund_closes { ["All"] }
     notes { Faker::Company.catch_phrase }
@@ -374,7 +385,7 @@ FactoryBot.define do
     entity { Entity.funds.sample }
     tag_list {  }
     unit_types {"Series A, Series B, Series C"}
-    currency { ["INR", "USD"].sample }
+    currency { ["INR"].sample }
   end
 
 

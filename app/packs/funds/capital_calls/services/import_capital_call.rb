@@ -1,5 +1,5 @@
 class ImportCapitalCall < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date", "Call Date", "Fund Closes", "Generate Remittances", "Remittances Verified", "Type"].freeze
+  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date", "Call Date", "Fund Closes", "Generate Remittances", "Remittances Verified", "Type", "Call Basis"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -51,7 +51,7 @@ class ImportCapitalCall < ImportUtil
                                        call_date: user_data["Call Date"],
                                        fund_closes:, commitment_type: user_data["Type"],
                                        percentage_called: user_data["Percentage Called"],
-                                       manual_generation: true,
+                                       manual_generation: true, call_basis: user_data["Call Basis"],
                                        generate_remittances:, generate_remittances_verified:)
 
         setup_custom_fields(user_data, capital_call, custom_field_headers)

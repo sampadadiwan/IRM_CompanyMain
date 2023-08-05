@@ -112,6 +112,6 @@ class CapitalCallsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_call_params
-    params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :add_setup_fees, :generate_remittances, :due_date, :call_date, :notes, :commitment_type, fund_closes: [], unit_prices: {}, properties: {})
+    params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :add_fees, :generate_remittances, :due_date, :call_date, :notes, :commitment_type, :call_basis, :amount_to_be_called, fund_closes: [], unit_prices: {}, properties: {}, call_fees_attributes: CallFee::NESTED_ATTRIBUTES)
   end
 end

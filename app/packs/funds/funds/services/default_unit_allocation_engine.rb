@@ -28,9 +28,10 @@ class DefaultUnitAllocationEngine
       premium_cents = capital_call.unit_prices[unit_type]["premium"].to_d * 100
 
       # Sometimes we collect more than the call amount, issue of funds units should be based on lesser of collected amount or call amount
-      if capital_remittance.collected_amount_cents > capital_remittance.call_amount_cents
-        amount_cents = capital_remittance.call_amount_cents
-        reason += " Collected amount greater than call amount, issuing units for call amount"
+      net_call_amount_cents = (capital_remittance.call_amount_cents - capital_remittance.capital_fee_cents)
+      if capital_remittance.collected_amount_cents >= net_call_amount_cents
+        amount_cents = net_call_amount_cents
+        reason += " Collected amount greater than net call amount, issuing units for net call amount #{net_call_amount_cents}"
       else
         amount_cents = capital_remittance.collected_amount_cents
       end

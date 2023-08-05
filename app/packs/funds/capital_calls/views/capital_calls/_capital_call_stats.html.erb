@@ -40,7 +40,7 @@
             </div>
         </div>
 
-
+        <% if capital_call.percentage_called > 0 %>
         <div class="col-xl-2 col-md-6 mb-4">
             <div class="card border-left-warning shadow h-100 py-2">
                 <div class="card-body">
@@ -58,6 +58,27 @@
                 </div>
             </div>
         </div>
+        <% end %>
+
+        <% if capital_call.amount_to_be_called_cents > 0 %>
+        <div class="col-xl-2 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Amount To Be Called
+                            </div>
+                            <div class="h6 mb-0 font-weight-bold text-gray-800"><%= money_to_currency capital_call.amount_to_be_called, params %> %</div>
+                        </div>
+                        <div class="col-auto">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% end %>
 
         
         <div class="col-xl-2 col-md-6 mb-4">

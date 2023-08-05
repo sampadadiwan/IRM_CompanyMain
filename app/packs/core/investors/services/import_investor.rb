@@ -18,6 +18,7 @@ class ImportInvestor < ImportUtil
     saved = true
     investor_name = user_data['Name'].strip
     pan = user_data['PAN'].strip
+    category = user_data['Category'].strip.presence
 
     investor = Investor.where(investor_name:, entity_id: import_upload.entity_id).first
     if investor.present?
@@ -27,7 +28,7 @@ class ImportInvestor < ImportUtil
 
       Rails.logger.debug user_data
       investor = Investor.new(investor_name:, pan:, tag_list: user_data["Tags"],
-                              category: user_data["Category"].strip, city: user_data["City"],
+                              category:, city: user_data["City"],
                               entity_id: import_upload.entity_id, imported: true)
 
       custom_field_headers.delete("Fund")

@@ -256,6 +256,7 @@
   When('I create a new capital call {string}') do |args|
     @capital_call = FactoryBot.build(:capital_call, fund: @fund)
     key_values(@capital_call, args)
+    @capital_call.setup_defaults
 
     puts @capital_call.to_json
 
@@ -265,11 +266,16 @@
     click_on "New Capital Call"
 
     fill_in('capital_call_name', with: @capital_call.name)
-    fill_in('capital_call_percentage_called', with: @capital_call.percentage_called)
+    
     fill_in('capital_call_due_date', with: @capital_call.due_date)
     select(@capital_call.fund_closes[0], from: 'capital_call_fund_closes')
+    select(@capital_call.call_basis, from: 'capital_call_call_basis')
 
-    check "capital_call_add_setup_fees" if @capital_call.add_setup_fees
+    if @capital_call.call_basis == "Amount allocated on Investable Capital"
+      fill_in('capital_call_amount_to_be_called', with: @capital_call.amount_to_be_called)
+    elsif @capital_call.call_basis == "Percentage of Commitment"
+      fill_in('capital_call_percentage_called', with: @capital_call.percentage_called)
+    end
 
     if @fund.entity.enable_units
       @fund.unit_types.split(",").each do |unit_type|
@@ -279,26 +285,78 @@
       end
     end
 
+    if @capital_call.call_basis == "Amount allocated on Investable Capital"
+      @capital_call.fee_account_entry_names.each_with_index do |fee_name, idx|
+        click_on "Add Fees" 
+        sleep(1)
+        within all(".nested-fields").last do
+          select(fee_name, from: "fee_name")
+          fill_in("fee_start_date", with: Time.zone.today - 10.years)
+          fill_in("fee_end_date", with: Time.zone.today)
+          select(CapitalCall::FEE_TYPES[0], from: "call_fee_types")
+        end
+      end
+    end
+
     click_on "Save"
     sleep(2)
 
+  end
+
+  Then('the no remittances should be created') do
+    @capital_call = CapitalCall.last
+    @capital_call.capital_remittances.count.should == 0
   end
 
   Then('the corresponding remittances should be created') do
 
     @capital_call = CapitalCall.last
 
-    @capital_call.capital_remittances.count.should == @fund.investors.count
-    @capital_call.capital_remittances.each do |remittance|
-        cc = @fund.capital_commitments.where(investor_id: remittance.investor_id).first
-        ((cc.committed_amount * @capital_call.percentage_called / 100.0) - remittance.collected_amount).should == remittance.due_amount
+    if @capital_call.call_basis != "Upload"
+      @capital_call.capital_remittances.count.should == @fund.capital_commitments.pool.count
+    end
+
+    @capital_call.capital_remittances.each_with_index do |remittance, idx|
+        ap remittance
+        cc = remittance.capital_commitment
+        if @capital_call.call_basis == "Amount allocated on Investable Capital"
+          ((@capital_call.amount_to_be_called * remittance.percentage / 100.0) + remittance.capital_fee - remittance.collected_amount).should == remittance.due_amount
+        elsif @capital_call.call_basis == "Percentage of Commitment"
+          ((cc.committed_amount * @capital_call.percentage_called / 100.0) + remittance.capital_fee - remittance.collected_amount).should == remittance.due_amount
+        elsif @capital_call.call_basis == "Upload"
+          file = File.open("./public/sample_uploads/capital_remittances.xlsx", "r")
+          data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+          headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+          row = data.row(idx+2)
+          # create hash from headers and cells
+          user_data = [headers, row].transpose.to_h
+          
+          puts "Checking import of #{user_data}"
+          remittance.investor.investor_name.should == user_data["Investor"].strip
+          remittance.fund.name.should == user_data["Fund"]
+          remittance.capital_call.name.should == user_data["Capital Call"]
+          remittance.call_amount_cents.should == user_data["Call Amount (Inclusive of Capital Fees)"].to_f * 100
+          remittance.capital_fee_cents.should == user_data["Capital Fees"].to_f * 100
+          remittance.other_fee_cents.should == user_data["Other Fees"].to_f * 100
+          remittance.collected_amount_cents.should == user_data["Collected Amount"].to_f * 100
+          remittance.status.should == user_data["Status"]
+          remittance.verified.should == (user_data["Verified"] == "Yes")
+        end
+
+        # Check the fees
+        if @capital_call.call_fees.present?
+          @capital_call.call_fees.each do |fee|
+            remittance.capital_fee_cents.should > 0
+            # remittance.other_fee_cents.should > 0
+          end
+        end
     end
   end
 
   Then('I should see the remittances') do
     @capital_call.reload
     @fund.capital_commitments.count.should == @fund.investors.count
-    @capital_call.capital_remittances.count.should == @fund.investors.count
+    @capital_call.capital_remittances.count.should == @fund.capital_commitments.pool.count
 
     visit(capital_call_url(@capital_call))
     sleep(2)
@@ -321,7 +379,9 @@
    Then('I should see the capital call details') do
     find(".show_details_link").click
     expect(page).to have_content(@capital_call.name)
-    expect(page).to have_content(@capital_call.percentage_called)
+    expect(page).to have_content(@capital_call.percentage_called) if  @capital_call.percentage_called > 0
+    expect(page).to have_content(money_to_currency @capital_call.amount_to_be_called) if  @capital_call.amount_to_be_called_cents > 0
+
     expect(page).to have_content(@capital_call.due_date.strftime("%d/%m/%Y"))
 
     @capital_call = CapitalCall.last
@@ -493,7 +553,7 @@ Then('user {string} have {string} access to his own fund') do |truefalse, access
   truefalse = "true" if truefalse == "yes"
   truefalse = "false" if truefalse == "no"
 
-  puts "##### Checking access to funds with rights #{@fund.access_rights.to_json}"
+  puts "##### Checking #{ap @user} with roles #{ap @user.roles} access to funds with rights #{ap @fund.access_rights}"
   accesses.split(",").each do |access|
     acc = Pundit.policy(@user, @fund).send("#{access}?")
     acc.to_s.should == truefalse
@@ -650,6 +710,21 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(4)
 
+end
+
+Then('Given I upload {string} file for Call remittances of the fund') do |file|
+  visit(capital_call_path(@capital_call))
+  click_on("Remittances")
+  sleep(2)
+  click_on("Upload / Download")
+  click_on("Upload Remittances")
+  fill_in('import_upload_name', with: "Test Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/capital_remittances.xlsx"), make_visible: true)
+  sleep(2)
+  click_on("Save")
+  sleep(2)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(4)
 end
 
 Then('There should be {string} capital commitments created') do |count|
@@ -1079,13 +1154,17 @@ Then('the account_entries must have the data in the sheet') do
 
       # create hash from headers and cells
       user_data = [headers, row].transpose.to_h
+      ap user_data
       cc = account_entries[idx-1]
+      ap cc
+      
       puts "Checking import of #{cc.name}"
       cc.name.should == user_data["Name"].strip
       cc.fund.name.should == user_data["Fund"]
       cc.investor.investor_name.should == user_data["Investor"]
       cc.folio_id.should == user_data["Folio No"].to_s
-      cc.amount_cents.should == user_data["Amount"].to_i * 100
+      # binding.pry if cc.name == "Investable Capital Percentage"
+      cc.amount_cents.should == user_data["Amount"].to_f * 100
       cc.entry_type.should == user_data["Entry Type"]
       cc.reporting_date.should == user_data["Reporting Date"]
       cc.notes.should == user_data["Notes"]
@@ -1100,7 +1179,11 @@ Then('the account_entries must visible for each commitment') do
     click_on "Account Entries"
     expect(page).to have_content(ae.name)
     expect(page).to have_content(ae.entry_type)
-    expect(page).to have_content(money_to_currency(ae.amount, {}))
+    if ae.name.include?("Percentage")
+      expect(page).to have_content("#{ae.amount_cents} %")
+    else
+      expect(page).to have_content(money_to_currency(ae.amount, {}))
+    end
     expect(page).to have_content(ae.capital_commitment.folio_id)
     expect(page).to have_content(ae.reporting_date.strftime("%d/%m/%Y"))
   end

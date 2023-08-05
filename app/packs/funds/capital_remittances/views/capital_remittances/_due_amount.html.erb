@@ -1,14 +1,28 @@
 <%= money_to_currency (capital_remittance.due_amount), params %>
-<% if capital_remittance.created_by != "Upload" %>
+<% if capital_remittance.capital_call.call_basis != "Upload" %>
   <div class="hideMobP">
     <small class="text-muted d-none d-sm-block d-sm-none d-md-block">
-      <%= money_to_currency capital_remittance.folio_committed_amount, params %> x 
-      <%= capital_remittance.capital_call.percentage_called %> % 
-      <% if capital_remittance.capital_call.add_setup_fees %>
-      +
-      <%= money_to_currency capital_remittance.folio_fee, params %> 
+
+      <% if capital_remittance.capital_call.amount_to_be_called_cents > 0 %>
+        <%= money_to_currency capital_remittance.capital_call.amount_to_be_called, params %> x 
+      <% else %>
+        <%= money_to_currency capital_remittance.folio_committed_amount, params %> x 
       <% end %>
+
+      <%= capital_remittance.percentage %> % 
+      
+      <% if capital_remittance.capital_fee_cents > 0 %>
+        +
+        <%= money_to_currency capital_remittance.folio_capital_fee, params %> 
+      <% end %>
+
+      <% if capital_remittance.other_fee_cents > 0 %>
+        +
+        <%= money_to_currency capital_remittance.folio_other_fee, params %> 
+      <% end %>      
+      
       -
+
       <%= money_to_currency capital_remittance.folio_collected_amount, params %>
     </small>
   </div>

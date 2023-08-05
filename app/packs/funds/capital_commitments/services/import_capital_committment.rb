@@ -58,22 +58,33 @@ class ImportCapitalCommittment < ImportUtil
       setup_custom_fields(user_data, capital_commitment, custom_field_headers)
       setup_exchange_rate(capital_commitment, user_data) if capital_commitment.foreign_currency?
 
-      if capital_commitment.valid?
-
+      valid, error_message = validate(capital_commitment)
+      if valid
         capital_commitment.run_callbacks(:save) { false }
         capital_commitment.run_callbacks(:create) { false }
         @commitments << capital_commitment
 
         [true, "Success"]
       else
-        Rails.logger.debug { "Could not save commitment: #{capital_commitment.errors.full_messages}" }
-        [false, capital_commitment.errors.full_messages]
+        Rails.logger.debug { "Could not save commitment: #{error_message}" }
+        [false, error_message]
       end
     elsif fund
       [false, "Investor not found"]
     else
       [false, "Fund not found"]
     end
+  end
+
+  def validate(capital_commitment)
+    if capital_commitment.valid?
+      folio_already_exists = @commitments.any? { |c| c.folio_id == capital_commitment.folio_id }
+      return [false, "Duplicate Folio Id"] if folio_already_exists
+    else
+      return [false, capital_commitment.errors.full_messages]
+    end
+
+    [true, "Success"]
   end
 
   def get_params(user_data)

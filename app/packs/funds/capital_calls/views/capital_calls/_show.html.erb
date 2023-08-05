@@ -60,6 +60,17 @@
           <%= capital_call.commitment_type %>
         </td>
       </tr>
+
+      <tr class="">
+        <td>
+          Call Basis
+        </td>
+        <td>
+          <%= capital_call.call_basis %>
+        </td>
+      </tr>
+
+      <% if capital_call.percentage_called > 0 %>
       <tr class="">
         <td>
           Percentage Called
@@ -68,17 +79,20 @@
           <%= capital_call.percentage_called %> %
         </td>
       </tr>
-
-      <% if capital_call.add_setup_fees %>
-        <tr class="">
-          <td>
-            Add Setup Fees
-          </td>
-          <td>
-            <%= display_boolean capital_call.add_setup_fees %> 
-          </td>
-        </tr>
       <% end %>
+
+      <% if capital_call.amount_to_be_called_cents > 0 %>
+      <tr class="">
+        <td>
+          Amount To Be Called
+        </td>
+        <td>
+          <%= money_to_currency capital_call.amount_to_be_called, params %> 
+        </td>
+      </tr>
+      <% end %>
+
+      
 
       <tr class="">
         <td>
@@ -124,14 +138,60 @@
             </td>
           </tr>
 
-          <% if capital_call.add_setup_fees %>
+
+          
+          <% if capital_call.call_fees.present? %>
+          <tr class="">
+            <td>
+              Fees
+            </td>
+            <td>
+              <table>
+                <tr>
+                  <td>Name</td> 
+                  <td>From</td>
+                  <td>To</td>
+                  <td>Type</td>
+                </tr>
+
+                <% capital_call.call_fees.each do |call_fee| %>
+                  <tr>            
+                    <td><%= call_fee.name %></td>
+                      <td><%= l call_fee.start_date %></td>
+                      <td><%= l call_fee.end_date %></td>
+                      <td><%= call_fee.fee_type %></td>
+                  </tr>
+                <% end %>
+
+              </table>
+
+            </td>
+          </tr>
+          <% end %>
+
+          
+
+          <% if capital_call.capital_fee_cents > 0 %>
       
             <tr class="">
               <td>
-                Fees
+                Capital Fees
               </td>
               <td>
-                <%= money_to_currency capital_call.fee, params %> 
+                <%= money_to_currency capital_call.capital_fee, params %> 
+              </td>
+            </tr>
+
+          <% end %>
+
+          <% if capital_call.other_fee_cents > 0 %>
+      
+            <tr class="">
+              <td>
+                Other Fees
+              </td>
+              <td>
+                <%= money_to_currency capital_call.other_fee, params %> 
               </td>
             </tr>
 

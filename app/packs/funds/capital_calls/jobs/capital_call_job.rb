@@ -39,21 +39,22 @@ class CapitalCallJob < ApplicationJob
                                    payment_date: @capital_call.due_date, created_by: "Call",
                                    status:, verified: @capital_call.generate_remittances_verified)
 
-        cr.fee_cents = setup_fees(@capital_call, capital_commitment)
-
+        cr.setup_call_fees
         cr.set_call_amount
+
         cr.run_callbacks(:save) { false }
         cr.run_callbacks(:create) { false }
         if cr.valid?
           @remittances << cr
         else
-          Rails.logger.debug { "Error generating remitance: #{cr.errors.full_messages}" }
+          Rails.logger.debug { "######Error generating remitance: #{cr.errors.full_messages}" }
+          Rails.logger.debug cr
         end
       end
     end
 
     # import the rows
-    Rails.logger.debug { "Importing #{@remittances.length} CapitalRemittances" }
+    Rails.logger.debug { "##### Importing #{@remittances.length} CapitalRemittances" }
     CapitalRemittance.import @remittances
 
     # Generate any payments for the imported remittances if required
@@ -64,18 +65,6 @@ class CapitalCallJob < ApplicationJob
 
     # Mark all remittances for this call as paid if the called - collected < 100 cents
     CapitalRemittance.where(capital_call_id: @capital_call.id).where("ABS(capital_remittances.collected_amount_cents - capital_remittances.call_amount_cents) <= 100").update_all(status: "Paid")
-  end
-
-  def setup_fees(capital_call, capital_commitment)
-    if capital_call.add_setup_fees
-      # We need to extract the Setup Fees that were allocated to the commitment and ensure its added here for payment
-
-      setup_fees_account_entry = capital_commitment.account_entries.where("account_entries.reporting_date <=? and account_entries.name in (?)", capital_call.call_date, ["Setup Fees", "Setup Fee"]).order("account_entries.reporting_date desc").first
-
-      setup_fees_account_entry ? setup_fees_account_entry.amount_cents : 0
-    else
-      0
-    end
   end
 
   def update_counters(capital_call)

@@ -11,6 +11,8 @@
     </div>
   <% end %>
 
+  <div data-controller="call-copy">
+
   <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
   <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
   
@@ -36,10 +38,23 @@
   </div>
 
   <div class="form-group">
+    <%= form.label :call_basis %>
+    <%= form.select :call_basis, CapitalCall::CALL_BASIS, {},{class: "form-control", data: {action: "change->call-copy#call_basis_changed"}}  %>
+    <small class="text-muted">Select how the remittance amounts are computed</small>
+  </div>
+
+  <div class="form-group" id="amount_to_be_called_group">
+    <%= form.label :amount_to_be_called %>
+    <%= form.number_field :amount_to_be_called, class: "form-control"  %>
+    <small class="text-muted">Total amount to be called, Investable Capital Percentage will be used for each folio.</small>
+  </div>
+
+  <div class="form-group" id="percentage_called_group">
     <%= form.label :percentage_called %>
     <%= form.number_field :percentage_called, class: "form-control"  %>
     <small class="text-muted">Write 100 for 100%</small>
   </div>
+
 
   <div class="form-group">
     <%= form.label :call_date %>
@@ -52,7 +67,7 @@
   </div>
 
   <% if capital_call.fund.unit_types.present? %>
-    <div data-controller="call-copy">
+    <div>
       <% capital_call.fund.unit_types.split(",").each_with_index do |unit_type, index| %>
         <% 
             unit_type = unit_type.strip 
@@ -87,23 +102,22 @@
   <%= custom_form_fields(capital_call, form) %>
 
   <div class="form-group">
-    <%= form.label :generate_remittances %>
-    <%= form.check_box :generate_remittances, class: "form-control form-checkbox" %>
-    <small class="text-muted">UnCheck if you want to manually upload remittances</small>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :add_setup_fees %>
-    <%= form.check_box :add_setup_fees, class: "form-control form-checkbox" %>
-    <small class="text-muted">Check to add the setup fees to the call amounts. Notes Account Entry for setup fees should already be geenrated / uploaded prior to the call</small>
-  </div>
-
-  <div class="form-group">
     <%= form.label :notes, "Notes (Will be inserted into the email sent to investors)" %>
     <%= form.rich_text_area :notes, class: "form-control"  %>
   </div>
 
+  <div id='form_call_fee'>
+    <%= form.fields_for :call_fees do |field| %>
+      <%= render 'call_fee_fields', :f => field, fund: capital_call.fund %>
+    <% end %>
+    <div class='links'>
+    </div>
+  </div>
+
   <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    <%= link_to_add_association 'Add Fees', form, :call_fees, class: "btn btn-outline-success" %>
+    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>    
+  </div>
+
   </div>
 <% end %>

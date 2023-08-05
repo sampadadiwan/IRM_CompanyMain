@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_30_162454) do
+ActiveRecord::Schema[7.0].define(version: 2023_08_04_122052) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -389,6 +389,22 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_30_162454) do
     t.index ["creator_id"], name: "index_blazer_queries_on_creator_id"
   end
 
+  create_table "call_fees", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name", limit: 50
+    t.date "start_date"
+    t.date "end_date"
+    t.string "notes"
+    t.string "fee_type", limit: 20
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "capital_call_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["capital_call_id"], name: "index_call_fees_on_capital_call_id"
+    t.index ["entity_id"], name: "index_call_fees_on_entity_id"
+    t.index ["fund_id"], name: "index_call_fees_on_fund_id"
+  end
+
   create_table "capital_calls", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
@@ -413,8 +429,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_30_162454) do
     t.text "unit_prices"
     t.string "fund_closes"
     t.string "commitment_type", limit: 10, default: "Pool"
-    t.boolean "add_setup_fees", default: false
-    t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "call_basis", limit: 40
+    t.decimal "amount_to_be_called_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_calls_on_document_folder_id"
@@ -600,9 +618,13 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_30_162454) do
     t.decimal "folio_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "exchange_rate_id"
-    t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "folio_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.string "created_by", limit: 10
+    t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_capital_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "folio_other_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "computed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "percentage", precision: 10, scale: 2, default: "0.0"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"
@@ -1229,6 +1251,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_30_162454) do
     t.string "contact_email", limit: 100
     t.date "start_date"
     t.decimal "target_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -2367,6 +2391,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_07_30_162454) do
   add_foreign_key "approval_responses", "users", column: "response_user_id"
   add_foreign_key "approvals", "entities"
   add_foreign_key "approvals", "folders", column: "document_folder_id"
+  add_foreign_key "call_fees", "capital_calls"
+  add_foreign_key "call_fees", "entities"
+  add_foreign_key "call_fees", "funds"
   add_foreign_key "capital_calls", "entities"
   add_foreign_key "capital_calls", "folders", column: "document_folder_id"
   add_foreign_key "capital_calls", "funds"

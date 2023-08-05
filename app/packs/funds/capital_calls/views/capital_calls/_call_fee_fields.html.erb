@@ -1,0 +1,32 @@
+<div class='nested-fields form-row'>
+    <% names = f.object.capital_call.fee_account_entry_names %>
+    <div class="form-group col-md-2">
+        <%= f.label :name %>
+        <%= f.select :name, names, {}, class: "form-control", id: "fee_name" %>
+    </div>
+    
+    <div class="form-group col-md-2">
+        <%= f.label :start_date %>
+        <%= f.date_field :start_date, class: "form-control", id: "fee_start_date" %>
+    </div>
+
+    <div class="form-group col-md-2">
+        <%= f.label :end_date %>
+        <%= f.date_field :end_date, class: "form-control", id: "fee_end_date" %>
+    </div>
+
+    <div class="form-group col-md-2">
+        <%= f.label :fee_type %>
+        <%= f.select :fee_type, CapitalCall::FEE_TYPES, {}, class: "form-control", id: "call_fee_types" %>
+    </div>
+
+    <div class="form-group col-md-2">
+        <%= f.label :notes %>
+        <%= f.text_field :notes, class: "form-control", id: "fee_notes" %>
+    </div>
+
+    <div class="form-group col-md-1">    
+        <%= f.label :none, "&nbsp;".html_safe %>
+        <%= link_to_remove_association "Delete" , f, class: "btn btn-outline-danger" %>
+    </div>
+</div>
