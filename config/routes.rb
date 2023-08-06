@@ -242,6 +242,7 @@ Rails.application.routes.draw do
   resources :holdings do
     get 'search', on: :collection
     post 'employee_calc', on: :collection
+    post 'employee_calc_excercise_form', on: :collection
     post 'investor_calc', on: :collection
     patch 'cancel', on: :member
     patch 'approve', on: :member

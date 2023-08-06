@@ -126,6 +126,9 @@ class HoldingsController < ApplicationController
   end
 
   def employee_calc; end
+
+  def employee_calc_excercise_form; end
+
   def investor_calc; end
 
   def cancel

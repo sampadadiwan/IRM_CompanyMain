@@ -29,6 +29,11 @@ class Excercise < ApplicationRecord
   validates :payment_proof, presence: true, on: :create unless Rails.env.test?
   validate :lapsed_holding, on: :create
   validate :validate_quantity, on: :update
+  validate :validate_cashless
+
+  def validate_cashless
+    errors.add(:cashless, "must be checked to allot or sell shares") if !cashless && (shares_to_allot.present? || shares_to_sell.present?)
+  end
 
   scope :approved, -> { where(approved: true) }
   scope :not_approved, -> { where(approved: false) }

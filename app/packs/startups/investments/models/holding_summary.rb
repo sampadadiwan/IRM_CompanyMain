@@ -15,8 +15,11 @@ class HoldingSummary
 
     @holdings.each do |holding|
       per_share_value = holding.entity.valuations.last.per_share_value
-
-      quantity = @params[:all_or_vested] == "Vested" ? holding.vested_quantity : holding.quantity
+      quantity = if @params[:quantity].present?
+                   @params[:quantity].to_i
+                 else
+                   @params[:all_or_vested] == "Vested" ? holding.vested_quantity : holding.quantity
+                 end
       profits += ((per_share_value * price_growth) - holding.option_pool.excercise_price) * quantity
     end
 
