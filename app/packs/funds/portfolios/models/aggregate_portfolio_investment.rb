@@ -5,6 +5,8 @@ class AggregatePortfolioInvestment < ApplicationRecord
   belongs_to :fund
   belongs_to :portfolio_company, class_name: "Investor"
   has_many :portfolio_investments, dependent: :destroy
+  has_many :portfolio_cashflows, dependent: :destroy
+
   monetize :bought_amount_cents, :sold_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_cents, with_currency: ->(i) { i.fund.currency }
 
   enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
@@ -22,7 +24,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   end
 
   def to_s
-    portfolio_company_name
+    "#{portfolio_company_name}  #{investment_type}"
   end
 
   before_save :compute_avg_cost

@@ -12,7 +12,12 @@
       </a>
       <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#portfolio-investments-tab"
          data-action="click->tabdetails#loadData">
-        Portfolio
+        Portfolio Investments
+      </a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#cashflows-tab"
+         data-action="click->tabdetails#loadData">
+        Portfolio Income
       </a>
 
       <% if current_user.enable_kpis %>
@@ -96,6 +101,19 @@
               <span>Loading...</span>
             <% end %>
             <%= turbo_frame_tag "aggregate_portfolio_investments_list", target: "_top" do %>
+            <% end %>
+          </div>     
+        </div>
+
+
+        <div id="cashflows-tab" class="tab-pane fade">
+          <div id="portfolio_cashflows" class="associated_entity">
+            <%= link_to portfolio_cashflows_path(portfolio_company_id: investor.id), 
+                                    class: "load_data_link", 
+                                    data: { turbo_frame: 'portfolio_cashflows_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "portfolio_cashflows_list", target: "_top" do %>
             <% end %>
           </div>     
         </div>

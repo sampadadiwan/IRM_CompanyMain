@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_08_04_122052) do
+ActiveRecord::Schema[7.0].define(version: 2023_08_05_152549) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1976,6 +1976,22 @@ ActiveRecord::Schema[7.0].define(version: 2023_08_04_122052) do
     t.index ["sold_pi_id"], name: "index_portfolio_attributions_on_sold_pi_id"
   end
 
+  create_table "portfolio_cashflows", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "portfolio_company_id", null: false
+    t.bigint "aggregate_portfolio_investment_id", null: false
+    t.date "payment_date"
+    t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_cashflows_on_aggregate_portfolio_investment_id"
+    t.index ["entity_id"], name: "index_portfolio_cashflows_on_entity_id"
+    t.index ["fund_id"], name: "index_portfolio_cashflows_on_fund_id"
+    t.index ["portfolio_company_id"], name: "index_portfolio_cashflows_on_portfolio_company_id"
+  end
+
   create_table "portfolio_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
@@ -2584,6 +2600,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_08_04_122052) do
   add_foreign_key "portfolio_attributions", "funds"
   add_foreign_key "portfolio_attributions", "portfolio_investments", column: "bought_pi_id"
   add_foreign_key "portfolio_attributions", "portfolio_investments", column: "sold_pi_id"
+  add_foreign_key "portfolio_cashflows", "aggregate_portfolio_investments"
+  add_foreign_key "portfolio_cashflows", "entities"
+  add_foreign_key "portfolio_cashflows", "funds"
+  add_foreign_key "portfolio_cashflows", "investors", column: "portfolio_company_id"
   add_foreign_key "portfolio_investments", "aggregate_portfolio_investments"
   add_foreign_key "portfolio_investments", "capital_commitments"
   add_foreign_key "portfolio_investments", "entities"

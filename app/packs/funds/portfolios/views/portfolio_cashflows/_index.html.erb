@@ -1,0 +1,32 @@
+<% aggregate_portfolio_investment ||= nil %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Portfolio Income</h1>
+  <%= link_to "New Portfolio Income", new_portfolio_cashflow_path("portfolio_cashflow[aggregate_portfolio_investment_id]": aggregate_portfolio_investment.id), {class: "btn btn-outline-primary"}  if aggregate_portfolio_investment %>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="portfolio_cashflows" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Portfolio Investment
+        </th>
+        <th>
+          Payment Date
+        </th>
+        <th>
+          Amount
+        </th>
+        <th>
+          Notes
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% portfolio_cashflows.each do |portfolio_cashflow| %>
+        <%= render portfolio_cashflow %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

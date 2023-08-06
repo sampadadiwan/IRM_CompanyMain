@@ -1,0 +1,58 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Fund
+    </td>
+    <td>
+      <%= link_to @portfolio_cashflow.fund %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Portfolio Company
+    </td>
+    <td>
+      <%= link_to @portfolio_cashflow.portfolio_company %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Aggregate Portfolio Investment
+    </td>
+    <td>
+      <%= link_to @portfolio_cashflow.aggregate_portfolio_investment %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Payment Date
+    </td>
+    <td>
+      <%= l @portfolio_cashflow.payment_date %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Amount
+    </td>
+    <td>
+      <%= money_to_currency @portfolio_cashflow.amount, params %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Notes
+    </td>
+    <td>
+      <%= @portfolio_cashflow.notes %>
+    </td>
+  </tr>
+</table>
+
+<div>
+  <% if policy(@portfolio_cashflow).update? %>
+    <%= link_to "Edit", edit_portfolio_cashflow_path(@portfolio_cashflow), {class: "btn btn-outline-primary"} %> 
+    <%= button_to "Delete", @portfolio_cashflow, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <% end %>
+</div>

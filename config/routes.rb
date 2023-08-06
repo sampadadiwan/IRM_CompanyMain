@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :portfolio_cashflows
   resources :scenario_investments
   resources :portfolio_scenarios do
     patch 'run', on: :member

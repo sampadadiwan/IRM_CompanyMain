@@ -1,4 +1,14 @@
 FactoryBot.define do
+  factory :portfolio_cashflow do
+    entity { nil }
+    fund { nil }
+    portfolio_company { nil }
+    aggregate_portfolio_investment { nil }
+    payment_date { "2023-08-05" }
+    amount { "9.99" }
+    notes { "MyText" }
+  end
+
   factory :call_fee do
     name { "MyString" }
     start_date { "2023-08-03" }
