@@ -22,4 +22,17 @@ class XirrApi
     Rails.logger.debug response
     response["xirr"]
   end
+
+  def check(caller_id: "health_check")
+    response = HTTParty.get(
+      "#{ENV.fetch('XIRR_API', nil)}/?caller_id=#{caller_id}",
+      headers: {
+        'Content-Type' => 'application/json'
+      },
+      body: {},
+      debug_output: @debug ? $stdout : nil
+    )
+    Rails.logger.debug response
+    response
+  end
 end

@@ -172,6 +172,7 @@ Rails.application.routes.draw do
   get "/health_check/redis_check", to: "health_check#redis_check"
   get "/health_check/db_check", to: "health_check#db_check"
   get "/health_check/elastic_check", to: "health_check#elastic_check"
+  get "/health_check/xirr_check", to: "health_check#xirr_check"
 
   resources :reminders
   resources :permissions

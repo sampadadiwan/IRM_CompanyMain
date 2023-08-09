@@ -1,6 +1,6 @@
 class HealthCheckController < ApplicationController
-  before_action :authenticate_user!, except: %i[redis_check db_check elastic_check]
-  skip_after_action :verify_authorized, only: %i[redis_check db_check elastic_check]
+  before_action :authenticate_user!, except: %i[redis_check db_check elastic_check xirr_check]
+  skip_after_action :verify_authorized, only: %i[redis_check db_check elastic_check xirr_check]
 
   def redis_check
     now = Time.zone.now.to_s
@@ -31,6 +31,22 @@ class HealthCheckController < ApplicationController
         format.json { render json: "Ok", status: :ok }
       else
         raise "ES not reachable"
+      end
+    end
+  end
+
+  def xirr_check
+    begin
+      response = XirrApi.new.check
+    rescue StandardError => e
+      response = nil
+    end
+
+    respond_to do |format|
+      if response && response.code == 200
+        format.json { render json: "Ok", status: :ok }
+      else
+        raise "XIRR not reachable #{e&.message}"
       end
     end
   end
