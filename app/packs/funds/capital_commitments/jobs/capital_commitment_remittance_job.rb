@@ -20,6 +20,7 @@ class CapitalCommitmentRemittanceJob < ApplicationJob
                                  entity: capital_call.entity, investor: capital_commitment.investor, capital_commitment:, folio_id: capital_commitment.folio_id,
                                  status: "Pending", verified: false)
 
+      cr.setup_call_fees
       cr.set_call_amount
       cr.save!
     end

@@ -70,9 +70,7 @@ class CapitalCallJob < ApplicationJob
   def update_counters(capital_call)
     # Update the search index
     CapitalRemittanceIndex.import(capital_call.capital_remittances)
-    CapitalRemittance.counter_culture_fix_counts only: :capital_call, where: { id: capital_call.id }
-    CapitalRemittance.counter_culture_fix_counts only: :capital_commitment, where: { fund_id: capital_call.fund_id }
-    CapitalRemittance.counter_culture_fix_counts only: :fund, where: { id: capital_call.fund_id }
+    CapitalRemittance.counter_culture_fix_counts where: { capital_remittances: { fund_id: capital_call.fund_id } }
   end
 
   def generate_remittance_payments
@@ -88,7 +86,7 @@ class CapitalCallJob < ApplicationJob
     end
 
     CapitalRemittancePayment.import @payments
-    CapitalRemittancePayment.counter_culture_fix_counts only: :capital_remittance, where: { fund_id: @capital_call.fund_id }
+    CapitalRemittancePayment.counter_culture_fix_counts where: { capital_remittance_payments: { fund_id: capital_call.fund_id } }
   end
 
   def notify(capital_call_id)
