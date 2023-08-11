@@ -91,14 +91,17 @@ class FundPortfolioCalcs
     @gross_portfolio_irr ||= begin
       cf = Xirr::Cashflow.new
 
+      # Get the buy cash flows
       @fund.portfolio_investments.buys.where(investment_date: ..@end_date).each do |buy|
         cf << Xirr::Transaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Bought Amount") if buy.amount_cents.positive?
       end
 
+      # Get the sell cash flows
       @fund.portfolio_investments.sells.where(investment_date: ..@end_date).each do |sell|
         cf << Xirr::Transaction.new(sell.amount_cents, date: sell.investment_date, notes: "Sold Amount") if sell.amount_cents.positive?
       end
 
+      # Get the FMV
       cf << Xirr::Transaction.new(fmv_on_date, date: @end_date, notes: "FMV on Date") if fmv_on_date.positive?
 
       lxirr = XirrApi.new.xirr(cf, "gross_portfolio_irr")
@@ -115,7 +118,9 @@ class FundPortfolioCalcs
       # @fund.portfolio_investments.pool.where(investment_date: ..@end_date).order(investment_date: :asc).group_by(&:portfolio_company_id)
 
       @fund.portfolio_investments.select { |pi| pi.Pool? && pi.investment_date <= @end_date }.sort_by(&:investment_date).group_by(&:portfolio_company_id).each do |portfolio_company_id, portfolio_investments|
+        portfolio_company = Investor.find(portfolio_company_id)
         cf = Xirr::Cashflow.new
+
         # Get the buy cash flows
         Rails.logger.debug "#########BUYS#########"
         portfolio_investments.filter { |pi| pi.quantity.positive? }.each do |buy|
@@ -126,6 +131,12 @@ class FundPortfolioCalcs
         # Get the sell cash flows
         portfolio_investments.filter { |pi| pi.quantity.negative? }.each do |sell|
           cf << Xirr::Transaction.new(sell.amount_cents, date: sell.investment_date, notes: "Sell #{sell.portfolio_company_name} #{sell.quantity}")
+        end
+
+        Rails.logger.debug "#########Portfolio CF#########"
+        # Get the portfolio income cash flows
+        portfolio_company.portfolio_cashflows.where(payment_date: ..@end_date).each do |pcf|
+          cf << Xirr::Transaction.new(pcf.amount_cents, date: pcf.payment_date, notes: "Portfolio Income") if pcf.amount_cents.positive?
         end
 
         # Get the FMV for this specific portfolio_company

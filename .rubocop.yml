@@ -125,10 +125,12 @@ Metrics/CyclomaticComplexity:
   Enabled: true
   Exclude:
     - 'app/packs/core/users/models/user.rb'
+    - 'app/packs/funds/funds/models/fund_portfolio_calcs.rb'
 Metrics/PerceivedComplexity:
   Max: 15
   Exclude:
     - 'app/packs/core/users/models/user.rb'
+    - 'app/packs/funds/funds/models/fund_portfolio_calcs.rb'
     - 'app/packs/core/tasks/controllers/tasks_controller.rb'
     - 'app/packs/core/uploaders/file_uploader.rb'
 Metrics/ClassLength:
