@@ -26,7 +26,7 @@ class Excercise < ApplicationRecord
 
   validates :quantity, :price, :amount, presence: true
   validates :quantity, :price, :amount, numericality: { greater_than: 0 }
-  validates :payment_proof, presence: true, on: :create unless Rails.env.test?
+  validates :payment_proof, presence: true, on: :create, if: proc { |e| !e.cashless && !Rails.env.test? } # unless cashless || Rails.env.test?
   validate :lapsed_holding, on: :create
   validate :validate_quantity, on: :update
   validate :validate_cashless
@@ -55,7 +55,11 @@ class Excercise < ApplicationRecord
   end
 
   def notify_excercise
-    ExcerciseNotification.with(entity_id:, excercise_id: id, email_method: :notify_excercise, msg: "Exercise of Option").deliver_later(user)
+    if cashless
+      ExcerciseNotification.with(entity_id:, excercise_id: id, email_method: :notify_cashless_excercise, msg: "Cashless Exercise of Option").deliver_later(user)
+    else
+      ExcerciseNotification.with(entity_id:, excercise_id: id, email_method: :notify_excercise, msg: "Exercise of Option").deliver_later(user)
+    end
   end
 
   def notify_approval

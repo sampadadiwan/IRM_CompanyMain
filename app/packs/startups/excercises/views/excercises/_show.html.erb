@@ -56,7 +56,7 @@
         <%= money_to_currency excercise.amount, params %>
       </td>
     </tr>
-    
+
     <% if current_user %>
         <tr>
             <td>
@@ -66,6 +66,35 @@
                 <%= link_to "Payment Proof", excercise.payment_proof.url, class: "btn btn-outline-success" if excercise.payment_proof.present? %>
             </td>
         </tr>
+    <% end %>
+
+    <tr>
+      <td>
+        Cashless
+      </td>
+      <td>
+        <%= display_boolean excercise.cashless %>
+      </td>
+    </tr>
+
+    <% if excercise.cashless %>
+    <tr>
+      <td>
+        Options to be cancelled
+      </td>
+      <td>
+        <%= excercise.shares_to_sell %>
+      </td>
+    </tr>
+
+     <tr>
+      <td>
+        Shares to be Alotted
+      </td>
+      <td>
+        <%= excercise.shares_to_allot %>
+      </td>
+    </tr>
     <% end %>
 
     <tr>

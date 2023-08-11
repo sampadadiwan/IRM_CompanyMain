@@ -10,12 +10,15 @@ class HoldingSummary
 
   def estimated_profits(price_growth)
     profits = Money.new(0, @entity.currency)
-
-    @holdings ||= @user.holdings.options.where(entity_id: @entity.id).includes(option_pool: :entity, entity: :valuations)
+    @holdings = if @params[:all_or_vested] == "Custom" && @params[:holding_id].present?
+                  Holding.where(id: @params[:holding_id])
+                else
+                  @user.holdings.options.where(entity_id: @entity.id).includes(option_pool: :entity, entity: :valuations)
+                end
 
     @holdings.each do |holding|
       per_share_value = holding.entity.valuations.last.per_share_value
-      quantity = if @params[:quantity].present?
+      quantity = if @params[:quantity].present? && @params[:all_or_vested] == "Custom"
                    @params[:quantity].to_i
                  else
                    @params[:all_or_vested] == "Vested" ? holding.vested_quantity : holding.quantity
@@ -52,8 +55,15 @@ class HoldingSummary
 
     estimated_profit = estimated_profits(price_growth)
     estimated_taxes = estimated_profit * tax_rate / 100
-    options = @user.holdings.options.where(entity_id: @entity.id)
-    total_value_cents = if @params[:all_or_vested] == "Vested"
+
+    options = if @params[:all_or_vested] == "Custom" && @params[:holding_id].present?
+                Holding.where(id: @params[:holding_id]).options
+              else
+                @user.holdings.options.where(entity_id: @entity.id)
+              end
+    total_value_cents = if @params[:all_or_vested] == "Custom" && @params[:quantity].present?
+                          options.inject(0) { |sum, h| sum + (@params[:quantity].to_d * h.price_cents) }
+                        elsif @params[:all_or_vested] == "Vested"
                           options.inject(0) { |sum, h| sum + (h.vested_quantity * h.price_cents) }
                         else
                           options.sum(:value_cents)

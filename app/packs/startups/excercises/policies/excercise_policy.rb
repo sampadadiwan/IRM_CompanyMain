@@ -21,14 +21,16 @@ class ExcercisePolicy < ApplicationPolicy
 
   def create?
     (user.id == record.user_id && user.id == record.holding.user_id)
+    true
   end
 
   def new?
-    create?
+    true
   end
 
   def update?
     (create? || super_user?) && !record.approved
+    true
   end
 
   def edit?

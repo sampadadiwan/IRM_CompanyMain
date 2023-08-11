@@ -14,7 +14,7 @@
         <div class="row associated_entity">
 
 
-            <% 
+            <%
                 entity_id = params[:entity_id].presence || current_user.employee_parent_entity&.id
                 if entity_id
                     entity = Entity.find(entity_id)
@@ -22,7 +22,7 @@
             %>
 
                         <div class="col-lg-6 mb-4">
-                            <%= render "/holdings/employee_calc" %>
+                            <%= render "/holdings/employee_calc", emp_calc: EmployeeCalc.new(params,current_user), holdings: policy_scope(Holding) %>
                         </div>
 
                         <div class="col-lg-6 mb-4">
@@ -35,10 +35,10 @@
                                 </div>
                             </div>
                         </div>
-                
-            <% 
-                    end 
-                end 
+
+            <%
+                    end
+                end
             %>
         </div>
 

@@ -14,8 +14,9 @@ class NewHoldingFromExcercise
 
   def create_holding(excercise)
     # Generate the equity holding to update the cap table
+    quantity = excercise.cashless? ? excercise.shares_to_allot : excercise.quantity
     holding = Holding.new(user_id: excercise.user_id, entity_id: excercise.entity_id,
-                          orig_grant_quantity: excercise.quantity,
+                          orig_grant_quantity: quantity,
                           grant_date: Time.zone.today,
                           price_cents: excercise.price_cents,
                           investment_instrument: "Equity", investor_id: excercise.holding.investor_id,
@@ -25,6 +26,7 @@ class NewHoldingFromExcercise
 
     CreateHolding.call(holding:)
     ApproveHolding.call(holding:)
+    CancelHolding.call(holding: excercise.holding, all_or_unvested: "custom", shares_to_sell: excercise.shares_to_sell) if excercise.cashless?
   end
 
   def create_audit_trail(holding)

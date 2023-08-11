@@ -125,9 +125,18 @@ class HoldingsController < ApplicationController
     end
   end
 
-  def employee_calc; end
-
-  def employee_calc_excercise_form; end
+  def employee_calc
+    @emp_calc = EmployeeCalc.new(calc_params, current_user)
+    @quantity = calc_params[:quantity]
+    @calc_total_value = calc_params[:total_value]
+    @all_or_vested = calc_params[:all_or_vested]
+    @holding_id = calc_params[:holding_id]
+    @holdings = if @holding_id.present?
+                  Holding.where(id: @holding_id)
+                else
+                  policy_scope(Holding)
+                end
+  end
 
   def investor_calc; end
 
@@ -211,5 +220,15 @@ class HoldingsController < ApplicationController
     params.require(:holding).permit(:user_id, :investor_id, :entity_id, :orig_grant_quantity, :price,
                                     :value, :investment_instrument, :holding_type, :funding_round_id, :note, :form_type_id, :option_pool_id, :grant_date, :employee_id, :manual_vesting, :preferred_conversion, :vested_quantity, :department, :option_type,
                                     :grant_letter, properties: {})
+  end
+
+  def calc_params
+    quantity = params[:quantity_hidden]
+    all_or_vested = params[:all_or_vested_hidden]
+    total_value = params[:calc_total_value_hidden]
+    price_growth = params[:price_growth]
+    tax_rate = params[:tax_rate]
+    holding_id = params[:holding_id]
+    { quantity:, price_growth:, tax_rate:, all_or_vested:, total_value:, holding_id: }
   end
 end

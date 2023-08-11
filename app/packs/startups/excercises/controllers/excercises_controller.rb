@@ -42,36 +42,24 @@ class ExcercisesController < ApplicationController
   # POST /excercises or /excercises.json
   def create
     @excercise = Excercise.new(excercise_params)
-    if commit_param == "Calculate"
-      authorize(@excercise)
-      head :ok
-      turbo_stream.replace("employee_calc", partial: "holdings/employee_calc_excercise_form", locals: { emp_calc: EmployeeCalc.new(calc_params, current_user), holdings: Holding.where(id: @excercise.holding_id), all_or_vested_disabled: true })
-      # redirect_to employee_calc_excercise_form_holdings_path, emp_calc: EmployeeCalc.new(calc_params, current_user), holdings: Holding.where(id: @excercise.holding_id), all_or_vested_disabled: true
-    else
+    @excercise.option_pool_id = @excercise.holding.option_pool_id
+    @excercise.entity_id = @excercise.holding.entity_id
+    @excercise.user_id = current_user.id
+    # For some reason the cents are not directly being taken in
+    @excercise.price_cents = excercise_params[:price].to_f * 100
+    @excercise.amount_cents = excercise_params[:amount].to_f * 100
 
-      @excercise.option_pool_id = @excercise.holding.option_pool_id
-      @excercise.entity_id = @excercise.holding.entity_id
-      @excercise.user_id = current_user.id
-      # For some reason the cents are not directly being taken in
-      @excercise.price_cents = excercise_params[:price].to_f * 100
-      @excercise.amount_cents = excercise_params[:amount].to_f * 100
+    authorize(@excercise)
 
-      authorize(@excercise)
-
-      respond_to do |format|
-        if @excercise.save
-          format.html do
-            if @excercise.cashless
-              redirect_to excercise_url(@excercise), notice: "Excercise was successfully created."
-            else
-              redirect_to excercise_url(@excercise), notice: "Yor details are submitted, please wait for next steps"
-            end
-          end
-          format.json { render :show, status: :created, location: @excercise }
-        else
-          format.html { render :new, status: :unprocessable_entity }
-          format.json { render json: @excercise.errors, status: :unprocessable_entity }
+    respond_to do |format|
+      if @excercise.save
+        format.html do
+          redirect_to excercise_url(@excercise), notice: "Excercise was successfully created."
         end
+        format.json { render :show, status: :created, location: @excercise }
+      else
+        format.html { render :new, status: :unprocessable_entity }
+        format.json { render json: @excercise.errors, status: :unprocessable_entity }
       end
     end
   end
@@ -126,17 +114,5 @@ class ExcercisesController < ApplicationController
   # Only allow a list of trusted parameters through.
   def excercise_params
     params.require(:excercise).permit(:entity_id, :holding_id, :user_id, :option_pool_id, :quantity, :price, :amount, :tax, :tax_rate, :payment_proof, :shares_to_sell, :shares_to_allot, :cashless)
-  end
-
-  def commit_param
-    params.require(:commit)
-  end
-
-  def calc_params
-    tax_rate = params.require(:tax_rate)
-    price_growth = params.require(:price_growth)
-    all_or_vested = "Vested"
-    quantity = params.require(:calc_total_value_hidden)
-    { tax_rate:, price_growth:, all_or_vested:, quantity: }
   end
 end
