@@ -61,7 +61,7 @@ class Document < ApplicationRecord
   def after_commit_callbacks
     setup_access_rights
     update_owner
-    send_notification_for_owner
+    send_notification_for_owner if send_email
   end
 
   def init

@@ -37,7 +37,7 @@ class CapitalCommitmentDocGenerator
     amount_in_words = capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
 
     context = {
-      date: Time.zone.today.strftime("%d %B %Y"),
+      effective_date: Time.zone.today.strftime("%d %B %Y"),
       company_name: capital_commitment.entity.name,
       fund_name: capital_commitment.fund.name,
       commitment_ppm_number: capital_commitment.ppm_number,
@@ -46,7 +46,8 @@ class CapitalCommitmentDocGenerator
       investor_name: capital_commitment.investor_name,
       commitment_amount: money_to_currency(capital_commitment.committed_amount),
       commitment_amount_words: amount_in_words,
-      capital_commitment:
+      capital_commitment:,
+      fund_unit_setting: capital_commitment.fund_unit_setting
     }
 
     generate_custom_fields(context, capital_commitment)

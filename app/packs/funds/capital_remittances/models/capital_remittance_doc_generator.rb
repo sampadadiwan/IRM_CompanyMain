@@ -34,7 +34,8 @@ class CapitalRemittanceDocGenerator
     template = Sablon.template(File.expand_path(fund_doc_template_path))
 
     context = {}
-    context.store :date, Time.zone.today.strftime("%d %B %Y")
+
+    context.store :effective_date, Time.zone.today.strftime("%d %B %Y")
 
     context.store :company_name, capital_remittance.entity.name
     context.store :fund_name, capital_remittance.fund.name
@@ -46,6 +47,9 @@ class CapitalRemittanceDocGenerator
     context.store :call_amount, money_to_currency(capital_remittance.call_amount)
     context.store :due_date, capital_remittance.capital_call.due_date&.strftime("%d %B %Y")
     context.store :call_date, capital_remittance.capital_call.call_date&.strftime("%d %B %Y")
+    context.store :capital_remittance, capital_remittance
+    context.store :capital_commitment, capital_remittance.capital_commitment
+    context.store :fund_unit_setting, capital_remittance.capital_commitment.fund_unit_setting
 
     add_amounts(capital_remittance, context)
 
@@ -62,6 +66,7 @@ class CapitalRemittanceDocGenerator
 
     context.store  :call_amount_words, call_amount_in_words
     context.store  :call_amount, money_to_currency(capital_remittance.call_amount)
+    context.store  :call_amount_in_words, (capital_remittance.fund.currency == "INR" ? capital_remittance.call_amount.to_i.rupees.humanize : capital_remittance.call_amount.to_i.to_words.humanize)
 
     context.store  :committed_amount, money_to_currency(capital_remittance.capital_commitment.committed_amount)
 
@@ -69,6 +74,11 @@ class CapitalRemittanceDocGenerator
 
     context.store  :collected_amount_words, collected_amount_in_words
     context.store  :collected_amount, money_to_currency(capital_remittance.collected_amount)
+    context.store  :due_amount, money_to_currency(capital_remittance.due_amount)
+    context.store  :due_amount_in_words, (capital_remittance.fund.currency == "INR" ? capital_remittance.due_amount.to_i.rupees.humanize : capital_remittance.due_amount.to_i.to_words.humanize)
+
+    context.store  :capital_fee, money_to_currency(capital_remittance.capital_fee)
+    context.store  :other_fee, money_to_currency(capital_remittance.other_fee)
   end
 
   def generate_custom_fields(context, capital_remittance)
