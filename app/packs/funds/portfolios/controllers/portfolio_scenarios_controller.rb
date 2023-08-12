@@ -1,5 +1,6 @@
 class PortfolioScenariosController < ApplicationController
   before_action :set_portfolio_scenario, only: %i[show edit update destroy run]
+  after_action :verify_authorized, except: %i[index simple_scenario], unless: :devise_controller?
 
   # GET /portfolio_scenarios or /portfolio_scenarios.json
   def index
@@ -7,6 +8,10 @@ class PortfolioScenariosController < ApplicationController
     @portfolio_scenarios = policy_scope(PortfolioScenario).includes(:fund, :user).order(created_at: :desc)
     @portfolio_scenarios = @portfolio_scenarios.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @portfolio_scenarios = @portfolio_scenarios.where(user_id: params[:user_id]) if params[:user_id].present?
+  end
+
+  def simple_scenario
+    @fund = Fund.find(params[:fund_id])
   end
 
   # GET /portfolio_scenarios/1 or /portfolio_scenarios/1.json

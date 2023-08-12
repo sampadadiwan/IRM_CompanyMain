@@ -1,0 +1,116 @@
+<%= turbo_frame_tag "simple_scenarios" do %>
+
+<% color_class = ["text-success", "text-primary", "text-warning", "text-info"].sample %>
+
+<div class="dynamic_form card shadow mb-4" data-controller="access">
+
+  <div class="card-header py-3">
+    <h6 class="m-0 font-weight-bold <%=color_class%>">Scenario : <%= l Time.zone.now %> </h6>
+  </div>
+  <div class="card-body">
+  <% orig_xirr = compute_portfolio_irr(params) %>
+  <% scenario_xirr = params["scenario"].present? ? compute_portfolio_irr(params, scenarios: params[:scenario]) : orig_xirr %>
+
+  <% fund_orig_xirr = compute_fund_irr(params) %>
+  <% fund_scenario_xirr = params["scenario"].present? ? compute_fund_irr(params, scenarios: params[:scenario]) : fund_orig_xirr %>
+
+  <%= form_with(model: nil) do |form| %>
+
+      <%= text_field_tag :entity_id, current_user.entity_id, class: "form-control", hidden: true %>
+      <%= text_field_tag :fund_id, @fund.id, class: "form-control", hidden: true  %>
+      <%= text_field_tag :user_id, current_user.id, class: "form-control", hidden: true  %>
+
+    <div class="row">
+
+      <div class="form-group col">
+        <%= label_tag :scenario_date %>
+        <%= date_field_tag :scenario_date, Date.today, class: "form-control"  %>
+      </div>
+
+    </div>
+
+      <div class="row">
+        <div class="form-group col">
+          <%= label_tag :portfolio_company %>
+        </div>
+        <div class="form-group col">
+          <%= label_tag :type %>
+        </div>
+        <div class="form-group col">
+          <%= label_tag :percentage_change, "% Change in FMV" %>
+        </div>
+        <div class="form-group col">
+          <%= label_tag :current_irr, "Current IRR" %>
+        </div>
+        <div class="form-group col <%=color_class%>">
+          <%= label_tag :scenario_irr, "Scenario IRR" %>
+        </div>
+      </div>
+
+    <% @fund.aggregate_portfolio_investments.where(quantity: 1..).order("portfolio_company_name asc").each_with_index do |api, idx| %>
+    <div class="row">
+
+      <div class="form-group col">
+        <%= text_field_tag :portfolio_company, api.portfolio_company_name, class: "form-control", disabled: true %>
+        <%= text_field_tag :aggregate_portfolio_investment_id, api.id, name: "scenario[#{api.portfolio_company_id}][aggregate_portfolio_investment_id]", class: "form-control", hidden: true  %>
+      </div>
+
+      <div class="form-group col">
+        <%= text_field_tag :type, api.investment_type, class: "form-control", disabled: true %>
+      </div>
+
+      <div class="form-group col">
+        <% percentage_change = params["scenario"].present? ? params["scenario"][api.portfolio_company_id.to_s]["percentage_change"] : 0 %>
+        <%= number_field_tag :percentage_change, percentage_change, name: "scenario[#{api.portfolio_company_id}][percentage_change]", class: "form-control" %>
+      </div>
+
+      <div class="form-group col">
+        <%= text_field_tag :current_irr, orig_xirr[api.portfolio_company_id][:xirr], class: "form-control", disabled: true %>
+      </div>
+
+      <div class="form-group col <%=color_class%>">
+        <%= text_field_tag :scenario_irr, scenario_xirr[api.portfolio_company_id][:xirr], class: "form-control", disabled: true %>
+      </div>
+
+    </div>
+    <% end %>
+
+
+    <div class="row">
+
+      <div class="form-group col">
+        <%= label_tag :fund %>
+        <%= text_field_tag :fund, @fund.name, class: "form-control", disabled: true %>
+      </div>
+
+      <div class="form-group col">
+      </div>
+
+      <div class="form-group col">
+      </div>
+
+      
+
+      <div class="form-group col">
+        <%= label_tag :current_irr, "Current IRR" %>
+        <%= text_field_tag :current_irr, fund_orig_xirr, class: "form-control", disabled: true %>
+      </div>
+
+      <div class="form-group col <%=color_class%>">
+        <%= label_tag :scenario_irr, "Scenario IRR" %>
+        <%= text_field_tag :scenario_irr, fund_scenario_xirr, class: "form-control", disabled: true %>
+      </div>
+    </div>
+
+
+
+    <div class="form-group">
+      <%= form.submit "Compute", {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+
+  </div>
+
+</div>
+
+<% end %>

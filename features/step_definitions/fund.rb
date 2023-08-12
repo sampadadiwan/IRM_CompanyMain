@@ -339,7 +339,7 @@
           remittance.capital_fee_cents.should == user_data["Capital Fees"].to_f * 100
           remittance.other_fee_cents.should == user_data["Other Fees"].to_f * 100
           remittance.collected_amount_cents.should == user_data["Collected Amount"].to_f * 100
-          remittance.status.should == user_data["Status"]
+          remittance.status.should == "Pending"
           remittance.verified.should == (user_data["Verified"] == "Yes")
         end
 

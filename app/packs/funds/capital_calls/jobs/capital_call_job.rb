@@ -86,7 +86,7 @@ class CapitalCallJob < ApplicationJob
     end
 
     CapitalRemittancePayment.import @payments
-    CapitalRemittancePayment.counter_culture_fix_counts where: { capital_remittance_payments: { fund_id: capital_call.fund_id } }
+    CapitalRemittancePayment.counter_culture_fix_counts where: { capital_remittance_payments: { fund_id: @capital_call.fund_id } }
   end
 
   def notify(capital_call_id)

@@ -1,7 +1,10 @@
 resources :portfolio_cashflows
 resources :scenario_investments
+
 resources :portfolio_scenarios do
   patch 'run', on: :member
+  get 'simple_scenario', on: :collection
+  post 'simple_scenario', on: :collection
 end
 
 resources :fund_reports

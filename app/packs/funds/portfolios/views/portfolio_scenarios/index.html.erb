@@ -1,8 +1,17 @@
 <%= render "/layouts/alerts" %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Portfolio Scenarios</h1>
-  <%= link_to "New Portfolio Scenario", new_portfolio_scenario_path(fund_id: params[:fund_id]), {class: "btn btn-outline-primary"}  %>
+
+  <span>
+    <%= link_to "New Scenario", new_portfolio_scenario_path(fund_id: params[:fund_id]), {class: "btn btn-outline-primary"}  %>
+    <%= link_to "Summary Scenario", simple_scenario_portfolio_scenarios_path(fund_id: params[:fund_id]), {class: "btn btn-outline-success", data: { turbo_frame: 'simple_scenarios' } }  %>
+  </span>
+
 </div>
+
+<%= turbo_frame_tag "simple_scenarios" do %>
+<% end %>
+
 <div class="table-responsive" data-controller="datatable">
   <table id="portfolio_scenarios" class="table table-bordered dataTable">
     <thead>

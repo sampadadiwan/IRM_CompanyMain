@@ -110,7 +110,7 @@ class FundPortfolioCalcs
   end
 
   # Compute the XIRR for each portfolio company
-  def portfolio_company_irr(return_cash_flows: false)
+  def portfolio_company_irr(return_cash_flows: false, scenarios: nil)
     @portfolio_companies_map ||= {}
 
     if @portfolio_companies_map.empty?
@@ -140,7 +140,8 @@ class FundPortfolioCalcs
         end
 
         # Get the FMV for this specific portfolio_company
-        fmv_val = fmv_on_date(portfolio_company_id).round(4)
+        fmv_val = fmv_on_date(portfolio_company_id, scenarios:).round(4)
+
         cf << Xirr::Transaction.new(fmv_val, date: @end_date, notes: "FMV portfolio_company_id: #{portfolio_company_id}") if fmv_val != 0
 
         Rails.logger.debug { "fmv = #{fmv_val}" }
@@ -179,7 +180,7 @@ class FundPortfolioCalcs
     @portfolio_companies_map
   end
 
-  def fmv_on_date(portfolio_company_id = nil)
+  def fmv_on_date(portfolio_company_id = nil, scenarios: nil)
     total_fmv_on_end_date_cents = 0
     # portfolio_investments = @fund.portfolio_investments.pool.where(investment_date: ..@end_date)
     portfolio_investments = @fund.portfolio_investments.select { |pi| pi.Pool? && pi.investment_date <= @end_date }
@@ -206,6 +207,9 @@ class FundPortfolioCalcs
       # Aggregate the fmv across the fun
       total_fmv_on_end_date_cents += fmv_on_end_date_cents
     end
+
+    total_fmv_on_end_date_cents = (total_fmv_on_end_date_cents * (1 + (scenarios[portfolio_company_id.to_s]["percentage_change"].to_f / 100))).round(4) if scenarios && scenarios[portfolio_company_id.to_s]["percentage_change"].present?
+
     total_fmv_on_end_date_cents
   end
 
@@ -213,7 +217,7 @@ class FundPortfolioCalcs
   # net_irr: true/false - if true, then the IRR is calculated net of Estimated Carry
   # return_cash_flows: true/false - if true, then the cash flows used in computation are returned
   # adjustment_cash: amount to be added to the cash flows, used specifically for scenarios. see PortfolioScenarioJob
-  def xirr(net_irr: false, return_cash_flows: false, adjustment_cash: 0)
+  def xirr(net_irr: false, return_cash_flows: false, adjustment_cash: 0, scenarios: nil)
     cf = Xirr::Cashflow.new
 
     @fund.capital_remittance_payments.includes(:capital_remittance).where("capital_remittance_payments.payment_date <= ?", @end_date).each do |cr|
@@ -224,7 +228,7 @@ class FundPortfolioCalcs
       cf << Xirr::Transaction.new(cdp.amount_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Distribution #{cdp.id}")
     end
 
-    cf << Xirr::Transaction.new(fmv_on_date, date: @end_date, notes: "FMV") if fmv_on_date != 0
+    cf << Xirr::Transaction.new(fmv_on_date(scenarios:), date: @end_date, notes: "FMV") if fmv_on_date != 0
     cf << Xirr::Transaction.new(cash_in_hand_cents, date: @end_date, notes: "Cash in Hand") if cash_in_hand_cents != 0
     cf << Xirr::Transaction.new(net_current_assets_cents, date: @end_date, notes: "Net Current Assets") if net_current_assets_cents != 0
 
