@@ -10,4 +10,28 @@ module SimpleScenarioHelper
     fpc = FundPortfolioCalcs.new(@fund, scenario_date)
     fpc.xirr(scenarios:)
   end
+
+  def portfolio_company_irr_chart(fund, orig_xirr, scenario_xirr, fund_orig_xirr, fund_scenario_xirr)
+    apis = fund.aggregate_portfolio_investments.where(quantity: 1..).order("portfolio_company_name asc")
+
+    oxirr_data = apis.to_h { |api| [api.portfolio_company_name, orig_xirr[api.portfolio_company_id][:xirr]] }
+    orig_xirr[fund.name] = fund_orig_xirr
+    sxirr_data = apis.to_h { |api| [api.portfolio_company_name, scenario_xirr[api.portfolio_company_id][:xirr]] }
+    sxirr_data[fund.name] = fund_scenario_xirr
+
+    chart_data = [{ name: "Current", data: oxirr_data }, { name: "Scenario", data: sxirr_data }]
+    Rails.logger.debug chart_data
+
+    # Sample data
+    # [{:name=>"Current", :data=>{"Apna Complex"=>838.77, "Cult Fit"=>-69.33}}, {:name=>"Scenario", :data=>{"Apna Complex"=>923.47, "Cult Fit"=>-69.33}}]
+
+    column_chart chart_data, library: {
+      plotOptions: { column: {
+        dataLabels: {
+          enabled: true,
+          format: "{point.y:,.2f}%"
+        }
+      } }
+    }
+  end
 end

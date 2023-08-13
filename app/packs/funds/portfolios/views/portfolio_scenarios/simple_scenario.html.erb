@@ -1,11 +1,9 @@
 <%= turbo_frame_tag "simple_scenarios" do %>
 
-<% color_class = ["text-success", "text-primary", "text-warning", "text-info"].sample %>
-
 <div class="dynamic_form card shadow mb-4" data-controller="access">
 
   <div class="card-header py-3">
-    <h6 class="m-0 font-weight-bold <%=color_class%>">Scenario : <%= l Time.zone.now %> </h6>
+    <h6 class="m-0 font-weight-bold">Scenario : <%= l Time.zone.now %> </h6>
   </div>
   <div class="card-body">
   <% orig_xirr = compute_portfolio_irr(params) %>
@@ -39,10 +37,10 @@
         <div class="form-group col">
           <%= label_tag :percentage_change, "% Change in FMV" %>
         </div>
-        <div class="form-group col">
+        <div class="form-group col text-success">
           <%= label_tag :current_irr, "Current IRR" %>
         </div>
-        <div class="form-group col <%=color_class%>">
+        <div class="form-group col text-primary">
           <%= label_tag :scenario_irr, "Scenario IRR" %>
         </div>
       </div>
@@ -64,11 +62,11 @@
         <%= number_field_tag :percentage_change, percentage_change, name: "scenario[#{api.portfolio_company_id}][percentage_change]", class: "form-control" %>
       </div>
 
-      <div class="form-group col">
+      <div class="form-group col text-success">
         <%= text_field_tag :current_irr, orig_xirr[api.portfolio_company_id][:xirr], class: "form-control", disabled: true %>
       </div>
 
-      <div class="form-group col <%=color_class%>">
+      <div class="form-group col text-primary">
         <%= text_field_tag :scenario_irr, scenario_xirr[api.portfolio_company_id][:xirr], class: "form-control", disabled: true %>
       </div>
 
@@ -91,12 +89,12 @@
 
       
 
-      <div class="form-group col">
+      <div class="form-group col text-success">
         <%= label_tag :current_irr, "Current IRR" %>
         <%= text_field_tag :current_irr, fund_orig_xirr, class: "form-control", disabled: true %>
       </div>
 
-      <div class="form-group col <%=color_class%>">
+      <div class="form-group col text-primary">
         <%= label_tag :scenario_irr, "Scenario IRR" %>
         <%= text_field_tag :scenario_irr, fund_scenario_xirr, class: "form-control", disabled: true %>
       </div>
@@ -112,5 +110,7 @@
   </div>
 
 </div>
+
+<%= render "portfolio_scenarios/simple_scenario_charts", fund: @fund, orig_xirr:, scenario_xirr:, fund_orig_xirr:, fund_scenario_xirr: %>
 
 <% end %>
