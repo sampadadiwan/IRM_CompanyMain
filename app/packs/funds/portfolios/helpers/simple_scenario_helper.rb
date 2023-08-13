@@ -5,6 +5,20 @@ module SimpleScenarioHelper
     fpc.portfolio_company_irr(scenarios:)
   end
 
+  def get_orig_xirr(params)
+    orig_xirr = {}
+
+    if params[:scenario].present?
+      params[:scenario].each do |k, v|
+        orig_xirr[k.to_i] = { xirr: v["current_irr"].to_f }
+      end
+    else
+      orig_xirr = compute_portfolio_irr(params)
+    end
+
+    orig_xirr
+  end
+
   def compute_fund_irr(params, scenarios: nil)
     scenario_date = params[:scenario_date].present? ? Date.parse(params[:scenario_date]) : Time.zone.today
     fpc = FundPortfolioCalcs.new(@fund, scenario_date)

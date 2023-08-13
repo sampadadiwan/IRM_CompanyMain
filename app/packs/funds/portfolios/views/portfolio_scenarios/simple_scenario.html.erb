@@ -9,11 +9,16 @@
     </span>
   </div>
   <div class="card-body collapse show show_details">
-  <% orig_xirr = compute_portfolio_irr(params) %>
-  <% scenario_xirr = params["scenario"].present? ? compute_portfolio_irr(params, scenarios: params[:scenario]) : orig_xirr %>
+  
+  <%# we compute the orig_xirr on page load using get, but its cached for every subsequent post for the scenario %>
+  <% orig_xirr = get_orig_xirr(params) %>
+  <%# If no scenario is specified the use the orig_xirr computed above %>
+  <% scenario_xirr = params["scenario"].blank? ? orig_xirr : compute_portfolio_irr(params, scenarios: params[:scenario]) %>
 
-  <% fund_orig_xirr = compute_fund_irr(params) %>
-  <% fund_scenario_xirr = params["scenario"].present? ? compute_fund_irr(params, scenarios: params[:scenario]) : fund_orig_xirr %>
+  <%# we compute the fund_orig_xirr on page load using get, but its cached for every subsequent post for the scenario %>
+  <% fund_orig_xirr = params[:fund_orig_xirr].presence || compute_fund_irr(params) %>
+  <%# If no scenario is specified the use the fund_orig_xirr computed above %>
+  <% fund_scenario_xirr = params["scenario"].blank? ? fund_orig_xirr : compute_fund_irr(params, scenarios: params[:scenario]) %>
 
   <%= form_with(model: nil) do |form| %>
 
@@ -67,6 +72,7 @@
 
       <div class="form-group col text-success">
         <%= text_field_tag :current_irr, orig_xirr[api.portfolio_company_id][:xirr], class: "form-control", disabled: true %>
+        <%= text_field_tag :current_irr, orig_xirr[api.portfolio_company_id][:xirr], name: "scenario[#{api.portfolio_company_id}][current_irr]", class: "form-control", hidden: true %>
       </div>
 
       <div class="form-group col text-primary">
@@ -94,7 +100,8 @@
 
       <div class="form-group col text-success">
         <%= label_tag :current_irr, "Current IRR" %>
-        <%= text_field_tag :current_irr, fund_orig_xirr, class: "form-control", disabled: true %>
+        <%= text_field_tag :current_irr, fund_orig_xirr, name: "fund_orig_xirr", class: "form-control", disabled: true %>
+        <%= text_field_tag :current_irr, fund_orig_xirr, name: "fund_orig_xirr", class: "form-control", hidden: true %>
       </div>
 
       <div class="form-group col text-primary">
