@@ -2,10 +2,13 @@
 
 <div class="dynamic_form card shadow mb-4" data-controller="access">
 
-  <div class="card-header py-3">
-    <h6 class="m-0 font-weight-bold">Scenario : <%= l Time.zone.now %> </h6>
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+    <h6 class="m-0 font-weight-bold text-primary">Scenario : <%= l Time.zone.now %> </h6>
+    <span>
+        <a class="btn btn-outline-primary show_details_link" data-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a>
+    </span>
   </div>
-  <div class="card-body">
+  <div class="card-body collapse show show_details">
   <% orig_xirr = compute_portfolio_irr(params) %>
   <% scenario_xirr = params["scenario"].present? ? compute_portfolio_irr(params, scenarios: params[:scenario]) : orig_xirr %>
 

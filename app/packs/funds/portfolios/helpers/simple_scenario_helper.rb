@@ -15,7 +15,8 @@ module SimpleScenarioHelper
     apis = fund.aggregate_portfolio_investments.where(quantity: 1..).order("portfolio_company_name asc")
 
     oxirr_data = apis.to_h { |api| [api.portfolio_company_name, orig_xirr[api.portfolio_company_id][:xirr]] }
-    orig_xirr[fund.name] = fund_orig_xirr
+    oxirr_data[fund.name] = fund_orig_xirr
+
     sxirr_data = apis.to_h { |api| [api.portfolio_company_name, scenario_xirr[api.portfolio_company_id][:xirr]] }
     sxirr_data[fund.name] = fund_scenario_xirr
 
