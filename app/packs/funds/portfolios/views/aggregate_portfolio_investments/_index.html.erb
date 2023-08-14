@@ -58,57 +58,6 @@
   </table>
 </div>
 
-
-<% if params[:fund_id].present? %>
-
-<div class="row">
-    <div class="col-lg-12 mb-4">
-
-        <!-- Illustrations -->
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary"> FMV % </h6>
-            </div>
-            <div class="card-body">
-                <%= investment_fmv_by_company(Fund.find(params[:fund_id])) %>
-            </div>
-        </div>
-    </div>
+<div class="associated_entity">
+  <%= render "aggregate_portfolio_investments/index_charts" %>
 </div>
-
-
-<div class="row">
-    <div class="col-lg-12 mb-4">
-
-        <!-- Illustrations -->
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary"> FMV/Bought/Sold </h6>
-            </div>
-            <div class="card-body">
-                <%= bought_sold_fmv(Fund.find(params[:fund_id])) %>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<div class="row">
-    <div class="col-lg-12 mb-4">
-
-        <!-- Illustrations -->
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary"> Portfolio IRR </h6>
-            </div>
-            <div class="card-body">
-                <%= portfolio_last_xirr(Fund.find(params[:fund_id])) %>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
-
-<% end %>

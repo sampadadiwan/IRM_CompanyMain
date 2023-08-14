@@ -1,16 +1,4 @@
 module StatisticsHelper
-  def pie_chart_with_options(data)
-    pie_chart data, library: { plotOptions: { pie: {
-      dataLabels: {
-        enabled: true,
-        format: '{point.name}:<br>{point.percentage:.1f} %'
-      }
-    } } },
-                    #  stacked: false,
-                    decimal: ",",
-                    prefix: "%"
-  end
-
   def investment_diluted(entity)
     investments = Investment.where(entity_id: entity.id,
                                    investment_instrument: %w[Equity Preferred Options])

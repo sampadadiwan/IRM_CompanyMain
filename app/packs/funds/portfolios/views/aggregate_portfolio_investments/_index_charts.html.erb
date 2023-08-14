@@ -1,0 +1,108 @@
+<% if params[:fund_id].present? %>
+<%  fund = Fund.find(params[:fund_id]) %>
+<div class="row">
+    <div class="col-lg-6 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"> FMV % </h6>
+            </div>
+            <div class="card-body">
+                <%= investment_fmv_by_company(fund) %>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"> Holding Cost % </h6>
+            </div>
+            <div class="card-body">
+                <%= investment_holding_cost_by_company(fund) %>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div class="row">
+    <div class="col-lg-6 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"> Bought % </h6>
+            </div>
+            <div class="card-body">
+                <%= investment_bought_by_company(fund) %>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"> Sold % </h6>
+            </div>
+            <div class="card-body">
+                <%= investment_sold_by_company(fund) %>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="row">
+    <div class="col-lg-12 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"> FMV/Bought/Sold </h6>
+            </div>
+            <div class="card-body">
+                <%= bought_sold_fmv(fund) %>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-lg-12 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"> Buy Timeline </h6>
+            </div>
+            <div class="card-body">
+                <%= buy_sell_timeline(fund) %>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-lg-12 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"> Portfolio IRR </h6>
+            </div>
+            <div class="card-body">
+                <%= portfolio_last_xirr(fund) %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% end %>
