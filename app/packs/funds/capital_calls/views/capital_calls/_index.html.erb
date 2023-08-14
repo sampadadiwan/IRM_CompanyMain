@@ -4,7 +4,7 @@
 
         <% fund ||= nil %>
         <% if fund && policy(fund).update? %>
-            <%= link_to "New Capital Call" , new_capital_call_path("capital_call[fund_id]": fund.id), 
+            <%= link_to "New Call" , new_capital_call_path("capital_call[fund_id]": fund.id), 
                         {class: "btn btn-outline-primary"} %>
 
             <%= link_to "Upload", 
@@ -16,7 +16,7 @@
         <% end %>
 
         <%= link_to "Download", capital_calls_path(fund_id: fund&.id, format: "xlsx"),  
-                    {class: "btn btn-outline-primary" }  %>
+                    {class: "btn btn-outline-success" }  %>
 
 
     </span>

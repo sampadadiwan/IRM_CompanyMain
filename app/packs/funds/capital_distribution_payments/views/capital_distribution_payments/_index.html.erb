@@ -5,13 +5,9 @@
       <% capital_distribution ||= nil %>
       <% if capital_distribution %>
       
-        <%= link_to "New Capital Distribution Payment", 
+        <%= link_to "New Payment", 
           new_capital_distribution_payment_path("capital_distribution_payment[capital_distribution_id]": capital_distribution.id), 
           {class: "btn btn-outline-primary" }  %>
-
-        <%= link_to "Download" , 
-          capital_distribution_payments_path(capital_distribution_id: capital_distribution.id, 
-          format: "xlsx", all: true), {class: "btn btn-outline-primary" } %>
 
 
         <%= link_to "Upload", 
@@ -20,6 +16,10 @@
             "import_upload[import_type]": "CapitalDistributionPayment", 
             "sample_upload": "CAPITAL_DISTRIBUTION_PAYMENT_SAMPLE"), 
             { class: "btn btn-outline-primary"}  %> 
+
+        <%= link_to "Download" , 
+          capital_distribution_payments_path(capital_distribution_id: capital_distribution.id, 
+          format: "xlsx", all: true), {class: "btn btn-outline-success" } %>
 
       <% end %>
       <%#= render "/funds/search_bar", model_name: "capital_distribution_payment" %>

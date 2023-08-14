@@ -37,9 +37,9 @@ module AggregatePortfolioInvestmentsHelper
               .map { |k| [k.portfolio_company_name, k.fmv.to_d, k.bought_amount.to_d, k.sold_amount.to_d] }
 
     column_chart [
-      { name: "FMV", data: grouped.map { |k| [k[0], k[1]] } },
       { name: "Bought", data: grouped.map { |k| [k[0], k[2]] } },
-      { name: "Sold", data: grouped.map { |k| [k[0], k[3]] } }
+      { name: "Sold", data: grouped.map { |k| [k[0], k[3]] } },
+      { name: "FMV", data: grouped.map { |k| [k[0], k[1]] } }
     ]
   end
 

@@ -180,7 +180,7 @@
 
     visit(fund_url(@fund))
     click_on("Commitments")
-    click_on("New Capital Commitment")
+    click_on("New Commitment")
     select(@new_capital_commitment.investor_name, from: "capital_commitment_investor_id")
     fill_in('capital_commitment_folio_committed_amount', with: @new_capital_commitment.folio_committed_amount)
     if @fund.capital_commitments.count > 0
@@ -263,7 +263,7 @@
     visit(fund_url(@fund))
 
     click_on "Calls"
-    click_on "New Capital Call"
+    click_on "New Call"
 
     fill_in('capital_call_name', with: @capital_call.name)
     
@@ -604,7 +604,7 @@ When('I create a new capital distribution {string}') do |args|
   visit(fund_url(@fund))
 
   click_on "Distributions"
-  click_on "New Capital Distribution"
+  click_on "New Distribution"
 
   fill_in('capital_distribution_title', with: @capital_distribution.title)
   fill_in('capital_distribution_gross_amount', with: @capital_distribution.gross_amount)
