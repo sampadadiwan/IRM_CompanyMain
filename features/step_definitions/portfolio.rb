@@ -7,7 +7,7 @@ include CurrencyHelper
     visit(fund_path(@fund))
     sleep(1)
     click_on "Portfolio"    
-    click_on "New Portfolio Investment"
+    click_on "New Investment"
     
     portfolio_company = @entity.investors.portfolio_companies.where(investor_name: @new_portfolio_investment.portfolio_company_name).first
 
