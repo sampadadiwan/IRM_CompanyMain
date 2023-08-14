@@ -27,6 +27,7 @@ namespace :admin do
   resources :capital_commitments
   resources :capital_distributions
   resources :capital_remittances
+  resources :capital_remittance_payments
   resources :capital_distribution_payments
 
   # namespace :audited do

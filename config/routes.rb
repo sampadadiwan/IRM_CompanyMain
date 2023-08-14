@@ -1,10 +1,4 @@
 Rails.application.routes.draw do
-  resources :e_signatures
-  resources :stamp_papers
-  resources :investor_notice_items
-  resources :kpis
-  resources :kpi_reports
-
   draw :admin
   draw :fund
   draw :secondary

@@ -5,7 +5,7 @@ class CapitalRemittancePolicy < FundBasePolicy
 
   def show?
     permissioned_employee? ||
-      permissioned_investor?
+      permissioned_investor? || super_user?
   end
 
   def new?
