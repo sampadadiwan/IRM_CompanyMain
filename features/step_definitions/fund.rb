@@ -92,12 +92,12 @@
     @user = @employee_investor
 
     if given == "given" || given == "yes"
-      
+
           # Create the Investor Advisor
           investor_advisor = InvestorAdvisor.create!(entity_id: @entity.id, email: @user.email)
           investor_advisor.permissions.set(:enable_funds)
           investor_advisor.save
-          
+
           puts "\n####Investor Advisor####\n"
           puts investor_advisor.to_json
 
@@ -111,7 +111,7 @@
           # @access_right.permissions.set(:update)
           # @access_right.permissions.set(:destroy)
           @access_right.save
-          
+
 
           puts "\n####Access Right####\n"
           ap @access_right
@@ -119,7 +119,7 @@
     end
   end
 
-  
+
 
   Given('the access right has access {string}') do |crud|
     puts AccessRight.all.to_json
@@ -266,7 +266,7 @@
     click_on "New Call"
 
     fill_in('capital_call_name', with: @capital_call.name)
-    
+
     fill_in('capital_call_due_date', with: @capital_call.due_date)
     select(@capital_call.fund_closes[0], from: 'capital_call_fund_closes')
     select(@capital_call.call_basis, from: 'capital_call_call_basis')
@@ -287,7 +287,7 @@
 
     if @capital_call.call_basis == "Amount allocated on Investable Capital"
       @capital_call.fee_account_entry_names.each_with_index do |fee_name, idx|
-        click_on "Add Fees" 
+        click_on "Add Fees"
         sleep(1)
         within all(".nested-fields").last do
           select(fee_name, from: "fee_name")
@@ -330,7 +330,7 @@
           row = data.row(idx+2)
           # create hash from headers and cells
           user_data = [headers, row].transpose.to_h
-          
+
           puts "Checking import of #{user_data}"
           remittance.investor.investor_name.should == user_data["Investor"].strip
           remittance.fund.name.should == user_data["Fund"]
@@ -619,7 +619,7 @@ end
 
 Then('I should see the capital distrbution details') do
   find(".show_details_link").click
-  
+
   expect(page).to have_content(@capital_distribution.title)
   expect(page).to have_content(money_to_currency(@capital_distribution.gross_amount))
   expect(page).to have_content(money_to_currency(@capital_distribution.reinvestment))
@@ -1157,7 +1157,7 @@ Then('the account_entries must have the data in the sheet') do
       ap user_data
       cc = account_entries[idx-1]
       ap cc
-      
+
       puts "Checking import of #{cc.name}"
       cc.name.should == user_data["Name"].strip
       cc.fund.name.should == user_data["Fund"]
@@ -1315,6 +1315,34 @@ Then('{string} has {string} "{string}" access to the fund_ratios') do |arg1,true
   end
 end
 
+Given('Given I upload a fund unit setting file for the fund') do
+  visit(fund_url(@fund))
+  click_on("Actions")
+  click_on("Fund Unit Settings")
+  sleep(2)
+  click_on("Upload Fund Unit Settings")
+  sleep(6)
+  fill_in('import_upload_name', with: "Test Fund Unit Settings Upload")
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_unit_setting.xlsx'), make_visible: true)
+  sleep(3)
+  click_on("Save")
+  sleep(10)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+end
+
+Then('There should be {string} fund unit settings created with data in the sheet') do |count|
+  file = File.open("./public/sample_uploads/fund_unit_setting.xlsx", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    row_data = [headers, row].transpose.to_h
+    FundUnitSetting.where(fund_id: Fund.find_by(name: row_data["Fund"]).id, name: row_data["Class/Series"], management_fee: row_data["Management Fee %"], setup_fee: row_data["Setup Fee %"], carry: row_data["Carry %"]).present?.should == true
+  end
+end
 
 # Then('{string} has {string} "{string}" access to the fund_ratios') do |arg1,truefalse, accesses|
 #   args_temp = arg1.split(";").to_h { |kv| kv.split("=") }
