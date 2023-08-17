@@ -29,7 +29,7 @@
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
         
-          <%= link_to "Download" , investors_path(format: "xlsx"),
+          <%= link_to "Download" , investors_path(format: "xlsx", all: true),
             {class: "dropdown-item" } %>
 
           <%= link_to "Upload", 
