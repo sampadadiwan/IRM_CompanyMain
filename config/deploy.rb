@@ -17,7 +17,10 @@ end
 set :pty, true
 
 # Default value for linked_dirs is []
-append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "public/system"
+append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "public/system", '.bundle'
+
+set :bundle_binstubs, -> { shared_path.join('bin') }
+set :bundle_jobs, 8
 
 # Default value for keep_releases is 5
 set :keep_releases, 3
@@ -42,7 +45,7 @@ namespace :deploy do
       # This is stored in /etc/environments
       execute "echo $RAILS_MASTER_KEY > #{release_path}/config/credentials/#{fetch(:stage)}.key"
     end
-      Rake::Task["deploy:assets:precompile"].clear_actions
+      # Rake::Task["deploy:assets:precompile"].clear_actions
       # Rake::Task["deploy:migrate"].clear_actions
   end
 

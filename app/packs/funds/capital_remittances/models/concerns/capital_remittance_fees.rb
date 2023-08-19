@@ -23,10 +23,10 @@ module CapitalRemittanceFees
   end
 
   def management_fees_days(start_date, end_date)
-    if capital_call.due_date < start_date
-      (end_date - start_date).to_i
-    elsif capital_call.due_date < end_date
-      (end_date - capital_call.due_date).to_i
+    if capital_call.due_date <= start_date
+      (end_date - start_date).to_i + 1
+    elsif capital_call.due_date <= end_date
+      (end_date - capital_call.due_date).to_i + 1
     else
       0
     end

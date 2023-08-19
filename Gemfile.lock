@@ -854,7 +854,8 @@ DEPENDENCIES
   brakeman
   bullet
   bundle-audit
-  capistrano
+  capistrano (~> 3.5)
+  capistrano-bundler (~> 2.0)
   capistrano-rails
   capistrano-rvm
   capistrano-sidekiq!
