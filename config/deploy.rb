@@ -42,11 +42,9 @@ namespace :deploy do
       # This is stored in /etc/environments
       execute "echo $RAILS_MASTER_KEY > #{release_path}/config/credentials/#{fetch(:stage)}.key"
     end
-    Rake::Task["deploy:assets:precompile"].clear_actions
-
   end
 
-  before "deploy:updated", :upload_env
+  before "deploy:assets:precompile", :upload_env
   after "deploy", "sidekiq:restart"
 
 end
