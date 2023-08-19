@@ -27,7 +27,7 @@ install_plugin Capistrano::SCM::Git
 #   https://github.com/capistrano/passenger
 require 'capistrano/rails'
 require "capistrano/rvm"
-require "whenever/capistrano"
+# require "whenever/capistrano"
 require 'capistrano/bundler'
 require 'capistrano/sidekiq'
 require 'capistrano/sidekiq/monit'
