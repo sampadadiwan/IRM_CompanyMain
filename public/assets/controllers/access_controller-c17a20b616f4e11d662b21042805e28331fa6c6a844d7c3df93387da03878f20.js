@@ -1,0 +1,191 @@
+import { Controller } from "@hotwired/stimulus"
+
+export default class extends Controller {
+
+  connect() {
+    this.init();
+  }
+
+  init() {
+    console.log("Access javascript loaded");
+    $('.select2-multiple').select2();
+
+    $(".select2-multiple").on('select2:select', function () {
+      let event = new Event('change', { bubbles: true }) // fire a native event
+      this.dispatchEvent(event);
+    });
+
+    this.onChange();
+  }
+
+  investorAdvisorChange(event) {
+
+    let selected = $("#access_right_metadata").val();
+    switch (selected) {
+      case "Investor":
+        this.hidePermissons();
+        break;
+      case "Advisor":
+        this.showPermissions();
+        break;
+      default:
+    }
+
+  }
+
+  onChange(event) {
+    let selected = $("#access_right_email_or_cat").val();
+    console.log(`access controller onChange ${selected}`);
+    
+    switch (selected) {
+      case "All Users for Specific Stakeholder":
+        // hide category & disable
+        this.hideAll();
+        this.showInvestor();
+        this.showMetadata();
+        break;
+      case "All Stakeholder of Specific Category":
+        // hide category & disable
+        this.hideAll();
+        this.showCategory();
+        this.showMetadata();
+        break;
+
+      case "Employee":
+        // hide category & disable
+        this.hideAll();
+        this.showEmployee();
+        this.showPermissions();
+        break;
+
+      case "Investor Advisor", "Advisor":
+          // hide category & disable
+          this.hideAll();
+          this.showInvestorAdvisor();
+          this.showPermissions();
+          break;
+        
+      case "Specific User":
+        // hide category & disable
+        this.hideAll();
+        this.showEmployee();
+        this.hidePermissons();
+        break;
+      default:
+    }
+  }
+
+  close(event) {
+    console.log("closeForm");
+    $(".dynamic_form").remove();
+  }
+
+
+  // Prevent form from submitting if required fields are not filled
+  checkRequiredFilled(event) {
+    
+    let required_missing = false;
+    $('#access_rights_form .required').each(function () {
+      if ($(this).val().length == 0) {
+        console.log(`Its blank`);
+        console.log($(this));
+        $(this).closest('.form-group').addClass('field_with_errors');
+        required_missing = true;
+      } else {
+        $(this).closest('.form-group').removeClass('field_with_errors');
+      }
+    });
+
+    if(required_missing) {
+      event.preventDefault();
+    }
+  }
+
+  // Clear error css if required field is filled
+  addErrorCheck() {
+    $('#access_rights_form .required').each(function () {
+      if ($(this).val().length == 0) {
+        console.log("Its blank");
+        $(this).closest('.form-group').addClass('field_with_errors');
+      } else {
+        $(this).closest('.form-group').removeClass('field_with_errors');
+      }
+    });
+  }
+
+  hideCategory() {
+    $("#category_form_group").hide();
+    $('#access_right_access_to_category').prop('disabled', 'disabled');
+    $('#access_right_access_to_category').removeClass('required');
+  }
+  
+  showCategory() {
+    $("#category_form_group").show();
+    $('#access_right_access_to_category').prop('disabled', '');
+    $('#access_right_access_to_category').addClass('required');
+  }
+
+  hideInvestor() {
+    $("#investor_form_group").hide();
+    $('#access_right_access_to_investor_id').prop('disabled', "disabled");
+    $('#access_right_access_to_investor_id').removeClass('required');        
+  }
+
+  showInvestor() {
+    $("#investor_form_group").show();
+    $('#access_right_access_to_investor_id').prop('disabled', "");
+    $('#access_right_access_to_investor_id').addClass('required');
+  }
+
+  showMetadata() {
+    $("#metadata_form_group").show();        
+    $('#access_right_metadata').prop('disabled', "");
+  }
+
+  hideMetadata() {
+    $("#metadata_form_group").hide();        
+    $('#access_right_metadata').prop('disabled', "disabled");
+  }
+
+  showEmployee() {
+    $("#employee_form_group").show();
+    $('#access_right_user_id').prop('disabled', "");
+    $('#access_right_user_id').addClass('required');
+  }
+
+  hideEmployee() {
+    $("#employee_form_group").hide();
+    $('#access_right_user_id').prop('disabled', "disabled");
+    $('#access_right_user_id').removeClass('required');
+  }
+
+  showInvestorAdvisor() {
+    $("#investor_advisor_form_group").show();
+    $('#access_right_user_id').prop('disabled', "");
+    $('#access_right_user_id').addClass('required');
+  }
+
+  hideInvestorAdvisor() {
+    $("#investor_advisor_form_group").hide();
+    $('#access_right_user_id').prop('disabled', "disabled");
+    $('#access_right_user_id').removeClass('required');
+  }
+
+  hidePermissons() {
+    $("#permissions_form_group").hide();
+  }
+
+  showPermissions() {
+    $("#permissions_form_group").show();        
+  }
+
+  hideAll() {
+    this.hideCategory();
+    this.hideInvestor();
+    this.hideMetadata();
+    this.hideEmployee();
+    this.hidePermissons();
+    this.hideInvestorAdvisor();
+  }
+
+};
