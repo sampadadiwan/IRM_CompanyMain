@@ -67,7 +67,11 @@ class ImportAccountEntry < ImportUtil
         account_entry.run_callbacks(:save) { false }
         account_entry.run_callbacks(:create) { false }
         @account_entries << account_entry
-        ret_val = [true, "Success"]
+        ret_val = if account_entry.valid?
+                    [true, "Success"]
+                  else
+                    [false, account_entry.errors.full_messages]
+                  end
       else
         ret_val = [false, "Duplicate, already present"] unless account_entry.new_record?
         ret_val = [false, account_entry.errors.full_messages] unless account_entry.valid?
@@ -100,7 +104,18 @@ class ImportAccountEntry < ImportUtil
 
   def post_process(import_upload, _context)
     # Import it
-    AccountEntry.import @account_entries
+
+    begin
+      results = AccountEntry.import @account_entries, on_duplicate_key_ignore: true, validate_uniqueness: true, track_validation_failures: true
+    rescue StandardError => e
+      import_upload.status = "Failed to import all rows #{e.message}"
+      import_upload.error_text = "Failed to import #{e.backtrace}"
+      import_upload.save
+    end
+
+    # Check for failures - this is bug in the gem, its not returning the errors
+    if results && results.failed_instances.present?
+    end
 
     # Sometimes we import custom fields. Ensure custom fields get created
     @last_saved = import_upload.entity.funds.last.account_entries.last

@@ -55,7 +55,7 @@ class CapitalCallJob < ApplicationJob
 
     # import the rows
     Rails.logger.debug { "##### Importing #{@remittances.length} CapitalRemittances" }
-    CapitalRemittance.import @remittances
+    CapitalRemittance.import @remittances, on_duplicate_key_ignore: true, track_validation_failures: true
 
     # Generate any payments for the imported remittances if required
     generate_remittance_payments
@@ -85,7 +85,7 @@ class CapitalCallJob < ApplicationJob
       @payments << crp if crp.valid?
     end
 
-    CapitalRemittancePayment.import @payments
+    CapitalRemittancePayment.import @payments, on_duplicate_key_ignore: true, track_validation_failures: true
     CapitalRemittancePayment.counter_culture_fix_counts where: { capital_remittance_payments: { fund_id: @capital_call.fund_id } }
   end
 

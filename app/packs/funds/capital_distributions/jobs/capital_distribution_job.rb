@@ -12,7 +12,7 @@ class CapitalDistributionJob < ApplicationJob
 
       Rails.logger.debug { "Importing #{@payments.length} CapitalDistributionPayment" }
       # import the rows
-      CapitalDistributionPayment.import @payments
+      CapitalDistributionPayment.import @payments, on_duplicate_key_ignore: true,  track_validation_failures: true
       # Update the index
       CapitalDistributionPaymentIndex.import(@capital_distribution.capital_distribution_payments)
       # Update the counter caches

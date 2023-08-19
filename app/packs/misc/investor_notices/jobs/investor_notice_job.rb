@@ -35,7 +35,7 @@ class InvestorNoticeJob < ApplicationJob
 
     if entries.present?
       Rails.logger.debug { "InvestorNoticeJob: importing #{entries.length} investor notices" }
-      InvestorNoticeEntry.import entries
+      InvestorNoticeEntry.import entries, on_duplicate_key_ignore: true, track_validation_failures: true
       # Bulk update the investor_entity_ids so the cache is busted
       Entity.where(id: investor_entity_ids).update_all(updated_at: Time.zone.now)
     else

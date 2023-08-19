@@ -822,19 +822,6 @@ ActiveRecord::Schema[7.0].define(version: 2023_08_05_152549) do
     t.index ["user_id"], name: "index_e_signatures_on_user_id"
   end
 
-  create_table "emailbutler_messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.string "uuid", null: false
-    t.string "mailer", null: false
-    t.string "action", null: false
-    t.json "params", null: false
-    t.string "send_to"
-    t.integer "status", default: 0, null: false
-    t.datetime "timestamp"
-    t.integer "lock_version"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["uuid"], name: "index_emailbutler_messages_on_uuid", unique: true
-  end
 
   create_table "entities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name"

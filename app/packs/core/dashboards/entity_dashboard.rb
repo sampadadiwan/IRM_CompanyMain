@@ -45,6 +45,8 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_kpis: Field::BooleanEmoji,
     enable_kycs: Field::BooleanEmoji,
     enable_support: Field::BooleanEmoji,
+    enable_approvals: Field::BooleanEmoji,
+    enable_investors: Field::BooleanEmoji,
     enable_inv_opportunities: Field::BooleanEmoji
   }.freeze
 
@@ -102,6 +104,8 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_captable
     enable_kpis
     enable_kycs
+    enable_investors
+    enable_approvals
     enable_support
     employees
     investors
@@ -140,6 +144,8 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_captable
     enable_kpis
     enable_kycs
+    enable_investors
+    enable_approvals
     enable_support
     activity_docs_required_for_completion
     activity_details_required_for_na
