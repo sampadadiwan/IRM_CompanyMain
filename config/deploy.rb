@@ -54,6 +54,7 @@ set :puma_preload_app, true
 set :puma_worker_timeout, nil
 set :puma_daemonize, true
 set :puma_init_active_record, true
+set :verbose, 1
 
 namespace :deploy do
   desc "Uploads .env remote servers."
@@ -67,7 +68,7 @@ namespace :deploy do
 
   end
 
-  before "deploy:assets:precompile", :upload_env
+  before "deploy:updated", :upload_env
   after "deploy", "sidekiq:restart"
 
   # desc 'Initial Deploy'
