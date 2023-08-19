@@ -6,6 +6,7 @@ class CapitalRemittance < ApplicationRecord
   include WithFolder
   include WithCustomField
   include WithExchangeRate
+  include CapitalRemittanceFees
 
   update_index('capital_remittance') { self }
 
@@ -242,26 +243,5 @@ class CapitalRemittance < ApplicationRecord
     else
       "#{investor_name}: #{due_amount} : #{status}"
     end
-  end
-
-  def setup_call_fees
-    total_capital_fees_cents = 0
-    total_other_fees_cents = 0
-
-    if capital_call.call_fees.present?
-
-      capital_call.call_fees.each do |call_fee|
-        # Sum the amount for the fee for the commitment account_entries
-        fees = capital_commitment.account_entries.where("account_entries.reporting_date >=? and account_entries.reporting_date <=? and account_entries.name = ? and cumulative = ?", call_fee.start_date, call_fee.end_date, call_fee.name, false).sum(:amount_cents)
-
-        call_fee.fee_type == "Other Fees" ? total_other_fees_cents += fees : total_capital_fees_cents += fees
-      end
-
-    end
-
-    Rails.logger.debug { "### #{investor_name} total_capital_fees_cents: #{total_capital_fees_cents}, total_other_fees_cents: #{total_other_fees_cents}" }
-
-    self.capital_fee_cents = total_capital_fees_cents
-    self.other_fee_cents = total_other_fees_cents
   end
 end
