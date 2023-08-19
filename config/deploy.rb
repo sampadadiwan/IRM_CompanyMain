@@ -5,11 +5,6 @@ set :application, "IRM"
 set :repo_url, "git@github.com:thimmaiah/IRM.git"
 set :branch, 'main'
 
-# Default branch is :master
-# ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
-
-# Default deploy_to directory is /var/www/my_app_name
-# set :deploy_to, "/var/www/my_app_name"
 set :deploy_to, "/home/ubuntu/IRM"
 set :ssh_options, forward_agent: true
 if fetch(:stage) == :production
@@ -17,27 +12,12 @@ if fetch(:stage) == :production
 else
   set :ssh_options, keys: "~/.ssh/altxdev.pem"
 end
-# Default value for :format is :airbrussh.
-# set :format, :airbrussh
-
-# You can configure the Airbrussh format using :format_options.
-# These are the defaults.
-# set :format_options, command_output: true, log_file: "log/capistrano.log", color: :auto, truncate: :auto
 
 # Default value for :pty is false
 set :pty, true
 
-# Default value for :linked_files is []
-# append :linked_files, "config/database.yml"
-
 # Default value for linked_dirs is []
 append :linked_dirs, "log", "tmp/pids", "tmp/cache", "tmp/sockets", "public/system"
-
-# Default value for default_env is {}
-# set :default_env, { path: "/opt/ruby/bin:$PATH" }
-
-# Default value for local_user is ENV['USER']
-# set :local_user, -> { `git config user.name`.chomp }
 
 # Default value for keep_releases is 5
 set :keep_releases, 3
@@ -54,7 +34,6 @@ set :puma_preload_app, true
 set :puma_worker_timeout, nil
 set :puma_daemonize, true
 set :puma_init_active_record, true
-set :verbose, 1
 
 namespace :deploy do
   desc "Uploads .env remote servers."
@@ -63,7 +42,6 @@ namespace :deploy do
       # This is stored in /etc/environments
       execute "echo $RAILS_MASTER_KEY > #{release_path}/config/credentials/#{fetch(:stage)}.key"
     end
-
     Rake::Task["deploy:assets:precompile"].clear_actions
 
   end
@@ -71,20 +49,6 @@ namespace :deploy do
   before "deploy:updated", :upload_env
   after "deploy", "sidekiq:restart"
 
-  # desc 'Initial Deploy'
-  # task :initial do
-  #   on roles(:app) do
-  #     before 'deploy:restart', 'puma:start'
-  #     invoke 'deploy'
-  #   end
-  # end
-
-  # desc 'Restart application'
-  # task :restart do
-  #   on roles(:app), in: :sequence, wait: 5 do
-  #     invoke 'puma:restart'
-  #   end
-  # end
 end
 
 namespace :puma do
@@ -95,6 +59,4 @@ namespace :puma do
       execute "mkdir #{shared_path}/tmp/pids -p"
     end
   end
-
-  # before :start, :make_dirs
 end
