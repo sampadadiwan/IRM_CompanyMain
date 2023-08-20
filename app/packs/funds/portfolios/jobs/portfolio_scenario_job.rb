@@ -1,5 +1,5 @@
 class PortfolioScenarioJob < ApplicationJob
-  queue_as :low, attempts: 1
+  queue_as :low
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(id, user_id, return_cash_flows: false)

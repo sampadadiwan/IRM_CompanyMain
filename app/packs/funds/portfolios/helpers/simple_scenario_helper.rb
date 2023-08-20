@@ -40,13 +40,14 @@ module SimpleScenarioHelper
     # Sample data
     # [{:name=>"Current", :data=>{"Apna Complex"=>838.77, "Cult Fit"=>-69.33}}, {:name=>"Scenario", :data=>{"Apna Complex"=>923.47, "Cult Fit"=>-69.33}}]
 
-    column_chart chart_data, library: {
-      plotOptions: { column: {
-        dataLabels: {
-          enabled: true,
-          format: "{point.y:,.2f}%"
-        }
-      } }
-    }
+    column_chart chart_data,
+                 library: {
+                   plotOptions: { column: {
+                     dataLabels: {
+                       enabled: true,
+                       format: "{point.y:,.2f}%"
+                     }
+                   } }
+                 }
   end
 end
