@@ -16,7 +16,11 @@
 <% end %>
 
 <%- if controller_name != 'passwords' && controller_name != 'registrations' && controller_name != 'confirmations' && params[:password].blank? %>
-   | <%= link_to "Enable Password", new_session_path(resource_name, password: true) , class: "small" %> 
+   | <%= link_to "Login With Password", new_session_path(resource_name, password: true) , class: "small" %> 
+<% end %>
+
+<%- if controller_name != 'passwords' && controller_name != 'registrations' && controller_name != 'confirmations' && params[:password].present? %>
+   | <%= link_to "Without Password", new_session_path(resource_name) , class: "small" %> 
 <% end %>
 
 <%- if devise_mapping.lockable? && resource_class.unlock_strategy_enabled?(:email) && controller_name != 'unlocks' %>

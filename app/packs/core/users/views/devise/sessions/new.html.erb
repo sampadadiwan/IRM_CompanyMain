@@ -60,14 +60,13 @@
 
                                             <span>
                                                 <% if enable_password %>     
-                                                <input type="submit" name="login" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
-                                                value="Log In" data-disable-with="Log in">
+                                                    <input type="submit" name="login" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
+                                                    value="Log In" data-disable-with="Log in">
+                                                <% else %>
+                                                    <input type="submit" name="login_wo_pw" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
+                                                    value="Login" data-disable-with="Log in"
+                                                    data-action="click->login#no_password">
                                                 <% end %>
-
-                                                <% label = enable_password ? "Log In Without Password" : "Login" %>
-                                                <input type="submit" name="login_wo_pw" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
-                                                value="<%=label%>" data-disable-with="Log in"
-                                                data-action="click->login#no_password">
                                             </span>
 
                                         </form>
