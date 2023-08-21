@@ -65,7 +65,7 @@ class ImportInvestorAccess < ImportUtil
   # accepts inputs - IN, in, in(+91), UaE(971), Us 1, etc
   def extract_call_code(input)
     # Convert the input to lowercase for consistent processing
-    normalized_input = input.downcase&.strip
+    normalized_input = input.to_s.downcase&.strip
     # Regular expression pattern to match numeric call codes
     call_code_pattern = /\d+/
 
