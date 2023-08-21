@@ -9,7 +9,17 @@ class User < ApplicationRecord
     "in" => "91",
     "us" => "1",
     "uae" => "971",
-    "sg" => "65"
+    "sg" => "65",
+    "tz" => "255",
+    "ug" => "256",
+    "nl" => "31",
+    "ch" => "41",
+    "uk" => "44",
+    "au" => "61",
+    "hk" => "852",
+    "kw" => "965",
+    "sa" => "966",
+    "qa" => "974"
   }.freeze
 
   tracked except: :update, owner: proc { |controller, _model| controller.current_user if controller && controller.current_user },
