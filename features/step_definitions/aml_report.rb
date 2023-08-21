@@ -6,7 +6,7 @@ Given('there is an investor {string} with investor kyc and aml report for the en
     FactoryBot.build(:entity, entity_type: "InvestmentFund")
   end
   key_values(@investor_entity, arg2)
-  @investor_entity.save!
+  @investor_entity.save(validate: false)
   args_temp = arg1.split(";").to_h { |kv| kv.split("=") }
   @investor = if Investor.exists?(args_temp)
     Investor.find_by(args_temp)
@@ -59,8 +59,9 @@ Given('the entity {string} has aml enabled {string}') do |args, boolean|
     FactoryBot.build(:entity, pan: Faker::Alphanumeric.alphanumeric(number: 10))
   end
   key_values(@entity, args)
-  @entity.entity_setting.aml_enabled = boolean
   @entity.save!
+  @entity.entity_setting.aml_enabled = boolean
+  @entity.entity_setting.save!
 end
 
 Then('there is an investor {string} for the entity {string} with investor kyc and aml report is generated for it') do |arg1, arg2|
@@ -100,7 +101,7 @@ Then('there is an investor {string} for the entity {string} with investor kyc an
   click_on("Next")
   sleep(1)
   click_on("Next")
-  sleep(1)  
+  sleep(1)
   click_on("Save")
   sleep(3)
   InvestorKyc.where(PAN: pan).last.aml_reports.count.should > 0
@@ -144,7 +145,7 @@ Then('there is an investor {string} for the entity {string} with investor kyc an
   click_on("Next")
   sleep(1)
   click_on("Next")
-  sleep(1)  
+  sleep(1)
   click_on("Save")
   InvestorKyc.where(PAN: pan).last.aml_reports.count.should == 0
   AmlReport.where(name: InvestorKyc.where(PAN: pan).last.full_name).count == 0
