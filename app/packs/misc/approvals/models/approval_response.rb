@@ -38,5 +38,13 @@ class ApprovalResponse < ApplicationRecord
       end
 
     end
+
+    # Ensure that the investor entity is set to enable approvals
+    e = investor.investor_entity
+
+    unless e.enable_approvals
+      e.enable_approvals = true
+      e.save
+    end
   end
 end
