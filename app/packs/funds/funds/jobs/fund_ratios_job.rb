@@ -1,5 +1,6 @@
 class FundRatiosJob < ApplicationJob
   queue_as :low
+  sidekiq_options retry: 1
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(fund_id, capital_commitment_id, end_date, user_id, generate_for_commitments)

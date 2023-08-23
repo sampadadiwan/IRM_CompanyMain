@@ -64,7 +64,7 @@
                               model: document %>
 
 
-    <% if (document.owner && document.owner.entity_id != current_user.entity_id) || document.owner_type = "InvestorKyc" %>
+    <% if (document.owner && document.owner.entity_id != current_user.entity_id) || document.owner_type == "InvestorKyc" %>
       <%= form.text_field :orignal, class: "form-control", hidden:true, value: true  %>
     <% else %>
       <div class="form-group nonpdf">
