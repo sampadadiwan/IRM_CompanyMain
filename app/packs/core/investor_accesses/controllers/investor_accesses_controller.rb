@@ -94,7 +94,7 @@ class InvestorAccessesController < ApplicationController
     authorize @investor_access
 
     respond_to do |format|
-      if @investor_access.save!
+      if @investor_access.save
         format.turbo_stream { render :create }
         format.html { redirect_to investor_access_path(@investor_access), notice: "Investor access was successfully created." }
         format.json { render :show, status: :created, location: @investor_access }

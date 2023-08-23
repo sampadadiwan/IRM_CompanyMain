@@ -1,6 +1,6 @@
 
 <%- if controller_name != 'sessions' %>
-  <%= link_to "Log in", new_session_path(resource_name) , class: "btn-lg small" %> |
+  <%= link_to "Log in", new_session_path(resource_name) , class: "small" %> |
 <% end %>
 
 <%- if devise_mapping.registerable? && controller_name != 'registrations' && Rails.env.test? %>
