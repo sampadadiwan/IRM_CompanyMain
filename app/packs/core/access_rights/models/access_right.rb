@@ -147,7 +147,7 @@ class AccessRight < ApplicationRecord
   def send_notification
     if notify && (owner_type != "Document" || owner.send_email)
       users.each do |user|
-        AccessRightNotification.with(entity_id:, access_right: self).deliver_later(user)
+        AccessRightNotification.with(entity_id:, access_right: self, msg: "Access Granted to #{owner_type} #{owner.name} by #{entity.name}").deliver_later(user)
       end
     end
   end

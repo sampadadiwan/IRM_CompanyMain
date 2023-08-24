@@ -8,6 +8,7 @@ class InvestorAccessMailer < ApplicationMailer
 
     subj = "Access Granted to #{@investor_access.entity_name}"
     mail(from: from_email(@investor_access.entity), to: email,
+         cc: @investor_access.entity.entity_setting.cc,
          subject: subj)
   end
 
@@ -20,6 +21,7 @@ class InvestorAccessMailer < ApplicationMailer
       subj = "Please complete your KYC for #{@investor_access.entity_name}"
       mail(from: from_email(@investor_access.entity),
            to: email,
+           cc: @investor_access.entity.entity_setting.cc,
            subject: subj)
     end
   end

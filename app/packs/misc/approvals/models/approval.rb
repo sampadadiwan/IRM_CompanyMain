@@ -54,9 +54,9 @@ class Approval < ApplicationRecord
   end
 
   after_commit :send_notification, if: :saved_change_to_approved?
-  def send_notification
+  def send_notification(reminder: false)
     # Send notification to all investors once its approved
-    approval_responses.pending.each(&:send_notification)
+    approval_responses.pending.each(&:send_notification(reminder: reminder))
   end
 
   after_create :generate_responses

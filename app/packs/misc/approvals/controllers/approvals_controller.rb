@@ -84,7 +84,7 @@ class ApprovalsController < ApplicationController
     # Mark all pending responses as not notified
     @approval.approval_responses.pending.update_all(notification_sent: false)
     # Send notification out
-    @approval.reload.send_notification
+    @approval.reload.send_notification(reminder: true)
     respond_to do |format|
       format.html { redirect_to approval_url(@approval), notice: "Successfully sent reminder." }
       format.json { head :no_content }

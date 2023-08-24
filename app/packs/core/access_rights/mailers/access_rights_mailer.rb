@@ -2,8 +2,8 @@ class AccessRightsMailer < ApplicationMailer
   helper ApplicationHelper
 
   def send_notification
-    confirmed_emails = [User.find(params[:user_id]).email]
-
+    @user = User.find(params[:user_id])
+    confirmed_emails = [@user.email]
     if confirmed_emails.present?
 
       access_right_id = params[:access_right_id]

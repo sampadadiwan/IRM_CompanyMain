@@ -24,17 +24,21 @@ class ApprovalResponse < ApplicationRecord
   end
 
   after_commit :send_notification
-  def send_notification
+  def send_notification(reminder: false)
     # send notification to the investor only if the approval is approved
     if approval.approved
 
       if status == "Pending"
         investor.approved_users.each do |user|
-          ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_new_approval, msg: "Approval Required: #{approval.title}").deliver_later(user) unless notification_sent
+          if reminder
+            ApprovalNotification.with(entity_id:, approval_response: self, email_method: :approval_reminder, msg: "Reminder for Approval: #{@approval.entity.name} : #{approval.title}").deliver_later(user) unless notification_sent
+          else
+            ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_new_approval, msg: "Approval Required for: #{@approval.entity.name} : #{approval.title}").deliver_later(user) unless notification_sent
+          end
         end
       else
         investor.approved_users.each do |user|
-          ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_approval_response, msg: "Approval #{status} by #{investor.investor_name}: #{approval.title}").deliver_later(user)
+          ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_approval_response, msg: "#{approval.entity.name} : Approval #{status} by #{investor.investor_name}: #{approval.title}").deliver_later(user)
         end
       end
 

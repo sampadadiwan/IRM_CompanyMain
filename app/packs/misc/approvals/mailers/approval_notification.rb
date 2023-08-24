@@ -24,6 +24,11 @@ class ApprovalNotification < BaseNotification
   end
 
   def url
-    approval_response_path(id: params[:approval_response].id)
+    @approval ||= params[:approval_response].approval
+    if email_method&.to_s == "notify_approval_response"
+      approval_response_path(id: params[:approval_response].id)
+    else
+      approval_url(@approval, subdomain: @approval.entity.sub_domain)
+    end
   end
 end
