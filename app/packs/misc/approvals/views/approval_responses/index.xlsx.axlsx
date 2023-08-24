@@ -4,7 +4,7 @@ form_type, custom_field_names, custom_headers = get_form_type("ApprovalResponse"
 
 wb.add_worksheet(name: "ApprovalResponses") do |sheet|
   # Create the header row
-  sheet.add_row(["Investor", "Category", "Tags", "Response By", "Email", "Status", "Updated On"] + custom_headers)
+  sheet.add_row(["Investor", "Category", "Tags", "Response By", "Email", "Phone", "Status", "Updated On"] + custom_headers)
 
   # Create entries for each item
   @approval_responses.each do |o|
@@ -15,6 +15,6 @@ wb.add_worksheet(name: "ApprovalResponses") do |sheet|
     tag_list = o.investor.tag_list
     updated_at = l o.updated_at
 
-    sheet.add_row([investor_name, category, tag_list, o.response_user&.full_name, o.response_user&.email, o.status, updated_at] + custom_field_values)
+    sheet.add_row([investor_name, category, tag_list, o.response_user&.full_name, o.response_user&.email, o.response_user&.phone, o.status, updated_at] + custom_field_values)
   end
 end

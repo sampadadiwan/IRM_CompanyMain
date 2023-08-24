@@ -1,4 +1,6 @@
 <% enable_password = params[:password].present? || Rails.env.test? %>
+<% enable_password = false if params[:password] == "false" %>
+
 
 <%- flash.each do |name, msg| -%>
     <%= content_tag :div, msg, :id => "flash_#{name}", class: "text-center alert alert-info login_flash" if msg.is_a?(String) %>
@@ -61,10 +63,10 @@
                                             <span>
                                                 <% if enable_password %>     
                                                     <input type="submit" name="login" class="btn btn-lg  btn-outline-primary btn-outline-user btn-outline-block" 
-                                                    value="Log In" data-disable-with="Log in">
+                                                    value="Log In" data-disable-with="Log In">
                                                 <% else %>
                                                     <input type="submit" name="login_wo_pw" class="btn btn-lg btn-outline-primary btn-outline-user btn-outline-block" 
-                                                    value="Login" data-disable-with="Log in"
+                                                    value="Log In" data-disable-with="Log In"
                                                     data-action="click->login#no_password">
                                                 <% end %>
                                             </span>

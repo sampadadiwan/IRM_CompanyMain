@@ -3,9 +3,9 @@
     <% approval ||= nil %>
 
     <span>
-      <%= link_to "New Approval Response", new_approval_response_path("approval_response[approval_id]": approval.id), {class: "btn btn-outline-primary"} if approval  %>
+      <%= link_to "New Approval Response", new_approval_response_path("approval_response[approval_id]": approval.id), {class: "btn btn-outline-primary"} if approval && policy(approval).create? %>
 
-      <%= link_to "Download", approval_responses_path("approval_id": approval.id, format: :xlsx), {class: "btn btn-outline-success"} if approval %>
+      <%= link_to "Download", approval_responses_path("approval_id": approval.id, format: :xlsx), {class: "btn btn-outline-success"} if approval && policy(approval).create? %>
     </span>
   </div>
   

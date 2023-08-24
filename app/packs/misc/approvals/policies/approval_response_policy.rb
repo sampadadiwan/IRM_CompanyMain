@@ -28,7 +28,7 @@ class ApprovalResponsePolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    create? && record.approval.due_date >= Time.zone.today
   end
 
   def edit?

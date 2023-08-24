@@ -28,7 +28,7 @@ Scenario Outline: Login Successfully
 
 Scenario Outline: Login Successfully, without password
   Given there is a user "<user>" for an entity ""
-  And I am at the login page
+  And I am at the login page without password
   When I fill and submit the login without password
   Then I should see the "<msg>"
   And the user receives an email with "<subject>" in the subject

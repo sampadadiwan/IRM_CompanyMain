@@ -12,8 +12,13 @@
     <%= approval_response.response_user&.full_name %>
   </td>
   <td>
-    <%= render DisplayBooleanComponent.new(bool: approval_response.status == "Approved").
-        with_content(approval_response.status) if approval_response.status %>
+    <% 
+      colors = ["badge-success", "badge-secondary", "badge-info", "badge-warning", "badge-primary", "badge-light", "badge-dark"].freeze 
+
+      idx = approval_response.approval.response_status.split(",").index(approval_response.status)
+
+    %>
+    <span class="badge <%=colors[idx]%>"><%= approval_response.status %></span>
   </td>
   <td>
     <%= l approval_response.updated_at %>
