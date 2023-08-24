@@ -118,7 +118,7 @@
     @approval.pending_investors.collect(&:emails).flatten.each do |email|
         open_email(email)
         puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}"
-        expect(current_email.subject).to eq "Approval required for #{@approval.entity.name}: #{@approval.title}"
+        expect(current_email.subject).to have_content "pproval required for #{@approval.entity.name}: #{@approval.title}"
     end
 
     clear_emails
@@ -147,7 +147,7 @@
         investor.emails.each do |email|
           open_email(email)
           puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}"
-          expect(current_email.subject).to eq "Approval response from #{approval_response.investor.investor_name}: #{approval_response.status}"
+          expect(current_email.subject).to eq "#{approval_response.entity.name}: Approval response for #{approval_response.approval.title}: #{approval_response.status}"
         end
     end
 

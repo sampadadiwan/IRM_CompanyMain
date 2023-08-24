@@ -43,7 +43,7 @@ class ApprovalMailer < ApplicationMailer
              to: investor_emails,
              cc: @approval_response.entity.entity_setting.cc,
              reply_to: @approval_response.entity.entity_setting.cc,
-             subject: "Reminder for approval required for  #{@approval.entity.name}: #{@approval.title}")
+             subject: "Reminder for approval required for #{@approval.entity.name}: #{@approval.title}")
 
       end
     else
