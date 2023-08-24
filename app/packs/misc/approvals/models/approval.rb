@@ -10,6 +10,8 @@ class Approval < ApplicationRecord
   has_many :approval_investors, through: :approval_responses, class_name: "Investor", source: :investor
   has_many :pending_investors, -> { where('approval_responses.status': "Pending") }, through: :approval_responses, class_name: "Investor", source: :investor
 
+  has_noticed_notifications
+
   validates :title, :due_date, :response_status, presence: true
 
   def name
@@ -56,7 +58,9 @@ class Approval < ApplicationRecord
   after_commit :send_notification, if: :saved_change_to_approved?
   def send_notification(reminder: false)
     # Send notification to all investors once its approved
-    approval_responses.pending.each(&:send_notification(reminder: reminder))
+    approval_responses.pending.each do |ar|
+      ar.send_notification(reminder:)
+    end
   end
 
   after_create :generate_responses

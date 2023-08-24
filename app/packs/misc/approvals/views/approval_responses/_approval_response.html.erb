@@ -15,7 +15,7 @@
     <% 
       colors = ["badge-success", "badge-secondary", "badge-info", "badge-warning", "badge-primary", "badge-light", "badge-dark"].freeze 
 
-      idx = approval_response.approval.response_status.split(",").index(approval_response.status)
+      idx = approval_response.approval.response_status.split(",").index(approval_response.status) || 0
 
     %>
     <span class="badge <%=colors[idx]%>"><%= approval_response.status %></span>

@@ -31,9 +31,9 @@ class ApprovalResponse < ApplicationRecord
       if status == "Pending"
         investor.approved_users.each do |user|
           if reminder
-            ApprovalNotification.with(entity_id:, approval_response: self, email_method: :approval_reminder, msg: "Reminder for Approval: #{@approval.entity.name} : #{approval.title}").deliver_later(user) unless notification_sent
+            ApprovalNotification.with(entity_id:, approval_response: self, email_method: :approval_reminder, msg: "Reminder for Approval: #{approval.entity.name} : #{approval.title}").deliver_later(user) unless notification_sent
           else
-            ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_new_approval, msg: "Approval Required for: #{@approval.entity.name} : #{approval.title}").deliver_later(user) unless notification_sent
+            ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_new_approval, msg: "Approval Required for: #{approval.entity.name} : #{approval.title}").deliver_later(user) unless notification_sent
           end
         end
       else
