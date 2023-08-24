@@ -25,7 +25,7 @@ class Document < ApplicationRecord
   belongs_to :from_template, class_name: "Document", optional: true
 
   belongs_to :owner, polymorphic: true, optional: true, touch: true
-  has_many :notifications, as: :recipient, dependent: :destroy
+  has_noticed_notifications
 
   NESTED_ATTRIBUTES = %i[id name file tags owner_tag user_id].freeze
   counter_culture :entity
@@ -45,7 +45,7 @@ class Document < ApplicationRecord
 
   include FileUploader::Attachment(:file)
 
-  after_create_commit  :after_commit_callbacks
+  after_create_commit  :after_create_commit_callbacks
 
   scope :generated, -> { where(owner_tag: "Generated") }
   scope :template, -> { where(template: true) }
@@ -58,7 +58,7 @@ class Document < ApplicationRecord
   end
 
   # Sequence of callbacks is important here
-  def after_commit_callbacks
+  def after_create_commit_callbacks
     setup_access_rights
     update_owner
     send_notification_for_owner if send_email
@@ -90,7 +90,7 @@ class Document < ApplicationRecord
 
   def send_notification_for_owner
     notification_users.each do |user|
-      DocumentNotification.with(entity_id:, document_id: id).deliver_later(user)
+      DocumentNotification.with(entity_id:, document: self).deliver_later(user)
     end
   end
 

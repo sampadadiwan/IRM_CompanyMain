@@ -3,7 +3,7 @@ class OfferNotification < BaseNotification
   deliver_by :email, mailer: "OfferMailer", method: :email_method, format: :email_data
 
   # Add required params
-  param :offer_id
+  param :offer
   param :email_method
 
   def email_method
@@ -13,17 +13,17 @@ class OfferNotification < BaseNotification
   def email_data
     {
       user_id: recipient.id,
-      offer_id: params[:offer_id]
+      offer_id: params[:offer].id
     }
   end
 
   # Define helper methods to make rendering easier.
   def message
-    @offer = Offer.find(params[:offer_id])
+    @offer = params[:offer]
     params[:msg] || "Offer: #{@offer}"
   end
 
   def url
-    offer_path(id: params[:offer_id])
+    offer_path(id: params[:offer].id)
   end
 end

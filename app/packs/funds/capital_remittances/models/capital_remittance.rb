@@ -18,7 +18,7 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :investor
   belongs_to :exchange_rate, optional: true
   has_many :capital_remittance_payments, dependent: :destroy
-  has_many :notifications, as: :recipient, dependent: :destroy
+  has_noticed_notifications
 
   scope :paid, -> { where(status: "Paid") }
   scope :pending, -> { where(status: "Pending") }
@@ -196,14 +196,14 @@ class CapitalRemittance < ApplicationRecord
   def send_notification
     if capital_call.approved && !capital_call.manual_generation
       investor.approved_users.each do |user|
-        CapitalRemittanceNotification.with(entity_id:, capital_remittance_id: id, email_method: :send_notification).deliver_later(user)
+        CapitalRemittanceNotification.with(entity_id:, capital_remittance: self, email_method: :send_notification).deliver_later(user)
       end
     end
   end
 
   def payment_received_notification
     investor.approved_users.each do |user|
-      CapitalRemittanceNotification.with(entity_id:, capital_remittance_id: id, email_method: :payment_received).deliver_later(user)
+      CapitalRemittanceNotification.with(entity_id:, capital_remittance: self, email_method: :payment_received).deliver_later(user)
     end
   end
 

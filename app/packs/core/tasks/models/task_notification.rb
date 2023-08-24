@@ -1,20 +1,15 @@
-# To deliver this notification:
-#
-# TaskNotification.with(task_id: @task.id).deliver_later(current_user)
-# TaskNotification.with(task_id: @task.id).deliver(current_user)
-
 class TaskNotification < BaseNotification
   deliver_by :email, mailer: "TasksMailer", method: :send_notification
   # Add required params
-  param :task_id
+  param :task
 
   # Define helper methods to make rendering easier.
   def message
-    @task ||= Task.find(params[:task_id])
+    @task ||= params[:task]
     @task.details
   end
 
   def url
-    task_path(id: params[:task_id])
+    task_path(id: params[:task].id)
   end
 end

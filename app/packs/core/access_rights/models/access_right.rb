@@ -21,7 +21,7 @@ class AccessRight < ApplicationRecord
   belongs_to :granted_by, class_name: "User", optional: true
   # If this is a specific investor access
   belongs_to :investor, foreign_key: :access_to_investor_id, optional: true # , strict_loading: true
-  has_many :notifications, as: :recipient, dependent: :destroy
+  has_noticed_notifications
 
   delegate :name, to: :entity, prefix: :entity
   delegate :name, to: :owner, prefix: :owner
@@ -147,7 +147,7 @@ class AccessRight < ApplicationRecord
   def send_notification
     if notify && (owner_type != "Document" || owner.send_email)
       users.each do |user|
-        AccessRightNotification.with(entity_id:, access_right_id: id).deliver_later(user)
+        AccessRightNotification.with(entity_id:, access_right: self).deliver_later(user)
       end
     end
   end

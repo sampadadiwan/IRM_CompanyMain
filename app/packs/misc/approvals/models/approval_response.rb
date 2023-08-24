@@ -6,7 +6,8 @@ class ApprovalResponse < ApplicationRecord
   belongs_to :response_entity, class_name: "Entity"
   belongs_to :response_user, class_name: "User", optional: true
   belongs_to :approval, touch: true
-  has_many :notifications, as: :recipient, dependent: :destroy
+  has_noticed_notifications
+
   has_rich_text :details
 
   counter_culture :approval, column_name: proc { |resp| resp.status == 'Approved' ? 'approved_count' : nil }
@@ -29,11 +30,11 @@ class ApprovalResponse < ApplicationRecord
 
       if status == "Pending"
         investor.approved_users.each do |user|
-          ApprovalNotification.with(entity_id:, approval_response_id: id, email_method: :notify_new_approval, msg: "Approval Required: #{approval.title}").deliver_later(user) unless notification_sent
+          ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_new_approval, msg: "Approval Required: #{approval.title}").deliver_later(user) unless notification_sent
         end
       else
         investor.approved_users.each do |user|
-          ApprovalNotification.with(entity_id:, approval_response_id: id, email_method: :notify_approval_response, msg: "Approval #{status} by #{investor.investor_name}: #{approval.title}").deliver_later(user)
+          ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_approval_response, msg: "Approval #{status} by #{investor.investor_name}: #{approval.title}").deliver_later(user)
         end
       end
 

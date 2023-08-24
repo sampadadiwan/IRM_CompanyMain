@@ -3,7 +3,7 @@ class HoldingNotification < BaseNotification
   deliver_by :email, mailer: "HoldingMailer", method: :email_method, format: :email_data
 
   # Add required params
-  param :holding_id
+  param :holding
   param :email_method
 
   def email_method
@@ -13,17 +13,17 @@ class HoldingNotification < BaseNotification
   def email_data
     {
       user_id: recipient.id,
-      holding_id: params[:holding_id]
+      holding_id: params[:holding].id
     }
   end
 
   # Define helper methods to make rendering easier.
   def message
-    @holding = Holding.find(params[:holding_id])
+    @holding = params[:holding]
     params[:msg] || "Holding: #{@holding}"
   end
 
   def url
-    holding_path(id: params[:holding_id])
+    holding_path(id: params[:holding].id)
   end
 end

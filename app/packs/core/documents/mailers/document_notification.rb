@@ -1,29 +1,24 @@
-# To deliver this notification:
-#
-# DocumentNotification.with(document_id: @document.id, msg: "Please View").deliver_later(current_user)
-# DocumentNotification.with(document_id: @document.id, msg: "Please View").deliver(current_user)
-
 class DocumentNotification < BaseNotification
   # Add your delivery methods
   deliver_by :email, mailer: "DocumentMailer", method: :notify_new_document, format: :email_data
 
   # Add required params
-  param :document_id
+  param :document
 
   def email_data
     {
       user_id: recipient.id,
-      document_id: params[:document_id]
+      document_id: params[:document].id
     }
   end
 
   # Define helper methods to make rendering easier.
   def message
-    @document = Document.find(params[:document_id])
+    @document = params[:document]
     params[:msg] || "Document Uploaded: #{@document.name}"
   end
 
   def url
-    document_path(id: params[:document_id])
+    document_path(id: params[:document])
   end
 end

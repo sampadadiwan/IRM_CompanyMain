@@ -14,7 +14,7 @@ class InvestorKyc < ApplicationRecord
   has_many :capital_distribution_payments, through: :capital_commitments
   has_many :account_entries, through: :capital_commitments
 
-  has_many :notifications, as: :recipient, dependent: :destroy
+  has_noticed_notifications
 
   has_many :aml_reports, dependent: :destroy
   has_many :kyc_datas, dependent: :destroy
@@ -91,7 +91,7 @@ class InvestorKyc < ApplicationRecord
   def notify_kyc_updated
     users = User.where(email: entity.entity_setting.cc&.split(","))
     users.each do |user|
-      InvestorKycNotification.with(entity_id:, investor_kyc_id: id, email_method: :notify_kyc_updated, msg: "KYC updated for #{full_name}").deliver_later(user)
+      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method: :notify_kyc_updated, msg: "KYC updated for #{full_name}").deliver_later(user)
     end
   end
 

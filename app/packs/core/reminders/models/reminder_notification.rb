@@ -1,29 +1,24 @@
-# To deliver this notification:
-#
-# ReminderNotification.with(reminder_id: @reminder.id, msg: "Please View").deliver_later(current_user)
-# ReminderNotification.with(reminder_id: @reminder.id, msg: "Please View").deliver(current_user)
-
 class ReminderNotification < BaseNotification
   # Add your delivery methods
   deliver_by :email, mailer: "ReminderMailer", method: :send_reminder, format: :email_data
 
   # Add required params
-  param :reminder_id
+  param :reminder
 
   def email_data
     {
       user_id: recipient.id,
-      reminder_id: params[:reminder_id]
+      reminder_id: params[:reminder].id
     }
   end
 
   # Define helper methods to make rendering easier.
   def message
-    @reminder = Reminder.find(params[:reminder_id])
+    @reminder = params[:reminder]
     params[:msg] || "Reminder: #{@reminder.note}"
   end
 
   def url
-    reminder_path(id: params[:reminder_id])
+    reminder_path(id: params[:reminder].id)
   end
 end

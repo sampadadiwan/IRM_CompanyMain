@@ -1,14 +1,9 @@
-# To deliver this notification:
-#
-# CapitalRemittanceNotification.with(capital_remittance_id: @capital_remittance.id, msg: "Please View").deliver_later(current_user)
-# CapitalRemittanceNotification.with(capital_remittance_id: @capital_remittance.id, msg: "Please View").deliver(current_user)
-
 class CapitalRemittanceNotification < BaseNotification
   # Add your delivery methods
   deliver_by :email, mailer: "CapitalRemittancesMailer", method: :email_method, format: :email_data
 
   # Add required params
-  param :capital_remittance_id
+  param :capital_remittance
   param :email_method
 
   def email_method
@@ -18,17 +13,17 @@ class CapitalRemittanceNotification < BaseNotification
   def email_data
     {
       user_id: recipient.id,
-      capital_remittance_id: params[:capital_remittance_id]
+      capital_remittance_id: params[:capital_remittance].id
     }
   end
 
   # Define helper methods to make rendering easier.
   def message
-    @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
+    @capital_remittance = params[:capital_remittance]
     params[:msg] || "Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}"
   end
 
   def url
-    capital_remittance_path(id: params[:capital_remittance_id])
+    capital_remittance_path(id: params[:capital_remittance].id)
   end
 end

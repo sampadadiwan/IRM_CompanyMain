@@ -14,7 +14,7 @@ class InvestorAccess < ApplicationRecord
 
   belongs_to :user, optional: true, strict_loading: true, touch: true
   belongs_to :granter, class_name: "User", foreign_key: :granted_by, optional: true
-  has_many :notifications, as: :recipient, dependent: :destroy
+  has_noticed_notifications
 
   delegate :name, to: :entity, prefix: :entity
   delegate :investor_name, to: :investor
@@ -103,7 +103,7 @@ class InvestorAccess < ApplicationRecord
   end
 
   def send_notification
-    InvestorAccessNotification.with(entity_id:, investor_access_id: id, email_method: :notify_access, msg: "Investor Access Granted to #{entity.name}").deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
+    InvestorAccessNotification.with(entity_id:, investor_access: self, email_method: :notify_access, msg: "Investor Access Granted to #{entity.name}").deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
   end
 
   def send_notification_if_changed
@@ -111,6 +111,6 @@ class InvestorAccess < ApplicationRecord
   end
 
   def notify_kyc_required
-    InvestorAccessNotification.with(entity_id:, investor_access_id: id, email_method: :notify_kyc_required, msg: "Investor KYC required for #{entity.name}").deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
+    InvestorAccessNotification.with(entity_id:, investor_access: self, email_method: :notify_kyc_required, msg: "Investor KYC required for #{entity.name}").deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
   end
 end

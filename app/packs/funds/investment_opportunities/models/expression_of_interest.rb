@@ -12,7 +12,7 @@ class ExpressionOfInterest < ApplicationRecord
 
   has_many :investor_kycs, through: :investor
   belongs_to :investor_signatory, class_name: "User", optional: true
-  has_many :notifications, as: :recipient, dependent: :destroy
+  has_noticed_notifications
 
   validate :check_amount
   counter_culture :investment_opportunity,
@@ -46,7 +46,7 @@ class ExpressionOfInterest < ApplicationRecord
   before_save :notify_approved
   def notify_approved
     investor.approved_users.each do |user|
-      ExpressionOfInterestNotification.with(entity_id:, expression_of_interest_id: id).deliver_later(user) if approved && approved_changed?
+      ExpressionOfInterestNotification.with(entity_id:, expression_of_interest: self).deliver_later(user) if approved && approved_changed?
     end
   end
 

@@ -43,7 +43,7 @@ gem 'devise'
 gem "pundit", git: "https://github.com/varvet/pundit.git"
 gem "rolify"
 
-gem 'activerecord-import'
+gem 'activerecord-import', "1.5.0"
 # Store env variables
 gem 'dotenv-rails'
 # Send error emails to support
@@ -111,7 +111,7 @@ gem 'uppy-s3_multipart', '~> 1.1'
 # Nested for fields
 gem 'cocoon'
 # Allows for soft delete
-gem "paranoia", "~> 2.2"
+gem "paranoia"
 # Audit trail
 gem 'public_activity', github: 'chaps-io/public_activity', branch: 'master'
 gem 'sanitize_email'
