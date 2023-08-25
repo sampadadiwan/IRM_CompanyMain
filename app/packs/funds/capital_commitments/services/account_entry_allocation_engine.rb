@@ -241,16 +241,11 @@ class AccountEntryAllocationEngine
     if account_entries.present?
       # Each account entry with the formula name, has to be allocated
       account_entries.each do |fund_account_entry|
+        Rails.logger.debug { "allocate_account_entries  #{fund_formula.name}: Allocating #{fund_account_entry}" }
         allocate_entry(fund_account_entry, fund_formula, fund_unit_settings)
       end
     else
-      # There is nothing to allocate, so create a zero account entry
-      entry_type = fund_formula.entry_type.presence || fund_formula.name
-      fund_formula.commitments.each do |capital_commitment|
-        ae = AccountEntry.new(name: fund_formula.name, entry_type:, reporting_date: @end_date, fund: @fund, capital_commitment:)
-        ae.amount_cents = 0
-        allocate_entry(ae, fund_formula, fund_unit_settings)
-      end
+      raise "No account entries found to allocate for #{fund_formula.name} in #{@fund.name}"
     end
   end
 

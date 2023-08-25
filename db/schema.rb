@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_08_05_152549) do
+ActiveRecord::Schema[7.0].define(version: 2023_08_25_100722) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1147,14 +1147,14 @@ ActiveRecord::Schema[7.0].define(version: 2023_08_05_152549) do
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.string "name", limit: 15
-    t.decimal "management_fee", precision: 20, scale: 2, default: "0.0"
-    t.decimal "setup_fee", precision: 20, scale: 2, default: "0.0"
+    t.decimal "management_fee", precision: 20, scale: 4, default: "0.0"
+    t.decimal "setup_fee", precision: 20, scale: 4, default: "0.0"
     t.bigint "form_type_id"
     t.text "properties"
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.decimal "carry", precision: 20, scale: 2, default: "0.0"
+    t.decimal "carry", precision: 20, scale: 4, default: "0.0"
     t.index ["entity_id"], name: "index_fund_unit_settings_on_entity_id"
     t.index ["form_type_id"], name: "index_fund_unit_settings_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_unit_settings_on_fund_id"

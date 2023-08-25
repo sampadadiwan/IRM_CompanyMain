@@ -102,4 +102,14 @@ class CapitalDistributionPayment < ApplicationRecord
   def folder_path
     "#{capital_distribution.folder_path}/Payments/#{investor.investor_name.delete('/')}-#{folio_id.delete('/')}"
   end
+
+  def management_fees_days(start_date, end_date)
+    if capital_distribution.distribution_date <= start_date
+      (end_date - start_date).to_i + 1
+    elsif capital_distribution.distribution_date <= end_date
+      (end_date - capital_distribution.distribution_date).to_i + 1
+    else
+      0
+    end
+  end
 end
