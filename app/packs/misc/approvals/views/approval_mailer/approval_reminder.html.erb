@@ -1,11 +1,13 @@
 <h3>Dear <%= @approval_response.investor.investor_name %> </h3>
 
 <p>
-    <%= @approval.entity.name %> has requested an approval for <%=@approval.title%>.
+    This is a reminder that <%= @approval.entity.name %> has requested your approval for <%=@approval.title%>.
 </p>
 
+<%if @approval.agreements_reference.present?%>
 <p>
-    <%= render "/approvals/show", approval: @approval, current_user: nil %>
+    <%= @approval.agreements_reference %>
 </p>
+<%end%>
 
 <p class="btn btn-outline-primary"><%= link_to 'View Approval', approval_url(@approval, subdomain: @approval.entity.sub_domain) %></p>

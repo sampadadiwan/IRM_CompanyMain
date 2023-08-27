@@ -182,7 +182,7 @@ Given('Given I upload an investor kyc file for employees') do
   # Sidekiq.redis(&:flushdb)
 
   visit(investor_kycs_path)
-  click_on("Upload/Download")  
+  click_on("Upload/Download")
   click_on("Upload KYC Details")
   fill_in('import_upload_name', with: "Test Investor Access Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_kycs.xlsx'), make_visible: true)
@@ -245,7 +245,7 @@ Given('Given I upload an investors file for the fund') do
   attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_investors.xlsx'), make_visible: true)
   sleep(1)
   click_on("Save")
-  sleep(3)
+  sleep(4)
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 
@@ -322,13 +322,13 @@ Given('I create a new InvestorKyc') do ||
 
 
   visit(investor_kycs_path)
-  click_on("New Investor Kyc")  
+  click_on("New Investor Kyc")
   select(@investor_kyc.investor.investor_name, from: "investor_kyc_investor_id")
   fill_in('investor_kyc_full_name', with: @investor_kyc.full_name)
   select(@investor_kyc.residency.titleize, from: "investor_kyc_residency")
   fill_in('investor_kyc_PAN', with: @investor_kyc.PAN)
   fill_in('investor_kyc_birth_date', with: @investor_kyc.birth_date)
-  
+
   click_on("Next")
   sleep(1)
   fill_in('investor_kyc_address', with: @investor_kyc.address)
@@ -337,12 +337,12 @@ Given('I create a new InvestorKyc') do ||
   fill_in('investor_kyc_ifsc_code', with: @investor_kyc.ifsc_code)
   click_on("Next")
   sleep(1)
-  
+
   fill_in('investor_kyc_expiry_date', with: @investor_kyc.expiry_date)
   fill_in('investor_kyc_comments', with: @investor_kyc.comments)
   click_on("Save & Upload Documents")
   sleep(1)
-  
+
 end
 
 Then('I should see ckyc and kra data comparison page') do
@@ -382,7 +382,7 @@ Then('when I upload the document for the kyc') do
   sleep(3)
   click_on("Save")
   sleep(4)
-    
+
 end
 
 Then('I should see the investor kyc details on the details page') do

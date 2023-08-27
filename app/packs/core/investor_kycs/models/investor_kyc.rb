@@ -48,6 +48,7 @@ class InvestorKyc < ApplicationRecord
            with_currency: ->(i) { i.entity.currency }
 
   attr_accessor :user_id
+  attr_accessor :kyc_verified
 
   before_save :set_investor_name
   def set_investor_name
@@ -87,11 +88,22 @@ class InvestorKyc < ApplicationRecord
     VerifyKycBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
   end
 
+  before_save :set_kyc_verified, if: :verified_changed?
+  def set_kyc_verified
+    self.kyc_verified = true if verified?
+  end
+
   after_save :notify_kyc_updated
   def notify_kyc_updated
     users = User.where(email: entity.entity_setting.cc&.split(","))
+    msg = "KYC updated for #{full_name}"
+    email_method = :notify_kyc_updated
+    if kyc_verified
+      msg = "Confirmation of your KYC: #{entity.name}"
+      email_method = :notify_kyc_verified
+    end
     users.each do |user|
-      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method: :notify_kyc_updated, msg: "KYC updated for #{full_name}").deliver_later(user)
+      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method:, msg:).deliver_later(user)
     end
   end
 

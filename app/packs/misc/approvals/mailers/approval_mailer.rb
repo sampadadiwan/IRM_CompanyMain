@@ -68,7 +68,7 @@ class ApprovalMailer < ApplicationMailer
            to: investor_emails,
            cc: employee_emails,
            reply_to: employee_emails,
-           subject: "#{@approval_response.entity.name}: Approval response for #{@approval_response.approval.title}: #{@approval_response.status}")
+           subject: "#{@approval_response.entity.name}: #{@approval_response.status} for #{@approval_response.approval.title}")
     end
   end
 end

@@ -4,8 +4,10 @@
     <%= @approval.entity.name %> has requested an approval for <%=@approval.title%>.
 </p>
 
+<%if @approval.agreements_reference.present?%>
 <p>
-    <%= render "/approvals/show", approval: @approval, current_user: nil %>
+    <%= @approval.agreements_reference %>
 </p>
+<%end%>
 
 <p class="btn btn-outline-primary"><%= link_to 'View Approval', approval_url(@approval, subdomain: @approval.entity.sub_domain) %></p>

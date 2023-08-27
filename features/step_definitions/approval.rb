@@ -1,7 +1,7 @@
   Given('I am at the approvals page') do
     visit(approvals_url)
   end
-  
+
   When('I create a new approval {string}') do |arg1|
     @approval = FactoryBot.build(:approval)
     key_values(@approval, arg1)
@@ -12,7 +12,7 @@
     find('trix-editor').click.set(@approval.agreements_reference.body.to_plain_text)
     click_on("Save")
   end
-  
+
   Then('an approval should be created') do
     db_approval = Approval.last
     db_approval.title.should == @approval.title
@@ -21,7 +21,7 @@
 
     @approval = db_approval
   end
-  
+
   Then('I should see the approval details on the details page') do
     # find(".show_details_link").click
     expect(page).to have_content(@approval.title)
@@ -39,7 +39,7 @@
         end
     end
   end
-  
+
   Then('I should see the approval in all approvals page') do
     visit(approvals_url)
     expect(page).to have_content(@approval.title)
@@ -57,7 +57,7 @@
         end
     end
   end
-  
+
 
   When('I edit the approval {string}') do |arg1|
     key_values(@approval, arg1)
@@ -78,43 +78,43 @@
     puts "\n####Approval####\n"
     puts @approval.to_json
   end
-  
+
   Given('the investors are added to the approval') do
     @user.entity.investors.not_holding.not_trust.each do |inv|
-        ar = AccessRight.create!( owner: @approval, access_type: "Approval", 
+        ar = AccessRight.create!( owner: @approval, access_type: "Approval",
                                  access_to_investor_id: inv.id, entity: @user.entity)
 
 
         puts "\n####Granted Access####\n"
-        puts ar.to_json                            
-    end    
+        puts ar.to_json
+    end
   end
 
   When('I visit the approval details page') do
     visit(approval_url(@approval))
   end
-  
-  
+
+
   Then('the approval responses are generated with status {string}') do |string|
     sleep(2)
     @approval.reload
-    @approval.approval_responses.pending.count.should > 0 
+    @approval.approval_responses.pending.count.should > 0
     @approval.approval_responses.pending.count.should == @approval.pending_investors.count
   end
 
   When('the approval is approved') do
     visit(approval_url(@approval))
     click_on("Approve")
-    click_on("Proceed")    
+    click_on("Proceed")
     sleep(1)
     @approval.reload
     @approval.approved.should == true
   end
-  
+
   Then('the investor gets the approval notification') do
     puts "\n#### Emails ###\n"
     puts @approval.pending_investors.collect(&:emails).flatten
-    
+
     @approval.pending_investors.collect(&:emails).flatten.each do |email|
         open_email(email)
         puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}"
@@ -122,8 +122,8 @@
     end
 
     clear_emails
-  end 
-  
+  end
+
 
   Then('I should see my approval response') do
     @approval.approval_responses.pending.each do |response|
@@ -138,16 +138,16 @@
   Then('when the approval response is accepted') do
     @approval.approval_responses.update(status: "Accepted")
   end
-  
+
   Then('the investor gets the accepted notification') do
     puts "\n#### Emails ###\n"
-    
+
     @approval.approval_responses.each do |approval_response|
         investor = approval_response.investor
         investor.emails.each do |email|
           open_email(email)
           puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}"
-          expect(current_email.subject).to eq "#{approval_response.entity.name}: Approval response for #{approval_response.approval.title}: #{approval_response.status}"
+          expect(current_email.subject).to eq "#{approval_response.entity.name}: #{approval_response.status} for #{approval_response.approval.title}"
         end
     end
 
@@ -162,26 +162,25 @@
     sleep(1)
     expect(page).to have_content("Successfully sent reminder")
   end
- 
+
   Then('the approval response is {string}') do |arg|
     sleep(1)
     @approval.reload
     @approval_response = @approval.approval_responses.first
     @approval_response.status.should == arg
   end
-  
+
   Then('the approved count of the approval is {string}') do |arg|
     @approval.approved_count.should == arg.to_i
   end
-  
+
   Then('the rejected count of the approval is {string}') do |arg|
     @approval.rejected_count.should == arg.to_i
   end
-  
-  
+
+
 When('I select {string} for the approval response') do |response|
   select(response, from: "approval_response_status")
   click_on("Submit")
 end
-  
-  
+

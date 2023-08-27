@@ -31,14 +31,17 @@ class ApprovalResponse < ApplicationRecord
       if status == "Pending"
         investor.approved_users.each do |user|
           if reminder
-            ApprovalNotification.with(entity_id:, approval_response: self, email_method: :approval_reminder, msg: "Reminder for Approval: #{approval.entity.name} : #{approval.title}").deliver_later(user) unless notification_sent
+            msg = "This is a reminder that #{approval.entity.name} has requested your approval for #{approval.title}. Please use your registered email id to access your account. The password is your PAN (in lower case)."
+            ApprovalNotification.with(entity_id:, approval_response: self, email_method: :approval_reminder, msg:).deliver_later(user) unless notification_sent
           else
-            ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_new_approval, msg: "Approval Required for: #{approval.entity.name} : #{approval.title}").deliver_later(user) unless notification_sent
+            msg = "#{approval.entity.name} has requested your approval for #{approval.title}. Please use your registered email id to access your account.The password is your PAN (in lower case)."
+            ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_new_approval, msg:).deliver_later(user) unless notification_sent
           end
         end
       else
+        msg = "Your response for Approval #{approval.title} has been registered as #{status}."
         investor.approved_users.each do |user|
-          ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_approval_response, msg: "#{approval.entity.name} : Approval #{status} by #{investor.investor_name}: #{approval.title}").deliver_later(user)
+          ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_approval_response, msg:).deliver_later(user)
         end
       end
 

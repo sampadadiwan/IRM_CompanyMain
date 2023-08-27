@@ -5,7 +5,7 @@
     puts "\n####Document####\n"
     puts @document.to_json
   end
-  
+
 
   Given('I have {string} access to the document') do |should|
     Pundit.policy(@user, @document).show?.should == (should == "true")
@@ -18,7 +18,7 @@
   Given('I should not have access to the document') do
     Pundit.policy(@user, @document).show?.should == false
   end
-  
+
   Then('another user has {string} access to the document') do |arg|
     Pundit.policy(@another_user, @document).show?.to_s.should == arg
   end
@@ -32,19 +32,19 @@ Given('investor has access right {string} in the document') do |arg1|
     @access_right = AccessRight.new(owner: @document, entity: @entity)
     key_values(@access_right, arg1)
     puts @access_right.to_json
-    
+
     @access_right.save
     puts "\n####Access Right####\n"
-    puts @access_right.to_json  
+    puts @access_right.to_json
 end
-  
+
 Given('I am at the documents page') do
   visit(documents_path)
 end
 
 When('I create a new document {string} in folder {string}') do |args, folder_name|
   @folder = Folder.where("name like '%#{folder_name}%'").first
-  
+
   @document = Document.new
   key_values(@document, args)
   @document.folder_id = @folder.id
@@ -64,6 +64,7 @@ end
 
 When('I fill and submit the new document page') do
   click_on("New Document")
+  sleep(4)
   fill_in("document_name", with: @document.name)
 
   fill_in("document_tag_list", with: @document.tag_list.join(",")) if @document.tag_list.present?
@@ -81,7 +82,7 @@ end
 Then('an document should be created') do
   @created_doc = Document.last
   puts "\n####Document####\n"
-  puts @created_doc.to_json  
+  puts @created_doc.to_json
 
   @created_doc.name.should == @document.name
   @created_doc.download.should == @document.download
@@ -115,15 +116,15 @@ Given('the folder has access rights {string}') do |arg1|
   @access_right = AccessRight.new(owner: @folder, entity: @user.entity)
   key_values(@access_right, arg1)
   puts @access_right.to_json
-  
+
   @access_right.save!
   puts "\n####Access Right####\n"
-  puts @access_right.to_json  
+  puts @access_right.to_json
 end
 
 Then('the document should have the same access rights as the folder') do
   puts "\n####Document Access Right####\n"
-  puts @document.reload.access_rights.to_json  
+  puts @document.reload.access_rights.to_json
   puts "\n####Folder Access Right####\n"
   puts @folder.reload.access_rights.to_json
 
@@ -132,7 +133,7 @@ Then('the document should have the same access rights as the folder') do
     far = @folder.access_rights[idx]
     far.access_to_investor_id.should == dar.access_to_investor_id
     far.access_to_category.should == dar.access_to_category
-    far.entity_id.should == dar.entity_id    
+    far.entity_id.should == dar.entity_id
   end
 end
 
@@ -153,7 +154,7 @@ end
 Then('the deal document details must be setup right') do
   @deal.data_room_folder.name.should == "Data Room"
   @deal.data_room_folder.owner.should == @deal
-  
+
   @document.owner.should == @deal
   @document.folder.name.should == "Data Room"
   @document.folder.full_path.should == "/Deals/#{@deal.name}/Data Room"
@@ -193,20 +194,20 @@ end
 
 
 Given('given there is a document {string} for the deal') do |args|
-  @document = Document.new(entity: @deal.entity, name: "Test", 
+  @document = Document.new(entity: @deal.entity, name: "Test",
     text: Faker::Company.catch_phrase, user: @user, owner: @deal,
     folder: @deal.entity.folders.sample, file: File.new("public/sample_uploads/GrantLetter.docx", "r"))
 
   key_values(@document, args)
-  @document.save!  
+  @document.save!
 
   puts "\n####Document####\n"
-  puts @document.to_json  
+  puts @document.to_json
 
 end
 
 Given('given there is a document {string} for the sale') do |args|
-  @document = Document.new(entity: @sale.entity, name: "Test", 
+  @document = Document.new(entity: @sale.entity, name: "Test",
     text: Faker::Company.catch_phrase, user: @user, owner: @sale,
     folder: @sale.entity.folders.sample, file: File.new("public/sample_uploads/GrantLetter.docx", "r"))
 
@@ -214,7 +215,7 @@ Given('given there is a document {string} for the sale') do |args|
   @document.save!
 
   puts "\n####Document####\n"
-  puts @document.to_json  
+  puts @document.to_json
 
 end
 
@@ -227,5 +228,5 @@ Then('an email must go out to the investors for the document') do
     puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
     current_email = email if email.subject == subj
   end
-  expect(current_email.subject).to include subj    
+  expect(current_email.subject).to include subj
 end

@@ -1,11 +1,7 @@
-<h3>Dear Investor</h3>
+<h3>Dear  <%= @approval_response.investor.investor_name %></h3>
 
 <p>
-    Approval for <%= @approval_response.approval.name %> has been registered. 
-</p>
-
-<p>
-    <%= render "/approval_responses/show", approval_response: @approval_response, current_user: nil %>
+Your response for Approval <%= @approval_response.approval.name %> has been registered as <%= @approval_response.status%>.
 </p>
 
 <p class="btn btn-outline-primary"><%= link_to 'View Approval Response', approval_response_url(@approval_response, subdomain: @approval_response.entity.sub_domain) %></p>

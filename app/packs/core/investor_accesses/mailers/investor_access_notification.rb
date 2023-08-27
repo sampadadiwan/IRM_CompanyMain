@@ -4,11 +4,13 @@ class InvestorAccessNotification < BaseNotification
 
   # Add required params
   param :investor_access
+  param :reminder
 
   def email_data
     {
       user_id: recipient.id,
-      investor_access_id: params[:investor_access].id
+      investor_access_id: params[:investor_access].id,
+      reminder: params[:reminder] || false
     }
   end
 

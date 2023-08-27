@@ -35,11 +35,6 @@
     <% label = investor_access.approved ?  "UnApprove" : "Approve" %>
     <%= button_to label , approve_investor_access_path(investor_access), method: :patch, class: "btn btn-outline-success" , form_class: "deleteButton" if policy(investor_access).approve? %>
 
-
-    <%= button_to "Notify KYC Required" , notify_kyc_required_investor_access_path(investor_access), method: :patch, class: "btn btn-outline-success" , form_class: "deleteButton",
-    data: {action: "click->confirm#popup",
-    msg: "Send email to user indicating that KYC needs to be completed", method: :patch } if policy(investor_access).notify_kyc_required? %>
-
     <%= link_to "Add Holding" , new_holding_path("holding[user_id]": investor_access.user_id, "holding[investor_id]": investor_access.investor_id), method: :patch, class: "btn btn-outline-success" ,
         form_class: "deleteButton"  if investor_access.investor.is_holdings_entity && investor_access.user_id %>
   </td>

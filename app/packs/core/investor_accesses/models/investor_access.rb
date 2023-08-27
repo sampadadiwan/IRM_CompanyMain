@@ -103,14 +103,24 @@ class InvestorAccess < ApplicationRecord
   end
 
   def send_notification
-    InvestorAccessNotification.with(entity_id:, investor_access: self, email_method: :notify_access, msg: "Investor Access Granted to #{entity.name}").deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
+    msg = "You have been granted access to '#{entity.name}'"
+    InvestorAccessNotification.with(entity_id:, investor_access: self, email_method: :notify_access, msg:).deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
   end
 
   def send_notification_if_changed
     send_notification if id.present? && saved_change_to_approved?
   end
 
-  def notify_kyc_required
-    InvestorAccessNotification.with(entity_id:, investor_access: self, email_method: :notify_kyc_required, msg: "Investor KYC required for #{entity.name}").deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
+  def notify_kyc_required(reminder: false)
+    if URI::MailTo::EMAIL_REGEXP.match?(email)
+      if reminder
+        msg = "This is a reminder to kindly add / update your KYC details by clicking on the button below."
+        InvestorAccessNotification.with(entity_id:, investor_access: self, email_method: :kyc_required_reminder, msg:, reminder: true).deliver_later(user)
+
+      elsif URI::MailTo::EMAIL_REGEXP.match?(email)
+        msg = "Kindly add / update your KYC details by clicking on the button below."
+        InvestorAccessNotification.with(entity_id:, investor_access: self, email_method: :notify_kyc_required, msg:, reminder: false).deliver_later(user)
+      end
+    end
   end
 end
