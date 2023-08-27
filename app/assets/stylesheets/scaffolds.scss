@@ -720,10 +720,17 @@ ul.vesting_schedule {
   margin-bottom: 100px;
 }
 
+#login_page {
+  hr {
+    margin-top: 30px;
+    margin-bottom: 10px;
+  }
+}
+
 .title-line {
   width: 100%; 
   text-align: center; 
-  border-bottom: 1px solid lightgray; 
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   line-height: 0.1em;
   margin: 40px 0px; 
   span { 
