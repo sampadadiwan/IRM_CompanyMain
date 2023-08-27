@@ -8,12 +8,12 @@ end
 
 Given(/^I am at the login page$/) do
   visit("/users/sign_in")
-  expect(page).to have_content("Welcome To Cap Hive")
+  # expect(page).to have_content("Welcome To Cap Hive")
 end
 
 Given('I am at the login page without password') do
-  visit("/users/sign_in?password=false")
-  expect(page).to have_content("Welcome To Cap Hive")
+  visit("/users/sign_in")
+  # expect(page).to have_content("Welcome To Cap Hive")
 end
 
 When(/^I fill and submit the login page$/) do
@@ -36,9 +36,10 @@ When('I fill and submit the login without password') do
   @user.confirmed_at = nil
   @user.save
   
-  fill_in('user_email', with: @user.email)
-  click_on("Log In")
-  sleep(1)
+  fill_in('user_email_wo_pass', with: @user.email)
+  sleep(5)
+  click_on("Log In Via Email Link")
+  sleep(2)
 end
 
 

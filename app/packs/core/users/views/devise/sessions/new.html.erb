@@ -1,6 +1,3 @@
-<% enable_password = params[:password].present? || Rails.env.test? %>
-<% enable_password = false if params[:password] == "false" %>
-
 
 <%- flash.each do |name, msg| -%>
     <%= content_tag :div, msg, :id => "flash_#{name}", class: "text-center alert alert-info login_flash" if msg.is_a?(String) %>
@@ -8,8 +5,7 @@
 
 <%= render "/layouts/display_status" if (notice || alert) && params[:display_status].present? %>
 
-<div data-controller="login">
-    <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+<div id="login_page" data-controller="login">
 
         <div class="container" data-turbo='false'>
 
@@ -27,11 +23,9 @@
                                 </div>
                                 <div class="col-lg-6 bg-login-image">
                                     <div class="p-5 text-center">
-                                        <div class="text-center">
-                                            <h1 class="h4 text-gray-900 mb-4">
-                                                Welcome To <%= @current_entity ? @current_entity.name : "Cap Hive" %>
-                                            </h1>                                            
-                                        </div>
+                                        
+                                        <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+
                                         <form class="user">
                                             <div class="form-group">
                                                 <input type="email" class="form-control form-control-user"
@@ -41,8 +35,6 @@
                                                     placeholder="Enter Email Address...">
                                             </div>
 
-                                            <% if enable_password %>                                            
-                                            
                                             <div class="form-group">
                                                 <input type="password" class="form-control form-control-user"
                                                 name="user[password]" required="required" 
@@ -58,21 +50,42 @@
                                                         Me</label>
                                             </div>
                                             
-                                            <% end %>
 
                                             <span>
-                                                <% if enable_password %>     
-                                                    <input type="submit" name="login" class="btn btn-lg  btn-outline-primary btn-outline-user btn-outline-block" 
+                                                    <input type="submit" name="login" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
                                                     value="Log In" data-disable-with="Log In">
-                                                <% else %>
-                                                    <input type="submit" name="login_wo_pw" class="btn btn-lg btn-outline-primary btn-outline-user btn-outline-block" 
-                                                    value="Log In" data-disable-with="Log In"
-                                                    data-action="click->login#no_password">
-                                                <% end %>
                                             </span>
 
                                         </form>
+
+                                        <% end %>                                        
+
+                                        <div class="title-line"><span>Or</span></div>
+
+                                        <%= form_for(resource, as: resource_name, url: "/users/magic_link", html: {id: "new_user_wo_pass"}) do |f| %>
+
+                                        <form class="user">
+                                            <div class="form-group">
+                                                <input type="email" class="form-control form-control-user"
+                                                    id="user_email_wo_pass" aria-describedby="emailHelp"
+                                                    required="required" 
+                                                    name="user[email]", value="<%=params[:email]%>"
+                                                    placeholder="Email Address...">
+                                            </div>
+
+                                            
+
+                                            <span>
+                                                    <input type="submit" name="login_wo_pw" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
+                                                    value="Log In Via Email Link" data-disable-with="Log In" >
+                                            </span>
+
+                                        </form>
+
+                                        <% end %>
+
                                         <hr>
+
                                         <div class="text-center">
                                             <%= render "devise/shared/links" %>
                                         </div>
@@ -89,7 +102,6 @@
 
         </div>
 
-    <% end %>
 </div>
 
 

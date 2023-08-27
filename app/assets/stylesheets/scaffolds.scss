@@ -719,3 +719,16 @@ ul.vesting_schedule {
   margin-top: 100px;
   margin-bottom: 100px;
 }
+
+.title-line {
+  width: 100%; 
+  text-align: center; 
+  border-bottom: 1px solid lightgray; 
+  line-height: 0.1em;
+  margin: 40px 0px; 
+  span { 
+    background:#fff; 
+    padding:0 10px; 
+    color: #4e73df;
+  }
+}
