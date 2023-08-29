@@ -1,9 +1,14 @@
 
 <div id="<%= dom_id approval_response %>">
-  <p class="card-text"> Please update your response below using the drop down. </p>
-  
-  <%= render "/approval_responses/quick_response", approval_response: approval_response if policy(approval_response).approve? %>
-  
+
+  <% if policy(approval_response).approve? %>
+    <p class="card-text"> Please update your response below using the drop down. </p>
+    
+    <%= render "/approval_responses/quick_response", approval_response: approval_response %>
+  <% else %>
+    <p class="card-text"> Your last response was: <%= approval_response.status %>. </p>
+  <% end %>
+
   <hr>
   <p class="card-text"> Last Updated: <%= l approval_response.updated_at %> </p>
 </div>

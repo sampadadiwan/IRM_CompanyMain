@@ -9,7 +9,6 @@
     <h6 class="card-subtitle mb-2 text-muted">Due By: <%= l approval.due_date %></h6>
     <p class="card-text"><%= approval.agreements_reference %></p>
 
-    
     <%= render "approval_responses/index", 
               approval_responses: policy_scope(approval.approval_responses).includes(:investor, :response_entity, :response_user), approval: approval, layout: :card %>
 
