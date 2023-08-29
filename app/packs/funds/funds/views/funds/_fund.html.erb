@@ -3,12 +3,12 @@
     <%= fund.entity.name %>
   </td>
   <td>
-    <%= fund.name %>
+    <%= link_to fund.name, fund %>
   </td>
-  <td>
+  <td class="hideMobP">
     <%= fund.tag_list %>
   </td>
-  <td>
+  <td class="hideMobP">
     <%= link_to "Show" , fund , {class: "btn btn-outline-primary" }%>
     <% if params[:debug].present? %>
       <%= link_to "Analytics" , fund_path(id: fund.id, charts: true) , {class: "btn btn-outline-success" }%>
