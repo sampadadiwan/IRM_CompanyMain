@@ -12,7 +12,7 @@
     <%= document.owner_tag %>
   </td>  
 
-  <td>
+  <td class="hideMobP">
     <%= document.folder_full_path.truncate(80) %>  
     <% if belongs_to_entity_id?(current_user, document.entity_id) %>  
       <span class="float-right">

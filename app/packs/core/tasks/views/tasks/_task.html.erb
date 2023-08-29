@@ -1,6 +1,6 @@
 <tr id="<%= dom_id task %>">
   <td>
-    <%= task.details.html_safe.truncate(50) %>
+    <%= link_to task.details.html_safe.truncate(50), task %>
     <div>
     <% task.tags&.split(",")&.each do |tag| %>
       <small><%= link_to tag, search_tasks_path(query: tag) %></small>

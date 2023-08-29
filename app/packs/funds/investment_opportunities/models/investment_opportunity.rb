@@ -70,4 +70,8 @@ class InvestmentOpportunity < ApplicationRecord
   def percentage_raised
     ((eoi_amount_cents * 100.0) / fund_raise_amount_cents).round(2)
   end
+
+  def to_s
+    company_name
+  end
 end

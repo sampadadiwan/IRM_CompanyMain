@@ -25,7 +25,7 @@ class InvestorKycDatatable < AjaxDatatablesRails::ActiveRecord
     records.map do |record|
       {
         id: record.id,
-        full_name: record.full_name,
+        full_name: record.decorate.full_name,
         investor_name: record.decorate.investor_link,
         pan: record.PAN,
         # address: record.address,
