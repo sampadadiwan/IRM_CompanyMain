@@ -603,7 +603,7 @@ ul.vesting_schedule {
         text-overflow: ellipsis;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 100px;
+        max-width: 80px;
       }
     }
  }
@@ -765,6 +765,6 @@ ul.vesting_schedule {
 
 nav {
   .nav-link {
-    min-width: 160px;
+    min-width: 120px;
   }
 }
