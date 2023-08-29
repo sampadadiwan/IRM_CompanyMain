@@ -178,8 +178,13 @@ video { float: none; }
   color: white !important;
 }
 
+.nav-tabs {
+  border-bottom: 0px solid white !important;  
+}
+
 .nav-tabs .nav-link {
   margin-right: 3px;
+  margin-bottom: 3px !important;
   background-color:lighten($color: cornflowerblue, $amount: 30);
   color: darkgray;
 }
@@ -736,5 +741,22 @@ ul.vesting_schedule {
     background:#fff; 
     padding:0 10px; 
     color: #4e73df;
+  }
+}
+
+.card-header {
+  h6 {
+    width: 80%;
+    display: inline-flex;
+  }
+
+  .show_details_link {
+    float: right;
+  }
+}
+
+nav {
+  .nav-link {
+    min-width: 160px;
   }
 }

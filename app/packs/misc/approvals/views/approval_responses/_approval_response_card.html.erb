@@ -6,7 +6,9 @@
     
     <%= render "/approval_responses/quick_response", approval_response: approval_response %>
   <% else %>
-    <p class="card-text"> Your last response was: <%= approval_response.status %>. </p>
+    <p class="card-text"> 
+      Your last response was: <span class="font-weight-bold"> <%= approval_response.status %> </span>. 
+    </p>
   <% end %>
 
   <hr>
