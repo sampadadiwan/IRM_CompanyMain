@@ -1,47 +1,58 @@
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Approval Responses</h1>
-    <% approval ||= nil %>
+<% approval ||= nil %>
+<% layout ||= nil %>
 
-    <span>
-      <%= link_to "New Approval Response", new_approval_response_path("approval_response[approval_id]": approval.id), {class: "btn btn-outline-primary"} if approval && policy(approval).create? %>
+<% if layout %>
+  <% approval_responses.each do |approval_response| %>
+    <%= render "approval_responses/approval_response_card", approval_response:  %>
+  <% end %>
+<% else %>
 
-      <%= link_to "Download", approval_responses_path("approval_id": approval.id, format: :xlsx), {class: "btn btn-outline-success"} if approval && policy(approval).create? %>
-    </span>
-  </div>
-  
-  <div class="table-responsive">
-  
-    <table id="approval_responses" class="table table-bordered dataTable jqDataTable">
-  
-      <thead>
-        <tr>
-          <th>
-            Investor
-          </th>
-          <th>
-            Tag
-          </th>
-          <th>
-            Response By
-          </th>
-          <th>
-            Status
-          </th>
-          <th>
-            Updated On
-          </th>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+      <h1 class="h3 mb-0 text-gray-800">Approval Responses</h1>
       
-          <th>
-          </th>
-        </tr>
-      </thead>
-  
-      
-      <tbody>
-      <% approval_responses.each do |approval_response| %>
-        <%= render approval_response %>
-      <% end %>
-      </tbody>
-    </table>
-  
-  </div>
+
+      <span>
+        <%= link_to "New Approval Response", new_approval_response_path("approval_response[approval_id]": approval.id), {class: "btn btn-outline-primary"} if approval && policy(approval).create? %>
+
+        <%= link_to "Download", approval_responses_path("approval_id": approval.id, format: :xlsx), {class: "btn btn-outline-success"} if approval && policy(approval).create? %>
+      </span>
+    </div>
+
+    <div class="table-responsive">
+    
+      <table id="approval_responses" class="table table-bordered dataTable jqDataTable">
+    
+        <thead>
+          <tr>
+            <th>
+              Investor
+            </th>
+            <th>
+              Tag
+            </th>
+            <th>
+              Response By
+            </th>
+            <th>
+              Status
+            </th>
+            <th>
+              Updated On
+            </th>
+        
+            <th>
+            </th>
+          </tr>
+        </thead>
+    
+        
+        <tbody>
+        <% approval_responses.each do |approval_response| %>
+          <%= render approval_response %>
+        <% end %>
+        </tbody>
+      </table>
+    
+    </div>
+
+  <% end %>

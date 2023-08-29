@@ -1,8 +1,8 @@
 <% if @current_entity %>
     <% if @current_entity.logo.present? %>
-        <%= image_tag(@current_entity.logo.url, class: "logo") %>
+        <%= image_tag(@current_entity.logo.url, class: "devise-logo") %>
     <% else %>
-        <div class="h3">Welcome to <%= @current_entity.name %></div>        
+        <div class="h3 devise-logo">Welcome to <%= @current_entity.name %></div>        
     <% end %>
     <div>
         <small    ll class="text-muted">Powered by CapHive</small>

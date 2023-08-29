@@ -1,0 +1,21 @@
+
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Approval Details</h6>
+  </div>
+  <div class="card-body collapse show show_details">
+    
+    <h4 class="card-title"><%= approval.title %></h4>
+    <h6 class="card-subtitle mb-2 text-muted">Due By: <%= l approval.due_date %></h6>
+    <p class="card-text"><%= approval.agreements_reference %></p>
+
+    
+    <%= render "approval_responses/index", 
+              approval_responses: policy_scope(approval.approval_responses).includes(:investor, :response_entity, :response_user), approval: approval, layout: :card %>
+
+  </div>
+</div>
+
+<div class="associated_entity">
+    <%= render "documents/index", documents: @approval.documents, owner: @approval %>
+</div>

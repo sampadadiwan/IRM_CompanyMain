@@ -1,29 +1,34 @@
 <%= render "/layouts/alerts" %>
 
-<% cache([@approval, current_user.entity_id == @approval.entity_id]) do %>
-  <%= render "/layouts/steps", steps: ["Setup Approval", "Add Access Rights", "Add Related Documents", "Approve / Finalize the Approval", 
-            "Receive / Track Responses", "Send Reminders"].freeze if current_user.entity_id == @approval.entity_id %>
+<% if current_user.entity_id == @approval.entity_id %>
+  <% cache([@approval, current_user.entity_id == @approval.entity_id]) do %>
+    <%= render "/layouts/steps", steps: ["Setup Approval", "Add Access Rights", "Add Related Documents", "Approve / Finalize the Approval", 
+              "Receive / Track Responses", "Send Reminders"].freeze if current_user.entity_id == @approval.entity_id %>
 
-  <%= render "/approvals/show", approval: @approval %>
-<% end %>
-
-
-<div>
-  <% if policy(@approval).update? %>
-    <%= link_to "Edit", edit_approval_path(@approval), {class: "btn btn-outline-primary"} %> 
-    <%= button_to "Delete", @approval, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", 
-          data: {action: "click->confirm#popup", turbo:false}  %> 
-    
+    <%= render "/approvals/show", approval: @approval %>
   <% end %>
-  <%= button_to "Approve", approve_approval_path(@approval), method: :patch, class: "btn btn-outline-success", 
-        form_class: "deleteButton", 
-        data: {action: "click->confirm#popup", msg: "Approve and send notificatons to investors?", turbo:true, method: :patch} if policy(@approval).approve?  %>
 
-  <%= button_to "Send Reminder", send_reminder_approval_path(@approval), method: :patch, class: "btn btn-outline-success", 
-        form_class: "deleteButton", 
-        data: {action: "click->confirm#popup", msg: "Send notificatons to pending investors?", turbo:true, method: :patch} if policy(@approval).send_reminder?  %>
-</div>
 
-<% cache_if(current_user.entity_id == @approval.entity_id, [@approval, "Details"]) do %>
-  <%= render "/approvals/approval_details", approval: @approval %>
+  <div>
+    <% if policy(@approval).update? %>
+      <%= link_to "Edit", edit_approval_path(@approval), {class: "btn btn-outline-primary"} %> 
+      <%= button_to "Delete", @approval, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", 
+            data: {action: "click->confirm#popup", turbo:false}  %> 
+      
+    <% end %>
+    <%= button_to "Approve", approve_approval_path(@approval), method: :patch, class: "btn btn-outline-success", 
+          form_class: "deleteButton", 
+          data: {action: "click->confirm#popup", msg: "Approve and send notificatons to investors?", turbo:true, method: :patch} if policy(@approval).approve?  %>
+
+    <%= button_to "Send Reminder", send_reminder_approval_path(@approval), method: :patch, class: "btn btn-outline-success", 
+          form_class: "deleteButton", 
+          data: {action: "click->confirm#popup", msg: "Send notificatons to pending investors?", turbo:true, method: :patch} if policy(@approval).send_reminder?  %>
+  </div>
+
+  <% cache_if(current_user.entity_id == @approval.entity_id, [@approval, "Details"]) do %>
+    <%= render "/approvals/approval_details", approval: @approval %>
+  <% end %>
+
+<% else %>
+  <%= render "/approvals/show_investor", approval: @approval %>
 <% end %>

@@ -1,0 +1,9 @@
+
+<div id="<%= dom_id approval_response %>">
+  <p class="card-text"> Please update your response below using the drop down. </p>
+  
+  <%= render "/approval_responses/quick_response", approval_response: approval_response if policy(approval_response).approve? %>
+  
+  <hr>
+  <p class="card-text"> Last Updated: <%= l approval_response.updated_at %> </p>
+</div>

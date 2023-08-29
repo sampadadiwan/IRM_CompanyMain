@@ -18,7 +18,7 @@
                         <div class="card-body p-0">
                             <!-- Nested Row within Card Body -->
                             <div class="row">
-                                <div class="col-lg-6 d-none d-lg-block bg-login-image">
+                                <div class="col-lg-6 d-lg-block bg-login-image">
                                     <%= render "devise/shared/company_logo" %>
                                 </div>
                                 <div class="col-lg-6 bg-login-image">
@@ -42,6 +42,10 @@
                                                 <i class="far fa-eye" id="togglePassword" style="float:right; margin-top: -25px; margin-right: 5px; cursor: pointer;"></i>
                                             </div>
 
+                                            <div class="form-group">
+                                                    <input type="submit" name="login" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
+                                                    value="Log In" data-disable-with="Log In">
+                                            </div>
                                             
                                             <div class="form-group">
                                                     <input type="checkbox"  
@@ -51,10 +55,7 @@
                                             </div>
                                             
 
-                                            <span>
-                                                    <input type="submit" name="login" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
-                                                    value="Log In" data-disable-with="Log In">
-                                            </span>
+                                            
 
                                         </form>
 
