@@ -1,9 +1,9 @@
-<tr id="<%= dom_id notification.record %>">  
+<tr id="<%= dom_id notification.record %>">
   <td class="hideMobP">
     <%= notification.record.type %>
   </td>
-  <td>
-    <%= link_to notification.message.html_safe, notification.record if notification.message %>
+  <td  class="card-text bg-light" style="transform: rotate(0);">
+    <%= link_to notification.message.html_safe, notification.record, {class: "stretched-link"} if notification.message %>
   </td>
   <td class="hideMobP">
     <%= l notification.record.created_at %>

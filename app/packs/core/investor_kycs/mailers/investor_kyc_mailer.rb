@@ -10,7 +10,7 @@ class InvestorKycMailer < ApplicationMailer
     if email.present?
       subj = "KYC updated for #{@investor_kyc.full_name}"
       mail(from: from_email(@investor_kyc.entity),
-           cc: cc,
+           cc:,
            to: email,
            subject: subj)
     end
@@ -23,10 +23,9 @@ class InvestorKycMailer < ApplicationMailer
     cc = @investor_kyc.entity.entity_setting.cc
 
     if email.present?
-      Confirmation of your KYC: <<fund entity name>>
       subj = "Confirmation of your KYC: #{@investor_kyc.entity.name}"
       mail(from: from_email(@investor_kyc.entity),
-           cc: cc,
+           cc:,
            to: email,
            subject: subj)
     end

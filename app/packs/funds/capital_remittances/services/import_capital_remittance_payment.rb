@@ -1,5 +1,5 @@
 class ImportCapitalRemittancePayment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Amount", "Currency", "Folio No", "Virtual Bank Account", "Verified", "Reference No", "Payment Date", "Notes"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Amount", "Currency", "Folio No", "Virtual Bank Account", "Verified", "Reference No", "Payment Date", "Notes", "Update Only"].freeze
 
   attr_accessor :fund_ids
 
@@ -40,29 +40,14 @@ class ImportCapitalRemittancePayment < ImportUtil
   def save_capital_remittance_payment(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing capital_remittance_payment #{user_data}" }
 
-    fund, capital_call, investor, capital_commitment, capital_remittance, folio_amount_cents, folio_currency = inputs(import_upload, user_data)
-
+    inputs = inputs(import_upload, user_data)
+    fund, capital_call, investor, capital_commitment, capital_remittance, _folio_amount_cents, folio_currency, _update_only = inputs
     if fund && capital_call && investor && capital_commitment &&
        capital_remittance && folio_currency == capital_commitment.folio_currency
 
       @fund_ids.add(fund.id)
 
-      # Make the capital_remittance
-      capital_remittance_payment = CapitalRemittancePayment.new(entity_id: fund.entity_id, fund:,
-                                                                capital_remittance:,
-                                                                folio_amount_cents:,
-                                                                notes: user_data["Notes"],
-                                                                reference_no: user_data["Reference No"],
-                                                                payment_date: user_data["Payment Date"])
-
-      setup_custom_fields(user_data, capital_remittance_payment, custom_field_headers)
-
-      capital_remittance_payment.save!
-
-      # We need to reload the capital_remittance, as the capital_remittance_payment counter caches would have updated the capital_remittance
-      capital_remittance.reload
-      capital_remittance.verified = user_data["Verified"] == "Yes"
-      capital_remittance.save!
+      create_or_update_capital_remittance_payment(inputs, user_data, custom_field_headers)
 
     else
       raise "Fund not found" unless fund
@@ -70,6 +55,45 @@ class ImportCapitalRemittancePayment < ImportUtil
       raise "Capital Remittance not found" unless capital_remittance
       raise "Currency not same as commitment currency" unless folio_currency == capital_commitment.folio_currency
     end
+  end
+
+  def create_or_update_capital_remittance_payment(inputs, user_data, custom_field_headers)
+    # Make the capital_remittance
+    fund, _capital_call, _investor, _capital_commitment, capital_remittance, folio_amount_cents, _folio_currency = inputs
+    capital_remittance_payment = CapitalRemittancePayment.where(entity_id: fund.entity_id, fund:,
+                                                                capital_remittance:,
+                                                                folio_amount_cents:,
+                                                                reference_no: user_data["Reference No"],
+                                                                payment_date: user_data["Payment Date"]).first
+    if capital_remittance_payment.present? && update_only&.downcase == "yes"
+      save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
+    elsif capital_remittance_payment.nil?
+      raise "Capital Remittance Payment not found" if update_only&.downcase != "yes"
+
+      capital_remittance_payment = CapitalRemittancePayment.new
+      save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
+    else
+      raise "Skipping: CapitalRemittancePayment already exists"
+    end
+
+    # We need to reload the capital_remittance, as the capital_remittance_payment counter caches would have updated the capital_remittance
+    capital_remittance.reload
+    capital_remittance.verified = user_data["Verified"] == "Yes"
+    capital_remittance.save!
+  end
+
+  def save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
+    fund, _capital_call, _investor, _capital_commitment, capital_remittance, folio_amount_cents, _folio_currency, _update_only = inputs
+    capital_remittance_payment.assign_attributes(entity_id: fund.entity_id, fund:,
+                                                 capital_remittance:,
+                                                 folio_amount_cents:,
+                                                 notes: user_data["Notes"],
+                                                 reference_no: user_data["Reference No"],
+                                                 payment_date: user_data["Payment Date"])
+
+    setup_custom_fields(user_data, capital_remittance_payment, custom_field_headers)
+
+    capital_remittance_payment.save!
   end
 
   def inputs(import_upload, user_data)
@@ -98,6 +122,8 @@ class ImportCapitalRemittancePayment < ImportUtil
 
     folio_amount_cents = user_data["Amount"].to_d * 100
     folio_currency = user_data["Currency"].strip
-    [fund, capital_call, investor, capital_commitment, capital_remittance, folio_amount_cents, folio_currency]
+    update_only = user_data["Update Only"]&.strip
+
+    [fund, capital_call, investor, capital_commitment, capital_remittance, folio_amount_cents, folio_currency, update_only]
   end
 end
