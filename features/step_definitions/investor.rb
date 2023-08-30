@@ -202,12 +202,14 @@ Given('Given I upload an investors file for the company') do
   visit(investors_path)
   click_on("Actions")
   click_on("Upload")
+  sleep(2)
   fill_in('import_upload_name', with: "Test Investor Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investors.xlsx'), make_visible: true)
-  sleep(1)
+  sleep(3)
   click_on("Save")
-  sleep(1)
+  sleep(4)
   ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(4)
 end
 
 Then('There should be {string} investors created') do |count|
@@ -241,11 +243,13 @@ Given('Given I upload an investors file for the fund') do
   visit(investors_path)
   click_on("Actions")
   click_on("Upload")
-  fill_in('import_upload_name', with: "Test Investor Upload")
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_investors.xlsx'), make_visible: true)
-  sleep(1)
-  click_on("Save")
   sleep(4)
+  fill_in('import_upload_name', with: "Test Investor Upload")
+  sleep(4)
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_investors.xlsx'), make_visible: true)
+  sleep(4)
+  click_on("Save")
+  sleep(6)
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 

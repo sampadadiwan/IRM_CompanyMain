@@ -59,7 +59,7 @@ class ImportCapitalRemittancePayment < ImportUtil
 
   def create_or_update_capital_remittance_payment(inputs, user_data, custom_field_headers)
     # Make the capital_remittance
-    fund, _capital_call, _investor, _capital_commitment, capital_remittance, folio_amount_cents, _folio_currency = inputs
+    fund, _capital_call, _investor, _capital_commitment, capital_remittance, folio_amount_cents, _folio_currency, update_only = inputs
     capital_remittance_payment = CapitalRemittancePayment.where(entity_id: fund.entity_id, fund:,
                                                                 capital_remittance:,
                                                                 folio_amount_cents:,
@@ -68,7 +68,7 @@ class ImportCapitalRemittancePayment < ImportUtil
     if capital_remittance_payment.present? && update_only&.downcase == "yes"
       save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
     elsif capital_remittance_payment.nil?
-      raise "Capital Remittance Payment not found" if update_only&.downcase != "yes"
+      raise "Capital Remittance Payment not found" if update_only&.downcase == "yes"
 
       capital_remittance_payment = CapitalRemittancePayment.new
       save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
