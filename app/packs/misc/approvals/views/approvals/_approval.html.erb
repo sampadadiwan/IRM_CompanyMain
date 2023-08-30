@@ -1,6 +1,6 @@
 
 <tr id="<%= dom_id approval %>">
-  <td>
+  <td class="hideMobP">
     <%= approval.entity.name %>
   </td>
   <td>
@@ -11,13 +11,13 @@
   </td>
 
   <% if show_stats %>
-    <td class="approved_count">
+    <td class="approved_count hideMobP">
       <%= approval.approved_count %>
     </td>
-    <td class="rejected_count">
+    <td class="rejected_count hideMobP">
       <%= approval.rejected_count %>
     </td>
-    <td class="pending_count">
+    <td class="pending_count hideMobP">
       <%= approval.pending_count %>
     </td>
   <% end %>
