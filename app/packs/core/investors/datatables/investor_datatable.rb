@@ -18,7 +18,7 @@ class InvestorDatatable < AjaxDatatablesRails::ActiveRecord
       {
         id: record.id,
         entity_name: record.entity.name,
-        investor_name: record.investor_name,
+        investor_name: record.decorate.investor_link,
         pan: record.pan,
         category: record.category,
         tag_list: record.tag_list,

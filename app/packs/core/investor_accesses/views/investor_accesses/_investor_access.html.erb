@@ -11,11 +11,11 @@
   <td>
     <%= investor_access.email %>
   </td>
-  <td>
+  <td class="hideMobP">
 
     <%= "(#{investor_access.user.call_code})#{investor_access.user.phone}" %>
   </td>
-  <td>
+  <td class="hideMobP">
     <%= display_boolean investor_access.user.whatsapp_enabled %>
     <% unless investor_access.user.whatsapp_enabled %>
     <br>

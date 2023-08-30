@@ -108,3 +108,12 @@ en:
     attributes:
       fund_unit_setting:
         name: "Class / Series / Unit Type"
+
+
+  views:
+    pagination:
+      first: "&laquo; First"
+      last: "Last &raquo;"
+      previous: "&lsaquo;"
+      next: "&rsaquo;"
+      truncate: "&hellip;"        

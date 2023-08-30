@@ -12,6 +12,11 @@ export default class extends ServerDatatableController {
     {"data": "dt_actions"}
   ]
 
+  mobile = [
+    {"data": "investor_name"},
+    {"data": "pan"}
+  ]
+
   all = [
     {"data": "entity_name"},
     {"data": "investor_name"},
@@ -24,7 +29,12 @@ export default class extends ServerDatatableController {
   ]
 
   columns() {
-    if($("#cols").val() == "all") {
+
+    var x = window.matchMedia("(max-width: 479px)")
+    if (x.matches) { // If media query matches
+      return this.mobile;
+    }  
+    else if($("#cols").val() == "all") {
       return this.all;
     } else {
       return this.default; 

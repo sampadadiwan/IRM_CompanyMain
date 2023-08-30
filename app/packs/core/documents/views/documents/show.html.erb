@@ -63,10 +63,12 @@
                      </td>
                      <td>
                         <%= @document&.folder.full_path %>
-                        <%= link_to "View Docs", folder_documents_path(folder_id: @document.folder_id),
-                              class: "badge badge-primary" %>
-                        <%= link_to "View Folder", folder_path(id: @document.folder_id),
-                              class: "badge badge-success" %>
+                        <span  class="hideMobP">
+                           <%= link_to "View Docs", folder_documents_path(folder_id: @document.folder_id),
+                                 class: "badge badge-primary" %>
+                           <%= link_to "View Folder", folder_path(id: @document.folder_id),
+                                 class: "badge badge-success" %>
+                        </span>
                      </td>
                   </tr>
                   <tr>
@@ -98,7 +100,7 @@
                   </tr>
 
 
-                  <tr>
+                  <tr class="hideMobP">
                      <td>
                         Allow
                      </td>
