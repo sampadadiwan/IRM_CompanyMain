@@ -122,7 +122,7 @@
             <tr>
               <td>Documents</td>
               <td>
-                <span id="copy_document_link"><%= documents_path(entity_id: current_user.entity_id) %></span>
+                <span id="copy_document_link"><%= investor_documents_path(entity_id: current_user.entity_id) %></span>
               </td>
               <td>
                 <i class="fas fa-lg fa-copy" data-action="click->confirm#copy" data-target="#copy_document_link" data-notify="#imp_links_notice"></i>
