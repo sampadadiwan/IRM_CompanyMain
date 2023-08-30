@@ -768,3 +768,35 @@ nav {
     min-width: 120px;
   }
 }
+
+
+/* Note: Design for a width of 320px */
+@media all and (max-width: 479px) {
+  
+  .hideMobP {
+      display:none;
+      width:0;
+      height:0;
+      opacity:0;
+      visibility: collapse;
+  }
+
+  .btn {
+      padding: 0.25rem 0.5rem !important;
+      font-size: 0.875rem !important;
+      line-height: 1.5 !important;
+      // border-radius: 0.2rem !important;
+  }
+
+  h1 {
+    font-size: 1.2rem !important;
+  }
+
+  .associated_entity {
+    h1 {
+      font-size: 1.2rem !important;
+    }
+  }
+
+  
+}
