@@ -20,6 +20,10 @@ class ImportInvestor < ImportUtil
     pan = user_data['PAN'].strip
     category = user_data['Category'].strip.presence
 
+    force_different_name = user_data['Force Different Name'] == "Yes"
+    # Ensure Force Different Name is not part of custom fields
+    custom_field_headers -= ["Force Different Name"]
+
     investor = Investor.where(investor_name:, entity_id: import_upload.entity_id).first
     if investor.present?
       Rails.logger.debug { "Investor with name investor_name already exists for entity #{import_upload.entity_id}" }
@@ -29,7 +33,7 @@ class ImportInvestor < ImportUtil
       Rails.logger.debug user_data
       investor = Investor.new(investor_name:, pan:, tag_list: user_data["Tags"],
                               category:, city: user_data["City"],
-                              entity_id: import_upload.entity_id, imported: true)
+                              entity_id: import_upload.entity_id, imported: true, force_different_name:)
 
       custom_field_headers.delete("Fund")
 

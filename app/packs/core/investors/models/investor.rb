@@ -6,6 +6,9 @@ class Investor < ApplicationRecord
 
   update_index('investor') { self }
 
+  # This is to be set if we want the investor name to be different from the investor_entity name
+  attr_accessor :force_different_name
+
   belongs_to :investor_entity, class_name: "Entity"
   has_many :kpi_reports, through: :investor_entity
 
@@ -105,13 +108,16 @@ class Investor < ApplicationRecord
   before_validation :update_name, if: :new_record?
 
   def update_name
-    self.investor_name = investor_entity.name if investor_name.blank?
     self.last_interaction_date ||= Time.zone.today - 10.years
 
     # Ensure we have an investor entity
     if investor_entity_id.blank?
-      e = pan ? Entity.where(name: pan.strip).first : nil
-      e ||= Entity.where(name: investor_name.strip).first
+      e = pan ? Entity.where(pan: pan.strip).first : nil
+
+      # If we do have an investor entity, and the name is not the same
+      errors.add(:investor_name, "Investor name in our records for PAN #{pan} is #{e.name}.") if e && e.name.strip != investor_name.strip && !force_different_name
+
+      # We dont have this entity in our DB, lets create one.
       e ||= Entity.create(name: investor_name.strip, entity_type: "Investor", pan:)
 
       setup_permissions(e)
@@ -120,6 +126,7 @@ class Investor < ApplicationRecord
       self.investor_entity = e
     end
 
+    self.investor_name = investor_entity.name if investor_name.blank?
     self.pan ||= investor_entity.pan
   end
 
@@ -135,6 +142,7 @@ class Investor < ApplicationRecord
 
     investor_entity.enable_funds = entity.enable_funds if entity.enable_funds
     investor_entity.enable_kpis = entity.enable_kpis if entity.enable_kpis
+    investor_entity.enable_kycs = entity.enable_kpis if entity.enable_kycs
     investor_entity.enable_approvals = entity.enable_kpis if entity.enable_approvals
     investor_entity.enable_inv_opportunities = entity.enable_inv_opportunities if entity.enable_inv_opportunities
   end

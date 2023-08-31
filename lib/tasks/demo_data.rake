@@ -202,7 +202,7 @@ namespace :irm do
       
       round = FactoryBot.create(:funding_round, entity: e)
       Entity.vcs.each do |vc|
-        inv = FactoryBot.build(:investor, entity: e, investor_entity: vc, tag_list: [tags.sample, tags.sample].join(","))
+        inv = FactoryBot.build(:investor, entity: e, investor_entity: vc, tag_list: [tags.sample, tags.sample].join(","), pan: vc.pan)
         puts "Investor #{inv.entity_id} #{inv.pan}"
 
         if inv.save!
@@ -548,14 +548,14 @@ namespace :irm do
     Entity.funds.each do |e|
       3.times do
         fund = FactoryBot.create(:fund, entity: e)
-
+        puts "Creating fund #{fund.name} for #{e.name}"
         doc = Document.create!(entity: e, owner: fund, name: Faker::Company.catch_phrase, 
                 text: Faker::Company.catch_phrase, user: e.employees.sample,
                 file: File.new("public/sample_uploads/#{files[rand(4)]}", "r"))
 
 
         e.investors.sample(5).each do |inv|
-          AccessRight.create(owner: fund, access_type: "Fund", entity: e, investor: inv, metadata: "Investor")
+          AccessRight.create!(owner: fund, access_type: "Fund", entity: e, investor: inv, metadata: "Investor")
           commitment = FactoryBot.create(:capital_commitment, investor: inv, fund: )
           
           doc = Document.create!(entity: e, owner: commitment, name: Faker::Company.catch_phrase, 
@@ -613,6 +613,7 @@ namespace :irm do
               begin
                 FactoryBot.create(:valuation, entity: e, portfolio_company: pc)
                 pi = FactoryBot.create(:portfolio_investment, entity: e, fund:, portfolio_company: pc)
+                puts "Creating PI #{pi} for #{fund.name}"
               rescue
               end
             end
