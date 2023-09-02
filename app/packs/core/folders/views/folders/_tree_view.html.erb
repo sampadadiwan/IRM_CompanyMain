@@ -1,12 +1,12 @@
-
+    <% ul_class ||= "" %>
     <% folders.each do |folder, children| %>
-        <ul id="<%=folder.id%>">
+        <ul id="<%=folder.id%>" class="<%= ul_class %>">
 
         <li id="folder_<%=folder.id%>" >
-            <span  class="caret">
+            <span class="caret">
                 <%= link_to folder.name, folder_documents_path(folder_id: folder.id, entity_id: params[:entity_id], parent_folder_id: params[:parent_folder_id], no_folders: true), class: "truncate" %>               
             </span>
-            <%= render "/folders/tree_view", folders: children if children.present? %>                            
+            <%= render "/folders/tree_view", folders: children, ul_class: "nested" if children.present? %>                            
         </li>
 
         </ul>
