@@ -1,10 +1,15 @@
-<h3>Dear <%= @task.assigned_to.email %></h3>
+<h3>Dear <%= @user.full_name %></h3>
 
-<% if @task.response.blank? %>
+<% if @task.assigned_to_id == @user.id %>
 <p>
-    A new task has been assigned to you.
+    A task has been assigned to you.
+</p>
+<% elsif @task.user_id == @user.id %>
+<p>
+    A task has been created by you.
 </p>
 <% end %>
+
 
 <p>
     <%= render "/tasks/show", task: @task, current_user: nil, params: {} %>

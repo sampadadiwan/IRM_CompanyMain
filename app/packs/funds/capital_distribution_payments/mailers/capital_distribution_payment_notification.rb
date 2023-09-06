@@ -8,6 +8,7 @@ class CapitalDistributionPaymentNotification < BaseNotification
   def email_data
     {
       user_id: recipient.id,
+      entity_id: params[:entity_id],
       capital_distribution_payment_id: params[:capital_distribution_payment].id
     }
   end

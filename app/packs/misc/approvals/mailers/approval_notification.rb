@@ -13,6 +13,7 @@ class ApprovalNotification < BaseNotification
   def email_data
     {
       user_id: recipient.id,
+      entity_id: params[:entity_id],
       approval_response_id: params[:approval_response].id
     }
   end

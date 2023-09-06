@@ -8,7 +8,8 @@ class DocumentNotification < BaseNotification
   def email_data
     {
       user_id: recipient.id,
-      document_id: params[:document].id
+      document_id: params[:document].id,
+      entity_id: params[:entity_id]
     }
   end
 

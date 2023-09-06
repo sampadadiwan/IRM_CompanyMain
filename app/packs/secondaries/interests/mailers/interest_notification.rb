@@ -13,6 +13,7 @@ class InterestNotification < BaseNotification
   def email_data
     {
       user_id: recipient.id,
+      entity_id: params[:entity_id],
       interest_id: params[:interest].id
     }
   end

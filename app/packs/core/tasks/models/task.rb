@@ -22,6 +22,11 @@ class Task < ApplicationRecord
 
   after_commit :send_notification
   def send_notification
-    TaskNotification.with(entity_id:, task: self).deliver_later(user)
+    users = []
+    users << user if response.blank?
+    users << assigned_to if assigned_to
+    users.uniq.each do |u|
+      TaskNotification.with(entity_id:, task: self).deliver_later(u)
+    end
   end
 end

@@ -13,6 +13,7 @@ class InvestmentOpportunityNotification < BaseNotification
   def email_data
     {
       user_id: recipient.id,
+      entity_id: params[:entity_id],
       investment_opportunity_id: params[:investment_opportunity].id
     }
   end

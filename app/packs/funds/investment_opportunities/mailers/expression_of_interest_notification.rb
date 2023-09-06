@@ -8,6 +8,7 @@ class ExpressionOfInterestNotification < BaseNotification
   def email_data
     {
       user_id: recipient.id,
+      entity_id: params[:entity_id],
       expression_of_interest_id: params[:expression_of_interest].id
     }
   end

@@ -4,27 +4,13 @@ class CapitalRemittancesMailer < ApplicationMailer
 
   def send_notification
     @capital_remittance = CapitalRemittance.find params[:capital_remittance_id]
-    @user = User.find(params[:user_id])
-
-    emails = sandbox_email(@capital_remittance, @user.email)
-
-    @entity = @capital_remittance.entity
-    cc = @entity.entity_setting.cc
-
-    reply_to = cc
 
     # Check for attachments
     @capital_remittance.documents.generated.each do |doc|
       attachments["#{doc.name}.pdf"] = doc.file.read
     end
 
-    if emails.present?
-      mail(from: from_email(@capital_remittance.entity),
-           to: emails,
-           reply_to:,
-           cc:,
-           subject: "Capital Call: #{@capital_remittance.entity.name}")
-    end
+    send_mail(subject: "Capital Call: #{@capital_remittance.entity.name}") if @to.present?
 
     Chewy.strategy(:sidekiq) do
       @capital_remittance.notification_sent = true
@@ -34,53 +20,18 @@ class CapitalRemittancesMailer < ApplicationMailer
 
   def notify_capital_remittance
     @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
-    @user = User.find(params[:user_id])
 
-    emails = sandbox_email(@capital_remittance, @user.email)
-
-    @entity = @capital_remittance.entity
-    cc = @entity.entity_setting.cc
-    reply_to = cc
-
-    if emails.present?
-      mail(from: from_email(@capital_remittance.entity),
-           to: emails, reply_to:, cc:,
-           subject: "New Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}")
-    end
+    send_mail(subject: "New Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}") if @to.present?
   end
 
   def reminder_capital_remittance
     @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
-    @user = User.find(params[:user_id])
-
-    emails = sandbox_email(@capital_remittance, @user.email)
-
-    @entity = @capital_remittance.entity
-    cc = @entity.entity_setting.cc
-    reply_to = cc
-
-    if emails.present?
-      mail(from: from_email(@capital_remittance.entity),
-           to: emails, reply_to:, cc:,
-           subject: "Reminder: Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}")
-    end
+    send_mail(subject: "Reminder: Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}") if @to.present?
   end
 
   def payment_received
     @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
-    @user = User.find(params[:user_id])
 
-    # Get all emails of investors who have pending remittances
-    investor_emails = sandbox_email(@capital_remittance, @user.email)
-
-    @entity = @capital_remittance.entity
-    cc = @entity.entity_setting.cc
-    reply_to = cc
-
-    if investor_emails.present?
-      mail(from: from_email(@capital_remittance.entity),
-           to: investor_emails, reply_to:, cc:,
-           subject: "Payment Received. #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}")
-    end
+    send_mail(subject: "Payment Received. #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}") if @to.present?
   end
 end

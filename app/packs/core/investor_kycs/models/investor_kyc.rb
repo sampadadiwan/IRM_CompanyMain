@@ -59,7 +59,7 @@ class InvestorKyc < ApplicationRecord
       msg = "This is a reminder to kindly add / update your KYC details by clicking on the button below."
     end
     investor.approved_users.each do |user|
-      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method:, msg:, user_id: user.id).deliver_later(user)
+      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method:, msg:).deliver_later(user)
     end
   end
 
@@ -116,7 +116,7 @@ class InvestorKyc < ApplicationRecord
       email_method = :notify_kyc_verified
     end
     users.each do |user|
-      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method:, msg:, user_id: user.id).deliver_later(user)
+      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method:, msg:).deliver_later(user)
     end
   end
 
