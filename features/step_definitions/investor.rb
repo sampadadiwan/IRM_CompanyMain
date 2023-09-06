@@ -202,12 +202,12 @@ Given('Given I upload an investors file for the company') do
   visit(investors_path)
   click_on("Actions")
   click_on("Upload")
-  sleep(2)
+  sleep(3)
   fill_in('import_upload_name', with: "Test Investor Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investors.xlsx'), make_visible: true)
-  sleep(3)
-  click_on("Save")
   sleep(4)
+  click_on("Save")
+  sleep(5)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(4)
 end
@@ -243,13 +243,13 @@ Given('Given I upload an investors file for the fund') do
   visit(investors_path)
   click_on("Actions")
   click_on("Upload")
-  sleep(4)
-  fill_in('import_upload_name', with: "Test Investor Upload")
-  sleep(4)
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_investors.xlsx'), make_visible: true)
-  sleep(4)
-  click_on("Save")
   sleep(6)
+  fill_in('import_upload_name', with: "Test Investor Upload")
+  sleep(6)
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_investors.xlsx'), make_visible: true)
+  sleep(6)
+  click_on("Save")
+  sleep(8)
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 
@@ -319,7 +319,7 @@ Given('I create a new InvestorKyc with pan {string}') do |string|
   sleep(3)
 end
 
-Given('I create a new InvestorKyc') do ||
+Given('I create a new InvestorKyc') do
   @investor_kyc = FactoryBot.create(:investor_kyc, entity: @entity)
   puts "\n########### KYC ############"
   puts @investor_kyc.to_json
@@ -354,6 +354,57 @@ Then('I should see ckyc and kra data comparison page') do
   expect(page).to have_content("KRA")
 
 end
+
+Then('I can send KYC reminder to approved users') do
+  @investor_kyc = FactoryBot.create(:investor_kyc, entity: @investor.entity, investor: @investor, verified: false)
+  entity = @investor_kyc.entity
+  investor = @investor_kyc.investor
+  @users = FactoryBot.create_list(:user, 2, entity: @investor.investor_entity)
+  @users.each do |user|
+    InvestorAccess.create!(investor: investor, user: user,
+    entity_id: investor.entity_id,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    email: user.email, approved: true)
+  end
+  visit(investor_kycs_path)
+  sleep(2)
+  click_on("Send KYC Reminders")
+  sleep(1)
+  click_on("Proceed")
+  sleep(2)
+  expect(page).to have_content("KYC Reminder sent successfully")
+end
+
+Then('Notifications are created for KYC Reminders') do
+  Notification.where(recipient_id: @users.pluck(:id)).count.should == 2
+  Notification.where(recipient_id: @users.pluck(:id)).pluck(:type).uniq.count.should == 1
+  Notification.where(recipient_id: @users.pluck(:id)).pluck(:type).uniq.last.should == "InvestorKycNotification"
+end
+
+
+Then('I cannot send KYC reminder as no approved users are present') do
+  @investor_kyc = FactoryBot.create(:investor_kyc, entity: @investor.entity, investor: @investor, verified: false)
+  entity = @investor_kyc.entity
+  investor = @investor_kyc.investor
+  @users = FactoryBot.create_list(:user, 2, entity: @investor.investor_entity)
+  @users.each do |user|
+    InvestorAccess.create!(investor: investor, user: user,
+    entity_id: investor.entity_id,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    email: user.email, approved: false)
+  end
+  visit(investor_kyc_path(@investor_kyc))
+  sleep(2)
+  click_on("Send KYC Reminder")
+  sleep(1)
+  click_on("Proceed")
+  sleep(2)
+  expect(page).to have_content("KYC Reminder could not be sent as no user has been assigned to the investor")
+end
+
+
 
 Then('I select one and see the edit page and save') do
   click_on("Select CKYC Data")

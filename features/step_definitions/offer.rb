@@ -21,10 +21,10 @@
     )
 
   end
-  
+
   Given('there is a holding {string} for each employee investor') do |args|
     @investor_entity.employees.each do |emp|
-        holding = FactoryBot.build(:holding, user: emp, entity: @entity, 
+        holding = FactoryBot.build(:holding, user: emp, entity: @entity,
                                     funding_round: @funding_round, investor_id: @entity.investors.first.id)
         key_values(holding, args)
         holding = CreateHolding.call(holding: holding).holding
@@ -34,11 +34,11 @@
     end
 
   end
-  
+
 
   Given('there is an option holding {string} for each employee investor') do |args|
     @investor_entity.employees.each do |emp|
-        holding = FactoryBot.build(:holding, user: emp, entity: @entity, option_pool: @option_pool, 
+        holding = FactoryBot.build(:holding, user: emp, entity: @entity, option_pool: @option_pool,
                                     funding_round: @option_pool.funding_round, investor_id: @entity.investors.first.id)
         key_values(holding, args)
         holding = CreateHolding.call(holding:holding).holding
@@ -69,7 +69,7 @@
     @investor_entity.employees.where("id <> ?", @employee_investor.id).each do |other_emp|
         other_emp.holdings.all.each do |h|
             expect(page).to have_no_content(h.user.full_name)
-            expect(page).to have_no_content(h.user.email)                    
+            expect(page).to have_no_content(h.user.email)
         end
     end
 
@@ -80,14 +80,14 @@
 
     @offer = FactoryBot.build(:offer, approved: @offer.approved, secondary_sale: @offer.secondary_sale)
     key_values(@offer, arg)
-        
+
     steps %(
       Then when I submit the offer
-    )  
+    )
   end
-  
-  
-  Then('when I submit the offer') do 
+
+
+  Then('when I submit the offer') do
 
     puts "\n####Offer####\n"
     puts @offer.to_json
@@ -128,10 +128,10 @@
     @offer ||= Offer.first
     visit(offer_path(@offer))
   end
-  
-  
+
+
   Then('I should see the offer details') do
-    if page.has_css?("#display_status_ok") 
+    if page.has_css?("#display_status_ok")
       sleep(1)
       find("#display_status_ok").click
     end
@@ -160,11 +160,11 @@
   Then('when the offer sale is finalized') do
     @offer.secondary_sale.finalized = true
     @offer.secondary_sale.lock_allocations = true
-    
+
     @offer.secondary_sale.final_price = 100
     @offer.secondary_sale.save
   end
-  
+
   Then('I should see the offer in the offers tab') do
     visit(secondary_sale_path(@sale))
     click_on("Offers")
@@ -173,7 +173,7 @@
     expect(page).to have_content(@offer.quantity)
     within("td.approved") do
         expect(page).to have_content("No")
-    end  
+    end
   end
 
 
@@ -189,7 +189,7 @@ Given('there is an {string} offer {string} for each employee investor') do | app
 
     offer.approved = approved
     offer.save
-    
+
     puts "\n####Offer####\n"
     puts offer.to_json
   end
@@ -208,9 +208,9 @@ Then('I should see all the offers') do
         expect(page).to have_content(offer.percentage)
         within("td.approved") do
           if offer.approved
-            expect(page).to have_content("Yes") 
+            expect(page).to have_content("Yes")
           else
-            expect(page).to have_content("No") 
+            expect(page).to have_content("No")
           end
         end
     end
@@ -237,7 +237,7 @@ end
 
 Given('Given I upload a offer file') do
     Sidekiq.redis(&:flushdb)
-  
+
     @existing_user_count = User.count
     visit(secondary_sale_path(@sale))
     click_on("Pending Offers")
@@ -245,13 +245,13 @@ Given('Given I upload a offer file') do
     click_on("Upload Offers")
     fill_in('import_upload_name', with: "Test Upload")
     attach_file('files[]', File.absolute_path('./public/sample_uploads/offers.xlsx'), make_visible: true)
-    sleep(1)
+    sleep(3)
     click_on("Save")
-    sleep(2)
-    ImportUploadJob.perform_now(ImportUpload.last.id)    
+    sleep(3)
+    ImportUploadJob.perform_now(ImportUpload.last.id)
     sleep(5)
-  
-    ImportUpload.last.failed_row_count.should == 0  
+
+    ImportUpload.last.failed_row_count.should == 0
 end
 
 Then('when the offers are approved') do

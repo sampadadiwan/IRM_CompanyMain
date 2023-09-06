@@ -43,6 +43,14 @@ class InvestorKycPolicy < ApplicationPolicy
     belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :approve)
   end
 
+  def send_kyc_reminder?
+    user.enable_kycs && belongs_to_entity?(user, record)
+  end
+
+  def send_kyc_reminder_to_all?
+    user.enable_kycs
+  end
+
   def generate_new_aml_report?
     toggle_verified?
   end

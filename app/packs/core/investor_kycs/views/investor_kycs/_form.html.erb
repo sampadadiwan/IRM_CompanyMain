@@ -85,8 +85,8 @@
 
                 <% if investor_kyc.pan_card.present? %>
                   <% if investor_kyc.pan_card.mime_type.index("image") %>
-                    <%= image_tag investor_kyc.pan_card_url, style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" %>                  
-                  <% end %>                  
+                    <%= image_tag investor_kyc.pan_card_url, style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" %>
+                  <% end %>
                 <% end %>
 
 
@@ -138,7 +138,7 @@
             <div class="form-group">
               <%= form.label :bank_verified %>
               <%= form.check_box :bank_verified, class: "form-control form-checkbox"  %>
-            </div>            
+            </div>
           <% end %>
 
           <div class="form-group">
@@ -155,7 +155,7 @@
       <div class="card">
         <div class="card-header"> 1. KYC Details </div>
         <div class="card-body">
-  
+
           <%= custom_form_fields(investor_kyc, form) %>
 
           <%# = render "layouts/multi_upload", form: form, title: "Documents",
@@ -171,9 +171,16 @@
             <%= form.text_area :comments, class: "form-control"  %>
           </div>
 
+          <%if investor_kyc.id.blank?%>
+          <div class="form-group">
+            <%= form.label :send_kyc_form_to_user, "Send Notification to User to Update KYC"%>
+            <%= form.check_box :send_kyc_form_to_user, class: "form-control form-checkbox"  %>
+          </div>
+          <%end%>
+
           <div class="form-group">
             <%= form.submit "Save", {class: "btn btn-outline-primary btn-lg", value: "Save"}%>
-            <%= form.submit "Save & Upload Documents", {class: "btn btn-outline-primary btn-lg", value: "Save & Upload Documents"}%>            
+            <%= form.submit "Save & Upload Documents", {class: "btn btn-outline-primary btn-lg", value: "Save & Upload Documents"}%>
           </div>
 
         </div>

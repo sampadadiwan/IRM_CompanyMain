@@ -16,6 +16,37 @@ Scenario Outline: Create new investor
   	|  	        |entity_type=Company  |name=Sequoia |Investor was successfully created|
     |  	        |entity_type=Company  |name=Bearing |Investor was successfully created|
 
+Scenario Outline: Send KYC notification
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the investor page
+  When I create a new investor "<investor>"
+  Then I should see the "<msg>"
+  And an investor should be created
+  And an investor entity should be created
+  And I should see the investor details on the details page
+  And I can send KYC reminder to approved users
+  Then Notifications are created for KYC Reminders
+
+  Examples:
+    |user	      |entity               |investor     |msg	|
+    |  	        |entity_type=Company  |name=Valo |Investor was successfully created|
+
+Scenario Outline: Send KYC notification error
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the investor page
+  When I create a new investor "<investor>"
+  Then I should see the "<msg>"
+  And an investor should be created
+  And an investor entity should be created
+  And I should see the investor details on the details page
+  And I cannot send KYC reminder as no approved users are present
+
+  Examples:
+    |user	      |entity               |investor     |msg	|
+    |  	        |entity_type=Company  |name=Radiant |Investor was successfully created|
+
 
 Scenario Outline: Create new investor from exiting entity
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -30,8 +61,8 @@ Scenario Outline: Create new investor from exiting entity
 
   Examples:
   	|user	      |entity               |investor         |msg	|
-  	|  	        |entity_type=Company  |name=Accel       |Investor was successfully created|
-    |  	        |entity_type=Company  |name=Bearing     |Investor was successfully created|
+  	|  	        |entity_type=Company  |name=Accelo       |Investor was successfully created|
+    |  	        |entity_type=Company  |name=Bearings     |Investor was successfully created|
 
 
 Scenario Outline: Import investor access
@@ -87,6 +118,6 @@ Scenario Outline: Create investor kyc
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   And Given Entity has ckyc_kra_enabled set to true
-  And I create a new InvestorKyc with pan "ABCD1234E"
+  And I create a new InvestorKyc with pan "ABCD9876F"
   Then I should see ckyc and kra data comparison page
   Then I select one and see the edit page and save

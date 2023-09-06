@@ -4,7 +4,11 @@ class InvestorKycDecorator < ApplicationDecorator
   end
 
   def full_name
-    h.link_to object.full_name, h.investor_kyc_path(id: object.id)
+    if object.full_name.blank?
+      h.link_to "", h.investor_kyc_path(id: object.id)
+    else
+      h.link_to object.full_name, h.investor_kyc_path(id: object.id)
+    end
   end
 
   def dt_actions

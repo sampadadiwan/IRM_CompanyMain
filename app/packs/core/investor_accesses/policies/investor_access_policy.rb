@@ -35,8 +35,4 @@ class InvestorAccessPolicy < ApplicationPolicy
   def destroy?
     create? || super_user?
   end
-
-  def notify_kyc_required?
-    update? && record.approved && record.entity.enable_kycs
-  end
 end

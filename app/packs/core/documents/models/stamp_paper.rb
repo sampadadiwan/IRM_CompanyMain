@@ -10,7 +10,7 @@ class StampPaper < ApplicationRecord
 
   validate :tags_format
   def tags_format
-    all_tags = tags.split(',').map(&:strip)
+    all_tags = tags&.split(',')&.map(&:strip)
     if tags.present?
       if all_tags.size == all_tags.uniq.size
         errors.add(:tags, "cannot be repeated") unless all_tags.map { |tag| tag.split(':').first } == all_tags.map { |tag| tag.split(':').first }.uniq

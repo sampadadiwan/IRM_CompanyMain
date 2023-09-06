@@ -1,5 +1,5 @@
 class InvestorAccessesController < ApplicationController
-  before_action :set_investor_access, only: %i[show edit update destroy approve notify_kyc_required]
+  before_action :set_investor_access, only: %i[show edit update destroy approve]
   after_action :verify_authorized, except: %i[index search]
 
   # GET /investor_accesses or /investor_accesses.json
@@ -72,14 +72,6 @@ class InvestorAccessesController < ApplicationController
       end
       format.html { redirect_to investor_access_path(@investor_access), notice: "Investor access was successfully approved." }
       format.json { @investor_access.to_json }
-    end
-  end
-
-  def notify_kyc_required
-    @investor_access.notify_kyc_required
-    respond_to do |format|
-      format.html { redirect_to investor_access_path(@investor_access), notice: "Investor was sent a notification to complete KYC." }
-      format.json { render :show, status: :ok, location: @investor_access }
     end
   end
 

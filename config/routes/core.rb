@@ -23,6 +23,8 @@ end
 resources :investor_kycs do
   get 'search', on: :collection
   put 'toggle_verified', on: :member
+  get 'send_kyc_reminder', on: :member
+  get 'send_kyc_reminder_to_all', on: :collection
   put 'generate_new_aml_report', on: :member
   post 'compare_kyc_datas', on: :collection
   put 'assign_kyc_data', on: :member
@@ -59,7 +61,6 @@ end
 resources :investor_accesses do
   get 'search', on: :collection
   patch 'approve', on: :member
-  patch 'notify_kyc_required', on: :member
   post 'request_access', on: :collection
   post 'upload', on: :collection
 end

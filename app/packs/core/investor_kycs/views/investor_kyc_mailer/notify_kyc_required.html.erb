@@ -1,0 +1,9 @@
+<p>Dear <%= @investor_kyc.full_name.present? ? @investor_kyc.full_name : "User" %></p>
+
+<p>
+
+    Kindly add / update your KYC details by clicking on the button below.
+
+    <p class="btn btn-outline-primary"><%= link_to  "Login to Access", edit_investor_kyc_url(@investor_kyc) %></p>
+
+</p>

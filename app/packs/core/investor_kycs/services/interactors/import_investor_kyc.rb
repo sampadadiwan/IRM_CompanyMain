@@ -2,7 +2,7 @@ class ImportInvestorKyc < ImportUtil
   include Interactor
 
   STANDARD_HEADERS = ["Investor", "Full Name", "PAN", "Address",
-                      "Bank Account", "IFSC Code", "Verified", "Update Only"].freeze
+                      "Bank Account", "IFSC Code", "Verified", "Update Only", "Send Kyc Form To User"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -42,7 +42,8 @@ class ImportInvestorKyc < ImportUtil
                                    address: user_data["Address"]&.strip,
                                    bank_account_number: user_data["Bank Account"]&.to_s&.strip,
                                    ifsc_code: user_data["IFSC Code"]&.strip,
-                                   verified: user_data["Verified"]&.strip == "Yes")
+                                   verified: user_data["Verified"]&.strip == "Yes",
+                                   send_kyc_form_to_user: user_data["Send Kyc Form To User"]&.strip == "Yes")
 
     setup_custom_fields(user_data, investor_kyc, custom_field_headers)
 

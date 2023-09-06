@@ -110,17 +110,4 @@ class InvestorAccess < ApplicationRecord
   def send_notification_if_changed
     send_notification if id.present? && saved_change_to_approved?
   end
-
-  def notify_kyc_required(reminder: false)
-    if URI::MailTo::EMAIL_REGEXP.match?(email)
-      if reminder
-        msg = "This is a reminder to kindly add / update your KYC details by clicking on the button below."
-        InvestorAccessNotification.with(entity_id:, investor_access: self, email_method: :kyc_required_reminder, msg:, reminder: true).deliver_later(user)
-
-      elsif URI::MailTo::EMAIL_REGEXP.match?(email)
-        msg = "Kindly add / update your KYC details by clicking on the button below."
-        InvestorAccessNotification.with(entity_id:, investor_access: self, email_method: :notify_kyc_required, msg:, reminder: false).deliver_later(user)
-      end
-    end
-  end
 end

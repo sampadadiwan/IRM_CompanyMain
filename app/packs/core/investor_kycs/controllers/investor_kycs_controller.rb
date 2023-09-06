@@ -1,7 +1,7 @@
 class InvestorKycsController < ApplicationController
-  after_action :verify_policy_scoped, only: [:index]
+  after_action :verify_policy_scoped, only: [:index] # add send_reminder_to_all?
 
-  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report]
+  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder]
   after_action :verify_authorized, except: %i[index search generate_all_docs]
 
   # GET /investor_kycs or /investor_kycs.json
@@ -59,7 +59,6 @@ class InvestorKycsController < ApplicationController
   # POST /investor_kycs or /investor_kycs.json
   def create
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
-    @investor_kyc.user_id = current_user.id if current_user
     authorize(@investor_kyc)
     setup_doc_user(@investor_kyc)
 
@@ -74,9 +73,30 @@ class InvestorKycsController < ApplicationController
     end
   end
 
+  def send_kyc_reminder
+    if @investor_kyc.investor.approved_users.present?
+      @investor_kyc.send_kyc_form(reminder: true)
+      msg = "KYC Reminder sent successfully."
+      redirect_to investor_kyc_url(@investor_kyc), notice: msg
+    else
+      msg = "KYC Reminder could not be sent as no user has been assigned to the investor."
+      redirect_to investor_kyc_url(@investor_kyc), alert: msg
+    end
+  end
+
+  def send_kyc_reminder_to_all
+    entity_id = current_user.entity_id
+    @investor_kycs = policy_scope(InvestorKyc)
+    authorize(InvestorKyc)
+
+    @investor_kycs.where(entity_id:, verified: false).each do |kyc|
+      kyc.send_kyc_form(reminder: true)
+    end
+    redirect_to investor_kycs_url, notice: "KYC Reminder sent successfully."
+  end
+
   def compare_kyc_datas
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
-    @investor_kyc.user_id = current_user.id if current_user
     authorize(@investor_kyc)
     setup_doc_user(@investor_kyc)
     respond_to do |format|
@@ -196,7 +216,7 @@ class InvestorKycsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_kyc_params
-    params.require(:investor_kyc).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :video, :phone, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:investor_kyc).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :video, :phone, :form_type_id, :send_kyc_form_to_user, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 
   def commit_param

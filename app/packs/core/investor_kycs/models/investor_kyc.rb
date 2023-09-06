@@ -47,8 +47,21 @@ class InvestorKyc < ApplicationRecord
            :call_amount_cents, :distribution_amount_cents,
            with_currency: ->(i) { i.entity.currency }
 
-  attr_accessor :user_id
-  attr_accessor :kyc_verified
+  attr_accessor :kyc_verified, :send_kyc_form_to_user
+
+  after_commit :send_kyc_form, if: ->(inv_kyc) { inv_kyc.send_kyc_form_to_user.present? && inv_kyc.send_kyc_form_to_user == "1" }
+
+  def send_kyc_form(reminder: false)
+    email_method = :notify_kyc_required
+    msg = "Kindly add / update your KYC details by clicking on the button below"
+    if reminder
+      email_method = :kyc_required_reminder
+      msg = "This is a reminder to kindly add / update your KYC details by clicking on the button below."
+    end
+    investor.approved_users.each do |user|
+      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method:, msg:, user_id: user.id).deliver_later(user)
+    end
+  end
 
   before_save :set_investor_name
   def set_investor_name
@@ -103,7 +116,7 @@ class InvestorKyc < ApplicationRecord
       email_method = :notify_kyc_verified
     end
     users.each do |user|
-      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method:, msg:).deliver_later(user)
+      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method:, msg:, user_id: user.id).deliver_later(user)
     end
   end
 
