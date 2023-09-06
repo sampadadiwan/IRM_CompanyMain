@@ -6,16 +6,14 @@
     <% 
       # Get the folder
       folder = Folder.find(params[:folder_id]) 
-      # Shorten the path - some folders are too long to display
-      path = last_folders_path(folder.full_path, 4)
       # link for users or just path for investors
-      link = (folder.entity_id == current_user.entity_id) ? link_to(path, folder) : path 
+      link = (folder.entity_id == current_user.entity_id) ? link_to(folder.name, folder) : folder.name 
     %>
-    <span class="mb-0 text-gray-800">
+    <span class="mb-0 text-gray-800 hideMobP">
       Documents: <%= link %>
     </span>
   <% else %>
-    <h4 class="mb-0 text-gray-800">
+    <h4 class="mb-0 text-gray-800  hideMobP">
       Documents
     </h4>
   <% end %>
@@ -33,7 +31,7 @@
 
   <span>
     <%= link_to "Download Folder", download_folder_path(id: params[:folder_id]), 
-        class: "btn btn-sm btn-outline-success", data: {action: "click->confirm#popup"} if params[:folder_id].present? && policy(@folder).download? %>
+        class: "btn btn-sm btn-outline-success hideMobP", data: {action: "click->confirm#popup"} if params[:folder_id].present? && policy(@folder).download? %>
 
     <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
         "folder[parent_id]": @folder.id), 
@@ -50,7 +48,7 @@
             "import_upload[owner_type]": "Folder", 
             "import_upload[import_type]": "Documents", 
             "sample_upload": "DOCS_SAMPLE"), 
-            { class: "btn btn-sm btn-outline-primary"} if params[:folder_id].present? && policy(@folder).update? %> 
+            { class: "btn btn-sm btn-outline-primary hideMobP"} if params[:folder_id].present? && policy(@folder).update? %> 
             
     <% 
       owner ||= nil 
