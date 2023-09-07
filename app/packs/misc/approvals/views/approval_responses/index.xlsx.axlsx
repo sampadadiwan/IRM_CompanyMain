@@ -23,7 +23,7 @@ wb.add_worksheet(name: "ApprovalResponses") do |sheet|
       emp = o.investor.investor_entity.employees.first
       full_name = emp&.full_name
       email = emp&.email
-      phone  = emp&.phone
+      phone = emp&.phone
     end
 
     sheet.add_row([investor_name, category, tag_list, full_name, email, phone, o.status, updated_at] + custom_field_values)

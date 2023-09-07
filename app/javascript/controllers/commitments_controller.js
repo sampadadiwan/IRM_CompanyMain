@@ -13,7 +13,6 @@ export default class extends ServerDatatableController {
     {"data": "percentage"},
     {"data": "call_amount"},
     {"data": "collected_amount"},
-    {"data": "pending_amount"},          
     {"data": "distribution_amount"},          
     {"data": "dt_actions"}
   ];
@@ -29,7 +28,6 @@ export default class extends ServerDatatableController {
     {"data": "percentage"},
     {"data": "call_amount"},
     {"data": "collected_amount"},
-    {"data": "pending_amount"},          
     {"data": "distribution_amount"},          
     {"data": "dt_actions"}
   ];
@@ -44,7 +42,6 @@ export default class extends ServerDatatableController {
     {"data": "percentage"},
     {"data": "call_amount"},
     {"data": "collected_amount"},  
-    {"data": "pending_amount"},          
     {"data": "distribution_amount"},          
     {"data": "document_names"},
     {"data": "dt_actions"}

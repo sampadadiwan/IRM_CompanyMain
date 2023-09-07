@@ -1,84 +1,67 @@
-            
-<% fund ||= nil; cols ||= params[:cols] %>        
-<% data_source ||= capital_commitments_path(params, format: :json, all: true) %>    
-<% lazy_load_data ||= false %>
+<% fund ||= nil; cols ||= params[:cols] %>
 
+<% data_source ||= capital_commitments_path(params, format: :json, all: true) %>
+<% lazy_load_data ||= false %>
 <%= render "/capital_commitments/index_header", fund: fund %>
 
 <div class="table-responsive" data-controller="commitments" data-commitments-lazy-load-data-value=<%= lazy_load_data %> data-commitments-table-name-value="#capital_commitments">
+  <% if lazy_load_data %>
+    <a class="load_data_link" data-action="click->commitments#loadData"><span>Load Data</span></a>
+  <% end %>
+  <% col_set = column_set(current_user, cols) %>
+  <%= custom_columns(current_user, cols) %>
 
-    <% if lazy_load_data %>
-        <a class="load_data_link" data-action="click->commitments#loadData"><span>Load Data</span></a>
-    <% end %>
-
-    <% col_set = column_set(current_user, cols) %>
-    <%= custom_columns(current_user, cols) %>
-    
-    <table id="capital_commitments" class="table table-bordered dataTable action_table" 
+  <table id="capital_commitments" class="table table-bordered dataTable action_table" 
         data-source="<%= data_source %>" >
-
-        <thead>
-            <tr>
-                <% if col_set == "all" %>
-                <th>
-                    Fund
-                </th>
-                <% end %>
-                <th>
-                    Type
-                </th>
-                <th>
-                    Folio No
-                </th>
-                <th>
-                    Investor
-                </th>
-                <th>
-                    Full Name
-                </th>
-                <th>
-                    Unit Type
-                </th>
-                <th>
-                    Committed
-                </th>
-                <th>
-                    Percentage
-                </th>
-                
-                <th>
-                    Called
-                </th>
-
-
-                <th>
-                    Collected
-                </th>
-                
-                <th>
-                    Pending
-                </th>
-
-                <th>
-                    Distributed
-                </th>
-                
-                
-                <% if params[:show_docs].present? %>
-                <input id="show_docs" value="true" hidden>
-                <th>
-                    Documents
-                </th>
-                <% end %>
-
-                <th>
-                </th>
-            </tr>
-        </thead>
-
-        <tbody>
-            
-        </tbody>
-    </table>
-
+    <thead>
+      <tr>
+        <% if col_set == "all" %>
+          <th>
+            Fund
+          </th>
+        <% end %>
+        <th>
+          Type
+        </th>
+        <th>
+          Folio No
+        </th>
+        <th>
+          Investor
+        </th>
+        <th>
+          Full Name
+        </th>
+        <th>
+          Unit Type
+        </th>
+        <th>
+          Committed
+        </th>
+        <th>
+          Percentage
+        </th>
+        <th>
+          Called
+        </th>
+        <th>
+          Collected
+        </th>
+        <th>
+          Distributed
+        </th>
+        <% if params[:show_docs].present? %>
+          <input id="show_docs" value="true" hidden>
+          <th>
+            Documents
+          </th>
+        <% end %>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+  
 </div>
