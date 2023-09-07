@@ -10,15 +10,27 @@
     <%= l approval.due_date %>
   </td>
 
+  <td class="responses_count hideMobP">
   <% if show_stats %>
-    <td class="approved_count hideMobP">
-      <%= approval.approved_count %>
-    </td>
-    <td class="rejected_count hideMobP">
-      <%= approval.rejected_count %>
-    </td>
-    <td class="pending_count hideMobP">
-      <%= approval.pending_count %>
+    <div class="container">
+      <%
+        colors = ["badge-warning", "badge-success", "badge-secondary", "badge-info", "badge-primary", "badge-light", "badge-dark"].freeze
+        # in case they have added a pending status with a different case, we dont want to duplicate it
+        statuses = approval.response_status&.gsub(/pending/i, "Pending")&.split(',') || []
+        statuses.delete("Pending")
+        # we want Pending at a fixed position so the colors can be consistent in the table
+        statuses.insert(0, "Pending")
+    %>
+    <%statuses&.each do |status|%>
+        <div class="row">
+          <%
+            response_count = approval.approval_responses.where(status: status).count
+            idx = statuses&.index(status) || 0
+          %>
+          <span class="badge <%=colors[idx]%>"> <%= status %> : <%= response_count %> </span>
+        </div>
+      <% end %>
+    </div>
     </td>
   <% end %>
 

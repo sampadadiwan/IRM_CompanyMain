@@ -24,21 +24,15 @@
 
         <% if show_stats %>
           <th class="hideMobP">
-            Approved 
-          </th>
-          <th class="hideMobP">
-            Rejected 
-          </th>
-          <th class="hideMobP">
-            Pending 
+            Responses Status
           </th>
         <% end %>
-    
+
         <th>
         </th>
       </tr>
     </thead>
-    
+
     <tbody>
     <% @approvals.each do |approval| %>
       <%= render approval, show_stats: %>
