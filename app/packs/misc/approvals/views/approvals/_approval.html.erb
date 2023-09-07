@@ -14,18 +14,13 @@
   <% if show_stats %>
     <div class="container">
       <%
-        colors = ["badge-warning", "badge-success", "badge-secondary", "badge-info", "badge-primary", "badge-light", "badge-dark"].freeze
-        # in case they have added a pending status with a different case, we dont want to duplicate it
-        statuses = approval.response_status&.gsub(/pending/i, "Pending")&.split(',') || []
-        statuses.delete("Pending")
-        # we want Pending at a fixed position so the colors can be consistent in the table
-        statuses.insert(0, "Pending")
+        colors = ["badge-success", "badge-warning", "badge-secondary", "badge-info", "badge-primary", "badge-light", "badge-dark"].freeze
     %>
-    <%statuses&.each do |status|%>
+    <%approval.response_status&.split(',')&.each do |status| %>
         <div class="row">
           <%
             response_count = approval.approval_responses.where(status: status).count
-            idx = statuses&.index(status) || 0
+            idx = approval.response_status&.split(',')&.index(status) || 0
           %>
           <span class="badge <%=colors[idx]%>"> <%= status %> : <%= response_count %> </span>
         </div>
