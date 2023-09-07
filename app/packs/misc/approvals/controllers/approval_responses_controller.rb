@@ -3,7 +3,7 @@ class ApprovalResponsesController < ApplicationController
 
   # GET /approval_responses or /approval_responses.json
   def index
-    @approval_responses = policy_scope(ApprovalResponse).includes(:approval, :entity, :response_user)
+    @approval_responses = policy_scope(ApprovalResponse).includes(:approval, :entity, :response_user, :investor)
     @approval = nil
     if params[:approval_id].present?
       @approval = Approval.find(params[:approval_id])

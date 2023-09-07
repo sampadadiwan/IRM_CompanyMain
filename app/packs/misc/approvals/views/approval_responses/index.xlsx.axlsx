@@ -15,6 +15,15 @@ wb.add_worksheet(name: "ApprovalResponses") do |sheet|
     tag_list = o.investor.tag_list
     updated_at = l o.updated_at
 
-    sheet.add_row([investor_name, category, tag_list, o.response_user&.full_name, o.response_user&.email, o.response_user&.phone, o.status, updated_at] + custom_field_values)
+    if o.response_user
+      full_name = o.response_user.full_name
+      email  = o.response_user.emails
+    else
+      emp = o.investor.investor_entity.employees.first
+      full_name = emp&.full_name
+      email = emp&.full_name
+    end
+
+    sheet.add_row([investor_name, category, tag_list, full_name, email, o.response_user&.phone, o.status, updated_at] + custom_field_values)
   end
 end
