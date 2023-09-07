@@ -47,10 +47,7 @@
     # expect(page).to have_content(@approval.agreements_reference)
     within("#approval_#{@approval.id}") do
         within(".responses_count") do
-          statuses = @approval_response&.response_status&.gsub(/pending/i, "Pending")&.split(',') || []
-          statuses << "Pending"
-          statuses.uniq!
-          statuses.each do |status|
+          @approval&.response_status&.split(',')&.each do |status|
             expect(page).to have_content(status + " : " + @approval.approval_responses.where(status: status).count.to_s)
           end
         end
