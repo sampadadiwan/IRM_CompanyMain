@@ -46,14 +46,13 @@
     expect(page).to have_content(@approval.due_date.strftime("%d/%m/%Y"))
     # expect(page).to have_content(@approval.agreements_reference)
     within("#approval_#{@approval.id}") do
-        within(".approved_count") do
-            expect(page).to have_content(@approval.approved_count)
-        end
-        within(".pending_count") do
-            expect(page).to have_content(@approval.pending_count)
-        end
-        within(".rejected_count") do
-            expect(page).to have_content(@approval.rejected_count)
+        within(".responses_count") do
+          statuses = @approval_response&.response_status&.gsub(/pending/i, "Pending")&.split(',') || []
+          statuses << "Pending"
+          statuses.uniq!
+          statuses.each do |status|
+            expect(page).to have_content(status + " : " + @approval.approval_responses.where(status: status).count.to_s)
+          end
         end
     end
   end
@@ -183,4 +182,3 @@ When('I select {string} for the approval response') do |response|
   select(response, from: "approval_response_status")
   click_on("Submit")
 end
-
