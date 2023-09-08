@@ -1,10 +1,15 @@
 class ApprovalNotification < BaseNotification
   # Add your delivery methods
-  deliver_by :email, mailer: "ApprovalMailer", method: :email_method, format: :email_data
+  deliver_by :email, mailer: "ApprovalMailer", method: :email_method, format: :email_data, delay: :email_delay
 
   # Add required params
   param :approval_response
   param :email_method
+
+  def email_delay
+    # Randomize the delay so we dont flood aws SES
+    rand(1..300).seconds
+  end
 
   def email_method
     params[:email_method]
