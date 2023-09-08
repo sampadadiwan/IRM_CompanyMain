@@ -1,0 +1,17 @@
+wb = xlsx_package.workbook
+
+
+wb.add_worksheet(name: "InvestorAccesses") do |sheet|
+  # Create the header row
+  sheet.add_row(["Investor", "User", "Type", "Email", "Phone", "WhatsApp", "Approved", "Updated On"])
+
+  # Create entries for each item
+  @investor_accesses.each do |o|
+
+    investor_name = o.investor.investor_name
+    updated_at = l o.updated_at
+    type = o.is_investor_advisor ? "Advisor" : "Employee"
+
+    sheet.add_row([investor_name, o.user.full_name, type, o.email, o.phone, o.whatsapp_enabled, o.approved, updated_at])
+  end
+end

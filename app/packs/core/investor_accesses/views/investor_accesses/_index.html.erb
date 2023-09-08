@@ -8,6 +8,9 @@
             new_investor_access_path("investor_access[investor_id]": investor.id, 
                 "investor_access[entity_id]": current_user.entity_id), 
                 { data: { turbo_frame: 'new_investor_access' }, class: "btn btn-outline-primary"} if investor  %> 
+        
+        <%= link_to "Download #{label}", investor_accesses_path(all: true, format: :xlsx) , 
+                { class: "btn btn-outline-primary", id: "download_stakeholder_users"} unless investor %>
 
         <%= link_to "Upload #{label}", 
                 new_import_upload_path("import_upload[owner_id]": investor.id, 
