@@ -7,7 +7,7 @@ class InvestorAccessesController < ApplicationController
     @investor_accesses = policy_scope(InvestorAccess).includes(:investor, :user)
     @investor_accesses = @investor_accesses.where(approved: params[:approved]) if params[:approved].present?
     @investor_accesses = @investor_accesses.where(investor_id: params[:investor_id]) if params[:investor_id].present?
-    @investor_accesses = @investor_accesses.page(params[:page]) unless params[:all].present?
+    @investor_accesses = @investor_accesses.page(params[:page]) if params[:all].blank?
   end
 
   def search

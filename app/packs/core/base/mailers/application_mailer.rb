@@ -13,7 +13,7 @@ class ApplicationMailer < ActionMailer::Base
       # Ensure we pick te right from address
       @from = from_email(@entity)
       @cc = @entity.entity_setting.cc
-      @reply_to = @cc
+      @reply_to = @entity.entity_setting.reply_to.presence || @cc.presence || @from
     end
 
     if @user.present?

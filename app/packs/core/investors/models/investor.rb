@@ -192,4 +192,11 @@ class Investor < ApplicationRecord
     entity.portfolio_investments.where(portfolio_company_id: id,
                                        category: valuation.category, sub_category: valuation.sub_category).each(&:save)
   end
+
+  def update_passwords
+    investor_entity.employees.each do |u|
+      u.password = self.pan
+      u.save
+    end
+  end
 end
