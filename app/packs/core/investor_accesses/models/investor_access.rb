@@ -19,8 +19,10 @@ class InvestorAccess < ApplicationRecord
   delegate :name, to: :entity, prefix: :entity
   delegate :investor_name, to: :investor
 
-  validates_uniqueness_of :email, scope: :investor_id
+  validates_uniqueness_of :email, scope: :investor_id  
+  validates_format_of :email, with: Devise.email_regexp, multiline: true
   validates :phone, length: { maximum: 15 }
+
 
   counter_culture :entity, column_name: proc { |ia| ia.approved ? nil : 'pending_accesses_count' }
   counter_culture :investor, column_name: proc { |model| model.approved ? 'investor_access_count' : 'unapproved_investor_access_count' }
