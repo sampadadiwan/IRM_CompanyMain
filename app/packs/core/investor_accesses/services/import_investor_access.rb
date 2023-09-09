@@ -36,14 +36,9 @@ class ImportInvestorAccess < ImportUtil
 
     if user_data['Investor'].present?
       investor = import_upload.entity.investors.find_by(investor_name: user_data['Investor'])
-      return false unless investor
+      raise "Investor #{user_data['Investor']} not found" unless investor
     else
-      investor = import_upload.owner
-    end
-
-    if InvestorAccess.exists?(email: user_data['Email'], investor_id: investor.id)
-      Rails.logger.debug { "InvestorAccess with email #{user_data['Email']} already exists for investor #{investor.id}" }
-      return false
+      raise "Investor name is missing"
     end
 
     Rails.logger.debug user_data
