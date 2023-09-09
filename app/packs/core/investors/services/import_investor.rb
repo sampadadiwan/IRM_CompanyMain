@@ -28,7 +28,7 @@ class ImportInvestor < ImportUtil
     if investor.present?
       Rails.logger.debug { "Investor with name investor_name already exists for entity #{import_upload.entity_id}" }
 
-      raise "Investor with already exists." if user_data["Fund"].blank? 
+      raise "Investor with already exists." if user_data["Fund"].blank?
     else
 
       Rails.logger.debug user_data
