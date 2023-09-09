@@ -24,10 +24,11 @@ class ImportInvestor < ImportUtil
     # Ensure Force Different Name is not part of custom fields
     custom_field_headers -= ["Force Different Name"]
 
-    investor = Investor.where(investor_name:, entity_id: import_upload.entity_id).first
+    investor = Investor.where(investor_name:, pan:, entity_id: import_upload.entity_id).first
     if investor.present?
       Rails.logger.debug { "Investor with name investor_name already exists for entity #{import_upload.entity_id}" }
 
+      raise "Investor with already exists." if user_data["Fund"].blank? 
     else
 
       Rails.logger.debug user_data

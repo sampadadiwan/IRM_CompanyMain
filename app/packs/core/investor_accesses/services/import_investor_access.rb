@@ -36,7 +36,7 @@ class ImportInvestorAccess < ImportUtil
 
     if user_data['Investor'].present?
       investor = import_upload.entity.investors.find_by(investor_name: user_data['Investor'])
-      raise "Investor #{user_data['Investor']} not found" unless investor
+      raise "Investor not found" unless investor
     else
       raise "Investor name is missing"
     end
