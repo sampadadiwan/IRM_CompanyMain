@@ -1,6 +1,6 @@
 class BaseNotification < Noticed::Base
   deliver_by :database, format: :to_database
-  deliver_by :whats_app, class: "DeliveryMethods::WhatsApp"
+  deliver_by :whats_app, class: "DeliveryMethods::WhatsApp", if: :whatsapp_enabled?
   deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
 
   param :entity_id
@@ -20,6 +20,10 @@ class BaseNotification < Noticed::Base
 
   def email_method
     params[:email_method]
+  end
+
+  def whatsapp_enabled?
+    recipient.whatsapp_enabled && recipient.phone.present?
   end
 
   def view_path
