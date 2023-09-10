@@ -200,4 +200,28 @@ class Entity < ApplicationRecord
     secondary_sales.where("secondary_sales.start_date <= ? and secondary_sales.end_date >= ?",
                           Time.zone.today, Time.zone.today).last
   end
+
+  def update_passwords_to_pan
+    no_pans = []
+    Rails.logger.debug { "Updating passwords for #{name}" }
+
+    investors.each do |investor|
+      investor.investor_entity.employees.each do |u|
+        if investor.pan
+          if u.sign_in_count.positive?
+            Rails.logger.debug { "Not updating password for #{u.email} as they have already logged in" }
+          else
+            Rails.logger.debug { "Updating password for #{u.email}" }
+            u.password = investor.pan.downcase
+            u.save
+          end
+        else
+          Rails.logger.debug { "No PAN for #{investor.investor_name}" }
+          no_pans << investor_entity.id
+        end
+      end
+    end
+
+    no_pans
+  end
 end
