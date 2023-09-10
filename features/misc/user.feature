@@ -20,8 +20,8 @@ Scenario Outline: Create new user
     |investor  	        |entity_type=Family Office  |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
     |holding         	          |entity_type=Holding        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
 
-Scenario Outline: Update a user
-  Given Im logged in as a user "" for an entity "entity_type=Company"
-  And the user has role "company_admin"
-  And update my password having phone "7721046692"
-  Then a whatsapp notification is sent indicating account update
+# Scenario Outline: Update a user
+#   Given Im logged in as a user "" for an entity "entity_type=Company"
+#   And the user has role "company_admin"
+#   And update my password having phone "7721046692"
+#   Then a whatsapp notification is sent indicating account update

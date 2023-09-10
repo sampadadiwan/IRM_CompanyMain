@@ -191,5 +191,4 @@ class User < ApplicationRecord
   def show_all_cols?
     entity_type == "Group Company"
   end
-
 end
