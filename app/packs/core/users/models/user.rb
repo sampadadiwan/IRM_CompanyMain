@@ -66,8 +66,6 @@ class User < ApplicationRecord
   def confirm_user
     confirm unless confirmed?
   end
-  # using before_save as after_save,after_commit,after_update all returned false for encrypted_password_changed?
-  before_save :send_password_update_notification, if: :password_changed?
 
   def password_changed?
     encrypted_password_changed? && persisted?
@@ -194,11 +192,4 @@ class User < ApplicationRecord
     entity_type == "Group Company"
   end
 
-  private
-
-  def send_password_update_notification
-    WhatsappNotifier.new.perform({ template_name: ENV.fetch('ACC_UPDATE_NOTI_TEMPLATE') }.stringify_keys, self)
-  rescue StandardError => e # added rescue because if error is raised in before_save callback then the record wont get saved
-    Rails.logger.error "Error in sending whatsapp notification, #{e}"
-  end
 end
