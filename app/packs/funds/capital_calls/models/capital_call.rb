@@ -8,7 +8,7 @@ class CapitalCall < ApplicationRecord
   include ForInvestor
 
   FEE_TYPES = ["Fees Part Of Capital", "Other Fees"].freeze
-  CALL_BASIS = ["Percentage of Commitment", "Amount allocated on Investable Capital", "Upload"].freeze
+  CALL_BASIS = ["Percentage of Commitment", "Upload", "Investable Capital Percentage"].freeze
 
   enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
   scope :pool, -> { where(commitment_type: 'Pool') }
@@ -113,5 +113,13 @@ class CapitalCall < ApplicationRecord
 
   def fee_account_entry_names
     fund.account_entries.where("name like '%Fee%' or name like '%Expense%'").pluck(:name).uniq
+  end
+
+  def call_basis_list
+    if entity.entity_setting.call_basis.present?
+      CALL_BASIS + entity.entity_setting.call_basis.split(",")
+    else
+      CALL_BASIS
+    end
   end
 end

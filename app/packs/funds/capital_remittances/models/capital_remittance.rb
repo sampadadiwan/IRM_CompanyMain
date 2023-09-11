@@ -7,6 +7,7 @@ class CapitalRemittance < ApplicationRecord
   include WithCustomField
   include WithExchangeRate
   include CapitalRemittanceFees
+  include CapitalRemittanceCallBasis
 
   update_index('capital_remittance') { self }
 
@@ -140,52 +141,21 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def calc_call_amount_cents
-    if capital_call.call_basis == "Upload"
-      # Also for some calls, fees will be included so we convert to folio_currency
-      self.capital_fee_cents = folio_capital_fee_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_capital_fee_cents, payment_date) : 0
+    # Convert between folio and fund currencies
+    convert_fees
 
-      self.other_fee_cents = folio_other_fee_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_other_fee_cents, payment_date) : 0
-    else
-      # Also for some calls, fees will be included so we convert to folio_currency
-      self.folio_capital_fee_cents = capital_fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, capital_fee_cents, payment_date) : 0
-
-      self.folio_other_fee_cents = other_fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, other_fee_cents, payment_date) : 0
-    end
-
-    # Get the call amount in the folio_currency
+    # Case where we allocate based on percentage of commitment
     if capital_call.call_basis == "Percentage of Commitment" && call_amount_cents.zero?
+      call_basis_percentage_commitment
 
-      self.percentage = capital_call.percentage_called
-      self.folio_call_amount_cents = percentage * capital_commitment.folio_committed_amount_cents / 100.0
-
-      # Now compute the call amount in the fund currency.
-      self.computed_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, payment_date)
-
-      # Now add the capital fees
-      self.folio_call_amount_cents += folio_capital_fee_cents
-      self.call_amount_cents = computed_amount_cents + capital_fee_cents
-
-    elsif capital_call.call_basis == "Amount allocated on Investable Capital" && call_amount_cents.zero?
-      # Get the IC percentage
-      self.percentage = capital_commitment.account_entries.where(name: "Investable Capital Percentage", reporting_date: ..capital_call.due_date).order(reporting_date: :desc).first&.amount_cents || 0
-
-      self.computed_amount_cents = capital_call.amount_to_be_called_cents * percentage / 100.0
-
-      self.call_amount_cents = computed_amount_cents + capital_fee_cents
-
-      # Now compute the folio call amount in the folio currency.
-      self.folio_call_amount_cents = convert_currency(fund.currency, capital_commitment.folio_currency, call_amount_cents, payment_date)
-
+    # Case where the capital remittances will be uploaded manually
     elsif capital_call.call_basis == "Upload"
-      # This is for direct upload of remittances, where the folio_call_amount includes the capital fees
-      self.folio_call_amount_cents -= folio_capital_fee_cents
+      call_basis_upload
 
-      # Now compute the call amount in the fund currency.
-      self.computed_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, payment_date)
+    # Special case where the call_basis is Investable Capital Percentage or Foreign Investable Capital Percentage
+    elsif call_amount_cents.zero?
+      call_basis_account_entry(capital_call.call_basis)
 
-      # Now add the capital fees
-      self.folio_call_amount_cents += folio_capital_fee_cents
-      self.call_amount_cents = computed_amount_cents + capital_fee_cents
     end
   end
 

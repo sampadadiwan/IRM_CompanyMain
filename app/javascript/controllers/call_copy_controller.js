@@ -34,13 +34,14 @@ export default class extends Controller {
     if ( call_basis == "Percentage of Commitment" ) {
       $("#amount_to_be_called_group").hide();
       $("#percentage_called_group").show();
-    } else if ( call_basis == "Amount allocated on Investable Capital" ) {
-      $("#amount_to_be_called_group").show();
-      $("#percentage_called_group").hide();
     } else if ( call_basis == "Upload" ) {
       $("#amount_to_be_called_group").hide();
       $("#percentage_called_group").hide();
+    } else {
+      $("#amount_to_be_called_group").show();
+      $("#percentage_called_group").hide();
     }
+
   }
 
 }

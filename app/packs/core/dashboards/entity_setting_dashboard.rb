@@ -26,7 +26,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     snapshot_frequency_months: Field::Number,
     trial: Field::BooleanEmoji,
     trial_end_date: Field::Date,
-    valuation_math: Field::String,
+    call_basis: Field::String,
     created_at: Field::DateTime,
     updated_at: Field::DateTime
   }.freeze
@@ -75,7 +75,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     last_snapshot_on
     trial
     trial_end_date
-    valuation_math
+    call_basis
     created_at
     updated_at
   ].freeze
@@ -98,7 +98,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     snapshot_frequency_months
     trial
     trial_end_date
-    valuation_math
+    call_basis
   ].freeze
 
   # COLLECTION_FILTERS

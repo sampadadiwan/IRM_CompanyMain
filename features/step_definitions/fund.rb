@@ -271,10 +271,10 @@
     select(@capital_call.fund_closes[0], from: 'capital_call_fund_closes')
     select(@capital_call.call_basis, from: 'capital_call_call_basis')
 
-    if @capital_call.call_basis == "Amount allocated on Investable Capital"
-      fill_in('capital_call_amount_to_be_called', with: @capital_call.amount_to_be_called)
-    elsif @capital_call.call_basis == "Percentage of Commitment"
+    if @capital_call.call_basis == "Percentage of Commitment"
       fill_in('capital_call_percentage_called', with: @capital_call.percentage_called)
+    elsif @capital_call.call_basis != "Upload"
+        fill_in('capital_call_amount_to_be_called', with: @capital_call.amount_to_be_called)      
     end
 
     if @fund.entity.enable_units
@@ -379,7 +379,7 @@
    Then('I should see the capital call details') do
     find(".show_details_link").click
     expect(page).to have_content(@capital_call.name)
-    expect(page).to have_content(@capital_call.percentage_called) if  @capital_call.percentage_called > 0
+    expect(page).to have_content(@capital_call.percentage_called) if  @capital_call.call_basis == "Percentage of Commitment" 
     expect(page).to have_content(money_to_currency @capital_call.amount_to_be_called) if  @capital_call.amount_to_be_called_cents > 0
 
     expect(page).to have_content(@capital_call.due_date.strftime("%d/%m/%Y"))

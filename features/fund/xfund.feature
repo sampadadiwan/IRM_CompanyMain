@@ -131,7 +131,7 @@ Scenario Outline: Create new capital call
   Examples:
   	|entity                                         |fund                |msg	| call | collected_amount |
   	|entity_type=Investment Fund;enable_funds=true  |name=SAAS Fund;currency=INR      |Fund was successfully created| percentage_called=20;call_basis=Percentage of Commitment | 2120000 |
-    |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;unit_types=Series A,Series B    |Fund was successfully created| call_basis=Amount allocated on Investable Capital;amount_to_be_called_cents=10000000 | 35500 |
+    |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;unit_types=Series A,Series B    |Fund was successfully created| call_basis=Investable Capital Percentage;amount_to_be_called_cents=10000000 | 28000 |
 
 
 Scenario Outline: Create new capital call - Upload remittances

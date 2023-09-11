@@ -1,6 +1,22 @@
 module CapitalRemittanceFees
   extend ActiveSupport::Concern
 
+  def convert_fees
+    if capital_call.call_basis == "Upload"
+      # Also for some calls, fees will be included. In uploads the fee is in folio_currency so we convert to fund_currency
+      self.capital_fee_cents = folio_capital_fee_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_capital_fee_cents, payment_date) : 0
+
+      self.other_fee_cents = folio_other_fee_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_other_fee_cents, payment_date) : 0
+    else
+      # Also for some calls, fees will be included so we convert to folio_currency
+      self.folio_capital_fee_cents = capital_fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, capital_fee_cents, payment_date) : 0
+
+      self.folio_other_fee_cents = other_fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, other_fee_cents, payment_date) : 0
+    end
+  end
+
+  # Called whenever remittance is created, to ensure that the fees is populated from the account_entries
+  # The account_entries in turn are populated either manually or via fund formulas
   def setup_call_fees
     total_capital_fees_cents = 0
     total_other_fees_cents = 0
@@ -22,6 +38,8 @@ module CapitalRemittanceFees
     self.other_fee_cents = total_other_fees_cents
   end
 
+  # Convinience method used in fund formulas. Not used directly in computed_amount
+  # DO NOT EVER DELETE THIS METHOD
   def management_fees_days(start_date, end_date)
     if capital_call.due_date <= start_date
       (end_date - start_date).to_i + 1

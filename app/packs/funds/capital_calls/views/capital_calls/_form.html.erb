@@ -39,7 +39,7 @@
 
   <div class="form-group">
     <%= form.label :call_basis %>
-    <%= form.select :call_basis, CapitalCall::CALL_BASIS, {},{class: "form-control", data: {action: "change->call-copy#call_basis_changed"}}  %>
+    <%= form.select :call_basis, capital_call.call_basis_list, {}, {class: "form-control", data: {action: "change->call-copy#call_basis_changed"}}  %>
     <small class="text-muted">Select how the remittance amounts are computed</small>
   </div>
 
