@@ -23,6 +23,10 @@ class FundPolicy < FundBasePolicy
     update?
   end
 
+  def generate_documentation?
+    update?
+  end
+
   def show?
     user.enable_funds &&
       (

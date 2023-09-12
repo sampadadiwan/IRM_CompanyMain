@@ -64,6 +64,7 @@ resources :funds do
   get 'report', on: :member
   get 'generate_fund_ratios', on: :member
   patch 'allocate', on: :member
+  patch 'generate_documentation', on: :member
   get 'allocate_form', on: :member
   get 'copy_formulas', on: :member
   get 'export', on: :member

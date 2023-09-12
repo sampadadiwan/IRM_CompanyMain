@@ -1,5 +1,5 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show edit update destroy timeline last report generate_fund_ratios allocate_form allocate copy_formulas export]
+  before_action :set_fund, only: %i[show edit update destroy timeline last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation]
 
   # GET /funds or /funds.json
   def index
@@ -80,6 +80,11 @@ class FundsController < ApplicationController
     else
       render "generate_fund_ratios"
     end
+  end
+
+  def generate_documentation
+    FundCapitalCommitmentDocJob.perform_later(@fund.id, current_user.id)
+    redirect_to fund_path(@fund), notice: "Documentation generation started, please check back in a few mins."
   end
 
   # DELETE /funds/1 or /funds/1.json

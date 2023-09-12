@@ -10,12 +10,20 @@
             <%= link_to "New Commitment", new_capital_commitment_path("capital_commitment[fund_id]": fund.id),  {class: "btn btn-outline-primary" } %>            
             
 
+            <%= button_to "Generate Documents", 
+                generate_documentation_fund_path(fund), 
+                method: :patch, class: "btn btn-outline-primary" , 
+                form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+                msg: "Generate Documents for all capital commitment from kyc and fund info. This will delete any previously generated documentation which is not signed. Proceed?"} %>
+
             <%= link_to "Upload", 
                 new_import_upload_path("import_upload[owner_id]": fund.id, 
                 "import_upload[owner_type]": "Fund", 
                 "import_upload[import_type]": "CapitalCommittment", 
                 "sample_upload": "CAPITAL_COMMITMENT_SAMPLE"), 
                 { class: "btn btn-outline-primary"}   %> 
+
+
 
         
         <% end %>
