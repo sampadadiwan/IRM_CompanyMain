@@ -2,6 +2,7 @@ class PortfolioInvestment < ApplicationRecord
   include WithCustomField
   include WithFolder
   include ForInvestor
+  include Trackable
 
   belongs_to :entity
   belongs_to :fund
@@ -188,5 +189,18 @@ class PortfolioInvestment < ApplicationRecord
 
   def self.total_investment_sold_cents(model, end_date)
     model.portfolio_investments.pool.sells.where(investment_date: ..end_date).sum(:amount_cents)
+  end
+
+  def split(stock_split_ratio)
+    # Update the quantity and cost
+    self.quantity *= stock_split_ratio
+    self.net_quantity *= stock_split_ratio
+    self.sold_quantity *= stock_split_ratio
+    save
+
+    portfolio_attributions.each do |pa|
+      pa.quantity *= stock_split_ratio
+      pa.save
+    end
   end
 end

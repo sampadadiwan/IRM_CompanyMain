@@ -1,4 +1,12 @@
 FactoryBot.define do
+  factory :stock_adjustment do
+    entity { nil }
+    portfolio_company { nil }
+    user { nil }
+    adjustment { "9.99" }
+    notes { "MyText" }
+  end
+
   factory :portfolio_cashflow do
     entity { nil }
     fund { nil }

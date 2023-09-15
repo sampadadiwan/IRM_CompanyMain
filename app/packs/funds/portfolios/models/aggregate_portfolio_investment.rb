@@ -96,4 +96,11 @@ class AggregatePortfolioInvestment < ApplicationRecord
     end
     total
   end
+
+  # This will trigger a stock split for all portfolio_investments
+  def split(stock_split_ratio)
+    portfolio_investments.each do |pi|
+      pi.split(stock_split_ratio)
+    end
+  end
 end

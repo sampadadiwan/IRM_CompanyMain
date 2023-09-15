@@ -1,4 +1,5 @@
 resources :portfolio_cashflows
+resources :stock_adjustments
 resources :scenario_investments
 
 resources :portfolio_scenarios do

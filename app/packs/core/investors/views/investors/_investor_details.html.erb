@@ -20,6 +20,10 @@
         Portfolio Income
       </a>
 
+      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#stock-adjustments-tab">
+        Stock Adjustments
+      </a>
+
       <% if current_user.enable_kpis %>
         <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#kpis-tab"
           data-action="click->tabdetails#loadData">
@@ -128,6 +132,12 @@
             <%= turbo_frame_tag "kpi_reports_list", target: "_top" do %>
             <% end %>
           </div>     
+        </div>
+
+        <div id="stock-adjustments-tab" class="tab-pane fade">
+          <div id="stock_adjustments" class="associated_entity">
+            <%= render "/stock_adjustments/index", stock_adjustments: investor.stock_adjustments, investor: %>
+          </div>
         </div>
 
       <% else %>

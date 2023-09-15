@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_09_14_154123) do
+ActiveRecord::Schema[7.0].define(version: 2023_09_15_103727) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -2023,8 +2023,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_14_154123) do
     t.string "sector", limit: 100
     t.boolean "startup", default: true
     t.string "investment_domicile", limit: 10, default: "Domestic"
+    t.datetime "deleted_at"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
+    t.index ["deleted_at"], name: "index_portfolio_investments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_portfolio_investments_on_document_folder_id"
     t.index ["entity_id"], name: "index_portfolio_investments_on_entity_id"
     t.index ["form_type_id"], name: "index_portfolio_investments_on_form_type_id"
@@ -2205,6 +2207,21 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_14_154123) do
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_stamp_papers_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_stamp_papers_on_owner"
+  end
+
+  create_table "stock_adjustments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "portfolio_company_id", null: false
+    t.bigint "user_id", null: false
+    t.decimal "adjustment", precision: 10, scale: 8, default: "0.0"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "category", limit: 10
+    t.string "sub_category", limit: 100
+    t.index ["entity_id"], name: "index_stock_adjustments_on_entity_id"
+    t.index ["portfolio_company_id"], name: "index_stock_adjustments_on_portfolio_company_id"
+    t.index ["user_id"], name: "index_stock_adjustments_on_user_id"
   end
 
   create_table "taggings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2638,6 +2655,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_14_154123) do
   add_foreign_key "signature_workflows", "documents"
   add_foreign_key "signature_workflows", "entities"
   add_foreign_key "stamp_papers", "entities"
+  add_foreign_key "stock_adjustments", "entities"
+  add_foreign_key "stock_adjustments", "investors", column: "portfolio_company_id"
+  add_foreign_key "stock_adjustments", "users"
   add_foreign_key "taggings", "tags"
   add_foreign_key "tasks", "entities"
   add_foreign_key "tasks", "form_types"

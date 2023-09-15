@@ -1,0 +1,63 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @stock_adjustment.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Portfolio Company
+    </td>
+    <td>
+      <%= link_to @stock_adjustment.portfolio_company.investor_name, investor_path(@stock_adjustment.portfolio_company, tab: "stock-adjustments-tab") %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      User
+    </td>
+    <td>
+      <%= @stock_adjustment.user.full_name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Adjustment
+    </td>
+    <td>
+      <%= @stock_adjustment.adjustment %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Category
+    </td>
+    <td>
+      <%= @stock_adjustment.category %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Sub Category
+    </td>
+    <td>
+      <%= @stock_adjustment.sub_category %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Notes
+    </td>
+    <td>
+      <%= @stock_adjustment.notes %>
+    </td>
+  </tr>
+</table>
+<div>
+  <%= link_to "Edit", edit_stock_adjustment_path(@stock_adjustment), {class: "btn btn-outline-primary"} if policy(@stock_adjustment).update? %> 
+  <%= button_to "Delete", @stock_adjustment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@stock_adjustment).destroy? %>
+</div>

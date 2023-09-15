@@ -1,0 +1,37 @@
+<% investor ||= nil %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Stock Adjustments</h1>
+  <%= link_to "New Stock Adjustment", new_stock_adjustment_path(portfolio_company_id: investor.id), {class: "btn btn-outline-primary"}  if investor %>
+</div>
+<div class="table-responsive" data-controller="datatable">
+
+  <table id="stock_adjustments" class="table table-bordered dataTable">
+
+    <thead>
+      <tr>
+        <th>
+          Portfolio Company
+        </th>
+        <th>
+          User
+        </th>
+        <th>
+          Type
+        </th>
+        <th>
+          Adjustment
+        </th>
+        <th>
+          Notes
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% stock_adjustments.each do |stock_adjustment| %>
+        <%= render stock_adjustment %>
+      <% end %>
+    </tbody>
+
+  </table>
+</div>
