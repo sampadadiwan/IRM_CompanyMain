@@ -1,3 +1,9 @@
+<% if fund_unit_setting.fund.unit_types.blank? %>
+  <div class="alert alert-danger">
+    No fund unit types defined in the fund. Please setup fund to provide fund unit types.
+  </div>
+<% end %>
+
 <%= form_with(model: fund_unit_setting) do |form| %>
   <% if fund_unit_setting.errors.any? %>
     <div class="alert alert-danger">
@@ -16,7 +22,9 @@
   
   <div class="form-group">
     <%= form.label :name, "Class / Series / Unit Type" %>
-    <%= form.select :name, fund_unit_setting.fund.unit_types.split(",").map{|x| x.strip}, {}, class: "form-control"  %>
+    <% if fund_unit_setting.fund.unit_types.present? %>
+      <%= form.select :name, fund_unit_setting.fund.unit_types.split(",").map{|x| x.strip}, {}, class: "form-control"  %>
+    <% end %>
   </div>
 
   <div class="form-group">
