@@ -109,6 +109,7 @@ Then('the portfolio investments must have the data in the sheet') do
     user_data = [headers, row].transpose.to_h
     pi = portfolio_investments[idx-1]
     puts "Checking import of #{pi.portfolio_company_name}"
+    ap pi
     pi.portfolio_company_name.should == user_data["Portfolio Company Name"].strip
     pi.fund.name.should == user_data["Fund"]
     pi.amount_cents.should == user_data["Amount"].to_d * 100
@@ -122,7 +123,8 @@ Then('the portfolio investments must have the data in the sheet') do
     if pi.commitment_type == "CoInvest"
       pi.capital_commitment_id.should == @fund.capital_commitments.where(folio_id: user_data["Folio No"]).first.id
     end  
-    pi.investment_date.should == Date.parse(user_data["Investment Date"].to_s)    
+    pi.investment_date.should == Date.parse(user_data["Investment Date"].to_s)
+    pi.properties["custom_field_1"].should == user_data["Custom Field 1"]    
   end
 end
 

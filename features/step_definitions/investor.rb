@@ -243,13 +243,12 @@ Given('Given I upload an investors file for the fund') do
   visit(investors_path)
   click_on("Actions")
   click_on("Upload")
-  sleep(6)
+  sleep(1)
   fill_in('import_upload_name', with: "Test Investor Upload")
-  sleep(6)
   attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_investors.xlsx'), make_visible: true)
-  sleep(6)
+  sleep(4)
   click_on("Save")
-  sleep(8)
+  sleep(4)
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 

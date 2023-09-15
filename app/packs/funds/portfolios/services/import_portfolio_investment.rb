@@ -25,8 +25,11 @@ class ImportPortfolioInvestment < ImportUtil
     if portfolio_investment.new_record?
 
       Rails.logger.debug user_data
+
       # Setup the portfolio_company if required
-      portfolio_company = fund.entity.investors.portfolio_companies.where(pan:).first
+      pcs = fund.entity.investors.portfolio_companies
+      portfolio_company = pan.present? ? pcs.where(pan:).first : pcs.where(investor_name: portfolio_company_name).first
+
       if portfolio_company.nil?
         # Create the portfolio_company
         portfolio_company = fund.entity.investors.create!(investor_name: portfolio_company_name, category: "Portfolio Company", pan:)
@@ -44,7 +47,7 @@ class ImportPortfolioInvestment < ImportUtil
 
   def inputs(user_data, import_upload)
     portfolio_company_name = user_data['Portfolio Company Name'].strip
-    pan = user_data['Pan'].strip
+    pan = user_data['Pan']&.strip
     investment_date = user_data["Investment Date"]
     amount_cents = user_data["Amount"].to_d * 100
     quantity = user_data["Quantity"].to_d
