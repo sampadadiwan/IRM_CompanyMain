@@ -1,6 +1,6 @@
 class EsignUpdateJob < ApplicationJob
   # rubocop:disable Metrics/method_length
-  def perform(document_id)
+  def perform(document_id, user_id)
     Chewy.strategy(:sidekiq) do
       # Find the document
       doc = Document.find(document_id)
@@ -22,7 +22,6 @@ class EsignUpdateJob < ApplicationJob
               if esign.status != signer['status']
                 esign.add_api_update(JSON.parse(response.body))
                 esign.update(status: signer['status'], api_updates: esign.api_updates)
-                # UserAlert.new(user_id: user.id, message: "Document - #{doc.name}'s E-Sign status updated", level: "success").broadcast
               end
             else
               e = StandardError.new("E-Sign not found for #{doc.name} and user #{user.name} - #{JSON.parse(response.body)}")
@@ -37,11 +36,13 @@ class EsignUpdateJob < ApplicationJob
             # raise e
           end
         end
-        signed_esigns = doc.e_signatures.reload.where.not(status: "signed")
-        signature_completed(doc) if signed_esigns.count < 1
+        unsigned_esigns = doc.e_signatures.reload.where.not(status: "signed")
+        signature_completed(doc) if unsigned_esigns.count < 1
       else
         signatures_failed(doc, JSON.parse(response.body))
       end
+      message = "Document - #{doc.name}'s E-Sign status updated"
+      UserAlert.new(message:, user_id:, level: "info").broadcast if user_id.present?
     end
   end
   # rubocop:enable Metrics/method_length

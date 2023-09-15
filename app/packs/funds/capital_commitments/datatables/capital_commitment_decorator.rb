@@ -12,7 +12,8 @@ class CapitalCommitmentDecorator < ApplicationDecorator
   end
 
   def full_name_link
-    h.link_to object.investor_kyc.full_name, object.investor_kyc if object.investor_kyc
+    name = object.investor_kyc&.full_name || ""
+    h.link_to name, object.investor_kyc if object.investor_kyc
   end
 
   def pending_call_amount
