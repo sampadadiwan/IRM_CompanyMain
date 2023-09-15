@@ -3,18 +3,17 @@ class Entity < ApplicationRecord
 
   include Trackable
   include EntityMerge
-  # encrypts :name, deterministic: true
-  validates :name, uniqueness: true
   # Make all models searchable
   update_index('entity') { self }
 
   validates :name, :entity_type, presence: true
   validates_uniqueness_of :sub_domain, scope: :parent_entity_id, allow_blank: true, allow_nil: true
   validates_uniqueness_of :pan, allow_blank: true, allow_nil: true
+
   # We did not have PAN as mandatory before. But we need to make it mandatory, without forcing update to existing data. Hence this check for data created after PAN_MANDATORY_AFTER date
   validates :pan, presence: true, if: proc { |e| (e.created_at && e.created_at >= PAN_MANDATORY_AFTER) || ((e.new_record? && Time.zone.today >= PAN_MANDATORY_AFTER) && !e.is_holdings_entity) }
 
-  validates_uniqueness_of :name
+  validates_uniqueness_of :name, scope: :pan
 
   validates :name, length: { maximum: 255 }
   validates :entity_type, length: { maximum: 25 }
@@ -153,7 +152,7 @@ class Entity < ApplicationRecord
     self.instrument_types = instrument_types.split(",").map(&:strip).join(",") if instrument_types
     self.currency ||= "INR"
     self.entity_setting ||= EntitySetting.new
-    self.sub_domain ||= name.gsub(/[[:space:]]/, '').underscore.dasherize
+    self.sub_domain ||= name.gsub(/[[:space:]]/, '').underscore.dasherize + rand(1000).to_s
   end
 
   scope :for_investor, lambda { |user|

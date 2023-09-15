@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_09_11_061501) do
+ActiveRecord::Schema[7.0].define(version: 2023_09_14_154123) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -892,7 +892,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_11_061501) do
     t.string "pan", limit: 15
     t.boolean "enable_approvals", default: false
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
-    t.index ["name"], name: "index_entities_on_name", unique: true
+    t.index ["name"], name: "index_entities_on_name"
+    t.index ["pan"], name: "index_entities_on_pan", unique: true
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
     t.index ["sub_domain"], name: "index_entities_on_sub_domain", unique: true
   end
@@ -1715,6 +1716,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_11_061501) do
     t.index ["investor_entity_id", "entity_id"], name: "index_investors_on_investor_entity_id_and_entity_id", unique: true
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
     t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
+    t.index ["pan"], name: "index_investors_on_pan"
   end
 
   create_table "kpi_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

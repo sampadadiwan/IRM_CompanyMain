@@ -54,11 +54,16 @@ class Investor < ApplicationRecord
   delegate :name, to: :entity, prefix: :investee
   validates :category, :investor_name, presence: true
 
+  # Ensure investor_name is unique per entity_id
   validates :investor_name, uniqueness: { scope: :entity_id, message: "already exists as an investor. Duplicate Investor." }
-  validates :investor_entity_id, uniqueness: { scope: :entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }
+
+  # Ensure unique investor_entity_id per entity_id, except for is_holdings_entity. See SetupHoldingEntity where a Founder Investor is created for startups.
+  validates :investor_entity_id, uniqueness: { scope: :entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }, if: proc { |i| !i.is_holdings_entity }
+
   validates :category, length: { maximum: 100 }
   validates :city, length: { maximum: 50 }
   validates :pan, length: { maximum: 15 }
+
   # We did not have PAN as mandatory before. But we need to make it mandatory, without forcing update to existing data. Hence this check for data created after PAN_MANDATORY_AFTER date
   validates :pan, presence: true, if: proc { |e| (e.created_at && e.created_at >= Entity::PAN_MANDATORY_AFTER) || ((e.new_record? && Time.zone.today >= Entity::PAN_MANDATORY_AFTER) && !e.is_holdings_entity && !e.is_trust) }
 
@@ -112,20 +117,20 @@ class Investor < ApplicationRecord
     self.last_interaction_date ||= Time.zone.today - 10.years
 
     # Ensure we have an investor entity
-    if investor_entity_id.blank?
-      e = pan ? Entity.where(pan: pan.strip).first : nil
+    # if investor_entity_id.blank?
+    e = pan ? Entity.where(pan: pan.strip).first : investor_entity
 
-      # If we do have an investor entity, and the name is not the same
-      errors.add(:investor_name, "Investor name in our records for PAN #{pan} is #{e.name}.") if e && e.name.strip != investor_name.strip && !force_different_name
+    # If we do have an investor entity, and the name is not the same
+    errors.add(:investor_name, "in our records for PAN #{pan} is different #{investor_name} vs #{e.name}.") if pan && e && e.name.strip != investor_name.strip && !force_different_name
 
-      # We dont have this entity in our DB, lets create one.
-      e ||= Entity.create(name: investor_name.strip, entity_type: "Investor", pan:)
+    # We dont have this entity in our DB, lets create one.
+    e ||= Entity.create!(name: investor_name.strip, entity_type: "Investor", pan:)
 
-      setup_permissions(e)
-      e.save
+    setup_permissions(e)
+    e.save
 
-      self.investor_entity = e
-    end
+    self.investor_entity = e
+    # end
 
     self.investor_name = investor_entity.name if investor_name.blank?
     self.pan ||= investor_entity.pan

@@ -654,6 +654,7 @@ FactoryBot.define do
 
   factory :investor do
     investor_entity_id { Entity.startups.sample.id }
+    investor_name { investor_entity.name }
     entity_id { Entity.startups.sample.id }
     pan { investor_entity.pan }
     category { ["Lead Investor", "Co-Investor"][rand(2)] }
