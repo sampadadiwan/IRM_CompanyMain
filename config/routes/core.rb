@@ -95,7 +95,7 @@ resources :documents do
   patch 'force_send_for_esign', on: :member
   patch 'cancel_esign', on: :member
   patch 'send_all_for_esign', on: :collection
-  get 'signature_progress', on: :collection
+  post 'signature_progress', on: :collection
   get 'fetch_esign_updates', on: :member
   get 'search', on: :collection
   get 'investor', on: :collection

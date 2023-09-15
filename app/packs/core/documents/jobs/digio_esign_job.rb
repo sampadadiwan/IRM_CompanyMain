@@ -7,7 +7,7 @@ class DigioEsignJob < ApplicationJob
 
       json_res = JSON.parse(response.body)
       if response.success?
-        doc.update(sent_for_esign: true, provider_doc_id: json_res["id"])
+        doc.update(sent_for_esign: true, provider_doc_id: json_res["id"], esign_status: "requested")
       else
         e = StandardError.new("Error sending #{doc.name} for e-signing - #{json_res}")
         ExceptionNotifier.notify_exception(e)

@@ -44,25 +44,37 @@ module DocumentHelper
         user = User.find_by(email: signer['identifier'])
         if user
           esign = doc&.e_signatures&.find_by(user_id: user.id)
-          if esign.present? && (esign.status != signer['status'])
+          # callbacks can be out of order leading to multiple updates for the same status
+          if esign.present? && (esign.status != signer['status'] && esign.status != "signed")
             esign.add_api_update(params['payload'])
             esign.update(status: signer['status'], api_updates: esign.api_updates)
             message = "Document - #{doc.name}'s E-Sign status updated"
             logger.info message
-            # UserAlert.new(user_id: user.id, message:, level: "success").broadcast
-          else
-            e = StandardError.new("E-Sign not found for #{doc&.name} and user #{user&.name} - #{response.body}")
+            UserAlert.new(user_id: user.id, message:, level: "info").broadcast
+            check_and_update_document_status(doc)
+          elsif esign.blank?
+            e = StandardError.new("E-Sign not found for #{doc&.name} and user #{user&.name} - #{params}")
             ExceptionNotifier.notify_exception(e)
+            logger.error e.message
+            # raise e
+          else
+            e = StandardError.new("E-Sign already has status #{esign&.status} for #{doc&.name} and user #{user&.name} - #{params}")
+            # ExceptionNotifier.notify_exception(e)
             logger.error e.message
             # raise e
           end
         else
-          e = StandardError.new("User not found for #{doc&.name} with identifier #{signer['identifier']} - #{response.body}")
+          e = StandardError.new("User not found for #{doc&.name} with identifier #{signer['identifier']} - #{params}")
           ExceptionNotifier.notify_exception(e)
           logger.error e.message
           # raise e
         end
       end
     end
+  end
+
+  def check_and_update_document_status(doc)
+    unsigned_esigns = doc.e_signatures.reload.where.not(status: "signed")
+    EsignUpdateJob.new.signature_completed(doc) if unsigned_esigns.count < 1
   end
 end

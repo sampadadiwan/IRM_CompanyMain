@@ -18,12 +18,12 @@ class DocumentsController < ApplicationController
     # if not then just respond with 200 OK
     update_signature_progress(params)
     # Always respond with 200 OK - Expected from Digio
-    render json: "Ok", status: :ok
+    render json: "Ok"
   end
 
   def fetch_esign_updates
-    DocumentEsignUpdateJob.new.perform(@document.id)
-    redirect_to document_url(@document), notice: "Fetching Updates for E-Signatures"
+    DocumentEsignUpdateJob.new.perform(@document.id, current_user.id)
+    redirect_to [@document, { tab: "signatures-tab" }], notice: "Fetching Updates for E-Signatures"
   end
 
   # GET /documents or /documents.json
@@ -113,17 +113,17 @@ class DocumentsController < ApplicationController
 
   def send_for_esign
     if @document.send_for_esign(user_id: current_user.id)
-      redirect_to document_url(@document), notice: "Document was queued for e-signature."
+      redirect_to [@document, { tab: "signatures-tab" }], notice: "Document was queued for e-signature."
     else
-      redirect_to document_url(@document, display_status: true), alert: "Document was NOT sent for e-signature."
+      redirect_to [@document, { tab: "signatures-tab" }], notice: "Document was NOT sent for e-signature."
     end
   end
 
   def force_send_for_esign
     if @document.send_for_esign(force: params[:force], user_id: current_user.id)
-      redirect_to document_url(@document), notice: "Document was queued for e-signature."
+      redirect_to [@document, { tab: "signatures-tab" }], notice: "Document was queued for e-signature."
     else
-      redirect_to document_url(@document, display_status: true), alert: "Document was NOT sent for e-signature."
+      redirect_to [@document, { tab: "signatures-tab" }], notice: "Document was NOT sent for e-signature."
     end
   end
 
@@ -138,6 +138,9 @@ class DocumentsController < ApplicationController
 
   # allows to add a button to cancel esigning on document
   def cancel_esign
+    @document.e_signatures.each do |esign|
+      esign.update(status: "cancelled")
+    end
     if @document.update(esign_status: "cancelled")
       redirect_to document_url(@document), notice: "Document's E-Signature(s) was cancelled"
     else
