@@ -189,3 +189,45 @@ Then('the aggregate portfolio investments must have cost of sold computed') do
     pi.aggregate_portfolio_investment.cost_of_sold_cents.should == pi.aggregate_portfolio_investment.portfolio_investments.sells.sum(:cost_of_sold_cents)
   end
 end
+
+
+Given('I create a new stock adjustment {string}') do |args|
+  puts "#### #{args}"
+  @orig_portfolio_investments = PortfolioInvestment.includes(portfolio_company: :valuations).all.to_a
+  @orig_portfolio_attributions = PortfolioAttribution.all.to_a
+  
+  @stock_adjustment = StockAdjustment.new(portfolio_company: @investor, entity_id: @investor.entity_id, user_id: User.first.id)
+  key_values(@stock_adjustment, args)
+  @stock_adjustment.save!
+  sleep(2)
+end
+
+Then('the valuations must be adjusted') do  
+  (@valuation.per_share_value_cents / @stock_adjustment.adjustment).round(0).should == @valuation.reload.per_share_value_cents.round(0) 
+end
+
+Then('the Portfolio investments must be adjusted') do
+  @current_portfolio_investments = PortfolioInvestment.all
+  @orig_portfolio_investments.each_with_index do |opi, idx|
+    ap opi
+    
+    cpi = @current_portfolio_investments[idx]
+    ap cpi
+
+    cpi.quantity.should == opi.quantity * @stock_adjustment.adjustment
+    cpi.amount_cents.should == opi.amount_cents 
+    cpi.fmv_cents.should be_within(100).of(opi.fmv_cents)
+    cpi.cost_of_sold_cents.should == opi.cost_of_sold_cents
+    cpi.net_quantity.should == opi.net_quantity * @stock_adjustment.adjustment
+    cpi.gain_cents.should be_within(100).of(opi.gain_cents)
+  end
+end
+
+Then('the Portfolio attributions must be adjusted') do
+  @current_portfolio_attributions = PortfolioAttribution.all
+  @orig_portfolio_attributions.each_with_index do |opa, idx|
+    cpa = @current_portfolio_attributions[idx]
+    cpa.quantity.should == opa.quantity * @stock_adjustment.adjustment
+    cpa.cost_of_sold_cents.should == opa.cost_of_sold_cents
+  end
+end

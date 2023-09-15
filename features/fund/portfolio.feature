@@ -101,3 +101,24 @@ Scenario Outline: FIFO
     |quantity=-400;category=Unlisted;       |2       |
     |quantity=-500;category=Unlisted;       |3       |
     |quantity=-600;category=Unlisted;       |3       |
+
+
+
+Scenario Outline: Stock Adjustment
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
+  Given there is an existing portfolio company "name=Apple;pan=BUHNXDFEA7;category=Portfolio Company" 
+  Given there is a valuation "per_share_value_cents=10000;category=Unlisted;sub_category=Equity" for the portfolio company
+  And Given I upload "portfolio_investments2.xlsx" file for "Portfolio" of the fund
+  Then I should see the "Import upload was successfully created"
+  Then There should be "2" portfolio investments created
+  Given I create a new stock adjustment "<adjustment>"
+  Then the valuations must be adjusted
+  And the Portfolio investments must be adjusted
+  And the Portfolio attributions must be adjusted
+  Examples:
+    |adjustment |
+    |adjustment=2.0;category=Unlisted;sub_category=Equity          |
+    |adjustment=0.5;category=Unlisted;sub_category=Equity          |
+    |adjustment=3.0;category=Unlisted;sub_category=Equity          |

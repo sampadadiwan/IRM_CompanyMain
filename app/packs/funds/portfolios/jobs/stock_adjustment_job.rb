@@ -9,8 +9,8 @@ class StockAdjustmentJob < ApplicationJob
 
     Rails.logger.info("StockAdjustmentJob: #{@portfolio_company.investor_name} #{@stock_adjustment.category}:#{@stock_adjustment.sub_category} by #{@stock_adjustment.adjustment}")
 
-    Rails.logger.info("StockAdjustmentJob: Adjusting valuations")
-    valuations.update_all("per_share_value_cents = per_share_value_cents / #{@stock_adjustment.adjustment}")
+    count = valuations.update_all("per_share_value_cents = (per_share_value_cents / #{@stock_adjustment.adjustment})")
+    Rails.logger.info("StockAdjustmentJob: Adjusting #{count} valuations")
 
     Rails.logger.info("StockAdjustmentJob: Adjusting portfolio investments")
     aggregate_portfolio_investments.each do |api|
