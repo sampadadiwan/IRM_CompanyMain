@@ -39,22 +39,22 @@
         </div>     
       </div>
 
-      <div id="access-tab" class="tab-pane fade">
-        <div id="access_rights" class="associated_entity">
-          <% cache([approval, "AccessRights"]) do %>
+      <% if policy(approval).update? %>
+        <div id="access-tab" class="tab-pane fade">
+          <div id="access_rights" class="associated_entity">
 
-            <%  access_right = AccessRight.new(
-              owner_id: approval.id, 
-              access_type: "Approval", 
-              owner_type: "Approval", 
-              entity_id: approval.entity_id) %> 
+              <%  access_right = AccessRight.new(
+                owner_id: approval.id, 
+                access_type: "Approval", 
+                owner_type: "Approval", 
+                entity_id: approval.entity_id) %> 
 
-            <%= render "access_rights/index", access_rights: approval.access_rights.includes(:investor, :owner), 
-                        access_right: access_right %>
+              <%= render "access_rights/index", access_rights: approval.access_rights.includes(:investor, :owner), 
+                          access_right: access_right %>
 
-          <% end %>
-        </div>  
-      </div>
+          </div>  
+        </div>
+      <% end %>
 
       
 

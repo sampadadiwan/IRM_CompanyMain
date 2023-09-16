@@ -1,7 +1,7 @@
 include CurrencyHelper
 
   When('I create a new portfolio investment {string}') do |args|
-    @new_portfolio_investment = PortfolioInvestment.new(fund: @fund)
+    @new_portfolio_investment = FactoryBot.build(:portfolio_investment, entity: @entity, fund: @fund)
     key_values(@new_portfolio_investment, args)
 
     visit(fund_path(@fund))
@@ -11,11 +11,14 @@ include CurrencyHelper
     
     portfolio_company = @entity.investors.portfolio_companies.where(investor_name: @new_portfolio_investment.portfolio_company_name).first
 
+    puts @new_portfolio_investment.to_json
+
     select(portfolio_company.investor_name, from: "portfolio_investment_portfolio_company_id")
     fill_in('portfolio_investment_amount', with: @new_portfolio_investment.amount)
     fill_in('portfolio_investment_quantity', with: @new_portfolio_investment.quantity)
     select(@new_portfolio_investment.category, from: 'portfolio_investment_category')
-    
+    select(@new_portfolio_investment.sector, from: 'portfolio_investment_sector')
+
     click_on "Save"    
     sleep(1)
   end

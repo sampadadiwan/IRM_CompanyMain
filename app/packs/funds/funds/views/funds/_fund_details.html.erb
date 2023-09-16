@@ -66,16 +66,15 @@
         <div id="docs-tab" class="tab-pane fade in">
           <div id="docs" class="associated_entity">
 
-            <% cache([fund, "Documents", policy(fund).update?]) do %>
               <%= link_to folder_documents_path(entity_id: fund.entity_id,
                                         folder_id: fund.document_folder.id),
                                         class: "load_data_link",
                                         data: { turbo_frame: 'documents_tree_frame' } do %>
                   <span>Loading...</span>
               <% end %>
+              
               <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
               <% end %>
-            <% end %>
 
           </div>
         </div>

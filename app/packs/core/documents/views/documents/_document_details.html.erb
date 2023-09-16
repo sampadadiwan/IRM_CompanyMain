@@ -43,7 +43,6 @@
 
         <% if policy(document).update? %>
           <div id="access-rights-tab" class="tab-pane fade">
-            <% cache(document) do %>
               <div id="access_rights" class="associated_entity">
                 <%  access_right = AccessRight.new(
                     owner_id: document.id,
@@ -54,7 +53,6 @@
                 <% params[:form_type] = "document_form" %>
                 <%= render "/access_rights/index", access_rights: document.access_rights.includes(:investor, :owner), access_right: access_right %>
               </div>
-            <% end %>
           </div>
         <% end %>
 
