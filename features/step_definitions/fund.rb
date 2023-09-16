@@ -684,6 +684,7 @@ Then('the capital distribution must reflect the payments') do
 end
 
 Then('the investors must receive email with subject {string}') do |subject|
+  sleep(2)
   Investor.all.each do |inv|
     if inv.emails.present?
       inv.emails.each do |email|
