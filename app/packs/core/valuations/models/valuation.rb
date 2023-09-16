@@ -7,6 +7,7 @@ class Valuation < ApplicationRecord
   validates :category, length: { maximum: 10 }
   validates :sub_category, length: { maximum: 100 }
   validates :category, :sub_category, presence: true, if: proc { |v| v.owner_type == "Investor" }
+  validates :valuation_cents, :per_share_value_cents, numericality: { greater_than: 0 }
 
   # Ensure callback to the owner
   after_save :update_owner

@@ -13,7 +13,7 @@ class PortfolioInvestment < ApplicationRecord
   has_many :portfolio_attributions, foreign_key: :sold_pi_id, dependent: :destroy
   has_many :buys_portfolio_attributions, class_name: "PortfolioAttribution", foreign_key: :bought_pi_id, dependent: :destroy
 
-  validates :investment_date, :quantity, :amount_cents, :category, :sub_category, presence: true
+  validates :investment_date, :quantity, :amount_cents, :category, :sub_category, :sector, presence: true
   monetize :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :cost_of_sold_cents, with_currency: ->(i) { i.fund.currency }
 
   counter_culture :aggregate_portfolio_investment, column_name: 'quantity', delta_column: 'quantity'

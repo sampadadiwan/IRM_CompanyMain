@@ -8,13 +8,15 @@ Given('there is an investor {string} with investor kyc and aml report for the en
   key_values(@investor_entity, arg2)
   @investor_entity.save(validate: false)
   args_temp = arg1.split(";").to_h { |kv| kv.split("=") }
-  @investor = if Investor.exists?(args_temp)
-    Investor.find_by(args_temp)
+  
+  if Investor.exists?(args_temp)
+    @investor = Investor.find_by(args_temp)
   else
-    tmpentity = FactoryBot.create(:entity, entity_type: "Investor",  pan: Faker::Alphanumeric.alphanumeric(number: 10))
-    FactoryBot.build(:investor, entity: @investor_entity, investor_entity:tmpentity)
+    tmpentity = FactoryBot.create(:entity, entity_type: "Investor")
+    @investor = FactoryBot.build(:investor, entity: @investor_entity, investor_entity: tmpentity)
+    key_values(@investor, arg1)
   end
-  key_values(@investor, arg1)
+  
   @investor.save!
 
   RSpec::Mocks.with_temporary_scope do
@@ -27,7 +29,7 @@ Given('there is an investor {string} with investor kyc and aml report for the en
   @aml_report = AmlReport.order(created_at: :desc).first
 end
 
-Then('{string} has {string} "{string}" access to the aml_report of investor {string}') do |arg1, arg2, accesses, arg4|
+Then('{string} has {string} "{string}" access to the aml_report of investor') do |arg1, arg2, accesses|
   args_temp = arg1.split(";").to_h { |kv| kv.split("=") }
   @user = if User.exists?(args_temp)
     User.find_by(args_temp)
@@ -36,16 +38,6 @@ Then('{string} has {string} "{string}" access to the aml_report of investor {str
   end
   key_values(@user, arg1)
   @user.save!
-  args_temp = arg4.split(";").to_h { |kv| kv.split("=") }
-  @investor = if Investor.exists?(args_temp)
-    Investor.find_by(args_temp)
-  else
-    FactoryBot.build(:investor)
-  end
-  @investor.entity_id = @investor_entity.id
-  @investor.investor_entity_id = FactoryBot.create(:entity, pan: Faker::Alphanumeric.alphanumeric(number: 10), entity_type: "InvestmentFund").id
-  key_values(@investor, arg4)
-  @investor.save!
   accesses.split(',').each do |access|
     Pundit.policy(@user, @aml_report).send("#{access}?").to_s.should == arg2
   end
