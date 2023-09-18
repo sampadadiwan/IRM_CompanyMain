@@ -24,9 +24,6 @@ class InvestmentsController < ApplicationController
       end
       format.html { render :index }
       format.json { render :index }
-      format.pdf do
-        render template: "investments/index", formats: [:html], pdf: "#{@entity.name} Investments"
-      end
     end
   end
 
@@ -77,9 +74,6 @@ class InvestmentsController < ApplicationController
     end
     respond_to do |format|
       format.html
-      format.pdf do
-        render template: "investments/show", formats: [:html], pdf: "Investment #{@investment.id}"
-      end
     end
   end
 

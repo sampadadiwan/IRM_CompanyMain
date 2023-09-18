@@ -19,9 +19,6 @@ class AggregateInvestmentsController < ApplicationController
       end
       format.html { render :index }
       format.json { render :index }
-      format.pdf do
-        render template: "aggregate_investments/index", formats: [:html], pdf: "#{@entity.name} Aggregate Investments"
-      end
     end
   end
 

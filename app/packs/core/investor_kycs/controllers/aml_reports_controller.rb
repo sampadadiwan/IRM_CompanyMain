@@ -33,9 +33,6 @@ class AmlReportsController < ApplicationController
     respond_to do |format|
       format.html { render "show" }
       format.json { render json: @aml_report }
-      format.pdf do
-        render template: "aml_reports/show", formats: [:html], pdf: "#{@aml_report.name}-#{@aml_report.id}"
-      end
     end
   end
 

@@ -26,14 +26,6 @@ GIT
     rupees (0.1.0)
 
 GIT
-  remote: https://github.com/thimmaiah/xirr
-  revision: e630a7cbe48dc0d2b6ce49097ca9010643e49ac2
-  specs:
-    xirr (0.6.1)
-      RubyInline (~> 3)
-      activesupport (~> 7.0)
-
-GIT
   remote: https://github.com/varvet/pundit.git
   revision: 1f5f6bec8aa4ad634a491d64b8ef076c11c75870
   specs:
@@ -43,9 +35,6 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
-    RubyInline (3.14.0)
-      ZenTest (~> 4.3)
-    ZenTest (4.12.1)
     action_mailbox_amazon_ingress (0.1.3)
       aws-sdk-sns (~> 1.23)
       rails (>= 6.1)
@@ -203,7 +192,6 @@ GEM
       erubi (~> 1.4)
       parser (>= 2.4)
       smart_properties
-    bigdecimal (3.1.4)
     bindex (0.8.1)
     binding_of_caller (1.0.0)
       debug_inspector (>= 0.0.1)
@@ -328,7 +316,6 @@ GEM
       irb (>= 1.5.0)
       reline (>= 0.3.1)
     debug_inspector (1.1.0)
-    declarative (0.0.20)
     devise (4.9.2)
       bcrypt (~> 3.0)
       orm_adapter (~> 0.1)
@@ -399,7 +386,6 @@ GEM
     faraday-patron (1.0.0)
     faraday-rack (1.0.0)
     faraday-retry (1.0.3)
-    fastimage (2.2.6)
     ffi (1.15.5)
     ffi-compiler (1.0.1)
       ffi (>= 1.0.0)
@@ -407,38 +393,7 @@ GEM
     foreman (0.87.2)
     globalid (1.1.0)
       activesupport (>= 5.0)
-    google-apis-core (0.11.0)
-      addressable (~> 2.5, >= 2.5.1)
-      googleauth (>= 0.16.2, < 2.a)
-      httpclient (>= 2.8.1, < 3.a)
-      mini_mime (~> 1.0)
-      representable (~> 3.0)
-      retriable (>= 2.0, < 4.a)
-      rexml
-      webrick
-    google-apis-drive_v3 (0.39.0)
-      google-apis-core (>= 0.11.0, < 2.a)
-    google-apis-sheets_v4 (0.22.0)
-      google-apis-core (>= 0.11.0, < 2.a)
-    google_drive (3.0.7)
-      google-apis-drive_v3 (>= 0.5.0, < 1.0.0)
-      google-apis-sheets_v4 (>= 0.4.0, < 1.0.0)
-      googleauth (>= 0.5.0, < 1.0.0)
-      nokogiri (>= 1.5.3, < 2.0.0)
-    googleauth (0.17.1)
-      faraday (>= 0.17.3, < 2.0)
-      jwt (>= 1.4, < 3.0)
-      memoist (~> 0.16)
-      multi_json (~> 1.11)
-      os (>= 0.9, < 2.0)
-      signet (~> 0.15)
     groupdate (6.2.1)
-      activesupport (>= 5.2)
-    grover (1.1.5)
-      combine_pdf (~> 1.0)
-      nokogiri (~> 1.0)
-    has_scope (0.8.1)
-      actionpack (>= 5.2)
       activesupport (>= 5.2)
     hightop (0.3.0)
       activesupport (>= 5.2)
@@ -454,7 +409,6 @@ GEM
     httparty (0.21.0)
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
-    httpclient (2.8.3)
     i18n (1.14.1)
       concurrent-ruby (~> 1.0)
     image_processing (1.12.2)
@@ -484,7 +438,6 @@ GEM
       regexp_property_values (~> 1.0)
     json (2.6.3)
     json2table (1.0.7)
-    jwt (2.7.0)
     kaminari (1.2.2)
       activesupport (>= 4.1.0)
       kaminari-actionview (= 1.2.2)
@@ -520,7 +473,6 @@ GEM
       actionpack (>= 5.2)
       activerecord (>= 5.2)
     matrix (0.4.2)
-    memoist (0.16.2)
     method_source (1.0.0)
     mime-types (3.4.1)
       mime-types-data (~> 3.2015)
@@ -561,12 +513,7 @@ GEM
     noticed (1.6.3)
       http (>= 4.0.0)
       rails (>= 5.2.0)
-    odf-report (0.7.3)
-      mime-types
-      nokogiri (>= 1.10.0)
-      rubyzip (>= 1.3.0)
     orm_adapter (0.5.0)
-    os (1.1.4)
     overcommit (0.58.0)
       childprocess (>= 0.6.3, < 5)
       iniparse (~> 1.4)
@@ -645,16 +592,11 @@ GEM
     regexp_property_values (1.3.0)
     reline (0.3.3)
       io-console (~> 0.5)
-    representable (3.2.0)
-      declarative (< 0.1.0)
-      trailblazer-option (>= 0.1.1, < 0.2.0)
-      uber (< 0.2.0)
     request_store (1.5.1)
       rack (>= 1.4)
     responders (3.1.0)
       actionpack (>= 5.2)
       railties (>= 5.2)
-    retriable (3.1.2)
     rexml (3.2.5)
     roda (3.68.0)
       rack
@@ -741,11 +683,6 @@ GEM
       redis (>= 4.5.0, < 5)
     sidekiq-limit_fetch (4.4.1)
       sidekiq (>= 6)
-    signet (0.17.0)
-      addressable (~> 2.8)
-      faraday (>= 0.17.5, < 3.a)
-      jwt (>= 1.5, < 3.0)
-      multi_json (~> 1.10)
     simplecov (0.22.0)
       docile (~> 1.1)
       simplecov-html (~> 0.11)
@@ -779,14 +716,12 @@ GEM
     tilt (2.2.0)
     timeout (0.3.2)
     to_words (1.1.1)
-    trailblazer-option (0.1.2)
     turbo-rails (1.4.0)
       actionpack (>= 6.0.0)
       activejob (>= 6.0.0)
       railties (>= 6.0.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
-    uber (0.1.0)
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.8.2)
@@ -818,9 +753,6 @@ GEM
     websocket-extensions (0.1.5)
     whenever (1.0.0)
       chronic (>= 0.6.3)
-    wicked_pdf (2.6.3)
-      activesupport
-    wkhtmltopdf-binary-edge (0.12.6.0)
     xpath (3.2.0)
       nokogiri (~> 1.8)
     zeitwerk (2.6.8)
@@ -847,7 +779,6 @@ DEPENDENCIES
   awesome_print
   aws-sdk-s3
   better_errors
-  bigdecimal
   binding_of_caller
   blazer
   bootsnap (= 1.15.0)
@@ -881,12 +812,8 @@ DEPENDENCIES
   exception_notification
   factory_bot_rails
   faker
-  fastimage
   foreman
-  google_drive
   groupdate
-  grover
-  has_scope
   hightop
   httparty
   image_processing (~> 1.2)
@@ -899,13 +826,11 @@ DEPENDENCIES
   letter_opener
   libreconv
   mail-logger
-  marcel
   marginalia (~> 1.11)
   money-rails (~> 1.12)
   mysql2 (~> 0.5)
   net-ssh (= 7.0.0.beta1)
   noticed
-  odf-report
   overcommit (~> 0.58.0)
   packwerk
   paper_trail
@@ -945,9 +870,6 @@ DEPENDENCIES
   web-console
   webdrivers
   whenever
-  wicked_pdf
-  wkhtmltopdf-binary-edge
-  xirr!
 
 RUBY VERSION
    ruby 3.1.2p20

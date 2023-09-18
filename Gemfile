@@ -70,22 +70,6 @@ gem 'eu_central_bank'
 gem 'money-rails', '~>1.12'
 gem 'rupees', git: "https://github.com/thimmaiah/rupees.git"
 gem 'to_words'
-# gem 'razorpay'
-
-gem 'bigdecimal'
-gem 'xirr', git: "https://github.com/thimmaiah/xirr"
-# gem 'xirr', path: "/home/thimmaiah/work/xirr"
-# gem 'prometheus_exporter'
-
-# For verifying digital signatures in PDFs
-# gem 'chilkat'
-
-gem 'grover'
-gem 'odf-report'
-gem 'wicked_pdf'
-gem 'wkhtmltopdf-binary-edge'
-
-gem 'google_drive'
 
 # Admin screens
 gem "administrate"
@@ -97,12 +81,6 @@ gem 'administrate-field-shrine'
 # This generates rails based datatables
 gem 'ajax-datatables-rails'
 gem 'draper'
-# Not used right now
-gem 'has_scope'
-
-# For custom buckets in S3 per client
-gem 'fastimage'
-gem 'marcel'
 
 # This is the S3 upload gem
 gem 'shrine', '~> 3.3'
@@ -117,7 +95,6 @@ gem 'public_activity', github: 'chaps-io/public_activity', branch: 'master'
 gem 'sanitize_email'
 # Cron
 gem 'whenever', require: false
-# gem 'ajax-datatables-rails'
 
 # Uses bitwise flags
 gem 'active_flag'

@@ -15,12 +15,14 @@ export default class extends Controller {
   }
 
   change(event) {
-    let params = new URLSearchParams()
-    params.append(this.paramValue, event.target.selectedOptions[0].value)
-    params.append("target", this.selectTarget.id)
+    if(event.target.selectedOptions[0].value) {
+      let params = new URLSearchParams()
+      params.append(this.paramValue, event.target.selectedOptions[0].value)
+      params.append("target", this.selectTarget.id)
 
-    get(`${this.urlValue}?${params}`, {
-      responseKind: "turbo-stream"
-    })
+      get(`${this.urlValue}?${params}`, {
+        responseKind: "turbo-stream"
+      })
+    }
   }
 }
