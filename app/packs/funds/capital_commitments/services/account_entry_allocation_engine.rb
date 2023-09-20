@@ -2,7 +2,7 @@ class AccountEntryAllocationEngine
   attr_accessor :cached_generated_fields
 
   def initialize(fund, start_date, end_date, user_id: nil,
-                 generate_soa: false, template_name: nil, fund_ratios: false)
+                 generate_soa: false, template_name: nil, fund_ratios: false, sample: false)
     @fund = fund
     @start_date = start_date
     @end_date = end_date
@@ -10,6 +10,7 @@ class AccountEntryAllocationEngine
     @generate_soa = generate_soa
     @template_name = template_name
     @fund_ratios = fund_ratios
+    @sample = sample
     @helper = AccountEntryAllocationHelper.new(self, fund, start_date, end_date, user_id:)
   end
 
@@ -59,12 +60,14 @@ class AccountEntryAllocationEngine
     end
   end
 
+  def commitments; end
+
   # This in theory generates a custom field in the commitment
   #
   def generate_custom_fields(fund_formula, fund_unit_settings)
     Rails.logger.debug { "generate_custom_fields #{fund_formula.name}" }
     # Generate the cols required
-    fund_formula.commitments.each do |capital_commitment|
+    fund_formula.commitments(@sample).each do |capital_commitment|
       Rails.logger.debug { "Generating using formula #{fund_formula} for #{capital_commitment}, #{@start_date}, #{@end_date}" }
 
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
@@ -89,7 +92,7 @@ class AccountEntryAllocationEngine
     cc_map = {}
 
     # Loop thru all the commitments and get the total of the account entry "field_name"
-    fund_formula.commitments.each do |capital_commitment|
+    fund_formula.commitments(@sample).each do |capital_commitment|
       ae = capital_commitment.cumulative_account_entry(field_name, nil, nil, @end_date)
 
       cc_map[capital_commitment.id] = {}
@@ -104,7 +107,7 @@ class AccountEntryAllocationEngine
     # Delete all prev generated percentage
     AccountEntry.where(name: "#{field_name} Percentage", entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, generated: true).each(&:destroy)
 
-    fund_formula.commitments.each do |capital_commitment|
+    fund_formula.commitments(@sample).each do |capital_commitment|
       percentage = total.positive? ? (100.0 * cc_map[capital_commitment.id]["amount_cents"] / total) : 0
 
       ae = AccountEntry.new(name: "#{field_name} Percentage", entry_type: cc_map[capital_commitment.id]["entry_type"], entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", capital_commitment:, folio_id: capital_commitment.folio_id, generated: true, amount_cents: percentage, cumulative: true)
@@ -120,7 +123,7 @@ class AccountEntryAllocationEngine
   def allocate_aggregate_portfolios(fund_formula, fund_unit_settings)
     Rails.logger.debug { "allocate_aggregate_portfolios(#{fund_formula.name}, #{fund_unit_settings})" }
 
-    fund_formula.commitments.each do |capital_commitment|
+    fund_formula.commitments(@sample).each do |capital_commitment|
       # This is used to generate instance variables from the cached computed values
       fields = @helper.computed_fields_cache(capital_commitment)
       apis = capital_commitment.Pool? ? @fund.aggregate_portfolio_investments.pool : []
@@ -143,7 +146,7 @@ class AccountEntryAllocationEngine
   def allocate_portfolios_investment(fund_formula, fund_unit_settings)
     Rails.logger.debug { "allocate_aggregate_portfolios(#{fund_formula.name}, #{fund_unit_settings})" }
 
-    fund_formula.commitments.each do |capital_commitment|
+    fund_formula.commitments(@sample).each do |capital_commitment|
       # This is used to generate instance variables from the cached computed values
       fields = @helper.computed_fields_cache(capital_commitment)
       portfolio_investments = capital_commitment.Pool? ? @fund.portfolio_investments.pool.where(investment_date: ..@end_date) : PortfolioInvestment.none
@@ -193,7 +196,7 @@ class AccountEntryAllocationEngine
 
     cumulative = !fund_formula.roll_up
 
-    fund_formula.commitments.each do |capital_commitment|
+    fund_formula.commitments(@sample).each do |capital_commitment|
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
 
       # This is used to generate instance variables from the cached computed values
@@ -221,7 +224,7 @@ class AccountEntryAllocationEngine
   # Used to generate cumulative account entries for things such as TDS which is uploaded by the fund per commitment
   def cumulate_account_entries(fund_formula, _fund_unit_settings)
     # binding.pry
-    fund_formula.commitments.each do |capital_commitment|
+    fund_formula.commitments(@sample).each do |capital_commitment|
       Rails.logger.debug { "Cumulating #{fund_formula} to #{capital_commitment}" }
 
       # Rollup this allocation for each commitment
@@ -250,7 +253,7 @@ class AccountEntryAllocationEngine
   end
 
   def allocate_entry(fund_account_entry, fund_formula, fund_unit_settings)
-    fund_formula.commitments.each do |capital_commitment|
+    fund_formula.commitments(@sample).each do |capital_commitment|
       Rails.logger.debug { "Allocating #{fund_account_entry} to #{capital_commitment}" }
 
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
