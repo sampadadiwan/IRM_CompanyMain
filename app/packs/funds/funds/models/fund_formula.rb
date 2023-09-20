@@ -23,14 +23,15 @@ class FundFormula < ApplicationRecord
     errors.add(:formula, "You cannot do CRUD operations in a formula") if formula.downcase.match?(/destroy|delete|update|create|save|rollback/)
   end
 
-  def commitments
+  # Sometimes we just want to sample the commitments to check if all the formulas are ok
+  def commitments(sample: false)
     cc = fund.capital_commitments
 
     case commitment_type
     when "Pool"
-      cc = cc.pool
+      cc = sample ? cc.pool.limit(10) : cc.pool
     when "CoInvest"
-      cc = cc.co_invest
+      cc = sample ? cc.co_invest.limit(10) : cc.co_invest
     end
     cc
   end
