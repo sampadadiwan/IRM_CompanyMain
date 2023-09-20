@@ -26,19 +26,19 @@ class AccountEntry < ApplicationRecord
   scope :cumulative, -> { where(cumulative: true) }
   scope :not_cumulative, -> { where.not(cumulative: true) }
 
-  counter_culture :capital_commitment,
-                  column_name: proc { |r| !r.cumulative && r.entry_type == "Expense" ? 'total_allocated_expense_cents' : nil },
-                  delta_column: 'amount_cents',
-                  column_names: {
-                    ["account_entries.entry_type = ? and cumulative = ?", "Expense", false] => 'total_allocated_expense_cents'
-                  }
+  # counter_culture :capital_commitment,
+  #                 column_name: proc { |r| !r.cumulative && r.entry_type == "Expense" ? 'total_allocated_expense_cents' : nil },
+  #                 delta_column: 'amount_cents',
+  #                 column_names: {
+  #                   ["account_entries.entry_type = ? and cumulative = ?", "Expense", false] => 'total_allocated_expense_cents'
+  #                 }
 
-  counter_culture :capital_commitment,
-                  column_name: proc { |r| !r.cumulative && r.entry_type == "Income" ? 'total_allocated_income_cents' : nil },
-                  delta_column: 'amount_cents',
-                  column_names: {
-                    ["account_entries.entry_type = ? and cumulative = ?", "Income", false] => 'total_allocated_income_cents'
-                  }
+  # counter_culture :capital_commitment,
+  #                 column_name: proc { |r| !r.cumulative && r.entry_type == "Income" ? 'total_allocated_income_cents' : nil },
+  #                 delta_column: 'amount_cents',
+  #                 column_names: {
+  #                   ["account_entries.entry_type = ? and cumulative = ?", "Income", false] => 'total_allocated_income_cents'
+  #                 }
 
   before_validation :setup_period
   def setup_period
