@@ -24,7 +24,7 @@ class FundFormula < ApplicationRecord
   end
 
   # Sometimes we just want to sample the commitments to check if all the formulas are ok
-  def commitments(sample: false)
+  def commitments(sample)
     cc = fund.capital_commitments
 
     case commitment_type

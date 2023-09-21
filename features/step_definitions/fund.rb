@@ -604,6 +604,7 @@ When('I create a new capital distribution {string}') do |args|
   visit(fund_url(@fund))
 
   click_on "Distributions"
+  sleep(1)
   click_on "New Distribution"
 
   fill_in('capital_distribution_title', with: @capital_distribution.title)
