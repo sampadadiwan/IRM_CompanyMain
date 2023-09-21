@@ -81,6 +81,7 @@ gem 'administrate-field-shrine'
 # This generates rails based datatables
 gem 'ajax-datatables-rails'
 gem 'draper'
+gem 'xirr', git: "https://github.com/thimmaiah/xirr"
 
 # This is the S3 upload gem
 gem 'shrine', '~> 3.3'

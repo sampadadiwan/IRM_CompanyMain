@@ -26,6 +26,14 @@ GIT
     rupees (0.1.0)
 
 GIT
+  remote: https://github.com/thimmaiah/xirr
+  revision: e630a7cbe48dc0d2b6ce49097ca9010643e49ac2
+  specs:
+    xirr (0.6.1)
+      RubyInline (~> 3)
+      activesupport (~> 7.0)
+
+GIT
   remote: https://github.com/varvet/pundit.git
   revision: 1f5f6bec8aa4ad634a491d64b8ef076c11c75870
   specs:
@@ -35,6 +43,9 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
+    RubyInline (3.14.0)
+      ZenTest (~> 4.3)
+    ZenTest (4.12.1)
     action_mailbox_amazon_ingress (0.1.3)
       aws-sdk-sns (~> 1.23)
       rails (>= 6.1)
@@ -870,6 +881,7 @@ DEPENDENCIES
   web-console
   webdrivers
   whenever
+  xirr!
 
 RUBY VERSION
    ruby 3.1.2p20
