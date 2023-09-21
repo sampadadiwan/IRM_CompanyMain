@@ -25,7 +25,10 @@ class CapitalCommitmentDocJob < ApplicationJob
             Rails.logger.debug msg
             UserAlert.new(user_id:, level: :info, message: msg).broadcast
             # Delete any existing signed documents
-            capital_commitment.documents.where(name: fund_doc_template.name).each(&:destroy)
+            # Do not delete signed documents
+            docs_to_destroy = capital_commitment.documents.where(name: fund_doc_template.name)
+            # .where.not translates to != in SQL. NULL is treated differently from other values, so != queries never match columns that are set to NULL
+            docs_to_destroy.where.not(esign_status: "signed").or(docs_to_destroy.where(esign_status: nil)).each(&:destroy)
             # Generate a new signed document
             CapitalCommitmentDocGenerator.new(capital_commitment, fund_doc_template, user_id)
           end

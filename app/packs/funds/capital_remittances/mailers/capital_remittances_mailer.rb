@@ -10,7 +10,7 @@ class CapitalRemittancesMailer < ApplicationMailer
       attachments["#{doc.name}.pdf"] = doc.file.read
     end
 
-    send_mail(subject: "Capital Call: #{@capital_remittance.entity.name}") if @to.present?
+    send_mail(subject: "Capital Call: #{@capital_remittance.fund.name}") if @to.present?
 
     Chewy.strategy(:sidekiq) do
       @capital_remittance.notification_sent = true
@@ -21,17 +21,17 @@ class CapitalRemittancesMailer < ApplicationMailer
   def notify_capital_remittance
     @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
 
-    send_mail(subject: "New Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}") if @to.present?
+    send_mail(subject: "New Capital Call by #{@capital_remittance.fund.name}") if @to.present?
   end
 
   def reminder_capital_remittance
     @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
-    send_mail(subject: "Reminder: Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}") if @to.present?
+    send_mail(subject: "Reminder: Capital Call by #{@capital_remittance.fund.name}") if @to.present?
   end
 
   def payment_received
     @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
 
-    send_mail(subject: "Payment Received. #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}") if @to.present?
+    send_mail(subject: "Payment Confirmation for Capital Call #{@capital_remittance.fund.name}") if @to.present?
   end
 end

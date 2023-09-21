@@ -5,7 +5,7 @@ class DocumentMailer < ApplicationMailer
     @document = Document.find params[:document_id]
 
     if @to.present?
-      subj = "New document #{@document.name} uploaded by #{@document.entity.name}"
+      subj = "#{@document.name} uploaded by #{@document.entity.name}"
       send_mail(subject: subj)
     else
       Rails.logger.debug { "No emails found for notify_new_document #{@document.name}" }

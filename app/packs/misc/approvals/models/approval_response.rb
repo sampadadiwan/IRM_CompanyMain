@@ -31,15 +31,15 @@ class ApprovalResponse < ApplicationRecord
       if status == "Pending"
         investor.approved_users.each do |user|
           if reminder
-            msg = "This is a reminder that #{approval.entity.name} has requested your approval for #{approval.title}. Please use your registered email id to access your account. The password is your PAN (in lower case)."
+            msg = "Reminder for approval required for #{approval.entity.name} : #{approval.title}."
             ApprovalNotification.with(entity_id:, approval_response: self, email_method: :approval_reminder, msg:).deliver_later(user) unless notification_sent
           else
-            msg = "#{approval.entity.name} has requested your approval for #{approval.title}. Please use your registered email id to access your account.The password is your PAN (in lower case)."
+            msg = "Approval required for #{approval.entity.name} : #{approval.title}."
             ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_new_approval, msg:).deliver_later(user) unless notification_sent
           end
         end
       else
-        msg = "Your response for Approval #{approval.title} has been registered as #{status}."
+        msg = "#{approval.entity.name} : #{status} for #{approval.title}"
         investor.approved_users.each do |user|
           ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_approval_response, msg:).deliver_later(user)
         end

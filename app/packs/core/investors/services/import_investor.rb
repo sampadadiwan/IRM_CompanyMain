@@ -26,7 +26,7 @@ class ImportInvestor < ImportUtil
 
     investor = Investor.where(investor_name:, pan:, entity_id: import_upload.entity_id).first
     if investor.present?
-      Rails.logger.debug { "Investor with name investor_name already exists for entity #{import_upload.entity_id}" }
+      Rails.logger.debug { "Investor with name #{investor_name} already exists for entity #{import_upload.entity_id}" }
 
       raise "Investor with already exists." if user_data["Fund"].blank?
     else
