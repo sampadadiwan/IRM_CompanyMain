@@ -221,7 +221,7 @@ end
 
 Then('an email must go out to the investors for the document') do
   user = InvestorAccess.includes(:user).first.user
-  subj = "New document #{@document.name} uploaded by #{@document.entity.name}"
+  subj = "#{@document.name} uploaded by #{@document.entity.name}"
   puts "Checking email for document #{@document.name} to #{user.email}"
   current_email = nil
   emails_sent_to(user.email).each do |email|
