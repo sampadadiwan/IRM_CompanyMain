@@ -17,11 +17,11 @@ class CommitmentAdjustmentPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update)
+    false # permissioned_employee?(:update)
   end
 
   def edit?
-    update?
+    false # update?
   end
 
   def destroy?

@@ -14,7 +14,7 @@ class CommitmentAdjustment < ApplicationRecord
   counter_culture :capital_commitment, column_name: 'adjustment_amount_cents', delta_column: 'amount_cents'
   counter_culture :capital_commitment, column_name: 'adjustment_folio_amount_cents', delta_column: 'folio_amount_cents'
 
-  before_save :update_amounts
+  before_create :update_amounts
   def update_amounts
     # Convert
     if folio_amount_cents != 0
