@@ -528,23 +528,72 @@ namespace :irm do
     raise e
   end
 
+  
+  desc "generates fake portfolios"
+  task generateFakePortfolios: :environment do
+
+    startup_names = ["PayTm", "Apna", "RazorPay", "Delhivery", "Eat Fit", "Cult Fit", "Quadrant"]
+    startup_names.each do |name|
+      
+      startup = FactoryBot.build(:entity, entity_type: "Company", name: name)
+      startup.save!
+      ap startup
+
+      # (1..2).each do |j|
+      #   user = FactoryBot.create(:user, entity: startup, first_name: "Emp#{j}")
+      #   user.add_role :company_admin
+      #   user.add_role :approver
+      #   puts user.to_json
+      # end
+    end
+
+    Entity.funds.each do |e|
+      startup_names.each do |name|        
+        begin
+          investor_entity = Entity.find_by(name: name)
+          pc = FactoryBot.build(:investor, entity: e, investor_entity: investor_entity, investor_name: name, pan: investor_entity.pan, category: "Portfolio Company")
+          pc.save!
+          FactoryBot.create(:valuation, entity: e, owner: pc)         
+        rescue Exception => e
+          puts e.message
+        end
+      end
+    end
+
+    Fund.all.each do |fund|
+      # Generate Buys
+      (1..4).each do
+        begin
+          pc = fund.entity.investors.portfolio_companies.sample
+          pi = FactoryBot.build(:portfolio_investment, entity: fund.entity, fund:, portfolio_company: pc, quantity: 100 * rand(1..10))
+          pi.save!
+          puts "Creating PI #{pi} for #{fund.name}"
+        rescue Exception => e
+          puts e.message
+        end
+      end
+
+      (1..2).each do
+        # Generate Sells
+        begin
+          pc = fund.entity.investors.portfolio_companies.sample
+          pi = FactoryBot.build(:portfolio_investment, entity: fund.entity, fund:, portfolio_company: pc, quantity: -100 * rand(1..4))
+          pi.save!
+          puts "Creating PI #{pi} for #{fund.name}"
+        rescue Exception => e
+          puts e.message
+        end
+      end
+    end
+
+  end
+
   desc "generates fake funds"
   task generateFakeFunds: :environment do
     i = 1
     files = ["holdings.xlsx", "signature.png", "investor_access.xlsx", "Offer_1_SPA.pdf"]
     
-    startup_names = ["PayTm", "Apna", "RazorPay", "Delhivery", "Eat Fit", "Cult Fit", "Quadrant"]
-    startup_names.each do |name|
-      startup = FactoryBot.create(:entity, entity_type: "Company", name: name)
-      puts "Entity #{startup.name}"
-      (1..2).each do |j|
-        user = FactoryBot.create(:user, entity: startup, first_name: "Emp#{j}")
-        user.add_role :company_admin
-        user.add_role :approver
-        puts user.to_json
-      end
-    end
-
+    
     Entity.funds.each do |e|
       3.times do
         fund = FactoryBot.create(:fund, entity: e)
@@ -605,21 +654,7 @@ namespace :irm do
           end
         end
 
-        startup_names.each do |name|        
-          begin
-            pc = FactoryBot.create(:investor, entity: e, investor_name: name, category: "Portfolio Company")
-            FactoryBot.create(:valuation, entity: e)
-            (1..3).each do
-              begin
-                FactoryBot.create(:valuation, entity: e, portfolio_company: pc)
-                pi = FactoryBot.create(:portfolio_investment, entity: e, fund:, portfolio_company: pc)
-                puts "Creating PI #{pi} for #{fund.name}"
-              rescue
-              end
-            end
-          rescue
-          end
-        end
+        
 
       end
 
@@ -630,7 +665,7 @@ namespace :irm do
     raise e
   end
 
-  task :generateAll => [:generateFakeEntities, :generateFakeInvestors, :generateFakeInvestments, :generateFakeDeals, :generateFakeValuations,:generateFakeHoldings, :generateFakeDocuments, :generateFakeNotes, :generateFakeSales, :generateFakeOffers, :generateFakeBlankEntities, :generateFakeFunds] do
+  task :generateAll => [:generateFakeEntities, :generateFakeInvestors, :generateFakeInvestments, :generateFakeHoldings, :generateFakeDocuments, :generateFakeNotes, :generateFakeSales, :generateFakeOffers, :generateFakeFunds, :generateFakePortfolios] do
     puts "Generating all Fake Data"
     Sidekiq.redis(&:flushdb)
   end

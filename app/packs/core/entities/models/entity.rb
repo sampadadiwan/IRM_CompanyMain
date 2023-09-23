@@ -40,7 +40,7 @@ class Entity < ApplicationRecord
   has_many :funding_rounds, dependent: :destroy
   has_many :valuations, dependent: :destroy
   has_many :investor_notices, dependent: :destroy
-  has_many :esigns, dependent: :destroy
+  # has_many :esigns, dependent: :destroy
 
   # Will have many employees
   has_many :employees, class_name: "User", dependent: :destroy

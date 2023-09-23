@@ -99,7 +99,8 @@ module UpdateInvestor
       update_folder_names
 
       # Check if investor entity has only one investor, and we changed its name
-      if Investor.where(investor_entity_id:).count == 1
+      exclude_category = %w[Trust Founder Employee].include?(category)
+      if Investor.where(investor_entity_id:).count == 1 && !exclude_category
         # If so also update the entity name
         investor_entity.update(name: investor_name)
       end

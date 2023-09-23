@@ -717,7 +717,6 @@ FactoryBot.define do
     enable_approvals {true}
     currency { ENV["CURRENCY"].split(",")[rand(3)] }
     units { ENV["CURRENCY_UNITS"].split(",")[rand(3)] }
-    sub_domain { rand(2) > 0 ? name.parameterize : nil }
 
     trait :with_exchange_rates do
       after(:create) do |entity|
