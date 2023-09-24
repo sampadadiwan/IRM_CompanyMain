@@ -111,14 +111,14 @@ class FundPortfolioCalcs
 
   # Compute the XIRR for each portfolio company
   def portfolio_company_irr(return_cash_flows: false, scenarios: nil)
-    @portfolio_companies_map ||= {}
+    @api_map ||= {}
 
-    if @portfolio_companies_map.empty?
-      # Group all fund investments by the portfolio_company
-      # @fund.portfolio_investments.pool.where(investment_date: ..@end_date).order(investment_date: :asc).group_by(&:portfolio_company_id)
+    if @api_map.empty?
 
-      @fund.portfolio_investments.select { |pi| pi.Pool? && pi.investment_date <= @end_date }.sort_by(&:investment_date).group_by(&:portfolio_company_id).each do |portfolio_company_id, portfolio_investments|
-        portfolio_company = Investor.find(portfolio_company_id)
+      @fund.aggregate_portfolio_investments.pool.each do |api|
+        portfolio_company_id = api.portfolio_company_id
+
+        portfolio_investments = api.portfolio_investments.where(investment_date: ..@end_date)
         cf = Xirr::Cashflow.new
 
         # Get the buy cash flows
@@ -134,15 +134,15 @@ class FundPortfolioCalcs
         end
 
         Rails.logger.debug "#########Portfolio CF#########"
-        # Get the portfolio income cash flows
-        portfolio_company.portfolio_cashflows.where(payment_date: ..@end_date).each do |pcf|
+        # Get the portfolio income cash flows, but only for pool and for this investment_type
+        portfolio_cashflows = api.portfolio_cashflows.where(payment_date: ..@end_date)
+        portfolio_cashflows.each do |pcf|
           cf << Xirr::Transaction.new(pcf.amount_cents, date: pcf.payment_date, notes: "Portfolio Income") if pcf.amount_cents.positive?
         end
 
         # Get the FMV for this specific portfolio_company
-        fmv_val = fmv_on_date(portfolio_company_id, scenarios:).round(4)
-
-        cf << Xirr::Transaction.new(fmv_val, date: @end_date, notes: "FMV portfolio_company_id: #{portfolio_company_id}") if fmv_val != 0
+        fmv_val = fmv_on_date(api, scenarios:).round(4)
+        cf << Xirr::Transaction.new(fmv_val, date: @end_date, notes: "FMV api: #{api}") if fmv_val != 0
 
         Rails.logger.debug { "fmv = #{fmv_val}" }
         # Calculate and store the xirr
@@ -152,50 +152,45 @@ class FundPortfolioCalcs
         Rails.logger.debug { "xirr = #{xirr_val}" }
 
         cash_flows = return_cash_flows ? cf : nil
-        @portfolio_companies_map[portfolio_company_id] = { name: portfolio_investments[0].portfolio_company_name,
-                                                           xirr: xirr_val, cash_flows: }
-        Rails.logger.debug xirr
+        @api_map[api.id] = { name: api.to_s, xirr: xirr_val, cash_flows: }
       end
 
     end
 
-    @portfolio_companies_map
+    @api_map
   end
 
   def portfolio_company_cost_to_value
-    # @fund.portfolio_investments.where(investment_date: ..@end_date).group_by(&:portfolio_company_id)
-    #      .each do |portfolio_company_id, portfolio_investments|
-    @portfolio_companies_map ||= {}
+    @api_map ||= {}
 
-    @portfolio_company_cost_to_value ||= @fund.portfolio_investments.select { |pi| pi.Pool? && pi.investment_date <= @end_date }.sort_by(&:investment_date).group_by(&:portfolio_company_id).each do |portfolio_company_id, portfolio_investments|
+    @fund.aggregate_portfolio_investments.pool.each do |api|
+      portfolio_investments = api.portfolio_investments.where(investment_date: ..@end_date)
+
       bought_amount = portfolio_investments.filter { |pi| pi.quantity.positive? }.sum(&:amount_cents)
       sold_amount = portfolio_investments.filter { |pi| pi.quantity.negative? }.sum(&:amount_cents)
-      fmv = fmv_on_date(portfolio_company_id)
+      fmv = fmv_on_date(api)
 
-      @portfolio_companies_map[portfolio_company_id] =
-        { name: portfolio_investments[0].portfolio_company_name,
-          value_to_cost: (sold_amount + fmv) / bought_amount }
+      @api_map[api.id] = { name: api.to_s, value_to_cost: (sold_amount + fmv) / bought_amount }
     end
 
-    @portfolio_companies_map
+    @api_map
   end
 
-  def fmv_on_date(portfolio_company_id = nil, scenarios: nil)
+  def fmv_on_date(aggregate_portfolio_investment = nil, scenarios: nil)
     total_fmv_on_end_date_cents = 0
-    # portfolio_investments = @fund.portfolio_investments.pool.where(investment_date: ..@end_date)
-    portfolio_investments = @fund.portfolio_investments.select { |pi| pi.Pool? && pi.investment_date <= @end_date }
 
-    # portfolio_investments = portfolio_investments.where(portfolio_company_id:) if portfolio_company_id
-    portfolio_investments = portfolio_investments.select { |pi| pi.portfolio_company_id == portfolio_company_id } if portfolio_company_id
+    apis = aggregate_portfolio_investment ? [aggregate_portfolio_investment] : @fund.aggregate_portfolio_investments.pool
 
-    Rails.logger.debug portfolio_investments
+    Rails.logger.debug apis
 
-    # portfolio_investments.group(:portfolio_company_id, :category, :sub_category).sum(:quantity).each do |k, quantity|
-    portfolio_investments.group_by { |pi| [pi.portfolio_company_id, pi.category, pi.sub_category] }.transform_values { |pis| pis.inject(0) { |sum, pi| sum + pi.quantity } }.each do |k, quantity|
-      # Get the valuation as of the end date
-      portfolio_company_id = k[0]
-      category = k[1]
-      sub_category = k[2]
+    apis.each do |api|
+      portfolio_investments = api.portfolio_investments.where(investment_date: ..@end_date)
+      quantity = portfolio_investments.inject(0) { |sum, pi| sum + pi.quantity }
+
+      portfolio_company_id = api.portfolio_company_id
+      category = api.category
+      sub_category = api.sub_category
+
       valuation = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", category:,
                                   sub_category:, valuation_date: ..@end_date).order(valuation_date: :asc).last
 
@@ -204,11 +199,11 @@ class FundPortfolioCalcs
 
       # Get the fmv for this portfolio_company on the @end_date
       fmv_on_end_date_cents = quantity * valuation.per_share_value_cents
+      fmv_on_end_date_cents = (fmv_on_end_date_cents * (1 + (scenarios[api.id.to_s]["percentage_change"].to_f / 100))).round(4) if api && scenarios && scenarios[api.id.to_s]["percentage_change"].present?
+
       # Aggregate the fmv across the fun
       total_fmv_on_end_date_cents += fmv_on_end_date_cents
     end
-
-    total_fmv_on_end_date_cents = (total_fmv_on_end_date_cents * (1 + (scenarios[portfolio_company_id.to_s]["percentage_change"].to_f / 100))).round(4) if scenarios && scenarios[portfolio_company_id.to_s]["percentage_change"].present?
 
     total_fmv_on_end_date_cents
   end

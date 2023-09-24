@@ -62,13 +62,13 @@ module PortfolioHelper
   end
 
   def portfolio_last_xirr(fund)
-    last_irr = FundRatio.where(entity_id: fund.entity_id, fund_id: fund.id, name: "IRR", owner_type: "Investor")
+    last_irr = FundRatio.where(entity_id: fund.entity_id, fund_id: fund.id, name: "IRR", owner_type: "AggregatePortfolioInvestment")
                         .order(end_date: :asc).last
 
     if last_irr
       portfolio_irr_ratios = FundRatio.where(entity_id: fund.entity_id, fund_id: fund.id,
-                                             end_date: last_irr.end_date, name: "IRR", owner_type: "Investor")
-                                      .map { |fr| [fr.owner.investor_name, fr.value] }
+                                             end_date: last_irr.end_date, name: "IRR", owner_type: "AggregatePortfolioInvestment")
+                                      .map { |fr| [fr.owner.to_s, fr.value] }
 
       column_chart portfolio_irr_ratios, library: {
         plotOptions: { line: {
