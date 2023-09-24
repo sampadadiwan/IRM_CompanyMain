@@ -1,7 +1,11 @@
 <%= render "/layouts/alerts" %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Portfolio Scenarios</h1>
-
+  <% if params[:fund_id].present? %>
+    <% @fund = Fund.find(params[:fund_id]) %>
+    <h1 class="h3 mb-0 text-gray-800">Portfolio Scenarios: <%= link_to @fund.name, fund_path(@fund, tab: "portfolio-investments-tab") %> </h1>
+  <% else %>
+    <h1 class="h3 mb-0 text-gray-800">Portfolio Scenarios</h1>
+  <% end %>
   <span>
     <%= link_to "New Scenario", new_portfolio_scenario_path(fund_id: params[:fund_id]), {class: "btn btn-outline-primary"}  %>
     <%= link_to "Summary Scenario", simple_scenario_portfolio_scenarios_path(fund_id: params[:fund_id]), {class: "btn btn-outline-success", data: { turbo_frame: 'simple_scenarios' } }  %>

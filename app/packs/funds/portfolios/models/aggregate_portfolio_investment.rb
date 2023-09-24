@@ -103,4 +103,12 @@ class AggregatePortfolioInvestment < ApplicationRecord
       pi.split(stock_split_ratio)
     end
   end
+
+  def category
+    investment_type.split(" : ").first
+  end
+
+  def sub_category
+    investment_type.split(" : ").last
+  end
 end
