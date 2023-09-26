@@ -49,7 +49,7 @@ module CurrencyHelper
                 raw_units
               end
 
-      cookies[:currency_units] = units
+      cookies[:currency_units] = units if cookies
     end
 
     display(money, sanf, units)
