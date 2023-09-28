@@ -22,6 +22,8 @@ class ImportUpload < ApplicationRecord
               "FUND_UNIT_SETTING_SAMPLE" => "/sample_uploads/fund_unit_setting.xlsx",
               "ACCOUNT_ENTRY_SAMPLE" => "/sample_uploads/account_entries.xlsx" }.freeze
 
+  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDitribution CapitalDitributionPayment Documents PortfolioInvestment Valuation FundDocs FundUnitSetting AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData].sort.freeze
+
   belongs_to :entity
   belongs_to :owner, polymorphic: true
   belongs_to :user

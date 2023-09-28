@@ -1,7 +1,16 @@
 <%= render "/layouts/alerts" %>
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    
     <h1 class="h3 mb-0 text-gray-800">Import Uploads</h1>
+    <span>
+    <%= link_to "Upload", 
+            new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
+                "import_upload[owner_type]": "Entity", 
+                "import_upload[entity_id]": current_user.entity_id,
+                "sample_upload": ""), 
+                { class: "btn btn-outline-primary"} %> 
+    </span>
   </div>
 
   <table id="import_uploads" class="table table-bordered dataTable">
