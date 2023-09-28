@@ -9,6 +9,8 @@ class NotificationsController < ApplicationController
       @notifications.mark_as_read!
       current_user.touch # This is to bust the topbar cache which shows new notifications
     end
+
+    @notifications = @notifications.page(params[:page])
   end
 
   # GET /notifications/1 or /notifications/1.json
