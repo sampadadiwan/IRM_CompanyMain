@@ -26,6 +26,8 @@ class ImportKpi < ImportUtil
     Rails.logger.debug { "############ kpi_report = #{kpi_report.errors.full_messages}" }
 
     kpi = Kpi.where(name:, entity_id:, kpi_report_id: kpi_report.id).first
+    attach_uploaded_document(kpi_report, import_upload)
+
     if kpi.present?
       Rails.logger.debug { "Kpi with name #{name} already exists for entity #{import_upload.entity_id}" }
       raise "Kpi with already exists."
@@ -42,6 +44,15 @@ class ImportKpi < ImportUtil
     end
 
     true
+  end
+
+  def attach_uploaded_document(kpi_report, import_upload)
+    existing = kpi_report.documents.where(name: "Uploaded Kpis").first
+    if existing.present?
+      Rails.logger.debug "Uploaded Kpis Document already exists"
+    else
+      Document.create(name: "Uploaded Kpis", owner: kpi_report, user_id: import_upload.user_id, entity_id: kpi_report.entity_id, file_data: import_upload.import_file_data, orignal: true, send_email: false)
+    end
   end
 
   def process_row(headers, custom_field_headers, row, import_upload, _context)

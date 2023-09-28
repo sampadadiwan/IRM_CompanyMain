@@ -36,9 +36,11 @@
                 <tr>
                     <td><%= fcf.name.titleize %></td>
                     <!-- TODO Optimize this loop -->
+                    <!-- Sometimes we have uploaded the data and setup aliases for the field names -->
                     <% aliases = fcf.meta_data.present? ? fcf.meta_data.split(",") : [] %>
                     <% kpi_reports.each do |kpi_report| %>            
                         <% kpis = kpi_report.kpis.map{|kpi| [kpi.name, kpi]}.to_h %>
+                        <!-- Find the kpi with the name or an alias for the name and show its value-->
                         <% val = kpis[fcf.name]&.value || kpis.values_at(*aliases).find{|x| x.present?}&.value %>
                         <td>
                             <%= val %> 
