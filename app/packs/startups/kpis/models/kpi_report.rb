@@ -27,7 +27,7 @@ class KpiReport < ApplicationRecord
   end
 
   def name
-    "KPI - #{as_of}"
+    "#{entity.name} KPI - #{as_of}"
   end
 
   def to_s

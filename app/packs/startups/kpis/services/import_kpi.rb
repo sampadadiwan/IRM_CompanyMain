@@ -47,11 +47,12 @@ class ImportKpi < ImportUtil
   end
 
   def attach_uploaded_document(kpi_report, import_upload)
-    existing = kpi_report.documents.where(name: "Uploaded Kpis").first
+    name = "#{kpi_report} Uploaded"
+    existing = kpi_report.documents.where(name:).first
     if existing.present?
       Rails.logger.debug "Uploaded Kpis Document already exists"
     else
-      Document.create(name: "Uploaded Kpis", owner: kpi_report, user_id: import_upload.user_id, entity_id: kpi_report.entity_id, file_data: import_upload.import_file_data, orignal: true, send_email: false)
+      Document.create(name:, owner: kpi_report, user_id: import_upload.user_id, entity_id: kpi_report.entity_id, file_data: import_upload.import_file_data, orignal: true, send_email: false)
     end
   end
 
