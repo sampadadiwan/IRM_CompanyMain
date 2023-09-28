@@ -10,7 +10,6 @@ class ImportKpi < ImportUtil
   def post_process(import_upload, _context); end
 
   def save_kpi(user_data, import_upload, custom_field_headers)
-
     name = user_data['Name'].strip
     value = user_data['Value']
     as_of = Date.parse(user_data['As Of'].to_s)

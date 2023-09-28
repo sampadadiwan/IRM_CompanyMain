@@ -1,3 +1,36 @@
-<h1>New Bulk Upload : <%=@import_upload.import_type%> </h1>
+<div class="row">    
+    <div class="col">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    Upload : <%=@import_upload.import_type%>
+                </h6>
+            </div>
+            <div class="card-body">
+                <%= render "form", import_upload: @import_upload %>
+            </div>
+        </div>
+    </div>
 
-<%= render "form", import_upload: @import_upload %>
+    <% if @import_upload.import_type.blank? %>
+        <div class="col-lg-5 mb-4">        
+            <div class="card shadow mb-4">
+            <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                Templates
+            </h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered  dataTable">
+                    <% ImportUpload::SAMPLES.sort.each do |name, path| %>
+                    <tr>
+                        <td><%= link_to name.humanize, path %></td>
+                    </tr>
+                    <% end %>
+                </table>
+            </div>
+        </div>
+        </div>
+    <% end %>
+    
+</div>
