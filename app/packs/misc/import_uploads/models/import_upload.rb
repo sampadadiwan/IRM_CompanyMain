@@ -20,7 +20,8 @@ class ImportUpload < ApplicationRecord
               "OFFERS_DOCS_SAMPLE" => "/sample_uploads/offer_docs.zip",
               "OPTIONS_CUSTOM_DATA_SAMPLE" => "/sample_uploads/options_custom_data.xlsx",
               "FUND_UNIT_SETTING_SAMPLE" => "/sample_uploads/fund_unit_setting.xlsx",
-              "ACCOUNT_ENTRY_SAMPLE" => "/sample_uploads/account_entries.xlsx" }.freeze
+              "ACCOUNT_ENTRY_SAMPLE" => "/sample_uploads/account_entries.xlsx",
+              "KPIS_SAMPLE" => "/sample_uploads/kpis.xlsx"  }.freeze
 
   TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDitribution CapitalDitributionPayment Documents PortfolioInvestment Valuation FundDocs FundUnitSetting AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData].sort.freeze
 
