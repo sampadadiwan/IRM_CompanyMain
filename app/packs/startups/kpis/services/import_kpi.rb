@@ -14,15 +14,26 @@ class ImportKpi < ImportUtil
     value = user_data['Value']
     as_of = Date.parse(user_data['As Of'].to_s)
     notes = user_data['Notes']
+    entity_id = import_upload.entity_id
 
-    kpi = Kpi.where(name:, as_of:, entity_id: import_upload.entity_id).first
+    kpi_report = KpiReport.find_or_initialize_by(as_of:, entity_id:)
+    if kpi_report.new_record?
+      kpi_report.user_id = import_upload.user_id
+      kpi_report.save!
+    end
+
+    Rails.logger.debug kpi_report.to_json
+    Rails.logger.debug { "############ kpi_report = #{kpi_report.errors.full_messages}" }
+
+    kpi = Kpi.where(name:, entity_id:, kpi_report_id: kpi_report.id).first
     if kpi.present?
       Rails.logger.debug { "Kpi with name #{name} already exists for entity #{import_upload.entity_id}" }
       raise "Kpi with already exists."
     else
 
       Rails.logger.debug user_data
-      kpi = Kpi.new(name:, as_of:, notes:, value:, display_value:, entity_id: import_upload.entity_id)
+
+      kpi = Kpi.new(name:, notes:, value:, display_value: value, entity_id:, kpi_report_id: kpi_report.id)
       setup_custom_fields(user_data, kpi, custom_field_headers)
 
       Rails.logger.debug { "Saving kpi with name '#{kpi.name}'" }

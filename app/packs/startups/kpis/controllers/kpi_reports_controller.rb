@@ -7,10 +7,8 @@ class KpiReportsController < ApplicationController
     authorize(KpiReport)
 
     params[:period] ||= 6
-    if params[:period].present?
-      date = Time.zone.today - params[:period].to_i.months
-      @kpi_reports = @kpi_reports.where(as_of: date..)
-    end
+    date = Time.zone.today - params[:period].to_i.months
+    @kpi_reports = @kpi_reports.where(as_of: date..)
 
     @kpi_reports = @kpi_reports.where(entity_id: params[:entity_id]) if params[:entity_id].present?
 

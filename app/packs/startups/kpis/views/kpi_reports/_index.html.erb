@@ -14,6 +14,15 @@
       <% if form_type %>
         <%= link_to "New Kpi Report", new_kpi_report_path("kpi_report[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
         <%= link_to "Grid View", kpi_reports_path(entity_id: current_user.entity_id, grid_view: true), {class: "btn btn-outline-primary"}  %>
+
+        <%= link_to "Upload", 
+            new_import_upload_path("import_upload[owner_id]": current_user.entity_id, 
+                "import_upload[owner_type]": "Entity", 
+                "import_upload[import_type]": "Kpi", 
+                "import_upload[entity_id]": current_user.entity_id,
+                "sample_upload": ""), 
+                { class: "btn btn-outline-success"} %> 
+
         <%= link_to "Customize Kpis", edit_form_type_path(form_type), {class: "btn btn-outline-success"}  %>
       <% else %>
         <%= link_to "Customize Kpis", new_form_type_path("form_type[name]": "KpiReport"), {class: "btn btn-outline-success"}  %>
@@ -21,7 +30,7 @@
     </span>
   </div>
 
-  <% data_source ||= kpi_reports_path(params, format: :json, all: true) %>
+  <% data_source ||= kpi_reports_path(format: :json, all: true, period: params[:period]) %>
   <% lazy_load_data ||= false %>
 
   <div class="table-responsive">

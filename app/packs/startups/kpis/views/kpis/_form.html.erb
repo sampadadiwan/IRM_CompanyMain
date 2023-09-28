@@ -4,6 +4,7 @@
     <% 
       kpi = form.object
       field = @kpi_report.form_type.form_custom_fields.where(name: kpi.name).first 
+      field ||= FormCustomField.new(field_type: "TextField", name: kpi.name)
     %>
 
   <div class="row">

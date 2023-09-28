@@ -18,7 +18,7 @@
 </div>
 
 <% if kpi_reports.present? %>
-<% form_custom_fields = kpi_reports[0].form_type.form_custom_fields.order(position: :asc) %>
+<% form_custom_fields = kpi_reports[0].form_type ? kpi_reports[0].form_type.form_custom_fields.order(position: :asc) : [FormCustomField.new(field_type: "TextField", name: "")] %>
 
 <div class="table-responsive" data-controller="datatable">
     <table id="kpi_reports_grid" class="table table-bordered dataTable jqDataTable">
@@ -34,11 +34,15 @@
                         
             <% form_custom_fields.each do |fcf| %>            
                 <tr>
-                    <td><%= fcf.name %></td>
+                    <td><%= fcf.name.titleize %></td>
                     <!-- TODO Optimize this loop -->
+                    <% aliases = fcf.meta_data.present? ? fcf.meta_data.split(",") : [] %>
                     <% kpi_reports.each do |kpi_report| %>            
                         <% kpis = kpi_report.kpis.map{|kpi| [kpi.name, kpi]}.to_h %>
-                        <td><%= kpis[fcf.name]&.value %> </td>
+                        <% val = kpis[fcf.name]&.value || kpis.values_at(*aliases).find{|x| x.present?}&.value %>
+                        <td>
+                            <%= val %> 
+                        </td>
                     <% end %>
                     
                 </tr>

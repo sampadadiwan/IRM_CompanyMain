@@ -11,7 +11,7 @@ class KpiReport < ApplicationRecord
   accepts_nested_attributes_for :kpis, reject_if: :all_blank, allow_destroy: true
 
   def self.custom_fields
-    JSON.parse(ENV.fetch("KPIS", nil)).keys.sort
+    JSON.parse(ENV.fetch("KPIS", nil)).keys.map(&:titleize).sort
   end
 
   def self.custom_fields_map
