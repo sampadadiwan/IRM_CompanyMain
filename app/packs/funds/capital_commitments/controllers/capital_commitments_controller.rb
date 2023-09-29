@@ -2,7 +2,8 @@ class CapitalCommitmentsController < ApplicationController
   before_action :set_capital_commitment, only: %i[show edit update destroy generate_documentation
                                                   report generate_soa generate_soa_form]
 
-  after_action :verify_policy_scoped, only: []
+  after_action :verify_authorized, only: %i[show edit update destroy generate_documentation
+                                            report generate_soa generate_soa_form]
 
   # GET /capital_commitments or /capital_commitments.json
   def index
@@ -21,6 +22,15 @@ class CapitalCommitmentsController < ApplicationController
       format.xlsx
       format.json { render json: CapitalCommitmentDatatable.new(params, capital_commitments: @capital_commitments) }
     end
+  end
+
+  def documents
+    capital_commitment_ids = policy_scope(CapitalCommitment).pluck(:id)
+    @documents = Document.where(owner_id: capital_commitment_ids, owner_type: "CapitalCommitment")
+    @documents = @documents.order(id: :desc).page params[:page]
+
+    @no_folders = false
+    render "documents/index"
   end
 
   def search_ids

@@ -12,6 +12,10 @@ class CapitalCommitmentPolicy < FundBasePolicy
       permissioned_investor?
   end
 
+  def documents?
+    true
+  end
+
   def new?
     create?
   end

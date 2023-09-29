@@ -57,6 +57,7 @@ resources :capital_commitments do
   patch 'generate_esign_link', on: :member
   get 'search', on: :collection
   get 'report', on: :member
+  get 'documents', on: :collection
 end
 
 resources :funds do

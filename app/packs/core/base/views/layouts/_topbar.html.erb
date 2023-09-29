@@ -127,32 +127,42 @@
                                 <i class="fas fa-users fa-sm fa-fw mr-2 text-gray-400"></i>
                                 Advisors
                             </a>
+
+                            <% if current_user.curr_role == "investor" %>
+                                <a class="dropdown-item" href="<%= documents_capital_commitments_path %>">
+                                    <i class="fas fa-file-text fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Statements
+                                </a>
+
+                            <% else %>
                             
-                            <a class="dropdown-item" href="<%= access_rights_path %>">
-                                <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
-                                Stakeholder Access Rights
-                            </a>
+                                <a class="dropdown-item" href="<%= access_rights_path %>">
+                                    <i class="fas fa-key fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Stakeholder Access Rights
+                                </a>
 
-                            <a class="dropdown-item" href="<%= form_types_path %>">
-                                <i class="fas fa-gear fa-sm fa-fw mr-2 text-gray-400"></i>
-                                Customize Forms
-                            </a>
+                                <a class="dropdown-item" href="<%= form_types_path %>">
+                                    <i class="fas fa-gear fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Customize Forms
+                                </a>
 
-                            <a class="dropdown-item" href="<%= investor_notices_path %>">
-                                <i class="fas fa-edit fa-sm fa-fw mr-2 text-gray-400"></i>
-                                Notices
-                            </a>
+                                <a class="dropdown-item" href="<%= investor_notices_path %>">
+                                    <i class="fas fa-edit fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Notices
+                                </a>
 
 
-                            <a class="dropdown-item" href="<%= import_uploads_path %>">
-                                <i class="fas fa-upload fa-sm fa-fw mr-2 text-gray-400"></i>
-                                Import Uploads
-                            </a>
-                            
-                            <a class="dropdown-item" href="<%= exchange_rates_path %>">
-                                <i class="fas fa-dollar fa-sm fa-fw mr-2 text-gray-400"></i>
-                                Exchange Rates
-                            </a>
+                                <a class="dropdown-item" href="<%= import_uploads_path %>">
+                                    <i class="fas fa-upload fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Import Uploads
+                                </a>
+                                
+                                <a class="dropdown-item" href="<%= exchange_rates_path %>">
+                                    <i class="fas fa-dollar fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Exchange Rates
+                                </a>
+
+                            <% end %>
                         </div>
                         
                     </li>
