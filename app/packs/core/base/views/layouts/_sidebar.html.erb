@@ -79,9 +79,10 @@
                 
                     <div id="fundMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
                         <div class="bg-white py-2 collapse-inner rounded">
-                            <a class="collapse-item" href="/funds">View Funds</a>
+                            <a class="collapse-item" href="/funds">Funds</a>
                             <% if current_user.curr_role == "investor" %>
-                                <a class="collapse-item" href="/capital_commitments?my_commitments=true">My Commitments</a>
+                                <a class="collapse-item" href="/capital_commitments?my_commitments=true"> Commitments</a>
+                                <a class="collapse-item" href="/capital_commitments/documents">Statements</a>
                             <% end %>
                             <a class="collapse-item" href="/investor_kycs">KYCs</a>
                         </div>
