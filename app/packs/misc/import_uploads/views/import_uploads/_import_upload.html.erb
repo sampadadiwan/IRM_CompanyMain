@@ -12,7 +12,10 @@
     <%= import_upload.import_type %>
   </td>
   <td>
-    <%= import_upload.status.present? ?  "Failed" : "Success" %>
+    <% status =  import_upload.status.present? ?  "Failed" : "Success" %>
+    <%= render DisplayBooleanComponent.new(bool: import_upload.status.blank?).
+        with_content(status) %>
+
   </td>
   <td>
     <%= link_to "Show", import_upload , {class: "btn btn-outline-primary"}%>
