@@ -75,6 +75,7 @@ class ImportUploadsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_import_upload
     @import_upload = ImportUpload.find(params[:id])
+    @bread_crumbs = { Uploads: import_uploads_path, "#{@import_upload.name}": import_upload_path(@import_upload) }
     authorize @import_upload
   end
 

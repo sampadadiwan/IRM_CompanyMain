@@ -1,5 +1,5 @@
 class ImportUpload < ApplicationRecord
-  SAMPLES = { "IA_SAMPLE" => "/sample_uploads/investor_access.xlsx",
+  SAMPLES = { "INVESTOR_ACCESS_SAMPLE" => "/sample_uploads/investor_access.xlsx",
               "INVESTORS_SAMPLE" => "/sample_uploads/investors.xlsx",
               "FUND_INVESTORS_SAMPLE" => "/sample_uploads/fund_investors.xlsx",
               "HOLDINGS_SAMPLE" => "/sample_uploads/holdings.xlsx",
@@ -23,7 +23,7 @@ class ImportUpload < ApplicationRecord
               "ACCOUNT_ENTRY_SAMPLE" => "/sample_uploads/account_entries.xlsx",
               "KPIS_SAMPLE" => "/sample_uploads/kpis.xlsx" }.freeze
 
-  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDitribution CapitalDitributionPayment Documents PortfolioInvestment Valuation FundDocs FundUnitSetting AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData Kpi].sort.freeze
+  TYPES = %w[InvestorAccess Investor CapitalCommittment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment Valuation FundDocs FundUnitSetting AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData Kpi].sort.freeze
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true

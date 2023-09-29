@@ -1,23 +1,20 @@
-
-
 <tr id="<%= dom_id import_upload %>">
-<td>
+  <td>
     <%= import_upload.name %>
-</td>  
-<td>
-    <%= import_upload.owner_type %>
-</td>  
-<td>
+  </td>
+  <td>
+    <%= link_to import_upload.owner %>
+  </td>
+  <td>
     <%= import_upload.user.full_name %>
-</td>  
-<td>
+  </td>
+  <td>
     <%= import_upload.import_type %>
-</td>  
-<td>
-    <%= import_upload.status %>
-</td>  
-
-<td>
-  <%= link_to "Show", import_upload , {class: "btn btn-outline-primary"}%>
-</td>
+  </td>
+  <td>
+    <%= import_upload.status.present? ?  "Failed" : "Success" %>
+  </td>
+  <td>
+    <%= link_to "Show", import_upload , {class: "btn btn-outline-primary"}%>
+  </td>
 </tr>
