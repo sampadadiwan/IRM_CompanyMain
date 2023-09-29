@@ -23,7 +23,7 @@ class ImportUpload < ApplicationRecord
               "ACCOUNT_ENTRY_SAMPLE" => "/sample_uploads/account_entries.xlsx",
               "KPIS_SAMPLE" => "/sample_uploads/kpis.xlsx" }.freeze
 
-  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDitribution CapitalDitributionPayment Documents PortfolioInvestment Valuation FundDocs FundUnitSetting AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData].sort.freeze
+  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDitribution CapitalDitributionPayment Documents PortfolioInvestment Valuation FundDocs FundUnitSetting AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData Kpi].sort.freeze
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true

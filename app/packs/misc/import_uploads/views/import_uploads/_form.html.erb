@@ -36,7 +36,10 @@
     <%= render "layouts/single_upload", form: form, field_label: "Import Data", 
                             for_model: "import_upload", field_name: "import_file", 
                             model: import_upload %>
-    <small class="text-muted"><%= link_to "Sample upload format", ImportUpload::SAMPLES[params[:sample_upload]] %> </small>
+
+    <small class="text-muted">
+      <%= link_to "Sample upload format", ImportUpload::SAMPLES[params[:sample_upload]] if ImportUpload::SAMPLES[params[:sample_upload]] %> 
+    </small>
   </div>
 
   <div class="form-group">
