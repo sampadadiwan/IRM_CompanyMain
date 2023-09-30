@@ -1,0 +1,59 @@
+<div class="table-responsive" data-controller="datatable">
+
+  <table id="documents" class="table table-bordered  dataTable jqDataTable">
+
+    <thead>
+      <tr>
+        
+        <th>
+          Fund
+        </th>
+        <th>
+          For
+        </th>
+
+        <th>
+          Name
+        </th>
+        <th class="hideMobP">
+          Tags
+        </th>
+
+        <th>
+        </th>
+
+      </tr>
+    </thead>
+    <tbody>
+      <% @documents.each do |document| %>
+        <tr id="document_<%= document.id %>">
+              
+            <td class="hideMobP">
+                <%= link_to document.owner.fund %>
+            </td>
+            <td class="hideMobP">
+                <%= link_to document.owner %>
+            </td>
+            <td>
+                <%= link_to document.name, document_path(document.id) %>
+                <% if document.orignal %>
+                    <%= link_to document.file_url(), class: "document_download_icon", target: "_blank" do %>
+                        <i class="fas fa-download"></i>
+                    <% end %>          
+                <% end %>
+            </td>  
+            <td class="hideMobP">
+                <%= document.tag_list %>
+                <%= document.owner_tag %>
+            </td>
+            <td>
+                <%= link_to "Show", document, class: "btn btn-outline-primary" %>
+            </td>
+
+        </tr>
+
+      <% end %>
+    </tbody>
+  </table>
+
+</div>

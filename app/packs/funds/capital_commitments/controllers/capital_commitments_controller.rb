@@ -27,10 +27,10 @@ class CapitalCommitmentsController < ApplicationController
   def documents
     capital_commitment_ids = policy_scope(CapitalCommitment).pluck(:id)
     @documents = Document.where(owner_id: capital_commitment_ids, owner_type: "CapitalCommitment")
-    @documents = @documents.order(id: :desc).page params[:page]
+    @documents = @documents.order(id: :desc)
 
     @no_folders = false
-    render "documents/index"
+    render "documents"
   end
 
   def search_ids

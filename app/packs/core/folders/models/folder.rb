@@ -36,6 +36,10 @@ class Folder < ApplicationRecord
     end
   end
 
+  def name
+    level.zero? ? entity.name : self[:name]
+  end
+
   def set_parent_permissions
     parent.access_rights.each do |parent_ar|
       folder_ar = parent_ar.dup
