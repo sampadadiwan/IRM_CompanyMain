@@ -64,7 +64,7 @@ class SecondarySalesController < ApplicationController
 
   def approve_offers
     @offers = @secondary_sale.offers.where(approved: false)
-    @offers.update(approved: true)
+    @offers.update(approved: true, granted_by_user_id: current_user.id)
 
     redirect_to secondary_sale_url(@secondary_sale), notice: "Approved all pending offers"
   end

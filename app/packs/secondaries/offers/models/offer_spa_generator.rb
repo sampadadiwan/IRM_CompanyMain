@@ -123,5 +123,8 @@ class OfferSpaGenerator
     new_generated_doc.send_email = false
     new_generated_doc.locked = true
     new_generated_doc.save
+
+    # Once the new SPA is created, ensure that the offer final_agreement is unset
+    offer.update_columns(final_agreement: false, final_agreement_user_id: nil)
   end
 end
