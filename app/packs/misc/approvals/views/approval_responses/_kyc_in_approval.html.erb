@@ -1,0 +1,13 @@
+<% if @approval.entity.entity_setting.arbitrary == "KycInApproval" %>
+    <p>
+    <table class="table table-bordered dataTable">
+        <% @approval_response.investor.investor_kycs.each do |kyc| %>
+        <tr>
+            <td><%= link_to kyc.full_name, investor_kyc_url(kyc, subdomain: @approval.entity.sub_domain) %></td>
+            <td><%= kyc.PAN %></td>
+            <td><%= kyc.address %></td>
+        </tr>
+        <% end %>
+    </table>
+    </p>
+<% end %>

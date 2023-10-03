@@ -15,7 +15,7 @@ class BaseNotification < Noticed::Base
 
   def email_delay
     # Randomize the delay so we dont flood aws SES
-    rand(1..300).seconds
+    Rails.env.development? ? 0.seconds : rand(1..300).seconds
   end
 
   def email_method

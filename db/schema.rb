@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_09_15_132403) do
+ActiveRecord::Schema[7.0].define(version: 2023_10_03_141919) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -925,6 +925,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_15_132403) do
     t.text "kyc_docs_note"
     t.string "stamp_paper_tags"
     t.string "call_basis"
+    t.string "arbitrary", limit: 20
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 

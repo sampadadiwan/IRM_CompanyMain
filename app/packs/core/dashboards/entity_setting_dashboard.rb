@@ -11,6 +11,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     id: Field::Number,
     sandbox: Field::BooleanEmoji,
     sandbox_emails: Field::String,
+    arbitrary: Field::String,
     entity_bcc: Field::String,
     from_email: Field::String,
     reply_to: Field::String,
@@ -76,6 +77,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     trial
     trial_end_date
     call_basis
+    arbitrary
     created_at
     updated_at
   ].freeze
@@ -99,6 +101,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     trial
     trial_end_date
     call_basis
+    arbitrary
   ].freeze
 
   # COLLECTION_FILTERS
