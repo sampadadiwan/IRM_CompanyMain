@@ -1,0 +1,25 @@
+<div class="field-unit__label">
+  <%= f.label field.attribute %>
+</div>
+<div class="field-unit__field">
+  <% if f.object.class.name == "EntitySetting" %>
+    <% EntitySetting.custom_flags.pairs.each do |key, val| %>
+        <div class="form-group col">
+          <%= f.label :custom_flags, key.titleize, class: "no-wrap" %>
+          <%= f.check_box :custom_flags, {name: "entity[entity_setting_attributes][custom_flags][]",
+              val: val, id: "custom_flags_#{val}", class: "form-control row-checkbox"}, val, nil   %>
+        </div>
+    <% end %>
+  <% elsif f.object.class.name == "User" %>
+    <% User.permissions.pairs.each do |key, val| %>
+        <div class="form-group col">
+          <%= f.label :permissions, key.titleize, class: "no-wrap" %>
+          <%= f.check_box :permissions, {name: "user[permissions][]",
+              val: val, id: "permissions_#{val}", class: "form-control row-checkbox"}, val, nil   %>
+        </div>
+    <% end %>
+  <% else %>
+    Edit ActiveFlagField _form partial to add custom fields
+    <%= f.text_field field.attribute, disabled: true %>
+  <% end %>
+</div>

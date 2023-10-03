@@ -103,6 +103,6 @@ class EntitiesController < ApplicationController
     params.require(:entity).permit(:name, :url, :category, :founded, :entity_type, :pan,
                                    :funding_amount, :funding_unit, :details, :logo_url,
                                    :investor_categories, :instrument_types, :sub_domain, :enable_support,
-                                   :currency, :units, :logo, entity_setting_attributes: [:id, :individual_kyc_doc_list, :non_individual_kyc_doc_list, :sandbox, :sandbox_emails, :cc, :sandbox_numbers, :kyc_docs_note, :entity_bcc, { kpi_doc_list: [] }])
+                                   :currency, :units, :logo, entity_setting_attributes: [:id, :individual_kyc_doc_list, :non_individual_kyc_doc_list, :sandbox, :sandbox_emails, :cc, :sandbox_numbers, :kyc_docs_note, :entity_bcc, { custom_flags: [], kpi_doc_list: [] }])
   end
 end

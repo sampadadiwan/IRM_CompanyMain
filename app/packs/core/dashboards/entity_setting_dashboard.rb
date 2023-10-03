@@ -11,7 +11,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     id: Field::Number,
     sandbox: Field::BooleanEmoji,
     sandbox_emails: Field::String,
-    custom_flags: Field::String,
+    custom_flags: ActiveFlagField,
     entity_bcc: Field::String,
     from_email: Field::String,
     reply_to: Field::String,
@@ -121,5 +121,10 @@ class EntitySettingDashboard < Administrate::BaseDashboard
   #
   def display_resource(entity_setting)
     "#{entity_setting.entity.name} Settings"
+  end
+
+  def permitted_attributes
+    # This is to enable the custom_flags field to be editable
+    super + [custom_flags: []]  # -- Adding our now removed field to the permitted list
   end
 end

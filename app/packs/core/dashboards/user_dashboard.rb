@@ -18,7 +18,7 @@ class UserDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     email: Field::String,
-    permissions: Field::String,
+    permissions: ActiveFlagField,
     password: Field::String.with_options(searchable: false),
     password_confirmation: Field::String.with_options(searchable: false),
     phone: Field::String,
@@ -85,6 +85,7 @@ class UserDashboard < Administrate::BaseDashboard
     advisor_entity
     advisor_entity_roles
     roles
+    permissions
   ].freeze
 
   # COLLECTION_FILTERS
@@ -104,5 +105,10 @@ class UserDashboard < Administrate::BaseDashboard
   #
   def display_resource(user)
     user.name
+  end
+
+  def permitted_attributes
+    # This is to enable the permissions field to be editable
+    super + [permissions: []]  # -- Adding our now removed field to the permitted list
   end
 end
