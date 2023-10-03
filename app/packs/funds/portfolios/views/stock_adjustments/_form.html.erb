@@ -1,4 +1,4 @@
-<%= form_with(model: stock_adjustment) do |form| %>
+<%= form_with(model: stock_adjustment, validate: true) do |form| %>
   <% if stock_adjustment.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(stock_adjustment.errors.count, "error") %> prohibited this stock_adjustment from being saved:</h2>
@@ -34,6 +34,7 @@
   <div class="form-group">
     <%= form.label :adjustment %>
     <%= form.number_field :adjustment, class: "form-control", step: :any  %>
+    <small class="text-muted"> Stock Split/Merge Ratio </small>
   </div>
 
   <div class="form-group">

@@ -132,7 +132,8 @@ class AccountEntryAllocationEngine
         ae = AccountEntry.new(name: "#{orig_api.portfolio_company_name}-#{orig_api.investment_type}", entry_type: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", generated: true)
 
         # This will create the AggregatePortfolioInvestment as of the end date, it will be used in the formulas
-        api = orig_api.as_of(@end_date)
+        api = orig_api.as_of(nil, @end_date)
+        api_period = orig_api.as_of @start_date, @end_date
         ae = create_account_entry(ae, fund_formula, capital_commitment, orig_api, binding)
       end
 

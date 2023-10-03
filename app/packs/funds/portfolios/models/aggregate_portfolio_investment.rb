@@ -36,9 +36,11 @@ class AggregatePortfolioInvestment < ApplicationRecord
   # This is used extensively in the AccountEntryAllocationEngine
   # The AccountEntryAllocationEngine needs the date as of end_date,
   # so this creates an AggregatePortfolioInvestment with data as of the end_date
-  def as_of(end_date)
+  def as_of(start_date, end_date)
     api = dup
     pis = portfolio_investments.where(investment_date: ..end_date)
+    pis = pis.where(investment_date: start_date..) if start_date
+
     api.portfolio_investments = pis
     api.quantity = pis.sum(:quantity)
     api.bought_quantity = pis.buys.sum(:quantity)
