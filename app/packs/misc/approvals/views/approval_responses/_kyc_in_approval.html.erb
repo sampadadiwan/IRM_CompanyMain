@@ -1,4 +1,4 @@
-<% if @approval.entity.entity_setting.arbitrary == "KycInApproval" %>
+<% if @approval.entity.entity_setting.custom_flags.enable_approval_show_kycs? %>
     <p>
     <table class="table table-bordered dataTable">
         <% @approval_response.investor.investor_kycs.each do |kyc| %>
