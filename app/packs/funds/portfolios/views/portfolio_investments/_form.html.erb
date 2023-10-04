@@ -19,7 +19,7 @@
     <%= form.select :portfolio_company_id, portfolio_investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control"  %>
 
     <small class="text-muted">
-      Create <%= link_to "New Portfolio Company", 
+      Create <%= link_to "New Portfolio Company",
         new_investor_path("investor[entity_id]": portfolio_investment.entity_id, "investor[category]": "Portfolio Company",
             "back_to": new_portfolio_investment_path("portfolio_investment[fund_id]": portfolio_investment.fund_id,
             "portfolio_investment[entity_id]": portfolio_investment.entity_id)) %>
@@ -42,7 +42,7 @@
     <%= form.label :quantity %>
     <%= form.number_field :quantity, class: "form-control", step: :any  %>
   </div>
-  
+
   <div class="form-group" data-controller="hide-co-invest">
     <%= form.label :commitment_type %>
     <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control commitment_type', data: {action: "change->hide-co-invest#onChange"} %>
