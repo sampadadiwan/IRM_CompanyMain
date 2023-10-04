@@ -1,0 +1,11 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "FundFormula") do |sheet|
+  # Create the header row
+  sheet.add_row(["Fund", "Sequence", "Name", "Type", "For", "Formula", "Entry Type", "Rollup", "Enabled"])
+
+  # Create entries for each item
+  @fund_formulas.each do |fu|
+    sheet.add_row [fu.fund.name, fu.sequence, fu.name, fu.rule_type, fu.commitment_type, fu.formula, fu.entry_type, fu.roll_up, fu.enabled]
+  end
+end

@@ -8,6 +8,9 @@
 
       <%= link_to "Run All", allocate_form_fund_path(id: params[:fund_id]), 
                       class: "btn btn-outline-success"  %> 
+
+      <%= link_to "Download", fund_formulas_path(fund_id: params[:fund_id], format: :xlsx), 
+                      class: "btn btn-outline-success"  %>                       
     </span>
   <% end %>
 
