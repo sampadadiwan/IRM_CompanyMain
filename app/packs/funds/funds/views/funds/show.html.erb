@@ -42,14 +42,14 @@
             Sebi Reports
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <%= link_to "All Reports", fund_reports_path, {class: "dropdown-item" }  %>
+            <%= link_to "All Reports", fund_reports_path(fund_id: @fund.id), {class: "dropdown-item" }  %>
             <%= link_to "Capital and Investments" , report_fund_path(@fund, report: "sebi_reports/cumulative_funds_raised"), {class: "dropdown-item" } %>
           </div>
         </div>
       </div>
 
 
-      
+
       <div class="btn-group">
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle" type="button"
@@ -57,7 +57,7 @@
             Actions
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            
+
             <% if policy(@fund).update? %>
 
               <%= link_to "Edit Fund" , edit_fund_path(@fund), {class: "dropdown-item" } %>
@@ -80,7 +80,7 @@
 
                 <%= link_to "Allocate Account Entries", allocate_form_fund_path(@fund),
                     class: "dropdown-item" if policy(@fund).allocate? %>
-                
+
 
                 <%= link_to "Import Account Entries",
                     new_import_upload_path("import_upload[owner_id]": @fund.id,
@@ -93,7 +93,7 @@
 
             <% end %>
 
-            
+
             <% if @fund.entity.enable_units %>
               <div class="dropdown-divider"></div>
               <%= link_to "Fund Unit Settings" , fund_unit_settings_path(fund_id: @fund.id), {class: "dropdown-item" } %>
@@ -129,10 +129,10 @@
 
               </div>
 
-              <div class="hideMobP"> 
+              <div class="hideMobP">
                 <div class="dropdown-divider"></div>
 
-                
+
                 <%= link_to "Import Investors",
                 new_import_upload_path("import_upload[owner_id]": @fund.id,
                     "import_upload[owner_type]": "Fund",
@@ -166,4 +166,3 @@
   </div>
 
   <%= render "/funds/fund_details", fund: @fund %>
-  

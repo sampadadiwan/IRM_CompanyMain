@@ -28,7 +28,7 @@ class CapitalCommitmentDocJob < ApplicationJob
             # Do not delete signed documents
             docs_to_destroy = capital_commitment.documents.where(name: fund_doc_template.name)
             # .where.not translates to != in SQL. NULL is treated differently from other values, so != queries never match columns that are set to NULL
-            docs_to_destroy.where.not(esign_status: "signed").or(docs_to_destroy.where(esign_status: nil)).each(&:destroy)
+            docs_to_destroy.where.not(owner_tag: %w[Signed signed]).or(docs_to_destroy.where(owner_tag: nil)).each(&:destroy)
             # Generate a new signed document
             CapitalCommitmentDocGenerator.new(capital_commitment, fund_doc_template, user_id)
           end

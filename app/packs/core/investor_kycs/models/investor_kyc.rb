@@ -101,20 +101,6 @@ class InvestorKyc < ApplicationRecord
     VerifyKycBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
   end
 
-  after_save :notify_kyc_updated
-  def notify_kyc_updated
-    users = User.where(email: entity.entity_setting.cc&.split(","))
-    msg = "KYC updated for #{full_name}"
-    email_method = :notify_kyc_updated
-    if verified && saved_change_to_verified?
-      msg = "Confirmation of your KYC: #{entity.name}"
-      email_method = :notify_kyc_verified
-    end
-    users.each do |user|
-      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method:, msg:, user_id: user.id).deliver_later(user)
-    end
-  end
-
   # rubocop:disable Rails/SkipsModelValidations
   after_save :enable_kyc
   def enable_kyc
