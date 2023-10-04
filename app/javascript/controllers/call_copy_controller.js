@@ -27,6 +27,18 @@ export default class extends Controller {
     
   }
 
+  copy_all_percentage_changes(e) {
+    e.preventDefault();
+
+    let percentage_change = $(".percentage_change")[0].value;
+    $(".percentage_change").each(function( index, item ) {
+      $( item )[0].value = percentage_change;
+    });
+    console.log(`percentage_change = ${percentage_change}`);
+  }
+
+  
+
   call_basis_changed() {
     let call_basis = $("#capital_call_call_basis").val();
     console.log(`call_basis = ${call_basis}`);

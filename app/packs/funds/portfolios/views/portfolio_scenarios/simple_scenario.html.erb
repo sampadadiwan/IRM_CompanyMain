@@ -36,12 +36,13 @@
 
     </div>
 
-      <div class="row">
+      <div class="row" data-controller="call-copy">
         <div class="form-group col">
           <%= label_tag :portfolio_company %>
         </div>
         <div class="form-group col">
           <%= label_tag :percentage_change, "% Change in FMV" %>
+          <small class="badge badge-info float-right"><a href="#" data-action="click->call-copy#copy_all_percentage_changes">Copy All</a></small>
         </div>
         <div class="form-group col text-success">
           <%= label_tag :current_irr, "Current IRR" %>
@@ -61,7 +62,7 @@
 
       <div class="form-group col">
         <% percentage_change = params["scenario"].present? ? params["scenario"][api.id.to_s]["percentage_change"] : 0 %>
-        <%= number_field_tag :percentage_change, percentage_change, name: "scenario[#{api.id}][percentage_change]", class: "form-control" %>
+        <%= number_field_tag :percentage_change, percentage_change, name: "scenario[#{api.id}][percentage_change]", class: "form-control percentage_change" %>
       </div>
 
       <div class="form-group col text-success">
