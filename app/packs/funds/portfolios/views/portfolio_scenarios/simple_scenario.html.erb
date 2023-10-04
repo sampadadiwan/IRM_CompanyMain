@@ -12,13 +12,27 @@
   
   <%# we compute the orig_xirr on page load using get, but its cached for every subsequent post for the scenario %>
   <% orig_xirr = get_orig_xirr(params) %>
-  <%# If no scenario is specified the use the orig_xirr computed above %>
-  <% scenario_xirr = params["scenario"].blank? ? nil : compute_portfolio_irr(params, scenarios: params[:scenario]) %>
+  
+  <% 
+    err_msg = nil
+    begin
+      # If no scenario is specified the use the orig_xirr computed above 
+      scenario_xirr = params["scenario"].blank? ? nil : compute_portfolio_irr(params, scenarios: params[:scenario]) 
+      
+      # we compute the fund_orig_xirr on page load using get, but its cached for every subsequent post for the scenario 
+      fund_orig_xirr = params[:fund_orig_xirr].presence || compute_fund_irr(params) 
 
-  <%# we compute the fund_orig_xirr on page load using get, but its cached for every subsequent post for the scenario %>
-  <% fund_orig_xirr = params[:fund_orig_xirr].presence || compute_fund_irr(params) %>
-  <%# If no scenario is specified the use the fund_orig_xirr computed above %>
-  <% fund_scenario_xirr = params["scenario"].blank? ? 0 : compute_fund_irr(params, scenarios: params[:scenario]) %>
+      # If no scenario is specified the use the fund_orig_xirr computed above
+      fund_scenario_xirr = params["scenario"].blank? ? 0 : compute_fund_irr(params, scenarios: params[:scenario])
+    rescue Exception => error
+      err_msg = "Error cannot proceed. #{error.message}. Please fix this error or contact the administrator."
+    end
+  %>
+
+  <% if err_msg.present? %>
+    <div class="alert alert-danger"><%= err_msg %></div>
+  <% end %>
+
 
   <%= form_with(model: nil) do |form| %>
 
