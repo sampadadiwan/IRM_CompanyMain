@@ -25,6 +25,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     entity: Field::BelongsTo,
     last_snapshot_on: Field::Date,
     snapshot_frequency_months: Field::Number,
+    email_delay_seconds: Field::Number,
     trial: Field::BooleanEmoji,
     trial_end_date: Field::Date,
     call_basis: Field::String,
@@ -66,6 +67,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     reply_to
     cc
     entity_bcc
+    email_delay_seconds
     pan_verification
     bank_verification
     aml_enabled
@@ -90,6 +92,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     sandbox_emails
     from_email
     cc
+    email_delay_seconds
     bank_verification
     pan_verification
     aml_enabled

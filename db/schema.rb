@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_10_03_152039) do
+ActiveRecord::Schema[7.0].define(version: 2023_10_05_143044) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -926,6 +926,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_10_03_152039) do
     t.string "stamp_paper_tags"
     t.string "call_basis"
     t.integer "custom_flags", default: 0
+    t.integer "email_delay_seconds", default: 0
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 
