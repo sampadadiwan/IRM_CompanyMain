@@ -36,6 +36,7 @@ class ApprovalMailer < ApplicationMailer
 
   def notify_approval_response
     @approval_response = ApprovalResponse.find params[:approval_response_id]
+    @approval = @approval_response.approval
 
     send_mail(subject: "#{@approval_response.entity.name}: #{@approval_response.status} for #{@approval_response.approval.title}") if @to.present?
   end

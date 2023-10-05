@@ -5,7 +5,6 @@
         <tr>
             <td><%= link_to kyc.full_name, investor_kyc_url(kyc, subdomain: @approval.entity.sub_domain) %></td>
             <td><%= kyc.PAN %></td>
-            <td><%= kyc.address %></td>
         </tr>
         <% end %>
     </table>
