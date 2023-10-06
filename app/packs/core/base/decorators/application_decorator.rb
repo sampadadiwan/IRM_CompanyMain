@@ -1,4 +1,5 @@
 class ApplicationDecorator < Draper::Decorator
+  include CurrencyHelper
   delegate_all
 
   delegate :display_boolean, to: :h
