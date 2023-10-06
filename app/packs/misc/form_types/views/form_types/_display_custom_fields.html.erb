@@ -1,15 +1,18 @@
 <% map = model.map_custom_fields %>
 <% model.properties&.each do |k,v| %>
-    <tr class="<%= collapsed ? 'collapse multi-collapse' : '' %>">
-        <td>
-            <%= k.to_s.humanize.titleize %>
-        </td>
-        <td>
-            <% if map[k] && map[k].renderer %>
-                <%= render map[k].renderer, value: v, model: model %>
-            <% else %>
-                <%= v %>
-            <% end %>
-        </td>
-    </tr>
+    <% custom_field = map[k] %>
+    <% if custom_field.show_to_user(current_user) %>
+        <tr class="<%= collapsed ? 'collapse multi-collapse' : '' %>">
+            <td>
+                <%= k.to_s.humanize.titleize %>
+            </td>
+            <td>
+                <% if custom_field && custom_field.renderer %>
+                    <%= render custom_field.renderer, value: v, model: model %>
+                <% else %>
+                    <%= v %>
+                <% end %>
+            </td>
+        </tr>
+    <% end %>
 <% end %>

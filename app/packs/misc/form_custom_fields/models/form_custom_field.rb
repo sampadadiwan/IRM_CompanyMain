@@ -17,4 +17,8 @@ class FormCustomField < ApplicationRecord
   def renderer
     RENDERERS[field_type.to_sym]
   end
+
+  def show_to_user(user)
+    show_user_ids.blank? || show_user_ids.split(",").include?(user.id.to_s)
+  end
 end
