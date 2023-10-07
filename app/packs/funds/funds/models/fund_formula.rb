@@ -10,6 +10,7 @@ class FundFormula < ApplicationRecord
   validates :name, :entry_type, length: { maximum: 50 }
   validates :rule_type, length: { maximum: 30 }
   validates :commitment_type, length: { maximum: 10 }
+  validates :formula, :entry_type, :name, :rule_type, presence: true
 
   delegate :to_s, to: :name
 

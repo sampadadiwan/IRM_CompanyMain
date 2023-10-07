@@ -137,6 +137,7 @@ class FundsController < ApplicationController
     from_fund.fund_formulas.order(sequence: :asc).each do |ff|
       new_ff = ff.dup
       new_ff.fund = @fund
+      new_ff.entity_id = @fund.entity_id
       new_ff.save
     end
 

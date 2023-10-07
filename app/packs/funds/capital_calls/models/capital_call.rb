@@ -52,11 +52,11 @@ class CapitalCall < ApplicationRecord
     case call_basis
     when "Percentage of Commitment"
       self.amount_to_be_called_cents = 0
-    when "Amount allocated on Investable Capital"
-      self.percentage_called = 0
     when "Upload"
       self.percentage_called = 0
       self.amount_to_be_called_cents = 0
+    else
+      self.percentage_called = 0
     end
 
     self.generate_remittances = true if call_basis != "Upload"

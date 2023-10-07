@@ -159,7 +159,11 @@ class AccountEntryAllocationEngine
         icp = capital_commitment.get_account_entry("Investable Capital Percentage", portfolio_investment.investment_date)
 
         fmv_cents = portfolio_investment.compute_fmv_cents_on(@end_date)
-        ae = create_account_entry(ae, fund_formula, capital_commitment, portfolio_investment, binding)
+        begin
+          ae = create_account_entry(ae, fund_formula, capital_commitment, portfolio_investment, binding)
+        rescue Exception => e
+          raise "Error in #{fund_formula.name} for #{portfolio_investment}: #{e.message}"
+        end
       end
 
       if fund_formula.roll_up
@@ -203,7 +207,7 @@ class AccountEntryAllocationEngine
       # This is used to generate instance variables from the cached computed values
       fields = @helper.computed_fields_cache(capital_commitment)
 
-      ae = AccountEntry.new(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", entry_type: fund_formula.entry_type, generated: true, cumulative:)
+      ae = AccountEntry.new(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", entry_type: fund_formula.entry_type, generated: true, cumulative: false)
 
       create_account_entry(ae, fund_formula, capital_commitment, nil, binding)
 

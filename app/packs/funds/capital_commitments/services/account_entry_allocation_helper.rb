@@ -54,6 +54,8 @@ class AccountEntryAllocationHelper
 
       # Commitment remittance and dist
       cached_commitment_fields["remittances"] = capital_commitment.capital_remittances.where(payment_date: ..@end_date).sum(:collected_amount_cents)
+      cached_commitment_fields["remittance_capital_fees"] = capital_commitment.capital_remittances.where(payment_date: ..@end_date).sum(:capital_fee_cents)
+      cached_commitment_fields["remittance_other_fees"] = capital_commitment.capital_remittances.where(payment_date: ..@end_date).sum(:other_fee_cents)
 
       cached_commitment_fields["distributions"] = capital_commitment.capital_distribution_payments.where(payment_date: ..@end_date).sum(:amount_cents)
 
