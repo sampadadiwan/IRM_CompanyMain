@@ -93,14 +93,21 @@ class AccountEntryAllocationEngine
 
     # Loop thru all the commitments and get the total of the account entry "field_name"
     fund_formula.commitments(@sample).each do |capital_commitment|
-      ae = capital_commitment.cumulative_account_entry(field_name, nil, nil, @end_date)
+      # ae = capital_commitment.cumulative_account_entry(field_name, nil, nil, @end_date)
+
+      # cc_map[capital_commitment.id] = {}
+      # cc_map[capital_commitment.id]["amount_cents"] = ae ? ae.amount_cents : 0
+      # cc_map[capital_commitment.id]["entry_type"] = ae && ae.entry_type ? ae.entry_type : "Percentage"
+
+      # total += ae ? ae.amount_cents : 0
+
+      amount_cents = capital_commitment.account_entries.where(name: field_name, reporting_date: ..@end_date).sum(:amount_cents)
 
       cc_map[capital_commitment.id] = {}
-      cc_map[capital_commitment.id]["amount_cents"] = ae ? ae.amount_cents : 0
-      cc_map[capital_commitment.id]["entry_type"] = ae && ae.entry_type ? ae.entry_type : "Percentage"
+      cc_map[capital_commitment.id]["amount_cents"] = amount_cents
+      cc_map[capital_commitment.id]["entry_type"] = "Percentage"
 
-      total += ae ? ae.amount_cents : 0
-
+      total += amount_cents
       count += 1
     end
 
@@ -110,7 +117,7 @@ class AccountEntryAllocationEngine
     fund_formula.commitments(@sample).each do |capital_commitment|
       percentage = total.positive? ? (100.0 * cc_map[capital_commitment.id]["amount_cents"] / total) : 0
 
-      ae = AccountEntry.new(name: "#{field_name} Percentage", entry_type: cc_map[capital_commitment.id]["entry_type"], entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", capital_commitment:, folio_id: capital_commitment.folio_id, generated: true, amount_cents: percentage, cumulative: true)
+      ae = AccountEntry.new(name: "#{field_name} Percentage", entry_type: cc_map[capital_commitment.id]["entry_type"], entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", capital_commitment:, folio_id: capital_commitment.folio_id, generated: true, amount_cents: percentage, cumulative: false)
 
       ae.save!
 
@@ -134,7 +141,11 @@ class AccountEntryAllocationEngine
         # This will create the AggregatePortfolioInvestment as of the end date, it will be used in the formulas
         api = orig_api.as_of(nil, @end_date)
         api_period = orig_api.as_of @start_date, @end_date
-        ae = create_account_entry(ae, fund_formula, capital_commitment, orig_api, binding)
+        begin
+          ae = create_account_entry(ae, fund_formula, capital_commitment, orig_api, binding)
+        rescue Exception => e
+          raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
+        end
       end
 
       if fund_formula.roll_up
@@ -162,7 +173,7 @@ class AccountEntryAllocationEngine
         begin
           ae = create_account_entry(ae, fund_formula, capital_commitment, portfolio_investment, binding)
         rescue Exception => e
-          raise "Error in #{fund_formula.name} for #{portfolio_investment}: #{e.message}"
+          raise "Error in #{fund_formula.name} for #{capital_commitment} #{portfolio_investment}: #{e.message}"
         end
       end
 
@@ -209,7 +220,11 @@ class AccountEntryAllocationEngine
 
       ae = AccountEntry.new(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", entry_type: fund_formula.entry_type, generated: true, cumulative: false)
 
-      create_account_entry(ae, fund_formula, capital_commitment, nil, binding)
+      begin
+        create_account_entry(ae, fund_formula, capital_commitment, nil, binding)
+      rescue Exception => e
+        raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
+      end
 
       # Rollup this allocation for each commitment
       capital_commitment.rollup_account_entries(ae.name, ae.entry_type, @start_date, @end_date) if fund_formula.roll_up
@@ -269,7 +284,11 @@ class AccountEntryAllocationEngine
       # Allocate this fund_account_entry to this capital_commitment
       ae = fund_account_entry.dup
 
-      create_account_entry(ae, fund_formula, capital_commitment, fund_account_entry, binding)
+      begin
+        create_account_entry(ae, fund_formula, capital_commitment, fund_account_entry, binding)
+      rescue Exception => e
+        raise "Error in #{fund_formula.name} for #{capital_commitment} #{fund_account_entry}: #{e.message}"
+      end
 
       # Rollup this allocation for each commitment
       capital_commitment.rollup_account_entries(ae.name, ae.entry_type, @start_date, @end_date) if fund_formula.roll_up
