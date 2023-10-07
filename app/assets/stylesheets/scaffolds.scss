@@ -750,10 +750,33 @@ ul.vesting_schedule {
 }
 
 #login_page {
+  // margin-top: auto;
+
   hr {
     margin-top: 30px;
     margin-bottom: 10px;
   }
+  
+
+  position:absolute;
+  top:0px;
+  right:0px;
+  bottom:0px;
+  left:0px;
+  
+  .bg-login-image {
+    // background-color: #4e73df;
+    
+  }
+  .login-left {
+    // background-color: #4e73df;
+    // margin: unset;
+    // vertical-align: middle;
+  }
+  // background-color: #4e73df;
+  background-image: url("https://img.freepik.com/free-vector/gradient-network-connection-background_23-2148865393.jpg?w=2000&t=st=1696676745~exp=1696677345~hmac=cc417d67c5a0e4caebda06445ee96bc18bd44de49bda2e329f0d9eaaa1a2d68f");
+    background-repeat: no-repeat, repeat;
+    background-size: cover;
 }
 
 .title-line {
