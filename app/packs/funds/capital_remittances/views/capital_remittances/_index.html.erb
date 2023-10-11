@@ -1,5 +1,5 @@
 <% search ||= "Yes" %>
-<div data-controller="remittances" 
+<div data-controller="remittances"
      data-remittances-lazy-load-data-value=<%= lazy_load_data %>
      data-remittances-table-name-value="#capital_remittances">
 
@@ -7,14 +7,14 @@
     <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
     <span>
       <% capital_call ||= nil %>
-     
+
       <% if capital_call %>
-        <%= button_to "Capital Call Reminder", reminder_capital_call_path(id: capital_call.id), 
-                        class: "btn btn-outline-primary", 
-                        data: {action: "click->confirm#popup", turbo:false, 
-                        msg: "Send reminder for pending payments?", 
+        <%= button_to "Capital Call Reminder", reminder_capital_call_path(id: capital_call.id),
+                        class: "btn btn-outline-primary",
+                        data: {action: "click->confirm#popup", turbo:false,
+                        msg: "Send reminder for pending payments?",
                         method: "post"} if policy(capital_call).reminder? %>
-        
+
 
         <div class="btn-group">
           <div class="dropdown">
@@ -23,37 +23,39 @@
               Upload / Download
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-        
+
               <%= link_to "Download", capital_remittances_path(capital_call_id: capital_call.id, format: "xlsx", all: true),  {class: "dropdown-item" } %>
 
-              
-              <%= link_to "Upload Remittances", 
-                  new_import_upload_path("import_upload[owner_id]": capital_call.id, 
-                  "import_upload[owner_type]": "CapitalCall", 
-                  "import_upload[import_type]": "CapitalRemittance", 
-                  "sample_upload": "CAPITAL_REMITTANCE_SAMPLE"), 
+
+              <%= link_to "Upload Remittances",
+                  new_import_upload_path("import_upload[owner_id]": capital_call.id,
+                  "import_upload[owner_type]": "CapitalCall",
+                  "import_upload[import_type]": "CapitalRemittance",
+                  "sample_upload": "CAPITAL_REMITTANCE_SAMPLE"),
                   { class: "dropdown-item"}  if policy(capital_call).update? %>
 
-              <%= link_to "Upload Payments", 
-                  new_import_upload_path("import_upload[owner_id]": capital_call.id, 
-                  "import_upload[owner_type]": "CapitalCall", 
-                  "import_upload[import_type]": "CapitalRemittancePayment", 
-                  "sample_upload": "CAPITAL_REMITTANCE_PAYMENT_SAMPLE"), 
+              <%= link_to "Upload Payments",
+                  new_import_upload_path("import_upload[owner_id]": capital_call.id,
+                  "import_upload[owner_type]": "CapitalCall",
+                  "import_upload[import_type]": "CapitalRemittancePayment",
+                  "sample_upload": "CAPITAL_REMITTANCE_PAYMENT_SAMPLE"),
                   { class: "dropdown-item"}  if policy(capital_call).update? %>
-              
+
             </div>
           </div>
         </div>
         <%= render "capital_remittances/filter", capital_call_id: capital_call.id %>
+      <% else %>
+        <%= link_to "Download", capital_remittances_path(format: "xlsx", all: true), {class: "btn btn-outline-primary" } %>
       <% end %>
-     
+
       <%#= render "/funds/search_bar", model_name: "capital_remittance" unless search == "No" %>
     </span>
   </div>
-  
+
   <% data_source ||= capital_remittances_path(params, format: :json, all: true, status: "", verified: "") %>
   <% lazy_load_data ||= false %>
-  
+
   <div class="table-responsive">
     <% if lazy_load_data %>
       <a class="load_data_link" data-action="click->remittances#loadData"><span>Load Data</span></a>
@@ -61,19 +63,22 @@
 
     <% col_set = column_set(current_user, params[:cols]) %>
     <%= custom_columns(current_user, params[:cols]) %>
-  
-    <table id="capital_remittances" class="table table-bordered dataTable action_table" 
+
+    <table id="capital_remittances" class="table table-bordered dataTable action_table"
         data-source="<%= data_source %>" style="width:100%" >
-    
+
       <thead>
         <tr>
           <% if col_set == "all" %>
           <th>
-              Fund
+            Fund
           </th>
           <% end %>
           <th>
             Investor
+          </th>
+          <th>
+            Capital Call
           </th>
           <th>
             Folio No
@@ -100,10 +105,10 @@
           </th>
         </tr>
       </thead>
-      
+
       <tbody>
       </tbody>
-    
+
     </table>
 
   </div>

@@ -7,6 +7,10 @@ class CapitalRemittanceDecorator < ApplicationDecorator
     h.link_to object.folio_id, object.capital_commitment
   end
 
+  def capital_call_link
+    h.link_to object.capital_call.name, object.capital_call
+  end
+
   def collected_amount
     h.money_to_currency object.collected_amount
   end
