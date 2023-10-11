@@ -1,4 +1,10 @@
 <%= render "/layouts/alerts" %>
+
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Valuation</h6>
+  </div>
+<div class="card-body">
 <table class="table table-bordered dataTable">
   <tr>
     <td>
@@ -8,7 +14,16 @@
       <%= @valuation.entity.name %>
     </td>
   </tr>
-
+  <% if @valuation.owner %>
+    <tr>
+      <td>
+        Owner
+      </td>
+      <td>
+        <%= link_to @valuation.owner&.investor_name, @valuation.owner %>
+      </td>
+    </tr>
+  <% end %>
   <tr>
     <td>
       Category
@@ -18,7 +33,7 @@
     </td>
   </tr>
 
-  
+
   <tr>
     <td>
       Sub Category
@@ -61,21 +76,12 @@
       <%= link_to "Report", @valuation.report.url, class: "btn btn-outline-success", target: "_blank" if @valuation.report.present? %>
     </td>
   </tr>
-  <% if @valuation.owner %>
-    <tr>
-      <td>
-        Owner
-      </td>
-      <td>
-        <%= link_to @valuation.owner_type, @valuation.owner %>
-      </td>
-    </tr>
-  <% end %>
 </table>
 <div>
   <% if policy(@valuation).update? %>
     <%= link_to "Edit" , edit_valuation_path(@valuation), {class: "btn btn-outline-primary" } %> |
-    <%= button_to "Delete" , @valuation, method: :delete, class: "btn btn-outline-danger" , 
+    <%= button_to "Delete" , @valuation, method: :delete, class: "btn btn-outline-danger" ,
         form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
   <% end %>
+</div>
 </div>

@@ -89,6 +89,7 @@ class ValuationsController < ApplicationController
   def set_valuation
     @valuation = Valuation.find(params[:id])
     authorize @valuation
+    @bread_crumbs = { Stakeholders: investors_path(entity_id: @valuation.entity_id), "#{@valuation.owner&.investor_name}": investor_path(@valuation.owner), Valuation: valuation_path(@valuation) }
   end
 
   # Only allow a list of trusted parameters through.
