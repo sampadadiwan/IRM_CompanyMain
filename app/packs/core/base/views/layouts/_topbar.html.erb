@@ -98,9 +98,10 @@
                                             class: "top_bar_logo" %>
                                     <% else %>
                                         <span class="mr-2 d-lg-inline text-gray-600 small">
-                                            <%= current_user.entity.name  %>
+                                            <%= current_user.entity.name  %> <i class="fas fa-caret-down fa-fw fa-lg"></i>
                                         </span>                                
-                                    <% end %>                                    
+                                    <% end %>  
+                                                                      
                             <% end %>
                             
                         </a>
@@ -157,6 +158,7 @@
                                 </a>
 
                             <% end %>
+                            
                         </div>
                         
                     </li>
@@ -171,10 +173,14 @@
                 <li class="nav-item dropdown no-arrow">
                     <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <span class="mr-2 d-lg-inline text-gray-600 small"><%= current_user.name %></span>
+                        <span class="mr-2 d-lg-inline text-gray-600 small">
+                            <%= current_user.name %> <i class="fas fa-caret-down fa-fw fa-lg"></i>
+                        </span>
+                        
                         <% if notification_count > 0 %>
                             <span class="badge badge-info"> <%= notification_count %> </span>
                         <% end %>
+                        
                     </a>
                     <!-- Dropdown - User Information -->
                     <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"

@@ -125,7 +125,7 @@ class DealInvestor < ApplicationRecord
       deal_access_right.permissions.set(:read)
       deal_access_right.save
     else
-      deal.access_rights.where(access_to_investor_id: access_right.access_to_investor_id, access_to_category: access_right.access_to_category, user_id: access_right.user_id).each(&:destroy)
+      deal.access_rights.where(access_to_investor_id: access_right.access_to_investor_id, access_to_category: access_right.access_to_category, user_id: access_right.user_id).find_each(&:destroy)
     end
   end
 end

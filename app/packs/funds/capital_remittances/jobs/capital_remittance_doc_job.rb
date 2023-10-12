@@ -16,7 +16,7 @@ class CapitalRemittanceDocJob < ApplicationJob
       @templates.each do |fund_doc_template|
         Rails.logger.debug { "Generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@capital_remittance.investor_name}" }
         # Delete any existing signed documents
-        @capital_remittance.documents.where(name: fund_doc_template.name).each(&:destroy)
+        @capital_remittance.documents.where(name: fund_doc_template.name).find_each(&:destroy)
         # Generate a new signed document
         CapitalRemittanceDocGenerator.new(@capital_remittance, fund_doc_template, user_id)
       end

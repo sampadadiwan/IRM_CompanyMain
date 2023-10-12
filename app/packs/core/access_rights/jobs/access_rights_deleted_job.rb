@@ -11,11 +11,11 @@ class AccessRightsDeletedJob < ApplicationJob
       if access_right.deleted? && owner.respond_to?(:document_folder)
         # We need to ensure that all documents and folders have explicit access rights destroyed
         folder_ids = owner.document_folder.descendant_ids
-        AccessRight.where(entity_id: access_right.entity_id, owner_type: "Folder", owner_id: folder_ids).where("access_rights.access_to_investor_id=? OR access_rights.user_id=?", access_right.access_to_investor_id, access_right.user_id).each(&:destroy)
+        AccessRight.where(entity_id: access_right.entity_id, owner_type: "Folder", owner_id: folder_ids).where("access_rights.access_to_investor_id=? OR access_rights.user_id=?", access_right.access_to_investor_id, access_right.user_id).find_each(&:destroy)
 
         # Remove rights from documents
         document_ids = Document.where(entity_id: access_right.entity_id, folder_id: folder_ids).pluck(:id)
-        AccessRight.where(entity_id: access_right.entity_id, owner_type: "Document", owner_id: document_ids).where("access_rights.access_to_investor_id=? OR access_rights.user_id=?", access_right.access_to_investor_id, access_right.user_id).each(&:destroy)
+        AccessRight.where(entity_id: access_right.entity_id, owner_type: "Document", owner_id: document_ids).where("access_rights.access_to_investor_id=? OR access_rights.user_id=?", access_right.access_to_investor_id, access_right.user_id).find_each(&:destroy)
       end
     end
   end

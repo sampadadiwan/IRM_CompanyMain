@@ -4,7 +4,7 @@ class InvestmentSnapshotJob < ApplicationJob
   # This is called on the 1st of every month by cron
   def perform
     Chewy.strategy(:sidekiq) do
-      Entity.joins(:entity_setting).where("entity_setting.snapshot_frequency_months > 0").each do |e|
+      Entity.joins(:entity_setting).where("entity_setting.snapshot_frequency_months > 0").find_each do |e|
         next unless e.entity_setting.last_snapshot_on + e.entity_setting.snapshot_frequency_months.months <= Time.zone.today
 
         Rails.logger.debug do

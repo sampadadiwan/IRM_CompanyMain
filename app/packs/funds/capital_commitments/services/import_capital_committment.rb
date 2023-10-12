@@ -114,7 +114,7 @@ class ImportCapitalCommittment < ImportUtil
     @last_saved = import_upload.entity.funds.last.capital_commitments.last
     FormType.extract_from_db(@last_saved) if @last_saved
 
-    Fund.where(id: fund_ids).each do |fund|
+    Fund.where(id: fund_ids).find_each do |fund|
       # Compute the percentages
       fund.capital_commitments.last&.compute_percentage
       fund.save

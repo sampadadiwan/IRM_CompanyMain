@@ -197,6 +197,6 @@ class Investor < ApplicationRecord
   def valuation_updated(valuation)
     # Ensure the portfolio_investments calculate the fmv
     entity.portfolio_investments.where(portfolio_company_id: id,
-                                       category: valuation.category, sub_category: valuation.sub_category).each(&:save)
+                                       category: valuation.category, sub_category: valuation.sub_category).find_each(&:save)
   end
 end

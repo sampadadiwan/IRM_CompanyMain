@@ -136,9 +136,11 @@ Metrics/PerceivedComplexity:
     - 'app/packs/core/tasks/controllers/tasks_controller.rb'
     - 'app/packs/core/uploaders/file_uploader.rb'
 Metrics/ClassLength:
-  Description: 'Avoid classes longer than 100 lines of code.'
+  Description: 'Avoid classes longer than 200 lines of code.'
   Max: 200
   Enabled: true
+  Exclude:
+    - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
 
 Metrics/ModuleLength:
   Description: 'Avoid modules longer than 100 lines of code.'

@@ -17,7 +17,7 @@ class InvestorAdvisor < ApplicationRecord
   before_validation :ensure_user
   validates_uniqueness_of :email, scope: :entity_id
 
-  serialize :allowed_roles, Array
+  serialize :allowed_roles, type: Array
 
   def ensure_user
     self.user = User.find_by(email:)
@@ -60,7 +60,7 @@ class InvestorAdvisor < ApplicationRecord
 
   after_destroy :remove_access_rights
   def remove_access_rights
-    AccessRight.where(entity_id:, user_id:).each(&:destroy)
+    AccessRight.where(entity_id:, user_id:).find_each(&:destroy)
     InvestorAccess.where(investor_entity_id: entity_id, email:).delete_all
   end
 end

@@ -6,7 +6,7 @@ class EntitySetting < ApplicationRecord
 
   validate :validate_ckyc_kra_enabled
   validates :from_email, length: { maximum: 100 }
-  serialize :kpi_doc_list, Array
+  serialize :kpi_doc_list, type: Array
 
   # Add new flags to the end of this list
   flag :custom_flags, %i[enable_approval_show_kycs enable_this enable_that]

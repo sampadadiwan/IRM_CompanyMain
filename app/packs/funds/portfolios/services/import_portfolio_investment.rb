@@ -12,7 +12,7 @@ class ImportPortfolioInvestment < ImportUtil
     # This ensures all the counters for this funds API are fixed
     PortfolioInvestment.counter_culture_fix_counts only: :aggregate_portfolio_investment, where: { fund_id: import_upload.owner_id }
     # This will cause the compute_avg_cost to be called
-    AggregatePortfolioInvestment.where(fund_id: import_upload.owner_id).each(&:save)
+    AggregatePortfolioInvestment.where(fund_id: import_upload.owner_id).find_each(&:save)
   end
 
   def save_portfolio_investment(user_data, import_upload, custom_field_headers)

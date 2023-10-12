@@ -23,7 +23,7 @@ class SecondarySale < ApplicationRecord
   has_many :fees, as: :owner, dependent: :destroy
   has_noticed_notifications
 
-  serialize :cmf_allocation_percentage, Hash
+  serialize :cmf_allocation_percentage, type: Hash
 
   monetize :total_offered_amount_cents, :total_interest_amount_cents,
            :allocation_offer_amount_cents, :allocation_interest_amount_cents,

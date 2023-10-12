@@ -30,7 +30,7 @@ class CustomAllocationJob < AllocationBase
     offers.update_all(interest_id: nil, allocation_quantity: 0, allocation_percentage: 0)
 
     if secondary_sale.custom_matching_fields.present?
-      custom_matching_vals = interests.select(:custom_matching_vals).map(&:custom_matching_vals).uniq
+      custom_matching_vals = interests.pluck(:custom_matching_vals).uniq
 
       custom_matching_vals.each do |cmv|
         Rails.logger.debug { "Checking #{cmv}" }

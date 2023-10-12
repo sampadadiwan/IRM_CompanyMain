@@ -8,7 +8,7 @@ class ExpressionOfInterest < ApplicationRecord
   belongs_to :eoi_entity, class_name: "Entity"
   belongs_to :investment_opportunity
   has_rich_text :details
-  serialize :properties, Hash
+  serialize :properties, type: Hash
 
   has_many :investor_kycs, through: :investor
   belongs_to :investor_signatory, class_name: "User", optional: true

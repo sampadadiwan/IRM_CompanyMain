@@ -113,7 +113,7 @@ class OfferSpaGenerator
     new_generated_doc = Document.new(document.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
 
     # Delete SOA for the same start_date, end_date
-    offer.documents.where(name: new_generated_doc.name).each(&:destroy)
+    offer.documents.where(name: new_generated_doc.name).find_each(&:destroy)
 
     # Create and attach the new SOA
     new_generated_doc.file = File.open(file_name, "rb")

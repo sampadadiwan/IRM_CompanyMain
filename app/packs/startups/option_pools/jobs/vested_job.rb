@@ -7,7 +7,7 @@ class VestedJob < ApplicationJob
       if option_pool_id.present?
         process_pool(OptionPool.find(option_pool_id))
       else
-        OptionPool.where("excercised_quantity < allocated_quantity").each do |pool|
+        OptionPool.where("excercised_quantity < allocated_quantity").find_each do |pool|
           process_pool(pool)
         end
       end

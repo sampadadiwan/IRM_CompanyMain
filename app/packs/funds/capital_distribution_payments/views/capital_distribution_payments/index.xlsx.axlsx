@@ -7,7 +7,7 @@ wb.add_worksheet(name: "CapitalDistrbutionPayment") do |sheet|
   sheet.add_row(["Fund", "Investor", "Capital Distribution", "Folio Currency", "Payment Amount (Folio Currency)", "Payment Amount", "Payment Date", "Completed", "Folio No", "Bank Account", "IFSC", "Full Name", "PAN"] + custom_headers)
 
   # Create entries for each item
-  @capital_distribution_payments.includes(capital_commitment: :investor_kyc).each do |cc|
+  @capital_distribution_payments.includes(capital_commitment: :investor_kyc).find_each do |cc|
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
     sheet.add_row [cc.fund.name, cc.investor_name, cc.capital_distribution.title, cc.capital_commitment.folio_currency, cc.folio_amount, cc.amount, cc.payment_date, cc.completed, cc.folio_id, cc.investor_kyc&.bank_account_number, cc.investor_kyc&.ifsc_code, cc.investor_kyc&.full_name, cc.investor_kyc&.PAN] + custom_field_values
   end

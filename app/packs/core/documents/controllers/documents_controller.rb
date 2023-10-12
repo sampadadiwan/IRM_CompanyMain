@@ -130,7 +130,7 @@ class DocumentsController < ApplicationController
   def send_all_for_esign
     authorize(Document)
     # Select Docs that are not templates, have not been sent for esign and are generated from a template
-    Document.where(entity_id: params[:entity_id]).not_template.not_sent_for_esign.where.not(from_template_id: nil).each do |document|
+    Document.where(entity_id: params[:entity_id]).not_template.not_sent_for_esign.where.not(from_template_id: nil).find_each do |document|
       document.send_for_esign(force: params[:force]) unless Document::SKIP_ESIGN_UPDATE_STATUSES.include?(document.esign_status)
     end
     UserAlert.new(user_id: current_user.id, message: "Documents were queued for e-signature.", level: "success").broadcast
@@ -257,7 +257,7 @@ class DocumentsController < ApplicationController
     params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id, :tag_list, :template,
                                      :signature_enabled, :public_visibility, :send_email, :display_on_page,
                                      :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag,
-                                     :tag_list, :folder_id, :file, properties: {},  e_signatures_attributes: %i[id user_id label signature_type notes _destroy],
+                                     :tag_list, :folder_id, :file, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy],
                                                                    stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy])
   end
 end

@@ -170,7 +170,7 @@ class PortfolioInvestment < ApplicationRecord
 
   def self.fmv_cents(model, end_date)
     total_fmv_end_date = 0
-    model.portfolio_investments.pool.buys.where(investment_date: ..end_date).each do |pi|
+    model.portfolio_investments.pool.buys.where(investment_date: ..end_date).find_each do |pi|
       # Find the valuation just prior to the end_date
       valuation = pi.portfolio_company.valuations.where(category: pi.category, sub_category: pi.sub_category, valuation_date: ..end_date).order(valuation_date: :asc).last
       total_fmv_end_date += pi.quantity * valuation.per_share_value_cents

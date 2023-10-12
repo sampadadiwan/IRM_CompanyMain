@@ -101,7 +101,7 @@ class SoaGenerator
 
     doc_name = "SOA-#{start_date}-#{end_date}"
     # Delete SOA for the same start_date, end_date
-    capital_commitment.documents.where(name: doc_name).each(&:destroy)
+    capital_commitment.documents.where(name: doc_name).find_each(&:destroy)
 
     # Create and attach the new SOA
     new_soa_doc.name = doc_name

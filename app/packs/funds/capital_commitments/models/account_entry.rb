@@ -13,7 +13,7 @@ class AccountEntry < ApplicationRecord
   scope :pool, -> { where(commitment_type: 'Pool') }
   scope :co_invest, -> { where(commitment_type: 'CoInvest') }
 
-  serialize :explanation, Array
+  serialize :explanation, type: Array
 
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }
   monetize :amount_cents, with_currency: ->(i) { i.fund.currency }

@@ -5,7 +5,7 @@ wb.add_worksheet(name: "Offers") do |sheet|
   sheet.add_row(["ID", "User", "Email", "Sign In Count", "Verified", "Signature Uploaded", "PAN Uploaded", "SPA Accepted", "Documents"])
 
   # Create entries for each item
-  @offers.includes(:user, :documents).each do |o|
+  @offers.includes(:user, :documents).find_each do |o|
     verified = o.verified ? 'Yes' : 'No'
     sig = o.signature.present? ? 'Yes' : 'No'
     pan = o.pan_card.present? ? 'Yes' : 'No'

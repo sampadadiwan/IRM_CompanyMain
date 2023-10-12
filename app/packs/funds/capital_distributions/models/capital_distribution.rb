@@ -21,7 +21,7 @@ class CapitalDistribution < ApplicationRecord
 
   has_many :capital_distribution_payments, dependent: :destroy, inverse_of: :capital_distribution
   # Stores the prices for unit types for this call
-  serialize :unit_prices, Hash
+  serialize :unit_prices, type: Hash
 
   monetize :net_amount_cents, :reinvestment_cents, :gross_amount_cents, :distribution_amount_cents, :cost_of_investment_cents, with_currency: ->(i) { i.fund.currency }
 

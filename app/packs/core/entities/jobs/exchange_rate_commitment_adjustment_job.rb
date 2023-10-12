@@ -8,7 +8,7 @@ class ExchangeRateCommitmentAdjustmentJob < ApplicationJob
       # Find the commitment with folio_currency
       CapitalCommitment.joins(:fund).where(entity_id: @exchange_rate.entity_id)
                        .where(folio_currency: @exchange_rate.from).where("funds.currency=?", @exchange_rate.to)
-                       .each do |cc|
+                       .find_each do |cc|
         next unless cc.fund.currency == @exchange_rate.to
 
         cc.reload

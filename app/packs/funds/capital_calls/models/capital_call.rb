@@ -20,8 +20,8 @@ class CapitalCall < ApplicationRecord
 
   belongs_to :approved_by_user, class_name: "User", optional: true
   # Stores the prices for unit types for this call
-  serialize :unit_prices, Hash
-  serialize :fund_closes, Array
+  serialize :unit_prices, type: Hash
+  serialize :fund_closes, type: Array
 
   has_many :call_fees, dependent: :destroy
   accepts_nested_attributes_for :call_fees, allow_destroy: true

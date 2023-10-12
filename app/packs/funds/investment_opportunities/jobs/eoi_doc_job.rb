@@ -16,7 +16,7 @@ class EoiDocJob < ApplicationJob
         @templates.each do |investment_opportunity_doc_template|
           Rails.logger.debug { "Generating #{investment_opportunity_doc_template.name} for investment_opportunity #{@investment_opportunity.company_name}, for user #{kyc.full_name}" }
           # Delete any existing signed documents
-          @expression_of_interest.documents.where(name: investment_opportunity_doc_template.name).each(&:destroy)
+          @expression_of_interest.documents.where(name: investment_opportunity_doc_template.name).find_each(&:destroy)
           # Generate a new signed document
           EoiDocGenerator.new(@expression_of_interest, investment_opportunity_doc_template, user_id)
         end

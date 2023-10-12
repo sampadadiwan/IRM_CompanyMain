@@ -25,7 +25,7 @@ class InvestorNoticeJob < ApplicationJob
     existing_investor_ids = investor_notice.investor_notice_entries.pluck(:investor_id)
     new_investor_ids = all_investor_ids - existing_investor_ids
 
-    Investor.where(id: new_investor_ids).each do |investor|
+    Investor.where(id: new_investor_ids).find_each do |investor|
       entries << InvestorNoticeEntry.new(investor_id: investor.id, investor_notice_id: investor_notice.id,
                                          investor_entity_id: investor.investor_entity_id,
                                          entity_id: investor_notice.entity_id, active: true)

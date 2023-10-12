@@ -3,7 +3,7 @@ lock "~> 3.17.2"
 
 set :application, "IRM"
 set :repo_url, "git@github.com:thimmaiah/IRM.git"
-set :branch, 'main'
+set :branch, ENV["branch"] || 'main'
 
 set :deploy_to, "/home/ubuntu/IRM"
 set :ssh_options, forward_agent: true

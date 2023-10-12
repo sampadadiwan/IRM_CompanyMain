@@ -5,7 +5,7 @@ ruby "3.1.2"
 
 gem "interactor", "~> 3.0"
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.0"
+gem "rails", "~> 7.1"
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
@@ -74,7 +74,7 @@ gem 'to_words'
 # Admin screens
 gem "administrate"
 gem 'administrate-field-active_storage'
-gem 'administrate-field-belongs_to_search'
+# gem 'administrate-field-belongs_to_search'
 gem 'administrate-field-boolean_emoji', '~> 0.3.0'
 gem 'administrate-field-shrine'
 
@@ -161,8 +161,8 @@ group :development, :staging, :test do
 end
 
 group :development do
-  gem 'packwerk'
-  gem 'stimpack'
+  gem 'packs-rails'
+  # gem 'stimpack'
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem 'annotate'
   gem 'bullet'

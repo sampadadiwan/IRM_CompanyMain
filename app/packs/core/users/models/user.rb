@@ -158,7 +158,7 @@ class User < ApplicationRecord
   end
 
   def self.update_roles
-    User.all.each do |u|
+    User.find_each do |u|
       if u.has_cached_role?(:company) || u.has_cached_role?(:fund_manager)
         u.remove_role(:company)
         u.remove_role(:fund_manager)

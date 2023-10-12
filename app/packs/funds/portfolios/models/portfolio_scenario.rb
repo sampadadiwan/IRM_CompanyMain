@@ -6,7 +6,7 @@ class PortfolioScenario < ApplicationRecord
   belongs_to :fund
   belongs_to :user
 
-  serialize :calculations, Hash
+  serialize :calculations, type: Hash
 
   has_many :scenario_investments, dependent: :destroy
 

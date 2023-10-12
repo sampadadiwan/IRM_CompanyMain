@@ -25,7 +25,7 @@ module WithDataRoom
       data_room_ar.save
     elsif data_room_folder
       # Remove this ar from the data room
-      data_room_folder.access_rights.where(access_to_investor_id: access_right.access_to_investor_id, access_to_category: access_right.access_to_category, user_id: access_right.user_id).each(&:destroy)
+      data_room_folder.access_rights.where(access_to_investor_id: access_right.access_to_investor_id, access_to_category: access_right.access_to_category, user_id: access_right.user_id).find_each(&:destroy)
     end
   end
 end

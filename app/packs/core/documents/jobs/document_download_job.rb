@@ -28,7 +28,7 @@ class DocumentDownloadJob < ApplicationJob
   end
 
   def add_documents(zipfile, user, folder_ids)
-    Pundit.policy_scope(user, Document).where(folder_id: folder_ids).includes(:folder).each do |doc|
+    Pundit.policy_scope(user, Document).where(folder_id: folder_ids).includes(:folder).find_each do |doc|
       doc.file.download do |tmp|
         file_name = get_file_name(doc, tmp)
         zipfile.add(file_name, file_name)

@@ -41,9 +41,9 @@ class Offer < ApplicationRecord
   include FileUploader::Attachment(:spa)
   include FileUploader::Attachment(:pan_card)
 
-  serialize :pan_verification_response, Hash
-  serialize :bank_verification_response, Hash
-  serialize :docs_uploaded_check, Hash
+  serialize :pan_verification_response, type: Hash
+  serialize :bank_verification_response, type: Hash
+  serialize :docs_uploaded_check, type: Hash
 
   delegate :quantity, to: :holding, prefix: :holding
   delegate :funding_round, to: :holding

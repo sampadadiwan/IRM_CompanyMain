@@ -89,7 +89,7 @@ class InvestorKycsController < ApplicationController
     @investor_kycs = policy_scope(InvestorKyc)
     authorize(InvestorKyc)
 
-    @investor_kycs.where(entity_id:, verified: false).each do |kyc|
+    @investor_kycs.where(entity_id:, verified: false).find_each do |kyc|
       kyc.send_kyc_form(reminder: true)
     end
     redirect_to investor_kycs_url, notice: "KYC Reminder sent successfully."

@@ -39,8 +39,8 @@ class InvestorKyc < ApplicationRecord
     errors.add(:birth_date, "can't be in the future") if birth_date.present? && birth_date > Date.current
   end
   # Customize form
-  serialize :pan_verification_response, Hash
-  serialize :bank_verification_response, Hash
+  serialize :pan_verification_response, type: Hash
+  serialize :bank_verification_response, type: Hash
 
   # Note this rollups work only where Fund and Entity currency are the same.
   monetize :committed_amount_cents, :collected_amount_cents,

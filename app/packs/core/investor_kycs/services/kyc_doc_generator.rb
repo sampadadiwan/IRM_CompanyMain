@@ -73,7 +73,7 @@ class KycDocGenerator
 
     doc_name = "#{new_generated_doc.name}-#{start_date}-#{end_date}"
     # Delete KYC doc for the same start_date, end_date
-    investor_kyc.documents.where(name: doc_name).each(&:destroy)
+    investor_kyc.documents.where(name: doc_name).find_each(&:destroy)
 
     # Create and attach the new KYC doc
     new_generated_doc.name = doc_name

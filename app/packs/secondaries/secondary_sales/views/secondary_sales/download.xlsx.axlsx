@@ -42,7 +42,7 @@ wb.add_worksheet(name: "Offers") do |sheet|
                  "Verified", "Comments", "SPA File Name"] + custom_headers
 
   # Create entries for each offer
-  @secondary_sale.offers.approved.includes(:user, :entity, investor: :investor_entity).each do |o|
+  @secondary_sale.offers.approved.includes(:user, :entity, investor: :investor_entity).find_each do |o|
     custom_field_values = get_custom_values(o, form_type, custom_field_names)
 
     row = sheet.add_row ["Link", o.user&.full_name, o.investor&.investor_name,
@@ -67,7 +67,7 @@ wb.add_worksheet(name: "Interests") do |sheet|
                  "Short Listed", "Escrow Deposited"] + custom_headers
 
   # Create entries for each offer
-  @secondary_sale.interests.short_listed.includes(:user, :interest_entity).each do |o|
+  @secondary_sale.interests.short_listed.includes(:user, :interest_entity).find_each do |o|
     custom_field_values = get_custom_values(o, form_type, custom_field_names)
 
     user_name, entity_name = if o.escrow_deposited

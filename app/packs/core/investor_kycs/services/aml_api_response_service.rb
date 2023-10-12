@@ -27,7 +27,7 @@ class AmlApiResponseService
     request = Net::HTTP::Post.new(url)
     request["Content-Type"] = "application/json"
     # replace below with rails credentials
-    request["api-key"] =  Rails.application.credentials[:IDFY_API_KEY]
+    request["api-key"] = Rails.application.credentials[:IDFY_API_KEY]
     request["account-id"] = Rails.application.credentials[:IDFY_ACCOUNT_ID]
     request.body = JSON.dump({
                                task_id:,

@@ -112,7 +112,7 @@ class AccountEntryAllocationEngine
     end
 
     # Delete all prev generated percentage
-    AccountEntry.where(name: "#{field_name} Percentage", entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, generated: true).each(&:destroy)
+    AccountEntry.where(name: "#{field_name} Percentage", entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, generated: true).find_each(&:destroy)
 
     fund_formula.commitments(@sample).each do |capital_commitment|
       percentage = total.positive? ? (100.0 * cc_map[capital_commitment.id]["amount_cents"] / total) : 0
@@ -230,7 +230,7 @@ class AccountEntryAllocationEngine
       capital_commitment.rollup_account_entries(ae.name, ae.entry_type, @start_date, @end_date) if fund_formula.roll_up
 
       # Generate fund account entry
-      @fund.fund_account_entries.where(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, entry_type: fund_formula.entry_type, generated: true, capital_commitment_id: nil).each(&:destroy)
+      @fund.fund_account_entries.where(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, entry_type: fund_formula.entry_type, generated: true, capital_commitment_id: nil).find_each(&:destroy)
 
       account_entries = @fund.account_entries.where(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, entry_type: fund_formula.entry_type, generated: true, cumulative: false)
 

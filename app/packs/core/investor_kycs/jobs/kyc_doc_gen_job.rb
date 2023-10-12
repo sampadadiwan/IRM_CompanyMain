@@ -13,7 +13,7 @@ class KycDocGenJob < ApplicationJob
 
       # Loop through each investor kyc and generate the documents
       investor_kycs.each do |investor_kyc|
-        Document.where(id: document_template_ids).each do |document_template|
+        Document.where(id: document_template_ids).find_each do |document_template|
           KycDocGenerator.new(investor_kyc, document_template, start_date, end_date, user_id)
         end
       end

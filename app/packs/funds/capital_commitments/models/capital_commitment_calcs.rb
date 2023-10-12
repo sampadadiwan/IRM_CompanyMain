@@ -66,11 +66,11 @@ class CapitalCommitmentCalcs
   def xirr(net_irr: false, return_cash_flows: false)
     cf = Xirr::Cashflow.new
 
-    @capital_commitment.capital_remittance_payments.where("capital_remittance_payments.payment_date <= ?", @end_date).each do |cr|
+    @capital_commitment.capital_remittance_payments.where("capital_remittance_payments.payment_date <= ?", @end_date).find_each do |cr|
       cf << Xirr::Transaction.new(-1 * cr.amount_cents, date: cr.payment_date, notes: "#{cr.capital_remittance.investor_name} Remittance #{cr.id}") if cr.amount_cents != 0
     end
 
-    @capital_commitment.capital_distribution_payments.where("capital_distribution_payments.payment_date <= ?", @end_date).each do |cdp|
+    @capital_commitment.capital_distribution_payments.where("capital_distribution_payments.payment_date <= ?", @end_date).find_each do |cdp|
       cf << Xirr::Transaction.new(cdp.amount_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Distribution #{cdp.id}") if cdp.amount_cents != 0
     end
 

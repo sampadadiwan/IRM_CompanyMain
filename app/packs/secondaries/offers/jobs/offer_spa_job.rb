@@ -4,7 +4,7 @@ class OfferSpaJob < ApplicationJob
   def perform(offer_id)
     Chewy.strategy(:sidekiq) do
       offer = Offer.find(offer_id)
-      offer.secondary_sale.documents.where(owner_tag: "Offer Template").each do |template|
+      offer.secondary_sale.documents.where(owner_tag: "Offer Template").find_each do |template|
         OfferSpaGenerator.new(offer, template)
       end
     end

@@ -92,12 +92,12 @@ class FundPortfolioCalcs
       cf = Xirr::Cashflow.new
 
       # Get the buy cash flows
-      @fund.portfolio_investments.buys.where(investment_date: ..@end_date).each do |buy|
+      @fund.portfolio_investments.buys.where(investment_date: ..@end_date).find_each do |buy|
         cf << Xirr::Transaction.new(-1 * buy.amount_cents, date: buy.investment_date, notes: "Bought Amount") if buy.amount_cents.positive?
       end
 
       # Get the sell cash flows
-      @fund.portfolio_investments.sells.where(investment_date: ..@end_date).each do |sell|
+      @fund.portfolio_investments.sells.where(investment_date: ..@end_date).find_each do |sell|
         cf << Xirr::Transaction.new(sell.amount_cents, date: sell.investment_date, notes: "Sold Amount") if sell.amount_cents.positive?
       end
 
@@ -215,11 +215,11 @@ class FundPortfolioCalcs
   def xirr(net_irr: false, return_cash_flows: false, adjustment_cash: 0, scenarios: nil)
     cf = Xirr::Cashflow.new
 
-    @fund.capital_remittance_payments.includes(:capital_remittance).where("capital_remittance_payments.payment_date <= ?", @end_date).each do |cr|
+    @fund.capital_remittance_payments.includes(:capital_remittance).where("capital_remittance_payments.payment_date <= ?", @end_date).find_each do |cr|
       cf << Xirr::Transaction.new(-1 * cr.amount_cents, date: cr.payment_date, notes: "#{cr.capital_remittance.investor_name} Remittance #{cr.id} ")
     end
 
-    @fund.capital_distribution_payments.includes(:investor).where("capital_distribution_payments.payment_date <= ?", @end_date).each do |cdp|
+    @fund.capital_distribution_payments.includes(:investor).where("capital_distribution_payments.payment_date <= ?", @end_date).find_each do |cdp|
       cf << Xirr::Transaction.new(cdp.amount_cents, date: cdp.payment_date, notes: "#{cdp.investor.investor_name} Distribution #{cdp.id}")
     end
 
