@@ -1,12 +1,12 @@
 <% if @approval.entity.entity_setting.custom_flags.enable_approval_show_kycs? %>
     <p>
-    <table class="table table-bordered dataTable">
+    <div>
         <% @approval_response.investor.investor_kycs.each do |kyc| %>
-        <tr>
-            <td><%= link_to kyc.full_name, investor_kyc_url(kyc, subdomain: @approval.entity.sub_domain) %></td>
-            <td><%= kyc.PAN %></td>
-        </tr>
+        <p>
+            <%= link_to kyc.full_name, investor_kyc_url(kyc, subdomain: @approval.entity.sub_domain) %>, 
+            <%= kyc.PAN %>
+        </p>
         <% end %>
-    </table>
+    </div>
     </p>
 <% end %>

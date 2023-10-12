@@ -43,9 +43,9 @@
     <small class="text-muted">Select how the remittance amounts are computed</small>
   </div>
 
-  <div class="form-group" id="amount_to_be_called_group">
-    <%= form.label :amount_to_be_called %>
-    <%= form.number_field :amount_to_be_called, class: "form-control"  %>
+  <div class="form-group" id="amount_to_be_called_group" data-controller="currencyformat">
+    <%= form.label :amount_to_be_called %> <span class="formatted_currency"></span>
+    <%= form.number_field :amount_to_be_called, class: "form-control", data: {action: "input->currencyformat#format"}  %>
     <small class="text-muted">Total amount to be called, Call basis will be used for each folio.</small>
   </div>
 
