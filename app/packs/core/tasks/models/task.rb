@@ -10,6 +10,7 @@ class Task < ApplicationRecord
 
   has_noticed_notifications
 
+  validates :details, presence: true, length: { maximum: 255 }
   validates :tags, length: { maximum: 50 }
 
   has_many :reminders, as: :owner, dependent: :destroy

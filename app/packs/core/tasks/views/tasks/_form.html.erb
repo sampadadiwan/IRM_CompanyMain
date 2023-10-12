@@ -5,7 +5,7 @@
       <h6 class="m-0 font-weight-bold text-primary">Add Task</h6>
   </div>
   <div class="card-body">
-    <%= form_with(model: task, id: "task_form") do |form| %>
+    <%= form_with(model: task, id: "task_form", validates: true) do |form| %>
       <% if task.errors.any? %>
         <div class="alert alert-danger">
           <h2><%= pluralize(task.errors.count, "error") %> prohibited this task from being saved:</h2>

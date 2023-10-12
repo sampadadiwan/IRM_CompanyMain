@@ -803,9 +803,11 @@ ul.vesting_schedule {
   }
 }
 
-nav {
-  .nav-link {
-    min-width: 120px;
+.container-fluid {
+  nav {
+    .nav-link {
+      min-width: 120px;
+    }
   }
 }
 
