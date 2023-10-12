@@ -3,7 +3,7 @@
     <div>
         <% @approval_response.investor.investor_kycs.each do |kyc| %>
         <p>
-            <%= link_to kyc.full_name, investor_kyc_url(kyc, subdomain: @approval.entity.sub_domain) %>, 
+            <%= kyc.full_name %>, 
             <%= kyc.PAN %>
         </p>
         <% end %>
