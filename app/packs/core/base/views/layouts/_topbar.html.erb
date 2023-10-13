@@ -96,7 +96,9 @@
                                     <% if current_user.entity.logo.present? %>
                                         <%= image_tag image_url(current_user.entity.logo.url(expires_in: 60*60*24*7)), 
                                             class: "top_bar_logo" %>
-                                        <i class="fas fa-caret-down fa-fw fa-lg small text-gray-600"></i>
+                                        <span class="mr-2 d-lg-inline text-gray-600 small">
+                                            <i class="fas fa-caret-down fa-fw fa-lg"></i>
+                                        </span>
                                     <% else %>
                                         <span class="mr-2 d-lg-inline text-gray-600 small">
                                             <%= current_user.entity.name  %> <i class="fas fa-caret-down fa-fw fa-lg"></i>

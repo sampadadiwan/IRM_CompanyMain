@@ -1,7 +1,7 @@
 <% if @approval.entity.entity_setting.custom_flags.enable_approval_show_kycs? %>
     <p>
     <div>
-        <% @approval_response.investor.investor_kycs.each do |kyc| %>
+        <% @approval_response.investor.investor_kycs.not_expired.each do |kyc| %>
         <p>
             <%= kyc.full_name %>, 
             <%= kyc.PAN %>

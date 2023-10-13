@@ -19,6 +19,10 @@ class InvestorKyc < ApplicationRecord
   has_many :aml_reports, dependent: :destroy
   has_many :kyc_datas, dependent: :destroy
   scope :verified, -> { where(verified: true) }
+
+  scope :expired, -> { where(expiry_date: ..Time.zone.today) }
+  scope :not_expired, -> { where(expiry_date: Time.zone.today..) }
+
   enum :kyc_type, { individual: "Individual", non_individual: "Non Individual" }
   enum :residency, { domestic: "Domestic", foreign: "Foreign" }
 
