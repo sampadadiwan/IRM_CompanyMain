@@ -18,7 +18,6 @@ export default class extends ServerDatatableController {
   ]
 
   all = [
-    {"data": "entity_name"},
     {"data": "investor_name"},
     {"data": "pan"},
     {"data": "tag_list"},

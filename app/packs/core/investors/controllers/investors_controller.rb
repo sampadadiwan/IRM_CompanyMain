@@ -4,7 +4,7 @@ class InvestorsController < ApplicationController
 
   # GET /investors or /investors.json
   def index
-    @investors = policy_scope(Investor).joins(:entity)
+    @investors = policy_scope(Investor)
     authorize(Investor)
 
     @investors = @investors.where(category: params[:category]) if params[:category]
@@ -28,7 +28,7 @@ class InvestorsController < ApplicationController
       @investors = Investor.where(id: ids)
     end
 
-    @investors = @investors.joins(:entity)
+    @investors = @investors.joins(:entity, :investor_entity)
     @investors = @investors.page(params[:page]) if params[:all].blank?
     respond_to do |format|
       format.html
