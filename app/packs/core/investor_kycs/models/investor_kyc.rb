@@ -21,7 +21,7 @@ class InvestorKyc < ApplicationRecord
   scope :verified, -> { where(verified: true) }
 
   scope :expired, -> { where(expiry_date: ..Time.zone.today) }
-  scope :not_expired, -> { where(expiry_date: Time.zone.today..) }
+  scope :not_expired, -> { where('expiry_date IS NULL OR expiry_date >= ?', Time.zone.today) }
 
   enum :kyc_type, { individual: "Individual", non_individual: "Non Individual" }
   enum :residency, { domestic: "Domestic", foreign: "Foreign" }
