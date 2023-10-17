@@ -9,7 +9,7 @@ class UserDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     entity: Field::BelongsTo,
-    advisor_entity: Field::BelongsToSearch.with_options(class_name: "Entity", searchable: false),
+    advisor_entity: Field::BelongsTo.with_options(class_name: "Entity", searchable: false),
     advisor_entity_roles: Field::String,
     id: Field::Number,
     sign_in_count: Field::Number,

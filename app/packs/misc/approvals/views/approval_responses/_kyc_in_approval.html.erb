@@ -1,14 +1,14 @@
 <% if @approval.entity.entity_setting.custom_flags.enable_approval_show_kycs? %>
     <p>
     <div>
-        <% @approval_response.investor.investor_kycs.not_expired.each do |kyc| %>
         <ol>
+        <% @approval_response.investor.investor_kycs.not_expired.each do |kyc| %>        
             <li>
                 <%= kyc.full_name %>, 
                 <%= kyc.PAN %>
-            </li>
-        </ol>
+            </li>        
         <% end %>
+        </ol>
     </div>
     </p>
 <% end %>
