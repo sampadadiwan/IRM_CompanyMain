@@ -2,10 +2,12 @@
     <p>
     <div>
         <% @approval_response.investor.investor_kycs.not_expired.each do |kyc| %>
-        <p>
-            <%= kyc.full_name %>, 
-            <%= kyc.PAN %>
-        </p>
+        <ol>
+            <li>
+                <%= kyc.full_name %>, 
+                <%= kyc.PAN %>
+            </li>
+        </ol>
         <% end %>
     </div>
     </p>
