@@ -114,7 +114,7 @@ class Investor < ApplicationRecord
 
   before_destroy :update_name_defunct
   def update_name_defunct
-    self.investor_name += " Defunct"
+    update_column(:investor_name, "#{investor_name} Defunct")
   end
 
   before_validation :update_name, if: :new_record?

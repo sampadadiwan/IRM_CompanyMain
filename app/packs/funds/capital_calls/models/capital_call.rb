@@ -79,9 +79,7 @@ class CapitalCall < ApplicationRecord
     "#{fund.folder_path}/Capital Calls/#{name.delete('/')}"
   end
 
-  def to_s
-    "#{name}"
-  end
+  delegate :to_s, to: :name
 
   def due_amount
     call_amount + other_fee - collected_amount

@@ -21,7 +21,7 @@ class FundFormula < ApplicationRecord
 
   validate :formula_kosher?
   def formula_kosher?
-    errors.add(:formula, "You cannot do CRUD operations in a formula") if formula.downcase.match?(/destroy|delete|update|create|save|rollback/)
+    errors.add(:formula, "You cannot do CRUD operations in a formula") if formula.downcase.match?(/alter|truncate|drop|insert|select|destroy|delete|update|create|save|rollback|system/)
   end
 
   # Sometimes we just want to sample the commitments to check if all the formulas are ok

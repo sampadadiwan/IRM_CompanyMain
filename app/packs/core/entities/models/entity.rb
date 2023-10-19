@@ -200,11 +200,13 @@ class Entity < ApplicationRecord
                           Time.zone.today, Time.zone.today).last
   end
 
-  def update_passwords_to_pan
+  def update_passwords_to_pan(investor_list = nil)
     no_pans = []
     Rails.logger.debug { "Updating passwords for #{name}" }
 
-    investors.each do |investor|
+    investor_list ||= investors
+
+    investor_list.each do |investor|
       investor.investor_entity.employees.each do |u|
         if investor.pan
           if u.sign_in_count.positive?
