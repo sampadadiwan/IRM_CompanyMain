@@ -1,7 +1,13 @@
+<%show_fund_name ||= false%>
 <tr id="<%= dom_id aggregate_portfolio_investment %>">
   <td>
     <%= aggregate_portfolio_investment.commitment_type %>
   </td>
+  <%if show_fund_name%>
+  <td>
+    <%= link_to aggregate_portfolio_investment.fund.name, aggregate_portfolio_investment.fund %>
+  </td>
+  <%end%>
   <td>
     <%= link_to aggregate_portfolio_investment.portfolio_company.investor_name, aggregate_portfolio_investment.portfolio_company %>
   </td>

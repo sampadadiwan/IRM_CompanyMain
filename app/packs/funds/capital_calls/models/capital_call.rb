@@ -80,7 +80,7 @@ class CapitalCall < ApplicationRecord
   end
 
   def to_s
-    "#{name}, #{percentage_called}%"
+    "#{name}"
   end
 
   def due_amount

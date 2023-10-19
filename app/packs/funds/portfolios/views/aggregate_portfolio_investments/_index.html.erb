@@ -1,25 +1,26 @@
+<%show_fund_name ||= false%>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Aggregate Portfolio Investments</h1>
 
   <span>
-    <%= link_to "New Investment", 
+    <%= link_to "New Investment",
         new_portfolio_investment_path("portfolio_investment[entity_id]": current_user.entity_id,
-        "portfolio_investment[fund_id]": params[:fund_id]), 
+        "portfolio_investment[fund_id]": params[:fund_id]),
         {class: "btn btn-outline-primary"} if params[:fund_id].present?  %>
 
     <%= link_to "Scenarios", portfolio_scenarios_path(fund_id: params[:fund_id]), { class: "btn btn-outline-success"} if params[:fund_id].present? %>
-        
-      <%= link_to "Upload", 
-          new_import_upload_path("import_upload[owner_id]": params[:fund_id], 
-          "import_upload[owner_type]": "Fund", 
-          "import_upload[import_type]": "PortfolioInvestment", 
-          "sample_upload": "PORTFOLIO_SAMPLE"), 
-          { class: "btn btn-outline-primary"}   %> 
+
+      <%= link_to "Upload",
+          new_import_upload_path("import_upload[owner_id]": params[:fund_id],
+          "import_upload[owner_type]": "Fund",
+          "import_upload[import_type]": "PortfolioInvestment",
+          "sample_upload": "PORTFOLIO_SAMPLE"),
+          { class: "btn btn-outline-primary"}   %>
 
       <%= link_to "Download", portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true),
           {class: "btn btn-outline-success" } %>
   </span>
-  
+
 </div>
 <div class="table-responsive" data-controller="datatable">
   <table id="aggregate_portfolio_investments" class="table table-bordered dataTable jqDataTable">
@@ -28,6 +29,11 @@
         <th>
           For
         </th>
+        <%if show_fund_name%>
+        <th>
+          Fund
+        </th>
+        <%end%>
         <th>
           Portfolio Company
         </th>
@@ -52,7 +58,7 @@
     </thead>
     <tbody>
       <% aggregate_portfolio_investments.each do |aggregate_portfolio_investment| %>
-        <%= render aggregate_portfolio_investment %>
+        <%= render aggregate_portfolio_investment, show_fund_name: show_fund_name %>
       <% end %>
     </tbody>
   </table>

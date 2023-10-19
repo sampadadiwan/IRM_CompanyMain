@@ -3,9 +3,6 @@
     <%= portfolio_investment.Pool? ? "Pool" : link_to(portfolio_investment.capital_commitment) %>
   </td>
   <td>
-    <%= link_to portfolio_investment.fund.name, portfolio_investment.fund %>
-  </td>
-  <td>
     <%= link_to portfolio_investment.portfolio_company_name, portfolio_investment.aggregate_portfolio_investment %>
   </td>
   <td>
