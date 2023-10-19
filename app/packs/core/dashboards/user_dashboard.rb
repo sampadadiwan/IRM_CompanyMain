@@ -107,7 +107,7 @@ class UserDashboard < Administrate::BaseDashboard
     user.name
   end
 
-  def permitted_attributes
+  def permitted_attributes(action = nil)
     # This is to enable the permissions field to be editable
     super + [permissions: []]  # -- Adding our now removed field to the permitted list
   end
