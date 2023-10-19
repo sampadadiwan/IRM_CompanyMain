@@ -12,7 +12,6 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     sandbox: Field::BooleanEmoji,
     sandbox_emails: Field::String,
     custom_flags: ActiveFlagField,
-    entity_bcc: Field::String,
     from_email: Field::String,
     reply_to: Field::String,
     cc: Field::String,
@@ -66,7 +65,6 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     from_email
     reply_to
     cc
-    entity_bcc
     email_delay_seconds
     pan_verification
     bank_verification
@@ -92,6 +90,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     sandbox_emails
     from_email
     cc
+    reply_to
     email_delay_seconds
     bank_verification
     pan_verification

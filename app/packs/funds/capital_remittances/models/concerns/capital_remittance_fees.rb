@@ -44,7 +44,7 @@ module CapitalRemittanceFees
     if capital_call.due_date <= start_date
       (end_date - start_date).to_i + 1
     elsif capital_call.due_date <= end_date
-      (end_date - capital_call.due_date).to_i + 1
+      (end_date - remittance_date).to_i + 1
     else
       0
     end

@@ -1,5 +1,5 @@
 class ImportCapitalRemittance < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Call Amount (Inclusive of Capital Fees)", "Capital Fees", "Other Fees", "Verified", "Folio No"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Call Amount (Inclusive of Capital Fees)", "Capital Fees", "Other Fees", "Remittance Date", "Verified", "Folio No"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -34,7 +34,7 @@ class ImportCapitalRemittance < ImportUtil
     if fund && capital_call && investor && capital_commitment
 
       # Make the capital_remittance
-      capital_remittance = CapitalRemittance.new(entity_id: import_upload.entity_id, fund:, capital_call:, investor:, investor_name: investor.investor_name, capital_commitment:, folio_id:, folio_call_amount: user_data["Call Amount (Inclusive of Capital Fees)"], folio_capital_fee: user_data["Capital Fees"], folio_other_fee: user_data["Other Fees"], payment_date: user_data["Payment Date"], created_by: "Upload")
+      capital_remittance = CapitalRemittance.new(entity_id: import_upload.entity_id, fund:, capital_call:, investor:, investor_name: investor.investor_name, capital_commitment:, folio_id:, folio_call_amount: user_data["Call Amount (Inclusive of Capital Fees)"], folio_capital_fee: user_data["Capital Fees"], folio_other_fee: user_data["Other Fees"], payment_date: user_data["Payment Date"], created_by: "Upload", remittance_date: user_data["Remittance Date"])
 
       capital_remittance.verified = user_data["Verified"] == "Yes"
 

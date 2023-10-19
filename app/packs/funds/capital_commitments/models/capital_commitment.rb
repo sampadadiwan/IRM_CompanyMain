@@ -175,8 +175,8 @@ class CapitalCommitment < ApplicationRecord
 
   def document_list
     # fund.commitment_doc_list&.split(",")
-    docs = fund.documents.where(template: true).map(&:name)
-    docs += fund.documents.where(template: true).map { |d| ["#{d.name} Header", "#{d.name} Footer"] }.flatten
+    docs = fund.documents.templates.map(&:name)
+    docs += fund.documents.templates.map { |d| ["#{d.name} Header", "#{d.name} Footer"] }.flatten
     docs += fund.commitment_doc_list.split(",").map(&:strip) if fund.commitment_doc_list.present?
     docs += ["Other"] if docs.present?
     docs.sort
@@ -184,11 +184,11 @@ class CapitalCommitment < ApplicationRecord
 
   # Retrieves the templates to be used for rendering as SOA, FRA etc.
   def templates(owner_tag, name = nil)
-    fund_templates = fund.documents.where(owner_tag:)
+    fund_templates = fund.documents.templates.where(owner_tag:)
     fund_templates = fund_templates.where(name:) if name
     fund_template_names = fund_templates.pluck(:name)
     # Try and get the template from the capital_commitment which override the fund templates
-    commitment_templates = documents.where(name: fund_template_names)
+    commitment_templates = documents.templates.where(name: fund_template_names)
 
     if commitment_templates.present?
       template_names = commitment_templates.pluck(:name)

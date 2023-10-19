@@ -25,5 +25,8 @@ module DocumentScope
     scope :owner_documents, lambda { |owner|
       where(owner_id: owner.id, owner_type: owner.class.name)
     }
+
+    scope :templates, -> { where(template: true) }
+    scope :not_templates, -> { where(template: false) }
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_10_05_143044) do
+ActiveRecord::Schema[7.1].define(version: 2023_10_19_063951) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -624,7 +624,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_10_05_143044) do
     t.decimal "folio_capital_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_other_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "computed_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "percentage", precision: 10, scale: 2, default: "0.0"
+    t.decimal "percentage", precision: 12, scale: 8, default: "0.0"
+    t.date "remittance_date"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"

@@ -110,6 +110,9 @@
                         &nbsp;&nbsp; Original <%= display_boolean @document.orignal  %>
                         &nbsp;&nbsp; Public <%= display_boolean @document.public_visibility  %>
                         &nbsp;&nbsp; Send Email <%= display_boolean @document.send_email  %>
+                        <% if @document.template %>
+                           &nbsp;&nbsp; Template <%= display_boolean @document.template  %>
+                        <% end %>
                      </td>
                   </tr>
 
