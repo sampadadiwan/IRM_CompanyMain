@@ -42,7 +42,7 @@ class CapitalRemittance < ApplicationRecord
   before_save :set_call_amount
 
   def set_call_amount
-    self.remittance_date ||= capital_call.due_date
+    self.remittance_date ||= capital_call.call_date
     # This is the committed_amount when the remittance was created. In certain special top up cases the committed_amount for the commitment may be changed later. Hence this is a ref for the committed_amount at the time of creation
     self.folio_committed_amount_cents = capital_commitment.folio_committed_amount_cents
     self.committed_amount_cents = capital_commitment.committed_amount_cents
