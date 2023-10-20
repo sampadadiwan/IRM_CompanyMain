@@ -752,6 +752,10 @@ ul.vesting_schedule {
 #login_page {
   // margin-top: auto;
 
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
   hr {
     margin-top: 30px;
     margin-bottom: 10px;
