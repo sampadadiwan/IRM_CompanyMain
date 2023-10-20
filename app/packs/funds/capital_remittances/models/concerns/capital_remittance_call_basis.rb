@@ -44,6 +44,7 @@ module CapitalRemittanceCallBasis
 
     # Now add the capital fees
     self.folio_call_amount_cents += folio_capital_fee_cents
+    self.percentage = self.folio_call_amount_cents / capital_commitment.folio_committed_amount_cents * 100.0
     self.call_amount_cents = computed_amount_cents + capital_fee_cents
   end
 end

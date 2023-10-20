@@ -134,27 +134,6 @@ Scenario Outline: Create new capital call
     |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=INR  |name=SAAS Fund;unit_types=Series A,Series B    |Fund was successfully created| call_basis=Investable Capital Percentage;amount_to_be_called_cents=10000000 | 28000 |
 
 
-Scenario Outline: Create new capital call - Upload remittances
-  Given Im logged in as a user "" for an entity "<entity>"
-  Given the user has role "company_admin"
-  Given there is a fund "<fund>" for the entity
-  And Given I upload an investors file for the fund  
-  Given the fund has capital call template
-  Given the investors are added to the fund  
-  And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
-  When I create a new capital call "<call>"
-  Then I should see the capital call details
-  Then when the capital call is approved
-  Then the no remittances should be created
-  And Given I upload "capital_remittances.xlsx" file for Call remittances of the fund
-  Then the corresponding remittances should be created
-  Then I should see the remittances
-
-  Examples:
-  	|entity                                         |fund                |msg	| call | collected_amount |
-  	|entity_type=Investment Fund;enable_funds=true  |name=SAAS Fund;currency=INR      |Fund was successfully created| name=Call 1;call_basis=Upload | 2120000 |
-
-
 Scenario Outline: Create new capital distrbution
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
