@@ -10,6 +10,7 @@ class CapitalRemittanceDatatable < AjaxDatatablesRails::ActiveRecord
       collected_amount: { source: "CapitalRemittance.collected_amount_cents" },
       due_amount: { source: "", orderable: false },
       status: { source: "CapitalRemittance.status" },
+      percentage: { source: "CapitalRemittance.percentage" },
       verified: { source: "CapitalRemittance.verified" },
       payment_date: { source: "CapitalRemittance.payment_date" },
       created_by: { source: "CapitalRemittance.created_by" },
@@ -32,6 +33,7 @@ class CapitalRemittanceDatatable < AjaxDatatablesRails::ActiveRecord
         due_amount: record.decorate.due_amount,
         verified: record.decorate.display_boolean(record.verified),
         status: record.status,
+        percentage: record.percentage,
         dt_actions: record.decorate.dt_actions,
         DT_RowId: "capital_remittance_#{record.id}" # This will automagically set the id attribute on the corresponding <tr> in the datatable
       }
