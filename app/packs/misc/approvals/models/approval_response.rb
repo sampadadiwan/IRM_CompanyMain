@@ -31,11 +31,13 @@ class ApprovalResponse < ApplicationRecord
       if status == "Pending"
         investor.approved_users.each do |user|
           if reminder
-            msg = "This is a reminder that #{approval.entity.name} has requested your approval for #{approval.title}. Please use your registered email id to access your account. The password is your PAN (in lower case). You can also log in without a password by sending a link to your registered email id."
+            # msg = "This is a reminder that #{approval.entity.name} has requested your approval for #{approval.title}. Please use your registered email id to access your account. The password is your PAN (in lower case). You can also log in without a password by sending a link to your registered email id."
+            msg = 'Reminder for approval for Change in Investment Manager for SiriusOne Capital Fund. We are proposing to appoint Cumulative Asset Management LLP (CAML) as the new Investment Manager for SiriusOne Capital Fund, in compliance with SEBI regulations. The partners of SiriusOne Capital LLP are also partners in the Proposed Investment Manager i.e. CAML. Your user id is your email provided to SiriusOne Capital Fund and Password is PAN in LOWERCASE.'
             # msg = "Reminder for approval required for #{approval.entity.name} : #{approval.title}."
             ApprovalNotification.with(entity_id:, approval_response: self, email_method: :approval_reminder, msg:).deliver_later(user) unless notification_sent
           else
-            msg = "#{approval.entity.name} has requested your approval for #{approval.title}.Please use your registered email id to access your account. The password is your PAN (in lower case). You can also log in without a password by sending a link to your registered email id."
+            # msg = "#{approval.entity.name} has requested your approval for #{approval.title}.Please use your registered email id to access your account. The password is your PAN (in lower case). You can also log in without a password by sending a link to your registered email id."
+            msg = 'Approval required for Change in Investment Manager for SiriusOne Capital Fund. We are proposing to appoint Cumulative Asset Management LLP (CAML) as the new Investment Manager for SiriusOne Capital Fund, in compliance with SEBI regulations. The partners of SiriusOne Capital LLP are also partners in the Proposed Investment Manager i.e. CAML. Your user id is your email provided to SiriusOne Capital Fund and Password is PAN in LOWERCASE.'
             # msg = "Approval required for #{approval.entity.name} : #{approval.title}."
             ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_new_approval, msg:).deliver_later(user) unless notification_sent
           end

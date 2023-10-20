@@ -115,6 +115,8 @@ class Entity < ApplicationRecord
   scope :funds, -> { where(entity_type: "Investment Fund") }
   scope :user_investor_entities, ->(user) { where('access_rights.access_to': user.email).includes(:access_rights) }
 
+  validates :pan, length: { maximum: 15 }
+
   before_save :check_url, :scrub_defaults
   def check_url
     self.url = "http://#{url}" if url.present? &&

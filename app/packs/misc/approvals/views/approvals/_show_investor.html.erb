@@ -7,7 +7,14 @@
     
     <h4 class="card-title font-weight-bold"><%= approval.title %></h4>
     <h6 class="card-subtitle mb-2 text-muted">Due By: <%= l approval.due_date %></h6>
-    <p class="card-text"><%= approval.agreements_reference %></p>
+    
+    <p class="card-text">
+      <%= approval.agreements_reference %>
+      <% if approval.entity.entity_setting.custom_flags.enable_approval_show_kycs? && !policy(approval).update? %>
+          <% @approval_response = policy_scope(approval.approval_responses).last %>
+          <%= render "/approval_responses/kyc_in_approval" %>
+      <% end %>
+    </p>
 
     <%= render "approval_responses/index", 
               approval_responses: policy_scope(approval.approval_responses).includes(:investor, :response_entity, :response_user), approval: approval, layout: :card %>
