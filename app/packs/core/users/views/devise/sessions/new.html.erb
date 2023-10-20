@@ -1,11 +1,10 @@
-
-<%- flash.each do |name, msg| -%>
-    <%= content_tag :div, msg, :id => "flash_#{name}", class: "text-center alert alert-info login_flash" if msg.is_a?(String) %>
-<%- end -%>  
-
-<%= render "/layouts/display_status" if (notice || alert) && params[:display_status].present? %>
-
 <div id="login_page" data-controller="login">
+
+        <%= render "/layouts/display_status" if (notice || alert) && params[:display_status].present? %>
+
+        <%- flash.each do |name, msg| -%>
+            <%= content_tag :div, msg, :id => "flash_#{name}", class: "text-center alert alert-info login_flash" if msg.is_a?(String) %>
+        <%- end -%>  
 
         <div class="container" data-turbo='false'>
 
@@ -21,7 +20,7 @@
                                 <div class="col-lg-6 d-lg-block bg-login-image login-left">
                                     <div><%= render "devise/shared/company_logo" %></div>
                                 </div>
-                                <div class="col-lg-6 bg-login-image">
+                                <div class="col-lg-6 bg-login-image login-right">
                                     <div class="p-5 text-center">
                                         
                                         <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
@@ -45,18 +44,13 @@
                                             <div class="form-group">
                                                     <input type="submit" name="login" class="btn btn-outline-primary btn-outline-user btn-outline-block" 
                                                     value="Log In" data-disable-with="Log In">
-                                            </div>
-                                            
-                                            <div class="form-group">
+                                                    &nbsp;&nbsp;
                                                     <input type="checkbox"  
                                                     id="user_remember_me" name="user[remember_me]">
                                                     <label for="user_remember_me">Remember
                                                         Me</label>
                                             </div>
-                                            
-
-                                            
-
+                                        
                                         </form>
 
                                         <% end %>                                        

@@ -758,25 +758,32 @@ ul.vesting_schedule {
   }
   
 
-  // position:absolute;
-  // top:0px;
-  // right:0px;
-  // bottom:0px;
-  // left:0px;
+  position:absolute;
+  top:0px;
+  right:0px;
+  bottom:0px;
+  left:0px;
   
   .bg-login-image {
-    // background-color: #4e73df;
-    
+    // background-color: #4e73df;    
   }
+  
+  .login-right {
+    background-color: lighten($color: lightgray, $amount: 15);
+    border-left: 1px solid lightgray;
+  }
+  
   .login-left {
     // background-color: #4e73df;
+    width: 100%;
+    height: 100%;
     // margin: unset;
     // vertical-align: middle;
   }
   // background-color: #4e73df;
-  // background-image: url("https://img.freepik.com/free-vector/gradient-network-connection-background_23-2148865393.jpg?w=2000&t=st=1696676745~exp=1696677345~hmac=cc417d67c5a0e4caebda06445ee96bc18bd44de49bda2e329f0d9eaaa1a2d68f");
-  // background-repeat: no-repeat, repeat;
-  // background-size: cover;
+  background-image: url("https://www.outlookindia.com/outlookmoney/public/uploads/article/gallery/0c73bbb6e8623e83d43592a807d2933d.jpg");
+  background-repeat: no-repeat, repeat;
+  background-size: cover;
 }
 
 .title-line {
