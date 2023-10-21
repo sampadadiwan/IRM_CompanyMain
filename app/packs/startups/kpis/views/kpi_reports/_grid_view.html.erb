@@ -44,9 +44,9 @@
                         <td>
                             <% if kpi %>
                                 <% if fcf.field_type == "NumberField" %>
-                                    <%= number_with_delimiter(kpi.value, delimiter: ',') %>
+                                    <%= number_with_delimiter(kpi.value.round(2), delimiter: ',') if kpi.value %>
                                 <% elsif fcf.field_type == "DateField" %>
-                                    <%= l Date.parse(kpi.display_value) %>
+                                    <%= l Date.parse(kpi.display_value) if kpi.display_value %>
                                 <% else %>
                                     <%= kpi.display_value %> 
                                 <% end %>

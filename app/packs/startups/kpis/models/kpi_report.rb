@@ -21,7 +21,7 @@ class KpiReport < ApplicationRecord
   def custom_kpis
     my_kpis = kpis.to_a
     form_type.form_custom_fields.each do |custom_field|
-      kpis << Kpi.new(name: custom_field.name, entity_id:) unless my_kpis.any? { |kpi| kpi.name.casecmp(custom_field.name).zero? }
+      kpis << Kpi.new(name: custom_field.name, entity_id:) unless my_kpis.any? { |kpi| kpi.custom_form_field.id == custom_field.id }
     end
     kpis
   end

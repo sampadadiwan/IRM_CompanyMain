@@ -3,8 +3,7 @@
 
     <% 
       kpi = form.object
-      field = @kpi_report.form_type.form_custom_fields.where(name: kpi.name.downcase).first 
-      field ||= FormCustomField.new(field_type: "Unknown", name: kpi.name)
+      field = kpi.custom_form_field
     %>
 
   <div class="row">
@@ -36,7 +35,7 @@
       <% elsif field.field_type == "TextField" %>
         <%= form.text_field :display_value, class: "form-control", required: field.required %>
       <% else %>
-        <%= form.text_field :display_value, class: "form-control", required: field.required, disabled: true %>
+        <%= form.text_field :display_value, class: "form-control", required: field.required %>
 
       <% end %>
 
