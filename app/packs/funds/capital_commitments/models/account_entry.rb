@@ -56,6 +56,7 @@ class AccountEntry < ApplicationRecord
     "#{reporting_date} #{name}"
   end
 
+  # BUG - please fix, should limit to fund or entity
   def self.total_amount(entry_type, cumulative: false, start_date: nil, end_date: nil)
     account_entries = AccountEntry.where(entry_type:, cumulative:)
     account_entries = account_entries.where(reporting_date: start_date..) if start_date
