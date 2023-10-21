@@ -3,8 +3,8 @@
 
     <% 
       kpi = form.object
-      field = @kpi_report.form_type.form_custom_fields.where(name: kpi.name).first 
-      field ||= FormCustomField.new(field_type: "TextField", name: kpi.name)
+      field = @kpi_report.form_type.form_custom_fields.where(name: kpi.name.downcase).first 
+      field ||= FormCustomField.new(field_type: "Unknown", name: kpi.name)
     %>
 
   <div class="row">
@@ -12,7 +12,7 @@
     <div class="form-group col">
       <%= form.label :name %>
       <%= form.text_field :name, class: "form-control", disabled: true, value: kpi.name.titleize %>
-      <%= form.text_field :name, class: "form-control", hidden: true %>
+      <%= form.text_field :name, class: "form-control", hidden: true, value: kpi.name.titleize %>
     </div>
 
 
@@ -33,9 +33,11 @@
       <% elsif field.field_type == "Money" %>
         <%= form.number_field :value, class: "form-control", required: field.required, step: :any, data: {action: "input->currencyformat#format"} %>
 
-      <% else %>
+      <% elsif field.field_type == "TextField" %>
         <%= form.text_field :display_value, class: "form-control", required: field.required %>
-      
+      <% else %>
+        <%= form.text_field :display_value, class: "form-control", required: field.required, disabled: true %>
+
       <% end %>
 
       <small class="text-muted"><%= field.help_text %></small>    
