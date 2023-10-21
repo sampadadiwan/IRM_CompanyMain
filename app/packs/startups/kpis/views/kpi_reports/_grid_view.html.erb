@@ -62,7 +62,9 @@
                 <% kpi_reports.each do |kpi_report| %>                               
                         <td>
                             <% kpi_report.documents.each do |doc| %>
-                            <%=  link_to doc.name, doc.file.url(expires_in: 60*60*24*7), target: "_blank" %>,
+                                <small>
+                                    <%=  link_to doc.name, doc.file.url(expires_in: 60*60*24*7), target: "_blank" %>,
+                                </small>
                             <% end %>
                         </td>                    
                 <% end %>
@@ -72,7 +74,7 @@
                 <td>Link</td>
                 <% kpi_reports.each do |kpi_report| %>                               
                         <td>
-                            <%=  link_to kpi_report %>
+                            <small><%=  link_to kpi_report %></small>
                         </td>                    
                 <% end %>
             </tr>     
