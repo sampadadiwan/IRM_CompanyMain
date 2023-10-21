@@ -19,6 +19,7 @@ class ImportKpi < ImportUtil
     kpi_report = KpiReport.find_or_initialize_by(as_of:, entity_id:)
     if kpi_report.new_record?
       kpi_report.user_id = import_upload.user_id
+      kpi_report.form_type = kpi_report.entity.form_types.where(name: "KpiReport").first
       kpi_report.save!
     end
 

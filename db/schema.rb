@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_10_19_063951) do
+ActiveRecord::Schema[7.1].define(version: 2023_10_21_054925) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1742,7 +1742,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_10_19_063951) do
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
     t.string "name", limit: 50
-    t.decimal "value", precision: 10
+    t.decimal "value", precision: 20, scale: 6
     t.string "display_value", limit: 30
     t.string "notes"
     t.text "properties"
