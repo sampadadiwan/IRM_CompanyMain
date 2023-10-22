@@ -13,6 +13,15 @@ class AccountEntry < ApplicationRecord
   scope :pool, -> { where(commitment_type: 'Pool') }
   scope :co_invest, -> { where(commitment_type: 'CoInvest') }
 
+  # Used in has_scope of controller
+  scope :reporting_date_start, ->(reporting_date_start) { where("reporting_date >= ?", reporting_date_start) }
+  scope :reporting_date_end, ->(reporting_date_end) { where("reporting_date <= ?", reporting_date_end) }
+  scope :entry_type, ->(entry_type) { where(entry_type:) }
+  scope :folio_id, ->(folio_id) { where(folio_id:) }
+  scope :unit_type, ->(unit_type) { where('capital_commitments.unit_type': unit_type) }
+  scope :cumulative, -> { where(cumulative: true) }
+  scope :not_cumulative, -> { where.not(cumulative: true) }
+
   serialize :explanation, type: Array
 
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }
@@ -22,9 +31,6 @@ class AccountEntry < ApplicationRecord
   validates :amount_cents,
             uniqueness: { scope: %i[fund_id capital_commitment_id name entry_type reporting_date cumulative],
                           message: "Duplicate Account Entry for reporting date" }
-
-  scope :cumulative, -> { where(cumulative: true) }
-  scope :not_cumulative, -> { where.not(cumulative: true) }
 
   # counter_culture :capital_commitment,
   #                 column_name: proc { |r| !r.cumulative && r.entry_type == "Expense" ? 'total_allocated_expense_cents' : nil },

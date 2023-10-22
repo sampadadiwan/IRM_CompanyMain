@@ -2,39 +2,45 @@
 <% data_source ||= account_entries_path(params, format: :json, all: true) %>    
 <% lazy_load_data ||= false %>
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Account Entries</h1>
-  <%  
-    if params[:capital_commitment_id].present? || params[:fund_id].present?
-        account_entry = AccountEntry.new(capital_commitment_id: params[:capital_commitment_id], fund_id: params[:fund_id]) 
-        account_entry.entity_id = account_entry.fund.entity_id
-            
-  %>
-
-  <span>
-    <%= link_to "New Account Entry", new_account_entry_path("account_entry[capital_commitment_id]": account_entry.capital_commitment_id, "account_entry[entity_id]": account_entry.entity_id, "account_entry[fund_id]": account_entry.fund_id), {class: "btn btn-outline-primary"} if policy(account_entry).new? %>
-
-    <%= link_to "Upload", 
-                  new_import_upload_path("import_upload[owner_id]": account_entry.fund_id, 
-                  "import_upload[owner_type]": "Fund", 
-                  "import_upload[import_type]": "AccountEntry", 
-                  "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
-                  { class: "btn btn-outline-primary"}   %> 
-
-
-    <%= link_to "Download", account_entries_path(capital_commitment_id: params[:capital_commitment_id], 
-                            fund_id: params[:fund_id], all: true, format: :xlsx), 
-                            class: "btn btn-outline-success" %>
-  </span>
-
-  <% end %>
-</div>
 
 <div class="table-responsive" data-controller="account-entries" data-account-entries-lazy-load-data-value=<%= lazy_load_data %> data-account-entries-table-name-value="#account_entries_table">
 
-    <% if lazy_load_data %>
-        <a class="load_data_link" data-action="click->account-entries#loadData"><span>Load Data</span></a>
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Account Entries</h1>
+
+    <%= render "account_entries/filter", capital_commitment_id: params[:capital_commitment_id] %>
+
+    <%  
+      if params[:capital_commitment_id].present? || params[:fund_id].present?
+          account_entry = AccountEntry.new(capital_commitment_id: params[:capital_commitment_id], fund_id: params[:fund_id]) 
+          account_entry.entity_id = account_entry.fund.entity_id
+              
+    %>
+
+    <span>
+      <%= link_to "New Account Entry", new_account_entry_path("account_entry[capital_commitment_id]": account_entry.capital_commitment_id, "account_entry[entity_id]": account_entry.entity_id, "account_entry[fund_id]": account_entry.fund_id), {class: "btn btn-outline-primary"} if policy(account_entry).new? %>
+
+      <%= link_to "Upload", 
+                    new_import_upload_path("import_upload[owner_id]": account_entry.fund_id, 
+                    "import_upload[owner_type]": "Fund", 
+                    "import_upload[import_type]": "AccountEntry", 
+                    "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
+                    { class: "btn btn-outline-primary"}   %> 
+
+    </span>
+
     <% end %>
+
+    
+      <%= link_to "Download", account_entries_path(capital_commitment_id: params[:capital_commitment_id], 
+                              fund_id: params[:fund_id], all: true, format: :xlsx), 
+                              class: "btn btn-outline-success" %>
+  </div>
+
+
+  <% if lazy_load_data %>
+      <a class="load_data_link" data-action="click->account-entries#loadData"><span>Load Data</span></a>
+  <% end %>
     
   <table id="account_entries_table" class="table table-bordered dataTable" 
         data-source="<%= data_source %>" style="width:100%" >
@@ -70,4 +76,5 @@
       
     </tbody>
   </table>
+
 </div>

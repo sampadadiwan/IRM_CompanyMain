@@ -40,6 +40,7 @@ gem "jbuilder"
 gem "redis", "~> 4.0"
 
 gem 'devise'
+gem 'has_scope'
 gem "pundit", git: "https://github.com/varvet/pundit.git"
 gem "rolify"
 

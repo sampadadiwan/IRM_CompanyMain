@@ -1,0 +1,35 @@
+<%= form_with(model: nil, method: :get, url: "/account_entries", id: "account_entries_filter",  data: {turbo_frame: "account_entries_frame"} ) do |form| %>
+    
+  <input name="capital_commitment_id" value="<%= capital_commitment_id%>" hidden="hidden">
+
+  <div class="form-group">    
+    <%= form.date_field :reporting_date_start, { id: "reporting_date_start", class: "form-control", data: { action: "change->account-entries#filterData", toggle: "tooltip", title: "Reporting Date Start"}  } %>        
+  </div>
+
+  <div class="form-group">    
+    <%= form.date_field :reporting_date_end, { id: "reporting_date_end", class: "form-control", 
+        data: { action: "change->account-entries#filterData", toggle: "tooltip", title: "Reporting Date End" } } %>        
+  </div>
+
+  <div class="form-group">
+    <% cumulative = params[:cumulative].presence %>
+    <%= form.select :cumulative, [["Yes", true], ["No", false]], {selected: cumulative, include_blank: "Cumulative"}, 
+        { id: "cumulative", class: "form-control", 
+        data: { action: "change->account-entries#filterData" } } %>
+        
+  </div>
+
+  <div class="form-group">    
+    <%= form.text_field :folio_id, { id: "folio_id", class: "form-control", style: "width: 100px;", data: { action: "change->account-entries#filterData", toggle: "tooltip", title: "Folio Number" }, placeholder: "Folio Number" } %>        
+  </div>
+
+  <div class="form-group">    
+    <% unit_type = params[:unit_type].presence %>
+    <%= form.text_field :unit_type, { id: "unit_type", class: "form-control", style: "width: 100px;", data: { action: "change->account-entries#filterData", toggle: "tooltip", title: "Unit Type"}, placeholder: "Unit Type"  } %>        
+  </div>
+
+  
+  <%= form.submit "Submit", {hidden: true, id: "submit"}%>
+
+
+<% end %>

@@ -2,17 +2,23 @@ class AccountEntriesController < ApplicationController
   include FundsHelper
 
   before_action :set_account_entry, only: %i[show edit update destroy]
+  has_scope :entry_type
+  has_scope :folio_id
+  has_scope :unit_type
+  has_scope :reporting_date_start
+  has_scope :reporting_date_end
+  has_scope :cumulative, type: :boolean
 
   # GET /account_entries or /account_entries.json
   def index
-    @account_entries = policy_scope(AccountEntry).includes(:capital_commitment, :fund)
+    @account_entries = apply_scopes(policy_scope(AccountEntry)).includes(:capital_commitment, :fund)
     @account_entries = @account_entries.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id]
     @account_entries = @account_entries.where(investor_id: params[:investor_id]) if params[:investor_id]
     @account_entries = @account_entries.where(fund_id: params[:fund_id]) if params[:fund_id]
     @account_entries = @account_entries.where(capital_commitment_id: nil) if params[:fund_accounts_only].present?
 
-    @account_entries = @account_entries.where(entry_type: params[:entry_type]) if params[:entry_type]
-    @account_entries = @account_entries.where(cumulative: params[:cumulative] == "true") if params[:cumulative]
+    # @account_entries = @account_entries.where(entry_type: params[:entry_type]) if params[:entry_type]
+    # @account_entries = @account_entries.where(cumulative: params[:cumulative] == "true") if params[:cumulative]
 
     @account_entries = @account_entries.page(params[:page]) if params[:all].blank?
 
