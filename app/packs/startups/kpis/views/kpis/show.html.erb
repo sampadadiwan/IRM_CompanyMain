@@ -1,63 +1,54 @@
 <%= render "/layouts/alerts" %>
-
 <table class="table table-bordered dataTable">
-
-          <tr>
-        <td>
-          Entity
-        </td>
-        <td>
-          <%= @kpi.entity_id %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Name
-        </td>
-        <td>
-          <%= @kpi.name %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Value
-        </td>
-        <td>
-          <%= @kpi.value %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Display Value
-        </td>
-        <td>
-          <%= @kpi.display_value %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Notes
-        </td>
-        <td>
-          <%= @kpi.notes %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Kpi Report
-        </td>
-        <td>
-          <%= @kpi.kpi_report_id %>
-        </td>    
-      </tr>
-    
-  
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @kpi.entity_id %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Name
+    </td>
+    <td>
+      <%= @kpi.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Value
+    </td>
+    <td>
+      <%= @kpi.value %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Display Value
+    </td>
+    <td>
+      <%= @kpi.display_value %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Notes
+    </td>
+    <td>
+      <%= @kpi.notes %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Kpi Report
+    </td>
+    <td>
+      <%= @kpi.kpi_report_id %>
+    </td>
+  </tr>
 </table>
-
-
 <div>
-  <%= link_to "Edit", edit_kpi_path(@kpi), {class: "btn btn-outline-primary"} %> |
-  <%= link_to "Back", :back, {class: "btn btn-outline-primary"} %> |
-
-  <%= button_to "Delete", @kpi, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <%= button_to "Delete", @kpi, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@kpi).destroy? %>
 </div>

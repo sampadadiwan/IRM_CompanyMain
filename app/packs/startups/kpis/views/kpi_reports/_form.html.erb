@@ -1,4 +1,4 @@
-<%= form_with(model: kpi_report) do |form| %>
+<%= form_with(model: kpi_report, validate: true) do |form| %>
   <% if kpi_report.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(kpi_report.errors.count, "error") %> prohibited this kpi_report from being saved:</h2>
