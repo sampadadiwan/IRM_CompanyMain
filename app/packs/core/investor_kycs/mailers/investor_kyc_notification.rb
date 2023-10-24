@@ -1,13 +1,10 @@
 class InvestorKycNotification < BaseNotification
-  # Add your delivery methods
-  if Rails.env.test?
-    deliver_by :email, mailer: "InvestorKycMailer", method: :email_method, format: :email_data
-  else
-    deliver_by :email, mailer: "InvestorKycMailer", method: :email_method, format: :email_data, delay: :email_delay
-  end
-
   # Add required params
   params :investor_kyc
+
+  def mailer_name
+    InvestorKycMailer
+  end
 
   def email_data
     {

@@ -1,9 +1,22 @@
 class BaseNotification < Noticed::Base
   deliver_by :database, format: :to_database
-  deliver_by :whats_app, class: "DeliveryMethods::WhatsApp", if: :whatsapp_enabled?
-  deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
+  if Rails.env.test?
+    # No delay in test env
+    deliver_by :whats_app, class: "DeliveryMethods::WhatsApp", if: :whatsapp_enabled?
+    deliver_by :email, mailer: :mailer_name, method: :email_method, format: :email_data
+    deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
+  else
+    # Randomize the delay so we dont flood aws SES / WATI
+    deliver_by :whats_app, class: "DeliveryMethods::WhatsApp", if: :whatsapp_enabled?, delay: :email_delay
+    deliver_by :email, mailer: :mailer_name, method: :email_method, format: :email_data, delay: :email_delay
+    deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts", delay: :email_delay
+  end
 
   param :entity_id
+
+  def mailer_name
+    raise NotImplementedError
+  end
 
   def to_database
     {
@@ -25,7 +38,7 @@ class BaseNotification < Noticed::Base
   end
 
   def whatsapp_enabled?
-    recipient.whatsapp_enabled && recipient.phone.present?
+    recipient.whatsapp_enabled && recipient.phone.present? && !Rails.env.test?
   end
 
   def view_path

@@ -1,9 +1,14 @@
 class CapitalDistributionPaymentNotification < BaseNotification
-  # Add your delivery methods
-  deliver_by :email, mailer: "CapitalDistributionPaymentsMailer", method: :send_notification, format: :email_data
-
   # Add required params
   param :capital_distribution_payment
+
+  def mailer_name
+    CapitalDistributionPaymentsMailer
+  end
+
+  def email_method
+    :send_notification
+  end
 
   def email_data
     {

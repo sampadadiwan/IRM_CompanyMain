@@ -1,9 +1,14 @@
 class ReminderNotification < BaseNotification
-  # Add your delivery methods
-  deliver_by :email, mailer: "ReminderMailer", method: :send_reminder, format: :email_data
-
   # Add required params
   param :reminder
+
+  def mailer_name
+    InvestorKycMailer
+  end
+
+  def email_method
+    :send_reminder
+  end
 
   def email_data
     {

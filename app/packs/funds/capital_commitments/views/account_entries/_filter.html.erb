@@ -1,4 +1,4 @@
-<%= form_with(model: nil, method: :get, url: "/account_entries", id: "account_entries_filter",  data: {turbo_frame: "account_entries_frame"} ) do |form| %>
+<%= form_with(model: nil, method: :get,  id: "account_entries_filter",  data: {turbo_frame: "account_entries_frame"} ) do |form| %>
     
   <input name="capital_commitment_id" value="<%= capital_commitment_id%>" hidden="hidden">
 
@@ -27,9 +27,5 @@
     <% unit_type = params[:unit_type].presence %>
     <%= form.text_field :unit_type, { id: "unit_type", class: "form-control", style: "width: 100px;", data: { action: "change->account-entries#filterData", toggle: "tooltip", title: "Unit Type"}, placeholder: "Unit Type"  } %>        
   </div>
-
-  
-  <%= form.submit "Submit", {hidden: true, id: "submit"}%>
-
 
 <% end %>

@@ -1,9 +1,14 @@
 class AccessRightNotification < BaseNotification
-  # Add your delivery methods
-  deliver_by :email, mailer: "AccessRightsMailer", method: :send_notification, format: :email_data, delay: rand(30).seconds
-
   # Add required params
   param :access_right
+
+  def mailer_name
+    AccessRightsMailer
+  end
+
+  def email_method
+    :send_notification
+  end
 
   def email_data
     {

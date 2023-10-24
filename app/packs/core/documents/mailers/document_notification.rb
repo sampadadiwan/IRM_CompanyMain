@@ -1,9 +1,14 @@
 class DocumentNotification < BaseNotification
-  # Add your delivery methods
-  deliver_by :email, mailer: "DocumentMailer", method: :notify_new_document, format: :email_data
-
   # Add required params
   param :document
+
+  def mailer_name
+    DocumentMailer
+  end
+
+  def email_method
+    :notify_new_document
+  end
 
   def email_data
     {

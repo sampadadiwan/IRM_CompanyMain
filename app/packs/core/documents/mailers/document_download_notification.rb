@@ -1,10 +1,15 @@
 class DocumentDownloadNotification < BaseNotification
-  # Add your delivery methods
-  deliver_by :email, mailer: "DocumentMailer", method: :email_link, format: :email_data
-
   # Add required params
   param :document
   param :msg
+
+  def mailer_name
+    DocumentMailer
+  end
+
+  def email_method
+    :email_link
+  end
 
   def email_data
     {

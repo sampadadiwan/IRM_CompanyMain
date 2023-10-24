@@ -1,16 +1,10 @@
 class OfferNotification < BaseNotification
-  # Add your delivery methods
-  if Rails.env.test?
-    deliver_by :email, mailer: "OfferMailer", method: :email_method, format: :email_data
-  else
-    deliver_by :email, mailer: "OfferMailer", method: :email_method, format: :email_data, delay: :email_delay
-  end
   # Add required params
   param :offer
   param :email_method
 
-  def email_method
-    params[:email_method]
+  def mailer_name
+    OfferMailer
   end
 
   def email_data

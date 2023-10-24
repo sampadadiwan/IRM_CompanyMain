@@ -21,11 +21,11 @@ class InvestorsController < ApplicationController
       # This is only when the datatable sends a search query
       query = "#{params[:search][:value]}*"
 
-      ids = InvestorIndex.filter(terms: { _id: @investors.pluck(:id) })
+      ids = InvestorIndex.filter(term: { entity_id: current_user.entity_id })
                          .query(query_string: { fields: InvestorIndex::SEARCH_FIELDS,
                                                 query:, default_operator: 'and' }).map(&:id)
 
-      @investors = Investor.where(id: ids)
+      @investors = policy_scope(Investor).where(id: ids)
     end
 
     @investors = @investors.joins(:entity, :investor_entity)

@@ -1,14 +1,10 @@
 class InvestorAccessNotification < BaseNotification
-  # Add your delivery methods
-
-  if Rails.env.test?
-    deliver_by :email, mailer: "InvestorAccessMailer", method: :email_method, format: :email_data
-  else
-    deliver_by :email, mailer: "InvestorAccessMailer", method: :email_method, format: :email_data, delay: :email_delay
-  end
-
   # Add required params
   param :investor_access
+
+  def mailer_name
+    InvestorAccessMailer
+  end
 
   def email_data
     {

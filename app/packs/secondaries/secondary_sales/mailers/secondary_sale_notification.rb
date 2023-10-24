@@ -1,13 +1,11 @@
 class SecondarySaleNotification < BaseNotification
-  # Add your delivery methods
-  if Rails.env.test?
-    deliver_by :email, mailer: "SecondarySaleMailer", method: :email_method, format: :email_data
-  else
-    deliver_by :email, mailer: "SecondarySaleMailer", method: :email_method, format: :email_data, delay: :email_delay
-  end
   # Add required params
   param :secondary_sale
   param :email_method
+
+  def mailer_name
+    SecondarySaleMailer
+  end
 
   def email_data
     {

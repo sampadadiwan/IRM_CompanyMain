@@ -1,8 +1,15 @@
 class TaskNotification < BaseNotification
-  deliver_by :email, mailer: "TasksMailer", method: :send_notification, format: :email_data
   # Add required params
   param :task
   param :entity_id
+
+  def mailer_name
+    TasksMailer
+  end
+
+  def email_method
+    :send_notification
+  end
 
   def email_data
     {

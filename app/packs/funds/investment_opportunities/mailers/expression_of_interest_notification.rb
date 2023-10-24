@@ -1,9 +1,14 @@
 class ExpressionOfInterestNotification < BaseNotification
-  # Add your delivery methods
-  deliver_by :email, mailer: "ExpressionOfInterestMailer", method: :notify_approved, format: :email_data
-
   # Add required params
   param :expression_of_interest
+
+  def mailer_name
+    ExpressionOfInterestMailer
+  end
+
+  def email_method
+    :notify_approved
+  end
 
   def email_data
     {
