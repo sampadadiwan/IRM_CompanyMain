@@ -93,15 +93,8 @@ class AccountEntryAllocationEngine
 
     # Loop thru all the commitments and get the total of the account entry "field_name"
     fund_formula.commitments(@sample).each do |capital_commitment|
-      # ae = capital_commitment.cumulative_account_entry(field_name, nil, nil, @end_date)
-
-      # cc_map[capital_commitment.id] = {}
-      # cc_map[capital_commitment.id]["amount_cents"] = ae ? ae.amount_cents : 0
-      # cc_map[capital_commitment.id]["entry_type"] = ae && ae.entry_type ? ae.entry_type : "Percentage"
-
-      # total += ae ? ae.amount_cents : 0
-
-      amount_cents = capital_commitment.account_entries.where(name: field_name, reporting_date: ..@end_date).sum(:amount_cents)
+      # Get the last entry for the field_name before the end date
+      amount_cents = capital_commitment.account_entries.where(name: field_name, reporting_date: ..@end_date).order(reporting_date: :asc).last.amount_cents
 
       cc_map[capital_commitment.id] = {}
       cc_map[capital_commitment.id]["amount_cents"] = amount_cents
