@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_10_22_084252) do
+ActiveRecord::Schema[7.1].define(version: 2023_10_26_060505) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -890,7 +890,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_10_22_084252) do
     t.boolean "enable_kpis", default: false
     t.boolean "enable_kycs", default: false
     t.boolean "enable_support", default: false
-    t.string "pan", limit: 15
+    t.string "pan", limit: 30
     t.boolean "enable_approvals", default: false
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name"
@@ -1152,14 +1152,14 @@ ActiveRecord::Schema[7.1].define(version: 2023_10_22_084252) do
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
     t.string "name", limit: 15
-    t.decimal "management_fee", precision: 20, scale: 4, default: "0.0"
-    t.decimal "setup_fee", precision: 20, scale: 4, default: "0.0"
+    t.decimal "management_fee", precision: 24, scale: 8, default: "0.0"
+    t.decimal "setup_fee", precision: 24, scale: 8, default: "0.0"
     t.bigint "form_type_id"
     t.text "properties"
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.decimal "carry", precision: 20, scale: 4, default: "0.0"
+    t.decimal "carry", precision: 24, scale: 8, default: "0.0"
     t.index ["entity_id"], name: "index_fund_unit_settings_on_entity_id"
     t.index ["form_type_id"], name: "index_fund_unit_settings_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_unit_settings_on_fund_id"
@@ -1711,7 +1711,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_10_22_084252) do
     t.string "tag_list", limit: 120
     t.boolean "imported", default: false
     t.bigint "document_folder_id"
-    t.string "pan", limit: 15
+    t.string "pan", limit: 30
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
