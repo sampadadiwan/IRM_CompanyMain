@@ -8,7 +8,7 @@ class CapitalRemittanceDatatable < AjaxDatatablesRails::ActiveRecord
       folio_id: { source: "CapitalRemittance.folio_id" },
       call_amount: { source: "CapitalRemittance.call_amount_cents" },
       collected_amount: { source: "CapitalRemittance.collected_amount_cents" },
-      due_amount: { source: "", orderable: false },
+      due_amount: { source: "", orderable: false, searchable: false },
       status: { source: "CapitalRemittance.status" },
       percentage: { source: "CapitalRemittance.percentage" },
       verified: { source: "CapitalRemittance.verified" },

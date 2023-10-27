@@ -10,7 +10,7 @@ export default class extends ServerDatatableController {
     {"data": "status"},
     {"data": "created_by"},
     {"data": "verified", "className": "verified"},
-    {"data": "due_amount"},
+    {"data": "due_amount", sortable: false},
     {"data": "collected_amount"},
     {"data": "payment_date"},
     {"data": "dt_actions"}
@@ -25,7 +25,7 @@ export default class extends ServerDatatableController {
     {"data": "status"},
     {"data": "created_by"},
     {"data": "verified", "className": "verified"},
-    {"data": "due_amount"},
+    {"data": "due_amount", sortable: false},
     {"data": "collected_amount"},
     {"data": "payment_date"},
     {"data": "dt_actions"}
