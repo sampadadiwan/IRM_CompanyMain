@@ -9,7 +9,7 @@ export default class extends Controller {
         }
     }
 
-    popup(event) { 
+    popup(event) {
         let btn = $(event.target);
         let title = event.target.dataset.title || "Are you sure?";
         let method = event.target.dataset.method || "delete";
@@ -24,14 +24,14 @@ export default class extends Controller {
         $('#confirmModal #title').text(title);
         $('#confirmModal #method').val(method);
         $('#confirmModal #submitForm').val(submitForm);
-        
+
         // We set the action to the delete btn form action
         $("#confirm_submit").attr("action", this.deleteForm.action);
 
         // Now we need to set turbo on or off, depending on the buttons turbo setting
         $("#confirm_submit").attr("data-turbo", true);
         if(btn.attr("data-turbo") == "false") {
-            $("#confirm_submit").attr("data-turbo", false);    
+            $("#confirm_submit").attr("data-turbo", false);
         }
 
         // Finally we need the authenticity token from the delete btn form
@@ -54,7 +54,7 @@ export default class extends Controller {
         if ( formName ) {
             event.preventDefault();
             $(formName).submit();
-        } 
+        }
     }
 
 
@@ -63,15 +63,15 @@ export default class extends Controller {
         // Get the text field
         let target = $(event.target).data('target');
         let notify_span = $(event.target).data('notify');
-        
+
         console.log(target);
 
         let copyText = $(target)[0];
         let notifyText = $(notify_span)[0];
-      
+
          // Copy the text inside the text field
         navigator.clipboard.writeText(copyText.innerHTML);
-      
+
         // Alert the copied text
         console.log("Copied the text: " + copyText.innerHTML);
         // $(copyText).css({'color': 'blue', 'font-weight': '500'});
@@ -80,7 +80,7 @@ export default class extends Controller {
     }
 
     popup_status(event) {
-        $('#alertPopupModal').modal({});
+        $('#alertPopupModal').modal('show');
     }
 
 }
