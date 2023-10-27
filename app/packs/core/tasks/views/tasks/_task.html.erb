@@ -33,7 +33,7 @@
     <% if policy(task).update? %>
       <% checked = task.completed == 1 ? "checked" : ""%>
       <%= form_with(model: task, url: completed_task_path(task), class: "inline_form") do |form| %>
-          <%= form.check_box :completed, class: "form-control task-done-checkbox", onchange:"this.form.requestSubmit();"  %>
+          <%= form.check_box :completed, class: "task-done-checkbox", onchange:"this.form.requestSubmit();"  %>
       <% end %>
 
       <%= link_to "Edit" , edit_task_path(task) , {class: "btn btn-outline-success" } %>

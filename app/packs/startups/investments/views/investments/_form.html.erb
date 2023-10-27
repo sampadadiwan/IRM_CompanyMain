@@ -49,7 +49,7 @@
 
   <div class="investment_row_container" data-controller="investmentrow">
   <div class="card investment_row" id="investment_row" >
-    <div class="card-body form-row" >
+    <div class="card-body row" >
       <div class="form-group col-md-1">
         <%= form.label :investment_instrument, "Instrument" %>
         <%= form.select :investment_instrument, Investment.INSTRUMENT_TYPES(current_user.entity) , 
