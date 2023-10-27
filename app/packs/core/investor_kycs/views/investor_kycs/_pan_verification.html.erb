@@ -1,12 +1,12 @@
         <% if model.pan_card.present? %>
             <% if model.pan_verified %>
-              <span class="badge badge-success" type="button" 
-                    data-toggle="collapse" data-target=".pan_verification_response">
+              <span class="badge bg-success" type="button" 
+                    data-bs-toggle="collapse" data-bs-target=".pan_verification_response">
                 Verified
               </span>
             <% elsif model.pan_verification_status %>
-              <span class="badge badge-danger" type="button" 
-                    data-toggle="collapse" data-target=".pan_verification_response">
+              <span class="badge bg-danger" type="button" 
+                    data-bs-toggle="collapse" data-bs-target=".pan_verification_response">
                   <%= model.pan_verification_status %>
               </span>              
             <% end %>
@@ -15,5 +15,5 @@
               <%= model.pan_verification_response if current_user  %>
             </small>
         <% else %>
-            <span class="badge badge-warning">Not Uploaded</span>
+            <span class="badge bg-warning">Not Uploaded</span>
         <% end %>

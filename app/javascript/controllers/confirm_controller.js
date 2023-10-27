@@ -38,7 +38,10 @@ export default class extends Controller {
         let at = $(this.deleteForm).find('input[name="authenticity_token"]').val();
         $("#confirm_submit").find("#confirm_at").val(at);
 
-        $('#confirmModal').modal({});
+        var myModal = new bootstrap.Modal(document.getElementById('confirmModal'), {})
+        myModal.show();
+
+        // $('#confirmModal').modal({});
         event.preventDefault();
     }
 

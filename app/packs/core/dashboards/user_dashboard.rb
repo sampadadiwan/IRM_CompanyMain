@@ -13,6 +13,7 @@ class UserDashboard < Administrate::BaseDashboard
     advisor_entity_roles: Field::String,
     id: Field::Number,
     sign_in_count: Field::Number,
+    last_sign_in_at: Field::DateTime,
     first_name: Field::String,
     last_name: Field::String,
     created_at: Field::DateTime,
@@ -59,6 +60,7 @@ class UserDashboard < Administrate::BaseDashboard
     phone
     active
     enable_support
+    last_sign_in_at
     sign_in_count
     confirmed_at
     curr_role

@@ -11,7 +11,7 @@
       </td>
       <td>
         <%= @folder.name %>
-        <%= link_to "View Docs" , folder_documents_path(folder_id: @folder.id), class: "badge badge-primary" %>
+        <%= link_to "View Docs" , folder_documents_path(folder_id: @folder.id), class: "badge bg-primary" %>
       </td>
     </tr>
     <tr>
@@ -20,7 +20,7 @@
       </td>
       <td>
         <%= @folder.parent&.full_path %>
-        <%= link_to "View Folder" , folder_path(id: @folder.parent.id), class: "badge badge-success" if @folder.parent %>
+        <%= link_to "View Folder" , folder_path(id: @folder.parent.id), class: "badge bg-success" if @folder.parent %>
       </td>
     </tr>
     <tr>

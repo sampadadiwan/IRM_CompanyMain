@@ -71,7 +71,7 @@
       <% if access_right.access_type == "Folder" %>
         <div class="form-group">
           <%= form.label :cascade, "Apply to files and sub folders" %>
-          <%= form.check_box :cascade, class: "form-control form-checkbox"  %>
+          <%= form.check_box :cascade, class: "form-check-input"  %>
         </div>
       <% end %>
       
@@ -79,13 +79,13 @@
         <% AccessRight.permissions.pairs.each do |key, val| %>
           <%= form.label :permissions, key %>
           <%= form.check_box :permissions, {name: "access_right[permissions][]",  
-                val: val, id: "permissions_#{val}", class: "form-checkbox-horizontal"}, val, nil   %>
+                val: val, id: "permissions_#{val}", class: "form-check-input-horizontal"}, val, nil   %>
         <% end %>
       </div>
 
       <div class="form-group">
           <%= form.label :notify, "Send Notification" %>
-          <%= form.check_box :notify, class: "form-control form-checkbox"  %>
+          <%= form.check_box :notify, class: "form-check-input"  %>
       </div>
 
       <div class="form-group">

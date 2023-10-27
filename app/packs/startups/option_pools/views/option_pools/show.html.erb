@@ -284,7 +284,7 @@
   <div class="actions">
     
     <% if current_user.entity_id == @option_pool.entity_id %>
-      <button class="btn btn-outline-primary" type="button" data-toggle="collapse" data-target=".multi-collapse"    aria-expanded="false" aria-controls="multi-collapse">Details</button> 
+      <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target=".multi-collapse"    aria-expanded="false" aria-controls="multi-collapse">Details</button> 
     <% end %>
     
     <% if policy(@option_pool).update? %>

@@ -1,36 +1,36 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
-    <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
+    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#remittances-tab"
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#remittances-tab"
           data-action="click->tabdetails#loadData">Remittances</a>
 
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#distributions-tab"
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#distributions-tab"
           data-action="click->tabdetails#loadData">Distributions</a>
 
     
     <% if capital_commitment.entity.enable_units %>
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-units-tab"
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab"
             data-action="click->tabdetails#loadData">Units</a>
     <% end %>
 
     <% if capital_commitment.entity.enable_account_entries && policy(capital_commitment).update? %>
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#account-entries-tab"
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#account-entries-tab"
             data-action="click->tabdetails#loadData">Account Entries</a>
 
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#adjustments-tab"
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#adjustments-tab"
             data-action="click->tabdetails#loadData">Adjustments</a>
 
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-ratios-tab"     
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab"     
             data-action="click->tabdetails#loadData">Ratios</a>
     <% end %>
 
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab" 
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab" 
           data-action="click->tabdetails#loadData">
       Tasks
     </a>
     <% if capital_commitment.entity.enable_kycs %>
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#kycs-tab" 
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab" 
               data-action="click->tabdetails#loadData">
         All KYCs
       </a>

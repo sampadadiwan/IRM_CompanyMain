@@ -9,7 +9,7 @@ When('I create a new investor {string}') do |arg1|
 
   if (Entity.vcs.count > 0)
     fill_in('investor_investor_name', with: @investor_entity.name)
-    find('ui-menu-item-wrapper', text: @investor_entity.name).click
+    find('ui-menu-item-wrapper', text: @investor_entity.name).click if page.has_css?(".ui-menu-item-wrapper") 
   end
   fill_in('investor_investor_name', with: @investor_entity.name)
   fill_in('investor_pan', with: @investor_entity.pan)

@@ -15,18 +15,18 @@
     <div class="divTableCell">
         <%= offer.pan_card.present? ? link_to(offer.PAN, offer.pan_card.url, target: "_blank") : offer.PAN %>
         <% if offer.pan_verified %>
-            <span class="badge badge-success">Verified</span>
+            <span class="badge bg-success">Verified</span>
         <% else %>
-            <span class="badge badge-danger"><%= offer.pan_verification_status %></span>
+            <span class="badge bg-danger"><%= offer.pan_verification_status %></span>
         <% end %>
     </div>
     <div class="divTableCell">
         Account: <%= offer.bank_account_number %> <br>
         IFSC Code: <%= offer.ifsc_code %>
         <% if offer.bank_verified %>
-            <span class="badge badge-success">Verified</span>
+            <span class="badge bg-success">Verified</span>
         <% else %>
-            <span class="badge badge-danger"><%= offer.bank_verification_status %></span>
+            <span class="badge bg-danger"><%= offer.bank_verification_status %></span>
         <% end %>
         <%= offer.properties if params[:debug].present? %>
     </div>
@@ -51,7 +51,7 @@
         <%= offer.comments %>
         <% if offer.verified %>
             <% offer.documents.each do |doc| %> 
-                <%= link_to doc.name, doc.file.url, target: "_blank", class: "badge badge-info" if doc.file && doc.owner_tag == "Generated" %>
+                <%= link_to doc.name, doc.file.url, target: "_blank", class: "badge bg-info" if doc.file && doc.owner_tag == "Generated" %>
             <% end %>   
         <% end %>
     </div>

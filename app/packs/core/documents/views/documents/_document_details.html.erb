@@ -1,29 +1,29 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
 
-      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#viewers-tab">Viewed By</a>
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#viewers-tab">Viewed By</a>
 
       <% if document.entity_id == current_user&.entity_id %>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">Access Rights</a>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
 
         <% if document.e_signatures.present? %>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#signatures-tab">
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#signatures-tab">
           Signatures
         </a>
         <% end %>
 
         <% if document.stamp_papers.present? %>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#stamp-papers-tab">
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#stamp-papers-tab">
           Stamp Papers
         </a>
         <% end %>
 
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#reminders-tab"
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab"
             data-action="click->tabdetails#loadData">
           Reminders
         </a>
       <% end %>
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab"
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
           data-action="click->tabdetails#loadData">
         Tasks
       </a>

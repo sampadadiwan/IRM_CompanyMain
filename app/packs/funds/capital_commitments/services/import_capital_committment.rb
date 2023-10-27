@@ -78,7 +78,7 @@ class ImportCapitalCommittment < ImportUtil
 
   def validate(capital_commitment)
     if capital_commitment.valid?
-      folio_already_exists = @commitments.any? { |c| c.folio_id == capital_commitment.folio_id }
+      folio_already_exists = @commitments.any? { |c| c.folio_id == capital_commitment.folio_id && c.fund_id == capital_commitment.fund_id }
       return [false, "Duplicate Folio Id"] if folio_already_exists
     else
       return [false, capital_commitment.errors.full_messages]

@@ -3,9 +3,9 @@
 <td>
     <%= link_to folder.name, folder_documents_path(folder_id: folder.id) %>
     <% if folder.system? %>
-        </br><span class="badge badge-warning">System</span>
+        </br><span class="badge bg-warning">System</span>
     <% else %>
-        </br><span class="badge badge-success">Regular</span>
+        </br><span class="badge bg-success">Regular</span>
     <% end %>
 </td>  
 <td>

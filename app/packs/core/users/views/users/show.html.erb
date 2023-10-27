@@ -71,7 +71,7 @@
           <td>
             <% permissions = @user.investor_advisor? ? @user.investor_advisor.permissions : @user.permissions  %>
             <% permissions.map{|p| p.to_s.titleize}.each do |permission| %>
-              <span class="badge badge-success"><%= permission %></span>
+              <span class="badge bg-success"><%= permission %></span>
             <% end %>
           </td>
         </tr>
@@ -83,7 +83,7 @@
           </td>
           <td>
             <% @user.extended_permissions.map{|p| p.to_s.titleize}.each do |permission| %>
-              <span class="badge badge-success"><%= permission %></span>
+              <span class="badge bg-success"><%= permission %></span>
             <% end %>
           </td>
         </tr>

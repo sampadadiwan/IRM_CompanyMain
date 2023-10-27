@@ -1,12 +1,4 @@
 <%= render "/layouts/alerts" %>
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Tasks</h1>
-    <% investor ||= nil %>
-
-    <%= link_to "New Task" , new_task_path("task[investor_id]": investor.id), 
-            {class: "btn btn-outline-primary" } if investor %>
-</div>
-
 <%= render "/tasks/index", tasks: @tasks, owner: @owner, for_entity: @for_entity, search: @search %>
 <%= paginate @tasks %>

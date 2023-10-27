@@ -7,7 +7,7 @@
         <div class="form-group col">
           <%= f.label :custom_flags, key.titleize, class: "no-wrap" %>
           <%= f.check_box :custom_flags, {name: "entity[entity_setting_attributes][custom_flags][]",
-              val: val, id: "custom_flags_#{val}", class: "form-control row-checkbox"}, val, nil   %>
+              val: val, id: "custom_flags_#{val}", class: "form-check-input"}, val, nil   %>
         </div>
     <% end %>
   <% elsif f.object.class.name == "User" %>
@@ -15,7 +15,7 @@
         <div class="form-group col">
           <%= f.label :permissions, key.titleize, class: "no-wrap" %>
           <%= f.check_box :permissions, {name: "user[permissions][]",
-              val: val, id: "permissions_#{val}", class: "form-control row-checkbox"}, val, nil   %>
+              val: val, id: "permissions_#{val}", class: "form-check-input"}, val, nil   %>
         </div>
     <% end %>
   <% else %>

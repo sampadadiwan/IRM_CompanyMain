@@ -74,7 +74,9 @@
             price = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["price"] : 0
             premium = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["premium"] : 0
         %>
-        <div class="form-row">  
+        <div class="row">  
+          
+
           <div class="form-group col-md-3">
             <%= form.label :unit_type, "#{unit_type} Unit Price" %>
             <%= form.number_field :unit_type, step: :any, class: "form-control price", 
@@ -87,13 +89,10 @@
                 name: "capital_call[unit_prices][#{unit_type}][premium]", 
                 id: "#{unit_type}_premium", value: premium %>
           </div>
-
           <% if index == 0 %>
-          <div class="form-group col-md-3">
             <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
-          </div>
           <% end %>
-
+          
         </div>
       <% end %>  
     </div>

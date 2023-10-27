@@ -84,7 +84,7 @@
 
     <div class="form-group">
       <%= form.label :final_agreement, "I agree to enter into the SPAs" %>
-      <%= form.check_box :final_agreement, class: "form-control form-checkbox"  %>
+      <%= form.check_box :final_agreement, class: "form-check-input"  %>
       <small class="text-muted"> 
         SPAs are visible in the 
         <%= link_to "Matched Offers", matched_offers_interest_path(@interest), target: "_blank" %>  
@@ -101,7 +101,7 @@
 
       <div class="form-group">
         <%= form.label :escrow_deposited %>
-        <%= form.check_box :escrow_deposited, class: "form-control form-checkbox"  %>
+        <%= form.check_box :escrow_deposited, class: "form-check-input"  %>
       </div>
 
     <% else %>

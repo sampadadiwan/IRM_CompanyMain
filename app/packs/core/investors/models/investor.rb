@@ -63,7 +63,7 @@ class Investor < ApplicationRecord
 
   validates :category, length: { maximum: 100 }
   validates :city, length: { maximum: 50 }
-  validates :pan, length: { maximum: 15 }
+  validates :pan, length: { maximum: 30 }
 
   # We did not have PAN as mandatory before. But we need to make it mandatory, without forcing update to existing data. Hence this check for data created after PAN_MANDATORY_AFTER date
   validates :pan, presence: true, if: proc { |e| (e.created_at && e.created_at >= Entity::PAN_MANDATORY_AFTER) || ((e.new_record? && Time.zone.today >= Entity::PAN_MANDATORY_AFTER) && !e.is_holdings_entity && !e.is_trust) }
@@ -120,26 +120,27 @@ class Investor < ApplicationRecord
   before_validation :update_name, if: :new_record?
 
   def update_name
-    self.last_interaction_date ||= Time.zone.today - 10.years
+    unless is_holdings_entity
+      self.last_interaction_date ||= Time.zone.today - 10.years
+      # Ensure we have a PAN, even if its a Dummy one
+      self.pan = (pan.presence || "Dummy-#{entity_id}-#{Time.now.to_f * 1000}-#{rand(10)}")
+      # Ensure we have an investor entity
+      e = pan ? Entity.where(pan: pan.strip).first : investor_entity
 
-    # Ensure we have an investor entity
-    # if investor_entity_id.blank?
-    e = pan ? Entity.where(pan: pan.strip).first : investor_entity
+      # If we do have an investor entity, and the name is not the same
+      errors.add(:investor_name, "in our records for PAN #{pan} is different #{investor_name} vs #{e.name}.") if pan && e && e.name.strip != investor_name.strip && !force_different_name
 
-    # If we do have an investor entity, and the name is not the same
-    errors.add(:investor_name, "in our records for PAN #{pan} is different #{investor_name} vs #{e.name}.") if pan && e && e.name.strip != investor_name.strip && !force_different_name
+      # We dont have this entity in our DB, lets create one.
+      e ||= Entity.create!(name: investor_name.strip, entity_type: "Investor", pan:)
 
-    # We dont have this entity in our DB, lets create one.
-    e ||= Entity.create!(name: investor_name.strip, entity_type: "Investor", pan:)
+      setup_permissions(e)
+      e.save
 
-    setup_permissions(e)
-    e.save
+      self.investor_entity = e
 
-    self.investor_entity = e
-    # end
-
-    self.investor_name = investor_entity.name if investor_name.blank?
-    self.pan ||= investor_entity.pan
+      self.investor_name = investor_entity.name if investor_name.blank?
+      self.pan ||= investor_entity.pan
+    end
   end
 
   def setup_permissions(investor_entity)

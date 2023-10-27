@@ -7,47 +7,47 @@
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
     
     <% if investor.category == "Portfolio Company" %>
-      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#valuations-tab">
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#valuations-tab">
         Valuations
       </a>
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#portfolio-investments-tab"
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab"
          data-action="click->tabdetails#loadData">
         <span class="hideMobP">Portfolio</span> Investments
       </a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#cashflows-tab"
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cashflows-tab"
          data-action="click->tabdetails#loadData">
         Portfolio Income
       </a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#stock-adjustments-tab">
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#stock-adjustments-tab">
         Stock Adjustments
       </a>
 
       <% if current_user.enable_kpis %>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#kpis-tab"
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kpis-tab"
           data-action="click->tabdetails#loadData">
           Kpis
         </a>
       <% end %>
     <% else %>
 
-      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab">
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">
         Access Rights
       </a>
 
-      <a id="stakeholder_users_tab" class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#investors-tab">
+      <a id="stakeholder_users_tab" class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investors-tab">
         <%= label %>
       </a>
 
       <% if current_user.entity_type == "Investment Fund" %>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#commitments-tab"
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab"
               data-action="click->tabdetails#loadData">Commitments</a>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-units-tab"
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab"
               data-action="click->tabdetails#loadData">Units</a>
       <% else %>
         <% if investor.entity.enable_investments %>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#investments-tab" 
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investments-tab" 
               data-action="click->tabdetails#loadData">
             Investments
         </a>
@@ -56,26 +56,26 @@
 
       <% if policy(investor).update? %>
 
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#notes-tab" 
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#notes-tab" 
               data-action="click->tabdetails#loadData">
             Notes
         </a>
 
 
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#reminders-tab" 
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab" 
                 data-action="click->tabdetails#loadData">
           Reminders
         </a>
 
       <% end %>
 
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab" 
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab" 
             data-action="click->tabdetails#loadData">
           Tasks
       </a>
 
       <% if investor.entity.enable_kycs %>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#kycs-tab" 
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab" 
               data-action="click->tabdetails#loadData">
             KYC
         </a>

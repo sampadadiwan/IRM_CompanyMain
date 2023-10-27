@@ -12,9 +12,9 @@ Scenario Outline: See my holdings in a sale
   And I am at the sales details page
   Then I should see only my holdings
 Examples:
-    |user	      |entity               |sale                                     |quantity	|
-    |  	        |entity_type=Company  |name=Grand Sale  |100        |
-    |  	        |entity_type=Company  |name=Winter Sale |200        |
+    |user	      |entity                          |sale                                     |quantity	|
+    |  	        |entity_type=Company;pan=123456  |name=Grand Sale  |100        |
+    |  	        |entity_type=Company;pan=123456  |name=Winter Sale |200        |
 
 
 

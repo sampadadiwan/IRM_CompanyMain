@@ -2,7 +2,7 @@
     <!-- Nav Item - Pages Collapse Menu -->
     <% if current_user.enable_investors %>
         <li class="nav-item">                
-            <a class="nav-link" href="/investors" data-toggle="collapse" data-target="#investorMenus">
+            <a class="nav-link" href="/investors" data-bs-toggle="collapse" data-bs-target="#investorMenus">
                 <i class="fas fa-xl fa-fw fa-user-tie"></i>
                 <span>Stakeholders</span>
             </a>
@@ -37,7 +37,7 @@
 
     <% if current_user.enable_investments %>
         <li class="nav-item"> 
-            <a class="nav-link" href="/aggregate_investments" data-toggle="collapse" data-target="#investmentMenus">
+            <a class="nav-link" href="/aggregate_investments" data-bs-toggle="collapse" data-bs-target="#investmentMenus">
                 <i class="fas fa-xl fa-fw fa-money-bill"></i>
                 <span>Investments</span>
             </a>

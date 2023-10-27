@@ -2,15 +2,15 @@
 
 
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
-    <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#docs-tab"
+    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
         data-action="click->tabdetails#loadData">Documents</a>
     <% @entity = @investor_kyc.entity || current_user.entity.entity_setting.aml_enabled %>
     <% if current_user.entity.entity_setting.aml_enabled %>
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#aml-reports-tab"
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#aml-reports-tab"
         data-action="click->tabdetails#loadData">Aml Reports</a>
     <% end %>
     <% if current_user.entity.entity_setting.ckyc_kra_enabled %>
-    <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#kyc-datas-tab"
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kyc-datas-tab"
         data-action="click->tabdetails#loadData">Kyc Data</a>
     <% end %>
 

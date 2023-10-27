@@ -28,6 +28,6 @@ class ImportPreProcess
 
   # get header row without the mandatory *
   def get_headers(headers)
-    headers.each { |x| x.delete!("*") }.each(&:strip!)
+    headers.each { |x| x.delete!("*") }.each { |h| h&.strip! }
   end
 end

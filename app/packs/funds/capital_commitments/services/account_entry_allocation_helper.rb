@@ -61,9 +61,9 @@ class AccountEntryAllocationHelper
       cached_commitment_fields["distributions"] = capital_commitment.capital_distribution_payments.where(payment_date: ..@end_date).sum(:amount_cents)
 
       # Income and Expense
-      cached_commitment_fields["income_before_start_date"] = capital_commitment.account_entries.total_amount('Income', end_date: @start_date)
+      cached_commitment_fields["income_before_start_date"] = AccountEntry.total_amount(capital_commitment.account_entries, 'Income', end_date: @start_date)
 
-      cached_commitment_fields["expense_before_start_date"] = capital_commitment.account_entries.total_amount('Expense', end_date: @start_date)
+      cached_commitment_fields["expense_before_start_date"] = AccountEntry.total_amount(capital_commitment.account_entries, 'Expense', end_date: @start_date)
 
       # Portfolio fields
       cached_commitment_fields["units"] = capital_commitment.fund_units.where(issue_date: ..@end_date).sum(:quantity)

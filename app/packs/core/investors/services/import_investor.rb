@@ -17,8 +17,8 @@ class ImportInvestor < ImportUtil
     # puts "processing #{user_data}"
     saved = true
     investor_name = user_data['Name'].strip
-    pan = user_data['PAN'].strip
-    category = user_data['Category'].strip.presence
+    pan = user_data['PAN']&.strip
+    category = user_data['Category']&.strip
 
     force_different_name = user_data['Force Different Name'] == "Yes"
     # Ensure Force Different Name is not part of custom fields

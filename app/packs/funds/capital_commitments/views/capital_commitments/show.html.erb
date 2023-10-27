@@ -7,7 +7,7 @@
   <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
       <h6 class="m-0 font-weight-bold text-primary">Commitment: <%= @capital_commitment.investor_name %></h6>
       <span>
-        <a class="btn btn-outline-primary show_details_link" data-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a>
+        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a>
       </span>
   </div>
   <div class="card-body collapse show_details">
@@ -39,7 +39,7 @@
         <%= @capital_commitment.commitment_type %>
         <% if @capital_commitment.feeder_fund %>
           <br>
-          <span class="badge badge-success">Feeder Fund</span>
+          <span class="badge bg-success">Feeder Fund</span>
         <% end %>
       </td>
     </tr>
@@ -443,7 +443,7 @@
   <div class="btn-group">
     <div class="dropdown">
       <button class="btn btn-outline-success dropdown-toggle" type="button" 
-              data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         Actions
       </button>
       <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">

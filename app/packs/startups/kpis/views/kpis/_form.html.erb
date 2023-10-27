@@ -27,7 +27,7 @@
         <%= form.select :display_value, options, {}, class: "form-control", required: field.required %>
         
       <% elsif field.field_type == "CheckBox" %>
-        <%= form.check_box :display_value, class: "form-control form-checkbox", required: field.required %> 
+        <%= form.check_box :display_value, class: "form-check-input", required: field.required %> 
 
       <% elsif field.field_type == "Money" %>
         <%= form.number_field :value, class: "form-control", required: field.required, step: :any, data: {action: "input->currencyformat#format"} %>

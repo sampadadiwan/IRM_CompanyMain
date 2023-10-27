@@ -9,18 +9,16 @@
         <div class="container" data-turbo='false'>
 
             <!-- Outer Row -->
-            <div class="row justify-content-center">
 
-                <div class="col-lg-12 col-md-12">
 
                     <div class="card o-hidden border-0 shadow-lg my-5">
                         <div class="card-body p-0">
                             <!-- Nested Row within Card Body -->
                             <div class="row">
-                                <div class="col-lg-6 d-lg-block bg-login-image login-left">
+                                <div class="col-sm bg-login-image login-left">
                                     <div><%= render "devise/shared/company_logo" %></div>
                                 </div>
-                                <div class="col-lg-6 bg-login-image login-right">
+                                <div class="col-sm bg-login-image login-right">
                                     <div class="p-5 text-center">
                                         
                                         <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
@@ -91,9 +89,7 @@
                         </div>
                     </div>
 
-                </div>
 
-            </div>
 
         </div>
 

@@ -62,8 +62,11 @@ class ApprovalResponsesController < ApplicationController
   def approve
     @approval_response.status = params[:status]
     @approval_response.response_user_id = current_user.id
-    @approval_response.save!
-    redirect_to approval_url(@approval_response.approval), notice: "Successfully #{params[:status]}."
+    if @approval_response.save
+      redirect_to approval_url(@approval_response.approval), notice: "Successfully #{params[:status]}."
+    else
+      redirect_to approval_url(@approval_response.approval), alert: "Failed to register response: #{@approval_response.errors.messages.values.flatten}"
+    end
   end
 
   # DELETE /approval_responses/1 or /approval_responses/1.json

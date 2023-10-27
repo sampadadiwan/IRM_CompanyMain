@@ -95,7 +95,7 @@
               <% if current_user.entity_id == investor_kyc.entity_id %>
                 <div class="form-group">
                   <%= form.label :pan_verified %>
-                  <%= form.check_box :pan_verified, class: "form-control form-checkbox"  %>
+                  <%= form.check_box :pan_verified, class: "form-check-input"  %>
                 </div>
               <% end %>
 
@@ -137,7 +137,7 @@
           <% if current_user.entity_id == investor_kyc.entity_id  %>
             <div class="form-group">
               <%= form.label :bank_verified %>
-              <%= form.check_box :bank_verified, class: "form-control form-checkbox"  %>
+              <%= form.check_box :bank_verified, class: "form-check-input"  %>
             </div>
           <% end %>
 
@@ -174,7 +174,7 @@
           <%if investor_kyc.id.blank?%>
           <div class="form-group">
             <%= form.label :send_kyc_form_to_user, "Send Notification to User to Update KYC"%>
-            <%= form.check_box :send_kyc_form_to_user, class: "form-control form-checkbox"  %>
+            <%= form.check_box :send_kyc_form_to_user, class: "form-check-input"  %>
           </div>
           <%end%>
 

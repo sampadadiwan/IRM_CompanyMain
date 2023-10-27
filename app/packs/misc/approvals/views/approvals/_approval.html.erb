@@ -14,17 +14,16 @@
   <td class="responses_count hideMobP">
     <div class="container">
       <%
-        colors = ["badge-success", "badge-warning", "badge-secondary", "badge-info", "badge-primary", "badge-light", "badge-dark"].freeze
-    %>
-    <%approval.response_status&.split(',')&.each do |status| %>
-        <div class="row">
-          <%
-            response_count = approval.approval_responses.where(status: status).count
-            idx = approval.response_status&.split(',')&.index(status) || 0
-          %>
-          <span class="badge <%=colors[idx]%>"> <%= status %> : <%= response_count %> </span>
-        </div>
-      <% end %>
+        colors = ["bg-success", "bg-warning", "bg-secondary", "bg-info", "bg-primary", "bg-light", "bg-dark"].freeze
+      %>
+        <%approval.response_status&.split(',')&.each do |status| %>
+            <%
+              response_count = approval.approval_responses.where(status: status).count
+              idx = approval.response_status&.split(',')&.index(status) || 0
+            %>
+            <span class="badge <%=colors[idx]%>"> <%= status %> : <%= response_count %> </span>
+          
+        <% end %>
     </div>
     </td>
   <% end %>

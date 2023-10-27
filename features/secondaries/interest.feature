@@ -8,7 +8,7 @@ Scenario Outline: Create new interest
   Given there is a FundingRound "name=Series A"
   And there is a holding "approved=true;orig_grant_quantity=110;investment_instrument=Equity" for each employee investor
   And there is an "approved" offer "quantity=110" for each employee investor
-  Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Investor"
+  Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Investor;pan=1234567"
   Given my firm is an investor in the company
   And the investor has "Buyer" access rights to the sale
   And I am at the sales details page
@@ -45,7 +45,7 @@ Scenario Outline: Create new interest for indicative sale
   Given there are "2" employee investors
   Given there is a sale "<sale>"
   Given there is a FundingRound "name=Series A"
-  Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Investor"
+  Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Investor;pan=1234567"
   Given my firm is an investor in the company
   And the investor has "Buyer" access rights to the sale  
   And I am at the sales details page

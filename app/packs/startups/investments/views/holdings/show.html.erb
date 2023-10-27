@@ -36,7 +36,7 @@
     <% end %>
 
     <% if policy(@holding).cancel? %>
-        <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#confirmCancelModal">
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmCancelModal">
           Cancel
         </button>
         <%= render "/holdings/confirm_cancel", holding: @holding %>

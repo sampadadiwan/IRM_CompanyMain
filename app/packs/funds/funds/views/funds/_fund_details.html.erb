@@ -3,59 +3,59 @@
 
     <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
 
-      <a class="nav-link active" data-bs-toggle="pill" data-toggle="tab" href="#commitments-tab"
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab"
           data-action="click->tabdetails#loadData">Commitments</a>
 
       <% if policy(fund).update? %>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-calls-tab"
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-calls-tab"
             data-action="click->tabdetails#loadData">Calls</a>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-distributions-tab"
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-distributions-tab"
             data-action="click->tabdetails#loadData">Distributions</a>
 
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-ratios-tab"
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab"
               data-action="click->tabdetails#loadData">Ratios</a>
 
         <% if fund.entity.enable_fund_portfolios %>
-          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#portfolio-investments-tab"
+          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab"
               data-action="click->tabdetails#loadData">Portfolio</a>
         <% end %>
       <% else %>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-remittances-tab"
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-remittances-tab"
             data-action="click->tabdetails#loadData">Calls</a>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#capital-distribution-payments-tab"
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#capital-distribution-payments-tab"
             data-action="click->tabdetails#loadData">Distributions</a>
 
         <% if fund.entity.enable_units %>
-          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-units-tab"
+          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab"
                 data-action="click->tabdetails#loadData">Units</a>
         <% end %>
 
         <% if fund.show_valuations %>
-          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#valuations-tab"
+          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#valuations-tab"
               data-action="click->tabdetails#loadData">Valuations</a>
         <% end %>
 
         <% if fund.show_fund_ratios %>
-          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#fund-ratios-tab"
+          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab"
               data-action="click->tabdetails#loadData">Ratios</a>
         <% end %>
 
 
       <% end %>
 
-      <a class="nav-link" data-bs-toggle="pill" data-toggle="tab"
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab"
           id="documents_tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
       <% if policy(fund).update? %>      
-          <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#tasks-tab"
+          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab"
               data-action="click->tabdetails#loadData">
             Tasks
           </a>
       <% end %>
 
       <% if policy(fund).grant_access_rights? %>
-        <a class="nav-link" data-bs-toggle="pill" data-toggle="tab" href="#access-rights-tab"
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab"
               data-action="click->tabdetails#loadData">Access</a>
       <% end %>
 

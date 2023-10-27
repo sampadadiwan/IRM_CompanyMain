@@ -23,6 +23,11 @@ class ApprovalResponse < ApplicationRecord
     errors.add(:approval, "Approval Response for this investor and approval already exists. Please delete of edit the existing response") if approval.approval_responses.where(response_entity_id:).count.positive?
   end
 
+  validate :no_pending_response, if: proc { |r| !r.new_record? }
+  def no_pending_response
+    errors.add(:status, 'You need to select a response other than Pending') if status == "Pending"
+  end
+
   after_commit :send_notification
   def send_notification(reminder: false)
     # send notification to the investor only if the approval is approved

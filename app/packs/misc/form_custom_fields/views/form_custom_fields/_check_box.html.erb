@@ -1,5 +1,5 @@
 <div class="form-group  <%= field.read_only ? 'hidden_form_field' : '' %>">
     <%= f.label field.name, field.name.humanize.titleize %>
-    <%= f.check_box field.name, class: "form-control form-checkbox", required: field.required %> 
+    <%= f.check_box field.name, class: "form-check-input", required: field.required %> 
     <small class="text-muted"><%= field.help_text %></small>   
 </div>

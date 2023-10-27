@@ -56,6 +56,8 @@ class User < ApplicationRecord
   validates :email, format: { with: /\A[^@\s]+@[^@\s]+\z/ }, presence: true
   validates :call_code, presence: true, if: -> { phone.present? }
   validates :phone, length: { maximum: 100 }
+  normalizes :phone, with: ->(phone) { phone.delete("^0-9") }
+
   validates :curr_role, :dept, length: { maximum: 20 }
   validates :entity_type, length: { maximum: 25 }
   validates :call_code, length: { maximum: 3 }

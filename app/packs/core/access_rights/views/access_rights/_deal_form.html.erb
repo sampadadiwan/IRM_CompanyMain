@@ -65,13 +65,13 @@
         <% AccessRight.permissions.pairs.each do |key, val| %>
           <%= form.label :permissions, key %>
           <%= form.check_box :permissions, {name: "access_right[permissions][]",  
-                val: val, id: "permissions_#{val}", class: "form-checkbox-horizontal"}, val, nil   %>
+                val: val, id: "permissions_#{val}", class: "form-check-input-horizontal"}, val, nil   %>
         <% end %>
       </div>
 
       <div class="form-group">
           <%= form.label :notify, "Send Notification" %>
-          <%= form.check_box :notify, class: "form-control form-checkbox"  %>
+          <%= form.check_box :notify, class: "form-check-input"  %>
       </div>
 
 

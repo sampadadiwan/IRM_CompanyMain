@@ -64,7 +64,7 @@
           <%= @offer.percentage %>%
             <% if @offer.percentage && @offer.percentage > @offer.secondary_sale.percent_allowed %>
               <div>
-                <div class="badge badge-danger">Over Allowed Percentage</div>
+                <div class="badge bg-danger">Over Allowed Percentage</div>
                 The current sale allows you to sell only <%= @offer.secondary_sale.percent_allowed %>% of your holdings
               </div>
               <% end %>

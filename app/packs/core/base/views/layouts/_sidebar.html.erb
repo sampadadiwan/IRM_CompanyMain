@@ -71,7 +71,7 @@
 
             <% if current_user && current_user.enable_funds %>
                 <li class="nav-item">                
-                    <a class="nav-link" href="/funds" data-toggle="collapse" data-target="#fundMenus">
+                    <a class="nav-link" href="/funds" data-bs-toggle="collapse" data-bs-target="#fundMenus">
                         <i class="fas fa-xl fa-fw fa-dollar"></i>
                         <span>Funds</span>
                     </a>
@@ -103,7 +103,7 @@
 
             <% if current_user &&  ["Investment Fund", "Company", "Group Company"].include?(current_user.entity_type) %>
                 <li class="nav-item"> 
-                    <a class="nav-link" href="/aggregate_investments" data-toggle="collapse" data-target="#taskMenus">
+                    <a class="nav-link" href="/aggregate_investments" data-bs-toggle="collapse" data-bs-target="#taskMenus">
                         <i class="fas fa-xl fa-fw fa-check"></i>
                         <span>Tasks</span>
                     </a>

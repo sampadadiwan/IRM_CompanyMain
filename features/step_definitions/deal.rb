@@ -124,7 +124,7 @@ end
 
 
 Given('another entity is an investor {string} in entity') do |arg|
-  @investor = Investor.new(investor_entity: @another_entity, entity: @entity)  
+  @investor = Investor.new(investor_name: @another_entity.name, investor_entity: @another_entity, entity: @entity)  
   key_values(@investor, arg)
   @investor.save!
   puts "\n####Investor####\n"

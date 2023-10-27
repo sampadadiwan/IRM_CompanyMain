@@ -95,7 +95,7 @@
     <% if import_upload.failed_row_count > 0 %>
       <tr>
         <td>
-          <span class="badge badge-danger">
+          <span class="badge bg-danger">
               Failed to import <%= import_upload.failed_row_count %> rows
           </span>
         </td>
@@ -123,14 +123,16 @@
       </td>
     </tr>
 
-    <tr>
-      <td>
-        Error Text
-      </td>
-      <td>
-        <%= import_upload.error_text %>
-      </td>
-    </tr>
+    <% if import_upload.error_text.present? %>
+      <tr>
+        <td>
+          <a data-bs-toggle="collapse" class="btn btn-sm btn-outline-danger" href=".show_errors">Show Error</a>
+        </td>
+        <td>
+          <span class="collapse show_errors"><%= import_upload.error_text %></span>
+        </td>
+      </tr>
+    <% end %>
   </table>
   <% if params[:debug] == "true" %>
   <div>

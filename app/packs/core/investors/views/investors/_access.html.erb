@@ -1,10 +1,10 @@
 <% if investor.investor_access_count > 0 %>
-  <span class="badge badge-success">
+  <span class="badge bg-success">
     <%= link_to "Approved #{investor.investor_access_count}", investor_path(id: investor.id, tab: "investors-tab") %>
   </span>
 <% end %>
 <% if investor.unapproved_investor_access_count > 0 %>
-  <span class="badge badge-warning">
+  <span class="badge bg-warning">
     <%= link_to "Pending #{investor.unapproved_investor_access_count}", investor_path(id: investor.id, tab: "investors-tab") %>
   </span>
 <% end %>
