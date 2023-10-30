@@ -236,19 +236,4 @@ class CapitalCommitment < ApplicationRecord
       end
     end
   end
-
-  def method_missing(method_name, *args, &)
-    # This is to enable templates to get specific account entries
-    if method_name.to_s.include?("account_entries")
-      account_entry_name = method_name.to_s.gsub("account_entries", "").humanize.titleize
-      aes = account_entries.where("account_entries.name=?", account_entry_name)
-
-      return aes
-    end
-    super
-  end
-
-  def respond_to_missing? *_args
-    true
-  end
 end

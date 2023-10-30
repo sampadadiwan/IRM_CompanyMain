@@ -38,26 +38,24 @@ class CapitalRemittanceDocGenerator
     context.store :effective_date, Time.zone.today.strftime("%d %B %Y")
 
     context.store :entity, capital_remittance.entity
-    context.store :fund, capital_remittance.fund
-    context.store :capital_remittance, capital_remittance
+    context.store :fund, TemplateDecorator.decorate(capital_remittance.fund)
+    context.store :capital_remittance, TemplateDecorator.decorate(capital_remittance)
+    context.store :investor_kyc, TemplateDecorator.decorate(capital_remittance.capital_commitment.investor_kyc)
+    context.store :capital_call, TemplateDecorator.decorate(capital_remittance.capital_call)
 
-    context.store :call_amount, money_to_currency(capital_remittance.call_amount)
     context.store :due_date, capital_remittance.capital_call.due_date&.strftime("%d %B %Y")
     context.store :call_date, capital_remittance.capital_call.call_date&.strftime("%d %B %Y")
 
-    context.store :capital_commitment, capital_remittance.capital_commitment
-    context.store :fund_unit_setting, capital_remittance.capital_commitment.fund_unit_setting
+    context.store :capital_commitment, TemplateDecorator.decorate(capital_remittance.capital_commitment)
+    context.store :fund_unit_setting, TemplateDecorator.decorate(capital_remittance.capital_commitment.fund_unit_setting)
 
-    add_amounts(capital_remittance, context)
-
-    generate_custom_fields(context, capital_remittance)
-
-    generate_kyc_fields(context, capital_remittance.capital_commitment.investor_kyc) if capital_remittance.capital_commitment.investor_kyc
+    # add_amounts(capital_remittance, context)
 
     file_name = "#{@working_dir}/CapitalRemittance-#{capital_remittance.id}"
     convert(template, context, file_name)
   end
 
+  # Dead code
   def add_amounts(capital_remittance, context)
     call_amount_in_words = capital_remittance.fund.currency == "INR" ? capital_remittance.call_amount.to_i.rupees.humanize : capital_remittance.call_amount.to_i.to_words.humanize
 
@@ -76,38 +74,6 @@ class CapitalRemittanceDocGenerator
 
     context.store  :capital_fee, money_to_currency(capital_remittance.capital_fee)
     context.store  :other_fee, money_to_currency(capital_remittance.other_fee)
-  end
-
-  def generate_custom_fields(context, capital_remittance)
-    capital_remittance.properties.each do |k, v|
-      context.store  "remittance_#{k}", v
-    end
-
-    capital_remittance.fund.properties.each do |k, v|
-      context.store  "fund_#{k}", v
-    end
-
-    capital_remittance.capital_call.properties.each do |k, v|
-      context.store  "call_#{k}", v
-    end
-
-    capital_remittance.capital_commitment.properties.each do |k, v|
-      context.store  "commitment_#{k}", v
-    end
-  end
-
-  def generate_kyc_fields(context, investor_kyc)
-    if investor_kyc
-      context.store  :kyc_full_name, investor_kyc.full_name
-      context.store  :kyc_pan, investor_kyc.PAN
-      context.store  :kyc_address, investor_kyc.address
-      context.store  :kyc_bank_account_number, investor_kyc.bank_account_number
-      context.store  :kyc_ifsc_code, investor_kyc.ifsc_code
-
-      investor_kyc.properties.each do |k, v|
-        context.store "kyc_#{k}", v
-      end
-    end
   end
 
   def upload(document, capital_remittance)

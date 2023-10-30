@@ -178,19 +178,4 @@ class InvestorKyc < ApplicationRecord
     # Find all the committments this kyc is tied to
     entity.fund_units.joins(capital_commitment: :investor_kyc).where("investor_kycs.id=?", id).sum(:quantity)
   end
-
-  def method_missing(method_name, *args, &)
-    # This is to enable templates to get specific account entries
-    if method_name.to_s.include?("account_entries")
-      account_entry_name = method_name.to_s.gsub("account_entries", "").humanize.titleize
-      account_entries = entity.account_entries.joins(capital_commitment: :investor_kyc).where("investor_kycs.id=? and account_entries.name=?", id, account_entry_name)
-
-      return account_entries
-    end
-    super
-  end
-
-  def respond_to_missing? *_args
-    true
-  end
 end

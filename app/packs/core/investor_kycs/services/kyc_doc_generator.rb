@@ -26,28 +26,22 @@ class KycDocGenerator
   def generate(investor_kyc, start_date, end_date, doc_template_path)
     template = Sablon.template(File.expand_path(doc_template_path))
 
-    amount_in_words = investor_kyc.entity.currency == "INR" ? investor_kyc.committed_amount.to_i.rupees.humanize : investor_kyc.committed_amount.to_i.to_words.humanize
+    investor_kyc.entity.currency == "INR" ? investor_kyc.committed_amount.to_i.rupees.humanize : investor_kyc.committed_amount.to_i.to_words.humanize
 
     context = {
       date: Time.zone.today.strftime("%d %B %Y"),
       start_date:,
       end_date:,
-      investor_kyc:,
+      investor_kyc: TemplateDecorator.decorate(investor_kyc),
       entity: investor_kyc.entity,
 
-      capital_commitments: investor_kyc.capital_commitments,
-      capital_remittances: investor_kyc.capital_remittances,
-      capital_remittance_payments: investor_kyc.capital_remittance_payments,
-      capital_distribution_payments: investor_kyc.capital_distribution_payments,
+      capital_commitments: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments),
+      capital_remittances: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances),
+      capital_remittance_payments: TemplateDecorator.decorate_collection(investor_kyc.capital_remittance_payments),
+      capital_distribution_payments: TemplateDecorator.decorate_collection(investor_kyc.capital_distribution_payments),
 
-      commitment_amount: money_to_currency(investor_kyc.committed_amount),
-      commitment_pending: money_to_currency(investor_kyc.committed_amount - investor_kyc.collected_amount),
+      commitment_pending: money_to_currency(investor_kyc.committed_amount - investor_kyc.collected_amount)
 
-      collected_amount: money_to_currency(investor_kyc.collected_amount),
-      call_amount: money_to_currency(investor_kyc.call_amount),
-      distribution_amount: money_to_currency(investor_kyc.distribution_amount),
-
-      commitment_amount_words: amount_in_words
     }
 
     generate_custom_fields(context, investor_kyc)

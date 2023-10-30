@@ -11,7 +11,9 @@ module WithCustomField
     form_custom_fields.index_by(&:name)
   end
 
+  # rubocop:disable Style/OpenStructUse
   def custom_fields
-    Struct.new(properties)
+    OpenStruct.new(properties)
   end
+  # rubocop:enable Style/OpenStructUse
 end

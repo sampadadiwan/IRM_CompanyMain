@@ -1,0 +1,2 @@
+class CapitalRemittancePaymentDecorator < ApplicationDecorator
+end

@@ -34,24 +34,17 @@ class CapitalCommitmentDocGenerator
   def generate(capital_commitment, fund_doc_template_path)
     template = Sablon.template(File.expand_path(fund_doc_template_path))
 
-    amount_in_words = capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
-
     context = {
       effective_date: Time.zone.today.strftime("%d %B %Y"),
       entity: capital_commitment.entity,
-      fund: capital_commitment.fund,
-      commitment_amount: money_to_currency(capital_commitment.committed_amount),
-      commitment_amount_words: amount_in_words,
-      capital_commitment:,
-      investor_kyc: capital_commitment.investor_kyc,
-      fund_unit_setting: capital_commitment.fund_unit_setting
+      fund: TemplateDecorator.decorate(capital_commitment.fund),
+      capital_commitment: TemplateDecorator.decorate(capital_commitment),
+      investor_kyc: TemplateDecorator.decorate(capital_commitment.investor_kyc),
+      fund_unit_setting: TemplateDecorator.decorate(capital_commitment.fund_unit_setting)
     }
-
-    generate_custom_fields(context, capital_commitment)
 
     # Can we have more than one LP signer ?
     add_image(context, :investor_signature, capital_commitment.investor_kyc.signature)
-    generate_kyc_fields(context, capital_commitment.investor_kyc)
     Rails.logger.debug { "Using context #{context} to render template" }
 
     file_name = "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}"
@@ -60,25 +53,6 @@ class CapitalCommitmentDocGenerator
     additional_footers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Footer" "#{@fund_doc_template_name} Signature"])
     additional_headers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Header", "#{@fund_doc_template_name} Stamp Paper"])
     add_header_footers(capital_commitment, "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf", additional_headers, additional_footers)
-  end
-
-  def generate_custom_fields(context, capital_commitment)
-    capital_commitment.properties.each do |k, v|
-      context["commitment_#{k}"] = v
-    end
-
-    capital_commitment.fund.properties.each do |k, v|
-      context["fund_#{k}"] = v
-    end
-  end
-
-  def generate_kyc_fields(context, investor_kyc)
-    if investor_kyc
-      context.store :kyc, investor_kyc
-      investor_kyc.properties.each do |k, v|
-        context.store "kyc_#{k}", v
-      end
-    end
   end
 
   def upload(doc_template, capital_commitment)
