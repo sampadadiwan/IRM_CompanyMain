@@ -74,6 +74,7 @@ class Entity < ApplicationRecord
   has_many :aggregate_investments, dependent: :destroy
 
   has_many :funds, dependent: :destroy, inverse_of: :entity
+  has_many :account_entries, dependent: :destroy
   has_many :capital_calls, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
   has_many :capital_remittances, dependent: :destroy

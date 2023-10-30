@@ -43,6 +43,7 @@ class CapitalCommitmentDocGenerator
       commitment_amount: money_to_currency(capital_commitment.committed_amount),
       commitment_amount_words: amount_in_words,
       capital_commitment:,
+      investor_kyc: capital_commitment.investor_kyc,
       fund_unit_setting: capital_commitment.fund_unit_setting
     }
 

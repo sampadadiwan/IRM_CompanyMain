@@ -32,7 +32,7 @@ class KycDocGenerator
       date: Time.zone.today.strftime("%d %B %Y"),
       start_date:,
       end_date:,
-      kyc: investor_kyc,
+      investor_kyc:,
       entity: investor_kyc.entity,
 
       capital_commitments: investor_kyc.capital_commitments,
