@@ -37,17 +37,14 @@ class CapitalRemittanceDocGenerator
 
     context.store :effective_date, Time.zone.today.strftime("%d %B %Y")
 
-    context.store :company_name, capital_remittance.entity.name
-    context.store :fund_name, capital_remittance.fund.name
-    context.store :folio_id, capital_remittance.folio_id
-    context.store :fund_details, capital_remittance.fund.details
+    context.store :entity, capital_remittance.entity
+    context.store :fund, capital_remittance.fund
+    context.store :capital_remittance, capital_remittance
 
-    context.store :investor_name, capital_remittance.investor_name
-    context.store :percentage_called, capital_remittance.capital_call.percentage_called
     context.store :call_amount, money_to_currency(capital_remittance.call_amount)
     context.store :due_date, capital_remittance.capital_call.due_date&.strftime("%d %B %Y")
     context.store :call_date, capital_remittance.capital_call.call_date&.strftime("%d %B %Y")
-    context.store :capital_remittance, capital_remittance
+
     context.store :capital_commitment, capital_remittance.capital_commitment
     context.store :fund_unit_setting, capital_remittance.capital_commitment.fund_unit_setting
 

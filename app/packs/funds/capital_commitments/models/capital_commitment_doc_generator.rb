@@ -38,12 +38,8 @@ class CapitalCommitmentDocGenerator
 
     context = {
       effective_date: Time.zone.today.strftime("%d %B %Y"),
-      company_name: capital_commitment.entity.name,
-      fund_name: capital_commitment.fund.name,
-      commitment_ppm_number: capital_commitment.ppm_number,
-      folio_id: capital_commitment.folio_id,
-      fund_details: capital_commitment.fund.details,
-      investor_name: capital_commitment.investor_name,
+      entity: capital_commitment.entity,
+      fund: capital_commitment.fund,
       commitment_amount: money_to_currency(capital_commitment.committed_amount),
       commitment_amount_words: amount_in_words,
       capital_commitment:,
@@ -77,12 +73,7 @@ class CapitalCommitmentDocGenerator
 
   def generate_kyc_fields(context, investor_kyc)
     if investor_kyc
-      context.store :kyc_full_name, investor_kyc.full_name
-      context.store :kyc_pan, investor_kyc.PAN
-      context.store :kyc_address, investor_kyc.address
-      context.store :kyc_bank_account_number, investor_kyc.bank_account_number
-      context.store :kyc_ifsc_code, investor_kyc.ifsc_code
-
+      context.store :kyc, investor_kyc
       investor_kyc.properties.each do |k, v|
         context.store "kyc_#{k}", v
       end

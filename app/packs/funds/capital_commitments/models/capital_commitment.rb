@@ -253,4 +253,28 @@ class CapitalCommitment < ApplicationRecord
   end
 
   delegate :fund_signatory, to: :fund
+
+  # The folio id is used in the folder names of commitments, remittances and distributions
+  after_commit :update_folio_id, if: :saved_change_to_folio_id?
+  def update_folio_id
+    # Only make changes if this is not a new record
+    unless previous_changes[:folio_id].include?(nil)
+      document_folder.update_columns(name: folder_name, full_path: folder_path)
+      capital_remittances.update_all(folio_id:)
+      capital_distribution_payments.update_all(folio_id:)
+      account_entries.update_all(folio_id:)
+
+      capital_remittances.each do |cr|
+        cr.document_folder.update_columns(full_path: cr.folder_path)
+        cr.reload
+        cr.document_folder.update_columns(name: cr.folder_name)
+      end
+
+      capital_distribution_payments.each do |cdp|
+        cdp.document_folder.update_columns(full_path: cdp.folder_path)
+        cdp.reload
+        cdp.document_folder.update_columns(name: cdp.folder_name)
+      end
+    end
+  end
 end

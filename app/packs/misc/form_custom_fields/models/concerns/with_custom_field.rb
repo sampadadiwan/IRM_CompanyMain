@@ -10,4 +10,8 @@ module WithCustomField
   def map_custom_fields
     form_custom_fields.index_by(&:name)
   end
+
+  def custom_fields
+    Struct.new(properties)
+  end
 end

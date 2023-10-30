@@ -40,6 +40,10 @@ module WithFolder
     end
   end
 
+  def folder_name
+    folder_path.split("/")[-1]
+  end
+
   # Given a folder path, create the folder tree
   def setup_folder_from_path(path)
     folder = nil
