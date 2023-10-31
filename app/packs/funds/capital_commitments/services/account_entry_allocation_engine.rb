@@ -45,8 +45,10 @@ class AccountEntryAllocationEngine
     case fund_formula.rule_type
     when "GenerateCustomField"
       generate_custom_fields(fund_formula, fund_unit_settings)
-    when "AllocateAccountEntry"
-      allocate_account_entries(fund_formula, fund_unit_settings)
+    when "AllocateAccountEntry", "AllocateAccountEntry-Name"
+      allocate_account_entries(fund_formula, fund_unit_settings, "name")
+    when "AllocateAccountEntry-EntryType"
+      allocate_account_entries(fund_formula, fund_unit_settings, "entry_type")
     when "CumulateAccountEntry"
       cumulate_account_entries(fund_formula, fund_unit_settings)
     when "GenerateAccountEntry"
@@ -249,10 +251,13 @@ class AccountEntryAllocationEngine
 
   # ALlocate account entries of the fund, to the varios capital commitments in the fund based on formulas
   # E.x fund_account_entry.amount_cents * capital_commitment.properties['opening_investable_capital_percentage'] / 100.0
-  def allocate_account_entries(fund_formula, fund_unit_settings)
+  def allocate_account_entries(fund_formula, fund_unit_settings, name_or_entry_type = "name")
     Rails.logger.debug { "allocate_account_entries  #{fund_formula.name}" }
     # Compute the allocation
-    account_entries = @fund.fund_account_entries.where(reporting_date: @start_date.., name: fund_formula.name).where(reporting_date: ..@end_date).where(commitment_type: fund_formula.commitment_type)
+
+    account_entries = @fund.fund_account_entries.where(reporting_date: @start_date..).where(reporting_date: ..@end_date).where(commitment_type: fund_formula.commitment_type)
+
+    account_entries = name_or_entry_type == "name" ? account_entries.where(name: fund_formula.name) : account_entries.where(entry_type: fund_formula.name)
 
     if account_entries.present?
       # Each account entry with the formula name, has to be allocated

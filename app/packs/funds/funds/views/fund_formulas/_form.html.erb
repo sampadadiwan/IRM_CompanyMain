@@ -35,7 +35,7 @@
 
           <div class="form-group">
             <%= form.label :rule_type %>
-            <%= form.select :rule_type, ["AllocateAccountEntry", "AllocatePortfolio", "AllocatePortfolioInvestment", "GenerateAccountEntry", "CumulateAccountEntry", "GenerateCustomField", "Percentage"], {}, class: "form-control", data: {action: "change->fund-formula#ruleTypeChanged"}   %>
+            <%= form.select :rule_type, ["AllocateAccountEntry-Name", "AllocateAccountEntry-EntryType", "AllocatePortfolio", "AllocatePortfolioInvestment", "GenerateAccountEntry", "CumulateAccountEntry", "GenerateCustomField", "Percentage"], {}, class: "form-control", data: {action: "change->fund-formula#ruleTypeChanged"}   %>
           </div>
 
           <div class="form-group">
@@ -101,11 +101,25 @@
               <th>Type</th>
               <th>Available variables for rule</th>
             </thead>
-            <tr id="AllocateAccountEntry" class="explanation">
+            <tr id="AllocateAccountEntry-Name" class="explanation">
               <td>Allocate Account Entry</td>
               <td>
                 <ul>                  
-                  <li> Uses the specific fund account entry with the same name as the rule and allocates it to each commitment </li>
+                  <li> Uses the specific fund account entry with the same <b>Name</b> as the rule and allocates it to each commitment </li>
+                  <li>fund_account_entry: The specific fund account entry getting allocated</li>
+                  <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
+                  <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
+                  <li>fund_formula: The formula currently being run</li>
+                  <li>ae: The specific account entry being created for the commitment</li>
+                </ul>
+              </td>              
+            </tr>
+
+            <tr id="AllocateAccountEntry-EntryType" class="explanation">
+              <td>Allocate Account Entry</td>
+              <td>
+                <ul>                  
+                  <li> Uses the specific fund account entry with the same <b>EntryType</b> as the rule and allocates it to each commitment </li>
                   <li>fund_account_entry: The specific fund account entry getting allocated</li>
                   <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
                   <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
