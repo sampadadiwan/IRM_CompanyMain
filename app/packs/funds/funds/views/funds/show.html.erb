@@ -59,7 +59,7 @@
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
             <% if policy(@fund).update? %>
-              <%= link_to "Check Access Rights" , check_access_rights_fund_path(@fund, create_missing: false), {class: "dropdown-item" } if params[:debug].present? %>
+              
               <%= link_to "Edit Fund" , edit_fund_path(@fund), {class: "dropdown-item" } %>
               <%= button_to "Delete Fund" , @fund, method: :delete, class: "dropdown-item" ,
                   form_class: "deleteButton",
@@ -131,8 +131,7 @@
 
               <div class="hideMobP">
                 <div class="dropdown-divider"></div>
-
-
+                
                 <%= link_to "Import Investors",
                 new_import_upload_path("import_upload[owner_id]": @fund.id,
                     "import_upload[owner_type]": "Fund",
@@ -153,6 +152,8 @@
 
                 <div class="dropdown-divider"></div>
                   <%= link_to 'Send Email', "mailto:?bcc=#{@fund.get_lps_emails&.join(',')}&subject=#{@fund.name}:", class: "dropdown-item" %>
+                  <%= link_to "Check Access Rights" , check_access_rights_fund_path(@fund, create_missing: false), {class: "dropdown-item" }  %>
+                
                 </div>
               </div>
             <% end %>

@@ -23,7 +23,7 @@ class FundsController < ApplicationController
       redirect_to fund_path(@fund), notice: "AccessRights creation started, please check back in a few mins"
     else
       cars = @fund.check_access_rights
-      redirect_to fund_path(@fund), notice: "Missing Access Rights #{cars}"
+      redirect_to fund_path(@fund), notice: "Missing Access Rights #{cars.length} : #{cars}"
     end
   end
 
