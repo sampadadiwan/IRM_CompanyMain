@@ -82,7 +82,7 @@ class CapitalDistributionPayment < ApplicationRecord
                                                amount_cents, payment_date)
   end
 
-  after_commit :send_notification, if: :completed
+  after_commit :send_notification, if: ->(cdp) { cdp.completed && !cdp.destroyed? }
   def send_notification
     if saved_change_to_completed? && capital_distribution.approved && !capital_distribution.manual_generation
       investor.approved_users.each do |user|

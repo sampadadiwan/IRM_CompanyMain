@@ -1,5 +1,6 @@
 class AggregatePortfolioInvestment < ApplicationRecord
   include ForInvestor
+  include Trackable
 
   belongs_to :entity
   belongs_to :fund

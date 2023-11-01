@@ -11,8 +11,8 @@ class InvestorNotice < ApplicationRecord
   validates :btn_label, length: { maximum: 40 }
   validates :category, length: { maximum: 30 }
 
-  after_commit :update_investors
-  after_commit :generate_investor_notice_entries, if: proc { |notice| notice.generate && notice.saved_change_to_generate? }
+  after_commit :update_investors, unless: :destroyed?
+  after_commit :generate_investor_notice_entries, if: proc { |notice| notice.generate && notice.saved_change_to_generate? && !notice.destroyed? }
 
   def generate_investor_notice_entries
     InvestorNoticeJob.perform_later(id)

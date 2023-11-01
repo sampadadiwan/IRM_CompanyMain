@@ -217,7 +217,7 @@ class CapitalCommitment < ApplicationRecord
   after_commit :update_folio_id, if: :saved_change_to_folio_id?
   def update_folio_id
     # Only make changes if this is not a new record
-    unless previous_changes[:folio_id].include?(nil)
+    unless previous_changes[:folio_id].include?(nil) || destroyed?
       document_folder.update_columns(name: folder_name, full_path: folder_path)
       capital_remittances.update_all(folio_id:)
       capital_distribution_payments.update_all(folio_id:)

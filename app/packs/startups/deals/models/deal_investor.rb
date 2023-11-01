@@ -37,7 +37,7 @@ class DealInvestor < ApplicationRecord
     self.investor_name = investor.investor_name
   end
 
-  after_commit :create_activities_later, on: %i[create update]
+  after_commit :create_activities_later, unless: :destroyed?
 
   def create_activities_later
     GenerateDealActivitiesJob.perform_later(id, "DealInvestor")

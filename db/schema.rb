@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_10_26_060505) do
+ActiveRecord::Schema[7.1].define(version: 2023_11_01_055547) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -231,6 +231,8 @@ ActiveRecord::Schema[7.1].define(version: 2023_10_26_060505) do
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
     t.string "commitment_type", limit: 10, default: "Pool"
     t.string "investment_domicile", limit: 10
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"

@@ -81,7 +81,7 @@ class PortfolioInvestment < ApplicationRecord
     self.portfolio_company_name ||= portfolio_company.investor_name
   end
 
-  before_save :compute_fmv
+  before_save :compute_fmv, unless: :destroyed?
   def compute_fmv
     self.fmv_cents = compute_fmv_cents_on(Time.zone.today)
     # For buys setup net_quantity, note sold_quantity is -ive
@@ -95,7 +95,7 @@ class PortfolioInvestment < ApplicationRecord
     last_valuation ? quantity * last_valuation.per_share_value_cents : 0
   end
 
-  after_commit :compute_avg_cost
+  after_commit :compute_avg_cost, unless: :destroyed?
   def compute_avg_cost
     aggregate_portfolio_investment.reload
     # save will recomute the avg costs

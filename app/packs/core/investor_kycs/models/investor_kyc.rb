@@ -53,7 +53,7 @@ class InvestorKyc < ApplicationRecord
 
   attr_accessor :send_kyc_form_to_user
 
-  after_commit :send_kyc_form, if: ->(inv_kyc) { inv_kyc.send_kyc_form_to_user.present? && inv_kyc.send_kyc_form_to_user == "1" }
+  after_commit :send_kyc_form, if: ->(inv_kyc) { !inv_kyc.destroyed? && inv_kyc.send_kyc_form_to_user.present? && inv_kyc.send_kyc_form_to_user == "1" }
 
   def send_kyc_form(reminder: false)
     email_method = :notify_kyc_required
@@ -95,12 +95,12 @@ class InvestorKyc < ApplicationRecord
 
   # after_commit :send_notification_if_changed, if: :approved
 
-  after_commit :validate_pan_card
+  after_commit :validate_pan_card, unless: :destroyed?
   def validate_pan_card
     VerifyKycPanJob.perform_later(id) if saved_change_to_PAN? || saved_change_to_full_name? || saved_change_to_pan_card_data?
   end
 
-  after_commit :validate_bank
+  after_commit :validate_bank, unless: :destroyed?
   def validate_bank
     VerifyKycBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
   end

@@ -65,7 +65,7 @@ class Folder < ApplicationRecord
     FolderAccessJob.perform_later(id, access_right.id) if access_right&.cascade
   end
 
-  after_commit :folder_changed
+  after_commit :folder_changed, unless: :destroyed?
   def folder_changed
     FolderDefaultsJob.perform_later(id) if saved_change_to_orignal? || saved_change_to_printing? || saved_change_to_download?
   end

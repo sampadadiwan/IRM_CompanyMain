@@ -2,7 +2,7 @@ module UpdateInvestor
   extend ActiveSupport::Concern
 
   included do
-    after_commit :update_association_name
+    after_commit :update_association_name, unless: :destroyed?
 
     # Be very careful using this method, it is used to move all investors associations to a new investor
     def self.merge(old_investor, new_investor)
