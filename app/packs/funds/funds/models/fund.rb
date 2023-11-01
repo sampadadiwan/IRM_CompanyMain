@@ -125,4 +125,15 @@ class Fund < ApplicationRecord
     # defunct_investor.investor_name += " - Defunct"
     # defunct_investor.save
   end
+
+  def check_access_rights(create_missing: false)
+    ccs_wihout_ar = []
+    capital_commitments.each do |cc|
+      ar = access_rights.where(access_to_investor_id: cc.investor_id).first
+      ccs_wihout_ar << cc.id if ar.nil?
+
+      AccessRight.create(entity_id:, owner: self, access_to_investor_id: cc.investor_id, notify: false) if create_missing && ar.nil?
+    end
+    ccs_wihout_ar
+  end
 end

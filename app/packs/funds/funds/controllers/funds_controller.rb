@@ -1,5 +1,5 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show edit update destroy timeline last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation]
+  before_action :set_fund, only: %i[show edit update destroy timeline last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights]
 
   # GET /funds or /funds.json
   def index
@@ -15,6 +15,16 @@ class FundsController < ApplicationController
 
   def report
     render "/funds/#{params[:report]}"
+  end
+
+  def check_access_rights
+    if params[:create_missing] == "true"
+      FundAccessRightsJob.perform_later(@fund.id, true, current_user.id)
+      redirect_to fund_path(@fund), notice: "AccessRights creation started, please check back in a few mins"
+    else
+      cars = @fund.check_access_rights
+      redirect_to fund_path(@fund), notice: "Missing Access Rights #{cars}"
+    end
   end
 
   # GET /funds/1 or /funds/1.json

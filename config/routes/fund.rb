@@ -70,6 +70,7 @@ resources :funds do
   get 'allocate_form', on: :member
   get 'copy_formulas', on: :member
   get 'export', on: :member
+  get 'check_access_rights', on: :member
 end
 
 resources :expression_of_interests do

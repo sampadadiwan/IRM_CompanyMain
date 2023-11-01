@@ -23,6 +23,10 @@ class FundPolicy < FundBasePolicy
     update?
   end
 
+  def check_access_rights?
+    update?
+  end
+
   def generate_documentation?
     update?
   end

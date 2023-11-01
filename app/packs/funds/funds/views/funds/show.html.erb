@@ -59,7 +59,7 @@
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
             <% if policy(@fund).update? %>
-
+              <%= link_to "Check Access Rights" , check_access_rights_fund_path(@fund, create_missing: false), {class: "dropdown-item" } if params[:debug].present? %>
               <%= link_to "Edit Fund" , edit_fund_path(@fund), {class: "dropdown-item" } %>
               <%= button_to "Delete Fund" , @fund, method: :delete, class: "dropdown-item" ,
                   form_class: "deleteButton",
