@@ -90,6 +90,12 @@ class CapitalCommitment < ApplicationRecord
   # 2. First set orig_folio_committed_amount_cents & then set the folio_committed_amount_cents
   # 3. Then save it - this will cause the set_orig_amounts to be called which will set things up correctly
   # This note is only if you are making direct changes to the db
+  def manually_set_committed_amount(amount_cents)
+    self.orig_folio_committed_amount_cents = amount_cents
+    self.folio_committed_amount_cents = amount_cents
+    save
+  end
+
 
   def set_orig_amounts
     # This is only excuted once when the commitment is created, to setup the orig amounts
