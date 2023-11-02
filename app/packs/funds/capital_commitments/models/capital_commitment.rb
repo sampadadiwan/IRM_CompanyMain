@@ -96,7 +96,6 @@ class CapitalCommitment < ApplicationRecord
     save
   end
 
-
   def set_orig_amounts
     # This is only excuted once when the commitment is created, to setup the orig amounts
     if orig_folio_committed_amount_cents.zero?

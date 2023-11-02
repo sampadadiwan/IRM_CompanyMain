@@ -4,15 +4,15 @@ class ApprovalPolicy < ApplicationPolicy
   end
 
   def show?
-    user.entity.enable_approvals &&
+    (user.entity.enable_approvals &&
       (belongs_to_entity?(user, record) ||
-        Approval.for_investor(user).where(id: record.id).present?)
+        Approval.for_investor(user).where(id: record.id).present?)) || super_user?
   end
 
   def create?
-    user.entity.enable_approvals &&
+    (user.entity.enable_approvals &&
       belongs_to_entity?(user, record) &&
-      (user.curr_role = "company_admin")
+      (user.curr_role = "company_admin")) || super_user?
   end
 
   def new?
@@ -20,7 +20,7 @@ class ApprovalPolicy < ApplicationPolicy
   end
 
   def update?
-    create? && record.due_date >= Time.zone.today
+    create? && record.due_date >= Time.zone.today && !record.locked
   end
 
   def edit?
@@ -36,6 +36,6 @@ class ApprovalPolicy < ApplicationPolicy
   end
 
   def send_reminder?
-    update? && record.approved
+    create? && record.due_date >= Time.zone.today && record.approved
   end
 end
