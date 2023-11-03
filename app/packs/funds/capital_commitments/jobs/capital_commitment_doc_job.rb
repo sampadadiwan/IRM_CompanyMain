@@ -12,29 +12,38 @@ class CapitalCommitmentDocJob < ApplicationJob
       validate(fund, investor, investor_kyc, templates, user_id)
 
       if templates.present? && investor_kyc.present?
+        send_notification("Generating documents for #{investor.investor_name}, for fund #{fund.name}", user_id, :info)
         Rails.logger.debug { "Generating documents for #{investor.investor_name}, for fund #{fund.name}" }
 
         templates.each do |fund_doc_template|
-          existing_doc = capital_commitment.documents.where(name: fund_doc_template.name).first
-          if existing_doc.present? && existing_doc.sent_for_esign
-            msg = "Not generating #{fund_doc_template.name} for fund #{fund.name}, for user #{investor_kyc.full_name}, already sent for esign"
-            Rails.logger.debug msg
-            UserAlert.new(user_id:, level: :info, message: msg).broadcast
-          else
-            msg = "Generating #{fund_doc_template.name} for fund #{fund.name}, for #{investor_kyc.full_name}"
-            Rails.logger.debug msg
-            UserAlert.new(user_id:, level: :info, message: msg).broadcast
-            # Delete any existing signed documents
-            # Do not delete signed documents
-            docs_to_destroy = capital_commitment.documents.not_templates.where(name: fund_doc_template.name)
-            # .where.not translates to != in SQL. NULL is treated differently from other values, so != queries never match columns that are set to NULL
-            docs_to_destroy.where.not(owner_tag: %w[Signed signed]).or(docs_to_destroy.where(owner_tag: nil)).find_each(&:destroy)
-            # Generate a new signed document
-            CapitalCommitmentDocGenerator.new(capital_commitment, fund_doc_template, user_id)
-          end
+          process_template(fund_doc_template, capital_commitment, investor_kyc, user_id)
         end
       end
     end
+  end
+
+  def process_template(fund_doc_template, capital_commitment, investor_kyc, user_id)
+    existing_doc = capital_commitment.documents.where(name: fund_doc_template.name).first
+    if existing_doc.present? && existing_doc.sent_for_esign
+      msg = "Not generating #{fund_doc_template.name} for fund #{fund.name}, for user #{investor_kyc.full_name}, already sent for esign"
+      Rails.logger.debug msg
+      send_notification(msg, user_id, :info)
+    else
+      msg = "Generating #{fund_doc_template.name} for fund #{capital_commitment.fund.name}, for #{investor_kyc.full_name}"
+      Rails.logger.debug msg
+      send_notification(msg, user_id, :info)
+      # Delete any existing signed documents
+      # Do not delete signed documents
+      docs_to_destroy = capital_commitment.documents.not_templates.where(name: fund_doc_template.name)
+      # .where.not translates to != in SQL. NULL is treated differently from other values, so != queries never match columns that are set to NULL
+      docs_to_destroy.where.not(owner_tag: %w[Signed signed]).or(docs_to_destroy.where(owner_tag: nil)).find_each(&:destroy)
+      # Generate a new signed document
+      CapitalCommitmentDocGenerator.new(capital_commitment, fund_doc_template, user_id)
+    end
+  rescue StandardError => e
+    msg = "Error generating #{fund_doc_template.name} for fund #{capital_commitment.fund.name}, for #{investor_kyc.full_name} #{e.message}"
+    send_notification(msg, user_id, :danger)
+    raise e
   end
 
   def validate(fund, investor, investor_kyc, templates, user_id)

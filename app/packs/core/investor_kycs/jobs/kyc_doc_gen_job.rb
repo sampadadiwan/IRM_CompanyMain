@@ -13,8 +13,13 @@ class KycDocGenJob < ApplicationJob
 
       # Loop through each investor kyc and generate the documents
       investor_kycs.each do |investor_kyc|
+        send_notification("Generating KYC documents for #{investor_kyc.full_name}", user_id)
         Document.where(id: document_template_ids).find_each do |document_template|
+          send_notification("Generating #{document_template.name} for #{investor_kyc.full_name}", user_id)
           KycDocGenerator.new(investor_kyc, document_template, start_date, end_date, user_id)
+        rescue StandardError => e
+          send_notification("Error generating #{document_template.name} for #{investor_kyc.full_name} #{e.message}", user_id, "danger")
+          raise e
         end
       end
     end

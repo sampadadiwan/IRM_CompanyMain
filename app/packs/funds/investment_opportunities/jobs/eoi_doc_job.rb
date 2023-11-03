@@ -15,10 +15,16 @@ class EoiDocJob < ApplicationJob
       @expression_of_interest.investor_kycs.verified.each do |kyc|
         @templates.each do |investment_opportunity_doc_template|
           Rails.logger.debug { "Generating #{investment_opportunity_doc_template.name} for investment_opportunity #{@investment_opportunity.company_name}, for user #{kyc.full_name}" }
+
           # Delete any existing signed documents
           @expression_of_interest.documents.not_templates.where(name: investment_opportunity_doc_template.name).find_each(&:destroy)
+
           # Generate a new signed document
+          send_notification("Generating #{investment_opportunity_doc_template.name} for investment_opportunity #{investment_opportunity.company_name}, for user #{kyc.full_name}", :info)
+
           EoiDocGenerator.new(@expression_of_interest, investment_opportunity_doc_template, user_id)
+        rescue StandardError => e
+          send_notification("Error generating #{investment_opportunity_doc_template.name} for investment_opportunity #{investment_opportunity.company_name}, for user #{kyc&.full_name}. #{e.message}", :danger)
         end
       end
     end
