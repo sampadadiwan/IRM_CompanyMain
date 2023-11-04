@@ -30,12 +30,11 @@ as well as a link to its edit page.
       class: "btn btn-outline-success",
     ) if valid_action?(:edit) && show_action?(:edit, page.resource) %>
 
-    <%= link_to(
+    <%= button_to(
             t("administrate.actions.destroy"),
             [namespace, page.resource],
             class: "btn btn-outline-danger",
-            method: :delete,
-            data: { confirm: t("administrate.actions.confirm") }
+            method: :delete, form_class: "deleteButton" , data: {msg: "This will delete this item. Proceed?", action: "click->confirm#popup" , turbo: true}
           ) if show_action? :destroy, page.resource %>
 
   </div>

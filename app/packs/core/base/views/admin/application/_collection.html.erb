@@ -83,12 +83,11 @@ to display a collection of resources in an HTML table.
         <% end %>
 
         <% if valid_action? :destroy, collection_presenter.resource_name %>
-          <td><%= link_to(
+          <td><%= button_to(
             t("administrate.actions.destroy"),
             [namespace, resource],
             class: "btn btn-outline-danger",
-            method: :delete,
-            data: { confirm: t("administrate.actions.confirm") }
+            method: :delete, form_class: "deleteButton" , data: {msg: "This will delete this item. Proceed?", action: "click->confirm#popup" , turbo: true}
           ) if show_action? :destroy, resource %></td>
         <% end %>
       </tr>
