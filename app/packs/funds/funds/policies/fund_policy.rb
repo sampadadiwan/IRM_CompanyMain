@@ -69,7 +69,7 @@ class FundPolicy < FundBasePolicy
   end
 
   def destroy?
-    Rails.env.test? ? permissioned_employee?(:destroy) : false
+    Rails.env.test? ? permissioned_employee?(:destroy) : super_user?
   end
 
   def grant_access_rights?

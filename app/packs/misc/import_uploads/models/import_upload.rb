@@ -51,4 +51,8 @@ class ImportUpload < ApplicationRecord
 
     (processed_row_count.to_f / total_rows_count * 100).round(2)
   end
+
+  def success?
+    status.nil? && total_rows_count == processed_row_count
+  end
 end
