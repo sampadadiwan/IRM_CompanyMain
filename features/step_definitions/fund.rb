@@ -416,7 +416,7 @@
 
 
 Then('the capital call collected amount should be {string}') do |arg|
-
+  sleep(1)
   @capital_call.reload
   @capital_call.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.fund.currency)
   @capital_call.fund.collected_amount.should == Money.new(arg.to_i * 100, @capital_call.fund.currency)

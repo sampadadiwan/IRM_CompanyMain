@@ -4,14 +4,14 @@ module CapitalRemittanceFees
   def convert_fees
     if capital_call.call_basis == "Upload"
       # Also for some calls, fees will be included. In uploads the fee is in folio_currency so we convert to fund_currency
-      self.capital_fee_cents = folio_capital_fee_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_capital_fee_cents, payment_date) : 0
+      self.capital_fee_cents = folio_capital_fee_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_capital_fee_cents, remittance_date) : 0
 
-      self.other_fee_cents = folio_other_fee_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_other_fee_cents, payment_date) : 0
+      self.other_fee_cents = folio_other_fee_cents.positive? ? convert_currency(capital_commitment.folio_currency, fund.currency, folio_other_fee_cents, remittance_date) : 0
     else
       # Also for some calls, fees will be included so we convert to folio_currency
-      self.folio_capital_fee_cents = capital_fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, capital_fee_cents, payment_date) : 0
+      self.folio_capital_fee_cents = capital_fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, capital_fee_cents, remittance_date) : 0
 
-      self.folio_other_fee_cents = other_fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, other_fee_cents, payment_date) : 0
+      self.folio_other_fee_cents = other_fee_cents.positive? ? convert_currency(fund.currency, capital_commitment.folio_currency, other_fee_cents, remittance_date) : 0
     end
   end
 
