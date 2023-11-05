@@ -27,7 +27,12 @@ class ApplicationController < ActionController::Base
   end
 
   rescue_from Pundit::NotAuthorizedError do |_exception|
-    redirect_to dashboard_entities_path, alert: "Access Denied"
+    redirect_to root_path, alert: "Access Denied"
+  end
+
+  rescue_from ActionController::InvalidAuthenticityToken do |_exception|
+    redirect_path = request.referer || root_path
+    redirect_to redirect_path, alert: "Please refresh screen and retry"
   end
 
   before_action :prepare_exception_notifier
