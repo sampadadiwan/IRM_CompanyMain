@@ -421,6 +421,11 @@ form {
 
   .form-group {
     margin: 15px 0px;
+
+    label {
+      display: unset;
+      margin: 1px;
+    }
   }
 
   .nested-fields {

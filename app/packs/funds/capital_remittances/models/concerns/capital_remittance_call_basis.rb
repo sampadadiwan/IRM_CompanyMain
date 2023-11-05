@@ -6,7 +6,7 @@ module CapitalRemittanceCallBasis
     self.folio_call_amount_cents = percentage * capital_commitment.folio_committed_amount_cents / 100.0
 
     # Now compute the call amount in the fund currency.
-    self.computed_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, payment_date)
+    self.computed_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, remittance_date)
 
     # Now add the capital fees
     self.folio_call_amount_cents += folio_capital_fee_cents
@@ -30,7 +30,7 @@ module CapitalRemittanceCallBasis
     self.call_amount_cents = computed_amount_cents + capital_fee_cents
 
     # Now compute the folio call amount in the folio currency.
-    self.folio_call_amount_cents = convert_currency(fund.currency, capital_commitment.folio_currency, call_amount_cents, payment_date)
+    self.folio_call_amount_cents = convert_currency(fund.currency, capital_commitment.folio_currency, call_amount_cents, remittance_date)
 
     logger.error "call_basis_account_entry: computed_amount_cents = #{computed_amount_cents}, call_amount_cents = #{call_amount_cents}, folio_call_amount_cents = #{folio_call_amount_cents} found for #{capital_commitment} for #{capital_call}"
   end
@@ -40,7 +40,7 @@ module CapitalRemittanceCallBasis
     self.folio_call_amount_cents -= folio_capital_fee_cents
 
     # Now compute the call amount in the fund currency.
-    self.computed_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, payment_date)
+    self.computed_amount_cents = convert_currency(capital_commitment.folio_currency, fund.currency, folio_call_amount_cents, remittance_date)
 
     # Now add the capital fees
     self.folio_call_amount_cents += folio_capital_fee_cents

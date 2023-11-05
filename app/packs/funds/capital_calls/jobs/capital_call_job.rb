@@ -32,13 +32,13 @@ class CapitalCallJob < ApplicationJob
       else
 
         # Note the due amount for the call is calculated automatically inside CapitalRemittance
-
         status = @capital_call.generate_remittances_verified ? "Paid" : "Pending"
         cr = CapitalRemittance.new(capital_call: @capital_call, fund: @capital_call.fund,
                                    entity: @capital_call.entity, investor: capital_commitment.investor, capital_commitment:, folio_id: capital_commitment.folio_id,
-                                   payment_date: @capital_call.due_date, created_by: "Call",
+                                   created_by: "Call",
                                    status:, verified: @capital_call.generate_remittances_verified)
 
+        cr.payment_date = @capital_call.due_date if cr.verified
         cr.setup_call_fees
         cr.set_call_amount
 
