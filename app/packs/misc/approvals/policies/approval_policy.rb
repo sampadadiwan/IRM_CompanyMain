@@ -1,4 +1,14 @@
 class ApprovalPolicy < ApplicationPolicy
+  class Scope < BaseScope
+    def resolve
+      if user.curr_role == "investor"
+        scope.for_investor(user)
+      else
+        super
+      end
+    end
+  end
+
   def index?
     user.entity.enable_approvals
   end

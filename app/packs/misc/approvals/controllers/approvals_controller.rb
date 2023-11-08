@@ -5,11 +5,7 @@ class ApprovalsController < ApplicationController
   # GET /approvals or /approvals.json
   def index
     authorize Approval
-    @approvals = if %w[employee].index(current_user.curr_role)
-                   policy_scope(Approval)
-                 else
-                   Approval.for_investor(current_user)
-                 end
+    @approvals = policy_scope(Approval)
 
     @approvals = @approvals.where(entity_id: params[:entity_id]) if params[:entity_id].present?
     @approvals = @approvals.includes(:entity)
