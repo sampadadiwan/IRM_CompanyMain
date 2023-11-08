@@ -1,5 +1,6 @@
 <%= form_with(model: nil, method: :get, url: set_persona_users_path, id: "persona_form") do |form| %>
   <% 
+  
     personas = []
 
     if current_user.has_cached_role?(:employee) 

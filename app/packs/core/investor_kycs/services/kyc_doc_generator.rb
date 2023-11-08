@@ -40,7 +40,7 @@ class KycDocGenerator
       capital_commitments: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments),
       capital_remittances: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances),
       capital_remittance_payments: TemplateDecorator.decorate_collection(investor_kyc.capital_remittance_payments),
-      capital_distribution_payments: TemplateDecorator.decorate_collection(investor_kyc.capital_distribution_payments),
+      capital_distribution_payments: TemplateDecorator.decorate_collection(investor_kyc.capital_distribution_payments)
 
     }
 

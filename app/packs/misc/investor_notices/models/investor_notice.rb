@@ -33,8 +33,14 @@ class InvestorNotice < ApplicationRecord
   delegate :investors, to: :owner
 
   def self.notices(user)
-    InvestorNotice.joins(:investor_notice_entries, entity: :investor_accesses).where("investor_notices.active=?", true)
-                  .where("investor_notice_entries.investor_entity_id=? and investor_notice_entries.active=?", user.entity_id, true)
-                  .where("investor_accesses.user_id=? and investor_accesses.approved=?", user.id, true)
+    notices = InvestorNotice.joins(:investor_notice_entries, entity: :investor_accesses).where("investor_notices.active=?", true)
+
+    notices = notices.where("investor_notice_entries.investor_entity_id=? and investor_notice_entries.active=?", user.entity_id, true)
+
+    notices = notices.where("investor_accesses.user_id=? and investor_accesses.approved=?", user.id, true)
+
+    notices = notices.where("investor_accesses.entity_id=?", ENV.fetch("CAPHIVE_ENTITY_ID", nil)) if user.curr_role == "employee"
+
+    notices
   end
 end
