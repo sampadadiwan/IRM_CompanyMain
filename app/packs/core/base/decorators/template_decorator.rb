@@ -3,7 +3,7 @@ class TemplateDecorator < ApplicationDecorator
     # This is to enable templates to get specific account entries
     if method_name.to_s.include?("account_entries_")
       account_entry_name = method_name.to_s.gsub("account_entries_", "").humanize.titleize
-      aes = account_entries.where("account_entries.name=?", account_entry_name)
+      aes = TemplateDecorator.decorate_collection(account_entries.where("account_entries.name=?", account_entry_name))
       return aes
 
     elsif method_name.to_s.include?("money_")

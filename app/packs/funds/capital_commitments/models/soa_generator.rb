@@ -35,24 +35,19 @@ class SoaGenerator
     context = {
       date: Time.zone.today.strftime("%d %B %Y"),
       start_date:,
+      format_start_date: Time.zone.parse(start_date).strftime("%d %B %Y"),
       end_date:,
-      commitment: capital_commitment,
+      format_end_date: Time.zone.parse(end_date).strftime("%d %B %Y"),
+      capital_commitment: TemplateDecorator.decorate(capital_commitment),
       entity: capital_commitment.entity,
-      fund: capital_commitment.fund,
+      fund: TemplateDecorator.decorate(capital_commitment.fund),
 
-      capital_remittances: capital_commitment.capital_remittances.decorate,
-      capital_distribution_payments: capital_commitment.capital_distribution_payments.decorate,
-      account_entries: capital_commitment.account_entries.includes(:fund).cumulative.where(reporting_date: start_date..).where(reporting_date: ..end_date).decorate,
-      fund_ratios: capital_commitment.fund_ratios.where(end_date:),
+      capital_remittances: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances),
+      capital_distribution_payments: TemplateDecorator.decorate_collection(capital_commitment.capital_distribution_payments),
+      account_entries: TemplateDecorator.decorate_collection(capital_commitment.account_entries.includes(:fund).cumulative.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
+      fund_ratios: TemplateDecorator.decorate_collection(capital_commitment.fund_ratios.where(end_date:)),
 
-      kyc: capital_commitment.investor_kyc,
-
-      commitment_amount: money_to_currency(capital_commitment.committed_amount),
-      commitment_pending: money_to_currency(capital_commitment.committed_amount - capital_commitment.collected_amount),
-
-      collected_amount: money_to_currency(capital_commitment.collected_amount),
-      call_amount: money_to_currency(capital_commitment.call_amount),
-      distribution_amount: money_to_currency(capital_commitment.distribution_amount),
+      investor_kyc: TemplateDecorator.decorate(capital_commitment.investor_kyc),
 
       commitment_amount_words: amount_in_words
     }

@@ -31,7 +31,9 @@ class KycDocGenerator
     context = {
       date: Time.zone.today.strftime("%d %B %Y"),
       start_date:,
+      format_start_date: Time.zone.parse(start_date).strftime("%d %B %Y"),
       end_date:,
+      format_end_date: Time.zone.parse(end_date).strftime("%d %B %Y"),
       investor_kyc: TemplateDecorator.decorate(investor_kyc),
       entity: investor_kyc.entity,
 
@@ -39,8 +41,6 @@ class KycDocGenerator
       capital_remittances: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances),
       capital_remittance_payments: TemplateDecorator.decorate_collection(investor_kyc.capital_remittance_payments),
       capital_distribution_payments: TemplateDecorator.decorate_collection(investor_kyc.capital_distribution_payments),
-
-      commitment_pending: money_to_currency(investor_kyc.committed_amount - investor_kyc.collected_amount)
 
     }
 

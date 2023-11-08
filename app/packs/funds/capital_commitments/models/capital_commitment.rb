@@ -122,6 +122,11 @@ class CapitalCommitment < ApplicationRecord
     adjustment_amount_cents + orig_committed_amount_cents
   end
 
+  def commitment_pending
+    committed_amount - collected_amount
+  end
+
+
   def changed_committed_amount_at_exchange_rate(date)
     if get_exchange_rate(folio_currency, fund.currency, date - 1.day).nil?
       0

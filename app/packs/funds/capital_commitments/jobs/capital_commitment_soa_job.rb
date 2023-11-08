@@ -20,7 +20,7 @@ class CapitalCommitmentSoaJob < ApplicationJob
         # Generate a new signed document
         SoaGenerator.new(@capital_commitment, fund_doc_template, start_date, end_date, user_id)
       rescue StandardError
-        send_notification("Error generating #{fund_doc_template.name} for fund #{@fund_name}, for user #{@investor_kyc&.full_name}")
+        send_notification("Error generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@investor_kyc&.full_name}")
       end
     end
 
