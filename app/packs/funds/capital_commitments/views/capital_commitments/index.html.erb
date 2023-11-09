@@ -3,6 +3,8 @@
      then we see if we can simply show the commitment -->
 <% if params[:my_commitments].present? && @capital_commitments.length == 1 %>
     <% controller.redirect_to @capital_commitments.first %>
+<% elsif params[:ag].present? %>
+    <%= render "/capital_commitments/index_ag", capital_commitments: @capital_commitments, fund: nil, lazy_load_data: false %>
 <% else %>
     <%= render "/capital_commitments/index", capital_commitments: @capital_commitments, fund: nil, lazy_load_data: false %>
 <% end %>

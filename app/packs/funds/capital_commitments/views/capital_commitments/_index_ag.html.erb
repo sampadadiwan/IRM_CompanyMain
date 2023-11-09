@@ -1,0 +1,11 @@
+<% fund ||= nil; cols ||= params[:cols] %>
+<%= render "/capital_commitments/index_header", fund: fund %>
+<div data-controller="commitments-ag">
+
+  <div id="capital_commitments" style="height: 800px; width:100%;" class="ag-theme-alpine">
+    <button data-action="click->commitments-ag#exportToXL" class="btn btn-outline-success">
+      Export to Excel
+    </button>
+  </div>
+
+</div>
