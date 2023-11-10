@@ -4,74 +4,112 @@ export default class extends Controller {
 
   static gridOptions = {};
 
+  static values = {
+    lazyLoadData: String, // Do we want to eager or lazy load (for tabs)
+    tableName: String // Which table id are we targeting
+  }
+
   connect() {
     console.log("Hello from commitments_ag_controller.js");
-    this.init();
+    console.log(`Datatable setup for ${this.tableNameValue}`);
+    
+    console.log(`lazyLoadDataValue = ${this.lazyLoadDataValue}`)
+    if(this.lazyLoadDataValue == "false") {
+      this.init();
+    }
   }
 
   extract_number(str_num) {
-    let ret_val = Number(str_num.replace(/[^0-9.-]+/g,""));
-    return ret_val
+    let ret_val = Number(str_num.replace(/[^0-9.-]+/g, ""));
+    return ret_val;
   }
 
   extract_text_from_html(html_text) {
     let ret_val = html_text.replace(/<\/?[^>]+(>|$)/g, "");
     return ret_val
   }
-  
+
+  format_currency(number, currency) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency }).format(number);
+  }
 
   init() {
 
     let columnDefs = [
-      {"field": "commitment_type", headerName: "Type", filter: "agSetColumnFilter", enableRowGroup: true},
-      {field: "folio_id", cellRenderer: this.html, headerName: "Folio", 
-        cellRenderer: function(params){
-          return params.data.folio_id;
-        },
-        valueGetter: (params) => { return this.extract_text_from_html(params.data.folio_id) }
-      },
-      {"field": "investor_name", cellRenderer: this.html, 
-        headerName: "Investor", chartDataType: 'category', 
-        cellRenderer: function(params){
-          return params.data.investor_name;
-        },
-        valueGetter: (params) => { return this.extract_text_from_html(params.data.investor_name) }
-      },
-      {"field": "full_name", cellRenderer: this.html, headerName: "Name"},
-      {"field": "unit_type", headerName: "Unit Type", sortable: true, filter: "agSetColumnFilter", chartDataType: 'category', enableRowGroup: true, enablePivot: true },
+      { "field": "commitment_type", headerName: "Type", filter: "agSetColumnFilter", enableRowGroup: true },
       {
-        field: "committed_amount", headerName: "Committed", 
-        sortable: true, filter: 'agNumberColumnFilter', aggFunc: 'sum', 
-        valueFormatter: params => params.data.committed_amount,
-        valueGetter: (params) => { return this.extract_number(params.data.committed_amount) }
+        field: "folio_id", cellRenderer: this.html, headerName: "Folio", enableRowGroup: true, enablePivot: true,
+        cellRenderer: function (params) {
+          return params.data.folio_link;
+        },
+        valueGetter: (params) => { return params.data.folio_id }
       },
-      {"field": "percentage", headerName: "%", sortable: true, filter: 'agNumberColumnFilter', chartDataType: "series", aggFunc: 'sum', valueGetter: (params) => { return parseInt(params.data.percentage) }},
-      {"field": "call_amount", headerName: "Called", sortable: true, filter: 'agNumberColumnFilter', 
-        filterValueGetter: (params) => { return this.extract_number(params.data.call_amount) },
-        valueFormatter: params => params.data.call_amount,
-        valueGetter: (params) => { return this.extract_number(params.data.call_amount) }
+      {
+        "field": "investor_link", cellRenderer: this.html,
+        headerName: "Investor", chartDataType: 'category', enableRowGroup: true, enablePivot: true,
+        cellRenderer: function (params) {
+          return params.data.investor_link;
+        },
+        valueGetter: (params) => { return params.data.investor_name }
       },
-      {"field": "collected_amount", headerName: "Collected", sortable: true, filter: 'agNumberColumnFilter', 
-        filterValueGetter: (params) => { return this.extract_number(params.data.collected_amount) },
-        valueFormatter: params => params.data.collected_amount,
-        valueGetter: (params) => { return this.extract_number(params.data.collected_amount) }
+      { "field": "full_name", cellRenderer: this.html, headerName: "Name" },
+      { "field": "unit_type", headerName: "Unit Type", sortable: true, filter: "agSetColumnFilter", chartDataType: 'category', enableRowGroup: true, enablePivot: true },
+      {
+        "field": "committed_amount_number", headerName: "Committed",
+        sortable: true, filter: 'agNumberColumnFilter', aggFunc: 'sum',
+        valueFormatter: params => {
+          if (params.data !== undefined) {
+            return this.format_currency(params.data.collected_amount_number, params.data.fund_currency)
+          }
+        },
       },
-      {"field": "distribution_amount", headerName: "Distributed", sortable: true, filter: 'agNumberColumnFilter', 
-        filterValueGetter: (params) => { return this.extract_number(params.data.distribution_amount) },
-        valueFormatter: params => params.data.distribution_amount,
-        valueGetter: (params) => { return this.extract_number(params.data.distribution_amount) }
-      },          
-      {"field": "dt_actions", cellRenderer: this.html, headerName: "Actions"}
+      {
+        "field": "percentage", headerName: "%",
+        sortable: true, filter: 'agNumberColumnFilter', chartDataType: "series", aggFunc: 'sum',
+        valueFormatter: params => {
+          if (params.data !== undefined) {
+            return `${params.data.percentage} %`;
+          }
+        },
+      },
+      {
+        "field": "call_amount_number", headerName: "Called",
+        sortable: true, filter: 'agNumberColumnFilter', aggFunc: 'sum',
+        valueFormatter: params => {
+          if (params.data !== undefined) {
+            return this.format_currency(params.data.call_amount_number, params.data.fund_currency)
+          }
+        },
+      },
+      {
+        "field": "collected_amount_number", headerName: "Collected",
+        sortable: true, filter: 'agNumberColumnFilter', aggFunc: 'sum',
+        valueFormatter: params => {
+          if (params.data !== undefined) {
+            return this.format_currency(params.data.collected_amount_number, params.data.fund_currency)
+          }
+        },
+      },
+      {
+        "field": "distribution_amount_number", headerName: "Distributed",
+        sortable: true, filter: 'agNumberColumnFilter', aggFunc: 'sum',
+        valueFormatter: params => {
+          if (params.data !== undefined) {
+            return this.format_currency(params.data.distribution_amount_number, params.data.fund_currency)
+          }
+        },
+      },
+      { "field": "dt_actions", cellRenderer: this.html, headerName: "Actions" }
     ];
-   
-    
+
+
     // let the grid know which columns and what data to use
     this.gridOptions = {
       columnDefs: columnDefs,
       rowHeight: 60,
       defaultColDef: {
         flex: 1,
-        minWidth: 150,
+        resizable: true,
         filter: 'agTextColumnFilter',
         sortable: true,
       },
@@ -84,21 +122,25 @@ export default class extends Controller {
       sideBar: 'columns',
 
     };
-    
+
     // setup the grid after the page has finished loading
     var gridDiv = document.querySelector('#capital_commitments');
     new agGrid.Grid(gridDiv, this.gridOptions);
     // this.setWidthAndHeight("100%");
 
 
-    fetch("/capital_commitments.json")
-   .then(response => response.json())
-   .then(data => {
+   this.loadData();
+
+  }
+
+  loadData() {
+    fetch($(this.tableNameValue).data('source'))
+    .then(response => response.json())
+    .then(data => {
       // load fetched data into grid
-      this.gridOptions.api.setRowData(data.data);
+      this.gridOptions.api.setRowData(data);
       console.log(data.data);
     });
-
   }
 
   setWidthAndHeight(size) {

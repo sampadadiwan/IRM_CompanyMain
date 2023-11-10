@@ -20,7 +20,7 @@ class CapitalCommitmentsController < ApplicationController
     respond_to do |format|
       format.html
       format.xlsx
-      format.json { render json: CapitalCommitmentDatatable.new(params, capital_commitments: @capital_commitments) }
+      format.json # { render json: CapitalCommitmentDatatable.new(params, capital_commitments: @capital_commitments) }
     end
   end
 
