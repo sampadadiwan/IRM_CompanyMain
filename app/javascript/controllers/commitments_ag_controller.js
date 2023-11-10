@@ -124,6 +124,7 @@ export default class extends Controller {
         resizable: true,
         filter: 'agTextColumnFilter',
         sortable: true,
+        minWidth: 120,
       },
       enableRangeSelection: true,
       enableCharts: true,
@@ -194,8 +195,13 @@ export default class extends Controller {
         const value = params.value;
         console.log(params);
         function extract_text_from_html(html_text) {
-          let ret_val = html_text.replace(/<\/?[^>]+(>|$)/g, "");
-          return ret_val
+          console.log(html_text);
+          if (typeof html_text === 'string' || html_text instanceof String) {
+            let ret_val = html_text.replace(/<\/?[^>]+(>|$)/g, "");
+            return ret_val
+          } else {
+            return html_text;
+          }
         }
 
         return value === undefined ? '' : extract_text_from_html(value) //`_${value}_`
