@@ -20,7 +20,7 @@ class CapitalRemittanceDocJob < ApplicationJob
         # Generate a new signed document
         CapitalRemittanceDocGenerator.new(@capital_remittance, fund_doc_template, user_id)
       rescue StandardError => e
-        send_notification("Error generating #{fund_doc_template.name} for fund #{@fund_name}, for user #{investor_kyc&.full_name}. #{e.message}")
+        send_notification("Error generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@capital_remittance.investor_name}. #{e.message}")
       end
     end
 
