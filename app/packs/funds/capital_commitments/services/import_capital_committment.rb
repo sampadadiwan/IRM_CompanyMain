@@ -54,7 +54,7 @@ class ImportCapitalCommittment < ImportUtil
 
       capital_commitment.folio_committed_amount = user_data["Committed Amount"].to_d
 
-      kyc_full_name = user_data["KYC Full Name"].strip
+      kyc_full_name = user_data["KYC Full Name"]&.strip
       capital_commitment.investor_kyc = if kyc_full_name.present?
                                           fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
                                         else
