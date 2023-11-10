@@ -13,21 +13,54 @@ export default class extends Controller {
     let ret_val = Number(str_num.replace(/[^0-9.-]+/g,""));
     return ret_val
   }
+
+  extract_text_from_html(html_text) {
+    let ret_val = html_text.replace(/<\/?[^>]+(>|$)/g, "");
+    return ret_val
+  }
   
 
   init() {
 
     let columnDefs = [
       {"field": "commitment_type", headerName: "Type", filter: "agSetColumnFilter", enableRowGroup: true},
-      {field: "folio_id", cellRenderer: this.html, headerName: "Folio"},
-      {"field": "investor_name", cellRenderer: this.html, headerName: "Investor", chartDataType: 'category'},
+      {field: "folio_id", cellRenderer: this.html, headerName: "Folio", 
+        cellRenderer: function(params){
+          return params.data.folio_id;
+        },
+        valueGetter: (params) => { return this.extract_text_from_html(params.data.folio_id) }
+      },
+      {"field": "investor_name", cellRenderer: this.html, 
+        headerName: "Investor", chartDataType: 'category', 
+        cellRenderer: function(params){
+          return params.data.investor_name;
+        },
+        valueGetter: (params) => { return this.extract_text_from_html(params.data.investor_name) }
+      },
       {"field": "full_name", cellRenderer: this.html, headerName: "Name"},
       {"field": "unit_type", headerName: "Unit Type", sortable: true, filter: "agSetColumnFilter", chartDataType: 'category', enableRowGroup: true, enablePivot: true },
-      {"field": "committed_amount", headerName: "Committed", sortable: true, filter: 'agNumberColumnFilter', aggFunc: 'sum', valueGetter: (params) => { return parseInt(params.data.committed_amount) }},
+      {
+        field: "committed_amount", headerName: "Committed", 
+        sortable: true, filter: 'agNumberColumnFilter', aggFunc: 'sum', 
+        valueFormatter: params => params.data.committed_amount,
+        valueGetter: (params) => { return this.extract_number(params.data.committed_amount) }
+      },
       {"field": "percentage", headerName: "%", sortable: true, filter: 'agNumberColumnFilter', chartDataType: "series", aggFunc: 'sum', valueGetter: (params) => { return parseInt(params.data.percentage) }},
-      {"field": "call_amount", headerName: "Called", sortable: true, filter: 'agNumberColumnFilter', filterValueGetter: (params) => { return this.extract_number(params.data.call_amount) }},
-      {"field": "collected_amount", headerName: "Collected", sortable: true, filter: 'agNumberColumnFilter', filterValueGetter: (params) => { return this.extract_number(params.data.collected_amount) }},
-      {"field": "distribution_amount", headerName: "Distributed", sortable: true, filter: 'agNumberColumnFilter', filterValueGetter: (params) => { return this.extract_number(params.data.distribution_amount) }},          
+      {"field": "call_amount", headerName: "Called", sortable: true, filter: 'agNumberColumnFilter', 
+        filterValueGetter: (params) => { return this.extract_number(params.data.call_amount) },
+        valueFormatter: params => params.data.call_amount,
+        valueGetter: (params) => { return this.extract_number(params.data.call_amount) }
+      },
+      {"field": "collected_amount", headerName: "Collected", sortable: true, filter: 'agNumberColumnFilter', 
+        filterValueGetter: (params) => { return this.extract_number(params.data.collected_amount) },
+        valueFormatter: params => params.data.collected_amount,
+        valueGetter: (params) => { return this.extract_number(params.data.collected_amount) }
+      },
+      {"field": "distribution_amount", headerName: "Distributed", sortable: true, filter: 'agNumberColumnFilter', 
+        filterValueGetter: (params) => { return this.extract_number(params.data.distribution_amount) },
+        valueFormatter: params => params.data.distribution_amount,
+        valueGetter: (params) => { return this.extract_number(params.data.distribution_amount) }
+      },          
       {"field": "dt_actions", cellRenderer: this.html, headerName: "Actions"}
     ];
    

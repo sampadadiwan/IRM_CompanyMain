@@ -29,7 +29,7 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
         investor_name: record.decorate.investor_link,
         full_name: record.decorate.full_name_link,
         fund_name: record.decorate.fund_link,
-        committed_amount: record.committed_amount.to_d,
+        committed_amount: record.decorate.money_to_currency(record.committed_amount, params),
         collected_amount: record.decorate.money_to_currency(record.collected_amount, params),
         call_amount: record.decorate.money_to_currency(record.call_amount, params),
         distribution_amount: record.decorate.money_to_currency(record.distribution_amount, params),
