@@ -12,9 +12,9 @@ export default class extends Controller {
   connect() {
     console.log("Hello from commitments_ag_controller.js");
     console.log(`Datatable setup for ${this.tableNameValue}`);
-    
+
     console.log(`lazyLoadDataValue = ${this.lazyLoadDataValue}`)
-    if(this.lazyLoadDataValue == "false") {
+    if (this.lazyLoadDataValue == "false") {
       this.init();
     }
   }
@@ -40,17 +40,29 @@ export default class extends Controller {
       {
         field: "folio_id", cellRenderer: this.html, headerName: "Folio", enableRowGroup: true, enablePivot: true,
         cellRenderer: function (params) {
-          return params.data.folio_link;
+          if (params.data !== undefined) {
+            return params.data.folio_link;
+          }
         },
-        valueGetter: (params) => { return params.data.folio_id }
+        valueGetter: (params) => { 
+          if (params.data !== undefined) {
+            return params.data.folio_id 
+          }
+        }
       },
       {
         "field": "investor_link", cellRenderer: this.html,
         headerName: "Investor", chartDataType: 'category', enableRowGroup: true, enablePivot: true,
         cellRenderer: function (params) {
-          return params.data.investor_link;
+          if (params.data !== undefined) {
+            return params.data.investor_link;
+          }
         },
-        valueGetter: (params) => { return params.data.investor_name }
+        valueGetter: (params) => { 
+          if (params.data !== undefined) {
+            return params.data.investor_name 
+          }
+        },
       },
       { "field": "full_name", cellRenderer: this.html, headerName: "Name" },
       { "field": "unit_type", headerName: "Unit Type", sortable: true, filter: "agSetColumnFilter", chartDataType: 'category', enableRowGroup: true, enablePivot: true },
@@ -119,7 +131,31 @@ export default class extends Controller {
       suppressDragLeaveHidesColumns: true,
       suppressMakeColumnVisibleAfterUnGroup: true,
       suppressRowGroupHidesColumns: true,
-      sideBar: 'columns',
+      sideBar: {
+        toolPanels: [
+          {
+            id: 'columns',
+            labelDefault: 'Columns',
+            labelKey: 'columns',
+            iconKey: 'columns',
+            toolPanel: 'agColumnsToolPanel',
+            toolPanelParams: {
+              // suppressValues: true,
+              // suppressPivots: true,
+              // suppressPivotMode: true,
+              // suppressRowGroups: false
+            }
+          },
+          {
+            id: 'filters',
+            labelDefault: 'Filters',
+            labelKey: 'filters',
+            iconKey: 'filter',
+            toolPanel: 'agFiltersToolPanel',
+          }
+        ],
+        defaultToolPanel: ''
+      }
 
     };
 
@@ -128,19 +164,18 @@ export default class extends Controller {
     new agGrid.Grid(gridDiv, this.gridOptions);
     // this.setWidthAndHeight("100%");
 
-
-   this.loadData();
+    this.loadData();
 
   }
 
   loadData() {
     fetch($(this.tableNameValue).data('source'))
-    .then(response => response.json())
-    .then(data => {
-      // load fetched data into grid
-      this.gridOptions.api.setRowData(data);
-      console.log(data.data);
-    });
+      .then(response => response.json())
+      .then(data => {
+        // load fetched data into grid
+        this.gridOptions.api.setRowData(data);
+        console.log(data.data);
+      });
   }
 
   setWidthAndHeight(size) {
