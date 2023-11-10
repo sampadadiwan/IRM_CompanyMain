@@ -14,6 +14,7 @@ class ImportUpload < ApplicationRecord
               "FUND_DOCS_SAMPLE" => "/sample_uploads/import_fund_docs.zip",
               "FUND_INVESTOR_ADVISORS_SAMPLE" => "/sample_uploads/investor_advisors.xlsx",
               "PORTFOLIO_SAMPLE" => "/sample_uploads/portfolio_investments.xlsx",
+              "PORTFOLIO_INCOME_SAMPLE" => "/sample_uploads/portfolio_income.xlsx",
               "VALUATION_SAMPLE" => "/sample_uploads/valuations.xlsx",
               "INVESTOR_KYCS_DOCS_SAMPLE" => "/sample_uploads/import_kyc_docs.zip",
               "DOCS_SAMPLE" => "/sample_uploads/documents_upload.zip",
@@ -23,7 +24,7 @@ class ImportUpload < ApplicationRecord
               "ACCOUNT_ENTRY_SAMPLE" => "/sample_uploads/account_entries.xlsx",
               "KPIS_SAMPLE" => "/sample_uploads/kpis.xlsx" }.freeze
 
-  TYPES = %w[InvestorAccess Investor CapitalCommittment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment Valuation FundDocs FundUnitSetting AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData Kpi KycDocs].sort.freeze
+  TYPES = %w[InvestorAccess Investor CapitalCommittment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData Kpi KycDocs].sort.freeze
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true

@@ -71,7 +71,7 @@ class ImportCapitalCommittment < ImportUtil
         capital_commitment.run_callbacks(:save) { false }
         capital_commitment.run_callbacks(:create) { false }
         @commitments << capital_commitment
-        
+
         msg += " Success"
         [true, msg]
       else
