@@ -123,7 +123,7 @@ class Investor < ApplicationRecord
     unless is_holdings_entity
       self.last_interaction_date ||= Time.zone.today - 10.years
       # Ensure we have a PAN, even if its a Dummy one
-      self.pan = (pan.presence || "Dummy-#{entity_id}-#{Time.now.to_f * 1000}-#{rand(10)}")
+      self.pan = (pan.presence || "D-#{entity_id}-#{Time.now.to_f * 1000}-#{rand(10)}")
       # Ensure we have an investor entity
       e = pan ? Entity.where(pan: pan.strip).first : investor_entity
 

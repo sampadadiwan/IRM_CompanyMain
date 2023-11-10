@@ -17,6 +17,7 @@ gem "mysql2", "~> 0.5"
 gem "json2table"
 gem 'mail-logger'
 gem "noticed"
+gem 'yajl-ruby', require: 'yajl'
 
 # To convert Doc into PDF
 gem 'libreconv'

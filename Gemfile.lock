@@ -818,6 +818,7 @@ GEM
     wisper (2.0.1)
     xpath (3.2.0)
       nokogiri (~> 1.8)
+    yajl-ruby (1.4.3)
     zeitwerk (2.6.12)
 
 PLATFORMS
@@ -933,6 +934,7 @@ DEPENDENCIES
   webdrivers
   whenever
   xirr!
+  yajl-ruby
 
 RUBY VERSION
    ruby 3.1.2p20
