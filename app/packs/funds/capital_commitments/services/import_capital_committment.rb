@@ -1,5 +1,5 @@
 class ImportCapitalCommittment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type", "Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type", "Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of", "KYC Full Name"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -53,7 +53,13 @@ class ImportCapitalCommittment < ImportUtil
                                                  folio_currency:, unit_type:, notes: user_data["Notes"])
 
       capital_commitment.folio_committed_amount = user_data["Committed Amount"].to_d
-      capital_commitment.investor_kyc = fund.entity.investor_kycs.where(investor_id: investor.id).last
+
+      kyc_full_name = user_data["KYC Full Name"].strip
+      capital_commitment.investor_kyc = if kyc_full_name.present?
+                                          fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
+                                        else
+                                          fund.entity.investor_kycs.where(investor_id: investor.id).last
+                                        end
 
       setup_custom_fields(user_data, capital_commitment, custom_field_headers)
       setup_exchange_rate(capital_commitment, user_data) if capital_commitment.foreign_currency?

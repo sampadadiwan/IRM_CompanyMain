@@ -16,8 +16,12 @@ class Entity < ApplicationRecord
   validates_uniqueness_of :name, scope: :pan
 
   validates :name, length: { maximum: 255 }
+  normalizes :name, with: ->(name) { name.strip }
+
   validates :entity_type, length: { maximum: 25 }
   validates :currency, length: { maximum: 10 }
+  validates :pan, length: { maximum: 40 }
+  normalizes :pan, with: ->(pan) { pan&.strip }
 
   has_rich_text :details
   belongs_to :parent_entity, class_name: "Entity", optional: true
@@ -115,8 +119,6 @@ class Entity < ApplicationRecord
   scope :family_offices, -> { where(entity_type: "Family Office") }
   scope :funds, -> { where(entity_type: "Investment Fund") }
   scope :user_investor_entities, ->(user) { where('access_rights.access_to': user.email).includes(:access_rights) }
-
-  validates :pan, length: { maximum: 30 }
 
   before_save :check_url, :scrub_defaults
   def check_url
