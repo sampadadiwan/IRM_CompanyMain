@@ -1,46 +1,44 @@
-
 <tr id="entity_<%= entity.id %>">
-    
-    <td>
-        <%= entity.name %>
-    </td>  
-    <td class="hideMobP">
-        <%= entity.category %>
-    </td>  
-    <td>
-        <%= entity.entity_type %>
-    </td>  
-    <td>
-        <% if !vc_view %>
-            <%= link_to "Documents", documents_path(entity_id: entity.id) , {class: "btn btn-outline-primary"}%>
-            <%= link_to "Investments", investments_path(entity_id: entity.id) , {class: "btn btn-outline-success"}%>
-        <% else %>
+  <td>
+    <%= entity.name %>
+  </td>
+  <td class="hideMobP">
+    <%= entity.category %>
+  </td>
+  <td>
+    <%= entity.entity_type %>
+  </td>
+  <td>
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-outline-success dropdown-toggle" type="button"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Actions
+        </button>
+        
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          <% if !vc_view %>
+            <%= link_to "Documents", documents_path(entity_id: entity.id) , {class: "dropdown-item"}%>
+            <%= link_to "Investments", investments_path(entity_id: entity.id) , {class: "dropdown-item"}%>
+          <% else %>
             <% hide_fund_docs = current_user.investor_advisor? %>
-            <%= link_to "Documents", investor_documents_path(entity_id: entity.id, hide_fund_docs:) , {class: "btn btn-outline-primary"}%>
-
+            <%= link_to "Documents", investor_documents_path(entity_id: entity.id, hide_fund_docs:) , {class: "dropdown-item"}%>
             <%= link_to "Tasks", tasks_path(entity_id: entity.id) , 
-                    {id: "tasks_#{entity.id}", class: "btn btn-outline-primary"}%>
-
-
+                    {id: "tasks_#{entity.id}", class: "dropdown-item"}%>
             <%= link_to "Investments", dashboard_entities_path(entity_id: entity.id, dashboard: "investor_dashboard") , 
-                    {id: "investments_entity_#{entity.id}", class: "btn btn-outline-success"} if current_user.enable_investments && entity.entity_type != "Investment Fund" %>
-
-            
+                    {id: "investments_entity_#{entity.id}", class: "dropdown-item"} if current_user.enable_investments && entity.entity_type != "Investment Fund" %>
             <%= link_to "Kpis", kpi_reports_path(entity_id: entity.id, grid_view: true), 
-                    {id: "kpis_#{entity.id}", class: "btn btn-outline-success"} if entity.enable_kpis %>
-
+                    {id: "kpis_#{entity.id}", class: "dropdown-item"} if entity.enable_kpis %>
             <%= link_to "Approvals", approvals_path(entity_id: entity.id), 
-                    {id: "approvals_#{entity.id}", class: "btn btn-outline-success"} %>
-
+                    {id: "approvals_#{entity.id}", class: "dropdown-item"} %>
             <%= link_to "Investment Opportunities", investment_opportunities_path(entity_id: entity.id) , 
-                    {id: "io_#{entity.id}", class: "btn btn-outline-success"} if entity.entity_type == "Investment Fund" && entity.enable_inv_opportunities %>
-
+                    {id: "io_#{entity.id}", class: "dropdown-item"} if entity.entity_type == "Investment Fund" && entity.enable_inv_opportunities %>
             <%= link_to "Funds", funds_path(entity_id: entity.id) , 
-                    {id: "funds_#{entity.id}", class: "btn btn-outline-success"} if entity.entity_type == "Investment Fund" && entity.enable_funds %>
-
+                    {id: "funds_#{entity.id}", class: "dropdown-item"} if entity.entity_type == "Investment Fund" && entity.enable_funds %>
             <%= link_to "Deals", deal_investors_path(entity_id: entity.id) , 
-                    {id: "deal_investors_#{entity.id}", class: "btn btn-outline-success"} if entity.enable_deals %>
-        <% end %>
-    </td>  
-
-</tr>
+                    {id: "deal_investors_#{entity.id}", class: "dropdown-item"} if entity.enable_deals %>
+          <% end %>
+        </div>
+      </div>
+    </td>
+  </tr>

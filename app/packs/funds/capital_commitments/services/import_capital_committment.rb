@@ -34,7 +34,7 @@ class ImportCapitalCommittment < ImportUtil
 
   def save_capital_commitment(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing capital_commitment #{user_data}" }
-
+    msg = ""
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
@@ -54,9 +54,11 @@ class ImportCapitalCommittment < ImportUtil
 
       capital_commitment.folio_committed_amount = user_data["Committed Amount"].to_d
 
-      kyc_full_name = user_data["KYC Full Name"].strip
+      kyc_full_name = user_data["KYC Full Name"]&.strip
       capital_commitment.investor_kyc = if kyc_full_name.present?
-                                          fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
+                                          kyc = fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
+                                          msg += " Kyc not found for #{kyc_full_name}"
+                                          kyc
                                         else
                                           fund.entity.investor_kycs.where(investor_id: investor.id).last
                                         end
@@ -70,7 +72,8 @@ class ImportCapitalCommittment < ImportUtil
         capital_commitment.run_callbacks(:create) { false }
         @commitments << capital_commitment
 
-        [true, "Success"]
+        msg += " Success"
+        [true, msg]
       else
         Rails.logger.debug { "Could not save commitment: #{error_message}" }
         [false, error_message]

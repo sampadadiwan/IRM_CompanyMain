@@ -1,0 +1,45 @@
+<% fund ||= nil; %>
+
+<%= render "/capital_commitments/index_header", fund: fund, title: "Fund Commitments" %>
+
+<div class="table-responsive">
+
+  <table id="capital_commitments" class="table table-bordered dataTable action_table jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Entity
+        </th>
+        <th>
+          Fund
+        </th>
+        <th>
+          Folio No
+        </th>
+        <th class="hideMobP">
+          KYC Name
+        </th>        
+        <th>
+          Committed
+        </th>
+        <th class="hideMobP">
+          Called
+        </th>
+        <th class="hideMobP">
+          Collected
+        </th>
+        <th class="hideMobP">
+          Distributed
+        </th>
+        <th class="hideMobP">
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% capital_commitments.each do |capital_commitment| %>
+        <%= render partial: "capital_commitments/investor_capital_commitment", locals: {capital_commitment: capital_commitment} %>
+      <% end %>
+    </tbody>
+  </table>
+  
+</div>
