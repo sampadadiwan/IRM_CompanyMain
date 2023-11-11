@@ -1,14 +1,17 @@
 <% fund ||= nil; cols ||= params[:cols] %>
 <% data_source ||= capital_commitments_path(params, format: :json, all: true) %>
 <% lazy_load_data ||= false %>
+
 <%= render "/capital_commitments/index_header", fund: fund %>
 
-<div data-controller="commitments-ag" data-commitments-ag-lazy-load-data-value=<%= lazy_load_data %> data-commitments-ag-table-name-value="#capital_commitments">
+<div data-controller="commitments-ag" data-commitments-ag-lazy-load-data-value=<%= lazy_load_data %> data-commitments-ag-table-name-value="#capital_commitments" style="height:100%; display: flex;">
 
-  <div id="capital_commitments" style="height: 300px; width:100%;" class="ag-theme-alpine" data-source="<%= data_source %>">
-    <button data-action="click->commitments-ag#exportToXL" class="btn btn-outline-success">
+  <div id="capital_commitments" style="height:100%; width:100%;" class="ag-theme-alpine" data-source="<%= data_source %>">
+    
+    <!-- button data-action="click->commitments-ag#exportToXL" class="btn btn-outline-success">
       Export to Excel
-    </button>
+    </button -->
+
   </div>
 
 

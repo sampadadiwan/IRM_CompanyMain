@@ -162,8 +162,7 @@ export default class extends Controller {
 
     // setup the grid after the page has finished loading
     var gridDiv = document.querySelector('#capital_commitments');
-    new agGrid.Grid(gridDiv, this.gridOptions);
-    // this.setWidthAndHeight("100%");
+    new agGrid.Grid(gridDiv, this.gridOptions);    
 
     this.loadData();
 
@@ -176,6 +175,7 @@ export default class extends Controller {
         // load fetched data into grid
         this.gridOptions.api.setRowData(data);
         console.log(data.data);
+        this.setWidthAndHeight("100%");
       });
   }
 
