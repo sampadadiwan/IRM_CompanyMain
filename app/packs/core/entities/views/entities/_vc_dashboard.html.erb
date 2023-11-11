@@ -7,11 +7,11 @@
 
         <% if current_user.enable_funds %>
             <div class="associated_entity">
-                <%= render "/funds/fund_investor_stats" %>
+                <%#= render "/funds/fund_investor_stats" %>
             </div>
             <div class="associated_entity">
                 <% capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc) %>
-                <%= render "/funds/investor_charts", capital_commitments: capital_commitments %>
+                <%#= render "/funds/investor_charts", capital_commitments: capital_commitments %>
                 <%= render "/capital_commitments/investor_index",  
                     capital_commitments: capital_commitments  %>
             </div>
