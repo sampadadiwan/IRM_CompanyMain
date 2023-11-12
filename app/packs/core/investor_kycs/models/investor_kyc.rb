@@ -179,4 +179,8 @@ class InvestorKyc < ApplicationRecord
     # Find all the committments this kyc is tied to
     entity.fund_units.joins(capital_commitment: :investor_kyc).where("investor_kycs.id=?", id).sum(:quantity)
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[PAN address bank_account_number full_name]
+  end
 end

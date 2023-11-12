@@ -138,4 +138,8 @@ class Fund < ApplicationRecord
     end
     ccs_wihout_ar
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[name currency category sub_category tag_list]
+  end
 end

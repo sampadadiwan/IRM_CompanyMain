@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_11_02_101644) do
+ActiveRecord::Schema[7.1].define(version: 2023_11_07_175823) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -638,6 +638,58 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_02_101644) do
     t.index ["form_type_id"], name: "index_capital_remittances_on_form_type_id"
     t.index ["fund_id"], name: "index_capital_remittances_on_fund_id"
     t.index ["investor_id"], name: "index_capital_remittances_on_investor_id"
+  end
+
+  create_table "ci_profiles", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id"
+    t.string "title"
+    t.string "geography", limit: 50
+    t.string "stage", limit: 50
+    t.string "sector", limit: 50
+    t.decimal "fund_size_cents", precision: 20, scale: 2
+    t.decimal "min_investment_cents", precision: 20, scale: 2
+    t.string "status"
+    t.string "currency", limit: 3
+    t.text "details"
+    t.bigint "form_type_id"
+    t.text "properties"
+    t.text "track_record"
+    t.bigint "document_folder_id"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_ci_profiles_on_deleted_at"
+    t.index ["entity_id"], name: "index_ci_profiles_on_entity_id"
+    t.index ["fund_id"], name: "index_ci_profiles_on_fund_id"
+  end
+
+  create_table "ci_track_records", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "ci_profile_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "name", limit: 50
+    t.decimal "value", precision: 10
+    t.string "prefix", limit: 5
+    t.string "suffix", limit: 5
+    t.string "details"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ci_profile_id"], name: "index_ci_track_records_on_ci_profile_id"
+    t.index ["entity_id"], name: "index_ci_track_records_on_entity_id"
+  end
+
+  create_table "ci_widgets", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "ci_profile_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "title"
+    t.text "details"
+    t.string "url"
+    t.string "image_placement", limit: 6, default: "left"
+    t.text "image_data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ci_profile_id"], name: "index_ci_widgets_on_ci_profile_id"
+    t.index ["entity_id"], name: "index_ci_widgets_on_entity_id"
   end
 
   create_table "commitment_adjustments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2067,6 +2119,19 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_02_101644) do
     t.index ["owner_type", "owner_id"], name: "index_reminders_on_owner"
   end
 
+  create_table "reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id"
+    t.bigint "user_id", null: false
+    t.string "name"
+    t.string "category", limit: 20
+    t.text "description"
+    t.text "url"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_reports_on_entity_id"
+    t.index ["user_id"], name: "index_reports_on_user_id"
+  end
+
   create_table "roles", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name"
     t.string "resource_type"
@@ -2478,6 +2543,12 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_02_101644) do
   add_foreign_key "capital_remittances", "folders", column: "document_folder_id"
   add_foreign_key "capital_remittances", "funds"
   add_foreign_key "capital_remittances", "investors"
+  add_foreign_key "ci_profiles", "entities"
+  add_foreign_key "ci_profiles", "funds"
+  add_foreign_key "ci_track_records", "ci_profiles"
+  add_foreign_key "ci_track_records", "entities"
+  add_foreign_key "ci_widgets", "ci_profiles"
+  add_foreign_key "ci_widgets", "entities"
   add_foreign_key "commitment_adjustments", "capital_commitments"
   add_foreign_key "commitment_adjustments", "entities"
   add_foreign_key "commitment_adjustments", "exchange_rates"
@@ -2643,6 +2714,8 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_02_101644) do
   add_foreign_key "portfolio_scenarios", "funds"
   add_foreign_key "portfolio_scenarios", "users"
   add_foreign_key "reminders", "entities"
+  add_foreign_key "reports", "entities"
+  add_foreign_key "reports", "users"
   add_foreign_key "scenario_investments", "entities"
   add_foreign_key "scenario_investments", "funds"
   add_foreign_key "scenario_investments", "investors", column: "portfolio_company_id"

@@ -1,0 +1,66 @@
+<% fund ||= nil; cols ||= params[:cols] %>
+
+
+<div class="table-responsive">
+
+  <% col_set = column_set(current_user, cols) %>
+  <%= custom_columns(current_user, cols) %>
+
+  <table id="capital_commitments" class="table table-bordered dataTable action_table">
+    <thead>
+      <tr>
+        <% if col_set == "all" %>
+          <th>
+            Fund
+          </th>
+        <% end %>
+        <th>
+          <%= sort_link(@q, :commitment_type, "Type") %>
+        </th>
+        <th>
+          <%= sort_link(@q, :folio_id, "Folio No") %>          
+        </th>
+        <th>
+          <%= sort_link(@q, :investor_name, "Investor") %>                    
+        </th>
+        <th>
+          Full Name
+        </th>
+        <th>
+          Unit Type
+        </th>
+        <th>
+          Committed
+        </th>
+        <th>
+          Percentage
+        </th>
+        <th>
+          Called
+        </th>
+        <th>
+          Collected
+        </th>
+        <th>
+          Distributed
+        </th>
+        <% if params[:show_docs].present? %>
+          <input id="show_docs" value="true" hidden>
+          <th>
+            Documents
+          </th>
+        <% end %>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+        <% capital_commitments.each do |capital_commitment| %>
+            <%= render "/capital_commitments/capital_commitment", capital_commitment: capital_commitment, fund: fund, col_set: col_set %>
+        <% end %>
+    </tbody>
+  </table>
+  
+</div>
+
+<%= paginate capital_commitments %>

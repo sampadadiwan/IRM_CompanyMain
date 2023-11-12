@@ -888,3 +888,16 @@ select {
 .font-weight-bold {
   font-weight: 700 !important;
 }
+
+.sort_link  {
+  color: white;
+  text-decoration: none;
+}
+
+.filter_form {
+  .col, .action {
+    margin: 10px;
+  }
+
+  margin-bottom: 10px;
+}

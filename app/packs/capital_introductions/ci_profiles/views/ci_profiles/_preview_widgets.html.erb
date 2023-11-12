@@ -1,0 +1,42 @@
+<div class="associated_entity">
+    <% ci_profile.ci_widgets.each do |widget| %>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h3 class="m-0 font-weight-bold text-primary">
+                <%= widget.title %></h3>
+            </div>
+            <% if widget.image_placement == "Left" %>
+                <div class="card-body lead row">
+                    <% if widget.image.present? %>
+                        <div class="col-lg-5 mb-4 notice_image_div">
+                            <img class="center notice_image" src=<%=widget.image.url%> />
+                        </div>
+                    <% end %>
+                    <div class="col-lg-7 mb-4">
+                        <% if widget.details.present? %>
+                            <%=  widget.details.html_safe %>
+                        <% end %>
+                    </div>
+                </div>
+            <% else widget.image_placement == "Right" %>
+                <div class="card-body lead row">
+                    <div class="col-lg-7 mb-4">
+                        <% if widget.details.present? %>
+                            <%=  widget.details.html_safe %>
+                        <% end %>
+                    </div>
+                    <% if widget.image.present? %>
+                        <div class="col-lg-5 mb-4 notice_image_div">
+                            <img class="center notice_image" src=<%=widget.image.url%> />
+                        </div>
+                    <% end %>
+                </div>
+            <% end %>
+        </div>
+
+
+    <% end %>
+</div>
+
+

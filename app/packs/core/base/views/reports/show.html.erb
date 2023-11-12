@@ -1,0 +1,57 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @report.entity_id %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      User
+    </td>
+    <td>
+      <%= @report.user_id %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Name
+    </td>
+    <td>
+      <%= link_to @report.name, @report.url %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Category
+    </td>
+    <td>
+      <%= @report.category %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Description
+    </td>
+    <td>
+      <%= @report.description %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Url
+    </td>
+    <td>
+      <%= @report.url %>
+    </td>
+  </tr>
+</table>
+<div>
+  <% if policy(@report).edit? %>
+    <%= link_to "Edit", edit_report_path(@report), {class: "btn btn-outline-primary"} %>
+    <%= button_to "Delete", @report, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <% end %>
+</div>

@@ -1,0 +1,20 @@
+<tr id="<%= dom_id ci_widget %>">
+  <td>
+    <%= ci_widget.ci_profile_id %>
+  </td>
+  <td>
+    <%= ci_widget.entity_id %>
+  </td>
+  <td>
+    <%= ci_widget.title %>
+  </td>
+  <td>
+    <%= ci_widget.details&.html_safe %>
+  </td>
+  <td>
+    <%= ci_widget.url %>
+  </td>
+  <td>
+    <%= link_to "Show", ci_widget , {class: "btn btn-outline-primary"}%>
+  </td>
+</tr>

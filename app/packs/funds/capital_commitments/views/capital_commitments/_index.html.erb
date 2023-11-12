@@ -1,6 +1,6 @@
 <% fund ||= nil; cols ||= params[:cols] %>
 
-<% data_source ||= capital_commitments_path(params, format: :json, all: true) %>
+<% data_source ||= capital_commitments_path(q: params.to_unsafe_h[:q], format: :json, all: true) %>
 <% lazy_load_data ||= false %>
 <%= render "/capital_commitments/index_header", fund: fund %>
 
