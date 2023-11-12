@@ -79,7 +79,6 @@ class ImportCapitalCommittment < ImportUtil
     kyc_full_name = user_data["KYC Full Name"]&.strip
     if kyc_full_name.present?
       fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
-
     else
       fund.entity.investor_kycs.where(investor_id: investor.id).last
     end
