@@ -1,10 +1,11 @@
-class CiProfilePolicy < ApplicationPolicy
+class CiProfilePolicy < FundBasePolicy
   def index?
     true
   end
 
   def show?
-    belongs_to_entity?(user, record)
+    permissioned_employee? ||
+      permissioned_investor?
   end
 
   def create?
@@ -12,11 +13,11 @@ class CiProfilePolicy < ApplicationPolicy
   end
 
   def new?
-    create?
+    permissioned_employee?(:create)
   end
 
   def update?
-    create?
+    permissioned_employee?(:update)
   end
 
   def edit?
@@ -24,6 +25,6 @@ class CiProfilePolicy < ApplicationPolicy
   end
 
   def destroy?
-    update?
+    Rails.env.test? ? permissioned_employee?(:destroy) : super_user?
   end
 end

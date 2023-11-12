@@ -2,6 +2,7 @@ class CiProfile < ApplicationRecord
   include WithFolder
   include WithCustomField
   include Trackable
+  include ForInvestor
 
   serialize :track_record, type: Hash
 
@@ -10,6 +11,7 @@ class CiProfile < ApplicationRecord
 
   has_many :ci_widgets, dependent: :destroy
   has_many :ci_track_records, dependent: :destroy
+  has_many :access_rights, as: :owner, dependent: :destroy
 
   monetize :fund_size_cents, :min_investment_cents, with_model_currency: ->(i) { i.currency }
 
@@ -22,6 +24,10 @@ class CiProfile < ApplicationRecord
   end
 
   def to_s
+    title
+  end
+
+  def name
     title
   end
 end

@@ -37,51 +37,51 @@ class ImportCapitalCommittment < ImportUtil
     msg = ""
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
+    raise "Fund not found" unless fund
+
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
+    raise "Investor not found" unless investor
 
     folio_id, unit_type, commitment_type, commitment_date, folio_currency, onboarding_completed = get_params(user_data)
 
     # binding.pry
 
-    if fund && investor
-      # Make the capital_commitment
-      capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
-                                                 fund_close: user_data["Fund Close"].strip,
-                                                 commitment_type:, commitment_date:,
-                                                 onboarding_completed:, imported: true,
-                                                 fund:, investor:, investor_name: investor.investor_name,
-                                                 folio_currency:, unit_type:, notes: user_data["Notes"])
+    # Make the capital_commitment
+    capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
+                                               fund_close: user_data["Fund Close"].strip,
+                                               commitment_type:, commitment_date:,
+                                               onboarding_completed:, imported: true,
+                                               fund:, investor:, investor_name: investor.investor_name,
+                                               folio_currency:, unit_type:, notes: user_data["Notes"])
 
-      capital_commitment.folio_committed_amount = user_data["Committed Amount"].to_d
+    capital_commitment.folio_committed_amount = user_data["Committed Amount"].to_d
 
-      kyc_full_name = user_data["KYC Full Name"]&.strip
-      capital_commitment.investor_kyc = if kyc_full_name.present?
-                                          kyc = fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
-                                          msg += " Kyc not found for #{kyc_full_name}"
-                                          kyc
-                                        else
-                                          fund.entity.investor_kycs.where(investor_id: investor.id).last
-                                        end
+    capital_commitment.investor_kyc = get_kyc(user_data, investor, fund, capital_commitment, msg)
 
-      setup_custom_fields(user_data, capital_commitment, custom_field_headers)
-      setup_exchange_rate(capital_commitment, user_data) if capital_commitment.foreign_currency?
+    setup_custom_fields(user_data, capital_commitment, custom_field_headers)
+    setup_exchange_rate(capital_commitment, user_data) if capital_commitment.foreign_currency?
 
-      valid, error_message = validate(capital_commitment)
-      if valid
-        capital_commitment.run_callbacks(:save) { false }
-        capital_commitment.run_callbacks(:create) { false }
-        @commitments << capital_commitment
+    valid, error_message = validate(capital_commitment)
+    if valid
+      capital_commitment.run_callbacks(:save) { false }
+      capital_commitment.run_callbacks(:create) { false }
+      @commitments << capital_commitment
 
-        msg += " Success"
-        [true, msg]
-      else
-        Rails.logger.debug { "Could not save commitment: #{error_message}" }
-        [false, error_message]
-      end
-    elsif fund
-      [false, "Investor not found"]
+      msg += " Success"
+      [true, msg]
     else
-      [false, "Fund not found"]
+      Rails.logger.debug { "Could not save commitment: #{error_message}" }
+      [false, error_message]
+    end
+  end
+
+  def get_kyc(user_data, investor, fund, _capital_commitment, _msg)
+    kyc_full_name = user_data["KYC Full Name"]&.strip
+    if kyc_full_name.present?
+      fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
+
+    else
+      fund.entity.investor_kycs.where(investor_id: investor.id).last
     end
   end
 
