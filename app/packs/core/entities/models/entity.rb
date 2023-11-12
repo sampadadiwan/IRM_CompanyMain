@@ -3,6 +3,8 @@ class Entity < ApplicationRecord
 
   include Trackable
   include EntityMerge
+  include EntityEnabled
+
   # Make all models searchable
   update_index('entity') { self }
 

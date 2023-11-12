@@ -106,13 +106,11 @@ class InvestorKyc < ApplicationRecord
     VerifyKycBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
   end
 
-  # rubocop:disable Rails/SkipsModelValidations
   after_save :enable_kyc
   def enable_kyc
-    investor.investor_entity.update_column(:enable_kycs, true)
+    investor.investor_entity.enable_kycs = true
+    investor.investor_entity.save
   end
-  # rubocop:enable Rails/SkipsModelValidations
-
   after_create :generate_aml_report, if: ->(inv_kyc) { inv_kyc.full_name.present? }
   after_update_commit :generate_aml_report, if: :full_name_has_changed?
   def generate_aml_report(user_id = nil)

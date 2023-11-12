@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_11_07_175823) do
+ActiveRecord::Schema[7.1].define(version: 2023_11_12_054441) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -668,7 +668,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_07_175823) do
     t.bigint "ci_profile_id", null: false
     t.bigint "entity_id", null: false
     t.string "name", limit: 50
-    t.decimal "value", precision: 10
+    t.decimal "value", precision: 20, scale: 4
     t.string "prefix", limit: 5
     t.string "suffix", limit: 5
     t.string "details"
@@ -914,11 +914,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_07_175823) do
     t.integer "documents_count", default: 0, null: false
     t.decimal "total_investments", precision: 20, default: "0"
     t.boolean "is_holdings_entity", default: false
-    t.boolean "enable_documents", default: false
-    t.boolean "enable_deals", default: false
-    t.boolean "enable_investments", default: false
-    t.boolean "enable_holdings", default: false
-    t.boolean "enable_secondary_sale", default: false
     t.integer "parent_entity_id"
     t.string "currency", limit: 10
     t.integer "tasks_count"
@@ -929,23 +924,29 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_07_175823) do
     t.integer "options", default: 0
     t.boolean "percentage_in_progress", default: false
     t.decimal "per_share_value_cents", precision: 15, scale: 2, default: "0.0"
-    t.boolean "enable_funds", default: false
-    t.boolean "enable_inv_opportunities", default: false
     t.integer "units", default: 0
-    t.boolean "enable_options", default: false
-    t.boolean "enable_captable", default: false
     t.string "sub_domain"
     t.text "logo_data"
     t.boolean "activity_docs_required_for_completion", default: false
     t.boolean "activity_details_required_for_na", default: false
-    t.boolean "enable_investors", default: true
+    t.string "pan", limit: 40
+    t.integer "permissions"
+    t.boolean "enable_documents", default: false
+    t.boolean "enable_deals", default: false
+    t.boolean "enable_investments", default: false
+    t.boolean "enable_holdings", default: false
+    t.boolean "enable_secondary_sale", default: false
+    t.boolean "enable_funds", default: false
+    t.boolean "enable_inv_opportunities", default: false
+    t.boolean "enable_options", default: false
+    t.boolean "enable_captable", default: false
+    t.boolean "enable_investors", default: false
     t.boolean "enable_account_entries", default: false
     t.boolean "enable_units", default: false
     t.boolean "enable_fund_portfolios", default: false
     t.boolean "enable_kpis", default: false
     t.boolean "enable_kycs", default: false
     t.boolean "enable_support", default: false
-    t.string "pan", limit: 30
     t.boolean "enable_approvals", default: false
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name"
@@ -1766,7 +1767,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_07_175823) do
     t.string "tag_list", limit: 120
     t.boolean "imported", default: false
     t.bigint "document_folder_id"
-    t.string "pan", limit: 30
+    t.string "pan", limit: 40
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"

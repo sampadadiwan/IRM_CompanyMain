@@ -755,6 +755,7 @@ FactoryBot.define do
     enable_kycs {true}
     enable_kpis {true}
     enable_approvals {true}
+    enable_investors {true}
     currency { ENV["CURRENCY"].split(",")[rand(3)] }
     units { ENV["CURRENCY_UNITS"].split(",")[rand(3)] }
 
