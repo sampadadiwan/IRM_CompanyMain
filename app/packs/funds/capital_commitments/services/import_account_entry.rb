@@ -114,8 +114,6 @@ class ImportAccountEntry < ImportUtil
     end
 
     # Check for failures - this is bug in the gem, its not returning the errors
-    if results && results.failed_instances.present?
-    end
 
     # Sometimes we import custom fields. Ensure custom fields get created
     @last_saved = import_upload.entity.funds.last.account_entries.last
