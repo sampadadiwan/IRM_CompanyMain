@@ -34,7 +34,6 @@ class ImportCapitalCommittment < ImportUtil
 
   def save_capital_commitment(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing capital_commitment #{user_data}" }
-    msg = ""
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
     raise "Fund not found" unless fund
@@ -56,7 +55,7 @@ class ImportCapitalCommittment < ImportUtil
 
     capital_commitment.folio_committed_amount = user_data["Committed Amount"].to_d
 
-    capital_commitment.investor_kyc = get_kyc(user_data, investor, fund, capital_commitment, msg)
+    capital_commitment.investor_kyc = get_kyc(user_data, investor, fund, capital_commitment)
 
     setup_custom_fields(user_data, capital_commitment, custom_field_headers)
     setup_exchange_rate(capital_commitment, user_data) if capital_commitment.foreign_currency?
@@ -67,18 +66,19 @@ class ImportCapitalCommittment < ImportUtil
       capital_commitment.run_callbacks(:create) { false }
       @commitments << capital_commitment
 
-      msg += " Success"
-      [true, msg]
+      [true, "Success"]
     else
       Rails.logger.debug { "Could not save commitment: #{error_message}" }
       [false, error_message]
     end
   end
 
-  def get_kyc(user_data, investor, fund, _capital_commitment, _msg)
+  def get_kyc(user_data, investor, fund, _capital_commitment)
     kyc_full_name = user_data["KYC Full Name"]&.strip
     if kyc_full_name.present?
-      fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
+      kyc = fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
+      raise "KYC not found" unless kyc
+      kyc
     else
       fund.entity.investor_kycs.where(investor_id: investor.id).last
     end
