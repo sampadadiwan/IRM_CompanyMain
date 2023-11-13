@@ -19,15 +19,15 @@ export default class extends BaseAgGrid {
         }
       },
 
-      { "field": "entry_type", headerName: "Entry Type", filter: "agSetColumnFilter", enableRowGroup: true },
-      { "field": "reporting_date", headerName: "Date", filter: "agSetColumnFilter", enableRowGroup: true },
-      { "field": "period", headerName: "Period", filter: "agSetColumnFilter", enableRowGroup: true },
+      { "field": "entry_type", headerName: "Entry Type", filter: "agSetColumnFilter", enableRowGroup: true, chartDataType: 'category', },
+      { "field": "reporting_date", headerName: "Date", filter: "agSetColumnFilter", enableRowGroup: true, chartDataType: 'category', },
+      { "field": "period", headerName: "Period", filter: "agSetColumnFilter", enableRowGroup: true, chartDataType: 'category', },
       
       {
-        field: "folio_id", headerName: "Folio", enableRowGroup: true, enablePivot: true,
+        field: "folio_id", headerName: "Folio", enableRowGroup: true, enablePivot: true, chartDataType: 'category',
         cellRenderer: function (params) {
           if (params.data !== undefined) {
-            return params.data.folio_link;
+            return params.data.folio_id;
           }
         },
         valueGetter: (params) => { 
