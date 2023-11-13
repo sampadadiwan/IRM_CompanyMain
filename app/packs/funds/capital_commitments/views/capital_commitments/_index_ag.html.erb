@@ -4,19 +4,8 @@
 
 <%= render "/capital_commitments/index_header", fund: fund %>
 
-<div data-controller="commitments-ag" data-commitments-ag-lazy-load-data-value=<%= lazy_load_data %> data-commitments-ag-table-name-value="#capital_commitments" style="height:100%;">
-
-  <div id="capital_commitments" style="width:100%;" class="ag-theme-alpine" data-source="<%= data_source %>">
-    
-    <!-- button data-action="click->commitments-ag#exportToXL" class="btn btn-outline-success">
-      Export to Excel
-    </button -->
-
+<div data-controller="commitments-ag" data-commitments-ag-lazy-load-data-value=<%= lazy_load_data %> data-commitments-ag-table-name-value="#capital_commitments">
+  <div id="capital_commitments" class="ag-theme-alpine" data-source="<%= data_source %>">
   </div>
-
-
-
-  
-
 </div>
 

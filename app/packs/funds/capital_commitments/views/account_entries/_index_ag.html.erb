@@ -1,0 +1,17 @@
+<% fund ||= nil %>        
+<% data_source ||= account_entries_path(params, format: :json, all: true, fund_id: params[:fund_id], fund_account_only: params[:fund_account_only], jbuilder: true) %>    
+<% lazy_load_data ||= false %>
+
+
+<div class="table-responsive">
+
+  <div data-controller="account-entries-ag" data-account-entries-ag-lazy-load-data-value=<%= lazy_load_data %>   
+    data-account-entries-ag-table-name-value="#account_entries">
+    
+    <div id="account_entries" class="ag-theme-alpine" data-source="<%= data_source %>">
+    </div>
+  
+  </div>
+
+
+</div>

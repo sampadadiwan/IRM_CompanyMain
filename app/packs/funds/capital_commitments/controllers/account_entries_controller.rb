@@ -27,7 +27,9 @@ class AccountEntriesController < ApplicationController
     respond_to do |format|
       format.html
       format.xlsx
-      format.json { render json: AccountEntryDatatable.new(params, account_entries: @account_entries) }
+      format.json do
+        render json: AccountEntryDatatable.new(params, account_entries: @account_entries) if params[:jbuilder].blank?
+      end
     end
   end
 

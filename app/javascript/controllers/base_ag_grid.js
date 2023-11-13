@@ -11,7 +11,7 @@ export default class BaseAgGrid extends Controller {
     }
 
     connect() {
-        console.log("connect commitments_ag_controller.js");
+        console.log(`connect AgGrid: ${this.tableNameValue}`);
         console.log(`Datatable setup for ${this.tableNameValue}`);
         console.log(`lazyLoadDataValue = ${this.lazyLoadDataValue}`);
 
@@ -88,9 +88,9 @@ export default class BaseAgGrid extends Controller {
             .then(response => response.json())
             .then(data => {
                 // load fetched data into grid
-                this.gridOptions.api.setRowData(data);
-                console.log(data.data);
-                this.setWidthAndHeight("100%");
+                console.log(`loadData completed from ${$(this.tableNameValue).data('source')}`);
+                console.log(data);
+                this.gridOptions.api.setRowData(data);                
             });
     }
 
