@@ -30,6 +30,7 @@ export default class extends Controller {
   }
 
   format_currency(number, currency) {
+    console.log(`format_currency(${number}, ${currency})`);
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency }).format(number);
   }
 
@@ -70,8 +71,9 @@ export default class extends Controller {
         "field": "committed_amount_number", headerName: "Committed",
         sortable: true, filter: 'agNumberColumnFilter', aggFunc: 'sum',
         valueFormatter: params => {
+          // console.log(params.data.committed_amount_number);
           if (params.data !== undefined) {
-            return this.format_currency(params.data.collected_amount_number, params.data.fund_currency)
+            return this.format_currency(params.data.committed_amount_number, params.data.fund_currency)
           }
         },
       },
