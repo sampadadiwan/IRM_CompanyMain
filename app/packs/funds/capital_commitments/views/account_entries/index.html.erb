@@ -1,4 +1,5 @@
 <%= render "/layouts/alerts" %>
+<%= render "/layouts/filter", associations: [:capital_commitment, :fund] %>
 <%= turbo_frame_tag "account_entries_list", target: "_top" do %>
   <% if params[:ag].present? %>
     <%= render "/account_entries/index_ag", account_entries: @account_entries, 

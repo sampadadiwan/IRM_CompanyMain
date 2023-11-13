@@ -11,7 +11,9 @@ class AccountEntriesController < ApplicationController
 
   # GET /account_entries or /account_entries.json
   def index
-    @account_entries = apply_scopes(policy_scope(AccountEntry)).includes(:capital_commitment, :fund)
+    @q = AccountEntry.ransack(params[:q])
+
+    @account_entries = apply_scopes(policy_scope(@q.result)).includes(:capital_commitment, :fund)
     @account_entries = @account_entries.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id]
     @account_entries = @account_entries.where(investor_id: params[:investor_id]) if params[:investor_id]
     @account_entries = @account_entries.where(fund_id: params[:fund_id]) if params[:fund_id]

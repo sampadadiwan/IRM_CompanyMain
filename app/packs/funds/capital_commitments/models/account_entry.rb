@@ -68,4 +68,12 @@ class AccountEntry < ApplicationRecord
     account_entries = account_entries.where(reporting_date: ..end_date) if end_date
     account_entries.sum(:amount_cents)
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[amount_cents commitment_type cumulative entry_type folio_id generated id id_value name period reporting_date]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[capital_commitment fund investor]
+  end
 end
