@@ -6,7 +6,7 @@
 <div class="table-responsive">
 
   <div data-controller="account-entries-ag" data-account-entries-ag-lazy-load-data-value=<%= lazy_load_data %>   
-    data-account-entries-ag-table-name-value="#account_entries">
+    data-account-entries-ag-table-name-value="#account_entries_table">
     
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Account Entries</h1>
@@ -38,7 +38,7 @@
                               class: "btn btn-outline-success" %>
   </div>
 
-  <div id="account_entries" class="ag-theme-alpine" data-source="<%= data_source %>">
+  <div id="account_entries_table" class="ag-theme-alpine" data-source="<%= data_source %>">
   </div>
   
 </div>

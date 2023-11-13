@@ -13,6 +13,8 @@ export default class BaseAgGrid extends Controller {
     connect() {
         console.log(`connect AgGrid: ${this.tableNameValue}`);
         console.log(`Datatable setup for ${this.tableNameValue}`);
+        let source = $(this.tableNameValue).data('source')
+        console.log(`source = ${source}`);
         console.log(`lazyLoadDataValue = ${this.lazyLoadDataValue}`);
 
         if (this.lazyLoadDataValue == "false") {
@@ -84,11 +86,13 @@ export default class BaseAgGrid extends Controller {
 
 
     loadData() {
-        fetch($(this.tableNameValue).data('source'))
+        let source = $(this.tableNameValue).data('source')
+        console.log(`loadData from ${source}`);
+        fetch(source)
             .then(response => response.json())
             .then(data => {
                 // load fetched data into grid
-                console.log(`loadData completed from ${$(this.tableNameValue).data('source')}`);
+                console.log(`loadData completed from ${source}`);
                 console.log(data);
                 this.gridOptions.api.setRowData(data);                
             });
