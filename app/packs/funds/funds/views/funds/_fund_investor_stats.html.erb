@@ -1,5 +1,10 @@
-<% 
-    capital_commitments = fund.capital_commitments.joins(:investor).where("investors.investor_entity_id=?", current_user.entity_id).to_a 
+<%
+    fund ||= nil
+    if fund     
+        capital_commitments = policy_scope(fund.capital_commitments).includes(:fund, :investor) 
+    else
+        capital_commitments = policy_scope(CapitalCommitment).includes(:fund, :investor)
+    end
     
     committed_amount =  capital_commitments.inject(0){|sum, cc| sum + cc.committed_amount }
     committed_amount = Money.new(committed_amount, fund.currency) if committed_amount == 0
@@ -16,8 +21,8 @@
 %>
 
     <div class="row center">
-
-        <div class="col mb-4">
+        <% if fund %>
+        <div class="col">
             <div class="card border-left-success shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
@@ -34,8 +39,9 @@
                 </div>
             </div>
         </div>
+        <% end %>
         
-        <div class="col mb-4">
+        <div class="col">
             <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
@@ -53,7 +59,7 @@
             </div>
         </div>
 
-        <div class="col mb-4">
+        <div class="col">
             <div class="card border-left-warning shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
@@ -72,7 +78,7 @@
         </div>
 
 
-        <div class="col mb-4">
+        <div class="col">
             <div class="card border-left-success shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
@@ -91,7 +97,7 @@
         </div>
 
 
-        <div class="col mb-4">
+        <div class="col">
             <div class="card border-left-info shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">

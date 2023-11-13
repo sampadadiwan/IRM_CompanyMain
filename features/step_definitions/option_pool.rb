@@ -186,7 +186,7 @@ Then('the unvested amount should be {string}') do |arg|
 end
 
 Then('the option pool must have {string}') do |args|
-  pool = Hash.new
+  pool = OptionPool.new
   key_values(pool, args)
   
   @option_pool.reload
@@ -206,7 +206,7 @@ Then('the option pool must have {string}') do |args|
 end
 
 Then('the option holding must have {string}') do |args|
-  holding = Hash.new
+  holding = Holding.new
   key_values(holding, args)
   
   @holding.reload

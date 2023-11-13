@@ -114,6 +114,14 @@ module IRMUtils
   def key_values(model, args)
     key_val = args.split(";").to_h { |kv| kv.split("=") }
     key_val.each do |k, v|
+      # model[k] = v
+      model.send("#{k}=", v)
+    end
+  end
+
+  def hash_key_values(model, args)
+    key_val = args.split(";").to_h { |kv| kv.split("=") }
+    key_val.each do |k, v|
       model[k] = v
     end
   end

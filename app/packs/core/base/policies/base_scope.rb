@@ -16,7 +16,7 @@ class BaseScope
     if instance_of?(::PaperTrail::VersionPolicy::Scope)
       scope
     else
-      scope.joins(:entity).where('entities.enable_support': true)
+      scope.joins(:entity).merge(Entity.where_permissions(:enable_support))
     end
   end
 

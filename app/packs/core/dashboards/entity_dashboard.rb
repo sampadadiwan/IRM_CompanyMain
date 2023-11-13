@@ -47,7 +47,8 @@ class EntityDashboard < Administrate::BaseDashboard
     enable_support: Field::BooleanEmoji,
     enable_approvals: Field::BooleanEmoji,
     enable_investors: Field::BooleanEmoji,
-    enable_inv_opportunities: Field::BooleanEmoji
+    enable_inv_opportunities: Field::BooleanEmoji,
+    permissions: ActiveFlagField
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -130,26 +131,11 @@ class EntityDashboard < Administrate::BaseDashboard
     entity_type
     investor_categories
     instrument_types
-    enable_documents
-    enable_deals
-    enable_investments
-    enable_holdings
-    enable_secondary_sale
-    enable_funds
-    enable_account_entries
-    enable_units
-    enable_fund_portfolios
-    enable_inv_opportunities
-    enable_options
-    enable_captable
-    enable_kpis
-    enable_kycs
-    enable_investors
-    enable_approvals
-    enable_support
     activity_docs_required_for_completion
     activity_details_required_for_na
+    permissions
     entity_setting
+
   ].freeze
 
   # COLLECTION_FILTERS
@@ -169,5 +155,10 @@ class EntityDashboard < Administrate::BaseDashboard
   #
   def display_resource(entity)
     entity.name
+  end
+
+  def permitted_attributes(action = nil)
+    # This is to enable the custom_flags field to be editable
+    super + [permissions: []]  # -- Adding our now removed field to the permitted list
   end
 end

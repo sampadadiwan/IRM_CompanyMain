@@ -1,0 +1,2 @@
+module CiProfilesHelper
+end

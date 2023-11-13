@@ -1,31 +1,39 @@
 <%#= render "entities/vc_dashboard_stats" %>
 
+
 <div data-controller="datatable">
 
-    <% if current_user.enable_funds %>
-        <div class="associated_entity">
-            <% capital_commitments = policy_scope(CapitalCommitment).includes(:fund, :investor_kyc) %>
-            <%#= render "/funds/investor_charts", capital_commitments: capital_commitments %>
-            <%= render "/capital_commitments/investor_index",  
-                capital_commitments: capital_commitments  %>
-        </div>
+    <% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role]) do %>
+
+        <% if current_user.enable_funds %>
+            <div class="associated_entity">
+                <%#= render "/funds/fund_investor_stats" %>
+            </div>
+            <div class="associated_entity">
+                <% capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc) %>
+                <%#= render "/funds/investor_charts", capital_commitments: capital_commitments %>
+                <%= render "/capital_commitments/investor_index",  
+                    capital_commitments: capital_commitments  %>
+            </div>
+        <% end %>
+
+    
+        <% investment_opportunities = policy_scope(InvestmentOpportunity) %>
+        <% if investment_opportunities.count > 0 %>
+            <div class="associated_entity" >
+                <%= render "/investment_opportunities/index",  
+                    investment_opportunities: investment_opportunities if current_user.enable_inv_opportunities %>
+            </div>
+        <% end %>
+
     <% end %>
 
-   
-    <% investment_opportunities = policy_scope(InvestmentOpportunity) %>
-    <% if investment_opportunities.count > 0 %>
-        <div class="associated_entity" >
-            <%= render "/investment_opportunities/index",  
-                investment_opportunities: investment_opportunities if current_user.enable_inv_opportunities %>
-        </div>
-    <% end %>
 
+    <% approval_responses =  policy_scope(ApprovalResponse).where(status: "Pending") %>
 
-     <% approvals =  policy_scope(Approval).joins(approval_responses: :investor).where("approval_responses.status=?", "Pending") %>
-
-    <% if approvals.count > 0 %>
+    <% if approval_responses.count > 0 %>
         <div class="associated_entity">            
-            <%= render "/approvals/index", approvals: approvals %>
+            <%= render "/approvals/index", approvals: Approval.where(id: approval_responses.pluck(:approval_id)) %>
         </div>
     <% end %> 
 

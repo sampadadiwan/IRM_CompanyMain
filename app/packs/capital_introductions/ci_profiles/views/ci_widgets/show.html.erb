@@ -1,0 +1,67 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Ci Profile
+    </td>
+    <td>
+      <%= link_to @ci_widget.ci_profile %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @ci_widget.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Title
+    </td>
+    <td>
+      <%= @ci_widget.title %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Image
+    </td>
+    <td>
+      <%= image_tag(@ci_widget.image_url) if @ci_widget.image %>
+    </td>
+  </tr>
+
+
+  <tr>
+    <td>
+      Image Placement
+    </td>
+    <td>
+      <%= @ci_widget.image_placement %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Details
+    </td>
+    <td>
+      <%= @ci_widget.details&.html_safe %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Url
+    </td>
+    <td>
+      <%= @ci_widget.url %>
+    </td>
+  </tr>
+</table>
+<div>
+  <%= link_to "Edit", edit_ci_widget_path(@ci_widget), {class: "btn btn-outline-primary"} %> 
+  <%= button_to "Delete", @ci_widget, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+</div>

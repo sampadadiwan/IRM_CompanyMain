@@ -1,0 +1,6 @@
+<%= render "/layouts/alerts" %>
+<% if params[:preview].present? || !policy(@ci_profile).update? %>
+    <%= render "/ci_profiles/preview", ci_profile: @ci_profile %>
+<% else %>
+    <%= render "/ci_profiles/show", ci_profile: @ci_profile %>
+<% end %>

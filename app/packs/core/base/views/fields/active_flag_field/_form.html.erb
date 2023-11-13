@@ -18,6 +18,14 @@
               val: val, id: "permissions_#{val}", class: "form-check-input"}, val, nil   %>
         </div>
     <% end %>
+  <% elsif f.object.class.name == "Entity" %>
+    <% Entity.permissions.pairs.each do |key, val| %>
+        <div class="form-group col">
+          <%= f.label :permissions, key.titleize, class: "no-wrap" %>
+          <%= f.check_box :permissions, {name: "entity[permissions][]",
+              val: val, id: "permissions_#{val}", class: "form-check-input"}, val, nil   %>
+        </div>
+    <% end %>
   <% else %>
     Edit ActiveFlagField _form partial to add custom fields
     <%= f.text_field field.attribute, disabled: true %>

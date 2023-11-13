@@ -9,7 +9,7 @@ When('I create a new investor {string}') do |arg1|
 
   if (Entity.vcs.count > 0)
     fill_in('investor_investor_name', with: @investor_entity.name)
-    find('ui-menu-item-wrapper', text: @investor_entity.name).click if page.has_css?(".ui-menu-item-wrapper") 
+    find('ui-menu-item-wrapper', text: @investor_entity.name).click if page.has_css?(".ui-menu-item-wrapper")
   end
   fill_in('investor_investor_name', with: @investor_entity.name)
   fill_in('investor_pan', with: @investor_entity.pan)
@@ -451,4 +451,46 @@ Then('I should see the investor kyc details on the details page') do
   expect(page).to have_content(@investor_kyc.corr_address)
   expect(page).to have_content(@investor_kyc.bank_account_number)
   expect(page).to have_content(@investor_kyc.ifsc_code)
+end
+
+Given('each Investor has an approved Investor Kyc') do
+  @investor_kycs = @entity.investors.each do |investor|
+    FactoryBot.create(:investor_kyc, entity: @entity, investor: investor, verified: true)
+  end
+  InvestorKyc.all.each do |kyc|
+    kyc.verified = true
+    kyc.save(validate: false)
+  end
+end
+
+Given('the fund has a SOA template {string}') do |string|
+  visit(fund_path(Fund.last))
+  sleep(3)
+  click_on("Actions")
+  click_on("New Template")
+  sleep(2)
+  fill_in('document_name', with: "SOA Template")
+  #document_owner_tag is the type of document
+  select("SOA Template", from: "document_owner_tag")
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/sample_SOA_template.docx'), make_visible: true)
+  check("document_template")
+  click_on("Save")
+end
+
+Given('we Generate SOA for the first capital commitment') do
+  @capital_commitment = CapitalCommitment.last
+  @capital_commitment.investor_kyc = InvestorKyc.last
+  @capital_commitment.save!
+  visit(capital_commitment_path(@capital_commitment))
+  click_on("Actions")
+  click_on("Generate SOA")
+  fill_in('start_date', with: "01/01/2020")
+  fill_in('end_date', with: "01/01/2021")
+  click_on("Generate SOA Now")
+  sleep(5)
+end
+
+Then('it is successfully generated') do
+  expect(page).to have_content("Documentation generation started, please check back in a few mins")
+  expect(page).to have_content("Generated")
 end

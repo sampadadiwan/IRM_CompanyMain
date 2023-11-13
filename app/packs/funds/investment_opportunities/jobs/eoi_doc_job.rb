@@ -20,11 +20,11 @@ class EoiDocJob < ApplicationJob
           @expression_of_interest.documents.not_templates.where(name: investment_opportunity_doc_template.name).find_each(&:destroy)
 
           # Generate a new signed document
-          send_notification("Generating #{investment_opportunity_doc_template.name} for investment_opportunity #{investment_opportunity.company_name}, for user #{kyc.full_name}", :info)
+          send_notification("Generating #{investment_opportunity_doc_template.name} for investment_opportunity #{investment_opportunity.company_name}, for user #{kyc.full_name}", user_id, :info)
 
           EoiDocGenerator.new(@expression_of_interest, investment_opportunity_doc_template, user_id)
         rescue StandardError => e
-          send_notification("Error generating #{investment_opportunity_doc_template.name} for investment_opportunity #{investment_opportunity.company_name}, for user #{kyc&.full_name}. #{e.message}", :danger)
+          send_notification("Error generating #{investment_opportunity_doc_template.name} for investment_opportunity #{investment_opportunity.company_name}, for user #{kyc&.full_name}. #{e.message}", user_id, :danger)
         end
       end
     end

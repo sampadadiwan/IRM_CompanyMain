@@ -16,11 +16,11 @@ class CapitalCommitmentSoaJob < ApplicationJob
 
       @templates.each do |fund_doc_template|
         Rails.logger.debug { "Generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@investor_kyc&.full_name}" }
-        send_notification("Generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@investor_kyc&.full_name}", :info)
+        send_notification("Generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@investor_kyc&.full_name}", user_id, :info)
         # Generate a new signed document
         SoaGenerator.new(@capital_commitment, fund_doc_template, start_date, end_date, user_id)
       rescue StandardError
-        send_notification("Error generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@investor_kyc&.full_name}")
+        send_notification("Error generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@investor_kyc&.full_name}", user_id, :danger)
       end
     end
 

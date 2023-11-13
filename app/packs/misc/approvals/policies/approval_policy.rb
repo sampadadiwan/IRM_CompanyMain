@@ -30,7 +30,7 @@ class ApprovalPolicy < ApplicationPolicy
   end
 
   def update?
-    create? && record.due_date >= Time.zone.today && !record.locked
+    (create? && record.due_date >= Time.zone.today && !record.locked) || super_user?
   end
 
   def edit?

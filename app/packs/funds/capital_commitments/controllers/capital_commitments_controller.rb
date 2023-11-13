@@ -7,7 +7,9 @@ class CapitalCommitmentsController < ApplicationController
 
   # GET /capital_commitments or /capital_commitments.json
   def index
-    @capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc)
+    @q = CapitalCommitment.ransack(params[:q])
+
+    @capital_commitments = policy_scope(@q.result).includes(:entity, :fund, :investor_kyc)
 
     @capital_commitments = @capital_commitments.where(id: search_ids) if params[:search] && params[:search][:value].present?
 

@@ -146,7 +146,9 @@ Metrics/ModuleLength:
   Description: 'Avoid modules longer than 100 lines of code.'
   Max: 100
   Enabled: true
-
+  Exclude:
+    - 'app/packs/core/entity/models/concerns/entity_enabled.rb'
+        
 Metrics/ParameterLists:
   Description: 'Pass no more than four parameters into a method.'
   Max: 6

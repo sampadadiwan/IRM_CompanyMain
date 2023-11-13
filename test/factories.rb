@@ -1,4 +1,44 @@
 FactoryBot.define do
+  factory :report do
+    entity { nil }
+    user { nil }
+    name { "MyString" }
+    description { "MyText" }
+    url { "MyText" }
+  end
+
+  factory :ci_track_record do
+    ci_profile { nil }
+    entity { nil }
+    name { "MyString" }
+    value { "9.99" }
+    prefix { "MyString" }
+    suffix { "MyString" }
+    details { "MyString" }
+  end
+
+  factory :ci_widget do
+    ci_profile { nil }
+    entity { nil }
+    title { "MyString" }
+    details { "MyText" }
+    url { "MyString" }
+  end
+
+  factory :ci_profile do
+    entity { nil }
+    fund { nil }
+    title { "MyString" }
+    geography { "MyString" }
+    stage { "MyString" }
+    sector { "MyString" }
+    fund_size_cents { "9.99" }
+    min_investment_cents { "9.99" }
+    status { "MyString" }
+    details { "MyString" }
+    text { "MyString" }
+  end
+
   factory :stock_adjustment do
     entity { nil }
     portfolio_company { nil }
@@ -715,6 +755,7 @@ FactoryBot.define do
     enable_kycs {true}
     enable_kpis {true}
     enable_approvals {true}
+    enable_investors {true}
     currency { ENV["CURRENCY"].split(",")[rand(3)] }
     units { ENV["CURRENCY_UNITS"].split(",")[rand(3)] }
 

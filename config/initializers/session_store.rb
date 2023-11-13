@@ -1,1 +1,1 @@
-Rails.application.config.session_store :cookie_store, key: '_caphive_session', domain: :all, tld_length: 2 unless Rails.env.test? || Rails.env.development?
+Rails.application.config.session_store :cookie_store, key: '_caphive_session', domain: :all, tld_length: 2 unless Rails.env.local?

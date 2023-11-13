@@ -1,0 +1,60 @@
+<%= form_with(model: ci_widget) do |form| %>
+  <% if ci_widget.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(ci_widget.errors.count, "error") %> prohibited this ci_widget from being saved:</h2>
+
+      <ul>
+        <% ci_widget.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+    <%= form.text_field :ci_profile_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+  
+  <div class="form-group">
+    <%= form.label :title %>
+    <%= form.text_field :title, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :details %>
+    <%= form.rich_text_area :details, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :image_placement %>
+    <%= form.select :image_placement, ["Left", "Right"], {}, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+
+    <div class="alert alert-info">
+      Please upload high resolution image
+    </div>
+    <div>
+      <%= render "layouts/single_upload", form: form, field_label: "Image",
+                            for_model: "ci_widget", field_name: "image",
+                            model: @ci_widget %>
+
+
+      <% if @ci_widget.image.present? %>
+        <% if @ci_widget.image.mime_type.index("image") %>
+          <%= image_tag @ci_widget.image_url, style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" %>
+        <% end %>
+      <% end %>
+
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :url %>
+    <%= form.text_field :url, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+  </div>
+<% end %>

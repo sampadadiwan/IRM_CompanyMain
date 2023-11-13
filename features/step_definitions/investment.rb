@@ -373,7 +373,7 @@ end
 Then('I must see the aggregated investment with {string}') do |args|
   @aggregate_investment = AggregateInvestment.last
   kv = {}
-  key_values(kv, args)
+  hash_key_values(kv, args)
   puts kv
   within("#aggregate_investment_#{@aggregate_investment.id}") do
     within(".equity") do

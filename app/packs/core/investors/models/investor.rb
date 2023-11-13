@@ -209,4 +209,8 @@ class Investor < ApplicationRecord
     entity.portfolio_investments.where(portfolio_company_id: id,
                                        category: valuation.category, sub_category: valuation.sub_category).find_each(&:save)
   end
+
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
 end
