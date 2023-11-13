@@ -1,6 +1,6 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
   <nav class="nav nav-tabs nav-fill nav-justified"  role="tablist">
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
+    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#remittances-tab"
           data-action="click->tabdetails#loadData">Remittances</a>
@@ -15,7 +15,7 @@
     <% end %>
 
     <% if capital_commitment.entity.enable_account_entries && policy(capital_commitment).update? %>
-    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#account-entries-tab"
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#account-entries-tab"
             data-action="click->tabdetails#loadData">Account Entries</a>
 
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#adjustments-tab"
@@ -38,7 +38,7 @@
   </nav>
 
   <div class="tab-content" data-controller="datatable">
-    <div id="docs-tab" class="tab-pane fade">
+    <div id="docs-tab" class="tab-pane fade in show active">
       <div id="docs" class="associated_entity">
         <%= render "/documents/index", documents: capital_commitment.documents, 
                 owner: capital_commitment, entity: capital_commitment.entity %>
@@ -97,7 +97,7 @@
       </div>     
     </div>
 
-    <div id="account-entries-tab" class="tab-pane fade in show active">
+    <div id="account-entries-tab" class="tab-pane fade">
       <div id="account_entries" class="associated_entity">
         <% 
           params[:capital_commitment_id] = capital_commitment.id 
