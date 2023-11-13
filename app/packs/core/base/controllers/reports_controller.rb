@@ -68,6 +68,7 @@ class ReportsController < ApplicationController
   def set_report
     @report = Report.find(params[:id])
     authorize @report
+    @bread_crumbs = { Reports: reports_path, "#{@report.name}": report_path(@report) }
   end
 
   # Only allow a list of trusted parameters through.

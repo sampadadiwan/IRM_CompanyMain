@@ -83,6 +83,8 @@
                             <% if current_user.curr_role == "investor" %>
                                 <a class="collapse-item" href="/capital_commitments?my_commitments=true"> Commitments</a>
                                 <a class="collapse-item" href="/capital_commitments/documents">Statements</a>
+                            <% else %>
+                                <a class="collapse-item" href="/reports">Reports</a>    
                             <% end %>
                             <a class="collapse-item" href="/investor_kycs">KYCs</a>
                         </div>

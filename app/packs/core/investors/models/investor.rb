@@ -213,4 +213,8 @@ class Investor < ApplicationRecord
   def self.ransackable_associations(_auth_object = nil)
     []
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[category city investor_name pan tag_list]
+  end
 end

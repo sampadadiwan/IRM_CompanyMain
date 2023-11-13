@@ -1,2 +1,4 @@
 <%= render "/layouts/alerts" %>
+<%= render "/layouts/filter", associations: [:capital_commitment, :investor, :fund] %>
+
 <%= render "/capital_remittances/index", capital_remittances: @capital_remittances, capital_call: nil, lazy_load_data: false %>

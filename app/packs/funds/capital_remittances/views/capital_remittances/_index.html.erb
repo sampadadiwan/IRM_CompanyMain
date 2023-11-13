@@ -53,7 +53,7 @@
     </span>
   </div>
 
-  <% data_source ||= capital_remittances_path(params, format: :json, all: true, fund_id: params[:fund_id], status: "", verified: "") %>
+  <% data_source ||= capital_remittances_path(q: params.to_unsafe_h[:q], format: :json, all: true, fund_id: params[:fund_id], status: "", verified: "") %>
   <% lazy_load_data ||= false %>
 
   <div class="table-responsive">

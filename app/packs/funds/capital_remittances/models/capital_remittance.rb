@@ -126,4 +126,12 @@ class CapitalRemittance < ApplicationRecord
       "#{investor_name}: #{due_amount} : #{status}"
     end
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[call_amount_cents capital_fee_cents collected_amount_cents committed_amount_cents computed_amount_cents folio_id investor_name payment_date percentage remittance_date status units_quantity verified]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[capital_commitment fund investor]
+  end
 end
