@@ -9,7 +9,7 @@ class CapitalCommitmentsController < ApplicationController
   def index
     @q = CapitalCommitment.ransack(params[:q])
 
-    @capital_commitments = policy_scope(@q.result).includes(:entity, :fund, :investor_kyc)
+    @capital_commitments = policy_scope(@q.result).includes(:entity, :fund, :investor_kyc, :investor)
 
     @capital_commitments = @capital_commitments.where(id: search_ids) if params[:search] && params[:search][:value].present?
 
@@ -22,7 +22,9 @@ class CapitalCommitmentsController < ApplicationController
     respond_to do |format|
       format.html
       format.xlsx
-      format.json # { render json: CapitalCommitmentDatatable.new(params, capital_commitments: @capital_commitments) }
+      format.json do
+        render json: CapitalCommitmentDatatable.new(params, capital_commitments: @capital_commitments) if params[:jbuilder].blank?
+      end
     end
   end
 

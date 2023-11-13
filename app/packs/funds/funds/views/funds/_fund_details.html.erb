@@ -76,8 +76,8 @@
 
         <div id="commitments-tab" class="tab-pane fade in show active">
           <div id="commitments" class="associated_entity">
-            <%= render "/capital_commitments/index", fund: fund,
-                lazy_load_data: false, data_source: capital_commitments_path(fund_id: fund.id, all: true) %>
+            <%= render "/capital_commitments/index_ag", fund: fund,
+                lazy_load_data: false, data_source: capital_commitments_path(fund_id: fund.id, all: true, format: :json, jbuilder: true) %>
           </div>
         </div>
 
