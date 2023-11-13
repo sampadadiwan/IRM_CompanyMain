@@ -5,3 +5,10 @@ json.url account_entry_url(account_entry, format: :json)
 json.fund_currency account_entry.fund.currency
 json.name_link link_to(account_entry.name, account_entry)
 json.folio_link link_to(account_entry.folio_id, capital_commitment_path(id: account_entry.capital_commitment_id)) if account_entry.folio_id
+
+json.dt_actions begin
+  links = []
+  links << link_to('Show', account_entry_path(account_entry), class: "btn btn-outline-primary")
+  links << link_to('Edit', edit_account_entry_path(account_entry), class: "btn btn-outline-success") if policy(account_entry).update?
+  safe_join(links, '')
+end
