@@ -78,6 +78,7 @@ class ImportCapitalCommittment < ImportUtil
     if kyc_full_name.present?
       kyc = fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
       raise "KYC not found" unless kyc
+
       kyc
     else
       fund.entity.investor_kycs.where(investor_id: investor.id).last

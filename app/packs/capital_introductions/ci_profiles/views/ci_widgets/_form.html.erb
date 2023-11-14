@@ -1,4 +1,4 @@
-<%= form_with(model: ci_widget) do |form| %>
+<%= form_with(model: ci_widget, validate: true) do |form| %>
   <% if ci_widget.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(ci_widget.errors.count, "error") %> prohibited this ci_widget from being saved:</h2>
