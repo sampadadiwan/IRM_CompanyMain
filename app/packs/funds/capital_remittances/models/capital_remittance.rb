@@ -106,6 +106,8 @@ class CapitalRemittance < ApplicationRecord
   def set_status
     self.status = if due_amount.to_f.abs < 100
                     "Paid"
+                  elsif due_amount.to_f < 1000
+                    "Overpaid"
                   else
                     "Pending"
                   end
