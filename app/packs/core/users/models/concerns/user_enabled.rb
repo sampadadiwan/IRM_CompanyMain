@@ -12,55 +12,55 @@ module UserEnabled
   end
 
   def enable_documents
-    get_permissions.enable_documents? && entity && entity.enable_documents
+    get_permissions.enable_documents? && entity && entity.permissions.enable_documents?
   end
 
   def enable_approvals
-    get_permissions.enable_approvals? && entity && entity.enable_approvals
+    get_permissions.enable_approvals? && entity && entity.permissions.enable_approvals?
   end
 
   def enable_deals
-    get_permissions.enable_deals? && entity && entity.enable_deals
+    get_permissions.enable_deals? && entity && entity.permissions.enable_deals?
   end
 
   def enable_investments
-    get_permissions.enable_investments? && entity && entity.enable_investments
+    get_permissions.enable_investments? && entity && entity.permissions.enable_investments?
   end
 
   def enable_holdings
-    get_permissions.enable_holdings? && entity && entity.enable_holdings
+    get_permissions.enable_holdings? && entity && entity.permissions.enable_holdings?
   end
 
   def enable_secondary_sale
-    get_permissions.enable_secondary_sale? && entity && entity.enable_secondary_sale
+    get_permissions.enable_secondary_sale? && entity && entity.permissions.enable_secondary_sale?
   end
 
   def enable_funds
-    get_permissions.enable_funds? && entity && entity.enable_funds
+    get_permissions.enable_funds? && entity && entity.permissions.enable_funds?
   end
 
   def enable_inv_opportunities
-    get_permissions.enable_inv_opportunities? && entity && entity.enable_inv_opportunities
+    get_permissions.enable_inv_opportunities? && entity && entity.permissions.enable_inv_opportunities?
   end
 
   def enable_options
-    get_permissions.enable_options? && entity && entity.enable_options
+    get_permissions.enable_options? && entity && entity.permissions.enable_options?
   end
 
   def enable_captable
-    get_permissions.enable_captable? && entity && entity.enable_captable
+    get_permissions.enable_captable? && entity && entity.permissions.enable_captable?
   end
 
   def enable_investors
-    get_permissions.enable_investors? && entity && entity.enable_investors
+    get_permissions.enable_investors? && entity && entity.permissions.enable_investors?
   end
 
   def enable_kpis
-    get_permissions.enable_kpis? && entity && entity.enable_kpis
+    get_permissions.enable_kpis? && entity && entity.permissions.enable_kpis?
   end
 
   def enable_kycs
-    get_permissions.enable_kycs? && entity && entity.enable_kycs
+    get_permissions.enable_kycs? && entity && entity.permissions.enable_kycs?
   end
 
   def get_permissions

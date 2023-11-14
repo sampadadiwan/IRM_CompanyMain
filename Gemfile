@@ -137,7 +137,7 @@ gem "image_processing", "~> 1.2"
 # gem 'rmagick'
 gem "combine_pdf"
 
-gem "blazer"
+gem "blazer", "~> 2.6"
 
 # gem "strong_migrations"
 

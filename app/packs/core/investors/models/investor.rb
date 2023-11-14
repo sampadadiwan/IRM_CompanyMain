@@ -149,18 +149,18 @@ class Investor < ApplicationRecord
   def setup_permissions(investor_entity)
     # We need to enable features if the entity creating the investor has them turned on
     # Ex. an Investment Fund creates and investor, who should have funds enabled
-    investor_entity.enable_documents = entity.enable_documents if entity.enable_documents
-    investor_entity.enable_investments = entity.enable_investments if entity.enable_investments
-    investor_entity.enable_holdings = entity.enable_holdings if entity.enable_holdings
-    investor_entity.enable_secondary_sale = entity.enable_secondary_sale if entity.enable_secondary_sale
-    investor_entity.enable_options = entity.enable_options if entity.enable_options
-    investor_entity.enable_captable = entity.enable_captable if entity.enable_captable
+    investor_entity.permissions.set(:enable_documents) if entity.permissions.enable_documents?
+    investor_entity.permissions.set(:enable_investments) if entity.permissions.enable_investments?
+    investor_entity.permissions.set(:enable_holdings) if entity.permissions.enable_holdings?
+    investor_entity.permissions.set(:enable_secondary_sale) if entity.permissions.enable_secondary_sale?
+    investor_entity.permissions.set(:enable_options) if entity.permissions.enable_options?
+    investor_entity.permissions.set(:enable_captable) if entity.permissions.enable_captable?
 
-    investor_entity.enable_funds = entity.enable_funds if entity.enable_funds
-    investor_entity.enable_kpis = entity.enable_kpis if entity.enable_kpis
-    investor_entity.enable_kycs = entity.enable_kpis if entity.enable_kycs
-    investor_entity.enable_approvals = entity.enable_kpis if entity.enable_approvals
-    investor_entity.enable_inv_opportunities = entity.enable_inv_opportunities if entity.enable_inv_opportunities
+    investor_entity.permissions.set(:enable_funds) if entity.permissions.enable_funds?
+    investor_entity.permissions.set(:enable_kpis) if entity.permissions.enable_kpis?
+    investor_entity.permissions.set(:enable_kycs) if entity.permissions.enable_kycs?
+    investor_entity.permissions.set(:enable_approvals) if entity.permissions.enable_approvals?
+    investor_entity.permissions.set(:enable_inv_opportunities) if entity.permissions.enable_inv_opportunities?
   end
 
   def to_s

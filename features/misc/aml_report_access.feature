@@ -39,8 +39,8 @@ Scenario Outline: Auto Create new Aml Report
   Then investor kyc and aml report is generated for it
 
   Examples:
-  |user	    |entity                                 |fund                	|
-  |  	      |entity_type=Investment Fund;enable_funds=true |name=Test fund|
+  |user	    |entity                      |fund                	|
+  |  	      |entity_type=Investment Fund |name=Test fund|
 
 Scenario Outline: Do not Create new Aml Report with blank name
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -50,5 +50,5 @@ Scenario Outline: Do not Create new Aml Report with blank name
   Then investor kyc and aml report is not generated for it
 
   Examples:
-  |user	    |entity                                 |fund                	|
-  |  	      |entity_type=Investment Fund;enable_funds=true |name=Test fund|
+  |user	    |entity                       |fund                	|
+  |  	      |entity_type=Investment Fund  |name=Test fund|
