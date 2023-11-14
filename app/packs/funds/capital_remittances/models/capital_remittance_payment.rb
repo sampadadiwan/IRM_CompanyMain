@@ -13,6 +13,7 @@ class CapitalRemittancePayment < ApplicationRecord
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_remittance.capital_commitment.folio_currency }
 
   before_save :set_amount, if: :folio_amount_cents_changed?
+  after_commit :unverify_remittance, unless: :destroyed?
 
   counter_culture :capital_remittance,
                   column_name: 'collected_amount_cents',
@@ -35,7 +36,6 @@ class CapitalRemittancePayment < ApplicationRecord
                                          folio_amount_cents, payment_date)
   end
 
-  after_commit :unverify_remittance, unless: :destroyed?
   def unverify_remittance
     capital_remittance.reload
     capital_remittance.verified = false

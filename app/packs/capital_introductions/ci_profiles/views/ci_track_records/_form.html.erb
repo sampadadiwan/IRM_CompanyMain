@@ -1,4 +1,4 @@
-<%= form_with(model: ci_track_record) do |form| %>
+<%= form_with(model: ci_track_record, validate: true) do |form| %>
   <% if ci_track_record.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(ci_track_record.errors.count, "error") %> prohibited this ci_track_record from being saved:</h2>

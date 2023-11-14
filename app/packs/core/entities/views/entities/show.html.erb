@@ -79,7 +79,7 @@
             </td>
          </tr>
 
-         <% if @entity.enable_kycs %>
+         <% if @entity.permissions.enable_kycs? %>
             <tr>
                <td>
                   KYC Document List (Individual)
@@ -109,7 +109,7 @@
 
          <% end %>
 
-         <% if @entity.enable_kpis %>
+         <% if @entity.permissions.enable_kpis? %>
          <tr>
             <td>
                KPI Document List
@@ -161,7 +161,7 @@
                Support Enabled
             </td>
             <td>
-               <%= display_boolean @entity.enable_support %>
+               <%= display_boolean @entity.permissions.enable_support? %>
             </td>
          </tr>
 
@@ -170,22 +170,22 @@
                Access Enabled
             </td>
             <td>
-               <%= "Documents," if @entity.enable_documents %>
-               <%= "Deals," if @entity.enable_deals %>
-               <%= "Funds," if @entity.enable_funds %>
-               <%= "Investment Opportunities," if @entity.enable_inv_opportunities %>
-               <%= "Investments," if @entity.enable_investments %>
-               <%= "Holdings," if @entity.enable_holdings %>
-               <%= "Secondary Sale," if @entity.enable_secondary_sale %>
-               <%= "KPIs," if @entity.enable_kpis %>
-               <%= "KYCs," if @entity.enable_kycs %>
+               <%= "Documents," if @entity.permissions.enable_documents? %>
+               <%= "Deals," if @entity.permissions.enable_deals? %>
+               <%= "Funds," if @entity.permissions.enable_funds? %>
+               <%= "Investment Opportunities," if @entity.permissions.enable_inv_opportunities? %>
+               <%= "Investments," if @entity.permissions.enable_investments? %>
+               <%= "Holdings," if @entity.permissions.enable_holdings? %>
+               <%= "Secondary Sale," if @entity.permissions.enable_secondary_sale? %>
+               <%= "KPIs," if @entity.permissions.enable_kpis? %>
+               <%= "KYCs," if @entity.permissions.enable_kycs? %>
 
-               <%= "Fund Portfolios," if @entity.enable_fund_portfolios %>
-               <%= "Units," if @entity.enable_units %>
-               <%= "Account Entries," if @entity.enable_account_entries %>
-               <%= "Investors," if @entity.enable_investors %>
-               <%= "Option Pools," if @entity.enable_options %>
-               <%= "Cap Table" if @entity.enable_captable %>
+               <%= "Fund Portfolios," if @entity.permissions.enable_fund_portfolios? %>
+               <%= "Units," if @entity.permissions.enable_units? %>
+               <%= "Account Entries," if @entity.permissions.enable_account_entries? %>
+               <%= "Investors," if @entity.permissions.enable_investors? %>
+               <%= "Option Pools," if @entity.permissions.enable_options? %>
+               <%= "Cap Table" if @entity.permissions.enable_captable? %>
             </td>
          </tr>
 

@@ -5,6 +5,11 @@ class CiProfile < ApplicationRecord
   include ForInvestor
 
   serialize :track_record, type: Hash
+  validates :title, :geography, :stage, :details, presence: true
+  validates :fund_size_cents, :min_investment_cents, numericality: { greater_than: 0 }
+
+  validates :geography, :stage, :sector, length: { maximum: 50 }
+  validates :currency, length: { maximum: 3 }
 
   belongs_to :entity
   belongs_to :fund, optional: true
