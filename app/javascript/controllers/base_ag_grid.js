@@ -28,6 +28,9 @@ export default class BaseAgGrid extends Controller {
         // let the grid know which columns and what data to use
         this.gridOptions = {
           getRowId: params => params.data.id,
+          defaultExcelExportParams: {
+            columnKeys: this.getExportColumns(),
+          },
           columnDefs: this.columnDefs(),
           rowHeight: 60,
           defaultColDef: {
@@ -109,7 +112,18 @@ export default class BaseAgGrid extends Controller {
         return params.value ? params.value : '';
     }
 
+    getExportColumns() {
+        let colsDefs = this.columnDefs();
+        // console.log(colsDefs);
+        // We dont want the dt_actions column in the export
+        let fields = colsDefs.filter(function(col) {return col.field != "dt_actions"}).map(function(col) {return col.field});
+        // console.log(`exportToXL = ${fields}`);
+        return fields;
+    }
+
     exportToXL() {
+
+    
         this.gridOptions.api.exportDataAsExcel({
             processCellCallback(params) {
                 const value = params.value;
