@@ -27,6 +27,7 @@ export default class BaseAgGrid extends Controller {
 
         // let the grid know which columns and what data to use
         this.gridOptions = {
+          getRowId: params => params.data.id,
           columnDefs: this.columnDefs(),
           rowHeight: 60,
           defaultColDef: {

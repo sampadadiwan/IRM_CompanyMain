@@ -42,7 +42,11 @@ export default class extends BaseAgGrid {
         sortable: true, filter: 'agNumberColumnFilter', aggFunc: 'sum',
         valueFormatter: params => {
           if (params.data !== undefined) {
-            return this.format_currency(params.data.amount_number, params.data.fund_currency)
+            if(params.data.name.includes("Percentage")) {
+              return `${params.data.amount_cents} %`;
+            } else {
+              return this.format_currency(params.data.amount_number, params.data.fund_currency);
+            }
           }
         },
       },
