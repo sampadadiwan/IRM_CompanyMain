@@ -15,7 +15,7 @@
   <%= link_to "Resend Confirmation", new_confirmation_path(resource_name) , class: "small" %>
 <% end %>
 
-<%- if devise_mapping.lockable? && resource_class.unlock_strategy_enabled?(:email) && controller_name != 'unlocks' %>
+<%- if false && devise_mapping.lockable? && resource_class.unlock_strategy_enabled?(:email) && controller_name != 'unlocks' %>
   <%= link_to "Resend Unlock Instructions", new_unlock_path(resource_name) , class: "small" %>
 <% end %>
 

@@ -782,17 +782,24 @@ ul.vesting_schedule {
     // background-color: #4e73df;    
   }
   
-  .login-right {
-    background-color: lighten($color: lightgray, $amount: 15);
-    border-left: 1px solid lightgray;
-  }
-  
-  .login-left {
-    // background-color: #4e73df;
-    width: 100%;
+  .container {
+    max-width: 1000px;
     height: 100%;
-    // margin: unset;
-    // vertical-align: middle;
+    margin-top: 11%;
+    padding: 0px;
+
+    .login-right {
+      background-color: lighten($color: lightgray, $amount: 15);
+      border-left: 1px solid lightgray;
+    }
+    
+    .login-left {
+      // background-color: #4e73df;
+      width: 100%;
+      height: 100%;
+      // margin: unset;
+      // vertical-align: middle;
+    }
   }
   // background-color: #4e73df;
   background-image: url("img/background.jpg");
