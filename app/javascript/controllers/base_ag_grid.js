@@ -27,66 +27,66 @@ export default class BaseAgGrid extends Controller {
 
         // let the grid know which columns and what data to use
         this.gridOptions = {
-          getRowId: params => params.data.id,
-          defaultExcelExportParams: {
-            columnKeys: this.getExportColumns(),
-          },
-          columnDefs: this.columnDefs(),
-          rowHeight: 60,
-          defaultColDef: {
-            flex: 1,
-            resizable: true,
-            filter: 'agTextColumnFilter',
-            sortable: true,
-            minWidth: 120,
-          },
-          enableRangeSelection: true,
-          enableCharts: true,
-          rowGroupPanelShow: 'always',
-          suppressDragLeaveHidesColumns: true,
-          suppressMakeColumnVisibleAfterUnGroup: true,
-          suppressRowGroupHidesColumns: true,
-          sideBar: {
-            toolPanels: [
-              {
-                id: 'columns',
-                labelDefault: 'Columns',
-                labelKey: 'columns',
-                iconKey: 'columns',
-                toolPanel: 'agColumnsToolPanel',
-                toolPanelParams: {
-                  // suppressValues: true,
-                  // suppressPivots: true,
-                  // suppressPivotMode: true,
-                  // suppressRowGroups: false
-                }
-              },
-              {
-                id: 'filters',
-                labelDefault: 'Filters',
-                labelKey: 'filters',
-                iconKey: 'filter',
-                toolPanel: 'agFiltersToolPanel',
-              }
-            ],
-            defaultToolPanel: ''
-          }
-    
+            getRowId: params => params.data.id,
+            defaultExcelExportParams: {
+                columnKeys: this.getExportColumns(),
+            },
+            columnDefs: this.columnDefs(),
+            rowHeight: 60,
+            defaultColDef: {
+                flex: 1,
+                resizable: true,
+                filter: 'agTextColumnFilter',
+                sortable: true,
+                minWidth: 120,
+            },
+            enableRangeSelection: true,
+            enableCharts: true,
+            rowGroupPanelShow: 'always',
+            suppressDragLeaveHidesColumns: true,
+            suppressMakeColumnVisibleAfterUnGroup: true,
+            suppressRowGroupHidesColumns: true,
+            sideBar: {
+                toolPanels: [
+                    {
+                        id: 'columns',
+                        labelDefault: 'Columns',
+                        labelKey: 'columns',
+                        iconKey: 'columns',
+                        toolPanel: 'agColumnsToolPanel',
+                        toolPanelParams: {
+                            // suppressValues: true,
+                            // suppressPivots: true,
+                            // suppressPivotMode: true,
+                            // suppressRowGroups: false
+                        }
+                    },
+                    {
+                        id: 'filters',
+                        labelDefault: 'Filters',
+                        labelKey: 'filters',
+                        iconKey: 'filter',
+                        toolPanel: 'agFiltersToolPanel',
+                    }
+                ],
+                defaultToolPanel: ''
+            }
+
         };
-    
+
         // setup the grid after the page has finished loading
         let gridDiv = document.querySelector(tableName);
-        this.grid = new agGrid.Grid(gridDiv, this.gridOptions);    
-    
+        this.grid = new agGrid.Grid(gridDiv, this.gridOptions);
+
         this.loadData();
-    
+
         // We need to destroy the grid when we leave the page
         var api = this.gridOptions.api;
-        $(document).on('turbo:before-cache', function() {    
-          api.destroy();      
+        $(document).on('turbo:before-cache', function () {
+            api.destroy();
         });
-    
-      }
+
+    }
 
 
     loadData() {
@@ -98,7 +98,7 @@ export default class BaseAgGrid extends Controller {
                 // load fetched data into grid
                 console.log(`loadData completed from ${source}`);
                 console.log(data);
-                this.gridOptions.api.setRowData(data);                
+                this.gridOptions.api.setRowData(data);
             });
     }
 
@@ -116,14 +116,14 @@ export default class BaseAgGrid extends Controller {
         let colsDefs = this.columnDefs();
         // console.log(colsDefs);
         // We dont want the dt_actions column in the export
-        let fields = colsDefs.filter(function(col) {return col.field != "dt_actions"}).map(function(col) {return col.field});
+        let fields = colsDefs.filter(function (col) { return col.field != "dt_actions" }).map(function (col) { return col.field });
         // console.log(`exportToXL = ${fields}`);
         return fields;
     }
 
     exportToXL() {
 
-    
+
         this.gridOptions.api.exportDataAsExcel({
             processCellCallback(params) {
                 const value = params.value;
@@ -162,5 +162,13 @@ export default class BaseAgGrid extends Controller {
     format_currency(number, currency) {
         // console.log(`format_currency(${number}, ${currency})`);
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency }).format(number);
+    }
+
+    renderCell(params, field_key, field_name=null) {
+        if (params.data !== undefined) {
+            return params.data[field_key];
+        } else if (field_name !== null && params.node.field === field_name || params.node.field === field_key) {
+            return params.node.key;
+        }
     }
 }

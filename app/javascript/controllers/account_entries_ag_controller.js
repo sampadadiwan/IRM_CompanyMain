@@ -2,17 +2,13 @@ import  BaseAgGrid from "controllers/base_ag_grid"
 export default class extends BaseAgGrid {
 
   columnDefs() {
-    
+    let controller = this;
     let columnDefs = [
       
       {
         field: "name", headerName: "Name", enableRowGroup: true, enablePivot: true,
         cellRenderer: function (params) {
-          if (params.data !== undefined) {
-            return params.data.name_link;
-          } else if(params.node.field === 'name') {
-            return params.node.key;
-          }
+          return controller.renderCell(params, "name_link", "name");
         },
         valueGetter: (params) => { 
           if (params.data !== undefined) {
@@ -28,11 +24,7 @@ export default class extends BaseAgGrid {
       {
         field: "folio_id", headerName: "Folio", enableRowGroup: true, enablePivot: true, chartDataType: 'category',
         cellRenderer: function (params) {
-          if (params.data !== undefined) {
-            return params.data.folio_link;
-          } else if(params.node.field === 'folio_id') {
-            return params.node.key;
-          }
+          return controller.renderCell(params, "folio_link", "folio_id");
         },
         valueGetter: (params) => { 
           if (params.data !== undefined) {

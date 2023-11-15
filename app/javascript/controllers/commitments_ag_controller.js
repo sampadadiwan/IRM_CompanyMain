@@ -2,17 +2,13 @@ import  BaseAgGrid from "controllers/base_ag_grid"
 export default class extends BaseAgGrid {
 
   columnDefs() {
-    
+    let controller = this;
     let columnDefs = [
       { "field": "commitment_type", headerName: "Type", filter: "agSetColumnFilter", enableRowGroup: true },
       {
         field: "folio_id", headerName: "Folio", enableRowGroup: true, enablePivot: true,
         cellRenderer: function (params) {
-          if (params.data !== undefined) {
-            return params.data.folio_link;
-          } else if(params.node.field === 'folio_id') {
-            return params.node.key;
-          }
+          return controller.renderCell(params, "folio_link", "folio_id");
         },
         valueGetter: (params) => { 
           if (params.data !== undefined) {
@@ -24,11 +20,7 @@ export default class extends BaseAgGrid {
         "field": "investor_link", 
         headerName: "Investor", chartDataType: 'category', enableRowGroup: true, enablePivot: true,
         cellRenderer: function (params) {
-          if (params.data !== undefined) {
-            return params.data.investor_link;
-          } else if(params.node.field === 'investor_link') {
-            return params.node.key;
-          }
+          return controller.renderCell(params, "investor_link");
         },
         valueGetter: (params) => { 
           if (params.data !== undefined) {
