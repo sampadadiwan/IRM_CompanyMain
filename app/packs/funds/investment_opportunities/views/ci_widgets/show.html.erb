@@ -27,10 +27,16 @@
 
   <tr>
     <td>
-      Image
+      Upload
     </td>
     <td>
-      <%= image_tag(@ci_widget.image_url) if @ci_widget.image %>
+      <% if @ci_widget.image&.mime_type&.include?('video') %>
+        <%= render "layouts/video", url: @ci_widget.image_url %>
+      <% elsif @ci_widget.image&.mime_type&.include?('image') %>
+        <%= image_tag(@ci_widget.image_url) if @ci_widget.image %>
+      <% else %>
+        <%= @ci_widget.image_url %>
+      <% end %>
     </td>
   </tr>
 
