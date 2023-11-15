@@ -5,7 +5,7 @@ json.url capital_commitment_url(capital_commitment, format: :json)
 json.investor_link link_to(capital_commitment.investor_name, capital_commitment.investor)
 json.folio_link link_to(capital_commitment.folio_id, capital_commitment)
 
-json.percentage capital_commitment.percentage.to_f
+json.percentage capital_commitment.percentage.to_f.round(2)
 json.full_name capital_commitment.investor_kyc&.full_name
 json.committed_amount_number capital_commitment.committed_amount.to_f
 json.call_amount_number capital_commitment.call_amount.to_f
