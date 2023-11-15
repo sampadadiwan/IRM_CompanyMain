@@ -10,12 +10,14 @@ export default class extends BaseAgGrid {
         cellRenderer: function (params) {
           if (params.data !== undefined) {
             return params.data.folio_link;
+          } else if(params.node.field === 'folio_id') {
+            return params.node.key;
           }
         },
         valueGetter: (params) => { 
           if (params.data !== undefined) {
             return params.data.folio_id 
-          }
+          } 
         }
       },
       {
@@ -24,7 +26,9 @@ export default class extends BaseAgGrid {
         cellRenderer: function (params) {
           if (params.data !== undefined) {
             return params.data.investor_link;
-          } 
+          } else if(params.node.field === 'investor_link') {
+            return params.node.key;
+          }
         },
         valueGetter: (params) => { 
           if (params.data !== undefined) {
