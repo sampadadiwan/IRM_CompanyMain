@@ -9,8 +9,14 @@
             <% if widget.image_placement == "Left" %>
                 <div class="card-body lead row">
                     <% if widget.image.present? %>
-                        <div class="col-lg-5 mb-4 notice_image_div">
-                            <img class="center notice_image" src=<%=widget.image.url%> />
+                        <div class="col-lg-5 mb-4">
+                            <% if widget.image&.mime_type&.include?('video') %>
+                                <%= render "layouts/video", url: widget.image_url, no_card: true %>
+                            <% elsif widget.image&.mime_type&.include?('image') %>
+                                <%= image_tag(widget.image_url, class: "notice_image_div") %>
+                            <% else %>
+                                <%= widget.image_url %>
+                            <% end %>
                         </div>
                     <% end %>
                     <div class="col-lg-7 mb-4">
@@ -28,7 +34,13 @@
                     </div>
                     <% if widget.image.present? %>
                         <div class="col-lg-5 mb-4 notice_image_div">
-                            <img class="center notice_image" src=<%=widget.image.url%> />
+                            <% if widget.image&.mime_type&.include?('video') %>
+                                <%= render "layouts/video", url: widget.image_url, no_card: true %>
+                            <% elsif widget.image&.mime_type&.include?('image') %>
+                                <%= image_tag(widget.image_url, class: "notice_image_div") %>
+                            <% else %>
+                                <%= widget.image_url %>
+                            <% end %>
                         </div>
                     <% end %>
                 </div>
