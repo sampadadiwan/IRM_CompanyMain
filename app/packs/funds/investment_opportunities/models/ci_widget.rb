@@ -1,5 +1,5 @@
 class CiWidget < ApplicationRecord
-  belongs_to :ci_profile
+  belongs_to :investment_opportunity
   belongs_to :entity
 
   validates :title, presence: true

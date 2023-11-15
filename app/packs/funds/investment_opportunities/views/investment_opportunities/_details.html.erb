@@ -5,6 +5,10 @@
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#widgets-tab">Widgets</a>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#track-records-tab">Track Record</a>
+
+
       <% if policy(investment_opportunity).update? %>          
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab" 
               data-action="click->tabdetails#loadData">
@@ -26,6 +30,19 @@
             <%= render "/documents/index", documents: investment_opportunity.documents, 
                 owner: investment_opportunity, entity: investment_opportunity.entity %>
           </div>     
+        </div>
+
+        
+        <div id="widgets-tab" class="tab-pane fade">
+          <div id="widgets" class="associated_entity">
+            <%= render "/ci_widgets/index", ci_widgets: investment_opportunity.ci_widgets %>
+          </div>
+        </div>
+
+        <div id="track-records-tab" class="tab-pane fade">
+          <div id="track_records" class="associated_entity">
+            <%= render "/ci_track_records/index", ci_track_records: investment_opportunity.ci_track_records %>
+          </div>
         </div>
         
         <div id="access-rights-tab" class="tab-pane fade">

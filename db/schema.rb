@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_11_12_071345) do
+ActiveRecord::Schema[7.1].define(version: 2023_11_15_073304) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -665,7 +665,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_12_071345) do
   end
 
   create_table "ci_track_records", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "ci_profile_id", null: false
     t.bigint "entity_id", null: false
     t.string "name", limit: 50
     t.decimal "value", precision: 20, scale: 4
@@ -674,12 +673,12 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_12_071345) do
     t.string "details"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["ci_profile_id"], name: "index_ci_track_records_on_ci_profile_id"
+    t.bigint "investment_opportunity_id"
     t.index ["entity_id"], name: "index_ci_track_records_on_entity_id"
+    t.index ["investment_opportunity_id"], name: "index_ci_track_records_on_investment_opportunity_id"
   end
 
   create_table "ci_widgets", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "ci_profile_id", null: false
     t.bigint "entity_id", null: false
     t.string "title"
     t.text "details"
@@ -688,8 +687,9 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_12_071345) do
     t.text "image_data"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["ci_profile_id"], name: "index_ci_widgets_on_ci_profile_id"
+    t.bigint "investment_opportunity_id"
     t.index ["entity_id"], name: "index_ci_widgets_on_entity_id"
+    t.index ["investment_opportunity_id"], name: "index_ci_widgets_on_investment_opportunity_id"
   end
 
   create_table "commitment_adjustments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2529,10 +2529,10 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_12_071345) do
   add_foreign_key "capital_remittances", "investors"
   add_foreign_key "ci_profiles", "entities"
   add_foreign_key "ci_profiles", "funds"
-  add_foreign_key "ci_track_records", "ci_profiles"
   add_foreign_key "ci_track_records", "entities"
-  add_foreign_key "ci_widgets", "ci_profiles"
+  add_foreign_key "ci_track_records", "investment_opportunities"
   add_foreign_key "ci_widgets", "entities"
+  add_foreign_key "ci_widgets", "investment_opportunities"
   add_foreign_key "commitment_adjustments", "capital_commitments"
   add_foreign_key "commitment_adjustments", "entities"
   add_foreign_key "commitment_adjustments", "exchange_rates"
