@@ -40,12 +40,41 @@ export default class BaseAgGrid extends Controller {
                 sortable: true,
                 minWidth: 120,
             },
+
+            autoGroupColumnDef: { 
+                minWidth: 200,
+                cellRendererParams: {
+                    footerValueGetter: params =>  {
+                        const isRootLevel = params.node.level === -1;
+                        if (isRootLevel) {
+                            return 'Total';
+                        }
+                        return `Sub Total (${params.value})`;
+                    },
+                }
+            },
+
+
             enableRangeSelection: true,
             enableCharts: true,
             rowGroupPanelShow: 'always',
             suppressDragLeaveHidesColumns: true,
             suppressMakeColumnVisibleAfterUnGroup: true,
             suppressRowGroupHidesColumns: true,
+             // adds subtotals
+            groupIncludeFooter: true,
+            // includes grand total
+            groupIncludeTotalFooter: true,
+
+            statusBar: {
+                statusPanels: [
+                    { statusPanel: 'agTotalAndFilteredRowCountComponent', align: 'left' },
+                    { statusPanel: 'agTotalRowCountComponent', align: 'center' },
+                    { statusPanel: 'agFilteredRowCountComponent' },
+                    { statusPanel: 'agSelectedRowCountComponent' },
+                    { statusPanel: 'agAggregationComponent' },
+                ]
+            },
             sideBar: {
                 toolPanels: [
                     {
@@ -171,4 +200,6 @@ export default class BaseAgGrid extends Controller {
             return params.node.key;
         }
     }
+
+    
 }

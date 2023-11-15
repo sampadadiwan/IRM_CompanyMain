@@ -922,7 +922,7 @@ select {
 
 
 .ag-root-wrapper-body.ag-layout-normal {
-  height: 100% !important;
+  height: 60% !important;
 }
 
 
@@ -935,4 +935,12 @@ select {
 .ag-header-icon {
   color: white !important;
   // background-color: white !important;
+}
+
+.ag-popup-child {
+  top: 40px !important;
+}
+
+span.ag-icon.ag-icon-filter {
+  color: orange;
 }
