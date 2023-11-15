@@ -62,7 +62,8 @@
                     
                   </table>
             </div>
-            <%= link_to "Show" , investment_opportunity , {class: "btn btn-outline-primary" } unless hide_show_btn %>
+            <% link = policy(investment_opportunity).update? ? investment_opportunity_path(investment_opportunity) : investment_opportunity_path(investment_opportunity, preview: true) %>
+            <%= link_to "Show" , link , {class: "btn btn-outline-primary" } unless hide_show_btn %>
         </div>
     </div>
 </div>

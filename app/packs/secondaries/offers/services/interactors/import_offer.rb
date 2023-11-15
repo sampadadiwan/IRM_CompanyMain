@@ -75,10 +75,10 @@ class ImportOffer < ImportUtil
     end
   end
 
-  def post_process(import_upload, _context)
+  def post_process(import_upload, context)
     # Sometimes we import custom fields. Ensure custom fields get created
-    @last_saved = import_upload.entity.offers.last
-    FormType.extract_from_db(@last_saved) if @last_saved
+    custom_field_headers = context.headers - standard_headers
+    FormType.save_cf_from_import(custom_field_headers, import_upload) if import_upload.processed_row_count.positive?
   end
 
   def adhoc_update(file_path, secondary_sale_id)

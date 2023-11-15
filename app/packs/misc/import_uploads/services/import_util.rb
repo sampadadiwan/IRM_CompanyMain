@@ -1,7 +1,5 @@
 class ImportUtil
   include Interactor
-  # Just stores the last model saved in the import. @see FormType.extract_from_db
-  attr_accessor :last_saved
 
   def call
     if context.import_upload.present? && context.import_file.present?
@@ -55,7 +53,7 @@ class ImportUtil
     end
 
     # Sometimes we import custom fields. Ensure custom fields get created
-    FormType.extract_from_db(@last_saved) if @last_saved
+    FormType.save_cf_from_import(custom_field_headers, import_upload) if import_upload.processed_row_count.positive?
     # Save the results file
     File.binwrite("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
 
@@ -70,11 +68,9 @@ class ImportUtil
       model.properties ||= {}
       custom_field_headers.each do |cfh|
         Rails.logger.debug { "### setup_custom_fields: processing #{cfh}" }
-        model.properties[cfh.parameterize.underscore] = user_data[cfh] if cfh.present?
+        model.properties[cfh.parameterize.underscore] = user_data[cfh] if cfh.present? && user_data[cfh].present?
       end
     end
-
-    @last_saved = model
   end
 
   def setup_exchange_rate(model, user_data)
@@ -85,7 +81,7 @@ class ImportUtil
 
   # get header row without the mandatory *
   def get_headers(headers)
-    headers.each { |x| x.delete!("*") }.each(&:strip!)
+    headers.filter(&:present?).each { |x| x.delete!("*") }.each(&:strip!)
   end
 
   def get_exchange_rates(file, _import_upload)

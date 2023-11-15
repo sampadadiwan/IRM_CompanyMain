@@ -107,7 +107,7 @@ class ImportCapitalCommittment < ImportUtil
     [folio_id, unit_type, commitment_type, commitment_date, folio_currency, onboarding_completed]
   end
 
-  def post_process(import_upload, _context)
+  def post_process(import_upload, context)
     # Import it
     CapitalCommitment.import @commitments, on_duplicate_key_update: %i[commitment_type commitment_date folio_currency unit_type fund_close virtual_bank_account notes properties onboarding_completed]
 
@@ -120,8 +120,8 @@ class ImportCapitalCommittment < ImportUtil
     fund_ids = @commitments.to_set(&:fund_id).to_a
 
     # Sometimes we import custom fields. Ensure custom fields get created
-    @last_saved = import_upload.entity.funds.last.capital_commitments.last
-    FormType.extract_from_db(@last_saved) if @last_saved
+    custom_field_headers = context.headers - standard_headers
+    FormType.save_cf_from_import(custom_field_headers, import_upload) if import_upload.processed_row_count.positive?
 
     Fund.where(id: fund_ids).find_each do |fund|
       # Compute the percentages
