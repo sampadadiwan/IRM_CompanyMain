@@ -47,7 +47,7 @@
   </div>
 <% end %>
 
-<div class="associated_entity">
+<div class="associated_entity" data-controller="datatable">
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Previous Runs</h1>
@@ -81,7 +81,7 @@
     </thead>
 
     <tbody>
-      <% @fund.allocation_runs.limit(20).each do |runs|  %>
+      <% @fund.allocation_runs.order(created_at: :desc).each do |runs|  %>
         <tr>
           <td>
             <%= l runs.start_date %>

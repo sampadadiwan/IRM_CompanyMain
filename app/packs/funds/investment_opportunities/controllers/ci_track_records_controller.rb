@@ -69,6 +69,6 @@ class CiTrackRecordsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def ci_track_record_params
-    params.require(:ci_track_record).permit(:ci_profile_id, :entity_id, :name, :value, :prefix, :suffix, :details)
+    params.require(:ci_track_record).permit(:investment_opportunity_id, :entity_id, :name, :value, :prefix, :suffix, :details)
   end
 end

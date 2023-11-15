@@ -9,6 +9,10 @@ class InvestmentOpportunity < ApplicationRecord
   belongs_to :entity, touch: true
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :expression_of_interests, dependent: :destroy
+
+  has_many :ci_track_records, dependent: :destroy
+  has_many :ci_widgets, dependent: :destroy
+
   has_noticed_notifications
   has_rich_text :details
 

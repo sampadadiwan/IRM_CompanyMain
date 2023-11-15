@@ -1,4 +1,6 @@
-<div class="io_card col-lg-3">
+<% hide_show_btn ||= false %>
+
+<div class="io_card col">
 
     <div class="card">
         <!-- <img src="..." class="card-img-top" alt="..."> -->
@@ -10,7 +12,7 @@
                 <table class="table table-bordered dataTable">
 
                     <% if investment_opportunity.logo.present? %>
-                    <tr>
+                    <tr class="logo_cell">
                        <td colspan="2" class="io_logo">
                             <%= image_tag investment_opportunity.logo.url(expires_in: 60*60*24*7) %>
                         </td>
@@ -60,7 +62,7 @@
                     
                   </table>
             </div>
-            <%= link_to "Show" , investment_opportunity , {class: "btn btn-outline-primary" }%>
+            <%= link_to "Show" , investment_opportunity , {class: "btn btn-outline-primary" } unless hide_show_btn %>
         </div>
     </div>
 </div>

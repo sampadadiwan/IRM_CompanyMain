@@ -538,11 +538,16 @@ ul.vesting_schedule {
 
 .io_card {
   margin-bottom: 20px;
-  .io_logo {
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
+  .logo_cell {
+    text-align: center;
+
+    .io_logo {
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        max-width: 400px;      
+      }
     }
   }
 }

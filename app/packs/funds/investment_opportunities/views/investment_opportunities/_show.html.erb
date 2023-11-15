@@ -1,0 +1,205 @@
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary">Investment Opportunity: <%= investment_opportunity.company_name %></h6>
+      <span>
+        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a>
+      </span>
+  </div>
+  <div class="card-body collapse show_details">
+    <table class="table table-bordered dataTable">
+
+      <tr>
+        <td>
+          Company Name
+        </td>
+        <td>
+          <%= investment_opportunity.company_name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Logo
+        </td>
+        <td>
+          <%= image_tag investment_opportunity.logo_url, 
+            style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if investment_opportunity.logo.present? %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Tags
+        </td>
+        <td>
+          <%= investment_opportunity.tag_list %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Fund Raise Amount
+        </td>
+        <td>
+          <%= money_to_currency investment_opportunity.fund_raise_amount, params %>
+          <div class="progress">
+            <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= investment_opportunity.percentage_raised %>%" aria-valuenow="<%=investment_opportunity.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
+              <%= investment_opportunity.percentage_raised %> %
+            </div>
+          </div>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Approved EOI Amount
+        </td>
+        <td>
+          <%= money_to_currency investment_opportunity.eoi_amount, params %>        
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Min Ticket Size
+        </td>
+        <td>
+          <%= money_to_currency investment_opportunity.min_ticket_size, params  %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Last Date
+        </td>
+        <td>
+          <%= l investment_opportunity.last_date %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Currency
+        </td>
+        <td>
+          <%= investment_opportunity.currency %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          EOI Locked
+        </td>
+        <td>
+          <%= display_boolean investment_opportunity.lock_eoi %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Allocations Locked
+        </td>
+        <td>
+          <%= display_boolean investment_opportunity.lock_allocations %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          Buyer Docs
+        </td>
+        <td>
+          <%= investment_opportunity.buyer_docs_list %>
+        </td>
+      </tr>
+
+      <%= display_custom_fields(investment_opportunity) if current_user %>
+
+      <tr>
+        <td>
+          Details
+        </td>
+        <td>
+          <%= investment_opportunity.details  %>
+        </td>
+      </tr>
+
+    </table>
+  </div>
+</div>
+
+  <%= render "layouts/video", 
+      url: investment_opportunity.video_url if investment_opportunity.video_url.present? %>
+
+
+  <div>
+    <% if policy(investment_opportunity).update? %>
+
+    <%= link_to "Edit" , edit_investment_opportunity_path(investment_opportunity), {class: "btn btn-outline-primary" } %> 
+    <%= button_to "Delete" , investment_opportunity, method: :delete, class: "btn btn-outline-danger" ,
+          form_class: "deleteButton", data: {action: "click->confirm#popup" , turbo:false} %>
+
+    <%= link_to "Preview", investment_opportunity_path(investment_opportunity, preview: 'true'), {class: "btn btn-outline-info"} %> 
+
+    &nbsp;&nbsp;&nbsp;
+
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Allocation
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          
+
+          <% 
+            lock_eoi_label = investment_opportunity.lock_eoi ? "Unlock EOIs" : "Lock EOIs" 
+            lock_eoi_msg = investment_opportunity.lock_eoi ? "This will enable new EOIs to be placed." : "This will disallow new EOIs from being placed."       
+          %>
+          <%= button_to lock_eoi_label , toggle_investment_opportunity_path(investment_opportunity, 
+              lock_eoi: true), {class: "dropdown-item", method: :patch, 
+              data: {action: "click->confirm#popup", msg: "#{lock_eoi_label}. #{lock_eoi_msg} Are you sure?", method: "patch"} } %> 
+              
+          <%= button_to "Allocate" , allocate_investment_opportunity_path(investment_opportunity), 
+              {class: "dropdown-item", form_class: "deleteButton", 
+              data: {action: "click->confirm#popup",  
+              msg: "Kick off allocation process? This will take some time to complete, please be patient.", 
+              method: "post"} } %> 
+
+          <%= link_to "View Allocations", finalize_allocation_investment_opportunity_path(investment_opportunity),
+              class: "dropdown-item" %>
+    
+          <%= link_to "Investors", investors_path(owner_type: "InvestmentOpportunity", owner_id: investment_opportunity.id), {class: "dropdown-item" } if current_user.enable_investors %>
+                    
+        </div>
+      </div>
+    </div>
+
+    
+
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-outline-success dropdown-toggle" type="button" 
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Notifications
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          
+          <%= button_to "Send Investment Opportunity Open : To LPs", 
+              send_notification_investment_opportunity_path(investment_opportunity, notification: "notify_open_for_interests"),    
+              class: "dropdown-item", 
+              data: { action: "click->confirm#popup", 
+                      msg: "Send email to all LPs notifying that the investment opportunity is open", 
+                      method: :patch }  %>   
+
+          <%= button_to "Send Investment Opportunity Allocated : To LPs", 
+              send_notification_investment_opportunity_path(investment_opportunity, notification: "notify_allocation"),    
+              class: "dropdown-item", 
+              data: { action: "click->confirm#popup", 
+                      msg: "Send email to all LPs notifying that the investment opportunity is now allocated", 
+                      method: :patch }  %>   
+   
+          
+        </div>
+      </div>
+    </div>
+
+    <% end %>
+  </div>
+
+  <%= render "investment_opportunities/details", investment_opportunity: investment_opportunity %>

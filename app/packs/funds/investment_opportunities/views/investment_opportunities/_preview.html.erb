@@ -1,0 +1,8 @@
+<%= render "/investment_opportunities/card", investment_opportunity: investment_opportunity,hide_show_btn: true %>
+<%= render "/investment_opportunities/preview_stats", investment_opportunity: investment_opportunity %>
+<%= render "/investment_opportunities/preview_widgets", investment_opportunity: investment_opportunity %>
+
+<div class="associated_entity">
+    <%= render "/documents/index", documents: investment_opportunity.documents, 
+                owner: investment_opportunity, entity: investment_opportunity.entity %>
+</div>                
