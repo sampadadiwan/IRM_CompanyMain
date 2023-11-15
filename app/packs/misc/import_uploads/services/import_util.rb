@@ -85,7 +85,7 @@ class ImportUtil
 
   # get header row without the mandatory *
   def get_headers(headers)
-    headers.each { |x| x.delete!("*") }.each(&:strip!)
+    headers.filter{|x| x.present?}.each { |x| x.delete!("*") }.each(&:strip!)
   end
 
   def get_exchange_rates(file, _import_upload)
