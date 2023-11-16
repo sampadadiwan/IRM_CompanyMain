@@ -8,7 +8,7 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Call Amount
+                                Called
                             </div>
                             <div class="h6 mb-0 font-weight-bold text-gray-800"><%= money_to_currency(capital_call.call_amount, params) %></div>
                         </div>
@@ -27,7 +27,7 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Collected Amount
+                                Collected
                             </div>
                             <div class="h6 mb-0 font-weight-bold text-gray-800"><%= money_to_currency(capital_call.collected_amount, params) %></div>
                         </div>
@@ -46,7 +46,7 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Percentage Called
+                                Percentage
                             </div>
                             <div class="h6 mb-0 font-weight-bold text-gray-800"><%= capital_call.percentage_called %> %</div>
                         </div>
@@ -86,7 +86,7 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Due Amount
+                                Due
                             </div>
                             <div class="row no-gutters align-items-center">
                                 <div class="col-auto">
@@ -112,8 +112,7 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Applicable To
-                            </div>
+                                Applicable                            </div>
                             <div class="h6 mb-0 font-weight-bold text-gray-800">
                                 <%= capital_call.fund_closes.join(",") %>
                             </div>

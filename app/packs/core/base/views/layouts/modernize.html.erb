@@ -21,7 +21,7 @@
   <title>CapHive</title>
 </head>
 
-<body>
+<body data-controller="confirm">
   <!-- Preloader -->
   <div class="preloader">
     <img src="/modernize/images/logos/favicon.png" alt="loader" class="lds-ripple img-fluid" />
@@ -46,30 +46,11 @@
 
           <span id="alert"></span>
 
-          <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
-            <div class="card-body px-4 py-3">
-              <div class="row align-items-center">
-                <div class="col-9">
                   <%= render "/layouts/breadcrumbs" %>
-                </div>
-                <div class="col-3">
-                  <div class="text-center mb-n5">
-                    <img src="/modernize/images/breadcrumb/ChatBc.png" alt="" class="img-fluid mb-n4" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
+          
           <%= yield %>
         </div>
       </div>
-      <script>
-        function handleColorTheme(e) {
-          $("html").attr("data-color-theme", e);
-          $(e).prop("checked", !0);
-        }
-      </script>
       
       <%= render "/layouts/modernize/theme_chooser" %>
 
@@ -77,6 +58,10 @@
 
     <%= render "/layouts/modernize/searchbar" %>
     <%= render "/layouts/modernize/sidebar_offcanvas" %>
+
+    <%= render "/layouts/logout_modal" %>    
+    <%= render "/layouts/confirm" %>
+    <%= render "/layouts/terms" if (current_user && !current_user.accept_terms) %>
 
   </div>
   <div class="dark-transparent sidebartoggler"></div>
@@ -91,6 +76,8 @@
   <script src="/modernize/js/sidebarmenu.js"></script>
   <script src="/modernize/js/theme.js"></script>
 
+    <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
     <!-- For sorting deal activities -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
@@ -109,12 +96,6 @@
     <!-- Tracking -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-4CPQNX69HM"></script>
     <script src="/js/clarity.js"></script>
-
-    <!-- PDFTron -->
-    <script src='/lib/webviewer.min.js'></script>
-    <script src='/lib/core/webviewer-core.min.js'></script>
-    <script src='/lib/core/pdf/PDFNet.js'></script>
-
     
     <script src="https://releases.transloadit.com/uppy/v2.12.1/uppy.min.js"></script>
 

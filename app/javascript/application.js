@@ -3,11 +3,10 @@ import "@hotwired/turbo-rails"
 import "trix"
 import "@rails/actiontext"
 import "controllers"
-import "@popperjs/core"
+// import "@popperjs/core"
 import "chartkick"
 import '@client-side-validations/client-side-validations/src'
 import "@nathanvda/cocoon"
-import "cleave.js"
 
 // import "Chart.bundle"
 import Highcharts from "highcharts"
@@ -27,9 +26,6 @@ addEventListener("trix-initialize", event => {
   inputElement.pattern = "(https?://|/).+";
 });
 
-
-
-
 $(document).on('turbo:before-cache', function() {     
   if( $('.select2-container').length > 0 ){
     // Hack to make sure select2 does not get duplicated due to turbolinks
@@ -40,18 +36,11 @@ $(document).on('turbo:before-cache', function() {
     $('#document_folder_id').select2('destroy');    
     $('#access_right_access_to_category').select2('destroy');    
     $('#access_right_access_to_investor_id').select2('destroy');    
-
   }
 });
 
 $( document ).on('turbo:load', function() {
 
-  $('.numeric').toArray().forEach(function(field) {
-    var cleave = new Cleave(field, {
-      numeral: true,
-      numeralThousandsGroupStyle: 'thousand'
-    });
-  });
 
     if (document.location.hostname.search("localhost") !== 0) {
       console.log("Google Analytics Enabled");
@@ -61,69 +50,13 @@ $( document ).on('turbo:load', function() {
       gtag('config', 'G-4CPQNX69HM');
     }
 
-    $('[data-toggle="tooltip"]').tooltip({'placement': 'top'});
-    $('.toast').toast('show');
+    // $('[data-toggle="tooltip"]').tooltip({'placement': 'top'});
+    // $('.toast').toast('show');
 
     $('.select2').select2();
     $(document).on('select2:open', () => {
       document.querySelector('.select2-search__field').focus();
     });
     
-
     "use strict"; 
-    
-    // Toggle the side navigation
-    $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) {
-      $("body").toggleClass("sidebar-toggled");
-      $(".sidebar").toggleClass("toggled");
-      if ($(".sidebar").hasClass("toggled")) {
-        $('.sidebar .collapse').collapse('hide');
-      };
-    });
-  
-    // Close any open menu accordions when window is resized below 768px
-    $(window).resize(function() {
-      if ($(window).width() < 768) {
-        $('.sidebar .collapse').collapse('hide');
-      };
-      
-      // Toggle the side navigation when window is resized below 480px
-      if ($(window).width() < 480 && !$(".sidebar").hasClass("toggled")) {
-        $("body").addClass("sidebar-toggled");
-        $(".sidebar").addClass("toggled");
-        $('.sidebar .collapse').collapse('hide');
-      };
-    });
-  
-    // Prevent the content wrapper from scrolling when the fixed side navigation hovered over
-    $('body.fixed-nav .sidebar').on('mousewheel DOMMouseScroll wheel', function(e) {
-      if ($(window).width() > 768) {
-        var e0 = e.originalEvent,
-          delta = e0.wheelDelta || -e0.detail;
-        this.scrollTop += (delta < 0 ? 1 : -1) * 30;
-        e.preventDefault();
-      }
-    });
-  
-    // Scroll to top button appear
-    $(document).on('scroll', function() {
-      var scrollDistance = $(this).scrollTop();
-      if (scrollDistance > 100) {
-        $('.scroll-to-top').fadeIn();
-      } else {
-        $('.scroll-to-top').fadeOut();
-      }
-    });
-  
-    // Smooth scrolling using jQuery easing
-    $(document).on('click', 'a.scroll-to-top', function(e) {
-      var $anchor = $(this);
-      $('html, body').stop().animate({
-        scrollTop: ($($anchor.attr('href')).offset().top)
-      }, 1000, 'easeInOutExpo');
-      e.preventDefault();
-    });
-
-    
-    
 });
