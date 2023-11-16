@@ -1,67 +1,88 @@
 
     <!-- Nav Item - Pages Collapse Menu -->
     <% if current_user.enable_investors %>
-        <li class="nav-item">                
-            <a class="nav-link" href="/investors" data-bs-toggle="collapse" data-bs-target="#investorMenus">
-                <i class="fas fa-xl fa-fw fa-user-tie"></i>
-                <span>Stakeholders</span>
+        <li class="sidebar-item">                
+            <a class="sidebar-link has-arrow" href="/investors" data-bs-toggle="collapse" data-bs-target="#investorMenus">
+                <span><i class="fas fa-xl fa-fw fa-user-tie"></i></span>
+                <span class="hide-menu">Stakeholders</span>
             </a>
 
-            <div id="investorMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
-                <div class="bg-white py-2 collapse-inner rounded">
-                    <a class="collapse-item" 
-                    href="/investors/new?investor[entity_id]=<%=current_user.entity_id%>">
-                        New Stakeholder</a>
-                    <a class="collapse-item" href="/investors">View Stakeholders</a>
-                    <% if current_user.enable_approvals %>
-                        <a class="collapse-item" href="/approvals">Approvals</a>
-                    <% end %>
-                    <a class="collapse-item" href="/notes">Notes</a>
-                    <a class="collapse-item" href="/investor_accesses?approved=false">Pending Access</a>
-                    <a class="collapse-item" href="/investor_accesses">All Investor Access</a>
-                </div>
-            </div>
+            <ul aria-expanded="false" class="collapse first-level">
+
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="/investors/new?investor[entity_id]=<%=current_user.entity_id%>">
+                        <div class="round-16 d-flex align-items-center justify-content-center">
+                            <i class="ti ti-circle"></i>
+                        </div>
+                        <span class="hide-menu">New Stakeholder</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="/investors">
+                        <div class="round-16 d-flex align-items-center justify-content-center">
+                            <i class="ti ti-circle"></i>
+                        </div>
+                        <span class="hide-menu">View Stakeholders</span>                    
+                    </a>
+                </li>
+                <% if current_user.enable_approvals %>
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="/approvals">
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-circle"></i>
+                            </div>
+                            <span class="hide-menu">Approvals</span>
+                        </a>
+                    </li>
+                <% end %>
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="/notes">
+                        <div class="round-16 d-flex align-items-center justify-content-center">
+                            <i class="ti ti-circle"></i>
+                        </div>
+                        <span class="hide-menu">Notes</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="/investor_accesses?approved=false">
+                        <div class="round-16 d-flex align-items-center justify-content-center">
+                            <i class="ti ti-circle"></i>
+                        </div>
+                        <span class="hide-menu">Pending Access</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="/investor_accesses">
+                        <div class="round-16 d-flex align-items-center justify-content-center">
+                            <i class="ti ti-circle"></i>
+                        </div>
+                        <span class="hide-menu">All Investor Access</span>                    
+                    </a>
+                </li>
+            </ul>
 
         </li>
     <% end %>
 
     <% if current_user.enable_documents %>
-        <li class="nav-item"> 
-            <a class="nav-link collapsed" href="/documents">
-                <i class="fas fa-xl fa-fw fa-folder"></i>
-                <span>Documents</span>
+        <li class="sidebar-item"> 
+            <a class="sidebar-link" href="/documents">
+                <span><i class="fas fa-xl fa-fw fa-folder"></i></span>
+                <span class="hide-menu">Documents</span>
             </a>
         </li>
     <% end %>
 
 
     <% if current_user.enable_investments %>
-        <li class="nav-item"> 
-            <a class="nav-link" href="/aggregate_investments" data-bs-toggle="collapse" data-bs-target="#investmentMenus">
-                <i class="fas fa-xl fa-fw fa-money-bill"></i>
-                <span>Investments</span>
-            </a>
-
-            <div id="investmentMenus" class="collapse subMenus" aria-labelledby="headingPages" data-parent="#accordionSidebar" style="">
-                <div class="bg-white py-2 collapse-inner rounded">
-                    <a class="collapse-item" 
-                    href="/investments/new?investment[entity_id]=<%=current_user.entity_id%>">
-                        New Investment</a>
-                    <a class="collapse-item" href="/aggregate_investments">Shareholding</a>
-                    <a class="collapse-item" href="/investments">Details View</a>
-                    <a class="collapse-item" href="/funding_rounds">Funding Rounds</a>
-                    
-                </div>
-            </div>
-
-        </li>
+        <%= render "/layouts/sidebars/investments_menus" %>
     <% end %>
 
     <% if current_user.enable_deals %>
-        <li class="nav-item"> 
-            <a class="nav-link" href="/deals">
-                <i class="fas fa-xl fa-fw fa-briefcase"></i>
-                <span>Deals</span>
+        <li class="sidebar-item"> 
+            <a class="sidebar-link" href="/deals">
+                <span><i class="fas fa-xl fa-fw fa-briefcase"></i></span>
+                <span class="hide-menu">Deals</span>
             </a>
         </li>
     <% end %>

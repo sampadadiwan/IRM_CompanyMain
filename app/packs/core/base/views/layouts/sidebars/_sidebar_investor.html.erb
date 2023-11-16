@@ -1,31 +1,31 @@
     <!-- Nav Item - Pages Collapse Menu -->
-    <li class="nav-item">
+    <li class="sidebar-item">
         
         <% if current_user.enable_investments %>
-            <a class="nav-link" href="/entities/investor_entities">
-                <i class="fas fa-xl fa-fw fa-money-bill"></i>
-                <span>Investments</span>
+            <a class="sidebar-link" href="/entities/investor_entities">
+                <span><i class="fas fa-xl fa-fw fa-money-bill"></i></span>
+                <span class="hide-menu">Investments</span>
             </a>
         <% end %>
 
         <% if current_user.enable_deals %>
-            <a class="nav-link" href="/deal_investors?for_investor=true">
-                <i class="fas fa-xl fa-fw fa-briefcase"></i>
-                <span>Deals</span>
+            <a class="sidebar-link" href="/deal_investors?for_investor=true">
+                <span><i class="fas fa-xl fa-fw fa-briefcase"></i></span>
+                <span class="hide-menu">Deals</span>
             </a>
         <% end %>
 
         <% if current_user.enable_secondary_sale %>
-            <a class="nav-link" href="/secondary_sales">
-                <i class="fas fa-xl fa-fw fa-briefcase"></i>
-                <span>Secondary Sales</span>
+            <a class="sidebar-link" href="/secondary_sales">
+                <span><i class="fas fa-xl fa-fw fa-briefcase"></i></span>
+                <span class="hide-menu">Secondary Sales</span>
             </a>
         <% end %>
 
         <% if current_user.enable_approvals %>
-            <a class="nav-link" href="/approvals">
-                <i class="fas fa-xl fa-fw fa-stamp"></i>
-                <span>Approvals</span>                        
+            <a class="sidebar-link" href="/approvals">
+                <span><i class="fas fa-xl fa-fw fa-stamp"></i></span>
+                <span class="hide-menu">Approvals</span>                        
             </a>
         <% end %>
 

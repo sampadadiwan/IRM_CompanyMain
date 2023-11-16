@@ -1,0 +1,64 @@
+        <li class="sidebar-item"> 
+            <a class="sidebar-link has-arrow" href="/aggregate_investments" data-bs-toggle="collapse" data-bs-target="#investmentMenus">
+                <span><i class="fas fa-xl fa-fw fa-money-bill"></i></span>
+                <span class="hide-menu">Investments</span>
+            </a>
+
+                <ul aria-expanded="false" class="collapse first-level">
+                    <li class="sidebar-item">
+                        <a class="sidebar-link"href="/investments/new?investment[entity_id]=<%=current_user.entity_id%>">
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-circle"></i>
+                            </div>
+                            <span class="hide-menu">New Investment</span>                         
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="/aggregate_investments">
+                            
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-circle"></i>
+                            </div>
+                            <span class="hide-menu">Shareholding</span> 
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="/investments">
+                            
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-circle"></i>
+                            </div>
+                            <span class="hide-menu">Details View</span> 
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="/funding_rounds">
+                            
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-circle"></i>
+                            </div>
+                            <span class="hide-menu">Funding Rounds</span> 
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="/valuations">
+                            
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-circle"></i>
+                            </div>
+                            <span class="hide-menu">Valuations</span> 
+                        </a>
+                    </li>
+                    <li class="sidebar-item">
+                        <a class="sidebar-link" href="/aggregate_investments/simple_simulator">
+                            
+                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-circle"></i>
+                            </div>
+                            <span class="hide-menu">Scenarios</span> 
+                        </a>
+                    </li>
+                    
+                </ul>
+
+        </li>
