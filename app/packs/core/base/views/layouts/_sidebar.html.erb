@@ -5,20 +5,20 @@
             <!-- Nav Item - Dashboard -->
             <li class="sidebar-item">
                 <a class="sidebar-link" href="/entities/dashboard" >
-                    <span><i class="fas fa-xl fa-fw fa-tachometer-alt"></i></span>
+                    <span><i class="fas fa-xl fa-tachometer-alt"></i></span>
                     <span class="hide-menu">Dashboard</span></a>                
             </li>
 
             <% if current_user && current_user.has_cached_role?(:super) %>
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/admin">
-                        <span><i class="fas fa-xl fa-fw fa-key"></i></span>
+                        <span><i class="fas fa-xl fa-key"></i></span>
                         <span class="hide-menu">Admin</span></a>
                 </li>
 
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/blazer">
-                        <span><i class="fas fa-xl fa-fw fa-file-lines"></i></span>
+                        <span><i class="fas fa-xl fa-file-lines"></i></span>
                         <span class="hide-menu">Reports</span></a>
                 </li>                
             <% end %>
@@ -27,12 +27,12 @@
                 <li class="sidebar-item">
                         
                     <a class="sidebar-link" href="/holdings">
-                        <span><i class="fas fa-xl fa-fw fa-money-bill"></i></span>
+                        <span><i class="fas fa-xl fa-money-bill"></i></span>
                         <span class="hide-menu">Holdings</span>
                     </a>
 
                     <a class="sidebar-link" href="/offers">
-                        <span><i class="fas fa-xl fa-fw fa-file-import"></i></span>
+                        <span><i class="fas fa-xl fa-file-import"></i></span>
                         <span class="hide-menu">Offers</span>
                     </a>
 
@@ -61,7 +61,7 @@
             <% if current_user && current_user.enable_funds %>
                 <li class="sidebar-item">                
                     <a class="sidebar-link has-arrow" href="/funds" data-bs-toggle="collapse" data-bs-target="#fundMenus">
-                        <span><i class="fas fa-xl fa-fw fa-dollar"></i></span>
+                        <span><i class="fas fa-xl fa-dollar"></i></span>
                         <span class="hide-menu">Funds</span>
                     </a>
 
@@ -126,8 +126,8 @@
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/investment_opportunities" >
                     
-                        <span><i class="fas fa-xl fa-fw fa-funnel-dollar"></i></span>
-                        <span class="hide-menu">Investment Opportunities</span></a>                
+                        <span><i class="fas fa-xl fa-funnel-dollar"></i></span>
+                        <span class="hide-menu">Opportunities</span></a>                
                 </li>
             <% end %>
 
@@ -135,7 +135,7 @@
             <% if current_user &&  ["Investment Fund", "Company", "Group Company"].include?(current_user.entity_type) %>
                 <li class="sidebar-item"> 
                     <a class="sidebar-link has-arrow" href="/tasks" data-bs-toggle="collapse" data-bs-target="#taskMenus">
-                        <span><i class="fas fa-xl fa-fw fa-check"></i></span>
+                        <span><i class="fas fa-xl fa-check"></i></span>
                         <span class="hide-menu">Tasks</span>
                     </a>
 

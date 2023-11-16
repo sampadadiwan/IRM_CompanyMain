@@ -166,25 +166,9 @@ h1 {
 video { float: none; }
 
 
-.nav-link.active {
-  background-color: #6484e3 !important;
-  color: white !important;
-}
-
-.nav-tabs {
-  border-bottom: 0px solid white !important;  
-}
-
-.nav-tabs .nav-link {
-  margin-right: 3px;
-  margin-bottom: 3px !important;
-  background-color:lighten($color: cornflowerblue, $amount: 30);
-  color: darkgray;
-}
-
-.nav-link:hover {
-  font-weight: 500;
-  border-color: lighten(#4e73df, 10%) !important;
+.nav-pills .nav-link {
+  text-align: center;
+  width: 200px;
 }
 
 .table_divider {
