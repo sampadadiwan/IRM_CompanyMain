@@ -1,4 +1,6 @@
 class ApplicationController < ActionController::Base
+  layout 'modernize'
+
   include Pundit::Authorization
   include PublicActivity::StoreController
 

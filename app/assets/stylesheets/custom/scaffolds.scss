@@ -611,27 +611,29 @@ ul.vesting_schedule {
   cursor: pointer;
  }
 
- .breadcrumb {
-    background-color: lighten(#4e73df, 5%) !important;
-    // background-image: linear-gradient(180deg, #4e73df 10%, #4e73df 100%);
-    background-size: cover;
-    padding: 10px;
-    li a {
-      color: white;
-      font-size: 1em;
-      @media (max-width: 480px) {
-        display: inline-block;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 150px;
+ .old{
+  .breadcrumb {
+      background-color: lighten(#4e73df, 5%) !important;
+      // background-image: linear-gradient(180deg, #4e73df 10%, #4e73df 100%);
+      background-size: cover;
+      padding: 10px;
+      li a {
+        color: white;
+        font-size: 1em;
+        @media (max-width: 480px) {
+          display: inline-block;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 150px;
+        }
       }
-    }
- }
+  }
 
-.breadcrumb-item + .breadcrumb-item::before {
-  color: white !important;
+  .breadcrumb-item + .breadcrumb-item::before {
+    color: white !important;
+  }
 }
 
 .notice_image_div {
