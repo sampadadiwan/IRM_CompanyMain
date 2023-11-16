@@ -5,7 +5,7 @@
             <!-- Nav Item - Dashboard -->
             <li class="sidebar-item">
                 <a class="sidebar-link" href="/entities/dashboard" >
-                    <span><i class="fas fa-xl fa-tachometer-alt"></i></span>
+                    <span><i class="ti ti-layout-dashboard"></i></span>
                     <span class="hide-menu">Dashboard</span></a>                
             </li>
 
@@ -61,7 +61,7 @@
             <% if current_user && current_user.enable_funds %>
                 <li class="sidebar-item">                
                     <a class="sidebar-link has-arrow" href="/funds" data-bs-toggle="collapse" data-bs-target="#fundMenus">
-                        <span><i class="fas fa-xl fa-dollar"></i></span>
+                        <span><i class="ti ti-currency-dollar"></i></span>
                         <span class="hide-menu">Funds</span>
                     </a>
 
@@ -124,10 +124,10 @@
 
             <% if current_user && current_user.enable_inv_opportunities %>                
                 <li class="sidebar-item">
-                    <a class="sidebar-link" href="/investment_opportunities" >
-                    
-                        <span><i class="fas fa-xl fa-funnel-dollar"></i></span>
-                        <span class="hide-menu">Opportunities</span></a>                
+                    <a class="sidebar-link" href="/investment_opportunities" >                    
+                        <span><i class="ti ti-device-analytics"></i></span>
+                        <span class="hide-menu">Opportunities</span>
+                    </a>                
                 </li>
             <% end %>
 
@@ -135,7 +135,7 @@
             <% if current_user &&  ["Investment Fund", "Company", "Group Company"].include?(current_user.entity_type) %>
                 <li class="sidebar-item"> 
                     <a class="sidebar-link has-arrow" href="/tasks" data-bs-toggle="collapse" data-bs-target="#taskMenus">
-                        <span><i class="fas fa-xl fa-check"></i></span>
+                        <span><i class="ti ti-checklist"></i></span>
                         <span class="hide-menu">Tasks</span>
                     </a>
 
