@@ -7,7 +7,6 @@ pin "@hotwired/stimulus-loading", to: "stimulus-loading.js", preload: true
 pin_all_from "app/javascript/controllers", under: "controllers"
 pin "trix"
 pin "@rails/actiontext", to: "actiontext.js"
-pin "@popperjs/core", to: "popper.min.js"
 pin "chartkick", to: "chartkick.js"
 # pin "Chart.bundle", to: "Chart.bundle.js"
 pin "@rails/activestorage", to: "activestorage.esm.js"
@@ -16,5 +15,4 @@ pin "highcharts" # @10.0.0
 pin "@client-side-validations/client-side-validations/src", to: "/js/client_side_validations.js"
 pin "@nathanvda/cocoon", to: "cocoon.min.js"
 pin_all_from "app/javascript/custom", under: "custom"
-pin "cleave.js", to: "cleave.js"
 pin "@rails/request.js", to: "request.js"

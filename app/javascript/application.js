@@ -3,7 +3,6 @@ import "@hotwired/turbo-rails"
 import "trix"
 import "@rails/actiontext"
 import "controllers"
-// import "@popperjs/core"
 import "chartkick"
 import '@client-side-validations/client-side-validations/src'
 import "@nathanvda/cocoon"
@@ -49,9 +48,6 @@ $( document ).on('turbo:load', function() {
       gtag('js', new Date());
       gtag('config', 'G-4CPQNX69HM');
     }
-
-    // $('[data-toggle="tooltip"]').tooltip({'placement': 'top'});
-    // $('.toast').toast('show');
 
     $('.select2').select2();
     $(document).on('select2:open', () => {
