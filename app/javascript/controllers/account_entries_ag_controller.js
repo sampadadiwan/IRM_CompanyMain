@@ -54,6 +54,12 @@ export default class extends BaseAgGrid {
   }
 
   
+  includeFooter() {
+    return false;
+  }
 
+  includeTotalFooter() {
+      return false;
+  }
  
 }

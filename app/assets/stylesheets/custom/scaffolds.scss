@@ -168,7 +168,7 @@ video { float: none; }
 
 .nav-pills .nav-link {
   text-align: center;
-  width: 200px;
+  min-width: 160px !important;
 }
 
 .table_divider {
@@ -721,58 +721,8 @@ ul.vesting_schedule {
   }
 }
 
-.devise-logo {
-  margin-top: 10px;
-}
-
-.devise-logo {
-  object-fit: contain;
-  max-width:100%;
-  max-height:100%;  
-}
-
-#login_page {
-  // margin-top: auto;
-
-  hr {
-    margin-top: 30px;
-    margin-bottom: 10px;
-  }
-  
-
-  position:absolute;
-  top:0px;
-  right:0px;
-  bottom:0px;
-  left:0px;
-  
-  .bg-login-image {
-    // background-color: #4e73df;    
-  }
-  
-  .container {
-    max-width: 1000px;
-    height: 100%;
-    margin-top: 11%;
-    padding: 0px;
-
-    .login-right {
-      background-color: lighten($color: lightgray, $amount: 15);
-      border-left: 1px solid lightgray;
-    }
-    
-    .login-left {
-      // background-color: #4e73df;
-      width: 100%;
-      height: 100%;
-      // margin: unset;
-      // vertical-align: middle;
-    }
-  }
-  // background-color: #4e73df;
-  background-image: url("img/background.jpg");
-  background-repeat: no-repeat, repeat;
-  background-size: cover;
+.splash-logo {
+  max-height: 500px !important;
 }
 
 .title-line {
@@ -905,12 +855,8 @@ select {
   // background-color: white !important;
 }
 
-.ag-popup-child {
-  top: 40px !important;
-}
-
-span.ag-icon.ag-icon-filter {
-  color: orange;
+.ag-panel.ag-default-panel.ag-dialog.ag-ltr.ag-popup-child {
+  top: 100px !important;
 }
 
 .progress, .progress-stacked {
@@ -920,3 +866,29 @@ span.ag-icon.ag-icon-filter {
 .badge {
   margin: 2px;
 }
+
+.ag-side-bar.ag-unselectable.ag-side-bar-right.ag-focus-managed {
+  max-height: 800px !important;
+}
+.ag-overlay {
+  position: unset !important;
+}
+.small_logo {
+  max-height: 100px;
+}
+
+
+.topbar {
+  .navbar {
+    .message-body {
+      i {
+        font-size: 2em;
+      }
+    }
+  }
+
+  .simplebar-wrapper {
+    max-height: 500px !important;
+  }
+}
+

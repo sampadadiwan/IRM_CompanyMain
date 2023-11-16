@@ -1,4 +1,4 @@
-<div id="login_page" data-controller="login">
+<div id="login_page_x" data-controller="login">
 
         <%= render "/layouts/display_status" if (notice || alert) && params[:display_status].present? %>
 
@@ -13,9 +13,6 @@
                         <div class="card-body p-0">
                             <!-- Nested Row within Card Body -->
                             <div class="row">
-                                <div class="col-sm bg-login-image login-left">
-                                    <div><%= render "devise/shared/company_logo" %></div>
-                                </div>
                                 <div class="col-sm bg-login-image login-right">
                                     <div class="p-5 text-center">
                                         

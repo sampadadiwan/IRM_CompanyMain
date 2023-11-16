@@ -33,6 +33,7 @@ export default class BaseAgGrid extends Controller {
             },
             columnDefs: this.columnDefs(),
             rowHeight: 60,
+            suppressAggFuncInHeader: true,
             defaultColDef: {
                 flex: 1,
                 resizable: true,
@@ -62,9 +63,9 @@ export default class BaseAgGrid extends Controller {
             suppressMakeColumnVisibleAfterUnGroup: true,
             suppressRowGroupHidesColumns: true,
              // adds subtotals
-            groupIncludeFooter: true,
+            groupIncludeFooter: this.includeFooter(),
             // includes grand total
-            groupIncludeTotalFooter: true,
+            groupIncludeTotalFooter: this.includeTotalFooter(),
 
             statusBar: {
                 statusPanels: [
@@ -201,5 +202,17 @@ export default class BaseAgGrid extends Controller {
         }
     }
 
+ 
+    includeFooter() {
+        return true;
+    }
+
+    includeTotalFooter() {
+        return true;
+    }
+
+    resetAllFilters() {
+        this.gridOptions.api.setFilterModel(null);
+    }
     
 }

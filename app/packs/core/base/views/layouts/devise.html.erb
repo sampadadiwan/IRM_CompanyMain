@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-bs-theme="light" data-color-theme="Blue_Theme">
+
+<head>
+  <!-- Required meta tags -->
+<meta charset="UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<!-- Favicon icon-->
+<link
+  rel="shortcut icon"
+  type="image/png"
+  href="/modernize/images/logos/favicon.png"
+/>
+
+<!-- Core Css -->
+<link rel="stylesheet" href="/modernize/css/styles.css" />
+<%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+<%= javascript_importmap_tags %>
+
+
+  <title>CapHive</title>
+</head>
+
+<body>
+  <!-- Preloader -->
+  <div class="preloader">
+    <img src="/modernize/images/logos/favicon.png" alt="loader" class="lds-ripple img-fluid" />
+  </div>
+  <div id="main-wrapper">
+
+    <div class="position-relative overflow-hidden radial-gradient min-vh-100 w-100">
+      <div class="position-relative z-index-5">
+        <div class="row">
+          <div class="col-xl-7 col-xxl-8">
+            <div class="text-nowrap logo-img d-block px-4 py-9 w-100">
+            </div>
+            <div class="d-none d-xl-flex justify-content-center" style="margin: auto">
+              <%= render "devise/shared/company_logo" %>
+            </div>
+          </div>
+          <div class="col-xl-5 col-xxl-4">
+            <div class="authentication-login min-vh-100 bg-body row justify-content-center align-items-center p-4">
+              <div class="col-sm-8 col-md-6 col-xl-9">
+                <h4 class="fw-bolder text-center">Welcome to CapHive</h2>
+                
+                <%= yield %>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dark-transparent sidebartoggler"></div>
+  <!-- Import Js Files -->
+
+<script src="/modernize/libs/jquery/dist/jquery.min.js"></script>
+<script src="/modernize/js/app.min.js"></script>
+<script src="/modernize/js/app.init.js"></script>
+<script src="/modernize/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/modernize/libs/simplebar/dist/simplebar.min.js"></script>
+
+<script src="/modernize/js/sidebarmenu.js"></script>
+<script src="/modernize/js/theme.js"></script>
+
+</body>
+
+</html>

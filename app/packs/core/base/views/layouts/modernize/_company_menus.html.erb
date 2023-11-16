@@ -1,0 +1,115 @@
+
+
+<li class="nav-item dropdown">
+    <a class="nav-link nav-icon-hover" href="javascript:void(0)" id="drop2" data-bs-toggle="dropdown"
+            aria-expanded="false">
+    <i class="ti ti-home"></i>
+    <div class="bg-primary rounded-circle"></div>
+    </a>
+    
+    <% if current_user %>
+    <div class="dropdown-menu content-dd dropdown-menu-end dropdown-menu-animate-up"
+            aria-labelledby="drop1">
+    <div class="profile-dropdown position-relative" data-simplebar>
+        
+        
+        <div class="d-flex align-items-center py-9 mx-7 border-bottom">
+
+        <div class="ms-3">
+            <h5 class="mb-1 fs-3"><%= current_user.entity.name %></h5>
+            <span class="mb-1 d-block"><%= current_user.entity.entity_type %></span>
+            <p class="mb-0 d-flex align-items-center gap-2">
+            <%= current_user.entity.url %>
+            </p>
+        </div>
+        </div>
+        <div class="message-body">
+        <a href="<%=entity_path(current_user.entity)%>" class="py-8 px-7 mt-8 d-flex align-items-center">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <i class="ti ti-home"></i>
+            </span>
+            <div class="w-75 d-inline-block v-middle ps-3">
+            <h6 class="mb-1 fs-3 fw-semibold lh-base">Company Profile</h6>
+            <span class="fs-2 d-block text-body-secondary">Account Settings</span>
+            </div>
+        </a>
+        <a href="<%= users_path %>" class="py-8 px-7 d-flex align-items-center">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <i class="ti ti-users"></i>
+            </span>
+            <div class="w-75 d-inline-block v-middle ps-3">
+            <h6 class="mb-1 fs-3 fw-semibold lh-base">User</h6>
+            <span class="fs-2 d-block text-body-secondary">Company Employees</span>
+            </div>
+        </a>
+        <a href="<%= investor_advisors_path %>" class="py-8 px-7 d-flex align-items-center">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <i class="ti ti-user-check"></i>
+            </span>
+            <div class="w-75 d-inline-block v-middle ps-3">
+            <h6 class="mb-1 fs-3 fw-semibold lh-base">Advisors</h6>
+            <span class="fs-2 d-block text-body-secondary">External Company Advisors</span>
+            </div>
+        </a>
+        
+        <% if current_user.curr_role != "investor" %>
+
+        <a href="<%= access_rights_path %>" class="py-8 px-7 d-flex align-items-center">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <i class="ti ti-lock-access"></i>
+            </span>
+            <div class="w-75 d-inline-block v-middle ps-3">
+            <h6 class="mb-1 fs-3 fw-semibold lh-base">Access Rights</h6>
+            <span class="fs-2 d-block text-body-secondary">Provide Access</span>
+            </div>
+        </a>
+
+        <a href="<%= form_types_path %>" class="py-8 px-7 d-flex align-items-center">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <i class="ti ti-forms"></i>
+            </span>
+            <div class="w-75 d-inline-block v-middle ps-3">
+            <h6 class="mb-1 fs-3 fw-semibold lh-base">Customize Forms</h6>
+            <span class="fs-2 d-block text-body-secondary"> Design Personalized Form</span>
+            </div>
+        </a>
+
+        <a href="<%= investor_notices_path %>" class="py-8 px-7 d-flex align-items-center">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <i class="ti ti-layers-difference"></i>
+            </span>
+            <div class="w-75 d-inline-block v-middle ps-3">
+            <h6 class="mb-1 fs-3 fw-semibold lh-base">Notices</h6>
+            <span class="fs-2 d-block text-body-secondary">Personalize Investor Notices</span>
+            </div>
+        </a>
+
+        <a href="<%= import_uploads_path %>" class="py-8 px-7 d-flex align-items-center">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <i class="ti ti-upload"></i>
+            </span>
+            <div class="w-75 d-inline-block v-middle ps-3">
+            <h6 class="mb-1 fs-3 fw-semibold lh-base">Imports</h6>
+            <span class="fs-2 d-block text-body-secondary">Bulk Upload Data</span>
+            </div>
+        </a>
+
+        <a href="<%= exchange_rates_path %>" class="py-8 px-7 d-flex align-items-center">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <i class="ti ti-currency-dollar"></i>
+            </span>
+            <div class="w-75 d-inline-block v-middle ps-3">
+            <h6 class="mb-1 fs-3 fw-semibold lh-base">Exchange Rates</h6>
+            <span class="fs-2 d-block text-body-secondary">Manage Exchange Rates</span>
+            </div>
+        </a>
+
+        <% end %>
+        
+        
+        </div>
+        
+    </div>
+    </div>
+    <% end %>
+</li>

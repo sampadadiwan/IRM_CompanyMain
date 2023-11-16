@@ -95,6 +95,14 @@ module CapHive
       enable_starttls_auto: true
     }
 
+    config.to_prepare do
+      Devise::SessionsController.layout "devise"
+      Devise::RegistrationsController.layout "devise"
+      Devise::ConfirmationsController.layout "devise"
+      Devise::UnlocksController.layout "devise"
+      Devise::PasswordsController.layout "devise"
+    end
+
     # unless Rails.env.development? || Rails.env.test?
     Rails.application.config.middleware.use ExceptionNotification::Rack,
                                             email: {
