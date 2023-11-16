@@ -210,5 +210,9 @@ export default class BaseAgGrid extends Controller {
     includeTotalFooter() {
         return true;
     }
+
+    resetAllFilters() {
+        this.gridOptions.api.setFilterModel(null);
+    }
     
 }

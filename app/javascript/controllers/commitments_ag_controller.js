@@ -32,10 +32,7 @@ export default class extends BaseAgGrid {
       { "field": "unit_type", headerName: "Unit Type", sortable: true, filter: "agSetColumnFilter", chartDataType: 'category', enableRowGroup: true, enablePivot: true },
       {
         "field": "committed_amount_number", headerName: "Committed",
-        sortable: true, filter: 'agNumberColumnFilter', aggFunc: 'sum', 
-        cellRenderer: function (params) {
-          return params.data.committed_amount_number;
-        },
+        sortable: true, filter: 'agNumberColumnFilter', aggFunc: 'sum',         
         valueFormatter: params => {
           // console.log(params.data.committed_amount_number);
           if (params.data !== undefined) {

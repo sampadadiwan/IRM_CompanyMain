@@ -943,9 +943,13 @@ select {
 }
 
 .ag-panel.ag-default-panel.ag-dialog.ag-ltr.ag-popup-child {
-  top: 40px !important;
+  top: 100px !important;
 }
 
 .ag-side-bar.ag-unselectable.ag-side-bar-right.ag-focus-managed {
   max-height: 800px !important;
+}
+
+.ag-overlay {
+  position: unset !important;
 }
