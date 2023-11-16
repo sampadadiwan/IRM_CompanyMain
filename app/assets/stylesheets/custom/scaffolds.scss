@@ -942,10 +942,10 @@ select {
   // background-color: white !important;
 }
 
-.ag-popup-child {
+.ag-panel.ag-default-panel.ag-dialog.ag-ltr.ag-popup-child {
   top: 40px !important;
 }
 
-span.ag-icon.ag-icon-filter {
-  color: orange;
+.ag-side-bar.ag-unselectable.ag-side-bar-right.ag-focus-managed {
+  max-height: 800px !important;
 }

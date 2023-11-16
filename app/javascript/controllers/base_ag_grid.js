@@ -33,6 +33,7 @@ export default class BaseAgGrid extends Controller {
             },
             columnDefs: this.columnDefs(),
             rowHeight: 60,
+            suppressAggFuncInHeader: true,
             defaultColDef: {
                 flex: 1,
                 resizable: true,
