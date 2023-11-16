@@ -165,12 +165,6 @@ h1 {
 
 video { float: none; }
 
-
-.nav-pills .nav-link {
-  text-align: center;
-  min-width: 160px !important;
-}
-
 .table_divider {
   background-color: lightgray;
 }
@@ -721,8 +715,8 @@ ul.vesting_schedule {
   }
 }
 
-.splash-logo {
-  max-height: 500px !important;
+.device-logo {
+  max-height: 400px !important;
 }
 
 .title-line {
@@ -892,3 +886,12 @@ select {
   }
 }
 
+
+.nav.nav-pills {
+  .nav-link {
+    text-align: center;
+    min-width: 160px !important;  
+    border: 1px dotted lighten($color: #4e73df, $amount: 10) ;
+    margin-right: 5px;
+  }
+}

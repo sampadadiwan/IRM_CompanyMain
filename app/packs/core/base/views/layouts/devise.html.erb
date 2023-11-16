@@ -16,6 +16,7 @@
 
 <!-- Core Css -->
 <link rel="stylesheet" href="/modernize/css/styles.css" />
+
 <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
 <%= javascript_importmap_tags %>
 
@@ -34,10 +35,10 @@
       <div class="position-relative z-index-5">
         <div class="row">
           <div class="col-xl-7 col-xxl-8">
-            <div class="text-nowrap logo-img d-block px-4 py-9 w-100">
-            </div>
-            <div class="d-none d-xl-flex justify-content-center" style="margin: auto">
-              <%= render "devise/shared/company_logo" %>
+            <div class="d-none d-xl-flex min-vh-100 bg-body row justify-content-center align-items-center p-4">
+              <div class="col-sm-8 col-md-6 col-xl-9">
+                <%= render "devise/shared/company_logo" %>                
+              </div>
             </div>
           </div>
           <div class="col-xl-5 col-xxl-4">
