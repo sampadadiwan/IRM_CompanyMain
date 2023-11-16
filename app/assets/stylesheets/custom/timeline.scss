@@ -1,4 +1,4 @@
-$primary-color: #FF6B6B;
+$primary-color: #4e73df;
 $primary-color-hover: scale-color($primary-color, $lightness: 32%);
 
 .activity_timeline {
@@ -95,7 +95,8 @@ $primary-color-hover: scale-color($primary-color, $lightness: 32%);
         margin: 0 0 .5em 0;
         text-transform: uppercase;
         white-space: nowrap;
-        background-color: antiquewhite;    
+        color: white;
+        background-color: #13deb9;    
     }
     /*----- TIMELINE MARKER -----*/
 
