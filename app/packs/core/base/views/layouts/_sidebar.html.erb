@@ -1,4 +1,6 @@
-        <!-- Sidebar -->
+<% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role]) do %>
+
+<!-- Sidebar -->
 <nav class="sidebar-nav scroll-sidebar" data-simplebar>
         <ul id="sidebarnav">
 
@@ -77,36 +79,36 @@
                             </a>
                         </li>
                             
-                            <% if current_user.curr_role == "investor" %>
-                                <li class="sidebar-item">
-                                    <a class="sidebar-link" href="/capital_commitments?my_commitments=true">
-                                        
-                                        <div class="round-16 d-flex align-items-center justify-content-center">
-                                            <i class="ti ti-circle"></i>
-                                        </div>
-                                        <span class="hide-menu">Commitments</span> 
-                                    </a>
-                                </li>  
-                                <li class="sidebar-item">
-                                    <a class="sidebar-link" href="/capital_commitments/documents">
-                                        
-                                        <div class="round-16 d-flex align-items-center justify-content-center">
-                                            <i class="ti ti-circle"></i>
-                                        </div>
-                                        <span class="hide-menu">Statements</span> 
-                                    </a>
-                                </li>  
-                            <% else %>
-                                <li class="sidebar-item">
-                                    <a class="sidebar-link" href="/reports">
-                                        
-                                        <div class="round-16 d-flex align-items-center justify-content-center">
-                                            <i class="ti ti-circle"></i>
-                                        </div>
-                                        <span class="hide-menu">Reports</span> 
-                                    </a>
-                                </li>    
-                            <% end %>
+                        <% if current_user.curr_role == "investor" %>
+                            <li class="sidebar-item">
+                                <a class="sidebar-link" href="/capital_commitments?my_commitments=true">
+                                    
+                                    <div class="round-16 d-flex align-items-center justify-content-center">
+                                        <i class="ti ti-circle"></i>
+                                    </div>
+                                    <span class="hide-menu">Commitments</span> 
+                                </a>
+                            </li>  
+                            <li class="sidebar-item">
+                                <a class="sidebar-link" href="/capital_commitments/documents">
+                                    
+                                    <div class="round-16 d-flex align-items-center justify-content-center">
+                                        <i class="ti ti-circle"></i>
+                                    </div>
+                                    <span class="hide-menu">Statements</span> 
+                                </a>
+                            </li>  
+                        <% elsif current_user.enable_reports %>
+                            <li class="sidebar-item">
+                                <a class="sidebar-link" href="/reports">
+                                    
+                                    <div class="round-16 d-flex align-items-center justify-content-center">
+                                        <i class="ti ti-circle"></i>
+                                    </div>
+                                    <span class="hide-menu">Reports</span> 
+                                </a>
+                            </li>    
+                        <% end %>
 
                         <li class="sidebar-item">
                             <a class="sidebar-link" href="/investor_kycs">
@@ -167,3 +169,5 @@
         </ul>
         <!-- End of Sidebar -->
 </nav>
+
+<% end %>

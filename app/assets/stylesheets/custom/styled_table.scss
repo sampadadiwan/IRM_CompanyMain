@@ -5,7 +5,7 @@ table.dataTable {
     padding: 1px 0px !important;
     
     thead th {
-      background-color: #6484e3;
+      background-color: var(--bs-primary);
       color: #ffffff;
       text-align: left;
       font-weight: normal;

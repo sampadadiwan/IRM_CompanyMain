@@ -1,3 +1,5 @@
+<% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role]) do %>
+
 <!--  Header Start -->
 <header class="topbar">
   <div class="with-vertical"><!-- ---------------------------------- -->
@@ -51,7 +53,7 @@
                 <%= render "/layouts/persona" %>                
             <% end %>
             
-            <%#= render "/layouts/modernize/notifications" %>
+            <%= render "/layouts/modernize/notifications" %>
 
             <%= render "/layouts/modernize/company_menus" %>
 
@@ -70,3 +72,5 @@
   
 </header>
 <!--  Header End -->
+
+<% end %>
