@@ -10,12 +10,12 @@
             <i class="ti ti-menu-2"></i>
           </a>
         </li>
-        <li class="nav-item d-none d-lg-block">
+        <!-- li class="nav-item d-none d-lg-block">
           <a class="nav-link nav-icon-hover" href="javascript:void(0)" data-bs-toggle="modal"
                   data-bs-target="#exampleModal">
             <i class="ti ti-search"></i>
           </a>
-        </li>
+        </li -->
       </ul>
       <ul class="navbar-nav quick-links d-none d-lg-flex">
         <%= render "/layouts/modernize/apps" %>        
@@ -38,6 +38,18 @@
             <i class="ti ti-align-justified fs-7"></i>
           </a>
           <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-center">
+            
+            <% if current_user && current_user.advisor_entity_id.present? %>
+                <div class="topbar-divider "></div>
+                <%= render "/investor_advisors/personas" %>
+            <% elsif current_user && 
+                (   
+                    current_user.has_cached_role?(:investor) || 
+                    current_user.has_cached_role?(:holding) 
+                )  %>
+                <div class="topbar-divider "></div>
+                <%= render "/layouts/persona" %>                
+            <% end %>
             
             <%= render "/layouts/modernize/notifications" %>
 
