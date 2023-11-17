@@ -459,8 +459,8 @@ ul.vesting_schedule {
 .top_bar_logo {
   margin:0px;
   padding:0px;
-  max-width:200px;
-  max-height:60px;
+  max-width:35px;
+  max-height:35px;
 }
 
 .allocation_form {
@@ -518,7 +518,6 @@ ul.vesting_schedule {
   margin-bottom: 20px;
   .logo_cell {
     text-align: center;
-
     .io_logo {
       img {
         width: 100%;
@@ -717,6 +716,10 @@ ul.vesting_schedule {
 
 .device-logo {
   max-height: 400px !important;
+}
+
+.ci-logo {
+  max-height: 150px !important;
 }
 
 .title-line {

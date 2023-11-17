@@ -1,0 +1,44 @@
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Tags
+    </td>
+    <td>
+      <%= raw investment_opportunity.tag_list.split(",").collect{|tag| link_to(tag, search_investment_opportunities_path(query: tag))}.join(", ") if investment_opportunity.tag_list.present? %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Fund Raise Amount
+    </td>
+    <td>
+      <%= money_to_currency investment_opportunity.fund_raise_amount, params %>
+      <div class="progress">
+        <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= investment_opportunity.percentage_raised %>%" aria-valuenow="<%=investment_opportunity.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
+          <%= investment_opportunity.percentage_raised %> %
+        </div>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Min Ticket Size
+    </td>
+    <td>
+      <%= money_to_currency investment_opportunity.min_ticket_size, params  %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Last Date
+    </td>
+    <td>
+      <%= l investment_opportunity.last_date %>
+    </td>
+  </tr>
+  <tr>
+    <td colspan=2>
+      <%= investment_opportunity.details %>
+    </td>
+  </tr>
+</table>

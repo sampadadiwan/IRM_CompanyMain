@@ -1,8 +1,64 @@
-<%= render "/investment_opportunities/card", investment_opportunity: investment_opportunity,hide_show_btn: true %>
-<%= render "/investment_opportunities/preview_stats", investment_opportunity: investment_opportunity %>
-<%= render "/investment_opportunities/preview_widgets", investment_opportunity: investment_opportunity %>
+<div class="col d-flex align-items-stretch">
+    <div class="card w-100 bg-info-subtle overflow-hidden shadow-none">
+    <div class="card-body position-relative">
+        <div class="row">
+        <div class="col-sm-10">
+            <div class="d-flex align-items-center mb-7">
+            
+            <h5 class="fw-semibold mb-0 fs-5"><%= investment_opportunity.company_name %></h5>
+            </div>
+            <div class="d-flex align-items-center">            
+                <div class="ps-4 border-end pe-4 border-muted border-opacity-10">
+                    <h3 class="mb-1 fw-semibold fs-8 d-flex align-content-center">$2,340<i class="ti ti-arrow-up-right fs-5 lh-base text-success"></i></h3>
+                    <p class="mb-0 text-dark">Today’s Sales</p>
+                </div>
+                <div class="ps-4">
+                    <h3 class="mb-1 fw-semibold fs-8 d-flex align-content-center">35%<i class="ti ti-arrow-up-right fs-5 lh-base text-success"></i></h3>
+                    <p class="mb-0 text-dark">Overall Performance</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-2">
+            <% if investment_opportunity.logo.present? %>
+                <%= image_tag investment_opportunity.logo.url(expires_in: 60*60*24*7), class: "ci-logo" %> 
+            <% end %>
+        </div>
+        </div>
+    </div>
+    </div>
+</div>
+
+
 
 <div class="associated_entity">
-    <%= render "/documents/index", documents: investment_opportunity.documents, 
-                owner: investment_opportunity, entity: investment_opportunity.entity %>
+    <section class="hero-section position-relative overflow-hidden mb-0 mb-lg-5">
+    <div class="container">
+        <div class="row align-items-center">        
+            <div class="col">
+                <%= render "/investment_opportunities/card_table2", investment_opportunity: investment_opportunity %>
+            </div>
+        </div>
+
+        <!-- section class="text-bg-light py-5">
+              <div class="row justify-content-center">
+                <div class="col-lg-8 col-xxl-8">
+                  <h2 class="fs-9 text-center mb-5 fw-bolder">
+                    <span class="text-primary"><%= investment_opportunity.company_name %>:</span> <%= investment_opportunity.tag_list %>
+                  </h2>
+                  <%= investment_opportunity.details %>
+                </div>
+              </div>
+        </section -->
+
+    </div>
+    </section>
+</div>
+
+<%= render "/ci_track_records/preview_track_record", investment_opportunity: investment_opportunity %>
+<%= render "/ci_widgets/preview_widgets2", investment_opportunity: investment_opportunity %>
+
+<div class="row">
+    <% investment_opportunity.documents.each do |doc| %>
+        <div class="col"><%= render "/investment_opportunities/preview_document", document: doc %></div>
+    <% end %>
 </div>                

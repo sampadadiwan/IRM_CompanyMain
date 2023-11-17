@@ -1,0 +1,56 @@
+<div class="row">
+
+  <div class="col">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex flex-row align-items-center">
+          <div
+            class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-primary">
+            <i class="ti ti-currency-dollar fs-6"></i>
+          </div>
+          <div class="ms-3 align-self-center">
+            <h3 class="mb-0 fs-6"><%= money_to_currency investment_opportunity.fund_raise_amount, params %></h3>
+            <span class="text-muted">Fund Raise Amount</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="col">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex flex-row align-items-center">
+          <div
+            class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-danger">
+            <i class="ti ti-ticket fs-6"></i>
+          </div>
+          <div class="ms-3 align-self-center">
+            <h3 class="mb-0 fs-6"><%= money_to_currency investment_opportunity.min_ticket_size, params %></h3>
+            <span class="text-muted">Min Ticket Size</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="col">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex flex-row align-items-center">
+          <div
+            class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-success">
+            <i class="ti ti-calendar fs-6"></i>
+          </div>
+          <div class="ms-3 align-self-center">
+            <h3 class="mb-0 fs-6"><%= l investment_opportunity.last_date %></h3>
+            <span class="text-muted">Last Date</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+    
+</div>

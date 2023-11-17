@@ -1,11 +1,23 @@
 
 
 <li class="nav-item dropdown">
-    <a class="nav-link nav-icon-hover" href="javascript:void(0)" id="drop2" data-bs-toggle="dropdown"
+    <a class="nav-link pe-0" href="javascript:void(0)" id="drop1" data-bs-toggle="dropdown"
             aria-expanded="false">
-    <i class="ti ti-home"></i>
-    <div class="bg-primary rounded-circle"></div>
+        <div class="d-flex align-items-center">
+            <div class="user-profile-img">
+                <% if current_user && current_user.entity %>
+                    <% if current_user.entity.logo.present? %>
+                        <%= image_tag image_url(current_user.entity.logo.url(expires_in: 60*60*24*7)), 
+                            class: "top_bar_logo rounded-circle" %>
+                    <% else %>
+                        <i class="ti ti-home"></i>
+                        <div class="bg-primary rounded-circle"></div>
+                    <% end %>                                                      
+                <% end %>
+            </div>
+        </div>
     </a>
+
     
     <% if current_user %>
     <div class="dropdown-menu content-dd dropdown-menu-end dropdown-menu-animate-up"

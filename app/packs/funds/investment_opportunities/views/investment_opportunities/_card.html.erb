@@ -9,58 +9,10 @@
                 <%= link_to investment_opportunity.company_name, investment_opportunity %>
             </h5>
             <div class="card-text">
-                <table class="table table-bordered dataTable">
-
-                    <% if investment_opportunity.logo.present? %>
-                    <tr class="logo_cell">
-                       <td colspan="2" class="io_logo">
-                            <%= image_tag investment_opportunity.logo.url(expires_in: 60*60*24*7) %>
-                        </td>
-                    </tr>
-                    <% end %>
-
-                    <tr>
-                      <td>
-                        Tags
-                      </td>
-                      <td>
-                        <%= raw investment_opportunity.tag_list.split(",").collect{|tag| link_to(tag, search_investment_opportunities_path(query: tag))}.join(", ") if investment_opportunity.tag_list.present? %>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        Fund Raise Amount
-                      </td>
-                      <td>
-                        <%= money_to_currency investment_opportunity.fund_raise_amount, params %>
-                        <div class="progress">
-                          <div class="progress-bar progress-bar-striped bg-success progress-bar-animated" role="progressbar" style="width: <%= investment_opportunity.percentage_raised %>%" aria-valuenow="<%=investment_opportunity.percentage_raised%>" aria-valuemin="0" aria-valuemax="100">
-                            <%= investment_opportunity.percentage_raised %> %
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                
-                
-                    
-                    <tr>
-                      <td>
-                        Min Ticket Size
-                      </td>
-                      <td>
-                        <%= money_to_currency investment_opportunity.min_ticket_size, params  %>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        Last Date
-                      </td>
-                      <td>
-                        <%= l investment_opportunity.last_date %>
-                      </td>
-                    </tr>
-                    
-                  </table>
+                <% if investment_opportunity.logo.present? %>
+                    <%= image_tag investment_opportunity.logo.url(expires_in: 60*60*24*7), class: "ci-logo" %>
+                <% end %>
+                <%= render "/investment_opportunities/card_table2", investment_opportunity: investment_opportunity %>
             </div>
             <% link = policy(investment_opportunity).update? ? investment_opportunity_path(investment_opportunity) : investment_opportunity_path(investment_opportunity, preview: true) %>
             <%= link_to "Show" , link , {class: "btn btn-outline-primary" } unless hide_show_btn %>

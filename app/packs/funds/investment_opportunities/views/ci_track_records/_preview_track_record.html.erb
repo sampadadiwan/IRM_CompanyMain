@@ -1,0 +1,44 @@
+    <div class="row center">
+
+        <% investment_opportunity.ci_track_records.each_with_index do |track_record, idx| %>
+            <div class="col">
+                <% color = ["success", "primary", "warning", "success", "primary", "info", "warning"][idx] %>
+                
+
+                <!-- div class="col d-flex align-items-stretch">
+                    <a href="javascript:void(0)" class="card text-bg-<%=color%> text-white w-100 card-hover">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <%= track_record.name %>
+                                <div class="ms-auto">
+                                <i class="ti ti-arrow-right fs-8"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <h4 class="card-title mb-1 text-white"><%= track_record.to_s %></h4>
+                                <h6 class="card-text fw-normal text-white-50">
+                                    <%= track_record.details %>
+                                </h6>
+                            </div>
+                        </div>
+                    </a>
+                </div -->
+
+                <div class="col d-flex align-items-stretch">
+                    <div class="card w-100">
+                        <div class="card-header text-bg-<%=color%>">
+                            <h4 class="mb-0 text-white card-title"><%= track_record.name %></h4>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title"><%= track_record.to_s %></h3>
+                            <p class="card-text">
+                                <%= track_record.details %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        <% end %>
+        
+    </div>

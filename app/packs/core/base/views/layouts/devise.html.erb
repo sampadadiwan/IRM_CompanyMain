@@ -44,8 +44,9 @@
           <div class="col-xl-5 col-xxl-4">
             <div class="authentication-login min-vh-100 bg-body row justify-content-center align-items-center p-4">
               <div class="col-sm-8 col-md-6 col-xl-9">
-                <h4 class="fw-bolder text-center">Welcome to CapHive</h2>
-                
+                <% name = @current_entity&.name || "CapHive" %>
+                <h5 class="card-title fw-semibold text-center"> Welcome to <%=name%> </h5>
+                <p class=" mb-9"></p>
                 <%= yield %>
                 
               </div>
