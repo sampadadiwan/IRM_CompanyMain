@@ -1,29 +1,49 @@
+<nav class="sidebar-nav scroll-sidebar" data-simplebar>
+  <ul id="sidebarnav">
 
-<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion toggled" id="accordionSidebar">
+<!-- Sidebar Start -->
+    <aside class="left-sidebar with-vertical" style="overflow:scroll;">
+      <div><!-- ---------------------------------- -->
+        <!-- Start Vertical Layout Sidebar -->
+        <!-- ---------------------------------- -->
+        <div class="brand-logo d-flex align-items-center justify-content-between">
+          <div class="sidebar-brand-icon">
+          <a href="/" class="text-nowrap logo-img">
+            <img src="/img/logo_trans.png" class="dark-logo" alt="Logo-Dark" />
+            <img src="/img/logo_trans.png" class="light-logo" alt="Logo-light" />
+          </a>
+          </div>
+          <a href="javascript:void(0)" class="sidebartoggler ms-auto text-decoration-none fs-5 d-block d-xl-none">
+            <i class="ti ti-x"></i>
+          </a>
+        </div>
 
-  <!-- Sidebar - Brand -->
-  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/">
-      <div class="sidebar-brand-icon">
-          <img src="/img/logo_trans.png"></img>
-      </div>
-  </a>
 
-  <!-- Divider -->
-  <hr class="sidebar-divider my-0">
+        <% Administrate::Namespace.new(namespace).resources_with_index_route.sort.each do |resource| %>
+          <li class="sidebar-item">
 
-  <% Administrate::Namespace.new(namespace).resources_with_index_route.sort.each do |resource| %>
-    <li class="nav-item">
-
-      
-      <% anchor = "<i class='fas fa-lg fa-fw'></i><span>#{display_resource_name(resource)}</span>".html_safe %>
-      
-      <%= link_to(anchor, resource_index_route(resource), class: "nav-link") if valid_action?(:index, resource) && show_action?(:index, model_from_resource(resource)) %>
-      
-    </li>
-  <% end %>
+            
+            <% anchor = "<span class='hide-menu'>#{display_resource_name(resource)}</span>".html_safe %>
+            
+            <%= link_to(anchor, resource_index_route(resource), class: "sidebar-link") if valid_action?(:index, resource) && show_action?(:index, model_from_resource(resource)) %>
+            
+          </li>
+        <% end %>
 
   <!-- Divider -->
   <hr class="sidebar-divider d-none d-md-block">
 
 
-</ul>
+
+        <!-- ---------------------------------- -->
+        <!-- Start Vertical Layout Sidebar -->
+        <!-- ---------------------------------- -->
+      </div>
+    </aside>
+<!--  Sidebar End -->
+  </ul>
+</nav>
+
+
+
+

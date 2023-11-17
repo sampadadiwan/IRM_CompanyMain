@@ -12,13 +12,13 @@
             <% if current_user && current_user.has_cached_role?(:super) %>
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/admin">
-                        <span><i class="fas fa-xl fa-key"></i></span>
+                        <span><i class="ti ti-layout-dashboard"></i></span>
                         <span class="hide-menu">Admin</span></a>
                 </li>
 
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/blazer">
-                        <span><i class="fas fa-xl fa-file-lines"></i></span>
+                        <span><i class="ti ti-files"></i></span>
                         <span class="hide-menu">Reports</span></a>
                 </li>                
             <% end %>
