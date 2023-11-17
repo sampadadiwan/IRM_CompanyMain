@@ -20,7 +20,9 @@
         padding: 0.375rem 0.75rem;
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap; }
+        white-space: nowrap; 
+        line-height: 25px !important;
+      }
       .select2-container .select2-selection--single .select2-selection__clear {
         background-color: transparent;
         border: none;
@@ -166,6 +168,7 @@
       right: 1px;
       width: 20px; }
       .select2-container--default .select2-selection--single .select2-selection__arrow b {
+        display:none !important;
         border-color: #888 transparent transparent transparent;
         border-style: solid;
         border-width: 5px 4px 0 4px;

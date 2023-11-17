@@ -5,7 +5,9 @@
     else
         capital_commitments = policy_scope(CapitalCommitment).includes(:fund, :investor)
     end
-    
+
+    if capital_commitments.present?
+
     committed_amount =  capital_commitments.inject(0){|sum, cc| sum + cc.committed_amount }
     committed_amount = Money.new(committed_amount, fund.currency) if committed_amount == 0
     
@@ -17,6 +19,8 @@
     
     distribution_amount =  capital_commitments.inject(0){|sum, cc| sum + cc.distribution_amount }
     distribution_amount = Money.new(distribution_amount, fund.currency) if distribution_amount == 0
+
+    end
 
 %>
 
