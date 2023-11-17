@@ -12,13 +12,15 @@
             <div class="col-md-7">
                 <%= column_chart [["Committed", capital_commitment.committed_amount.to_f], ["Called", capital_commitment.call_amount.to_f], ["Collected", capital_commitment.collected_amount.to_f], ["Distributed", capital_commitment.distribution_amount.to_f] ],
                  library: {
-                   plotOptions: { column: {
-                     pointWidth: 20,
-                     dataLabels: {
-                       enabled: true,
-                       format: "{point.y:,.2f}"
-                     }
-                   } }
+                   plotOptions: { 
+                        column: {
+                            pointWidth: 20,
+                            dataLabels: {
+                                enabled: false,
+                                format: "{point.y:,.2f}"
+                            }
+                        }
+                    }
                  } %>
             </div>
             <div class="col-md-5">

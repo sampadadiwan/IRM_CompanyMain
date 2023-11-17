@@ -4,13 +4,17 @@
 
     <div class="card">
         <!-- <img src="..." class="card-img-top" alt="..."> -->
-        <div class="card-body">
+        <div class="card-header">
             <h5 class="card-title">
                 <%= link_to investment_opportunity.company_name, investment_opportunity %>
             </h5>
+        </div>
+        <div class="card-body">
             <div class="card-text">
                 <% if investment_opportunity.logo.present? %>
-                    <%= image_tag investment_opportunity.logo.url(expires_in: 60*60*24*7), class: "ci-logo" %>
+                    <div class="d-sm-flex align-items-center justify-content-between">
+                        <%= image_tag investment_opportunity.logo.url(expires_in: 60*60*24*7), class: "ci-logo" %>
+                    </div>
                 <% end %>
                 <%= render "/investment_opportunities/card_table2", investment_opportunity: investment_opportunity %>
             </div>
