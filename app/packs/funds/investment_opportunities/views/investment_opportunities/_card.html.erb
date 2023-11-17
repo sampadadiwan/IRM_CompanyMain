@@ -17,9 +17,13 @@
                     </div>
                 <% end %>
                 <%= render "/investment_opportunities/card_table2", investment_opportunity: investment_opportunity %>
+
+                <div class="row">
+                    <% link = policy(investment_opportunity).update? ? investment_opportunity_path(investment_opportunity) : investment_opportunity_path(investment_opportunity, preview: true) %>
+                    <%= link_to "Show" , link , {class: "btn btn-outline-primary" } unless hide_show_btn %>
+                </div>
             </div>
-            <% link = policy(investment_opportunity).update? ? investment_opportunity_path(investment_opportunity) : investment_opportunity_path(investment_opportunity, preview: true) %>
-            <%= link_to "Show" , link , {class: "btn btn-outline-primary" } unless hide_show_btn %>
+            
         </div>
     </div>
 </div>
