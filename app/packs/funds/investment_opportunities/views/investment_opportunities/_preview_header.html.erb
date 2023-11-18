@@ -4,17 +4,14 @@
         <div class="row">
         <div class="col-sm-10">
             <div class="d-flex align-items-center mb-7">            
-                <h5 class="fw-semibold mb-0 fs-5"><%= investment_opportunity.company_name %></h5>
+                <h3 class="mb-1 fw-semibold fs-8 d-flex align-content-center"><%= investment_opportunity.company_name %></h3>
             </div>
             <div class="d-flex align-items-center">            
-                <div class="ps-4 border-end pe-4 border-muted border-opacity-10">
-                    <h3 class="mb-1 fw-semibold fs-8 d-flex align-content-center">$2,340<i class="ti ti-arrow-up-right fs-5 lh-base text-success"></i></h3>
-                    <p class="mb-0 text-dark">Today’s Sales</p>
-                </div>
-                <div class="ps-4">
-                    <h3 class="mb-1 fw-semibold fs-8 d-flex align-content-center">35%<i class="ti ti-arrow-up-right fs-5 lh-base text-success"></i></h3>
-                    <p class="mb-0 text-dark">Overall Performance</p>
-                </div>
+                <% investment_opportunity.tag_list.split(",").each do |tag| %>
+                    <div class="ps-4 border-end pe-4 border-muted border-opacity-10">
+                        <h5 class="mb-0 fs-5"><%= tag %><i class="ti ti-arrow-up-right fs-5 lh-base text-success"></i></h5>
+                    </div>
+                <% end %>            
             </div>
         </div>
         <div class="col-sm-2">

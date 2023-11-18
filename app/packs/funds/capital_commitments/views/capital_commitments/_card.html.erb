@@ -6,7 +6,7 @@
             <div class="mb-3 mb-sm-0">
                 <h5 class="card-title fw-semibold"><%= capital_commitment.fund.name %></h5>                
                 <span class="fs3 mb-1">
-                    <%= "KYC: #{capital_commitment.investor_kyc&.full_name}, " if capital_commitment.investor_kyc %>
+                    <%= capital_commitment.investor_kyc&.full_name if capital_commitment.investor_kyc %>
                     Folio: <%= capital_commitment.folio_id %>
                 </span>
             </div>     
@@ -95,7 +95,8 @@
             </div>
         </div>
         </div>
-        <div class="col-lg-12 col-md-6">
+        
+        <!-- div class="col-lg-12 col-md-6">
         <div class="card">
             <div class="card-body">
             <div class="row align-items-start">
@@ -110,7 +111,8 @@
             </div>
             </div>
         </div>
-        </div>
+        </div -->
+
         <div class="col-lg-12 col-md-6">
         <div class="card">
             <div class="card-body">
