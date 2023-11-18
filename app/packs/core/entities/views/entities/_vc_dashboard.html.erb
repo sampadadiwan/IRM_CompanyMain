@@ -8,24 +8,45 @@
             <div class="associated_entity">
                 <%#= render "/funds/fund_investor_stats" %>
             </div>
-            <div class="associated_entity">
-                <% capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc) %>
-                <%#= render "/funds/investor_charts", capital_commitments: capital_commitments %>
-                <%#= render "/capital_commitments/investor_index",  
-                    capital_commitments: capital_commitments  %>
 
-                <% capital_commitments.each do |cc| %>
-                    <%= render "/capital_commitments/card", capital_commitment: cc %>
-                <% end %>
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Funds</h6>
+                    <span>
+                        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_funds"><i class="fa-solid fa-caret-down"></i></a>
+                    </span>
+                </div>
+                <div class="card-body collapse show show_funds">
+                    <% capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc) %>
+                    <%#= render "/funds/investor_charts", capital_commitments: capital_commitments %>
+                    <%#= render "/capital_commitments/investor_index",  
+                        capital_commitments: capital_commitments  %>
+
+                    <% capital_commitments.each do |cc| %>
+                        <%= render "/capital_commitments/card", capital_commitment: cc %>
+                    <% end %>
+                </div>
             </div>
+
         <% end %>
 
     
         <% investment_opportunities = policy_scope(InvestmentOpportunity) %>
         <% if investment_opportunities.count > 0 %>
-            <div class="associated_entity" >
-                <%= render "/investment_opportunities/index",  
-                    investment_opportunities: investment_opportunities if current_user.enable_inv_opportunities %>
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Opportunities</h6>
+                    <span>
+                        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_opp"><i class="fa-solid fa-caret-down"></i></a>
+                    </span>
+                </div>
+                <div class="card-body collapse show show_opp">
+                    <div class="row" >
+                        <% investment_opportunities.each do |investment_opportunity| %>
+                            <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity %>
+                        <% end %>
+                    </div>
+                </div>
             </div>
         <% end %>
 
