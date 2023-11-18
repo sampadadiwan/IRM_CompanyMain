@@ -23,7 +23,7 @@
         <%#= render "/layouts/modernize/apps" %>        
       </ul>
       <div class="d-block d-lg-none">
-        <img src="/modernize/images/logos/dark-logo.svg" width="180" alt="" />
+        <img src="/img/logo-without-tagline.jpg" width="80" alt="" />
       </div>
       <a class="navbar-toggler nav-icon-hover p-0 border-0" href="javascript:void(0)" data-bs-toggle="collapse"
               data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
@@ -34,11 +34,7 @@
       </a>
       <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
         <div class="d-flex align-items-center justify-content-between">
-          <a href="javascript:void(0)" class="nav-link d-flex d-lg-none align-items-center justify-content-center"
-                  type="button" data-bs-toggle="offcanvas" data-bs-target="#mobilenavbar"
-                  aria-controls="offcanvasWithBothOptions">
-            <i class="ti ti-align-justified fs-7"></i>
-          </a>
+          
           <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-center">
             
             <% if current_user && current_user.advisor_entity_id.present? %>

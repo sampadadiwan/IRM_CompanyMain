@@ -9,7 +9,8 @@
                     <%= "KYC: #{capital_commitment.investor_kyc&.full_name}, " if capital_commitment.investor_kyc %>
                     Folio: <%= capital_commitment.folio_id %>
                 </span>
-            </div>            
+            </div>     
+            <%#= image_tag capital_commitment.entity.logo.url, class: "ci-logo" if capital_commitment.entity.logo %>       
         </div>
         <div class="row align-items-center">
             <div class="col-md-7">
@@ -44,6 +45,13 @@
                         <h6 class="fs-5 fw-semibold mb-0"><%= money_to_currency(capital_commitment.call_amount, params) %></h6>
                     </div>
                     </div>
+                    <!-- div class="d-flex align-items-baseline mb-4">
+                    <span class="round-8 text-bg-primary rounded-circle me-6"></span>
+                    <div>
+                        <p class="fs-3 mb-1">UnCalled</p>
+                        <h6 class="fs-5 fw-semibold mb-0"><%= money_to_currency(capital_commitment.commitment_pending, params) %></h6>
+                    </div>
+                    </div -->
                     <div class="d-flex align-items-baseline mb-4 pb-1">
                     <span class="round-8 text-bg-secondary rounded-circle me-6"></span>
                     <div>
@@ -73,13 +81,15 @@
                     <h5 class="card-title mb-9 fw-semibold">
                         Recent Statements
                     </h5>
-                    <div>
+                    <ul>
                         <% capital_commitment.documents.not_template.limit(3).each do |doc| %>
+                            <li>
                             <%= link_to doc do %>
                                 <%= doc.name %> : <%= l doc.created_at.to_date %> 
                             <% end %>
+                            </li>
                         <% end %>
-                    </div>
+                    </ul>
                 </div>
             </div>
             </div>
@@ -91,7 +101,23 @@
             <div class="row align-items-start">
                 <div class="col">
                     <h5 class="card-title mb-9 fw-semibold">
-                        Pending Remittances
+                        Uncalled Capital
+                    </h5>
+                    <h4 class="fw-semibold mb-3">
+                        <%= money_to_currency(capital_commitment.commitment_pending, params) %>
+                    </h4>
+                </div>
+            </div>
+            </div>
+        </div>
+        </div>
+        <div class="col-lg-12 col-md-6">
+        <div class="card">
+            <div class="card-body">
+            <div class="row align-items-start">
+                <div class="col">
+                    <h5 class="card-title mb-9 fw-semibold">
+                        Due Amount
                     </h5>
                     <h4 class="fw-semibold mb-3">
                         <%= money_to_currency(capital_commitment.due_amount, params) %>
