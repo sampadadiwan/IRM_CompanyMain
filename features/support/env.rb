@@ -115,6 +115,7 @@ module IRMUtils
     key_val = args.split(";").to_h { |kv| kv.split("=") }
     key_val.each do |k, v|
       # model[k] = v
+      puts "Setting #{k} to #{v} on #{model.class} #{model.id}"
       model.send("#{k}=", v)
     end
   end

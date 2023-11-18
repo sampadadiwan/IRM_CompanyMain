@@ -31,23 +31,6 @@ class EntityDashboard < Administrate::BaseDashboard
     created_by: Field::Number,
     investor_categories: Field::String,
     instrument_types: Field::String,
-    enable_documents: Field::BooleanEmoji,
-    enable_deals: Field::BooleanEmoji,
-    enable_investments: Field::BooleanEmoji,
-    enable_holdings: Field::BooleanEmoji,
-    enable_secondary_sale: Field::BooleanEmoji,
-    enable_funds: Field::BooleanEmoji,
-    enable_account_entries: Field::BooleanEmoji,
-    enable_units: Field::BooleanEmoji,
-    enable_fund_portfolios: Field::BooleanEmoji,
-    enable_options: Field::BooleanEmoji,
-    enable_captable: Field::BooleanEmoji,
-    enable_kpis: Field::BooleanEmoji,
-    enable_kycs: Field::BooleanEmoji,
-    enable_support: Field::BooleanEmoji,
-    enable_approvals: Field::BooleanEmoji,
-    enable_investors: Field::BooleanEmoji,
-    enable_inv_opportunities: Field::BooleanEmoji,
     permissions: ActiveFlagField
   }.freeze
 
@@ -60,17 +43,7 @@ class EntityDashboard < Administrate::BaseDashboard
     id
     name
     entity_type
-    enable_documents
-    enable_deals
-    enable_investments
-    enable_captable
-    enable_secondary_sale
-    enable_funds
-    enable_account_entries
-    enable_units
-    enable_fund_portfolios
-    enable_kpis
-    enable_kycs
+    permissions
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -83,6 +56,7 @@ class EntityDashboard < Administrate::BaseDashboard
     sub_domain
     url
     category
+    permissions
     created_at
     updated_at
     active
@@ -91,23 +65,6 @@ class EntityDashboard < Administrate::BaseDashboard
     created_by
     investor_categories
     instrument_types
-    enable_documents
-    enable_deals
-    enable_investments
-    enable_holdings
-    enable_secondary_sale
-    enable_funds
-    enable_account_entries
-    enable_units
-    enable_fund_portfolios
-    enable_inv_opportunities
-    enable_options
-    enable_captable
-    enable_kpis
-    enable_kycs
-    enable_investors
-    enable_approvals
-    enable_support
     employees
     investors
     investor_entities

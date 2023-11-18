@@ -4,6 +4,7 @@ Given(/^there is a user "([^"]*)"$/) do |arg1|
   @user.save!
   puts "\n####User####\n"
   puts @user.to_json
+  puts "User Permissions: #{@user.permissions}"
 end
 
 Given('there is a user {string} for an entity {string}') do |arg1, arg2|
@@ -12,6 +13,7 @@ Given('there is a user {string} for an entity {string}') do |arg1, arg2|
   @entity.save!
   puts "\n####Entity####\n"
   puts @entity.to_json
+  puts "Entity Permissions: #{@entity.permissions}"
 
   # Funds need exchange rates for their calculations
   if @entity.entity_type == "Investment Fund"
@@ -28,6 +30,7 @@ Given('there is a user {string} for an entity {string}') do |arg1, arg2|
   @user.save!
   puts "\n####User####\n"
   puts @user.to_json
+  puts "User Permissions: #{@user.permissions}"
 
   @entity.reload
 end
@@ -40,12 +43,14 @@ Given('there is another user {string} for another entity {string}') do |arg1, ar
   @another_entity.save!
   puts "\n####Another Entity####\n"
   puts @another_entity.to_json
+  puts "Another Entity Permissions: #{@another_entity.permissions}"
 
   @another_user = FactoryBot.build(:user, entity: @another_entity)
   key_values(@another_user, arg1)
   @another_user.save!
   puts "\n####Another User####\n"
   puts @another_user.to_json
+  puts "Another User Permissions: #{@another_user.permissions}"
 
   @another_entity.reload
 end

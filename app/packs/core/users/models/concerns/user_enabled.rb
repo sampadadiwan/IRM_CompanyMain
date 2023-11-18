@@ -5,7 +5,7 @@ module UserEnabled
     # Add new flags to the end of this list
     flag :permissions, %i[enable_documents enable_deals enable_investments enable_holdings
                           enable_secondary_sale enable_funds enable_inv_opportunities enable_options
-                          enable_captable enable_investors enable_kpis enable_kycs enable_approvals]
+                          enable_captable enable_investors enable_kpis enable_kycs enable_approvals enable_reports]
 
     # Add new flags to the end of this list
     flag :extended_permissions, %i[investor_kyc_create investor_kyc_read investor_kyc_update investor_kyc_delete investor_kyc_approve investor_create investor_read investor_update investor_destroy]
@@ -61,6 +61,10 @@ module UserEnabled
 
   def enable_kycs
     get_permissions.enable_kycs? && entity && entity.permissions.enable_kycs?
+  end
+
+  def enable_reports
+    get_permissions.enable_reports? && entity && entity.permissions.enable_reports?
   end
 
   def get_permissions
