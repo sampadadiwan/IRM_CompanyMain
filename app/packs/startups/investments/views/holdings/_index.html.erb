@@ -19,7 +19,7 @@
                         method: :post, class: "btn btn-outline-success" , form_class: "deleteButton", 
                         data: {turbo:false}  %>
 
-                <% elsif policy(current_user.entity).approve_all_holdings? %>
+                <% elsif false && policy(current_user.entity).approve_all_holdings? %>
                     <%= button_to "Approve All" , 
                         approve_all_holdings_holdings_path(), 
                         method: :post, class: "btn btn-outline-success" , form_class: "deleteButton", 
