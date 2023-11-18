@@ -910,3 +910,8 @@ select {
     }
   }
 }
+
+
+[data-layout=vertical] body[data-sidebartype=mini-sidebar] .left-sidebar .left-logo {
+  display: none;
+}

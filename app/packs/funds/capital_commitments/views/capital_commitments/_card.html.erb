@@ -82,7 +82,7 @@
                         Recent Statements
                     </h5>
                     <ul>
-                        <% capital_commitment.documents.not_template.limit(3).each do |doc| %>
+                        <% capital_commitment.documents.not_template.limit(3).order(id: :desc).each do |doc| %>
                             <li>
                             <%= link_to doc do %>
                                 <%= doc.name %> : <%= l doc.created_at.to_date %> 
@@ -103,9 +103,9 @@
                     <h5 class="card-title mb-9 fw-semibold">
                         Uncalled Capital
                     </h5>
-                    <h4 class="fw-semibold mb-3">
+                    <h6 class="fs-5 fw-semibold mb-0">
                         <%= money_to_currency(capital_commitment.commitment_pending, params) %>
-                    </h4>
+                    </h6>
                 </div>
             </div>
             </div>
@@ -119,9 +119,9 @@
                     <h5 class="card-title mb-9 fw-semibold">
                         Due Amount
                     </h5>
-                    <h4 class="fw-semibold mb-3">
+                    <h6 class="fs-5 fw-semibold mb-0">
                         <%= money_to_currency(capital_commitment.due_amount, params) %>
-                    </h4>
+                    </h6>
                 </div>
             </div>
             </div>
