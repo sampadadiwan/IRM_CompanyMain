@@ -275,7 +275,7 @@
     </tr>
 
 
-    <% if @capital_commitment.entity.enable_account_entries %>
+    <% if @capital_commitment.entity.permissions.enable_account_entries? %>
       <tr class="">
         <td>
           Total Allocated Expense

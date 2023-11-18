@@ -9,12 +9,12 @@
           data-action="click->tabdetails#loadData">Distributions</a>
 
     
-    <% if capital_commitment.entity.enable_units %>
+    <% if capital_commitment.entity.permissions.enable_units? %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab"
             data-action="click->tabdetails#loadData">Units</a>
     <% end %>
 
-    <% if capital_commitment.entity.enable_account_entries && policy(capital_commitment).update? %>
+    <% if capital_commitment.entity.permissions.enable_account_entries? && policy(capital_commitment).update? %>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#account-entries-tab"
             data-action="click->tabdetails#loadData">Account Entries</a>
 
@@ -29,7 +29,7 @@
           data-action="click->tabdetails#loadData">
       Tasks
     </a>
-    <% if capital_commitment.entity.enable_kycs %>
+    <% if capital_commitment.entity.permissions.enable_kycs? %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab" 
               data-action="click->tabdetails#loadData">
         All KYCs

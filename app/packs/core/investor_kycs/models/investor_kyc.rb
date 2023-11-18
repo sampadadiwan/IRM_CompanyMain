@@ -108,7 +108,7 @@ class InvestorKyc < ApplicationRecord
 
   after_save :enable_kyc
   def enable_kyc
-    investor.investor_entity.enable_kycs = true
+    investor.investor_entity.permissions.set(:enable_kycs)
     investor.investor_entity.save
   end
   after_create :generate_aml_report, if: ->(inv_kyc) { inv_kyc.full_name.present? }

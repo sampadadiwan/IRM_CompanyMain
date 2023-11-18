@@ -80,7 +80,7 @@
 
         <% end %>
 
-        <% if capital_distribution_payment.entity.enable_units %>
+        <% if capital_distribution_payment.entity.permissions.enable_units? %>
         <tr>
           <td>
             Units Redeemed

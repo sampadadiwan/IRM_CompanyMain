@@ -46,7 +46,7 @@
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab"
               data-action="click->tabdetails#loadData">Units</a>
       <% else %>
-        <% if investor.entity.enable_investments %>
+        <% if investor.entity.permissions.enable_investments? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investments-tab" 
               data-action="click->tabdetails#loadData">
             Investments
@@ -74,7 +74,7 @@
           Tasks
       </a>
 
-      <% if investor.entity.enable_kycs %>
+      <% if investor.entity.permissions.enable_kycs? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab" 
               data-action="click->tabdetails#loadData">
             KYC

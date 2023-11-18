@@ -1,3 +1,4 @@
+<% colors = ["success", "primary", "warning", "success", "primary", "info", "warning"] %>
 <div class="card shadow mb-4">
   <!-- <hr class="my-4"> -->
   <div class="card-header py-3">
@@ -11,15 +12,39 @@
     </div>
     <div class="col-lg-7 mb-4" style="margin: auto;">
       <% if investor_notice.investor_notice_items.present? %>
-        <ul class="list-group">
-          <% investor_notice.investor_notice_items.each do |item| %>
-          <li class="list-group-item">
-            <% if item.link.present? %>
-              <h3><a class="text-primary" href="<%= item.link %>"><%= item.title %></a></h3>
-            <% else %>
-              <h3 class="text-primary"><%= item.title %></h3>
-            <% end %>
-            <small><%= item.details %></small>
+        <ul class="">
+          <% investor_notice.investor_notice_items.each_with_index do |item, idx| %>
+          <li class="">
+            
+
+            <div class="card">
+                <div class="card-body">
+                  <div class="d-flex flex-row align-items-center">
+                    
+                    <div class="text-bg-<%= colors[idx] % 7 %> rounded-2 d-flex align-items-center justify-content-center p-6">
+                        <i class="ti ti-activity text-white fs-7"></i>
+                    </div>
+
+                    <div class="ms-3">
+                      <h4 class="mb-0 text-white fs-6">
+                      <% if item.link.present? %>
+                        <a href="<%= item.link %>"><%= item.title %></a>
+                      <% else %>
+                        <%= item.title %>
+                      <% end %>
+                      </h4>
+                      <span class=""><%= item.details %></span>
+                    </div>
+                    <div class="ms-auto">
+                      <h2 class="fs-7 mb-0 text-white">
+                        <%#= item.details %>
+                      </h2>
+                    </div>
+                  </div>
+                </div>
+            </div>
+
+
           </li>
           <% end %>
         </ul>
@@ -29,3 +54,6 @@
     </div>
   </div>
 </div>
+
+
+              

@@ -906,7 +906,7 @@ select {
 .container-fluid  {
   table {
     a {
-      color: #4e73df;
+      color: var(--bs-primary);
     }
   }
 }
@@ -914,4 +914,8 @@ select {
 
 [data-layout=vertical] body[data-sidebartype=mini-sidebar] .left-sidebar .left-logo {
   display: none;
+}
+
+.nav-link:hover {
+    background-color: var(--bs-light-primary);
 }

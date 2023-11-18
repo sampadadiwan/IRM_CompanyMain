@@ -13,7 +13,7 @@
     fill_in('fund_name', with: @fund.name)
     select(@fund.currency, from: "fund_currency")
     # fill_in('fund_currency', with: @fund.currency)
-    fill_in('fund_unit_types', with: @fund.unit_types) if @fund.entity.enable_units
+    fill_in('fund_unit_types', with: @fund.unit_types) if @fund.entity.permissions.enable_units?
     # fill_in('fund_details', with: @fund.details)
     find('trix-editor').click.set(@fund.details)
     click_on("Next")
@@ -191,7 +191,7 @@
     fill_in('capital_commitment_folio_id', with: rand(10**4))
     select(@new_capital_commitment.folio_currency, from: "capital_commitment_folio_currency")
 
-    if @fund.entity.enable_units
+    if @fund.entity.permissions.enable_units?
       unit_types = @fund.unit_types.split(",").map{|x| x.strip}
       @new_capital_commitment.unit_type = unit_types[rand(unit_types.length)]
       select(@new_capital_commitment.unit_type, from: 'capital_commitment_unit_type')
@@ -216,7 +216,7 @@
     expect(page).to have_content(money_to_currency @capital_commitment.folio_committed_amount, {})
     expect(page).to have_content(money_to_currency @capital_commitment.committed_amount, {})
     expect(page).to have_content(@capital_commitment.fund.name)
-    expect(page).to have_content(@capital_commitment.unit_type) if @fund.entity.enable_units
+    expect(page).to have_content(@capital_commitment.unit_type) if @fund.entity.permissions.enable_units?
   end
 
   Then('the fund total committed amount must be {string}') do |amount|
@@ -277,7 +277,7 @@
         fill_in('capital_call_amount_to_be_called', with: @capital_call.amount_to_be_called)      
     end
 
-    if @fund.entity.enable_units
+    if @fund.entity.permissions.enable_units?
       @fund.unit_types.split(",").each do |unit_type|
         unit_type = unit_type.strip
         fill_in("#{unit_type}_price", with: @capital_call.unit_prices[unit_type]["price"])

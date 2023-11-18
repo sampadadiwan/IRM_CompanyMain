@@ -67,7 +67,7 @@
 
             <% end %>
 
-            <% if @fund.entity.enable_account_entries %>
+            <% if @fund.entity.permissions.enable_account_entries? %>
 
               <div class="dropdown-divider"></div>
 
@@ -94,7 +94,7 @@
             <% end %>
 
 
-            <% if @fund.entity.enable_units %>
+            <% if @fund.entity.permissions.enable_units? %>
               <div class="dropdown-divider"></div>
               <%= link_to "Fund Unit Settings" , fund_unit_settings_path(fund_id: @fund.id), {class: "dropdown-item" } %>
 

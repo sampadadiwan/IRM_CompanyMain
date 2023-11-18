@@ -1,6 +1,6 @@
 class StockAdjustmentPolicy < FundBasePolicy
   def index?
-    user.entity.enable_fund_portfolios
+    user.entity.permissions.enable_fund_portfolios?
   end
 
   def report?
@@ -8,12 +8,12 @@ class StockAdjustmentPolicy < FundBasePolicy
   end
 
   def show?
-    user.entity.enable_fund_portfolios &&
+    user.entity.permissions.enable_fund_portfolios? &&
       permissioned_employee?
   end
 
   def create?
-    user.entity.enable_fund_portfolios &&
+    user.entity.permissions.enable_fund_portfolios? &&
       permissioned_employee?
   end
 

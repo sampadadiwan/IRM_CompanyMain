@@ -1,6 +1,6 @@
 <%= render "/entities/investment_advisor_stats" %>
 
-<% if current_user.entity.enable_funds %>
+<% if current_user.enable_funds? %>
 <div class="associated_entity">
     <%= render "/funds/index", funds: @current_entity ? policy_scope(@current_entity.funds) : policy_scope(Fund) %>
 </div>
