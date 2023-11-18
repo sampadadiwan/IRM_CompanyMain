@@ -1,0 +1,23 @@
+<div class="card">
+    <div class="card-header text-bg-primary d-flex align-items-center">
+        <h4 class="card-title text-white mb-0">Thesis</h4>
+        <div class="card-actions cursor-pointer ms-auto d-flex button-group">
+            <a class="link d-flex text-white align-items-center" data-action="collapse">
+                <i class="ti ti-plus fs-6"></i></a>
+            <a class="mb-0 text-white btn-minimize px-2 cursor-pointer link d-flex align-items-center" data-action="expand">
+                <i class="ti ti-arrows-maximize fs-6"></i></a>                    
+        </div>
+    </div>
+    <div class="card-body collapse">
+        <section class="text-bg-light py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 col-xxl-8">
+                <h2 class="fs-9 text-center mb-5 fw-bolder">
+                    <span class="text-primary"><%= investment_opportunity.company_name %>:</span> <%= investment_opportunity.tag_list %>
+                </h2>
+                <%= investment_opportunity.details %>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

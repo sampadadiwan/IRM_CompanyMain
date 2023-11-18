@@ -1,34 +1,4 @@
-<div class="col d-flex align-items-stretch">
-    <div class="card w-100 bg-primary overflow-hidden shadow-none">
-    <div class="card-body position-relative">
-        <div class="row">
-        <div class="col-sm-10">
-            <div class="d-flex align-items-center mb-7">
-            
-            <h5 class="fw-semibold mb-0 fs-5"><%= investment_opportunity.company_name %></h5>
-            </div>
-            <div class="d-flex align-items-center">            
-                <div class="ps-4 border-end pe-4 border-muted border-opacity-10">
-                    <h3 class="mb-1 fw-semibold fs-8 d-flex align-content-center">$2,340<i class="ti ti-arrow-up-right fs-5 lh-base text-success"></i></h3>
-                    <p class="mb-0 text-dark">Today’s Sales</p>
-                </div>
-                <div class="ps-4">
-                    <h3 class="mb-1 fw-semibold fs-8 d-flex align-content-center">35%<i class="ti ti-arrow-up-right fs-5 lh-base text-success"></i></h3>
-                    <p class="mb-0 text-dark">Overall Performance</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-2">
-            <% if investment_opportunity.logo.present? %>
-                <%= image_tag investment_opportunity.logo.url(expires_in: 60*60*24*7), class: "ci-logo" %> 
-            <% end %>
-        </div>
-        </div>
-    </div>
-    </div>
-</div>
-
-
+<%= render "/investment_opportunities/preview_header", investment_opportunity: investment_opportunity %>
 
 <div class="associated_entity">
     <section class="hero-section position-relative overflow-hidden mb-0 mb-lg-5">
@@ -37,32 +7,7 @@
             <div class="col">
                 <%= render "/investment_opportunities/card_table2", investment_opportunity: investment_opportunity %>
             </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header text-bg-primary d-flex align-items-center">
-                <h4 class="card-title text-white mb-0">Thesis</h4>
-                <div class="card-actions cursor-pointer ms-auto d-flex button-group">
-                    <a class="link d-flex text-white align-items-center" data-action="collapse">
-                        <i class="ti ti-plus fs-6"></i></a>
-                    <a class="mb-0 text-white btn-minimize px-2 cursor-pointer link d-flex align-items-center" data-action="expand">
-                        <i class="ti ti-arrows-maximize fs-6"></i></a>                    
-                </div>
-            </div>
-            <div class="card-body collapse">
-                <section class="text-bg-light py-5">
-                    <div class="row justify-content-center">
-                        <div class="col-lg-8 col-xxl-8">
-                        <h2 class="fs-9 text-center mb-5 fw-bolder">
-                            <span class="text-primary"><%= investment_opportunity.company_name %>:</span> <%= investment_opportunity.tag_list %>
-                        </h2>
-                        <%= investment_opportunity.details %>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </div>
-
+        </div>        
     </div>
     </section>
 </div>
@@ -75,3 +20,7 @@
         <div class="col"><%= render "/investment_opportunities/preview_document", document: doc %></div>
     <% end %>
 </div>                
+
+<div class="align-items-center text-center">                        
+    <%= link_to "Express Interest", new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-primary btn-lg px-5 py-6 btn-hover-shadow mb-3 mb-sm-0"} %>
+</div>

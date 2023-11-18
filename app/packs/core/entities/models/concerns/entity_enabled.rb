@@ -15,7 +15,7 @@ module EntityEnabled
 
   # This is for legacy code only, user entity.permissions.enable_xyz? going forward
   # Creates enable_xyz methods on Entity, to get or set the underlying permissions bitflag
-  def method_missing(method_name, *args, &)    
+  def method_missing(method_name, *args, &)
     if method_name.to_s.starts_with?("enable_")
       Rails.logger.debug { "EntityEnabled.method_missing method_name: #{method_name} #{args}" }
       if method_name.to_s.ends_with?("=")

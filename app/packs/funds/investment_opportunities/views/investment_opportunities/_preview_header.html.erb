@@ -1,0 +1,35 @@
+<div class="col d-flex align-items-stretch">
+    <div class="card w-100 bg-primary-subtle overflow-hidden shadow-none">
+    <div class="card-body position-relative">
+        <div class="row">
+        <div class="col-sm-10">
+            <div class="d-flex align-items-center mb-7">            
+                <h5 class="fw-semibold mb-0 fs-5"><%= investment_opportunity.company_name %></h5>
+            </div>
+            <div class="d-flex align-items-center">            
+                <div class="ps-4 border-end pe-4 border-muted border-opacity-10">
+                    <h3 class="mb-1 fw-semibold fs-8 d-flex align-content-center">$2,340<i class="ti ti-arrow-up-right fs-5 lh-base text-success"></i></h3>
+                    <p class="mb-0 text-dark">Today’s Sales</p>
+                </div>
+                <div class="ps-4">
+                    <h3 class="mb-1 fw-semibold fs-8 d-flex align-content-center">35%<i class="ti ti-arrow-up-right fs-5 lh-base text-success"></i></h3>
+                    <p class="mb-0 text-dark">Overall Performance</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-2">
+            <% if false && investment_opportunity.logo.present? %>
+                <%= image_tag investment_opportunity.logo.url(expires_in: 60*60*24*7), class: "ci-logo" %> 
+            <% end %>
+
+            <div class="d-flex align-items-center mb-7">            
+                
+            </div>
+            <div class="d-flex align-items-center">                        
+                <%= link_to "Express Interest", new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-primary btn-lg btn-hover-shadow"}  %>
+            </div>
+        </div>
+        </div>
+    </div>
+    </div>
+</div>
