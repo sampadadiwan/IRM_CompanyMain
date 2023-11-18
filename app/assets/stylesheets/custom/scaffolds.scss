@@ -602,6 +602,12 @@ ul.vesting_schedule {
   }
 }
 
+.notice_items {
+  .card {
+    margin-bottom: 5px;
+  }
+}
+
 #remittance_filter {
   input[type="date"].form-control {
     -webkit-appearance: textfield !important;

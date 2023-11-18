@@ -10,14 +10,12 @@
       <% img = investor_notice.link.present?  ? investor_notice.link : current_user.entity.logo_url %>
       <img class="center notice_image" src=<%=img%> />
     </div>
-    <div class="col-lg-7 mb-4" style="margin: auto;">
+    <div class="col-lg-7 mb-4 notice_items" style="margin: auto;">
       <% if investor_notice.investor_notice_items.present? %>
-        <ul class="">
+        <div class="row">
           <% investor_notice.investor_notice_items.each_with_index do |item, idx| %>
-          <li class="">
-            
-
-            <div class="card">
+          
+            <div class="card col-12">
                 <div class="card-body">
                   <div class="d-flex flex-row align-items-center">
                     
@@ -26,7 +24,7 @@
                     </div>
 
                     <div class="ms-3">
-                      <h4 class="mb-0 text-white fs-6">
+                      <h4 class="mb-0 fs-6">
                       <% if item.link.present? %>
                         <a href="<%= item.link %>"><%= item.title %></a>
                       <% else %>
@@ -37,17 +35,15 @@
                     </div>
                     <div class="ms-auto">
                       <h2 class="fs-7 mb-0 text-white">
-                        <%#= item.details %>
+
                       </h2>
                     </div>
                   </div>
                 </div>
             </div>
 
-
-          </li>
           <% end %>
-        </ul>
+        </div>
       <% else %>
         <%= raw investor_notice.details.to_plain_text %>
       <% end %>
