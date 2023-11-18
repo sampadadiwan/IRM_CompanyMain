@@ -33,7 +33,7 @@ module EntityEnabled
     end
   end
 
-  def respond_to_missing? *_args
-    true
+  def respond_to_missing?(method_name, _include_private = false)
+    method_name.to_s.starts_with?("enable_")
   end
 end

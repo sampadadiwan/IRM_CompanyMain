@@ -4,7 +4,7 @@ module ForInvestor
   included do
     # Defines which tabel to join with for access_rights
     def self.parent_class_type
-      if %w[CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment FundUnit FundRatio FundUnit FundUnitSetting PortfolioInvestment AggregatePortfolioInvestment FundFormula FundReport PortfolioScenario CommitmentAdjustment].include?(name)
+      if %w[CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment FundUnit FundRatio FundUnit FundUnitSetting PortfolioInvestment AggregatePortfolioInvestment FundFormula FundReport PortfolioScenario CommitmentAdjustment AccountEntry].include?(name)
         Fund
       elsif ["ExpressionOfInterest"].include?(name)
         InvestmentOpportunity

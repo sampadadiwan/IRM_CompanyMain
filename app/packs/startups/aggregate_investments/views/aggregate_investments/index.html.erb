@@ -145,7 +145,7 @@
   </small>
 </div>
 
-<% if false && policy(@entity).update? %>
+<% if policy(@entity).update? %>
 <div class="associated_entity">
   <% 
     access_right = AccessRight.new(entity: @entity, access_type: "Investment", owner: current_user.entity) 
