@@ -605,6 +605,12 @@ ul.vesting_schedule {
 .notice_items {
   .card {
     margin-bottom: 5px;
+    a {
+      color: var(--bs-primary);
+    }
+    .card-body {
+      padding: 15px 15px;
+    }
   }
 }
 
