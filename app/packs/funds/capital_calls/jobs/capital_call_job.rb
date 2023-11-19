@@ -71,6 +71,11 @@ class CapitalCallJob < ApplicationJob
     # Update the search index
     CapitalRemittanceIndex.import(capital_call.capital_remittances)
     CapitalRemittance.counter_culture_fix_counts where: { capital_remittances: { fund_id: capital_call.fund_id } }
+
+    # Update all the entities of the investors to but any cached data
+    capital_call.capital_remittances.each do |cr|
+      cr.investor.investor_entity.touch
+    end
   end
 
   def generate_remittance_payments

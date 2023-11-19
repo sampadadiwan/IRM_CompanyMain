@@ -15584,7 +15584,7 @@ textarea.form-control-lg {
 
 .page-wrapper .body-wrapper > .container-fluid, .page-wrapper .body-wrapper > .container-sm, .page-wrapper .body-wrapper > .container-md, .page-wrapper .body-wrapper > .container-lg, .page-wrapper .body-wrapper > .container-xl, .page-wrapper .body-wrapper > .container-xxl {
   transition: 0.2s ease-in;
-  padding: 0 24px;
+  /* padding: 0 24px; */
 }
 
 .body-wrapper {
