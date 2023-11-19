@@ -81,15 +81,14 @@
                     <h5 class="card-title mb-9 fw-semibold">
                         Recent Statements
                     </h5>
-                    <ul>
+                    <table>
                         <% capital_commitment.documents.not_template.limit(3).order(id: :desc).each do |doc| %>
-                            <li>
-                            <%= link_to doc do %>
-                                <%= doc.name %> : <%= l doc.created_at.to_date %> 
-                            <% end %>
-                            </li>
+                            <tr>
+                                <td><%= link_to doc.name, doc %></td> 
+                                <td><%= l doc.created_at.to_date %></td>
+                            </tr>
                         <% end %>
-                    </ul>
+                    </table>
                 </div>
             </div>
             </div>
