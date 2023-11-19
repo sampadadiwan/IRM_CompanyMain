@@ -2,7 +2,7 @@
     <div class="row">
 
         <!-- Earnings (Monthly) Card Example -->
-        <div class="col mb-4">
+        <div class="col-sm-3">
             <div class="card border-left-primary shadow py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
@@ -21,8 +21,8 @@
         </div>
 
         <!-- Earnings (Monthly) Card Example -->
-        <div class="col mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
+        <div class="col-sm-3">
+            <div class="card border-left-success shadow py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -40,8 +40,8 @@
         </div>
 
         <!-- Earnings (Monthly) Card Example -->
-        <div class="col mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
+        <div class="col-sm-3">
+            <div class="card border-left-info shadow py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -68,8 +68,8 @@
         <% 
             if current_user.entity.active_deal_id && false
         %>
-            <div class="col mb-4">
-                <div class="card border-left-warning shadow h-100 py-2">
+            <div class="col-sm-3">
+                <div class="card border-left-warning shadow py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
@@ -88,8 +88,8 @@
                 </div>
             </div>
         <% else %>
-            <div class="col mb-4">
-                <div class="card border-left-warning shadow h-100 py-2">
+            <div class="col-sm-3">
+                <div class="card border-left-warning shadow py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
@@ -97,7 +97,7 @@
                                     <%= link_to "Open Tasks", tasks_path, class: "text-warning" %>
                                 </div>
                                 <div class="h6 mb-0 font-weight-bold text-gray-800">
-                                    <%= current_user.entity.tasks_count %>
+                                    <%= current_user.entity.tasks_count %> 
                                 </div>
                             </div>
                             <div class="col-auto">

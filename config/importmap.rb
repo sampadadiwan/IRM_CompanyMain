@@ -16,3 +16,4 @@ pin "@client-side-validations/client-side-validations/src", to: "/js/client_side
 pin "@nathanvda/cocoon", to: "cocoon.min.js"
 pin_all_from "app/javascript/custom", under: "custom"
 pin "@rails/request.js", to: "request.js"
+pin "turbo_progress_bar"

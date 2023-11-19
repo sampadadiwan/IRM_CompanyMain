@@ -2,7 +2,7 @@
     <div class="row">
 
         <!-- Earnings (Monthly) Card Example -->
-        <div class="col mb-4">
+        <div class="col-sm-3">
             <div class="card border-left-primary shadow py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
@@ -21,8 +21,8 @@
         </div>
 
         <!-- Earnings (Monthly) Card Example -->
-        <div class="col mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
+        <div class="col-sm-3">
+            <div class="card border-left-success shadow py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -40,22 +40,15 @@
         </div>
 
         <!-- Earnings (Monthly) Card Example -->
-        <div class="col mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
+        <div class="col-sm-3">
+            <div class="card border-left-info shadow py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                 <%= link_to "Opportunities", investment_opportunities_path, class: "text-info" %>
                             </div>
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800"><%= current_user.entity.investment_opportunities.count %></div>
-                                </div>
-                                <div class="col">
-                                    
-                                </div>
-                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= current_user.entity.investment_opportunities.count %></div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
@@ -66,8 +59,8 @@
         </div>
 
      
-            <div class="col mb-4">
-                <div class="card border-left-warning shadow h-100 py-2">
+            <div class="col-sm-3">
+                <div class="card border-left-warning shadow py-2">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
