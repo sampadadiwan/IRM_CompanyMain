@@ -1,21 +1,14 @@
-<div class="col-xl-6 d-none d-xl-block">
+<div class="col-xl-6 d-xl-block">
     <div
-        class="position-relative bg-primary-subtle p-4 rounded"
+        class="position-relative bg-primary-subtle p-4 rounded text-center"
     >                  
         <% if widget.image&.mime_type&.include?('video') %>
             <%= render "layouts/video", url: widget.image_url, no_card: true %>
         <% elsif widget.image&.mime_type&.include?('image') %>                      
-            <div class="d-flex flex-row">
-            <div class="">
-                <div class="banner-img-1">
                 <img
                     src="<%= widget.image_url %> "
-                    alt=""
-                    class=""
-                />
-                </div>
-            </div>
-            </div>
+                    class="img-fluid object-fit-contain"
+                />                
         <% else %>
             <%= widget.image_url %>
         <% end %>
