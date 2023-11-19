@@ -16,13 +16,13 @@
                 </div>
                 <div class="card-body collapse show show_funds">
                     <% capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc) %>
-                    <%#= render "/funds/investor_charts", capital_commitments: capital_commitments %>
-                    <%#= render "/capital_commitments/investor_index",  
-                        capital_commitments: capital_commitments  %>
 
                     <% capital_commitments.each do |cc| %>
-                        <%= render "/capital_commitments/card", capital_commitment: cc %>
+                        <% cache_if(current_user != nil, [cc]) do %>
+                            <%= render "/capital_commitments/card", capital_commitment: cc %>
+                        <% end %>
                     <% end %>
+
                 </div>
             </div>
 
@@ -51,18 +51,10 @@
     <% end %>
 
 
-    <% approval_responses =  policy_scope(ApprovalResponse).where(status: "Pending") %>
-
-    <% if approval_responses.count > 0 %>
-        <div class="associated_entity">            
-            <%= render "/approvals/index", approvals: Approval.where(id: approval_responses.pluck(:approval_id)) %>
-        </div>
-    <% end %> 
-
     
     <div class="associated_entity">        
         <%= render "/entities/index",  
-            entities: policy_scope(Entity), vc_view: true %>
+            entities: policy_scope(Entity).where(entity_type: "Company"), vc_view: true %>
     </div>
 
 </div>

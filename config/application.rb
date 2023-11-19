@@ -74,6 +74,9 @@ module CapHive
       Devise::Mailer.layout "mailer" # simple.haml or simple.erb
     end
 
+    config.cache_store = :solid_cache_store
+    config.solid_cache.connects_to = { database: { writing: "IRM" } }
+
     config.time_zone = 'New Delhi'
     config.active_record.default_timezone = :local
 

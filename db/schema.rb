@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_11_15_073304) do
+ActiveRecord::Schema[7.1].define(version: 2023_11_19_053754) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -2248,6 +2248,13 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_15_073304) do
     t.index ["document_id"], name: "index_signature_workflows_on_document_id"
     t.index ["entity_id"], name: "index_signature_workflows_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_signature_workflows_on_owner"
+  end
+
+  create_table "solid_cache_entries", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.binary "key", limit: 1024, null: false
+    t.binary "value", size: :long, null: false
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_solid_cache_entries_on_key", unique: true
   end
 
   create_table "stamp_papers", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

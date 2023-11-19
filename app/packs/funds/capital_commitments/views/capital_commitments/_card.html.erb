@@ -4,13 +4,22 @@
         <div class="card-body">
         <div class="d-sm-flex d-block align-items-center justify-content-between mb-9">
             <div class="mb-3 mb-sm-0">
-                <h5 class="card-title fw-semibold"><%= capital_commitment.fund.name %></h5>                
-                <span class="fs3 mb-1">
-                    <%= capital_commitment.investor_kyc&.full_name if capital_commitment.investor_kyc %>
-                    Folio: <%= capital_commitment.folio_id %>
-                </span>
+                <div class="row">
+                    <%= image_tag capital_commitment.entity.logo.url, class: "col cc-card-logo" if capital_commitment.entity.logo %>       
+
+                    <span class="col">
+                    <h5 class="card-title fw-semibold"><%= capital_commitment.fund.name %> : <%= capital_commitment.entity.name %> </h5>                
+
+                    <span class="fs3 mb-1">
+                        <%= capital_commitment.investor_kyc&.full_name if capital_commitment.investor_kyc %>
+                        Folio: <%= capital_commitment.folio_id %>
+                    </span>
+                    <span>
+
+                </div>
+                
             </div>     
-            <%#= image_tag capital_commitment.entity.logo.url, class: "ci-logo" if capital_commitment.entity.logo %>       
+            
         </div>
         <div class="row align-items-center">
             <div class="col-md-7">
@@ -18,7 +27,7 @@
                  library: {
                    plotOptions: { 
                         column: {
-                            pointWidth: 20,
+                            pointWidth: 40,
                             dataLabels: {
                                 enabled: false,
                                 format: "{point.y:,.2f}"
@@ -33,32 +42,33 @@
                         <i class="ti ti-grid-dots text-primary fs-6"></i>
                         </div>
                         <div>
-                        <h4 class="mb-0 fs-7 fw-semibold"><%= money_to_currency(capital_commitment.committed_amount, params) %></h4>
+                        <h4 class="mb-0 fs-7"><%= money_to_currency(capital_commitment.committed_amount, params) %></h4>
                         <p class="fs-3 mb-0">Committed</p>
                     </div>
                 </div>
+
+                <div class="hstack mb-4 pb-1">
+                    <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
+                        <i class="ti ti-grid-dots text-primary fs-6"></i>
+                        </div>
+                        <div>
+                        <h4 class="mb-0 fs-7"><%= money_to_currency(capital_commitment.call_amount, params) %></h4>
+                        <p class="fs-3 mb-0">Called</p>
+                    </div>
+                </div>
+
+                <div class="hstack mb-4 pb-1">
+                    <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
+                        <i class="ti ti-grid-dots text-primary fs-6"></i>
+                        </div>
+                        <div>
+                        <h4 class="mb-0 fs-7"><%= money_to_currency(capital_commitment.distribution_amount, params) %></h4>
+                        <p class="fs-3 mb-0">Distributed</p>
+                    </div>
+                </div>
+
                 <div>
-                    <div class="d-flex align-items-baseline mb-4">
-                    <span class="round-8 text-bg-primary rounded-circle me-6"></span>
-                    <div>
-                        <p class="fs-3 mb-1">Called</p>
-                        <h6 class="fs-5 fw-semibold mb-0"><%= money_to_currency(capital_commitment.call_amount, params) %></h6>
-                    </div>
-                    </div>
-                    <!-- div class="d-flex align-items-baseline mb-4">
-                    <span class="round-8 text-bg-primary rounded-circle me-6"></span>
-                    <div>
-                        <p class="fs-3 mb-1">UnCalled</p>
-                        <h6 class="fs-5 fw-semibold mb-0"><%= money_to_currency(capital_commitment.commitment_pending, params) %></h6>
-                    </div>
-                    </div -->
-                    <div class="d-flex align-items-baseline mb-4 pb-1">
-                    <span class="round-8 text-bg-secondary rounded-circle me-6"></span>
-                    <div>
-                        <p class="fs-3 mb-1">Distributed</p>
-                        <h6 class="fs-5 fw-semibold mb-0"><%= money_to_currency(capital_commitment.distribution_amount, params) %></h6>
-                    </div>
-                    </div>
+                    
                     <div class="text-center">
                         <a href="<%= capital_commitment_path(capital_commitment) %>" class="btn btn-outline-primary w-100">
                             View Details
@@ -120,7 +130,7 @@
                     <h5 class="card-title mb-9 fw-semibold">
                         Due Amount
                     </h5>
-                    <h6 class="fs-5 fw-semibold mb-0">
+                    <h6 class="fs-5 mb-0">
                         <%= money_to_currency(capital_commitment.due_amount, params) %>
                     </h6>
                 </div>

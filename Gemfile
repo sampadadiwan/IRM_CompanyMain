@@ -44,6 +44,7 @@ gem 'devise'
 gem 'has_scope'
 gem "pundit", git: "https://github.com/varvet/pundit.git"
 gem "rolify"
+gem "solid_cache"
 
 gem 'activerecord-import', "1.5.0"
 # Store env variables
