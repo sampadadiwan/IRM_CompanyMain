@@ -31,7 +31,7 @@ module CurrencyHelper
     units = ""
     cookies ||= nil
     raw_units = params[:units].presence || (cookies && cookies[:currency_units])
-
+    
     if raw_units.present? && !ignore_units
 
       units = case raw_units
