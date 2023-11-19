@@ -14,7 +14,7 @@ Scenario Outline: Create new approval
   Examples:
   	|user	    |entity               |approval                 |msg	|
   	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created|
-    |  	        |entity_type=Company  |title=MErger Approval    |Approval was successfully created|
+    |  	        |entity_type=Company  |title=Merger Approval    |Approval was successfully created|
 
 
 

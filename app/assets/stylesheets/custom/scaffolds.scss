@@ -927,6 +927,18 @@ select {
       color: var(--bs-primary);
     }
   }
+
+  form {
+    a {
+      color: var(--bs-primary);
+    }
+  }
+}
+
+@media only screen and (max-width: 450px) {
+  .card-body {
+    padding: var(--bs-card-spacer-y) 15px !important; //var(--bs-card-spacer-x);
+  }
 }
 
 

@@ -22,11 +22,11 @@ class ApprovalPolicy < ApplicationPolicy
   def create?
     (user.entity.permissions.enable_approvals? &&
       belongs_to_entity?(user, record) &&
-      (user.curr_role == "company_admin")) || super_user?
+      user.has_cached_role?("company_admin")) || super_user?
   end
 
   def new?
-    user.entity.permissions.enable_approvals? && (user.curr_role == "company_admin")
+    user.entity.permissions.enable_approvals? && user.has_cached_role?("company_admin")
   end
 
   def update?
