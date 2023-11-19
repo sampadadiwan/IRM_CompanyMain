@@ -191,7 +191,7 @@ export default class BaseAgGrid extends Controller {
 
     format_currency(number, currency) {
         // console.log(`format_currency(${number}, ${currency})`);
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency }).format(number);
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: currency }).format(number);
     }
 
     renderCell(params, field_key, field_name=null) {

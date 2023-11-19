@@ -467,6 +467,7 @@ Then('I should be able to see the investments for each entity') do
   Entity.for_investor(@user).each do |entity|
     entity.investments.joins(:investor).where("investors.investor_entity_id": @user.entity_id).each do |inv|
       visit(investor_entities_entities_path)
+      find("#action_#{entity.id}").click
       find("#investments_entity_#{entity.id}").click
       @investment = inv
       find("#show_investment_#{inv.id}").click

@@ -4,7 +4,7 @@
 
 <%= render "/capital_commitments/index_header", fund: fund %>
 
-<div data-controller="commitments-ag" data-commitments-ag-lazy-load-data-value=<%= lazy_load_data %> data-commitments-ag-table-name-value="#capital_commitments_table">
+<div id="capital_commitments" data-controller="commitments-ag" data-commitments-ag-lazy-load-data-value=<%= lazy_load_data %> data-commitments-ag-table-name-value="#capital_commitments_table">
   <div id="capital_commitments_table" class="ag-theme-alpine" data-source="<%= data_source %>">
   </div>
 </div>
