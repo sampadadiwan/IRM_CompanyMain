@@ -1,1 +1,3 @@
-<%= field.to_s %>
+<% field.data.each do |f| %>
+  <p class="badge bg-success"><%= f.to_s.humanize.titleize %></p>
+<% end %>

@@ -923,7 +923,7 @@ select {
 
 .container-fluid  {
   table {
-    a {
+    td > a {
       color: var(--bs-primary);
     }
   }

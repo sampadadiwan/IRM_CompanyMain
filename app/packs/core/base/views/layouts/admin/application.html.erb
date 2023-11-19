@@ -5,17 +5,16 @@
   <!-- Required meta tags -->
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="turbolinks-cache-control" content="no-cache">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-
     <%= render "stylesheet" %>
-
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
 
   <!-- Favicon icon-->
-  <link rel="shortcut icon" type="image/png" href="/modernize/images/logos/favicon.png" />
+  <link rel="shortcut icon" type="image/png" href="/favicon.png" />
 
   <!-- Core Css -->
   <link rel="stylesheet" href="/modernize/css/styles.css" />
@@ -75,6 +74,7 @@
 
   <title>CapHive</title>
 </head>
+
 
 <body data-controller="confirm">
   <!-- Preloader -->

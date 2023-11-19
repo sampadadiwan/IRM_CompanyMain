@@ -1,3 +1,6 @@
 
-<%= field.data.map{|f| f.to_s.humanize.titleize} %>
+<%#= field.data.map{|f| f.to_s.humanize.titleize} %>
+<% field.data.each do |f| %>
+  <p class="badge bg-success"><%= f.to_s.humanize.titleize %></p>
+<% end %>
   

@@ -12,7 +12,7 @@
         <div class="card-body">
             <div class="card-text">
                 <% if investment_opportunity.logo.present? %>
-                    <div class="d-sm-flex align-items-center justify-content-between">
+                    <div class="d-sm-flex align-items-center justify-content-between text-center">
                         <%= image_tag investment_opportunity.logo.url(expires_in: 60*60*24*7), class: "ci-logo" %>
                     </div>
                 <% end %>
