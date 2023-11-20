@@ -138,6 +138,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   after_commit :touch_investor
+  after_destroy :touch_investor
   # rubocop:disable Rails/SkipsModelValidations
   # This is to bust any cached dashboards showing the commitments
   def touch_investor

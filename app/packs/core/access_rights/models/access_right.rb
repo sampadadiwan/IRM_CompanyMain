@@ -167,9 +167,15 @@ class AccessRight < ApplicationRecord
 
   after_create_commit :update_owner
   after_destroy :update_owner
+  # rubocop:disable Rails/SkipsModelValidations
+  # This is to bust any cached dashboards showing the commitments
   def update_owner
-    owner.access_rights_changed(self) if owner.respond_to? :access_rights_changed
+    investors.each do |i|
+      i.investor_entity.touch
+    end
+    owner.access_rights_changed(self) if owner.respond_to?(:access_rights_changed)
   end
+  # rubocop:enable Rails/SkipsModelValidations
 
   after_destroy lambda {
     AccessRightsDeletedJob.perform_later(owner_id, owner_type, id) if owner.respond_to?(:document_folder)
@@ -179,7 +185,7 @@ class AccessRight < ApplicationRecord
     if access_to_category.present?
       entity.investors.where(category: access_to_category)
     else
-      [investor]
+      investor ? [investor] : []
     end
   end
 

@@ -20,9 +20,7 @@
                     <% capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc) %>
 
                     <% capital_commitments.each do |cc| %>
-                        <% cache_if(current_user != nil, [cc]) do %>
-                            <%= render "/capital_commitments/card", capital_commitment: cc %>
-                        <% end %>
+                        <%= render "/capital_commitments/card", capital_commitment: cc %>
                     <% end %>
 
                 </div>
