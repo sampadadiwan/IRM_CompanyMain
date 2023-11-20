@@ -46,7 +46,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def cancel_esign?
-    update? && user.has_cached_role?(:company_admin)
+    update? && user.has_cached_role?(:company_admin) && record.sent_for_esign && record.esign_status&.downcase != "cancelled"
   end
 
   def fetch_esign_updates?

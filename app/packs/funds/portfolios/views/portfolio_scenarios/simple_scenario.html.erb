@@ -3,15 +3,15 @@
 
   <%# we compute the orig_xirr on page load using get, but its cached for every subsequent post for the scenario %>
   <% orig_xirr = get_orig_xirr(params) %>
-  
-  <% 
+
+  <%
     err_msg = nil
     begin
-      # If no scenario is specified the use the orig_xirr computed above 
-      scenario_xirr = params["scenario"].blank? ? nil : compute_portfolio_irr(params, scenarios: params[:scenario]) 
-      
-      # we compute the fund_orig_xirr on page load using get, but its cached for every subsequent post for the scenario 
-      fund_orig_xirr = params[:fund_orig_xirr].presence || compute_fund_irr(params) 
+      # If no scenario is specified the use the orig_xirr computed above
+      scenario_xirr = params["scenario"].blank? ? nil : compute_portfolio_irr(params, scenarios: params[:scenario])
+
+      # we compute the fund_orig_xirr on page load using get, but its cached for every subsequent post for the scenario
+      fund_orig_xirr = params[:fund_orig_xirr].presence || compute_fund_irr(params)
 
       # If no scenario is specified the use the fund_orig_xirr computed above
       fund_scenario_xirr = params["scenario"].blank? ? 0 : compute_fund_irr(params, scenarios: params[:scenario])
@@ -28,7 +28,7 @@
 <div class="dynamic_form card shadow mb-4" data-controller="access">
 
   <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
-    <h6 class="m-0 font-weight-bold text-primary">Scenario : <%= l Time.zone.now %> </h6>
+        <h6 class="m-0 font-weight-bold text-primary">Scenario </h6>
     <span>
         <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a>
     </span>
@@ -104,7 +104,7 @@
 
       <div class="form-group col">
       </div>
-      
+
       <div class="form-group col text-success">
         <%= label_tag :current_irr, "Current IRR" %>
         <%= text_field_tag :current_irr, fund_orig_xirr, name: "fund_orig_xirr", class: "form-control", disabled: true %>
