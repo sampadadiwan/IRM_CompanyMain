@@ -18,6 +18,8 @@ Highcharts.setOptions({
   }
 });
 
+
+
 // https://github.com/basecamp/trix/issues/624
 addEventListener("trix-initialize", event => {
   const { toolbarElement } = event.target;
@@ -40,7 +42,6 @@ $(document).on('turbo:before-cache', function() {
 });
 
 $( document ).on('turbo:load', function() {
-
 
     if (document.location.hostname.search("localhost") !== 0) {
       console.log("Google Analytics Enabled");
