@@ -16,6 +16,7 @@
       <%= button_to "Send KYC Reminders", send_kyc_reminder_to_all_investor_kycs_path("entity_id": entity_id), method: :get, class: "btn btn-outline-primary", data: {action: "click->confirm#popup", turbo:false,
       method: :get, msg: "This will generate a notification to all investor users whose KYC is unverified"} if policy(InvestorKyc).send_kyc_reminder_to_all? %>
 
+      <% if current_user && policy(InvestorKyc).import? %>
       <div class="btn-group">
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle" type="button"
@@ -45,6 +46,7 @@
           </div>
         </div>
       </div>
+      <% end %>
     </span>
   </div>
 

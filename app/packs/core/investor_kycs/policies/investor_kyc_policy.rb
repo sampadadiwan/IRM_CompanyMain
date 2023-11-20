@@ -48,7 +48,11 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def send_kyc_reminder_to_all?
-    user.enable_kycs
+    user.enable_kycs && user.curr_role == "employee"
+  end
+
+  def import?
+    user.enable_kycs && user.curr_role == "employee"
   end
 
   def generate_new_aml_report?

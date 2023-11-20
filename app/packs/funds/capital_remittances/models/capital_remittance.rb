@@ -136,4 +136,13 @@ class CapitalRemittance < ApplicationRecord
   def self.ransackable_associations(_auth_object = nil)
     %w[capital_commitment fund investor]
   end
+
+  after_commit :touch_investor
+  # rubocop:disable Rails/SkipsModelValidations
+  # This is to bust any cached dashboards showing the commitments
+  def touch_investor
+    investor.investor_entity.touch
+    entity.touch
+  end
+  # rubocop:enable Rails/SkipsModelValidations
 end

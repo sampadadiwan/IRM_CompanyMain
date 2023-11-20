@@ -250,6 +250,13 @@ class CapitalCommitment < ApplicationRecord
     end
   end
 
+  after_commit :touch_investor
+  # This is to bust any cached dashboards showing the commitments
+  def touch_investor
+    investor.investor_entity.touch
+    entity.touch
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[commitment_date commitment_type fund_close investor_name onboarding_completed percentage unit_type virtual_bank_account]
   end

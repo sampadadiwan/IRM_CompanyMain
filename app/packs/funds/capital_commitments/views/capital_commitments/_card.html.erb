@@ -5,10 +5,12 @@
         <div class="d-sm-flex d-block align-items-center justify-content-between mb-9">
             <div class="mb-3 mb-sm-0">
                 <div class="row">
-                    <%= image_tag capital_commitment.entity.logo.url, class: "col cc-card-logo" if capital_commitment.entity.logo %>       
+                    <%= image_tag capital_commitment.entity.logo.url(expires_in: 60*60*24*7), class: "col cc-card-logo" if capital_commitment.entity.logo %>       
 
                     <span class="col">
-                    <h5 class="card-title fw-semibold"><%= capital_commitment.fund.name %> : <%= capital_commitment.entity.name %> </h5>                
+                    <h4 class="card-title fw-semibold">
+                        <%= capital_commitment.fund.name %> : <%= capital_commitment.entity.name %> 
+                    </h4>                
 
                     <span class="fs3 mb-1">
                         <%= capital_commitment.investor_kyc&.full_name if capital_commitment.investor_kyc %>
