@@ -159,6 +159,10 @@ class InvestorKyc < ApplicationRecord
   end
   # rubocop:enable Rails/SkipsModelValidations
 
+  def commitment_pending
+    committed_amount - collected_amount
+  end
+
   # Check if all the required docs have been uploaded
   def docs_completed?
     # The required_docs depend on the kyc_type
