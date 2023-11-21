@@ -5,6 +5,10 @@
       list-style-type: none;
       padding-inline-start: 20px;
     }
+
+    li {
+      padding: 5px;
+    }
     
     /* Remove margins and padding from the parent ul */
     ul:first-child {
