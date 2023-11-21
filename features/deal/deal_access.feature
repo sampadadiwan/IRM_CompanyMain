@@ -68,8 +68,8 @@ Scenario Outline: Access Deal as Investor without access
 Scenario Outline: Access Deal as Investor with access
   Given there is a user "" for an entity "<entity>"
   And given there is a deal "<deal>" for the entity 
-  Given there is another user "first_name=Investor" for another entity "entity_type=Investor"
-  And another entity is an investor "category=Lead Investor" in entity
+  Given there is another user "first_name=Investor" for another entity "name=Another Entity;pan=X5CA4DB71K;entity_type=Investor"
+  And another entity is an investor "pan=X5CA4DB71K;category=Lead Investor" in entity
   And another entity is a deal_investor "status=Active" in the deal
   And investor has access right "<access_right>" in the deal
   And another user has investor access "<investor_access>" in the investor
@@ -92,8 +92,8 @@ Scenario Outline: Access Deal as Investor with access
 Scenario Outline: Access Deal as Investor without investor access
   Given there is a user "" for an entity "<entity>"
   And given there is a deal "<deal>" for the entity 
-  Given there is another user "first_name=Investor" for another entity "entity_type=Investor"
-  And another entity is an investor "category=Lead Investor" in entity
+  Given there is another user "first_name=Investor" for another entity "entity_type=Investor;pan=X5CA4DB71K"
+  And another entity is an investor "category=Lead Investor;pan=X5CA4DB71K" in entity
   And investor has access right "<access_right>" in the deal
   And another user "<should>" have access to the deal 
 
@@ -106,8 +106,8 @@ Scenario Outline: Access Deal as Investor without investor access
 Scenario Outline: Access Deal as Investor without access right
   Given there is a user "" for an entity "<entity>"
   And given there is a deal "<deal>" for the entity 
-  Given there is another user "first_name=Investor" for another entity "entity_type=Investor"
-  And another entity is an investor "category=Lead Investor" in entity
+  Given there is another user "first_name=Investor" for another entity "entity_type=Investor;pan=X5CA4DB71K"
+  And another entity is an investor "category=Lead Investor;pan=X5CA4DB71K" in entity
   And another user has investor access "<investor_access>" in the investor
   And another user "<should>" have access to the deal 
 
