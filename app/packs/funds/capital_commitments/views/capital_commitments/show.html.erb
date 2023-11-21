@@ -440,31 +440,32 @@
                 
   <% end %>
 
-  <div class="btn-group">
-    <div class="dropdown">
-      <button class="btn btn-outline-success dropdown-toggle" type="button" 
-              data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        Actions
-      </button>
-      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+  <% if policy(@capital_commitment).update? %>
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-outline-success dropdown-toggle" type="button" 
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Actions
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-        <%= link_to "LP Account Statement" , report_capital_commitment_path(@capital_commitment, report: "lp_statement"), {class: "dropdown-item" } %>
-    
-        <%= button_to "Generate Documents", 
-        generate_documentation_capital_commitment_path(@capital_commitment), 
-        method: :patch, class: "dropdown-item" , 
-        form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-        msg: "Generate Documents for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"} if policy(@capital_commitment).generate_documentation? %>
+          <%= link_to "LP Account Statement" , report_capital_commitment_path(@capital_commitment, report: "lp_statement"), {class: "dropdown-item" } %>
+      
+          <%= button_to "Generate Documents", 
+          generate_documentation_capital_commitment_path(@capital_commitment), 
+          method: :patch, class: "dropdown-item" , 
+          form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+          msg: "Generate Documents for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"} if policy(@capital_commitment).generate_documentation? %>
 
 
-        <%= link_to "Generate SOA", 
-        generate_soa_form_capital_commitment_path(@capital_commitment), 
-        class: "dropdown-item" if policy(@capital_commitment).generate_soa? %>
-        
+          <%= link_to "Generate SOA", 
+          generate_soa_form_capital_commitment_path(@capital_commitment), 
+          class: "dropdown-item" if policy(@capital_commitment).generate_soa? %>
+          
+        </div>
       </div>
     </div>
-  </div>
-
+  <% end %>
   
   
 </div>
