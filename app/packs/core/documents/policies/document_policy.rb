@@ -17,8 +17,8 @@ class DocumentPolicy < ApplicationPolicy
     (belongs_to_entity?(user, record) && user.enable_documents) ||
       (record.owner && owner_policy.update?) ||
       # The DealInvestor/CapitalCommitment are cases where other users can attach documents to the document owner which is not created by them
-      (record.owner && record.owner_type == "DealInvestor" && owner_policy.show?) 
-      # || (record.owner && record.owner_type == "CapitalCommitment" && owner_policy.show?)
+      (record.owner && record.owner_type == "DealInvestor" && owner_policy.show?)
+    # || (record.owner && record.owner_type == "CapitalCommitment" && owner_policy.show?)
   end
 
   def new?

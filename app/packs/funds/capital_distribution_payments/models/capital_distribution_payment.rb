@@ -112,4 +112,12 @@ class CapitalDistributionPayment < ApplicationRecord
       0
     end
   end
+
+  after_commit :update_investor_entity
+  # rubocop:disable Rails/SkipsModelValidations
+  # This is to bust any cached dashboards showing the commitments
+  def update_investor_entity
+    investor.investor_entity.touch
+  end
+  # rubocop:enable Rails/SkipsModelValidations
 end
