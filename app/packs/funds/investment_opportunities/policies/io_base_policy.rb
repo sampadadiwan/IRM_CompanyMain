@@ -39,7 +39,7 @@ class IoBasePolicy < ApplicationPolicy
   end
 
   def create?
-    (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) ||
+    belongs_to_entity?(user, record) ||
       permissioned_employee?(:create)
   end
 end

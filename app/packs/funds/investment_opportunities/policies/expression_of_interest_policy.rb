@@ -8,6 +8,12 @@ class ExpressionOfInterestPolicy < IoBasePolicy
       permissioned_investor?
   end
 
+  def create?
+    belongs_to_entity?(user, record) ||
+      permissioned_employee?(:create) ||
+      InvestmentOpportunityPolicy.new(user, record.investment_opportunity).permissioned_investor?
+  end
+
   def new?
     create?
   end

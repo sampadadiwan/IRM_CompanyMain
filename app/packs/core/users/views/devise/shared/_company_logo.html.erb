@@ -1,6 +1,8 @@
 <% @current_entity ||= nil %>
-<div class="row splash-logo">
-    <% image = @current_entity&.logo&.url || "/img/logo_big.png" %>
-    <%= image_tag(image, class: "devise-logo") %>
-    <small class="text-muted text-center">Powered by CapHive</small>
+<div>
+    <div class="splash-logo text-center">
+        <% image = @current_entity&.logo&.url || "/img/logo_big.png" %>
+        <%= image_tag(image, class: "devise-logo") %>    
+    </div>
+    <div class="text-muted text-center">Powered by CapHive</div>    
 </div>    
