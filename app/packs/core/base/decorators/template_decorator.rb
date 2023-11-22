@@ -1,10 +1,18 @@
 class TemplateDecorator < ApplicationDecorator
+  def add_filter_clause(association, filter_field, filter_value)
+    object.send(association).where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize.titleize)
+  end
+
   def method_missing(method_name, *args, &)
     # This is to enable templates to get specific account entries
-    if method_name.to_s.include?("account_entries_")
-      account_entry_name = method_name.to_s.gsub("account_entries_", "").humanize.titleize
-      aes = TemplateDecorator.decorate_collection(account_entries.where("account_entries.name=?", account_entry_name))
-      return aes
+
+    if method_name.to_s.include?("where_")
+
+      params = method_name.to_s.gsub("where_", "")
+      filter_field, filter_value = params.split("_eq_")
+      collection = object.where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize.titleize)
+
+      return TemplateDecorator.decorate_collection(collection)
 
     elsif method_name.to_s.include?("money_")
       attr_name = method_name.to_s.gsub("money_", "")
@@ -25,6 +33,7 @@ class TemplateDecorator < ApplicationDecorator
     elsif method_name.to_s.include?("dollars_")
       attr_name = method_name.to_s.gsub("dollars_", "")
       return send(attr_name).to_i.to_words.humanize
+
     end
     super
   end

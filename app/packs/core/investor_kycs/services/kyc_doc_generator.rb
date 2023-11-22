@@ -37,10 +37,25 @@ class KycDocGenerator
       investor_kyc: TemplateDecorator.decorate(investor_kyc),
       entity: investor_kyc.entity,
 
+      account_entries: TemplateDecorator.decorate_collection(investor_kyc.account_entries),
+      account_entries_between_dates: TemplateDecorator.decorate_collection(investor_kyc.account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
+      account_entries_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.account_entries.where(reporting_date: ..end_date)),
+
       capital_commitments: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments),
+      capital_commitments_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments.where(commitment_date: start_date..).where(commitment_date: ..end_date)),
+      capital_commitments_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments.where(commitment_date: ..end_date)),
+
       capital_remittances: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances),
+      capital_remittances_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
+      capital_remittances_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances.where(remittance_date: ..end_date)),
+
       capital_remittance_payments: TemplateDecorator.decorate_collection(investor_kyc.capital_remittance_payments),
-      capital_distribution_payments: TemplateDecorator.decorate_collection(investor_kyc.capital_distribution_payments)
+      capital_remittance_payments_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_remittance_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
+      capital_remittance_payments_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.capital_remittance_payments.where(payment_date: ..end_date)),
+
+      capital_distribution_payments: TemplateDecorator.decorate_collection(investor_kyc.capital_distribution_payments),
+      capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
+      capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.capital_distribution_payments.where(payment_date: ..end_date))
 
     }
 

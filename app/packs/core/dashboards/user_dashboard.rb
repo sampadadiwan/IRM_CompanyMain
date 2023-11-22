@@ -27,7 +27,7 @@ class UserDashboard < Administrate::BaseDashboard
     enable_support: Field::BooleanEmoji,
     confirmed_at: Field::DateTime,
     roles: Field::HasMany,
-    curr_role: Field::Select.with_options(collection: Role.all.collect(&:name))
+    curr_role: Field::Select.with_options(collection: ["", "employee", "investor"])
   }.freeze
 
   # COLLECTION_ATTRIBUTES

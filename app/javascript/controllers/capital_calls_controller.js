@@ -11,7 +11,7 @@ export default class extends ServerDatatableController {
       {"data": "due_date"},
       {"data": "call_amount"},
       {"data": "collected_amount"},
-      {"data": "due_amount"},          
+      {"data": "due_amount", sortable: false},          
       {"data": "approved"},
       {"data": "dt_actions"}
     ]

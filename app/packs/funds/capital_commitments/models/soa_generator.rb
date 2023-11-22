@@ -43,9 +43,19 @@ class SoaGenerator
       fund: TemplateDecorator.decorate(capital_commitment.fund),
 
       capital_remittances: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances),
+      capital_remittances_between_dates: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
+      capital_remittances_before_end_date: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances.where(remittance_date: ..end_date)),
+
       capital_distribution_payments: TemplateDecorator.decorate_collection(capital_commitment.capital_distribution_payments),
-      account_entries: TemplateDecorator.decorate_collection(capital_commitment.account_entries.includes(:fund).cumulative.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
-      fund_ratios: TemplateDecorator.decorate_collection(capital_commitment.fund_ratios.where(end_date:)),
+      capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(capital_commitment.capital_distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
+      capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(capital_commitment.capital_distribution_payments.where(payment_date: ..end_date)),
+
+      account_entries: TemplateDecorator.decorate_collection(capital_commitment.account_entries),
+      account_entries_between_dates: TemplateDecorator.decorate_collection(capital_commitment.account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
+      account_entries_before_end_date: TemplateDecorator.decorate_collection(capital_commitment.account_entries.where(reporting_date: ..end_date)),
+
+      fund_ratios_between_dates: TemplateDecorator.decorate_collection(capital_commitment.fund_ratios.where(end_date: start_date..).where(end_date: ..end_date)),
+      fund_ratios_before_end_date: TemplateDecorator.decorate_collection(capital_commitment.fund_ratios.where(end_date: ..end_date)),
 
       investor_kyc: TemplateDecorator.decorate(capital_commitment.investor_kyc),
 
