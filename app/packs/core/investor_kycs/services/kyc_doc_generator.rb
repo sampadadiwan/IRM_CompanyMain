@@ -87,7 +87,8 @@ class KycDocGenerator
 
     call_amount_cents = remittances.sum(:call_amount_cents)
     collected_amount_cents = remittances.sum(:collected_amount_cents)
-    
+    committed_amount_cents = ccs.sum(:committed_amount_cents)
+
     distributions = CapitalDistributionPayment.where(capital_commitment_id: ccs.pluck(:id))
     distributions = distributions.where(payment_date: start_date..) if start_date
     distributions = distributions.where(payment_date: ..end_date) if end_date
@@ -95,11 +96,12 @@ class KycDocGenerator
     distribution_amount_cents = distributions.sum(:amount_cents)
     
     OpenStruct.new({
-                     committed_amount: Money.new(ccs.sum(:committed_amount_cents), currency),
+                     committed_amount: Money.new(committed_amount_cents, currency),
                      call_amount: Money.new(call_amount_cents, currency),
                      collected_amount: Money.new(collected_amount_cents, currency),
                      distribution_amount: Money.new(distribution_amount_cents, currency),
-                     commitment_pending: Money.new(call_amount_cents - collected_amount_cents, currency)
+                     due_amount: Money.new(call_amount_cents - collected_amount_cents, currency),
+                     uncalled_amount: Money.new(committed_amount_cents - call_amount_cents, currency)
                    })
   end
 
