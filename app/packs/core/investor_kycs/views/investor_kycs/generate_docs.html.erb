@@ -24,9 +24,10 @@
 
   <div class="form-group">
     <%= form.label :template_name, "Template" %>
-    <%= form.select :template_name, @investor_kyc.entity.documents.template.map{|d| [d.name, d.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2", 
+    <% template_folder = @investor_kyc.entity.folders.where(name: "KYC Templates").first %>
+    <%= form.select :template_name, @investor_kyc.entity.documents.where(folder_id: template_folder&.id).template.map{|d| [d.name, d.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2", 
     name: "document_template_ids[]", multiple: "multiple" %>
-    <small class="text-muted">Select the template to be used for document generation. </small>
+    <small class="text-muted">Select the template to be used for document generation from KYC Templates Folder. </small>
   </div>
 
   <div class="form-group">
