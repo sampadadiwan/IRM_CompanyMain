@@ -26,7 +26,12 @@ class KycDocGenerator
   def generate(investor_kyc, start_date, end_date, doc_template_path)
     template = Sablon.template(File.expand_path(doc_template_path))
 
+    currency = investor_kyc.entity.currency
     investor_kyc.entity.currency == "INR" ? investor_kyc.committed_amount.to_i.rupees.humanize : investor_kyc.committed_amount.to_i.to_words.humanize
+
+    capital_commitments = investor_kyc.capital_commitments
+    capital_commitments_between_dates = investor_kyc.capital_commitments.where(commitment_date: start_date..).where(commitment_date: ..end_date)
+    capital_commitments_before_end_date = investor_kyc.capital_commitments.where(commitment_date: ..end_date)
 
     context = {
       date: Time.zone.today.strftime("%d %B %Y"),
@@ -41,9 +46,14 @@ class KycDocGenerator
       account_entries_between_dates: TemplateDecorator.decorate_collection(investor_kyc.account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
       account_entries_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.account_entries.where(reporting_date: ..end_date)),
 
-      capital_commitments: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments),
-      capital_commitments_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments.where(commitment_date: start_date..).where(commitment_date: ..end_date)),
-      capital_commitments_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments.where(commitment_date: ..end_date)),
+      capital_commitments: TemplateDecorator.decorate_collection(capital_commitments),
+      amounts: TemplateDecorator.decorate(amounts(capital_commitments, currency)),
+
+      capital_commitments_between_dates: TemplateDecorator.decorate_collection(capital_commitments_between_dates),
+      amounts_between_dates: TemplateDecorator.decorate(amounts(capital_commitments_between_dates, currency)),
+
+      capital_commitments_before_end_date: TemplateDecorator.decorate_collection(capital_commitments_before_end_date),
+      amounts_before_end_date: TemplateDecorator.decorate(amounts(capital_commitments_before_end_date, currency)),
 
       capital_remittances: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances),
       capital_remittances_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
@@ -66,6 +76,18 @@ class KycDocGenerator
 
     file_name = "#{@working_dir}/KYC-#{investor_kyc.id}"
     convert(template, context, file_name)
+  end
+
+  def amounts(commitments, currency)
+    call_amount_cents = commitments.sum(:call_amount_cents)
+    collected_amount_cents = commitments.sum(:collected_amount_cents)
+    OpenStruct.new({
+                     committed_amount: Money.new(commitments.sum(:committed_amount_cents), currency),
+                     call_amount: Money.new(call_amount_cents, currency),
+                     collected_amount: Money.new(collected_amount_cents, currency),
+                     distribution_amount: Money.new(commitments.sum(:distribution_amount_cents), currency),
+                     commitment_pending: Money.new(call_amount_cents - collected_amount_cents, currency)
+                   })
   end
 
   def generate_custom_fields(context, investor_kyc)
