@@ -46,26 +46,28 @@ class KycDocGenerator
       account_entries_between_dates: TemplateDecorator.new(investor_kyc.account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
       account_entries_before_end_date: TemplateDecorator.new(investor_kyc.account_entries.where(reporting_date: ..end_date)),
 
-      capital_commitments: TemplateDecorator.new(capital_commitments),
+      fund_units: fund_units(investor_kyc, start_date, end_date),
+
+      capital_commitments: TemplateDecorator.decorate_collection(capital_commitments),
       amounts: TemplateDecorator.decorate(amounts(capital_commitments, currency)),
 
-      capital_commitments_between_dates: TemplateDecorator.new(capital_commitments_between_dates),
+      capital_commitments_between_dates: TemplateDecorator.decorate_collection(capital_commitments_between_dates),
       amounts_between_dates: TemplateDecorator.decorate(amounts(capital_commitments_between_dates, currency)),
 
-      capital_commitments_before_end_date: TemplateDecorator.new(capital_commitments_before_end_date),
+      capital_commitments_before_end_date: TemplateDecorator.decorate_collection(capital_commitments_before_end_date),
       amounts_before_end_date: TemplateDecorator.decorate(amounts(capital_commitments_before_end_date, currency)),
 
-      capital_remittances: TemplateDecorator.new(investor_kyc.capital_remittances),
-      capital_remittances_between_dates: TemplateDecorator.new(investor_kyc.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
-      capital_remittances_before_end_date: TemplateDecorator.new(investor_kyc.capital_remittances.where(remittance_date: ..end_date)),
+      capital_remittances: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances),
+      capital_remittances_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
+      capital_remittances_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances.where(remittance_date: ..end_date)),
 
-      capital_remittance_payments: TemplateDecorator.new(investor_kyc.capital_remittance_payments),
-      capital_remittance_payments_between_dates: TemplateDecorator.new(investor_kyc.capital_remittance_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
-      capital_remittance_payments_before_end_date: TemplateDecorator.new(investor_kyc.capital_remittance_payments.where(payment_date: ..end_date)),
+      capital_remittance_payments: TemplateDecorator.decorate_collection(investor_kyc.capital_remittance_payments),
+      capital_remittance_payments_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_remittance_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
+      capital_remittance_payments_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.capital_remittance_payments.where(payment_date: ..end_date)),
 
-      capital_distribution_payments: TemplateDecorator.new(investor_kyc.capital_distribution_payments),
-      capital_distribution_payments_between_dates: TemplateDecorator.new(investor_kyc.capital_distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
-      capital_distribution_payments_before_end_date: TemplateDecorator.new(investor_kyc.capital_distribution_payments.where(payment_date: ..end_date))
+      capital_distribution_payments: TemplateDecorator.decorate_collection(investor_kyc.capital_distribution_payments),
+      capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
+      capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.capital_distribution_payments.where(payment_date: ..end_date))
 
     }
 
@@ -87,6 +89,14 @@ class KycDocGenerator
                      collected_amount: Money.new(collected_amount_cents, currency),
                      distribution_amount: Money.new(commitments.sum(:distribution_amount_cents), currency),
                      commitment_pending: Money.new(call_amount_cents - collected_amount_cents, currency)
+                   })
+  end
+
+  def fund_units(investor_kyc, start_date, end_date)
+    OpenStruct.new({
+                     current: investor_kyc.fund_units.sum(:quantity),
+                     before_end_date: investor_kyc.fund_units.where(issue_date: ..end_date).sum(:quantity),
+                     between_dates: investor_kyc.fund_units.where(issue_date: ..end_date).where(issue_date: start_date..).sum(:quantity)
                    })
   end
 
