@@ -1,17 +1,24 @@
 <% if current_user %>
-<div class="fixed-profile p-3 mx-4 mb-2 bg-secondary-subtle rounded sidebar-ad mt-3">
-  <div class="hstack gap-3">
-    <div class="john-img text-primary">
-      <i class="ti ti-user fs-8"></i>
+
+  <% if current_user && current_user.entity.logo %>
+    <div class="text-center">
+      <img src="/img/logo-without-tagline.jpg" width="100" alt="" />    
+    </div>  
+  <% end %>
+
+  <div class="fixed-profile p-3 mx-4 mb-2 bg-secondary-subtle rounded sidebar-ad mt-3">
+    <div class="hstack gap-3">
+      <div class="john-img text-primary">
+        <i class="ti ti-user fs-8"></i>
+      </div>
+      <div class="john-title text-center w-100">
+        <h6 class="mb-0 fs-4 fw-semibold"><%= current_user.first_name %></h6>
+      </div>
+      
+      <a href="#" class="border-0 bg-transparent text-primary ms-auto" tabindex="0" type="button" aria-label="logout"
+                data-bs-toggle="modal" data-bs-target="#logoutModal">
+        <i class="ti ti-power fs-8"></i>
+      </a>
     </div>
-    <div class="john-title text-center w-100">
-      <h6 class="mb-0 fs-4 fw-semibold"><%= current_user.first_name %></h6>
-    </div>
-    
-    <a href="#" class="border-0 bg-transparent text-primary ms-auto" tabindex="0" type="button" aria-label="logout"
-              data-bs-toggle="modal" data-bs-target="#logoutModal">
-      <i class="ti ti-power fs-8"></i>
-    </a>
   </div>
-</div>
 <% end %>
