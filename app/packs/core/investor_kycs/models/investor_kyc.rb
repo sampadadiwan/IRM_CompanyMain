@@ -13,6 +13,7 @@ class InvestorKyc < ApplicationRecord
   has_many :capital_remittance_payments, through: :capital_commitments
   has_many :capital_distribution_payments, through: :capital_commitments
   has_many :account_entries, through: :capital_commitments
+  has_many :fund_units, through: :capital_commitments
 
   has_noticed_notifications
 
