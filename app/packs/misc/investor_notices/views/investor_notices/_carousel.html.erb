@@ -1,4 +1,4 @@
-<% cache ["InvestorNotice", current_user, current_user.entity] do %>
+<% cache ["InvestorNotice", current_user, current_user.entity], expires_in: 5.day do %>
 <% 
     active = "active" 
     notices = InvestorNotice.notices(current_user)

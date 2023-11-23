@@ -7,7 +7,7 @@
   </div>
   <div class="card-body lead row">
     <div class="col-lg-5 mb-4 notice_image_div">
-      <% img = investor_notice.link.present?  ? investor_notice.link : current_user.entity.logo_url %>
+      <% img = investor_notice.link.present?  ? investor_notice.link : current_user.entity.logo.url(expires_in: 60*60*24*7) %>
       <img class="center notice_image" src=<%=img%> />
     </div>
     <div class="col-lg-7 mb-4 notice_items" style="margin: auto;">
