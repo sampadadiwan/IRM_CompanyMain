@@ -17,12 +17,11 @@ class CapitalCommitmentRemittanceJob < ApplicationJob
       next unless capital_call.applicable_to.exists?(id: capital_commitment.id)
 
       status = capital_call.generate_remittances_verified ? "Paid" : "Pending"
-      cr = CapitalRemittance.new(capital_call: capital_call, fund: capital_call.fund,
-                                   entity: capital_call.entity, investor: capital_commitment.investor, 
-                                   capital_commitment:, folio_id: capital_commitment.folio_id,
-                                   created_by: "Call",
-                                   status:, verified: capital_call.generate_remittances_verified)
-
+      cr = CapitalRemittance.new(capital_call:, fund: capital_call.fund,
+                                 entity: capital_call.entity, investor: capital_commitment.investor,
+                                 capital_commitment:, folio_id: capital_commitment.folio_id,
+                                 created_by: "Call",
+                                 status:, verified: capital_call.generate_remittances_verified)
 
       cr.setup_call_fees
       cr.set_call_amount
