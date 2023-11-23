@@ -266,7 +266,7 @@ class AccountEntryAllocationEngine
         allocate_entry(fund_account_entry, fund_formula, fund_unit_settings)
       end
     else
-      raise "No account entries found to allocate for #{fund_formula.name} in #{@fund.name}"
+      Rails.logger.warn "No account entries found to allocate for #{fund_formula.name} in #{@fund.name}"
     end
   end
 
