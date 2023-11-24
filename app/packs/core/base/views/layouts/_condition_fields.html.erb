@@ -7,5 +7,8 @@
     <%= f.value_fields do |v| %>
       <%= v.text_field :value, class: "form-control col" %>
     <% end %>
-    <%= link_to "Remove", '#', class: "remove_fields btn btn-danger col md-1" %>
+    <span class="col-1 pt-2">
+      <%= link_to "Remove", '#', class: "remove_fields btn btn-outline-danger" %>
+    </span>
+    
   </div>

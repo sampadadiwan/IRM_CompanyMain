@@ -919,7 +919,7 @@ select {
   }
 
   form {
-    a {
+    a:not(.btn) {
       color: var(--bs-primary);
     }
   }
