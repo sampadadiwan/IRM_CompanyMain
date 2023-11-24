@@ -94,7 +94,7 @@ class KycDocGenerator
     distributions = distributions.where(payment_date: ..end_date) if end_date
 
     distribution_amount_cents = distributions.sum(:amount_cents)
-    
+
     OpenStruct.new({
                      committed_amount: Money.new(committed_amount_cents, currency),
                      call_amount: Money.new(call_amount_cents, currency),

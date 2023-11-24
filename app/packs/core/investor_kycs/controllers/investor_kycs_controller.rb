@@ -174,19 +174,28 @@ class InvestorKycsController < ApplicationController
 
   def generate_docs
     if params["_method"] == "patch"
-      KycDocGenJob.perform_later(@investor_kyc.id, params[:document_template_ids],
-                                 params[:start_date], params[:end_date], user_id: current_user.id)
 
-      redirect_to investor_kyc_url(@investor_kyc), notice: "Document generation in progress. Please check back in a few minutes."
+      if params[:document_template_ids].present? && Date.parse(params[:start_date]) <= Date.parse(params[:end_date])
+        KycDocGenJob.perform_later(@investor_kyc.id, params[:document_template_ids],
+                                   params[:start_date], params[:end_date], user_id: current_user.id)
+
+        redirect_to investor_kyc_url(@investor_kyc), notice: "Document generation in progress. Please check back in a few minutes."
+      else
+        redirect_to generate_docs_investor_kycs_url, alert: "Invalid dates or document template."
+      end
     end
   end
 
   def generate_all_docs
     if request.post?
-      KycDocGenJob.perform_later(nil, params[:document_template_ids], params[:start_date], params[:end_date],
-                                 user_id: current_user.id, entity_id: params[:entity_id])
+      if params[:document_template_ids].present? && Date.parse(params[:start_date]) <= Date.parse(params[:end_date])
+        KycDocGenJob.perform_later(nil, params[:document_template_ids], params[:start_date], params[:end_date],
+                                   user_id: current_user.id, entity_id: params[:entity_id])
 
-      redirect_to investor_kycs_url, notice: "Document generation in progress. Please check back in a few minutes."
+        redirect_to investor_kycs_url, notice: "Document generation in progress. Please check back in a few minutes."
+      else
+        redirect_to generate_all_docs_investor_kycs_url, alert: "Invalid dates or document template."
+      end
     end
   end
 

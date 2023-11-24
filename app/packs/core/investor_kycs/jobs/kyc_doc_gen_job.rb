@@ -23,5 +23,8 @@ class KycDocGenJob < ApplicationJob
         end
       end
     end
+
+    send_notification("Invalid Dates", user_id, "danger") if start_date > end_date
+    send_notification("Invalid Document Template", user_id, "danger") if document_template_ids.blank?
   end
 end
