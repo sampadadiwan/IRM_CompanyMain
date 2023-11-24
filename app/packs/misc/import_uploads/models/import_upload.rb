@@ -21,10 +21,11 @@ class ImportUpload < ApplicationRecord
               "OFFERS_DOCS_SAMPLE" => "/sample_uploads/offer_docs.zip",
               "OPTIONS_CUSTOM_DATA_SAMPLE" => "/sample_uploads/options_custom_data.xlsx",
               "FUND_UNIT_SETTING_SAMPLE" => "/sample_uploads/fund_unit_setting.xlsx",
+              "FUND_UNIT_SAMPLE" => "/sample_uploads/fund_unit.xlsx",
               "ACCOUNT_ENTRY_SAMPLE" => "/sample_uploads/account_entries.xlsx",
               "KPIS_SAMPLE" => "/sample_uploads/kpis.xlsx" }.freeze
 
-  TYPES = %w[InvestorAccess Investor CapitalCommittment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData Kpi KycDocs].sort.freeze
+  TYPES = %w[InvestorAccess Investor CapitalCommittment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData Kpi KycDocs].sort.freeze
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true

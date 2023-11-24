@@ -1,0 +1,81 @@
+class ImportFundUnit < ImportUtil
+  include Interactor
+
+  STANDARD_HEADERS = ["Fund", "Folio No", "Call Name", "Unit Type",	"Quantity",	"Price", "Reason", "Premium", "Issue Date", "Update Only"].freeze
+
+  def standard_headers
+    STANDARD_HEADERS
+  end
+
+  def save_fund_unit(row_data, import_upload, custom_field_headers)
+    Rails.logger.debug row_data
+
+    saved = true
+    row_data["Unit Type"]&.strip
+    folio_id = row_data["Folio No"]&.to_s&.strip
+    call_name = row_data["Call Name"]&.strip
+    update_only = row_data["Update Only"]&.strip
+
+    fund = import_upload.entity.funds.where(name: row_data["Fund"].strip).first
+    raise "Fund not found" unless fund
+
+    capital_commitment = fund.capital_commitments.where(folio_id:).first
+    raise "Folio #{folio_id} not found in fund #{fund.name}" unless capital_commitment
+
+    capital_call = fund.capital_calls.where(name: call_name).first
+    raise "Call #{call_name} not found in fund #{fund.name}" unless capital_call
+
+    capital_remittance = capital_commitment.capital_remittances.where(capital_call_id: capital_call.id).first
+    raise "Remittance not found for #{folio_id} in call #{call_name} in fund #{fund.name}" unless capital_remittance
+
+    fund_unit = FundUnit.where(owner: capital_remittance).first
+
+    if fund_unit.present? && update_only == "Yes"
+      save_fu(fund_unit, fund, capital_commitment, capital_remittance, row_data, custom_field_headers)
+
+    elsif fund_unit.nil?
+      fund_unit = FundUnit.new(entity_id: import_upload.entity_id)
+      save_fu(fund_unit, fund, capital_commitment, capital_remittance, row_data, custom_field_headers)
+    else
+      raise "Skipping: FundUnit #{fund_unit.id} already exists"
+    end
+
+    saved
+  end
+
+  def save_fu(fund_unit, fund, capital_commitment, capital_remittance, row_data, custom_field_headers)
+    unit_type = row_data["Unit Type"]&.strip
+    row_data["Folio No"]&.to_s&.strip
+
+    fund_unit.assign_attributes(fund:, capital_commitment:, owner: capital_remittance, investor_id: capital_commitment.investor_id, unit_type:, quantity: row_data["Quantity"], price: row_data["Price"], reason: row_data["Reason"]&.strip, premium: row_data["Premium"], issue_date: row_data["Issue Date"])
+
+    setup_custom_fields(row_data, fund_unit, custom_field_headers)
+
+    fund_unit.save!
+  end
+
+  def process_row(headers, custom_field_headers, row, import_upload, _context)
+    # create hash from headers and cells
+
+    row_data = [headers, row].transpose.to_h
+
+    Rails.logger.debug { "#### row_data = #{row_data}" }
+    begin
+      if save_fund_unit(row_data, import_upload, custom_field_headers)
+        import_upload.processed_row_count += 1
+        row << "Success"
+      else
+        import_upload.failed_row_count += 1
+        row << "Error"
+      end
+    rescue ActiveRecord::Deadlocked => e
+      raise e
+    rescue StandardError => e
+      Rails.logger.debug e.message
+      row << "Error #{e.message}"
+      Rails.logger.debug row_data
+      Rails.logger.debug row
+      import_upload.failed_row_count += 1
+    end
+  end
+end
