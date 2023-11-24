@@ -8,7 +8,7 @@
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Committed
                             </div>
-                            <div class=" h6 mb-0 font-weight-bold text-gray-800"><%= money_to_currency(fund.committed_amount, params) %></div>
+                            <div class="h6 mb-0 text-gray-800"><%= money_to_currency(fund.committed_amount, params) %></div>
                         </div>
                         <div class="col-auto">
                             
@@ -26,7 +26,7 @@
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Called
                             </div>
-                            <div class=" h6 mb-0 font-weight-bold text-gray-800"><%= money_to_currency(fund.call_amount, params) %></div>
+                            <div class="h6 mb-0 text-gray-800"><%= money_to_currency(fund.call_amount, params) %></div>
                         </div>
                         <div class="col-auto">
                             
@@ -45,7 +45,7 @@
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                 Collected
                             </div>
-                            <div class=" h6 mb-0 font-weight-bold text-gray-800"><%= money_to_currency(fund.collected_amount, params) %></div>
+                            <div class="h6 mb-0 text-gray-800"><%= money_to_currency(fund.collected_amount, params) %></div>
                         </div>
                         <div class="col-auto">
                             
@@ -66,7 +66,7 @@
                             </div>
                             <div class="row no-gutters align-items-center">
                                 <div class="col-auto">
-                                    <div class=" h6 mb-0 mr-3 font-weight-bold text-gray-800"><%= money_to_currency(fund.distribution_amount, params) %></div>
+                                    <div class="h6 mb-0 text-gray-800"><%= money_to_currency(fund.distribution_amount, params) %></div>
                                 </div>
                                 <div class="col">
                                     
@@ -90,7 +90,7 @@
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Uncalled
                             </div>
-                            <div class=" h6 mb-0 font-weight-bold text-gray-800">
+                            <div class="h6 mb-0 text-gray-800">
                                 <%= money_to_currency(fund.committed_amount - fund.call_amount, params) %>
                             </div>
                         </div>
@@ -110,7 +110,7 @@
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                 Investors
                             </div>
-                            <div class=" h6 mb-0 font-weight-bold text-gray-800">
+                            <div class="h6 mb-0 text-gray-800">
                                 <%= fund.capital_commitments.count %>
                             </div>
                         </div>

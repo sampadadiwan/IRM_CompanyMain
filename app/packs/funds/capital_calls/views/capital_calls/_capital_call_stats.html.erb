@@ -10,7 +10,7 @@
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Called
                             </div>
-                            <div class="h6 mb-0 font-weight-bold text-gray-800"><%= money_to_currency(capital_call.call_amount, params) %></div>
+                            <div class="h6 mb-0 text-gray-800"><%= money_to_currency(capital_call.call_amount, params) %></div>
                         </div>
                         <div class="col-auto">
                             
@@ -29,7 +29,7 @@
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                 Collected
                             </div>
-                            <div class="h6 mb-0 font-weight-bold text-gray-800"><%= money_to_currency(capital_call.collected_amount, params) %></div>
+                            <div class="h6 mb-0 text-gray-800"><%= money_to_currency(capital_call.collected_amount, params) %></div>
                         </div>
                         <div class="col-auto">
                             
@@ -48,7 +48,7 @@
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Percentage
                             </div>
-                            <div class="h6 mb-0 font-weight-bold text-gray-800"><%= capital_call.percentage_called %> %</div>
+                            <div class="h6 mb-0 text-gray-800"><%= capital_call.percentage_called %> %</div>
                         </div>
                         <div class="col-auto">
                             
@@ -68,7 +68,7 @@
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Amount To Be Called
                             </div>
-                            <div class="h6 mb-0 font-weight-bold text-gray-800"><%= money_to_currency capital_call.amount_to_be_called, params %> </div>
+                            <div class="h6 mb-0 text-gray-800"><%= money_to_currency capital_call.amount_to_be_called, params %> </div>
                         </div>
                         <div class="col-auto">
                             
@@ -90,7 +90,7 @@
                             </div>
                             <div class="row no-gutters align-items-center">
                                 <div class="col-auto">
-                                    <div class="h6 mb-0 font-weight-bold text-gray-800"><%= money_to_currency(capital_call.due_amount, params) %></div>
+                                    <div class="h6 mb-0 text-gray-800"><%= money_to_currency(capital_call.due_amount, params) %></div>
                                 </div>
                                 <div class="col">
                                     
@@ -113,7 +113,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Applicable                            </div>
-                            <div class="h6 mb-0 font-weight-bold text-gray-800">
+                            <div class="h6 mb-0 text-gray-800">
                                 <%= capital_call.fund_closes.join(",") %>
                             </div>
                         </div>
@@ -133,7 +133,7 @@
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                 Due Date
                             </div>
-                            <div class="h6 mb-0 font-weight-bold text-gray-800">
+                            <div class="h6 mb-0 text-gray-800">
                                 <%=l capital_call.due_date %>
                             </div>
                         </div>

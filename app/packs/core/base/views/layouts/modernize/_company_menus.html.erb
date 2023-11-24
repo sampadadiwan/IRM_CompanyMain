@@ -30,7 +30,7 @@
         </div>
         <div class="message-body">
         <a href="<%=entity_path(current_user.entity)%>" class="py-8 px-7 mt-8 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-home"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
@@ -39,7 +39,7 @@
             </div>
         </a>
         <a href="<%= users_path %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-users"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
@@ -48,7 +48,7 @@
             </div>
         </a>
         <a href="<%= investor_advisors_path %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-user-check"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
@@ -60,7 +60,7 @@
         <% if current_user.curr_role != "investor" %>
 
         <a href="<%= access_rights_path %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-lock-access"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
@@ -70,7 +70,7 @@
         </a>
 
         <a href="<%= form_types_path %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-forms"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
@@ -80,7 +80,7 @@
         </a>
 
         <a href="<%= investor_notices_path %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-layers-difference"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
@@ -90,7 +90,7 @@
         </a>
 
         <a href="<%= import_uploads_path %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-upload"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
@@ -100,7 +100,7 @@
         </a>
 
         <a href="<%= exchange_rates_path %>" class="py-8 px-7 d-flex align-items-center">
-            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
             <i class="ti ti-currency-dollar"></i>
             </span>
             <div class="w-75 d-inline-block v-middle ps-3">
