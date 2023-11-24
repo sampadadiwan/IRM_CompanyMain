@@ -1324,7 +1324,7 @@ Given('Given I upload a fund unit setting file for the fund') do
   click_on("Actions")
   click_on("Fund Unit Settings")
   sleep(2)
-  click_on("Upload Fund Unit Settings")
+  click_on("Upload")
   sleep(6)
   fill_in('import_upload_name', with: "Test Fund Unit Settings Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_unit_setting.xlsx'), make_visible: true)

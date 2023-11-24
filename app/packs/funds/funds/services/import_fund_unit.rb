@@ -15,12 +15,15 @@ class ImportFundUnit < ImportUtil
     folio_id = row_data["Folio No"]&.to_s&.strip
     call_name = row_data["Call Name"]&.strip
     update_only = row_data["Update Only"]&.strip
+    row_data["Unit Type"]&.strip
 
     fund = import_upload.entity.funds.where(name: row_data["Fund"].strip).first
     raise "Fund not found" unless fund
 
     capital_commitment = fund.capital_commitments.where(folio_id:).first
     raise "Folio #{folio_id} not found in fund #{fund.name}" unless capital_commitment
+
+    # raise "Unit Type does not match commitment unit type" if capital_commitment.unit_type != unit_type
 
     capital_call = fund.capital_calls.where(name: call_name).first
     raise "Call #{call_name} not found in fund #{fund.name}" unless capital_call
