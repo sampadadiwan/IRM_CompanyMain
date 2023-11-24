@@ -8,7 +8,6 @@ class CapitalRemittance < ApplicationRecord
   include WithExchangeRate
   include CapitalRemittanceFees
   include CapitalRemittanceCallBasis
-  include CapitalRemittanceCounters
 
   update_index('capital_remittance') { self }
 
@@ -40,6 +39,8 @@ class CapitalRemittance < ApplicationRecord
   validates :investor_name, length: { maximum: 255 }
 
   before_save :set_call_amount
+
+  include CapitalRemittanceCounters
 
   def set_call_amount
     self.remittance_date ||= capital_call.call_date

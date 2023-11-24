@@ -15,6 +15,14 @@ class ReportsController < ApplicationController
     @report.user = current_user
     @report.entity = current_user.entity
     @report.url = request.referer
+
+    @report.name = ""
+    hash = Rack::Utils.parse_query URI(request.referer).query
+    hash.each_key do |k|
+      @report.name += "#{hash[k]} " if k.include?("value")
+      # @report.name += "#{hash[k]} " if k.include?("[p]")
+      # @report.name += "#{hash[k].humanize} " if k.include?("name")
+    end
     authorize @report
   end
 
