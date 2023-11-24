@@ -4,7 +4,9 @@ class InvestorsController < ApplicationController
 
   # GET /investors or /investors.json
   def index
-    @investors = policy_scope(Investor)
+    @q = Investor.ransack(params[:q])
+
+    @investors = policy_scope(@q.result)
     authorize(Investor)
 
     @investors = @investors.where(category: params[:category]) if params[:category]

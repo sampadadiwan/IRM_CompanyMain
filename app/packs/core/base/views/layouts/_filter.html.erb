@@ -13,9 +13,15 @@
         <div class="field"></div>
 
         <div class="action float-end">        
-          <%= link_to_add_fields "Add Conditions", f, :condition, associations %>
-          <%= link_to "Save Report", new_report_path, class: "btn btn-outline-info" %>
-          <%= f.submit "Search", class: "btn btn-outline-primary" %>
+          <%= f.button "", class: "btn btn-outline-primary", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Search" do %>
+            <i class="ti ti-search"></i>
+          <% end %>
+
+          <%= link_to_add_fields '<i class="ti ti-plus"></i>'.html_safe, f, :condition, associations %>
+          
+          <%= link_to new_report_path, class: "btn btn-outline-info", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Save Report" do %>
+            <i class="ti ti-database"></i>
+          <% end %>
         </div>
       <% end %>
     </div>

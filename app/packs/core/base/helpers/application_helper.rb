@@ -33,6 +33,6 @@ module ApplicationHelper
     fields = form.send("#{type}_fields", new_object, child_index: id) do |builder|
       render("/layouts/#{type}_fields", f: builder, associations:)
     end
-    link_to(name, '#', class: "add_fields btn btn-outline-success", data: { id:, fields: fields.delete("\n") })
+    link_to(name, '#', class: "add_fields btn btn-outline-success", 'data-bs-toggle': "tooltip", 'data-bs-placement': "top", title: "Add Field", data: { id:, fields: fields.delete("\n") })
   end
 end

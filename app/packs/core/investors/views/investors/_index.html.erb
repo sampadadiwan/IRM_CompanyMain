@@ -1,8 +1,5 @@
 <% 
-  qs = params.to_enum.to_h
-  qs[:format] = :json
-  qs[:all] =  true
-  data_source ||= investors_path(qs) 
+  data_source ||= investors_path(q: params.to_unsafe_h[:q], format: :json, all: true) 
 %>    
 <% lazy_load_data ||= false %>
 
