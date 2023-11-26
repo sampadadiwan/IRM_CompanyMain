@@ -140,6 +140,6 @@ class Fund < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name currency category sub_category tag_list]
+    %w[name]
   end
 end

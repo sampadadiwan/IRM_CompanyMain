@@ -184,6 +184,6 @@ class InvestorKyc < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[PAN address bank_account_number full_name]
+    %w[PAN full_name]
   end
 end

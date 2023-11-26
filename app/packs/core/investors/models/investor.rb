@@ -215,6 +215,6 @@ class Investor < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[category city investor_name pan tag_list]
+    %w[category investor_name tag_list]
   end
 end
