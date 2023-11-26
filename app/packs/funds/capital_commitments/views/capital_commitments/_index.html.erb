@@ -1,6 +1,10 @@
-<% fund ||= nil; cols ||= params[:cols] %>
+<% 
+  fund ||= nil; 
+  cols ||= params[:cols] 
+  fund_id ||= params[:fund_id] || fund&.id
+%>
 
-<% data_source ||= capital_commitments_path(q: params.to_unsafe_h[:q], format: :json, all: true) %>
+<% data_source ||= capital_commitments_path(q: params.to_unsafe_h[:q], fund_id:, format: :json, all: true) %>
 <% lazy_load_data ||= false %>
 <%= render "/capital_commitments/index_header", fund: fund %>
 
@@ -8,14 +12,16 @@
   <% if lazy_load_data %>
     <a class="load_data_link" data-action="click->commitments#loadData"><span>Load Data</span></a>
   <% end %>
-  <% col_set = column_set(current_user, cols) %>
-  <%= custom_columns(current_user, cols) %>
+  
+  <% if fund_id.blank? %>        
+    <input type="text" id="cols" hidden value="all">
+  <% end %>
 
   <table id="capital_commitments" class="table table-bordered dataTable action_table" 
         data-source="<%= data_source %>" >
     <thead>
       <tr>
-        <% if col_set == "all" %>
+        <% if fund_id.blank? %>
           <th>
             Fund
           </th>

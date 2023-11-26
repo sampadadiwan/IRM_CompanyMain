@@ -1,5 +1,6 @@
 <% fund ||= nil %>        
-<% data_source ||= account_entries_path(q: params.to_unsafe_h[:q], format: :json, all: true, fund_id: params[:fund_id], fund_account_only: params[:fund_account_only]) %>    
+<% data_source ||= account_entries_path(q: params.to_unsafe_h[:q], 
+    capital_commitment_id: params[:capital_commitment_id], fund_id: params[:fund_id], format: :json, all: true, fund_id: params[:fund_id], fund_account_only: params[:fund_account_only]) %>    
 <% lazy_load_data ||= false %>
 
 
@@ -11,7 +12,7 @@
     <%  
       if params[:capital_commitment_id].present? || params[:fund_id].present?
           account_entry = AccountEntry.new(capital_commitment_id: params[:capital_commitment_id], fund_id: params[:fund_id]) 
-          account_entry.entity_id = account_entry.fund.entity_id
+          account_entry.entity_id =current_user.entity_id
               
     %>
 
@@ -39,12 +40,24 @@
   <% if lazy_load_data %>
       <a class="load_data_link" data-action="click->account-entries#loadData"><span>Load Data</span></a>
   <% end %>
+
+  <% if params[:capital_commitment_id].blank? %>        
+    <input type="text" id="cols" hidden value="all">
+  <% end %>
     
   <table id="account_entries_table" class="table table-bordered dataTable" 
         data-source="<%= data_source %>" style="width:100%" >
 
     <thead>
       <tr>
+        <% if params[:capital_commitment_id].blank? %>          
+          <th>
+            Fund
+          </th>
+          <th>
+            Investor
+          </th>
+        <% end %> 
         <th>
           Folio
         </th>

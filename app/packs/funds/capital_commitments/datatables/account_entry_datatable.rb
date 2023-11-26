@@ -2,6 +2,8 @@ class AccountEntryDatatable < AjaxDatatablesRails::ActiveRecord
   def view_columns
     @view_columns ||= {
       id: { source: "AccountEntry.id", searchable: false },
+      fund_name: { source: "Fund.name", searchable: false },
+      investor_name: { source: "CapitalCommitment.investor_name", searchable: false },
       folio_id: { source: "AccountEntry.folio_id", orderable: true },
       reporting_date: { source: "AccountEntry.reporting_date", orderable: true },
       period: { source: "AccountEntry.period", orderable: true },
@@ -17,6 +19,8 @@ class AccountEntryDatatable < AjaxDatatablesRails::ActiveRecord
     records.map do |record|
       {
         id: record.id,
+        fund_name: record.fund.name,
+        investor_name: record.capital_commitment&.investor_name,
         folio_id: record.decorate.folio_id,
         reporting_date: record.decorate.display_date(record.reporting_date),
         period: record.period,

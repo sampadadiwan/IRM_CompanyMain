@@ -3,17 +3,37 @@ import ServerDatatableController from "controllers/server_datatable_controller"
 
 export default class extends ServerDatatableController {
 
+  default = [
+    { "data": "folio_id" },
+    { "data": "reporting_date" },
+    { "data": "period" },
+    { "data": "entry_type" },
+    { "data": "name" },
+    { "data": "amount" },
+    { "data": "commitment_type" },
+    { "data": "dt_actions" }
+  ];
+
+  all = [
+    { "data": "fund_name" },
+    { "data": "investor_name" },
+    { "data": "folio_id" },
+    { "data": "reporting_date" },
+    { "data": "period" },
+    { "data": "entry_type" },
+    { "data": "name" },
+    { "data": "amount" },
+    { "data": "commitment_type" },
+    { "data": "dt_actions" }
+  ];
+
   columns() {
-    return [
-      { "data": "folio_id" },
-      { "data": "reporting_date" },
-      { "data": "period" },
-      { "data": "entry_type" },
-      { "data": "name" },
-      { "data": "amount" },
-      { "data": "commitment_type" },
-      { "data": "dt_actions" }
-    ]
+    console.log(`cols: ${$("#cols").val()}`);
+    if($("#cols").val() == "all") {
+      return this.all;
+    } else {
+      return this.default; 
+    }
   }
 
   filterData(event) {
