@@ -1,4 +1,9 @@
 <% search ||= "Yes" %>
+<% capital_call ||= nil %>
+<% capital_commitment ||= nil %>
+<% capital_call_id ||= params[:capital_call_id] || capital_call&.id %>
+<% capital_commitment_id ||= params[:capital_commitment_id] || capital_commitment&.id %>
+
 <div data-controller="remittances"
      data-remittances-lazy-load-data-value=<%= lazy_load_data %>
      data-remittances-table-name-value="#capital_remittances">
@@ -6,7 +11,7 @@
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
     <span>
-      <% capital_call ||= nil %>
+      
 
       <% if capital_call %>
         <%= button_to "Capital Call Reminder", reminder_capital_call_path(id: capital_call.id),
@@ -53,7 +58,10 @@
     </span>
   </div>
 
-  <% data_source ||= capital_remittances_path(q: params.to_unsafe_h[:q], format: :json, all: true, fund_id: params[:fund_id], status: "", verified: "") %>
+  <% data_source ||= capital_remittances_path(q: params.to_unsafe_h[:q], format: :json, all: true, 
+        capital_call_id: params[:capital_call_id], capital_commitment_id: params[:capital_commitment_id],  
+        fund_id: params[:fund_id], status: "", verified: "") %>
+
   <% lazy_load_data ||= false %>
 
   <div class="table-responsive">
@@ -61,15 +69,16 @@
       <a class="load_data_link" data-action="click->remittances#loadData"><span>Load Data</span></a>
     <% end %>
 
-    <% col_set = column_set(current_user, params[:cols]) %>
-    <%= custom_columns(current_user, params[:cols]) %>
+    <% if capital_call_id.blank? && capital_commitment_id.blank? %>        
+      <input type="text" id="cols" hidden value="all">
+    <% end %>
 
     <table id="capital_remittances" class="table table-bordered dataTable action_table"
         data-source="<%= data_source %>" style="width:100%" >
 
       <thead>
         <tr>
-          <% if col_set == "all" %>
+          <% if capital_call_id.blank? && capital_commitment_id.blank? %>        
           <th>
             Fund
           </th>
