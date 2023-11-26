@@ -4,13 +4,18 @@
       <%= a.attribute_select({associations: associations}, {class: "form-control col"}) %>
     <% end %>
     <%= f.predicate_select({only: [:cont, :not_cont, :eq, :not_eq, :gt, :lt, :blank, :null, :not_null], default: :eq}, {class: "form-control col"}) %>
+    
     <%= f.value_fields do |v| %>
       <%= v.text_field :value, class: "form-control col" %>
     <% end %>
-    <span class="col-1 pt-2">
+
+    <span class="col-2 pt-2">
       <%= link_to "#", class: "remove_fields btn btn-outline-danger", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Delete Condition" do %>
         <i class="ti ti-trash fs-4"></i>
       <% end %>
+            
+      <%= link_to_add_fields '<i class="ti ti-plus"></i>'.html_safe, f, :value, {} %>
+
     </span>
     
   </div>

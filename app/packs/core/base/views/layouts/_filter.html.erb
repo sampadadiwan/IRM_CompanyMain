@@ -11,10 +11,10 @@
     <div class="card-body collapse show show_details">
       <% @q.build_condition if @q.conditions.empty? %>
       <%= search_form_for @q, method: :post do |f| %>
+
         <%= f.condition_fields do |c| %>
           <%= render "/layouts/condition_fields", f: c, associations: associations %>
         <% end %>
-        <div class="field"></div>
 
         <div class="action float-end">        
           <%= f.button "", class: "btn btn-outline-primary", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Search" do %>
