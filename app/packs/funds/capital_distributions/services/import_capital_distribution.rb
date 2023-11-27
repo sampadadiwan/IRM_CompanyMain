@@ -60,7 +60,7 @@ class ImportCapitalDistribution < ImportUtil
         setup_custom_fields(user_data, capital_distribution, custom_field_headers)
 
         # We need to setup the commitments for the exchange rate
-        setup_exchange_rate(capital_distribution, user_data)
+        setup_exchange_rate(capital_distribution, user_data) if user_data["From Currency"].present?
 
         capital_distribution.save!
       end
