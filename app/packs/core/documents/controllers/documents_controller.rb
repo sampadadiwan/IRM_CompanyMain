@@ -3,13 +3,14 @@ class DocumentsController < ApplicationController
 
   include ActiveStorage::SetCurrent
   include DocumentHelper
+
   skip_before_action :verify_authenticity_token, :set_current_entity, :authenticate_user!, :set_search_controller, :set_paper_trail_whodunnit, only: %i[signature_progress]
 
   before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign]
-  after_action :verify_authorized, except: %i[index search investor folder signature_progress]
 
-  after_action :verify_policy_scoped, only: []
-  # skip_before_action :authenticate_user!, :only => [:show]
+  after_action :verify_authorized, except: %i[index search investor folder signature_progress approve]
+
+  # after_action :verify_policy_scoped, except: [:approve]
 
   impressionist actions: [:show]
 
@@ -148,6 +149,17 @@ class DocumentsController < ApplicationController
     end
   end
 
+  def approve
+    if request.post?
+      options = params.to_unsafe_h.slice(:user_id, :notification, :owner_type, :parent_folder_id)
+      options[:user_id] = current_user.id
+
+      DocumentApprovalJob.perform_later(current_user.entity_id, params[:start_date], params[:end_date], options)
+
+      redirect_to documents_path, notice: "Document approval started, please check back in a few mins."
+    end
+  end
+
   # GET /documents/new
   def new
     @document = Document.new(document_params)
@@ -256,8 +268,7 @@ class DocumentsController < ApplicationController
   def document_params
     params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id, :tag_list, :template,
                                      :signature_enabled, :public_visibility, :send_email, :display_on_page,
-                                     :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag,
-                                     :tag_list, :folder_id, :file, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy],
-                                                                   stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy])
+                                     :download, :printing, :orignal, :owner_id, :owner_type, :owner_tag, :approved,
+                                     :tag_list, :folder_id, :file, properties: {}, e_signatures_attributes: %i[id user_id label signature_type notes _destroy], stamp_papers_attributes: %i[id tags sign_on_page notes note_on_page _destroy])
   end
 end

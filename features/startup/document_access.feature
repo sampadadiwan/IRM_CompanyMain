@@ -88,3 +88,19 @@ Scenario Outline: Access Document as Investor without access right
     |false      |entity_type=Company  |name=Test | approved=1 |
 
 
+Scenario Outline: Access Generated Document as Other User
+  Given there is a user "<user>" for an entity "<entity>"
+  Given there is another user "first_name=Investor" for another entity "entity_type=Investor;pan=12345678"
+  And another entity is an investor "category=LP;pan=12345678" in entity
+  And given there is a document "<document>" for the entity 
+  Then another user has "false" access to the document
+  And investor has access right "<access_right>" in the document
+  And another user has investor access "approved=1" in the investor
+  Then another user has "false" access to the document
+  Given the document is approved
+  Then another user has "true" access to the document
+
+  Examples:
+  	|user	    |entity               |document                         | access_right     |
+  	|  	      |entity_type=Company  |name=Test;from_template_id=1 | access_type=Document;access_to_category=LP |
+    |  	      |entity_type=Company  |name=Test;from_template_id=1 | access_type=Document;access_to_category=LP |

@@ -11,13 +11,9 @@ class FundFormula < ApplicationRecord
   validates :rule_type, length: { maximum: 30 }
   validates :commitment_type, length: { maximum: 10 }
   validates :formula, :entry_type, :name, :rule_type, presence: true
+  normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
 
   delegate :to_s, to: :name
-
-  before_save :sanitize_name
-  def sanitize_name
-    self.name = name.strip
-  end
 
   validate :formula_kosher?
   def formula_kosher?

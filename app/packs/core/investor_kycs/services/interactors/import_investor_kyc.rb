@@ -12,9 +12,9 @@ class ImportInvestorKyc < ImportUtil
     Rails.logger.debug user_data
 
     saved = true
-    full_name = user_data["Full Name"]&.strip
-    update_only = user_data["Update Only"]&.strip
-    pan = user_data["PAN"]&.strip
+    full_name = user_data["Full Name"]&.strip&.squeeze(" ")
+    update_only = user_data["Update Only"]&.strip&.squeeze(" ")
+    pan = user_data["PAN"]&.strip&.squeeze(" ")
 
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
     raise "Investor not found" unless investor
@@ -37,15 +37,15 @@ class ImportInvestorKyc < ImportUtil
   end
 
   def save_kyc(investor_kyc, investor, user_data, custom_field_headers)
-    investor_kyc.assign_attributes(investor:, PAN: user_data["PAN"]&.strip,
-                                   full_name: user_data["Full Name"]&.strip,
-                                   address: user_data["Address"]&.strip,
-                                   kyc_type: user_data["KYC Type"]&.strip,
-                                   residency: user_data["Residency"]&.strip,
+    investor_kyc.assign_attributes(investor:, PAN: user_data["PAN"]&.strip&.squeeze(" "),
+                                   full_name: user_data["Full Name"]&.strip&.squeeze(" "),
+                                   address: user_data["Address"]&.strip&.squeeze(" "),
+                                   kyc_type: user_data["KYC Type"]&.strip&.squeeze(" "),
+                                   residency: user_data["Residency"]&.strip&.squeeze(" "),
                                    bank_account_number: user_data["Bank Account"]&.to_s&.strip,
-                                   ifsc_code: user_data["IFSC Code"]&.strip,
-                                   verified: user_data["Verified"]&.strip == "Yes",
-                                   send_kyc_form_to_user: user_data["Send Kyc Form To User"]&.strip == "Yes")
+                                   ifsc_code: user_data["IFSC Code"]&.strip&.squeeze(" "),
+                                   verified: user_data["Verified"]&.strip&.squeeze(" ") == "Yes",
+                                   send_kyc_form_to_user: user_data["Send Kyc Form To User"]&.strip&.squeeze(" ") == "Yes")
 
     setup_custom_fields(user_data, investor_kyc, custom_field_headers)
 

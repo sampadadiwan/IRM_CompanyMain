@@ -232,3 +232,9 @@ Then('an email must go out to the investors for the document') do
   end
   expect(current_email.subject).to include subj
 end
+
+Given('the document is approved') do
+  @document.approved = true
+  @document.approved_by_id = @user.id
+  @document.save
+end

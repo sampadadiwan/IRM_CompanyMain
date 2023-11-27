@@ -35,7 +35,7 @@ class ImportInvestorAccess < ImportUtil
     # next if user exists
 
     if user_data['Investor'].present?
-      investor = import_upload.entity.investors.find_by(investor_name: user_data['Investor']&.strip)
+      investor = import_upload.entity.investors.find_by(investor_name: user_data['Investor']&.strip&.squeeze(" "))
       raise "Investor not found" unless investor
     else
       raise "Investor name is missing"
@@ -46,8 +46,8 @@ class ImportInvestorAccess < ImportUtil
     whatsapp_enabled = user_data["WhatsApp Enabled"] ? user_data["WhatsApp Enabled"].strip == "Yes" : false
     call_code = user_data["Country Code"].present? ? extract_call_code(user_data["Country Code"].to_s&.strip) : "91"
 
-    ia = InvestorAccess.new(first_name: user_data["First Name"]&.strip, last_name: user_data["Last Name"]&.strip, call_code:,
-                            email: user_data["Email"]&.strip, phone: user_data["Phone"].to_s&.strip,
+    ia = InvestorAccess.new(first_name: user_data["First Name"]&.strip&.squeeze(" "), last_name: user_data["Last Name"]&.strip&.squeeze(" "), call_code:,
+                            email: user_data["Email"]&.strip&.squeeze(" "), phone: user_data["Phone"].to_s&.strip,
                             approved:, whatsapp_enabled:,
                             entity_id: import_upload.entity_id, investor_id: investor.id,
                             granted_by: import_upload.user_id,

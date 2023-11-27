@@ -28,8 +28,8 @@ class AccountEntry < ApplicationRecord
   monetize :amount_cents, with_currency: ->(i) { i.fund.currency }
 
   validates :name, :reporting_date, :entry_type, presence: true
-  validates :amount_cents,
-            uniqueness: { scope: %i[fund_id capital_commitment_id name entry_type reporting_date cumulative],
+  validates :name,
+            uniqueness: { scope: %i[fund_id capital_commitment_id entry_type reporting_date cumulative],
                           message: "Duplicate Account Entry for reporting date" }
 
   # counter_culture :capital_commitment,

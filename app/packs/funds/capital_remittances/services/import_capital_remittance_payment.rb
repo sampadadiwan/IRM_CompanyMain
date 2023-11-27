@@ -122,7 +122,7 @@ class ImportCapitalRemittancePayment < ImportUtil
 
     folio_amount_cents = user_data["Amount"].to_d * 100
     folio_currency = user_data["Currency"].strip
-    update_only = user_data["Update Only"]&.strip
+    update_only = user_data["Update Only"]&.strip&.squeeze(" ")
 
     [fund, capital_call, investor, capital_commitment, capital_remittance, folio_amount_cents, folio_currency, update_only]
   end

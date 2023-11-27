@@ -21,8 +21,13 @@ class VestedJob < ApplicationJob
     pool.holdings.approved.not_investors.not_lapsed.find_each(batch_size: 500) do |holding|
       if holding.manual_vesting
         # The formula is entered manually into the DB, users cannot enter it.
-        vested_quantity = eval(holding.option_pool.formula)
-        audit_comment = "Vested quantity based on formula"
+        if holding.option_pool.formula.present?
+          vested_quantity = eval(holding.option_pool.formula)
+          audit_comment = "Vested quantity based on formula"
+        else
+          Rails.logger.error("Vested quantity not calculated for #{holding.id}. Please enter formula.")
+          audit_comment = "Vested quantity not calculated. Please enter formula."
+        end
       else
         vested_quantity = holding.compute_vested_quantity
         audit_comment = "Vested quantity based on schedule"

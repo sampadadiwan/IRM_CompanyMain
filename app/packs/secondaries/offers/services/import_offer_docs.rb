@@ -40,7 +40,7 @@ class ImportOfferDocs < ImportUtil
     offer = import_upload.entity.offers.where(id: user_data["Id"]).first
     raise "Offer #{user_data['Id']} not found" unless offer
 
-    send_email = user_data["Send Email"]&.strip == "Yes"
+    send_email = user_data["Send Email"]&.strip&.squeeze(" ") == "Yes"
     file_name = "#{context.unzip_dir}/#{user_data['File Name'].strip}"
 
     if offer
@@ -54,7 +54,7 @@ class ImportOfferDocs < ImportUtil
         folder = offer.document_folder.children.where(name: folder, entity_id: offer.entity_id).first_or_create if folder
         # Create the document
         doc = Document.new(owner: offer, entity_id: offer.entity_id, folder:,
-                           name: user_data["Document Name"].strip, tag_list: user_data["Tags"]&.strip,
+                           name: user_data["Document Name"].strip, tag_list: user_data["Tags"]&.strip&.squeeze(" "),
                            user_id: import_upload.user_id, send_email:)
 
         raise "#{file_name} does not exist. Check for missing file or extension" unless File.exist?(file_name)

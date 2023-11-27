@@ -113,6 +113,9 @@
                         <% if @document.template %>
                            &nbsp;&nbsp; Template <%= display_boolean @document.template  %>
                         <% end %>
+                        <% if @document.from_template_id.present? %>
+                           &nbsp;&nbsp; Approved <%= display_boolean @document.approved  %>
+                        <% end %>
                      </td>
                   </tr>
 

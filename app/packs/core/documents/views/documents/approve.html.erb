@@ -1,0 +1,58 @@
+<%
+  start_date ||= params[:start_date] || Time.zone.today - 1.day
+  end_date ||=  params[:end_date] || Time.zone.today
+  notification ||= params[:notification]
+  owner_type ||= params[:owner_type]
+  parent_folder_id ||= params[:parent_folder_id]
+%>
+
+<%= render "/layouts/alerts" %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Approve Generated Documents</h1>
+</div>
+
+<div class="alert alert-info">
+    <p>
+        Approve all documents generated between Start end End dates below
+        <% if parent_folder_id.present? %> 
+            <% folder = Folder.find(parent_folder_id) %>
+            <%  if folder.owner %>
+              for: <%= link_to folder.owner.to_s %>
+            <% else %>
+              for folder: <%= link_to folder.name, folder %>
+            <% end %>
+        <% end %>
+    </p>
+</div>
+
+<%= form_with(model: Document.new, url: approve_documents_path(), method: :post) do |form| %>
+  
+  <%= form.text_field :parent_folder_id, hidden: true, name: "parent_folder_id", value: parent_folder_id  %>
+
+  <div class="form-group">
+    <%= form.label :start_date %>
+    <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :end_date %>
+    <%= form.date_field :end_date, class: "form-control", name: "end_date", value: end_date %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :notification %>
+    <%= form.check_box :notification, class: "form-check-input", name: "notification", value: notification %>
+    <small class="text-muted">Send notification to users</small>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :owner_type, "Only" %>
+    <%= form.select :owner_type, ["CapitalCommitment", "CapitalRemittance", "InvestorKyc"], {selected: owner_type}, class: "form-control", name: "owner_type"  %>
+    <small class="text-muted">Approve only docs of selected type</small>
+  </div>
+
+  <div class="form-group">
+    <%= form.submit "Approve All", {class: "btn btn-outline-primary"}%>
+  </div>
+<% end %>

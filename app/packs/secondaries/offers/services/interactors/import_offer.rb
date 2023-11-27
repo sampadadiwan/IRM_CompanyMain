@@ -35,7 +35,7 @@ class ImportOffer < ImportUtil
     user = User.find_by(email:)
     raise "User #{email} not found" unless user
 
-    if user_data["Founder/Employee/Investor"]&.strip == "Investor"
+    if user_data["Founder/Employee/Investor"]&.strip&.squeeze(" ") == "Investor"
       # This offer is for an investor
       investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
       raise "Investor #{user_data['Investor']} not found" unless investor

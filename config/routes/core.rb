@@ -101,6 +101,8 @@ resources :documents do
   get 'investor', on: :collection
   get 'folder', on: :collection
   get 'owner', on: :collection
+  get 'approve', on: :collection
+  post 'approve', on: :collection
 end
 
 resources :entities do

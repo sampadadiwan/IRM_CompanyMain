@@ -38,8 +38,8 @@ class ImportCapitalDistribution < ImportUtil
         raise "Capital Distribution Already Present"
       else
 
-        generate_payments = user_data["Generate Payments"]&.strip&.downcase == "yes"
-        generate_payments_paid = user_data["Payments Paid"]&.strip&.downcase == "yes"
+        generate_payments = user_data["Generate Payments"]&.strip&.squeeze(" ")&.downcase == "yes"
+        generate_payments_paid = user_data["Payments Paid"]&.strip&.squeeze(" ")&.downcase == "yes"
 
         # Make the capital_distribution
         capital_distribution = CapitalDistribution.new(entity_id: import_upload.entity_id, title:,

@@ -11,11 +11,11 @@ class ImportFundUnit < ImportUtil
     Rails.logger.debug row_data
 
     saved = true
-    row_data["Unit Type"]&.strip
+    row_data["Unit Type"]&.strip&.squeeze(" ")
     folio_id = row_data["Folio No"]&.to_s&.strip
-    call_name = row_data["Call Name"]&.strip
-    update_only = row_data["Update Only"]&.strip
-    row_data["Unit Type"]&.strip
+    call_name = row_data["Call Name"]&.strip&.squeeze(" ")
+    update_only = row_data["Update Only"]&.strip&.squeeze(" ")
+    row_data["Unit Type"]&.strip&.squeeze(" ")
 
     fund = import_upload.entity.funds.where(name: row_data["Fund"].strip).first
     raise "Fund not found" unless fund
@@ -47,10 +47,10 @@ class ImportFundUnit < ImportUtil
   end
 
   def save_fu(fund_unit, fund, capital_commitment, capital_remittance, row_data, custom_field_headers)
-    unit_type = row_data["Unit Type"]&.strip
+    unit_type = row_data["Unit Type"]&.strip&.squeeze(" ")
     row_data["Folio No"]&.to_s&.strip
 
-    fund_unit.assign_attributes(fund:, capital_commitment:, owner: capital_remittance, investor_id: capital_commitment.investor_id, unit_type:, quantity: row_data["Quantity"], price: row_data["Price"], reason: row_data["Reason"]&.strip, premium: row_data["Premium"], issue_date: row_data["Issue Date"])
+    fund_unit.assign_attributes(fund:, capital_commitment:, owner: capital_remittance, investor_id: capital_commitment.investor_id, unit_type:, quantity: row_data["Quantity"], price: row_data["Price"], reason: row_data["Reason"]&.strip&.squeeze(" "), premium: row_data["Premium"], issue_date: row_data["Issue Date"])
 
     setup_custom_fields(row_data, fund_unit, custom_field_headers)
 

@@ -42,7 +42,7 @@ class ImportFundDocs < ImportUtil
 
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
     folio_id = user_data["Folio No"].presence
-    send_email = user_data["Send Email"]&.strip == "Yes"
+    send_email = user_data["Send Email"]&.strip&.squeeze(" ") == "Yes"
     file_name = "#{context.unzip_dir}/#{user_data['File Name'].strip}"
 
     model = find_model(user_data, fund)
@@ -57,7 +57,7 @@ class ImportFundDocs < ImportUtil
         folder = model.document_folder.children.where(name: folder, entity_id: model.entity_id).first_or_create if folder
         # Create the document
         doc = Document.new(owner: model, entity_id: model.entity_id, folder:,
-                           name: user_data["Document Name"].strip, tag_list: user_data["Tags"]&.strip,
+                           name: user_data["Document Name"].strip, tag_list: user_data["Tags"]&.strip&.squeeze(" "),
                            user_id: import_upload.user_id, send_email:)
 
         # Save the document

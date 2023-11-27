@@ -103,4 +103,9 @@ class ImportUtil
     # Sort by the as_of date
     exchange_rates.sort_by { |er| er["As Of"] }
   end
+
+  def stz(val)
+    val&.strip&.squeeze(" ")
+  end
+
 end

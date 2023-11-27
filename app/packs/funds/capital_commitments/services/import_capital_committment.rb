@@ -74,7 +74,7 @@ class ImportCapitalCommittment < ImportUtil
   end
 
   def get_kyc(user_data, investor, fund, _capital_commitment)
-    kyc_full_name = user_data["KYC Full Name"]&.strip
+    kyc_full_name = user_data["KYC Full Name"]&.strip&.squeeze(" ")
     if kyc_full_name.present?
       kyc = fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
       raise "KYC not found" unless kyc

@@ -47,7 +47,7 @@ class ImportPortfolioCashflow < ImportUtil
     amount_cents = user_data["Amount"].to_d * 100
     category = user_data["Category"].strip
     sub_category = user_data["Sub Category"].strip
-    investment_domicile = user_data["Investment Domicile"]&.strip
+    investment_domicile = user_data["Investment Domicile"]&.strip&.squeeze(" ")
 
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).last
     raise "Fund not found" if fund.nil?

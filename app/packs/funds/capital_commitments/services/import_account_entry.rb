@@ -88,9 +88,9 @@ class ImportAccountEntry < ImportUtil
     name = user_data["Name"].presence
     entry_type = user_data["Entry Type"].presence
     reporting_date = user_data["Reporting Date"].presence
-    investor_name = user_data["Investor"]&.strip
+    investor_name = user_data["Investor"]&.strip&.squeeze(" ")
     amount_cents = user_data["Amount"].to_d * 100
-    period = user_data["Period"]&.strip
+    period = user_data["Period"]&.strip&.squeeze(" ")
 
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
     raise "Fund not found" unless fund

@@ -36,7 +36,7 @@ class InvestorKyc < ApplicationRecord
   validates :bank_account_number, length: { maximum: 40 }
   validates :ifsc_code, length: { maximum: 20 }
   validates :full_name, length: { maximum: 100 }
-  normalizes :full_name, with: ->(full_name) { full_name&.strip }
+  normalizes :full_name, with: ->(full_name) { full_name.strip.squeeze(" ") }
   validates :kyc_type, length: { maximum: 15 }
   validates :residency, length: { maximum: 10 }
 

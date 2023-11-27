@@ -100,7 +100,6 @@
         <small class="text-muted">Send email notification to users who can view this document</small>
       </div>
 
-
       <div class="form-group">
         <%= form.label :template %>
         <%= form.check_box :template, class: "form-check-input", "data-action":  "click->docform#showSignature" %>
@@ -108,7 +107,15 @@
       </div>
 
     <% end %>
-
+    
+      <% if document.from_template_id != nil %>
+        <div class="form-group">
+          <%= form.label :approved %>
+          <%= form.check_box :approved, class: "form-check-input" %>
+          <small class="text-muted">Enable access to generated document</small>
+        </div>
+      <% end %>
+      
       <%= custom_form_fields(document, form) %>
 
       <div class="form-group">

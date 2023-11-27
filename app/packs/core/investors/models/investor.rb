@@ -57,7 +57,7 @@ class Investor < ApplicationRecord
 
   # Ensure investor_name is unique per entity_id
   validates :investor_name, uniqueness: { scope: :entity_id, message: "already exists as an investor. Duplicate Investor." }
-  normalizes :investor_name, with: ->(investor_name) { investor_name.strip }
+  normalizes :investor_name, with: ->(investor_name) { investor_name.strip.squeeze(" ") }
 
   # Ensure unique investor_entity_id per entity_id, except for is_holdings_entity. See SetupHoldingEntity where a Founder Investor is created for startups.
   validates :investor_entity_id, uniqueness: { scope: :entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }, if: proc { |i| !i.is_holdings_entity }
@@ -65,7 +65,7 @@ class Investor < ApplicationRecord
   validates :category, length: { maximum: 100 }
   validates :city, length: { maximum: 50 }
   validates :pan, length: { maximum: 40 }
-  normalizes :pan, with: ->(pan) { pan&.strip }
+  normalizes :pan, with: ->(pan) { pan.strip.squeeze(" ") }
 
   # We did not have PAN as mandatory before. But we need to make it mandatory, without forcing update to existing data. Hence this check for data created after PAN_MANDATORY_AFTER date
   validates :pan, presence: true, if: proc { |e| (e.created_at && e.created_at >= Entity::PAN_MANDATORY_AFTER) || ((e.new_record? && Time.zone.today >= Entity::PAN_MANDATORY_AFTER) && !e.is_holdings_entity && !e.is_trust) }

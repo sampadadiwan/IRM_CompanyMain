@@ -15,9 +15,9 @@
     </div>
 
     <%= render "entities/dashboard/notes" if current_user.enable_investors %>
-    <%= render "entities/dashboard/investors" if current_user.enable_investors %>
+    <%#= render "entities/dashboard/investors" if current_user.enable_investors %>
     
 <% unless current_user.investor_advisor? %>
-    <%= render "entities/dashboard/timeline" %>
+    <%#= render "entities/dashboard/timeline" %>
 <% end %>
 

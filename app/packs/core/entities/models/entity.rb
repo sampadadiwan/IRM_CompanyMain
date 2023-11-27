@@ -18,12 +18,12 @@ class Entity < ApplicationRecord
   validates_uniqueness_of :name, scope: :pan
 
   validates :name, length: { maximum: 255 }
-  normalizes :name, with: ->(name) { name.strip }
+  normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
 
   validates :entity_type, length: { maximum: 25 }
   validates :currency, length: { maximum: 10 }
   validates :pan, length: { maximum: 40 }
-  normalizes :pan, with: ->(pan) { pan&.strip }
+  normalizes :pan, with: ->(pan) { pan.strip.squeeze(" ") }
 
   has_rich_text :details
   belongs_to :parent_entity, class_name: "Entity", optional: true

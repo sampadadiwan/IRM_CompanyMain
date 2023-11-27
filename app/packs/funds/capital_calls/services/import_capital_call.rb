@@ -41,8 +41,8 @@ class ImportCapitalCall < ImportUtil
       if CapitalCall.exists?(entity_id: import_upload.entity_id, fund:, name:)
         raise "Capital Call Already Present"
       else
-        generate_remittances = user_data["Generate Remittances"]&.strip&.downcase == "yes"
-        generate_remittances_verified = user_data["Remittances Verified"]&.strip&.downcase == "yes"
+        generate_remittances = user_data["Generate Remittances"]&.strip&.squeeze(" ")&.downcase == "yes"
+        generate_remittances_verified = user_data["Remittances Verified"]&.strip&.squeeze(" ")&.downcase == "yes"
         fund_closes = user_data["Fund Closes"] ? user_data["Fund Closes"].strip.split(",") : ["All"]
 
         # Make the capital_call

@@ -47,15 +47,15 @@ class ImportPortfolioInvestment < ImportUtil
 
   def inputs(user_data, import_upload)
     portfolio_company_name = user_data['Portfolio Company Name'].strip
-    pan = user_data['Pan']&.strip
+    pan = user_data['Pan']&.strip&.squeeze(" ")
     investment_date = user_data["Investment Date"]
     amount_cents = user_data["Amount"].to_d * 100
     quantity = user_data["Quantity"].to_d
     category = user_data["Category"].strip
     sub_category = user_data["Sub Category"].strip
-    sector = user_data["Sector"]&.strip
+    sector = user_data["Sector"]&.strip&.squeeze(" ")
     startup = user_data["Startup"].strip == "Yes"
-    investment_domicile = user_data["Investment Domicile"]&.strip
+    investment_domicile = user_data["Investment Domicile"]&.strip&.squeeze(" ")
     fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).last
     commitment_type = user_data["Type"].strip
     folio_id = user_data["Folio No"].presence

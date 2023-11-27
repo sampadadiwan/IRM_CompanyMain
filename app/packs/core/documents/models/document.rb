@@ -22,6 +22,7 @@ class Document < ApplicationRecord
   belongs_to :entity, touch: true
   belongs_to :folder
   belongs_to :signed_by, class_name: "User", optional: true
+  belongs_to :approved_by, class_name: "User", optional: true
   belongs_to :from_template, class_name: "Document", optional: true
 
   belongs_to :owner, polymorphic: true, optional: true, touch: true
@@ -47,7 +48,7 @@ class Document < ApplicationRecord
 
   after_create_commit  :after_create_commit_callbacks
 
-  scope :generated, -> { where(owner_tag: "Generated") }
+  scope :generated, -> { where.not(from_template_id: nil) }
   scope :template, -> { where(template: true) }
   scope :not_template, -> { where(template: [nil, false]) }
   scope :sent_for_esign, -> { where(sent_for_esign: true) }
@@ -97,7 +98,7 @@ class Document < ApplicationRecord
   # TODO: This is really inefficient
   def notification_users
     users = access_rights.map(&:users).flatten
-    users += self.owner.access_rights.map(&:users).flatten if %w[Fund Deal SecondarySale InvestmentOpportunity].include? owner_type
+    users += self.owner.access_rights.map(&:users).flatten if %w[Fund Deal SecondarySale InvestmentOpportunity InvestorKyc].include? owner_type
 
     users.uniq
   end

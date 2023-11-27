@@ -8,9 +8,14 @@ class DocumentPolicy < ApplicationPolicy
       (user && (
         (user.enable_documents && belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) ||
         (user.enable_documents && show_investor? && !user.investor_advisor?) ||
-        (record.owner && owner_policy.show?) ||
+        (record.owner && owner_policy.show? && not_generated_or_approved) ||
         allow_external?(:read) || super_user?
       ))
+  end
+
+  def not_generated_or_approved
+    # Either is is not a generated doc or it is generated but approved
+    record.from_template_id.nil? || record.approved
   end
 
   def create?
@@ -57,13 +62,17 @@ class DocumentPolicy < ApplicationPolicy
     update?
   end
 
+  def approve?
+    user.has_cached_role?(:company_admin)
+  end
+
   def destroy?
     update? && record.entity_id == user.entity_id
   end
 
   def show_investor?
-    Document.for_investor(user, record.entity)
-            .where("documents.id=?", record.id).first.present?
+    not_generated_or_approved && Document.for_investor(user, record.entity)
+                                         .where("documents.id=?", record.id).first.present?
   end
 
   def owner_policy
