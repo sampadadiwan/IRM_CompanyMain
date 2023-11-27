@@ -41,16 +41,6 @@
                      </tr>
                   <% end %>
 
-                  <% if @document.from_template %>
-                     <tr>
-                        <td>
-                           Created from template
-                        </td>
-                        <td>
-                           <%= link_to @document.from_template.name.capitalize.titleize, @document.from_template %>
-                        </td>
-                     </tr>
-                  <% end %>
 
                   <input type="text" id="download_document" hidden="hidden" value="<%= @document.download %>" />
                   <input type="text" id="printing_document" hidden="hidden" value="<%= @document.printing %>" />
@@ -98,6 +88,18 @@
                         <%= link_to @document.owner_type, [@document.owner, tab: "docs-tab"] if @document.owner %>
                      </td>
                   </tr>
+
+                  
+                  <% if @document.from_template %>
+                     <tr>
+                        <td>
+                           Created from template
+                        </td>
+                        <td>
+                           <%= link_to @document.from_template.name.capitalize.titleize, @document.from_template %>
+                        </td>
+                     </tr>
+                  <% end %>
 
 
                   <tr class="hideMobP">
