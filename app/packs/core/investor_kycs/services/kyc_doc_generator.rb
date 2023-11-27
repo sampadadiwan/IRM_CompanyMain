@@ -49,13 +49,13 @@ class KycDocGenerator
       fund_units: fund_units(investor_kyc, start_date, end_date),
 
       capital_commitments: TemplateDecorator.decorate_collection(capital_commitments),
-      amounts: TemplateDecorator.decorate(amounts(capital_commitments, currency, nil, nil)),
+      amounts: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments, currency, nil, nil)),
 
       capital_commitments_between_dates: TemplateDecorator.decorate_collection(capital_commitments_between_dates),
-      amounts_between_dates: TemplateDecorator.decorate(amounts(capital_commitments_between_dates, currency, start_date, end_date)),
+      amounts_between_dates: TemplateDecorator.decorate(amounts(investor_kyc,capital_commitments_between_dates, currency, start_date, end_date)),
 
       capital_commitments_before_end_date: TemplateDecorator.decorate_collection(capital_commitments_before_end_date),
-      amounts_before_end_date: TemplateDecorator.decorate(amounts(capital_commitments_before_end_date, currency, nil, end_date)),
+      amounts_before_end_date: TemplateDecorator.decorate(amounts(investor_kyc,capital_commitments_before_end_date, currency, nil, end_date)),
 
       capital_remittances: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances),
       capital_remittances_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
@@ -80,7 +80,7 @@ class KycDocGenerator
     convert(template, context, file_name)
   end
 
-  def amounts(ccs, currency, start_date, end_date)
+  def amounts(investor_kyc, ccs, currency, start_date, end_date)
     remittances = CapitalRemittance.where(capital_commitment_id: ccs.pluck(:id))
     remittances = remittances.where(remittance_date: start_date..) if start_date
     remittances = remittances.where(remittance_date: ..end_date) if end_date
@@ -101,7 +101,8 @@ class KycDocGenerator
                      collected_amount: Money.new(collected_amount_cents, currency),
                      distribution_amount: Money.new(distribution_amount_cents, currency),
                      due_amount: Money.new(call_amount_cents - collected_amount_cents, currency),
-                     uncalled_amount: Money.new(committed_amount_cents - call_amount_cents, currency)
+                     uncalled_amount: Money.new(committed_amount_cents - call_amount_cents, currency),
+                     custom_uncalled_amount: Money.new(investor_kyc.custom_committed_amount.cents - call_amount_cents, currency)
                    })
   end
 
