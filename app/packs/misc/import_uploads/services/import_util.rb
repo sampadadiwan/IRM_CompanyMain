@@ -47,7 +47,7 @@ class ImportUtil
           sanitized_row = row.map { |x| x&.to_s&.strip&.squeeze(" ") }
           process_row(headers, custom_field_headers, sanitized_row, import_upload, context)
           # add row to results sheet
-          sheet.add_row(row)
+          sheet.add_row(sanitized_row)
           # To indicate progress
           import_upload.save if (idx % 10).zero?
         end

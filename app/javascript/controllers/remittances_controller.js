@@ -33,7 +33,7 @@ export default class extends ServerDatatableController {
 
 
   columns() {
-    if($("#cols").val() == "all") {
+    if($("#capital_remittance_cols").val() == "all") {
       return this.all;
     } else {
       return this.default;

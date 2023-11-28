@@ -28,8 +28,8 @@ export default class extends ServerDatatableController {
   ];
 
   columns() {
-    console.log(`cols: ${$("#cols").val()}`);
-    if($("#cols").val() == "all") {
+    console.log(`cols: ${$("#account_entry_cols").val()}`);
+    if($("#account_entry_cols").val() == "all") {
       return this.all;
     } else {
       return this.default; 

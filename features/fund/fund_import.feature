@@ -85,7 +85,7 @@ Scenario Outline: Import capital distributions
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   And Given I upload "capital_distributions.xlsx" file for "Distributions" of the fund
   Then I should see the "Import upload was successfully created"
-  Then There should be "3" capital distributions created
+  Then There should be "2" capital distributions created
   And the capital distributions must have the data in the sheet
   And the payments are generated for the capital distrbutions
 

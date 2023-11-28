@@ -52,7 +52,7 @@ export default class extends ServerDatatableController {
     if ($("#show_docs").length > 0) {
       return this.with_docs;
     } else {
-      if($("#cols").val() == "all") {
+      if($("#commitment_cols").val() == "all") {
         return this.all;
       } else {
         return this.default; 

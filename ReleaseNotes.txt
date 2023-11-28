@@ -1,6 +1,17 @@
-#### Import Uploads Sanitization {tag} ####
+
+
+28/11/2023
+#####################################
+
+#### Import Uploads Sanitization ####
 1. All data headers are sanitized to titlecase and stripped and squeezed (def validate_headers)
 2. All data in rows is also sanitized by strip and squeeze (def process_rows)
-#### Filter by funds in filters {tag} ####
+
+#### Filter by funds in filters ####
 1. Added special filter for funds
 2. Allow only XL to be uploaded for import upload
+
+#### Bug ####
+1. Fixed bug for investor login commitments not loading
+2. Removed unwanted button request access
+

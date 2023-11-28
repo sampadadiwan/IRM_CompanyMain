@@ -80,3 +80,23 @@ Examples:
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test  | gross_amount_cents=20000000;cost_of_investment_cents=15000000;reinvestment_cents=0;fee_cents=0;completed=true |
     |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger| gross_amount_cents=20000000;cost_of_investment_cents=15000000;reinvestment_cents=0;fee_cents=0;completed=true |
 
+
+Scenario Outline: Import fund units
+  Given Im logged in as a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is a fund "<fund>" for the entity
+  And Given I upload an investors file for the fund  
+  Given the investors are added to the fund  
+  And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
+  When I create a new capital call "<call>"
+  Then I should see the capital call details
+  Then when the capital call is approved
+  And Given I upload "capital_remittances.xlsx" file for Call remittances of the fund
+  And Given I upload "capital_distributions.xlsx" file for Distributions of the fund
+  And Given I upload "fund_units.xlsx" file for Fund Units of the fund
+  Then There should be "5" fund units created with data in the sheet
+  
+  Examples:
+  	|entity                                         |fund                |msg	| call | collected_amount |
+  	|entity_type=Investment Fund;enable_funds=true  |name=SAAS Fund;currency=INR      |Fund was successfully created| name=Call 1;call_basis=Upload | 2120000 |
+  

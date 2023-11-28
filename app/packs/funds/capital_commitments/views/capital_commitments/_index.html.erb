@@ -4,6 +4,8 @@
   fund_id ||= params[:fund_id] || fund&.id
 %>
 
+Fund ID: <%= fund_id %>
+
 <% data_source ||= capital_commitments_path(q: params.to_unsafe_h[:q], fund_id:, format: :json, all: true) %>
 <% xl_link = download_xl_link(data_source) %>
 <% lazy_load_data ||= false %>
@@ -14,8 +16,8 @@
     <a class="load_data_link" data-action="click->commitments#loadData"><span>Load Data</span></a>
   <% end %>
   
-  <% if fund_id.blank? %>        
-    <input type="text" id="cols" hidden value="all">
+  <% if false && fund_id.blank? %>        
+    <input type="text" id="commitment_cols" hidden value="all">
   <% end %>
 
   <table id="capital_commitments" class="table table-bordered dataTable action_table" 

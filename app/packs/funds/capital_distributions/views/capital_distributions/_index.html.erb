@@ -1,4 +1,4 @@
-
+  <% owner = params[:fund_id].present? ? Fund.find(params[:fund_id]) : current_user.entity %>
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Distributions</h1>
 
@@ -6,8 +6,8 @@
       <%= link_to "New Distribution" , new_capital_distribution_path("capital_distribution[fund_id]": params[:fund_id]), {class: "btn btn-outline-primary" } if params[:fund_id].present? %>
 
       <%= link_to "Upload", 
-            new_import_upload_path("import_upload[owner_id]": params[:fund_id], 
-            "import_upload[owner_type]": "Fund", 
+            new_import_upload_path("import_upload[owner_id]": owner.id, 
+            "import_upload[owner_type]": owner.class.name, 
             "import_upload[import_type]": "CapitalDistribution", 
             "sample_upload": "CAPITAL_DISTRIBUTION_SAMPLE"), 
             { class: "btn btn-outline-primary"}  %> 

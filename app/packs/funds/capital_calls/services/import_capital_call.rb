@@ -25,6 +25,7 @@ class ImportCapitalCall < ImportUtil
       raise e
     rescue StandardError => e
       Rails.logger.debug e.backtrace
+      Rails.logger.debug e.messsage
       row << "Error #{e.message}"
       import_upload.failed_row_count += 1
     end

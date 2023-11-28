@@ -1365,3 +1365,62 @@ end
 #     end
 #   end
 # end
+
+
+Then('Given I upload {string} file for Distributions of the fund') do |string|
+  visit(capital_distributions_url)
+  sleep(2)
+  click_on("Upload")
+  sleep(2)
+  fill_in('import_upload_name', with: "Test Distributions Upload")
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/capital_distributions.xlsx'), make_visible: true)
+  sleep(3)
+  click_on("Save")
+  sleep(6)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+end
+
+Then('Given I upload {string} file for Fund Units of the fund') do |string|
+  visit(fund_units_url)
+  sleep(2)
+  click_on("Upload")
+  sleep(2)
+  fill_in('import_upload_name', with: "Test Fund Units Upload")
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/fund_units.xlsx'), make_visible: true)
+  sleep(3)
+  click_on("Save")
+  sleep(6)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+end
+
+Then('There should be {string} fund units created with data in the sheet') do |count|
+  file = File.open("./public/sample_uploads/fund_units.xlsx", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    row_data = [headers, row].transpose.to_h
+    capital_commitment = CapitalCommitment.where(folio_id: row_data["Folio No"]).first
+
+    fund_unit = FundUnit.where(capital_commitment_id: capital_commitment.id, quantity: row_data["Quantity"].to_f).first
+    
+    puts "Checking import of #{fund_unit.to_json}"
+
+    fund_unit.quantity.should == row_data["Quantity"].to_f
+    fund_unit.unit_type.should == row_data["Unit Type"]
+    fund_unit.price.should == row_data["Price"].to_f
+    fund_unit.premium.should == row_data["Premium"].to_f
+    fund_unit.issue_date.should == row_data["Issue Date"]
+    fund_unit.reason.should == row_data["Reason"]
+    fund_unit.owner.folio_id.should == row_data["Folio No"].to_s
+
+    if fund_unit.quantity.positive?
+      fund_unit.owner_type.should == "CapitalRemittance"
+    else
+      fund_unit.owner_type.should == "CapitalDistributionPayment"
+    end
+  end
+end
