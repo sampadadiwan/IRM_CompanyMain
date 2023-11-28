@@ -1,0 +1,6 @@
+#### Import Uploads Sanitization {tag} ####
+1. All data headers are sanitized to titlecase and stripped and squeezed (def validate_headers)
+2. All data in rows is also sanitized by strip and squeeze (def process_rows)
+#### Filter by funds in filters {tag} ####
+1. Added special filter for funds
+2. Allow only XL to be uploaded for import upload

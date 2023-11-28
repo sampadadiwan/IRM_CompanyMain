@@ -10,7 +10,10 @@
     </div>
     <div class="card-body collapse show show_details">
       <% @q.build_condition if @q.conditions.empty? %>
+      
       <%= search_form_for @q, method: :post do |f| %>
+
+        <%= render "/funds/filter" %>
 
         <%= f.condition_fields do |c| %>
           <%= render "/layouts/condition_fields", f: c, associations: associations %>

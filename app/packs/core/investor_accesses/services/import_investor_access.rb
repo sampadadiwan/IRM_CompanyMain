@@ -35,19 +35,19 @@ class ImportInvestorAccess < ImportUtil
     # next if user exists
 
     if user_data['Investor'].present?
-      investor = import_upload.entity.investors.find_by(investor_name: user_data['Investor']&.strip&.squeeze(" "))
+      investor = import_upload.entity.investors.find_by(investor_name: user_data['Investor'])
       raise "Investor not found" unless investor
     else
       raise "Investor name is missing"
     end
 
     Rails.logger.debug user_data
-    approved = user_data["Approved"] ? user_data["Approved"].strip == "Yes" : false
-    whatsapp_enabled = user_data["WhatsApp Enabled"] ? user_data["WhatsApp Enabled"].strip == "Yes" : false
-    call_code = user_data["Country Code"].present? ? extract_call_code(user_data["Country Code"].to_s&.strip) : "91"
+    approved = user_data["Approved"] ? user_data["Approved"] == "Yes" : false
+    whatsapp_enabled = user_data["WhatsApp Enabled"] ? user_data["WhatsApp Enabled"] == "Yes" : false
+    call_code = user_data["Country Code"].present? ? extract_call_code(user_data["Country Code"].to_s) : "91"
 
-    ia = InvestorAccess.new(first_name: user_data["First Name"]&.strip&.squeeze(" "), last_name: user_data["Last Name"]&.strip&.squeeze(" "), call_code:,
-                            email: user_data["Email"]&.strip&.squeeze(" "), phone: user_data["Phone"].to_s&.strip,
+    ia = InvestorAccess.new(first_name: user_data["First Name"], last_name: user_data["Last Name"], call_code:,
+                            email: user_data["Email"], phone: user_data["Phone"].to_s,
                             approved:, whatsapp_enabled:,
                             entity_id: import_upload.entity_id, investor_id: investor.id,
                             granted_by: import_upload.user_id,
@@ -60,7 +60,7 @@ class ImportInvestorAccess < ImportUtil
   # accepts inputs - IN, in, in(+91), UaE(971), Us 1, etc
   def extract_call_code(input)
     # Convert the input to lowercase for consistent processing
-    normalized_input = input.to_s.downcase&.strip
+    normalized_input = input.to_s.downcase
     # Regular expression pattern to match numeric call codes
     call_code_pattern = /\d+/
 

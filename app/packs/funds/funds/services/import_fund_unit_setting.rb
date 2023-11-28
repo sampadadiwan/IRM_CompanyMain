@@ -11,10 +11,10 @@ class ImportFundUnitSetting < ImportUtil
     Rails.logger.debug row_data
 
     saved = true
-    name = row_data["Class/Series"]&.strip&.squeeze(" ")
-    update_only = row_data["Update Only"]&.strip&.squeeze(" ")
+    name = row_data["Class/Series"]
+    update_only = row_data["Update Only"]
 
-    fund = import_upload.entity.funds.where(name: row_data["Fund"].strip).first
+    fund = import_upload.entity.funds.where(name: row_data["Fund"]).first
     raise "Fund not found" unless fund
 
     fund_unit_setting = FundUnitSetting.where(fund_id: fund.id,
@@ -36,10 +36,10 @@ class ImportFundUnitSetting < ImportUtil
 
   def save_fus(fund_unit_setting, fund, row_data, custom_field_headers)
     fund_unit_setting.assign_attributes(fund:,
-                                        name: row_data["Class/Series"]&.strip&.squeeze(" "),
-                                        management_fee: row_data["Management Fee %"].to_s&.strip,
-                                        setup_fee: row_data["Setup Fee %"]&.to_s&.strip,
-                                        carry: row_data["Carry %"].to_s&.strip)
+                                        name: row_data["Class/Series"],
+                                        management_fee: row_data["Management Fee %"].to_s,
+                                        setup_fee: row_data["Setup Fee %"]&.to_s,
+                                        carry: row_data["Carry %"].to_s)
 
     setup_custom_fields(row_data, fund_unit_setting, custom_field_headers)
 

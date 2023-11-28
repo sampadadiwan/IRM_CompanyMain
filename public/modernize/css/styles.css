@@ -2542,8 +2542,8 @@ progress {
 }
 .form-label {
   margin-bottom: 0.5rem;
-  font-weight: 600;
-  color: #2a3547;
+  /* font-weight: 600;
+  color: #2a3547; */
 }
 
 .col-form-label {

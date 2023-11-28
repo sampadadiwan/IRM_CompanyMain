@@ -14,14 +14,14 @@ class ImportValuation < ImportUtil
     valuation_date = user_data['Valuation Date']
     valuation_cents = user_data['Valuation'].to_d * 100
     per_share_value_cents = user_data['Per Share Value'].to_d * 100
-    investor_name = user_data['Portfolio Company'].strip
-    category = user_data['Category'].strip
-    sub_category = user_data['Sub Category'].strip
+    investor_name = user_data['Portfolio Company']
+    category = user_data['Category']
+    sub_category = user_data['Sub Category']
     entity = import_upload.entity
 
     investor = entity.investors.find_or_initialize_by(investor_name:, category: "Portfolio Company")
     if investor.new_record?
-      investor.pan = user_data['Pan'].to_s.strip
+      investor.pan = user_data['Pan'].to_s
       investor.save
     end
 

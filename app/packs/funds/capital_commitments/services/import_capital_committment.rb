@@ -1,5 +1,5 @@
 class ImportCapitalCommittment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type", "Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of", "KYC Full Name"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type", "Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of", "Kyc Full Name"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -35,10 +35,10 @@ class ImportCapitalCommittment < ImportUtil
   def save_capital_commitment(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing capital_commitment #{user_data}" }
     # Get the Fund
-    fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
+    fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
     raise "Fund not found" unless fund
 
-    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
+    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
     raise "Investor not found" unless investor
 
     folio_id, unit_type, commitment_type, commitment_date, folio_currency, onboarding_completed = get_params(user_data)
@@ -47,7 +47,7 @@ class ImportCapitalCommittment < ImportUtil
 
     # Make the capital_commitment
     capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
-                                               fund_close: user_data["Fund Close"].strip,
+                                               fund_close: user_data["Fund Close"],
                                                commitment_type:, commitment_date:,
                                                onboarding_completed:, imported: true,
                                                fund:, investor:, investor_name: investor.investor_name,
@@ -74,7 +74,7 @@ class ImportCapitalCommittment < ImportUtil
   end
 
   def get_kyc(user_data, investor, fund, _capital_commitment)
-    kyc_full_name = user_data["KYC Full Name"]&.strip&.squeeze(" ")
+    kyc_full_name = user_data["Kyc Full Name"]
     if kyc_full_name.present?
       kyc = fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
       raise "KYC not found" unless kyc

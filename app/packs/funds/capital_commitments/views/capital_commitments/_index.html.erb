@@ -5,8 +5,9 @@
 %>
 
 <% data_source ||= capital_commitments_path(q: params.to_unsafe_h[:q], fund_id:, format: :json, all: true) %>
+<% xl_link = download_xl_link(data_source) %>
 <% lazy_load_data ||= false %>
-<%= render "/capital_commitments/index_header", fund: fund %>
+<%= render "/capital_commitments/index_header", fund: fund, xl_link: xl_link %>
 
 <div class="table-responsive" data-controller="commitments" data-commitments-lazy-load-data-value=<%= lazy_load_data %> data-commitments-table-name-value="#capital_commitments">
   <% if lazy_load_data %>

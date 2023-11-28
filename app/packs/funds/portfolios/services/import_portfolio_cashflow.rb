@@ -37,7 +37,7 @@ class ImportPortfolioCashflow < ImportUtil
   end
 
   def inputs(user_data, import_upload)
-    portfolio_company_name = user_data['Portfolio Company'].strip
+    portfolio_company_name = user_data['Portfolio Company']
     portfolio_company = import_upload.entity.investors.where(investor_name: portfolio_company_name).first
     raise "Portfolio Company not found" if portfolio_company.nil?
 
@@ -45,16 +45,16 @@ class ImportPortfolioCashflow < ImportUtil
 
     payment_date = user_data["Payment Date"]
     amount_cents = user_data["Amount"].to_d * 100
-    category = user_data["Category"].strip
-    sub_category = user_data["Sub Category"].strip
-    investment_domicile = user_data["Investment Domicile"]&.strip&.squeeze(" ")
+    category = user_data["Category"]
+    sub_category = user_data["Sub Category"]
+    investment_domicile = user_data["Investment Domicile"]
 
-    fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).last
+    fund = import_upload.entity.funds.where(name: user_data["Fund"]).last
     raise "Fund not found" if fund.nil?
 
     fund_id = fund.id
 
-    commitment_type = user_data["Type"].strip
+    commitment_type = user_data["Type"]
     folio_id = user_data["Folio No"].presence
     capital_commitment = commitment_type == "CoInvest" ? fund.capital_commitments.where(folio_id:).first : nil
     raise "Capital Commitment not found" if folio_id.present? && capital_commitment.nil?

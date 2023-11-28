@@ -36,11 +36,11 @@ class ImportKycDocs < ImportUtil
     Rails.logger.debug { "Processing fund doc #{user_data}" }
 
     # Get the Fund
-    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
-    file_name = "#{context.unzip_dir}/#{user_data['File Name'].strip}"
-    name = user_data["Document Name"].strip
-    model = InvestorKyc.where(investor_id: investor.id, PAN: user_data["PAN"].strip).first if user_data["Document Type"].strip == "KYC"
-    send_email = user_data["Send Email"]&.strip&.squeeze(" ") == "Yes"
+    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
+    file_name = "#{context.unzip_dir}/#{user_data['File Name']}"
+    name = user_data["Document Name"]
+    model = InvestorKyc.where(investor_id: investor.id, PAN: user_data["Pan"]).first if user_data["Document Type"] == "KYC"
+    send_email = user_data["Send Email"] == "Yes"
 
     if investor && model && File.exist?(file_name)
       if name == "PAN"
@@ -48,14 +48,14 @@ class ImportKycDocs < ImportUtil
         model.pan_card = File.open(file_name, "rb")
         [model.save, model.errors.full_messages]
       elsif Document.exists?(owner: model, entity_id: model.entity_id,
-                             name: user_data["Document Name"].strip)
+                             name: user_data["Document Name"])
         # All other docs are attached as documents
         # Create the doc and attach it to the commitment
         [false, "#{user_data['Document Name']} already present"]
       else
         # Create the document
         doc = Document.new(owner: model, entity_id: model.entity_id,
-                           name:, tag_list: user_data["Tags"]&.strip&.squeeze(" "), orignal: true,
+                           name:, tag_list: user_data["Tags"], orignal: true,
                            user_id: import_upload.user_id, send_email:)
 
         doc.file = File.open(file_name, "rb")
@@ -64,7 +64,7 @@ class ImportKycDocs < ImportUtil
         [saved, status]
       end
     elsif model.nil?
-      [false, "#{user_data['Document Type'].strip} not found"]
+      [false, "#{user_data['Document Type']} not found"]
     elsif investor.nil?
       [false, "Investor not found"]
     else

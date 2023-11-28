@@ -30,10 +30,10 @@ class ImportCapitalDistributionPayment < ImportUtil
     Rails.logger.debug { "Processing capital_distribution_payment #{user_data}" }
 
     # Get the Fund
-    fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
-    capital_distribution = fund.capital_distributions.where(title: user_data["Capital Distribution"].strip).first
-    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
-    folio_id = user_data["Folio No"]&.to_s&.strip
+    fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
+    capital_distribution = fund.capital_distributions.where(title: user_data["Capital Distribution"]).first
+    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
+    folio_id = user_data["Folio No"]&.to_s
     capital_commitment = fund.capital_commitments.where(investor_id: investor&.id, folio_id:).first
 
     if fund && capital_distribution && investor && capital_commitment

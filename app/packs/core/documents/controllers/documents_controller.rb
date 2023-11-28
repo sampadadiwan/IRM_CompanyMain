@@ -1,6 +1,4 @@
 class DocumentsController < ApplicationController
-  # prepend_view_path 'app/packs/core/documents/views'
-
   include ActiveStorage::SetCurrent
   include DocumentHelper
 
@@ -10,7 +8,7 @@ class DocumentsController < ApplicationController
 
   after_action :verify_authorized, except: %i[index search investor folder signature_progress approve]
 
-  # after_action :verify_policy_scoped, except: [:approve]
+  after_action :verify_policy_scoped, only: []
 
   impressionist actions: [:show]
 

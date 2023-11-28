@@ -1,6 +1,6 @@
 class ImportHolding < ImportUtil
-  STANDARD_HEADERS = ["Funding Round or Option Pool", "Employee ID", "Email",
-                      "First Name", "Last Name", "Founder or Employee", "Instrument", "Quantity",
+  STANDARD_HEADERS = ["Funding Round Or Option Pool", "Employee Id", "Email",
+                      "First Name", "Last Name", "Founder Or Employee", "Instrument", "Quantity",
                       "Price", "Grant Date (dd/mm/yyyy)", "Option Type", "Manual Vesting (Options Only)"].freeze
 
   def standard_headers
@@ -31,9 +31,9 @@ class ImportHolding < ImportUtil
   end
 
   def save_user(user_data, import_upload, _custom_field_headers)
-    # Find the Founder or Employee Investor for the entity
+    # Find the Founder Or Employee Investor for the entity
     investor = Investor.where(entity_id: import_upload.owner_id,
-                              is_holdings_entity: true, category: user_data["Founder or Employee"]).first
+                              is_holdings_entity: true, category: user_data["Founder Or Employee"]).first
 
     # Create the user if he does not exists
     user = User.find_by(email: user_data['Email'].strip)
@@ -69,9 +69,9 @@ class ImportHolding < ImportUtil
     manual_vesting = user_data["Manual Vesting (Options Only)"]
     manual_vesting = manual_vesting.strip.casecmp("yes").zero? if manual_vesting.present?
 
-    holding = Holding.new(user:, investor:, holding_type: user_data["Founder or Employee"],
+    holding = Holding.new(user:, investor:, holding_type: user_data["Founder Or Employee"],
                           entity_id: import_upload.owner_id, orig_grant_quantity: user_data["Quantity"],
-                          price_cents:, employee_id: user_data["Employee ID"], department: user_data["Department"],
+                          price_cents:, employee_id: user_data["Employee Id"], department: user_data["Department"],
                           investment_instrument: user_data["Instrument"], funding_round: fr, option_pool: ep,
                           import_upload_id: import_upload.id, grant_date:, approved: false, manual_vesting:,
                           option_type: user_data["Option Type"], preferred_conversion: user_data["Preferred Conversion"])
@@ -109,7 +109,7 @@ class ImportHolding < ImportUtil
 
   def funding_round(user_data, import_upload)
     # Create the Holding
-    col = "Funding Round or Option Pool"
+    col = "Funding Round Or Option Pool"
     fr = FundingRound.where(entity_id: import_upload.owner_id, name: user_data[col].strip).first
     fr ||= FundingRound.create(name: user_data[col].strip,
                                entity_id: import_upload.owner_id,
@@ -121,7 +121,7 @@ class ImportHolding < ImportUtil
 
   def option_pool(user_data, import_upload)
     # Create the Holding
-    col = "Funding Round or Option Pool"
+    col = "Funding Round Or Option Pool"
     option_pool = OptionPool.approved.where(entity_id: import_upload.owner_id, name: user_data[col].strip).first
 
     raise "Option Pool #{user_data[col].strip} not available. Please create or approve the pool before uploading" unless option_pool

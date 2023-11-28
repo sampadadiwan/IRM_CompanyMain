@@ -1,5 +1,5 @@
 class ImportOffer < ImportUtil
-  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Last Name", "Address", "PAN", "Bank Account", "IFSC Code", "Founder/Employee/Investor", "Investor"].freeze
+  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Last Name", "Address", "PAN", "Bank Account", "Ifsc Code", "Founder/Employee/Investor", "Investor"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -30,14 +30,14 @@ class ImportOffer < ImportUtil
   def save_offer(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing offer #{user_data}" }
 
-    email = user_data["Email"].strip
+    email = user_data["Email"]
 
     user = User.find_by(email:)
     raise "User #{email} not found" unless user
 
-    if user_data["Founder/Employee/Investor"]&.strip&.squeeze(" ") == "Investor"
+    if user_data["Founder/Employee/Investor"] == "Investor"
       # This offer is for an investor
-      investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
+      investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
       raise "Investor #{user_data['Investor']} not found" unless investor
 
       # Get the holding for which the offer is being made
@@ -59,8 +59,8 @@ class ImportOffer < ImportUtil
     full_name = "#{user_data['First Name']} #{user_data['Last Name']}"
 
     if holding
-      offer = Offer.new(PAN: user_data["PAN"], address: user_data["Address"], city: user_data["City"],
-                        demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["IFSC Code"],
+      offer = Offer.new(PAN: user_data["Pan"], address: user_data["Address"], city: user_data["City"],
+                        demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"],
                         holding:, secondary_sale:, final_price: secondary_sale.final_price,
                         user:, investor: holding.investor, entity: holding.entity, full_name:)
 
@@ -95,14 +95,14 @@ class ImportOffer < ImportUtil
 
       first_name, last_name = user_data["Seller name"].split
       u = User.joins(:offers).where('offers.entity_id': secondary_sale.entity_id,
-                                    'users.first_name': first_name.strip,
-                                    'users.last_name': last_name.strip).first
+                                    'users.first_name': first_name,
+                                    'users.last_name': last_name).first
 
       if u
         secondary_sale.offers.where(user_id: u.id).update(
-          bank_name: user_data["Bank Name"].strip,
-          bank_account_number: user_data["Bank Account Number"].strip,
-          ifsc_code: user_data["IFSC CODE"].strip
+          bank_name: user_data["Bank Name"],
+          bank_account_number: user_data["Bank Account Number"],
+          ifsc_code: user_data["Ifsc Code"]
         )
 
       else

@@ -35,7 +35,7 @@
   <div class="field" class="form-group" id="document_upload">
     <%= render "layouts/single_upload", form: form, field_label: "Import Data", 
                             for_model: "import_upload", field_name: "import_file", 
-                            model: import_upload %>
+                            model: import_upload, allowed_types: ['.xlsx'].freeze %>
 
     <small class="text-muted">
       <%= link_to "Sample upload format", ImportUpload::SAMPLES[params[:sample_upload]] if ImportUpload::SAMPLES[params[:sample_upload]] %> 

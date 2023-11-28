@@ -18,7 +18,7 @@ class ImportUtil
   def validate_headers(headers)
     if respond_to?(:standard_headers)
       standard_headers.each do |header_name|
-        raise "Column not found #{header_name}" unless headers.include?(header_name)
+        raise "Column not found #{header_name}" unless headers.include?(header_name.downcase.strip.squeeze(" ").titleize)
       end
     end
   end
@@ -43,7 +43,9 @@ class ImportUtil
             next
           end
 
-          process_row(headers, custom_field_headers, row, import_upload, context)
+          # This sanitizes each row by stripping and squeezing spaces
+          sanitized_row = row.map { |x| x&.to_s&.strip&.squeeze(" ") }
+          process_row(headers, custom_field_headers, sanitized_row, import_upload, context)
           # add row to results sheet
           sheet.add_row(row)
           # To indicate progress
@@ -107,5 +109,4 @@ class ImportUtil
   def stz(val)
     val&.strip&.squeeze(" ")
   end
-
 end

@@ -275,16 +275,16 @@ Then('the investor kycs must have the data in the sheet') do
   investor_kycs = @entity.investor_kycs.order(id: :asc).to_a
   data.each_with_index do |row, idx|
     next if idx.zero? # skip header row
-
+    
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
     cc = investor_kycs[idx-1]
     puts "Checking import of #{cc.full_name}"
     cc.full_name.should == user_data["Full Name"]
     cc.address.should == user_data["Address"]
-    cc.PAN.should == user_data["PAN"]
+    cc.PAN.should == user_data["Pan"]
     cc.bank_account_number.should == user_data["Bank Account"].to_s
-    cc.ifsc_code.should == user_data["IFSC Code"].to_s
+    cc.ifsc_code.should == user_data["Ifsc Code"].to_s
 
   end
 end

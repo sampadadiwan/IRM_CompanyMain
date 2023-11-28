@@ -1,8 +1,8 @@
 <% fund ||= nil %>        
 <% data_source ||= account_entries_path(q: params.to_unsafe_h[:q], 
-    capital_commitment_id: params[:capital_commitment_id], fund_id: params[:fund_id], format: :json, all: true, fund_id: params[:fund_id], fund_account_only: params[:fund_account_only]) %>    
+    capital_commitment_id: params[:capital_commitment_id], format: :json, all: true, fund_id: params[:fund_id], fund_account_only: params[:fund_account_only]) %>    
 <% lazy_load_data ||= false %>
-
+<% xl_link = download_xl_link(data_source) %>
 
 <div class="table-responsive" data-controller="account-entries" data-account-entries-lazy-load-data-value=<%= lazy_load_data %> data-account-entries-table-name-value="#account_entries_table">
 
@@ -31,8 +31,7 @@
     <% end %>
 
     
-      <%= link_to "Download", account_entries_path(capital_commitment_id: params[:capital_commitment_id], 
-                              fund_id: params[:fund_id], all: true, format: :xlsx), 
+      <%= link_to "Download", xl_link, 
                               class: "btn btn-outline-success" %>
   </div>
 

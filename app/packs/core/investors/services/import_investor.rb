@@ -16,9 +16,9 @@ class ImportInvestor < ImportUtil
   def save_investor(user_data, import_upload, custom_field_headers)
     # puts "processing #{user_data}"
     saved = true
-    investor_name = user_data['Name'].strip
-    pan = user_data['PAN']&.strip&.squeeze(" ")
-    category = user_data['Category']&.strip&.squeeze(" ")
+    investor_name = user_data['Name']
+    pan = user_data['Pan']
+    category = user_data['Category']
 
     force_different_name = user_data['Force Different Name'] == "Yes"
     # Ensure Force Different Name is not part of custom fields
@@ -55,7 +55,7 @@ class ImportInvestor < ImportUtil
     if user_data["Fund"].present? || import_upload.owner_type == "Fund"
       if user_data["Fund"].present?
         Rails.logger.debug { "######## Fund present in import row #{user_data['Fund']}" }
-        fund = Fund.where(entity_id: import_upload.entity_id, name: user_data["Fund"].strip).first
+        fund = Fund.where(entity_id: import_upload.entity_id, name: user_data["Fund"]).first
       elsif import_upload.owner_type == "Fund"
         fund = import_upload.owner
         Rails.logger.debug { "######## Fund present in import upload record #{fund.name}" }

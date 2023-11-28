@@ -335,7 +335,7 @@
           remittance.investor.investor_name.should == user_data["Investor"].strip
           remittance.fund.name.should == user_data["Fund"]
           remittance.capital_call.name.should == user_data["Capital Call"]
-          remittance.call_amount_cents.should == user_data["Call Amount (Inclusive of Capital Fees)"].to_f * 100
+          remittance.call_amount_cents.should == user_data["Call Amount (Inclusive Of Capital Fees)"].to_f * 100
           remittance.capital_fee_cents.should == user_data["Capital Fees"].to_f * 100
           remittance.other_fee_cents.should == user_data["Other Fees"].to_f * 100
           remittance.collected_amount_cents.should == user_data["Collected Amount"].to_f * 100

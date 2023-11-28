@@ -28,6 +28,9 @@ class ImportPreProcess
 
   # get header row without the mandatory *
   def get_headers(headers)
-    headers.each { |x| x.delete!("*") }.each { |h| h&.strip! }
+    # The headers are transformed by strip, squeeze and titleize and then stripped of *
+    ret_headers = headers.each { |x| x.delete!("*") }.map { |h| h&.downcase&.strip&.squeeze(" ")&.titleize }
+    Rails.logger.debug { "ret_headers = #{ret_headers}" }
+    ret_headers
   end
 end

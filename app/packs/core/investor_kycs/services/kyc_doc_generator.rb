@@ -52,10 +52,10 @@ class KycDocGenerator
       amounts: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments, currency, nil, nil)),
 
       capital_commitments_between_dates: TemplateDecorator.decorate_collection(capital_commitments_between_dates),
-      amounts_between_dates: TemplateDecorator.decorate(amounts(investor_kyc,capital_commitments_between_dates, currency, start_date, end_date)),
+      amounts_between_dates: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments_between_dates, currency, start_date, end_date)),
 
       capital_commitments_before_end_date: TemplateDecorator.decorate_collection(capital_commitments_before_end_date),
-      amounts_before_end_date: TemplateDecorator.decorate(amounts(investor_kyc,capital_commitments_before_end_date, currency, nil, end_date)),
+      amounts_before_end_date: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments_before_end_date, currency, nil, end_date)),
 
       capital_remittances: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances),
       capital_remittances_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),

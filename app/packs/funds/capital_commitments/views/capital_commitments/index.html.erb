@@ -1,5 +1,5 @@
 <%= render "/layouts/alerts" %>
-<%= render "/layouts/filter", associations: [:fund, :investor_kyc, :investor] %>
+<%= render "/layouts/filter", associations: [:investor_kyc, :investor] %>
 <!-- If we provide the path /capital_commitments?my_commitments=true, 
      then we see if we can simply show the commitment -->
 <% if params[:my_commitments].present? && @capital_commitments.length == 1 %>

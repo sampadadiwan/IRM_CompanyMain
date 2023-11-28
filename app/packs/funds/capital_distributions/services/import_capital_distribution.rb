@@ -30,22 +30,22 @@ class ImportCapitalDistribution < ImportUtil
     Rails.logger.debug { "Processing capital_distribution #{user_data}" }
 
     # Get the Fund
-    fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
+    fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
 
     if fund
-      title = user_data["Title"].strip
+      title = user_data["Title"]
       if CapitalDistribution.exists?(entity_id: import_upload.entity_id, fund:, title:)
         raise "Capital Distribution Already Present"
       else
 
-        generate_payments = user_data["Generate Payments"]&.strip&.squeeze(" ")&.downcase == "yes"
-        generate_payments_paid = user_data["Payments Paid"]&.strip&.squeeze(" ")&.downcase == "yes"
+        generate_payments = user_data["Generate Payments"]&.downcase == "yes"
+        generate_payments_paid = user_data["Payments Paid"]&.downcase == "yes"
 
         # Make the capital_distribution
         capital_distribution = CapitalDistribution.new(entity_id: import_upload.entity_id, title:,
                                                        fund:, distribution_date: user_data["Date"],
                                                        manual_generation: true,
-                                                       commitment_type: user_data["Type"].strip,
+                                                       commitment_type: user_data["Type"],
                                                        generate_payments:, generate_payments_paid:)
 
         if capital_distribution.CoInvest?

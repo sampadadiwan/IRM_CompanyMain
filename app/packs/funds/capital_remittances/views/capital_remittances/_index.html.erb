@@ -3,7 +3,12 @@
 <% capital_commitment ||= nil %>
 <% capital_call_id ||= params[:capital_call_id] || capital_call&.id %>
 <% capital_commitment_id ||= params[:capital_commitment_id] || capital_commitment&.id %>
+<% data_source ||= capital_remittances_path(q: params.to_unsafe_h[:q], format: :json, all: true, 
+        capital_call_id: params[:capital_call_id], capital_commitment_id: params[:capital_commitment_id],  
+        fund_id: params[:fund_id], status: "", verified: "") %>
 
+<% xl_link = download_xl_link(data_source) %>
+              
 <div data-controller="remittances"
      data-remittances-lazy-load-data-value=<%= lazy_load_data %>
      data-remittances-table-name-value="#capital_remittances">
@@ -29,7 +34,8 @@
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-              <%= link_to "Download", capital_remittances_path(capital_call_id: capital_call.id, format: "xlsx", all: true),  {class: "dropdown-item" } %>
+
+              <%= link_to "Download", xl_link,  {class: "dropdown-item" } %>
 
 
               <%= link_to "Upload Remittances",
@@ -51,16 +57,14 @@
         </div>
         <%= render "capital_remittances/filter", capital_call_id: capital_call.id %>
       <% else %>
-        <%= link_to "Download", capital_remittances_path(format: "xlsx", all: true), {class: "btn btn-outline-primary" } %>
+        <%= link_to "Download", xl_link, {class: "btn btn-outline-primary" } %>
       <% end %>
 
       <%#= render "/funds/search_bar", model_name: "capital_remittance" unless search == "No" %>
     </span>
   </div>
 
-  <% data_source ||= capital_remittances_path(q: params.to_unsafe_h[:q], format: :json, all: true, 
-        capital_call_id: params[:capital_call_id], capital_commitment_id: params[:capital_commitment_id],  
-        fund_id: params[:fund_id], status: "", verified: "") %>
+  
 
   <% lazy_load_data ||= false %>
 

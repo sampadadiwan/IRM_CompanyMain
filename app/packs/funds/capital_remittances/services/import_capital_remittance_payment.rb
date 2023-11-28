@@ -97,18 +97,18 @@ class ImportCapitalRemittancePayment < ImportUtil
   end
 
   def inputs(import_upload, user_data)
-    fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
+    fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
     raise "Fund not found" unless fund
 
-    capital_call = fund.capital_calls.where(name: user_data["Capital Call"].strip).first
+    capital_call = fund.capital_calls.where(name: user_data["Capital Call"]).first
     raise "Capital Call not found" unless capital_call
 
-    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"].strip).first
+    investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
     raise "Investor not found" unless investor
 
     # One of the 2 should be present folio_id or virtual_bank_account
-    folio_id = user_data["Folio No"]&.to_s&.strip
-    virtual_bank_account = user_data["Virtual Bank Account"]&.to_s&.strip
+    folio_id = user_data["Folio No"]&.to_s
+    virtual_bank_account = user_data["Virtual Bank Account"]&.to_s
 
     raise "Folio No or Virtual Bank Account must be specified" if folio_id.blank? && virtual_bank_account.blank?
 
@@ -121,8 +121,8 @@ class ImportCapitalRemittancePayment < ImportUtil
     raise "Capital Remittance not found" unless capital_remittance
 
     folio_amount_cents = user_data["Amount"].to_d * 100
-    folio_currency = user_data["Currency"].strip
-    update_only = user_data["Update Only"]&.strip&.squeeze(" ")
+    folio_currency = user_data["Currency"]
+    update_only = user_data["Update Only"]
 
     [fund, capital_call, investor, capital_commitment, capital_remittance, folio_amount_cents, folio_currency, update_only]
   end

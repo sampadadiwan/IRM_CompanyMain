@@ -26,4 +26,11 @@ module ApplicationHelper
     col_set ||= current_user.show_all_cols? ? "all" : nil
     render partial: "/layouts/custom_columns", locals: { current_user:, col_set: }
   end
+
+  def download_xl_link(data_source)
+    uri = URI.parse(data_source)
+    query = Rack::Utils.parse_query(uri.query)
+    uri.query = Rack::Utils.build_query(query)
+    uri.to_s.gsub(".json", ".xlsx")
+  end
 end

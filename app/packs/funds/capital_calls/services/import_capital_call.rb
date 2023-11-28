@@ -34,16 +34,16 @@ class ImportCapitalCall < ImportUtil
     Rails.logger.debug { "Processing capital_call #{user_data}" }
 
     # Get the Fund
-    fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
+    fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
 
     if fund
-      name = user_data["Name"].strip
+      name = user_data["Name"]
       if CapitalCall.exists?(entity_id: import_upload.entity_id, fund:, name:)
         raise "Capital Call Already Present"
       else
-        generate_remittances = user_data["Generate Remittances"]&.strip&.squeeze(" ")&.downcase == "yes"
-        generate_remittances_verified = user_data["Remittances Verified"]&.strip&.squeeze(" ")&.downcase == "yes"
-        fund_closes = user_data["Fund Closes"] ? user_data["Fund Closes"].strip.split(",") : ["All"]
+        generate_remittances = user_data["Generate Remittances"]&.downcase == "yes"
+        generate_remittances_verified = user_data["Remittances Verified"]&.downcase == "yes"
+        fund_closes = user_data["Fund Closes"] ? user_data["Fund Closes"].split(",") : ["All"]
 
         # Make the capital_call
         capital_call = CapitalCall.new(entity_id: import_upload.entity_id, name:,

@@ -12,10 +12,10 @@ class TemplateDecorator < ApplicationDecorator
       collection = object.where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize.titleize)
       return TemplateDecorator.decorate_collection(collection)
 
-    elsif method_name.to_s.include?("account_entries_")
-      account_entry_name = method_name.to_s.gsub("account_entries_", "").humanize.titleize
-      aes = account_entries.where("account_entries.name=?", account_entry_name)
-      return TemplateDecorator.decorate_collection(aes)
+    # elsif method_name.to_s.include?("account_entries_")
+    #   account_entry_name = method_name.to_s.gsub("account_entries_", "").humanize.titleize
+    #   aes = account_entries.where("account_entries.name=?", account_entry_name)
+    #   return TemplateDecorator.decorate_collection(aes)
 
     elsif method_name.to_s.include?("money_")
       attr_name = method_name.to_s.gsub("money_", "")

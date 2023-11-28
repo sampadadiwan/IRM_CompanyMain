@@ -12,8 +12,8 @@ class ImportInvestorAdvisor < ImportUtil
   def save_investor_advisor(user_data, import_upload, _custom_field_headers)
     # puts "processing #{user_data}"
     saved = true
-    email = user_data['Email'].strip
-    investor_name = user_data['Investor'].strip
+    email = user_data['Email']
+    investor_name = user_data['Investor']
     entity = import_upload.entity
     investor = entity.investors.where(investor_name:).first
 
@@ -36,7 +36,7 @@ class ImportInvestorAdvisor < ImportUtil
     if user_data["Add To"].present? && user_data["Name"].present?
       if user_data["Add To"] == "Fund"
         Rails.logger.debug { "######## Fund present in import row #{user_data['Name']}" }
-        fund = Fund.where(entity_id: import_upload.entity_id, name: user_data["Name"].strip).first
+        fund = Fund.where(entity_id: import_upload.entity_id, name: user_data["Name"]).first
       end
 
       if fund

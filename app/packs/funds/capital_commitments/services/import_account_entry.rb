@@ -84,15 +84,15 @@ class ImportAccountEntry < ImportUtil
   end
 
   def get_fields(user_data, import_upload)
-    folio_id = user_data["Folio No"]&.to_s&.strip
+    folio_id = user_data["Folio No"]&.to_s
     name = user_data["Name"].presence
     entry_type = user_data["Entry Type"].presence
     reporting_date = user_data["Reporting Date"].presence
-    investor_name = user_data["Investor"]&.strip&.squeeze(" ")
+    investor_name = user_data["Investor"]
     amount_cents = user_data["Amount"].to_d * 100
-    period = user_data["Period"]&.strip&.squeeze(" ")
+    period = user_data["Period"]
 
-    fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).first
+    fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
     raise "Fund not found" unless fund
 
     capital_commitment = investor_name.present? ? fund.capital_commitments.where(investor_name:, folio_id:).first : nil

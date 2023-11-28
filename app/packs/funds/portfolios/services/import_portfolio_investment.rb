@@ -46,18 +46,18 @@ class ImportPortfolioInvestment < ImportUtil
   end
 
   def inputs(user_data, import_upload)
-    portfolio_company_name = user_data['Portfolio Company Name'].strip
-    pan = user_data['Pan']&.strip&.squeeze(" ")
+    portfolio_company_name = user_data['Portfolio Company Name']
+    pan = user_data['Pan']
     investment_date = user_data["Investment Date"]
     amount_cents = user_data["Amount"].to_d * 100
     quantity = user_data["Quantity"].to_d
-    category = user_data["Category"].strip
-    sub_category = user_data["Sub Category"].strip
-    sector = user_data["Sector"]&.strip&.squeeze(" ")
-    startup = user_data["Startup"].strip == "Yes"
-    investment_domicile = user_data["Investment Domicile"]&.strip&.squeeze(" ")
-    fund = import_upload.entity.funds.where(name: user_data["Fund"].strip).last
-    commitment_type = user_data["Type"].strip
+    category = user_data["Category"]
+    sub_category = user_data["Sub Category"]
+    sector = user_data["Sector"]
+    startup = user_data["Startup"] == "Yes"
+    investment_domicile = user_data["Investment Domicile"]
+    fund = import_upload.entity.funds.where(name: user_data["Fund"]).last
+    commitment_type = user_data["Type"]
     folio_id = user_data["Folio No"].presence
     capital_commitment = commitment_type == "CoInvest" ? fund.capital_commitments.where(folio_id:).first : nil
 
