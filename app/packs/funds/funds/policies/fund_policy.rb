@@ -68,6 +68,10 @@ class FundPolicy < FundBasePolicy
     update?
   end
 
+  def delete_all?
+    user.has_cached_role?(:company_admin) && permissioned_employee?(:update)
+  end
+
   def destroy?
     Rails.env.test? ? permissioned_employee?(:destroy) : super_user?
   end

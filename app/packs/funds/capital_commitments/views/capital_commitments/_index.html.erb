@@ -16,7 +16,7 @@ Fund ID: <%= fund_id %>
     <a class="load_data_link" data-action="click->commitments#loadData"><span>Load Data</span></a>
   <% end %>
   
-  <% if false && fund_id.blank? %>        
+  <% if fund_id.blank? %>        
     <input type="text" id="commitment_cols" hidden value="all">
   <% end %>
 

@@ -40,7 +40,7 @@ class CapitalDistribution < ApplicationRecord
     self.net_amount_cents = gross_amount_cents - reinvestment_cents
   end
 
-  after_commit :generate_distribution_payments, unless: :destroyed?
+  after_create_commit :generate_distribution_payments, unless: :destroyed?
 
   def generate_distribution_payments
     if generate_payments

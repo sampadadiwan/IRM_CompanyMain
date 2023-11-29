@@ -1,5 +1,5 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show edit update destroy timeline last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights]
+  before_action :set_fund, only: %i[show edit update destroy timeline last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all]
 
   # GET /funds or /funds.json
   def index
@@ -80,6 +80,12 @@ class FundsController < ApplicationController
         format.json { render json: @fund.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  def delete_all
+    delete_class_name = params[:type]
+    FundDeleteAllJob.perform_now(@fund.id, delete_class_name, current_user.id)
+    redirect_to fund_path(@fund), notice: "Deletion of #{delete_class_name} started, please check back in a few mins"
   end
 
   def generate_fund_ratios

@@ -71,6 +71,7 @@ resources :funds do
   get 'copy_formulas', on: :member
   get 'export', on: :member
   get 'check_access_rights', on: :member
+  delete 'delete_all', on: :member
 end
 
 resources :expression_of_interests do
