@@ -1,7 +1,7 @@
 <tr id="document_<%= document.id %>">
   <td>
       <%= link_to document.name, document_path(document.id) %>
-      <% if document.orignal %>
+      <% if document.orignal  %>
           <%= link_to document.file_url(), class: "document_download_icon", target: "_blank" do %>
             <i class="fas fa-download"></i>
           <% end %>          

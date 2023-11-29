@@ -25,7 +25,7 @@ class DocumentApprovalJob < ApplicationJob
       end
 
       # Get all the generated documents in the date range
-      documents = documents.generated.where(created_at: start_date..end_date)
+      documents = documents.generated.where(created_at: start_date..end_date.end_of_day)
       # Get all the generated documents with owner_type like InvestorKYC, CapitalCommitment, etc.
       documents = documents.where(owner_type:) if owner_type.present?
 
@@ -39,6 +39,9 @@ class DocumentApprovalJob < ApplicationJob
         # Send notification to the document owner
         document.send_email = true if notification
         document.save
+
+        document.send_notification_for_owner if notification
+
       rescue StandardError => e
         Rails.logger.error("Document approval for #{doc.name}, #{doc.id} failed: #{e.message}")
         Rails.logger.error(e.backtrace.join("\n"))
