@@ -1,4 +1,9 @@
+29/11/2023 - V7.0.6
+#####################################
 
+#### Delete All for Funds 
+1. Added delete all button for funds
+2. Minor fix for fund col in commitments filter view
 
 28/11/2023 - V7.0.5
 #####################################
