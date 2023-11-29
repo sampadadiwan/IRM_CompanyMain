@@ -487,6 +487,7 @@ Then('I should be able to see only my investments for each entity') do
 
       @investment = inv
       if @investment.investor_entity_id == @entity.id
+        find("#action_#{entity.id}").click
         find("#investments_entity_#{entity.id}").click
 
         find("#show_investment_#{inv.id}").click
