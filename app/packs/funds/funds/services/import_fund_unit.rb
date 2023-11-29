@@ -11,7 +11,7 @@ class ImportFundUnit < ImportUtil
     Rails.logger.debug row_data
 
     saved = true
-    row_data["Unit Type"]
+    unit_type = row_data["Unit Type"]
     folio_id = row_data["Folio No"]&.to_s
     name = row_data["Call / Distribution Name"]
     update_only = row_data["Update Only"]
@@ -23,7 +23,7 @@ class ImportFundUnit < ImportUtil
     capital_commitment = fund.capital_commitments.where(folio_id:).first
     raise "Folio #{folio_id} not found in fund #{fund.name}" unless capital_commitment
 
-    # raise "Unit Type does not match commitment unit type" if capital_commitment.unit_type != unit_type
+    raise "Unit Type does not match commitment unit type" if capital_commitment.unit_type != unit_type
 
     owner = get_owner(fund, capital_commitment, name, quantity, folio_id)
     fund_unit = FundUnit.where(owner:).first
