@@ -18,6 +18,7 @@ class CapitalDistributionPayment < ApplicationRecord
   has_one :investor_kyc, through: :capital_commitment
   has_noticed_notifications
 
+  # Note that cost_of_investment_cents is Face value for redemption
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }
   monetize :amount_cents, :cost_of_investment_cents, with_currency: ->(i) { i.fund.currency }
 
@@ -59,6 +60,9 @@ class CapitalDistributionPayment < ApplicationRecord
   counter_culture %i[capital_commitment investor_kyc],
                   column_name: 'distribution_amount_cents',
                   delta_column: 'amount_cents'
+
+  scope :has_cost_of_investment, -> { where("cost_of_investment_cents > 0") }
+  scope :has_amount, -> { where("amount_cents > 0") }
 
   scope :completed, -> { where(completed: true) }
   scope :incomplete, -> { where(completed: false) }
@@ -120,4 +124,13 @@ class CapitalDistributionPayment < ApplicationRecord
     investor.investor_entity.touch
   end
   # rubocop:enable Rails/SkipsModelValidations
+
+  def has_amount?
+    amount_cents.positive?
+  end
+
+  def has_cost_of_investment?
+    cost_of_investment_cents.positive?
+  end
+  
 end
