@@ -4,8 +4,6 @@
   fund_id ||= params[:fund_id] || fund&.id
 %>
 
-Fund ID: <%= fund_id %>
-
 <% data_source ||= capital_commitments_path(q: params.to_unsafe_h[:q], fund_id:, format: :json, all: true) %>
 <% xl_link = download_xl_link(data_source) %>
 <% lazy_load_data ||= false %>
