@@ -25,7 +25,8 @@ class DocumentApprovalJob < ApplicationJob
       end
 
       # Get all the generated documents in the date range
-      documents = documents.generated.where(created_at: start_date..end_date.end_of_day)
+      eod = Date.parse(end_date).end_of_day
+      documents = documents.generated.where(created_at: start_date..eod)
       # Get all the generated documents with owner_type like InvestorKYC, CapitalCommitment, etc.
       documents = documents.where(owner_type:) if owner_type.present?
 

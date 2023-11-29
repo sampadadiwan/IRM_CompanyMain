@@ -5,7 +5,7 @@
 1. Better remittance email messages
 2. Better templating for CDP, for Sirius 
 3. Fixed approvals for generated docs end dates
-
+4. Fixed issue with investor notice
 
 29/11/2023 - V7.0.6
 #####################################
