@@ -41,7 +41,6 @@ class DocumentApprovalJob < ApplicationJob
         document.save
 
         document.send_notification_for_owner if notification
-
       rescue StandardError => e
         Rails.logger.error("Document approval for #{doc.name}, #{doc.id} failed: #{e.message}")
         Rails.logger.error(e.backtrace.join("\n"))

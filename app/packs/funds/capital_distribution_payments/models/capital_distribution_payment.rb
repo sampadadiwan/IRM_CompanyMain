@@ -132,5 +132,4 @@ class CapitalDistributionPayment < ApplicationRecord
   def has_cost_of_investment?
     cost_of_investment_cents.positive?
   end
-  
 end

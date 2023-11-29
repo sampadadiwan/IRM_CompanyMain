@@ -4,12 +4,10 @@ class CapitalRemittancesMailer < ApplicationMailer
 
   def send_notification
     @capital_remittance = CapitalRemittance.find params[:capital_remittance_id]
-
     # Check for attachments
     @capital_remittance.documents.generated.each do |doc|
       attachments["#{doc.name}.pdf"] = doc.file.read
     end
-
     send_mail(subject: "Capital Call: #{@capital_remittance.fund.name}") if @to.present?
 
     Chewy.strategy(:sidekiq) do
@@ -26,7 +24,11 @@ class CapitalRemittancesMailer < ApplicationMailer
 
   def reminder_capital_remittance
     @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
-    send_mail(subject: "Reminder: Capital Call by #{@capital_remittance.fund.name}") if @to.present?
+    # Check for attachments
+    @capital_remittance.documents.generated.each do |doc|
+      attachments["#{doc.name}.pdf"] = doc.file.read
+    end
+    send_mail(subject: "Capital Call Reminder: #{@capital_remittance.fund.name}") if @to.present?
   end
 
   def payment_received

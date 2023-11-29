@@ -25,6 +25,8 @@ Rails/RenderInline:
   Enabled: false
 Style/OpenStructUse:
   Enabled: false
+Naming/PredicateName:
+  Enabled: false
 Style/CombinableLoops:
   Exclude:
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
