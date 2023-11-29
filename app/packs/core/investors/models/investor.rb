@@ -158,6 +158,7 @@ class Investor < ApplicationRecord
     investor_entity.permissions.set(:enable_captable) if entity.permissions.enable_captable?
 
     investor_entity.permissions.set(:enable_funds) if entity.permissions.enable_funds?
+    investor_entity.permissions.set(:enable_units) if entity.permissions.enable_units?
     investor_entity.permissions.set(:enable_kpis) if entity.permissions.enable_kpis?
     investor_entity.permissions.set(:enable_kycs) if entity.permissions.enable_kycs?
     investor_entity.permissions.set(:enable_approvals) if entity.permissions.enable_approvals?
