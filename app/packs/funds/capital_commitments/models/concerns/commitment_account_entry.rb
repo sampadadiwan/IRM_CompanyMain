@@ -47,6 +47,7 @@ module CommitmentAccountEntry
     entries = account_entries
     entries = entries.not_cumulative.where(name:) if name.present?
     entries = entries.where(entry_type:) if entry_type.present?
+
     entries.where(reporting_date: end_date.beginning_of_quarter..end_date).sum(:amount_cents)
   end
 
@@ -54,7 +55,8 @@ module CommitmentAccountEntry
     entries = account_entries
     entries = entries.not_cumulative.where(name:) if name.present?
     entries = entries.where(entry_type:) if entry_type.present?
-    entries.not_cumulative.where(name:).where(reporting_date: ..end_date).sum(:amount_cents)
+
+    entries.not_cumulative.where(reporting_date: ..end_date).sum(:amount_cents)
   end
 
   def year_to_date(name, entry_type, _start_date, end_date)
@@ -64,6 +66,7 @@ module CommitmentAccountEntry
 
     date = end_date.month > 3 ? end_date.beginning_of_year : (end_date.beginning_of_year - 1.year)
     start_of_financial_year = (date + 3.months)
-    entries.not_cumulative.where(name:).where(reporting_date: start_of_financial_year..end_date).sum(:amount_cents)
+
+    entries.not_cumulative.where(reporting_date: start_of_financial_year..end_date).sum(:amount_cents)
   end
 end
