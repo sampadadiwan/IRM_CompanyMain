@@ -69,6 +69,8 @@
     </td>
     <td>
       <%= @account_entry.name %>
+      <br>
+      <small class="text-muted"><%= @account_entry.rule_for %></small>
     </td>
   </tr>
 
@@ -98,9 +100,7 @@
       Formula
     </td>
     <td>
-      <%= link_to @account_entry.fund_formula %>
-      
-      <%= @account_entry.rule_for %>
+      <%= link_to @account_entry.fund_formula %>      
     </td>
   </tr>
   <% end %>
