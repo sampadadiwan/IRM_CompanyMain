@@ -171,6 +171,10 @@ class CapitalCommitment < ApplicationRecord
     committed_amount - collected_amount
   end
 
+  def uncalled_amount
+    committed_amount - call_amount
+  end
+
   def percentage_pending_call
     call_amount_cents.positive? ? 100 * (collected_amount_cents / call_amount_cents).round(2) : 0
   end
