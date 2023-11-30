@@ -38,7 +38,7 @@
 
   <div class="form-group">
     <%= form.label :rule_for, "For" %>
-    <%= form.select :rule_for, ["Accounting", "Reporting"], {include_blank: true}, class: "form-control", name: "rule_for" %>
+    <%= form.select :rule_for, ["Accounting", "Reporting"],  {include_blank: "Both", selected: "Accounting"}, class: "form-control", name: "rule_for" %>
   </div>
 
   <div class="form-group">

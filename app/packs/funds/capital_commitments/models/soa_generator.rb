@@ -73,6 +73,7 @@ class SoaGenerator
     }
 
     # add_account_entries(context, capital_commitment, start_date, end_date)
+    add_reporting_entries(context, capital_commitment, start_date, end_date)
 
     generate_custom_fields(context, capital_commitment)
 
@@ -106,6 +107,13 @@ class SoaGenerator
                      before_end_date: capital_commitment.fund_units.where(issue_date: ..end_date).sum(:quantity),
                      between_dates: capital_commitment.fund_units.where(issue_date: ..end_date).where(issue_date: start_date..).sum(:quantity)
                    })
+  end
+
+  def add_reporting_entries(context, capital_commitment, start_date, end_date)
+    raes = capital_commitment.account_entries.where(reporting_date: start_date..end_date, entry_type: "Reporting")
+    raes.each do |ae|
+      context["reporting_#{ae.name.delete(' ').underscore}"] = TemplateDecorator.decorate(ae)
+    end
   end
 
   def add_account_entries(context, capital_commitment, start_date, end_date)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_11_30_113224) do
+ActiveRecord::Schema[7.1].define(version: 2023_11_30_144611) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -73,6 +73,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_30_113224) do
     t.bigint "exchange_rate_id"
     t.string "commitment_type", limit: 10, default: "Pool"
     t.bigint "fund_formula_id"
+    t.string "rule_for", limit: 10, default: "Accounting"
     t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative"], name: "idx_account_entries_reporting_date_uniq", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"

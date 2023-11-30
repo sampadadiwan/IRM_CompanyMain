@@ -6,6 +6,8 @@ class FundFormula < ApplicationRecord
   belongs_to :entity
   acts_as_list scope: %i[fund_id], column: :sequence
 
+  enum :rule_for, { accounting: "Accounting", reporting: "Reporting" }
+
   scope :enabled, -> { where(enabled: true) }
   scope :accounting, -> { where(rule_for: "Accounting") }
   scope :reporting, -> { where(rule_for: "Reporting") }

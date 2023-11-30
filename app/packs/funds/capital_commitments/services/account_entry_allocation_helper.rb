@@ -20,8 +20,10 @@ class AccountEntryAllocationHelper
   end
 
   # Remove all prev allocations for this period, as we will recompute it
-  def cleaup_prev_allocation
+  def cleaup_prev_allocation(rule_for: nil)
     ae = AccountEntry.where(fund_id: @fund.id, generated: true, reporting_date: @start_date..).where(reporting_date: ..@end_date)
+
+    ae = ae.where(rule_for:) if rule_for.present?
 
     ae.delete_all
     notify("Cleaned up prev allocated entries", :success, @user_id)

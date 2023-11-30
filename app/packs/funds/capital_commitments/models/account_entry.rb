@@ -10,6 +10,9 @@ class AccountEntry < ApplicationRecord
   belongs_to :investor, optional: true
   belongs_to :parent, polymorphic: true, optional: true
 
+  # Account entries come in 2 flavours, they are either accounting entries or reporting entries.
+  enum :rule_for, { accounting: "Accounting", reporting: "Reporting" }
+
   enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest", All: "All" }
   scope :pool, -> { where(commitment_type: 'Pool') }
   scope :co_invest, -> { where(commitment_type: 'CoInvest') }
@@ -57,6 +60,15 @@ class AccountEntry < ApplicationRecord
     # Since the account entry amount is always in the fund currency, we compute the converted folio_amount based on exchange rates.
     self.folio_amount_cents = convert_currency(fund.currency, capital_commitment.folio_currency,
                                                amount_cents, reporting_date)
+  end
+
+  before_save :setup_rule_for
+  def setup_rule_for
+    self.rule_for = if fund_formula.present? && fund_formula.reporting?
+                      'reporting'
+                    else
+                      'accounting'
+                    end
   end
 
   def to_s

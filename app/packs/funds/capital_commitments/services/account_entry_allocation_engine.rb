@@ -17,7 +17,7 @@ class AccountEntryAllocationEngine
 
   # There are 3 types of formulas - we need to run them in the sequence defined
   def run_formulas
-    @helper.cleaup_prev_allocation
+    @helper.cleaup_prev_allocation(rule_for: @rule_for)
 
     fund_unit_settings = FundUnitSetting.where(fund_id: @fund.id).index_by(&:name)
 
