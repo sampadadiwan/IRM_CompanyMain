@@ -36,4 +36,37 @@ module EntityEnabled
   def respond_to_missing?(method_name, _include_private = false)
     method_name.to_s.starts_with?("enable_")
   end
+
+  # Counts the investors for a given entity_id, which have the input permission enabled
+  # E.x investors_enabled(:enable_deals) => 5
+  def investors_enabled_count(enable_permission)
+    Entity.joins(:investees).where("investors.entity_id=?", id).where_permissions(enable_permission.to_s).count
+  end
+
+  # Find the investors whose entity permissions do not have the input enable_permission
+  # and set the enable_permission on them
+  # E.x investors_enable(:enable_deals) => 5
+  def investors_enable(enable_permission)
+    entities = Entity.joins(:investees).where("investors.entity_id=?", id).where_not_permissions(enable_permission.to_s)
+    before_count = entities.count
+    entities.each do |e|
+      e.permissions.set(enable_permission.to_sym)
+      e.save
+    end
+    after_count = entities.count
+    [before_count, after_count]
+  end
+
+  def investors_disable(disable_permission)
+    entities = Entity.joins(:investees).where("investors.entity_id=?", id).where_permissions(disable_permission.to_s)
+    before_count = entities.count
+
+    entities.each do |e|
+      e.permissions.unset(disable_permission.to_sym)
+      e.save
+    end
+
+    after_count = entities.count
+    [before_count, after_count]
+  end
 end

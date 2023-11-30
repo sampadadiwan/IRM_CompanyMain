@@ -73,7 +73,7 @@ class AccountEntryAllocationEngine
       Rails.logger.debug { "Generating using formula #{fund_formula} for #{capital_commitment}, #{@start_date}, #{@end_date}" }
 
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
-      Rails.logger.debug { "No fund_unit_setting found for #{capital_commitment.to_json}" } unless fund_unit_setting 
+      Rails.logger.debug { "No fund_unit_setting found for #{capital_commitment.to_json}" } unless fund_unit_setting
 
       printable = @helper.print_formula(fund_formula, binding)
       Rails.logger.debug printable
