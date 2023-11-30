@@ -72,7 +72,7 @@ class SoaGenerator
       commitment_amount_words: amount_in_words
     }
 
-    add_account_entries(context, capital_commitment, start_date, end_date)
+    # add_account_entries(context, capital_commitment, start_date, end_date)
 
     generate_custom_fields(context, capital_commitment)
 
