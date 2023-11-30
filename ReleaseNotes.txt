@@ -1,6 +1,9 @@
 29/11/2023 - V7.0.8
 #####################################
 
+#### Bugs
+1. Fixed document approval notification
+2. Defaults false for approved in documents
 
 
 

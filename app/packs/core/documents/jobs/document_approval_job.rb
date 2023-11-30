@@ -14,23 +14,7 @@ class DocumentApprovalJob < ApplicationJob
     send_notification("Document approval #{start_date} - #{end_date} started", user_id, "info")
 
     Chewy.strategy(:sidekiq) do
-      if parent_folder_id.present?
-        # Get all the documents in the folder and its subfolders
-        parent_folder = Folder.find(parent_folder_id)
-        folder_ids = parent_folder.descendant_ids << parent_folder_id
-        documents = Document.where(folder_id: folder_ids)
-      else
-        # Get all the documents in the entity
-        documents = Document.where(entity_id:)
-      end
-
-      # Get all the generated documents in the date range which are not aproved yet
-      eod = Date.parse(end_date).end_of_day
-      documents = documents.generated.where(created_at: start_date..eod, approved: false)
-      # Get all the generated documents with owner_type like InvestorKYC, CapitalCommitment, etc.
-      documents = documents.where(owner_type:) if owner_type.present?
-
-      Rails.logger.debug { "Found #{documents.count} documents to approve" }
+      documents = documents_to_approve(entity_id, parent_folder_id, start_date, end_date, owner_type)
 
       documents.find_each do |document|
         Rails.logger.debug { "Approving document #{document.name}, #{document.id}" }
@@ -49,6 +33,27 @@ class DocumentApprovalJob < ApplicationJob
       end
     end
 
-    send_notification("Document approval completed", user_id, "info")
+    send_notification("Document approval completed, please refresh the page.", user_id, "info")
+  end
+
+  def documents_to_approve(entity_id, parent_folder_id, start_date, end_date, owner_type)
+    if parent_folder_id.present?
+      # Get all the documents in the folder and its subfolders
+      parent_folder = Folder.find(parent_folder_id)
+      folder_ids = parent_folder.descendant_ids << parent_folder_id
+      documents = Document.where(folder_id: folder_ids)
+    else
+      # Get all the documents in the entity
+      documents = Document.where(entity_id:)
+    end
+
+    # Get all the generated documents in the date range which are not aproved yet
+    eod = Date.parse(end_date).end_of_day
+    documents = documents.generated.where(created_at: start_date..eod, approved: false)
+    # Get all the generated documents with owner_type like InvestorKYC, CapitalCommitment, etc.
+    documents = documents.where(owner_type:) if owner_type.present?
+
+    Rails.logger.debug { "Found #{documents.count} documents to approve" }
+    documents
   end
 end
