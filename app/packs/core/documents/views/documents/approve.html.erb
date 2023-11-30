@@ -18,9 +18,8 @@
             <% folder = Folder.find(parent_folder_id) %>
             <%  if folder.owner %>
               for: <%= link_to folder.owner.to_s %>
-            <% else %>
-              for folder: <%= link_to folder.name, folder %>
             <% end %>
+            for folder: <%= link_to folder.name, folder %>
         <% end %>
     </p>
 </div>
