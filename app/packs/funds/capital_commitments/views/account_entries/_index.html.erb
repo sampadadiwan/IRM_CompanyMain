@@ -26,13 +26,19 @@
                     "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
                     { class: "btn btn-outline-primary"}   %> 
 
+
+      <%= link_to "Download", xl_link, 
+                              class: "btn btn-outline-success" %>
+
     </span>
+
+    <% else %>
+            <%= link_to "Download", xl_link, 
+                              class: "btn btn-outline-success" %>
 
     <% end %>
 
     
-      <%= link_to "Download", xl_link, 
-                              class: "btn btn-outline-success" %>
   </div>
 
 
