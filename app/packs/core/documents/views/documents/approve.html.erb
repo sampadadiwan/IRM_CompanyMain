@@ -1,7 +1,6 @@
 <%
   start_date ||= params[:start_date] || Time.zone.today - 1.day
   end_date ||=  params[:end_date] || Time.zone.today
-  notification ||= params[:notification]
   owner_type ||= params[:owner_type]
   parent_folder_id ||= params[:parent_folder_id]
 %>
@@ -42,7 +41,7 @@
 
   <div class="form-group">
     <%= form.label :notification %>
-    <%= form.check_box :notification, class: "form-check-input", name: "notification", value: notification %>
+    <%= form.check_box :notification, class: "form-check-input", name: "notification" %>
     <small class="text-muted">Send notification to users</small>
   </div>
 

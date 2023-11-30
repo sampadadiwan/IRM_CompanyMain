@@ -51,7 +51,8 @@
             { class: "btn btn-sm btn-outline-primary hideMobP"} if params[:folder_id].present? && policy(@folder).update? %> 
 
 
-    <%= link_to "Approve", approve_documents_path("parent_folder_id": params[:folder_id]),
+    <% approve_folder_id = params[:folder_id].presence || owner&.document_folder_id %>
+    <%= link_to "Approve", approve_documents_path("parent_folder_id": approve_folder_id),
                 {class: "btn btn-sm  btn-outline-success" }  if policy(document).approve? %>
 
 

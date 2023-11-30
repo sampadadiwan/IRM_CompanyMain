@@ -8,7 +8,7 @@ class DocumentApprovalJob < ApplicationJob
   def perform(entity_id, start_date, end_date, options)
     parent_folder_id = options[:parent_folder_id]
     user_id = options[:user_id]
-    notification = options[:notification]
+    notification = options[:notification] == "1"
     owner_type = options[:owner_type]
 
     send_notification("Document approval #{start_date} - #{end_date} started", user_id, "info")
@@ -24,9 +24,9 @@ class DocumentApprovalJob < ApplicationJob
         documents = Document.where(entity_id:)
       end
 
-      # Get all the generated documents in the date range
+      # Get all the generated documents in the date range which are not aproved yet
       eod = Date.parse(end_date).end_of_day
-      documents = documents.generated.where(created_at: start_date..eod)
+      documents = documents.generated.where(created_at: start_date..eod, approved: false)
       # Get all the generated documents with owner_type like InvestorKYC, CapitalCommitment, etc.
       documents = documents.where(owner_type:) if owner_type.present?
 
