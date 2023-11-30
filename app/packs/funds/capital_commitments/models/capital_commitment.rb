@@ -250,10 +250,10 @@ class CapitalCommitment < ApplicationRecord
     end
   end
 
-  after_commit :touch_investor
+  after_commit :touch_investor, unless: :destroyed?
   # This is to bust any cached dashboards showing the commitments
   def touch_investor
-    investor.investor_entity.touch
+    investor.investor_entity.touch if investor&.investor_entity
     entity.touch
   end
 

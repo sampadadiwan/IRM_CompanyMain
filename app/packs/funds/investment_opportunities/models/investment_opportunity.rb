@@ -84,7 +84,7 @@ class InvestmentOpportunity < ApplicationRecord
   # This is to bust any cached dashboards showing the commitments
   def update_investor_entity
     investors.each do |i|
-      i.investor_entity.touch
+      i.investor_entity.touch if i&.investor_entity
     end
   end
   # rubocop:enable Rails/SkipsModelValidations
