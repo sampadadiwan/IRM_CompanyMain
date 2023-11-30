@@ -9,7 +9,7 @@ class TemplateDecorator < ApplicationDecorator
     if method_name.to_s.include?("where_")
       params = method_name.to_s.gsub("where_", "")
       filter_field, filter_value = params.split("_eq_")
-      collection = object.where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize.titleize)
+      collection = object.where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize)
       return TemplateDecorator.decorate_collection(collection)
 
     # elsif method_name.to_s.include?("account_entries_")
