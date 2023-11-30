@@ -92,6 +92,17 @@
   </tr>
   <% end %>
 
+  <% if @account_entry.fund_formula %>
+  <tr>
+    <td>
+      Formula
+    </td>
+    <td>
+      <%= link_to @account_entry.fund_formula %>
+    </td>
+  </tr>
+  <% end %>
+
   <tr>
     <td>
       Amount

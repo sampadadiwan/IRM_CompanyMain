@@ -1,7 +1,7 @@
 class AccountEntryAllocationEngine
   attr_accessor :cached_generated_fields
 
-  def initialize(fund, start_date, end_date, user_id: nil,
+  def initialize(fund, start_date, end_date, user_id: nil, rule_for: nil,
                  generate_soa: false, template_name: nil, fund_ratios: false, sample: false)
     @fund = fund
     @start_date = start_date
@@ -11,6 +11,7 @@ class AccountEntryAllocationEngine
     @template_name = template_name
     @fund_ratios = fund_ratios
     @sample = sample
+    @rule_for = rule_for
     @helper = AccountEntryAllocationHelper.new(self, fund, start_date, end_date, user_id:)
   end
 
@@ -21,6 +22,8 @@ class AccountEntryAllocationEngine
     fund_unit_settings = FundUnitSetting.where(fund_id: @fund.id).index_by(&:name)
 
     formulas = FundFormula.enabled.where(fund_id: @fund.id).order(sequence: :asc)
+    formulas = formulas.where(rule_for: @rule_for) if @rule_for.present?
+
     count = formulas.count
 
     formulas.each_with_index do |fund_formula, index|
@@ -78,7 +81,7 @@ class AccountEntryAllocationEngine
       printable = @helper.print_formula(fund_formula, binding)
       Rails.logger.debug printable
 
-      ae = AccountEntry.new(name: fund_formula.name,
+      ae = AccountEntry.new(name: fund_formula.name, fund_formula:,
                             amount_cents: @helper.safe_eval(fund_formula.formula, binding))
       @helper.add_to_computed_fields_cache(capital_commitment, ae)
 
@@ -112,7 +115,7 @@ class AccountEntryAllocationEngine
     fund_formula.commitments(@sample).each do |capital_commitment|
       percentage = total.positive? ? (100.0 * cc_map[capital_commitment.id]["amount_cents"] / total) : 0
 
-      ae = AccountEntry.new(name: "#{field_name} Percentage", entry_type: cc_map[capital_commitment.id]["entry_type"], entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", capital_commitment:, folio_id: capital_commitment.folio_id, generated: true, amount_cents: percentage, cumulative: false)
+      ae = AccountEntry.new(name: "#{field_name} Percentage", entry_type: cc_map[capital_commitment.id]["entry_type"], entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", capital_commitment:, folio_id: capital_commitment.folio_id, generated: true, amount_cents: percentage, cumulative: false, fund_formula:)
 
       ae.save!
 
@@ -131,7 +134,7 @@ class AccountEntryAllocationEngine
       apis = capital_commitment.Pool? ? @fund.aggregate_portfolio_investments.pool : []
       # Only pool APIs should be used to generate account_entries
       apis.each do |orig_api|
-        ae = AccountEntry.new(name: "#{orig_api.portfolio_company_name}-#{orig_api.investment_type}", entry_type: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", generated: true)
+        ae = AccountEntry.new(name: "#{orig_api.portfolio_company_name}-#{orig_api.investment_type}", entry_type: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", generated: true, fund_formula:)
 
         # This will create the AggregatePortfolioInvestment as of the end date, it will be used in the formulas
         api = orig_api.as_of(nil, @end_date)
@@ -160,7 +163,7 @@ class AccountEntryAllocationEngine
 
       # Only pool PIs should be used to generate account_entries
       portfolio_investments.each do |portfolio_investment|
-        ae = AccountEntry.new(name: portfolio_investment.to_s, entry_type: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", generated: true)
+        ae = AccountEntry.new(name: portfolio_investment.to_s, entry_type: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", generated: true, fund_formula:)
 
         icp = capital_commitment.get_account_entry("Investable Capital Percentage", portfolio_investment.investment_date)
 
@@ -192,6 +195,7 @@ class AccountEntryAllocationEngine
     account_entry.parent = parent
     account_entry.generated = true
     account_entry.commitment_type = fund_formula.commitment_type
+    account_entry.fund_formula = fund_formula
 
     account_entry.save!
     @helper.add_to_computed_fields_cache(capital_commitment, account_entry)
@@ -213,7 +217,7 @@ class AccountEntryAllocationEngine
       # This is used to generate instance variables from the cached computed values
       fields = @helper.computed_fields_cache(capital_commitment)
 
-      ae = AccountEntry.new(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", entry_type: fund_formula.entry_type, generated: true, cumulative: false)
+      ae = AccountEntry.new(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", entry_type: fund_formula.entry_type, generated: true, cumulative: false, fund_formula:)
 
       begin
         create_account_entry(ae, fund_formula, capital_commitment, nil, binding)

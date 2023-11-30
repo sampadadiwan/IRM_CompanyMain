@@ -37,6 +37,11 @@
   </div>
 
   <div class="form-group">
+    <%= form.label :rule_for, "For" %>
+    <%= form.select :rule_for, ["Accounting", "Reporting"], {include_blank: true}, class: "form-control", name: "rule_for" %>
+  </div>
+
+  <div class="form-group">
     <%= form.label :template_name, "SOA Template" %>
     <%= form.select :template_name, @fund.capital_commitments.first.templates("SOA Template"), {}, class: "form-control", name: "template_name"  %>
     <small class="text-muted">Select the SOA template to be used for SOA generation. </small>
@@ -77,6 +82,9 @@
           <th>
             By
           </th>
+          <th>
+            For
+          </th>
       </tr>
     </thead>
 
@@ -103,6 +111,9 @@
           </td>
           <td>
             <%= runs.user.full_name %>
+          </td>
+          <td>
+            <%= runs.rule_for %>
           </td>
         </tr>
       <% end %>

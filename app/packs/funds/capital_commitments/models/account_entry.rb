@@ -6,6 +6,7 @@ class AccountEntry < ApplicationRecord
   belongs_to :capital_commitment, optional: true
   belongs_to :entity
   belongs_to :fund
+  belongs_to :fund_formula, optional: true
   belongs_to :investor, optional: true
   belongs_to :parent, polymorphic: true, optional: true
 

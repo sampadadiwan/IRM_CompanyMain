@@ -7,6 +7,7 @@
 3. Added uncalled_amount to commitment
 4. Fixed bug in account entry allocation engine generate custom field
 5. Added methods to enable / disable permissions for all investor entities
+6. Added rule_for Accounting or Reporting, and every account entry will now capture, which rule was used to generate it.
 
 
 29/11/2023 - V7.0.7

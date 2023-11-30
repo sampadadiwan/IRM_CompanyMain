@@ -1,11 +1,14 @@
 class FundFormula < ApplicationRecord
   include ForInvestor
+  include Trackable
 
   belongs_to :fund
   belongs_to :entity
   acts_as_list scope: %i[fund_id], column: :sequence
 
   scope :enabled, -> { where(enabled: true) }
+  scope :accounting, -> { where(rule_for: "Accounting") }
+  scope :reporting, -> { where(rule_for: "Reporting") }
 
   validates :name, :entry_type, length: { maximum: 50 }
   validates :rule_type, length: { maximum: 30 }

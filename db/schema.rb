@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_11_30_021954) do
+ActiveRecord::Schema[7.1].define(version: 2023_11_30_113224) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -72,11 +72,13 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_30_021954) do
     t.decimal "folio_amount_cents", precision: 30, scale: 8, default: "0.0"
     t.bigint "exchange_rate_id"
     t.string "commitment_type", limit: 10, default: "Pool"
+    t.bigint "fund_formula_id"
     t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative"], name: "idx_account_entries_reporting_date_uniq", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
+    t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
     t.index ["parent_type", "parent_id"], name: "index_account_entries_on_parent"
@@ -249,6 +251,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_30_021954) do
     t.string "template_name", limit: 30
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "rule_for", limit: 10, default: "Accounting"
     t.index ["entity_id"], name: "index_allocation_runs_on_entity_id"
     t.index ["fund_id"], name: "index_allocation_runs_on_fund_id"
     t.index ["user_id"], name: "index_allocation_runs_on_user_id"
@@ -1148,6 +1151,9 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_30_021954) do
     t.string "entry_type", limit: 50
     t.boolean "roll_up", default: true
     t.string "commitment_type", limit: 10, default: "All"
+    t.string "rule_for", limit: 10, default: "Accounting"
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_fund_formulas_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
   end
@@ -2472,6 +2478,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_30_021954) do
   add_foreign_key "account_entries", "entities"
   add_foreign_key "account_entries", "exchange_rates"
   add_foreign_key "account_entries", "form_types"
+  add_foreign_key "account_entries", "fund_formulas"
   add_foreign_key "account_entries", "funds"
   add_foreign_key "account_entries", "investors"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

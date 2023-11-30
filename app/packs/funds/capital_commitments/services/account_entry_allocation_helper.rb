@@ -21,7 +21,9 @@ class AccountEntryAllocationHelper
 
   # Remove all prev allocations for this period, as we will recompute it
   def cleaup_prev_allocation
-    AccountEntry.where(fund_id: @fund.id, generated: true, reporting_date: @start_date..).where(reporting_date: ..@end_date).delete_all
+    ae = AccountEntry.where(fund_id: @fund.id, generated: true, reporting_date: @start_date..).where(reporting_date: ..@end_date)
+
+    ae.delete_all
     notify("Cleaned up prev allocated entries", :success, @user_id)
   end
 
