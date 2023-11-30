@@ -53,6 +53,12 @@ Scenario Outline: Import capital remittance payments
   And the remittances are generated for the capital calls
   And the capital commitments are updated with remittance numbers
   And the funds are updated with remittance numbers
+  And if the last remittance payment is deleted
+  Then the capital commitments are updated with remittance numbers
+  And the funds are updated with remittance numbers
+  And if the first remittance is deleted
+  Then the capital commitments are updated with remittance numbers
+  And the funds are updated with remittance numbers
 
 
 Scenario Outline: Import capital remittance
@@ -70,6 +76,10 @@ Scenario Outline: Import capital remittance
   And Given I upload "capital_remittances.xlsx" file for Call remittances of the fund
   Then the corresponding remittances should be created
   Then I should see the remittances
+  And if the first remittance is deleted
+  Then the capital commitments are updated with remittance numbers
+  And the funds are updated with remittance numbers
+
 
   Examples:
   	|entity                                         |fund                |msg	| call | collected_amount |

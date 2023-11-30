@@ -124,8 +124,8 @@ Scenario Outline: Create new capital call
   And the capital call collected amount should be "<collected_amount>"
   And the investors must receive email with subject "Capital Call"
   Given each investor has a "verified" kyc linked to the commitment
-  # And when the capital call docs are generated
-  # Then the generated doc must be attached to the capital remittances
+  And when the capital call docs are generated
+  Then the generated doc must be attached to the capital remittances
 
   
   Examples:

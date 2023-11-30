@@ -873,6 +873,15 @@ Then('the funds are updated with remittance numbers') do
 end
 
 
+Then('if the last remittance payment is deleted') do
+  CapitalRemittancePayment.last.destroy
+end
+
+Then('if the first remittance is deleted') do
+  CapitalRemittance.first.destroy
+end
+
+
 Given('my firm is an investor in the fund') do
   @investor = FactoryBot.create(:investor, entity: @fund.entity, investor_entity: @user.entity)
   puts "\n####Fund Investor####\n"
