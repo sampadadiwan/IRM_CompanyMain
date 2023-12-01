@@ -2,7 +2,7 @@ class InvestorKycsController < ApplicationController
   after_action :verify_policy_scoped, only: [:index] # add send_reminder_to_all?
 
   before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder]
-  after_action :verify_authorized, except: %i[index search generate_all_docs]
+  after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc]
 
   # GET /investor_kycs or /investor_kycs.json
   def index
@@ -49,6 +49,31 @@ class InvestorKycsController < ApplicationController
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
     authorize(@investor_kyc)
     setup_custom_fields(@investor_kyc)
+  end
+
+  def edit_my_kyc
+    # We have the current_entity from the url subdomain or from a specific param in the notice
+    current_entity = params[:current_entity_id].present? ? Entity.where(id: params[:current_entity_id]).first : @current_entity
+
+    if current_entity.blank? 
+      redirect_to investor_kycs_path, info: "Please select the kyc you want to update." 
+    else 
+      # Find the investor for the current user in the current_entity
+      investor = current_entity.investors.joins(:investor_accesses).where(investor_accesses: { user_id: current_user.id }).first
+
+      if investor.blank? 
+        redirect_to investor_kycs_path, info: "Please select the kyc you want to update." 
+      else
+
+        # Find and redirect to kyc if it exists, else redirect to new kyc
+        kyc = current_entity.investor_kycs.where(investor_id: investor.id).last
+        if kyc.present?
+          redirect_to edit_investor_kyc_path(kyc)
+        else
+          redirect_to new_investor_kyc_path(investor_id: investor.id)
+        end
+      end
+    end
   end
 
   # GET /investor_kycs/1/edit

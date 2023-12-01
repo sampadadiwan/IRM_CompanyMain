@@ -54,19 +54,19 @@ class InvestorKyc < ApplicationRecord
            :call_amount_cents, :distribution_amount_cents,
            with_currency: ->(i) { i.entity.currency }
 
-  attr_accessor :send_kyc_form_to_user
-
-  after_commit :send_kyc_form, if: ->(inv_kyc) { !inv_kyc.destroyed? && inv_kyc.send_kyc_form_to_user.present? && inv_kyc.send_kyc_form_to_user == "1" }
+  after_commit :send_kyc_form, if: :saved_change_to_send_kyc_form_to_user?
 
   def send_kyc_form(reminder: false)
-    email_method = :notify_kyc_required
-    msg = "Kindly add / update your KYC details by clicking on the button below"
-    if reminder
-      email_method = :kyc_required_reminder
-      msg = "This is a reminder to kindly add / update your KYC details by clicking on the button below."
-    end
-    investor.approved_users.each do |user|
-      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method:, msg:, user_id: user.id).deliver_later(user)
+    if send_kyc_form_to_user || reminder
+      email_method = :notify_kyc_required
+      msg = "Kindly update your KYC details for #{entity.name} by clicking on the button below"
+      if reminder
+        email_method = :kyc_required_reminder
+        msg = "Reminder to kindly update your KYC details for #{entity.name} by clicking on the button below."
+      end
+      investor.approved_users.each do |user|
+        InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method:, msg:, user_id: user.id).deliver_later(user)
+      end
     end
   end
 

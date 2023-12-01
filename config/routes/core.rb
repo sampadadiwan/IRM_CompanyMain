@@ -28,6 +28,7 @@ resources :investor_kycs do
   put 'generate_new_aml_report', on: :member
   post 'compare_kyc_datas', on: :collection
   put 'assign_kyc_data', on: :member
+  get 'edit_my_kyc', on: :collection
   get 'generate_docs', on: :member # Just show the form
   patch 'generate_docs', on: :member # Actually generate the docs
   get 'generate_all_docs', on: :collection

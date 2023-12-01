@@ -2,7 +2,11 @@
 
 <p>
 
-    Kindly add / update your KYC details by clicking on the button below.
+    <% if @investor_kyc.notification_msg.present? %>
+        <%= @investor_kyc.notification_msg.html_safe %>
+    <% else %>
+        <% @investor_kyc.entity.name %> has requested that you kindly add / update your KYC details by clicking on the button below.
+    <% end %>
 
     <p class="btn btn-outline-primary"><%= link_to  "Login to Access", edit_investor_kyc_url(@investor_kyc) %></p>
 
