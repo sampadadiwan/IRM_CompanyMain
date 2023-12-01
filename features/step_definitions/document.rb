@@ -43,6 +43,7 @@ Given('I am at the documents page') do
 end
 
 When('I create a new document {string} in folder {string}') do |args, folder_name|
+  
   @folder = Folder.where("name like '%#{folder_name}%'").first
 
   @document = Document.new

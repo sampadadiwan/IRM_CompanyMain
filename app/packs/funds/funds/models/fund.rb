@@ -143,7 +143,7 @@ class Fund < ApplicationRecord
     %w[name]
   end
 
-  after_commit :name_change, if: :saved_change_to_name?
+  after_update_commit :name_change, if: :saved_change_to_name?
   def name_change
     document_folder.update_columns(name:, full_path: folder_path)
   end

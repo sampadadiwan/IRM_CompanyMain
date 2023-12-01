@@ -1,5 +1,5 @@
-<div class="<%= field.read_only ? 'hidden_form_field' : '' %>">
-    <%= f.label field.name, field.name.humanize.titleize %>
+<div class="form-group <%= field.read_only ? 'hidden_form_field' : '' %>">
+    <%= f.label field.name, field.name.humanize.titleize %><br>
     <% field.meta_data.split(",").each do |option| %>
         <div class="form-check form-check-inline">
             <%= f.radio_button field.name, option, required: field.required, class: "form-check-input" %> 
