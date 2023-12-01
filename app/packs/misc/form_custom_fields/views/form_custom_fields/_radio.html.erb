@@ -1,8 +1,8 @@
-<div class="form-group <%= field.read_only ? 'hidden_form_field' : '' %>">
+<div class="form-group form-check-inline <%= field.read_only ? 'hidden_form_field' : '' %>">
     <%= f.label field.name, field.name.humanize.titleize %><br>
     <% field.meta_data.split(",").each do |option| %>
         <%= f.radio_button field.name, option, required: field.required, class: "form-check-input" %> 
-        <%= f.label option, class: "radio_label" %>
+        <%= f.label option %>
     <% end %>
     <br>
     <small class="text-muted"><%= field.help_text %></small>
