@@ -1,22 +1,24 @@
 <div class="wizard_container" data-controller="wizard">
-  <div class="stepwizard hidden">
-      <div class="stepwizard-row setup-panel">
-          <div class="stepwizard-step">
-              <a href="#step-1" type="button" class="btn btn-outline-primary btn-outline-primary btn-outline-circle">1</a>
-              <p>Step 1</p>
-          </div>
-          <div class="stepwizard-step">
-              <a href="#step-2" type="button" class="btn btn-outline-primary btn-outline-circle" disabled="disabled">2</a>
-              <p>Step 2</p>
-          </div>
-          <div class="stepwizard-step">
-              <a href="#step-3" type="button" class="btn btn-outline-primary btn-outline-circle" disabled="disabled">3</a>
-              <p>Step 3</p>
-          </div>
-      </div>
+  <div class="row justify-content-md-center">
+    <div class="stepwizard hidden col-md-6">
+        <div class="stepwizard-row setup-panel">
+            <div class="stepwizard-step">
+                <a href="#step-1" type="button" class="btn btn-outline-primary btn-outline-primary btn-outline-circle">1</a>
+                <p>Step 1</p>
+            </div>
+            <div class="stepwizard-step">
+                <a href="#step-2" type="button" class="btn btn-outline-primary btn-outline-circle" disabled="disabled">2</a>
+                <p>Step 2</p>
+            </div>
+            <div class="stepwizard-step">
+                <a href="#step-3" type="button" class="btn btn-outline-primary btn-outline-circle" disabled="disabled">3</a>
+                <p>Step 3</p>
+            </div>
+        </div>
+    </div>
   </div>
 
-<%= form_with(model: investor_kyc, validate: true) do |form| %>
+<%= form_with(model: investor_kyc, validate: true, class: "row justify-content-md-center") do |form| %>
   <% if investor_kyc.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(investor_kyc.errors.count, "error") %> prohibited this investor_kyc from being saved:</h2>
@@ -30,8 +32,8 @@
   <% end %>
 
 
-  <div class="row setup-content" id="step-1">
-    <div class="col-md-6">
+  <div class="col-md-6 setup-content" id="step-1">
+    <div class="">
       <div class="card">
         <div class="card-header"> 1. KYC Details </div>
         <div class="card-body">
@@ -100,8 +102,8 @@
     </div>
   </div>
 
-  <div class="row setup-content" id="step-2">
-    <div class="col-md-6">
+  <div class="col-md-6 setup-content" id="step-2">
+    <div class="">
       <div class="card">
         <div class="card-header"> 2. KYC Details </div>
         <div class="card-body">
@@ -192,8 +194,8 @@
   </div>
 
 
-  <div class="row setup-content" id="step-3">
-    <div class="col-md-6">
+  <div class="col-md-6 setup-content" id="step-3">
+    <div class="">
       <div class="card">
         <div class="card-header"> 1. KYC Details </div>
         <div class="card-body">
