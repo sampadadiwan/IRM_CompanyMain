@@ -55,14 +55,14 @@ class InvestorKycsController < ApplicationController
     # We have the current_entity from the url subdomain or from a specific param in the notice
     current_entity = params[:current_entity_id].present? ? Entity.where(id: params[:current_entity_id]).first : @current_entity
 
-    if current_entity.blank? 
-      redirect_to investor_kycs_path, info: "Please select the kyc you want to update." 
-    else 
+    if current_entity.blank?
+      redirect_to investor_kycs_path, info: "Please select the kyc you want to update."
+    else
       # Find the investor for the current user in the current_entity
       investor = current_entity.investors.joins(:investor_accesses).where(investor_accesses: { user_id: current_user.id }).first
 
-      if investor.blank? 
-        redirect_to investor_kycs_path, info: "Please select the kyc you want to update." 
+      if investor.blank?
+        redirect_to investor_kycs_path, info: "Please select the kyc you want to update."
       else
 
         # Find and redirect to kyc if it exists, else redirect to new kyc
@@ -250,7 +250,7 @@ class InvestorKycsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_kyc_params
-    params.require(:investor_kyc).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :video, :phone, :form_type_id, :send_kyc_form_to_user, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:investor_kyc).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :address_proof, :cheque, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :phone, :form_type_id, :send_kyc_form_to_user, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 
   def commit_param

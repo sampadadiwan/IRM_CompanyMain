@@ -132,6 +132,19 @@
         <%= investor_kyc.address %>
       </td>
     </tr>
+
+    <% if investor_kyc.address_proof && current_user %>
+      <tr>
+        <td>
+          Address Proof
+        </td>
+        <td>
+          <%= link_to "Uploaded Copy", investor_kyc.address_proof.url %>
+        </td>
+      </tr>
+    <% end %>
+
+
     <tr>
       <td>
         Bank Account Number
@@ -148,6 +161,18 @@
         <%= investor_kyc.ifsc_code %>
       </td>
     </tr>
+
+    <% if investor_kyc.cheque && current_user %>
+    <tr>
+      <td>
+        Cancelled Cheque
+      </td>
+      <td>
+        <%= link_to "Uploaded Copy", investor_kyc.cheque.url %>
+      </td>
+    </tr>
+    <% end %>
+
     <tr>
       <td>
         Bank Verified
@@ -211,15 +236,6 @@
 
 
 
-
-
-    <% if investor_kyc.video && current_user %>
-    <tr>
-      <td colspan="2">
-        <%= render "layouts/video", url: investor_kyc.video.url, title: "KYC Video" %>
-      </td>
-    </tr>
-    <% end %>
 
 
     <% if params[:debug].present? %>

@@ -77,19 +77,11 @@
                 Please upload a clear image of your PAN card
               </div>
               <div>
-                <% pan_label = investor_kyc.pan_card.blank? ? "Upload PAN Card" : link_to("Uploaded PAN Card", investor_kyc.pan_card.url, target: "_blank") %>
-                <%= render "layouts/single_upload", form: form, field_label: pan_label,
+                <% label = investor_kyc.pan_card.blank? ? "Upload PAN Card" : link_to("Uploaded PAN Card: #{uploaded_file_name(investor_kyc.pan_card)}", investor_kyc.cheque.url, target: "_blank") %>
+
+                <%= render "layouts/single_upload", form: form, field_label: label,
                                       for_model: "investor_kyc", field_name: "pan_card",
                                       model: investor_kyc %>
-
-
-                <% if investor_kyc.pan_card.present? %>
-                  <% if investor_kyc.pan_card.mime_type.index("image") %>
-                    <%= image_tag investor_kyc.pan_card_url, style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" %>
-                  <% end %>
-                <% end %>
-
-
               </div>
 
               <% if current_user.entity_id == investor_kyc.entity_id %>
@@ -125,6 +117,15 @@
           </div>
 
           <div class="form-group">
+            <% label = investor_kyc.address_proof.blank? ? "Upload Address Proof" : link_to("Uploaded Address Proof: #{uploaded_file_name(investor_kyc.address_proof)}", investor_kyc.cheque.url, target: "_blank") %>
+
+            <%= render "layouts/single_upload", form: form, field_label: label,
+                                      for_model: "investor_kyc", field_name: "address_proof",
+                                      model: investor_kyc %>
+
+          </div>
+
+          <div class="form-group">
             <%= form.label :bank_account_number %>
             <%= form.text_field :bank_account_number, class: "form-control"  %>
           </div>
@@ -133,6 +134,16 @@
             <%= form.label :ifsc_code %>
             <%= form.text_field :ifsc_code, class: "form-control"  %>
           </div>
+
+          <div class="form-group">
+                <% label = investor_kyc.cheque.blank? ? "Upload Cancelled Cheque" : link_to("Uploaded Cancelled Cheque: #{uploaded_file_name(investor_kyc.cheque)}", investor_kyc.cheque.url, target: "_blank") %>
+
+                <%= render "layouts/single_upload", form: form, field_label: label,
+                                      for_model: "investor_kyc", field_name: "cheque",
+                                      model: investor_kyc %>
+
+          </div>
+
 
           <% if current_user.entity_id == investor_kyc.entity_id  %>
             <div class="form-group">

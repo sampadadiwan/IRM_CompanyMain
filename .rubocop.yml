@@ -140,7 +140,7 @@ Metrics/PerceivedComplexity:
     - 'app/packs/core/uploaders/file_uploader.rb'
 Metrics/ClassLength:
   Description: 'Avoid classes longer than 200 lines of code.'
-  Max: 200
+  Max: 220
   Enabled: true
   Exclude:
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'

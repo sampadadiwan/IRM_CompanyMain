@@ -23,4 +23,8 @@ module ApplicationHelper
     uri.query = Rack::Utils.build_query(query)
     uri.to_s.gsub(".json", ".xlsx")
   end
+
+  def uploaded_file_name(file)
+    file.metadata['filename'] if file.metadata
+  end
 end

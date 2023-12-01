@@ -29,7 +29,8 @@ class InvestorKyc < ApplicationRecord
 
   include FileUploader::Attachment(:signature)
   include FileUploader::Attachment(:pan_card)
-  include FileUploader::Attachment(:video)
+  include FileUploader::Attachment(:address_proof)
+  include FileUploader::Attachment(:cheque)
 
   belongs_to :verified_by, class_name: "User", optional: true
 
