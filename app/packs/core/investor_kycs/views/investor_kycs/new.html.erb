@@ -1,6 +1,9 @@
 <h1>New Investor Kyc</h1>
 
-<% form="form" %>
+<div class="text-center">
+    <% form="form", style="margin-auto;" %>
+</div>
+
 <% form="initial_form" if @investor_kyc.entity.entity_setting.ckyc_kra_enabled %>
 <%= render form, investor_kyc: @investor_kyc %>
 

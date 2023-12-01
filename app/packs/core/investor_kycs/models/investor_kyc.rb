@@ -35,12 +35,13 @@ class InvestorKyc < ApplicationRecord
   belongs_to :verified_by, class_name: "User", optional: true
 
   validates :PAN, length: { maximum: 15 }
-  validates :bank_account_number, length: { maximum: 40 }
+  validates :bank_account_number, :bank_branch, :bank_account_type, length: { maximum: 40 }
   validates :ifsc_code, length: { maximum: 20 }
   validates :full_name, length: { maximum: 100 }
   normalizes :full_name, with: ->(full_name) { full_name.strip.squeeze(" ") }
   validates :kyc_type, length: { maximum: 15 }
   validates :residency, length: { maximum: 10 }
+  validates :bank_name, length: { maximum: 50 }
 
   validate :birth_date_cannot_be_in_the_future
   def birth_date_cannot_be_in_the_future
