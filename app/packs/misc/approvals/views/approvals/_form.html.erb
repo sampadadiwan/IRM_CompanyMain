@@ -1,4 +1,4 @@
-<%= form_with(model: approval, validate: true) do |form| %>
+<%= form_with(model: approval, validate: true, class: "") do |form| %>
   <% if approval.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(approval.errors.count, "error") %> prohibited this approval from being saved:</h2>

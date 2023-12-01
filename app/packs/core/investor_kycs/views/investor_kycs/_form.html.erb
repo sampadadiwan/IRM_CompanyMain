@@ -77,7 +77,7 @@
             <div class="form-group">
 
               <div>
-                <% label = investor_kyc.pan_card.blank? ? "Upload PAN Card" : link_to("Uploaded PAN Card: #{uploaded_file_name(investor_kyc.pan_card)}", investor_kyc.cheque.url, target: "_blank") %>
+                <% label = investor_kyc.pan_card.blank? ? "Upload PAN Card" : link_to("Uploaded PAN Card: #{uploaded_file_name(investor_kyc.pan_card)}", investor_kyc.pan_card.url, target: "_blank") %>
 
                 <%= render "layouts/single_upload", form: form, field_label: label,
                                       for_model: "investor_kyc", field_name: "pan_card",
@@ -121,7 +121,7 @@
           </div>
 
           <div class="form-group">
-            <% label = investor_kyc.address_proof.blank? ? "Upload Address Proof" : link_to("Uploaded Address Proof: #{uploaded_file_name(investor_kyc.address_proof)}", investor_kyc.cheque.url, target: "_blank") %>
+            <% label = investor_kyc.address_proof.blank? ? "Upload Address Proof" : link_to("Uploaded Address Proof: #{uploaded_file_name(investor_kyc.address_proof)}", investor_kyc.address_proof.url, target: "_blank") %>
 
             <%= render "layouts/single_upload", form: form, field_label: label,
                                       for_model: "investor_kyc", field_name: "address_proof",

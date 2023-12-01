@@ -1,138 +1,149 @@
-<%= form_with(model: capital_commitment, validate: true) do |form| %>
-  <% if capital_commitment.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(capital_commitment.errors.count, "error") %> prohibited this capital_commitment from being saved:</h2>
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+          Capital Commitment : <%= capital_commitment.folio_id %>
+      </h6>
+  </div>
+  <div class="card-body">
 
-      <ul>
-        <% capital_commitment.errors.each do |error| %>
-          <li><%= error.full_message %></li>
+    <%= form_with(model: capital_commitment, validate: true) do |form| %>
+      <% if capital_commitment.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(capital_commitment.errors.count, "error") %> prohibited this capital_commitment from being saved:</h2>
+
+          <ul>
+            <% capital_commitment.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+
+
+      <div data-controller="commitmentselect" data-commitmentselect-kyc-url-value="<%= investor_kycs_path %>" data-commitmentselect-employee-url-value="<%= investor_accesses_path %>"
+              data-commitmentselect-param-value="investor_id">
+
+        <div class="form-group">
+          <% disabled = capital_commitment.investor_id.present? ? "disabled" : nil %>
+          <%= form.label :investor_id %>
+          <%= form.select :investor_id, capital_commitment.fund.investors.order(:investor_name).map{|i| [i.investor_name, i.id]}  ,{include_blank: "Select Investor"}, { disabled: disabled, class: 'form-control select2', data: { action: "change->commitmentselect#change" } }  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :commitment_type %>
+          <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control' %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :commitment_date %>
+          <%= form.date_field :commitment_date, class: 'form-control' %>
+        </div>
+        
+        <div class="form-group">
+          <%= form.label :feeder_fund %>
+          <%= form.check_box :feeder_fund, class: "form-check-input"  %>
+          <small class="text-muted">Check this only if you need to identify this as coming from a feeder fund</small>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :investor_signatory_id %>
+          <% employees = capital_commitment.investor ? capital_commitment.investor.investor_accesses.map{|e| [e.full_name, e.user_id]} : [] %>
+          
+          <%= form.select :investor_signatory_id, employees, {include_blank: true}, {class: 'form-control', data: { commitmentselect_target: "employeeSelect" } }  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :investor_kyc %>
+          <% investor_kycs = capital_commitment.investor ? capital_commitment.investor.investor_kycs.map{|e| [e.full_name, e.id]} : [] %>
+          
+          <%= form.select :investor_kyc_id, investor_kycs, {include_blank: true}, {class: 'form-control', data: { commitmentselect_target: "kycSelect" } } %>
+        </div>
+
+      </div>
+
+      <div class="form-group">
+        <%= form.label :folio_id, "Folio Id" %>
+        <%= form.text_field :folio_id, class: "form-control"  %>
+        <small class="text-muted">Clients have a Folio Id / Number</small>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :virtual_bank_account %>
+        <%= form.text_field :virtual_bank_account, class: "form-control" %>
+        <small class="text-muted">Virtual Bank Account for your clients, if any</small>
+      </div>
+
+      <div class="form-group" data-controller="otherselect" data-otherselect-select-id-value="#capital_commitment_fund_close">
+        <%
+          closes = capital_commitment.fund.capital_commitments.pluck(:fund_close).uniq 
+          closes += ["Other"]
+        %>
+        <%= form.label :fund_close %>
+        <% if closes.length > 1 %>
+          <%= form.select :fund_close, closes, {}, class: "form-control", "data-action": "change->otherselect#checkOtherName"  %>
+          <%= form.text_field :fund_close, class: "form-control", disabled: true, id: "other_name"  %>
+        <% else %>
+          <%= form.text_field :fund_close, class: "form-control", maxlength: 30  %>
         <% end %>
-      </ul>
-    </div>
-  <% end %>
+      </div>
 
-  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+      <% if capital_commitment.fund.unit_types.present? %>
+        <div class="form-group">
+          <%= form.label :unit_type %>
+          <%= form.select :unit_type, capital_commitment.fund.unit_types.split(","), 
+              {include_blank: true}, class: "form-control"  %>
+          <small class="text-muted">They type of unit issued for this commitment</small>
+        </div>
+      <% end %>
 
+      <div class="form-group">
+        <%
+          currency = capital_commitment.entity.exchange_rates
+                    .where(to: capital_commitment.fund.currency)
+                    .latest.pluck(:to, :from).flatten.uniq 
 
-  <div data-controller="commitmentselect" data-commitmentselect-kyc-url-value="<%= investor_kycs_path %>" data-commitmentselect-employee-url-value="<%= investor_accesses_path %>"
-           data-commitmentselect-param-value="investor_id">
+          currency = [capital_commitment.fund.currency] if currency.length == 0
+        %>
+        <%= form.label :folio_currency %>
+        <%= form.select :folio_currency, currency, {}, class: "form-control" %>
 
-    <div class="form-group">
-      <% disabled = capital_commitment.investor_id.present? ? "disabled" : nil %>
-      <%= form.label :investor_id %>
-      <%= form.select :investor_id, capital_commitment.fund.investors.order(:investor_name).map{|i| [i.investor_name, i.id]}  ,{include_blank: "Select Investor"}, { disabled: disabled, class: 'form-control select2', data: { action: "change->commitmentselect#change" } }  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :commitment_type %>
-      <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control' %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :commitment_date %>
-      <%= form.date_field :commitment_date, class: 'form-control' %>
-    </div>
-    
-     <div class="form-group">
-      <%= form.label :feeder_fund %>
-      <%= form.check_box :feeder_fund, class: "form-check-input"  %>
-      <small class="text-muted">Check this only if you need to identify this as coming from a feeder fund</small>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :investor_signatory_id %>
-      <% employees = capital_commitment.investor ? capital_commitment.investor.investor_accesses.map{|e| [e.full_name, e.user_id]} : [] %>
+        <small class="text-muted"><%= link_to "Setup Exchange Rates", exchange_rates_path %></small>
+      </div>
       
-      <%= form.select :investor_signatory_id, employees, {include_blank: true}, {class: 'form-control', data: { commitmentselect_target: "employeeSelect" } }  %>
-    </div>
 
-    <div class="form-group">
-      <%= form.label :investor_kyc %>
-      <% investor_kycs = capital_commitment.investor ? capital_commitment.investor.investor_kycs.map{|e| [e.full_name, e.id]} : [] %>
-      
-      <%= form.select :investor_kyc_id, investor_kycs, {include_blank: true}, {class: 'form-control', data: { commitmentselect_target: "kycSelect" } } %>
-    </div>
+      <div class="form-group" data-controller="currencyformat">
+        <%= form.label :folio_committed_amount %> <span class="formatted_currency"></span>
+        <%= form.number_field :folio_committed_amount, class: "form-control", data: {action: "input->currencyformat#format"}, disabled: !capital_commitment.new_record?  %>
 
-  </div>
+        <% unless capital_commitment.new_record? %>
+          <small class="text-muted">Changes can be made only via <%= link_to 'Commitment Adjustment', new_commitment_adjustment_path(capital_commitment_id: capital_commitment.id) %></small>  
+        <% end %>
+        
+      </div>
 
-  <div class="form-group">
-    <%= form.label :folio_id, "Folio Id" %>
-    <%= form.text_field :folio_id, class: "form-control"  %>
-    <small class="text-muted">Clients have a Folio Id / Number</small>
-  </div>
+      <%= custom_form_fields(capital_commitment, form) %>
 
-  <div class="form-group">
-    <%= form.label :virtual_bank_account %>
-    <%= form.text_field :virtual_bank_account, class: "form-control" %>
-    <small class="text-muted">Virtual Bank Account for your clients, if any</small>
-  </div>
+      <%= render "layouts/multi_upload", form: form, title: "Documents", 
+                  for_model: "capital_commitment" %>
 
-  <div class="form-group" data-controller="otherselect" data-otherselect-select-id-value="#capital_commitment_fund_close">
-    <%
-      closes = capital_commitment.fund.capital_commitments.pluck(:fund_close).uniq 
-      closes += ["Other"]
-    %>
-    <%= form.label :fund_close %>
-    <% if closes.length > 1 %>
-      <%= form.select :fund_close, closes, {}, class: "form-control", "data-action": "change->otherselect#checkOtherName"  %>
-      <%= form.text_field :fund_close, class: "form-control", disabled: true, id: "other_name"  %>
-    <% else %>
-      <%= form.text_field :fund_close, class: "form-control", maxlength: 30  %>
+
+      <div class="form-group">
+        <%= form.label :notes %>
+        <%= form.rich_text_area :notes, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :onboarding_completed %>
+        <%= form.check_box :onboarding_completed, class: "form-check-input"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      </div>
     <% end %>
+
   </div>
-
-  <% if capital_commitment.fund.unit_types.present? %>
-    <div class="form-group">
-      <%= form.label :unit_type %>
-      <%= form.select :unit_type, capital_commitment.fund.unit_types.split(","), 
-          {include_blank: true}, class: "form-control"  %>
-      <small class="text-muted">They type of unit issued for this commitment</small>
-    </div>
-  <% end %>
-
-  <div class="form-group">
-    <%
-      currency = capital_commitment.entity.exchange_rates
-                .where(to: capital_commitment.fund.currency)
-                .latest.pluck(:to, :from).flatten.uniq 
-
-      currency = [capital_commitment.fund.currency] if currency.length == 0
-    %>
-    <%= form.label :folio_currency %>
-    <%= form.select :folio_currency, currency, {}, class: "form-control" %>
-
-    <small class="text-muted"><%= link_to "Setup Exchange Rates", exchange_rates_path %></small>
-  </div>
-  
-
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :folio_committed_amount %> <span class="formatted_currency"></span>
-    <%= form.number_field :folio_committed_amount, class: "form-control", data: {action: "input->currencyformat#format"}, disabled: !capital_commitment.new_record?  %>
-
-    <% unless capital_commitment.new_record? %>
-      <small class="text-muted">Changes can be made only via <%= link_to 'Commitment Adjustment', new_commitment_adjustment_path(capital_commitment_id: capital_commitment.id) %></small>  
-    <% end %>
-    
-  </div>
-
-  <%= custom_form_fields(capital_commitment, form) %>
-
-  <%= render "layouts/multi_upload", form: form, title: "Documents", 
-              for_model: "capital_commitment" %>
-
-
-  <div class="form-group">
-    <%= form.label :notes %>
-    <%= form.rich_text_area :notes, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :onboarding_completed %>
-    <%= form.check_box :onboarding_completed, class: "form-check-input"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
-<% end %>
+</div>

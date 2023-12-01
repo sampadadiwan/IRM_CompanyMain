@@ -1,122 +1,133 @@
-<%= form_with(model: capital_call, validate: true) do |form| %>
-  <% if capital_call.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(capital_call.errors.count, "error") %> prohibited this capital_call from being saved:</h2>
-
-      <ul>
-        <% capital_call.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  <div data-controller="call-copy">
-
-  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
-  
-  <div class="form-group">
-    <%= form.label :name %>
-    <%= form.text_field :name, class: "form-control"  %>
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+          Capital Call : <%= capital_call.name %>
+      </h6>
   </div>
+  <div class="card-body">
 
-  <div class="form-group">
-    <%= form.label :commitment_type %>
-    <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control' %>
-  </div>
+    <%= form_with(model: capital_call, validate: true) do |form| %>
+      <% if capital_call.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(capital_call.errors.count, "error") %> prohibited this capital_call from being saved:</h2>
 
-
-  <div class="form-group">
-    <%= form.label :fund_closes, "Applicable To" %>
-    <%
-      closes = ["All"] 
-      closes += capital_call.fund.capital_commitments.pluck(:fund_close).uniq 
-    %>
-    <%= form.select :fund_closes, closes, {include_blank: false, include_hidden: false}, 
-                    class: "form-control select2 select2-multiple", multiple: "multiple" %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :call_basis %>
-    <%= form.select :call_basis, capital_call.call_basis_list, {}, {class: "form-control", data: {action: "change->call-copy#call_basis_changed"}}  %>
-    <small class="text-muted">Select how the remittance amounts are computed</small>
-  </div>
-
-  <div class="form-group" id="amount_to_be_called_group" data-controller="currencyformat">
-    <%= form.label :amount_to_be_called %> <span class="formatted_currency"></span>
-    <%= form.number_field :amount_to_be_called, class: "form-control", data: {action: "input->currencyformat#format"}  %>
-    <small class="text-muted">Total amount to be called, Call basis will be used for each folio.</small>
-  </div>
-
-  <div class="form-group" id="percentage_called_group">
-    <%= form.label :percentage_called %>
-    <%= form.number_field :percentage_called, class: "form-control"  %>
-    <small class="text-muted">Write 100 for 100%</small>
-  </div>
-
-
-  <div class="form-group">
-    <%= form.label :call_date %>
-    <%= form.date_field :call_date, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :due_date %>
-    <%= form.date_field :due_date, class: "form-control"  %>
-  </div>
-
-  <% if capital_call.fund.unit_types.present? %>
-    <div>
-      <% capital_call.fund.unit_types.split(",").each_with_index do |unit_type, index| %>
-        <% 
-            unit_type = unit_type.strip 
-            price = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["price"] : 0
-            premium = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["premium"] : 0
-        %>
-        <div class="row">  
-          
-
-          <div class="form-group col-md-3">
-            <%= form.label :unit_type, "#{unit_type} Unit Price" %>
-            <%= form.number_field :unit_type, step: :any, class: "form-control price", 
-                name: "capital_call[unit_prices][#{unit_type}][price]", 
-                id: "#{unit_type}_price", value: price  %>
-          </div>
-          <div class="form-group col-md-3">
-            <%= form.label :unit_type, "Premium" %>      
-            <%= form.number_field :unit_type, step: :any, class: "form-control premium", 
-                name: "capital_call[unit_prices][#{unit_type}][premium]", 
-                id: "#{unit_type}_premium", value: premium %>
-          </div>
-          <% if index == 0 %>
-            <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
-          <% end %>
-          
+          <ul>
+            <% capital_call.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
         </div>
-      <% end %>  
-    </div>
-  <% end %>
+      <% end %>
 
-  <%= custom_form_fields(capital_call, form) %>
+      <div data-controller="call-copy">
 
-  <div class="form-group">
-    <%= form.label :notes, "Notes (Will be inserted into the email sent to investors)" %>
-    <%= form.rich_text_area :notes, class: "form-control"  %>
-  </div>
+      <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+      
+      <div class="form-group">
+        <%= form.label :name %>
+        <%= form.text_field :name, class: "form-control"  %>
+      </div>
 
-  <div id='form_call_fee'>
-    <%= form.fields_for :call_fees do |field| %>
-      <%= render 'call_fee_fields', :f => field, fund: capital_call.fund %>
+      <div class="form-group">
+        <%= form.label :commitment_type %>
+        <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control' %>
+      </div>
+
+
+      <div class="form-group">
+        <%= form.label :fund_closes, "Applicable To" %>
+        <%
+          closes = ["All"] 
+          closes += capital_call.fund.capital_commitments.pluck(:fund_close).uniq 
+        %>
+        <%= form.select :fund_closes, closes, {include_blank: false, include_hidden: false}, 
+                        class: "form-control select2 select2-multiple", multiple: "multiple" %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :call_basis %>
+        <%= form.select :call_basis, capital_call.call_basis_list, {}, {class: "form-control", data: {action: "change->call-copy#call_basis_changed"}}  %>
+        <small class="text-muted">Select how the remittance amounts are computed</small>
+      </div>
+
+      <div class="form-group" id="amount_to_be_called_group" data-controller="currencyformat">
+        <%= form.label :amount_to_be_called %> <span class="formatted_currency"></span>
+        <%= form.number_field :amount_to_be_called, class: "form-control", data: {action: "input->currencyformat#format"}  %>
+        <small class="text-muted">Total amount to be called, Call basis will be used for each folio.</small>
+      </div>
+
+      <div class="form-group" id="percentage_called_group">
+        <%= form.label :percentage_called %>
+        <%= form.number_field :percentage_called, class: "form-control"  %>
+        <small class="text-muted">Write 100 for 100%</small>
+      </div>
+
+
+      <div class="form-group">
+        <%= form.label :call_date %>
+        <%= form.date_field :call_date, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :due_date %>
+        <%= form.date_field :due_date, class: "form-control"  %>
+      </div>
+
+      <% if capital_call.fund.unit_types.present? %>
+        <div>
+          <% capital_call.fund.unit_types.split(",").each_with_index do |unit_type, index| %>
+            <% 
+                unit_type = unit_type.strip 
+                price = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["price"] : 0
+                premium = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["premium"] : 0
+            %>
+            <div class="row">  
+              
+
+              <div class="form-group col-md-3">
+                <%= form.label :unit_type, "#{unit_type} Unit Price" %>
+                <%= form.number_field :unit_type, step: :any, class: "form-control price", 
+                    name: "capital_call[unit_prices][#{unit_type}][price]", 
+                    id: "#{unit_type}_price", value: price  %>
+              </div>
+              <div class="form-group col-md-3">
+                <%= form.label :unit_type, "Premium" %>      
+                <%= form.number_field :unit_type, step: :any, class: "form-control premium", 
+                    name: "capital_call[unit_prices][#{unit_type}][premium]", 
+                    id: "#{unit_type}_premium", value: premium %>
+              </div>
+              <% if index == 0 %>
+                <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
+              <% end %>
+              
+            </div>
+          <% end %>  
+        </div>
+      <% end %>
+
+      <%= custom_form_fields(capital_call, form) %>
+
+      <div class="form-group">
+        <%= form.label :notes, "Notes (Will be inserted into the email sent to investors)" %>
+        <%= form.rich_text_area :notes, class: "form-control"  %>
+      </div>
+
+      <div id='form_call_fee'>
+        <%= form.fields_for :call_fees do |field| %>
+          <%= render 'call_fee_fields', :f => field, fund: capital_call.fund %>
+        <% end %>
+        <div class='links'>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <%= link_to_add_association 'Add Fees', form, :call_fees, class: "btn btn-outline-success" %>
+        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>    
+      </div>
+
+      </div>
     <% end %>
-    <div class='links'>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <%= link_to_add_association 'Add Fees', form, :call_fees, class: "btn btn-outline-success" %>
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>    
-  </div>
 
   </div>
-<% end %>
+</div>
