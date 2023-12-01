@@ -3,7 +3,12 @@ module WithFolder
 
   included do
     has_many :documents, as: :owner, dependent: :destroy
-    accepts_nested_attributes_for :documents, allow_destroy: true
+    accepts_nested_attributes_for :documents, allow_destroy: true, reject_if: :reject_documents
+
+    def reject_documents(attributes)
+      attributes['file'].blank?
+    end
+
     validates_associated :documents
 
     has_many :folders, as: :owner, dependent: :destroy

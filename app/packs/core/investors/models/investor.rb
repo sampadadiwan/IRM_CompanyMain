@@ -218,4 +218,26 @@ class Investor < ApplicationRecord
   def self.ransackable_attributes(_auth_object = nil)
     %w[category investor_name tag_list]
   end
+
+  def update_investor_name(name)
+    Rails.logger.debug { "Setting name for #{id} to #{name}" }
+    update_column(:investor_name, name)
+    reload
+    CapitalCommitment.where(investor_id: id).update_all(investor_name:)
+    CapitalRemittance.where(investor_id: id).update_all(investor_name:)
+    CapitalDistributionPayment.where(investor_id: id).update_all(investor_name:)
+    InvestorKyc.where(investor_id: id).update_all(investor_name:)
+  end
+
+  def self.squeeze_names
+    ids = []
+    Investor.find_each do |i|
+      investor_name_sqz = i.investor_name.squeeze(" ")
+      if investor_name_sqz != i.investor_name
+        i.update_investor_name(investor_name_sqz)
+        ids << i.id
+      end
+    end
+    ids
+  end
 end

@@ -1,7 +1,7 @@
 <% struct = OpenStruct.new(model.properties) %>
 <%= form.fields_for :properties, struct  do |builder| %>
     <% model.form_type.form_custom_fields.each do |field| %>
-        <%= render "form_custom_fields/#{field.field_type.underscore}", 
+        <%= render "form_custom_fields/#{field.field_type.underscore}", model:,
                     field: field, f: builder, struct: struct if field.show_to_user(current_user) %>
     
     <% end %>
