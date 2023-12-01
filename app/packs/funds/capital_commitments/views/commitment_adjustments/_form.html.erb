@@ -1,39 +1,50 @@
-<%= form_with(model: commitment_adjustment) do |form| %>
-  <% if commitment_adjustment.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(commitment_adjustment.errors.count, "error") %> prohibited this commitment_adjustment from being saved:</h2>
-
-      <ul>
-        <% commitment_adjustment.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :capital_commitment_id, class: "form-control", hidden: true  %>
-
-
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :folio_amount, "Amount in #{commitment_adjustment.capital_commitment.folio_currency}" %> 
-        <span class="formatted_currency"></span>
-    <%= form.text_field :folio_amount, class: "form-control", data: {action: "input->currencyformat#format"} %>
-    <small class="text-muted">The  differential amount of the commitment that is to be adjusted, i.e. to be added to the commitment amount.</small>
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+          Adjustment : <%= commitment_adjustment.capital_commitment.investor_name %>
+      </h6>
   </div>
+  <div class="card-body">
 
-  <div class="form-group">
-    <%= form.label :as_of %>
-    <%= form.date_field :as_of, class: "form-control"  %>
-  </div>
+    <%= form_with(model: commitment_adjustment) do |form| %>
+      <% if commitment_adjustment.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(commitment_adjustment.errors.count, "error") %> prohibited this commitment_adjustment from being saved:</h2>
 
-  <div class="form-group">
-    <%= form.label :reason %>
-    <%= form.text_area :reason, class: "form-control"  %>
-  </div>
+          <ul>
+            <% commitment_adjustment.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
 
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :capital_commitment_id, class: "form-control", hidden: true  %>
+
+
+      <div class="form-group" data-controller="currencyformat">
+        <%= form.label :folio_amount, "Amount in #{commitment_adjustment.capital_commitment.folio_currency}" %> 
+            <span class="formatted_currency"></span>
+        <%= form.text_field :folio_amount, class: "form-control", data: {action: "input->currencyformat#format"} %>
+        <small class="text-muted">The  differential amount of the commitment that is to be adjusted, i.e. to be added to the commitment amount.</small>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :as_of %>
+        <%= form.date_field :as_of, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :reason %>
+        <%= form.text_area :reason, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      </div>
+    <% end %>
+
   </div>
-<% end %>
+</div>

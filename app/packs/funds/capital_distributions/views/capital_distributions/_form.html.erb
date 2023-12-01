@@ -1,98 +1,109 @@
-<%= form_with(model: capital_distribution, validate: true) do |form| %>
-  <% if capital_distribution.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(capital_distribution.errors.count, "error") %> prohibited this capital_distribution from being saved:</h2>
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+          Distribution : <%= capital_distribution.fund&.name %>
+      </h6>
+  </div>
+  <div class="card-body">
 
-      <ul>
-        <% capital_distribution.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
+    <%= form_with(model: capital_distribution, validate: true) do |form| %>
+      <% if capital_distribution.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(capital_distribution.errors.count, "error") %> prohibited this capital_distribution from being saved:</h2>
 
-  <div data-controller="currencyformat">
-    <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :form_type_id, class: "form-control", hidden: true  %>
+          <ul>
+            <% capital_distribution.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
 
-    <div class="form-group">
-      <%= form.label :title %>
-      <%= form.text_field :title, class: "form-control"  %>
-    </div>
+      <div data-controller="currencyformat">
+        <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+        <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+        <%= form.text_field :form_type_id, class: "form-control", hidden: true  %>
 
-    <div class="form-group" data-controller="hide-co-invest">
-      <%= form.label :commitment_type %>
-      <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control commitment_type', data: {action: "change->hide-co-invest#onChange"} %>
-    </div>
-
-    <div class="form-group co-invest">
-      <%= form.label :folio_id %>
-      <%= form.select :capital_commitment_id, capital_distribution.fund.capital_commitments.map{|cc| ["#{cc.investor_name}: #{cc.folio_id}", cc.id] }, {include_blank: true}, class: 'form-control' %>
-      <small class="text-muted">Select the Folio for the CoInvestment</small>
-    </div>
-
-    <div class="form-group pool">
-      <%= form.label :distribution_on %>
-      <%= form.select :distribution_on, CapitalDistribution.distribution_ons.keys, {}, class: 'form-control' %>
-      <small class="text-muted">Select the Folio for the CoInvestment</small>
-    </div>
-      
-    <div class="form-group">
-      <%= form.label :gross_amount %> <span class="formatted_currency"></span>
-      <%= form.number_field :gross_amount, class: "form-control", data: {action: "input->currencyformat#format"}   %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :cost_of_investment, "Face Value For Redemption" %> <span class="formatted_currency"></span>
-      <%= form.number_field :cost_of_investment, class: "form-control", data: {action: "input->currencyformat#format"}   %>
-
-      <small class="small_text">
-        Units are redeemed based on the cost of investments above and unit price specified below
-      </small>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :reinvestment %> <span class="formatted_currency"></span>
-      <%= form.number_field :reinvestment, class: "form-control", data: {action: "input->currencyformat#format"}   %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :distribution_date %>
-      <%= form.date_field :distribution_date, class: "form-control"  %>
-    </div>
-
-    <% if capital_distribution.fund.unit_types.present? %>
-    <div data-controller="call-copy">
-      <% capital_distribution.fund.unit_types.split(",").each_with_index do |unit_type, index| %>
         <div class="form-group">
-          <% unit_type = unit_type.strip %>
-          <%= form.label :unit_type, "#{unit_type} Unit Price" %>
-          <%= form.number_field :unit_type, step: :any, class: "form-control price", 
-              name: "capital_distribution[unit_prices][#{unit_type}]", value: capital_distribution.unit_prices[unit_type] %>
+          <%= form.label :title %>
+          <%= form.text_field :title, class: "form-control"  %>
+        </div>
 
-          <% if index == 0 %>
-            <div class="form-group col-md-3">
-              <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
-            </div>
-          <% end %>
-        </div>  
-      <% end %>  
-    </div>
+        <div class="form-group" data-controller="hide-co-invest">
+          <%= form.label :commitment_type %>
+          <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control commitment_type', data: {action: "change->hide-co-invest#onChange"} %>
+        </div>
+
+        <div class="form-group co-invest">
+          <%= form.label :folio_id %>
+          <%= form.select :capital_commitment_id, capital_distribution.fund.capital_commitments.map{|cc| ["#{cc.investor_name}: #{cc.folio_id}", cc.id] }, {include_blank: true}, class: 'form-control' %>
+          <small class="text-muted">Select the Folio for the CoInvestment</small>
+        </div>
+
+        <div class="form-group pool">
+          <%= form.label :distribution_on %>
+          <%= form.select :distribution_on, CapitalDistribution.distribution_ons.keys, {}, class: 'form-control' %>
+          <small class="text-muted">Select the Folio for the CoInvestment</small>
+        </div>
+          
+        <div class="form-group">
+          <%= form.label :gross_amount %> <span class="formatted_currency"></span>
+          <%= form.number_field :gross_amount, class: "form-control", data: {action: "input->currencyformat#format"}   %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :cost_of_investment, "Face Value For Redemption" %> <span class="formatted_currency"></span>
+          <%= form.number_field :cost_of_investment, class: "form-control", data: {action: "input->currencyformat#format"}   %>
+
+          <small class="small_text">
+            Units are redeemed based on the cost of investments above and unit price specified below
+          </small>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :reinvestment %> <span class="formatted_currency"></span>
+          <%= form.number_field :reinvestment, class: "form-control", data: {action: "input->currencyformat#format"}   %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :distribution_date %>
+          <%= form.date_field :distribution_date, class: "form-control"  %>
+        </div>
+
+        <% if capital_distribution.fund.unit_types.present? %>
+        <div data-controller="call-copy">
+          <% capital_distribution.fund.unit_types.split(",").each_with_index do |unit_type, index| %>
+            <div class="form-group">
+              <% unit_type = unit_type.strip %>
+              <%= form.label :unit_type, "#{unit_type} Unit Price" %>
+              <%= form.number_field :unit_type, step: :any, class: "form-control price", 
+                  name: "capital_distribution[unit_prices][#{unit_type}]", value: capital_distribution.unit_prices[unit_type] %>
+
+              <% if index == 0 %>
+                <div class="form-group col-md-3">
+                  <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
+                </div>
+              <% end %>
+            </div>  
+          <% end %>  
+        </div>
+        <% end %>
+
+        <div class="form-group">
+          <%= form.label :generate_payments %>
+          <%= form.check_box :generate_payments, class: "form-check-input"  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :completed %>
+          <%= form.check_box :completed, class: "form-check-input"  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+        </div>
+      </div>
     <% end %>
 
-    <div class="form-group">
-      <%= form.label :generate_payments %>
-      <%= form.check_box :generate_payments, class: "form-check-input"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :completed %>
-      <%= form.check_box :completed, class: "form-check-input"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-    </div>
   </div>
-<% end %>
+</div>

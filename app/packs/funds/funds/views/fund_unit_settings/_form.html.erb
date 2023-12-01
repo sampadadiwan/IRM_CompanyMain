@@ -4,50 +4,59 @@
   </div>
 <% end %>
 
-<%= form_with(model: fund_unit_setting) do |form| %>
-  <% if fund_unit_setting.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(fund_unit_setting.errors.count, "error") %> prohibited this fund_unit_setting from being saved:</h2>
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+          Unit Setting : <%= fund_unit_setting.fund&.name %>
+      </h6>
+  </div>
+  <div class="card-body">
+    <%= form_with(model: fund_unit_setting) do |form| %>
+      <% if fund_unit_setting.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(fund_unit_setting.errors.count, "error") %> prohibited this fund_unit_setting from being saved:</h2>
 
-      <ul>
-        <% fund_unit_setting.errors.each do |error| %>
-          <li><%= error.full_message %></li>
+          <ul>
+            <% fund_unit_setting.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+        <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+        <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+      
+      <div class="form-group">
+        <%= form.label :name, "Class / Series / Unit Type" %>
+        <% if fund_unit_setting.fund.unit_types.present? %>
+          <%= form.select :name, fund_unit_setting.fund.unit_types.split(",").map{|x| x.strip}, {}, class: "form-control"  %>
         <% end %>
-      </ul>
-    </div>
-  <% end %>
+      </div>
 
-    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
-  
-  <div class="form-group">
-    <%= form.label :name, "Class / Series / Unit Type" %>
-    <% if fund_unit_setting.fund.unit_types.present? %>
-      <%= form.select :name, fund_unit_setting.fund.unit_types.split(",").map{|x| x.strip}, {}, class: "form-control"  %>
+      <div class="form-group">
+        <%= form.label :management_fee %>
+        <%= form.number_field :management_fee, class: "form-control", step: :any  %>
+        <small class="text-muted">Management Fee as a %</small>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :setup_fee %>
+        <%= form.number_field :setup_fee, class: "form-control", step: :any  %>
+        <small class="text-muted">Setup Fee as a %</small>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :carry %>
+        <%= form.number_field :carry, class: "form-control", step: :any  %>
+        <small class="text-muted">Carry as a %</small>
+      </div>
+
+      <%= custom_form_fields(fund_unit_setting, form) %>
+
+      <div class="form-group">
+        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      </div>
     <% end %>
   </div>
-
-  <div class="form-group">
-    <%= form.label :management_fee %>
-    <%= form.number_field :management_fee, class: "form-control", step: :any  %>
-    <small class="text-muted">Management Fee as a %</small>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :setup_fee %>
-    <%= form.number_field :setup_fee, class: "form-control", step: :any  %>
-    <small class="text-muted">Setup Fee as a %</small>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :carry %>
-    <%= form.number_field :carry, class: "form-control", step: :any  %>
-    <small class="text-muted">Carry as a %</small>
-  </div>
-
-  <%= custom_form_fields(fund_unit_setting, form) %>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
-<% end %>
+</div>

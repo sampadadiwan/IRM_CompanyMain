@@ -1,50 +1,61 @@
-<%= form_with(model: capital_distribution_payment, validate: true) do |form| %>
-  <% if capital_distribution_payment.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(capital_distribution_payment.errors.count, "error") %> prohibited this capital_distribution_payment from being saved:</h2>
-
-      <ul>
-        <% capital_distribution_payment.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-  
-    <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :capital_distribution_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :form_type_id, class: "form-control", hidden: true  %>
-
-  
-  <div class="form-group">
-    <%= form.label :investor_id %>
-    <%= form.select :investor_id, capital_distribution_payment.fund.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control  select2" %>
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+          Distribution Payment : <%= capital_distribution_payment.capital_commitment&.investor_name %>
+      </h6>
   </div>
+  <div class="card-body">
+
+    <%= form_with(model: capital_distribution_payment, validate: true) do |form| %>
+      <% if capital_distribution_payment.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(capital_distribution_payment.errors.count, "error") %> prohibited this capital_distribution_payment from being saved:</h2>
+
+          <ul>
+            <% capital_distribution_payment.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+      
+        <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+        <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+        <%= form.text_field :capital_distribution_id, class: "form-control", hidden: true  %>
+        <%= form.text_field :form_type_id, class: "form-control", hidden: true  %>
+
+      
+      <div class="form-group">
+        <%= form.label :investor_id %>
+        <%= form.select :investor_id, capital_distribution_payment.fund.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control  select2" %>
+      </div>
 
 
-  <div class="form-group">
-    <%= form.label :folio_id, "Folio No" %>
-    <%= form.text_field :folio_id, class: "form-control"  %>
+      <div class="form-group">
+        <%= form.label :folio_id, "Folio No" %>
+        <%= form.text_field :folio_id, class: "form-control"  %>
+      </div>
+
+      <div class="form-group" data-controller="currencyformat">
+        <%= form.label :amount, "Amount in #{capital_distribution_payment.fund.currency}" %> <span class="formatted_currency"></span>
+        <%= form.text_field :amount, class: "form-control", data: {action: "input->currencyformat#format"} %>
+        <small class="text-muted"> Ensure this number is in the fund currency <%= capital_distribution_payment.fund.currency %>. </small>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :payment_date %>
+        <%= form.date_field :payment_date, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :completed %>
+        <%= form.check_box :completed, class: "form-check-input"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      </div>
+    <% end %>
+
   </div>
-
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :amount, "Amount in #{capital_distribution_payment.fund.currency}" %> <span class="formatted_currency"></span>
-    <%= form.text_field :amount, class: "form-control", data: {action: "input->currencyformat#format"} %>
-    <small class="text-muted"> Ensure this number is in the fund currency <%= capital_distribution_payment.fund.currency %>. </small>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :payment_date %>
-    <%= form.date_field :payment_date, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :completed %>
-    <%= form.check_box :completed, class: "form-check-input"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
-<% end %>
+</div>  

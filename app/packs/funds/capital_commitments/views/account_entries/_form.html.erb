@@ -1,71 +1,82 @@
-<%= form_with(model: account_entry, validate: true) do |form| %>
-  <% if account_entry.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(account_entry.errors.count, "error") %> prohibited this account_entry from being saved:</h2>
-
-      <ul>
-        <% account_entry.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-
-  <%= form.text_field :capital_commitment_id, class: "form-control", hidden: true %>
-  <%= form.text_field :entity_id, class: "form-control", hidden: true %>
-  <%= form.text_field :fund_id, class: "form-control", hidden: true %>
-  <%= form.text_field :investor_id, class: "form-control", hidden: true %>
-  
-  <% if account_entry.investor_id.present? %>
-  <div class="form-group">
-    <%= form.label :folio_id %>
-    <%= form.text_field :folio_id, class: "form-control"  %>
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+          Account Entry : <%= account_entry.name %>
+      </h6>
   </div>
-  <% end %>
+  <div class="card-body">
 
-  <div class="form-group">
-    <%= form.label :reporting_date %>
-    <%= form.date_field :reporting_date, class: "form-control"  %>
+    <%= form_with(model: account_entry, validate: true) do |form| %>
+      <% if account_entry.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(account_entry.errors.count, "error") %> prohibited this account_entry from being saved:</h2>
+
+          <ul>
+            <% account_entry.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+
+      <%= form.text_field :capital_commitment_id, class: "form-control", hidden: true %>
+      <%= form.text_field :entity_id, class: "form-control", hidden: true %>
+      <%= form.text_field :fund_id, class: "form-control", hidden: true %>
+      <%= form.text_field :investor_id, class: "form-control", hidden: true %>
+      
+      <% if account_entry.investor_id.present? %>
+      <div class="form-group">
+        <%= form.label :folio_id %>
+        <%= form.text_field :folio_id, class: "form-control"  %>
+      </div>
+      <% end %>
+
+      <div class="form-group">
+        <%= form.label :reporting_date %>
+        <%= form.date_field :reporting_date, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :period %>
+        <%= form.text_field :period, class: "form-control"  %>    
+      </div>
+
+      <div class="form-group" data-controller="docform">
+        <%= form.label :entry_type %>
+        <%= form.select :entry_type, ["Expense", "Income", "Tax", "Cash In Hand", "Other"], {}, class: "form-control", id: "doc_name_select", "data-action": "change->docform#checkOtherName"  %>
+        <%= form.text_field :entry_type, class: "form-control", disabled: true, id: "other_name"  %>
+      </div>
+
+      <input type="hidden" id="name_list" value="<%= account_entry.fund.fund_formulas.pluck(:name).join(';') %>">
+
+      <div class="form-group" data-controller="account-entry-search">
+        <%= form.label :name %>
+        <%= form.text_field :name, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :commitment_type %>
+        <%= form.select :commitment_type, ["All", "Pool"], {}, class: "form-control"  %>
+      </div>
+
+      <div class="form-group" data-controller="currencyformat">
+        <%= form.label :amount %> <span class="formatted_currency"></span>
+        <%= form.text_field :amount, class: "form-control", step: :any, data: {action: "input->currencyformat#format"}   %>
+      </div>
+
+      <%= custom_form_fields(account_entry, form) %>
+
+
+      <div class="form-group">
+        <%= form.label :notes %>
+        <%= form.text_area :notes, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      </div>
+    <% end %>
+
   </div>
-
-  <div class="form-group">
-    <%= form.label :period %>
-    <%= form.text_field :period, class: "form-control"  %>    
-  </div>
-
-  <div class="form-group" data-controller="docform">
-    <%= form.label :entry_type %>
-    <%= form.select :entry_type, ["Expense", "Income", "Tax", "Cash In Hand", "Other"], {}, class: "form-control", id: "doc_name_select", "data-action": "change->docform#checkOtherName"  %>
-    <%= form.text_field :entry_type, class: "form-control", disabled: true, id: "other_name"  %>
-  </div>
-
-  <input type="hidden" id="name_list" value="<%= account_entry.fund.fund_formulas.pluck(:name).join(';') %>">
-
-  <div class="form-group" data-controller="account-entry-search">
-    <%= form.label :name %>
-    <%= form.text_field :name, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :commitment_type %>
-    <%= form.select :commitment_type, ["All", "Pool"], {}, class: "form-control"  %>
-  </div>
-
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :amount %> <span class="formatted_currency"></span>
-    <%= form.text_field :amount, class: "form-control", step: :any, data: {action: "input->currencyformat#format"}   %>
-  </div>
-
-  <%= custom_form_fields(account_entry, form) %>
-
-
-  <div class="form-group">
-    <%= form.label :notes %>
-    <%= form.text_area :notes, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
-<% end %>
+</div>
