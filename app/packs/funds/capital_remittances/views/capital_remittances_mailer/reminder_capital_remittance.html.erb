@@ -1,15 +1,21 @@
-<h3>Dear <%= @capital_remittance.investor_name %></h3>
+<% if @capital_remittance.capital_call.notes.blank? %>
+    <h3>Dear <%= @capital_remittance.investor_name %></h3>
 
-<p>
-    This is a reminder for the capital call of <%= money_to_currency(@capital_remittance.call_amount, {}) %> which has been made by the fund <%= @capital_remittance.fund.name %>, and which is due by <%= l @capital_remittance.capital_call.due_date %> 
-</p>
+    <p>
+        A capital call of <%= money_to_currency(@capital_remittance.call_amount, {}) %> has been made by the fund <%= @capital_remittance.fund.name %>, which is due by <%= l @capital_remittance.capital_call.due_date %> 
+    </p>
+<% end %>
 
-<p>
-    <%= @capital_remittance.capital_call.notes&.html_safe %>
-</p>
+<% if @capital_remittance.capital_call.notes.present? %>
+    <p>
+        <%= @capital_remittance.capital_call.notes&.html_safe %>
+    </p>
+<% end %>
 
-<p>
-    Please refer the attached notice for further details or click on the link below.
-</p>
+<% if @capital_remittance.capital_call.notes.blank? %>
+    <p>
+        Please refer the attached notice for further details or click on the link below.
+    </p>
+<% end %>
 
 <p class="btn btn-outline-primary"><%= link_to 'View Call', capital_remittance_url(@capital_remittance, subdomain: @capital_remittance.entity.sub_domain) %></p>

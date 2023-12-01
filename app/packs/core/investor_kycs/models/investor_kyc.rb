@@ -32,7 +32,8 @@ class InvestorKyc < ApplicationRecord
   include FileUploader::Attachment(:video)
 
   belongs_to :verified_by, class_name: "User", optional: true
-  validates :PAN, presence: true, length: { maximum: 15 }
+
+  validates :PAN, length: { maximum: 15 }
   validates :bank_account_number, length: { maximum: 40 }
   validates :ifsc_code, length: { maximum: 20 }
   validates :full_name, length: { maximum: 100 }

@@ -142,4 +142,9 @@ class Fund < ApplicationRecord
   def self.ransackable_attributes(_auth_object = nil)
     %w[name]
   end
+  
+  after_commit :name_change, if: :saved_change_to_name?
+  def name_change
+    self.document_folder.update_columns(name: self.name, full_path: self.folder_path)
+  end
 end
