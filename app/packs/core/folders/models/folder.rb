@@ -45,6 +45,7 @@ class Folder < ApplicationRecord
       folder_ar = parent_ar.dup
       folder_ar.owner = self
       folder_ar.access_type = 'Folder'
+      folder_ar.notify = false
       folder_ar.save
     end
 

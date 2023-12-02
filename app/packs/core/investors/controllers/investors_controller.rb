@@ -90,7 +90,7 @@ class InvestorsController < ApplicationController
   def create
     @investor = Investor.new(investor_params)
     @investor.entity_id = current_user.entity_id
-    authorize @investor
+    pre_process(@investor)
 
     respond_to do |format|
       if @investor.save
@@ -108,7 +108,7 @@ class InvestorsController < ApplicationController
 
   # PATCH/PUT /investors/1 or /investors/1.json
   def update
-    authorize @investor
+    pre_process(@investor)
     respond_to do |format|
       if @investor.update(investor_params)
         format.html { redirect_to investor_url(@investor), notice: "Investor was successfully updated." }
@@ -141,6 +141,6 @@ class InvestorsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def investor_params
     params.require(:investor).permit(:investor_entity_id, :tag_list, :investor_name, :form_type_id,
-                                     :pan, :entity_id, :category, :city, properties: {})
+                                     :pan, :entity_id, :category, :city, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

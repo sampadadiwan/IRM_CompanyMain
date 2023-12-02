@@ -74,27 +74,24 @@
               <%= form.text_field :PAN, class: "form-control"  %>
             </div>
 
+
             <div class="form-group">
-
-              <div>
-                <% label = investor_kyc.pan_card.blank? ? "Upload PAN Card" : link_to("Uploaded PAN Card: #{uploaded_file_name(investor_kyc.pan_card)}", investor_kyc.pan_card.url, target: "_blank") %>
-
-                <%= render "layouts/single_upload", form: form, field_label: label,
-                                      for_model: "investor_kyc", field_name: "pan_card",
-                                      model: investor_kyc %>
-
-                <small class="form-text text-muted">Please upload a clear image of your PAN card</small>                                      
-              </div>
-
-              <% if current_user.entity_id == investor_kyc.entity_id %>
-                <div class="form-group">
-                  <%= form.label :pan_verified %>
-                  <%= form.check_box :pan_verified, class: "form-check-input"  %>
-                </div>
-              <% end %>
-
+              <% form_type = investor_kyc.form_type %>
+              <%= file_fields("Upload PAN Card", investor_kyc, form) %>
+              <small class="form-text text-muted">Please upload a clear image of your PAN card</small>                                      
             </div>
 
+
+            
+
+            <% if current_user.entity_id == investor_kyc.entity_id %>
+              <div class="form-group">
+                <%= form.label :pan_verified %>
+                <%= form.check_box :pan_verified, class: "form-check-input"  %>
+              </div>
+            <% end %>
+
+            
             <%= custom_form_fields(investor_kyc, form, step: :one) %>
 
             <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
@@ -122,14 +119,12 @@
             <small class="form-text text-muted">If different from the address above.</small>
           </div>
 
+
           <div class="form-group">
-            <% label = investor_kyc.address_proof.blank? ? "Upload Address Proof" : link_to("Uploaded Address Proof: #{uploaded_file_name(investor_kyc.address_proof)}", investor_kyc.address_proof.url, target: "_blank") %>
+              <% form_type = investor_kyc.form_type %>
+              <%= file_fields("Upload Address Proof", investor_kyc, form) %>
 
-            <%= render "layouts/single_upload", form: form, field_label: label,
-                                      for_model: "investor_kyc", field_name: "address_proof",
-                                      model: investor_kyc %>
-
-            <small class="form-text text-muted"> Any one of: 
+              <small class="form-text text-muted"> Any one of: 
                 Passport
                 Aadhar Card,
                 Voter ID Card,
@@ -137,9 +132,10 @@
                 NREGA Job Card,
                 National Population Register Letter,
                 Deemed Proof of Address (utility bill not older than 2 month in English language)
-            </small>
+              </small>
 
           </div>
+
 
           <div class="form-group">
             <%= form.label :bank_name, "Bank Name" %>
@@ -168,15 +164,11 @@
             <%= form.text_field :ifsc_code, class: "form-control"  %>
           </div>
 
+
           <div class="form-group">
-                <% label = investor_kyc.cheque.blank? ? "Upload Cancelled Cheque" : link_to("Uploaded Cancelled Cheque: #{uploaded_file_name(investor_kyc.cheque)}", investor_kyc.cheque.url, target: "_blank") %>
-
-                <%= render "layouts/single_upload", form: form, field_label: label,
-                                      for_model: "investor_kyc", field_name: "cheque",
-                                      model: investor_kyc %>
-
+              <% form_type = investor_kyc.form_type %>
+              <%= file_fields("Upload Cancelled Cheque", investor_kyc, form) %>              
               <small class="form-text text-muted">Upload Cancelled Cheque or Bank account statement</small>                                      
-
           </div>
 
           <%= custom_form_fields(investor_kyc, form, step: :two) %>
@@ -200,7 +192,7 @@
   <div class="col-md-6 setup-content" id="step-3">
     <div class="">
       <div class="card">
-        <div class="card-header"> 1. KYC Details </div>
+        <div class="card-header"> 3. KYC Details </div>
         <div class="card-body">
 
           <%= custom_form_fields(investor_kyc, form) %>

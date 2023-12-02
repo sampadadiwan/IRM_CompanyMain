@@ -6,6 +6,9 @@ module DeliveryMethods
         entity = notification.record.entity
         # Ensure that the message is sanitized to prevent XSS attacks
         message = ActionView::Base.full_sanitizer.sanitize(notification.message)
+
+        Rails.logger.info "Sending WhatsApp to #{notification.recipient.phone} with message #{message} from #{entity.name}"
+
         # Send the message
         WhatsappGeneralNotification.new.perform(entity.name, message,
                                                 notification.view_path,

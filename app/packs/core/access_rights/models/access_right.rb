@@ -145,7 +145,7 @@ class AccessRight < ApplicationRecord
 
   after_create_commit :send_notification
   def send_notification
-    if notify && (owner_type != "Document" || owner.send_email)
+    if notify && (%w[Document Folder].exclude?(owner_type) || owner.send_email)
       users.each do |user|
         msg = "You have been granted access to #{owner_type} #{owner.name} by #{entity.name}"
         AccessRightNotification.with(entity_id:, access_right: self, msg:).deliver_later(user)

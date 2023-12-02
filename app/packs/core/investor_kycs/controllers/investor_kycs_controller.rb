@@ -83,14 +83,13 @@ class InvestorKycsController < ApplicationController
 
   # POST /investor_kycs or /investor_kycs.json
   def create
+    @investor_kyc = InvestorKyc.new(investor_kyc_params)
+    pre_process(@investor_kyc)
     kyc_params = investor_kyc_params
     # If saved by user in another entity then saved_by_investor_user is true and fields are mandatory
     # When FM or creator of the investor kyc saves it then saved_by_investor_user is false and fields are not mandatory
-    kyc_params[:saved_by_investor_user] = current_user.entity_id == investor_kyc_params[:entity_id] ? false : true
+    kyc_params[:saved_by_investor_user] = !(current_user.entity_id == investor_kyc_params[:entity_id].to_i)
     @investor_kyc = InvestorKyc.new(kyc_params)
-    authorize(@investor_kyc)
-    setup_custom_fields(@investor_kyc)
-    setup_doc_user(@investor_kyc)
 
     respond_to do |format|
       if @investor_kyc.save
@@ -127,7 +126,7 @@ class InvestorKycsController < ApplicationController
 
   def compare_kyc_datas
     kyc_params = investor_kyc_params
-    kyc_params[:saved_by_investor_user] = current_user.entity_id == investor_kyc_params[:entity_id] ? false : true
+    kyc_params[:saved_by_investor_user] = !(current_user.entity_id == investor_kyc_params[:entity_id].to_i)
     @investor_kyc = InvestorKyc.new(kyc_params)
     authorize(@investor_kyc)
     setup_doc_user(@investor_kyc)
@@ -179,9 +178,9 @@ class InvestorKycsController < ApplicationController
 
   # PATCH/PUT /investor_kycs/1 or /investor_kycs/1.json
   def update
-    setup_doc_user(@investor_kyc)
+    pre_process(@investor_kyc)
     kyc_params = investor_kyc_params
-    kyc_params[:saved_by_investor_user] = current_user.entity_id == @investor_kyc.entity_id? ? false : true
+    kyc_params[:saved_by_investor_user] = !(current_user.entity_id == @investor_kyc.entity_id)
 
     respond_to do |format|
       if @investor_kyc.update(kyc_params)
@@ -260,7 +259,7 @@ class InvestorKycsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_kyc_params
-    params.require(:investor_kyc).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :address_proof, :cheque, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_branch, :bank_account_type, :bank_name, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :phone, :form_type_id, :send_kyc_form_to_user, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:investor_kyc).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_branch, :bank_account_type, :bank_name, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :phone, :form_type_id, :send_kyc_form_to_user, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 
   def commit_param

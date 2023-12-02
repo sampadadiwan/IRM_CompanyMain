@@ -40,7 +40,7 @@ class PortfolioInvestmentsController < ApplicationController
   # POST /portfolio_investments or /portfolio_investments.json
   def create
     @portfolio_investment = PortfolioInvestment.new(portfolio_investment_params)
-    authorize @portfolio_investment
+    pre_process @portfolio_investment
 
     respond_to do |format|
       if @portfolio_investment.save
@@ -55,6 +55,7 @@ class PortfolioInvestmentsController < ApplicationController
 
   # PATCH/PUT /portfolio_investments/1 or /portfolio_investments/1.json
   def update
+    pre_process @portfolio_investment
     respond_to do |format|
       if @portfolio_investment.update(portfolio_investment_params)
         format.html { redirect_to portfolio_investment_url(@portfolio_investment), notice: "Portfolio investment was successfully updated." }
@@ -98,6 +99,6 @@ class PortfolioInvestmentsController < ApplicationController
   def portfolio_investment_params
     params.require(:portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :investment_date,
                                                  :amount, :quantity, :investment_type, :notes, :form_type_id, :category, :sub_category, :sector, :startup, :investment_domicile,
-                                                 :commitment_type, :capital_commitment_id, :folio_id, properties: {})
+                                                 :commitment_type, :capital_commitment_id, :folio_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

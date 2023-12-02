@@ -57,7 +57,7 @@ class FundsController < ApplicationController
   # POST /funds or /funds.json
   def create
     @fund = Fund.new(fund_params)
-    authorize(@fund)
+    pre_process(@fund)
     respond_to do |format|
       if @fund.save
         format.html { redirect_to fund_url(@fund), notice: "Fund was successfully created." }
@@ -71,6 +71,7 @@ class FundsController < ApplicationController
 
   # PATCH/PUT /funds/1 or /funds/1.json
   def update
+    pre_process(@fund)
     respond_to do |format|
       if @fund.update(fund_params)
         format.html { redirect_to fund_url(@fund), notice: "Fund was successfully updated." }
@@ -177,6 +178,6 @@ class FundsController < ApplicationController
                                  :currency, :unit_types, :units_allocation_engine, :form_type_id,
                                  :registration_number, :category, :sub_category, :sponsor_name, :manager_name,
                                  :trustee_name, :contact_name, :contact_email,
-                                 :fund_signatory_id, :trustee_signatory_id, properties: {})
+                                 :fund_signatory_id, :trustee_signatory_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

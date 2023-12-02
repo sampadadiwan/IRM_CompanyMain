@@ -125,4 +125,11 @@ module UpdateInvestor
       cc.document_folder.save
     end
   end
+
+  def change_investor_entity(investor_entity)
+    update_column(:investor_entity_id, investor_entity.id)
+
+    entity.investor_accesses.where(investor_entity_id: investor_entity.id).update_all(investor_entity_id: investor_entity.id)
+    InvestorNoticeEntry.where(entity_id:, investor_entity_id: investor_entity.id).update_all(investor_entity_id: investor_entity.id)
+  end
 end

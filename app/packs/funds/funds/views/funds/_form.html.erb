@@ -79,7 +79,7 @@
                     <%= form.rich_text_area :details, class: "form-control"  %>
                   </div>
 
-                  <%= custom_form_fields(fund, form) %>
+                  <%= custom_form_fields(fund, form, step: :one) %>
                     
                   <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
 
@@ -128,7 +128,9 @@
                     <%= form.label :contact_email %>
                     <%= form.text_field :contact_email, class: "form-control"  %>
                   </div>
-                    
+                  
+                  <%= custom_form_fields(fund, form, step: :two) %>
+
                   <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
                 </div>
             </div>
@@ -150,6 +152,8 @@
                     <%= form.label :show_fund_ratios, "Show fund ratios to LPs" %>
                     <%= form.check_box :show_fund_ratios, class: "form-check-input"  %>
                   </div>                  
+
+                  <%= custom_form_fields(fund, form, step: :end) %>
 
                   <div class="form-group">
                     <%= form.submit "Save", {class: "btn btn-outline-primary btn-lg pull-right"}%>

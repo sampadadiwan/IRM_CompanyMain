@@ -21,7 +21,7 @@
       Allowed Roles
     </td>
     <td>
-      <%= @investor_advisor.allowed_roles.map{|r| r.humanize.titleize}.join(", ") %>
+      <%= @investor_advisor.allowed_roles.map{|r| r.to_s.humanize.titleize}.join(", ") %>
     </td>
   </tr>
   <tr>

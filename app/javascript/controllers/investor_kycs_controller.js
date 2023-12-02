@@ -14,7 +14,7 @@ export default class extends ServerDatatableController {
     {"data": "committed_amount"},
     {"data": "collected_amount"},
     {"data": "bank_verified"},
-    {"data": "docs_completed"},
+    //{"data": "docs_completed"},
     {"data": "verified"},      
     {"data": "expired"},
     {"data": "dt_actions"}

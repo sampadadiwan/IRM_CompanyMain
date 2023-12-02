@@ -23,8 +23,16 @@ class InvestorAccess < ApplicationRecord
   validates_format_of :email, with: Devise.email_regexp, multiline: true
   validates :phone, length: { maximum: 15 }
 
-  counter_culture :entity, column_name: proc { |ia| ia.approved ? nil : 'pending_accesses_count' }
-  counter_culture :investor, column_name: proc { |model| model.approved ? 'investor_access_count' : 'unapproved_investor_access_count' }
+  counter_culture :entity, column_name: proc { |ia| ia.approved ? nil : 'pending_accesses_count' },
+                           column_names: {
+                             ["investor_accesses.approved = ?", false] => 'pending_accesses_count'
+                           }
+
+  counter_culture :investor, column_name: proc { |model| model.approved ? 'investor_access_count' : 'unapproved_investor_access_count' },
+                             column_names: {
+                               ["investor_accesses.approved = ?", true] => 'investor_access_count',
+                               ["investor_accesses.approved = ?", false] => 'unapproved_investor_access_count'
+                             }
 
   scope :approved_for_user, lambda { |user|
     if user.entity && user.entity.is_holdings_entity

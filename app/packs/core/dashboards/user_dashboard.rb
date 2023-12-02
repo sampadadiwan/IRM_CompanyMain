@@ -25,6 +25,7 @@ class UserDashboard < Administrate::BaseDashboard
     phone: Field::String,
     active: Field::BooleanEmoji,
     enable_support: Field::BooleanEmoji,
+    whatsapp_enabled: Field::BooleanEmoji,
     confirmed_at: Field::DateTime,
     roles: Field::HasMany,
     curr_role: Field::Select.with_options(collection: ["", "employee", "investor"])
@@ -58,6 +59,7 @@ class UserDashboard < Administrate::BaseDashboard
     updated_at
     email
     phone
+    whatsapp_enabled
     active
     enable_support
     last_sign_in_at
@@ -81,6 +83,7 @@ class UserDashboard < Administrate::BaseDashboard
     password
     password_confirmation
     phone
+    whatsapp_enabled
     active
     enable_support
     curr_role

@@ -2,7 +2,8 @@ class Entity < ApplicationRecord
   PAN_MANDATORY_AFTER = Date.parse("01-07-2023")
 
   include Trackable
-  include EntityMerge
+  # include EntityMerge
+  # include InvestorEntityMerge
   include EntityEnabled
 
   # Make all models searchable

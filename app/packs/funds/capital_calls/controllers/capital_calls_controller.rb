@@ -44,7 +44,7 @@ class CapitalCallsController < ApplicationController
   # POST /capital_calls or /capital_calls.json
   def create
     @capital_call = CapitalCall.new(capital_call_params)
-    authorize @capital_call
+    pre_process @capital_call
 
     respond_to do |format|
       if @capital_call.save
@@ -59,6 +59,7 @@ class CapitalCallsController < ApplicationController
 
   # PATCH/PUT /capital_calls/1 or /capital_calls/1.json
   def update
+    pre_process @capital_call
     respond_to do |format|
       if @capital_call.update(capital_call_params)
         format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was successfully updated." }
@@ -112,6 +113,6 @@ class CapitalCallsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_call_params
-    params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :add_fees, :generate_remittances, :due_date, :call_date, :notes, :commitment_type, :call_basis, :amount_to_be_called, fund_closes: [], unit_prices: {}, properties: {}, call_fees_attributes: CallFee::NESTED_ATTRIBUTES)
+    params.require(:capital_call).permit(:entity_id, :fund_id, :form_type_id, :name, :percentage_called, :add_fees, :generate_remittances, :due_date, :call_date, :notes, :commitment_type, :call_basis, :amount_to_be_called, fund_closes: [], unit_prices: {}, properties: {}, call_fees_attributes: CallFee::NESTED_ATTRIBUTES, documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

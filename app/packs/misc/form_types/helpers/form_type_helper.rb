@@ -3,6 +3,10 @@ module FormTypeHelper
     render partial: "/form_types/custom_form_fields", locals: { model:, form:, step: FormCustomField.steps[step.to_sym] } if model.form_type.present?
   end
 
+  def file_fields(name, model, form)
+    render "/form_custom_fields/file", field: FormCustomField.new(name:, field_type: "file", required: false, form_type_id: model.form_type&.id), model:, f: form
+  end
+
   def display_custom_fields(model, collapsed: false)
     render partial: "/form_types/display_custom_fields", locals: { model:, collapsed: }
   end

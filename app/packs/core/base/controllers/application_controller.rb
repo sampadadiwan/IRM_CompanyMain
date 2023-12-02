@@ -61,6 +61,11 @@ class ApplicationController < ActionController::Base
     model.form_type = form_type
   end
 
+  def pre_process(model)
+    authorize(model)
+    setup_doc_user(model)
+  end
+
   def setup_doc_user(model)
     sym = model.class.name.underscore.to_sym
     if params[sym][:documents_attributes].present?

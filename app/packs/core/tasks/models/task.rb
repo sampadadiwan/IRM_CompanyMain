@@ -21,7 +21,7 @@ class Task < ApplicationRecord
 
   counter_culture :entity, column_name: proc { |t| t.completed ? nil : 'tasks_count' }
 
-  after_commit :send_notification, unless: :destroyed?
+  # after_commit :send_notification, unless: :destroyed?
   def send_notification
     users = []
     users << user if response.blank?

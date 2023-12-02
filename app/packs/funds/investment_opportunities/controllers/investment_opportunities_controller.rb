@@ -46,9 +46,7 @@ class InvestmentOpportunitiesController < ApplicationController
   # POST /investment_opportunities or /investment_opportunities.json
   def create
     @investment_opportunity = InvestmentOpportunity.new(investment_opportunity_params)
-    authorize @investment_opportunity
-
-    setup_doc_user(@investment_opportunity)
+    pre_process(@investment_opportunity)
 
     respond_to do |format|
       if @investment_opportunity.save
@@ -63,7 +61,7 @@ class InvestmentOpportunitiesController < ApplicationController
 
   # PATCH/PUT /investment_opportunities/1 or /investment_opportunities/1.json
   def update
-    setup_doc_user(@investment_opportunity)
+    pre_process(@investment_opportunity)
     respond_to do |format|
       if @investment_opportunity.update(investment_opportunity_params)
         format.html { redirect_to investment_opportunity_url(@investment_opportunity), notice: "Investment opportunity was successfully updated." }

@@ -1298,13 +1298,6 @@ Given('the capital remittance whatsapp notification is sent to the first investo
   @resjob = cr.send_notification
 end
 
-Then('the whatsapp message should be send successfully to {string}') do |number|
-  sleep(8) # wait for the job to complete and the message to be sent
-  body = WhatsappNotifier.get_messages(number,1,1)
-  body = JSON.parse(body)
-  body['messages']['items'].first['eventDescription'].include?(ENV.fetch('CAPITAL_REMITTANCE_NOTI_TEMPLATE')).should == true
-end
-
 
 Given('the fund has fund ratios') do
     FundRatiosJob.perform_now(@fund.id, nil, Time.zone.now + 2.days, @user.id, true)

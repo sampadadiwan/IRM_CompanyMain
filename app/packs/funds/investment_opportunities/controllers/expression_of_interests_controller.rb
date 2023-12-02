@@ -32,7 +32,7 @@ class ExpressionOfInterestsController < ApplicationController
     @expression_of_interest.entity_id = @expression_of_interest.investment_opportunity.entity_id
     @expression_of_interest.user_id = current_user.id
 
-    authorize @expression_of_interest
+    pre_process @expression_of_interest
 
     respond_to do |format|
       if @expression_of_interest.save
@@ -47,6 +47,7 @@ class ExpressionOfInterestsController < ApplicationController
 
   # PATCH/PUT /expression_of_interests/1 or /expression_of_interests/1.json
   def update
+    pre_process @expression_of_interest
     respond_to do |format|
       if @expression_of_interest.update(expression_of_interest_params)
         format.html { redirect_to expression_of_interest_url(@expression_of_interest), notice: "Expression of interest was successfully updated." }
@@ -123,6 +124,6 @@ class ExpressionOfInterestsController < ApplicationController
   def expression_of_interest_params
     params.require(:expression_of_interest).permit(:entity_id, :user_id, :eoi_entity_id, :investor_id,
                                                    :investment_opportunity_id, :amount, :approved, :verified, :allocation_percentage, :comment, :investor_signatory_id,
-                                                   :allocation_amount, :details)
+                                                   :allocation_amount, :details, documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

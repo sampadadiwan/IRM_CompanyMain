@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_02_041455) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_02_102420) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1689,8 +1689,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_02_041455) do
     t.boolean "docs_completed", default: false
     t.boolean "send_kyc_form_to_user", default: false
     t.text "notification_msg"
-    t.text "address_proof_data"
-    t.text "cheque_data"
     t.string "bank_name", limit: 50
     t.string "bank_branch", limit: 40
     t.string "bank_account_type", limit: 40

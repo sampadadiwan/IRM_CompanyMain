@@ -55,6 +55,7 @@ Lint/UselessAssignment:
 
 Rails/SkipsModelValidations:
   Exclude:
+    - 'app/packs/core/entities/models/concerns/investor_entity_merge.rb'
     - 'app/packs/secondaries/offers/models/offer_spa_generator.rb'
     - 'app/packs/funds/portfolios/jobs/stock_adjustment_job.rb'
     - 'app/packs/core/notifications/controllers/notifications_controller.rb'

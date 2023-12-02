@@ -133,17 +133,6 @@
       </td>
     </tr>
 
-    <% if investor_kyc.address_proof && current_user %>
-      <tr>
-        <td>
-          Address Proof
-        </td>
-        <td>
-          <%= link_to "Uploaded Copy", investor_kyc.address_proof.url %>
-        </td>
-      </tr>
-    <% end %>
-
 
     <tr>
       <td>
@@ -185,17 +174,6 @@
         <%= investor_kyc.ifsc_code %>
       </td>
     </tr>
-
-    <% if investor_kyc.cheque && current_user %>
-    <tr>
-      <td>
-        Cancelled Cheque
-      </td>
-      <td>
-        <%= link_to "Uploaded Copy", investor_kyc.cheque.url %>
-      </td>
-    </tr>
-    <% end %>
 
     <tr>
       <td>

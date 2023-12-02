@@ -6,12 +6,12 @@
 
   <div class="form-group">
     <%= form.label :old_investor_id, "Defunct Investor" %>
-    <%= form.select :old_investor_id, @entity.investors.map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control", name: :old_investor_id    %>
+    <%= form.select :old_investor_id, @entity.investors.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control select2", name: :old_investor_id    %>
   </div>
 
   <div class="form-group">
     <%= form.label :new_investor_id, "Merge into Investor" %>
-    <%= form.select :new_investor_id, @entity.investors.map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control", name: :new_investor_id  %>
+    <%= form.select :new_investor_id, @entity.investors.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control select2", name: :new_investor_id  %>
   </div>
 
   <div class="form-group">

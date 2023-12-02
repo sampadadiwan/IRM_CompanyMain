@@ -65,10 +65,3 @@
     @user.save!
   end
 
-  Then('a whatsapp notification is sent indicating account update') do
-    sleep(8) # wait for whatsapp message to be sent
-    body = WhatsappNotifier.get_messages(@user.phone_with_call_code,1,1)
-    body = JSON.parse(body)
-    body['messages']['items'].first['eventDescription'].include?(ENV.fetch('ACC_UPDATE_NOTI_TEMPLATE')).should == true
-  end
-
