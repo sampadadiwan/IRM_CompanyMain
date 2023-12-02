@@ -83,7 +83,11 @@ class InvestorKycsController < ApplicationController
 
   # POST /investor_kycs or /investor_kycs.json
   def create
-    @investor_kyc = InvestorKyc.new(investor_kyc_params)
+    kyc_params = investor_kyc_params
+    # If saved by user in another entity then saved_by_investor_user is true and fields are mandatory
+    # When FM or creator of the investor kyc saves it then saved_by_investor_user is false and fields are not mandatory
+    kyc_params[:saved_by_investor_user] = current_user.entity_id == investor_kyc_params[:entity_id] ? false : true
+    @investor_kyc = InvestorKyc.new(kyc_params)
     authorize(@investor_kyc)
     setup_custom_fields(@investor_kyc)
     setup_doc_user(@investor_kyc)
@@ -122,7 +126,9 @@ class InvestorKycsController < ApplicationController
   end
 
   def compare_kyc_datas
-    @investor_kyc = InvestorKyc.new(investor_kyc_params)
+    kyc_params = investor_kyc_params
+    kyc_params[:saved_by_investor_user] = current_user.entity_id == investor_kyc_params[:entity_id] ? false : true
+    @investor_kyc = InvestorKyc.new(kyc_params)
     authorize(@investor_kyc)
     setup_doc_user(@investor_kyc)
     respond_to do |format|
@@ -174,8 +180,11 @@ class InvestorKycsController < ApplicationController
   # PATCH/PUT /investor_kycs/1 or /investor_kycs/1.json
   def update
     setup_doc_user(@investor_kyc)
+    kyc_params = investor_kyc_params
+    kyc_params[:saved_by_investor_user] = current_user.entity_id == @investor_kyc.entity_id? ? false : true
+
     respond_to do |format|
-      if @investor_kyc.update(investor_kyc_params)
+      if @investor_kyc.update(kyc_params)
         format.html { save_and_upload }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
