@@ -95,6 +95,8 @@
 
             </div>
 
+            <%= custom_form_fields(investor_kyc, form, step: :one) %>
+
             <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
 
         </div>
@@ -177,6 +179,7 @@
 
           </div>
 
+          <%= custom_form_fields(investor_kyc, form, step: :two) %>
 
           <% if current_user.entity_id == investor_kyc.entity_id  %>
             <div class="form-group">

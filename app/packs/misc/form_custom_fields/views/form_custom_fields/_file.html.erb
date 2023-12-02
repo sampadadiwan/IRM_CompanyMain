@@ -9,8 +9,6 @@
     document = model.documents.where(name: document_name).first
 %>
 
-
-
 <div class="form-group <%= field.read_only ? 'hidden_form_field' : '' %>"
     data-controller="single-upload" 
     data-single-upload-types-value="<%= allowed_types.to_json %>" 

@@ -85,6 +85,7 @@ class InvestorKycsController < ApplicationController
   def create
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
     authorize(@investor_kyc)
+    setup_custom_fields(@investor_kyc)
     setup_doc_user(@investor_kyc)
 
     respond_to do |format|

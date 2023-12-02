@@ -1,6 +1,6 @@
 module FormTypeHelper
-  def custom_form_fields(model, form)
-    render partial: "/form_types/custom_form_fields", locals: { model:, form: } if model.form_type.present?
+  def custom_form_fields(model, form, step: "end")
+    render partial: "/form_types/custom_form_fields", locals: { model:, form:, step: FormCustomField.steps[step.to_sym] } if model.form_type.present?
   end
 
   def display_custom_fields(model, collapsed: false)

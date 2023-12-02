@@ -1,3 +1,6 @@
+<h1>
+  <%= @form_type.name %>
+</h1>
 <%= render "/layouts/alerts" %>
 
   <table class="table table-bordered dataTable">
@@ -12,6 +15,12 @@
       <td>
         <%= @form_type.name %>
       </td>
+      <td>
+        Properties
+      </td>
+      <td>
+        Step  
+      </td>
     </tr>
 
     <% @form_type.form_custom_fields.each do |f| %>
@@ -23,12 +32,18 @@
           <%= f.name %>
         </td>
         <td>
-          <%= f.field_type %> : 
+          <%= f.field_type %> 
+        </td>
+        <td>
           Required <%= display_boolean f.required %>  ,
           Read Only <%= display_boolean f.read_only %>  <br>
           Metadata: <%= f.meta_data %><br>
           Help Text: <%= f.help_text %><br>
         </td>
+        <td>
+          <%= f.step.humanize %>
+        </td>
+
       </tr>
     <% end %>
 
@@ -37,8 +52,6 @@
 
 
   <div>
-    <%= link_to "Edit" , edit_form_type_path(@form_type), {class: "btn btn-outline-primary" } %> |
-    <%= link_to "Back" , :back, {class: "btn btn-outline-primary" } %> |
-
-    <%= button_to "Delete" , @form_type, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton" %>
+    <%= link_to "Edit" , edit_form_type_path(@form_type), {class: "btn btn-outline-primary" } %> 
+    <%= button_to "Delete" , @form_type, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo: true} %>
   </div>

@@ -2,6 +2,8 @@ class FormCustomField < ApplicationRecord
   belongs_to :form_type
   acts_as_list scope: :form_type
 
+  enum :step,  { one: 1, two: 2, three: 3, end: 100 }
+
   validates :name, :show_user_ids, length: { maximum: 50 }
   validates :field_type, length: { maximum: 20 }
 
