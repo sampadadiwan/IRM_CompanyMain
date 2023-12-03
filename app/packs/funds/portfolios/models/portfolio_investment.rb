@@ -86,7 +86,7 @@ class PortfolioInvestment < ApplicationRecord
     self.fmv_cents = compute_fmv_cents_on(Time.zone.today)
     # For buys setup net_quantity, note sold_quantity is -ive
     self.net_quantity = quantity + sold_quantity if buy?
-    self.gain_cents = fmv_cents.abs - cost_of_sold_cents if sell?
+    self.gain_cents = amount_cents.abs + cost_of_sold_cents if sell?
   end
 
   def compute_fmv_cents_on(date)

@@ -86,6 +86,15 @@
           <%= money_to_currency @portfolio_investment.cost_of_sold, params %>
         </td>
       </tr>
+
+      <tr>
+        <td>
+          Gain
+        </td>
+        <td>
+          <%= money_to_currency @portfolio_investment.gain, params %>
+        </td>
+      </tr>
       <% end %>
 
       <tr>
