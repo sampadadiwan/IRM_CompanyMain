@@ -57,7 +57,7 @@ class FundsController < ApplicationController
   # POST /funds or /funds.json
   def create
     @fund = Fund.new(fund_params)
-    pre_process(@fund)
+    authorize(@fund)
     respond_to do |format|
       if @fund.save
         format.html { redirect_to fund_url(@fund), notice: "Fund was successfully created." }
@@ -71,7 +71,6 @@ class FundsController < ApplicationController
 
   # PATCH/PUT /funds/1 or /funds/1.json
   def update
-    pre_process(@fund)
     respond_to do |format|
       if @fund.update(fund_params)
         format.html { redirect_to fund_url(@fund), notice: "Fund was successfully updated." }

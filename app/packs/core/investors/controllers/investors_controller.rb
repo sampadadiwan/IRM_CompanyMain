@@ -90,7 +90,7 @@ class InvestorsController < ApplicationController
   def create
     @investor = Investor.new(investor_params)
     @investor.entity_id = current_user.entity_id
-    pre_process(@investor)
+    authorize(@investor)
 
     respond_to do |format|
       if @investor.save
@@ -108,7 +108,6 @@ class InvestorsController < ApplicationController
 
   # PATCH/PUT /investors/1 or /investors/1.json
   def update
-    pre_process(@investor)
     respond_to do |format|
       if @investor.update(investor_params)
         format.html { redirect_to investor_url(@investor), notice: "Investor was successfully updated." }

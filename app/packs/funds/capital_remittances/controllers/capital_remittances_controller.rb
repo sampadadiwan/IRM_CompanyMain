@@ -83,7 +83,7 @@ class CapitalRemittancesController < ApplicationController
   # POST /capital_remittances or /capital_remittances.json
   def create
     @capital_remittance = CapitalRemittance.new(capital_remittance_params)
-    pre_process @capital_remittance
+    authorize @capital_remittance
     respond_to do |format|
       if @capital_remittance.save
         format.html { redirect_to capital_remittance_url(@capital_remittance), notice: "Capital remittance was successfully created." }
@@ -97,7 +97,6 @@ class CapitalRemittancesController < ApplicationController
 
   # PATCH/PUT /capital_remittances/1 or /capital_remittances/1.json
   def update
-    pre_process @capital_remittance
     respond_to do |format|
       if @capital_remittance.update(capital_remittance_params)
         format.html { redirect_to capital_remittance_url(@capital_remittance), notice: "Capital remittance was successfully updated." }

@@ -44,7 +44,7 @@ class CapitalCallsController < ApplicationController
   # POST /capital_calls or /capital_calls.json
   def create
     @capital_call = CapitalCall.new(capital_call_params)
-    pre_process @capital_call
+    authorize @capital_call
 
     respond_to do |format|
       if @capital_call.save
@@ -59,7 +59,6 @@ class CapitalCallsController < ApplicationController
 
   # PATCH/PUT /capital_calls/1 or /capital_calls/1.json
   def update
-    pre_process @capital_call
     respond_to do |format|
       if @capital_call.update(capital_call_params)
         format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was successfully updated." }
