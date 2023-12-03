@@ -1,129 +1,153 @@
-<%= form_with(model: interest, validate: true) do |form| %>
-  <% if interest.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(interest.errors.count, "error") %> prohibited this interest from being saved:</h2>
-
-      <ul>
-        <% interest.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  <%= form.number_field :entity_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :user_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :secondary_sale_id, class: "form-control", hidden: true  %>
-
-
-  <% if interest.short_listed %>
-    
-    <div class="form-group">
-      <%= form.label :buyer_entity_name %>
-      <%= form.text_field :buyer_entity_name, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :contact_name %>
-      <%= form.text_field :contact_name, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :email %>
-      <%= form.text_field :email, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :address %>
-      <%= form.text_area :address, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :city %>
-      <%= form.text_field :city, class: "form-control"  %>
-    </div>
-    
-    <div class="form-group">
-      <%= form.label :PAN %>
-      <%= form.text_field :PAN, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :demat %>
-      <%= form.text_field :demat, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :bank_account_number %>
-      <%= form.text_field :bank_account_number, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :ifsc_code, "IFSC Code" %>
-      <%= form.text_field :ifsc_code, class: "form-control"  %>
-    </div>
-
-    
-
-    <div class="form-group">
-
-      <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image", 
-                              for_model: "interest", field_name: "signature", 
-                              model: interest %>
-  
-    </div>
-    
-    
-    <div class="form-group">
-      <%= form.label :final_agreement, "I agree to enter into the SPAs" %>
-      <%= form.check_box :final_agreement, class: "form-check-input"  %>
-      <small class="text-muted"> 
-        SPAs are visible in the 
-        <%= link_to "Matched Offers", matched_offers_interest_path(@interest), target: "_blank" %>  
-      </small>
-    </div>
-
-
-  <% else %>
-    <% if current_user.entity_id == interest.entity_id %>
-      <div class="form-group">
-        <%= form.label :investor_id, "Buyer" %>
-        <%= form.select :investor_id, interest.secondary_sale.buyer_investors.map{|i| [i.investor_name, i.id]}, {}, class: "form-control" %>
-      </div>  
-
-      <div class="form-group">
-        <%= form.label :escrow_deposited %>
-        <%= form.check_box :escrow_deposited, class: "form-check-input"  %>
-      </div>
-
-    <% else %>
-      <%= form.text_field :investor_id, class: "form-control", hidden: true  %>    
-    <% end %>
-    
-    <div class="form-group" data-controller="currencyformat">
-      <%= form.label :quantity %> <span class="formatted_currency"></span>
-      <%= form.number_field :quantity, class: "form-control", data: {action: "input->currencyformat#format"}  %>
-      <small class="text-muted">Sale quantity: <%= interest.secondary_sale.display_quantity %></small>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :price %>
-      <%= form.number_field :price, class: "form-control"  %>
-      <small class="text-muted">
-            <%= interest.secondary_sale.display_price %>       
-      </small>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :details %>
-      <%= form.rich_text_area :details, class: "form-control"  %>
-    </div>   
-
-  <% end %>
-
-  <%= custom_form_fields(interest, form) %>
-  
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+          Interest : <%= interest.buyer_entity_name %>
+      </h6>
   </div>
-<% end %>
+  <div class="card-body">
+
+    <%= form_with(model: interest, validate: true) do |form| %>
+      <% if interest.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(interest.errors.count, "error") %> prohibited this interest from being saved:</h2>
+
+          <ul>
+            <% interest.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <%= form.number_field :entity_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :user_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :secondary_sale_id, class: "form-control", hidden: true  %>
+
+
+      <% if interest.short_listed %>
+        
+        <div class="form-group">
+          <%= form.label :buyer_entity_name %>
+          <%= form.text_field :buyer_entity_name, class: "form-control"  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :contact_name %>
+          <%= form.text_field :contact_name, class: "form-control"  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :email %>
+          <%= form.text_field :email, class: "form-control"  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :address %>
+          <%= form.text_area :address, class: "form-control"  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :city %>
+          <%= form.text_field :city, class: "form-control"  %>
+        </div>
+        
+        <div class="form-group">
+          <%= form.label :PAN %>
+          <%= form.text_field :PAN, class: "form-control"  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :demat %>
+          <%= form.text_field :demat, class: "form-control"  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :bank_account_number %>
+          <%= form.text_field :bank_account_number, class: "form-control"  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :ifsc_code, "IFSC Code" %>
+          <%= form.text_field :ifsc_code, class: "form-control"  %>
+        </div>
+
+        
+
+        <div class="form-group">
+
+          <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image", 
+                                  for_model: "interest", field_name: "signature", 
+                                  model: interest %>
+      
+        </div>
+        
+        
+        <div class="form-group">
+          <%= form.label :final_agreement, "I agree to enter into the SPAs" %>
+          <%= form.check_box :final_agreement, class: "form-check-input"  %>
+          <small class="text-muted"> 
+            SPAs are visible in the 
+            <%= link_to "Matched Offers", matched_offers_interest_path(@interest), target: "_blank" %>  
+          </small>
+        </div>
+
+
+      <% else %>
+        <% if current_user.entity_id == interest.entity_id %>
+          <div class="form-group">
+            <%= form.label :investor_id, "Buyer" %>
+            <%= form.select :investor_id, interest.secondary_sale.buyer_investors.map{|i| [i.investor_name, i.id]}, {}, class: "form-control" %>
+          </div>  
+
+          <div class="form-group">
+            <%= form.label :escrow_deposited %>
+            <%= form.check_box :escrow_deposited, class: "form-check-input"  %>
+          </div>
+
+        <% else %>
+          <%= form.text_field :investor_id, class: "form-control", hidden: true  %>    
+        <% end %>
+        
+        <div class="form-group" data-controller="currencyformat">
+          <%= form.label :quantity %> <span class="formatted_currency"></span>
+          <%= form.number_field :quantity, class: "form-control", data: {action: "input->currencyformat#format"}  %>
+          <small class="text-muted">Sale quantity: <%= interest.secondary_sale.display_quantity %></small>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :price %>
+          <%= form.number_field :price, class: "form-control"  %>
+          <small class="text-muted">
+                <%= interest.secondary_sale.display_price %>       
+          </small>
+        </div>
+
+        <% if interest.secondary_sale.buyer_doc_list.present? %>
+        <%  interest.secondary_sale.buyer_doc_list.split(",").each do |doc_name| %>
+
+        <div class="form-group">
+            <%= file_fields(doc_name.strip.squeeze(" "), interest, form) %>              
+            <small class="form-text text-muted">Please upload a latest clear copy </small>
+        </div>
+        
+        <% end %>
+        <% end %>
+        
+        <div class="form-group">
+          <%= form.label :details %>
+          <%= form.rich_text_area :details, class: "form-control"  %>
+        </div>
+
+
+
+      <% end %>
+
+      <%= custom_form_fields(interest, form) %>
+      
+      <div class="form-group">
+        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      </div>
+    <% end %>
+
+  </div>
+</div>

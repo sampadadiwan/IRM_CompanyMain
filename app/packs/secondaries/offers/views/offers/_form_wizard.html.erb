@@ -136,16 +136,14 @@
                 <div class="card-body">
 
                     <% if offer.secondary_sale.seller_doc_list.present? %>
-                    <div class="form-group">
+                    <%  offer.secondary_sale.seller_doc_list.split(",").each do |doc_name| %>
 
-                        <% label = offer.secondary_sale.seller_doc_list ? offer.secondary_sale.seller_doc_list : "Additional Documents" %>
-                        <%= form.label :documents, "Upload #{label}", class: "form-label" %>
-                        <%= render "layouts/multi_upload", form: form, title: "Offer Documents", 
-                                                for_model: "offer" %>
-                    
-                        <small class="text-muted"> Upload documents here </small>
-                    
+                    <div class="form-group">
+                        <%= file_fields(doc_name.strip.squeeze(" "), offer, form) %>              
+                        <small class="form-text text-muted">Please upload a latest clear copy </small>
                     </div>
+                    
+                    <% end %>
                     <% end %>
 
                     
