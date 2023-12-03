@@ -86,7 +86,7 @@ class AccountEntryAllocationEngine
       @helper.add_to_computed_fields_cache(capital_commitment, ae)
 
       # This is used to generate instance variables from the cached computed values
-      fields = @helper.computed_fields_cache(capital_commitment)
+      fields = @helper.computed_fields_cache(capital_commitment, @start_date)
     end
   end
 
@@ -130,7 +130,7 @@ class AccountEntryAllocationEngine
 
     fund_formula.commitments(@sample).each do |capital_commitment|
       # This is used to generate instance variables from the cached computed values
-      fields = @helper.computed_fields_cache(capital_commitment)
+      fields = @helper.computed_fields_cache(capital_commitment, @start_date)
       apis = capital_commitment.Pool? ? @fund.aggregate_portfolio_investments.pool : []
       # Only pool APIs should be used to generate account_entries
       apis.each do |orig_api|
@@ -158,7 +158,7 @@ class AccountEntryAllocationEngine
 
     fund_formula.commitments(@sample).each do |capital_commitment|
       # This is used to generate instance variables from the cached computed values
-      fields = @helper.computed_fields_cache(capital_commitment)
+      fields = @helper.computed_fields_cache(capital_commitment, @start_date)
       portfolio_investments = capital_commitment.Pool? ? @fund.portfolio_investments.pool.where(investment_date: ..@end_date) : PortfolioInvestment.none
 
       # Only pool PIs should be used to generate account_entries
@@ -215,7 +215,7 @@ class AccountEntryAllocationEngine
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
 
       # This is used to generate instance variables from the cached computed values
-      fields = @helper.computed_fields_cache(capital_commitment)
+      fields = @helper.computed_fields_cache(capital_commitment, @start_date)
 
       ae = AccountEntry.new(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, period: "As of #{@end_date}", entry_type: fund_formula.entry_type, generated: true, cumulative: false, fund_formula:)
 
@@ -281,7 +281,7 @@ class AccountEntryAllocationEngine
       fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
 
       # This is used to generate instance variables from the cached computed values
-      fields = @helper.computed_fields_cache(capital_commitment)
+      fields = @helper.computed_fields_cache(capital_commitment, @start_date)
 
       # Allocate this fund_account_entry to this capital_commitment
       ae = fund_account_entry.dup
