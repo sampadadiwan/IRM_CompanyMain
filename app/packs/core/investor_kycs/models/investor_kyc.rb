@@ -34,7 +34,7 @@ class InvestorKyc < ApplicationRecord
 
   attr_accessor :saved_by_investor_user
 
-  validates :kyc_type, :address, :full_name, :birth_date, :PAN, :pan_card, :bank_name, :bank_branch, :bank_account_type, :bank_account_number, :ifsc_code, presence: true, if: ->(inv_kyc) { inv_kyc&.saved_by_investor_user == true }
+  validates :kyc_type, :address, :full_name, :birth_date, :PAN, :bank_name, :bank_branch, :bank_account_type, :bank_account_number, :ifsc_code, presence: true, if: ->(inv_kyc) { inv_kyc&.saved_by_investor_user == true }
   validates :PAN, length: { maximum: 15 }
   validates :bank_account_number, :bank_branch, :bank_account_type, length: { maximum: 40 }
   validates :ifsc_code, length: { maximum: 20 }
