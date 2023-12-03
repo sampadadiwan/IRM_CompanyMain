@@ -73,15 +73,7 @@
   
     </div>
     
-    <div class="form-group">
-
-      <%= form.label :documents, "Documents", class: "form-label" %>
-      <%= render "layouts/multi_upload", form: form, title: "Interest Documents", 
-                              for_model: "interest" %>
-  
-      <small class="text-muted"> Upload documents requested by the sellers. </small>  
-    </div>  
-
+    
     <div class="form-group">
       <%= form.label :final_agreement, "I agree to enter into the SPAs" %>
       <%= form.check_box :final_agreement, class: "form-check-input"  %>
@@ -125,16 +117,7 @@
     <div class="form-group">
       <%= form.label :details %>
       <%= form.rich_text_area :details, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-
-      <%= form.label :documents, "Documents", class: "form-label" %>
-      <%= render "layouts/multi_upload", form: form, title: "Interest Documents", 
-                              for_model: "interest" %>
-  
-      <small class="text-muted"> Upload documents. </small>  
-    </div>  
+    </div>   
 
   <% end %>
 
