@@ -75,8 +75,10 @@ class AccountEntry < ApplicationRecord
     "#{reporting_date} #{name}"
   end
 
-  def self.total_amount(account_entries, entry_type, cumulative: false, start_date: nil, end_date: nil)
-    account_entries = account_entries.where(entry_type:, cumulative:)
+  def self.total_amount(account_entries, name: nil, entry_type: nil, cumulative: false, start_date: nil, end_date: nil)
+    account_entries = account_entries.where(entry_type:) if entry_type
+    account_entries = account_entries.where(name:) if name
+    account_entries = account_entries.where(cumulative:)
     account_entries = account_entries.where(reporting_date: start_date..) if start_date
     account_entries = account_entries.where(reporting_date: ..end_date) if end_date
     account_entries.sum(:amount_cents)

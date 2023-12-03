@@ -136,37 +136,15 @@
                 <div class="card-body">
 
                     <% if offer.secondary_sale.seller_doc_list.present? %>
-                    <%  offer.secondary_sale.seller_doc_list.split(",").each do |doc_name| %>
+                        <%  offer.secondary_sale.seller_doc_list.split(",").each do |doc_name| %>
 
-                    <div class="form-group">
-                        <%= file_fields(doc_name.strip.squeeze(" "), offer, form) %>              
-                        <small class="form-text text-muted">Please upload a latest clear copy </small>
-                    </div>
-                    
+                        <div class="form-group">
+                            <%= file_fields(doc_name.strip.squeeze(" "), offer, form) %>              
+                            <small class="form-text text-muted">Please upload a latest clear copy </small>
+                        </div>
+                        
+                        <% end %>
                     <% end %>
-                    <% end %>
-
-                    
-                    <div class="form-group">
-
-                        <%= render "layouts/single_upload", form: form, 
-                        field_label: "Upload Signature Image (jpg or png only)", 
-                        for_model: "offer", field_name: "signature", 
-                        model: offer, allowed_types: ['image/*'].freeze %>
-                    
-                    </div>
-
-                    <div class="form-group">
-                        <%= render "layouts/single_upload", form: form, field_label: "Upload PAN Card (any format)", 
-                                                for_model: "offer", field_name: "pan_card", 
-                                                model: offer %>
-                    
-                    </div>
-
-                    <!-- <div class="form-group">
-                        <%= form.label :final_agreement, "I agree to enter into the SPA" %>
-                        <%= form.check_box :final_agreement, class: "form-check-input"  %>
-                    </div> -->
 
                     <div class="form-group">
                         <%= form.submit "Save", {class: "btn btn-outline-primary btn-outline-lg"}%>
