@@ -150,7 +150,7 @@ class InvestorKycsController < ApplicationController
     if params[:commit] == "Save & Upload Documents"
       redirect_to new_document_url(document: { entity_id: @investor_kyc.entity_id, owner_id: @investor_kyc.id, owner_type: "InvestorKyc" }, display_status: true), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC."
     else
-      redirect_to investor_kyc_url(@investor_kyc, display_status: false), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC."
+      redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC."
     end
   end
 
