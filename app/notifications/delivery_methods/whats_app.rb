@@ -1,9 +1,10 @@
 module DeliveryMethods
   class WhatsApp < Noticed::DeliveryMethods::Base
     def deliver
-      if notification.recipient.whatsapp_enabled
+      if notification.recipient.whatsapp_enabled && entity.permissions.enable_whatsapp?
         # Get the entity name sending the msg
         entity = notification.record.entity
+        
         # Ensure that the message is sanitized to prevent XSS attacks
         message = ActionView::Base.full_sanitizer.sanitize(notification.message)
 
@@ -14,7 +15,7 @@ module DeliveryMethods
                                                 notification.view_path,
                                                 notification.recipient.id)
       else
-        Rails.logger.info "WhatsApp not enabled for #{notification.recipient.phone}"
+        Rails.logger.info "WhatsApp not enabled for #{notification.recipient.phone} and entity #{entity.name}"
       end
     end
 
