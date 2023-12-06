@@ -55,9 +55,13 @@ class ApplicationController < ActionController::Base
     stored_location_for(resource) || root_path
   end
 
-  def setup_custom_fields(model)
+  def setup_custom_fields(model, type: nil)
     # Custom form fields
-    form_type = FormType.where(entity_id: model.entity_id, name: model.class.name).first
+    form_type = if type.present?
+                  FormType.where(entity_id: model.entity_id, name: type).first
+                else
+                  FormType.where(entity_id: model.entity_id, name: model.class.name).first
+                end
     model.form_type = form_type
   end
 
@@ -65,7 +69,8 @@ class ApplicationController < ActionController::Base
     sym = model.class.name.underscore.to_sym
     if params[sym][:documents_attributes].present?
       params[sym][:documents_attributes].each do |_id, doc_attribute|
-        doc_attribute.merge!(user_id: current_user.id)
+        doc_attribute[:user_id] = current_user.id
+        doc_attribute.merge!(entity_id: model.entity_id)
       end
     end
 

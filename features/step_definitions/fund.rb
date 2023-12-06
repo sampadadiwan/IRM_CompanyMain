@@ -1029,7 +1029,8 @@ end
 Given('each investor has a {string} kyc linked to the commitment') do |status|
   verified = status == "verified"
   Investor.all.each do |inv|
-    kyc = FactoryBot.create(:investor_kyc, investor: inv, entity: @fund.entity, verified:)
+    kyc = FactoryBot.build(:investor_kyc, investor: inv, entity: @fund.entity, verified:)
+    kyc.save(validate: false)
     @fund.capital_commitments.where(investor_id: inv.id).update(investor_kyc_id: kyc.id)
   end
 end

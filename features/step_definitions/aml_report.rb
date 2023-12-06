@@ -1,10 +1,11 @@
 Given('the investor has investor kyc and aml report') do
   RSpec::Mocks.with_temporary_scope do
     @investor_kyc = FactoryBot.build(:investor_kyc, investor: @investor, entity: @entity)
+    @investor_kyc.save(validate: false)
     aml_report = FactoryBot.create(:aml_report, investor: @investor, entity: @entity, investor_kyc: @investor_kyc, name: @investor_kyc.full_name)
     InvestorKyc.stub(:generate_aml_report).and_return(aml_report)
     allow_any_instance_of(InvestorKyc).to receive(:generate_aml_report).and_return(aml_report)
-    @investor_kyc.save!
+    
   end
   @aml_report = AmlReport.order(created_at: :desc).first
 end
@@ -46,12 +47,14 @@ Then('investor kyc and aml report is generated for it') do
   @investor_entity.entity_setting.save!
   visit(investor_kycs_url)
   sleep(2)
-  click_on("New Investor Kyc")
+  click_on("New KYC")
+  click_on("Individual")
   sleep(3)
   pan = "testpannum555"
-  fill_in('investor_kyc_full_name', with: "testname abc")
-  fill_in('investor_kyc_birth_date', with: "03/03/2020")
-  fill_in('investor_kyc_PAN', with: pan)
+  
+  fill_in('individual_kyc_full_name', with: "testname abc")
+  fill_in('individual_kyc_birth_date', with: "03/03/2020")
+  fill_in('individual_kyc_PAN', with: pan)
   click_on("Next")
   sleep(3)
   click_on("Next")
@@ -72,11 +75,12 @@ Then('investor kyc and aml report is not generated for it') do
   @investor.entity.entity_setting.save!
   visit(investor_kycs_url)
   sleep(2)
-  click_on("New Investor Kyc")
+  click_on("New KYC")
+  click_on("Individual")
   sleep(3)
   pan = "testpannum555"
-  fill_in('investor_kyc_birth_date', with: "01/01/1955")
-  fill_in('investor_kyc_PAN', with: pan)
+  fill_in('individual_kyc_birth_date', with: "01/01/1955")
+  fill_in('individual_kyc_PAN', with: pan)
   click_on("Next")
   sleep(3)
   click_on("Next")

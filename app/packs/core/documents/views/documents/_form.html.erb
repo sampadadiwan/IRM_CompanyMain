@@ -66,6 +66,8 @@
 
     <% if (document.owner && document.owner.entity_id != current_user.entity_id) || document.owner_type == "InvestorKyc" %>
       <%= form.text_field :orignal, class: "form-control", hidden:true, value: true  %>
+      <%= form.text_field :send_email, class: "form-control", hidden:true, value: false  %>
+
     <% else %>
       <div class="form-group nonpdf">
         <%= form.label :orignal, "Allow Orignal Format Download" %>

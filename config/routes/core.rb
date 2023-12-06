@@ -20,6 +20,8 @@ resources :approvals do
   patch 'send_reminder', on: :member
 end
 
+resources :individual_kycs, controller: "investor_kycs", type: "IndividualKyc"
+resources :non_individual_kycs, controller: "investor_kycs", type: "NonIndividualKyc"
 resources :investor_kycs do
   get 'search', on: :collection
   put 'toggle_verified', on: :member

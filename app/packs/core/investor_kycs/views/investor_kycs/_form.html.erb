@@ -7,19 +7,20 @@
                 <p>Step 1</p>
             </div>
             <div class="stepwizard-step">
-                <a href="#step-2" type="button" class="btn btn-outline-primary btn-outline-circle" disabled="disabled">2</a>
+                <a href="#step-2" type="button" class="btn disabled btn-outline-primary btn-outline-circle">2</a>
                 <p>Step 2</p>
             </div>
             <div class="stepwizard-step">
-                <a href="#step-3" type="button" class="btn btn-outline-primary btn-outline-circle" disabled="disabled">3</a>
+                <a href="#step-3" type="button" class="btn disabled btn-outline-primarybtn-outline-circle">3</a>
                 <p>Step 3</p>
             </div>
         </div>
     </div>
   </div>
 
-<% validate_fields = current_user.curr_role == "investor"%>
-<%= form_with(model: investor_kyc, validate: true, class: "row justify-content-md-center") do |form| %>
+<% is_investor = current_user.curr_role == "investor"%>
+
+<%= form_with(model: investor_kyc, validate: is_investor, class: "wizard_form row justify-content-md-center") do |form| %>
   <% if investor_kyc.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(investor_kyc.errors.count, "error") %> prohibited this investor_kyc from being saved:</h2>
@@ -39,8 +40,6 @@
         <div class="card-header"> 1. KYC Details </div>
         <div class="card-body">
 
-            <%= form.text_field :saved_by_fm, value: !validate_fields, class: "form-control", hidden: true  %>
-
             <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
             <% if investor_kyc.investor_id.present? %>
               <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
@@ -51,9 +50,9 @@
               </div>
             <% end %>
 
-            <div class="form-group">
+            <div class="form-group" data-controller="investor-kycs">
               <%= form.label :kyc_type %>
-              <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control"  %>
+              <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control", id: "kyc_type", data: { action: "change->investor-kycs#kyc_type_changed" }  %>
             </div>
 
             <div class="form-group">
@@ -63,28 +62,25 @@
 
             <div class="form-group">
               <%= form.label :full_name %>
-              <%= form.text_field :full_name, class: "form-control", validate: { presence: validate_fields }  %>
+              <%= form.text_field :full_name, class: "form-control"  %>
               <small class="form-text text-muted">Please enter full name as per the Identity Proof being attached</small>
             </div>
 
             <div class="form-group">
               <%= form.label :date_of_birth %>
-              <%= form.date_field :birth_date, class: "form-control", validate: { presence: validate_fields } %>
+              <%= form.date_field :birth_date, class: "form-control" %>
             </div>
 
             <div class="form-group">
               <%= form.label :PAN, "PAN" %>
-              <%= form.text_field :PAN, class: "form-control", validate: { presence: validate_fields }  %>
+              <%= form.text_field :PAN, class: "form-control"  %>
             </div>
 
 
             <div class="form-group">
-              <%= file_fields("Upload PAN Card", investor_kyc, form) %>
+              <%= file_fields("Upload PAN Card", investor_kyc, form, required: is_investor) %>
               <small class="form-text text-muted">Please upload a clear image of your PAN card</small>
             </div>
-
-
-
 
             <% if current_user.entity_id == investor_kyc.entity_id %>
               <div class="form-group">
@@ -94,7 +90,7 @@
             <% end %>
 
 
-            <%= custom_form_fields(investor_kyc, form, step: :one) %>
+            <%= custom_form_fields(investor_kyc, form, step: :one, required: is_investor) %>
 
             <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
 
@@ -111,7 +107,7 @@
 
           <div class="form-group">
             <%= form.label :permanent_address, "Address" %>
-            <%= form.text_area :address, class: "form-control", validate: { presence: validate_fields }  %>
+            <%= form.text_area :address, class: "form-control"  %>
             <small class="form-text text-muted">Address as per the address proof attached.</small>
           </div>
 
@@ -123,7 +119,7 @@
 
 
           <div class="form-group">
-              <%= file_fields("Upload Address Proof", investor_kyc, form) %>
+              <%= file_fields("Upload Address Proof", investor_kyc, form, required: is_investor) %>
 
               <small class="form-text text-muted"> Any one of:
                 Passport
@@ -140,13 +136,13 @@
 
           <div class="form-group">
             <%= form.label :bank_name, "Bank Name" %>
-            <%= form.text_field :bank_name, class: "form-control", validate: { presence: validate_fields }  %>
+            <%= form.text_field :bank_name, class: "form-control"  %>
             <small class="form-text text-muted">  I / We confirm that the subscription to units is made through my bank account / joint account where first account holder is one of the joint account holders of the bank account. <br>
             Investor will receive redemption or any proceeds directly into bank account provided here</small>
           </div>
 
           <div class="form-group">
-            <%= form.label :bank_branch, "Branch Name", validate: { presence: validate_fields } %>
+            <%= form.label :bank_branch, "Branch Name" %>
             <%= form.text_field :bank_branch, class: "form-control"  %>
           </div>
 
@@ -157,21 +153,21 @@
 
           <div class="form-group">
             <%= form.label :bank_account_number %>
-            <%= form.text_field :bank_account_number, class: "form-control", validate: { presence: validate_fields }  %>
+            <%= form.text_field :bank_account_number, class: "form-control"  %>
           </div>
 
           <div class="form-group">
             <%= form.label :ifsc_code %>
-            <%= form.text_field :ifsc_code, class: "form-control", validate: { presence: validate_fields }  %>
+            <%= form.text_field :ifsc_code, class: "form-control"  %>
           </div>
 
 
           <div class="form-group">
-              <%= file_fields("Upload Cancelled Cheque", investor_kyc, form) %>
+              <%= file_fields("Upload Cancelled Cheque", investor_kyc, form, required: is_investor) %>
               <small class="form-text text-muted">Upload Cancelled Cheque or Bank account statement</small>
           </div>
 
-          <%= custom_form_fields(investor_kyc, form, step: :two) %>
+          <%= custom_form_fields(investor_kyc, form, step: :two, required: is_investor) %>
 
           <% if current_user.entity_id == investor_kyc.entity_id  %>
             <div class="form-group">
@@ -195,12 +191,14 @@
         <div class="card-header"> 3. KYC Details </div>
         <div class="card-body">
 
-          <%= custom_form_fields(investor_kyc, form) %>
+          <%= custom_form_fields(investor_kyc, form, required: is_investor) %>
 
-          <div class="form-group">
-            <%= form.label :expiry_date %>
-            <%= form.date_field :expiry_date, class: "form-control"  %>
-          </div>
+          <% unless current_user.curr_role == "investor" %> 
+            <div class="form-group">
+              <%= form.label :expiry_date %>
+              <%= form.date_field :expiry_date, class: "form-control"  %>
+            </div>
+          <% end %>
 
           <div class="form-group">
             <%= form.label :comments %>
@@ -215,7 +213,7 @@
           <%end%>
 
           <div class="form-group">
-            <%= form.submit "Save", {class: "btn btn-outline-primary btn-lg", value: "Save"}%>
+            <%= form.submit "Save", {class: "btn btn-outline-primary btn-lg"}%>
           </div>
 
         </div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_02_102420) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_03_075511) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1692,6 +1692,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_02_102420) do
     t.string "bank_name", limit: 50
     t.string "bank_branch", limit: 40
     t.string "bank_account_type", limit: 40
+    t.string "type", limit: 20
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"

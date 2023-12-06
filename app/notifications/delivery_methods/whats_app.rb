@@ -1,10 +1,11 @@
 module DeliveryMethods
   class WhatsApp < Noticed::DeliveryMethods::Base
     def deliver
+      # Get the entity name sending the msg
+      entity = notification.record.entity
+
       if notification.recipient.whatsapp_enabled && entity.permissions.enable_whatsapp?
-        # Get the entity name sending the msg
-        entity = notification.record.entity
-        
+
         # Ensure that the message is sanitized to prevent XSS attacks
         message = ActionView::Base.full_sanitizer.sanitize(notification.message)
 

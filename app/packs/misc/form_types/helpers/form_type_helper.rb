@@ -1,10 +1,14 @@
 module FormTypeHelper
-  def custom_form_fields(model, form, step: "end")
-    render partial: "/form_types/custom_form_fields", locals: { model:, form:, step: FormCustomField.steps[step.to_sym] } if model.form_type.present?
+  # model: the model that has the form_type
+  # form: the form object
+  # step: the step of the form, usually CFs are added to the end of the form
+  # required: whether the CF is required or not, This is an ovverride when we want no validations for certain use cases like KYC form, which needs validations only from investor side, and no validations from fund side. This will override the defined custom form fields required attribute.
+  def custom_form_fields(model, form, step: "end", required: nil)
+    render partial: "/form_types/custom_form_fields", locals: { model:, form:, step: FormCustomField.steps[step.to_sym], required: } if model.form_type.present?
   end
 
-  def file_fields(name, model, form)
-    render "/form_custom_fields/file", field: FormCustomField.new(name:, field_type: "file", required: false, form_type_id: model.form_type&.id), model:, f: form
+  def file_fields(name, model, form, required: false)
+    render "/form_custom_fields/file", field: FormCustomField.new(name:, field_type: "file", required:, form_type_id: model.form_type&.id), model:, f: form
   end
 
   def display_custom_fields(model, collapsed: false)

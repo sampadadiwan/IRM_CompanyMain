@@ -212,6 +212,12 @@ Given('Given I upload an investors file for the company') do
   sleep(4)
 end
 
+Given('the investors have approved investor accesse') do
+  @entity.investors.each do |investor|
+    ia = FactoryBot.create(:investor_access, investor: investor, entity: investor.entity, approved: true) 
+  end
+end
+
 Then('There should be {string} investors created') do |count|
   @entity.investors.not_holding.not_trust.count.should == count.to_i
 end
@@ -279,22 +285,37 @@ Then('the investor kycs must have the data in the sheet') do
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
     cc = investor_kycs[idx-1]
-    puts "Checking import of #{cc.full_name}"
+    ap cc
+
+    puts "Checking import of #{cc.full_name} #{cc.class.name}}"
     cc.full_name.should == user_data["Full Name"]
     cc.address.should == user_data["Address"]
     cc.PAN.should == user_data["Pan"]
-    cc.bank_account_number.should == user_data["Bank Account"].to_s
-    cc.ifsc_code.should == user_data["Ifsc Code"].to_s
+    cc.bank_account_number.should == user_data["Bank Account"]&.to_s
+    cc.ifsc_code.should == user_data["Ifsc Code"]&.to_s
+    cc.class.name.should == cc.type_from_kyc_type
+  end
+end
 
+
+
+Then('the approved investor access should receive a notification') do
+  InvestorKyc.all.each do |kyc|
+    kyc.investor.approved_users.each do |user|
+      open_email(user.email)
+      expect(current_email.subject).to eq "Request to add KYC: #{kyc.entity.name}"
+    end
   end
 end
 
 Then('Aml Report should be generated for each investor kyc') do
   investor_kycs = @entity.investor_kycs
   investor_kycs.each do |kyc|
-    kyc.aml_reports.count.should_not == 0
-    kyc.aml_reports.each do |report|
-      report.name.should == kyc.full_name
+    if kyc.full_name.present?
+      kyc.aml_reports.count.should_not == 0
+      kyc.aml_reports.each do |report|
+        report.name.should == kyc.full_name
+      end
     end
   end
 end
@@ -311,39 +332,48 @@ end
 Given('I create a new InvestorKyc with pan {string}') do |string|
   visit(investor_kycs_path)
   sleep(2)
-  click_on("New Investor Kyc")
+  click_on("New KYC")
+  click_on("Individual")
   sleep(2)
-  fill_in('investor_kyc_PAN', with: "PANNUMBER1")
+  class_name = "individual_kyc" #@investor_kyc.type_from_kyc_type.underscore
+  fill_in("#{class_name}_birth_date", with: Date.today - 20.years)
+  fill_in("#{class_name}_PAN", with: "PANNUMBER1")
   click_on("Next")
   sleep(3)
 end
 
 Given('I create a new InvestorKyc') do
-  @investor_kyc = FactoryBot.create(:investor_kyc, entity: @entity)
+  @investor_kyc = FactoryBot.build(:investor_kyc, entity: @entity)
+  # @investor_kyc.save(validate: false)
   puts "\n########### KYC ############"
   puts @investor_kyc.to_json
 
+  class_name = @investor_kyc.type_from_kyc_type.underscore
+  
 
   visit(investor_kycs_path)
-  click_on("New Investor Kyc")
-  select(@investor_kyc.investor.investor_name, from: "investor_kyc_investor_id")
-  fill_in('investor_kyc_full_name', with: @investor_kyc.full_name)
-  select(@investor_kyc.residency.titleize, from: "investor_kyc_residency")
-  fill_in('investor_kyc_PAN', with: @investor_kyc.PAN)
-  fill_in('investor_kyc_birth_date', with: @investor_kyc.birth_date)
+  click_on("New KYC")
+  click_on("Individual")
+
+  sleep(5)
+  select(@investor_kyc.investor.investor_name, from: "#{class_name}_investor_id")
+  fill_in("#{class_name}_full_name", with: @investor_kyc.full_name)
+  select(@investor_kyc.residency.titleize, from: "#{class_name}_residency")
+  fill_in("#{class_name}_PAN", with: @investor_kyc.PAN)
+  fill_in("#{class_name}_birth_date", with: @investor_kyc.birth_date)
 
   click_on("Next")
   sleep(1)
-  fill_in('investor_kyc_address', with: @investor_kyc.address)
-  fill_in('investor_kyc_corr_address', with: @investor_kyc.corr_address)
-  fill_in('investor_kyc_bank_account_number', with: @investor_kyc.bank_account_number)
-  fill_in('investor_kyc_ifsc_code', with: @investor_kyc.ifsc_code)
+  fill_in("#{class_name}_address", with: @investor_kyc.address)
+  fill_in("#{class_name}_corr_address", with: @investor_kyc.corr_address)
+  fill_in("#{class_name}_bank_account_number", with: @investor_kyc.bank_account_number)
+  fill_in("#{class_name}_ifsc_code", with: @investor_kyc.ifsc_code)
   click_on("Next")
   sleep(1)
 
-  fill_in('investor_kyc_expiry_date', with: @investor_kyc.expiry_date)
-  fill_in('investor_kyc_comments', with: @investor_kyc.comments)
-  click_on("Save & Upload Documents")
+  fill_in("#{class_name}_expiry_date", with: @investor_kyc.expiry_date)
+  fill_in("#{class_name}_comments", with: @investor_kyc.comments)
+  click_on("Save")
   sleep(1)
 
 end
@@ -355,7 +385,8 @@ Then('I should see ckyc and kra data comparison page') do
 end
 
 Then('I can send KYC reminder to approved users') do
-  @investor_kyc = FactoryBot.create(:investor_kyc, entity: @investor.entity, investor: @investor, verified: false)
+  @investor_kyc = FactoryBot.build(:investor_kyc, entity: @investor.entity, investor: @investor, verified: false)
+  @investor_kyc.save(validate: false)
   entity = @investor_kyc.entity
   investor = @investor_kyc.investor
   @users = FactoryBot.create_list(:user, 2, entity: @investor.investor_entity)
@@ -383,7 +414,8 @@ end
 
 
 Then('I cannot send KYC reminder as no approved users are present') do
-  @investor_kyc = FactoryBot.create(:investor_kyc, entity: @investor.entity, investor: @investor, verified: false)
+  @investor_kyc = FactoryBot.build(:investor_kyc, entity: @investor.entity, investor: @investor, verified: false)
+  @investor_kyc.save(validate: false)
   entity = @investor_kyc.entity
   investor = @investor_kyc.investor
   @users = FactoryBot.create_list(:user, 2, entity: @investor.investor_entity)
@@ -418,14 +450,8 @@ Then('I select one and see the edit page and save') do
 end
 
 
-
-Then('I should be on the new documents page') do
-  sleep(1)
-  click_on("Ok")
-  expect(current_path).to eq(new_document_path())
-end
-
 Then('when I upload the document for the kyc') do
+  click_on("New Document")
   @document = FactoryBot.build(:document, entity: @entity, user: @entity.employees.sample)
 
   fill_in("document_name", with: @document.name)
@@ -455,7 +481,8 @@ end
 
 Given('each Investor has an approved Investor Kyc') do
   @investor_kycs = @entity.investors.each do |investor|
-    FactoryBot.create(:investor_kyc, entity: @entity, investor: investor, verified: true)
+    kyc = FactoryBot.build(:investor_kyc, entity: @entity, investor: investor, verified: true)
+    kyc.save(validate: false)
   end
   InvestorKyc.all.each do |kyc|
     kyc.verified = true

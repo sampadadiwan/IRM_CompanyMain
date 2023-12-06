@@ -11,7 +11,7 @@
 1. Fixed bugs for import investor advisor
 2. Added support for file type custom field
 3. Fixed the size of forms
-
+4. No notifications for document or folder
 
 29/11/2023 - V7.0.9
 #####################################

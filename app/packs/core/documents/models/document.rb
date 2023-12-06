@@ -28,7 +28,7 @@ class Document < ApplicationRecord
   belongs_to :owner, polymorphic: true, optional: true, touch: true
   has_noticed_notifications
 
-  NESTED_ATTRIBUTES = %i[id name file tags owner_tag user_id].freeze
+  NESTED_ATTRIBUTES = %i[id name file tags owner_tag user_id entity_id].freeze
   counter_culture :entity
   counter_culture :folder
 

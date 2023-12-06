@@ -1,0 +1,27 @@
+<% investor_kyc_params = params[:investor_kyc] %>
+
+<div class="row justify-content-md-center">
+    <div class="col-md-6">   
+        <%= render FormCard.new(title: "Select KYC Type") do %>   
+            <% url = investor_kyc_params[:id].present? ? edit_investor_kyc_path(@investor_kyc) : new_investor_kyc_path(@investor_kyc) %>  
+            <%= form_with(model: @investor_kyc, validate: true, data: {turbo: false},
+                class: "row justify-content-md-center", method: :post, url: url) do |form| %>
+
+                
+
+                <%= form.text_field :investor_id, value: investor_kyc_params[:investor_id], class: "form-control", hidden: true  %>
+                <%= form.text_field :entity_id, value: investor_kyc_params[:entity_id], class: "form-control", hidden: true  %>
+
+                <div class="form-group">
+                    <%= form.label :kyc_type, "Select Type" %>
+                    <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control"  %>
+                </div>
+
+                <div class="form-group">
+                    <%= form.submit "Proceed", {class: "btn btn-outline-primary btn-lg", value: "Proceed"}%>
+                </div>
+
+            <% end %>
+        <% end %>
+    </div>
+</div>

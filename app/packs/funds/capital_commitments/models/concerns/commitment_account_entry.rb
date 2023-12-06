@@ -43,6 +43,14 @@ module CommitmentAccountEntry
     account_entries.where(name:, reporting_date: ..date).order(reporting_date: :desc).first
   end
 
+  def on_date(name, entry_type, end_date)
+    entries = account_entries
+    entries = entries.not_cumulative.where(name:) if name.present?
+    entries = entries.where(entry_type:) if entry_type.present?
+
+    entries.where(reporting_date: end_date).sum(:amount_cents)
+  end
+
   def quarterly(name, entry_type, _start_date, end_date)
     entries = account_entries
     entries = entries.not_cumulative.where(name:) if name.present?

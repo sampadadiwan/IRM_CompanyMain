@@ -37,10 +37,12 @@ class ImportInvestorKyc < ImportUtil
   end
 
   def save_kyc(investor_kyc, investor, user_data, custom_field_headers)
+    kyc_type = user_data["Kyc Type"].presence || "Individual"
+
     investor_kyc.assign_attributes(investor:, PAN: user_data["Pan"],
                                    full_name: user_data["Full Name"],
                                    address: user_data["Address"],
-                                   kyc_type: user_data["Kyc Type"],
+                                   kyc_type:,
                                    residency: user_data["Residency"],
                                    bank_account_number: user_data["Bank Account"]&.to_s,
                                    ifsc_code: user_data["Ifsc Code"],
@@ -49,7 +51,7 @@ class ImportInvestorKyc < ImportUtil
 
     setup_custom_fields(user_data, investor_kyc, custom_field_headers)
 
-    investor_kyc.save!
+    investor_kyc.save!(validate: false)
   end
 
   def process_row(headers, custom_field_headers, row, import_upload, _context)

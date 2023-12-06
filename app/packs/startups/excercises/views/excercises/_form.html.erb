@@ -21,7 +21,7 @@
   </div>
 
 
-      <%= form_with(model: excercise) do |form| %>
+      <%= form_with(model: excercise,class: "wizard_form row justify-content-md-center") do |form| %>
         <% if excercise.errors.any? %>
           <div class="alert alert-danger">
             <h2><%= pluralize(excercise.errors.count, "error") %> prohibited this excercise from being saved:</h2>

@@ -8,18 +8,18 @@
                     <p>Step 1</p>
                 </div>
                 <div class="stepwizard-step">
-                    <a href="#step-2" type="button" class="btn btn-outline-primary btn-outline-circle" disabled="disabled">2</a>
+                    <a href="#step-2" type="button" class="btn disabled btn-outline-primary btn-outline-circle">2</a>
                     <p>Step 2</p>
                 </div>
                 <div class="stepwizard-step">
-                    <a href="#step-3" type="button" class="btn btn-outline-primary btn-outline-circle" disabled="disabled">3</a>
+                    <a href="#step-3" type="button" class="btn disabled btn-outline-primary btn-outline-circle">3</a>
                     <p>Step 3</p>
                 </div>
 
             </div>        
     </div>
     
-<%= form_with(model: offer, validate: true) do |form| %>
+<%= form_with(model: offer, validate: true, class: "wizard_form row justify-content-md-center") do |form| %>
   <% if offer.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(offer.errors.count, "error") %> prohibited this offer from being saved:</h2>

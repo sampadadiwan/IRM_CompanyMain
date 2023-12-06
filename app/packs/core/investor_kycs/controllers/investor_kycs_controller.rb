@@ -46,9 +46,11 @@ class InvestorKycsController < ApplicationController
 
   # GET /investor_kycs/new
   def new
-    @investor_kyc = InvestorKyc.new(investor_kyc_params)
+    kyc_type = investor_kyc_params[:kyc_type] || "Individual"
+    @investor_kyc = kyc_type == "Individual" ? IndividualKyc.new(investor_kyc_params) : NonIndividualKyc.new(investor_kyc_params)
+    @investor_kyc.type = @investor_kyc.type_from_kyc_type
     authorize(@investor_kyc)
-    setup_custom_fields(@investor_kyc)
+    setup_custom_fields(@investor_kyc, type: @investor_kyc.type)
   end
 
   def edit_my_kyc
@@ -78,16 +80,23 @@ class InvestorKycsController < ApplicationController
 
   # GET /investor_kycs/1/edit
   def edit
-    setup_custom_fields(@investor_kyc)
+    if params[:kyc_type].present?
+      # The form is reloaded if the user changes the kyc type
+      @investor_kyc.kyc_type = params[:kyc_type]
+      @investor_kyc.type = @investor_kyc.type_from_kyc_type
+    end
+    setup_custom_fields(@investor_kyc, type: @investor_kyc.type)
   end
 
   # POST /investor_kycs or /investor_kycs.json
   def create
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
     authorize(@investor_kyc)
+    validate = current_user.curr_role == "investor"
+    @investor_kyc.documents.each(&:validate)
 
     respond_to do |format|
-      if @investor_kyc.save
+      if @investor_kyc.save(validate:)
         format.html { save_and_upload }
         format.json { render :show, status: :created, location: @investor_kyc }
       else
@@ -122,7 +131,6 @@ class InvestorKycsController < ApplicationController
   def compare_kyc_datas
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
     authorize(@investor_kyc)
-    setup_doc_user(@investor_kyc)
     respond_to do |format|
       if @investor_kyc.save
         format.html do
@@ -171,8 +179,13 @@ class InvestorKycsController < ApplicationController
 
   # PATCH/PUT /investor_kycs/1 or /investor_kycs/1.json
   def update
+    validate = current_user.curr_role == "investor"
+
     respond_to do |format|
-      if @investor_kyc.update(investor_kyc_params)
+      @investor_kyc.assign_attributes(investor_kyc_params)
+      @investor_kyc.documents.each(&:validate)
+
+      if @investor_kyc.save(validate:)
         format.html { save_and_upload }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
@@ -202,9 +215,9 @@ class InvestorKycsController < ApplicationController
         KycDocGenJob.perform_later(@investor_kyc.id, params[:document_template_ids],
                                    params[:start_date], params[:end_date], user_id: current_user.id)
 
-        redirect_to investor_kyc_url(@investor_kyc), notice: "Document generation in progress. Please check back in a few minutes."
+        redirect_to investor_kyc_path(@investor_kyc), notice: "Document generation in progress. Please check back in a few minutes."
       else
-        redirect_to generate_docs_investor_kycs_url, alert: "Invalid dates or document template."
+        redirect_to generate_docs_investor_kycs_path, alert: "Invalid dates or document template."
       end
     end
   end
@@ -248,7 +261,15 @@ class InvestorKycsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_kyc_params
-    params.require(:investor_kyc).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_branch, :bank_account_type, :bank_name, :bank_verified, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :phone, :form_type_id, :send_kyc_form_to_user, :saved_by_fm, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    param_name = if params[:individual_kyc].present?
+                   :individual_kyc
+                 elsif params[:non_individual_kyc].present?
+                   :non_individual_kyc
+                 else
+                   :investor_kyc
+                 end
+
+    params.require(param_name).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_branch, :bank_account_type, :bank_name, :bank_verified, :type, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :phone, :form_type_id, :send_kyc_form_to_user, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 
   def commit_param

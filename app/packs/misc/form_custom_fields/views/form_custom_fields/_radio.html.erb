@@ -3,7 +3,7 @@
     <% field.meta_data.split(",").each do |option| %>
         <div class="form-check form-check-inline">
             <%= f.radio_button field.name, option, required: field.required, class: "form-check-input" %> 
-            <%= f.label option, class: "form-check-label" %>
+            <%= f.label option, class: "form-check-label custom_field" %>
         </div>
     <% end %>
     <br>

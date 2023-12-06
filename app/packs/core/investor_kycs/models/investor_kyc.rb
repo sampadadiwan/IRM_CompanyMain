@@ -32,13 +32,7 @@ class InvestorKyc < ApplicationRecord
 
   belongs_to :verified_by, class_name: "User", optional: true
 
-  attr_accessor :saved_by_fm
-
-  validates :kyc_type, :address, :full_name, :birth_date, :PAN, :bank_name, :bank_branch, :bank_account_type, :bank_account_number, :ifsc_code, presence: true, unless: :saved_by_fm?
-
-  def saved_by_fm?
-    saved_by_fm&.to_s == "true"
-  end
+  validates :kyc_type, :address, :full_name, :birth_date, :PAN, :bank_name, :bank_branch, :bank_account_type, :bank_account_number, :ifsc_code, presence: true
 
   validates :PAN, length: { maximum: 15 }
   validates :bank_account_number, :bank_branch, :bank_account_type, length: { maximum: 40 }
@@ -80,7 +74,13 @@ class InvestorKyc < ApplicationRecord
 
   before_save :set_investor_name
   def set_investor_name
+    self.type = type_from_kyc_type
+    Rails.logger.debug { "self.type: #{type}" }
     self.investor_name = investor.investor_name
+  end
+
+  def type_from_kyc_type
+    "#{kyc_type.titleize.delete(' ')}Kyc" if kyc_type.present?
   end
 
   def custom_committed_amount

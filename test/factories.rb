@@ -1,50 +1,23 @@
 FactoryBot.define do
-  factory :report do
-    entity { nil }
-    user { nil }
-    name { "MyString" }
-    description { "MyText" }
-    url { "MyText" }
-  end
-
-  factory :ci_track_record do
-    ci_profile { nil }
-    entity { nil }
-    name { "MyString" }
-    value { "9.99" }
-    prefix { "MyString" }
-    suffix { "MyString" }
-    details { "MyString" }
-  end
-
-  factory :ci_widget do
-    ci_profile { nil }
-    entity { nil }
-    title { "MyString" }
-    details { "MyText" }
-    url { "MyString" }
-  end
-
-  factory :ci_profile do
-    entity { nil }
-    fund { nil }
-    title { "MyString" }
-    geography { "MyString" }
-    stage { "MyString" }
-    sector { "MyString" }
-    fund_size_cents { "9.99" }
-    min_investment_cents { "9.99" }
-    status { "MyString" }
-    details { "MyString" }
-    text { "MyString" }
-  end
-
+  
   factory :stock_adjustment do
     entity { nil }
     portfolio_company { nil }
     user { nil }
     adjustment { "9.99" }
     notes { "MyText" }
+  end
+
+  factory :investor_access do
+    entity { Entity.sample }
+    investor { entity.investors.sample }
+    user { nil }
+    first_name { Faker::Name.first_name }
+    last_name { Faker::Name.last_name }
+    email { Faker::Internet.email }
+    phone { rand(10 ** 10) }
+    send_confirmation { false }
+    approved { true }
   end
 
   factory :portfolio_cashflow do
@@ -67,54 +40,7 @@ FactoryBot.define do
     capital_call { nil }
   end
 
-  factory :scenario_investment do
-    entity { nil }
-    fund { nil }
-    portfolio_scenario { nil }
-    user { nil }
-    transaction_date { "2023-07-29" }
-    portfolio_company { nil }
-    price { "9.99" }
-    quantity { "9.99" }
-    notes { "MyText" }
-  end
-
-  factory :portfolio_scenario do
-    entity { nil }
-    fund { nil }
-    name { "MyString" }
-    user { nil }
-  end
-
-  factory :allocation_run do
-    entity { nil }
-    fund { nil }
-    user { nil }
-    start_date { "2023-07-27" }
-    end_date { "2023-07-27" }
-    fund_ratios { false }
-    generate_soa { false }
-    template_name { "MyString" }
-  end
-
-
-  factory :e_signature do
-    entity { nil }
-    user { nil }
-    label { nil }
-    signature_type { "Adhaar" }
-    owner { nil }
-    status { "Pending" }
-  end
-
-
-  factory :investor_notice_item do
-    investor_notice { nil }
-    title { "MyString" }
-    details { "MyText" }
-    link { "MyString" }
-  end
-
+  
   factory :kpi do
     entity { nil }
     name { "MyString" }
@@ -131,16 +57,6 @@ FactoryBot.define do
     user { nil }
   end
 
-  factory :fund_report do
-    fund { nil }
-    entity { nil }
-    name { "MyString" }
-    name_of_scheme { "MyString" }
-    data { "MyText" }
-    start_date { "2023-04-30" }
-    end_date { "2023-04-30" }
-  end
-
   
   factory :commitment_adjustment do
     entity { nil }
@@ -150,43 +66,6 @@ FactoryBot.define do
     amount { "9.99" }
     post_adjustment { "9.99" }
     reason { "MyText" }
-  end
-
-  factory :portfolio_attribution do
-    entity { nil }
-    fund { nil }
-    sold_pi { nil }
-    bought_pi { nil }
-    quantity { "9.99" }
-  end
-
-  factory :exchange_rate do
-    entity { nil }
-    from { "MyString" }
-    to { "MyString" }
-    rate { "9.99" }
-  end
-
-  factory :investor_advisor do
-    entity { nil }
-    user { nil }
-    email { "MyString" }
-  end
-
-  factory :aggregate_portfolio_investment do
-    entity { nil }
-    fund { nil }
-    portfolio_company { nil }
-    quantity { "9.99" }
-    fmv { "9.99" }
-    avg_cost { "9.99" }
-  end
-
-  factory :fund_formula do
-    fund { nil }
-    name { "MyString" }
-    description { "MyText" }
-    formula { "MyText" }
   end
 
   factory :fund_unit_setting do

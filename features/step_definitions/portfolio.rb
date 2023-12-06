@@ -177,7 +177,7 @@ Then('there must be {string} portfolio attributions created') do |count|
     ap pa
     pa.sold_pi.sell?.should == true
     pa.sold_pi.cost_of_sold_cents.should == PortfolioAttribution.all.map{|x| x.quantity * x.bought_pi.cost_cents}.sum
-    pa.sold_pi.gain_cents.should == pa.sold_pi.fmv_cents.abs - pa.sold_pi.cost_of_sold_cents
+    pa.sold_pi.gain_cents.should == pa.sold_pi.amount_cents + pa.sold_pi.cost_of_sold_cents
     pa.bought_pi.buy?.should == true
     pa.bought_pi.sold_quantity.should == pa.quantity
     pa.bought_pi.net_quantity.should == pa.bought_pi.quantity + pa.bought_pi.sold_quantity

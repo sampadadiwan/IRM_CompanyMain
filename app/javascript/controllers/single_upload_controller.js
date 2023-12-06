@@ -50,6 +50,8 @@ export default class extends Controller {
       // set hidden field value to the uploaded file data so that it's submitted with the form as the attachment
       this.resultTarget.value = uploadedFileData(file, response, this.serverValue)
       console.log("Upload success", file, response);
+      // Remove the required attribute from the input file field to allow the form to submit
+      $(this.inputTarget).removeAttr('required');
     })
 
     uppy.on('thumbnail:generated', (file, preview) => {

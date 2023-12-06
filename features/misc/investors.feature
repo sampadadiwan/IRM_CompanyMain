@@ -79,10 +79,12 @@ Scenario Outline: Import investor kycs
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   And Given I upload an investors file for the company
+  And the investors have approved investor accesse
   And Given I upload an investor kyc file for employees
   Then I should see the "Import upload was successfully created"
-  Then There should be "2" investor kycs created
+  Then There should be "4" investor kycs created
   And the investor kycs must have the data in the sheet
+  And the approved investor access should receive a notification 
   And Aml Report should be generated for each investor kyc
 
 Scenario Outline: Import investors
@@ -109,7 +111,6 @@ Scenario Outline: Create investor kyc - no ckyc
   And Given I upload an investors file for the company
   Given I create a new InvestorKyc
   Then I should see the "Investor kyc was successfully saved. Please upload the required documents for the KYC."
-  And I should be on the new documents page
   And when I upload the document for the kyc
   Then I should see the "Document was successfully saved."
   Then I should see the investor kyc details on the details page

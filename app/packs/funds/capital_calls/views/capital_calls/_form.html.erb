@@ -1,10 +1,5 @@
-<div class="card shadow mb-4">
-  <div class="card-header py-3">
-      <h6 class="m-0 font-weight-bold text-primary">
-          Capital Call : <%= capital_call.name %>
-      </h6>
-  </div>
-  <div class="card-body">
+
+<%= render FormCard.new(title: "Capital Call : #{capital_call.name}") do %>
 
     <%= form_with(model: capital_call, validate: true) do |form| %>
       <% if capital_call.errors.any? %>
@@ -129,5 +124,4 @@
       </div>
     <% end %>
 
-  </div>
-</div>
+<% end %>
