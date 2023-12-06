@@ -288,11 +288,17 @@ Then('the investor kycs must have the data in the sheet') do
     ap cc
 
     puts "Checking import of #{cc.full_name} #{cc.class.name}}"
-    cc.full_name.should == user_data["Full Name"]
-    cc.address.should == user_data["Address"]
-    cc.PAN.should == user_data["Pan"]
-    cc.bank_account_number.should == user_data["Bank Account"]&.to_s
-    cc.ifsc_code.should == user_data["Ifsc Code"]&.to_s
+    if user_data["Full Name"].present?
+      cc.full_name.should == user_data["Full Name"]
+      cc.birth_date.to_date.should == user_data["Date Of Birth"]
+      cc.address.should == user_data["Address"]
+      cc.corr_address.should == user_data["Correspondence Address"]
+      cc.PAN.should == user_data["Pan"]
+      cc.bank_name.should == user_data["Bank Name"]
+      cc.bank_branch.should == user_data["Branch Name"]
+      cc.bank_account_number.should == user_data["Bank Account Number"]&.to_s
+      cc.ifsc_code.should == user_data["Ifsc Code"]&.to_s
+    end
     cc.class.name.should == cc.type_from_kyc_type
   end
 end
