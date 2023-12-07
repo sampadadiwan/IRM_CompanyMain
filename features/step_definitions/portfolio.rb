@@ -89,8 +89,7 @@ end
 
 Then('the fmv must be calculated for the portfolio') do  
   PortfolioInvestment.all.each do |pi|
-    pi.fmv_cents.abs.should > 0
-    pi.fmv_cents.should == (pi.quantity * @valuation.per_share_value_cents)
+    pi.fmv_cents.should == (pi.net_quantity * @valuation.per_share_value_cents)
   end
 end
 

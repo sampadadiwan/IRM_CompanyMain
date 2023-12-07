@@ -441,8 +441,6 @@ Then('I cannot send KYC reminder as no approved users are present') do
   expect(page).to have_content("KYC Reminder could not be sent as no user has been assigned to the investor")
 end
 
-
-
 Then('I select one and see the edit page and save') do
   click_on("Select CKYC Data")
   sleep(4) #image saving may take time
