@@ -93,7 +93,12 @@ class PortfolioInvestment < ApplicationRecord
   def compute_fmv_cents_on(date)
     last_valuation = portfolio_company.valuations.where(category:, sub_category:, valuation_date: ..date).order(valuation_date: :desc).first
 
-    last_valuation ? net_quantity * last_valuation.per_share_value_cents : 0
+    last_valuation ? net_quantity_on(date) * last_valuation.per_share_value_cents : 0
+  end
+
+  def net_quantity_on(date)
+    sold_quantity_on = portfolio_attributions.joins(:sold_pi).where(bought_pi_id: self.id, "portfolio_investments.investment_date": ..date).sum(:quantity)
+    quantity + sold_quantity_on
   end
 
   after_commit :compute_avg_cost, unless: :destroyed?
