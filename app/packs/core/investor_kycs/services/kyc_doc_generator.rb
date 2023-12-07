@@ -102,7 +102,7 @@ class KycDocGenerator
                      distribution_amount: Money.new(distribution_amount_cents, currency),
                      due_amount: Money.new(call_amount_cents - collected_amount_cents, currency),
                      uncalled_amount: Money.new(committed_amount_cents - call_amount_cents, currency),
-                     custom_uncalled_amount: Money.new(investor_kyc.custom_committed_amount.cents - call_amount_cents, currency)
+                     custom_uncalled_amount: Money.new(investor_kyc.custom_committed_amount.cents - call_amount_cents + investor_kyc.face_value_for_redemption.cents, currency)
                    })
   end
 

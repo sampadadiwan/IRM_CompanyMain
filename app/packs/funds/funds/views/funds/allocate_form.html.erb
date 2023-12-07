@@ -38,7 +38,8 @@
 
   <div class="form-group">
     <%= form.label :rule_for, "For" %>
-    <%= form.select :rule_for, ["Accounting", "Reporting"],  {include_blank: "Both", selected: "Accounting"}, class: "form-control", name: "rule_for" %>
+    <% selected = params[:rule_for] || "Accounting" %>
+    <%= form.select :rule_for, ["Accounting", "Reporting"],  {include_blank: "Both", selected: selected}, class: "form-control", name: "rule_for" %>
   </div>
 
   <div class="form-group">
@@ -85,6 +86,9 @@
           <th>
             For
           </th>
+          <th>
+            
+          </th>
       </tr>
     </thead>
 
@@ -114,6 +118,9 @@
           </td>
           <td>
             <%= runs.rule_for %>
+          </td>
+          <td>
+            <%= link_to "Rerun", allocate_form_fund_path(runs.attributes), class: "btn btn-sm btn-outline-primary" %>
           </td>
         </tr>
       <% end %>

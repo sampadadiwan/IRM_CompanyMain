@@ -195,4 +195,8 @@ class InvestorKyc < ApplicationRecord
   def self.ransackable_attributes(_auth_object = nil)
     %w[PAN full_name]
   end
+
+  def face_value_for_redemption
+    Money.new(entity.capital_distribution_payments.where(investor_id:).sum(:cost_of_investment_cents), entity.currency)
+  end
 end

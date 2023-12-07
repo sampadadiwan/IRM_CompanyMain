@@ -112,7 +112,7 @@ class SoaGenerator
   def add_reporting_entries(context, capital_commitment, start_date, end_date)
     raes = capital_commitment.account_entries.where(reporting_date: start_date..end_date, rule_for: "Reporting")
     raes.each do |ae|
-      context["reporting_#{ae.name.delete(' ').underscore}"] = TemplateDecorator.decorate(ae)
+      context["reporting_#{ae.name.titleize.delete(' :,;').underscore}"] = TemplateDecorator.decorate(ae)
     end
   end
 

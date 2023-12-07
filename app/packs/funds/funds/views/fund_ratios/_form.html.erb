@@ -1,52 +1,56 @@
-<%= form_with(model: fund_ratio) do |form| %>
-  <% if fund_ratio.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(fund_ratio.errors.count, "error") %> prohibited this fund_ratio from being saved:</h2>
+<%= render FormCard.new(title: "Fund Ratio") do %>
 
-      <ul>
-        <% fund_ratio.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+  <%= form_with(model: fund_ratio) do |form| %>
+    <% if fund_ratio.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(fund_ratio.errors.count, "error") %> prohibited this fund_ratio from being saved:</h2>
+
+        <ul>
+          <% fund_ratio.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= form.label :entity_id %>
+      <%= form.text_field :entity_id, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :fund_id %>
+      <%= form.text_field :fund_id, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :valuation_id %>
+      <%= form.text_field :valuation_id, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :name %>
+      <%= form.text_field :name, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :value %>
+      <%= form.text_field :value, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :display_value %>
+      <%= form.text_field :display_value, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :notes %>
+      <%= form.text_area :notes, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>
 
-  <div class="form-group">
-    <%= form.label :entity_id %>
-    <%= form.text_field :entity_id, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :fund_id %>
-    <%= form.text_field :fund_id, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :valuation_id %>
-    <%= form.text_field :valuation_id, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :name %>
-    <%= form.text_field :name, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :value %>
-    <%= form.text_field :value, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :display_value %>
-    <%= form.text_field :display_value, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :notes %>
-    <%= form.text_area :notes, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
 <% end %>

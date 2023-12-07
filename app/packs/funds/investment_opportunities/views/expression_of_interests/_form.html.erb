@@ -1,48 +1,52 @@
-<%= form_with(model: expression_of_interest, validate: true) do |form| %>
-  <% if expression_of_interest.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(expression_of_interest.errors.count, "error") %> prohibited this expression_of_interest from being saved:</h2>
+<%= render FormCard.new(title: "Expression Of Interest") do %>
 
-      <ul>
-        <% expression_of_interest.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+  <%= form_with(model: expression_of_interest, validate: true) do |form| %>
+    <% if expression_of_interest.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(expression_of_interest.errors.count, "error") %> prohibited this expression_of_interest from being saved:</h2>
+
+        <ul>
+          <% expression_of_interest.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form.text_field :investment_opportunity_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+
+    <div class="form-group">
+      <% disabled = !belongs_to_entity_id?(current_user, expression_of_interest.entity_id) %>
+      <%= form.label :investor_id %>
+      <%= form.select :investor_id, expression_of_interest.investment_opportunity.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control select2", disabled: disabled %>
+
+      <%= form.text_field :investor_id, hidden: true if disabled %>
+    </div>
+
+    <% if expression_of_interest.investor %>
+    <div class="form-group">
+      <%= form.label :investor_signatory_id %>
+      <%= form.select :investor_signatory_id, expression_of_interest.investor.investor_entity.employees.map{|e| [e.full_name, e.id]}, {include_blank: true}, class: "form-control"  %>
+    </div>
+    <% end %>
+
+    <div class="form-group" data-controller="currencyformat">
+      <%= form.label :amount %> <span class="formatted_currency"></span>
+      <%= form.number_field :amount, class: "form-control", data: {action: "input->currencyformat#format"}  %>
+      <small class="text-muted">Min ticket size is <%= money_to_currency(expression_of_interest.investment_opportunity.min_ticket_size, params) %></small> 
+    </div>
+
+
+    <div class="form-group">
+      <%= form.label :details %>
+      <%= form.rich_text_area :details, class: "form-control trix-content"  %>
+    </div>
+
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>
 
-  <%= form.text_field :investment_opportunity_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-
-  <div class="form-group">
-    <% disabled = !belongs_to_entity_id?(current_user, expression_of_interest.entity_id) %>
-    <%= form.label :investor_id %>
-    <%= form.select :investor_id, expression_of_interest.investment_opportunity.investors.map{|i| [i.investor_name, i.id]}  ,{}, class: "form-control select2", disabled: disabled %>
-
-    <%= form.text_field :investor_id, hidden: true if disabled %>
-  </div>
-
-  <% if expression_of_interest.investor %>
-  <div class="form-group">
-    <%= form.label :investor_signatory_id %>
-    <%= form.select :investor_signatory_id, expression_of_interest.investor.investor_entity.employees.map{|e| [e.full_name, e.id]}, {include_blank: true}, class: "form-control"  %>
-  </div>
-  <% end %>
-
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :amount %> <span class="formatted_currency"></span>
-    <%= form.number_field :amount, class: "form-control", data: {action: "input->currencyformat#format"}  %>
-    <small class="text-muted">Min ticket size is <%= money_to_currency(expression_of_interest.investment_opportunity.min_ticket_size, params) %></small> 
-  </div>
-
-
-  <div class="form-group">
-    <%= form.label :details %>
-    <%= form.rich_text_area :details, class: "form-control trix-content"  %>
-  </div>
-
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
 <% end %>

@@ -1,9 +1,4 @@
-
-<div class="card shadow mb-4">
-  <div class="card-header py-3">
-      <h6 class="m-0 font-weight-bold text-primary">Entity</h6>
-  </div>
-  <div class="card-body">
+<%= render FormCard.new(title: "Entity : #{entity.name.presence || 'New'}") do %>
 
     <%= form_with(model: entity, validate: true) do |form| %>      
       <%= render "form_fields", entity: entity, form: form %>
@@ -12,5 +7,4 @@
       </div>
     <% end %>
 
-  </div>
-</div>
+<% end %>

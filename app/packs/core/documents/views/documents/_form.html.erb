@@ -1,166 +1,160 @@
-<div class="card shadow mb-4">
-  <div class="card-header py-3">
-      <h6 class="m-0 font-weight-bold text-primary">Document</h6>
-  </div>
-  <div class="card-body">
+<%= render FormCard.new(title: "Document : #{document.name.presence || 'New'}") do %>
+    <%= form_with(model: document, validate: true) do |form| %>
+      <% if document.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(document.errors.count, "error") %> prohibited this document from being saved:</h2>
 
-<%= form_with(model: document, validate: true) do |form| %>
-  <% if document.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(document.errors.count, "error") %> prohibited this document from being saved:</h2>
-
-      <ul>
-        <% document.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  <div  data-controller="docform">
-    <div class="form-group">
-      <%= form.label :name %>
-      <% if document.name == nil && document.owner != nil && document.owner.respond_to?(:document_list) && document.owner.document_list.present? %>
-        <%= form.select :name, document.owner.document_list.map{|d| d.strip} ,{}, class: "form-control", id: "doc_name_select", "data-action": "change->docform#checkOtherName" %>
-        <%= form.text_field :name, class: "form-control", disabled: true, id: "other_name"  %>
-      <% else %>
-        <%= form.text_field :name, class: "form-control"  %>
+          <ul>
+            <% document.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
       <% end %>
 
-      <%= form.text_field :owner_id, class: "form-control", hidden:true  %>
-      <%= form.text_field :owner_type, class: "form-control", hidden:true  %>
-      <%= form.text_field :entity_id, class: "form-control", hidden:true  %>
-    </div>
-
-    <% if document.owner == nil ||  document.owner_type == "Deal" %>
-
-      <%
-        root = document.owner ? document.owner.data_room_folder : document.entity.root_folder
-        folders = ([[root.full_path, root.id]]  + root.descendants.map{|f| [f.full_path, f.id]})
-      %>
-      <div class="form-group">
-        <%= form.label :folder %>
-        <%= form.select :folder_id, folders,{}, class: "form-control select2"  %>
-        <small class="text-muted"><%= link_to "Create New Folder", new_folder_path("folder[entity_id]": current_user.entity_id) %></small>
-      </div>
-
-      <div class="form-group">
-        <%= form.label :tags %>
-        <%= form.text_field :tag_list, class: "form-control"  %>
-        <small class="text-muted">Comma separated list of tags to classify the document</small>
-      </div>
-    <% elsif document.owner && document.owner.respond_to?(:document_tags) && document.owner.document_tags.present?  %>
-      <div class="form-group">
-        <%= form.label :owner_tag, "Document For" %>
-        <%= form.select :owner_tag, document.owner.document_tags , {include_blank: true}, class: "form-control"  %>
-      </div>
-    <% end %>
-
-
-
-    <% label = document.file.blank? ? "Upload File" : link_to("Uploaded File: #{document.uploaded_file_name}", document.file.url, target: "_blank") %>
-    <%= render "layouts/single_upload", form: form, field_label: label,
-                              for_model: "document", field_name: "file",
-                              model: document %>
-
-
-    <% if (document.owner && document.owner.entity_id != current_user.entity_id) || document.owner_type == "InvestorKyc" %>
-      <%= form.text_field :orignal, class: "form-control", hidden:true, value: true  %>
-      <%= form.text_field :send_email, class: "form-control", hidden:true, value: false  %>
-
-    <% else %>
-      <div class="form-group nonpdf">
-        <%= form.label :orignal, "Allow Orignal Format Download" %>
-        <%= form.check_box :orignal, class: "form-check-input",
-                  data: {action: "click->docform#onOrignalChange"} %>
-        <small class="text-muted">Allow orignal format to be downloaded (No conversion or watermarking)</small>
-      </div>
-
-      <div class="form-group pdfopts">
-        <%= form.label :download, "Allow Download" %>
-        <%= form.check_box :download, class: "form-check-input",
-                data: {action: "click->docform#onPdfOptChange"}  %>
-        <small class="text-muted">Enable users to download this document</small>
-      </div>
-
-      <div class="form-group pdfopts">
-        <%= form.label :printing, "Allow Printing" %>
-        <%= form.check_box :printing, class: "form-check-input",
-                data: {action: "click->docform#onPdfOptChange"} %>
-        <small class="text-muted">Enable users to print this document</small>
-      </div>
-
-      <div class="form-group pdfopts">
-        <%= form.label :public_visibility, "Allow Public Visibility" %>
-        <%= form.check_box :public_visibility, class: "form-check-input" %>
-        <small class="text-muted">Enable any user to view this document</small>
-      </div>
-
-      <div class="form-group">
-        <%= form.label :send_email %>
-        <%= form.check_box :send_email, class: "form-check-input" %>
-        <small class="text-muted">Send email notification to users who can view this document</small>
-      </div>
-
-      <div class="form-group">
-        <%= form.label :template %>
-        <%= form.check_box :template, class: "form-check-input", "data-action":  "click->docform#showSignature" %>
-        <small class="text-muted">Mark this document as a template for document generation.</small>
-      </div>
-
-    <% end %>
-    
-      <% if document.from_template_id != nil %>
+      <div  data-controller="docform">
         <div class="form-group">
-          <%= form.label :approved %>
-          <%= form.check_box :approved, class: "form-check-input" %>
-          <small class="text-muted">Enable access to generated document</small>
+          <%= form.label :name %>
+          <% if document.name == nil && document.owner != nil && document.owner.respond_to?(:document_list) && document.owner.document_list.present? %>
+            <%= form.select :name, document.owner.document_list.map{|d| d.strip} ,{}, class: "form-control", id: "doc_name_select", "data-action": "change->docform#checkOtherName" %>
+            <%= form.text_field :name, class: "form-control", disabled: true, id: "other_name"  %>
+          <% else %>
+            <%= form.text_field :name, class: "form-control"  %>
+          <% end %>
+
+          <%= form.text_field :owner_id, class: "form-control", hidden:true  %>
+          <%= form.text_field :owner_type, class: "form-control", hidden:true  %>
+          <%= form.text_field :entity_id, class: "form-control", hidden:true  %>
         </div>
-      <% end %>
-      
-      <%= custom_form_fields(document, form) %>
 
-      <div class="form-group">
-        <%= form.label :description %>
-        <%= form.rich_text_area :text, class: "form-control trix-content"  %>
-      </div>
+        <% if document.owner == nil ||  document.owner_type == "Deal" %>
 
-      <div id="sign_display_on_page">
-        <hr>
-        <h5> E-Signatures </h5>
-        <%= form.label :esign_display_on_page %>
-        <%= form.select :display_on_page, ["Last", "All"], {}, class: "form-control" %>
-        <br>
-      </div>
+          <%
+            root = document.owner ? document.owner.data_room_folder : document.entity.root_folder
+            folders = ([[root.full_path, root.id]]  + root.descendants.map{|f| [f.full_path, f.id]})
+          %>
+          <div class="form-group">
+            <%= form.label :folder %>
+            <%= form.select :folder_id, folders,{}, class: "form-control select2"  %>
+            <small class="text-muted"><%= link_to "Create New Folder", new_folder_path("folder[entity_id]": current_user.entity_id) %></small>
+          </div>
 
-      <div id='e_signatures'>
-        <% @labels = @document.owner.respond_to?(:signature_labels) ? @document.owner.signature_labels : nil %>
-        <%= form.fields_for :e_signatures do |f| %>
-          <%= render 'e_signature_fields', f: %>
+          <div class="form-group">
+            <%= form.label :tags %>
+            <%= form.text_field :tag_list, class: "form-control"  %>
+            <small class="text-muted">Comma separated list of tags to classify the document</small>
+          </div>
+        <% elsif document.owner && document.owner.respond_to?(:document_tags) && document.owner.document_tags.present?  %>
+          <div class="form-group">
+            <%= form.label :owner_tag, "Document For" %>
+            <%= form.select :owner_tag, document.owner.document_tags , {include_blank: true}, class: "form-control"  %>
+          </div>
         <% end %>
-        <div class='links'>
-        </div>
-      </div>
 
-      <div id='stamp_papers'>
-      <hr>
-        <% @tags = @document.entity.entity_setting.respond_to?(:stamp_paper_tags) ? @document.entity.entity_setting.stamp_paper_tags&.split(',') : "" %>
-        <% if @tags.present? %>
-          <p>Available Stamp-Papers- <%= @tags.join(", ") %> </p>
+
+
+        <% label = document.file.blank? ? "Upload File" : link_to("Uploaded File: #{document.uploaded_file_name}", document.file.url, target: "_blank") %>
+        <%= render "layouts/single_upload", form: form, field_label: label,
+                                  for_model: "document", field_name: "file",
+                                  model: document %>
+
+
+        <% if (document.owner && document.owner.entity_id != current_user.entity_id) || document.owner_type == "InvestorKyc" %>
+          <%= form.text_field :orignal, class: "form-control", hidden:true, value: true  %>
+          <%= form.text_field :send_email, class: "form-control", hidden:true, value: false  %>
+
+        <% else %>
+          <div class="form-group nonpdf">
+            <%= form.label :orignal, "Allow Orignal Format Download" %>
+            <%= form.check_box :orignal, class: "form-check-input",
+                      data: {action: "click->docform#onOrignalChange"} %>
+            <small class="text-muted">Allow orignal format to be downloaded (No conversion or watermarking)</small>
+          </div>
+
+          <div class="form-group pdfopts">
+            <%= form.label :download, "Allow Download" %>
+            <%= form.check_box :download, class: "form-check-input",
+                    data: {action: "click->docform#onPdfOptChange"}  %>
+            <small class="text-muted">Enable users to download this document</small>
+          </div>
+
+          <div class="form-group pdfopts">
+            <%= form.label :printing, "Allow Printing" %>
+            <%= form.check_box :printing, class: "form-check-input",
+                    data: {action: "click->docform#onPdfOptChange"} %>
+            <small class="text-muted">Enable users to print this document</small>
+          </div>
+
+          <div class="form-group pdfopts">
+            <%= form.label :public_visibility, "Allow Public Visibility" %>
+            <%= form.check_box :public_visibility, class: "form-check-input" %>
+            <small class="text-muted">Enable any user to view this document</small>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :send_email %>
+            <%= form.check_box :send_email, class: "form-check-input" %>
+            <small class="text-muted">Send email notification to users who can view this document</small>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :template %>
+            <%= form.check_box :template, class: "form-check-input", "data-action":  "click->docform#showSignature" %>
+            <small class="text-muted">Mark this document as a template for document generation.</small>
+          </div>
+
         <% end %>
-        <%= form.fields_for :stamp_papers do |f| %>
-          <%= render 'stamp_paper_fields', f: %>
-        <% end %>
-      </div>
+        
+          <% if document.from_template_id != nil %>
+            <div class="form-group">
+              <%= form.label :approved %>
+              <%= form.check_box :approved, class: "form-check-input" %>
+              <small class="text-muted">Enable access to generated document</small>
+            </div>
+          <% end %>
+          
+          <%= custom_form_fields(document, form) %>
 
-      <div class="form-group">
-        <%= link_to_add_association 'Add Signature', form, :e_signatures, class: "btn btn-outline-success", id: "add_signature_btn" %>
-        <%= link_to_add_association 'Add Stamp Paper', form, :stamp_papers, class: "btn btn-outline-success", id: "add_stamp_paper_btn" %>
-        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-        <%= form.submit "Save & Upload More", {class: "btn btn-outline-primary"}%>
-      </div>
+          <div class="form-group">
+            <%= form.label :description %>
+            <%= form.rich_text_area :text, class: "form-control trix-content"  %>
+          </div>
 
-  </div>
+          <div id="sign_display_on_page">
+            <hr>
+            <h5> E-Signatures </h5>
+            <%= form.label :esign_display_on_page %>
+            <%= form.select :display_on_page, ["Last", "All"], {}, class: "form-control" %>
+            <br>
+          </div>
+
+          <div id='e_signatures'>
+            <% @labels = @document.owner.respond_to?(:signature_labels) ? @document.owner.signature_labels : nil %>
+            <%= form.fields_for :e_signatures do |f| %>
+              <%= render 'e_signature_fields', f: %>
+            <% end %>
+            <div class='links'>
+            </div>
+          </div>
+
+          <div id='stamp_papers'>
+          <hr>
+            <% @tags = @document.entity.entity_setting.respond_to?(:stamp_paper_tags) ? @document.entity.entity_setting.stamp_paper_tags&.split(',') : "" %>
+            <% if @tags.present? %>
+              <p>Available Stamp-Papers- <%= @tags.join(", ") %> </p>
+            <% end %>
+            <%= form.fields_for :stamp_papers do |f| %>
+              <%= render 'stamp_paper_fields', f: %>
+            <% end %>
+          </div>
+
+          <div class="form-group">
+            <%= link_to_add_association 'Add Signature', form, :e_signatures, class: "btn btn-outline-success", id: "add_signature_btn" %>
+            <%= link_to_add_association 'Add Stamp Paper', form, :stamp_papers, class: "btn btn-outline-success", id: "add_stamp_paper_btn" %>
+            <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+            <%= form.submit "Save & Upload More", {class: "btn btn-outline-primary"}%>
+          </div>
+
+      </div>
+    <% end %>
 <% end %>
-</div>
-</div>

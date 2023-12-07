@@ -31,6 +31,8 @@
     </div>
   <% else %>
     <div>
-      <%= render "form", document: @document %>
+      <%= render NewCard.new do %>
+        <%= render "form", document: @document %>
+      <% end %>
     </div>
   <% end %>

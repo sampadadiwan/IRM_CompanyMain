@@ -40,7 +40,10 @@ module CommitmentAccountEntry
   end
 
   def get_account_entry(name, date)
-    account_entries.where(name:, reporting_date: ..date).order(reporting_date: :desc).first
+    ae = account_entries.where(name:, reporting_date: ..date).order(reporting_date: :desc).first
+    raise "No Account Entry found for #{name} on #{date}" unless ae
+
+    ae
   end
 
   def on_date(name, entry_type, end_date)

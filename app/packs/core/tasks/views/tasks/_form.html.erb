@@ -1,10 +1,9 @@
 <div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
 
-<div class="dynamic_form card shadow mb-4" data-controller="access">
-  <div class="card-header py-3">
-      <h6 class="m-0 font-weight-bold text-primary">Add Task</h6>
-  </div>
-  <div class="card-body">
+<div data-controller="access">
+
+<%= render FormCard.new(title: "Task", css_class: "dynamic_form") do %>
+
     <%= form_with(model: task, id: "task_form", validates: true) do |form| %>
       <% if task.errors.any? %>
         <div class="alert alert-danger">
@@ -74,5 +73,6 @@
       </div>
     <% end %>
 
-  </div>
+<% end %>
+
 </div>

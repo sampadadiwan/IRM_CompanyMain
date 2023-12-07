@@ -1,3 +1,4 @@
 <%= render "/layouts/alerts" %>
-
-<%= render "form", user: @user %>
+<%= render NewCard.new do %>
+    <%= render "form", user: @user %>
+<% end %>

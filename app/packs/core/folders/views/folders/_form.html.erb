@@ -1,62 +1,59 @@
-<div class="card shadow mb-4">
-  <div class="card-header py-3">
-      <h6 class="m-0 font-weight-bold text-primary">Folder</h6>
-  </div>
-  <div class="card-body" data-controller="docform">
+<%= render FormCard.new(title: "Folder : #{folder.name.presence || 'New'}") do %>
+  <div data-controller="docform">
 
-<%= form_with(model: folder, validate: true) do |form| %>
-  <% if folder.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(folder.errors.count, "error") %> prohibited this folder from being saved:</h2>
+    <%= form_with(model: folder, validate: true) do |form| %>
+      <% if folder.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(folder.errors.count, "error") %> prohibited this folder from being saved:</h2>
 
-      <ul>
-        <% folder.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
+          <ul>
+            <% folder.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
 
-  <div class="form-group">
-    <%= form.label :name %>
-    <%= form.text_field :name, class: "form-control"  %>
-  </div>
+      <div class="form-group">
+        <%= form.label :name %>
+        <%= form.text_field :name, class: "form-control"  %>
+      </div>
 
-  <div class="form-group">
-    <%= form.label :parent_folder %>
-    <%= form.select :parent_id, Folder.for(current_user).map{|f| [f.full_path, f.id]} ,{}, class: "form-control select2"  %>
-  </div>
+      <div class="form-group">
+        <%= form.label :parent_folder %>
+        <%= form.select :parent_id, Folder.for(current_user).map{|f| [f.full_path, f.id]} ,{}, class: "form-control select2"  %>
+      </div>
 
-  <div class="form-group nonpdf">
-    <%= form.label :orignal, "Allow Orignal Format Download" %>
-    <%= form.check_box :orignal, class: "form-check-input", 
-              data: {action: "click->docform#onOrignalChange"} %>
-    <small class="text-muted">Allow orignal format to be downloaded (No conversion or watermarking)</small>
-  </div>
+      <div class="form-group nonpdf">
+        <%= form.label :orignal, "Allow Orignal Format Download" %>
+        <%= form.check_box :orignal, class: "form-check-input", 
+                  data: {action: "click->docform#onOrignalChange"} %>
+        <small class="text-muted">Allow orignal format to be downloaded (No conversion or watermarking)</small>
+      </div>
 
-  <div class="form-group pdfopts">
-    <%= form.label :download, "Allow Download" %>
-    <%= form.check_box :download, class: "form-check-input",
-            data: {action: "click->docform#onPdfOptChange"}  %>
-    <small class="text-muted">Enable users to download this document</small>
-  </div>
+      <div class="form-group pdfopts">
+        <%= form.label :download, "Allow Download" %>
+        <%= form.check_box :download, class: "form-check-input",
+                data: {action: "click->docform#onPdfOptChange"}  %>
+        <small class="text-muted">Enable users to download this document</small>
+      </div>
 
-  <div class="form-group pdfopts">
-    <%= form.label :printing, "Allow Printing" %>
-    <%= form.check_box :printing, class: "form-check-input",
-            data: {action: "click->docform#onPdfOptChange"} %>
-    <small class="text-muted">Enable users to print this document</small>
-  </div>
+      <div class="form-group pdfopts">
+        <%= form.label :printing, "Allow Printing" %>
+        <%= form.check_box :printing, class: "form-check-input",
+                data: {action: "click->docform#onPdfOptChange"} %>
+        <small class="text-muted">Enable users to print this document</small>
+      </div>
 
 
-  <%= render "layouts/multi_upload", form: form, title: "Folder Documents", 
-              for_model: "folder" %>
-                    
+      <%= render "layouts/multi_upload", form: form, title: "Folder Documents", 
+                  for_model: "folder" %>
+                        
 
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      <div class="form-group">
+        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      </div>
+    <% end %>
+
   </div>
 <% end %>
-
-  </div>
-</div>

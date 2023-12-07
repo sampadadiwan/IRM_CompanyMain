@@ -1,48 +1,42 @@
-<h1> 
-  Portfolio Income: 
+<%= render FormCard.new(title: "Portfolio Income: #{@portfolio_cashflow.aggregate_portfolio_investment}") do %>
 
-  <%= link_to @portfolio_cashflow.aggregate_portfolio_investment, aggregate_portfolio_investment_path(@portfolio_cashflow.aggregate_portfolio_investment, tab: "cashflows-tab")  %> 
+  <%= form_with(model: portfolio_cashflow) do |form| %>
+    <% if portfolio_cashflow.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(portfolio_cashflow.errors.count, "error") %> prohibited this portfolio_cashflow from being saved:</h2>
 
-  &nbsp 
+        <ul>
+          <% portfolio_cashflow.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
 
-  <%= @portfolio_cashflow.aggregate_portfolio_investment.investment_type %> 
-</h1>
+      <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :portfolio_company_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :aggregate_portfolio_investment_id, class: "form-control", hidden: true  %>
 
-<%= form_with(model: portfolio_cashflow) do |form| %>
-  <% if portfolio_cashflow.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(portfolio_cashflow.errors.count, "error") %> prohibited this portfolio_cashflow from being saved:</h2>
+    <div class="form-group">
+      <%= form.label :payment_date %>
+      <%= form.date_field :payment_date, class: "form-control"  %>
+    </div>
 
-      <ul>
-        <% portfolio_cashflow.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+    <div class="form-group" data-controller="currencyformat">
+      <%= form.label :amount %> <span class="formatted_currency"></span>
+      <%= form.number_field :amount, class: "form-control", step: :any,
+          data: {action: "input->currencyformat#format"} %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :notes %>
+      <%= form.text_area :notes, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>
 
-    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :portfolio_company_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :aggregate_portfolio_investment_id, class: "form-control", hidden: true  %>
-
-  <div class="form-group">
-    <%= form.label :payment_date %>
-    <%= form.date_field :payment_date, class: "form-control"  %>
-  </div>
-
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :amount %> <span class="formatted_currency"></span>
-    <%= form.number_field :amount, class: "form-control", step: :any,
-        data: {action: "input->currencyformat#format"} %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :notes %>
-    <%= form.text_area :notes, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
 <% end %>

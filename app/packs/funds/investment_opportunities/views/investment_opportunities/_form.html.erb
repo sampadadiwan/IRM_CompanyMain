@@ -1,82 +1,86 @@
-<%= form_with(model: investment_opportunity, validate: true) do |form| %>
-  <% if investment_opportunity.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(investment_opportunity.errors.count, "error") %> prohibited this investment_opportunity from being saved:</h2>
+<%= render FormCard.new(title: "Investment Opportunity") do %>
 
-      <ul>
-        <% investment_opportunity.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+  <%= form_with(model: investment_opportunity, validate: true) do |form| %>
+    <% if investment_opportunity.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(investment_opportunity.errors.count, "error") %> prohibited this investment_opportunity from being saved:</h2>
+
+        <ul>
+          <% investment_opportunity.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= form.label :company_name %>
+      <%= form.text_field :company_name, class: "form-control"  %>
+      <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :tag_list %>
+      <%= form.text_field :tag_list, class: "form-control"  %>
+    </div>
+
+
+    <div class="form-group">
+
+      <%= render "layouts/single_upload", form: form, field_label: "Upload Logo", 
+                              for_model: "investment_opportunity", field_name: "logo", 
+                              model: investment_opportunity %>
+
+      <small class="text-muted"> Upload Logo. </small>
+    </div>
+
+    <div class="form-group" data-controller="currencyformat">
+      <%= form.label :fund_raise_amount %> <span class="formatted_currency"></span>
+      <%= form.text_field :fund_raise_amount, class: "form-control", data: {action: "input->currencyformat#format"}  %>
+    </div>
+
+    <div class="form-group" data-controller="currencyformat">
+      <%= form.label :min_ticket_size %> <span class="formatted_currency"></span>
+      <%= form.text_field :min_ticket_size, class: "form-control", data: {action: "input->currencyformat#format"}  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :last_date %>
+      <%= form.date_field :last_date, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :currency %>
+      <%= form.text_field :currency, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :buyer_docs_list, "List of documents for Buyers" %>
+      <%= form.text_field :buyer_docs_list, class: "form-control"  %>
+      <small class="text-muted"> Comma seprated list of documents buyers need to upload. </small>
+    </div>
+
+
+    <div class="form-group">
+
+      <%= render "layouts/single_upload", form: form, field_label: "Upload Video", 
+                              for_model: "investment_opportunity", field_name: "video", 
+                              model: investment_opportunity %>
+
+      <small class="text-muted"> Upload Video. </small>
+    </div>
+
+    <%= custom_form_fields(investment_opportunity, form) %>
+
+    <div class="form-group">
+      <%= form.label :details %>
+      <%= form.rich_text_area :details, class: "form-control trix-content"  %>
+    </div>
+
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>
 
-  <div class="form-group">
-    <%= form.label :company_name %>
-    <%= form.text_field :company_name, class: "form-control"  %>
-    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :tag_list %>
-    <%= form.text_field :tag_list, class: "form-control"  %>
-  </div>
-
-
-  <div class="form-group">
-
-    <%= render "layouts/single_upload", form: form, field_label: "Upload Logo", 
-                            for_model: "investment_opportunity", field_name: "logo", 
-                            model: investment_opportunity %>
-
-    <small class="text-muted"> Upload Logo. </small>
-  </div>
-
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :fund_raise_amount %> <span class="formatted_currency"></span>
-    <%= form.text_field :fund_raise_amount, class: "form-control", data: {action: "input->currencyformat#format"}  %>
-  </div>
-
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :min_ticket_size %> <span class="formatted_currency"></span>
-    <%= form.text_field :min_ticket_size, class: "form-control", data: {action: "input->currencyformat#format"}  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :last_date %>
-    <%= form.date_field :last_date, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :currency %>
-    <%= form.text_field :currency, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :buyer_docs_list, "List of documents for Buyers" %>
-    <%= form.text_field :buyer_docs_list, class: "form-control"  %>
-    <small class="text-muted"> Comma seprated list of documents buyers need to upload. </small>
-  </div>
-
-
-  <div class="form-group">
-
-    <%= render "layouts/single_upload", form: form, field_label: "Upload Video", 
-                            for_model: "investment_opportunity", field_name: "video", 
-                            model: investment_opportunity %>
-
-    <small class="text-muted"> Upload Video. </small>
-  </div>
-
-  <%= custom_form_fields(investment_opportunity, form) %>
-
-  <div class="form-group">
-    <%= form.label :details %>
-    <%= form.rich_text_area :details, class: "form-control trix-content"  %>
-  </div>
-
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
 <% end %>

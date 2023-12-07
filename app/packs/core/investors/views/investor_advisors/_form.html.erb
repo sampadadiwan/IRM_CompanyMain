@@ -1,51 +1,53 @@
-<%= form_with(model: investor_advisor) do |form| %>
-  <% if investor_advisor.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(investor_advisor.errors.count, "error") %> prohibited this investor_advisor from being saved:</h2>
+<%= render FormCard.new(title: "Investor Advisor : #{investor_advisor.email.presence || 'New'}") do %>
+  <%= form_with(model: investor_advisor) do |form| %>
+    <% if investor_advisor.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(investor_advisor.errors.count, "error") %> prohibited this investor_advisor from being saved:</h2>
 
-      <ul>
-        <% investor_advisor.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-    <%= form.label :user_id, hidden: true %>
-
-  <div class="form-group">
-    <%= form.label :email %>
-    <%= form.text_field :email, class: "form-control"  %>
-  </div>
-
-  <div class="associated_entity row">
-    <% InvestorAdvisor.permissions.pairs.each do |key, val| %>
-      <% if investor_advisor.entity.send(val) %>
-        <div class="form-group col">
-          <%= form.label :permissions, key.titleize, class: "no-wrap" %>
-          <%= form.check_box :permissions, {name: "investor_advisor[permissions][]",
-              val: val, id: "permissions_#{val}", class: "form-check-input"}, val, nil   %>
-        </div>
-        <% end %>
+        <ul>
+          <% investor_advisor.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
     <% end %>
 
-      <% InvestorAdvisor.extended_permissions.pairs.each do |key, val| %>
-        <div class="form-group col">
-            <%= form.label :extended_permissions, key.titleize, class: "no-wrap" %>
-            <%= form.check_box :extended_permissions, {name: "investor_advisor[extended_permissions][]",
-                val: val, id: "extended_permissions#{val}", class: "form-check-input"}, val, nil   %>
-        </div>      
+      <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+      <%= form.label :user_id, hidden: true %>
+
+    <div class="form-group">
+      <%= form.label :email %>
+      <%= form.text_field :email, class: "form-control"  %>
+    </div>
+
+    <div class="associated_entity row">
+      <% InvestorAdvisor.permissions.pairs.each do |key, val| %>
+        <% if investor_advisor.entity.send(val) %>
+          <div class="form-group col">
+            <%= form.label :permissions, key.titleize, class: "no-wrap" %>
+            <%= form.check_box :permissions, {name: "investor_advisor[permissions][]",
+                val: val, id: "permissions_#{val}", class: "form-check-input"}, val, nil   %>
+          </div>
+          <% end %>
       <% end %>
 
-  </div>
+        <% InvestorAdvisor.extended_permissions.pairs.each do |key, val| %>
+          <div class="form-group col">
+              <%= form.label :extended_permissions, key.titleize, class: "no-wrap" %>
+              <%= form.check_box :extended_permissions, {name: "investor_advisor[extended_permissions][]",
+                  val: val, id: "extended_permissions#{val}", class: "form-check-input"}, val, nil   %>
+          </div>      
+        <% end %>
 
-  <div class="form-group">
-      <%= form.label :allowed_roles %>
-      <%= form.select :allowed_roles, ["company_admin", "approver", "employee", "investor"], {selected: investor_advisor.allowed_roles, include_hidden: false}, class: "form-control select2", multiple: true, name: "investor_advisor[allowed_roles][]" %>
-  </div>
+    </div>
 
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
+    <div class="form-group">
+        <%= form.label :allowed_roles %>
+        <%= form.select :allowed_roles, ["company_admin", "approver", "employee", "investor"], {selected: investor_advisor.allowed_roles, include_hidden: false}, class: "form-control select2", multiple: true, name: "investor_advisor[allowed_roles][]" %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
 <% end %>

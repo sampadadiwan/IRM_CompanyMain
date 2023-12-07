@@ -1,59 +1,63 @@
 <%= render "/layouts/alerts" %>
-<table class="table table-bordered dataTable">
-  <tr>
-    <td>
-      Ci Profile
-    </td>
-    <td>
-      <%= link_to @ci_track_record.investment_opportunity %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Name
-    </td>
-    <td>
-      <%= @ci_track_record.name %>
-    </td>
-  </tr>
-  
-  <tr>
-    <td>
-      Prefix
-    </td>
-    <td>
-      <%= @ci_track_record.prefix %>
-    </td>
-  </tr>
-  
-  <tr>
-    <td>
-      Value
-    </td>
-    <td>
-      <%= @ci_track_record.value %>
-    </td>
-  </tr>
-  
-  <tr>
-    <td>
-      Suffix
-    </td>
-    <td>
-      <%= @ci_track_record.suffix %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Details
-    </td>
-    <td>
-      <%= @ci_track_record.details %>
-    </td>
-  </tr>
-</table>
+<%= render FormCard.new(title: "Track Record: #{@ci_track_record.name}") do %>
+
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        Ci Profile
+      </td>
+      <td>
+        <%= link_to @ci_track_record.investment_opportunity %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Name
+      </td>
+      <td>
+        <%= @ci_track_record.name %>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        Prefix
+      </td>
+      <td>
+        <%= @ci_track_record.prefix %>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        Value
+      </td>
+      <td>
+        <%= @ci_track_record.value %>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        Suffix
+      </td>
+      <td>
+        <%= @ci_track_record.suffix %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Details
+      </td>
+      <td>
+        <%= @ci_track_record.details %>
+      </td>
+    </tr>
+  </table>
+
+<% end %>
+
 <div>
-  <%= link_to "Edit", edit_ci_track_record_path(@ci_track_record), {class: "btn btn-outline-primary"} %> |
-  <%= link_to "Back", :back, {class: "btn btn-outline-primary"} %> |
+  <%= link_to "Edit", edit_ci_track_record_path(@ci_track_record), {class: "btn btn-outline-primary"} %> 
   <%= button_to "Delete", @ci_track_record, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>

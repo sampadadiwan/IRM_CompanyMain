@@ -1,2 +1,3 @@
-
-<%= render "form", entity: @entity %>
+<%= render NewCard.new do %>
+    <%= render "form", entity: @entity %>
+<% end %>

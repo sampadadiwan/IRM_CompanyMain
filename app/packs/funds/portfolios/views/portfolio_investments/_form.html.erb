@@ -1,103 +1,107 @@
-<%= form_with(model: portfolio_investment, validate: true) do |form| %>
-  <% if portfolio_investment.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(portfolio_investment.errors.count, "error") %> prohibited this portfolio_investment from being saved:</h2>
+<%= render FormCard.new(title: "Portfolio Investment : #{portfolio_investment.portfolio_company.presence || 'New'}") do %>
 
-      <ul>
-        <% portfolio_investment.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+  <%= form_with(model: portfolio_investment, validate: true) do |form| %>
+    <% if portfolio_investment.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(portfolio_investment.errors.count, "error") %> prohibited this portfolio_investment from being saved:</h2>
+
+        <ul>
+          <% portfolio_investment.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+      <%= form.text_field :entity_id, class: "form-control", hidden: true %>
+      <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+
+    <div class="form-group">
+      <%= form.label :portfolio_company_id, "Portfolio Company" %>
+      <%= form.select :portfolio_company_id, portfolio_investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control"  %>
+
+      <small class="text-muted">
+        Create <%= link_to "New Portfolio Company",
+          new_investor_path("investor[entity_id]": portfolio_investment.entity_id, "investor[category]": "Portfolio Company",
+              "back_to": new_portfolio_investment_path("portfolio_investment[fund_id]": portfolio_investment.fund_id,
+              "portfolio_investment[entity_id]": portfolio_investment.entity_id)) %>
+      </small>
+
+    </div>
+
+    <div class="form-group">
+      <%= form.label :investment_date %>
+      <%= form.date_field :investment_date, class: "form-control"  %>
+    </div>
+
+    <div class="form-group" data-controller="currencyformat">
+      <%= form.label :amount %> <span class="formatted_currency"></span>
+      <%= form.number_field :amount, class: "form-control", step: :any,
+          data: {action: "input->currencyformat#format"} %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :quantity %>
+      <%= form.number_field :quantity, class: "form-control", step: :any  %>
+    </div>
+
+    <div class="form-group" data-controller="hide-co-invest">
+      <%= form.label :commitment_type %>
+      <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control commitment_type', data: {action: "change->hide-co-invest#onChange"} %>
+    </div>
+
+    <div class="form-group co-invest">
+      <%= form.label :folio_id %>
+      <%= form.select :capital_commitment_id, portfolio_investment.fund.capital_commitments.map{|cc| ["#{cc.investor_name}: #{cc.folio_id}", cc.id] }, {include_blank: true}, class: 'form-control' %>
+      <small class="text-muted">Select the Folio for the CoInvestment</small>
+    </div>
+
+    <div data-controller="select" data-select-url-value="<%= sub_categories_portfolio_investments_path %>"
+            data-select-param-value="category">
+
+      <div class="form-group">
+        <%= form.label :category %>
+        <%= form.select :category, PortfolioInvestment::CATEGORIES.keys.sort, {include_blank: true}, class: 'form-control',
+            "data-action": "change->select#change" %>
+        <small class="text-muted">Select the category (For SEBI Reports)</small>
+      </div>
+
+      <div class="form-group">
+        <% sub_categories = @portfolio_investment.category.present? ? PortfolioInvestment::CATEGORIES[@portfolio_investment.category] : ""  %>
+        <%= form.label :sub_category %>
+        <%= form.select :sub_category, sub_categories, {include_blank: true}, class: 'form-control', data: { select_target: "select" } %>
+        <small class="text-muted">Select the sub category (For SEBI Reports)</small>
+      </div>
+
+    </div>
+
+
+    <div class="form-group">
+      <%= form.label :sector %>
+      <%= form.select :sector, PortfolioInvestment::SECTORS, {include_blank: true}, class: 'form-control select2' %>
+      <small class="text-muted">Select the sector (For SEBI Reports)</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :investment_domicile %>
+      <%= form.select :investment_domicile, ["Domestic", "Overseas"], {include_blank: true}, class: 'form-control' %>
+      <small class="text-muted">For SEBI Reports</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :startup, "Startup Investment" %>
+      <%= form.check_box :startup, class: 'form-check-input' %>
+      <small class="text-muted">For SEBI Reports</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :notes %>
+      <%= form.text_area :notes, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>
 
-    <%= form.text_field :entity_id, class: "form-control", hidden: true %>
-    <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
-
-  <div class="form-group">
-    <%= form.label :portfolio_company_id, "Portfolio Company" %>
-    <%= form.select :portfolio_company_id, portfolio_investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control"  %>
-
-    <small class="text-muted">
-      Create <%= link_to "New Portfolio Company",
-        new_investor_path("investor[entity_id]": portfolio_investment.entity_id, "investor[category]": "Portfolio Company",
-            "back_to": new_portfolio_investment_path("portfolio_investment[fund_id]": portfolio_investment.fund_id,
-            "portfolio_investment[entity_id]": portfolio_investment.entity_id)) %>
-    </small>
-
-  </div>
-
-  <div class="form-group">
-    <%= form.label :investment_date %>
-    <%= form.date_field :investment_date, class: "form-control"  %>
-  </div>
-
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :amount %> <span class="formatted_currency"></span>
-    <%= form.number_field :amount, class: "form-control", step: :any,
-        data: {action: "input->currencyformat#format"} %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :quantity %>
-    <%= form.number_field :quantity, class: "form-control", step: :any  %>
-  </div>
-
-  <div class="form-group" data-controller="hide-co-invest">
-    <%= form.label :commitment_type %>
-    <%= form.select :commitment_type, CapitalCommitment::COMMITMENT_TYPES, {}, class: 'form-control commitment_type', data: {action: "change->hide-co-invest#onChange"} %>
-  </div>
-
-  <div class="form-group co-invest">
-    <%= form.label :folio_id %>
-    <%= form.select :capital_commitment_id, portfolio_investment.fund.capital_commitments.map{|cc| ["#{cc.investor_name}: #{cc.folio_id}", cc.id] }, {include_blank: true}, class: 'form-control' %>
-    <small class="text-muted">Select the Folio for the CoInvestment</small>
-  </div>
-
-  <div data-controller="select" data-select-url-value="<%= sub_categories_portfolio_investments_path %>"
-           data-select-param-value="category">
-
-    <div class="form-group">
-      <%= form.label :category %>
-      <%= form.select :category, PortfolioInvestment::CATEGORIES.keys.sort, {include_blank: true}, class: 'form-control',
-          "data-action": "change->select#change" %>
-      <small class="text-muted">Select the category (For SEBI Reports)</small>
-    </div>
-
-    <div class="form-group">
-      <% sub_categories = @portfolio_investment.category.present? ? PortfolioInvestment::CATEGORIES[@portfolio_investment.category] : ""  %>
-      <%= form.label :sub_category %>
-      <%= form.select :sub_category, sub_categories, {include_blank: true}, class: 'form-control', data: { select_target: "select" } %>
-      <small class="text-muted">Select the sub category (For SEBI Reports)</small>
-    </div>
-
-  </div>
-
-
-  <div class="form-group">
-    <%= form.label :sector %>
-    <%= form.select :sector, PortfolioInvestment::SECTORS, {include_blank: true}, class: 'form-control select2' %>
-    <small class="text-muted">Select the sector (For SEBI Reports)</small>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :investment_domicile %>
-    <%= form.select :investment_domicile, ["Domestic", "Overseas"], {include_blank: true}, class: 'form-control' %>
-    <small class="text-muted">For SEBI Reports</small>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :startup, "Startup Investment" %>
-    <%= form.check_box :startup, class: 'form-check-input' %>
-    <small class="text-muted">For SEBI Reports</small>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :notes %>
-    <%= form.text_area :notes, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
 <% end %>

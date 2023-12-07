@@ -1,3 +1,7 @@
-<h1>Editing Task</h1>
-
-<%=render "form", task: @task, show_completed: true %>
+<div>
+    <%= turbo_frame_tag "new_task" do %>        
+        <%= render NewCard.new do %>
+            <%= render "form", task: task %>
+        <% end %>
+    <% end %>
+</div>

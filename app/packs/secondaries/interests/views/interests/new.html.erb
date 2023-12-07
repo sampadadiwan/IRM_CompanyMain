@@ -1,7 +1,3 @@
-<div class="row justify-content-md-center">
-    <div class="col-md-6">
-        <%= render "form", interest: @interest %>
-    </div>
-</div>
-
-
+<%= render NewCard.new do %>
+    <%= render "form", interest: @interest %>
+<% end %>

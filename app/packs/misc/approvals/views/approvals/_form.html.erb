@@ -1,43 +1,47 @@
-<%= form_with(model: approval, validate: true, class: "") do |form| %>
-  <% if approval.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(approval.errors.count, "error") %> prohibited this approval from being saved:</h2>
+<%= render FormCard.new(title: "Approval : #{approval.title.presence || 'New'}") do %>
 
-      <ul>
-        <% approval.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+  <%= form_with(model: approval, validate: true, class: "") do |form| %>
+    <% if approval.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(approval.errors.count, "error") %> prohibited this approval from being saved:</h2>
+
+        <ul>
+          <% approval.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+    
+    <div class="form-group">
+      <%= form.label :title %>
+      <%= form.text_field :title, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :due_date %>
+      <%= form.date_field :due_date, class: "form-control"  %>
+      <small class="text-muted">Date after which responses are not allowed</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :response_status %>
+      <%= form.text_field :response_status, class: "form-control"  %>
+      <small class="text-muted">Comma separated list of options for responses</small>
+    </div>
+
+    <%= custom_form_fields(approval, form) %>
+
+    <div class="form-group">
+      <%= form.label :agreements_reference, "Details" %>
+      <%= form.rich_text_area :agreements_reference, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>
 
-  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-  
-  <div class="form-group">
-    <%= form.label :title %>
-    <%= form.text_field :title, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :due_date %>
-    <%= form.date_field :due_date, class: "form-control"  %>
-    <small class="text-muted">Date after which responses are not allowed</small>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :response_status %>
-    <%= form.text_field :response_status, class: "form-control"  %>
-    <small class="text-muted">Comma separated list of options for responses</small>
-  </div>
-
-  <%= custom_form_fields(approval, form) %>
-
-  <div class="form-group">
-    <%= form.label :agreements_reference, "Details" %>
-    <%= form.rich_text_area :agreements_reference, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
 <% end %>

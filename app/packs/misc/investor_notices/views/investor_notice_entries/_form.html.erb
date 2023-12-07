@@ -1,35 +1,39 @@
-<%= form_with(model: investor_notice_entry) do |form| %>
-  <% if investor_notice_entry.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(investor_notice_entry.errors.count, "error") %> prohibited this investor_notice_entry from being saved:</h2>
+<%= render FormCard.new(title: "Investor Notice") do %>
 
-      <ul>
-        <% investor_notice_entry.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+  <%= form_with(model: investor_notice_entry) do |form| %>
+    <% if investor_notice_entry.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(investor_notice_entry.errors.count, "error") %> prohibited this investor_notice_entry from being saved:</h2>
+
+        <ul>
+          <% investor_notice_entry.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+    
+    <div class="form-group">
+      <%= form.label :investor_notice_id %>
+      <%= form.text_field :investor_notice, class: "form-control", disabled: true, value: investor_notice_entry.investor_notice.title  %>
+      <%= form.text_field :investor_notice_id, class: "form-control", hidden: true  %>
+    </div>
+    
+    <div class="form-group">
+      <%= form.label :investor_id %>
+      <%= form.select :investor_id, investor_notice_entry.investor_notice.investors.order("investors.investor_name asc").map{|i| [i.investor_name, i.id]}, {}, class: "form-control select2"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :active %>
+      <%= form.check_box :active, class: "form-check-input"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>
 
-  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-  
-  <div class="form-group">
-    <%= form.label :investor_notice_id %>
-    <%= form.text_field :investor_notice, class: "form-control", disabled: true, value: investor_notice_entry.investor_notice.title  %>
-    <%= form.text_field :investor_notice_id, class: "form-control", hidden: true  %>
-  </div>
-  
-  <div class="form-group">
-    <%= form.label :investor_id %>
-    <%= form.select :investor_id, investor_notice_entry.investor_notice.investors.order("investors.investor_name asc").map{|i| [i.investor_name, i.id]}, {}, class: "form-control select2"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :active %>
-    <%= form.check_box :active, class: "form-check-input"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
 <% end %>

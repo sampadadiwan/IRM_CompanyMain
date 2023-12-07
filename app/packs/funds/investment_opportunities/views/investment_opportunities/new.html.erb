@@ -1,3 +1,3 @@
-<h1>New Investment Opportunity</h1>
-
-<%= render "form", investment_opportunity: @investment_opportunity %>
+<%= render NewCard.new do %>
+    <%= render "form", investment_opportunity: @investment_opportunity %>
+<% end %>

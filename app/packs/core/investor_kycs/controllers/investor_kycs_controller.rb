@@ -132,7 +132,7 @@ class InvestorKycsController < ApplicationController
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
     authorize(@investor_kyc)
     respond_to do |format|
-      if @investor_kyc.save
+      if @investor_kyc.save(validate: false)
         format.html do
           if commit_param == "Continue without CKYC/KRA"
             redirect_to edit_investor_kyc_path(@investor_kyc)

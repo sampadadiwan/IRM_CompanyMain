@@ -1,67 +1,71 @@
-<%= form_with(model: valuation, validate: true) do |form| %>
-  <% if valuation.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(valuation.errors.count, "error") %> prohibited this valuation from being saved:</h2>
+<%= render FormCard.new(title: "Valuation : #{valuation.owner.presence || 'New'}") do %>
 
-      <ul>
-        <% valuation.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+  <%= form_with(model: valuation, validate: true) do |form| %>
+    <% if valuation.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(valuation.errors.count, "error") %> prohibited this valuation from being saved:</h2>
+
+        <ul>
+          <% valuation.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+
+    <div class="form-group">
+      <%= form.label :valuation_date %>
+      <%= form.date_field :valuation_date, class: "form-control"  %>
+    </div>
+
+    <div data-controller="select" data-select-url-value="<%= sub_categories_portfolio_investments_path %>"
+            data-select-param-value="category">
+
+      <div class="form-group">
+        <%= form.label :category %>
+        <%= form.select :category, PortfolioInvestment::CATEGORIES.keys.sort, {include_blank: true}, class: 'form-control',
+            "data-action": "change->select#change" %>
+      </div>
+
+      <div class="form-group">
+        <% sub_categories = @valuation.category.present? ? PortfolioInvestment::CATEGORIES[@valuation.category] : ""  %>
+        <%= form.label :sub_category %>
+        <%= form.select :sub_category, sub_categories, {include_blank: true}, class: 'form-control', data: { select_target: "select" } %>      
+      </div>
+
+    </div>
+
+    <div class="form-group" data-controller="currencyformat">
+      <%= form.label :valuation, "Company Valuation" %> <span class="formatted_currency"></span>
+      <%= form.number_field :valuation, class: "form-control",  step: :any, 
+          data: {action: "input->currencyformat#format"}  %>
+    </div>
+
+    
+    <div class="form-group" data-controller="currencyformat">
+        <%= form.label :per_share_value %> <span class="formatted_currency"></span>
+        <%= form.number_field :per_share_value, class: "form-control",  step: :any,
+            data: {action: "input->currencyformat#format"} %>
+    </div>
+
+
+    <div class="form-group">
+      
+      <%= render "layouts/single_upload", form: form, field_label: "Upload the valuation report", 
+                              for_model: "valuation", field_name: "report", 
+                              model: valuation %>
+
+    </div>
+
+
+    <%= custom_form_fields(valuation, form) %>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>
 
-  <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
-  <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
-
-  <div class="form-group">
-    <%= form.label :valuation_date %>
-    <%= form.date_field :valuation_date, class: "form-control"  %>
-  </div>
-
-  <div data-controller="select" data-select-url-value="<%= sub_categories_portfolio_investments_path %>"
-           data-select-param-value="category">
-
-    <div class="form-group">
-      <%= form.label :category %>
-      <%= form.select :category, PortfolioInvestment::CATEGORIES.keys.sort, {include_blank: true}, class: 'form-control',
-          "data-action": "change->select#change" %>
-    </div>
-
-    <div class="form-group">
-      <% sub_categories = @valuation.category.present? ? PortfolioInvestment::CATEGORIES[@valuation.category] : ""  %>
-      <%= form.label :sub_category %>
-      <%= form.select :sub_category, sub_categories, {include_blank: true}, class: 'form-control', data: { select_target: "select" } %>      
-    </div>
-
-  </div>
-
-  <div class="form-group" data-controller="currencyformat">
-    <%= form.label :valuation, "Company Valuation" %> <span class="formatted_currency"></span>
-    <%= form.number_field :valuation, class: "form-control",  step: :any, 
-        data: {action: "input->currencyformat#format"}  %>
-  </div>
-
-  
-  <div class="form-group" data-controller="currencyformat">
-      <%= form.label :per_share_value %> <span class="formatted_currency"></span>
-      <%= form.number_field :per_share_value, class: "form-control",  step: :any,
-          data: {action: "input->currencyformat#format"} %>
-  </div>
-
-
-  <div class="form-group">
-    
-    <%= render "layouts/single_upload", form: form, field_label: "Upload the valuation report", 
-                            for_model: "valuation", field_name: "report", 
-                            model: valuation %>
-
-  </div>
-
-
-  <%= custom_form_fields(valuation, form) %>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
 <% end %>

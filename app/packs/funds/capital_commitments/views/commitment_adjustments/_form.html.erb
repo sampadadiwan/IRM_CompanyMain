@@ -1,10 +1,4 @@
-<div class="card shadow mb-4">
-  <div class="card-header py-3">
-      <h6 class="m-0 font-weight-bold text-primary">
-          Adjustment : <%= commitment_adjustment.capital_commitment.investor_name %>
-      </h6>
-  </div>
-  <div class="card-body">
+<%= render FormCard.new(title: "Account Entry : #{commitment_adjustment.capital_commitment.investor_name}") do %>
 
     <%= form_with(model: commitment_adjustment) do |form| %>
       <% if commitment_adjustment.errors.any? %>
@@ -46,5 +40,4 @@
       </div>
     <% end %>
 
-  </div>
-</div>
+  <% end %>

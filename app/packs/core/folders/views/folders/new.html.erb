@@ -1,2 +1,3 @@
-
-<%= render "form", folder: @folder %>
+<%= render NewCard.new do %>
+    <%= render "form", folder: @folder %>
+<% end %>

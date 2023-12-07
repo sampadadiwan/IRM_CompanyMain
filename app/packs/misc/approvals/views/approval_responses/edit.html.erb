@@ -1,3 +1,3 @@
-<h1>Editing Approval Response</h1>
-
-<%=render "form", approval_response: @approval_response %>
+<%= render NewCard.new do %>
+    <%= render "form", approval_response: @approval_response %>
+<% end %>
