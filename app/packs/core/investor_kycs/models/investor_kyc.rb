@@ -197,6 +197,6 @@ class InvestorKyc < ApplicationRecord
   end
 
   def face_value_for_redemption
-    Money.new(entity.capital_distribution_payments.where(investor_id:).sum(:cost_of_investment_cents), entity.currency)
+    Money.new(capital_distribution_payments.sum(:cost_of_investment_cents), entity.currency)
   end
 end
