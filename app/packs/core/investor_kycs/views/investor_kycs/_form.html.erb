@@ -67,7 +67,8 @@
             </div>
 
             <div class="form-group">
-              <%= form.label :date_of_birth %>
+              <% label = investor_kyc.kyc_type == "individual" ? "Date Of Birth" : "Date Of Incorporation" %>
+              <%= form.label :date_of_birth, label %>
               <%= form.date_field :birth_date, class: "form-control" %>
             </div>
 
@@ -122,13 +123,8 @@
               <%= file_fields("Upload Address Proof", investor_kyc, form, required: is_investor) %>
 
               <small class="form-text text-muted"> Any one of:
-                Passport
-                Aadhar Card,
-                Voter ID Card,
-                Driving License,
-                NREGA Job Card,
-                National Population Register Letter,
-                Deemed Proof of Address (utility bill not older than 2 month in English language)
+                Passport,
+                Aadhar Card
               </small>
 
           </div>

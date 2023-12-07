@@ -10,7 +10,7 @@
         investor_kyc = InvestorKyc.new(investor_id: @investor&.id, entity_id: entity_id)
       %>
       
-      <% if policy(investor_kyc).new? %>
+      <% if policy(investor_kyc).new? && current_user.curr_role != "investor" %>
       <div class="btn-group">
         <div class="dropdown">
           <button class="btn btn-outline-primary dropdown-toggle" type="button"
@@ -28,7 +28,7 @@
       </div>
       <% end %>
 
-
+      <% if policy(investor_kyc).new? || policy(Document).approve? %>
       <div class="btn-group">
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle" type="button"
@@ -44,6 +44,7 @@
           </div>
         </div>
       </div>
+      <% end %>
 
       <%= button_to "Send KYC Reminders", send_kyc_reminder_to_all_investor_kycs_path("entity_id": entity_id), method: :get, class: "btn btn-outline-primary", data: {action: "click->confirm#popup", turbo:false,
       method: :get, msg: "This will generate a notification to all investor users whose KYC is unverified"} if policy(InvestorKyc).send_kyc_reminder_to_all? %>

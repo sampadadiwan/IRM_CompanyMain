@@ -81,5 +81,6 @@ class InvestorKycPolicy < ApplicationPolicy
 
   def destroy?
     create?(:destroy) && !record.verified
+    (belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :destroy))
   end
 end
