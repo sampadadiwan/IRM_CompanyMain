@@ -1,5 +1,9 @@
-04/12/2023 - V7.0.11
+04/12/2023 - V7.0.12
 #####################################
+1. KYCs UI changes
+2. Face Val For Redemption included in KYC uncalled amount
+3. Using FormCard across all forms
+4. Formula Rerun
 
 
 04/12/2023 - V7.0.11
