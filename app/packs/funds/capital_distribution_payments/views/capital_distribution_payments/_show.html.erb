@@ -60,6 +60,16 @@
           </td>
         </tr>
 
+        <tr>
+          <td>
+            Face Value For Redemption
+          </td>
+          <td>
+            <%= money_to_currency capital_distribution_payment.cost_of_investment, params %>
+          </td>
+        </tr>
+
+
         <% if capital_distribution_payment.folio_amount != capital_distribution_payment.amount %>
         <tr>
           <td>

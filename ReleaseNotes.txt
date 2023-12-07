@@ -1,6 +1,10 @@
 04/12/2023 - V7.0.11
 #####################################
 
+
+04/12/2023 - V7.0.11
+#####################################
+
 1. Added WA enabled to entity
 2. Better Individual/Non I KYCs
 3. Changed client side validations
