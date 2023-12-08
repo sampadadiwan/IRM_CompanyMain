@@ -93,7 +93,13 @@ class PortfolioInvestment < ApplicationRecord
   def compute_fmv_cents_on(date)
     last_valuation = portfolio_company.valuations.where(category:, sub_category:, valuation_date: ..date).order(valuation_date: :desc).first
 
-    last_valuation ? net_quantity_on(date) * last_valuation.per_share_value_cents : 0
+    if date == Time.zone.today 
+      nq = net_quantity
+    else
+      nq = net_quantity_on(date)
+    end
+
+    last_valuation ? nq * last_valuation.per_share_value_cents : 0
   end
 
   def net_quantity_on(date)
