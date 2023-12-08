@@ -105,6 +105,7 @@ class InvestorAccessesController < ApplicationController
 
     respond_to do |format|
       if @investor_access.update(investor_access_params)
+        format.turbo_stream { render :update }
         format.html { redirect_to investor_access_path(@investor_access), notice: "Investor access was successfully updated." }
         format.json { render :show, status: :ok, location: @investor_access }
       else
@@ -139,7 +140,7 @@ class InvestorAccessesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_access_params
-    params.require(:investor_access).permit(:investor_id, :user_id, :email, :approved, :send_confirmation,
+    params.require(:investor_access).permit(:investor_id, :user_id, :email, :cc, :approved, :send_confirmation,
                                             :phone, :whatsapp_enabled, :granted_by, :entity_id, :first_name, :last_name, :call_code)
   end
 end

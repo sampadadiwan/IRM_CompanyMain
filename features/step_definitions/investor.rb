@@ -168,6 +168,7 @@ Then('the investor accesses must have the data in the sheet') do
     puts "Checking import of #{ia.investor.investor_name}"
     ia.investor.investor_name.should == user_data["Investor"].strip
     ia.email.should == user_data["Email"]
+    ia.cc.should == user_data["Cc"]
     ia.first_name.should == user_data["First Name"]
     ia.last_name.should == user_data["Last Name"]
     ia.phone.should == user_data["Phone"]&.to_s

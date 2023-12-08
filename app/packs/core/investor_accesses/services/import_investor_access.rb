@@ -1,5 +1,5 @@
 class ImportInvestorAccess < ImportUtil
-  STANDARD_HEADERS = ["Investor", "First Name", "Last Name", "Email", "Country Code", "Phone", "WhatsApp Enabled", "Approved", "Send Confirmation Email"].freeze
+  STANDARD_HEADERS = ["Investor", "First Name", "Last Name", "Email", "Cc", "Country Code", "Phone", "WhatsApp Enabled", "Approved", "Send Confirmation Email"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -48,7 +48,7 @@ class ImportInvestorAccess < ImportUtil
 
     ia = InvestorAccess.new(first_name: user_data["First Name"], last_name: user_data["Last Name"], call_code:,
                             email: user_data["Email"], phone: user_data["Phone"].to_s,
-                            approved:, whatsapp_enabled:,
+                            approved:, whatsapp_enabled:, cc: user_data["Cc"],
                             entity_id: import_upload.entity_id, investor_id: investor.id,
                             granted_by: import_upload.user_id,
                             send_confirmation: user_data["Send Confirmation Email"] == "Yes")

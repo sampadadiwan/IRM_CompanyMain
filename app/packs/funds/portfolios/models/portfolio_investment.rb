@@ -114,7 +114,7 @@ class PortfolioInvestment < ApplicationRecord
     aggregate_portfolio_investment.save
   end
 
-  after_create_commit -> { PortfolioInvestmentJob.perform_later(id) }
+  after_create_commit -> { PortfolioInvestmentJob.perform_later(id) if sell? }
   # Called from PortfolioInvestmentJob
   # This method is used to setup which sells are linked to which buys for purpose of attribution
   def setup_attribution

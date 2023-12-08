@@ -1,4 +1,12 @@
-04/12/2023 - V7.0.12
+08/12/2023 - V7.0.13
+#####################################
+1. Added filters for IAs
+2. Fixed stock adjustment computation
+3. Added cc to IA
+4. Added Custom notifications
+5. Add cc override in Fund
+
+07/12/2023 - V7.0.12
 #####################################
 1. KYCs UI changes
 2. Face Val For Redemption included in KYC uncalled amount

@@ -11,6 +11,9 @@
   <td>
     <%= investor_access.email %>
   </td>
+  <td>
+    <%= investor_access.cc %>
+  </td>
   <td class="hideMobP">
 
     <%= "(#{investor_access.user.call_code})#{investor_access.user.phone}" %>
@@ -29,6 +32,9 @@
     <%= investor_access.granter&.name %>
   </td>
   <td>
+
+    <%= link_to "Edit" , edit_investor_access_path(investor_access), data: { turbo_frame: 'new_investor_access' }, class: "btn btn-outline-primary" if policy(investor_access).edit? %>
+
     <%= button_to "Delete" , investor_access, method: :delete, class: "btn btn-outline-danger" ,
         form_class: "deleteButton", data: {action: "click->confirm#popup"} if Pundit.policy(current_user, investor_access).destroy? %>
 
