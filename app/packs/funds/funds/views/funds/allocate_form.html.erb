@@ -3,54 +3,55 @@
   end_date ||= params[:end_date] || Time.zone.today.end_of_quarter
 %>
 
-<%= render "/layouts/alerts" %>
+<%= render NewCard.new do %>
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Allocate Account Entries For : <%= @fund.name %> </h1>
-</div>
+  <%= render FormCard.new(title: "Allocate Account Entries For : #{@fund.name}") do %>
 
+  <%= form_with(model: @fund, url: allocate_fund_path(@fund), method: :patch) do |form| %>
+    
+    <%= form.text_field :sample, class: "form-control", name: "sample", value: params[:sample], hidden: true %>
 
-<%= form_with(model: @fund, url: allocate_fund_path(@fund), method: :patch) do |form| %>
-  
-  <%= form.text_field :sample, class: "form-control", name: "sample", value: params[:sample], hidden: true %>
+    <div class="form-group">
+      <%= form.label :start_date %>
+      <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date  %>
+    </div>
 
-  <div class="form-group">
-    <%= form.label :start_date %>
-    <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date  %>
-  </div>
+    <div class="form-group">
+      <%= form.label :end_date %>
+      <%= form.date_field :end_date, class: "form-control", name: "end_date", value: end_date %>
+    </div>
 
-  <div class="form-group">
-    <%= form.label :end_date %>
-    <%= form.date_field :end_date, class: "form-control", name: "end_date", value: end_date %>
-  </div>
+    <div class="form-group">
+      <%= form.label :fund_ratios, "Generate Fund Ratios" %>
+      <%= form.check_box :fund_ratios, class: "form-check-input", name: "fund_ratios", value: true %>
+      <small class="text-muted">Check if the fund ratios should be generated post the allocation process</small>
+    </div>
 
-  <div class="form-group">
-    <%= form.label :fund_ratios, "Generate Fund Ratios" %>
-    <%= form.check_box :fund_ratios, class: "form-check-input", name: "fund_ratios", value: true %>
-    <small class="text-muted">Check if the fund ratios should be generated post the allocation process</small>
-  </div>
+    <div class="form-group">
+      <%= form.label :generate_soa, "Generate SOA" %>
+      <%= form.check_box :generate_soa, class: "form-check-input", name: "generate_soa", value: true %>
+      <small class="text-muted">Check if the SOA for each LP should be generated post the allocation process</small>
+    </div>
 
-  <div class="form-group">
-    <%= form.label :generate_soa, "Generate SOA" %>
-    <%= form.check_box :generate_soa, class: "form-check-input", name: "generate_soa", value: true %>
-    <small class="text-muted">Check if the SOA for each LP should be generated post the allocation process</small>
-  </div>
+    <div class="form-group">
+      <%= form.label :rule_for, "For" %>
+      <% selected = params[:rule_for] || "Accounting" %>
+      <%= form.select :rule_for, ["Accounting", "Reporting"],  {include_blank: "Both", selected: selected}, class: "form-control", name: "rule_for" %>
+    </div>
 
-  <div class="form-group">
-    <%= form.label :rule_for, "For" %>
-    <% selected = params[:rule_for] || "Accounting" %>
-    <%= form.select :rule_for, ["Accounting", "Reporting"],  {include_blank: "Both", selected: selected}, class: "form-control", name: "rule_for" %>
-  </div>
+    <div class="form-group">
+      <%= form.label :template_name, "SOA Template" %>
+      <%= form.select :template_name, @fund.capital_commitments.first.templates("SOA Template"), {}, class: "form-control", name: "template_name"  %>
+      <small class="text-muted">Select the SOA template to be used for SOA generation. </small>
+    </div>
 
-  <div class="form-group">
-    <%= form.label :template_name, "SOA Template" %>
-    <%= form.select :template_name, @fund.capital_commitments.first.templates("SOA Template"), {}, class: "form-control", name: "template_name"  %>
-    <small class="text-muted">Select the SOA template to be used for SOA generation. </small>
-  </div>
+    <div class="form-group">
+      <%= form.submit "Allocate Now", {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
 
-  <div class="form-group">
-    <%= form.submit "Allocate Now", {class: "btn btn-outline-primary"}%>
-  </div>
+  <% end %>
+
 <% end %>
 
 <div class="associated_entity" data-controller="datatable">

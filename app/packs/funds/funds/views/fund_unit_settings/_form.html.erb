@@ -4,13 +4,8 @@
   </div>
 <% end %>
 
-<div class="card shadow mb-4">
-  <div class="card-header py-3">
-      <h6 class="m-0 font-weight-bold text-primary">
-          Unit Setting : <%= fund_unit_setting.fund&.name %>
-      </h6>
-  </div>
-  <div class="card-body">
+<%= render FormCard.new(title: "Unit Setting : #{fund_unit_setting.fund&.name}") do %>
+
     <%= form_with(model: fund_unit_setting) do |form| %>
       <% if fund_unit_setting.errors.any? %>
         <div class="alert alert-danger">
@@ -58,5 +53,5 @@
         <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
       </div>
     <% end %>
-  </div>
-</div>
+  
+<% end %>
