@@ -119,4 +119,12 @@ class InvestorAccess < ApplicationRecord
   def send_notification_if_changed
     send_notification if id.present? && saved_change_to_approved?
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[approved created_at email first_name granted_by last_name phone]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    ["investor"]
+  end
 end

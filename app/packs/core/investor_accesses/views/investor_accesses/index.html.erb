@@ -1,4 +1,4 @@
 <%= render "/layouts/alerts" %>
-
+<%= render "/layouts/filter", associations: [:investor] %> 
 <%= render "/investor_accesses/index", investor_accesses: @investor_accesses, investor: nil %>
 <%= paginate @investor_accesses %>
