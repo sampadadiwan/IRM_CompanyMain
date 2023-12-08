@@ -171,7 +171,7 @@ class InvestorKycsController < ApplicationController
       if @investor_kyc.save
         format.html { redirect_to edit_investor_kyc_path(@investor_kyc), notice: "Investor kyc was successfully updated." }
       else
-        format.html { redirect_to edit_investor_kyc_path(@investor_kyc), status: :unprocessable_entity }
+        format.html {  render :edit, status: :unprocessable_entity }
       end
       format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }
     end
