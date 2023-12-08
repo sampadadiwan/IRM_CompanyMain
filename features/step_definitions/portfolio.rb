@@ -216,6 +216,8 @@ Then('the Portfolio investments must be adjusted') do
     cpi = @current_portfolio_investments[idx]
     ap cpi
 
+    binding.pry
+    
     cpi.quantity.should == opi.quantity * @stock_adjustment.adjustment
     cpi.amount_cents.should == opi.amount_cents 
     # cpi.fmv_cents.should be_within(100).of(opi.fmv_cents)

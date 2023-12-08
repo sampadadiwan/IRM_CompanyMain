@@ -205,15 +205,21 @@ class PortfolioInvestment < ApplicationRecord
   end
 
   def split(stock_split_ratio)
-    # Update the quantity and cost
-    self.quantity *= stock_split_ratio
-    self.net_quantity *= stock_split_ratio
-    self.sold_quantity *= stock_split_ratio
-    save
-
+    # Update the attributions first as they influence the net quantity
     portfolio_attributions.each do |pa|
       pa.quantity *= stock_split_ratio
       pa.save
     end
+
+    portfolio_attributions.reload
+    reload
+
+    # Update the quantity and cost
+    self.quantity *= stock_split_ratio
+    # self.sold_quantity *= stock_split_ratio
+    # self.net_quantity *= stock_split_ratio
+    self.notes ||= ""
+    self.notes += "Stock split #{stock_split_ratio} on #{Time.zone.today}\n"
+    save
   end
 end
