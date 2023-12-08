@@ -196,9 +196,12 @@ class InvestorKycsController < ApplicationController
   end
 
   def toggle_verified
+    validate = current_user.curr_role == "investor"
     verified_by_id = @investor_kyc.verified ? nil : current_user.id
+    @investor_kyc.assign_attributes(verified: !@investor_kyc.verified, verified_by_id:)
+    
     respond_to do |format|
-      if @investor_kyc.update(verified: !@investor_kyc.verified, verified_by_id:)
+      if @investor_kyc.save(validate:)
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully updated." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
