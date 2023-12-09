@@ -45,13 +45,14 @@ Scenario Outline: Grant Access Rights to approval
   Given the investors are added to the approval  
   When I visit the approval details page
   Then the approval responses are generated with status "Pending"  
-  When the approval is approved
+  Given there is a custom notification in place for the approval with subject "<subject>"
+  When the approval is approved  
   Then the investor gets the approval notification
 
   Examples:
-  	|user	    |entity               |approval                 |msg	|
-  	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created|
-    |  	        |entity_type=Company  |title=Merger Approval    |Approval was successfully created|
+  	|user	    |entity               |approval                 |msg	|   subject |
+  	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created| Please respond to approval"|
+    |  	        |entity_type=Company  |title=Merger Approval    |Approval was successfully created| Approval from XYZ"|
 
 
 Scenario Outline: Grant Access Rights to approval after approved

@@ -10,6 +10,9 @@
       <% if policy(approval).update? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-tab">
             Access Rights</a>
+
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">
+            Notification</a>
       <% end %>
 
     </nav>
@@ -54,10 +57,17 @@
 
           </div>  
         </div>
+
+        <div id="custom-notification-tab" class="tab-pane fade">
+          <div id="custom_notifications" class="associated_entity">
+
+              <%= render "custom_notifications/index", custom_notifications: [approval.custom_notification].compact, 
+                          owner: approval %>
+
+          </div>  
+        </div>
       <% end %>
-
       
-
-  </div>
+    </div>
   
   </div>

@@ -8,6 +8,8 @@
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
 
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">
+            Notification</a>
     </nav>
 
     <div class="tab-content" data-controller="datatable">
@@ -26,6 +28,15 @@
           </div>
         </div>
 
+    </div>
+
+    <div id="custom-notification-tab" class="tab-pane fade">
+      <div id="custom_notifications" class="associated_entity">
+
+          <%= render "custom_notifications/index", custom_notifications: [capital_call.custom_notification].compact, 
+                      owner: capital_call %>
+
+      </div>  
     </div>
 
   </div>

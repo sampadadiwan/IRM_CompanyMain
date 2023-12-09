@@ -9,12 +9,12 @@ Scenario Outline: Import capital commitments
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   Then I should see the "Import upload was successfully created"
-  Then There should be "6" capital commitments created
+  Then There should be "8" capital commitments created
   And the capital commitments must have the data in the sheet
   And the capital commitments must have the percentages updated
   And the fund must have the counter caches updated
   And Given I upload "account_entries.xlsx" file for Account Entries
-  Then There should be "17" account_entries created
+  Then There should be "19" account_entries created
   And the account_entries must have the data in the sheet
   And the account_entries must visible for each commitment
 

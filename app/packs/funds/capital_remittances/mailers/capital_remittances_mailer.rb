@@ -4,11 +4,16 @@ class CapitalRemittancesMailer < ApplicationMailer
 
   def send_notification
     @capital_remittance = CapitalRemittance.find params[:capital_remittance_id]
+    @capital_call = @capital_remittance.capital_call
+    @custom_notification = @capital_call.custom_notification
+
+    subject = @custom_notification&.subject || "#{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}"
+
     # Check for attachments
     @capital_remittance.documents.generated.each do |doc|
       attachments["#{doc.name}.pdf"] = doc.file.read
     end
-    send_mail(subject: "#{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}") if @to.present?
+    send_mail(subject:) if @to.present?
 
     Chewy.strategy(:sidekiq) do
       @capital_remittance.notification_sent = true
@@ -18,17 +23,26 @@ class CapitalRemittancesMailer < ApplicationMailer
 
   def notify_capital_remittance
     @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
+    @capital_call = @capital_remittance.capital_call
+    @custom_notification = @capital_call.custom_notification
 
-    send_mail(subject: "#{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}") if @to.present?
+    subject = @custom_notification&.subject || "#{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}"
+
+    send_mail(subject:) if @to.present?
   end
 
   def reminder_capital_remittance
     @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
+    @capital_call = @capital_remittance.capital_call
+    @custom_notification = @capital_call.custom_notification
+
+    subject = @custom_notification&.subject || "Reminder: #{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}"
+
     # Check for attachments
     @capital_remittance.documents.generated.each do |doc|
       attachments["#{doc.name}.pdf"] = doc.file.read
     end
-    send_mail(subject: "Reminder: #{@capital_remittance.fund.name} #{@capital_remittance.capital_call.name}") if @to.present?
+    send_mail(subject:) if @to.present?
   end
 
   def payment_received

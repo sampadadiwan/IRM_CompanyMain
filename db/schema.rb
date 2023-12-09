@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_08_061639) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_09_065511) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -716,6 +716,21 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_08_061639) do
     t.index ["exchange_rate_id"], name: "index_commitment_adjustments_on_exchange_rate_id"
     t.index ["fund_id"], name: "index_commitment_adjustments_on_fund_id"
     t.index ["owner_type", "owner_id"], name: "index_commitment_adjustments_on_owner"
+  end
+
+  create_table "custom_notifications", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "subject"
+    t.text "body"
+    t.string "whatsapp"
+    t.bigint "entity_id", null: false
+    t.string "owner_type", null: false
+    t.bigint "owner_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "for", limit: 15
+    t.boolean "show_details", default: false
+    t.index ["entity_id"], name: "index_custom_notifications_on_entity_id"
+    t.index ["owner_type", "owner_id"], name: "index_custom_notifications_on_owner"
   end
 
   create_table "deal_activities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2562,6 +2577,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_08_061639) do
   add_foreign_key "commitment_adjustments", "entities"
   add_foreign_key "commitment_adjustments", "exchange_rates"
   add_foreign_key "commitment_adjustments", "funds"
+  add_foreign_key "custom_notifications", "entities"
   add_foreign_key "deal_activities", "deal_investors"
   add_foreign_key "deal_activities", "deals"
   add_foreign_key "deal_activities", "folders", column: "document_folder_id"

@@ -18,7 +18,10 @@ class CapitalRemittanceNotification < BaseNotification
   # Define helper methods to make rendering easier.
   def message
     @capital_remittance = params[:capital_remittance]
-    params[:msg] || "Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}"
+    @capital_call = @capital_remittance.capital_call
+    @custom_notification = @capital_call.custom_notification
+
+    @custom_notification&.whatsapp || "Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}"
   end
 
   def url

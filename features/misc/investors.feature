@@ -79,7 +79,7 @@ Scenario Outline: Import investor kycs
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   And Given I upload an investors file for the company
-  And the investors have approved investor accesse
+  And the investors have approved investor access
   And Given I upload an investor kyc file for employees
   Then I should see the "Import upload was successfully created"
   Then There should be "4" investor kycs created

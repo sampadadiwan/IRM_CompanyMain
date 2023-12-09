@@ -213,7 +213,7 @@ Given('Given I upload an investors file for the company') do
   sleep(4)
 end
 
-Given('the investors have approved investor accesse') do
+Given('the investors have approved investor access') do
   @entity.investors.each do |investor|
     ia = FactoryBot.create(:investor_access, investor: investor, entity: investor.entity, approved: true) 
   end

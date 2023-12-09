@@ -1,0 +1,46 @@
+<%= render FormCard.new(title: "Custom Notification : #{custom_notification.owner}") do %>
+  
+  <%= form_with(model: custom_notification, validate: true) do |form| %>
+    <% if custom_notification.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(custom_notification.errors.count, "error") %> prohibited this custom_notification from being saved:</h2>
+
+        <ul>
+          <% custom_notification.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+    <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+    <%= form.text_field :for, class: "form-control", hidden: true  %>
+
+    <div class="form-group">
+      <%= form.label :subject %>
+      <%= form.text_field :subject, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :body %>
+      <%= form.rich_text_area :body, class: "form-control trix"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :whatsapp %>
+      <%= form.text_field :whatsapp, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :show_details %>
+      <%= form.check_box :show_details, class: "form-check-input"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+
+<% end %>

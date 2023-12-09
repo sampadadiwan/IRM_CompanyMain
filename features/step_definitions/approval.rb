@@ -113,8 +113,16 @@
 
     @approval.pending_investors.collect(&:emails).flatten.each do |email|
         open_email(email)
-        puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}"
-        expect(current_email.subject).to have_content "pproval required for #{@approval.entity.name}: #{@approval.title}"
+
+        @custom_notification ||= nil
+        if @custom_notification.present?
+          puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}, body: #{@custom_notification.body}"
+          expect(current_email.subject).to have_content @custom_notification.subject
+          expect(current_email.body).to have_content @custom_notification.body
+        else
+          puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}"
+          expect(current_email.subject).to have_content "Approval required for #{@approval.entity.name}: #{@approval.title}"
+        end
     end
 
     clear_emails
@@ -178,4 +186,7 @@
 When('I select {string} for the approval response') do |response|
   select(response, from: "approval_response_status")
   click_on("Submit")
+end
+
+Given('there is a custom notification in place for the approval with subject {string}"') do |subject|  @custom_notification = CustomNotification.create!(entity: @approval.entity, subject:, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @approval)
 end

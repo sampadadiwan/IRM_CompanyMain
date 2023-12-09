@@ -23,6 +23,7 @@
 
             <%= link_to "Non Individual" , new_investor_kyc_path("investor_kyc[investor_id]": @investor&.id, "investor_kyc[entity_id]": entity_id, "investor_kyc[kyc_type]": "Non Individual"), {class: "dropdown-item" } %>
 
+            <%= link_to "Customize Notification" , new_custom_notification_path("custom_notification[for]": "InvestorKyc", "custom_notification[entity_id]": entity_id), {class: "dropdown-item" } %>
           </div>
         </div>
       </div>

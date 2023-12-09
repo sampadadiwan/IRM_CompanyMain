@@ -22,7 +22,9 @@ class ApprovalNotification < BaseNotification
   # Define helper methods to make rendering easier.
   def message
     @approval_response = params[:approval_response]
-    params[:msg] || "Approval: #{@approval_response.approval.title}"
+    @approval = @approval_response.approval
+    @custom_notification = @approval.custom_notification
+    @custom_notification&.whatsapp&.presence || @approval.title
   end
 
   def url

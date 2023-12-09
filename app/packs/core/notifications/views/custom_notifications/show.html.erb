@@ -1,0 +1,49 @@
+<%= render "/layouts/alerts" %>
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Subject
+    </td>
+    <td>
+      <%= @custom_notification.subject %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Body
+    </td>
+    <td>
+      <%= @custom_notification.body.html_safe %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Whatsapp
+    </td>
+    <td>
+      <%= @custom_notification.whatsapp %>
+    </td>
+  </tr>
+ 
+  <tr>
+    <td>
+      Owner
+    </td>
+    <td>
+      <%= link_to @custom_notification.owner%>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Show Details
+    </td>
+    <td>
+      <%= display_boolean @custom_notification.show_details%>
+    </td>
+  </tr>
+
+</table>
+<div>
+  <%= link_to "Edit", edit_custom_notification_path(@custom_notification), {class: "btn btn-outline-primary"} %>   <%= button_to "Delete", @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+</div>

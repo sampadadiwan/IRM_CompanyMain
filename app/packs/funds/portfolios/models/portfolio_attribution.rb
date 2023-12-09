@@ -27,4 +27,8 @@ class PortfolioAttribution < ApplicationRecord
 
   # This is so that the bought_pi net_quantity is updated
   after_destroy_commit -> { bought_pi.reload.save }
+
+  def gain
+    Money.new((sold_pi.price_per_share_cents - bought_pi.price_per_share_cents) * quantity.abs, fund.currency)
+  end
 end

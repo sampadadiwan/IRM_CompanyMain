@@ -21,6 +21,9 @@
         </th>
         <th>
           Cost of Sold
+        </th>
+        <th>
+          Gain/Loss
         </th>        
       </tr>
     </thead>
@@ -36,6 +39,7 @@
               <br>
               <%= portfolio_attribution.quantity %> x <%= portfolio_attribution.bought_pi.cost %>
             </td>
+            <td><%= money_to_currency portfolio_attribution.gain, params %></td>
         </tr>
       <% end %>
     </tbody>

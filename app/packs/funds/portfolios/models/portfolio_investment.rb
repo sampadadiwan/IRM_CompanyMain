@@ -103,7 +103,7 @@ class PortfolioInvestment < ApplicationRecord
   end
 
   def net_quantity_on(date)
-    sold_quantity_on = portfolio_attributions.joins(:sold_pi).where(bought_pi_id: id, 'portfolio_investments.investment_date': ..date).sum(:quantity)
+    sold_quantity_on = buys_portfolio_attributions.joins(:sold_pi).where('portfolio_investments.investment_date': ..date).sum(:quantity)
     quantity + sold_quantity_on
   end
 
@@ -221,5 +221,20 @@ class PortfolioInvestment < ApplicationRecord
     self.notes ||= ""
     self.notes += "Stock split #{stock_split_ratio} on #{Time.zone.today}\n"
     save
+  end
+
+  def price_per_share_cents
+    amount_cents / quantity.abs
+  end
+
+  # account_entry_name
+  def allocation_of_realized_gain_cents(end_date, account_entry_name, capital_commitment)
+    realized_gain = 0
+    pas_before_end_date = portfolio_attributions.joins(:sold_pi).where("portfolio_investments.investment_date <= ?", end_date)
+    pas_before_end_date.each do |pa|
+      ae_date_of_buy = capital_commitment.account_entries.where(account_entry_name:, reporting_date: ..pa.bought_pi.investment_date).order(reporting_date: :desc).first
+      realized_gain += pa.gain.cent * ae_date_of_buy.amount_cents
+    end
+    realized_gain
   end
 end

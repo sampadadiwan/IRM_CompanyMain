@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :custom_notifications
   resources :reports
   resources :ci_track_records
   resources :ci_widgets

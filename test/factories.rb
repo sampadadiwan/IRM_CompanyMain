@@ -1,4 +1,12 @@
 FactoryBot.define do
+  factory :custom_notification do
+    subject { "MyString" }
+    body { "MyText" }
+    whatsapp { "MyString" }
+    entity { nil }
+    owner { nil }
+  end
+
   
   factory :stock_adjustment do
     entity { nil }

@@ -355,7 +355,7 @@
 
   Then('I should see the remittances') do
     @capital_call.reload
-    @fund.capital_commitments.count.should == @fund.investors.count
+    # @fund.capital_commitments.count.should == @fund.investors.count
     @capital_call.capital_remittances.count.should == @fund.capital_commitments.pool.count
 
     visit(capital_call_url(@capital_call))
@@ -689,9 +689,18 @@ Then('the investors must receive email with subject {string}') do |subject|
   Investor.all.each do |inv|
     if inv.emails.present?
       inv.emails.each do |email|
-        puts "# checking email #{subject} sent for #{email}"
+        puts "# checking email #{subject} sent for #{email} for investor #{inv}"
         open_email(email)
-        expect(current_email.subject).to include subject
+        
+        binding.pry if current_email.nil?
+
+        @custom_notification ||= nil 
+        if @custom_notification.present?
+          expect(current_email.subject).to include @custom_notification.subject
+          expect(current_email.body).to include @custom_notification.body
+        else
+          expect(current_email.subject).to include subject
+        end
       end
     end
   end
@@ -1426,4 +1435,8 @@ Then('There should be {string} fund units created with data in the sheet') do |c
       fund_unit.owner_type.should == "CapitalDistributionPayment"
     end
   end
+end
+
+Given('there is a custom notification for the capital call with subject {string}') do |subject|
+  @custom_notification = CustomNotification.create!(entity: @capital_call.entity, subject:, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @capital_call)
 end

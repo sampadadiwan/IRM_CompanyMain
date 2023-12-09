@@ -11,10 +11,15 @@ class Approval < ApplicationRecord
   has_many :pending_investors, -> { where('approval_responses.status': "Pending") }, through: :approval_responses, class_name: "Investor", source: :investor
 
   has_noticed_notifications
+  has_one :custom_notification, as: :owner, dependent: :destroy
 
   validates :title, :due_date, :response_status, presence: true
 
   def name
+    title
+  end
+
+  def to_s
     title
   end
 
