@@ -4,7 +4,8 @@ class FundUnitsController < ApplicationController
 
   # GET /fund_units or /fund_units.json
   def index
-    @fund_units = policy_scope(FundUnit).includes(:fund, :capital_commitment)
+    @q = FundUnit.ransack(params[:q])
+    @fund_units = policy_scope(@q.result).includes(:fund, :capital_commitment)
     @fund_units = @fund_units.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id]
     @fund_units = @fund_units.where(fund_id: params[:fund_id]) if params[:fund_id]
     @fund_units = @fund_units.where(investor_id: params[:investor_id]) if params[:investor_id]

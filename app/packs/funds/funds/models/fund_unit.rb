@@ -21,4 +21,12 @@ class FundUnit < ApplicationRecord
   def to_s
     unit_type
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[issue_date premium price quantity reason unit_type]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[capital_commitment investor]
+  end
 end
