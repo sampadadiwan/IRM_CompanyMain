@@ -5,6 +5,10 @@
 3. Added cc to IA
 4. Added Custom notifications
 5. Add cc override in Fund
+6. Fund Unit reports
+7. Approval for individual document
+8. Better notifications in doc generator
+
 
 07/12/2023 - V7.0.12
 #####################################

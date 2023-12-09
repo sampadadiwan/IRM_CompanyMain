@@ -12,7 +12,7 @@
                     "import_upload[owner_type]": "Entity",
                     "import_upload[import_type]": "FundUnit",
                     "sample_upload": "FUND_UNIT_SAMPLE"),
-                    { class: "btn btn-outline-primary"}  %>
+                    { class: "btn btn-outline-primary"}  if current_user.curr_role != "investor" %>
   </span>                  
 
 </div>

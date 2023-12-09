@@ -168,6 +168,9 @@
    
    <div style="display: inline-block;">
       <%= link_to "Edit", edit_document_path(@document), {class: "btn btn-outline-primary"} %>
+
+      <%= button_to "Approve", document_path(@document, "document[approved]": true), {class: "btn btn-outline-success", method: :patch} if @document.to_be_approved? %>
+      
       <%= link_to "All Documents", documents_path, {class: "btn btn-outline-success"} %>
       <%= button_to "Delete", @document, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@document).destroy? %>
    </div>

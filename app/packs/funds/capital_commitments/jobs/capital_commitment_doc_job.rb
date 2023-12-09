@@ -3,6 +3,7 @@ class CapitalCommitmentDocJob < ApplicationJob
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(capital_commitment_id, user_id = nil)
+    msg = ""
     Chewy.strategy(:sidekiq) do
       capital_commitment = CapitalCommitment.find(capital_commitment_id)
       fund = capital_commitment.fund
@@ -12,14 +13,22 @@ class CapitalCommitmentDocJob < ApplicationJob
       validate(fund, investor, investor_kyc, templates, user_id)
 
       if templates.present? && investor_kyc.present?
-        send_notification("Generating documents for #{investor.investor_name}, for fund #{fund.name}", user_id, :info)
-        Rails.logger.debug { "Generating documents for #{investor.investor_name}, for fund #{fund.name}" }
+        msg = "Generating documents for #{investor.investor_name}, for fund #{fund.name}"
+        send_notification(msg, user_id, :info)
+        Rails.logger.debug { msg }
 
         templates.each do |fund_doc_template|
           process_template(fund_doc_template, capital_commitment, investor_kyc, user_id)
         end
+
+        msg = "Generated all documents for #{investor.investor_name}, for fund #{fund.name}"
+      else
+        msg = "Not generating documents for #{investor.investor_name}, for fund #{fund.name}" if investor_kyc.blank?
+        msg = "Not generating documents for #{investor.investor_name}, for fund #{fund.name}, no templates found" if templates.blank?
       end
     end
+
+    send_notification(msg, user_id, :info)
   end
 
   def process_template(fund_doc_template, capital_commitment, investor_kyc, user_id)

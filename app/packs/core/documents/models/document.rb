@@ -152,4 +152,8 @@ class Document < ApplicationRecord
   def update_owner
     owner.document_changed(self) if owner.respond_to? :document_changed
   end
+
+  def to_be_approved?
+    from_template_id.present? && !approved
+  end
 end

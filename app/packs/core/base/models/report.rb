@@ -7,6 +7,7 @@ class Report < ApplicationRecord
   def self.reports_for
     { 'Capital Commitments': "/capital_commitments?filter=true",
       'Capital Remittances': "/capital_remittances?filter=true",
+      'Fund Units': "/fund_units?filter=true",
       'Account Entries': "/account_entries?filter=true" }
   end
 end

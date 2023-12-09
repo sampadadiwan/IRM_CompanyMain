@@ -3,6 +3,7 @@ class CapitalRemittanceDocJob < ApplicationJob
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalRemittance
   def perform(capital_remittance_id, user_id = nil)
+    error_msg = []
     Chewy.strategy(:sidekiq) do
       @capital_remittance = CapitalRemittance.find(capital_remittance_id)
       @fund = @capital_remittance.fund
@@ -11,7 +12,9 @@ class CapitalRemittanceDocJob < ApplicationJob
       # Try and get the template from the capital_commitment
       @templates = @capital_remittance.capital_commitment.templates("Call Template")
 
-      Rails.logger.debug { "Generating Remittance documents for #{@investor.investor_name}, for fund #{@fund.name}" }
+      msg = "Generating Remittance documents for #{@investor.investor_name}, for fund #{@fund.name}"
+      send_notification(msg, user_id, :info)
+      Rails.logger.debug { msg }
 
       @templates.each do |fund_doc_template|
         Rails.logger.debug { "Generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@capital_remittance.investor_name}" }
@@ -20,10 +23,20 @@ class CapitalRemittanceDocJob < ApplicationJob
         # Generate a new signed document
         CapitalRemittanceDocGenerator.new(@capital_remittance, fund_doc_template, user_id)
       rescue StandardError => e
-        send_notification("Error generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@capital_remittance.investor_name}. #{e.message}", user_id, "danger")
+        msg = "Error generating #{fund_doc_template.name} for fund #{capital_remittance.fund.name}, for #
+        {investor_kyc.full_name} #{e.message}"
+
+        send_notification(msg, user_id, "danger")
+        Rails.logger.error { msg }
+
+        error_msg << "Faled for {investor_kyc.full_name} #{e.message}"
+
+        # Sleep so user can see this error before the next doc is tried
+        sleep(2)
       end
     end
 
-    nil
+    # Notify on all errors
+    send_notification(error_msg.join(", "), user_id, :danger) if error_msg.present?
   end
 end
