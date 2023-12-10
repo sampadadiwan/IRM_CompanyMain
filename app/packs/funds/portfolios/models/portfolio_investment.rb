@@ -64,14 +64,13 @@ class PortfolioInvestment < ApplicationRecord
     ["portfolio_investments.quantity < ?", 0] => 'sold_amount_cents'
   }
 
-  before_validation :setup_aggregate
-
   scope :buys, -> { where("portfolio_investments.quantity > 0") }
   scope :allocatable_buys, lambda { |portfolio_company_id, category, _sub_category|
-    where("portfolio_company_id=? and category = ? and portfolio_investments.quantity > 0 and net_quantity > 0", portfolio_company_id, category)
+    where("portfolio_company_id=? and category = ? and portfolio_investments.quantity > 0 and net_quantity > 0", portfolio_company_id, category).order(investment_date: :asc)
   }
   scope :sells, -> { where("portfolio_investments.quantity < 0") }
 
+  before_validation :setup_aggregate
   def setup_aggregate
     self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, investment_type:, commitment_type:, investment_domicile:) if aggregate_portfolio_investment_id.blank?
   end
@@ -118,30 +117,7 @@ class PortfolioInvestment < ApplicationRecord
   # Called from PortfolioInvestmentJob
   # This method is used to setup which sells are linked to which buys for purpose of attribution
   def setup_attribution
-    if sell?
-      # Sell quantity is negative
-      allocatable_quantity = quantity.abs
-      # It's a sell
-      buys = aggregate_portfolio_investment.portfolio_investments.allocatable_buys(portfolio_company_id, category, sub_category)
-      buys = buys.where(capital_commitment_id:) if self.CoInvest?
-      buys = buys.pool if self.Pool?
-
-      buys.order(investment_date: :asc).each do |buy|
-        Rails.logger.debug { "processing buy #{buy.to_json}" }
-        attribution_quantity = [buy.net_quantity, allocatable_quantity].min
-        # Create the portfolio attribution
-        PortfolioAttribution.create!(entity_id:, fund_id:, bought_pi: buy,
-                                     sold_pi: self, quantity: -attribution_quantity)
-        # This triggers the computation of net_quantity
-        buy.reload.save
-
-        # Update if we have more to allocate
-        allocatable_quantity -= attribution_quantity
-
-        # Check if we are done
-        break if allocatable_quantity.zero?
-      end
-    end
+    AttributionService.new(self).setup_attribution
   end
 
   def investment_type
@@ -205,22 +181,7 @@ class PortfolioInvestment < ApplicationRecord
   end
 
   def split(stock_split_ratio)
-    # Update the attributions first as they influence the net quantity
-    portfolio_attributions.each do |pa|
-      pa.quantity *= stock_split_ratio
-      pa.save
-    end
-
-    portfolio_attributions.reload
-    reload
-
-    # Update the quantity and cost
-    self.quantity *= stock_split_ratio
-    # self.sold_quantity *= stock_split_ratio
-    # self.net_quantity *= stock_split_ratio
-    self.notes ||= ""
-    self.notes += "Stock split #{stock_split_ratio} on #{Time.zone.today}\n"
-    save
+    StockSplitter.new(self).split(stock_split_ratio)
   end
 
   def price_per_share_cents
