@@ -76,7 +76,7 @@ class CapitalRemittance < ApplicationRecord
     # Adjust for exchange rates on the day of the payment
   end
 
-  def send_notification(reminder = false)
+  def send_notification(reminder: false)
     if capital_call.approved && !capital_call.manual_generation
       investor.approved_users.each do |user|
         email_method = reminder ? :reminder_capital_remittance : :send_notification

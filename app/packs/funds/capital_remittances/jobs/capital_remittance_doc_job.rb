@@ -10,12 +10,7 @@ class CapitalRemittanceDocJob < ApplicationJob
       @fund = @capital_remittance.fund
       @investor = @capital_remittance.investor
 
-      if @capital_commitment.investor_kyc.blank? || !@capital_commitment.investor_kyc.verified
-        msg = "Investor KYC not verified for #{@capital_remittance.investor_name}. Skipping..."
-        send_notification(msg, user_id, :danger)
-        Rails.logger.error { msg }
-        sleep(2)
-      else
+      unless kyc_ok?
         # Try and get the template from the capital_commitment
         @templates = @capital_remittance.capital_commitment.templates("Call Template")
 
@@ -32,7 +27,6 @@ class CapitalRemittanceDocJob < ApplicationJob
         rescue StandardError => e
           msg = "Error generating #{fund_doc_template.name} for fund #{capital_remittance.fund.name}, for #
           {investor_kyc.full_name} #{e.message}"
-
           send_notification(msg, user_id, "danger")
           Rails.logger.error { msg }
 
@@ -46,5 +40,17 @@ class CapitalRemittanceDocJob < ApplicationJob
 
     # Notify on all errors
     send_notification(error_msg.join(", "), user_id, :danger) if error_msg.present?
+  end
+
+  def kyc_ok?
+    if @capital_commitment.investor_kyc.blank? || !@capital_commitment.investor_kyc.verified
+      msg = "Investor KYC not verified for #{@capital_remittance.investor_name}. Skipping..."
+      send_notification(msg, user_id, :danger)
+      Rails.logger.error { msg }
+      sleep(2)
+      false
+    else
+      true
+    end
   end
 end
