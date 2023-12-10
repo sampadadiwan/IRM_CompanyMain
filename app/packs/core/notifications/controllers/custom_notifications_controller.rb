@@ -75,6 +75,8 @@ class CustomNotificationsController < ApplicationController
   def set_custom_notification
     @custom_notification = CustomNotification.find(params[:id])
     authorize @custom_notification
+    @bread_crumbs = { "#{@custom_notification.owner_type}": polymorphic_path(@custom_notification.owner),
+                      "#{@custom_notification}": nil }
   end
 
   # Only allow a list of trusted parameters through.
