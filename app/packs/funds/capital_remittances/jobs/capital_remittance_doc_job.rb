@@ -18,7 +18,7 @@ class CapitalRemittanceDocJob < ApplicationJob
       else
         # Try and get the template from the capital_commitment
         @templates = @capital_remittance.capital_commitment.templates("Call Template")
-        
+
         msg = "Generating Remittance documents for #{@investor.investor_name}, for fund #{@fund.name}"
         send_notification(msg, user_id, :info)
         Rails.logger.debug { msg }

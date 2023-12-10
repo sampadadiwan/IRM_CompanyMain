@@ -1,15 +1,22 @@
-<h3>Dear <%= @approval_response.investor.investor_name %> </h3>
+<% if @custom_notification.present? %>
+    <%= @custom_notification.body.html_safe %>
+    <%= render "approval_responses/kyc_in_approval" if @custom_notification.show_details %>
+<% else %>
 
-<p>
-    This is a reminder that <%= @approval.entity.name %> has requested your approval for <%=@approval.title%>.
-</p>
+    <h3>Dear <%= @approval_response.investor.investor_name %> </h3>
 
-<%if @approval.agreements_reference.present?%>
-<p>
-    <%= @approval.agreements_reference %>
-</p>
-<%end%>
+    <p>
+        This is a reminder that <%= @approval.entity.name %> has requested your approval for <%=@approval.title%>.
+    </p>
 
-<%= render "approval_responses/kyc_in_approval" %>
+    <%if @approval.agreements_reference.present?%>
+    <p>
+        <%= @approval.agreements_reference %>
+    </p>
+    <%end%>
+
+    <%= render "approval_responses/kyc_in_approval" %>
+
+<% end %>
 
 <p class="btn btn-outline-primary"><%= link_to 'View Approval', approval_url(@approval, subdomain: @approval.entity.sub_domain) %></p>

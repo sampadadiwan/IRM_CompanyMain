@@ -8,5 +8,4 @@ class CustomNotification < ApplicationRecord
   def to_s
     subject
   end
-  
 end
