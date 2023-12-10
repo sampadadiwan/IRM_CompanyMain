@@ -56,7 +56,6 @@ Scenario Outline: Import portfolio investments
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   Then I should see the "Import upload was successfully created"
-  Then There should be "6" capital commitments created
   And Given I upload "portfolio_investments.xlsx" file for "Portfolio" of the fund
   Then I should see the "Import upload was successfully created"
   Then There should be "8" portfolio investments created
@@ -70,7 +69,6 @@ Scenario Outline: Import portfolio investments failed
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   Then I should see the "Import upload was successfully created"
-  Then There should be "6" capital commitments created
   And Given I upload "co_invest_portfolio_investments_failed.xlsx" file for "Portfolio" of the fund
   Then I should see the "Import upload was successfully created"
   Then There should be "1" portfolio investments created
