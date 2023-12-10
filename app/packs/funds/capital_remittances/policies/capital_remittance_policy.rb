@@ -21,7 +21,7 @@ class CapitalRemittancePolicy < FundBasePolicy
   end
 
   def send_notification?
-    update? && !record.notification_sent && record.capital_call.approved
+    update? && record.capital_call.approved
   end
 
   def update?

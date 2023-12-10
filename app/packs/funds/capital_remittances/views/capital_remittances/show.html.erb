@@ -8,20 +8,31 @@
 
     <%= button_to "Delete", @capital_remittance, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@capital_remittance).destroy?  %>  
 
-    <% label = @capital_remittance.verified ? "Unverify" : "Verify" %> 
-    <% msg = @capital_remittance.verified ? "Mark as Unverified?" : "Mark as Verified?" %> 
-    <%= button_to label, verify_capital_remittance_path(@capital_remittance), method: :patch, 
-        class: "btn btn-outline-success", form_class: "deleteButton", 
-        data: {action: "click->confirm#popup", msg: msg, turbo:false, method: :patch} if policy(@capital_remittance).verify? %>
+    <div class="btn-group">
+        <div class="dropdown">
+            <button class="btn btn-outline-success dropdown-toggle" type="button"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Actions
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-    <%= button_to "Generate Documents" , 
-        generate_docs_capital_remittance_path(@capital_remittance),    
-        method: :patch, class: "btn btn-outline-success", 
-        form_class: "deleteButton" if policy(@capital_remittance).generate_docs? %>
+                <% label = @capital_remittance.verified ? "Unverify" : "Verify" %> 
+                <% msg = @capital_remittance.verified ? "Mark as Unverified?" : "Mark as Verified?" %> 
+                <%= button_to label, verify_capital_remittance_path(@capital_remittance), method: :patch, 
+                    class: "dropdown-item", form_class: "deleteButton", 
+                    data: {action: "click->confirm#popup", msg: msg, turbo:false, method: :patch} if policy(@capital_remittance).verify? %>
 
-    <%= button_to "Send Notification", send_notification_capital_remittance_path(@capital_remittance), method: :patch, 
-        class: "btn btn-outline-success", form_class: "deleteButton", 
-        data: {action: "click->confirm#popup", msg: "This will send out an email notification to the investor for this remittances", method: :patch} if policy(@capital_remittance).send_notification? %>
+                <%= button_to "Generate Documents" , 
+                    generate_docs_capital_remittance_path(@capital_remittance),    
+                    method: :patch, class: "dropdown-item", 
+                    form_class: "deleteButton" if policy(@capital_remittance).generate_docs? %>
+
+                <%= button_to "Send Notification", send_notification_capital_remittance_path(@capital_remittance), method: :patch, 
+                    class: "dropdown-item", form_class: "deleteButton", 
+                    data: {action: "click->confirm#popup", msg: "This will send out an email notification to the investor for this remittances", method: :patch} if policy(@capital_remittance).send_notification? %>
+            </div>
+        </div>
+    </div>
   </div>
 
 

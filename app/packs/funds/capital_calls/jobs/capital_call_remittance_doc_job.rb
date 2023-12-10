@@ -5,7 +5,8 @@ class CapitalCallRemittanceDocJob < ApplicationJob
   def perform(capital_call_id, user_id)
     @capital_call = CapitalCall.find(capital_call_id)
     @capital_call.capital_remittances.each do |cr|
-      CapitalRemittanceDocJob.perform_later(cr.id, user_id)
+      CapitalRemittanceDocJob.perform_now(cr.id, user_id)
     end
+    send_notification("Documentation generation completed.", user_id, :info)
   end
 end

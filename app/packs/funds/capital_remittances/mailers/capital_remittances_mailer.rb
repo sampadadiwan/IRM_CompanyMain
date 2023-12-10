@@ -48,6 +48,6 @@ class CapitalRemittancesMailer < ApplicationMailer
   def payment_received
     @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
 
-    send_mail(subject: "Payment Confirmation for #{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}") if @to.present?
+    send_mail(subject: "Payment Confirmation for capital call #{@capital_remittance.fund.name}") if @to.present?
   end
 end

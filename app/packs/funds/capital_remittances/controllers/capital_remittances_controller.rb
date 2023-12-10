@@ -57,7 +57,8 @@ class CapitalRemittancesController < ApplicationController
   end
 
   def send_notification
-    @capital_remittance.send_notification
+    reminder = @capital_remittance.notification_sent
+    @capital_remittance.send_notification(reminder)
     redirect_to capital_remittance_path(@capital_remittance), notice: "Sent notification."
   end
 
