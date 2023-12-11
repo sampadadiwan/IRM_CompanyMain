@@ -30,12 +30,12 @@ class CapitalRemittanceDocJob < ApplicationJob
           send_notification(msg, user_id, "danger")
           Rails.logger.error { msg }
 
-          error_msg << {msg:, template: fund_doc_template.name, folio_id: @capital_remittance.folio_id, investor_name: @investor.investor_name}
+          error_msg << { msg:, template: fund_doc_template.name, folio_id: @capital_remittance.folio_id, investor_name: @investor.investor_name }
 
           # Sleep so user can see this error before the next doc is tried
           sleep(2)
         end
-      end      
+      end
     end
 
     # Notify on all errors
@@ -43,17 +43,16 @@ class CapitalRemittanceDocJob < ApplicationJob
     error_msg
   end
 
-
   def kyc_ok?(user_id, error_msg)
     if @investor_kyc.blank? || !@investor_kyc.verified
       msg = "Investor KYC not verified for #{@capital_remittance.investor_name}. Skipping."
       send_notification(msg, user_id, :danger)
       Rails.logger.error { msg }
       sleep(2)
-      error_msg << {msg:, folio_id: @capital_remittance.folio_id, investor_name: @investor.investor_name}
-      return false
+      error_msg << { msg:, folio_id: @capital_remittance.folio_id, investor_name: @investor.investor_name }
+      false
     else
-      return true
+      true
     end
   end
 end

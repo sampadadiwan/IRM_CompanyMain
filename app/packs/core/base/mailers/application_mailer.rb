@@ -12,8 +12,8 @@ class ApplicationMailer < ActionMailer::Base
     if @entity.present?
       # Ensure we pick te right from address
       @from = from_email(@entity)
-      
-      unless @entity.sandox
+
+      unless @entity.entity_setting.sandbox
         @cc = @entity.entity_setting.cc
         # Sometimes we have an ovveride for the cc field in the investor access
         investor_cc = @entity.investor_accesses.where(email: @user.email).first&.cc
@@ -22,9 +22,10 @@ class ApplicationMailer < ActionMailer::Base
         elsif @cc.present? && investor_cc.present?
           @cc += ",#{investor_cc}"
         end
+
+        @reply_to = @entity.entity_setting.reply_to.presence || @cc.presence || @from
       end
 
-      @reply_to = @entity.entity_setting.reply_to.presence || @cc.presence || @from
     end
 
     if @user.present?
