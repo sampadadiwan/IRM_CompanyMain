@@ -26,8 +26,9 @@
                     generate_docs_capital_remittance_path(@capital_remittance),    
                     method: :patch, class: "dropdown-item", 
                     form_class: "deleteButton" if policy(@capital_remittance).generate_docs? %>
-
-                <%= button_to "Send Notification", send_notification_capital_remittance_path(@capital_remittance), method: :patch, 
+                
+                <% label = @capital_remittance.notification_sent ? "Send Reminder" : "Send Notification" %>
+                <%= button_to label, send_notification_capital_remittance_path(@capital_remittance), method: :patch, 
                     class: "dropdown-item", form_class: "deleteButton", 
                     data: {action: "click->confirm#popup", msg: "This will send out an email notification to the investor for this remittances", method: :patch} if policy(@capital_remittance).send_notification? %>
             </div>
