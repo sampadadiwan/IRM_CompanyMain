@@ -70,7 +70,6 @@ class InvestorsController < ApplicationController
 
   # GET /investors/1 or /investors/1.json
   def show
-    authorize @investor
   end
 
   # GET /investors/new
@@ -82,7 +81,6 @@ class InvestorsController < ApplicationController
 
   # GET /investors/1/edit
   def edit
-    authorize @investor
     setup_custom_fields(@investor)
   end
 
@@ -120,8 +118,7 @@ class InvestorsController < ApplicationController
   end
 
   # DELETE /investors/1 or /investors/1.json
-  def destroy
-    authorize @investor
+  def destroy    
     @investor.destroy
 
     respond_to do |format|
@@ -135,6 +132,7 @@ class InvestorsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_investor
     @investor = Investor.find(params[:id])
+    authorize @investor
   end
 
   # Only allow a list of trusted parameters through.

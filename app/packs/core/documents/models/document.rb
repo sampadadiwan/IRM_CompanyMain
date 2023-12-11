@@ -154,6 +154,6 @@ class Document < ApplicationRecord
   end
 
   def to_be_approved?
-    from_template_id.present? && !approved
+    from_template_id.present? && !approved && esign_status.blank?
   end
 end

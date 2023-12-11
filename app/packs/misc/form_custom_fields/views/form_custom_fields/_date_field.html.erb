@@ -1,16 +1,16 @@
 <div class="form-group <%= field.read_only ? 'hidden_form_field' : '' %>">
     <%= f.label field.name, field.name.humanize.titleize %>
-    <% if struct[field.name].present? %>
-        <%
+    <% 
+        if struct[field.name].present?         
             begin
                 val = Date.parse(struct[field.name])
             rescue StandardError    
                 val = nil
-            end
-        %>
-    <% else %>
-        val = nil
-    <% end %>
+            end        
+        else 
+            val = nil 
+        end 
+    %>
     <%= f.date_field field.name, class: "form-control custom_field", required: field.required, value: val   %>
     <small class="text-muted"><%= field.help_text %></small>
 </div>
