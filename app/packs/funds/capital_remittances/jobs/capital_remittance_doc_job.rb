@@ -7,14 +7,15 @@ class CapitalRemittanceDocJob < ApplicationJob
     Chewy.strategy(:sidekiq) do
       @capital_remittance = CapitalRemittance.find(capital_remittance_id)
       @capital_commitment = @capital_remittance.capital_commitment
+      @investor_kyc = @capital_commitment.investor_kyc
       @fund = @capital_remittance.fund
       @investor = @capital_remittance.investor
 
-      unless kyc_ok?
+      if kyc_ok?(user_id, error_msg)
         # Try and get the template from the capital_commitment
         @templates = @capital_remittance.capital_commitment.templates("Call Template")
 
-        msg = "Generating Remittance documents for #{@investor.investor_name}, for fund #{@fund.name}"
+        msg = "Generating Remittance documents for #{@investor.investor_name}, for fund #{@fund.name} and kyc #{@investor_kyc.id}"
         send_notification(msg, user_id, :info)
         Rails.logger.debug { msg }
 
@@ -25,32 +26,34 @@ class CapitalRemittanceDocJob < ApplicationJob
           # Generate a new signed document
           CapitalRemittanceDocGenerator.new(@capital_remittance, fund_doc_template, user_id)
         rescue StandardError => e
-          msg = "Error generating #{fund_doc_template.name} for fund #{capital_remittance.fund.name}, for #
-          {investor_kyc.full_name} #{e.message}"
+          msg = "Error generating template #{fund_doc_template.name} for fund #{@capital_remittance.folio_id}, for #{@investor.investor_name}: #{e.message}"
           send_notification(msg, user_id, "danger")
           Rails.logger.error { msg }
 
-          error_msg << "Faled for {investor_kyc.full_name} #{e.message}"
+          error_msg << {msg:, template: fund_doc_template.name, folio_id: @capital_remittance.folio_id, investor_name: @investor.investor_name}
 
           # Sleep so user can see this error before the next doc is tried
           sleep(2)
         end
-      end
+      end      
     end
 
     # Notify on all errors
-    send_notification(error_msg.join(", "), user_id, :danger) if error_msg.present?
+    # send_notification("Errors with document generation will be sent via email", user_id, :danger) if error_msg.present?
+    error_msg
   end
 
-  def kyc_ok?
-    if @capital_commitment.investor_kyc.blank? || !@capital_commitment.investor_kyc.verified
-      msg = "Investor KYC not verified for #{@capital_remittance.investor_name}. Skipping..."
+
+  def kyc_ok?(user_id, error_msg)
+    if @investor_kyc.blank? || !@investor_kyc.verified
+      msg = "Investor KYC not verified for #{@capital_remittance.investor_name}. Skipping."
       send_notification(msg, user_id, :danger)
       Rails.logger.error { msg }
       sleep(2)
-      false
+      error_msg << {msg:, folio_id: @capital_remittance.folio_id, investor_name: @investor.investor_name}
+      return false
     else
-      true
+      return true
     end
   end
 end

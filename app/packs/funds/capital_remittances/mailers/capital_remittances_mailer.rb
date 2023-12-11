@@ -50,4 +50,10 @@ class CapitalRemittancesMailer < ApplicationMailer
 
     send_mail(subject: "Payment Confirmation for capital call #{@capital_remittance.fund.name}") if @to.present?
   end
+
+  def remittance_doc_errors
+    setup_defaults
+    @error_msg = params[:error_msg]
+    mail(from: @from, to: @to, subject: "Remittance Documentation Generation Errors")
+  end
 end
