@@ -52,7 +52,10 @@ class ApplicationMailer < ActionMailer::Base
 
   # Convinience method to send mail with simply the subject
   def send_mail(subject: nil, additional_ccs: nil)
-    @cc.present? ? @cc += ",#{additional_ccs}" : @cc = additional_ccs
+    # Sometimes we have an ovveride for the cc field ex commitment specific cc
+    unless @entity.entity_setting.sandbox
+      @cc.present? ? @cc += ",#{additional_ccs}" : @cc = additional_ccs
+    end
     mail(from: @from, to: @to, cc: @cc, reply_to: @reply_to, subject:)
   end
 end

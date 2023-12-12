@@ -125,7 +125,7 @@ class CapitalRemittancesController < ApplicationController
 
     @capital_remittance.payment_received_notification if @capital_remittance.verified
 
-    redirect_to capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: "Successfully updated."
+    redirect_back fallback_location: capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: "Successfully updated."
   end
 
   private
