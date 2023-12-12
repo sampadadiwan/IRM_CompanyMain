@@ -8,4 +8,8 @@
     <%= render "/capital_remittances/show", capital_remittance: @capital_remittance, current_user: nil, params: {} %>
 </p>
 
+<p>
+    Please contact the fund for further details.
+</p>
+
 <p class="btn btn-outline-primary"><%= link_to 'View Remittance', capital_remittance_url(@capital_remittance, subdomain: @capital_remittance.entity.sub_domain) %></p>
