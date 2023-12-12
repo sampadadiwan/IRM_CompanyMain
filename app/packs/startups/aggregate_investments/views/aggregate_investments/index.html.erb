@@ -149,6 +149,7 @@
 <div class="associated_entity">
   <% 
     access_right = AccessRight.new(entity: @entity, access_type: "Investment", owner: current_user.entity) 
+    params[:form_type] = "ai_form"
   %>
   <%= render "/access_rights/index", access_rights: @entity.access_rights.investments, access_right: %>
 </div>
