@@ -69,8 +69,7 @@ class InvestorsController < ApplicationController
   end
 
   # GET /investors/1 or /investors/1.json
-  def show
-  end
+  def show; end
 
   # GET /investors/new
   def new
@@ -118,7 +117,7 @@ class InvestorsController < ApplicationController
   end
 
   # DELETE /investors/1 or /investors/1.json
-  def destroy    
+  def destroy
     @investor.destroy
 
     respond_to do |format|

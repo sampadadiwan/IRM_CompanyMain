@@ -14,15 +14,7 @@ class ApplicationMailer < ActionMailer::Base
       @from = from_email(@entity)
 
       unless @entity.entity_setting.sandbox
-        @cc = @entity.entity_setting.cc
-        # Sometimes we have an ovveride for the cc field in the investor access
-        investor_cc = @entity.investor_accesses.where(email: @user.email).first&.cc
-        if (@cc.nil? || @cc.blank?) && investor_cc.present?
-          @cc = investor_cc
-        elsif @cc.present? && investor_cc.present?
-          @cc += ",#{investor_cc}"
-        end
-
+        setup_cc
         @reply_to = @entity.entity_setting.reply_to.presence || @cc.presence || @from
       end
 
@@ -31,6 +23,17 @@ class ApplicationMailer < ActionMailer::Base
     if @user.present?
       # Ensure we send to sanbox if required
       @to = @entity.entity_setting.sandbox ? @entity.entity_setting.sandbox_emails : @user.email
+    end
+  end
+
+  def setup_cc
+    @cc = @entity.entity_setting.cc
+    # Sometimes we have an ovveride for the cc field in the investor access
+    investor_cc = @entity.investor_accesses.where(email: @user.email).first&.cc
+    if (@cc.nil? || @cc.blank?) && investor_cc.present?
+      @cc = investor_cc
+    elsif @cc.present? && investor_cc.present?
+      @cc += ",#{investor_cc}"
     end
   end
 
@@ -48,7 +51,8 @@ class ApplicationMailer < ActionMailer::Base
   end
 
   # Convinience method to send mail with simply the subject
-  def send_mail(subject: nil)
+  def send_mail(subject: nil, additional_ccs: nil)
+    @cc.present? ? @cc += ",#{additional_ccs}" : @cc = additional_ccs
     mail(from: @from, to: @to, cc: @cc, reply_to: @reply_to, subject:)
   end
 end

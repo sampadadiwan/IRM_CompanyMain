@@ -268,4 +268,8 @@ class CapitalCommitment < ApplicationRecord
   def self.ransackable_associations(_auth_object = nil)
     %w[account_entries activities capital_distribution_payments capital_remittance_payments capital_remittances document_folder documents entity exchange_rate folders form_custom_fields form_type fund fund_ratios fund_units investor investor_kyc investor_signatory versions]
   end
+
+  def cc
+    properties[:cc]
+  end
 end

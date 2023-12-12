@@ -4,7 +4,8 @@ class CapitalDistributionPaymentsMailer < ApplicationMailer
 
   def send_notification
     @capital_distribution_payment = CapitalDistributionPayment.find params[:capital_distribution_payment_id]
-
-    send_mail(subject: "Capital Distribution: #{@capital_distribution_payment.fund.name}") if @to.present?
+    additional_ccs = @capital_distribution_payment.capital_commitment.cc
+    subject = "Capital Distribution: #{@capital_distribution_payment.fund.name}"
+    send_mail(subject:, additional_ccs:) if @to.present?
   end
 end
