@@ -30,6 +30,7 @@ class PortfolioInvestment < ApplicationRecord
   validates :category, length: { maximum: 15 }
   validates :sub_category, :sector, length: { maximum: 100 }
   validates :investment_domicile, length: { maximum: 10 }
+  validates :amount, numericality: { greater_than_or_equal_to: 0 }
 
   SECTORS = ENV["SECTORS"].split(",").sort
   CATEGORIES = JSON.parse(ENV.fetch("PORTFOLIO_CATEGORIES", nil))
