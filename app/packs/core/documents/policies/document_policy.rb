@@ -63,7 +63,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def approve?
-    user.has_cached_role?(:company_admin)
+    user.has_cached_role?(:company_admin) || user.has_cached_role?(:approver)
   end
 
   def destroy?
