@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_09_065511) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_12_125710) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1130,7 +1130,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_09_065511) do
   end
 
   create_table "form_custom_fields", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.string "name", limit: 50
+    t.string "name", limit: 100
     t.string "field_type", limit: 20
     t.boolean "required"
     t.bigint "form_type_id", null: false

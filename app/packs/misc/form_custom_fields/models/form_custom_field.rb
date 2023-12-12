@@ -4,7 +4,7 @@ class FormCustomField < ApplicationRecord
 
   enum :step,  { one: 1, two: 2, three: 3, end: 100 }
 
-  validates :name, :show_user_ids, length: { maximum: 50 }
+  validates :name, :show_user_ids, length: { maximum: 100 }
   validates :field_type, length: { maximum: 20 }
 
   RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date" }.freeze
