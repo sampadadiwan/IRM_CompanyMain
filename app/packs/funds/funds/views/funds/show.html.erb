@@ -48,9 +48,54 @@
         </div>
       </div>
 
+      <% if policy(@fund).update? %>
+
+        <div class="btn-group">
+          <div class="dropdown">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Import
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+              <%= link_to "Import Account Entries",
+                      new_import_upload_path("import_upload[owner_id]": @fund.id,
+                      "import_upload[owner_type]": "Fund",
+                      "import_upload[import_type]": "AccountEntry",
+                      "sample_upload": "ACCOUNT_ENTRY_SAMPLE"),
+                      { class: "dropdown-item"}  if @fund.entity.permissions.enable_account_entries? %>
+
+
+              <%= link_to "Import Documents",
+                      new_import_upload_path("import_upload[owner_id]": @fund.id,
+                      "import_upload[owner_type]": "Fund",
+                      "import_upload[import_type]": "FundDocs",
+                      "sample_upload": "FUND_DOCS_SAMPLE"),
+                      { class: "dropdown-item"}   %>
+
+
+              <%= link_to "Import Investors",
+                  new_import_upload_path("import_upload[owner_id]": @fund.id,
+                      "import_upload[owner_type]": "Fund",
+                      "import_upload[import_type]": "Investor",
+                      "sample_upload": "FUND_INVESTORS_SAMPLE"),
+                      { class: "dropdown-item"}  %>
+
+              <%= link_to "Import Investor Advisors",
+                  new_import_upload_path("import_upload[owner_id]": @fund.id,
+                      "import_upload[owner_type]": "Fund",
+                      "import_upload[import_type]": "InvestorAdvisor",
+                      "sample_upload": "FUND_INVESTOR_ADVISORS_SAMPLE"),
+                      { class: "dropdown-item"}  %>
+
+            </div>
+          </div>
+        </div>
+
+      <% end %>
+
       <div class="btn-group">
         <div class="dropdown">
-          <button class="btn btn-outline-success dropdown-toggle" type="button"
+          <button class="btn btn-outline-primary dropdown-toggle" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             Actions
           </button>
@@ -79,14 +124,6 @@
                 <%= link_to "Allocate Account Entries", allocate_form_fund_path(@fund),
                     class: "dropdown-item" if policy(@fund).allocate? %>
 
-
-                <%= link_to "Import Account Entries",
-                    new_import_upload_path("import_upload[owner_id]": @fund.id,
-                    "import_upload[owner_type]": "Fund",
-                    "import_upload[import_type]": "AccountEntry",
-                    "sample_upload": "ACCOUNT_ENTRY_SAMPLE"),
-                    { class: "dropdown-item"}   %>
-
               </div>
 
             <% end %>
@@ -94,15 +131,15 @@
 
             <% if @fund.entity.permissions.enable_units? %>
               <div class="dropdown-divider"></div>
+
               <%= link_to "Fund Unit Settings" , fund_unit_settings_path(fund_id: @fund.id), {class: "dropdown-item" } %>
 
               <%= link_to "Fund Units" , fund_units_path(fund_id: @fund.id), {class: "dropdown-item" } %>
-
             <% end %>
 
             <div class="dropdown-divider"></div>
 
-            <%= link_to "View Investors", investors_path(owner_type: "Fund", owner_id: @fund.id), {class: "dropdown-item" } if current_user.enable_investors %>
+            <%#= link_to "View Investors", investors_path(owner_type: "Fund", owner_id: @fund.id), {class: "dropdown-item" } if current_user.enable_investors %>
 
             <% if policy(@fund).update? %>
               <%
@@ -116,41 +153,15 @@
                   document: doc_attributes,
                     "document[folder_id]": @fund.document_folder.id),
                     {class: "dropdown-item" }  if policy(@fund).update? %>
-
-
-                <%= link_to "Import Documents",
-                    new_import_upload_path("import_upload[owner_id]": @fund.id,
-                    "import_upload[owner_type]": "Fund",
-                    "import_upload[import_type]": "FundDocs",
-                    "sample_upload": "FUND_DOCS_SAMPLE"),
-                    { class: "dropdown-item"}   %>
-
-              </div>
-
-              <div class="hideMobP">
-                <div class="dropdown-divider"></div>
-                
-                <%= link_to "Import Investors",
-                new_import_upload_path("import_upload[owner_id]": @fund.id,
-                    "import_upload[owner_type]": "Fund",
-                    "import_upload[import_type]": "Investor",
-                    "sample_upload": "FUND_INVESTORS_SAMPLE"),
-                    { class: "dropdown-item"}  %>
-
-                <%= link_to "Import Investor Advisors",
-                new_import_upload_path("import_upload[owner_id]": @fund.id,
-                    "import_upload[owner_type]": "Fund",
-                    "import_upload[import_type]": "InvestorAdvisor",
-                    "sample_upload": "FUND_INVESTOR_ADVISORS_SAMPLE"),
-                    { class: "dropdown-item"}  %>
+              
 
                 <%= link_to "Add Investor Notice" ,
                           new_investor_notice_path( "investor_notice[owner_id]": @fund.id,
                           "investor_notice[owner_type]": "Fund"), {class: "dropdown-item" }  %>
 
-                <div class="dropdown-divider"></div>
-                  <%= link_to 'Send Email', "mailto:?bcc=#{@fund.get_lps_emails&.join(',')}&subject=#{@fund.name}:", class: "dropdown-item" %>
-                  <%= link_to "Check Access Rights" , check_access_rights_fund_path(@fund, create_missing: false), {class: "dropdown-item" }  %>
+                <%= link_to 'Send Email', "mailto:?bcc=#{@fund.get_lps_emails&.join(',')}&subject=#{@fund.name}:", class: "dropdown-item" %>
+
+                <%= link_to "Check Access Rights" , check_access_rights_fund_path(@fund, create_missing: false), {class: "dropdown-item" }  %>
                 
                 </div>
               </div>
