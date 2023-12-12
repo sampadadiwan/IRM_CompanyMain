@@ -11,7 +11,8 @@ class CapitalRemittanceNotification < BaseNotification
     {
       user_id: recipient.id,
       entity_id: params[:entity_id],
-      capital_remittance_id: params[:capital_remittance].id
+      capital_remittance_id: params[:capital_remittance].id,
+      additional_ccs: params[:capital_remittance].capital_commitment.cc
     }
   end
 

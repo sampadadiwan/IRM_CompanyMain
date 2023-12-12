@@ -14,7 +14,8 @@ class CapitalDistributionPaymentNotification < BaseNotification
     {
       user_id: recipient.id,
       entity_id: params[:entity_id],
-      capital_distribution_payment_id: params[:capital_distribution_payment].id
+      capital_distribution_payment_id: params[:capital_distribution_payment].id,
+      additional_ccs: params[:capital_distribution_payment].capital_commitment.cc
     }
   end
 

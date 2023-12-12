@@ -18,6 +18,21 @@ When('I create a new investor {string}') do |arg1|
   click_on("Save")
 end
 
+When('I update the investor {string}') do |args|
+  @investor = Investor.last
+  key_values(@investor, args)
+  @investor.investor_name += " Updated"
+  visit(edit_investor_path(@investor))
+
+  fill_in('investor_investor_name', with: @investor.investor_name)
+  fill_in('investor_pan', with: @investor.pan)
+  select("Founder", from: "investor_category")
+  fill_in('investor_tag_list', with: @investor.tag_list)
+
+  click_on("Save")
+  
+end
+
 Then('an investor should be created') do
   @investor = Investor.last
   @investor.investor_name.include?(@investor_entity.name).should == true
@@ -46,6 +61,7 @@ Then('I should see the investor details on the details page') do
   expect(page).to have_content(@investor.investor_name)
   expect(page).to have_content(@investor.category)
   expect(page).to have_content(@investor.entity.name)
+  expect(page).to have_content(@investor.tag_list) if @investor.tag_list.present?
 end
 
 Given('there is an existing investor entity {string} with employee {string}') do |arg1, arg2|

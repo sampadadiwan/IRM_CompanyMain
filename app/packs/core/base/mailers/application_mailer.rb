@@ -8,6 +8,7 @@ class ApplicationMailer < ActionMailer::Base
   def setup_defaults
     @entity = Entity.find(params[:entity_id]) if params[:entity_id]
     @user = User.find(params[:user_id]) if params[:user_id]
+    @additional_ccs ||= params[:additional_ccs]
 
     if @entity.present?
       # Ensure we pick te right from address
@@ -35,6 +36,11 @@ class ApplicationMailer < ActionMailer::Base
     elsif @cc.present? && investor_cc.present?
       @cc += ",#{investor_cc}"
     end
+
+    # Sometimes we have an ovveride for the cc field ex commitment specific cc
+    if @additional_ccs
+      @cc.present? ? @cc += ",#{@additional_ccs}" : @cc = @additional_ccs
+    end
   end
 
   def sandbox_email(model, emails)
@@ -51,11 +57,7 @@ class ApplicationMailer < ActionMailer::Base
   end
 
   # Convinience method to send mail with simply the subject
-  def send_mail(subject: nil, additional_ccs: nil)
-    # Sometimes we have an ovveride for the cc field ex commitment specific cc
-    unless @entity.entity_setting.sandbox
-      @cc.present? ? @cc += ",#{additional_ccs}" : @cc = additional_ccs
-    end
+  def send_mail(subject: nil)
     mail(from: @from, to: @to, cc: @cc, reply_to: @reply_to, subject:)
   end
 end

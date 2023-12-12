@@ -692,14 +692,18 @@ Then('the investors must receive email with subject {string}') do |subject|
         puts "# checking email #{subject} sent for #{email} for investor #{inv}"
         open_email(email)
         
-        binding.pry if current_email.nil?
-
         @custom_notification ||= nil 
         if @custom_notification.present?
           expect(current_email.subject).to include @custom_notification.subject
           expect(current_email.body).to include @custom_notification.body
         else
           expect(current_email.subject).to include subject
+        end
+
+        @cc_email ||= nil
+        if @cc_email
+          puts " Checking cc email #{@cc_email} for #{email}"
+          expect(current_email.cc).to include @cc_email 
         end
       end
     end
@@ -1439,4 +1443,12 @@ end
 
 Given('there is a custom notification for the capital call with subject {string}') do |subject|
   @custom_notification = CustomNotification.create!(entity: @capital_call.entity, subject:, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @capital_call)
+end
+
+Given('Given the commitments have a cc {string}') do |email|
+  @cc_email = email
+  CapitalCommitment.all.each do |cc|
+    cc.properties[:cc] = email
+    cc.save
+  end
 end

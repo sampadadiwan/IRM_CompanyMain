@@ -6,14 +6,13 @@ class CapitalRemittancesMailer < ApplicationMailer
     @capital_remittance = CapitalRemittance.find params[:capital_remittance_id]
     @capital_call = @capital_remittance.capital_call
     @custom_notification = @capital_call.custom_notification
-    additional_ccs = @capital_remittance.capital_commitment.cc
     subject = @custom_notification&.subject || "#{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}"
 
     # Check for attachments
     @capital_remittance.documents.generated.each do |doc|
       attachments["#{doc.name}.pdf"] = doc.file.read
     end
-    send_mail(subject:, additional_ccs:) if @to.present?
+    send_mail(subject:) if @to.present?
 
     Chewy.strategy(:sidekiq) do
       @capital_remittance.notification_sent = true
@@ -36,7 +35,6 @@ class CapitalRemittancesMailer < ApplicationMailer
     @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
     @capital_call = @capital_remittance.capital_call
     @custom_notification = @capital_call.custom_notification
-    additional_ccs = @capital_remittance.capital_commitment.cc
 
     subject = @custom_notification&.subject || "Reminder: #{@capital_remittance.fund.name}: #{@capital_remittance.capital_call.name}"
 
@@ -44,14 +42,13 @@ class CapitalRemittancesMailer < ApplicationMailer
     @capital_remittance.documents.generated.each do |doc|
       attachments["#{doc.name}.pdf"] = doc.file.read
     end
-    send_mail(subject:, additional_ccs:) if @to.present?
+    send_mail(subject:) if @to.present?
   end
 
   def payment_received
     @capital_remittance = CapitalRemittance.find(params[:capital_remittance_id])
-    additional_ccs = @capital_remittance.capital_commitment.cc
     subject = "Payment Confirmation for capital call #{@capital_remittance.fund.name}"
-    send_mail(subject:, additional_ccs:) if @to.present?
+    send_mail(subject:) if @to.present?
   end
 
   def remittance_doc_errors

@@ -110,6 +110,7 @@ Scenario Outline: Create new capital call
   Given the fund has capital call template
   Given the investors are added to the fund  
   And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
+  And Given the commitments have a cc "advisor@gmail.com"
   And Given I upload "account_entries.xlsx" file for Account Entries
   When I create a new capital call "<call>"
   Then I should see the capital call details
@@ -144,6 +145,7 @@ Scenario Outline: Create new capital distrbution
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund  
   Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
+  And Given the commitments have a cc "advisor@gmail.com"
   When I create a new capital distribution "cost_of_investment_cents=10000000;"
   Then I should see the capital distrbution details
   Then when the capital distrbution is approved

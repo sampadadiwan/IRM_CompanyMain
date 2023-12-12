@@ -13,8 +13,23 @@ Scenario Outline: Create new investor
 
   Examples:
   	|user	      |entity               |investor     |msg	|
-  	|  	        |entity_type=Company  |name=Sequoia |Investor was successfully created|
-    |  	        |entity_type=Company  |name=Bearing |Investor was successfully created|
+  	|  	        |entity_type=Company  |category=LP |Investor was successfully created|
+    |  	        |entity_type=Company  |category=LP |Investor was successfully created|
+
+
+Scenario Outline: Update investor
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the investor page
+  When I create a new investor "<investor>"
+  When I update the investor "<investor_update>"
+  Then I should see the "<msg>"
+  Then I should see the investor details on the details page
+
+  Examples:
+  	|user	      |entity               |investor    | investor_update  | msg	|
+  	|  	        |entity_type=Company  |category=LP | tag_list=Cool    | Investor was successfully updated|
+    |  	        |entity_type=Company  |category=LP | tag_list=Cool    | Investor was successfully updated|
 
 Scenario Outline: Send KYC notification
   Given Im logged in as a user "<user>" for an entity "<entity>"
