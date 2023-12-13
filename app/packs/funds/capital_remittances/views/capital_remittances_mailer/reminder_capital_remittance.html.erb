@@ -5,25 +5,17 @@
 
 <% else %>
 
-    <% if @capital_remittance.capital_call.notes.blank? %>
-        <h3>Dear <%= @capital_remittance.investor_name %></h3>
+    <h3>Dear <%= @capital_remittance.investor_name %></h3>
 
-        <p>
-            A capital call of <%= money_to_currency(@capital_remittance.call_amount, {}) %> has been made by the fund <%= @capital_remittance.fund.name %>, which is due by <%= l @capital_remittance.capital_call.due_date %> 
-        </p>
-    <% end %>
-
-    <% if @capital_remittance.capital_call.notes.present? %>
-        <p>
-            <%= @capital_remittance.capital_call.notes&.html_safe %>
-        </p>
-    <% end %>
-
-    <% if @capital_remittance.capital_call.notes.blank? %>
-        <p>
-            Please refer the attached notice for further details or click on the link below.
-        </p>
-    <% end %>
+    <p>
+        A capital call of <%= money_to_currency(@capital_remittance.call_amount, {}) %> has been made by the fund <%= @capital_remittance.fund.name %>, which is due by <%= l @capital_remittance.capital_call.due_date %> 
+    </p>
+    <p>
+        <%= @capital_remittance.capital_call.notes&.html_safe %>
+    </p>
+    <p>
+        Please refer the attached notice for further details or click on the link below.
+    </p>
 
 <% end %>
 

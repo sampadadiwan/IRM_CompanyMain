@@ -169,7 +169,7 @@ Metrics/MethodLength:
   Exclude:
     - 'app/packs/core/users/models/user.rb'
     - 'app/packs/core/investor_kycs/services/kyc_doc_generator.rb'
-    - 'app/packs/funds/capital_commitments/models/soa_generator.rb'
+    - 'app/packs/funds/capital_commitments/services/soa_generator.rb'
   
 Metrics/BlockNesting:
   Exclude:
