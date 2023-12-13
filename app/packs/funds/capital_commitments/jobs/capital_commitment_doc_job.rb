@@ -18,7 +18,7 @@ class CapitalCommitmentDocJob < ApplicationJob
         Rails.logger.debug { msg }
 
         templates.each do |fund_doc_template|
-          process_template(fund_doc_template, capital_commitment, investor_kyc, user_id)
+          process_template(fund, fund_doc_template, capital_commitment, investor_kyc, user_id)
         end
 
         msg = "Generated all documents for #{investor.investor_name}, for fund #{fund.name}"
@@ -31,7 +31,7 @@ class CapitalCommitmentDocJob < ApplicationJob
     send_notification(msg, user_id, :info)
   end
 
-  def process_template(fund_doc_template, capital_commitment, investor_kyc, user_id)
+  def process_template(fund, fund_doc_template, capital_commitment, investor_kyc, user_id)
     existing_doc = capital_commitment.documents.where(name: fund_doc_template.name).first
     if existing_doc.present? && existing_doc.sent_for_esign
       msg = "Not generating #{fund_doc_template.name} for fund #{fund.name}, for user #{investor_kyc.full_name}, already sent for esign"
