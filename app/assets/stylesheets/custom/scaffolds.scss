@@ -929,7 +929,7 @@ select {
 
 .container-fluid  {
   table {
-    td > a {
+    td > a:not(.btn)  {
       color: var(--bs-primary);
     }
   }
