@@ -2698,7 +2698,7 @@ progress {
 }
 
 textarea.form-control {
-  min-height: calc(1.5em + 16px + calc(var(--bs-border-width) * 2));
+  min-height: calc(4.5em + 26px + calc(var(--bs-border-width) * 2));
 }
 textarea.form-control-sm {
   min-height: calc(1.5em + 0.5rem + calc(var(--bs-border-width) * 2));
