@@ -8,7 +8,7 @@ class InvestorKycPolicy < ApplicationPolicy
       elsif user.has_cached_role?(:employee)
         # We cant show them all the KYCs, only the ones for the funds they have been permissioned
         fund_ids = Fund.for_employee(user).pluck(:id)
-        scope.joins(investor: [capital_commitments: :fund]).where('funds.id': fund_ids)
+        scope.joins(capital_commitments: :fund).where('funds.id': fund_ids)
       end
     end
   end

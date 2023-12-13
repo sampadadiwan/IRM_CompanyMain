@@ -32,13 +32,16 @@
       <% end %>
     <% else %>
 
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">
-        Access Rights
-      </a>
 
-      <a id="stakeholder_users_tab" class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investors-tab">
+      <a id="stakeholder_users_tab" class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#investors-tab">
         <%= label %>
       </a>
+
+      <% if policy(investor).update? %>        
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">
+          Access Rights
+        </a>
+      <% end %>
 
       <% if current_user.entity_type == "Investment Fund" %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab"
@@ -142,12 +145,12 @@
 
       <% else %>
 
-        <div id="access-rights-tab" class="tab-pane fade in show active">
+        <div id="access-rights-tab" class="tab-pane fade in">
           <div id="access_rights" class="associated_entity">
             <%= render "/access_rights/index", access_rights: AccessRight.includes(:owner, :investor).for_investor(investor).includes(:owner, :investor), access_right: nil %>
           </div>
         </div>
-        <div id="investors-tab" class="tab-pane fade">
+        <div id="investors-tab" class="tab-pane fade show active">
           <div id="investor_accesses" class="associated_entity">
             <%= render "/investor_accesses/index", investor_accesses: investor.investor_accesses.includes(:user), 
                 investor: investor, label: label %>

@@ -41,6 +41,7 @@ class NotesController < ApplicationController
   def new
     @note = Note.new(note_params)
     @note.entity_id ||= @note.investor.entity_id
+    @note.user_id ||= current_user.id
     @note.on = Time.zone.today
     @note.reminder = Reminder.new(entity_id: @note.entity_id)
     authorize @note
