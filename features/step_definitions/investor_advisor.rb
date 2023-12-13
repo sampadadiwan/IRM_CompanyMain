@@ -11,7 +11,7 @@
   Given('Given I upload {string} file for Investoment Advisors') do |file|
     @import_file = file
     visit(fund_path(@fund))
-    click_on("Actions")
+    click_on("Import")
     click_on("Import Investor Advisors")
     sleep(2)
     fill_in('import_upload_name', with: "Test Upload")
