@@ -7,20 +7,14 @@
     </div>
     <% end %>
 
-    <div class="col" data-controller="otherselect"   
-                    data-otherselect-select-id-value="#esign_label">
-
-      <div class="form-group">
+      <div class="form-group col">
         <%= f.label :label %>
         <% if labels %>
-          <%= f.select :label, labels, {}, class: "form-control", id: "esign_label", "data-action": "change->otherselect#checkOtherName"  %>
-          <%= f.text_field :label, class: "form-control", disabled: true, id: "other_name"  %>
+          <%= f.select :label, labels, {}, class: "form-control", id: "esign_label" %>
         <% else %>
           <%= f.text_field :label, class: "form-control"  %>
         <% end %>
       </div>
-
-    </div>
 
     <div class="form-group col">
       <%= f.label :signature_type, "Signature" %>

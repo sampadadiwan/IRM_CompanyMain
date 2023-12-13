@@ -27,6 +27,7 @@ export default class extends Controller {
         $(this.selectIdValue).remove();
         $(this.otherIdValue).prop("disabled", "")
         $(this.otherIdValue).show();
+        $(this.otherIdValue).removeAttr("hidden");
       } else {
         $(this.otherIdValue).hide();
       }
