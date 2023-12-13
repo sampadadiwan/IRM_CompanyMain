@@ -1,1 +1,9 @@
-<%= l Date.parse(value) if value.present? %>
+<%
+    val = nil
+    begin
+        val = Date.parse(value) if value.present?
+    rescue StandardError        
+        val = nil    
+    end
+%>
+<%= l val if val %>
