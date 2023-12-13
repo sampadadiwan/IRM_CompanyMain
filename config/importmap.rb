@@ -17,3 +17,4 @@ pin "@nathanvda/cocoon", to: "cocoon.min.js"
 pin_all_from "app/javascript/custom", under: "custom"
 pin "@rails/request.js", to: "request.js"
 pin "turbo_progress_bar"
+pin "countup.js" # @2.8.0
