@@ -6,23 +6,11 @@ class InvestorKycsController < ApplicationController
 
   # GET /investor_kycs or /investor_kycs.json
   def index
-    @investor = nil
+    @investor = Investor.find(params[:investor_id]) if params[:investor_id].present?
     @investor_kycs = policy_scope(InvestorKyc)
     authorize(InvestorKyc)
-    @investor_kycs = @investor_kycs.where(id: search_ids) if params[:search] && params[:search][:value].present?
-    if params[:investor_id]
-      @investor = Investor.find(params[:investor_id])
-      @investor_kycs = @investor_kycs.where(investor_id: params[:investor_id])
-    end
 
-    @investor_kycs = @investor_kycs.where(verified: params[:verified] == "true") if params[:verified].present?
-
-    @investor_kycs = @investor_kycs.includes(:investor, :entity)
-    @investor_kycs = @investor_kycs.page(params[:page]) if params[:all].blank? && params[:search].blank?
-
-    # The distinct clause is there because IAs can access only KYCs that belong to thier funds
-    # See policy_scope - this query returns dups
-    @investor_kycs = @investor_kycs.distinct
+    @investor_kycs = KycSearch.perform(@investor_kycs, current_user, params)
 
     respond_to do |format|
       format.html
@@ -30,15 +18,6 @@ class InvestorKycsController < ApplicationController
       format.xlsx
       format.json { render json: InvestorKycDatatable.new(params, investor_kycs: @investor_kycs) }
     end
-  end
-
-  def search_ids
-    # This is only when the datatable sends a search query
-    query = "#{params[:search][:value]}*"
-    entity_ids = [current_user.entity_id]
-    InvestorKycIndex.filter(terms: { entity_id: entity_ids })
-                    .query(query_string: { fields: InvestorKycIndex::SEARCH_FIELDS,
-                                           query:, default_operator: 'and' }).map(&:id)
   end
 
   # GET /investor_kycs/1 or /investor_kycs/1.json
@@ -97,7 +76,7 @@ class InvestorKycsController < ApplicationController
 
     respond_to do |format|
       if @investor_kyc.save(validate:)
-        format.html { save_and_upload }
+        format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC." }
         format.json { render :show, status: :created, location: @investor_kyc }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -147,14 +126,6 @@ class InvestorKycsController < ApplicationController
     end
   end
 
-  def save_and_upload
-    if params[:commit] == "Save & Upload Documents"
-      redirect_to new_document_url(document: { entity_id: @investor_kyc.entity_id, owner_id: @investor_kyc.id, owner_type: "InvestorKyc" }, display_status: true), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC."
-    else
-      redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC."
-    end
-  end
-
   def assign_kyc_data
     @investor_kyc = InvestorKyc.find(investor_kyc_params[:id])
     authorize(@investor_kyc)
@@ -186,7 +157,7 @@ class InvestorKycsController < ApplicationController
       @investor_kyc.documents.each(&:validate)
 
       if @investor_kyc.save(validate:)
-        format.html { save_and_upload }
+        format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
         format.html { render :edit, status: :unprocessable_entity }
