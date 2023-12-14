@@ -2,7 +2,7 @@ class CapitalCommitmentDocJob < ApplicationJob
   queue_as :doc_gen
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
-  def perform(capital_commitment_id, user_id = nil)
+  def perform(capital_commitment_id, user_id = nil, template_name: nil)
     msg = ""
     Chewy.strategy(:sidekiq) do
       capital_commitment = CapitalCommitment.find(capital_commitment_id)
@@ -10,6 +10,8 @@ class CapitalCommitmentDocJob < ApplicationJob
       investor = capital_commitment.investor
       investor_kyc = capital_commitment.investor_kyc
       templates = capital_commitment.templates("Commitment Template")
+      templates = templates.where(name: template_name) if template_name.present?
+      
       validate(fund, investor, investor_kyc, templates, user_id)
 
       if templates.present? && investor_kyc.present?
