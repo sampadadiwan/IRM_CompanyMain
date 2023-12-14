@@ -50,7 +50,7 @@ class CapitalCommitmentDocJob < ApplicationJob
       # Generate a new signed document
       CapitalCommitmentDocGenerator.new(capital_commitment, fund_doc_template, user_id)
     end
-  rescue Error => e
+  rescue Exception => e
     msg = "Error generating #{fund_doc_template.name} for fund #{capital_commitment.fund.name}, for #{investor_kyc.full_name} #{e.message}"
     send_notification(msg, user_id, :danger)
     raise e

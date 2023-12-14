@@ -17,7 +17,7 @@ class KycDocGenJob < ApplicationJob
         Document.where(id: document_template_ids).find_each do |document_template|
           send_notification("Generating #{document_template.name} for #{investor_kyc.full_name}", user_id)
           KycDocGenerator.new(investor_kyc, document_template, start_date, end_date, user_id)
-        rescue Error => e
+        rescue Exception => e
           send_notification("Error generating #{document_template.name} for #{investor_kyc.full_name} #{e.message}", user_id, "danger")
           raise e
         end
