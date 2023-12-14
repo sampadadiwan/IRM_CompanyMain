@@ -14,13 +14,13 @@
                 <div class="dropdown">
                     <button class="btn btn-outline-success dropdown-toggle" type="button" 
                             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Generate Documents
+                    Generate
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     
                     <% msg = "Generate Documents for all capital commitment from kyc and fund info. This will delete any previously generated documentation which is not signed. Proceed?" %>
 
-                        <%= button_to "All", 
+                        <%= button_to "All Documents", 
                             generate_documentation_fund_path(fund), 
                             method: :patch, class: "dropdown-item" , 
                             form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
