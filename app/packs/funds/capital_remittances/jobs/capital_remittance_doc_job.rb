@@ -25,7 +25,7 @@ class CapitalRemittanceDocJob < ApplicationJob
           @capital_remittance.documents.not_templates.where(name: fund_doc_template.name).find_each(&:destroy)
           # Generate a new signed document
           CapitalRemittanceDocGenerator.new(@capital_remittance, fund_doc_template, user_id)
-        rescue StandardError => e
+        rescue Error => e
           msg = "Error generating template #{fund_doc_template.name} for fund #{@capital_remittance.folio_id}, for #{@investor.investor_name}: #{e.message}"
           send_notification(msg, user_id, "danger")
           Rails.logger.error { msg }
