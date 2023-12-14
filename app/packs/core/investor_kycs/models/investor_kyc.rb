@@ -72,6 +72,13 @@ class InvestorKyc < ApplicationRecord
     end
   end
 
+  def updated_notification
+    msg = "KYC updated for #{full_name}"
+    entity.employees.each do |user|
+      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method: "notify_kyc_updated", msg:, user_id: user.id).deliver_later(user) unless user.investor_advisor?
+    end
+  end
+
   before_save :set_investor_name
   def set_investor_name
     self.type = type_from_kyc_type
