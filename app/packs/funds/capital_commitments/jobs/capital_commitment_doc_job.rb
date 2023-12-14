@@ -9,9 +9,8 @@ class CapitalCommitmentDocJob < ApplicationJob
       fund = capital_commitment.fund
       investor = capital_commitment.investor
       investor_kyc = capital_commitment.investor_kyc
-      templates = capital_commitment.templates("Commitment Template")
-      templates = templates.where(name: template_name) if template_name.present?
-      
+      templates = capital_commitment.templates("Commitment Template", template_name)
+
       validate(fund, investor, investor_kyc, templates, user_id)
 
       if templates.present? && investor_kyc.present?
