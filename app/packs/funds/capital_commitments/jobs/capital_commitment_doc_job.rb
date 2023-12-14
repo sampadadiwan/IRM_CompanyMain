@@ -22,7 +22,7 @@ class CapitalCommitmentDocJob < ApplicationJob
           process_template(fund, fund_doc_template, capital_commitment, investor_kyc, user_id)
         end
 
-        msg = "Generated all documents for #{investor.investor_name}, for fund #{fund.name}"
+        msg = "Document generation completed for #{investor.investor_name}, for fund #{fund.name}"
       else
         msg = "Not generating documents for #{investor.investor_name}, for fund #{fund.name}" if investor_kyc.blank?
         msg = "Not generating documents for #{investor.investor_name}, for fund #{fund.name}, no templates found" if templates.blank?

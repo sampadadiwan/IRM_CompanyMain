@@ -25,12 +25,29 @@
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
           <%= link_to "LP Account Statement" , report_capital_commitment_path(@capital_commitment, report: "lp_statement"), {class: "dropdown-item" } %>
+
+          <div class="dropdown-divider"></div>
       
-          <%= button_to "Generate Documents", 
-          generate_documentation_capital_commitment_path(@capital_commitment), 
-          method: :patch, class: "dropdown-item" , 
-          form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-          msg: "Generate Documents for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"} if policy(@capital_commitment).generate_documentation? %>
+          <% if policy(@capital_commitment).generate_documentation? %>
+
+            <%= button_to "Generate All Documents", 
+            generate_documentation_capital_commitment_path(@capital_commitment), 
+            method: :patch, class: "dropdown-item" , 
+            form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+            msg: "Generate Documents for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"}  %>
+
+            <div class="dropdown-divider"></div>
+
+            <% @capital_commitment.templates("Commitment Template").each do |template| %>
+              <%= button_to "Generate #{template.name}", 
+              generate_documentation_capital_commitment_path(@capital_commitment, template_name: template.name), 
+              method: :patch, class: "dropdown-item" , 
+              form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+              msg: "Generate #{template.name} for this capital commitment from kyc and fund info. This will delete any previously generated documentation for this capital commitment. Proceed?"}  %>
+
+            <% end %>
+
+          <% end %>
 
 
           <%= link_to "Generate SOA", 

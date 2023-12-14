@@ -10,12 +10,33 @@
 
             <%= link_to "New Commitment", new_capital_commitment_path("capital_commitment[fund_id]": fund.id),  {class: "btn btn-outline-primary" } %>            
             
+            <div class="btn-group">
+                <div class="dropdown">
+                    <button class="btn btn-outline-success dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Generate Documents
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    
+                    <% msg = "Generate Documents for all capital commitment from kyc and fund info. This will delete any previously generated documentation which is not signed. Proceed?" %>
 
-            <%= button_to "Generate Documents", 
-                generate_documentation_fund_path(fund), 
-                method: :patch, class: "btn btn-outline-primary" , 
-                form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
-                msg: "Generate Documents for all capital commitment from kyc and fund info. This will delete any previously generated documentation which is not signed. Proceed?"} %>
+                        <%= button_to "All", 
+                            generate_documentation_fund_path(fund), 
+                            method: :patch, class: "dropdown-item" , 
+                            form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+                            msg: } %>
+
+                        <% fund.documents.where(owner_tag: "Commitment Template").each do |template| %>
+                            <%= button_to template.name, 
+                                generate_documentation_fund_path(fund, template_name: template.name), 
+                                method: :patch, class: "dropdown-item" , 
+                                form_class: "deleteButton",data: {action: "click->confirm#popup", method: :patch,
+                                msg: } %>
+                        <% end %>
+
+                    </div>
+                </div>
+            </div>
 
             <%= link_to "Upload", 
                 new_import_upload_path("import_upload[owner_id]": fund.id, 

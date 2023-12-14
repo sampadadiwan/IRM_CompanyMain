@@ -99,7 +99,7 @@ class FundsController < ApplicationController
   end
 
   def generate_documentation
-    FundCapitalCommitmentDocJob.perform_later(@fund.id, current_user.id)
+    FundCapitalCommitmentDocJob.perform_later(@fund.id, current_user.id, template_name: params[:template_name])
     redirect_to fund_path(@fund), notice: "Documentation generation started, please check back in a few mins."
   end
 
