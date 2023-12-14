@@ -10,7 +10,7 @@ class FundCapitalCommitmentDocJob < ApplicationJob
       # Need to generate docs for all commitments of the fund
       fund.capital_commitments.each do |capital_commitment|
         CapitalCommitmentDocJob.perform_now(capital_commitment.id, user_id, template_name:)
-      end      
+      end
     end
 
     msg = "Document generation completed for #{fund.name}"

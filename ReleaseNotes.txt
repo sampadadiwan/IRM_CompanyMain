@@ -1,3 +1,9 @@
+08/12/2023 - V7.0.19
+#####################################
+1. Enable selection of template name for commitment doc gen
+2. Enable download of documents uploaded for custom files 
+3. Notification of KYC update to fund employees
+
 08/12/2023 - V7.0.17
 #####################################
 1. Custom form fields name lenght to 100

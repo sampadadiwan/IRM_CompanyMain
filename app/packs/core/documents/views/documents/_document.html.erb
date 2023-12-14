@@ -11,9 +11,7 @@
     <%= document.tag_list %>
     <%= document.owner_tag %>
     
-    <%= "Template" if document.template %>
-
-    <% if document.from_template_id %>
+    <% if document.subject_to_approval? %>
       <% status = document.approved ? "Approved" : "Pending Approval" %>
       <%= render DisplayBooleanComponent.new(bool: document.approved).
         with_content(status)  %>
