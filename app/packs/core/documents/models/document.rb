@@ -158,6 +158,7 @@ class Document < ApplicationRecord
   end
 
   def subject_to_approval?
-    from_template_id.present? && esign_status.blank?
+    # It was generated from some template, but is not a signed doc.
+    from_template_id.present? && !owner_tag.include?("Signed")
   end
 end
