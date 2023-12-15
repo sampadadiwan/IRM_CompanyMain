@@ -4,7 +4,7 @@ class FormCustomField < ApplicationRecord
 
   enum :step,  { one: 1, two: 2, three: 3, end: 100 }
 
-  normalizes :name, with: ->(name) { name.strip.delete(" ").underscore.gsub(%r{[^0-9A-Za-z_()?'/]}, '') }
+  normalizes :name, with: ->(name) { name.strip.delete(" ").underscore.gsub(%r{[^0-9A-Za-z_()?/]}, '') }
   validates :name, :show_user_ids, length: { maximum: 100 }
   validates :label, length: { maximum: 254 }
   validates :field_type, length: { maximum: 20 }
@@ -28,5 +28,20 @@ class FormCustomField < ApplicationRecord
 
   def human_label
     label.presence || name.humanize.titleize
+  end
+
+  after_commit :change_name_job, on: :update, if: :saved_change_to_name?
+
+  def change_name_job
+    FcfNameChangeJob.perform_later(id, previous_changes[:name].first)
+  end
+
+  def change_name(old_name)
+    # Loop thru all the records
+    form_type.name.constantize.where(entity_id: form_type.entity_id).find_each do |record|
+      record.properties[name] = record.properties[old_name]
+      record.properties.delete(old_name)
+      record.save(validate: false)
+    end
   end
 end
