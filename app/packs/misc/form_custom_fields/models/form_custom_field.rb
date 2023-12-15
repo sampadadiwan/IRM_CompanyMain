@@ -4,7 +4,7 @@ class FormCustomField < ApplicationRecord
 
   enum :step,  { one: 1, two: 2, three: 3, end: 100 }
 
-  normalizes :name, with: ->(name) { name.strip.delete(" ").underscore }
+  normalizes :name, with: ->(name) { name.strip.delete(" ").underscore.gsub(/[^0-9A-Za-z_]/, '') }
   validates :name, :show_user_ids, length: { maximum: 100 }
   validates :field_type, length: { maximum: 20 }
 

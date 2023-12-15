@@ -7,7 +7,7 @@
       # Get the folder
       @folder = Folder.find(params[:folder_id]) 
       # link for users or just path for investors
-      link = (folder.entity_id == current_user.entity_id) ? link_to(folder.name, folder) : folder.name 
+      link = (@folder.entity_id == current_user.entity_id) ? link_to(@folder.name, @folder) : @folder.name 
     %>
     <h4 class="mb-0 text-gray-800 hideMobP">
       Documents: <%= link %>
@@ -29,8 +29,9 @@
 
   <input type="text" id="selected_folder_id" value="<%=params[:folder_id]%>" hidden>
   <% 
-    folder_id = params[:folder_id].presence || owner&.document_folder_id 
-    @folder = Folder.find(folder_id) if folder_id.present?
+    @folder ||= nil
+    folder_id = @folder&.id || owner&.document_folder_id 
+    @folder ||= Folder.find(folder_id) if folder_id.present?
   %>
 
   <span>
