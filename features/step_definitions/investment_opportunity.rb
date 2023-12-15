@@ -73,7 +73,6 @@
   
   When('I upload a document for the investment_opportunity') do
     visit(investment_opportunity_path(@investment_opportunity))
-    click_on "Actions"
     click_on "New Document"
     fill_in('document_name', with: "Test IO Doc")
     select("Document", from: "document_owner_tag")    

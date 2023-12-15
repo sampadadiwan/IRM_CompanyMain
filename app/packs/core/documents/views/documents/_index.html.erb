@@ -5,7 +5,7 @@
   <% if params[:folder_id].present? %>
     <% 
       # Get the folder
-      folder = Folder.find(params[:folder_id]) 
+      @folder = Folder.find(params[:folder_id]) 
       # link for users or just path for investors
       link = (folder.entity_id == current_user.entity_id) ? link_to(folder.name, folder) : folder.name 
     %>
@@ -28,7 +28,10 @@
   %>
 
   <input type="text" id="selected_folder_id" value="<%=params[:folder_id]%>" hidden>
-  <% folder_id = params[:folder_id].presence || owner&.document_folder_id %>
+  <% 
+    folder_id = params[:folder_id].presence || owner&.document_folder_id 
+    @folder = Folder.find(folder_id) if folder_id.present?
+  %>
 
   <span>
     <% if folder_id.present? %>
@@ -41,7 +44,7 @@
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
 
-            <%= link_to "Download Folder", download_folder_path(id: params[:folder_id]), 
+            <%= link_to "Download Folder", download_folder_path(id: folder_id), 
                 class: "dropdown-item hideMobP", data: {action: "click->confirm#popup"} if policy(@folder).download? %>
 
             <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
@@ -50,12 +53,12 @@
 
             <%= link_to "New Document", new_document_path( 
                         document: doc_attributes, 
-                        "document[folder_id]": params[:folder_id]), 
+                        "document[folder_id]": folder_id), 
                         {class: "dropdown-item" }  if policy(document).create? %>
 
 
             <%= link_to "Bulk Upload", 
-                new_import_upload_path("import_upload[owner_id]": params[:folder_id], 
+                new_import_upload_path("import_upload[owner_id]": folder_id, 
                     "import_upload[owner_type]": "Folder", 
                     "import_upload[import_type]": "Documents", 
                     "sample_upload": "DOCS_SAMPLE"), 
@@ -75,6 +78,10 @@
           </div>
         </div>
       </div>
+    <% else %>
+      <%= link_to "New Document", new_document_path( 
+                        document: doc_attributes), 
+                        {class: "btn btn-outline-primary" }  if document && policy(document).create? %>
     <% end %>
 
     <% 
