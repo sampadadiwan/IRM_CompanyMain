@@ -990,7 +990,7 @@ Then('when the capital commitment docs are generated') do
   CapitalCommitment.all.each do |cc|
     visit(capital_commitment_path(cc))
     click_on("Actions")
-    click_on("Generate Documents")
+    click_on("Generate All Documents")
     sleep(1)
     click_on("Proceed")
     sleep(8)

@@ -128,11 +128,11 @@ class DocumentsController < ApplicationController
 
   def send_all_for_esign
     authorize(Document)
-    # Select Docs that are not templates, have not been sent for esign and are generated from a template
-    Document.where(entity_id: params[:entity_id]).not_template.not_sent_for_esign.where.not(from_template_id: nil).find_each do |document|
-      document.send_for_esign(force: params[:force]) unless Document::SKIP_ESIGN_UPDATE_STATUSES.include?(document.esign_status)
+    if params[:folder_id].present?
+      folder = Folder.find(params[:folder_id])
+      authorize(folder, :send_for_esign?)
     end
-    UserAlert.new(user_id: current_user.id, message: "Documents were queued for e-signature.", level: "success").broadcast
+    DigioEsignJob.perform_later(params[:document_id], current_user.id, folder_id: params[:folder_id])
   end
 
   # allows to add a button to cancel esigning on document

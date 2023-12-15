@@ -30,31 +30,48 @@
   <input type="text" id="selected_folder_id" value="<%=params[:folder_id]%>" hidden>
 
   <span>
-    <%= link_to "Download Folder", download_folder_path(id: params[:folder_id]), 
-        class: "btn btn-sm btn-outline-success hideMobP", data: {action: "click->confirm#popup"} if params[:folder_id].present? && policy(@folder).download? %>
-
-    <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
-        "folder[parent_id]": @folder.id), 
-        class: "btn btn-sm btn-outline-primary" if params[:folder_id].present? && policy(@folder).create?   %> 
-
-    <%= link_to "New Document", new_document_path( 
-                document: doc_attributes, 
-                "document[folder_id]": params[:folder_id]), 
-                {class: "btn btn-sm  btn-outline-primary" }  if policy(document).create? %>
+    <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Actions
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
 
-    <%= link_to "Bulk Upload", 
-        new_import_upload_path("import_upload[owner_id]": params[:folder_id], 
-            "import_upload[owner_type]": "Folder", 
-            "import_upload[import_type]": "Documents", 
-            "sample_upload": "DOCS_SAMPLE"), 
-            { class: "btn btn-sm btn-outline-primary hideMobP"} if params[:folder_id].present? && policy(@folder).update? %> 
+            <%= link_to "Download Folder", download_folder_path(id: params[:folder_id]), 
+                class: "dropdown-item hideMobP", data: {action: "click->confirm#popup"} if params[:folder_id].present? && policy(@folder).download? %>
+
+            <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
+                "folder[parent_id]": @folder.id), 
+                class: "dropdown-item" if params[:folder_id].present? && policy(@folder).create?   %> 
+
+            <%= link_to "New Document", new_document_path( 
+                        document: doc_attributes, 
+                        "document[folder_id]": params[:folder_id]), 
+                        {class: "dropdown-item" }  if policy(document).create? %>
 
 
-    <% approve_folder_id = params[:folder_id].presence || owner&.document_folder_id %>
-    <%= link_to "Approve", approve_documents_path("parent_folder_id": approve_folder_id),
-                {class: "btn btn-sm  btn-outline-success" }  if policy(document).approve? %>
+            <%= link_to "Bulk Upload", 
+                new_import_upload_path("import_upload[owner_id]": params[:folder_id], 
+                    "import_upload[owner_type]": "Folder", 
+                    "import_upload[import_type]": "Documents", 
+                    "sample_upload": "DOCS_SAMPLE"), 
+                    { class: "dropdown-item hideMobP"} if params[:folder_id].present? && policy(@folder).update? %> 
 
+
+            <% folder_id = params[:folder_id].presence || owner&.document_folder_id %>
+            <%= link_to "Approve", approve_documents_path("parent_folder_id": folder_id),
+                        {class: "dropdown-item" }  if policy(document).approve? %>
+
+            <%= button_to "Send All for eSignatures" , 
+              send_all_for_esign_documents_path(folder_id: folder_id), 
+              data: {action: "click->confirm#popup", msg: "This will send all the approved documents ready for esigning to the esign provider.", method: :patch},
+              class: "dropdown-item" if policy(Document).send_all_for_esign? %>
+
+          </div>
+        </div>
+      </div>
 
     <% 
       owner ||= nil 

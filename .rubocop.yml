@@ -97,6 +97,10 @@ Lint/RescueException:
     - 'app/packs/funds/capital_commitments/jobs/account_entry_allocation_job.rb'
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb'
+    - 'app/packs/core/investor_kycs/jobs/kyc_doc_gen_job.rb'
+    - 'app/packs/funds/capital_commitments/jobs/capital_commitment_doc_job.rb'
+    - 'app/packs/funds/capital_commitments/jobs/capital_commitment_soa_job.rb'
+    - 'app/packs/funds/capital_remittances/jobs/capital_remittance_doc_job.rb'
 
 Lint/DuplicateBranch:
   Exclude:

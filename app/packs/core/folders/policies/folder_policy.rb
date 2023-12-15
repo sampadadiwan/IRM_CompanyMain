@@ -34,4 +34,8 @@ class FolderPolicy < ApplicationPolicy
   def destroy?
     false
   end
+
+  def send_for_esign?
+    user.entity_id == record.entity_id
+  end
 end
