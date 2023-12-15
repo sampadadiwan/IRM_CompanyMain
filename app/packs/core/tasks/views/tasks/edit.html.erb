@@ -1,7 +1,7 @@
 <div>
     <%= turbo_frame_tag "new_task" do %>        
         <%= render NewCard.new do %>
-            <%= render "form", task: task %>
+            <%= render "form", task: @task %>
         <% end %>
     <% end %>
 </div>

@@ -1,6 +1,6 @@
 <tr id="<%= dom_id task %>">
   <td>
-    <%= link_to task.details.html_safe.truncate(50), task %>
+    <%= link_to task.details.html_safe, task %>
     <div>
     <% task.tags&.split(",")&.each do |tag| %>
       <small><%= link_to tag, search_tasks_path(query: tag) %></small>
@@ -36,7 +36,7 @@
           <%= form.check_box :completed, class: "task-done-checkbox", onchange:"this.form.requestSubmit();"  %>
       <% end %>
 
-      <%= link_to "Edit" , edit_task_path(task) , {class: "btn btn-outline-success" } %>
+      <%= link_to "Edit", edit_task_path(task), class: "btn btn-outline-success", data: { turbo_frame: 'new_task' }%>
     <% end %>
     
     <%= link_to "Show" , task , {class: "btn btn-outline-primary" } if policy(task).show? %>
