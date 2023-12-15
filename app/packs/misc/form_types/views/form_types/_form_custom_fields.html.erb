@@ -1,3 +1,4 @@
+<div class="divider"></div>
 <div class='nested-fields row'>
     <div class="row">
     <div class="form-group col-md-1">
@@ -15,10 +16,11 @@
         <div class="form-group col-md-2">
             <%= f.label :name %>
             <%= f.text_field :name, class: "form-control" %>
+            <small class="form-text text-muted">Name of the field.</small>
         </div>
     <% end %>
     
-    <div class="form-group col-md-1">
+    <div class="form-group col-md-2">
         <%= f.label :field_type %>
         <%= f.select :field_type, %w[TextField NumberField DateField TextArea CheckBox Radio Select MultiSelect Money File], {}, class: "form-control" %>
     </div>
@@ -33,31 +35,37 @@
         <%= f.check_box :read_only, class: "form-check-input mt-3" %>
     </div>
 
-    <div class="form-group col-md-1">
+    <div class="form-group col-md-3">
         <%= f.label :meta_data %>
         <%= f.text_field :meta_data, class: "form-control" %>
-    </div>
-
-    <div class="form-group col-md-1">
-        <%= f.label :help_text %>
-        <%= f.text_field :help_text, class: "form-control" %>
+        <small class="form-text text-muted">CSV for selects, checkboxes etc</small>
     </div>
 
     <div class="form-group col-md-1">
         <%= f.label :show_user_ids, "Show only to" %>
         <%= f.text_field :show_user_ids, class: "form-control", placeholder: "List of user ids to hide this field from" %>
     </div>
-    <div class="form-group col-md-1">
-        <%= f.label :step %>
-        <%= f.select :step, FormCustomField.steps.keys, {}, class: "form-control" %>
-    </div>
+    
 
     </div>
 
     <div class="row">
-    <div class="form-group col-md-10">
+
+    <div class="form-group col-md-4">
         <%= f.label :label %>
         <%= f.text_field :label, class: "form-control" %>
+        <small class="form-text text-muted">Custom label for the field, can be blank</small>
+    </div>
+
+    <div class="form-group col-md-5">
+        <%= f.label :help_text %>
+        <%= f.text_field :help_text, class: "form-control" %>
+        <small class="form-text text-muted">This help text will be displayed below the field</small>
+    </div>
+
+    <div class="form-group col-md-1">
+        <%= f.label :step %>
+        <%= f.select :step, FormCustomField.steps.keys, {}, class: "form-control" %>
     </div>
 
     <div class="form-group col-md-1">    
