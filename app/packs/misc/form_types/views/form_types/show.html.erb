@@ -1,57 +1,62 @@
-<h1>
-  <%= @form_type.name %>
-</h1>
 <%= render "/layouts/alerts" %>
 
-  <table class="table table-bordered dataTable">
+<%= render FormCard.new(title: @form_type.name) do %>
 
-    <tr>
-      <td>
-        Position
-      </td>
-      <td>
-        Label
-      </td>
-      <td>
-        <%= @form_type.name %>
-      </td>
-      <td>
-        Properties
-      </td>
-      <td>
-        Step  
-      </td>
-    </tr>
+  <div data-controller="datatable">
+    <table class="table table-bordered dataTable jqDataTable">
+      <thead>
+        <tr>
+          <th>
+            Position
+          </th>
+          <th>
+            Label
+          </th>
+          <th>
+            <%= @form_type.name %>
+          </th>
+          <th>
+            Properties
+          </th>
+          <th>
+            Step  
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @form_type.form_custom_fields.each do |f| %>
+          <tr>
+            <td>
+              <%= f.position %>
+            </td>
+            <td>
+              <%= f.human_label %>
+            </td>
+            <td>
+              <%= f.field_type %> 
+            </td>
+            <td>
+              Required <%= display_boolean f.required %>  ,
+              Read Only <%= display_boolean f.read_only %>  <br>
+              Metadata: <%= f.meta_data %><br>
+              Help Text: <%= f.help_text %><br>
+            </td>
+            <td>
+              <%= f.step.humanize %>
+            </td>
 
-    <% @form_type.form_custom_fields.each do |f| %>
-      <tr>
-        <td>
-          <%= f.position %>
-        </td>
-        <td>
-          <%= f.human_label %>
-        </td>
-        <td>
-          <%= f.field_type %> 
-        </td>
-        <td>
-          Required <%= display_boolean f.required %>  ,
-          Read Only <%= display_boolean f.read_only %>  <br>
-          Metadata: <%= f.meta_data %><br>
-          Help Text: <%= f.help_text %><br>
-        </td>
-        <td>
-          <%= f.step.humanize %>
-        </td>
+          </tr>
+        <% end %>
+      </tbody>
 
-      </tr>
-    <% end %>
+    </table>
 
-
-  </table>
+  </div>
 
 
   <div>
     <%= link_to "Edit" , edit_form_type_path(@form_type), {class: "btn btn-outline-primary" } %> 
-    <%= button_to "Delete" , @form_type, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo: true} %>
+    <%= button_to "Delete" , @form_type, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton", data: {action: "click->confirm#popup", turbo: true, msg: "Delete custom form? Note this will not delete the custom data in saved #{@form_type.name}."} %>
   </div>
+
+<% end %>
