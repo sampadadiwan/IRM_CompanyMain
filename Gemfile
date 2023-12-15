@@ -54,7 +54,6 @@ gem 'exception_notification'
 gem 'sassc-rails'
 # Background Jobs
 gem 'sidekiq', '~> 7.0'
-# gem 'sidekiq-limit_fetch'
 
 gem 'action_mailbox_amazon_ingress', '~> 0.1.3'
 gem "aws-sdk-s3", require: false

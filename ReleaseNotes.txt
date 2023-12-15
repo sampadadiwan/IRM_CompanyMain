@@ -1,4 +1,10 @@
-08/12/2023 - V7.0.19
+15/12/2023 - V7.0.20    
+#####################################
+1. Added labels for Custom fields
+2. Changing FCF name, causes data in models to changes
+3. Upgraded to Sidekiq 7 for capsule functionality
+
+13/12/2023 - V7.0.19
 #####################################
 1. Enable selection of template name for commitment doc gen
 2. Enable download of documents uploaded for custom files 
