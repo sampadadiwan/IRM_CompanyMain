@@ -7,6 +7,8 @@ class IoBasePolicy < ApplicationPolicy
         scope.for_company_admin(user)
       elsif user.has_cached_role?(:employee) && ["Investment Fund", "Group Company"].include?(user.entity_type)
         scope.for_employee(user)
+      else
+        scope.none
       end
     end
   end
