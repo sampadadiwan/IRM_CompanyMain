@@ -38,10 +38,15 @@ class FormCustomField < ApplicationRecord
 
   def change_name(old_name)
     # Loop thru all the records
-    form_type.name.constantize.where(entity_id: form_type.entity_id).find_each do |record|
+    klass = form_type.name.constantize
+    puts "Changing name from #{old_name} to #{name} for #{form_type.name}"
+    
+    klass.where(entity_id: form_type.entity_id).find_each do |record|
+      # Replace the name value with the old name value
       record.properties[name] = record.properties[old_name]
       record.properties.delete(old_name)
-      record.save(validate: false)
+      # Save the record without callbacks
+      record.update_column(:properties, record.properties)
     end
   end
 end

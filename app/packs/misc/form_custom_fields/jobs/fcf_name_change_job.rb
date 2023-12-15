@@ -1,5 +1,5 @@
 class FcfNameChangeJob < ApplicationJob
-  queue_as :default
+  queue_as :serial
 
   def perform(fcf_id, old_name)
     Chewy.strategy(:sidekiq) do
