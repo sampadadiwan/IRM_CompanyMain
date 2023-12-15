@@ -9,9 +9,9 @@
       # link for users or just path for investors
       link = (folder.entity_id == current_user.entity_id) ? link_to(folder.name, folder) : folder.name 
     %>
-    <span class="mb-0 text-gray-800 hideMobP">
+    <h4 class="mb-0 text-gray-800 hideMobP">
       Documents: <%= link %>
-    </span>
+    </h4>
   <% else %>
     <h4 class="mb-0 text-gray-800  hideMobP">
       Documents
@@ -28,11 +28,13 @@
   %>
 
   <input type="text" id="selected_folder_id" value="<%=params[:folder_id]%>" hidden>
+  <% folder_id = params[:folder_id].presence || owner&.document_folder_id %>
 
   <span>
-    <div class="btn-group">
+    <% if folder_id.present? %>
+      <div class="btn-group">
         <div class="dropdown">
-          <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
+          <button class="btn btn-outline-primary dropdown-toggle" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             Actions
           </button>
@@ -40,11 +42,11 @@
 
 
             <%= link_to "Download Folder", download_folder_path(id: params[:folder_id]), 
-                class: "dropdown-item hideMobP", data: {action: "click->confirm#popup"} if params[:folder_id].present? && policy(@folder).download? %>
+                class: "dropdown-item hideMobP", data: {action: "click->confirm#popup"} if policy(@folder).download? %>
 
             <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
                 "folder[parent_id]": @folder.id), 
-                class: "dropdown-item" if params[:folder_id].present? && policy(@folder).create?   %> 
+                class: "dropdown-item" if policy(@folder).create?   %> 
 
             <%= link_to "New Document", new_document_path( 
                         document: doc_attributes, 
@@ -57,14 +59,15 @@
                     "import_upload[owner_type]": "Folder", 
                     "import_upload[import_type]": "Documents", 
                     "sample_upload": "DOCS_SAMPLE"), 
-                    { class: "dropdown-item hideMobP"} if params[:folder_id].present? && policy(@folder).update? %> 
+                    { class: "dropdown-item hideMobP"} if policy(@folder).update? %> 
 
 
-            <% folder_id = params[:folder_id].presence || owner&.document_folder_id %>
+            <div class="dropdown-divider"></div>
+            
             <%= link_to "Approve", approve_documents_path("parent_folder_id": folder_id),
                         {class: "dropdown-item" }  if policy(document).approve? %>
 
-            <%= button_to "Send All for eSignatures" , 
+            <%= button_to "Send For eSignatures" , 
               send_all_for_esign_documents_path(folder_id: folder_id), 
               data: {action: "click->confirm#popup", msg: "This will send all the approved documents ready for esigning to the esign provider.", method: :patch},
               class: "dropdown-item" if policy(Document).send_all_for_esign? %>
@@ -72,6 +75,7 @@
           </div>
         </div>
       </div>
+    <% end %>
 
     <% 
       owner ||= nil 
