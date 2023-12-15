@@ -4,7 +4,7 @@
     <% if custom_field.nil? || custom_field.show_to_user(current_user) %>
         <tr class="<%= collapsed ? 'collapse multi-collapse' : '' %>">
             <td>
-                <%= k.to_s.humanize.titleize %>
+                <%= custom_field&.human_label || k.to_s.humanize.titleize %>
             </td>
             <td>
                 <% if custom_field && custom_field.renderer %>

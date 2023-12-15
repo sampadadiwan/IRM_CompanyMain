@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_12_125710) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1143,6 +1143,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_12_125710) do
     t.boolean "read_only", default: false
     t.string "show_user_ids", limit: 50
     t.integer "step", default: 100
+    t.string "label"
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
   end
 

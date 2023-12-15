@@ -25,20 +25,19 @@
 
     document = Document.new(entity_id: , owner: owner)
     doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
-  %>
 
-  <input type="text" id="selected_folder_id" value="<%=params[:folder_id]%>" hidden>
-  <% 
     @folder ||= nil
     folder_id = @folder&.id || owner&.document_folder_id 
     @folder ||= Folder.find(folder_id) if folder_id.present?
   %>
 
+  <input type="text" id="selected_folder_id" value="<%=folder_id%>" hidden>
+
   <span>
     <% if folder_id.present? %>
       <div class="btn-group">
         <div class="dropdown">
-          <button class="btn btn-outline-primary dropdown-toggle" type="button"
+          <button class="btn btn-outline-primary dropdown-toggle" type="button" id="doc_actions"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             Actions
           </button>

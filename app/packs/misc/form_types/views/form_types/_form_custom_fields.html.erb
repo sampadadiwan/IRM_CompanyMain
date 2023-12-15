@@ -1,4 +1,5 @@
 <div class='nested-fields row'>
+    <div class="row">
     <div class="form-group col-md-1">
         <%= f.label :position %>
         <%= f.text_field :position, class: "form-control" %>
@@ -51,8 +52,17 @@
         <%= f.select :step, FormCustomField.steps.keys, {}, class: "form-control" %>
     </div>
 
+    </div>
+
+    <div class="row">
+    <div class="form-group col-md-10">
+        <%= f.label :label %>
+        <%= f.text_field :label, class: "form-control" %>
+    </div>
+
     <div class="form-group col-md-1">    
         <%= f.label :none, "&nbsp;".html_safe %>
         <%= link_to_remove_association "Delete" , f, class: "btn btn-outline-danger mt-4" %>
+    </div>
     </div>
 </div>

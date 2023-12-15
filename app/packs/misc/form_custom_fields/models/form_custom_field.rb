@@ -4,8 +4,9 @@ class FormCustomField < ApplicationRecord
 
   enum :step,  { one: 1, two: 2, three: 3, end: 100 }
 
-  normalizes :name, with: ->(name) { name.strip.delete(" ").underscore.gsub(/[^0-9A-Za-z_]/, '') }
+  normalizes :name, with: ->(name) { name.strip.delete(" ").underscore.gsub(%r{[^0-9A-Za-z_()?'/]}, '') }
   validates :name, :show_user_ids, length: { maximum: 100 }
+  validates :label, length: { maximum: 254 }
   validates :field_type, length: { maximum: 20 }
 
   RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date" }.freeze
@@ -23,5 +24,9 @@ class FormCustomField < ApplicationRecord
 
   def show_to_user(user)
     show_user_ids.blank? || show_user_ids.split(",").include?(user.id.to_s)
+  end
+
+  def human_label
+    label.presence || name.humanize.titleize
   end
 end

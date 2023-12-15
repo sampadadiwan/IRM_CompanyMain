@@ -64,7 +64,7 @@ When('I create a new document {string}') do |args|
 end
 
 When('I fill and submit the new document page') do
-  click_on("Actions")
+  find("#doc_actions").click
   click_on("New Document")
   sleep(4)
   fill_in("document_name", with: @document.name)

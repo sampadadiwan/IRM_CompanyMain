@@ -1,5 +1,5 @@
 <div class="form-group <%= field.read_only ? 'hidden_form_field' : '' %>">
-    <%= f.label field.name, field.name.humanize.titleize %>
+    <%= f.label field.name, field.human_label %>
     <% 
         if struct[field.name].present?         
             begin
