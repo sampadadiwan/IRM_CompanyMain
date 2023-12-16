@@ -1,21 +1,16 @@
 # Purpose: To send a document for e-signing to Digio
 class DigioEsignJob < ApplicationJob
   def perform(document_id, user_id = nil, folder_id: nil)
-    send_notification("Started documents enqueuing for eSigning", user_id, :info)
 
     Chewy.strategy(:sidekiq) do
-      documents = if folder_id.present?
-                    documents_to_esign(document_id, folder_id)
-                  else
-                    Document.where(id: document_id)
-                  end
-
-      documents.each do |doc|
+      if folder_id.present?
+        send_documents_for_esign(folder_id, user_id)
+      else
+        doc = Document.find(document_id)
         process_document(doc, user_id)
       end
-
-      send_notification("Completed. #{documents.count} documents enqueued for eSigning", user_id, :info)
     end
+    
   end
 
   def process_document(doc, user_id = nil)
@@ -40,23 +35,23 @@ class DigioEsignJob < ApplicationJob
     end
   end
 
-  def documents_to_esign(entity_id, folder_id)
-    if folder_id.present?
-      # Get all the documents in the folder and its subfolders
-      parent_folder = Folder.find(folder_id)
-      folder_ids = parent_folder.descendant_ids << folder_id
-      documents = Document.where(folder_id: folder_ids)
-    else
-      # Get all the documents in the entity
-      documents = Document.where(entity_id:)
-    end
-
+  def send_documents_for_esign(folder_id, user_id)
+    parent_folder = Folder.find(folder_id)
+    folder_ids = parent_folder.descendant_ids << folder_id
+    documents = Document.where(folder_id: folder_ids)
+    
     # Get all the generated documents
-    documents = documents.not_template.not_sent_for_esign.generated
+    documents = documents.not_template.not_sent_for_esign.generated.approved
     # Dont include the Cancelled or completed ones
-    documents = documents.where.not(esign_status: Document::SKIP_ESIGN_UPDATE_STATUSES)
+    documents = documents.where.not(esign_status: Document::SKIP_ESIGN_UPDATE_STATUSES).or(documents.where(esign_status: nil))
 
     Rails.logger.debug { "Found #{documents.count} documents to esign" }
-    documents
+    documents.each do |doc|
+      # Schedule each doc for esigning
+      DigioEsignJob.set(wait: rand(documents.count * 15).seconds).perform_later(doc.id, user_id)
+    end
+
+    send_notification("Completed. #{documents.count} documents enqueued for eSigning", user_id, :info)
+
   end
 end

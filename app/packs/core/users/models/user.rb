@@ -202,4 +202,7 @@ class User < ApplicationRecord
 
     errors.add :password, 'Complexity requirement not met. Please use: 1 uppercase, 1 lowercase, 1 digit and 1 special character'
   end
+
+  belongs_to :form_type, optional: true
+  has_many :form_custom_fields, through: :form_type
 end

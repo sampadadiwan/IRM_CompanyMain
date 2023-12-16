@@ -65,11 +65,13 @@ class UsersController < ApplicationController
     @user = User.new
     @user.entity_id = params[:entity_id]
     authorize @user
+    setup_custom_fields(@user)
   end
 
   # GET /users/1/edit
   def edit
     authorize @user
+    setup_custom_fields(@user)
   end
 
   # PATCH/PUT /users/1 or /users/1.json
@@ -142,6 +144,6 @@ class UsersController < ApplicationController
   # Only allow a list of trusted parameters through.
   def user_params
     params.require(:user).permit(:first_name, :last_name, :phone, :whatsapp_enabled, :signature, :call_code,
-                                 :dept, :sale_notification, :enable_support, role_name: [], permissions: [], extended_permissions: [])
+                                 :dept, :sale_notification, :enable_support, role_name: [], permissions: [], extended_permissions: [], properties: {})
   end
 end

@@ -7,6 +7,7 @@ class InvestorKycIndex < Chewy::Index
   field :PAN
   field :bank_account_number
   field :verified
+  field :kyc_type
   field :entity_name, value: ->(kyc) { kyc.entity.name if kyc.entity }
   field :investor_name, value: ->(kyc) { kyc.investor.investor_name if kyc.investor }
   field :entity_id

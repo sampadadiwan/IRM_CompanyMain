@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -74,6 +74,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.string "commitment_type", limit: 10, default: "Pool"
     t.bigint "fund_formula_id"
     t.string "rule_for", limit: 10, default: "Accounting"
+    t.json "json_fields"
     t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative"], name: "idx_account_entries_reporting_date_uniq", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
@@ -313,6 +314,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.bigint "document_folder_id"
     t.string "response_status"
     t.boolean "locked"
+    t.json "json_fields"
     t.index ["document_folder_id"], name: "index_approvals_on_document_folder_id"
     t.index ["entity_id"], name: "index_approvals_on_entity_id"
     t.index ["form_type_id"], name: "index_approvals_on_form_type_id"
@@ -440,6 +442,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.string "call_basis", limit: 40
     t.decimal "amount_to_be_called_cents", precision: 20, scale: 2, default: "0.0"
+    t.json "json_fields"
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_calls_on_document_folder_id"
@@ -495,6 +498,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.boolean "feeder_fund", default: false
     t.date "commitment_date"
     t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
+    t.json "json_fields"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
@@ -529,6 +533,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.decimal "cost_of_investment_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "exchange_rate_id"
+    t.json "json_fields"
     t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
     t.index ["deleted_at"], name: "index_capital_distribution_payments_on_deleted_at"
@@ -568,6 +573,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.string "commitment_type", limit: 10, default: "Pool"
     t.bigint "capital_commitment_id"
     t.integer "distribution_on", default: 0
+    t.json "json_fields"
     t.index ["approved_by_user_id"], name: "index_capital_distributions_on_approved_by_user_id"
     t.index ["capital_commitment_id"], name: "index_capital_distributions_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_distributions_on_deleted_at"
@@ -591,6 +597,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.string "reference_no", limit: 40
     t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "exchange_rate_id"
+    t.json "json_fields"
     t.index ["capital_remittance_id"], name: "index_capital_remittance_payments_on_capital_remittance_id"
     t.index ["entity_id"], name: "index_capital_remittance_payments_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_capital_remittance_payments_on_exchange_rate_id"
@@ -633,6 +640,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.decimal "computed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "percentage", precision: 12, scale: 8, default: "0.0"
     t.date "remittance_date"
+    t.json "json_fields"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"
@@ -831,6 +839,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.bigint "clone_from_id"
     t.bigint "data_room_folder_id"
     t.bigint "document_folder_id"
+    t.json "json_fields"
     t.index ["clone_from_id"], name: "index_deals_on_clone_from_id"
     t.index ["data_room_folder_id"], name: "index_deals_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_deals_on_deleted_at"
@@ -872,6 +881,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.string "display_on_page", limit: 6
     t.bigint "approved_by_id"
     t.boolean "approved", default: false
+    t.json "json_fields"
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
@@ -1083,6 +1093,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.text "properties"
     t.bigint "investor_signatory_id"
     t.bigint "document_folder_id"
+    t.json "json_fields"
     t.index ["document_folder_id"], name: "index_expression_of_interests_on_document_folder_id"
     t.index ["entity_id"], name: "index_expression_of_interests_on_entity_id"
     t.index ["eoi_entity_id"], name: "index_expression_of_interests_on_eoi_entity_id"
@@ -1226,6 +1237,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.decimal "carry", precision: 24, scale: 8, default: "0.0"
+    t.json "json_fields"
     t.index ["entity_id"], name: "index_fund_unit_settings_on_entity_id"
     t.index ["form_type_id"], name: "index_fund_unit_settings_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_unit_settings_on_fund_id"
@@ -1327,6 +1339,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.decimal "target_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.json "json_fields"
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -1415,6 +1428,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.integer "preferred_conversion", default: 1
     t.text "grant_letter_data"
     t.datetime "deleted_at"
+    t.json "json_fields"
     t.index ["created_from_excercise_id"], name: "index_holdings_on_created_from_excercise_id"
     t.index ["deleted_at"], name: "index_holdings_on_deleted_at"
     t.index ["entity_id"], name: "index_holdings_on_entity_id"
@@ -1513,6 +1527,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
     t.bigint "investor_id"
+    t.json "json_fields"
     t.index ["custom_matching_vals"], name: "index_interests_on_custom_matching_vals"
     t.index ["deleted_at"], name: "index_interests_on_deleted_at"
     t.index ["document_folder_id"], name: "index_interests_on_document_folder_id"
@@ -1547,6 +1562,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.bigint "funding_round_id"
     t.string "tag_list", limit: 120
     t.bigint "document_folder_id"
+    t.json "json_fields"
     t.index ["document_folder_id"], name: "index_investment_opportunities_on_document_folder_id"
     t.index ["entity_id"], name: "index_investment_opportunities_on_entity_id"
     t.index ["form_type_id"], name: "index_investment_opportunities_on_form_type_id"
@@ -1710,6 +1726,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.string "bank_branch", limit: 40
     t.string "bank_account_type", limit: 40
     t.string "type", limit: 20
+    t.json "json_fields"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
@@ -1784,6 +1801,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.boolean "imported", default: false
     t.bigint "document_folder_id"
     t.string "pan", limit: 40
+    t.json "json_fields"
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
@@ -1804,6 +1822,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "document_folder_id"
+    t.json "json_fields"
     t.index ["document_folder_id"], name: "index_kpi_reports_on_document_folder_id"
     t.index ["entity_id"], name: "index_kpi_reports_on_entity_id"
     t.index ["form_type_id"], name: "index_kpi_reports_on_form_type_id"
@@ -1821,6 +1840,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.bigint "kpi_report_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "json_fields"
     t.index ["entity_id"], name: "index_kpis_on_entity_id"
     t.index ["form_type_id"], name: "index_kpis_on_form_type_id"
     t.index ["kpi_report_id"], name: "index_kpis_on_kpi_report_id"
@@ -1956,6 +1976,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.string "esign_link"
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
+    t.json "json_fields"
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
     t.index ["custom_matching_vals"], name: "index_offers_on_custom_matching_vals"
     t.index ["deleted_at"], name: "index_offers_on_deleted_at"
@@ -2099,6 +2120,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.boolean "startup", default: true
     t.string "investment_domicile", limit: 10, default: "Domestic"
     t.datetime "deleted_at"
+    t.json "json_fields"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_portfolio_investments_on_deleted_at"
@@ -2230,6 +2252,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.text "custom_matching_fields"
     t.text "cmf_allocation_percentage"
     t.bigint "document_folder_id"
+    t.json "json_fields"
     t.index ["deleted_at"], name: "index_secondary_sales_on_deleted_at"
     t.index ["document_folder_id"], name: "index_secondary_sales_on_document_folder_id"
     t.index ["entity_id"], name: "index_secondary_sales_on_entity_id"
@@ -2424,10 +2447,13 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.integer "failed_attempts", default: 0
     t.string "unlock_token"
     t.datetime "locked_at"
+    t.json "json_fields"
+    t.bigint "form_type_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["entity_id"], name: "index_users_on_entity_id"
+    t.index ["form_type_id"], name: "index_users_on_form_type_id"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
@@ -2455,6 +2481,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
     t.datetime "deleted_at"
     t.string "category", limit: 10
     t.string "sub_category", limit: 100
+    t.json "json_fields"
     t.index ["deleted_at"], name: "index_valuations_on_deleted_at"
     t.index ["entity_id"], name: "index_valuations_on_entity_id"
     t.index ["form_type_id"], name: "index_valuations_on_form_type_id"
@@ -2773,6 +2800,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_15_102857) do
   add_foreign_key "tasks", "users"
   add_foreign_key "user_alerts", "entities"
   add_foreign_key "user_alerts", "users"
+  add_foreign_key "users", "form_types"
   add_foreign_key "valuations", "entities"
   add_foreign_key "valuations", "form_types"
   add_foreign_key "vesting_schedules", "entities"

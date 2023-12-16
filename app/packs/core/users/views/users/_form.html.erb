@@ -111,6 +111,9 @@
     <% end %>
 
 
+    <%= custom_form_fields(user, form) %>
+
+
     <%= form.text_field :entity_id, class: "form-control", hidden: true %>
 
     <% if current_user.has_cached_role?(:company_admin) %>

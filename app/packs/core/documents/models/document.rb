@@ -50,6 +50,7 @@ class Document < ApplicationRecord
 
   scope :generated, -> { where.not(from_template_id: nil) }
   scope :template, -> { where(template: true) }
+  scope :approved, -> { where(approved: true) }
   scope :not_template, -> { where(template: [nil, false]) }
   scope :sent_for_esign, -> { where(sent_for_esign: true) }
   scope :not_sent_for_esign, -> { where(sent_for_esign: [nil, false]) }

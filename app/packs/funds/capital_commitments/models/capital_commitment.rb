@@ -270,6 +270,6 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def cc
-    properties[:cc]
+    properties["cc"]
   end
 end
