@@ -104,6 +104,9 @@ class Investor < ApplicationRecord
     end
   }
 
+  scope :perms, ->(p) { joins(:investor_entity).merge(Entity.perms(p)) }
+  scope :no_perms, ->(p) { joins(:investor_entity).merge(Entity.no_perms(p)) }
+
   INVESTOR_CATEGORIES = ENV["INVESTOR_CATEGORIES"].split(",") << "Prospective"
 
   def self.INVESTOR_CATEGORIES(entity = nil)

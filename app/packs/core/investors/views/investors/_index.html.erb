@@ -1,5 +1,5 @@
 <% 
-  data_source ||= investors_path(q: params.to_unsafe_h[:q], format: :json, all: true) 
+  data_source ||= investors_path(q: params.to_unsafe_h[:q], format: :json, all: true, perm: params[:perm], no_perm: params[:no_perm]) 
 %>    
 <% lazy_load_data ||= false %>
 
