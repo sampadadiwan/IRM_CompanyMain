@@ -19,7 +19,7 @@ class InvestorSearch
                          .query(query_string: { fields: InvestorIndex::SEARCH_FIELDS,
                                                 query:, default_operator: 'and' }).map(&:id)
 
-      investors = policy_scope(Investor).where(id: ids)
+      investors = investors.where(id: ids)
     end
 
     if params[:perm].present?
