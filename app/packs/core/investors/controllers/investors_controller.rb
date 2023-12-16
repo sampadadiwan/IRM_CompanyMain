@@ -8,7 +8,7 @@ class InvestorsController < ApplicationController
     @investors = policy_scope(@q.result)
     authorize(Investor)
     @investors = InvestorSearch.search(@investors, params, current_user)
-    @investors = @investors.page(params[:page]) if params[:all].blank?
+    @investors = @investors.page(params[:page]) if params[:all].blank? || params[:search].blank?
     respond_to do |format|
       format.html
       format.turbo_stream
