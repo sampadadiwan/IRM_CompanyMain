@@ -5,4 +5,10 @@ class EntityMailer < ApplicationMailer
     mail(to: ENV.fetch('SUPPORT_EMAIL', nil),
          subject: "New Entity created #{@entity.name}")
   end
+
+  def doc_gen_errors
+    setup_defaults
+    @error_msg = params[:error_msg]
+    mail(from: @from, to: @to, subject: "Remittance Documentation Generation Errors")
+  end
 end

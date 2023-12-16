@@ -3,6 +3,7 @@ class CapitalCommitmentDocJob < ApplicationJob
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(capital_commitment_id, user_id = nil, template_name: nil)
+    error_msg = []
     msg = ""
     Chewy.strategy(:sidekiq) do
       capital_commitment = CapitalCommitment.find(capital_commitment_id)
@@ -11,7 +12,7 @@ class CapitalCommitmentDocJob < ApplicationJob
       investor_kyc = capital_commitment.investor_kyc
       templates = capital_commitment.templates("Commitment Template", template_name)
 
-      validate(fund, investor, investor_kyc, templates, user_id)
+      validate(fund, capital_commitment, investor, investor_kyc, templates, user_id, error_msg)
 
       if templates.present? && investor_kyc.present?
         msg = "Generating documents for #{investor.investor_name}, for fund #{fund.name}"
@@ -19,25 +20,28 @@ class CapitalCommitmentDocJob < ApplicationJob
         Rails.logger.debug { msg }
 
         templates.each do |fund_doc_template|
-          process_template(fund, fund_doc_template, capital_commitment, investor_kyc, user_id)
+          process_template(fund, fund_doc_template, capital_commitment, investor_kyc, user_id, error_msg)
         end
 
         msg = "Document generation completed for #{investor.investor_name}, for fund #{fund.name}"
       else
-        msg = "Not generating documents for #{investor.investor_name}, for fund #{fund.name}" if investor_kyc.blank?
+        msg = "Not generating documents for #{investor.investor_name}, for fund #{fund.name}. No KYC" if investor_kyc.blank?
         msg = "Not generating documents for #{investor.investor_name}, for fund #{fund.name}, no templates found" if templates.blank?
+        error_msg << { msg:, folio_id: capital_commitment.folio_id, investor_name: investor.investor_name }
       end
     end
 
     send_notification(msg, user_id, :info)
+    error_msg
   end
 
-  def process_template(fund, fund_doc_template, capital_commitment, investor_kyc, user_id)
+  def process_template(fund, fund_doc_template, capital_commitment, investor_kyc, user_id, error_msg)
     existing_doc = capital_commitment.documents.where(name: fund_doc_template.name).first
     if existing_doc.present? && existing_doc.sent_for_esign
       msg = "Not generating #{fund_doc_template.name} for fund #{fund.name}, for user #{investor_kyc.full_name}, already sent for esign"
       Rails.logger.debug msg
       send_notification(msg, user_id, :info)
+      error_msg << { msg:, template: fund_doc_template.name, folio_id: capital_commitment.folio_id, investor_name: investor_kyc.full_name }
     else
       msg = "Generating #{fund_doc_template.name} for fund #{capital_commitment.fund.name}, for #{investor_kyc.full_name}"
       Rails.logger.debug msg
@@ -53,19 +57,22 @@ class CapitalCommitmentDocJob < ApplicationJob
   rescue Exception => e
     msg = "Error generating #{fund_doc_template.name} for fund #{capital_commitment.fund.name}, for #{investor_kyc.full_name} #{e.message}"
     send_notification(msg, user_id, :danger)
+    error_msg << { msg:, template: fund_doc_template.name, folio_id: capital_commitment.folio_id, investor_name: investor_kyc.full_name }
     raise e
   end
 
-  def validate(fund, investor, investor_kyc, templates, user_id)
+  def validate(fund, capital_commitment, investor, investor_kyc, templates, user_id, error_msg)
     if investor_kyc.blank? || !investor_kyc.verified
       msg = "Not generating documents for #{investor.investor_name}, for fund #{fund.name}, no verified KYC"
       UserAlert.new(user_id:, level: :danger, message: msg).broadcast
+      error_msg << { msg:, folio_id: capital_commitment.folio_id, investor_name: investor.investor_name }
     end
 
     if templates.blank?
       msg = "Not generating documents for #{investor.investor_name}, for fund #{fund.name}, no templates found"
       Rails.logger.debug msg
       UserAlert.new(user_id:, level: :info, message: msg).broadcast
+      error_msg << { msg:, folio_id: capital_commitment.folio_id, investor_name: investor.investor_name }
     end
   end
 end

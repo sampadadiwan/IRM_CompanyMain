@@ -12,7 +12,7 @@ class CapitalCallRemittanceDocJob < ApplicationJob
     if error_msg.present?
       send_notification("Documentation generation completed with errors. Errors will be sent via email", user_id, :danger)
 
-      CapitalRemittancesMailer.with(entity_id: @capital_call.entity_id, user_id:, error_msg:).remittance_doc_errors.deliver_now
+      EntityMailer.with(entity_id: @capital_call.entity_id, user_id:, error_msg:).doc_gen_errors.deliver_now
 
     else
       send_notification("Documentation generation completed.", user_id, :info)
