@@ -34,16 +34,15 @@
   <input type="text" id="selected_folder_id" value="<%=folder_id%>" hidden>
 
   <span>
-    <% if folder_id.present? %>
-      <div class="btn-group">
-        <div class="dropdown">
-          <button class="btn btn-outline-primary dropdown-toggle" type="button" id="doc_actions"
-                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Actions
-          </button>
-          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-
-
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="doc_actions"
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Actions
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        <% if folder_id.present? %>
+      
             <%= link_to "Download Folder", download_folder_path(id: folder_id), 
                 class: "dropdown-item hideMobP", data: {action: "click->confirm#popup"} if policy(@folder).download? %>
 
@@ -75,15 +74,15 @@
               data: {action: "click->confirm#popup", msg: "This will send all the approved documents ready for esigning to the esign provider.", method: :patch},
               class: "dropdown-item" if policy(Document).send_all_for_esign? %>
 
-          </div>
+          <% else %>
+            <%= link_to "New Document", new_document_path( 
+                              document: doc_attributes), 
+                              {class: "dropdown-item" }  if document && policy(document).create? %>
+          <% end %>
+
         </div>
       </div>
-    <% else %>
-      <%= link_to "New Document", new_document_path( 
-                        document: doc_attributes), 
-                        {class: "btn btn-outline-primary" }  if document && policy(document).create? %>
-    <% end %>
-
+    </div>      
     <% 
       owner ||= nil 
       @deal  ||= nil

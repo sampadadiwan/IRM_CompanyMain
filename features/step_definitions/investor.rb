@@ -472,6 +472,7 @@ end
 
 
 Then('when I upload the document for the kyc') do
+  click_on("Actions")
   click_on("New Document")
   @document = FactoryBot.build(:document, entity: @entity, user: @entity.employees.sample)
 
@@ -530,7 +531,7 @@ Given('we Generate SOA for the first capital commitment') do
   @capital_commitment.investor_kyc = InvestorKyc.last
   @capital_commitment.save!
   visit(capital_commitment_path(@capital_commitment))
-  click_on("Actions")
+  find("#commitment_actions").click
   click_on("Generate SOA")
   fill_in('start_date', with: "01/01/2020")
   fill_in('end_date', with: "01/01/2021")

@@ -228,16 +228,4 @@ class Investor < ApplicationRecord
     CapitalDistributionPayment.where(investor_id: id).update_all(investor_name:)
     InvestorKyc.where(investor_id: id).update_all(investor_name:)
   end
-
-  def self.squeeze_names
-    ids = []
-    Investor.find_each do |i|
-      investor_name_sqz = i.investor_name.squeeze(" ")
-      if investor_name_sqz != i.investor_name
-        i.update_investor_name(investor_name_sqz)
-        ids << i.id
-      end
-    end
-    ids
-  end
 end
