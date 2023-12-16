@@ -126,7 +126,7 @@
 
         <% User.permissions.pairs.each do |key, val| %>
           <% if user.entity.permissions.send("#{val}?") %>
-            <div class="form-group col">
+            <div class="form-group col-6">
               <%= form.label :permissions, key.titleize, class: "no-wrap" %>
               <%= form.check_box :permissions, {name: "user[permissions][]",
                   val: val, id: "permissions_#{val}", class: "form-check-input"}, val, nil   %>

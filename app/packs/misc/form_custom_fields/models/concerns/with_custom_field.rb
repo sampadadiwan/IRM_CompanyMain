@@ -7,9 +7,6 @@ module WithCustomField
 
     belongs_to :form_type, optional: true
     has_many :form_custom_fields, through: :form_type
-    # Note - properties will be dropped from DB soon. Replaced by json_fields
-    self.ignored_columns += %w[properties]
-    # serialize :properties, type: Hash
   end
 
   def map_custom_fields

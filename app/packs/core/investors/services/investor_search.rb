@@ -23,7 +23,7 @@ class InvestorSearch
     end
 
     if params[:perm].present?
-      investors = investors.perms(params[perm])
+      investors = investors.perms(params[:perm])
     elsif params[:no_perm].present?
       investors = investors.no_perms(params[:no_perm])
     end

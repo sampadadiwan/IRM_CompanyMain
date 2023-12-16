@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_16_115009) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -60,7 +60,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.string "name", limit: 100
     t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
     t.text "notes"
-    t.text "properties"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "explanation"
@@ -308,7 +307,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.datetime "updated_at", null: false
     t.integer "pending_count", default: 0
     t.boolean "approved", default: false
-    t.text "properties"
     t.bigint "form_type_id"
     t.date "due_date"
     t.bigint "document_folder_id"
@@ -425,7 +423,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "properties"
     t.bigint "form_type_id"
     t.boolean "approved", default: false
     t.bigint "approved_by_user_id"
@@ -460,7 +457,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "properties"
     t.bigint "form_type_id"
     t.decimal "percentage", precision: 11, scale: 8, default: "0.0"
     t.bigint "ppm_number", default: 0
@@ -519,7 +515,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.bigint "form_type_id"
     t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
     t.date "payment_date"
-    t.text "properties"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "completed", default: false
@@ -552,7 +547,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.decimal "gross_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "carry_cents", precision: 20, scale: 2, default: "0.0"
     t.date "distribution_date"
-    t.text "properties"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "title"
@@ -589,7 +583,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.bigint "entity_id", null: false
     t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
     t.date "payment_date"
-    t.text "properties"
     t.text "payment_proof_data"
     t.text "notes"
     t.datetime "created_at", null: false
@@ -616,7 +609,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "capital_commitment_id"
-    t.text "properties"
     t.bigint "form_type_id"
     t.boolean "verified", default: false
     t.text "payment_proof_data"
@@ -834,7 +826,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.boolean "archived", default: false
     t.string "currency", limit: 10
     t.string "units", limit: 15
-    t.text "properties"
     t.bigint "form_type_id"
     t.bigint "clone_from_id"
     t.bigint "data_room_folder_id"
@@ -858,7 +849,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.datetime "deleted_at"
     t.bigint "folder_id", null: false
     t.integer "impressions_count", default: 0
-    t.text "properties"
     t.bigint "form_type_id"
     t.boolean "download", default: false
     t.boolean "printing", default: false
@@ -1090,7 +1080,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.bigint "investor_id", null: false
     t.boolean "esign_required", default: false
     t.boolean "esign_completed", default: false
-    t.text "properties"
     t.bigint "investor_signatory_id"
     t.bigint "document_folder_id"
     t.json "json_fields"
@@ -1232,7 +1221,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.decimal "management_fee", precision: 24, scale: 8, default: "0.0"
     t.decimal "setup_fee", precision: 24, scale: 8, default: "0.0"
     t.bigint "form_type_id"
-    t.text "properties"
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -1300,7 +1288,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.text "properties"
     t.bigint "form_type_id"
     t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "funding_round_id"
@@ -1420,7 +1407,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.integer "unvested_cancelled_quantity", default: 0
     t.integer "net_unvested_quantity", default: 0
     t.boolean "manual_vesting", default: false
-    t.text "properties"
     t.bigint "form_type_id"
     t.string "department", limit: 25
     t.string "option_type", limit: 12
@@ -1510,7 +1496,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.string "email"
     t.string "PAN", limit: 15
     t.boolean "final_agreement", default: false
-    t.text "properties"
     t.bigint "form_type_id"
     t.integer "offer_quantity", default: 0
     t.boolean "verified", default: false
@@ -1558,7 +1543,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.boolean "lock_allocations", default: false
     t.boolean "lock_eoi", default: false
     t.text "buyer_docs_list"
-    t.text "properties"
     t.bigint "funding_round_id"
     t.string "tag_list", limit: 120
     t.bigint "document_folder_id"
@@ -1701,7 +1685,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.text "pan_verification_response"
     t.string "pan_verification_status"
     t.text "comments"
-    t.text "properties"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "verified", default: false
@@ -1795,7 +1778,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.boolean "is_holdings_entity", default: false
     t.boolean "is_trust", default: false
     t.string "city", limit: 50
-    t.text "properties"
     t.bigint "form_type_id"
     t.string "tag_list", limit: 120
     t.boolean "imported", default: false
@@ -1817,7 +1799,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.bigint "form_type_id"
     t.date "as_of"
     t.text "notes"
-    t.text "properties"
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -1836,7 +1817,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.decimal "value", precision: 20, scale: 6
     t.string "display_value", limit: 30
     t.string "notes"
-    t.text "properties"
     t.bigint "kpi_report_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -1949,7 +1929,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.text "comments"
     t.boolean "final_agreement", default: false
     t.bigint "interest_id"
-    t.text "properties"
     t.bigint "form_type_id"
     t.text "signature_data"
     t.text "spa_data"
@@ -2101,7 +2080,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "quantity", precision: 20, scale: 2, default: "0.0"
     t.text "notes"
-    t.text "properties"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.decimal "fmv_cents", precision: 20, scale: 2, default: "0.0"
@@ -2233,7 +2211,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.boolean "finalized", default: false
     t.text "seller_doc_list"
     t.decimal "seller_transaction_fees_pct", precision: 5, scale: 2
-    t.text "properties"
     t.bigint "form_type_id"
     t.boolean "lock_allocations", default: false
     t.date "offer_end_date"
@@ -2477,7 +2454,6 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_054725) do
     t.bigint "owner_id"
     t.text "report_data"
     t.decimal "net_valuation_cents", precision: 20, scale: 2, default: "0.0"
-    t.text "properties"
     t.datetime "deleted_at"
     t.string "category", limit: 10
     t.string "sub_category", limit: 100
