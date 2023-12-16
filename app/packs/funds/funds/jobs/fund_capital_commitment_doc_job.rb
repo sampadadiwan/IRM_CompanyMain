@@ -21,7 +21,5 @@ class FundCapitalCommitmentDocJob < ApplicationJob
     else
       send_notification("Documentation generation completed.", user_id, :success)
     end
-
-    
   end
 end

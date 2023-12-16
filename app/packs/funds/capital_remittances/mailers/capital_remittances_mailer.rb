@@ -50,6 +50,4 @@ class CapitalRemittancesMailer < ApplicationMailer
     subject = "Payment Confirmation for capital call #{@capital_remittance.fund.name}"
     send_mail(subject:) if @to.present?
   end
-
-  
 end

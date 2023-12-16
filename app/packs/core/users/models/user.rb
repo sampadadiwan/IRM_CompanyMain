@@ -203,5 +203,4 @@ class User < ApplicationRecord
 
     errors.add :password, 'Complexity requirement not met. Please use: 1 uppercase, 1 lowercase, 1 digit and 1 special character'
   end
-
 end

@@ -1,7 +1,6 @@
 # Purpose: To send a document for e-signing to Digio
 class DigioEsignJob < ApplicationJob
   def perform(document_id, user_id = nil, folder_id: nil)
-
     Chewy.strategy(:sidekiq) do
       if folder_id.present?
         send_documents_for_esign(folder_id, user_id)
@@ -10,7 +9,6 @@ class DigioEsignJob < ApplicationJob
         process_document(doc, user_id)
       end
     end
-    
   end
 
   def process_document(doc, user_id = nil)
@@ -39,7 +37,7 @@ class DigioEsignJob < ApplicationJob
     parent_folder = Folder.find(folder_id)
     folder_ids = parent_folder.descendant_ids << folder_id
     documents = Document.where(folder_id: folder_ids)
-    
+
     # Get all the generated documents
     documents = documents.not_template.not_sent_for_esign.generated.approved
     # Dont include the Cancelled or completed ones
@@ -52,6 +50,5 @@ class DigioEsignJob < ApplicationJob
     end
 
     send_notification("Completed. #{documents.count} documents enqueued for eSigning", user_id, :info)
-
   end
 end
