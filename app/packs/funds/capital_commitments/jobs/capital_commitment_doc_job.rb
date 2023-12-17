@@ -7,27 +7,25 @@ class CapitalCommitmentDocJob < ApplicationJob
     msg = ""
     Chewy.strategy(:sidekiq) do
       capital_commitment = CapitalCommitment.find(capital_commitment_id)
-      fund = capital_commitment.fund
-      investor = capital_commitment.investor
+      capital_commitment.fund
       investor_kyc = capital_commitment.investor_kyc
       templates = capital_commitment.templates("Commitment Template", template_name)
 
-      validate(fund, capital_commitment, investor, investor_kyc, templates, user_id, error_msg)
+      valid = validate(capital_commitment, investor_kyc, templates, user_id, error_msg)
 
-      if templates.present? && investor_kyc.present?
-        msg = "Generating documents for #{investor.investor_name}, for fund #{fund.name}"
+      if templates.present? && valid
+        msg = "Generating documents for #{capital_commitment.investor_name}"
         send_notification(msg, user_id, :info)
         Rails.logger.debug { msg }
 
         templates.each do |fund_doc_template|
-          process_template(fund, fund_doc_template, capital_commitment, investor_kyc, user_id, error_msg)
+          process_template(fund_doc_template, capital_commitment, investor_kyc, user_id, error_msg)
         end
 
-        msg = "Document generation completed for #{investor.investor_name}, for fund #{fund.name}"
+        msg = "Document generation completed for #{capital_commitment.investor_name}"
       else
-        msg = "Not generating documents for #{investor.investor_name}, for fund #{fund.name}. No KYC" if investor_kyc.blank?
-        msg = "Not generating documents for #{investor.investor_name}, for fund #{fund.name}, no templates found" if templates.blank?
-        error_msg << { msg:, folio_id: capital_commitment.folio_id, investor_name: investor.investor_name }
+        msg = templates.blank? ? "Not generating documents for #{capital_commitment.investor_name}, no templates found" : nil
+        error_msg << { msg:, folio_id: capital_commitment.folio_id, investor_name: capital_commitment.investor_name } if msg
       end
     end
 
@@ -35,15 +33,14 @@ class CapitalCommitmentDocJob < ApplicationJob
     error_msg
   end
 
-  def process_template(fund, fund_doc_template, capital_commitment, investor_kyc, user_id, error_msg)
+  def process_template(fund_doc_template, capital_commitment, investor_kyc, user_id, error_msg)
     existing_doc = capital_commitment.documents.where(name: fund_doc_template.name).first
     if existing_doc.present? && existing_doc.sent_for_esign
-      msg = "Not generating #{fund_doc_template.name} for fund #{fund.name}, for user #{investor_kyc.full_name}, already sent for esign"
-      Rails.logger.debug msg
+      msg = "Not generating #{fund_doc_template.name} for user #{investor_kyc.full_name}, already sent for esign"
       send_notification(msg, user_id, :info)
       error_msg << { msg:, template: fund_doc_template.name, folio_id: capital_commitment.folio_id, investor_name: investor_kyc.full_name }
     else
-      msg = "Generating #{fund_doc_template.name} for fund #{capital_commitment.fund.name}, for #{investor_kyc.full_name}"
+      msg = "Generating #{fund_doc_template.name}, for #{investor_kyc.full_name}"
       Rails.logger.debug msg
       send_notification(msg, user_id, :info)
       # Delete any existing signed documents
@@ -55,24 +52,27 @@ class CapitalCommitmentDocJob < ApplicationJob
       CapitalCommitmentDocGenerator.new(capital_commitment, fund_doc_template, user_id)
     end
   rescue Exception => e
-    msg = "Error generating #{fund_doc_template.name} for fund #{capital_commitment.fund.name}, for #{investor_kyc.full_name} #{e.message}"
+    msg = "Error generating #{fund_doc_template.name}, for #{investor_kyc.full_name} #{e.message}"
     send_notification(msg, user_id, :danger)
-    error_msg << { msg:, template: fund_doc_template.name, folio_id: capital_commitment.folio_id, investor_name: investor_kyc.full_name }
+    error_msg << { msg:, template: fund_doc_template.name, folio_id: capital_commitment.folio_id, investor_name: capital_commitment.full_name }
     raise e
   end
 
-  def validate(fund, capital_commitment, investor, investor_kyc, templates, user_id, error_msg)
+  def validate(capital_commitment, investor_kyc, templates, user_id, error_msg)
     if investor_kyc.blank? || !investor_kyc.verified
-      msg = "Not generating documents for #{investor.investor_name}, for fund #{fund.name}, no verified KYC"
-      UserAlert.new(user_id:, level: :danger, message: msg).broadcast
-      error_msg << { msg:, folio_id: capital_commitment.folio_id, investor_name: investor.investor_name }
+      msg = "Not generating documents for #{capital_commitment.investor_name}, no verified KYC"
+      send_notification(msg, user_id, :danger)
+      error_msg << { msg:, folio_id: capital_commitment.folio_id, investor_name: capital_commitment.investor_name }
+      return false
     end
 
     if templates.blank?
-      msg = "Not generating documents for #{investor.investor_name}, for fund #{fund.name}, no templates found"
-      Rails.logger.debug msg
-      UserAlert.new(user_id:, level: :info, message: msg).broadcast
-      error_msg << { msg:, folio_id: capital_commitment.folio_id, investor_name: investor.investor_name }
+      msg = "Not generating documents for #{capital_commitment.investor_name}, no templates found"
+      send_notification(msg, user_id, :info)
+      error_msg << { msg:, folio_id: capital_commitment.folio_id, investor_name: capital_commitment.investor_name }
+      return false
     end
+
+    true
   end
 end

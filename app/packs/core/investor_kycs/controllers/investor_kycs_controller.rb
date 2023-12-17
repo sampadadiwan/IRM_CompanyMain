@@ -152,13 +152,16 @@ class InvestorKycsController < ApplicationController
   # PATCH/PUT /investor_kycs/1 or /investor_kycs/1.json
   def update
     validate = current_user.curr_role == "investor"
+    @investor_kyc.assign_attributes(investor_kyc_params)
+    @investor_kyc.documents.each(&:validate)
 
     respond_to do |format|
-      @investor_kyc.assign_attributes(investor_kyc_params)
-      @investor_kyc.documents.each(&:validate)
-
       if @investor_kyc.save(validate:)
+        # Send notification to entity employees if the kyc is updated
         @investor_kyc.updated_notification if validate
+        # Send reminder for kyc to user if send_kyc_form_to_user
+        @investor_kyc.send_kyc_form(reminder: true) if @investor_kyc.send_kyc_form_to_user
+
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else

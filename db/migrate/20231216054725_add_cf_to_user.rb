@@ -44,5 +44,9 @@ class AddCfToUser < ActiveRecord::Migration[7.1]
         m.update_column(:json_fields, m.properties)
       end
     end
+
+    existing.each do |klass|
+      klass.where(json_fields: nil).update_all(json_fields: {})
+    end
   end
 end

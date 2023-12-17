@@ -54,7 +54,6 @@ class ImportInvestorKyc < ImportUtil
                                    send_kyc_form_to_user: user_data["Send Kyc Form To User"] == "Yes")
 
     setup_custom_fields(user_data, investor_kyc, custom_field_headers)
-
     investor_kyc.save!(validate: false)
   end
 

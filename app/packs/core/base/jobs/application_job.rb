@@ -6,6 +6,6 @@ class ApplicationJob < ActiveJob::Base
   discard_on ActiveJob::DeserializationError
 
   def send_notification(message, user_id, level = "success")
-    UserAlert.new(user_id:, message:, level:).broadcast if user_id.present?
+    UserAlert.new(user_id:, message:, level:).broadcast if user_id.present? && message.present?
   end
 end
