@@ -80,7 +80,7 @@ class SoaGenerator
     Rails.logger.debug { "Using context #{context.keys} to render template" }
     Rails.logger.debug "Rendering template"
 
-    file_name = "#{@working_dir}/SOA-#{capital_commitment.id}"
+    file_name = "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}"
     convert(template, context, file_name)
   end
 

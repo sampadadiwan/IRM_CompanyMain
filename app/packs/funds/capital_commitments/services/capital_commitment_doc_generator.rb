@@ -54,16 +54,4 @@ class CapitalCommitmentDocGenerator
     additional_headers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Header", "#{@fund_doc_template_name} Stamp Paper"])
     add_header_footers(capital_commitment, "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf", additional_headers, additional_footers)
   end
-
-  def add_image2(context, field_name, image)
-    if image
-      file = image.download
-      stored_file_path = "#{@working_dir}/#{File.basename(file.path)}"
-
-      FileUtils.mv(file.path, stored_file_path)
-
-      context.store "image:#{field_name}", stored_file_path
-      stored_file_path
-    end
-  end
 end
