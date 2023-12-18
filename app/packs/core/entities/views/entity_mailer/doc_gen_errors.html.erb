@@ -1,11 +1,10 @@
 <div>
-    The following errors were detected in the processing of remittance documents:
+    The following errors were detected in the generation of documents:
     <ol>
         <% @error_msg.each do |error| %>
             <li>
                 Message: <%= error[:msg] %>,             
                 Template: <%= error[:template] %>, 
-                Folio: <%= error[:folio_id] %>, 
                 Investor: <%= error[:investor_name] %>
             </li>
         <% end %>

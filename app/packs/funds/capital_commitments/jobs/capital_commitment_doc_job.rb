@@ -13,7 +13,7 @@ class CapitalCommitmentDocJob < ApplicationJob
 
       valid = validate(capital_commitment, investor_kyc, templates, user_id, error_msg)
 
-      if templates.present? && valid
+      if valid
         msg = "Generating documents for #{capital_commitment.investor_name}"
         send_notification(msg, user_id, :info)
         Rails.logger.debug { msg }
@@ -23,56 +23,60 @@ class CapitalCommitmentDocJob < ApplicationJob
         end
 
         msg = "Document generation completed for #{capital_commitment.investor_name}"
-      else
-        msg = templates.blank? ? "Not generating documents for #{capital_commitment.investor_name}, no templates found" : nil
-        error_msg << { msg:, folio_id: capital_commitment.folio_id, investor_name: capital_commitment.investor_name } if msg
+        send_notification(msg, user_id, :info)
       end
     end
 
-    send_notification(msg, user_id, :info)
     error_msg
   end
 
   def process_template(fund_doc_template, capital_commitment, investor_kyc, user_id, error_msg)
     existing_doc = capital_commitment.documents.where(name: fund_doc_template.name).first
     if existing_doc.present? && existing_doc.sent_for_esign
-      msg = "Not generating #{fund_doc_template.name} for user #{investor_kyc.full_name}, already sent for esign"
-      send_notification(msg, user_id, :info)
-      error_msg << { msg:, template: fund_doc_template.name, folio_id: capital_commitment.folio_id, investor_name: investor_kyc.full_name }
+      msg = "Not generating #{fund_doc_template.name} for #{capital_commitment.investor_name}, already sent for esign"
+      handle_error(msg, fund_doc_template, capital_commitment, investor_kyc, user_id, error_msg)
     else
       msg = "Generating #{fund_doc_template.name}, for #{investor_kyc.full_name}"
       Rails.logger.debug msg
       send_notification(msg, user_id, :info)
-      # Delete any existing signed documents
-      # Do not delete signed documents
-      docs_to_destroy = capital_commitment.documents.not_templates.where(name: fund_doc_template.name)
-      # .where.not translates to != in SQL. NULL is treated differently from other values, so != queries never match columns that are set to NULL
-      docs_to_destroy.where.not(owner_tag: %w[Signed signed]).or(docs_to_destroy.where(owner_tag: nil)).find_each(&:destroy)
+
+      destroy_existing(capital_commitment, fund_doc_template)
+
       # Generate a new signed document
       CapitalCommitmentDocGenerator.new(capital_commitment, fund_doc_template, user_id)
     end
   rescue Exception => e
     msg = "Error generating #{fund_doc_template.name}, for #{investor_kyc.full_name} #{e.message}"
-    send_notification(msg, user_id, :danger)
-    error_msg << { msg:, template: fund_doc_template.name, folio_id: capital_commitment.folio_id, investor_name: capital_commitment.full_name }
+    handle_error(msg, fund_doc_template, capital_commitment, investor_kyc, user_id, error_msg)
     raise e
+  end
+
+  def destroy_existing(capital_commitment, fund_doc_template)
+    # Delete any existing signed documents
+    # Do not delete signed documents
+    docs_to_destroy = capital_commitment.documents.not_templates.where(name: fund_doc_template.name)
+    # .where.not translates to != in SQL. NULL is treated differently from other values, so != queries never match columns that are set to NULL
+    docs_to_destroy.where.not(owner_tag: %w[Signed signed]).or(docs_to_destroy.where(owner_tag: nil)).find_each(&:destroy)
   end
 
   def validate(capital_commitment, investor_kyc, templates, user_id, error_msg)
     if investor_kyc.blank? || !investor_kyc.verified
       msg = "Not generating documents for #{capital_commitment.investor_name}, no verified KYC"
-      send_notification(msg, user_id, :danger)
-      error_msg << { msg:, folio_id: capital_commitment.folio_id, investor_name: capital_commitment.investor_name }
+      handle_error(msg, nil, capital_commitment, investor_kyc, user_id, error_msg)
       return false
     end
 
     if templates.blank?
       msg = "Not generating documents for #{capital_commitment.investor_name}, no templates found"
-      send_notification(msg, user_id, :info)
-      error_msg << { msg:, folio_id: capital_commitment.folio_id, investor_name: capital_commitment.investor_name }
+      handle_error(msg, nil, capital_commitment, investor_kyc, user_id, error_msg)
       return false
     end
 
     true
+  end
+
+  def handle_error(msg, fund_doc_template, capital_commitment, _investor_kyc, user_id, error_msg)
+    send_notification(msg, user_id, :danger)
+    error_msg << { msg:, template: fund_doc_template&.name, folio_id: capital_commitment.folio_id, investor_name: capital_commitment.to_s }
   end
 end
