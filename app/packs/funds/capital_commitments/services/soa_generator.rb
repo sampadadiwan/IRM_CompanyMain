@@ -10,7 +10,7 @@ class SoaGenerator
         fund_doc_template_path = tempfile.path
         create_working_dir(capital_commitment)
         generate(capital_commitment, start_date, end_date, fund_doc_template_path)
-        upload(fund_doc_template, capital_commitment, start_date, end_date)
+        upload(fund_doc_template, capital_commitment, start_date:, end_date:)
         notify(fund_doc_template, capital_commitment, user_id) if user_id
       ensure
         cleanup
@@ -139,26 +139,5 @@ class SoaGenerator
     capital_commitment.investor_kyc.properties.each do |k, v|
       context.store "kyc_#{k}", v
     end
-  end
-
-  def upload(document, capital_commitment, start_date, end_date)
-    file_name = "#{@working_dir}/SOA-#{capital_commitment.id}.pdf"
-    Rails.logger.debug { "Uploading new signed file #{file_name}" }
-
-    new_soa_doc = Document.new(document.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
-
-    doc_name = "#{document.name}-#{start_date}-#{end_date}"
-    # Delete SOA for the same start_date, end_date
-    capital_commitment.documents.where(name: doc_name).find_each(&:destroy)
-
-    # Create and attach the new SOA
-    new_soa_doc.name = doc_name
-    new_soa_doc.file = File.open(file_name, "rb")
-    new_soa_doc.from_template = document
-    new_soa_doc.owner = capital_commitment
-    new_soa_doc.owner_tag = "Generated"
-    new_soa_doc.send_email = false
-
-    new_soa_doc.save
   end
 end

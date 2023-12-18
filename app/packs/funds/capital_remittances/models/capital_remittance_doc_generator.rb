@@ -75,20 +75,4 @@ class CapitalRemittanceDocGenerator
     context.store  :capital_fee, money_to_currency(capital_remittance.capital_fee)
     context.store  :other_fee, money_to_currency(capital_remittance.other_fee)
   end
-
-  def upload(document, capital_remittance)
-    file_name = "#{@working_dir}/CapitalRemittance-#{capital_remittance.id}.pdf"
-    Rails.logger.debug { "Uploading new signed file #{file_name}" }
-
-    signed_document = Document.new(document.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
-
-    signed_document.name = document.name
-    signed_document.file = File.open(file_name, "rb")
-    signed_document.from_template = document
-    signed_document.owner = capital_remittance
-    signed_document.owner_tag = "Generated"
-    signed_document.send_email = false
-
-    signed_document.save
-  end
 end

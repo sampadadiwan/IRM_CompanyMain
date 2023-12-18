@@ -105,26 +105,4 @@ class OfferSpaGenerator
       end
     end
   end
-
-  def upload(document, offer)
-    file_name = "#{@working_dir}/Offer-#{offer.id}.pdf"
-    Rails.logger.debug { "Uploading new file #{file_name}" }
-
-    new_generated_doc = Document.new(document.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
-
-    # Delete SOA for the same start_date, end_date
-    offer.documents.where(name: new_generated_doc.name).find_each(&:destroy)
-
-    # Create and attach the new SOA
-    new_generated_doc.file = File.open(file_name, "rb")
-    new_generated_doc.from_template = document
-    new_generated_doc.owner = offer
-    new_generated_doc.owner_tag = "Generated"
-    new_generated_doc.send_email = false
-    new_generated_doc.locked = true
-    new_generated_doc.save
-
-    # Once the new SPA is created, ensure that the offer final_agreement is unset
-    offer.update_columns(final_agreement: false, final_agreement_user_id: nil)
-  end
 end

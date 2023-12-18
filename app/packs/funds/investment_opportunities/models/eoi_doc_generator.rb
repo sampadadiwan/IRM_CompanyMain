@@ -87,20 +87,4 @@ class EoiDocGenerator
       end
     end
   end
-
-  def upload(document, expression_of_interest)
-    file_name = "#{@working_dir}/ExpressionOfInterest-#{expression_of_interest.id}.pdf"
-    Rails.logger.debug { "Uploading new signed file #{file_name}" }
-
-    signed_document = Document.new(document.attributes.slice("entity_id", "name", "folder_id", "orignal", "download", "printing", "user_id"))
-
-    signed_document.name = document.name
-    signed_document.file = File.open(file_name, "rb")
-    signed_document.from_template = document
-    signed_document.owner = expression_of_interest
-    signed_document.owner_tag = "Generated"
-    signed_document.send_email = false
-
-    signed_document.save
-  end
 end
