@@ -55,25 +55,6 @@ class CapitalCommitmentDocGenerator
     add_header_footers(capital_commitment, "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf", additional_headers, additional_footers)
   end
 
-  def upload(doc_template, capital_commitment)
-    file_name = "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf"
-    Rails.logger.debug { "Uploading generated file #{file_name} to folio #{capital_commitment.folio_id} " }
-
-    generated_document = Document.new(doc_template.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id", "display_on_page"))
-
-    generated_document.name = doc_template.name
-    generated_document.file = File.open(file_name, "rb")
-    generated_document.from_template = doc_template
-    generated_document.owner = capital_commitment
-    generated_document.owner_tag = "Generated"
-    generated_document.send_email = false
-
-    generated_document.e_signatures = doc_template.e_signatures_for(capital_commitment) || []
-    generated_document.stamp_papers = doc_template.stamp_papers_for(capital_commitment) || []
-
-    generated_document.save
-  end
-
   def add_image2(context, field_name, image)
     if image
       file = image.download

@@ -85,4 +85,35 @@ module DocumentGeneratorBase
   def send_notification(message, user_id, level = "success")
     UserAlert.new(user_id:, message:, level:).broadcast
   end
+
+  def upload(doc_template, model, start_date = nil, end_date = nil)
+    file_name = "#{@working_dir}/#{model.class.name}-#{model.id}.pdf"
+    Rails.logger.debug { "Uploading generated file #{file_name} to #{model} " }
+
+    # Clone some attributes of the template
+    generated_document = Document.new(doc_template.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id", "display_on_page"))
+
+    # Get the name of the doc we are generating
+    generated_document.name = if start_date && end_date
+                                "#{doc_template.name}-#{start_date}-#{end_date}"
+                              else
+                                doc_template.name
+                              end
+
+    # Destroy existing docs with the same name for the model
+    model.documents.where(name: generated_document.name).find_each(&:destroy)
+
+    # Upload the generated file
+    generated_document.file = File.open(file_name, "rb")
+    generated_document.from_template = doc_template
+    generated_document.owner = model
+    generated_document.owner_tag = "Generated"
+    generated_document.send_email = false
+
+    # Add the e-signatures and stamp papers if available
+    generated_document.e_signatures = doc_template.e_signatures_for(model) || []
+    generated_document.stamp_papers = doc_template.stamp_papers_for(model) || []
+
+    generated_document.save
+  end
 end

@@ -9,7 +9,7 @@ class KycDocGenerator
       doc_template_path = tempfile.path
       create_working_dir(investor_kyc)
       generate(investor_kyc, start_date, end_date, doc_template_path)
-      upload(doc_template, investor_kyc, start_date, end_date)
+      upload(doc_template, investor_kyc, start_date:, end_date:)
       notify(doc_template, investor_kyc, user_id) if user_id
     ensure
       cleanup
@@ -118,29 +118,5 @@ class KycDocGenerator
     investor_kyc.properties.each do |k, v|
       context.store "kyc_#{k}", v
     end
-  end
-
-  def upload(document, investor_kyc, start_date, end_date)
-    file_name = "#{@working_dir}/KYC-#{investor_kyc.id}.pdf"
-    Rails.logger.debug { "Uploading new generated file #{file_name}" }
-
-    new_generated_doc = Document.new(document.attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
-
-    doc_name = "#{new_generated_doc.name}-#{start_date}-#{end_date}"
-    # Delete KYC doc for the same start_date, end_date
-    investor_kyc.documents.where(name: doc_name).find_each(&:destroy)
-
-    # Create and attach the new KYC doc
-    new_generated_doc.name = doc_name
-    new_generated_doc.file = File.open(file_name, "rb")
-    new_generated_doc.from_template = document
-    new_generated_doc.owner = investor_kyc
-    new_generated_doc.owner_tag = "Generated"
-    new_generated_doc.send_email = false
-
-    new_generated_doc.e_signatures = document.e_signatures_for(investor_kyc) || []
-    new_generated_doc.stamp_papers = document.stamp_papers_for(investor_kyc) || []
-
-    new_generated_doc.save
   end
 end
