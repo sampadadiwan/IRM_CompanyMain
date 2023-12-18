@@ -19,11 +19,13 @@
     <div class="form-group col">
       <%= f.label :signature_type, "Signature" %>
       <%= f.select :signature_type, ["Aadhaar", "Electronic"], {}, class: "form-control"  %>
+      <small class="text-muted">Type of Signature</small>
     </div>
 
     <div class="form-group col">
       <%= f.label :notes %>
       <%= f.text_field :notes, class: "form-control"  %>
+      <small class="text-muted">Email address if Other</small>
     </div>
 
       <div class="form-group col">

@@ -31,8 +31,6 @@ class CapitalRemittanceDocJob < ApplicationJob
       end
     end
 
-    # Notify on all errors
-    # send_notification("Errors with document generation will be sent via email", user_id, :danger) if error_msg.present?
     error_msg
   end
 

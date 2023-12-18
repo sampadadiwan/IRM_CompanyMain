@@ -129,7 +129,10 @@
           </div>
 
           <div id='e_signatures'>
-            <% @labels = @document.owner.respond_to?(:signature_labels) ? @document.owner.signature_labels : nil %>
+            <% 
+              @labels = @document.owner.respond_to?(:signature_labels) ? @document.owner.signature_labels : nil 
+              @labels ||= ["Investor", "Other"] if @document.folder.name == "KYC Templates"
+            %>
             <%= form.fields_for :e_signatures do |f| %>
               <%= render 'e_signature_fields', f: %>
             <% end %>

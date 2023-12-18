@@ -138,6 +138,9 @@ class KycDocGenerator
     new_generated_doc.owner_tag = "Generated"
     new_generated_doc.send_email = false
 
+    new_generated_doc.e_signatures = document.e_signatures_for(investor_kyc) || []
+    new_generated_doc.stamp_papers = document.stamp_papers_for(investor_kyc) || []
+
     new_generated_doc.save
   end
 end

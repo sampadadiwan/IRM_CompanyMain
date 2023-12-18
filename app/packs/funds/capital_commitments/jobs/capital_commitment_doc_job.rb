@@ -23,7 +23,7 @@ class CapitalCommitmentDocJob < ApplicationJob
         end
 
         msg = "Document generation completed for #{capital_commitment.investor_name}"
-        send_notification(msg, user_id, :info)
+        send_notification(msg, user_id, :success)
       end
     end
 
