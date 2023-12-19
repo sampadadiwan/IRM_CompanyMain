@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_16_115009) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_19_124526) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -495,6 +495,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_115009) do
     t.date "commitment_date"
     t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
     t.json "json_fields"
+    t.string "esign_emails"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
@@ -1040,6 +1041,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_115009) do
     t.boolean "cashless"
     t.integer "shares_to_sell"
     t.integer "shares_to_allot"
+    t.json "json_fields"
     t.index ["deleted_at"], name: "index_excercises_on_deleted_at"
     t.index ["document_folder_id"], name: "index_excercises_on_document_folder_id"
     t.index ["entity_id"], name: "index_excercises_on_entity_id"
@@ -1327,6 +1329,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_115009) do
     t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.json "json_fields"
+    t.string "esign_emails"
     t.index ["data_room_folder_id"], name: "index_funds_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_funds_on_deleted_at"
     t.index ["document_folder_id"], name: "index_funds_on_document_folder_id"
@@ -1710,6 +1713,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_115009) do
     t.string "bank_account_type", limit: 40
     t.string "type", limit: 20
     t.json "json_fields"
+    t.string "esign_emails"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
@@ -2000,6 +2004,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_16_115009) do
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
     t.text "formula"
+    t.json "json_fields"
     t.index ["deleted_at"], name: "index_option_pools_on_deleted_at"
     t.index ["document_folder_id"], name: "index_option_pools_on_document_folder_id"
     t.index ["entity_id"], name: "index_option_pools_on_entity_id"
