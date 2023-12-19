@@ -37,8 +37,9 @@ module DocumentHelper
     ids.map { |p| p[1] ? (p[1].split("/") << p[0]) : [p[0]] }.flatten.map(&:to_i).uniq
   end
 
+
   def update_signature_progress(params)
-    if params.dig('payload', 'document', 'id').present?
+    if params.dig('payload', 'document', 'id').present? && !params.dig('payload', 'document', 'error_code').present?
       doc = Document.find_by(provider_doc_id: params.dig('payload', 'document', 'id'))
       params['payload']['document']['signing_parties'].each do |signer|
         user = User.find_by(email: signer['identifier'])
@@ -69,6 +70,31 @@ module DocumentHelper
           logger.error e.message
           # raise e
         end
+      end
+    elsif params.dig('payload', 'document', 'error_code').present?
+      email = params.dig('payload', 'document', 'signer_identifier')
+      user = User.find_by(email: email)
+      if user
+        doc = Document.find_by(provider_doc_id: params.dig('payload', 'document', 'id'))
+        esign = doc&.e_signatures&.find_by(user_id: user.id)
+        if esign.present? && esign.status != "signed" && esign.status != "failed"
+          esign.add_api_update(params['payload'])
+          esign.update(status: "failed", api_updates: esign.api_updates)
+          message = "Document - #{doc.name}'s E-Sign status updated"
+          logger.info message
+          UserAlert.new(user_id: user.id, message:, level: "info").broadcast
+          check_and_update_document_status(doc)
+        else
+          e = StandardError.new("E-Sign not found or already updated for #{doc&.name} and user #{user&.name} - #{params}")
+          ExceptionNotifier.notify_exception(e)
+          logger.error e.message
+          # raise e
+        end
+      else
+        e = StandardError.new("User not found for #{doc&.name} with identifier #{signer['identifier']} - #{params}")
+        ExceptionNotifier.notify_exception(e)
+        logger.error e.message
+        # raise e
       end
     end
   end
