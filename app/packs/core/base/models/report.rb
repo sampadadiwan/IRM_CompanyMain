@@ -5,9 +5,10 @@ class Report < ApplicationRecord
   validates :name, presence: true
 
   def self.reports_for
-    { 'Capital Commitments': "/capital_commitments?filter=true",
+    { 'Account Entries': "/account_entries?filter=true",
+      'Capital Commitments': "/capital_commitments?filter=true",
       'Capital Remittances': "/capital_remittances?filter=true",
       'Fund Units': "/fund_units?filter=true",
-      'Account Entries': "/account_entries?filter=true" }
+      KYCs: "/investor_kycs?filter=true" }
   end
 end

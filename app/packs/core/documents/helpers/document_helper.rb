@@ -37,9 +37,8 @@ module DocumentHelper
     ids.map { |p| p[1] ? (p[1].split("/") << p[0]) : [p[0]] }.flatten.map(&:to_i).uniq
   end
 
-
   def update_signature_progress(params)
-    if params.dig('payload', 'document', 'id').present? && !params.dig('payload', 'document', 'error_code').present?
+    if params.dig('payload', 'document', 'id').present? && params.dig('payload', 'document', 'error_code').blank?
       doc = Document.find_by(provider_doc_id: params.dig('payload', 'document', 'id'))
       params['payload']['document']['signing_parties'].each do |signer|
         user = User.find_by(email: signer['identifier'])
@@ -73,7 +72,7 @@ module DocumentHelper
       end
     elsif params.dig('payload', 'document', 'error_code').present?
       email = params.dig('payload', 'document', 'signer_identifier')
-      user = User.find_by(email: email)
+      user = User.find_by(email:)
       if user
         doc = Document.find_by(provider_doc_id: params.dig('payload', 'document', 'id'))
         esign = doc&.e_signatures&.find_by(user_id: user.id)
