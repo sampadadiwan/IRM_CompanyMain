@@ -20,7 +20,7 @@
             Capital Call
           </td>
           <td>
-            <%= link_to capital_remittance.capital_call.name, capital_call_url(capital_remittance.capital_call, tab: "remittances-tab") %>
+            <%= current_user && current_user.entity_id == capital_remittance.entity_id ? link_to(capital_remittance.capital_call.name, capital_call_url(capital_remittance.capital_call, tab: "remittances-tab")) : capital_remittance.capital_call.name %>
           </td>
         </tr>
 
