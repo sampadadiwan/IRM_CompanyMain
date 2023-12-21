@@ -78,7 +78,7 @@ Scenario Outline: Access fund & details as Employee with update access
     
 
 Scenario Outline: Access fund & details as Investor
-  Given there is a user "<user>" for an entity "<entity>"
+  Given there is a user "first_name=Mohith" for an entity "<entity>"
   Given there is an existing investor "entity_type=Family Office"
   Given there is an existing investor entity "entity_type=Family Office" with employee "first_name=Investor"
   Given there is a fund "name=Test fund" for the entity
@@ -88,7 +88,8 @@ Scenario Outline: Access fund & details as Investor
   Given the fund has capital commitments from each investor
   Then user "<should>" have "<access>" access to his own capital commitment
   Given the fund has "2" capital call
-  Then user "<should>" have "<access>" access to the capital calls
+  # Investors can no longer access calls
+  Then user "false" have "<access>" access to the capital calls 
   Given the capital calls are approved
   Then user "<should>" have "<inv_access>" access to his own capital remittances
   Given the fund has "2" capital distribution
@@ -97,15 +98,15 @@ Scenario Outline: Access fund & details as Investor
   Then user "<should>" have "<access>" access to his own capital distribution payments
   
   Examples:
-  	|user	      |entity                       |role       |given |should |access | inv_access |
-    |  	        |entity_type=Investment Fund  |investor   |no    |false  |show,edit,update,destroy| show,edit,update,destroy|
-    |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show  | show|
-    |  	        |entity_type=Investment Fund  |investor   |yes   |false   |edit,update,destroy     | |
-    |  	        |entity_type=Investment Fund  |investor   |yes   |false   |     |edit,update |
-    |  	        |entity_type=Investment Fund  |company_admin   |no    |false  |show,edit,update,destroy| show,edit,update,destroy|
-    |  	        |entity_type=Investment Fund  |company_admin   |yes   |true   |show  | show|
-    |  	        |entity_type=Investment Fund  |company_admin   |yes   |false   |edit,update,destroy     | |
-    |  	        |entity_type=Investment Fund  |company_admin   |yes   |false   |     |edit,update |
+  	|entity                       |role       |given |should |access | inv_access |
+    |entity_type=Investment Fund  |investor   |no    |false  |show,edit,update,destroy| show,edit,update,destroy|
+    |entity_type=Investment Fund  |investor   |yes   |true   |show   | show  |
+    |entity_type=Investment Fund  |investor   |yes   |false  |edit,update,destroy| |
+    |entity_type=Investment Fund  |investor   |yes   |false  |edit,update | |
+    |entity_type=Investment Fund  |company_admin   |no    |false  |show,edit,update,destroy| show,edit,update,destroy|
+    |entity_type=Investment Fund  |company_admin   |yes   |true   |show  | show|
+    |entity_type=Investment Fund  |company_admin   |yes   |false  |edit,update,destroy | |
+    |entity_type=Investment Fund  |company_admin   |yes   |false  |     |edit,update |
 
 
 Scenario Outline: Access fund & details as Advisor

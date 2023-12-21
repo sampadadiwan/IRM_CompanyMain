@@ -2,7 +2,7 @@ module UpdateInvestor
   extend ActiveSupport::Concern
 
   included do
-    after_commit :update_association_name, unless: :destroyed?
+    after_commit :update_association_name, only: :update?
 
     # Be very careful using this method, it is used to move all investors associations to a new investor
     def self.merge(old_investor, new_investor)
@@ -88,6 +88,7 @@ module UpdateInvestor
   # Some associations cache the investor_name, so update that if the name changes here.
 
   def update_association_name
+    # If the investor name changes, we need to update all the associations
     if saved_change_to_investor_name?
       investor_kycs.update_all(investor_name:)
       capital_commitments.update_all(investor_name:)
@@ -99,12 +100,14 @@ module UpdateInvestor
       update_folder_names
 
       # Check if investor entity has only one investor, and we changed its name
-      exclude_category = %w[Trust Founder Employee].include?(category)
-      if Investor.where(investor_entity_id:).count == 1 && !exclude_category
+      if sole_investor?
         # If so also update the entity name
         investor_entity.update(name: investor_name)
       end
     end
+
+    # If the primary email changes, we need to update the investor_entity as well
+    investor_entity.update_column(:primary_email, primary_email) if saved_change_to_primary_email? && (sole_investor? || investor_entity.primary_email.blank?)
   end
 
   # Some folder names have the investor name in it, so if that changes, we need to change folder names
@@ -126,6 +129,15 @@ module UpdateInvestor
     end
   end
 
+  
+  private
+
+  def sole_investor?
+    exclude_category = %w[Trust Founder Employee].include?(category)
+    Investor.where(investor_entity_id:).count == 1 && !exclude_category
+  end
+
+  
   def change_investor_entity(investor_entity)
     update_column(:investor_entity_id, investor_entity.id)
 
