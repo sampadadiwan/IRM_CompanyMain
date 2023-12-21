@@ -6,6 +6,7 @@ class ExchangeRate < ApplicationRecord
   validates :from, :to, :as_of, presence: true
   validates :rate, numericality: { greater_than: 0 }
   validates :from, :to, length: { maximum: 5 }
+  validates_uniqueness_of :as_of, scope: %i[from to entity_id]
 
   before_save :set_latest
   def set_latest

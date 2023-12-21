@@ -76,9 +76,7 @@ class ImportUtil
   end
 
   def setup_exchange_rate(model, user_data)
-    ExchangeRate.create!(from: user_data["From Currency"], to: user_data["To Currency"], as_of: user_data["As Of"], rate: user_data["Exchange Rate"], entity_id: model.entity_id, notes: "Imported with #{model}")
-
-    # puts "Created #{exchange_rate}"
+    ExchangeRate.create(from: user_data["From Currency"], to: user_data["To Currency"], as_of: user_data["As Of"], rate: user_data["Exchange Rate"], entity_id: model.entity_id, notes: "Imported with #{model}")
   end
 
   # get header row without the mandatory *

@@ -13,6 +13,7 @@ Scenario Outline: Import capital commitments
   And the capital commitments must have the data in the sheet
   And the capital commitments must have the percentages updated
   And the fund must have the counter caches updated
+  And the investors must have access rights to the fund
   And Given I upload "account_entries.xlsx" file for Account Entries
   Then There should be "19" account_entries created
   And the account_entries must have the data in the sheet

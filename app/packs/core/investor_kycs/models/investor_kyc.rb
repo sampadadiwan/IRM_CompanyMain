@@ -5,6 +5,7 @@ class InvestorKyc < ApplicationRecord
   include Trackable
   include WithFolder
   include ForInvestor
+  include RansackerAmounts
 
   belongs_to :investor
   belongs_to :entity
@@ -19,8 +20,13 @@ class InvestorKyc < ApplicationRecord
 
   has_many :aml_reports, dependent: :destroy
   has_many :kyc_datas, dependent: :destroy
-  scope :verified, -> { where(verified: true) }
 
+  scope :uncalled, -> { where('committed_amount_cents > call_amount_cents') }
+  scope :due, -> { where('committed_amount_cents > collected_amount_cents') }
+  scope :agreement_uncalled, -> { where('agreement_committed_amount_cents > call_amount_cents') }
+  scope :agreement_overcalled, -> { where('agreement_committed_amount_cents <= call_amount_cents') }
+
+  scope :verified, -> { where(verified: true) }
   scope :expired, -> { where(expiry_date: ..Time.zone.today) }
   scope :not_expired, -> { where('expiry_date IS NULL OR expiry_date >= ?', Time.zone.today) }
 
@@ -52,8 +58,8 @@ class InvestorKyc < ApplicationRecord
   serialize :bank_verification_response, type: Hash
 
   # Note this rollups work only where Fund and Entity currency are the same.
-  monetize :committed_amount_cents, :collected_amount_cents,
-           :call_amount_cents, :distribution_amount_cents,
+  monetize :committed_amount_cents, :collected_amount_cents, :agreement_committed_amount_cents,
+           :call_amount_cents, :distribution_amount_cents, :uncalled_amount_cents,
            with_currency: ->(i) { i.entity.currency }
 
   after_commit :send_kyc_form, if: :saved_change_to_send_kyc_form_to_user?
@@ -86,12 +92,20 @@ class InvestorKyc < ApplicationRecord
     self.investor_name = investor.investor_name
   end
 
+  def due_amount
+    custom_committed_amount - collected_amount
+  end
+
+  def uncalled_amount
+    custom_committed_amount - call_amount
+  end
+
   def type_from_kyc_type
     "#{kyc_type.titleize.delete(' ')}Kyc" if kyc_type.present?
   end
 
   def custom_committed_amount
-    properties["committed_amount"].present? ? Money.new(properties["committed_amount"].to_f * 100, entity.currency) : committed_amount
+    agreement_committed_amount_cents.positive? ? agreement_committed_amount : committed_amount
   end
 
   def folder_path
@@ -200,7 +214,15 @@ class InvestorKyc < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[PAN full_name]
+    %w[PAN full_name kyc_type address bank_name bank_branch bank_account_type bank_account_number ifsc_code birth_date verified expiry_date collected_amount committed_amount call_amount distribution_amount docs_completed]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[capital_commitments investor]
+  end
+
+  def self.ransackable_scopes(_auth_object = nil)
+    %i[verified expired not_expired due]
   end
 
   def face_value_for_redemption

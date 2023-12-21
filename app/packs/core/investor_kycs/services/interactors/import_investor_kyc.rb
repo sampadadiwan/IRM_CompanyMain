@@ -1,7 +1,7 @@
 class ImportInvestorKyc < ImportUtil
   include Interactor
 
-  STANDARD_HEADERS = ["Investor", "Full Name", "Pan", "Address", "Correspondence Address", "Kyc Type", "Residency", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User"].freeze
+  STANDARD_HEADERS = ["Investor", "Full Name", "Pan", "Address", "Correspondence Address", "Kyc Type", "Residency", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User", "Investor Signatory Emails"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -44,6 +44,7 @@ class ImportInvestorKyc < ImportUtil
                                    corr_address: user_data["Correspondence Address"],
                                    birth_date: user_data["Date Of Birth"],
                                    kyc_type:,
+                                   esign_emails: user_data["Investor Signatory Emails"],
                                    residency: user_data["Residency"],
                                    bank_name: user_data["Bank Name"],
                                    bank_branch: user_data["Branch Name"],

@@ -49,10 +49,9 @@
         </div>
 
         <div class="form-group">
-          <%= form.label :investor_signatory_id %>
-          <% employees = capital_commitment.investor ? capital_commitment.investor.investor_accesses.map{|e| [e.full_name, e.user_id]} : [] %>
-          
-          <%= form.select :investor_signatory_id, employees, {include_blank: true}, {class: 'form-control', data: { commitmentselect_target: "employeeSelect" } }  %>
+          <%= form.label :esign_emails, "Investor Signatory Emails" %>          
+          <%= form.text_field :esign_emails, class: "form-control" %>
+          <small class="text-muted">Comma separated list of investor emails to send the esignature request to</small>
         </div>
 
         <div class="form-group">

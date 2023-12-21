@@ -2,6 +2,7 @@ class AccountEntry < ApplicationRecord
   include WithCustomField
   include WithExchangeRate
   include ForInvestor
+  include RansackerAmounts
 
   belongs_to :capital_commitment, optional: true
   belongs_to :entity
@@ -85,7 +86,7 @@ class AccountEntry < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[amount_cents commitment_type cumulative entry_type folio_id generated name period reporting_date]
+    %w[amount commitment_type cumulative entry_type folio_id generated name period reporting_date]
   end
 
   def self.ransackable_associations(_auth_object = nil)

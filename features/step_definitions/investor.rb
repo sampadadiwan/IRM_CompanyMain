@@ -315,6 +315,7 @@ Then('the investor kycs must have the data in the sheet') do
       cc.bank_branch.should == user_data["Branch Name"]
       cc.bank_account_number.should == user_data["Bank Account Number"]&.to_s
       cc.ifsc_code.should == user_data["Ifsc Code"]&.to_s
+      cc.esign_emails.should == user_data["Investor Signatory Emails"]
     end
     cc.class.name.should == cc.type_from_kyc_type
   end

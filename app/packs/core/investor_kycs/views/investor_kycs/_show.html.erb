@@ -175,6 +175,16 @@
       </td>
     </tr>
 
+    <tr>
+      <td>
+        Investor Signature Emails
+      </td>
+      <td>
+        <%= investor_kyc.esign_emails %>
+      </td>
+    </tr>
+
+
     <%= display_custom_fields(investor_kyc) if current_user %>
 
     <tr>
@@ -189,13 +199,39 @@
     </tr>
 
 
+    <% if investor_kyc.entity.entity_type == "Angel Fund" %>
+    <tr>
+      <td>
+        Agreement Committed Amount
+      </td>
+      <td>
+        <%= money_to_currency investor_kyc.agreement_committed_amount, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Due Amount
+      </td>
+      <td>
+        <%= money_to_currency investor_kyc.due_amount, params %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Uncalled Amount
+      </td>
+      <td>
+        <%= money_to_currency investor_kyc.uncalled_amount, params %>
+      </td>
+    </tr>
+    <% end %>
 
     <tr>
       <td>
         Committed Amount
       </td>
       <td>
-        <%= money_to_currency investor_kyc.custom_committed_amount, params %>
+        <%= money_to_currency investor_kyc.committed_amount, params %>
       </td>
     </tr>
 

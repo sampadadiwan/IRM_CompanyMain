@@ -181,17 +181,14 @@
           </td>
         </tr>
 
-        <% if fund.fund_signatory %>
         <tr>
           <td>
-            Fund Signatory
+            Fund Signatory Emails
           </td>
           <td>
-            <%= fund.fund_signatory.full_name %>
+            <%= fund.esign_emails %>
           </td>
         </tr>
-        <% end %>
-
 
         <tr>
           <td>

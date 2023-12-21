@@ -756,6 +756,7 @@ Then('the capital commitments must have the data in the sheet') do
   data.each_with_index do |row, idx|
     next if idx.zero? # skip header row
 
+    # binding.pry
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
     cc = capital_commitments[idx-1]
@@ -767,6 +768,7 @@ Then('the capital commitments must have the data in the sheet') do
     cc.folio_currency.should == user_data["Folio Currency"]
     cc.folio_committed_amount_cents.should == user_data["Committed Amount"].to_i * 100
     cc.folio_id.should == user_data["Folio No"].to_s
+    cc.esign_emails.should == user_data["Investor Signatory Emails"]
 
     exchange_rate = cc.get_exchange_rate(cc.folio_currency, cc.fund.currency, cc.commitment_date)
     puts "Using exchange_rate #{exchange_rate}"
@@ -1450,5 +1452,12 @@ Given('Given the commitments have a cc {string}') do |email|
   CapitalCommitment.all.each do |cc|
     cc.properties[:cc] = email
     cc.save
+  end
+end
+
+Then('the investors must have access rights to the fund') do
+  @fund.capital_commitments.each do |cc|
+    ar = AccessRight.where(owner: @fund, access_to_investor_id: cc.investor_id, access_type: "Fund").first
+    ar.should be_present
   end
 end

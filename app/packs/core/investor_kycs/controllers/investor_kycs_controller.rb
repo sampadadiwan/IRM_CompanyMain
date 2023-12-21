@@ -4,10 +4,18 @@ class InvestorKycsController < ApplicationController
   before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder]
   after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc]
 
+  has_scope :uncalled, type: :boolean
+  has_scope :unverified, type: :boolean
+  has_scope :agreement_uncalled, type: :boolean
+  has_scope :agreement_overcalled, type: :boolean
+
   # GET /investor_kycs or /investor_kycs.json
   def index
+    @q = InvestorKyc.ransack(params[:q])
+    @investor_kycs = policy_scope(@q.result)
+    @investor_kycs = apply_scopes(@investor_kycs)
+
     @investor = Investor.find(params[:investor_id]) if params[:investor_id].present?
-    @investor_kycs = policy_scope(InvestorKyc)
     authorize(InvestorKyc)
 
     @investor_kycs = KycSearch.perform(@investor_kycs, current_user, params)
@@ -248,7 +256,7 @@ class InvestorKycsController < ApplicationController
                    :investor_kyc
                  end
 
-    params.require(param_name).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_branch, :bank_account_type, :bank_name, :bank_verified, :type, :bank_verification_response, :expiry_date, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :phone, :form_type_id, :send_kyc_form_to_user, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(param_name).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_branch, :bank_account_type, :bank_name, :bank_verified, :type, :bank_verification_response, :expiry_date, :esign_emails, :bank_verification_status, :pan_verified, :residency, :pan_verification_response, :pan_verification_status, :comments, :verified, :phone, :form_type_id, :send_kyc_form_to_user, :agreement_committed_amount, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 
   def commit_param

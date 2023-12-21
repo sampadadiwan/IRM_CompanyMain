@@ -118,7 +118,7 @@
             <%= runs.user.full_name %>
           </td>
           <td>
-            <%= runs.rule_for %>
+            <%= runs.rule_for.presence || "Both" %>
           </td>
           <td>
             <%= link_to "Rerun", allocate_form_fund_path(runs.attributes), class: "btn btn-sm btn-outline-primary" %>

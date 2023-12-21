@@ -24,8 +24,17 @@ class FormTypesController < ApplicationController
     @form_type = FormType.new(form_type_params)
     @form_type.entity_id = current_user.entity_id
     authorize(@form_type)
+
+    begin
+      saved = @form_type.save
+    rescue ActiveRecord::RecordNotUnique
+      @form_type.errors.add(:base, "Duplicate names detected. Please ensure all names are unique.")
+      @form_type.dup_cf_names?
+      saved = false
+    end
+
     respond_to do |format|
-      if @form_type.save
+      if saved
         format.html { redirect_to form_type_url(@form_type), notice: "Form type was successfully created." }
         format.json { render :show, status: :created, location: @form_type }
       else
@@ -37,8 +46,16 @@ class FormTypesController < ApplicationController
 
   # PATCH/PUT /form_types/1 or /form_types/1.json
   def update
+    begin
+      saved = @form_type.update(form_type_params)
+    rescue ActiveRecord::RecordNotUnique
+      @form_type.errors.add(:base, "Duplicate names detected. Please ensure all names are unique.")
+      @form_type.dup_cf_names?
+      saved = false
+    end
+
     respond_to do |format|
-      if @form_type.update(form_type_params)
+      if saved
         format.html { redirect_to form_type_url(@form_type), notice: "Form type was successfully updated." }
         format.json { render :show, status: :ok, location: @form_type }
       else

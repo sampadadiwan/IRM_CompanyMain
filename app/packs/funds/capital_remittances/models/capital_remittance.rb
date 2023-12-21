@@ -8,6 +8,7 @@ class CapitalRemittance < ApplicationRecord
   include WithExchangeRate
   include CapitalRemittanceFees
   include CapitalRemittanceCallBasis
+  include RansackerAmounts
 
   update_index('capital_remittance') { self }
 
@@ -132,7 +133,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[call_amount_cents capital_fee_cents collected_amount_cents folio_id investor_name payment_date remittance_date status verified]
+    %w[call_amount collected_amount capital_fee other fee folio_id investor_name payment_date remittance_date status verified]
   end
 
   def self.ransackable_associations(_auth_object = nil)

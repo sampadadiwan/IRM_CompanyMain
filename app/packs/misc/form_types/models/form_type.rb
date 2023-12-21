@@ -24,4 +24,17 @@ class FormType < ApplicationRecord
       end
     end
   end
+
+  def dup_cf_names?
+    uniq_fcfs = form_custom_fields.uniq(&:name)
+    if uniq_fcfs.count == form_custom_fields.count
+      false
+    else
+      dups = form_custom_fields - uniq_fcfs
+      dups.each do |dup|
+        dup.errors.add(:name, "cannot have duplicate names")
+      end
+      true
+    end
+  end
 end

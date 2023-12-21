@@ -5,6 +5,7 @@ class CapitalCommitment < ApplicationRecord
   include Trackable
   include ActivityTrackable
   include CommitmentAccountEntry
+  include RansackerAmounts
 
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
@@ -149,6 +150,12 @@ class CapitalCommitment < ApplicationRecord
     CapitalCommitmentRemittanceJob.perform_later(id)
   end
 
+  after_create_commit :give_access_rights
+  def give_access_rights
+    # Give the investor access rights as an investor to the fund
+    AccessRight.create(entity_id:, owner: fund, investor:, access_type: "Fund", metadata: "Investor")
+  end
+
   after_destroy :compute_percentage
   after_save :compute_percentage, if: :saved_change_to_committed_amount_cents?
   def compute_percentage
@@ -228,8 +235,6 @@ class CapitalCommitment < ApplicationRecord
     fund.fund_unit_settings.where(name: unit_type).last
   end
 
-  delegate :fund_signatory, to: :fund
-
   # The folio id is used in the folder names of commitments, remittances and distributions
   after_commit :update_folio_id, if: :saved_change_to_folio_id?
   def update_folio_id
@@ -262,7 +267,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[commitment_date commitment_type fund_close investor_name onboarding_completed percentage unit_type committed_amount_cents collected_amount_cents]
+    %w[commitment_date commitment_type fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount]
   end
 
   def self.ransackable_associations(_auth_object = nil)

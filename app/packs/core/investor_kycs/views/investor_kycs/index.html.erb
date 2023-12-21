@@ -1,3 +1,4 @@
 <%= render "/layouts/alerts" %>
+<%= render "/layouts/filter", associations: [:investor, :capital_commitments] %>
 <%= render "investor_kycs/index", investor_kycs: @investor_kycs, lazy_load_data: false %>
   

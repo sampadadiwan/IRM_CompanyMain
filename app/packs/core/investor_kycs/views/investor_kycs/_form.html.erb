@@ -66,6 +66,14 @@
               <small class="form-text text-muted">Please enter full name as per the Identity Proof being attached</small>
             </div>
 
+            <% if investor_kyc.entity.entity_type == "Angel Fund" %>
+            <div class="form-group">
+              <%= form.label :agreement_committed_amount %>
+              <%= form.text_field :agreement_committed_amount, class: "form-control"  %>
+              <small class="form-text text-muted">Please enter the commitment amount</small>
+            </div>
+            <% end %>
+
             <div class="form-group">
               <% label = investor_kyc.kyc_type == "individual" ? "Date Of Birth" : "Date Of Incorporation" %>
               <%= form.label :date_of_birth, label %>
@@ -186,6 +194,12 @@
       <div class="card">
         <div class="card-header"> 3. KYC Details </div>
         <div class="card-body">
+
+          <div class="form-group">
+            <%= form.label :esign_emails, "Investor Signatory Emails" %>          
+            <%= form.text_field :esign_emails, class: "form-control" %>
+            <small class="text-muted">Comma separated list of investor emails to send the esignature request to</small>
+          </div>
 
           <%= custom_form_fields(investor_kyc, form, required: is_investor) %>
 

@@ -9,6 +9,9 @@ class FormCustomField < ApplicationRecord
   validates :label, length: { maximum: 254 }
   validates :field_type, length: { maximum: 20 }
 
+  validates :name, uniqueness: { scope: :form_type_id }
+  validates :name, presence: true
+
   RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date" }.freeze
 
   scope :writable, -> { where(read_only: false) }
