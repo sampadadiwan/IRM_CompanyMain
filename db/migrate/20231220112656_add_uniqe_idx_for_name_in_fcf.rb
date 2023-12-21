@@ -3,8 +3,12 @@ class AddUniqeIdxForNameInFcf < ActiveRecord::Migration[7.1]
     # Ensure existing data is migrated, remove dups
     FormCustomField.all.each do |fcf|
       unless fcf.save
+        # This means there is prob already a duplicate
+        old_name = fcf.name
         fcf.name += rand(1000).to_s
         fcf.save
+        # This goes in and changes the actual json_fields in the models
+        fcf.change_name(old_name)
       end
     end
 
