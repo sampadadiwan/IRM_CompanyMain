@@ -91,7 +91,7 @@ module DocumentGeneratorBase
   end
 
   def upload(doc_template, model, start_date = nil, end_date = nil)
-    file_name = generated_file_name(model)
+    file_name = "#{generated_file_name(model)}.pdf"
     Rails.logger.debug { "Uploading generated file #{file_name} to #{model} " }
 
     # Clone some attributes of the template

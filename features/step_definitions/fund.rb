@@ -985,7 +985,7 @@ end
 Given('the fund has capital commitment template') do
   @commitment_template = Document.create!(name: "Fund Agreement", owner_tag: "Commitment Template",
     owner: @fund, entity_id: @fund.entity_id, user: @user,
-    file: File.new("public/sample_uploads/FundDocVariables.docx", "r"))
+    file: File.new("public/sample_uploads/Commitment Agreement Template.docx", "r"))
 end
 
 Then('the user goes to the fund e-signature report') do
@@ -1020,7 +1020,7 @@ end
 
 Then('the generated doc must be attached to the capital commitments') do
   CapitalCommitment.all.each do |cc|
-    cc.documents.where(name: @commitment_template.name).count.should == 1
+    cc.documents.where(name: @commitment_template.name, owner_tag: "Generated").count.should == 1
     visit(capital_commitment_path(cc))
     expect(page).to have_content(@commitment_template.name)
     expect(page).to have_content("Generated")
