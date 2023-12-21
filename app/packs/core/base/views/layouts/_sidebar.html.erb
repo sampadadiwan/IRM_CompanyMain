@@ -47,7 +47,7 @@
                 <%= render "layouts/sidebars/sidebar_investor" %>                
             <% end %>
 
-            <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && ["Investment Fund", "Group Company"].include?(current_user.entity_type) %>
+            <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && (current_user.entity.is_fund?) %>
                 <!-- Divider -->
                 <hr class="sidebar-divider my-0">
                 <%= render "layouts/sidebars/sidebar_fund" %>
@@ -134,7 +134,9 @@
             <% end %>
 
 
-            <% if current_user &&  ["Investment Fund", "Company", "Group Company"].include?(current_user.entity_type) %>
+            <% if current_user &&  
+                (current_user.entity.is_fund? || current_user.entity.is_company?) %>
+                
                 <li class="sidebar-item"> 
                     <a class="sidebar-link has-arrow" href="/tasks" data-bs-toggle="collapse" data-bs-target="#taskMenus">
                         <span><i class="ti ti-checklist"></i></span>

@@ -19,7 +19,7 @@
         aggregate_investment.investor_name %>
 </td>  
 
-<% if aggregate_investment.entity.entity_type == "Investment Fund" %>
+<% if aggregate_investment.entity.is_fund? %>
   <td>
     <%= aggregate_investment&.funding_round&.name %>
   </td> 

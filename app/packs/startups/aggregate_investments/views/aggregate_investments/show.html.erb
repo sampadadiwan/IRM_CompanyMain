@@ -28,7 +28,7 @@
         <%= @aggregate_investment.investor.category %>
       </td>
     </tr>
-    <% if @aggregate_investment.entity.entity_type == "Investment Fund" %>
+    <% if @aggregate_investment.entity.is_fund? %>
     <tr>
       <td>
         Units

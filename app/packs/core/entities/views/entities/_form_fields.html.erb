@@ -17,8 +17,14 @@
 
   <div class="form-group">
     <%= form.label :pan %>
-    <%= form.text_field :pan, class: "form-control", required: true %>
+    <%= form.text_field :pan, class: "form-control" %>
   </div>
+
+  <div class="form-group">
+    <%= form.label :primary_email %>
+    <%= form.text_field :primary_email, class: "form-control" %>
+  </div>
+
 
   <div class="form-group">
     <%= form.label :industry %>
@@ -88,7 +94,7 @@
   </div>
 
 
-  <% if ["Company", "Investment Fund"].include? entity.entity_type %>
+  <% if ["Company", "Investment Fund", "Angel Fund"].include? entity.entity_type %>
 
     <div class="form-group">
       <%= form.label :investor_categories %>

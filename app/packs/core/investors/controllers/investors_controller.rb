@@ -114,6 +114,6 @@ class InvestorsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def investor_params
     params.require(:investor).permit(:investor_entity_id, :tag_list, :investor_name, :form_type_id,
-                                     :pan, :entity_id, :category, :city, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+                                     :pan, :entity_id, :category, :city, :primary_email, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

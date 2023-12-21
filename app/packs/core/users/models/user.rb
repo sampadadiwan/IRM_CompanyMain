@@ -109,7 +109,7 @@ class User < ApplicationRecord
       self.curr_role ||= :employee
       # This is specifically set for Investor Advisors. It is the orig entity_id of the advisor, and cannot change
       self.advisor_entity_id = entity_id
-    elsif ["Investment Fund", "Group Company"].include?(entity.entity_type)
+    elsif entity.is_fund?
       add_role :employee
       self.curr_role = :employee
     end

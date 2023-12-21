@@ -43,7 +43,7 @@
         </a>
       <% end %>
 
-      <% if current_user.entity_type == "Investment Fund" %>
+      <% if current_user.entity.is_fund? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitments-tab"
               data-action="click->tabdetails#loadData">Commitments</a>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-units-tab"

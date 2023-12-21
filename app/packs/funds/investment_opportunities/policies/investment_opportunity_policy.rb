@@ -16,7 +16,7 @@ class InvestmentOpportunityPolicy < IoBasePolicy
   end
 
   def new?
-    user.enable_inv_opportunities && ["Investment Fund"].include?(user.entity_type)
+    user.enable_inv_opportunities && user.entity.is_fund?
   end
 
   def update?

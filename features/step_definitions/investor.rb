@@ -13,6 +13,7 @@ When('I create a new investor {string}') do |arg1|
   end
   fill_in('investor_investor_name', with: @investor_entity.name)
   fill_in('investor_pan', with: @investor_entity.pan)
+  fill_in('investor_primary_email', with: @investor_entity.primary_email)
   select("Founder", from: "investor_category")
 
   click_on("Save")
@@ -28,6 +29,7 @@ When('I update the investor {string}') do |args|
   fill_in('investor_pan', with: @investor.pan)
   select("Founder", from: "investor_category")
   fill_in('investor_tag_list', with: @investor.tag_list)
+  fill_in('investor_primary_email', with: @investor_entity.primary_email)
 
   click_on("Save")
   
@@ -45,6 +47,7 @@ Then('an investor entity should be created') do
   @investor.investor_name.include?(@investor_entity.name).should == true
   @investor.investor_entity_id.should == @investor_entity.id
   @investor.entity_id.should == @user.entity_id
+  @investor.primary_email.should == @investor_entity.primary_email
 end
 
 Then('an investor entity should not be created') do
@@ -60,6 +63,7 @@ Then('I should see the investor details on the details page') do
   find(".show_details_link").click
   expect(page).to have_content(@investor.investor_name)
   expect(page).to have_content(@investor.category)
+  expect(page).to have_content(@investor.primary_email)
   expect(page).to have_content(@investor.entity.name)
   expect(page).to have_content(@investor.tag_list) if @investor.tag_list.present?
 end
@@ -143,13 +147,17 @@ Given('there is an existing investor entity {string}') do |arg1|
   EntityIndex.import
 end
 
-When('I create a new investor {string} for the existing investor entity') do |string|
+When('I create a new investor {string} for the existing investor entity') do |args|
+  @new_investor = FactoryBot.build(:investor)
+  key_values(@new_investor, args)
   click_on("New Stakeholder")
 
   fill_in('investor_investor_name', with: @investor_entity.name)
-
-  find('.ui-menu-item-wrapper', text: @investor_entity.name).click
+  first('.ui-menu-item-wrapper', text: @investor_entity.name).click
+  fill_in('investor_pan', with: @new_investor.pan)
+  fill_in('investor_primary_email', with: @new_investor.primary_email)
   select("Founder", from: "investor_category")
+
   click_on("Save")
 end
 
@@ -256,7 +264,7 @@ Then('the investors must have the data in the sheet') do
     inv.tag_list.should == user_data["Tags"]
     inv.category.should == user_data["Category"]
     inv.city.should == user_data["City"]
-
+    inv.primary_email.should == user_data["Primary Email"]
   end
 
 end

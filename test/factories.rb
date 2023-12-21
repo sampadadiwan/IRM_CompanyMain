@@ -592,7 +592,8 @@ FactoryBot.define do
     investor_entity_id { Entity.startups.sample.id }
     investor_name { investor_entity.name }
     entity_id { Entity.startups.sample.id }
-    pan { investor_entity.pan }
+    # pan { investor_entity.pan }
+    primary_email { investor_entity.primary_email }
     category { ["Lead Investor", "Co-Investor"][rand(2)] }
     city {Faker::Address.city.truncate(20)}
   end
@@ -624,7 +625,8 @@ FactoryBot.define do
 
   factory :entity do
     name { Faker::Company.name }
-    pan { [*('A'..'Z'),*('0'..'9')].shuffle[0,10].join }
+    # pan { [*('A'..'Z'),*('0'..'9')].shuffle[0,10].join }
+    primary_email { Faker::Internet.email }
     category { Faker::Company.industry }
     url { "https://#{Faker::Internet.domain_name}" }
     entity_type { Entity::TYPES[rand(Entity::TYPES.length)] }

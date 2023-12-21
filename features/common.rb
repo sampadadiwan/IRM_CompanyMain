@@ -16,7 +16,7 @@ Given('there is a user {string} for an entity {string}') do |arg1, arg2|
   puts "Entity Permissions: #{@entity.permissions}"
 
   # Funds need exchange rates for their calculations
-  if @entity.entity_type == "Investment Fund"
+  if @entity.is_fund?
     ExchangeRate.create([
         {from: "USD", to: "INR", rate: 81.72, entity: @entity, as_of: Date.today - 5.year}, 
         {from: "INR", to: "USD", rate: 0.012, entity: @entity, as_of: Date.today - 5.year}

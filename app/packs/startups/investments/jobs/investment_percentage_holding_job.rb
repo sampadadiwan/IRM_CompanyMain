@@ -31,7 +31,7 @@ class InvestmentPercentageHoldingJob < ApplicationJob
   private
 
   def update_investment_percentage(entity)
-    if entity.entity_type == "Investment Fund"
+    if entity.is_fund?
       # We have to compute the percentage holding per fund
       entity.funding_rounds.each do |funding_round|
         equity_investments = funding_round.investments.equity
@@ -75,7 +75,7 @@ class InvestmentPercentageHoldingJob < ApplicationJob
   end
 
   def update_aggregate_percentage(entity)
-    if entity.entity_type == "Investment Fund"
+    if entity.is_fund?
       entity.funding_rounds.each do |funding_round|
         fund_agg_inv = funding_round.aggregate_investments
         update_aggregate(fund_agg_inv)

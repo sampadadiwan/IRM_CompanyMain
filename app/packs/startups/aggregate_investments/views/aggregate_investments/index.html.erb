@@ -84,7 +84,7 @@
             <th>
               Investor
             </th>
-            <% if @entity.entity_type == "Investment Fund" %>
+            <% if @entity.is_fund? %>
               <th>
                 Funding Round
               </th>

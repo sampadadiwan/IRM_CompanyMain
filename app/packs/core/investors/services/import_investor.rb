@@ -1,7 +1,7 @@
 class ImportInvestor < ImportUtil
   include Interactor
 
-  STANDARD_HEADERS = %w[Name PAN Category Tags City].freeze
+  STANDARD_HEADERS = ["Name", "Pan", "Primary Email", "Category", "Tags", "City"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -18,13 +18,16 @@ class ImportInvestor < ImportUtil
     saved = true
     investor_name = user_data['Name']
     pan = user_data['Pan']
+    primary_email = user_data['Primary Email']
     category = user_data['Category']
 
     force_different_name = user_data['Force Different Name'] == "Yes"
     # Ensure Force Different Name is not part of custom fields
     custom_field_headers -= ["Force Different Name"]
 
-    investor = Investor.where(investor_name:, pan:, entity_id: import_upload.entity_id).first
+    investor = pan.present? ? Investor.where(investor_name:, pan:, entity_id: import_upload.entity_id).first : nil
+    investor ||= Investor.where(investor_name:, primary_email:, entity_id: import_upload.entity_id).first
+
     if investor.present?
       Rails.logger.debug { "Investor with name #{investor_name} already exists for entity #{import_upload.entity_id}" }
 
@@ -33,7 +36,7 @@ class ImportInvestor < ImportUtil
 
       Rails.logger.debug user_data
       investor = Investor.new(investor_name:, pan:, tag_list: user_data["Tags"],
-                              category:, city: user_data["City"],
+                              category:, city: user_data["City"], primary_email:,
                               entity_id: import_upload.entity_id, imported: true, force_different_name:)
 
       custom_field_headers.delete("Fund")

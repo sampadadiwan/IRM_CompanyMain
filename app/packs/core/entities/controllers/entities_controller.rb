@@ -101,7 +101,7 @@ class EntitiesController < ApplicationController
   # Only allow a list of trusted parameters through.
   def entity_params
     params.require(:entity).permit(:name, :url, :category, :founded, :entity_type, :pan,
-                                   :funding_amount, :funding_unit, :details, :logo_url,
+                                   :funding_amount, :funding_unit, :details, :logo_url, :primary_email,
                                    :investor_categories, :instrument_types, :sub_domain, :enable_support,
                                    :currency, :units, :logo, permissions: [], entity_setting_attributes: [:id, :individual_kyc_doc_list, :non_individual_kyc_doc_list, :sandbox, :sandbox_emails, :cc, :sandbox_numbers, :kyc_docs_note, :entity_bcc, { custom_flags: [], kpi_doc_list: [] }])
   end

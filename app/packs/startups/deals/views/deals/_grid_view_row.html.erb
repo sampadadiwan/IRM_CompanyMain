@@ -27,7 +27,7 @@
     <td>
         <%= money_to_currency deal_investor.secondary_investment, params %> 
     </td>
-    <% if (@deal && @deal.entity.entity_type == "Investment Fund") || deal_investor.entity.entity_type == "Investment Fund" %>
+    <% if (@deal && @deal.entity.is_fund?) || deal_investor.entity.is_fund? %>
         <td>
             <%= money_to_currency deal_investor.fee, params %> 
         </td>

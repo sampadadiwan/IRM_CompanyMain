@@ -1,5 +1,6 @@
 class Entity < ApplicationRecord
   PAN_MANDATORY_AFTER = Date.parse("01-07-2023")
+  EMAIL_MANDATORY_AFTER = Date.parse("25-12-2023")
 
   include Trackable
   # include EntityMerge
@@ -15,8 +16,7 @@ class Entity < ApplicationRecord
 
   has_many :custom_notifications, as: :owner, dependent: :destroy
 
-  # We did not have PAN as mandatory before. But we need to make it mandatory, without forcing update to existing data. Hence this check for data created after PAN_MANDATORY_AFTER date
-  validates :pan, presence: true, if: proc { |e| (e.created_at && e.created_at >= PAN_MANDATORY_AFTER) || ((e.new_record? && Time.zone.today >= PAN_MANDATORY_AFTER) && !e.is_holdings_entity) }
+  validates :primary_email, presence: true, if: proc { |e| (e.created_at && e.created_at >= EMAIL_MANDATORY_AFTER) || ((e.new_record? && Time.zone.today >= EMAIL_MANDATORY_AFTER) && !e.is_holdings_entity) }
 
   validates_uniqueness_of :name, scope: :pan
 
@@ -241,5 +241,25 @@ class Entity < ApplicationRecord
 
   def custom_notification(for_type = nil)
     custom_notifications.where(for: for_type).first
+  end
+
+  def is_fund?
+    ["Investment Fund", "Angel Fund"].include?(entity_type)
+  end
+
+  def is_group_company?
+    ["Group Company"].include?(entity_type)
+  end
+
+  def is_investor?
+    ["Investor"].include?(entity_type)
+  end
+
+  def is_investment_advisor?
+    ["Investment Advisor"].include?(entity_type)
+  end
+
+  def is_company?
+    ["Company"].include?(entity_type)
   end
 end

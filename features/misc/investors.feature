@@ -64,7 +64,7 @@ Scenario Outline: Send KYC notification error
 
 
 Scenario Outline: Create new investor from exiting entity
-  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given Im logged in as a user "first_name=Mohith" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is an existing investor entity "<investor>"
   And I am at the investor page
@@ -75,9 +75,9 @@ Scenario Outline: Create new investor from exiting entity
   And I should see the investor details on the details page
 
   Examples:
-  	|user	      |entity               |investor         |msg	|
-  	|  	        |entity_type=Company  |name=Accelo       |Investor was successfully created|
-    |  	        |entity_type=Company  |name=Bearings     |Investor was successfully created|
+  	|entity              |investor                         |msg	|
+  	|entity_type=Company |investor_name=Accelo;primary_email=a@b.c   |Investor was successfully created|
+    |entity_type=Company |investor_name=Bearings;primary_email=a@b.c |Investor was successfully created|
 
 
 Scenario Outline: Import investor access

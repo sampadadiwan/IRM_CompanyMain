@@ -5,6 +5,7 @@ class InvestorIndex < Chewy::Index
   field :investor_name
   field :investee_name
   field :category
+  field :primary_email
   field :city
   field :pan
   field :tag_list

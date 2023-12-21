@@ -67,8 +67,7 @@ class Investor < ApplicationRecord
   validates :pan, length: { maximum: 40 }
   normalizes :pan, with: ->(pan) { pan.strip.squeeze(" ") }
 
-  # We did not have PAN as mandatory before. But we need to make it mandatory, without forcing update to existing data. Hence this check for data created after PAN_MANDATORY_AFTER date
-  validates :pan, presence: true, if: proc { |e| (e.created_at && e.created_at >= Entity::PAN_MANDATORY_AFTER) || ((e.new_record? && Time.zone.today >= Entity::PAN_MANDATORY_AFTER) && !e.is_holdings_entity && !e.is_trust) }
+  validates :primary_email, presence: true, if: proc { |e| (e.created_at && e.created_at >= Entity::EMAIL_MANDATORY_AFTER) || ((e.new_record? && Time.zone.today >= Entity::EMAIL_MANDATORY_AFTER) && !e.is_holdings_entity) }
 
   validates_uniqueness_of :pan, scope: :entity_id, allow_blank: true, allow_nil: true, message: "already exists as an investor. Duplicate Investor."
   validates_uniqueness_of :investor_name, scope: :entity_id, message: "already exists as an investor. Duplicate Investor."
@@ -111,7 +110,7 @@ class Investor < ApplicationRecord
 
   def self.INVESTOR_CATEGORIES(entity = nil)
     cats = Investment.INVESTOR_CATEGORIES(entity) + %w[Prospective]
-    cats += ["Portfolio Company"] if entity.entity_type == "Investment Fund"
+    cats += ["Portfolio Company"] if ["Investment Fund", "Angel Fund"].include?(entity.entity_type)
     cats
   end
 
@@ -127,18 +126,16 @@ class Investor < ApplicationRecord
   def update_name
     unless is_holdings_entity
       self.last_interaction_date ||= Time.zone.today - 10.years
-      # Ensure we have a PAN, even if its a Dummy one
-      prefix = (0...1).map { rand(65..90).chr }.join
-      self.pan = (pan.presence || "#{prefix}-#{entity_id}-#{Time.now.to_f * 1000}")
 
       # Ensure we have an investor entity
-      e = pan ? Entity.where(pan: pan.strip).first : investor_entity
+      e = primary_email ? Entity.where(primary_email: primary_email.strip).first : nil
+      e ||= pan ? Entity.where(pan: pan.strip).first : nil
 
       # If we do have an investor entity, and the name is not the same
-      errors.add(:investor_name, "in our records for PAN #{pan} is different #{investor_name} vs #{e.name}.") if pan && e && e.name.strip != investor_name.strip && !force_different_name
+      errors.add(:investor_name, "in our records is different #{investor_name} vs #{e.name}.") if e && e.name.strip != investor_name.strip && !force_different_name
 
       # We dont have this entity in our DB, lets create one.
-      e ||= Entity.create!(name: investor_name.strip, entity_type: "Investor", pan:)
+      e ||= Entity.create!(name: investor_name.strip, entity_type: "Investor", pan:, primary_email:)
 
       setup_permissions(e)
       e.save

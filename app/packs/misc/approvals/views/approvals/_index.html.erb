@@ -6,7 +6,7 @@
 
 <div class="table-responsive" data-controller="datatable">
 
-  <% show_stats = ["Company", "Investment Fund"].include?(current_user.entity_type) %>
+  <% show_stats = ["Company", "Investment Fund", "Angel Fund"].include?(current_user.entity_type) %>
 
   <table id="approvals" class="table table-bordered dataTable jqDataTable">
     <thead>
