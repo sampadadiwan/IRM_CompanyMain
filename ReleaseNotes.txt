@@ -1,8 +1,18 @@
+22/12/2023 - V7.0.22    
+#####################################
+1. Refactored esign code, multiple esing emails, no users required
+2. Added primary email to investor and entity
+3. Call not visible to investors
+
+
+
 15/12/2023 - V7.0.20    
 #####################################
 1. Added labels for Custom fields
 2. Changing FCF name, causes data in models to changes
 3. Upgraded to Sidekiq 7 for capsule functionality
+
+
 
 13/12/2023 - V7.0.19
 #####################################

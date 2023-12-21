@@ -18,6 +18,7 @@ class EntityDashboard < Administrate::BaseDashboard
     id: Field::Number,
     name: Field::String,
     pan: Field::String,
+    primary_email: Field::String,
     sub_domain: Field::String,
     url: Field::String,
     category: Field::String,
@@ -42,6 +43,7 @@ class EntityDashboard < Administrate::BaseDashboard
   COLLECTION_ATTRIBUTES = %i[
     id
     name
+    primary_email
     entity_type
     permissions
   ].freeze
@@ -52,6 +54,7 @@ class EntityDashboard < Administrate::BaseDashboard
     id
     name
     pan
+    primary_email
     parent_entity
     sub_domain
     url
@@ -79,6 +82,7 @@ class EntityDashboard < Administrate::BaseDashboard
   FORM_ATTRIBUTES = %i[
     name
     pan
+    primary_email
     parent_entity
     sub_domain
     url

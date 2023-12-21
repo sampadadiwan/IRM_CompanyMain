@@ -19,6 +19,7 @@ class InvestorDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     pan: Field::String,
+    primary_email: Field::String,
     investor_name: Field::String
   }.freeze
 
@@ -31,6 +32,7 @@ class InvestorDashboard < Administrate::BaseDashboard
     id
     investor_name
     pan
+    primary_email
     entity
     category
   ].freeze
@@ -40,6 +42,7 @@ class InvestorDashboard < Administrate::BaseDashboard
   SHOW_PAGE_ATTRIBUTES = %i[
     investor_name
     pan
+    primary_email
     investor_entity
     entity
     access_rights
@@ -56,6 +59,8 @@ class InvestorDashboard < Administrate::BaseDashboard
     investor_entity
     entity
     category
+    primary_email
+    pan
   ].freeze
 
   # COLLECTION_FILTERS
