@@ -129,7 +129,6 @@ module UpdateInvestor
     end
   end
 
-  
   private
 
   def sole_investor?
@@ -137,7 +136,6 @@ module UpdateInvestor
     Investor.where(investor_entity_id:).count == 1 && !exclude_category
   end
 
-  
   def change_investor_entity(investor_entity)
     update_column(:investor_entity_id, investor_entity.id)
 

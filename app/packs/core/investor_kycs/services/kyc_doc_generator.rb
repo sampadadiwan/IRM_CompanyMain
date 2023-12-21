@@ -76,7 +76,7 @@ class KycDocGenerator
     Rails.logger.debug { "Using context #{context.keys} to render template" }
     Rails.logger.debug "Rendering template"
 
-    file_name = "#{@working_dir}/#{investor_kyc.class.name}-#{investor_kyc.id}"
+    file_name = generated_file_name(investor_kyc)
     convert(template, context, file_name)
   end
 

@@ -56,12 +56,12 @@ class EoiDocGenerator
     add_image(context, :investor_signature, investor_kyc.signature)
     generate_kyc_fields(context, investor_kyc)
 
-    file_name = "#{@working_dir}/ExpressionOfInterest-#{expression_of_interest.id}"
+    file_name = generated_file_name(expression_of_interest)
     convert(template, context, file_name)
 
     additional_footers = expression_of_interest.documents.where(name: ["#{@io_doc_template_name} Footer" "#{@io_doc_template_name} Signature"])
     additional_headers = expression_of_interest.documents.where(name: ["#{@io_doc_template_name} Header", "#{@io_doc_template_name} Stamp Paper"])
-    add_header_footers(expression_of_interest, "#{@working_dir}/ExpressionOfInterest-#{expression_of_interest.id}.pdf", additional_headers, additional_footers)
+    add_header_footers(expression_of_interest, file_name, additional_headers, additional_footers)
   end
 
   def generate_custom_fields(context, expression_of_interest)

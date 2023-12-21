@@ -22,10 +22,6 @@ class CapitalCommitmentDocGenerator
 
   private
 
-  def working_dir_path(capital_commitment)
-    "tmp/fund_doc_generator/#{rand(1_000_000)}/#{capital_commitment.id}"
-  end
-
   def notify(fund_doc_template, capital_commitment, user_id)
     UserAlert.new(user_id:, message: "Document #{fund_doc_template.name} generated for #{capital_commitment.investor_name}. Please refresh the page.", level: "success").broadcast
   end
@@ -47,11 +43,11 @@ class CapitalCommitmentDocGenerator
     add_image(context, :investor_signature, capital_commitment.investor_kyc.signature)
     Rails.logger.debug { "Using context #{context} to render template" }
 
-    file_name = "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}"
+    file_name = generated_file_name(capital_commitment)
     convert(template, context, file_name)
 
     additional_footers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Footer" "#{@fund_doc_template_name} Signature"])
     additional_headers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Header", "#{@fund_doc_template_name} Stamp Paper"])
-    add_header_footers(capital_commitment, "#{@working_dir}/CapitalCommitment-#{capital_commitment.id}.pdf", additional_headers, additional_footers)
+    add_header_footers(capital_commitment, file_name, additional_headers, additional_footers)
   end
 end

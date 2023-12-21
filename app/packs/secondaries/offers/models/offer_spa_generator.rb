@@ -49,7 +49,7 @@ class OfferSpaGenerator
     add_buyer_fields(context, offer)
     add_image(context, :buyer_signature, offer.interest&.signature)
 
-    file_name = "#{@working_dir}/Offer-#{offer.id}"
+    file_name = generated_file_name(offer)
     convert(template, context, file_name)
 
     additional_footers = []
@@ -62,7 +62,7 @@ class OfferSpaGenerator
       additional_headers += offer.interest.documents.where(name: ["#{template_document.name} Header", "#{template_document.name} Stamp Paper"])
     end
 
-    add_header_footers(offer, "#{@working_dir}/Offer-#{offer.id}.pdf", additional_headers, additional_footers, template_document.name)
+    add_header_footers(offer, file_name, additional_headers, additional_footers, template_document.name)
   end
 
   def add_seller_fields(context, offer)

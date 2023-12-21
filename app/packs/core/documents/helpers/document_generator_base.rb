@@ -15,6 +15,10 @@ module DocumentGeneratorBase
     "tmp/#{model.class.name}/#{rand(1_000_000)}/#{model.id}"
   end
 
+  def generated_file_name(model)
+    "#{@working_dir}/#{model.class.name}-#{model.id}"
+  end
+
   def cleanup
     FileUtils.rm_rf(@working_dir) if @working_dir
   end
@@ -38,7 +42,7 @@ module DocumentGeneratorBase
     generate_headers(model, additional_headers, combined_pdf, header_footer_download_path, template_name)
 
     # Combine the SPA
-    combined_pdf << CombinePDF.load(spa_path)
+    combined_pdf << CombinePDF.load("#{spa_path}.pdf")
 
     generate_footers(model, additional_footers, combined_pdf, header_footer_download_path, template_name)
 
@@ -87,7 +91,7 @@ module DocumentGeneratorBase
   end
 
   def upload(doc_template, model, start_date = nil, end_date = nil)
-    file_name = "#{@working_dir}/#{model.class.name}-#{model.id}.pdf"
+    file_name = generated_file_name(model)
     Rails.logger.debug { "Uploading generated file #{file_name} to #{model} " }
 
     # Clone some attributes of the template

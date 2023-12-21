@@ -51,7 +51,7 @@ class CapitalRemittanceDocGenerator
 
     # add_amounts(capital_remittance, context)
 
-    file_name = "#{@working_dir}/CapitalRemittance-#{capital_remittance.id}"
+    file_name = generated_file_name(capital_remittance)
     convert(template, context, file_name)
   end
 
