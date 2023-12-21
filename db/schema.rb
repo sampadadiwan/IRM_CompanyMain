@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_20_112656) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_21_102020) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -886,18 +886,18 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_20_112656) do
   create_table "e_signatures", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "user_id"
-    t.string "label", limit: 20
+    t.string "label", limit: 30
     t.string "signature_type", limit: 10
     t.integer "position"
-    t.string "owner_type", null: false
-    t.bigint "owner_id", null: false
     t.text "notes"
     t.string "status", limit: 10
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "api_updates"
+    t.string "email", limit: 60
+    t.bigint "document_id"
+    t.index ["document_id"], name: "index_e_signatures_on_document_id"
     t.index ["entity_id"], name: "index_e_signatures_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_e_signatures_on_owner"
     t.index ["user_id"], name: "index_e_signatures_on_user_id"
   end
 
@@ -2614,6 +2614,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_20_112656) do
   add_foreign_key "documents", "form_types"
   add_foreign_key "documents", "users"
   add_foreign_key "documents", "users", column: "approved_by_id"
+  add_foreign_key "e_signatures", "documents"
   add_foreign_key "e_signatures", "entities"
   add_foreign_key "e_signatures", "users"
   add_foreign_key "entity_settings", "entities"
