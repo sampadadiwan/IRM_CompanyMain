@@ -44,7 +44,6 @@ class ESignature < ApplicationRecord
     # DIGIO sometimes sends us old callbacks
     if new_status?(payload_status)
       add_api_update(payload)
-      update(status: payload_status, api_updates:)
       message = "Document - #{document.name}'s E-Sign status updated"
       logger.info message
     else
@@ -54,7 +53,8 @@ class ESignature < ApplicationRecord
   end
 
   def new_status?(payload_status)
-    status != payload_status && status != "signed"
+    # status != payload_status && status != "signed"
+    ESignature.where(id: self.id).where.not(status: payload_status).where.not(status: "signed").update_all(status: payload_status, api_updates: self.api_updates) > 0
   end
 
   # status can be [nil, "signed", "failed", "requested"]
