@@ -1,5 +1,7 @@
 <%= render "/layouts/alerts" %>
-<h1> E Signature </h1>
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">E Signature</h1>
+  </div>
 <div>
 <table class="table table-bordered dataTable">
   <tr>
@@ -12,10 +14,10 @@
   </tr>
   <tr>
     <td>
-      User
+      Email
     </td>
     <td>
-      <%= @e_signature.user&.full_name %>
+      <%= @e_signature.email %>
     </td>
   </tr>
   <tr>
@@ -36,10 +38,10 @@
   </tr>
   <tr>
     <td>
-      Owner
+      Document
     </td>
     <td>
-      <%= link_to @e_signature.owner %>
+      <%= link_to @e_signature.document %>
     </td>
   </tr>
   <tr>
@@ -55,7 +57,11 @@
       Status
     </td>
     <td>
-      <%= @e_signature.status %>
+    <%if @e_signature.status.present? %>
+      <span class="badge bg-<%=@e_signature.status_badge%>">
+      <%= @e_signature.status&.titleize %>
+      </span>
+    <% end %>
     </td>
   </tr>
 </table>

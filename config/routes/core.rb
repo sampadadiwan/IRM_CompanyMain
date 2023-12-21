@@ -110,6 +110,7 @@ end
 
 resources :entities do
   get 'search', on: :collection
+  get 'report', on: :member
   get 'investor_entities', on: :collection
   get 'dashboard', on: :collection
   get 'investor_view', on: :member

@@ -20,6 +20,7 @@ class DigioEsignHelper
     # Encode the puppy
     encoded_file = Base64.strict_encode64(data)
     tmpfile.close
+    # unlink deletes the tempfile
     tmpfile.unlink
     # fetch from esign
     display_on_page = document.display_on_page&.downcase || "last"
@@ -104,17 +105,102 @@ class DigioEsignHelper
   def prep_user_data(esigns)
     ret = []
     esigns.order(:position).each do |esign|
-      u = esign.user
+      email = esign.email
       sign_type = esign.signature_type.downcase || "aadhaar"
       reason = nil # fetch from esign or doc
       hash = {
-        identifier: u.email,
-        name: u.full_name,
+        identifier: email,
+        # name: u.full_name, #not mandatory
         sign_type:
       }
       hash[:reason] = reason if reason.present?
       ret << hash
     end
     ret
+  end
+
+  # fetch manual updates from digio
+  def update_esign_status(doc)
+    # Get api response
+    response = retrieve_signed(doc.provider_doc_id)
+    if response.success?
+      # update document attribute
+      overall_status = JSON.parse(response.body)["status"] # can be "completed" or "requested"
+      doc.update(esign_status: overall_status)
+      # Update each esignature's status
+      response['signing_parties'].each do |signer|
+        # Find esignature for this email
+        esign = doc.e_signatures.find_by(email: signer['identifier'])
+        esign&.update_esign_response(signer['status'], response)
+      end
+      check_and_update_document_status(doc)
+    else
+      signatures_failed(doc, JSON.parse(response.body))
+    end
+  end
+
+  # handles Digio automatic callbacks
+  def update_signature_progress(params)
+    if params.dig('payload', 'document', 'id').present?
+      if params.dig('payload', 'document', 'error_code').blank?
+        process_esign_success(params)
+      else
+        process_esign_failure(params)
+      end
+    else
+      e = StandardError.new("Document not found for #{params}")
+      ExceptionNotifier.notify_exception(e)
+      logger.error e.message
+      # raise e
+    end
+  end
+
+  private
+
+  # used in digio callbacks
+  def process_esign_success(params)
+    provider_doc_id = params.dig('payload', 'document', 'id')
+    doc = Document.find_by(provider_doc_id:)
+    signing_parties = params.dig('payload', 'document', 'signing_parties')
+    # update contains the statuses of all signing parties
+    signing_parties.each do |signer|
+      esign = doc.e_signatures.find_by(email: signer['identifier'])
+      esign&.update_esign_response(signer['status'], params['payload'])
+    end
+    check_and_update_document_status(doc)
+  end
+
+  # used in digio callbacks
+  def process_esign_failure(params)
+    doc = Document.find_by(provider_doc_id: params.dig('payload', 'document', 'id'))
+    email = params.dig('payload', 'document', 'signer_identifier')
+    esign = doc.e_signatures.find_by(email:)
+    esign&.update_esign_response("failed", params['payload'])
+    ExceptionNotifier.notify_exception(StandardError.new("E-Sign not found for #{doc&.name} and email #{email} - #{params}")) if esign.blank?
+  end
+
+  def check_and_update_document_status(document)
+    unsigned_esigns = document.e_signatures.reload.where.not(status: "signed")
+    signature_completed(document) if unsigned_esigns.count < 1
+  end
+
+  def signature_completed(doc)
+    tmpfile = Tempfile.new("#{doc.name}.pdf", encoding: 'ascii-8bit')
+    content = DigioEsignHelper.new.download(doc.provider_doc_id).body
+    tmpfile.write(content)
+    doc.signature_completed(tmpfile.path)
+    tmpfile.close
+    tmpfile.unlink
+  end
+
+  def signatures_failed(doc, response)
+    e = StandardError.new("Error getting status for #{doc.name} - #{response}")
+    ExceptionNotifier.notify_exception(e)
+    doc.update(esign_status: "failed")
+    doc.e_signatures.each do |esign|
+      esign.add_api_update(response)
+      esign.save!
+    end
+    logger.error e.message
   end
 end

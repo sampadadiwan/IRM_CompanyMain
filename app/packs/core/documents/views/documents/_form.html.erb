@@ -104,7 +104,7 @@
           </div>
 
         <% end %>
-        
+
           <% if document.from_template_id != nil %>
             <div class="form-group">
               <%= form.label :approved %>
@@ -112,7 +112,7 @@
               <small class="text-muted">Enable access to generated document</small>
             </div>
           <% end %>
-          
+
           <%= custom_form_fields(document, form) %>
 
           <div class="form-group">
@@ -129,9 +129,9 @@
           </div>
 
           <div id='e_signatures'>
-            <% 
-              @labels = @document.owner.respond_to?(:signature_labels) ? @document.owner.signature_labels : nil 
-              @labels ||= ["Investor", "Other"] if @document.folder && @document.folder.name == "KYC Templates"
+            <%
+              @labels = @document.owner.respond_to?(:signature_labels) ? @document.owner.signature_labels : nil
+              @labels ||= ["Investor Signatories", "Other"] if @document.folder && @document.folder.name == "KYC Templates"
             %>
             <%= form.fields_for :e_signatures do |f| %>
               <%= render 'e_signature_fields', f: %>

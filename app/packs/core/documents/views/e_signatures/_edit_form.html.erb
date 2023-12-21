@@ -6,13 +6,11 @@
   <% labels ||= nil %>
   <%= form_with(model: e_signature, validate: true) do |f| %>
   <div class='nested-fields row'>
-      <% if f.object.user %>
       <div class="form-group col">
-        <%= f.label :user_id %>
-        <%= f.text_field :user_id, class: "form-control", disabled: true, value: f.object.user.full_name %>
+        <%= f.label :email %>
+        <%= f.text_field :email, class: "form-control"  %>
+        <small class="text-muted">Email address</small>
       </div>
-      <% end %>
-
 
       <div class="form-group col">
         <%= f.label :label %>

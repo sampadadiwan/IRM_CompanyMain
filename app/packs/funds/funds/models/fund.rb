@@ -103,7 +103,11 @@ class Fund < ApplicationRecord
   end
 
   def signature_labels
-    ["Investor Signatory", "Fund Signatory", "Other"]
+    ["Investor Signatories", "Fund Signatories", "Other"]
+  end
+
+  def fund_signatories
+    esign_emails.split(",").map(&:strip)
   end
 
   def current_fund_ratios(valuation = nil)

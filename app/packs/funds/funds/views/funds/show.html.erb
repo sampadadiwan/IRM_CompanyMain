@@ -20,6 +20,7 @@
             Reports
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <%= link_to "E-Signatures Report" , report_fund_path(@fund, report: "dashboard/e_signatures"), {class: "dropdown-item" } %>
             <%= link_to "Fund Export" , export_fund_path(@fund), {class: "dropdown-item" } %>
             <%= link_to "Foreign Remittances" , report_fund_path(@fund, report: "dashboard/foreign_remittances"), {class: "dropdown-item" } %>
 
@@ -102,12 +103,12 @@
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
             <% if policy(@fund).update? %>
-              
+
               <%= link_to "Edit Fund" , edit_fund_path(@fund), {class: "dropdown-item" } %>
               <%= button_to "Delete Fund" , @fund, method: :delete, class: "dropdown-item" ,
                   form_class: "deleteButton",
                   data: {action: "click->confirm#popup" , turbo:false} if policy(@fund).destroy? %>
-            
+
             <% end %>
 
             <% if @fund.entity.permissions.enable_account_entries? %>
@@ -153,7 +154,7 @@
                   document: doc_attributes,
                     "document[folder_id]": @fund.document_folder.id),
                     {class: "dropdown-item" }  if policy(@fund).update? %>
-              
+
 
                 <%= link_to "Add Investor Notice" ,
                           new_investor_notice_path( "investor_notice[owner_id]": @fund.id,
@@ -162,7 +163,7 @@
                 <%= link_to 'Send Email', "mailto:?bcc=#{@fund.get_lps_emails&.join(',')}&subject=#{@fund.name}:", class: "dropdown-item" %>
 
                 <%= link_to "Check Access Rights" , check_access_rights_fund_path(@fund, create_missing: false), {class: "dropdown-item" }  %>
-                
+
                 </div>
               </div>
 
@@ -179,7 +180,7 @@
               Delete All
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-              
+
               <%
               delete_classes = ["AccountEntry", "CapitalCommitment", "CapitalCall", "CapitalRemittance", "CapitalRemittancePayment", "CapitalDistribution", "CapitalDistributionPayment"]
 

@@ -1,6 +1,6 @@
 class EntitiesController < ApplicationController
   # prepend_view_path 'app/packs/core/entities/views'
-  before_action :set_entity, only: %w[show update destroy edit]
+  before_action :set_entity, only: %w[show update destroy edit report]
   after_action :verify_authorized, except: %i[dashboard search index investor_entities delete_attachment]
 
   # GET /entities or /entities.json
@@ -11,6 +11,10 @@ class EntitiesController < ApplicationController
 
   def dashboard
     @entities = Entity.all
+  end
+
+  def report
+    render "entities/#{params[:report]}"
   end
 
   def investor_entities

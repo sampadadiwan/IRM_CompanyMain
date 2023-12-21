@@ -1,7 +1,7 @@
 
 <tr id="<%= dom_id e_signature %>">
   <td>
-    <%= e_signature.user %>
+    <%= e_signature.email %>
   </td>
   <td>
     <%= e_signature.label %>
@@ -11,7 +11,11 @@
   </td>
 
   <td>
-    <%= e_signature.status %>
+    <%if e_signature.status.present? %>
+      <span class="badge bg-<%=e_signature.status_badge%>">
+      <%= e_signature.status&.titleize %>
+      </span>
+    <% end %>
   </td>
   <td>
     <%= link_to "Show", e_signature , {class: "btn btn-outline-primary"}%>

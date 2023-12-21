@@ -1,7 +1,7 @@
 <p>Dear User</p>
 
-<% investment_opportunity = @esign.owner.investment_opportunity %>
-<% eoi = @esign.owner %>
+<% investment_opportunity = @esign.document.investment_opportunity %>
+<% eoi = @esign.document %>
 
 <p>This is in regard to the EOI in <%= investment_opportunity.name %>. For the EOI to be confirmed, you are required to sign the <%= @esign.document ? @esign.document.name : 'required documents' %>. Please use the link below to sign the document after reading it.</p>
 

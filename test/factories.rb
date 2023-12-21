@@ -7,7 +7,7 @@ FactoryBot.define do
     owner { nil }
   end
 
-  
+
   factory :stock_adjustment do
     entity { nil }
     portfolio_company { nil }
@@ -48,7 +48,7 @@ FactoryBot.define do
     capital_call { nil }
   end
 
-  
+
   factory :kpi do
     entity { nil }
     name { "MyString" }
@@ -65,7 +65,7 @@ FactoryBot.define do
     user { nil }
   end
 
-  
+
   factory :commitment_adjustment do
     entity { nil }
     fund { nil }
@@ -370,6 +370,15 @@ FactoryBot.define do
     response_status { "Approved,Rejected,Pending"}
   end
 
+  factory :e_signature do
+    entity { Entity.startups.sample }
+    document { FactoryBot.create(:document, entity: entity) }
+    email { Faker::Internet.email }
+    position { rand(5) + 1 }
+    signature_type { ["Aadhaar", "Electronic"][rand(2)] }
+    status { nil }
+  end
+
   factory :reminder do
     entity { nil }
     owner { nil }
@@ -659,4 +668,3 @@ FactoryBot.define do
 
   end
 end
-

@@ -66,6 +66,6 @@ class ESignaturesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def e_signature_params
-    params.require(:e_signature).permit(:entity_id, :user_id, :label, :signature_type, :owner_id, :owner_type, :notes, :status)
+    params.require(:e_signature).permit(:entity_id, :user_id, :label, :signature_type, :document_id, :notes, :status)
   end
 end

@@ -15,7 +15,7 @@ class DocumentsController < ApplicationController
   def signature_progress
     # Check response  - if contains proper info then update doc esign status
     # if not then just respond with 200 OK
-    update_signature_progress(params)
+    DigioEsignHelper.new.update_signature_progress(params)
     # Always respond with 200 OK - Expected from Digio
     render json: "Ok"
   end

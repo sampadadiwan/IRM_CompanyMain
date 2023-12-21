@@ -4,12 +4,12 @@ Feature: Fund
 Scenario Outline: Create new fund
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
-  Given there is an existing investor "" with "1" users  
+  Given there is an existing investor "" with "1" users
   And I am at the funds page
   When I create a new fund "<fund>"
   Then I should see the "<msg>"
   And an fund should be created
-  Given the investors are added to the fund  
+  Given the investors are added to the fund
   And I should see the fund details on the details page
   And I should see the fund in all funds page
   And I visit the fund details page
@@ -32,7 +32,7 @@ Scenario Outline: View fund with employee access
   Given Im logged in as a user "" for an entity "<entity>"
   Given there is a fund "<fund>" for the entity
   And I am "given" employee access to the fund
-  When I am at the fund details page  
+  When I am at the fund details page
   And I should see the fund details on the details page
   And I should see the fund in all funds page
 
@@ -45,7 +45,7 @@ Scenario Outline: View fund - without employee access
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given there is a fund "<fund>" for the entity
   And I am "no" employee access to the fund
-  When I am at the fund details page  
+  When I am at the fund details page
   Then I should see the "<msg>"
 
   Examples:
@@ -53,7 +53,7 @@ Scenario Outline: View fund - without employee access
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Access Denied|
     |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Access Denied|
 
-  
+
 
 Scenario Outline: Create new capital commitment
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -61,8 +61,8 @@ Scenario Outline: Create new capital commitment
   Given there is an existing investor "name=A1" with "2" users
   Given there is an existing investor "name=A2" with "2" users
   Given there is a fund "<fund>" for the entity
-  Given the fund has capital commitment template   
-  Given the investors are added to the fund  
+  Given the fund has capital commitment template
+  Given the investors are added to the fund
   When I add a capital commitment "1000000" for investor "A1"
   Then I should see the capital commitment details
   Then the fund total committed amount must be "1000000"
@@ -73,7 +73,7 @@ Scenario Outline: Create new capital commitment
   And when the capital commitment docs are generated
   Then the generated doc must be attached to the capital commitments
 
-  
+
   Examples:
   	|user	    |entity                                 |fund                 |msg	|
   	|  	      |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
@@ -86,15 +86,15 @@ Scenario Outline: Create new commitment after capital call
   Given there is an existing investor "" with "1" users
   Given there is an existing investor "" with "1" users
   Given there is a fund "<fund>" for the entity
-  Given the investors are added to the fund  
+  Given the investors are added to the fund
   Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
   Given there is a capital call "<call>"
   Given there is an existing investor "" with "1" users
-  Given there is a capital commitment of "folio_committed_amount_cents=100000000" for the last investor 
-  Given the investors are added to the fund  
+  Given there is a capital commitment of "folio_committed_amount_cents=100000000" for the last investor
+  Given the investors are added to the fund
   Then the corresponding remittances should be created
-  Then I should see the remittances  
-  
+  Then I should see the remittances
+
 Examples:
   	|entity                                 |fund                 | call |
   	|entity_type=Investment Fund;enable_funds=true;currency=INR  |name=Test  | percentage_called=20 |
@@ -105,10 +105,10 @@ Scenario Outline: Create new capital call
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is a fund "<fund>" for the entity
-  And Given I upload an investors file for the fund 
-  Given the investors have approved investor access 
+  And Given I upload an investors file for the fund
+  Given the investors have approved investor access
   Given the fund has capital call template
-  Given the investors are added to the fund  
+  Given the investors are added to the fund
   And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
   And Given the commitments have a cc "advisor@gmail.com"
   And Given I upload "account_entries.xlsx" file for Account Entries
@@ -130,7 +130,7 @@ Scenario Outline: Create new capital call
   # And when the capital call docs are generated
   # Then the generated doc must be attached to the capital remittances
 
-  
+
   Examples:
   	|entity                                         |fund                |msg	| call | collected_amount | subject |
   	|entity_type=Investment Fund;enable_funds=true  |name=SAAS Fund;currency=INR      |Fund was successfully created| percentage_called=20;call_basis=Percentage of Commitment | 3320000 | This is a capital call for Fund 1 |
@@ -143,7 +143,7 @@ Scenario Outline: Create new capital distrbution
   Given there is an existing investor "" with "2" users
   Given there is an existing investor "" with "2" users
   Given there is a fund "<fund>" for the entity
-  Given the investors are added to the fund  
+  Given the investors are added to the fund
   Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
   And Given the commitments have a cc "advisor@gmail.com"
   When I create a new capital distribution "cost_of_investment_cents=10000000;"
@@ -154,11 +154,26 @@ Scenario Outline: Create new capital distrbution
   And when the capital distrbution payments are marked as paid
   Then the capital distribution must reflect the payments
   And the investors must receive email with subject "Capital Distribution"
-  
+
   Examples:
   	|user	    |entity                                 |fund                 |msg	|
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
     |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
 
+Scenario Outline: Fund E-Signatures Report
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "name=A1" with "2" users
+  Given there is an existing investor "name=A2" with "2" users
+  Given there is a fund "<fund>" for the entity
+  Given the fund has capital commitment template
+  Given the investors are added to the fund
+  When I add a capital commitment "1000000" for investor "A1"
+  Then I should see the capital commitment details
+  Then the user goes to the fund e-signature report
+  And the user should see all esign report for all docs sent for esign
 
 
+  Examples:
+    |user	    |entity                                 |fund                 |msg	|
+    |  	      |entity_type=Investment Fund;enable_funds=true  |name=Test fund 888      |Fund was successfully created|

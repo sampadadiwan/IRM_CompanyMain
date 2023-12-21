@@ -1,0 +1,28 @@
+<%= render "/layouts/alerts" %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><%= @entity.name %> : E-Signatures</h1>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+    <table id="fund_document_esigns_table" class="table table-bordered dataTable jqDataTable">
+        <thead>
+        <tr>
+        <th>Investor Name</th>
+        <th>Kyc Name</th>
+        <th>Document Name</th>
+        <th>E-Sign Status</th>
+        <th>E-Signatures</th>
+        <th></th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <% @entity.investor_kycs.includes(:documents).each do |kyc|%>
+            <% kyc.documents.sent_for_esign.each do |doc| %>
+                <%= render "documents/investor_kyc_esign_status",document: doc %>
+            <% end %>
+        <% end %>
+        </tbody>
+
+    </table>
+</div>

@@ -38,68 +38,69 @@ module DocumentHelper
   end
 
   def update_signature_progress(params)
-    if params.dig('payload', 'document', 'id').present? && params.dig('payload', 'document', 'error_code').blank?
-      doc = Document.find_by(provider_doc_id: params.dig('payload', 'document', 'id'))
-      params['payload']['document']['signing_parties'].each do |signer|
-        user = User.find_by(email: signer['identifier'])
-        if user
-          esign = doc&.e_signatures&.find_by(user_id: user.id)
-          # callbacks can be out of order leading to multiple updates for the same status
-          if esign.present? && (esign.status != signer['status'] && esign.status != "signed")
-            esign.add_api_update(params['payload'])
-            esign.update(status: signer['status'], api_updates: esign.api_updates)
-            message = "Document - #{doc.name}'s E-Sign status updated"
-            logger.info message
-            UserAlert.new(user_id: user.id, message:, level: "info").broadcast
-            check_and_update_document_status(doc)
-          elsif esign.blank?
-            e = StandardError.new("E-Sign not found for #{doc&.name} and user #{user&.name} - #{params}")
-            ExceptionNotifier.notify_exception(e)
-            logger.error e.message
-            # raise e
-          else
-            e = StandardError.new("E-Sign already has status #{esign&.status} for #{doc&.name} and user #{user&.name} - #{params}")
-            # ExceptionNotifier.notify_exception(e)
-            logger.error e.message
-            # raise e
-          end
-        else
-          e = StandardError.new("User not found for #{doc&.name} with identifier #{signer['identifier']} - #{params}")
-          ExceptionNotifier.notify_exception(e)
-          logger.error e.message
-          # raise e
-        end
-      end
-    elsif params.dig('payload', 'document', 'error_code').present?
-      email = params.dig('payload', 'document', 'signer_identifier')
-      user = User.find_by(email:)
-      if user
-        doc = Document.find_by(provider_doc_id: params.dig('payload', 'document', 'id'))
-        esign = doc&.e_signatures&.find_by(user_id: user.id)
-        if esign.present? && esign.status != "signed" && esign.status != "failed"
-          esign.add_api_update(params['payload'])
-          esign.update(status: "failed", api_updates: esign.api_updates)
-          message = "Document - #{doc.name}'s E-Sign status updated"
-          logger.info message
-          UserAlert.new(user_id: user.id, message:, level: "info").broadcast
-          check_and_update_document_status(doc)
-        else
-          e = StandardError.new("E-Sign not found or already updated for #{doc&.name} and user #{user&.name} - #{params}")
-          ExceptionNotifier.notify_exception(e)
-          logger.error e.message
-          # raise e
-        end
+    if params.dig('payload', 'document', 'id').present?
+      if params.dig('payload', 'document', 'error_code').blank?
+        process_esign_success(params)
       else
-        e = StandardError.new("User not found for #{doc&.name} with identifier #{signer['identifier']} - #{params}")
-        ExceptionNotifier.notify_exception(e)
-        logger.error e.message
-        # raise e
+        process_esign_failure(params)
       end
+    else
+      e = StandardError.new("Document not found for #{params}")
+      ExceptionNotifier.notify_exception(e)
+      logger.error e.message
+      # raise e
     end
   end
 
   def check_and_update_document_status(doc)
     unsigned_esigns = doc.e_signatures.reload.where.not(status: "signed")
     EsignUpdateJob.new.signature_completed(doc) if unsigned_esigns.count < 1
+  end
+
+  private
+
+  def process_esign_success(params)
+    provider_doc_id = params.dig('payload', 'document', 'id')
+    doc = Document.find_by(provider_doc_id:)
+    signing_parties = params.dig('payload', 'document', 'signing_parties')
+    # update contains the statuses of all signing parties
+    signing_parties.each do |signer|
+      esign = doc.e_signatures.find_by(email: signer['identifier'])
+      # callbacks can be out of order leading to multiple updates for the same status
+      # we can get duplicates
+      if esign.present? && (esign.status != signer['status'] && esign.status != "signed")
+        # move inside model
+        esign.add_api_update(params['payload'])
+        esign.update(status: signer['status'], api_updates: esign.api_updates)
+        message = "Document - #{doc.name}'s E-Sign status updated"
+        logger.info message
+        check_and_update_document_status(doc)
+      elsif esign.blank?
+        e = StandardError.new("E-Sign not found for #{doc&.name} - #{params}")
+        ExceptionNotifier.notify_exception(e)
+        logger.error e.message
+        # raise e
+      else
+        e = StandardError.new("E-Sign already has status #{esign&.status} for #{doc&.name} - #{params}")
+        # ExceptionNotifier.notify_exception(e)
+        logger.error e.message
+        # raise e
+      end
+    end
+  end
+
+  def process_esign_failure(params)
+    doc = Document.find_by(provider_doc_id: params.dig('payload', 'document', 'id'))
+    email = params.dig('payload', 'document', 'signer_identifier')
+    esign = doc.e_signatures&.find_by(email:)
+    if esign.present? && (esign.status != "signed")
+      esign.add_api_update(params['payload'])
+      esign.update(status: "failed", api_updates: esign.api_updates)
+      message = "Document - #{doc.name}'s E-Sign status updated"
+      logger.info message
+    else
+      ExceptionNotifier.notify_exception(StandardError.new("E-Sign not found for #{doc&.name} and email #{email} - #{params}")) if esign.blank?
+      ExceptionNotifier.notify_exception(StandardError.new("E-Sign already has status #{esign&.status} for #{doc&.name} and email #{email} - #{params}")) if esign.present?
+    end
   end
 end

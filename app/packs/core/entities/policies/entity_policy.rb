@@ -18,6 +18,10 @@ class EntityPolicy < ApplicationPolicy
     true
   end
 
+  def report?
+    true
+  end
+
   def dashboard?
     true
   end

@@ -1,16 +1,14 @@
 <% labels ||= nil %>
 <div class='nested-fields row'>
-    <% if f.object.user %>
-    <div class="form-group col">
-      <%= f.label :user_id %>
-      <%= f.text_field :user_id, class: "form-control", disabled: true, value: f.object.user.full_name %>
-    </div>
-    <% end %>
-
       <div class="form-group col">
         <%= f.label :label %>
         <% if labels %>
-          <%= f.select :label, labels, {}, class: "form-control", id: "esign_label" %>
+          <%= f.text_field :label, list: 'label-list', class: "form-control" %>
+          <datalist id="label-list">
+            <% labels.each do |label| %>
+              <option value="<%= label %>"></option>
+            <% end %>
+          </datalist>
         <% else %>
           <%= f.text_field :label, class: "form-control"  %>
         <% end %>
@@ -25,7 +23,6 @@
     <div class="form-group col">
       <%= f.label :notes %>
       <%= f.text_field :notes, class: "form-control"  %>
-      <small class="text-muted">Email address if Other</small>
     </div>
 
       <div class="form-group col">

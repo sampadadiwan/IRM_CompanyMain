@@ -17,11 +17,11 @@ class ESignaturePolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    create? && !record.document.sent_for_esign
   end
 
   def edit?
-    update? && (!record.owner.sent_for_esign || user.has_cached_role?(:company_admin))
+    update?
   end
 
   def destroy?

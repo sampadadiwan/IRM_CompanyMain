@@ -112,6 +112,10 @@ class InvestorKyc < ApplicationRecord
     "#{investor.folder_path}/KYC-#{id}/#{full_name.delete('/')}"
   end
 
+  def investor_signatories
+    esign_emails&.split(",")&.map(&:strip)
+  end
+
   def to_s
     "#{full_name} - #{self.PAN}"
   end

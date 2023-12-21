@@ -101,7 +101,8 @@ module DocumentGeneratorBase
                               end
 
     # Destroy existing docs with the same name for the model
-    model.documents.where(name: generated_document.name).find_each(&:destroy)
+    # except for signed ones
+    model.documents.where(name: generated_document.name).where.not(owner_tag: "signed").find_each(&:destroy)
 
     # Upload the generated file
     generated_document.file = File.open(file_name, "rb")
@@ -112,6 +113,10 @@ module DocumentGeneratorBase
 
     # Add the e-signatures and stamp papers if available
     generated_document.e_signatures = doc_template.e_signatures_for(model) || []
+    generated_document.e_signatures.each do |esign|
+      esign.document = generated_document
+      esign.entity = model.entity
+    end
     generated_document.stamp_papers = doc_template.stamp_papers_for(model) || []
 
     generated_document.save

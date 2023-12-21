@@ -1,0 +1,29 @@
+<%= render "/layouts/alerts" %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><%= @fund.name %> : E-Signatures</h1>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+    <table id="fund_document_esigns_table" class="table table-bordered dataTable jqDataTable">
+        <thead>
+        <tr>
+        <th>Investor Name</th>
+        <th>Folio ID</th>
+        <th>Document Name</th>
+        <th>Owner Tag</th>
+        <th>E-Sign Status</th>
+        <th>E-Signatures</th>
+        <th></th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <% @fund.capital_commitments.includes(:documents).each do |commitment|%>
+            <% commitment.documents.sent_for_esign.each do |doc| %>
+                <%= render "documents/capital_commitment_esign_status",document: doc %>
+            <% end %>
+        <% end %>
+        </tbody>
+
+    </table>
+</div>

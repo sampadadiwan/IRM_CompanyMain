@@ -1,3 +1,5 @@
+require 'cucumber/rspec/doubles'
+
 Given('I am at the investor page') do
   visit("/investors")
 end
@@ -32,7 +34,7 @@ When('I update the investor {string}') do |args|
   fill_in('investor_primary_email', with: @investor_entity.primary_email)
 
   click_on("Save")
-  
+
 end
 
 Then('an investor should be created') do
@@ -239,7 +241,7 @@ end
 
 Given('the investors have approved investor access') do
   @entity.investors.each do |investor|
-    ia = FactoryBot.create(:investor_access, investor: investor, entity: investor.entity, approved: true) 
+    ia = FactoryBot.create(:investor_access, investor: investor, entity: investor.entity, approved: true)
   end
 end
 
@@ -306,7 +308,7 @@ Then('the investor kycs must have the data in the sheet') do
   investor_kycs = @entity.investor_kycs.order(id: :asc).to_a
   data.each_with_index do |row, idx|
     next if idx.zero? # skip header row
-    
+
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
     cc = investor_kycs[idx-1]
@@ -381,7 +383,7 @@ Given('I create a new InvestorKyc') do
   puts @investor_kyc.to_json
 
   class_name = @investor_kyc.type_from_kyc_type.underscore
-  
+
 
   visit(investor_kycs_path)
   click_on("New KYC")
@@ -545,10 +547,172 @@ Given('we Generate SOA for the first capital commitment') do
   fill_in('start_date', with: "01/01/2020")
   fill_in('end_date', with: "01/01/2021")
   click_on("Generate SOA Now")
-  sleep(5)
+  sleep(2)
 end
 
 Then('it is successfully generated') do
-  expect(page).to have_content("Documentation generation started, please check back in a few mins")
   expect(page).to have_content("Generated")
+  expect(page).to have_content("Documentation generation started, please check back in a few mins")
+end
+
+Then('the document has {string} e_signatures') do |string|
+  allow_any_instance_of(DigioEsignHelper).to receive(:sign).and_return(sample_doc_esign_init_response)
+  allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response)
+
+  # stub DigioEsignHelper's sign method to return
+  @doc = Document.order(:created_at).last
+  @esign1 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email: "shrikantgour018@gmail.com", position: 1)
+  @esign2 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email: "aseemak56@yahoo.com", position: 2)
+  visit(document_path(@doc))
+  sleep(2)
+  click_on("Signatures")
+  sleep(1)
+  click_on("Send For eSignatures")
+end
+
+Then('the document is signed by the signatories') do
+  allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
+  allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response_signed)
+  visit(current_path)
+  sleep(2)
+  click_on("Signatures")
+  sleep(1)
+  click_on("Get eSignatures' updates")
+end
+
+Then('the esign completed document is present') do
+  allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
+  visit(document_path(@doc))
+  sleep(2)
+  click_on("Signatures")
+  sleep(1)
+  # page should contain status requested
+  expected_status = "Signed"
+  expect(page).to have_content(expected_status)
+  visit(capital_commitment_path(@capital_commitment))
+  click_on("Documents")
+  # the signed document owner tag will be signed
+  expect(page).to have_content("Signed")
+end
+
+Given('the fund has a Commitment template {string}') do |string|
+  @fund = Fund.last
+  visit(fund_path(@fund))
+  sleep(3)
+  click_on("Actions")
+  click_on("New Template")
+  sleep(2)
+  fill_in('document_name', with: "Commitment Template")
+  #document_owner_tag is the type of document
+  select("Commitment Template", from: "document_owner_tag")
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/Mutual-Confidentiality-Agreement.docx'), make_visible: true)
+  check("document_template")
+  click_on("Save")
+  sleep(2)
+  @fund.esign_emails = "shrikantgour018@gmail.com,aseemk@test.com"
+  @fund.save!
+  @doc = Document.where(name: "Commitment Template").last
+  @template_esign1 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, label: "Fund Signatories", position: 1)
+  @template_esign2 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, label: "Investor Signatories", position: 1)
+end
+
+Given('we Generate Commitment template for the first capital commitment') do
+  @capital_commitment = CapitalCommitment.last
+  @capital_commitment.investor_kyc = InvestorKyc.last
+  @capital_commitment.esign_emails = "testmail@testsite1.com,testmail@testsite2.com,"
+  @capital_commitment.save!
+  visit(capital_commitment_path(@capital_commitment))
+  find("#commitment_actions").click
+  click_on("Generate Commitment Template")
+  click_on("Proceed")
+  sleep(2)
+end
+
+Then('the document has esignatures based on the template') do
+  visit(capital_commitment_path(@capital_commitment))
+  click_on("Documents")
+  # expect generated Document
+  expect(page).to have_content("Commitment Template")
+  # visit the document page
+  click_on("Commitment Template")
+  click_on("Signatures")
+  # page should contain emails of all Signatories
+  @fund.esign_emails.split(",").each do |email|
+    expect(page).to have_content(email)
+  end
+  @capital_commitment.esign_emails.split(",").each do |email|
+    expect(page).to have_content(email)
+  end
+end
+
+
+def sample_doc_esign_init_response
+  OpenStruct.new(success?: true,
+    body:
+  {
+    "id": "DID2312191801389959UDGNBWGRGCSC1",
+    "is_agreement": true,
+    "agreement_type": "outbound",
+    "agreement_status": "requested",
+    "file_name": "Test.pdf",
+    "created_at": "2021-01-04 22:23:33",
+    "self_signed": false,
+    "self_sign_type": "aadhaar",
+    "no_of_pages": 3,
+    "signing_parties": [
+        {
+            "name": nil,
+            "status": "requested",
+            "type": "self",
+            "signature_type": "aadhaar",
+            "identifier": "shrikantgour018@gmail.com",
+            "reason": nil,
+            "expire_on": "2021-01-14 23:59:59"
+        },
+        {
+            "name": nil,
+            "status": "requested",
+            "type": "self",
+            "signature_type": "aadhaar",
+            "identifier": "aseemak56@yahoo.com",
+            "reason": nil,
+            "expire_on": "2021-01-14 23:59:59"
+        }
+      ],
+      "sign_request_details": {
+          "name": "Caphive",
+          "requested_on": "2021-01-04 22:23:35",
+          "expire_on": "2021-01-14 23:59:59",
+          "identifier": "support@cahive.com",
+          "requester_type": "org"
+      },
+    "channel": "api",
+      "other_doc_details": {
+          "web_hook_available": true
+      },
+      "access_token": {
+          "created_at": "2023-01-06 12:25:32",
+          "id": "GWT2301061225322132HSJY268JM2MD6",
+          "entity_id": "DID210104222331448SRAQT22GMIB33B",
+          "valid_till": "2023-01-06 13:25:32"
+      },
+      "attached_estamp_details": {}
+    }.to_json
+  )
+end
+
+def download_response
+  OpenStruct.new(body: Document.last.file.download.read, success?: true)
+end
+
+def retrieve_signed_response
+  OpenStruct.new(body:{"id"=>"DID2312191801389959UDGNBWGRGCSC1", "is_agreement"=>true, "agreement_type"=>"outbound", "agreement_status"=>"requested", "file_name"=>"Commitment with Demo Fund", "updated_at"=>"2023-12-19 18:01:39", "created_at"=>"2023-12-19 18:01:39", "self_signed"=>false, "self_sign_type"=>"aadhaar", "no_of_pages"=>10, "signing_parties"=>[{"name"=>"RON RON", "status"=>"requested", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"shrikantgour018@gmail.com", "expire_on"=>"2023-12-30 00:00:00"}, {"name"=>"Charley Emmerich1", "status"=>"requested", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"aseemak56@yahoo.com", "expire_on"=>"2023-12-30 00:00:00"}], "sign_request_details"=>{"name"=>"Caphive", "requested_on"=>"2023-12-19 18:01:40", "expire_on"=>"2023-12-30 00:00:00", "identifier"=>"support@caphive.com", "requester_type"=>"org"}, "channel"=>"api", "other_doc_details"=>{"web_hook_available"=>true}, "attached_estamp_details"=>{}}.to_json,
+  success?: true,
+  signing_parties: [{"name"=>"RON RON", "status"=>"requested", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"shrikantgour018@gmail.com", "expire_on"=>"2023-12-30 00:00:00"}, {"name"=>"Charley Emmerich1", "status"=>"requested", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"aseemak56@yahoo.com", "expire_on"=>"2023-12-30 00:00:00"}])
+end
+
+def retrieve_signed_response_signed
+  OpenStruct.new(body:{"id"=>"DID2312191801389959UDGNBWGRGCSC1", "is_agreement"=>true, "agreement_type"=>"outbound", "agreement_status"=>"requested", "file_name"=>"Commitment with Demo Fund", "updated_at"=>"2023-12-19 18:01:39", "created_at"=>"2023-12-19 18:01:39", "self_signed"=>false, "self_sign_type"=>"aadhaar", "no_of_pages"=>10, "signing_parties"=>[{"name"=>"RON RON", "status"=>"signed", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"shrikantgour018@gmail.com", "expire_on"=>"2023-12-30 00:00:00"}, {"name"=>"Charley Emmerich1", "status"=>"signed", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"aseemak56@yahoo.com", "expire_on"=>"2023-12-30 00:00:00"}], "sign_request_details"=>{"name"=>"Caphive", "requested_on"=>"2023-12-19 18:01:40", "expire_on"=>"2023-12-30 00:00:00", "identifier"=>"support@caphive.com", "requester_type"=>"org"}, "channel"=>"api", "other_doc_details"=>{"web_hook_available"=>true}, "attached_estamp_details"=>{}}.to_json,
+  success?: true,
+  signing_parties: [{"name"=>"RON RON", "status"=>"signed", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"shrikantgour018@gmail.com", "expire_on"=>"2023-12-30 00:00:00"}, {"name"=>"Charley Emmerich1", "status"=>"signed", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"aseemak56@yahoo.com", "expire_on"=>"2023-12-30 00:00:00"}])
 end

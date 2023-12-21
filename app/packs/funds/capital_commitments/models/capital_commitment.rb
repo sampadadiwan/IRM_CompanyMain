@@ -190,6 +190,12 @@ class CapitalCommitment < ApplicationRecord
     committed_amount_cents.positive? ? 100 * (collected_amount_cents / committed_amount_cents).round(2) : 0
   end
 
+  def investor_signatories
+    esign_emails&.split(",")&.map(&:strip)
+  end
+
+  delegate :fund_signatories, to: :fund
+
   def to_s
     "#{investor_name}, Folio: #{folio_id}"
   end

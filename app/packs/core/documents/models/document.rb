@@ -17,6 +17,7 @@ class Document < ApplicationRecord
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :permissions, as: :owner, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
+  has_many :e_signatures, dependent: :destroy
   belongs_to :user
 
   belongs_to :entity, touch: true

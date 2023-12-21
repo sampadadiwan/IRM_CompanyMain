@@ -38,12 +38,13 @@ class DocumentPolicy < ApplicationPolicy
     ) && !record.locked # Ensure locked documents cannot be changed
   end
 
+  # remove user check in next iteration - only check email
   def send_for_esign?
-    update? && !record.sent_for_esign && record.e_signatures.all? { |esign| esign.user&.email.present? } && record.esign_status&.downcase != "cancelled"
+    update? && !record.sent_for_esign && record.e_signatures.all? { |esign| esign.email.present? } && record.esign_status&.downcase != "cancelled"
   end
 
   def force_send_for_esign?
-    update? && record.sent_for_esign && record.e_signatures.all? { |esign| esign.user&.email.present? } && user.has_cached_role?(:company_admin)
+    update? && record.sent_for_esign && record.e_signatures.all? { |esign| esign.email.present? } && user.has_cached_role?(:company_admin)
   end
 
   def send_all_for_esign?
@@ -67,7 +68,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def destroy?
-    update? && record.entity_id == user.entity_id
+    update? && record.entity_id == user.entity_id && !record.sent_for_esign
   end
 
   def show_investor?

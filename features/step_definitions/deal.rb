@@ -18,9 +18,9 @@ end
 
 When('I edit the deal {string}') do |arg1|
   key_values(@deal, arg1)
-  
+
   click_on("Edit")
-  
+
   fill_in('deal_name', with: @deal.name)
   fill_in('deal_amount', with: @deal.amount)
   select(@deal.status, from: "deal_status")
@@ -101,7 +101,7 @@ Given('I am {string} employee access to the deal') do |given|
   end
 end
 
-Given('I have {string} access to the deal') do |should|  
+Given('I have {string} access to the deal') do |should|
   Pundit.policy(@user, @deal).show?.should == (should == "true")
 end
 
@@ -124,7 +124,9 @@ end
 
 
 Given('another entity is an investor {string} in entity') do |arg|
-  @investor = Investor.new(investor_name: @another_entity.name, investor_entity: @another_entity, entity: @entity)  
+  random_pan = Faker::Alphanumeric.alphanumeric(number: 10, min_alpha: 3)
+  @entity = Entity.find_or_initialize_by(name: "Another Entity 2", pan: random_pan)
+  @investor = Investor.new(investor_name: @another_entity.name, investor_entity: @another_entity, entity: @entity, pan:random_pan)
   key_values(@investor, arg)
   @investor.save!
   puts "\n####Investor####\n"
@@ -132,7 +134,7 @@ Given('another entity is an investor {string} in entity') do |arg|
 end
 
 Given('another entity is a deal_investor {string} in the deal') do |arg|
-  @deal_investor = DealInvestor.new(investor: @investor, entity: @entity, deal: @deal)  
+  @deal_investor = DealInvestor.new(investor: @investor, entity: @entity, deal: @deal)
   key_values(@deal_investor, arg)
   @deal_investor.save!
   puts "\n####Deal Investor####\n"
@@ -142,7 +144,7 @@ end
 
 
 Given('another user has investor access {string} in the investor') do |arg|
-  @investor_access = InvestorAccess.new(entity: @entity, investor: @investor, 
+  @investor_access = InvestorAccess.new(entity: @entity, investor: @investor,
                             first_name: @another_user.first_name, last_name: @another_user.last_name,
                             email: @another_user.email, granter: @user )
   key_values(@investor_access, arg)
@@ -165,7 +167,7 @@ end
 
 ############################################################################
 ############################################################################
-#######################  Investor related test steps #############################  
+#######################  Investor related test steps #############################
 ############################################################################
 ############################################################################
 
@@ -176,25 +178,25 @@ Given('there are {string} exisiting deals {string} with another firm in the star
 
   Entity.startups.each do |company|
     @investor = FactoryBot.create(:investor, investor_entity: @another_entity, entity: company)
-    (1..count.to_i).each do 
+    (1..count.to_i).each do
       deal = FactoryBot.build(:deal, entity: company)
       deal = CreateDeal.call(deal: deal).deal
-      
+
       begin
         di = FactoryBot.create(:deal_investor, investor: @investor, entity: company, deal: deal)
       rescue Exception => e
-        puts deal.entity.folders.collect(&:full_path)  
+        puts deal.entity.folders.collect(&:full_path)
         puts deal.to_json
         raise e
       end
-    end 
+    end
   end
 end
 
 Given('there are {string} exisiting deals {string} with my firm in the startups') do |count, args|
 
   Entity.startups.each do |company|
-    (1..count.to_i).each do 
+    (1..count.to_i).each do
       deal = FactoryBot.create(:deal, entity: company, name: Faker::Company.bs)
       puts "\n####Deal####\n"
       ap deal
@@ -229,42 +231,42 @@ end
 
 
 Given('I have access to all deals') do
-  
+
   DealInvestor.where(investor_entity_id: @entity.id).all.each do |di|
-  
-    ia = InvestorAccess.create!(investor:di.investor, user: @user, 
-                          first_name: @user.first_name, 
+
+    ia = InvestorAccess.create!(investor:di.investor, user: @user,
+                          first_name: @user.first_name,
                           last_name: @user.last_name,
-                          email: @user.email, approved: true, 
+                          email: @user.email, approved: true,
                           entity_id: di.entity_id)
 
     ar = AccessRight.create(owner: di, access_type: "DealInvestor",
         entity: di.entity, access_to_investor_id: di.investor_id)
 
     puts "\n####Access Right####\n"
-    puts ar.to_json    
+    puts ar.to_json
   end
-  
+
   puts "\n####DealInvestor.for_investor####\n"
   puts DealInvestor.for_investor(@user).to_json
 end
 
 Given('the investors are added to the deal') do
   @user.entity.investors.not_holding.not_trust.each do |inv|
-        ar = AccessRight.create( owner: @deal, access_type: "Deal", 
+        ar = AccessRight.create( owner: @deal, access_type: "Deal",
                                  access_to_investor_id: inv.id, entity: @user.entity)
 
 
         puts "\n####Granted Access####\n"
-        puts ar.to_json                            
-  end 
+        puts ar.to_json
+  end
 end
 
 
 Then('the deal data room should be setup') do
   @deal.reload
   puts "\n####Data Room####\n"
-  puts @deal.data_room_folder.to_json        
+  puts @deal.data_room_folder.to_json
   @deal.data_room_folder.should_not == nil
   @deal.data_room_folder.name.should == "Data Room"
   @deal.data_room_folder.full_path.should == "/Deals/#{@deal.name}/Data Room"

@@ -274,7 +274,7 @@
     if @capital_call.call_basis == "Percentage of Commitment"
       fill_in('capital_call_percentage_called', with: @capital_call.percentage_called)
     elsif @capital_call.call_basis != "Upload"
-        fill_in('capital_call_amount_to_be_called', with: @capital_call.amount_to_be_called)      
+        fill_in('capital_call_amount_to_be_called', with: @capital_call.amount_to_be_called)
     end
 
     if @fund.entity.permissions.enable_units?
@@ -379,7 +379,7 @@
    Then('I should see the capital call details') do
     find(".show_details_link").click
     expect(page).to have_content(@capital_call.name)
-    expect(page).to have_content(@capital_call.percentage_called) if  @capital_call.call_basis == "Percentage of Commitment" 
+    expect(page).to have_content(@capital_call.percentage_called) if  @capital_call.call_basis == "Percentage of Commitment"
     expect(page).to have_content(money_to_currency @capital_call.amount_to_be_called) if  @capital_call.amount_to_be_called_cents > 0
 
     expect(page).to have_content(@capital_call.due_date.strftime("%d/%m/%Y"))
@@ -691,8 +691,8 @@ Then('the investors must receive email with subject {string}') do |subject|
       inv.emails.each do |email|
         puts "# checking email #{subject} sent for #{email} for investor #{inv}"
         open_email(email)
-        
-        @custom_notification ||= nil 
+
+        @custom_notification ||= nil
         if @custom_notification.present?
           expect(current_email.subject).to include @custom_notification.subject
           expect(current_email.body).to include @custom_notification.body
@@ -703,7 +703,7 @@ Then('the investors must receive email with subject {string}') do |subject|
         @cc_email ||= nil
         if @cc_email
           puts " Checking cc email #{@cc_email} for #{email}"
-          expect(current_email.cc).to include @cc_email 
+          expect(current_email.cc).to include @cc_email
         end
       end
     end
@@ -986,6 +986,24 @@ Given('the fund has capital commitment template') do
   @commitment_template = Document.create!(name: "Fund Agreement", owner_tag: "Commitment Template",
     owner: @fund, entity_id: @fund.entity_id, user: @user,
     file: File.new("public/sample_uploads/FundDocVariables.docx", "r"))
+end
+
+Then('the user goes to the fund e-signature report') do
+  @template_dup = @commitment_template.dup
+  @template_dup.assign_attributes(sent_for_esign: true, owner: @fund.capital_commitments.last )
+  @template_dup.save!
+  ESignature.create!(user: @user, entity: @fund.entity, document: @template_dup, status: "failed")
+  visit(fund_path(@fund))
+  click_on("Reports")
+  click_on("E-Signatures Report")
+  sleep(2)
+end
+
+Then('the user should see all esign report for all docs sent for esign') do
+  esign = ESignature.last
+  doc = esign.document
+  expect(page).to have_content(doc.name)
+  expect(page).to have_content(doc.owner_tag)
 end
 
 Then('when the capital commitment docs are generated') do
@@ -1424,7 +1442,7 @@ Then('There should be {string} fund units created with data in the sheet') do |c
     capital_commitment = CapitalCommitment.where(folio_id: row_data["Folio No"]).first
 
     fund_unit = FundUnit.where(capital_commitment_id: capital_commitment.id, quantity: row_data["Quantity"].to_f).first
-    
+
     puts "Checking import of #{fund_unit.to_json}"
 
     fund_unit.quantity.should == row_data["Quantity"].to_f

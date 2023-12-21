@@ -1,0 +1,25 @@
+<%document ||=nil%>
+
+<% if document.present? %>
+    <tr id="<%= dom_id document %>">
+      <td><%= link_to(document&.owner&.investor_name, document&.owner&.investor) %></td>
+      <td><%= link_to(document&.owner&.full_name, document.owner) %></td>
+      <td><%= link_to(document.name, document) %></td>
+      <td><%= document.esign_status&.titleize %></td>
+      <td>
+        <% document.e_signatures.each do |esign| %>
+        <span>
+            <span class="badge bg-<%=esign.status_badge%>" type="button" data-bs-toggle="collapse" data-bs-target=".esign_status_reason_<%=esign.id%>"><%= esign.label %>
+            </span>
+            <small class="text-muted collapse esign_status_reason_<%=esign.id%>">
+                <%= esign.status&.titleize if current_user  %>
+            </small>
+        </span>
+        <br>
+        <% end %>
+      </td>
+      <td>
+        <%= link_to "Show", document_path(document)+"#signatures-tab" , {class: "btn btn-outline-primary"}  if policy(document).show? %>
+      </td>
+    </tr>
+<% end %>
