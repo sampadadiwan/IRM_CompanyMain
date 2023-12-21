@@ -23,7 +23,7 @@ class ESignature < ApplicationRecord
 
   before_save :update_status
   def update_status
-    self.status = nil if signature_type_changed?
+    self.status = "" if signature_type_changed?
   end
 
   after_save :update_document

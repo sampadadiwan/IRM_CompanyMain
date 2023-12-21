@@ -570,6 +570,23 @@ Then('the document has {string} e_signatures') do |string|
   click_on("Send For eSignatures")
 end
 
+Then('the document has {string} e_signatures with status {string}') do |string, string2|
+  allow_any_instance_of(DigioEsignHelper).to receive(:sign).and_return(sample_doc_esign_init_response)
+  allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response)
+
+  # stub DigioEsignHelper's sign method to return
+  @doc = Document.order(:created_at).last
+  string2 = string2 == "nil" ? nil : string2
+  @esign1 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email: "shrikantgour018@gmail.com", position: 1, status: string2)
+  @esign2 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, email: "aseemak56@yahoo.com", position: 2, status: string2)
+  visit(document_path(@doc))
+  sleep(2)
+  click_on("Signatures")
+  sleep(1)
+  click_on("Send For eSignatures")
+end
+
+
 Then('the document is signed by the signatories') do
   allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response_signed)
@@ -612,8 +629,8 @@ Given('the fund has a Commitment template {string}') do |string|
   @fund.esign_emails = "shrikantgour018@gmail.com,aseemk@test.com"
   @fund.save!
   @doc = Document.where(name: "Commitment Template").last
-  @template_esign1 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, label: "Fund Signatories", position: 1)
-  @template_esign2 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, label: "Investor Signatories", position: 1)
+  @template_esign1 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, label: "Fund Signatories", position: 1, status: "")
+  @template_esign2 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, label: "Investor Signatories", position: 2, status: "")
 end
 
 Given('we Generate Commitment template for the first capital commitment') do

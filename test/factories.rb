@@ -376,7 +376,7 @@ FactoryBot.define do
     email { Faker::Internet.email }
     position { rand(5) + 1 }
     signature_type { ["Aadhaar", "Electronic"][rand(2)] }
-    status { nil }
+    status { "" }
   end
 
   factory :reminder do
