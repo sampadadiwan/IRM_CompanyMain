@@ -54,7 +54,8 @@ class ESignature < ApplicationRecord
 
   def new_status?(payload_status)
     # status != payload_status && status != "signed"
-    ESignature.where(id: self.id).where.not(status: payload_status).where.not(status: "signed").update_all(status: payload_status, api_updates: self.api_updates) > 0
+    ESignature.where(id:).where.not(status: payload_status)
+              .esigs.where.not(status: "signed").or(esigs.where(status: nil)).update_all(status: payload_status, api_updates:).positive?
   end
 
   # status can be [nil, "signed", "failed", "requested"]
