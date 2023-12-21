@@ -47,7 +47,7 @@ class EsopLetterGenerator
     add_image(context, :employee_signature, holding.option_pool.certificate_signature)
 
     Rails.logger.debug { "Rendering with context #{context}" }
-    file_name = "#{@working_dir}/GrantLetter-#{holding.id}"
+    file_name = "#{@working_dir}/Holding-#{holding.id}"
     convert(template, context, file_name)
   end
 
