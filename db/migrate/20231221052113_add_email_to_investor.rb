@@ -4,8 +4,10 @@ class AddEmailToInvestor < ActiveRecord::Migration[7.1]
     add_column :entities, :primary_email, :string
 
     Investor.where(primary_email: nil).each do |inv|
-      primary_email = inv.investor_accesses.first&.email&.presence || inv.investor_entity.employees.first&.email
-      inv.update_column(:primary_email, primary_email)
+      if inv.investor_entity
+        primary_email = inv.investor_accesses.first&.email&.presence || inv.investor_entity.employees.first&.email
+        inv.update_column(:primary_email, primary_email)
+      end
     end
     
     Entity.where(primary_email: nil).each do |entity|

@@ -8,10 +8,11 @@ class AddEmailToESignatures < ActiveRecord::Migration[7.1]
 
   def update_emails
     ESignature.all.each do |es|
-      if es.user&.email&.present? && es.email.blank?
+      if es.user && es.email.blank?
         Rails.logger.info "Updating email for esign #{es.id} - #{es.user.email}"
-        es.email = es.user&.email
-        es.save!
+        # es.email = es.user&.email
+        # es.save!
+        es.update_column(:email, es.user.email)        
       else
         Rails.logger.info "No email for esign #{es.id}"
       end
