@@ -28,7 +28,7 @@ module WithESignatures
         # if the label is investor or fund the model.send label will return unexpected objects, so in those cases we select email from notes
         if model.respond_to?(method) && allowed_methods.include?(method)
           emails = model.send(method)
-          emails.each do |email|
+          emails&.each do |email|
             email = email&.strip&.downcase
             if esigns.pluck(:email).map(&:downcase).include?(email)
               Rails.logger.debug { "Duplicate esign email - #{email} in #{model.class.to_s.titleize} #{model.id} document #{name}" }

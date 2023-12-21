@@ -24,7 +24,7 @@ class CapitalRemittanceDatatable < AjaxDatatablesRails::ActiveRecord
         id: record.id,
         fund_name: record.decorate.fund_link,
         payment_date: record.decorate.payment_date,
-        capital_call_name: record.decorate.capital_call_link,
+        capital_call_name: record.capital_call.name,
         folio_id: record.decorate.folio_id,
         created_by: record.decorate.created_by,
         investor_name: record.decorate.investor_link,
