@@ -532,7 +532,7 @@ Given('the fund has a SOA template {string}') do |string|
   fill_in('document_name', with: "SOA Template")
   #document_owner_tag is the type of document
   select("SOA Template", from: "document_owner_tag")
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/sample_SOA_template.docx'), make_visible: true)
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/SOA Template.docx'), make_visible: true)
   check("document_template")
   click_on("Save")
 end
