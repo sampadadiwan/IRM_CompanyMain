@@ -192,7 +192,9 @@ end
 
 Given('my firm is an investor in the company') do
   @company = Entity.startups.first
-  @investor = Investor.create!(investor_name: @entity.name, pan: @entity.pan, entity: @company, investor_entity: @entity, category: "Lead Investor")
+  @investor = Investor.create!(investor_name: @entity.name, pan: @entity.pan, 
+                               primary_email: @entity.primary_email, entity: @company, 
+                               investor_entity: @entity, category: "Lead Investor")
 
   InvestorAccess.create!(investor:@investor, user: @user, 
     first_name: @user.first_name, 

@@ -99,7 +99,6 @@ Then('I should see the investment details') do
 end
 
 Given('given there is a investment {string} for the entity') do |arg1|
-
   @funding_round ||= FactoryBot.create(:funding_round, entity: @entity)
   @investment = FactoryBot.build(:investment, investor: @investor,
                                   entity: @entity,

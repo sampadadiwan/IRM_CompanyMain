@@ -125,8 +125,8 @@ end
 
 Given('another entity is an investor {string} in entity') do |arg|
   random_pan = Faker::Alphanumeric.alphanumeric(number: 10, min_alpha: 3)
-  @entity = Entity.find_or_initialize_by(name: "Another Entity 2", pan: random_pan)
-  @investor = Investor.new(investor_name: @another_entity.name, investor_entity: @another_entity, entity: @entity, pan:random_pan)
+  # @entity = FactoryBot.create(:entity, entity_type: "Startup")
+  @investor = Investor.new(investor_name: @another_entity.name, investor_entity: @another_entity, entity: @entity, pan: random_pan, primary_email: @another_entity.primary_email)
   key_values(@investor, arg)
   @investor.save!
   puts "\n####Investor####\n"

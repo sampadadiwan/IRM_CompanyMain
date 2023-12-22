@@ -135,8 +135,9 @@ class Investor < ApplicationRecord
       errors.add(:investor_name, "in our records is different #{investor_name} vs #{e.name}.") if e && e.name.strip != investor_name.strip && !force_different_name
 
       # We dont have this entity in our DB, lets create one.
-      e ||= Entity.create!(name: investor_name.strip, entity_type: "Investor", pan:, primary_email:)
+      e ||= Entity.create(name: investor_name.strip, entity_type: "Investor", pan:, primary_email:)
 
+      errors.add(:investor_name, "is not valid. #{e.errors.full_messages}") unless e.valid?
       setup_permissions(e)
       e.save
 
