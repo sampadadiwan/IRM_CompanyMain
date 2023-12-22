@@ -179,9 +179,9 @@ class DigioEsignHelper
     ExceptionNotifier.notify_exception(StandardError.new("E-Sign not found for #{doc&.name} and email #{email} - #{params}")) if esign.blank?
   end
 
-  def check_and_update_document_status(document)    
+  def check_and_update_document_status(document)
     unsigned_esigns = document.e_signatures.reload.where.not(status: "signed")
-    signature_completed(document) if unsigned_esigns.count < 1
+    signature_completed(document) if unsigned_esigns.count < 1 && document.esign_status != "Completed"
   end
 
   def signature_completed(doc)

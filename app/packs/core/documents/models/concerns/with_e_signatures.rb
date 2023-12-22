@@ -77,13 +77,15 @@ module WithESignatures
 
   # called by the provider once esign is completed
   def signature_completed(signed_doc_from_provider, replace: false)
-    if replace
-      # We replace the file in the orig document
+    if esign_status == "Completed"
+      Rails.logger.debug { "Document #{name} #{id} already marked as completed, hence skipping" }
+    elsif replace
       self.file = File.open(signed_doc_from_provider, "rb")
       self.owner_tag = "Signed"
       save
+    # We replace the file in the orig document
     else
-      update(esign_status: "Completed")
+      update_column(esign_status: "Completed")
       # We create a new document, and leave the old one intact.
       signed_doc = Document.new(attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
       signed_doc.file = File.open(signed_doc_from_provider, "rb")
