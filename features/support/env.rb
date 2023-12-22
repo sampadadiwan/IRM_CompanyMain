@@ -71,18 +71,18 @@ end
 # Cucumber::Rails::Database.javascript_strategy = :truncation
 
 Capybara.run_server = true
-Capybara.server_port = 3000 + ENV['TEST_ENV_NUMBER'].to_i
-Capybara.default_max_wait_time = 5
+Capybara.server_port = 3000 # + ENV['TEST_ENV_NUMBER'].to_i
+# Capybara.default_max_wait_time = 5
 
-Capybara.register_server :puma do |app, port, host|
-  require 'puma'
-  Puma::Server.new(app).tap do |s|
-    s.add_tcp_listener host, 3000 + ENV['TEST_ENV_NUMBER'].to_i
-  end.run.join
-end
+# Capybara.register_server :puma do |app, port, host|
+#   require 'puma'
+#   Puma::Server.new(app).tap do |s|
+#     s.add_tcp_listener host, 3000 + ENV['TEST_ENV_NUMBER'].to_i
+#   end.run.join
+# end
 
 Capybara.server_host = "localhost"
-Capybara.app_host = "http://localhost:#{3000 + ENV['TEST_ENV_NUMBER'].to_i}"
+Capybara.app_host = "http://localhost:#{3000}"
 
 options = Selenium::WebDriver::Chrome::Options.new
 options.add_argument('--ignore-certificate-errors')

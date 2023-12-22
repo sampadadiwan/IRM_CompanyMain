@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_21_181833) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_22_084322) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -868,7 +868,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_21_181833) do
     t.boolean "send_email"
     t.boolean "sent_for_esign", default: false
     t.string "provider_doc_id"
-    t.string "esign_status", limit: 20
+    t.string "esign_status", default: "", null: false
     t.string "display_on_page", limit: 6
     t.bigint "approved_by_id"
     t.boolean "approved", default: false

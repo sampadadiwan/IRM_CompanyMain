@@ -68,7 +68,7 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def destroy?
-    update? && record.entity_id == user.entity_id && !record.sent_for_esign
+    (update? && record.entity_id == user.entity_id && !record.sent_for_esign) || super_user?
   end
 
   def show_investor?

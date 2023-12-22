@@ -41,7 +41,7 @@ class DigioEsignJob < ApplicationJob
     # Get all the generated documents
     documents = documents.not_template.not_sent_for_esign.generated.approved
     # Dont include the Cancelled or completed ones
-    documents = documents.where.not(esign_status: Document::SKIP_ESIGN_UPDATE_STATUSES).or(documents.where(esign_status: nil))
+    documents = documents.where.not(esign_status: Document::SKIP_ESIGN_UPDATE_STATUSES)
 
     Rails.logger.debug { "Found #{documents.count} documents to esign" }
     documents.each do |doc|

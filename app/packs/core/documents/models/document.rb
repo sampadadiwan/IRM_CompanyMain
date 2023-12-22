@@ -79,6 +79,10 @@ class Document < ApplicationRecord
     end
   end
 
+  def esign_completed?
+    esign_status.casecmp?("completed")
+  end
+
   def setup_folder
     self.folder = owner.document_folder if folder.nil? && owner
     self.owner ||= folder.owner

@@ -1,4 +1,6 @@
 require 'cucumber/rspec/doubles'
+require 'net/http'
+require 'uri'
 
 Given('I am at the investor page') do
   visit("/investors")
@@ -609,7 +611,7 @@ Then('the esign completed document is present') do
   visit(capital_commitment_path(@capital_commitment))
   click_on("Documents")
   # the signed document owner tag will be signed
-  expect(page).to have_content("Signed")
+  expect(page).to have_content("Signed").once
 end
 
 Given('the fund has a Commitment template {string}') do |string|
@@ -661,6 +663,22 @@ Then('the document has esignatures based on the template') do
     expect(page).to have_content(email)
   end
 end
+
+Then('the document get digio callbacks') do
+  allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
+
+  @doc = Document.last
+  # @doc.update_column(:provider_doc_id, "DID2312191801389959UDGNBWGRGCSC1")
+  ap @doc.e_signatures.pluck(:status)
+  callbacks = [digio_callback_first_signed, digio_callback_second_signed, digio_callback_first_signed, digio_callback_both_signed, digio_callback_second_signed, digio_callback_both_signed]
+  callbacks.each do |cb|
+    Thread.new do
+      hit_signature_progress(cb)
+      ap @doc.e_signatures.pluck(:status)
+    end
+  end
+end
+
 
 
 def sample_doc_esign_init_response
@@ -732,4 +750,29 @@ def retrieve_signed_response_signed
   OpenStruct.new(body:{"id"=>"DID2312191801389959UDGNBWGRGCSC1", "is_agreement"=>true, "agreement_type"=>"outbound", "agreement_status"=>"requested", "file_name"=>"Commitment with Demo Fund", "updated_at"=>"2023-12-19 18:01:39", "created_at"=>"2023-12-19 18:01:39", "self_signed"=>false, "self_sign_type"=>"aadhaar", "no_of_pages"=>10, "signing_parties"=>[{"name"=>"RON RON", "status"=>"signed", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"shrikantgour018@gmail.com", "expire_on"=>"2023-12-30 00:00:00"}, {"name"=>"Charley Emmerich1", "status"=>"signed", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"aseemak56@yahoo.com", "expire_on"=>"2023-12-30 00:00:00"}], "sign_request_details"=>{"name"=>"Caphive", "requested_on"=>"2023-12-19 18:01:40", "expire_on"=>"2023-12-30 00:00:00", "identifier"=>"support@caphive.com", "requester_type"=>"org"}, "channel"=>"api", "other_doc_details"=>{"web_hook_available"=>true}, "attached_estamp_details"=>{}}.to_json,
   success?: true,
   signing_parties: [{"name"=>"RON RON", "status"=>"signed", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"shrikantgour018@gmail.com", "expire_on"=>"2023-12-30 00:00:00"}, {"name"=>"Charley Emmerich1", "status"=>"signed", "updated_at"=>"2023-12-19 18:01:39", "type"=>"self", "signature_type"=>"electronic", "signature_mode"=>"slate", "identifier"=>"aseemak56@yahoo.com", "expire_on"=>"2023-12-30 00:00:00"}])
+end
+
+def hit_signature_progress(payload)
+  url = URI.parse('http://localhost:3000/documents/signature_progress')
+  http = Net::HTTP.new(url.host, url.port)
+
+  # Create a request
+  request = Net::HTTP::Post.new(url.path,
+  {'Content-Type' => 'application/json', 'Accept' => 'application/json'})
+  request.body = payload
+  response = http.request(request)
+  puts response.body
+  response
+end
+
+def digio_callback_first_signed
+  {"entities":["document"],"payload":{"document":{"updated_at":1703164607000,"sign_request_details":{"identifier":"support@caphive.com","expire_on":1704047400000,"name":"Caphive","requested_on":1703164608000,"requester_type":"org"},"attached_estamp_details":{},"file_name":"commitment with Demo fund","agreement_status":"requested","id":"DID2312191801389959UDGNBWGRGCSC1","signing_parties":[{"has_dependents":nil,"signature_mode":"slate","identifier":"shrikantgour018@gmail.com","reason":nil,"type":"self","aadhaar_mode":nil,"signature_type":"electronic","signing_index":nil,"updated_at":1703164607000,"sign_coordinates":nil,"expire_on":1704047400000,"signature_verification_response":nil,"name":"shrikantgour018@gmail.com","skip_primary_sign":nil,"pki_signature_details":nil,"dependents":nil,"next_dependent":nil,"review_comment":nil,"status":"signed"},{"has_dependents":nil,"signature_mode":"slate","identifier":"aseemak56@yahoo.com","reason":nil,"type":"self","aadhaar_mode":nil,"signature_type":"electronic","signing_index":nil,"updated_at":1703164607000,"sign_coordinates":nil,"expire_on":1704047400000,"signature_verification_response":nil,"name":"aseemak56@yahoo.com","skip_primary_sign":nil,"pki_signature_details":nil,"dependents":nil,"next_dependent":nil,"review_comment":nil,"status":"requested"}],"others":{"last_signed_by":"shrikantgour018@gmail.com","has_all_signed":false}}},"created_at":1703164687000,"id":"WHN2312211848066346G2QY1F19GZC15","event":"doc.signed"}.to_json
+end
+
+def digio_callback_second_signed
+  {"entities":["document"],"payload":{"document":{"updated_at":1703164607000,"sign_request_details":{"identifier":"support@caphive.com","expire_on":1704047400000,"name":"Caphive","requested_on":1703164608000,"requester_type":"org"},"attached_estamp_details":{},"file_name":"commitment with Demo fund","agreement_status":"requested","id":"DID2312191801389959UDGNBWGRGCSC1","signing_parties":[{"has_dependents":nil,"signature_mode":"slate","identifier":"shrikantgour018@gmail.com","reason":nil,"type":"self","aadhaar_mode":nil,"signature_type":"electronic","signing_index":nil,"updated_at":1703164607000,"sign_coordinates":nil,"expire_on":1704047400000,"signature_verification_response":nil,"name":"shrikantgour018@gmail.com","skip_primary_sign":nil,"pki_signature_details":nil,"dependents":nil,"next_dependent":nil,"review_comment":nil,"status":"requested"},{"has_dependents":nil,"signature_mode":"slate","identifier":"aseemak56@yahoo.com","reason":nil,"type":"self","aadhaar_mode":nil,"signature_type":"electronic","signing_index":nil,"updated_at":1703164607000,"sign_coordinates":nil,"expire_on":1704047400000,"signature_verification_response":nil,"name":"aseemak56@yahoo.com","skip_primary_sign":nil,"pki_signature_details":nil,"dependents":nil,"next_dependent":nil,"review_comment":nil,"status":"signed"}],"others":{"last_signed_by":"aseemak56@yahoo.com","has_all_signed":false}}},"created_at":1703164687000,"id":"WHN2312211848066346G2QY1F19GZC15","event":"doc.signed"}.to_json
+end
+
+def digio_callback_both_signed
+  {"entities":["document"],"payload":{"document":{"updated_at":1703164607000,"sign_request_details":{"identifier":"support@caphive.com","expire_on":1704047400000,"name":"Caphive","requested_on":1703164608000,"requester_type":"org"},"attached_estamp_details":{},"file_name":"commitment with Demo fund","agreement_status":"requested","id":"DID2312191801389959UDGNBWGRGCSC1","signing_parties":[{"has_dependents":nil,"signature_mode":"slate","identifier":"shrikantgour018@gmail.com","reason":nil,"type":"self","aadhaar_mode":nil,"signature_type":"electronic","signing_index":nil,"updated_at":1703164607000,"sign_coordinates":nil,"expire_on":1704047400000,"signature_verification_response":nil,"name":"shrikantgour018@gmail.com","skip_primary_sign":nil,"pki_signature_details":nil,"dependents":nil,"next_dependent":nil,"review_comment":nil,"status":"signed"},{"has_dependents":nil,"signature_mode":"slate","identifier":"aseemak56@yahoo.com","reason":nil,"type":"self","aadhaar_mode":nil,"signature_type":"electronic","signing_index":nil,"updated_at":1703164607000,"sign_coordinates":nil,"expire_on":1704047400000,"signature_verification_response":nil,"name":"aseemak56@yahoo.com","skip_primary_sign":nil,"pki_signature_details":nil,"dependents":nil,"next_dependent":nil,"review_comment":nil,"status":"requested"}],"others":{"last_signed_by":"shrikantgour018@gmail.com","has_all_signed":true}}},"created_at":1703164687000,"id":"WHN2312211848066346G2QY1F19GZC15","event":"doc.signed"}.to_json
 end

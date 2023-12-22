@@ -56,7 +56,7 @@ class DigioEsignHelper
   end
 
   def download(esign_doc_id)
-    response = HTTParty.get(
+    HTTParty.get(
       "#{BASE_URL}/v2/client/document/download?document_id=#{esign_doc_id}",
       headers: {
         "authorization" => "Basic #{AUTH_TOKEN}",
@@ -64,10 +64,6 @@ class DigioEsignHelper
       },
       debug_output: @debug ? $stdout : nil
     )
-
-    Rails.logger.debug response
-
-    response
   end
 
   #   private
@@ -121,21 +117,26 @@ class DigioEsignHelper
 
   # fetch manual updates from digio
   def update_esign_status(doc)
-    # Get api response
-    response = retrieve_signed(doc.provider_doc_id)
-    if response.success?
-      # update document attribute
-      overall_status = JSON.parse(response.body)["status"] # can be "completed" or "requested"
-      doc.update(esign_status: overall_status)
-      # Update each esignature's status
-      response['signing_parties'].each do |signer|
-        # Find esignature for this email
-        esign = doc.e_signatures.find_by(email: signer['identifier'])
-        esign&.update_esign_response(signer['status'], response)
-      end
-      check_and_update_document_status(doc)
+    if doc.esign_completed?
+      # document already completed
+      Rails.logger.debug { "Document #{doc.name} #{doc.id} already completed" }
     else
-      signatures_failed(doc, JSON.parse(response.body))
+      # Get api response
+      response = retrieve_signed(doc.provider_doc_id)
+      overall_status = JSON.parse(response.body)["status"].presence || JSON.parse(response.body)["agreement_status"] # can be "completed" or "requested"
+      if response.success? && overall_status.present?
+        # update document attribute
+        doc.update(esign_status: overall_status)
+        # Update each esignature's status
+        response['signing_parties'].each do |signer|
+          # Find esignature for this email
+          esign = doc.e_signatures.find_by(email: signer['identifier'])
+          esign&.update_esign_response(signer['status'], response)
+        end
+        check_and_update_document_status(doc)
+      else
+        signatures_failed(doc, JSON.parse(response.body))
+      end
     end
   end
 
@@ -150,7 +151,7 @@ class DigioEsignHelper
     else
       e = StandardError.new("Document not found for #{params}")
       ExceptionNotifier.notify_exception(e)
-      logger.error e.message
+      Rails.logger.error e.message
       # raise e
     end
   end
@@ -161,13 +162,17 @@ class DigioEsignHelper
   def process_esign_success(params)
     provider_doc_id = params.dig('payload', 'document', 'id')
     doc = Document.find_by(provider_doc_id:)
-    signing_parties = params.dig('payload', 'document', 'signing_parties')
-    # update contains the statuses of all signing parties
-    signing_parties.each do |signer|
-      esign = doc.e_signatures.find_by(email: signer['identifier'])
-      esign&.update_esign_response(signer['status'], params['payload'])
+    if doc.present?
+      signing_parties = params.dig('payload', 'document', 'signing_parties')
+      # update contains the statuses of all signing parties
+      signing_parties.each do |signer|
+        esign = doc.e_signatures.find_by(email: signer['identifier'])
+        esign&.update_esign_response(signer['status'], params['payload'])
+      end
+      check_and_update_document_status(doc)
+    else
+      Rails.logger.error "Document not found for digio provider_doc_id #{provider_doc_id}"
     end
-    check_and_update_document_status(doc)
   end
 
   # used in digio callbacks
@@ -181,7 +186,7 @@ class DigioEsignHelper
 
   def check_and_update_document_status(document)
     unsigned_esigns = document.e_signatures.reload.where.not(status: "signed")
-    signature_completed(document) if unsigned_esigns.count < 1 && document.esign_status != "Completed"
+    signature_completed(document) if unsigned_esigns.count < 1 && !document.esign_completed?
   end
 
   def signature_completed(doc)
@@ -201,6 +206,6 @@ class DigioEsignHelper
       esign.add_api_update(response)
       esign.save!
     end
-    logger.error e.message
+    Rails.logger.error e.message
   end
 end
