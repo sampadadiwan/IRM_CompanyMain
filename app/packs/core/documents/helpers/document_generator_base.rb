@@ -47,7 +47,7 @@ module DocumentGeneratorBase
     generate_footers(model, additional_footers, combined_pdf, header_footer_download_path, template_name)
 
     # Overwrite the orig SPA with the one with header and footer
-    combined_pdf.save(spa_path)
+    combined_pdf.save("#{spa_path}.pdf")
 
     header_footer_download_path.each do |file_path|
       FileUtils.rm_f(file_path)
@@ -73,7 +73,7 @@ module DocumentGeneratorBase
 
   def generate_footers(model, additional_footers, combined_pdf, header_footer_download_path, template_name = nil)
     # Get the footers
-    footers = model.documents.where(name: ["Footer", "Signature", "#{template_name} Footer" "#{template_name} Signature"]).to_a
+    footers = model.documents.where(name: ["Footer", "Signature", "#{template_name} Footer", "#{template_name} Signature"]).to_a
     footers += additional_footers if additional_footers.present?
     Rails.logger.debug { "footers are #{footers.collect(&:name)}" }
     # Combine the footers

@@ -46,7 +46,7 @@ class CapitalCommitmentDocGenerator
     file_name = generated_file_name(capital_commitment)
     convert(template, context, file_name)
 
-    additional_footers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Footer" "#{@fund_doc_template_name} Signature"])
+    additional_footers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Footer", "#{@fund_doc_template_name} Signature"])
     additional_headers = capital_commitment.documents.where(name: ["#{@fund_doc_template_name} Header", "#{@fund_doc_template_name} Stamp Paper"])
     add_header_footers(capital_commitment, file_name, additional_headers, additional_footers)
   end
