@@ -1,9 +1,9 @@
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Access Rights</h1>
+<div class="d-sm-flex align-items-center justify-content-between mb-4 row">
+  <h1 class="h3 mb-0 text-gray-800 col-6">Access Rights</h1>
   <%
     access_right ||= params[:entity_id].present? ? AccessRight.new(access_to_investor_id: params[:access_to_investor_id], owner_id: params[:owner_id], owner_type: params[:owner_type], entity_id: params[:entity_id], access_type: params[:access_type]) : nil
   %>
-  <span>
+
     <%= link_to "Grant Access", 
                   new_access_right_path(
                       "access_right[access_to_investor_id]": access_right.access_to_investor_id, 
@@ -13,10 +13,10 @@
                       "access_right[entity_id]": access_right.entity_id,
                       form_type: params[:form_type]), 
                       { data: { turbo_frame: 'new_access_right' },
-                      method: :get, class: "btn btn-outline-primary" } if access_right %> 
+                      method: :get, class: "btn btn-outline-primary col" } if access_right %> 
 
     <%= render "/funds/search_bar", model_name: "access_right" if access_right && access_right.owner_type == "Fund"%>
-  </span>
+    
 </div>
 
 <%= turbo_frame_tag "new_access_right" do %>
