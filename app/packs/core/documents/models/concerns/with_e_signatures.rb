@@ -85,7 +85,7 @@ module WithESignatures
       save
     # We replace the file in the orig document
     else
-      update_column(esign_status: "Completed")
+      update_column(:esign_status, "Completed")
       # We create a new document, and leave the old one intact.
       signed_doc = Document.new(attributes.slice("entity_id", "name", "orignal", "download", "printing", "user_id"))
       signed_doc.file = File.open(signed_doc_from_provider, "rb")
