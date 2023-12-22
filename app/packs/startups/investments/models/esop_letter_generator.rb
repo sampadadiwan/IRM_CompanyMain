@@ -83,7 +83,8 @@ class EsopLetterGenerator
   end
 
   def attach(holding)
-    holding.grant_letter = File.open("#{@working_dir}/GrantLetter-#{holding.id}.pdf", "rb")
+    file_name = generated_file_name(holding)
+    holding.grant_letter = File.open("#{file_name}.pdf", "rb")
     holding.save
   end
 end
