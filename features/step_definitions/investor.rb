@@ -157,7 +157,7 @@ When('I create a new investor {string} for the existing investor entity') do |ar
   click_on("New Stakeholder")
 
   fill_in('investor_investor_name', with: @investor_entity.name)
-  first('.ui-menu-item-wrapper', text: @investor_entity.name).click
+  first('.ui-menu-item-wrapper', text: @investor_entity.name).click if page.has_css?(".ui-menu-item-wrapper") 
   fill_in('investor_pan', with: @new_investor.pan)
   fill_in('investor_primary_email', with: @new_investor.primary_email)
   select("Founder", from: "investor_category")
