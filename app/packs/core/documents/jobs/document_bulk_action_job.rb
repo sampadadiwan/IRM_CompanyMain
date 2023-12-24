@@ -29,6 +29,9 @@ class DocumentBulkActionJob < ApplicationJob
 
     when "approve"
       document.update(approved: true, approved_by_id: user_id) if document.to_be_approved?
+
+    when "send for esignatures"
+      # DigioEsignJob.perform_now(document.id, user_id) if document.to_be_esign?
     else
       msg = "Invalid bulk action"
       send_notification(msg, user_id, :error)

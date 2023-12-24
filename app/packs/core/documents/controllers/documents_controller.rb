@@ -27,26 +27,7 @@ class DocumentsController < ApplicationController
 
   # GET /documents or /documents.json
   def index
-    if params[:owner_id].present? && params[:owner_type].present?
-      # This is typicaly for investors to view documents of a sale, offer, commitment etc
-      owner_documents
-    else
-      # See your own docs
-      @entity = current_user.entity
-      @q = Document.ransack(params[:q])
-      @documents = policy_scope(@q.result)
-      authorize(Document)
-    end
-
-    @folder = Folder.find(params[:folder_id]) if params[:folder_id].present?
-
-    # Filter by owner_tag
-    @documents = @documents.where(owner_tag: params[:owner_tag]) if params[:owner_tag].present?
-    # This is specifically for non company_admins
-    @documents = @documents.where(user_id: current_user.id) unless current_user.has_cached_role?(:company_admin)
-
-    # Newest docs first
-    @documents = @documents.includes(:folder).order(id: :desc)
+    fetch_documents
   end
 
   def folder
@@ -233,8 +214,7 @@ class DocumentsController < ApplicationController
 
   def bulk_actions
     # Here we get a ransack search and a bulk action to perform on the results
-    @q = Document.ransack(params[:q])
-    @documents = policy_scope(@q.result).includes(:folder)
+    fetch_documents
     DocumentBulkActionJob.perform_later(@documents.pluck(:id), current_user.id, params[:bulk_action])
 
     redirect_path = request.referer || root_path
@@ -271,6 +251,32 @@ class DocumentsController < ApplicationController
                    end
     end
     @show_steps = false
+  end
+
+  def fetch_documents
+    if params[:owner_id].present? && params[:owner_type].present?
+      # This is typicaly for investors to view documents of a sale, offer, commitment etc
+      owner_documents
+    else
+      # See your own docs
+      @entity = current_user.entity
+      @q = Document.ransack(params[:q])
+      @documents = policy_scope(@q.result)
+      authorize(Document)
+    end
+
+    if params[:folder_id].present?
+      @folder = Folder.find(params[:folder_id])
+      @documents = @documents.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
+    end
+
+    # Filter by owner_tag
+    @documents = @documents.where(owner_tag: params[:owner_tag]) if params[:owner_tag].present?
+    # This is specifically for non company_admins
+    @documents = @documents.where(user_id: current_user.id) unless current_user.has_cached_role?(:company_admin)
+
+    # Newest docs first
+    @documents = @documents.includes(:folder).order(id: :desc)
   end
 
   # Only allow a list of trusted parameters through.

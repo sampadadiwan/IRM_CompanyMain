@@ -66,13 +66,27 @@
 
             <div class="dropdown-divider"></div>
             
-            <%= link_to "Approve", approve_documents_path("parent_folder_id": folder_id),
-                        {class: "dropdown-item" }  if policy(document).approve? %>
+            <% if params[:q].present? %>
+              <% msg = "This will approve each document in the search results (including results on other pages). Proceed?" %>
+              <%= button_to "Approve", 
+                bulk_actions_documents_path("bulk_action": "Approve", q: params.to_unsafe_h[:q], folder_id:),
+                class: "dropdown-item", 
+                data: {msg:, action: "click->confirm#popup", method: :get}  %>
 
+
+              <% msg = "This will send each document in the search results (including results on other pages) for eSignatures. Proceed?" %>
+              <%= button_to "Send For eSignatures", 
+                bulk_actions_documents_path("bulk_action": "Send For eSignatures", q: params.to_unsafe_h[:q], folder_id:),
+                class: "dropdown-item", 
+                data: {msg:, action: "click->confirm#popup", method: :get}  %>
+            <% else %>
+              <%= link_to "Filter Documents", documents_path(folder_id:, filter: true, no_folders: true), class: "dropdown-item" %>
+            <% end %>
+            <%#  remove later once the above one is fixed %>
             <%= button_to "Send For eSignatures" , 
               send_all_for_esign_documents_path(folder_id: folder_id), 
               data: {action: "click->confirm#popup", msg: "This will send all the approved documents ready for esigning to the esign provider.", method: :patch},
-              class: "dropdown-item" if policy(Document).send_all_for_esign? %>
+              class: "dropdown-item" if false && policy(Document).send_all_for_esign? %>
 
           <% else %>
             <%= link_to "New Document", new_document_path( 
