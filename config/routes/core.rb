@@ -106,6 +106,7 @@ resources :documents do
   get 'owner', on: :collection
   get 'approve', on: :collection
   post 'approve', on: :collection
+  get 'bulk_actions', on: :collection
 end
 
 resources :entities do

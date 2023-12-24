@@ -78,6 +78,8 @@
             <%= link_to "New Document", new_document_path( 
                               document: doc_attributes), 
                               {class: "dropdown-item" }  if document && policy(document).create? %>
+
+            <%= link_to "Send Commitment Agreement", bulk_actions_documents_path("bulk_action": "Send Commitment Agreement", q: params.to_unsafe_h[:q]), {class: "dropdown-item" }  %>                              
           <% end %>
 
         </div>

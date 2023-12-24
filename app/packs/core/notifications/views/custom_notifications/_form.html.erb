@@ -16,7 +16,13 @@
     <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
     <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
     <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
-    <%= form.text_field :for, class: "form-control", hidden: true  %>
+
+
+    <% if custom_notification.owner_type == "Entity" %>
+      <%= form.select :for, ["Commitment Agreement", "InvestorKyc"], {}, class: "form-control"  %>
+    <% else %>
+      <%= form.text_field :for, class: "form-control", hidden: true  %>
+    <% end %>
 
     <div class="form-group">
       <%= form.label :subject %>

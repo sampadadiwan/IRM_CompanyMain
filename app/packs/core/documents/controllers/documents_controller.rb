@@ -6,7 +6,7 @@ class DocumentsController < ApplicationController
 
   before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign]
 
-  after_action :verify_authorized, except: %i[index search investor folder signature_progress approve]
+  after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions]
 
   after_action :verify_policy_scoped, only: []
 
@@ -229,6 +229,16 @@ class DocumentsController < ApplicationController
       end
       format.json { head :no_content }
     end
+  end
+
+  def bulk_actions
+    # Here we get a ransack search and a bulk action to perform on the results
+    @q = Document.ransack(params[:q])
+    @documents = policy_scope(@q.result).includes(:folder)
+    DocumentBulkActionJob.perform_later(@documents.pluck(:id), current_user.id, params[:bulk_action])
+
+    redirect_path = request.referer || root_path
+    redirect_to redirect_path, notice: "Bulk Action started, please check back in a few mins."
   end
 
   private

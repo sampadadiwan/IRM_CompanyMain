@@ -169,7 +169,7 @@ class Document < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[approved created_at download esign_status impressions_count locked name orignal owner_tag tag_list]
+    %w[approved created_at download esign_status impressions_count locked name orignal owner_tag owner_type tag_list]
   end
 
   def self.ransackable_associations(_auth_object = nil)

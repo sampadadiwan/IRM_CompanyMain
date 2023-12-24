@@ -3,6 +3,10 @@ class DocumentPolicy < ApplicationPolicy
     user.enable_documents
   end
 
+  def bulk_actions?
+    index?
+  end
+
   def show?
     record.public_visibility ||
       (user && (

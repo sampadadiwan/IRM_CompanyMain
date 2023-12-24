@@ -1,0 +1,30 @@
+class DocumentBulkActionJob < ApplicationJob
+  queue_as :low
+
+  # This is called every day at 2:01 am for all docs created in the last 10 days
+  # to update the status of the e-signing process
+  # Or it can be called with a document_id to update a single document
+  def perform(document_ids, user_id, bulk_action)
+    Chewy.strategy(:sidekiq) do
+      docs = Document.where(id: document_ids)
+      docs.each do |doc|
+        perform_action(doc, user_id, bulk_action)
+      end
+    end
+
+    msg = "#{bulk_action} completed for #{document_ids.count} documents"
+    send_notification(msg, user_id, :success)
+  end
+
+  def perform_action(doc, user_id, bulk_action)
+    msg = "#{bulk_action}: #{doc.name}"
+    send_notification(msg, user_id, :success)
+    case bulk_action.downcase
+    when "send commitment agreement"
+      
+    else
+      msg = "Invalid bulk action"
+      send_notification(msg, user_id, :error)
+    end
+  end
+end
