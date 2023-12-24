@@ -67,8 +67,12 @@ class Document < ApplicationRecord
     send_notification_for_owner if send_email
   end
 
+  before_save :init
   def init
     self.send_email = true if send_email.nil?
+    self.approved = false if approved.nil?
+    self.template = false if template.nil?
+    self.sent_for_esign = false if sent_for_esign.nil?
   end
 
   def setup_folder_defaults
@@ -160,7 +164,7 @@ class Document < ApplicationRecord
   end
 
   def to_be_esigned?
-    approved && !template && !sent_for_esign && SKIP_ESIGN_UPDATE_STATUSES.exclude?(esign_status)
+    approved && !template && !sent_for_esign && SKIP_ESIGN_UPDATE_STATUSES.exclude?(esign_status) && e_signatures.count.positive?
   end
 
   def to_be_approved?

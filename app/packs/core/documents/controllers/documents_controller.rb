@@ -159,7 +159,6 @@ class DocumentsController < ApplicationController
     @document.entity_id = @document.owner&.entity_id || current_user.entity_id
     @document.user_id = current_user.id
     authorize @document
-
     respond_to do |format|
       if @document.save
         format.html { save_and_upload }
