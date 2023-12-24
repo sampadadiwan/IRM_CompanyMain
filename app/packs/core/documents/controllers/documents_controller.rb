@@ -33,7 +33,8 @@ class DocumentsController < ApplicationController
     else
       # See your own docs
       @entity = current_user.entity
-      @documents = policy_scope(Document)
+      @q = Document.ransack(params[:q])
+      @documents = policy_scope(@q.result)
       authorize(Document)
     end
 

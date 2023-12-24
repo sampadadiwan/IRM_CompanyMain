@@ -88,4 +88,8 @@ class Folder < ApplicationRecord
       .joins(entity: :investor_accesses)
       .merge(InvestorAccess.approved_for_user(user))
   }
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[full_path name owner_type]
+  end
 end

@@ -3,6 +3,7 @@
 <% if params[:no_folders].present? %>
     <%= turbo_frame_tag "documents_frame", target: "_top" do %>
         <% @documents = @documents.page(params[:page]) if params[:all].blank? %>
+        <%= render "layouts/filter", associations: [:folder], hidden_fields: {no_folders: true} %>
         <%= render "/documents/index", documents: @documents, entity: @entity, owner: @owner %>
         <%= paginate @documents, data: {turbo_frame: 'documents_frame'} %>
     <% end %>

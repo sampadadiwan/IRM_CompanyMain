@@ -167,4 +167,12 @@ class Document < ApplicationRecord
     # It was generated from some template, but is not a signed doc.
     from_template_id.present? && owner_tag.exclude?("Signed")
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[approved created_at download esign_status impressions_count locked name orignal owner_tag tag_list]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[approved_by folder]
+  end
 end
