@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_24_083046) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_24_111753) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -859,19 +859,19 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_24_083046) do
     t.string "owner_tag", limit: 40
     t.boolean "orignal", default: false
     t.bigint "user_id", null: false
-    t.boolean "signature_enabled", default: false
+    t.boolean "signature_enabled", default: false, null: false
     t.bigint "from_template_id"
-    t.boolean "locked", default: false
+    t.boolean "locked", default: false, null: false
     t.boolean "public_visibility", default: false
     t.string "tag_list", limit: 120
-    t.boolean "template", default: false
-    t.boolean "send_email"
-    t.boolean "sent_for_esign", default: false
+    t.boolean "template", default: false, null: false
+    t.boolean "send_email", null: false
+    t.boolean "sent_for_esign", default: false, null: false
     t.string "provider_doc_id"
     t.string "esign_status", default: "", null: false
     t.string "display_on_page", limit: 6
     t.bigint "approved_by_id"
-    t.boolean "approved", default: false
+    t.boolean "approved", default: false, null: false
     t.json "json_fields"
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"

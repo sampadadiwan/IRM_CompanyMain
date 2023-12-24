@@ -52,9 +52,9 @@ class Document < ApplicationRecord
   scope :generated, -> { where.not(from_template_id: nil) }
   scope :template, -> { where(template: true) }
   scope :approved, -> { where(approved: true) }
-  scope :not_template, -> { where(template: [nil, false]) }
+  scope :not_template, -> { where(template: false) }
   scope :sent_for_esign, -> { where(sent_for_esign: true) }
-  scope :not_sent_for_esign, -> { where(sent_for_esign: [nil, false]) }
+  scope :not_sent_for_esign, -> { where(sent_for_esign: false) }
 
   def to_s
     name
@@ -157,6 +157,10 @@ class Document < ApplicationRecord
 
   def update_owner
     owner.document_changed(self) if owner.respond_to? :document_changed
+  end
+
+  def to_be_esigned?
+    approved && !template && !sent_for_esign && SKIP_ESIGN_UPDATE_STATUSES.exclude?(esign_status)
   end
 
   def to_be_approved?
