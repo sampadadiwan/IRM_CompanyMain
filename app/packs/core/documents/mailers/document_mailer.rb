@@ -19,7 +19,7 @@ class DocumentMailer < ApplicationMailer
 
     # Check for attachments
     attachments["#{@document.name}.pdf"] = @document.file.read
-    
+
     send_mail(subject: subj)
   end
 

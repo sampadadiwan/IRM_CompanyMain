@@ -1,0 +1,31 @@
+<% folder_id ||= params[:folder_id] %>
+
+<% if params[:q].present? %>
+  
+    <div class="dropdown-divider"></div>
+    
+    <% msg = "This will approve each document in the search results (including results on other pages). Proceed?" %>
+    <%= button_to "Approve", 
+    bulk_actions_documents_path("bulk_action": "Approve", q: params.to_unsafe_h[:q], folder_id:),
+    class: "dropdown-item", 
+    data: {msg:, action: "click->confirm#popup", method: :get}  %>
+
+
+    <% msg = "This will send each document in the search results (including results on other pages) for eSignatures. Proceed?" %>
+    <%= button_to "Send For eSignatures", 
+    bulk_actions_documents_path("bulk_action": "Send For eSignatures", q: params.to_unsafe_h[:q], folder_id:),
+    class: "dropdown-item", 
+    data: {msg:, action: "click->confirm#popup", method: :get}  %>
+
+
+    <div class="dropdown-divider"></div>
+
+    <span class="dropdown-item-text">Email Using Template:</span>
+
+    <% msg = "This will send an email for each document in the search results (including results on other pages), based on the template setup for 'Commitment Agreement'. Proceed?" %>
+    <%= button_to "&nbsp;&nbsp;&nbsp;&nbspCommitment Agreement".html_safe, 
+        bulk_actions_documents_path("bulk_action": "Send Commitment Agreement", q: params.to_unsafe_h[:q]),
+        class: "dropdown-item", 
+        data: {msg:, action: "click->confirm#popup", method: :get} if params[:q].present? %>
+
+<% end %>
