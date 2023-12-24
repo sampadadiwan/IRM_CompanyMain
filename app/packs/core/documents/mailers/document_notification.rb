@@ -7,7 +7,7 @@ class DocumentNotification < BaseNotification
   end
 
   def email_method
-    :notify_new_document
+    params[:email_method] || :notify_new_document
   end
 
   def email_data
@@ -21,7 +21,8 @@ class DocumentNotification < BaseNotification
   # Define helper methods to make rendering easier.
   def message
     @document = params[:document]
-    params[:msg] || "Document Uploaded: #{@document.name}"
+    @custom_notification = @document.entity.custom_notification(params[:custom_notification_for])
+    @custom_notification&.whatsapp || params[:msg] || "Document Uploaded: #{@document.name}"
   end
 
   def url

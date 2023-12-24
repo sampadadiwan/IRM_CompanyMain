@@ -192,4 +192,12 @@ class AccessRight < ApplicationRecord
   def self.grant(owner, investor_id)
     AccessRight.create(owner:, access_to_investor_id: investor_id, entity_id: owner.entity_id)
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[access_to_category access_to_investor_id user_id]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[investor user]
+  end
 end

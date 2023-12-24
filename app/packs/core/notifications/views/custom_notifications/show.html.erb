@@ -2,6 +2,14 @@
 <table class="table table-bordered dataTable">
   <tr>
     <td>
+      For
+    </td>
+    <td>
+      <%= @custom_notification.for ? @custom_notification.for : @custom_notification.owner %>
+    </td>
+  </tr>
+  <tr>
+    <td>
       Subject
     </td>
     <td>

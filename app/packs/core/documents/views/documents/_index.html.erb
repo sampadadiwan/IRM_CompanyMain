@@ -79,7 +79,19 @@
                               document: doc_attributes), 
                               {class: "dropdown-item" }  if document && policy(document).create? %>
 
-            <%= link_to "Send Commitment Agreement", bulk_actions_documents_path("bulk_action": "Send Commitment Agreement", q: params.to_unsafe_h[:q]), {class: "dropdown-item" }  %>                              
+            <% msg = "This will send an email for each document in the search results (including results on other pages), based on the template setup for 'Commitment Agreement'. Proceed?" %>
+            <%= button_to "Send Commitment Agreement", 
+              bulk_actions_documents_path("bulk_action": "Send Commitment Agreement", q: params.to_unsafe_h[:q]),
+              class: "dropdown-item", 
+              data: {msg:, action: "click->confirm#popup", method: :get} if params[:q].present? %>
+
+
+            <% msg = "This will approve each document in the search results (including results on other pages). Proceed?" %>
+            <%= button_to "Approve", 
+              bulk_actions_documents_path("bulk_action": "Approve", q: params.to_unsafe_h[:q]),
+              class: "dropdown-item", 
+              data: {msg:, action: "click->confirm#popup", method: :get} if params[:q].present? %>
+
           <% end %>
 
         </div>

@@ -6,6 +6,7 @@
         <%= render "layouts/filter", associations: [:folder], hidden_fields: {no_folders: true} %>
         <%= render "/documents/index", documents: @documents, entity: @entity, owner: @owner %>
         <%= paginate @documents, data: {turbo_frame: 'documents_frame'} %>
+        <span><%= page_entries_info @documents %></span>
     <% end %>
 <% else %>
     <% cache_if((current_user.entity_id == @entity&.id && params.blank?), [@entity]) do %>

@@ -18,5 +18,5 @@
 
 <% end %>
 
-<p class="btn btn-outline-primary"><%= link_to  "Login to Access", edit_investor_kyc_url(@investor_kyc) %></p>
+<p class="btn btn-outline-primary"><%= link_to  "Login to Access", edit_investor_kyc_url(@investor_kyc, subdomain: @investor_kyc.entity.sub_domain) %></p>
 

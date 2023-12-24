@@ -4,6 +4,7 @@ class CustomNotification < ApplicationRecord
 
   validates :subject, :body, :whatsapp, presence: true
   validates :whatsapp, :subject, length: { maximum: 255 }
+  validates :for, length: { maximum: 100 }
 
   def to_s
     subject

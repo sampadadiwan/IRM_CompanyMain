@@ -12,6 +12,13 @@ class DocumentMailer < ApplicationMailer
     end
   end
 
+  def send_commitment_agreement
+    @document = Document.find params[:document_id]
+    @custom_notification = @document.entity.custom_notification("Commitment Agreement")
+    subj = @custom_notification&.subject || "#{@document.name} uploaded by #{@document.entity.name}"
+    send_mail(subject: subj)
+  end
+
   def email_link
     @link = Document.find(params[:document_id]).file.url
 
