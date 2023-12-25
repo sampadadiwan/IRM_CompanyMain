@@ -18,7 +18,9 @@ export default class extends Controller {
 
   clickTab(tab) {
     console.log(`tab_controller switching to #${tab}`);
-    $(`a[href="#${tab}"]`).click();
+    // $(`a[href="#${tab}"]`).click();
+    bootstrap.Tab.getOrCreateInstance($(`a[href="#${tab}"]`)).show()
+
 
     if( $(`#${tab} .load_data_link`).length > 0 ) {
       // We need a small delay here, oterwise when the tab is programtically clicked,
