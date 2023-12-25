@@ -1,3 +1,9 @@
+22/12/2023 - V7.0.25    
+#####################################
+1. Made boolean fields in documents mandatory with defaults
+2. Search documents for approval, email - bulk actions
+
+
 22/12/2023 - V7.0.22    
 #####################################
 1. Refactored esign code, multiple esing emails, no users required
