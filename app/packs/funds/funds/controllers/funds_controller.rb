@@ -84,7 +84,7 @@ class FundsController < ApplicationController
 
   def delete_all
     delete_class_name = params[:type]
-    FundDeleteAllJob.perform_now(@fund.id, delete_class_name, current_user.id)
+    FundDeleteAllJob.perform_later(@fund.id, delete_class_name, current_user.id)
     redirect_to fund_path(@fund), notice: "Deletion of #{delete_class_name} started, please check back in a few mins"
   end
 

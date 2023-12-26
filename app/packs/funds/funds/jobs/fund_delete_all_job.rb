@@ -23,26 +23,8 @@ class FundDeleteAllJob < ApplicationJob
   end
 
   def delete(fund, delete_class_name)
-    case delete_class_name
-    when "AccountEntry"
-      fund.account_entries.each(&:destroy)
-    when "AccessRight"
-      fund.access_rights.each(&:destroy)
-    when "CapitalCall"
-      fund.capital_calls.each(&:destroy)
-    when "CapitalCommitment"
-      fund.capital_commitments.each(&:destroy)
-    when "CapitalRemittance"
-      fund.capital_remittances.each(&:destroy)
-    when "CapitalRemittancePayment"
-      fund.capital_remittance_payments.each(&:destroy)
-    when "CapitalDistribution"
-      fund.capital_distributions.each(&:destroy)
-    when "CapitalDistributionPayment"
-      fund.capital_distribution_payments.each(&:destroy)
-    else
-      raise "Cannot delete #{delete_class_name} for #{fund.name}"
-    end
+    # Delete the funds corr association
+    fund.send(delete_class_name.underscore.pluralize).each(&:destroy)
   end
 
   def fix_counter_cache(fund, delete_class_name)
