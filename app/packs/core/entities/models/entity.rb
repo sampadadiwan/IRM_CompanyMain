@@ -16,7 +16,7 @@ class Entity < ApplicationRecord
 
   has_many :custom_notifications, as: :owner, dependent: :destroy
 
-  validates :primary_email, presence: true, if: proc { |e| ((e.created_at && e.created_at >= EMAIL_MANDATORY_AFTER) || (e.new_record? && Time.zone.today >= EMAIL_MANDATORY_AFTER)) && (!e.is_holdings_entity) }
+  validates :primary_email, presence: true, if: proc { |e| ((e.created_at && e.created_at >= EMAIL_MANDATORY_AFTER) || (e.new_record? && Time.zone.today >= EMAIL_MANDATORY_AFTER)) && !e.is_holdings_entity }
 
   validates_uniqueness_of :name, scope: :pan
 
