@@ -1,6 +1,6 @@
 class DocumentPolicy < ApplicationPolicy
   def index?
-    user.enable_documents
+    user.enable_documents || super_user?
   end
 
   def bulk_actions?
@@ -72,7 +72,8 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def destroy?
-    (update? && record.entity_id == user.entity_id && !record.sent_for_esign) || super_user?
+    (update? && record.entity_id == user.entity_id &&
+    (!record.sent_for_esign || record.esign_status.casecmp("cancelled").zero?)) || super_user?
   end
 
   def show_investor?
