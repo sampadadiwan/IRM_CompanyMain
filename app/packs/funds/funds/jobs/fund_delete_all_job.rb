@@ -26,6 +26,8 @@ class FundDeleteAllJob < ApplicationJob
     case delete_class_name
     when "AccountEntry"
       fund.account_entries.each(&:destroy)
+    when "AccessRight"
+      fund.access_rights.each(&:destroy)
     when "CapitalCall"
       fund.capital_calls.each(&:destroy)
     when "CapitalCommitment"
