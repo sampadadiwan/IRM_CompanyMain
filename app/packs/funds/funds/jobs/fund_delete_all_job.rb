@@ -11,6 +11,7 @@ class FundDeleteAllJob < ApplicationJob
       delete(fund, delete_class_name)
     rescue StandardError => e
       Rails.logger.error(e.backtrace.join("\n"))
+      ExceptionNotifier.notify_exception(e, data: { message: "Failed deleting #{delete_class_name} for fund #{fund.name}" })
       msg = "Failed deleting #{delete_class_name} for fund #{fund.name} with error #{e.message}"
       Rails.logger.error(msg)
       send_notification(msg, user_id, :error)
@@ -19,8 +20,10 @@ class FundDeleteAllJob < ApplicationJob
     send_notification("Completed deleting #{delete_class_name} for fund #{fund.name}", user_id, :success)
   end
 
-  def delete
+  def delete(fund, delete_class_name)
     case delete_class_name
+    when "AccountEntry"
+      fund.account_entries.each(&:destroy)
     when "CapitalCall"
       fund.capital_calls.each(&:destroy)
     when "CapitalCommitment"
