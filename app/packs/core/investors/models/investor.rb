@@ -67,7 +67,7 @@ class Investor < ApplicationRecord
   validates :pan, length: { maximum: 40 }
   normalizes :pan, with: ->(pan) { pan.strip.squeeze(" ") }
 
-  validates :primary_email, presence: true, if: proc { |e| (e.created_at && e.created_at >= Entity::EMAIL_MANDATORY_AFTER) || ((e.new_record? && Time.zone.today >= Entity::EMAIL_MANDATORY_AFTER) && !e.is_holdings_entity) }
+  validates :primary_email, presence: true, if: proc { |e| ((e.created_at && e.created_at >= Entity::EMAIL_MANDATORY_AFTER) || (e.new_record? && Time.zone.today >= Entity::EMAIL_MANDATORY_AFTER)) && (!e.is_holdings_entity && !e.is_trust) }
 
   validates_uniqueness_of :pan, scope: :entity_id, allow_blank: true, allow_nil: true, message: "already exists as an investor. Duplicate Investor."
   validates_uniqueness_of :investor_name, scope: :entity_id, message: "already exists as an investor. Duplicate Investor."
@@ -124,7 +124,7 @@ class Investor < ApplicationRecord
   before_validation :update_name, if: :new_record?
 
   def update_name
-    unless is_holdings_entity
+    unless is_holdings_entity || is_trust
       self.last_interaction_date ||= Time.zone.today - 10.years
 
       # Ensure we have an investor entity
