@@ -13,6 +13,7 @@ class DocumentDashboard < Administrate::BaseDashboard
       searchable_fields: ['name']
     ),
     access_rights: Field::HasMany,
+    e_signatures: Field::HasMany,
     folder: Field::BelongsTo.with_options(
       searchable: true,
       searchable_fields: ['name']
@@ -21,12 +22,18 @@ class DocumentDashboard < Administrate::BaseDashboard
     id: Field::Number,
     file: Field::Shrine,
     name: Field::String,
+    esign_status: Field::String,
+    provider_doc_id: Field::String,
     text: Field::String,
     tag_list: Field::String,
     owner_tag: Field::String,
     download: Field::BooleanEmoji,
     printing: Field::BooleanEmoji,
     orignal: Field::BooleanEmoji,
+    signature_enabled: Field::BooleanEmoji,
+    from_template: Field::BelongsTo,
+    approved: Field::BooleanEmoji,
+    approved_by: Field::BelongsTo,
     created_at: Field::DateTime,
     updated_at: Field::DateTime
   }.freeze
@@ -40,7 +47,7 @@ class DocumentDashboard < Administrate::BaseDashboard
     id
     name
     download
-    printing
+    approved
     orignal
     tag_list
     owner_tag
@@ -65,7 +72,16 @@ class DocumentDashboard < Administrate::BaseDashboard
     file
     created_at
     updated_at
+
+    approved
+    approved_by
+    esign_status
+    signature_enabled
+    provider_doc_id
+    from_template
+
     access_rights
+    e_signatures
 
   ].freeze
 
