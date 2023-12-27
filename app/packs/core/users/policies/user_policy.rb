@@ -43,6 +43,7 @@ class UserPolicy < ApplicationPolicy
   end
 
   def destroy?
+    # Only make user flag inactive, never destroy the user, else we loose associated data.
     false
   end
 end
