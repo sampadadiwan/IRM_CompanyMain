@@ -31,6 +31,7 @@ namespace :admin do
   resources :capital_distribution_payments
   resources :approvals
   resources :approval_responses
+  resources :e_signatures
 
   # namespace :audited do
   #   resources :audits

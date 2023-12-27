@@ -53,7 +53,7 @@ class ApplicationPolicy
   # If user is of entity "A" and record is of entity "B" and entity "B" is not a child of entity "A", then user cannot perform actions
   def belongs_to_entity?(user, record)
     user.entity_id == record.entity_id ||
-      (user.entity_type == "Group Company" && user.entity.child_ids.include?(record.entity_id))
+      (user.entity_type == "Group Company" && user.entity.child_ids.include?(record.entity_id)) || super_user?
   end
 
   def company_admin_or_emp_crud?(user, record, crud = "read")
