@@ -31,9 +31,4 @@ class StampPaper < ApplicationRecord
     end
   end
 
-  after_save :update_owner
-  def update_owner
-    owner.template = true
-    owner.save
-  end
 end
