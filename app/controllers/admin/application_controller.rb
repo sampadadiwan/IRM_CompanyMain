@@ -15,6 +15,10 @@ module Admin
       redirect_to '/', alert: 'Not authorized.' unless current_user&.has_role?(:super)
     end
 
+    rescue_from Pundit::NotAuthorizedError do |_exception|
+      redirect_to root_path, alert: "Access Denied"
+    end
+
     # Override this value to specify the number of elements to display at a time
     # on index pages. Defaults to 20.
     # def records_per_page
