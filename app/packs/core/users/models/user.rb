@@ -207,4 +207,8 @@ class User < ApplicationRecord
   def self.ransackable_attributes(_auth_object = nil)
     %w[first_name last_name email phone]
   end
+
+  def active_for_authentication?
+    super && active
+  end
 end
