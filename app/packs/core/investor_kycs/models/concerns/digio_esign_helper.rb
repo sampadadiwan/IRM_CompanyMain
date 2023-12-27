@@ -71,7 +71,7 @@ class DigioEsignHelper
   def prepare_data(doc, file_name, encoded_file, display_on_page = "last")
     data = {
       signers: prep_user_data(doc.e_signatures),
-      expire_in_days: 10,
+      expire_in_days: 30,
       notify_signers: true,
       send_sign_link: true,
       # true only needed for widget
