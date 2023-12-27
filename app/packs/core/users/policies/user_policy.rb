@@ -43,6 +43,6 @@ class UserPolicy < ApplicationPolicy
   end
 
   def destroy?
-    super_user?
+    false
   end
 end
