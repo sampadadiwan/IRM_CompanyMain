@@ -7,7 +7,7 @@ class Document < ApplicationRecord
   include DocumentScope
 
   SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
-  SKIP_ESIGN_UPDATE_STATUSES = %w[Cancelled Completed cancelled completed].freeze
+  SKIP_ESIGN_UPDATE_STATUSES = %w[Cancelled Completed cancelled completed expired Expired].freeze
 
   MODELS_WITH_DOCS = %w[Fund CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDitribution CapitalDitributionPayment Deal DealInvestor InvestmentOpportunity ExpressionOfInterest].freeze
 
@@ -84,7 +84,11 @@ class Document < ApplicationRecord
   end
 
   def esign_completed?
-    esign_status.casecmp?("completed")
+    esign_status&.casecmp?("completed")
+  end
+
+  def esign_expired?
+    esign_status&.casecmp?("expired") || esign_status&.casecmp?("cancelled")
   end
 
   def setup_folder

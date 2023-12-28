@@ -44,7 +44,7 @@ class DocumentPolicy < ApplicationPolicy
 
   # remove user check in next iteration - only check email
   def send_for_esign?
-    update? && !record.sent_for_esign && record.e_signatures.all? { |esign| esign.email.present? } && record.esign_status&.downcase != "cancelled"
+    update? && !record.sent_for_esign && record.e_signatures.all? { |esign| esign.email.present? } && !record.esign_expired?
   end
 
   def force_send_for_esign?
@@ -56,11 +56,11 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def cancel_esign?
-    update? && user.has_cached_role?(:company_admin) && record.sent_for_esign && record.esign_status&.downcase != "cancelled"
+    update? && user.has_cached_role?(:company_admin) && record.sent_for_esign && !record.esign_expired?
   end
 
   def fetch_esign_updates?
-    update? && record.sent_for_esign && record.esign_status&.downcase != "cancelled"
+    update? && record.sent_for_esign && !record.esign_expired?
   end
 
   def edit?
@@ -73,7 +73,7 @@ class DocumentPolicy < ApplicationPolicy
 
   def destroy?
     (update? && record.entity_id == user.entity_id &&
-    (!record.sent_for_esign || record.esign_status.casecmp("cancelled").zero?)) || super_user?
+    (!record.sent_for_esign || record.esign_expired?)) || super_user?
   end
 
   def show_investor?

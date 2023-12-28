@@ -4,9 +4,7 @@
   <%= button_to "Send For eSignatures" , send_for_esign_document_path(owner), {class: "btn btn-outline-primary", method: :patch} if owner && policy(owner).send_for_esign? %>
   <%= button_to "Get eSignatures' updates" , fetch_esign_updates_document_path(owner), {class: "btn btn-outline-primary", method: :get} if owner && policy(owner).fetch_esign_updates? %>
   <% msg = "This option is to be used only when you want to change the type of signature for a signatory.  After this, the document will have to be signed by all signatories again (even if it was signed earlier)." %>
-  <%= button_to "Change Signature type" ,force_send_for_esign_document_path(owner, force: true), method: :patch,
-        class: "btn btn-outline-primary", form_class: "deleteButton",
-        data: {action: "click->confirm#popup", turbo:false, method: :patch, msg: msg} if owner && policy(owner).force_send_for_esign? %>
+
   <%= button_to "Cancel eSignatures" , cancel_esign_document_path(owner), {class: "btn btn-outline-danger", method: :patch} if owner && policy(owner).cancel_esign? %>
 </div>
 <div class="table-responsive" data-controller="datatable">

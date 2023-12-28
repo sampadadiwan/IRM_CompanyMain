@@ -152,3 +152,27 @@ Scenario Outline: Send Generated SOA for Esign with callbacks
     Examples:
     |user	      |entity                         |role       |given  |should	|access | crud |
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
+
+Scenario Outline: Cancel Esign for a document
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    Given the user has role "company_admin"
+    Given there is an existing investor "entity_type=Family Office"
+    Given there is an existing investor entity "entity_type=Investor Advisor" with employee "first_name=Advisor555"
+    Given there is a fund "name=Test fund8685" for the entity
+    And another user is "<given>" fund advisor access to the fund
+    And the access right has access "<crud>"
+    Given the user has role "<role>"
+    Given the fund has capital commitments from each investor
+    And each Investor has an approved Investor Kyc
+    Given the fund has a Commitment template "name=Commitment template"
+    And we Generate Commitment template for the first capital commitment
+    And it is successfully generated
+    Then the document has esignatures based on the template
+    And the document is partially signed
+    And the document esign is cancelled
+    Then the document and esign status is cancelled
+
+
+    Examples:
+    |user	      |entity                         |role       |given  |should	|access | crud |
+    |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |

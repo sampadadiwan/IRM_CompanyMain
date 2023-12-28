@@ -115,6 +115,35 @@ class DigioEsignHelper
     ret
   end
 
+  def hit_cancel_esign_api(provider_doc_id)
+    response = HTTParty.post(
+      "#{BASE_URL}/v2/client/document/#{provider_doc_id}/cancel",
+      headers: {
+        "authorization" => "Basic #{AUTH_TOKEN}",
+        'Content-Type' => 'application/json'
+      }
+    )
+
+    Rails.logger.debug response
+    response
+  end
+
+  def cancel_esign(doc)
+    response = hit_cancel_esign_api(doc.provider_doc_id)
+    if response.success?
+      # added transaction to avoid partial updates
+      ActiveRecord::Base.transaction do
+        doc.e_signatures.each do |esign|
+          esign.add_api_update(response)
+          esign.update(status: "cancelled", api_updates: esign.api_updates)
+        end
+        doc.update(esign_status: "cancelled")
+      end
+    else
+      ExceptionNotifier.notify_exception(StandardError.new("Error cancelling #{doc.name} - #{response}"))
+    end
+  end
+
   # fetch manual updates from digio
   def update_esign_status(doc)
     if doc.esign_completed?
