@@ -8,7 +8,7 @@ class KycDocGenerator
     doc_template.file.download do |tempfile|
       doc_template_path = tempfile.path
       create_working_dir(investor_kyc)
-      generate(investor_kyc, start_date, end_date, doc_template_path)
+      generate(investor_kyc, start_date, end_date, doc_template, doc_template_path)
       upload(doc_template, investor_kyc, start_date:, end_date:)
       notify(doc_template, investor_kyc, user_id) if user_id
     ensure
@@ -23,7 +23,7 @@ class KycDocGenerator
   end
 
   # doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
-  def generate(investor_kyc, start_date, end_date, doc_template_path)
+  def generate(investor_kyc, start_date, end_date, doc_template, doc_template_path)
     template = Sablon.template(File.expand_path(doc_template_path))
 
     currency = investor_kyc.entity.currency
@@ -78,6 +78,10 @@ class KycDocGenerator
 
     file_name = generated_file_name(investor_kyc)
     convert(template, context, file_name)
+
+    additional_footers = investor_kyc.documents.where(name: ["#{doc_template.name} Footer", "#{doc_template.name} Signature"])
+    additional_headers = investor_kyc.documents.where(name: ["#{doc_template.name} Header", "#{doc_template.name} Stamp Paper"])
+    add_header_footers(investor_kyc, file_name, additional_headers, additional_footers)
   end
 
   def amounts(investor_kyc, ccs, currency, start_date, end_date)

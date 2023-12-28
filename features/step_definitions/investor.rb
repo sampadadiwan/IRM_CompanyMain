@@ -776,3 +776,12 @@ end
 def digio_callback_both_signed
   {"entities":["document"],"payload":{"document":{"updated_at":1703164607000,"sign_request_details":{"identifier":"support@caphive.com","expire_on":1704047400000,"name":"Caphive","requested_on":1703164608000,"requester_type":"org"},"attached_estamp_details":{},"file_name":"commitment with Demo fund","agreement_status":"requested","id":"DID2312191801389959UDGNBWGRGCSC1","signing_parties":[{"has_dependents":nil,"signature_mode":"slate","identifier":"shrikantgour018@gmail.com","reason":nil,"type":"self","aadhaar_mode":nil,"signature_type":"electronic","signing_index":nil,"updated_at":1703164607000,"sign_coordinates":nil,"expire_on":1704047400000,"signature_verification_response":nil,"name":"shrikantgour018@gmail.com","skip_primary_sign":nil,"pki_signature_details":nil,"dependents":nil,"next_dependent":nil,"review_comment":nil,"status":"signed"},{"has_dependents":nil,"signature_mode":"slate","identifier":"aseemak56@yahoo.com","reason":nil,"type":"self","aadhaar_mode":nil,"signature_type":"electronic","signing_index":nil,"updated_at":1703164607000,"sign_coordinates":nil,"expire_on":1704047400000,"signature_verification_response":nil,"name":"aseemak56@yahoo.com","skip_primary_sign":nil,"pki_signature_details":nil,"dependents":nil,"next_dependent":nil,"review_comment":nil,"status":"requested"}],"others":{"last_signed_by":"shrikantgour018@gmail.com","has_all_signed":true}}},"created_at":1703164687000,"id":"WHN2312211848066346G2QY1F19GZC15","event":"doc.signed"}.to_json
 end
+
+
+Given('the fund has a KYC template {string}') do |string|
+  pending # Write code here that turns the phrase above into concrete actions
+end
+
+Given('we Generate KYC template for the first KYC') do
+  pending # Write code here that turns the phrase above into concrete actions
+end

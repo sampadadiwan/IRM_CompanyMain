@@ -132,7 +132,7 @@ Scenario Outline: Send Generated SOA for Esign with callbacks
       |user	    |entity                         |role       |given  |should	|access | crud |
       |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
 
-    Scenario Outline: Generate document from funds template
+  Scenario Outline: Generate document from funds template
     Given Im logged in as a user "<user>" for an entity "<entity>"
     Given the user has role "company_admin"
     Given there is an existing investor "entity_type=Family Office"

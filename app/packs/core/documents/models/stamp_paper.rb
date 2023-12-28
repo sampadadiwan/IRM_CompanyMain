@@ -30,5 +30,4 @@ class StampPaper < ApplicationRecord
       errors.add(:tags, "should be one of #{entity.entity_setting.stamp_paper_tags}") unless entity.entity_setting.stamp_paper_tags&.split(',')&.map(&:strip)&.include?(tag)
     end
   end
-
 end
