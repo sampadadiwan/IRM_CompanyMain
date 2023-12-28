@@ -35,6 +35,7 @@ module DocumentGeneratorBase
     end
   end
 
+  
   def add_header_footers(model, spa_path, additional_headers = nil, additional_footers = nil, template_name = nil)
     header_footer_download_path = []
 
