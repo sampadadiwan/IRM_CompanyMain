@@ -148,10 +148,6 @@ class User < ApplicationRecord
     Investor.includes(:entity).user_investors(self).where('entities.id': entity_id).first
   end
 
-  def active_for_authentication?
-    active && !confirmed_at.nil?
-  end
-
   def reset_password?
     sign_in_count == 1 && system_created
   end

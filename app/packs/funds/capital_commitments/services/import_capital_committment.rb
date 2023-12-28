@@ -62,7 +62,7 @@ class ImportCapitalCommittment < ImportUtil
     capital_commitment.save!
   end
 
-  def get_kyc(user_data, investor, fund, _capital_commitment)
+  def get_kyc(user_data, investor, fund, capital_commitment)
     kyc_full_name = user_data["Kyc Full Name"]
     if kyc_full_name.present?
       kyc = fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
