@@ -99,7 +99,7 @@ module DocumentGeneratorBase
 
     # Get the name of the doc we are generating
     generated_document.name = if start_date && end_date
-                                "#{doc_template.name}-#{start_date}-#{end_date}"
+                                "#{doc_template.name} #{start_date} to #{end_date}"
                               else
                                 doc_template.name
                               end

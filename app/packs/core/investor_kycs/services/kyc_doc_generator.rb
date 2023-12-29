@@ -9,7 +9,15 @@ class KycDocGenerator
       doc_template_path = tempfile.path
       create_working_dir(investor_kyc)
       generate(investor_kyc, start_date, end_date, doc_template, doc_template_path)
-      upload(doc_template, investor_kyc, start_date:, end_date:)
+
+      # Use a regular expression to check for the standalone word
+      is_soa_doc = doc_template.tag_list.downcase =~ /\b#{Regexp.escape("soa")}\b/
+
+      if is_soa_doc
+        upload(doc_template, investor_kyc, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"))
+      else
+        upload(doc_template, investor_kyc)
+      end
       notify(doc_template, investor_kyc, user_id) if user_id
     ensure
       cleanup

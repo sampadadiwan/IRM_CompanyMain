@@ -10,7 +10,7 @@ class SoaGenerator
         fund_doc_template_path = tempfile.path
         create_working_dir(capital_commitment)
         generate(capital_commitment, start_date, end_date, fund_doc_template_path)
-        upload(fund_doc_template, capital_commitment, start_date:, end_date:)
+        upload(fund_doc_template, capital_commitment, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"))
         notify(fund_doc_template, capital_commitment, user_id) if user_id
       ensure
         cleanup
