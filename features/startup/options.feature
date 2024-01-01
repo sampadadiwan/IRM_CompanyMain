@@ -71,7 +71,7 @@ Scenario Outline: Import holdings to pool
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
   Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"
   And Given I upload a holdings file
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   And when the holdings are approved
   And the pool granted amount should be "700"
 

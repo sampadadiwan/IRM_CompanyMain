@@ -55,10 +55,10 @@ Scenario Outline: Import portfolio investments
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   And Given I upload an the portfolio companies
   And Given I upload "portfolio_investments.xlsx" file for "Portfolio" of the fund
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   Then There should be "8" portfolio investments created
   And the portfolio investments must have the data in the sheet
   And the aggregate portfolio investments must have cost of sold computed
@@ -70,9 +70,9 @@ Scenario Outline: Import portfolio investments failed
   And Given I upload an investors file for the fund
   And Given I upload an the portfolio companies
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   And Given I upload "co_invest_portfolio_investments_failed.xlsx" file for "Portfolio" of the fund
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   Then There should be "1" portfolio investments created
 
 
@@ -82,7 +82,7 @@ Scenario Outline: Import portfolio valuations
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   And Given I upload an the portfolio companies
   And Given I upload "valuations.xlsx" file for portfolio companies of the fund
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   Then There should be "4" valuations created
   And the valuations must have the data in the sheet
 
@@ -112,7 +112,7 @@ Scenario Outline: Stock Adjustment
   Given there is an existing portfolio company "name=Apple;primary_email=tc@apple.com;category=Portfolio Company" 
   Given there is a valuation "per_share_value_cents=10000;category=Unlisted;sub_category=Equity" for the portfolio company
   And Given I upload "portfolio_investments2.xlsx" file for "Portfolio" of the fund
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   Then There should be "2" portfolio investments created
   Given I create a new stock adjustment "<adjustment>"
   Then the valuations must be adjusted

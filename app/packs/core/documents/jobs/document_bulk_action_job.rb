@@ -12,6 +12,7 @@ class DocumentBulkActionJob < ApplicationJob
       end
     end
 
+    sleep(5)
     msg = "#{bulk_action} completed for #{document_ids.count} documents"
     send_notification(msg, user_id, :success)
   end

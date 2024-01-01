@@ -38,7 +38,8 @@ class ImportUploadsController < ApplicationController
 
     respond_to do |format|
       if @import_upload.save
-        format.html { redirect_to import_upload_url(@import_upload), notice: "Import upload was successfully created." }
+        notice = @import_upload.status.blank? ? "Import in progress" : "Import Status: #{@import_upload.status}"
+        format.html { redirect_to import_upload_url(@import_upload), notice: }
         format.json { render :show, status: :created, location: @import_upload }
       else
         format.html { render :new, status: :unprocessable_entity }

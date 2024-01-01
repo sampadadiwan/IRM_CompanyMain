@@ -85,7 +85,7 @@ Scenario Outline: Import investor access
   Given the user has role "company_admin"
   And Given I upload an investors file for the company
   And Given I upload an investor access file for employees
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   Then There should be "2" investor access created
   And the investor accesses must have the data in the sheet
 
@@ -96,7 +96,7 @@ Scenario Outline: Import investor kycs
   And Given I upload an investors file for the company
   And the investors have approved investor access
   And Given I upload an investor kyc file for employees
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   Then There should be "4" investor kycs created
   And the investor kycs must have the data in the sheet
   And the approved investor access should receive a notification 
@@ -106,7 +106,7 @@ Scenario Outline: Import investors
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
   Given the user has role "company_admin"
   And Given I upload an investors file for the company
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   Then There should be "6" investors created
   And the investors must have the data in the sheet
 
@@ -115,7 +115,7 @@ Scenario Outline: Import Fund investors
   Given the user has role "company_admin"
   Given there is a fund "name=Tech Fund" for the entity
   And Given I upload an investors file for the fund
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   Then There should be "6" investors created
   And the investors must have the data in the sheet
   And the investors must be added to the fund

@@ -106,7 +106,7 @@ Scenario Outline: Import holding
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
   Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"
   And Given I upload a holdings file
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   Then There should be "6" holdings created
   And There should be "6" users created for the holdings  
   And There should be "0" Investments created for the holdings

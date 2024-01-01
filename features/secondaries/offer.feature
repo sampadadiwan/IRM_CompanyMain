@@ -96,9 +96,9 @@ Scenario Outline: Import offer to sale
   Given there is a sale "name=Summer Sale"
   Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"
   And Given I upload a holdings file
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   And when the holdings are approved
   And Given I upload a offer file
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   And when the offers are approved
   And the sale offered quantity should be "100"

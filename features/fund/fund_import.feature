@@ -8,7 +8,7 @@ Scenario Outline: Import capital commitments
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   Then There should be "8" capital commitments created
   And the capital commitments must have the data in the sheet
   And the capital commitments must have the percentages updated
@@ -27,7 +27,7 @@ Scenario Outline: Import capital calls
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   And Given I upload "capital_calls.xlsx" file for "Calls" of the fund
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   Then There should be "3" capital calls created
   And the capital calls must have the data in the sheet
   And the remittances are generated for the capital calls
@@ -46,7 +46,7 @@ Scenario Outline: Import capital remittance payments
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   And Given I upload "capital_calls_no_remittances.xlsx" file for "Calls" of the fund
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   Then There should be "3" capital calls created
   And Given I upload "capital_remittance_payments_multi_currency.xlsx" file for the remittances of the capital call
   Then There should be "6" remittance payments created
@@ -95,7 +95,7 @@ Scenario Outline: Import capital distributions
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   And Given I upload "capital_distributions.xlsx" file for "Distributions" of the fund
-  Then I should see the "Import upload was successfully created"
+  Then I should see the "Import in progress"
   Then There should be "2" capital distributions created
   And the capital distributions must have the data in the sheet
   And the payments are generated for the capital distrbutions
