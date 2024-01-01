@@ -20,7 +20,7 @@ class DealPolicy < ApplicationPolicy
   end
 
   def show?
-    (permissioned_employee? && user.enable_deals)
+    permissioned_employee? && user.enable_deals
   end
 
   def show_detail_tabs?

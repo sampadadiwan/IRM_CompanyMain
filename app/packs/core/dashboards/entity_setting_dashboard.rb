@@ -127,6 +127,6 @@ class EntitySettingDashboard < Administrate::BaseDashboard
 
   def permitted_attributes(action = nil)
     # This is to enable the custom_flags field to be editable
-    super + [custom_flags: []]  # -- Adding our now removed field to the permitted list
+    super + [custom_flags: []] # -- Adding our now removed field to the permitted list
   end
 end

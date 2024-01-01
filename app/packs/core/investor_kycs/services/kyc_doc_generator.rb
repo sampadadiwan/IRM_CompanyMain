@@ -11,7 +11,7 @@ class KycDocGenerator
       generate(investor_kyc, start_date, end_date, doc_template, doc_template_path)
 
       # Use a regular expression to check for the standalone word
-      is_soa_doc = doc_template.tag_list.downcase =~ /\b#{Regexp.escape("soa")}\b/
+      is_soa_doc = doc_template.tag_list.downcase =~ /\b#{Regexp.escape('soa')}\b/
 
       if is_soa_doc
         upload(doc_template, investor_kyc, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"))

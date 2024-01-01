@@ -28,7 +28,7 @@ module EntityEnabled
           permissions.unset(flag_name)
         end
       else
-        permissions.send("#{method_name}?")
+        permissions.send(:"#{method_name}?")
       end
     end
   end

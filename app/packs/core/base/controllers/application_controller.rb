@@ -68,7 +68,7 @@ class ApplicationController < ActionController::Base
   def setup_doc_user(model)
     sym = model.class.name.underscore.to_sym
     if params[sym][:documents_attributes].present?
-      params[sym][:documents_attributes].each do |_id, doc_attribute|
+      params[sym][:documents_attributes].each_value do |doc_attribute|
         doc_attribute[:user_id] = current_user.id
         doc_attribute.merge!(entity_id: model.entity_id)
       end

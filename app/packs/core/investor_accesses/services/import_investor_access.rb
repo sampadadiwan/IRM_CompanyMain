@@ -79,7 +79,7 @@ class ImportInvestorAccess < ImportUtil
       else
         # Return the call code if country is found in the hash
         call_code = User::CALL_CODES[normalized_input]
-        (call_code.presence || raise(StandardError, "Invalid Country Code #{input}"))
+        call_code.presence || raise(StandardError, "Invalid Country Code #{input}")
       end
     end
   end

@@ -23,7 +23,7 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def external_sale?
-    (user.has_cached_role?(:investor) && record.visible_externally)
+    user.has_cached_role?(:investor) && record.visible_externally
   end
 
   def owner?
@@ -64,8 +64,8 @@ class SecondarySalePolicy < SaleBasePolicy
     if belongs_to_entity?(user, record) && user.enable_secondary_sale
       true
     else
-      (permissioned_investor? ||
-        external_sale? || super_user?)
+      permissioned_investor? ||
+        external_sale? || super_user?
     end
   end
 

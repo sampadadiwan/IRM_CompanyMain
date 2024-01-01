@@ -1,7 +1,7 @@
 class ImportValuation < ImportUtil
   include Interactor
 
-  STANDARD_HEADERS = ["Category", "Sub Category", "Valuation Date", "Valuation", "Per Share Value", "Portfolio Company", "Pan", "Primary Email"].freeze
+  STANDARD_HEADERS = ["Category", "Sub Category", "Valuation Date", "Valuation", "Per Share Value", "Portfolio Company"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -19,12 +19,8 @@ class ImportValuation < ImportUtil
     sub_category = user_data['Sub Category']
     entity = import_upload.entity
 
-    investor = entity.investors.find_or_initialize_by(investor_name:, category: "Portfolio Company")
-    if investor.new_record?
-      investor.pan = user_data['Pan'].to_s
-      investor.primary_email = user_data['Primary Email']
-      investor.save
-    end
+    investor = entity.investors.where(investor_name:, category: "Portfolio Company").first
+    raise "Investor #{investor_name} not found" if investor.nil?
 
     valuation = investor.valuations.find_or_initialize_by(entity_id: investor.entity_id,
                                                           valuation_date:, per_share_value_cents:, category:, sub_category:, valuation_cents:)

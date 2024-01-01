@@ -29,16 +29,14 @@ class HoldingPolicy < ApplicationPolicy
   end
 
   def offer?
-    (
-      record.investment_instrument != "Options" && (
-        (user.id == record.user_id && user.has_cached_role?(:holding)) ||
-        (user.entity_id == record.investor.investor_entity_id && user.has_cached_role?(:investor))
-      )
+    record.investment_instrument != "Options" && (
+      (user.id == record.user_id && user.has_cached_role?(:holding)) ||
+      (user.entity_id == record.investor.investor_entity_id && user.has_cached_role?(:investor))
     )
   end
 
   def create?
-    (belongs_to_entity?(user, record) && user.enable_holdings)
+    belongs_to_entity?(user, record) && user.enable_holdings
   end
 
   def new?

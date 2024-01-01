@@ -233,3 +233,17 @@ Then('the Portfolio attributions must be adjusted') do
     cpa.cost_of_sold_cents.should == opa.cost_of_sold_cents
   end
 end
+
+
+Given('Given I upload an the portfolio companies') do
+  visit(investors_path)
+  click_on("Actions")
+  click_on("Upload")
+  sleep(1)
+  fill_in('import_upload_name', with: "Test Investor Upload")
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/portfolio_companies.xlsx'), make_visible: true)
+  sleep(4)
+  click_on("Save")
+  sleep(4)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+end

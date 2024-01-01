@@ -25,14 +25,12 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def create?(emp_perm = :create)
-    (
-      (belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, emp_perm)) ||
+    (belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, emp_perm)) ||
       user.entity_id == record.investor&.investor_entity_id
-    )
   end
 
   def generate_docs?
-    (belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :read))
+    belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :read)
   end
 
   def new?
@@ -81,6 +79,6 @@ class InvestorKycPolicy < ApplicationPolicy
 
   def destroy?
     create?(:destroy) && !record.verified
-    (belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :destroy))
+    belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :destroy)
   end
 end

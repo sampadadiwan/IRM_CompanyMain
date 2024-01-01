@@ -304,7 +304,7 @@ class AccountEntryAllocationEngine
       # variable names cannot be created with special chars - so delete them
       variable_name = f.delete('.&:')
       # Use meta programming to setup an instance variable
-      instance_variable_set("@#{variable_name}", cached_commitment_fields[f])
+      instance_variable_set(:"@#{variable_name}", cached_commitment_fields[f])
       Rails.logger.debug { "Setting up variable @#{variable_name} to #{cached_commitment_fields[f]}" }
     end
   end

@@ -712,6 +712,7 @@ end
 
 
 Given('Given I upload {string} file for {string} of the fund') do |file, tab|
+  
   @import_file = file
   visit(fund_path(@fund))
   click_on(tab)

@@ -20,7 +20,7 @@ class ExcercisePolicy < ApplicationPolicy
   end
 
   def create?
-    (user.id == record.user_id && user.id == record.holding.user_id)
+    user.id == record.user_id && user.id == record.holding.user_id
     true
   end
 

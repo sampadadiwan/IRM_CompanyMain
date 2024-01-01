@@ -8,7 +8,7 @@ class FeePolicy < ApplicationPolicy
   end
 
   def create?
-    (belongs_to_entity?(user, record) && record.entity_id == record.owner.entity_id)
+    belongs_to_entity?(user, record) && record.entity_id == record.owner.entity_id
   end
 
   def new?

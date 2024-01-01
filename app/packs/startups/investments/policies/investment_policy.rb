@@ -30,7 +30,7 @@ class InvestmentPolicy < ApplicationPolicy
   end
 
   def create?
-    (belongs_to_entity?(user, record) && user.enable_investments)
+    belongs_to_entity?(user, record) && user.enable_investments
   end
 
   def new?

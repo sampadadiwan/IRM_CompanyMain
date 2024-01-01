@@ -56,6 +56,7 @@ Scenario Outline: Import portfolio investments
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   Then I should see the "Import upload was successfully created"
+  And Given I upload an the portfolio companies
   And Given I upload "portfolio_investments.xlsx" file for "Portfolio" of the fund
   Then I should see the "Import upload was successfully created"
   Then There should be "8" portfolio investments created
@@ -67,6 +68,7 @@ Scenario Outline: Import portfolio investments failed
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   And Given I upload an investors file for the fund
+  And Given I upload an the portfolio companies
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   Then I should see the "Import upload was successfully created"
   And Given I upload "co_invest_portfolio_investments_failed.xlsx" file for "Portfolio" of the fund
@@ -78,6 +80,7 @@ Scenario Outline: Import portfolio valuations
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
+  And Given I upload an the portfolio companies
   And Given I upload "valuations.xlsx" file for portfolio companies of the fund
   Then I should see the "Import upload was successfully created"
   Then There should be "4" valuations created
