@@ -268,7 +268,7 @@ class DocumentsController < ApplicationController
 
     if params[:folder_id].present?
       @folder = Folder.find(params[:folder_id])
-      @documents = @documents.joins(:folder).merge(Folder.descendants_of(params[:folder_id]))
+      @documents = @documents.joins(:folder).merge(Folder.subtree_of(params[:folder_id]))
     end
 
     # Filter by owner_tag
