@@ -18,7 +18,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     bank_verification: Field::BooleanEmoji,
     pan_verification: Field::BooleanEmoji,
     aml_enabled: Field::BooleanEmoji,
-    ckyc_kra_enabled: Field::BooleanEmoji,
+    ckyc_enabled: Field::BooleanEmoji,
+    kra_enabled: Field::BooleanEmoji,
     fi_code: Field::String,
     stamp_paper_tags: Field::String,
     entity: Field::BelongsTo,
@@ -42,7 +43,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     bank_verification
     pan_verification
     aml_enabled
-    ckyc_kra_enabled
+    ckyc_enabled
+    kra_enabled
     fi_code
     stamp_paper_tags
     entity
@@ -69,7 +71,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     pan_verification
     bank_verification
     aml_enabled
-    ckyc_kra_enabled
+    ckyc_enabled
+    kra_enabled
     fi_code
     stamp_paper_tags
     snapshot_frequency_months
@@ -95,7 +98,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     bank_verification
     pan_verification
     aml_enabled
-    ckyc_kra_enabled
+    ckyc_enabled
+    kra_enabled
     fi_code
     stamp_paper_tags
     last_snapshot_on

@@ -161,10 +161,14 @@ class InvestorKyc < ApplicationRecord
   end
 
   def assign_kyc_data(kyc_data)
+    unless self.PAN.casecmp?(kyc_data.pan&.to_s&.strip)
+      e = StandardError.new("PAN number does not match the KYC data")
+      errors.add(:PAN, "does not match the KYC data")
+    end
     self.full_name = kyc_data.full_name
     self.address = kyc_data.perm_address
     self.corr_address = kyc_data.corr_address
-
+    # add below images as attached documents
     kyc_data.get_image_data.each do |image_data|
       imgtype = image_data['image_type']
       file_name = "#{kyc_data.source.upcase}Data-#{id}-#{full_name.delete('/')}-#{imgtype}.png"
@@ -178,10 +182,15 @@ class InvestorKyc < ApplicationRecord
         Rails.root.join(file_path).binwrite(Base64.decode64(image_data['data']))
         self.pan_card = File.open(file_path, "rb")
       end
+
       FileUtils.rm_f(file_path)
     rescue StandardError => e # caught as kyc can have improper base64 data
       Rails.logger.error { "Error while uploading file #{file_name} #{e.message}" }
     end
+  end
+
+  def remove_images
+    # remove attached image documents from kyc data
   end
 
   # Ovveride the include with_folder method

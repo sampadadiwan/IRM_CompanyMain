@@ -53,6 +53,10 @@ class InvestorKycPolicy < ApplicationPolicy
     user.enable_kycs && user.curr_role == "employee"
   end
 
+  def ckyc_or_kra_enabled?
+    record.entity.entity_setting.ckyc_or_kra_enabled?
+  end
+
   def generate_new_aml_report?
     toggle_verified?
   end

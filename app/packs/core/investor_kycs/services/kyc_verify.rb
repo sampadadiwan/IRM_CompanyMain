@@ -104,7 +104,7 @@ class KycVerify
 
     #   body: {
     #     ckyc_no: search_ckyc_parsed_response["ckyc_number"],
-    #     date_of_birth: birth_date&.strftime("%m-%d-%Y"), # dd-MM-yyyy format
+    #     date_of_birth: birth_date, # dd-MM-yyyy format
     #     fi_code:,
     #     unique_request_id: rand(5**5)
     #   }.to_json

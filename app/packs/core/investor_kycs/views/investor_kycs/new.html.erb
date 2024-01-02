@@ -2,6 +2,6 @@
     <% form="form" %>
 </div>
 
-<% form="initial_form" if @investor_kyc.entity.entity_setting.ckyc_kra_enabled %>
+<% form="initial_form" if policy(@investor_kyc).ckyc_or_kra_enabled? %>
 <%= render form, investor_kyc: @investor_kyc %>
 

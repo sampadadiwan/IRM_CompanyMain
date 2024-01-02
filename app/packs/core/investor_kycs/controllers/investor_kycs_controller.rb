@@ -120,7 +120,8 @@ class InvestorKycsController < ApplicationController
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
     authorize(@investor_kyc)
     respond_to do |format|
-      if @investor_kyc.save(validate: false)
+      validate = current_user.curr_role.casecmp?("investor")
+      if @investor_kyc.save(validate: validate)
         format.html do
           if commit_param == "Continue without CKYC/KRA"
             redirect_to edit_investor_kyc_path(@investor_kyc)
@@ -144,16 +145,14 @@ class InvestorKycsController < ApplicationController
     else
       @investor_kyc.assign_attributes(investor_kyc_params)
       # when CKYC/KRA data is selected once and user goes back then selects no data the images need to be removed (sending nil is not allowed in params)
-      @investor_kyc.signature = nil
-      @investor_kyc.pan_card = nil
+      @investor_kyc.remove_images
     end
     respond_to do |format|
-      if @investor_kyc.save
+      if @investor_kyc.save(validate: false)
         format.html { redirect_to edit_investor_kyc_path(@investor_kyc), notice: "Investor kyc was successfully updated." }
       else
         format.html { render :edit, status: :unprocessable_entity }
       end
-      format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }
     end
   end
 

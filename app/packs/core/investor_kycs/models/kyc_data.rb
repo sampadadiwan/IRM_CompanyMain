@@ -15,11 +15,21 @@ class KycData < ApplicationRecord
     }
   }.freeze
 
+  def pan
+    return "" if response.blank?
+
+    if source == "ckyc"
+      response.dig("download_response", "personal_details", "pan")
+    else
+      response.dig("pan_details", "pan_number")
+    end
+  end
+
   def full_name
     return "" if response.blank?
 
     if source == "ckyc"
-      response.dig('download_response', 'personal_details', 'full_name').gsub(/\s+/, " ").titleize
+      response.dig('download_response', 'personal_details', 'full_name')&.gsub(/\s+/, " ")&.titleize
     else
       response["name"]
     end

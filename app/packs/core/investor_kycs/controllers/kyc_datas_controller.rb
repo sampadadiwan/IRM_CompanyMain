@@ -48,23 +48,33 @@ class KycDatasController < ApplicationController
   def create; end
 
   def compare_ckyc_kra
-    @kyc_datas = policy_scope(KycData)
-    @investor_kyc = nil
     @ckyc_data = nil
     @kra_data = nil
     if params[:investor_kyc_id].present?
       @investor_kyc = InvestorKyc.find(params[:investor_kyc_id])
-      @kyc_datas = @kyc_datas.where(investor_kyc_id: params[:investor_kyc_id])
-      @ckyc_data = @kyc_datas.where(source: "ckyc").last
-      @ckyc_data = CkycKraService.new.get_ckyc_data(@investor_kyc) if @ckyc_data.blank?
-      @kra_data = @kyc_datas.where(source: "kra").last
-      @kra_data = CkycKraService.new.get_kra_data(@investor_kyc) if @kra_data.blank?
-      authorize(@kra_data)
+      @kyc_datas = policy_scope(KycData).where(investor_kyc_id: params[:investor_kyc_id])
+
+      if @investor_kyc.entity.entity_setting.ckyc_enabled?
+        @ckyc_data = @kyc_datas.where(source: "ckyc").last
+        @ckyc_data = CkycKraService.new.get_ckyc_data(@investor_kyc) if @ckyc_data.blank?
+        authorize(@ckyc_data)
+      end
+      if @investor_kyc.entity.entity_setting.kra_enabled?
+        @kra_data = @kyc_datas.where(source: "kra").last
+        @kra_data = CkycKraService.new.get_kra_data(@investor_kyc) if @kra_data.blank?
+        authorize(@kra_data)
+      end
     end
 
+    alert = ""
+    alert = "CKYC data not found" if @ckyc_data.blank? || @ckyc_data&.response.blank?
+    alert += " KRA data not found" if @kra_data.blank? || @kra_data&.response.blank?
+
     respond_to do |format|
-      format.html do
-        render "compare_ckyc_kra"
+      if alert.present?
+        format.html { render "compare_ckyc_kra", status: :unprocessable_entity, alert: }
+      else
+        format.html { render "compare_ckyc_kra" }
       end
     end
   end

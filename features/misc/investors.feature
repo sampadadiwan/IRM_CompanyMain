@@ -99,7 +99,7 @@ Scenario Outline: Import investor kycs
   Then I should see the "Import in progress"
   Then There should be "4" investor kycs created
   And the investor kycs must have the data in the sheet
-  And the approved investor access should receive a notification 
+  And the approved investor access should receive a notification
   And Aml Report should be generated for each investor kyc
 
 Scenario Outline: Import investors
@@ -133,7 +133,7 @@ Scenario Outline: Create investor kyc - no ckyc
 Scenario Outline: Create investor kyc
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
-  And Given Entity has ckyc_kra_enabled set to true
+  And Given Entity has ckyc_enabled kra_enabled set to true
   And I create a new InvestorKyc with pan "ABCD9876F"
   Then I should see ckyc and kra data comparison page
   Then I select one and see the edit page and save

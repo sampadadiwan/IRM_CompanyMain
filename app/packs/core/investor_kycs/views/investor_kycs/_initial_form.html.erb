@@ -10,6 +10,10 @@
     <%= form.date_field :birth_date, class: "form-control"  %>
   </div>
 
+  <div class="form-group" hidden='hidden'>
+    <%= form.select :kyc_type, InvestorKyc.kyc_types.invert, {}, class: "form-control", id: "kyc_type", hidden: true %>
+  </div>
+
   <div class="form-group">
     <%= form.label :PAN %>
     <%= form.text_field :PAN, class: "form-control"  %>

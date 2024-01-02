@@ -356,12 +356,12 @@ Then('Aml Report should be generated for each investor kyc') do
   end
 end
 
-Given('Given Entity has ckyc_kra_enabled set to true') do
+Given('Given Entity has ckyc_enabled kra_enabled set to true') do
   @entity.update(enable_kycs: true)
   @user.permissions.set(:enable_kycs)
   @user.save!
   @user.reload
-  @entity.entity_setting.update(ckyc_kra_enabled: true, fi_code: "123456", aml_enabled: true)
+  @entity.entity_setting.update(kra_enabled: true, ckyc_enabled: true, fi_code: "123456", aml_enabled: true)
   @investor = FactoryBot.create(:investor, entity: @entity, investor_entity: Entity.first)
 end
 

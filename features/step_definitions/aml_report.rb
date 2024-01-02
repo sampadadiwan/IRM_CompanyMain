@@ -5,7 +5,7 @@ Given('the investor has investor kyc and aml report') do
     aml_report = FactoryBot.create(:aml_report, investor: @investor, entity: @entity, investor_kyc: @investor_kyc, name: @investor_kyc.full_name)
     InvestorKyc.stub(:generate_aml_report).and_return(aml_report)
     allow_any_instance_of(InvestorKyc).to receive(:generate_aml_report).and_return(aml_report)
-    
+
   end
   @aml_report = AmlReport.order(created_at: :desc).first
 end
@@ -42,7 +42,8 @@ Then('investor kyc and aml report is generated for it') do
   @investor = FactoryBot.create(:investor, investor_entity_id: FactoryBot.create(:entity,  pan: Faker::Alphanumeric.alphanumeric(number: 10), entity_type: "InvestmentFund").id, entity_id: @investor_entity.id)
 
   @investor_entity.entity_setting.fi_code = "test"
-  @investor_entity.entity_setting.ckyc_kra_enabled = true
+  @investor_entity.entity_setting.ckyc_enabled = true
+  @investor_entity.entity_setting.kra_enabled = true
   @investor_entity.entity_setting.aml_enabled = true
   @investor_entity.entity_setting.save!
   visit(investor_kycs_url)
@@ -51,7 +52,7 @@ Then('investor kyc and aml report is generated for it') do
   click_on("Individual")
   sleep(3)
   pan = "testpannum555"
-  
+
   fill_in('individual_kyc_full_name', with: "testname abc")
   fill_in('individual_kyc_birth_date', with: "03/03/2020")
   fill_in('individual_kyc_PAN', with: pan)
@@ -70,7 +71,8 @@ Then('investor kyc and aml report is not generated for it') do
   @investor = FactoryBot.create(:investor, investor_entity_id: FactoryBot.create(:entity,  pan: Faker::Alphanumeric.alphanumeric(number: 10), entity_type: "InvestmentFund").id, entity_id: @investor_entity.id)
 
   @investor.entity.entity_setting.fi_code = "test"
-  @investor.entity.entity_setting.ckyc_kra_enabled = true
+  @investor.entity.entity_setting.ckyc_enabled = true
+  @investor.entity.entity_setting.kra_enabled = true
   @investor.entity.entity_setting.aml_enabled = true
   @investor.entity.entity_setting.save!
   visit(investor_kycs_url)
