@@ -1,0 +1,58 @@
+<% params[:units] = "Million" %>
+
+<% unless current_user.investor_advisor? %>
+    <% cache([current_user.entity, "FMDashBoardStats"], expires_in: 24.hour) do %>
+        <%= render "entities/fm_dashboard_stats" %>
+    <% end %>
+<% end %>
+
+<%= render "entities/fm_dashboard_menus" %>
+
+<div data-controller="datatable">
+
+    <% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role], expires_in: 5.day) do %>
+
+        <% if current_user.enable_funds %>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Funds</h6>
+                    <span>
+                        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_funds"><i class="fa-solid fa-caret-down"></i></a>
+                    </span>
+                </div>
+                <div class="card-body collapse show show_funds">
+                    <% funds = policy_scope(Fund) %>
+
+                    <% funds.each do |fund| %>
+                        <%= render "/funds/card", fund: %>
+                    <% end %>
+
+                </div>
+            </div>
+
+        <% end %>
+
+    
+        <% investment_opportunities = policy_scope(InvestmentOpportunity) %>
+        <% if investment_opportunities.count > 0 %>
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Opportunities</h6>
+                    <span>
+                        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_opp"><i class="fa-solid fa-caret-down"></i></a>
+                    </span>
+                </div>
+                <div class="card-body collapse show show_opp">
+                    <div class="row" >
+                        <% investment_opportunities.each do |investment_opportunity| %>
+                            <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity %>
+                        <% end %>
+                    </div>
+                </div>
+            </div>
+        <% end %>
+
+    <% end %>
+
+</div>

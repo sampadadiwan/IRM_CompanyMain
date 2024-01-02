@@ -1,0 +1,65 @@
+<% if current_user.enable_funds %>
+<div class="row">
+    <div class="col">
+        <div class="card">
+        <div class="card-body">
+            <a href="<%= reports_path %>">
+                <div class="d-flex flex-row align-items-center">
+                <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-success">
+                    <i class="ti ti-credit-card fs-6"></i>
+                </div>
+                <div class="ms-3 align-self-center">
+                    <h3 class="mb-0 fs-6">
+                        Reports
+                    </h3>
+                    <span class="text-muted">View Reports</span>
+                </div>
+                </div>
+            </a>
+        </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card">
+        <div class="card-body">
+            <a href="<%= documents_path %>">
+                <div class="d-flex flex-row align-items-center">
+                <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-primary">
+                    <i class="ti ti-grid-dots fs-6"></i>
+                </div>
+                <div class="ms-3 align-self-center">
+                    <h3 class="mb-0 fs-6">
+                        Documents
+                    </h3>
+                    <span class="text-muted">All Your Documents</span>
+                </div>
+                </div>
+            </a>
+        </div>
+        </div>
+    </div>
+
+
+    <div class="col">
+        <div class="card">
+        <div class="card-body">
+            <a href="<%= investor_kycs_path %>">
+                <div class="d-flex flex-row align-items-center">
+                <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-warning">
+                    <i class="ti ti-file-check fs-6"></i>
+                </div>
+                <div class="ms-3 align-self-center">
+                    <h3 class="mb-0 fs-6">
+                        KYC's
+                    </h3>
+                    <span class="text-muted">Your KYC Documents</span>
+                </div>
+                </div>
+            </a>
+        </div>
+        </div>
+    </div>
+
+</div>
+<% end %>

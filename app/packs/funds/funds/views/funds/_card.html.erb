@@ -1,0 +1,111 @@
+<div class="row">
+    <div class="col-lg-12 d-flex align-items-strech">
+    <div class="card w-100">
+        <div class="card-body">
+        <div class="d-sm-flex d-block align-items-center justify-content-between mb-9">
+            <div class="mb-3 mb-sm-0">
+                <div class="row">
+                    <span class="col">
+                        <h4 class="card-title fw-semibold">
+                            <%= link_to fund %>  
+                        </h4>                
+
+                        <span class="fs3 mb-1">
+                        </span>
+
+                    <span>
+                </div>                
+            </div>     
+
+            <div class="btn-group float-right">
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Actions
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <%= link_to "View Fund" , fund_path(fund), {class: "dropdown-item" } %>
+                        <%= link_to "Edit Fund" , edit_fund_path(fund), {class: "dropdown-item" } %>
+                        <div class="dropdown-divider"></div>
+                        <%= link_to "Documents" , fund_path(fund, tab: "docs-tab"), {class: "dropdown-item" } %>
+                        <%= link_to "Portfolio" , fund_path(fund, tab: "portfolio-investments-tab"), {class: "dropdown-item" } %>
+                        <%= link_to "Fund Unit Settings" , fund_unit_settings_path(fund_id: fund.id), {class: "dropdown-item" } %>
+                        <%= link_to "Fund Account Entries", account_entries_path(fund_id: fund.id, fund_accounts_only: true, all: true),
+                  class: "dropdown-item" %>
+                    </div>
+                </div>
+            </div>  
+
+            
+        </div>
+        <div class="row align-items-center">
+            <div class="col-md-5">
+                <%= column_chart [["Committed", fund.committed_amount.to_f], ["Called", fund.call_amount.to_f], ["Collected", fund.collected_amount.to_f], ["Distributed", fund.distribution_amount.abs.to_f] ],
+                 library: {
+                   plotOptions: { 
+                        column: {
+                            pointWidth: 40,
+                            dataLabels: {
+                                enabled: false,
+                                format: "{point.y:,.2f}"
+                            }
+                        }
+                    }
+                 } %>
+            </div>
+            <div class="col-md-2">
+                <div class="hstack mb-4 pb-1">
+                    <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
+                        <i class="ti ti-grid-dots text-primary fs-6"></i>
+                        </div>
+                        <div>
+                        <h4 class="mb-0 fs-5"><%= money_to_currency(fund.committed_amount, params) %></h4>
+                        <p class="fs-3 mb-0">Committed</p>
+                    </div>
+                </div>
+
+                <div class="hstack mb-4 pb-1">
+                    <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
+                        <i class="ti ti-grid-dots text-primary fs-6"></i>
+                        </div>
+                        <div>
+                        <h4 class="mb-0 fs-5"><%= money_to_currency(fund.call_amount, params) %></h4>
+                        <p class="fs-3 mb-0">Called</p>
+                    </div>
+                </div>
+
+                <div class="hstack mb-4 pb-1">
+                    <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
+                        <i class="ti ti-grid-dots text-primary fs-6"></i>
+                        </div>
+                        <div>
+                        <h4 class="mb-0 fs-5"><%= money_to_currency(fund.distribution_amount.abs, params) %></h4>
+                        <p class="fs-3 mb-0">Distributed</p>
+                    </div>
+                </div>
+
+                <div class="hstack mb-4 pb-1">
+                    <div class="p-8 bg-primary-subtle rounded-1 me-3 d-flex align-items-center justify-content-center">
+                        <i class="ti ti-grid-dots text-primary fs-6"></i>
+                        </div>
+                        <div>
+                        <h4 class="mb-0 fs-5"><%= fund.capital_commitments.count %></h4>
+                        <p class="fs-3 mb-0">Folios</p>
+                    </div>
+                </div>
+
+                <div>                    
+                    <div class="text-center">
+                        
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <%= fund_commitment_amounts(fund)  %>
+            </div>
+        </div>
+        </div>
+    </div>
+    </div>
+    
+</div>

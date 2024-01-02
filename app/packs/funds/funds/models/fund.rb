@@ -58,7 +58,7 @@ class Fund < ApplicationRecord
     FundRatiosJob.perform_later(id, nil, end_date, user_id, generate_for_commitments)
   end
 
-  def to_be_called_amount
+  def pending_call_amount
     call_amount - collected_amount
   end
 
