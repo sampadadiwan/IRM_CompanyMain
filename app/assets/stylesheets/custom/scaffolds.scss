@@ -762,6 +762,12 @@ ul.vesting_schedule {
   }
 }
 
+.card-title {
+  a{
+    --bs-link-color-rgb: var(--bs-link-hover-color-rgb);
+  }
+}
+
 .card-header {
   h6 {
     width: 80%;

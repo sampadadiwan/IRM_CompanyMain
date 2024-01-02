@@ -121,7 +121,7 @@ class InvestorKycsController < ApplicationController
     authorize(@investor_kyc)
     respond_to do |format|
       validate = current_user.curr_role.casecmp?("investor")
-      if @investor_kyc.save(validate: validate)
+      if @investor_kyc.save(validate:)
         format.html do
           if commit_param == "Continue without CKYC/KRA"
             redirect_to edit_investor_kyc_path(@investor_kyc)

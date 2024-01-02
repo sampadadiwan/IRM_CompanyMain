@@ -17,7 +17,7 @@
                 </div>                
             </div>     
 
-            <div class="btn-group float-right">
+            <div class="btn-group float-right d-none d-sm-block">
                 <div class="dropdown">
                     <button class="btn btn-outline-primary dropdown-toggle" type="button"
                             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -39,7 +39,7 @@
             
         </div>
         <div class="row align-items-center">
-            <div class="col-md-5">
+            <div class="col-md-5 d-none d-sm-block">
                 <%= column_chart [["Committed", fund.committed_amount.to_f], ["Called", fund.call_amount.to_f], ["Collected", fund.collected_amount.to_f], ["Distributed", fund.distribution_amount.abs.to_f] ],
                  library: {
                    plotOptions: { 
@@ -100,7 +100,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-5 d-none d-sm-block">
                 <%= fund_commitment_amounts(fund)  %>
             </div>
         </div>

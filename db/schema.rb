@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_24_111753) do
+ActiveRecord::Schema[7.1].define(version: 2023_12_26_134100) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -991,6 +991,8 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_24_111753) do
     t.string "call_basis"
     t.integer "custom_flags", default: 0
     t.integer "email_delay_seconds", default: 0
+    t.boolean "ckyc_enabled", default: false
+    t.boolean "kra_enabled", default: false
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 
