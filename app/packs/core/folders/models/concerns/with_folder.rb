@@ -30,7 +30,7 @@ module WithFolder
 
   # Get or Create the folder based on folder_path
   def setup_document_folder
-    if folder_path.present?
+    if folder_path.present? && !destroyed?
       folder = Folder.where(entity_id:, full_path: folder_path).last
       folder ||= setup_folder_from_path(folder_path)
 

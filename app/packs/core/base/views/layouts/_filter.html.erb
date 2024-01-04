@@ -20,7 +20,16 @@
           <%= render "/layouts/condition_fields", f: c, associations: associations %>
         <% end %>
 
+
         <div class="action float-end">        
+
+          <% if %w[capital_commitments account_entries].include?(params[:controller]) %>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="ag_grid" name="ag" value="true" <%= params[:ag].present? ? "checked" : nil %> >
+            <label class="form-check-label" for="ag_grid">Enable Pivots</label>
+          </div>
+          <% end %>
+
           <%= f.button "", class: "btn btn-outline-primary", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Search" do %>
             <i class="ti ti-search"></i>
           <% end %>
@@ -31,10 +40,11 @@
             <i class="ti ti-database"></i>
           <% end %>
         </div>
-
+      
         <% hidden_fields.each do |key, value| %>
-          <%= hidden_field_tag key, value %>
+          <%= hidden_field_tag key, value if value %>
         <% end %>
+
       <% end %>
     </div>
   </div>

@@ -86,7 +86,7 @@ module CapHive
 
     Rails.application.routes.default_url_options[:host] = ENV.fetch('HOST', nil)
 
-    config.active_record.yaml_column_permitted_classes = [BigDecimal, Date, ActiveSupport::HashWithIndifferentAccess, Time, Symbol, Roo::Link]
+    config.active_record.yaml_column_permitted_classes = [BigDecimal, Date, ActiveSupport::HashWithIndifferentAccess, Time, Symbol, Roo::Link, ActiveSupport::TimeWithZone, ActiveSupport::TimeZone]
 
     config.action_mailer.smtp_settings = {
       address: "email-smtp.ap-south-1.amazonaws.com",

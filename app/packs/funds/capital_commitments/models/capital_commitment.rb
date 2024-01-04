@@ -269,7 +269,7 @@ class CapitalCommitment < ApplicationRecord
   # This is to bust any cached dashboards showing the commitments
   def touch_investor
     investor.investor_entity.touch if investor&.investor_entity
-    entity.touch
+    entity&.touch
   end
 
   def self.ransackable_attributes(_auth_object = nil)

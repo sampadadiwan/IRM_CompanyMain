@@ -2,6 +2,7 @@ class User < ApplicationRecord
   include PublicActivity::Model
   include UserEnabled
   include WithCustomField
+  include Trackable
 
   attr_accessor :role_name
 

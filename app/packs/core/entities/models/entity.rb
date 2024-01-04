@@ -52,7 +52,7 @@ class Entity < ApplicationRecord
   # has_many :esigns, dependent: :destroy
 
   # Will have many employees
-  has_many :employees, class_name: "User", dependent: :destroy
+
   has_many :documents, dependent: :destroy
   has_many :holdings, dependent: :destroy
   has_many :messages, dependent: :destroy
@@ -103,6 +103,7 @@ class Entity < ApplicationRecord
 
   # Noticed gem
   has_many :notifications, as: :recipient, dependent: :destroy
+  has_many :employees, class_name: "User", dependent: :destroy
 
   include FileUploader::Attachment(:logo)
 

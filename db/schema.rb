@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_03_130338) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -210,6 +210,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_03_130338) do
     t.bigint "funding_round_id"
     t.integer "units", default: 0
     t.integer "preferred_converted_qty", default: 0
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_aggregate_investments_on_deleted_at"
     t.index ["entity_id"], name: "index_aggregate_investments_on_entity_id"
     t.index ["funding_round_id"], name: "index_aggregate_investments_on_funding_round_id"
     t.index ["investor_id"], name: "index_aggregate_investments_on_investor_id"

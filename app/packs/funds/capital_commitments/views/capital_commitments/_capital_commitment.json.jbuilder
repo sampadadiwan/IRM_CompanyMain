@@ -12,6 +12,7 @@ json.call_amount_number capital_commitment.call_amount.to_f
 json.collected_amount_number capital_commitment.collected_amount.to_f
 json.distribution_amount_number capital_commitment.distribution_amount.to_f
 json.fund_currency capital_commitment.fund.currency
+json.fund_name capital_commitment.fund.name
 
 json.dt_actions begin
   links = []

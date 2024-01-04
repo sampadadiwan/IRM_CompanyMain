@@ -1,5 +1,5 @@
 <% fund ||= nil; cols ||= params[:cols] %>
-<% data_source ||= capital_commitments_path(params, format: :json, all: true, jbuilder: true) %>
+<% data_source ||= capital_commitments_path(params: params.to_unsafe_h, format: :json, all: true, jbuilder: true) %>
 <% xl_link = download_xl_link(data_source) %>
 <% lazy_load_data ||= false %>
 
