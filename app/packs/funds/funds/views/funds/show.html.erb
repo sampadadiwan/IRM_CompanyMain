@@ -73,14 +73,7 @@
                       "sample_upload": "FUND_DOCS_SAMPLE"),
                       { class: "dropdown-item"}   %>
 
-
-              <%= link_to "Import Investors",
-                  new_import_upload_path("import_upload[owner_id]": @fund.id,
-                      "import_upload[owner_type]": "Fund",
-                      "import_upload[import_type]": "Investor",
-                      "sample_upload": "FUND_INVESTORS_SAMPLE"),
-                      { class: "dropdown-item"}  %>
-
+        
               <%= link_to "Import Investor Advisors",
                   new_import_upload_path("import_upload[owner_id]": @fund.id,
                       "import_upload[owner_type]": "Fund",

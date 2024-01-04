@@ -9,8 +9,7 @@
         <div class="brand-logo d-flex align-items-center justify-content-between">
           <div class="sidebar-brand-icon">
           <a href="/" class="text-nowrap logo-img">
-            <img src="/img/logo_trans.png" class="dark-logo" alt="Logo-Dark" />
-            <img src="/img/logo_trans.png" class="light-logo" alt="Logo-light" />
+            <img src="/img/logo-without-tagline.jpg" class="dark-logo" alt="Logo-Dark" />
           </a>
           </div>
           <a href="javascript:void(0)" class="sidebartoggler ms-auto text-decoration-none fs-5 d-block d-xl-none">
@@ -18,17 +17,42 @@
           </a>
         </div>
 
+        <% 
+        #grouped_routes = Administrate::Namespace.new(namespace).resources_with_index_route.sort.group_by{|r| r[0]}
 
-        <% Administrate::Namespace.new(namespace).resources_with_index_route.sort.each do |resource| %>
-          <li class="sidebar-item">
+        grouped_routes = {"Approvals"=>["access_rights", "approval_responses", "approvals"],
+                          "Funds"=>["funds", "capital_calls", "capital_commitments", "capital_distribution_payments", "capital_distributions", "capital_remittance_payments", "capital_remittances"],
+                          "Deals"=>["deal_activities", "deal_investors", "deals"],
+                          "Misc"=>["users", "documents", "investor_accesses", "investors", "e_signatures", "entities", "folders", "quick_links", "reports"],
+                          "Startups"=>["holdings", "interests", "investments", "excercises", "offers", "option_pools", "secondary_sales", "valuations", "funding_rounds"]}
 
-            
-            <% anchor = "<span class='hide-menu'>#{display_resource_name(resource)}</span>".html_safe %>
-            
-            <%= link_to(anchor, resource_index_route(resource), class: "sidebar-link") if valid_action?(:index, resource) && show_action?(:index, model_from_resource(resource)) %>
-            
+        
+        grouped_routes.each do |letter, resources| %>
+
+          <li class="sidebar-item"> 
+            <a class="sidebar-link has-arrow" href="javascript:void(0)">
+                <span><i class="ti ti-checklist"></i></span>
+                <span class="hide-menu"><%= letter.titleize %></span>
+            </a>
+
+            <ul aria-expanded="false" class="collapse first-level">
+              <% resources.sort.each do |resource, route| %>
+                <% if valid_action?(:index, resource) && show_action?(:index, model_from_resource(resource)) %>
+                <li class="sidebar-item">
+                    <a class="sidebar-link" href="<%= resource_index_route(resource) %>">
+                        <div class="round-16 d-flex align-items-center justify-content-center">
+                            <i class="ti ti-circle"></i>
+                        </div>
+                        <span class="hide-menu"><%= display_resource_name(resource) %></span>
+                    </a>
+                </li>
+                <% end %>
+              <% end %>
+            </ul>
           </li>
+
         <% end %>
+
 
   <!-- Divider -->
   <hr class="sidebar-divider d-none d-md-block">
