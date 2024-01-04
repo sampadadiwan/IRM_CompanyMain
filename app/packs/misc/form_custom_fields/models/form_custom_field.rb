@@ -54,32 +54,4 @@ class FormCustomField < ApplicationRecord
     end
   end
 
-  def self.migrate_old_data
-    old_data = [[93, "Type of Investor", "InvestorKyc", 47, "Carpediem"],
-                [94, "Type of Investor as per SEBI", "InvestorKyc", 47, "Carpediem"],
-                [103, "mutual_funds_/_F_Ds", "Valuation", 19, "Sauce.VC"],
-                [229, "Individual", "Offer", 762, "Ambit Private Limited"],
-                [244, "value_of_stamp_paper_SH4", "Offer", 4, "Demo Startup"],
-                [282, "dob_doi`", "InvestorKyc", 844, "SiriusOne"],
-                [327, "net sales", "KpiReport", 4, "Demo Startup"],
-                [330, "no of orders   net", "KpiReport", 4, "Demo Startup"],
-                [331, "net working capital", "KpiReport", 4, "Demo Startup"],
-                [332, "total assets", "KpiReport", 4, "Demo Startup"],
-                [337, "distributor name", "InvestorKyc", 3103, "Artha"],
-                [339, "whether valuation report available?", "Valuation", 69, "Demo Fund"],
-                [491, "gein_(global_entity_identification_number)", "NonIndividualKyc", 844, "SiriusOne"],
-                [492, "provide_tin_(tax_identification_number)", "NonIndividualKyc", 844, "SiriusOne"],
-                [497, "registered_office_address/_place_of_business", "NonIndividualKyc", 844, "SiriusOne"],
-                [521, "father's_name", "NonIndividualKyc", 844, "SiriusOne"],
-                [522, "spouse's_name", "NonIndividualKyc", 844, "SiriusOne"],
-                [530, "provide_aadhar_card/passport_of_controlling_person", "NonIndividualKyc", 844, "SiriusOne"]]
-
-    old_data.each do |row|
-      id = row[0]
-      old_name = row[1]
-      fcf = FormCustomField.find(id)
-      fcf.save
-      fcf.change_name(old_name)
-    end
-  end
 end

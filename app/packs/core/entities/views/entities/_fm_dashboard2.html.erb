@@ -10,7 +10,7 @@
 
 <div data-controller="datatable">
 
-    <% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role], expires_in: 5.day) do %>
+    <% cache_if(current_user != nil, [current_user&.entity, current_user&.curr_role, params[:page]], expires_in: 5.day) do %>
 
         <% if current_user.enable_funds %>
             
@@ -22,11 +22,13 @@
                     </span>
                 </div>
                 <div class="card-body collapse show show_funds">
-                    <% funds = policy_scope(Fund) %>
+                    <% funds = policy_scope(Fund).page(params[:page]) %>
 
                     <% funds.each do |fund| %>
                         <%= render "/funds/card", fund: %>
                     <% end %>
+
+                    <%= paginate funds %>
 
                 </div>
             </div>
