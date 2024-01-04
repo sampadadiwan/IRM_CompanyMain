@@ -1,6 +1,6 @@
 <%= render "/layouts/alerts" %>
 
-<%= render "/layouts/filter", associations: [:capital_commitment] %>
+<%= render "/layouts/filter", associations: [:capital_commitment], hidden_fields: {ag: params[:ag]} %>
 
 <%= turbo_frame_tag "account_entries_list", target: "_top" do %>
   <% if params[:ag].present? %>
