@@ -4,11 +4,11 @@ class QuickLinkStepPolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record) || record.entity.nil?
+    record.quick_link.entity.nil? || belongs_to_entity?(user, record.quick_link)
   end
 
   def create?
-    belongs_to_entity?(user, record)
+    belongs_to_entity?(user, record.quick_link)
   end
 
   def new?

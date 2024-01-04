@@ -13,7 +13,7 @@ class BaseScope
   end
 
   def resolve_admin
-    if instance_of?(::PaperTrail::VersionPolicy::Scope)
+    if instance_of?(::PaperTrail::VersionPolicy::Scope) || instance_of?(ReportPolicy::Scope) || instance_of?(QuickLinkPolicy::Scope) || instance_of?(QuickLinkStepPolicy::Scope)
       scope
     else
       scope.joins(:entity).merge(Entity.where_permissions(:enable_support))

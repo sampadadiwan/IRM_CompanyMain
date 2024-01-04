@@ -3,6 +3,9 @@ namespace :admin do
     resources :versions, except: :index
   end
   resources :investors
+  resources :reports
+  resources :quick_links
+  resources :quick_link_steps
   resources :users
   resources :entities
   resources :documents

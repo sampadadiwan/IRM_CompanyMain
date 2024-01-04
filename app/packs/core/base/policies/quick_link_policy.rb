@@ -1,14 +1,10 @@
 class QuickLinkPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.curr_role == "investor"
-        scope.where(entity_id: [user.entity_id, nil])
-      elsif user.entity.is_fund? || user.entity.is_group_company?
-        scope.where(entity_id: [user.entity_id, nil])
-      elsif user.has_cached_role?(:super)
+      if user.has_cached_role?(:super)
         scope.all
       else
-        scope.none
+        scope.where(entity_id: [user.entity_id, nil])
       end
     end
   end
