@@ -1,5 +1,5 @@
 <% hidden_fields ||= {} %>
-<% if params[:filter].present? || params[:q].present? %>
+<% if params[:filter].present? || params[:q].present? || params[:ag].present? %>
 
   <div class="card filter_form" data-controller="filter">
     <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">

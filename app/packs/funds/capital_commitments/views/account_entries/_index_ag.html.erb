@@ -1,5 +1,5 @@
 <% fund ||= nil %>        
-<% data_source ||= account_entries_path(params, format: :json, all: true, fund_id: params[:fund_id], fund_account_only: params[:fund_account_only], capital_commitment_id: params[:capital_commitment_id], jbuilder: true) %>    
+<% data_source ||= account_entries_path(params: params.to_unsafe_h, format: :json, all: true, fund_id: params[:fund_id], fund_account_only: params[:fund_account_only], capital_commitment_id: params[:capital_commitment_id], jbuilder: true) %>    
 <% lazy_load_data ||= false %>
 
 

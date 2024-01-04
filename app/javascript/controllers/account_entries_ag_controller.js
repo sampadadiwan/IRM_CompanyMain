@@ -4,7 +4,8 @@ export default class extends BaseAgGrid {
   columnDefs() {
     let controller = this;
     let columnDefs = [
-      
+      { "field": "fund_name", headerName: "Fund", filter: "agSetColumnFilter", enableRowGroup: true, enablePivot: true, chartDataType: 'category', },
+
       {
         field: "name", headerName: "Name", enableRowGroup: true, enablePivot: true,
         cellRenderer: function (params) {
