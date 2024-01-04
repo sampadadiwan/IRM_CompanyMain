@@ -18,6 +18,7 @@ export default class extends BaseAgGrid {
       },
 
       { "field": "entry_type", headerName: "Entry Type", filter: "agSetColumnFilter", enableRowGroup: true, enablePivot: true, chartDataType: 'category', },
+      { "field": "unit_type", headerName: "Unit Type", filter: "agSetColumnFilter", enableRowGroup: true, enablePivot: true, chartDataType: 'category', },
       { "field": "reporting_date", headerName: "Date", filter: "agDateColumnFilter", enableRowGroup: true, enablePivot: true, chartDataType: 'category', },
       { "field": "period", headerName: "Period", filter: "agSetColumnFilter", enableRowGroup: true, enablePivot: true, chartDataType: 'category', },
       
