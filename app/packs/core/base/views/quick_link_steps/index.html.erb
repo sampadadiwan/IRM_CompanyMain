@@ -1,0 +1,34 @@
+<%= render "/layouts/alerts" %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Quick Link Steps</h1>
+  <%= link_to "New Quick Link Step", new_quick_link_step_path, {class: "btn btn-outline-primary"}  %>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+
+  <table id="quick_link_steps" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Position
+        </th>
+        <th>
+          Name
+        </th>
+        <th>
+          Link
+        </th>
+        <th>
+          Description
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+    <% @quick_link_steps.each do |quick_link_step| %>
+      <%= render quick_link_step %>
+    <% end %>
+    </tbody>
+  </table>
+
+</div>

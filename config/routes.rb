@@ -1,9 +1,4 @@
 Rails.application.routes.draw do
-  resources :custom_notifications
-  resources :reports
-  resources :ci_track_records
-  resources :ci_widgets
-  resources :ci_profiles
   draw :admin
   draw :fund
   draw :secondary

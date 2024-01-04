@@ -1,0 +1,30 @@
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Name
+    </td>
+    <td>
+      <%= quick_link.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Description
+    </td>
+    <td>
+      <%= quick_link.description %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Tags
+    </td>
+    <td>
+      <%= quick_link.tags %>
+    </td>
+  </tr>
+
+</table>
+
+<%= render "/quick_links/preview", quick_link: quick_link %>
+

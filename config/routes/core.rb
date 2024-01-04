@@ -1,3 +1,8 @@
+resources :quick_link_steps
+resources :quick_links
+resources :custom_notifications
+resources :reports
+
 resources :reminders
 resources :permissions
 resources :tasks do

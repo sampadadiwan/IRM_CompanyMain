@@ -1,0 +1,55 @@
+<%= render "/layouts/alerts" %>
+
+<table class="table table-bordered dataTable">
+
+          <tr>
+        <td>
+          Name
+        </td>
+        <td>
+          <%= @quick_link_step.name %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Link
+        </td>
+        <td>
+          <%= @quick_link_step.link %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Description
+        </td>
+        <td>
+          <%= @quick_link_step.description %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Entity
+        </td>
+        <td>
+          <%= @quick_link_step.entity_id %>
+        </td>    
+      </tr>
+          <tr>
+        <td>
+          Quick Link
+        </td>
+        <td>
+          <%= @quick_link_step.quick_link_id %>
+        </td>    
+      </tr>
+    
+  
+</table>
+
+
+<div>
+  <%= link_to "Edit", edit_quick_link_step_path(@quick_link_step), {class: "btn btn-outline-primary"} %> |
+  <%= link_to "Back", :back, {class: "btn btn-outline-primary"} %> |
+
+  <%= button_to "Delete", @quick_link_step, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+</div>

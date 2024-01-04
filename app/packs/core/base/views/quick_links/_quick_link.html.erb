@@ -1,0 +1,17 @@
+<tr id="<%= dom_id quick_link %>">
+  <td>
+    <%= link_to quick_link.name, quick_link %>
+  </td>
+  <td>
+    <%= quick_link.description %>
+  </td>
+  <td>
+    <%= quick_link.tags %>
+  </td>
+</tr>
+
+<tr>
+  <td colspan="3">
+    <%= render "/quick_links/preview", quick_link: quick_link %>
+  </td> 
+</tr>

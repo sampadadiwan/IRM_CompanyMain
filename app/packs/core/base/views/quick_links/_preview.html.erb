@@ -1,0 +1,28 @@
+<% colors = ['primary', 'secondary', 'success', 'danger', 'warning'] %>
+<div class="row">
+  <% quick_link.quick_link_steps.each_with_index do |s, index| %>
+  <div class="col-md-4 d-flex align-items-stretch">
+    <a href="<%=s.link%>" target="_blank" class="card text-bg-<%= colors[index % 5] %> text-white w-100 card-hover">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <i class="ti fs-8"><%= index + 1 %></i>
+          <div class="ms-auto">
+            <i class="ti ti-arrow-right fs-8"></i>
+          </div>
+        </div>
+        <div class="mt-4">
+          <h4 class="card-title mb-1 text-white"><%= s.name %></h4>
+          <h6 class="card-text fw-normal text-white-50">
+            <%= s.description %>
+          </h6>
+        </div>
+      </div>
+    </a>
+  </div>
+  <% end %>
+</div>
+  <% if policy(quick_link).edit? %>    
+    <%= link_to "Edit", edit_quick_link_path(quick_link), {class: "btn btn-outline-primary"} %> |
+    <%= button_to "Delete", quick_link, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <% end %>
+

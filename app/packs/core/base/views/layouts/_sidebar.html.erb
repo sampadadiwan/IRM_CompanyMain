@@ -10,7 +10,7 @@
                     <span><i class="ti ti-layout-dashboard"></i></span>
                     <span class="hide-menu">Dashboard</span></a>                
             </li>
-
+            
             <% if current_user && current_user.has_cached_role?(:super) %>
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/admin">
@@ -43,22 +43,23 @@
 
             <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role) && Entity::SECONDARY_BUYERS.include?(current_user.entity_type) %>
                 <!-- Divider -->
-                <hr class="sidebar-divider my-0">
+                <hr class="sidebar-divider">
                 <%= render "layouts/sidebars/sidebar_investor" %>                
             <% end %>
 
             <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && (current_user.entity.is_fund?) %>
                 <!-- Divider -->
-                <hr class="sidebar-divider my-0">
+                <hr class="sidebar-divider">
                 <%= render "layouts/sidebars/sidebar_fund" %>
             <% end %>
 
             <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && current_user.entity_type == "Company" %>
                 <!-- Divider -->
-                <hr class="sidebar-divider my-0">
+                <hr class="sidebar-divider">
                 <%= render "layouts/sidebars/sidebar_startup" %>
             <% end %>
 
+            <hr class="sidebar-divider">
 
             <% if current_user && current_user.enable_funds %>
                 <li class="sidebar-item">                
@@ -134,6 +135,10 @@
             <% end %>
 
 
+            
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
             <% if current_user &&  
                 (current_user.entity.is_fund? || current_user.entity.is_company?) %>
                 
@@ -165,8 +170,37 @@
                 </li>
             <% end %>
 
-            <!-- Divider -->
-            <hr class="sidebar-divider">
+
+
+            <li class="sidebar-item"> 
+                    <a class="sidebar-link has-arrow" href="/quick_links" data-bs-toggle="collapse" data-bs-target="#taskMenus">
+                        <span><i class="ti ti-map-pin"></i></span>
+                        <span class="hide-menu">Quick Links</span>
+                    </a>
+
+                    <ul aria-expanded="false" class="collapse first-level">
+                        <% if current_user && current_user.curr_role != "investor" %>
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" href="/quick_links?tags=Fund">
+                                <div class="round-16 d-flex align-items-center justify-content-center">
+                                    <i class="ti ti-circle"></i>
+                                </div>
+                                <span class="hide-menu">Funds</span>
+                            </a>
+                        </li>
+                        <% end %>
+
+                        <li class="sidebar-item">
+                            <a class="sidebar-link" href="/quick_links?tags=Investor">
+                                <div class="round-16 d-flex align-items-center justify-content-center">
+                                    <i class="ti ti-circle"></i>
+                                </div>
+                                <span class="hide-menu">Investors</span>
+                            </a>
+                        </li>
+                    </ul>
+
+            </li>
 
         </ul>
         <!-- End of Sidebar -->

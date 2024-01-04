@@ -35,7 +35,8 @@ class FundPolicy < FundBasePolicy
     user.enable_funds &&
       (
         permissioned_employee? ||
-        permissioned_investor?
+        permissioned_investor? ||
+        super_user?
       )
   end
 
@@ -61,7 +62,7 @@ class FundPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update)
+    permissioned_employee?(:update) || super_user?
   end
 
   def edit?

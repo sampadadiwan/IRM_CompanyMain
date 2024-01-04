@@ -1,6 +1,8 @@
 resources :portfolio_cashflows
 resources :stock_adjustments
 resources :scenario_investments
+resources :ci_track_records
+resources :ci_widgets
 
 resources :portfolio_scenarios do
   patch 'run', on: :member

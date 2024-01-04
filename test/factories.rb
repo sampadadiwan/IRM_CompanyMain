@@ -1,4 +1,19 @@
 FactoryBot.define do
+  factory :quick_link_step do
+    name { "MyString" }
+    link { "MyText" }
+    description { "MyText" }
+    entity { nil }
+    quick_link { nil }
+  end
+
+  factory :quick_link do
+    name { "MyString" }
+    description { "MyText" }
+    tags { "MyString" }
+    entity { nil }
+  end
+
   factory :custom_notification do
     subject { "MyString" }
     body { "MyText" }

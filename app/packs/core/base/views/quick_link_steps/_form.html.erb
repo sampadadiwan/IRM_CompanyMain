@@ -1,0 +1,35 @@
+<%= form_with(model: quick_link_step) do |form| %>
+  <% if quick_link_step.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(quick_link_step.errors.count, "error") %> prohibited this quick_link_step from being saved:</h2>
+
+      <ul>
+        <% quick_link_step.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :name %>
+    <%= form.text_field :name, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :link %>
+    <%= form.text_area :link, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :description %>
+    <%= form.text_area :description, class: "form-control"  %>
+  </div>
+
+  <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+  <%= form.text_field :quick_link_id, class: "form-control", hidden: true  %>
+
+  <div class="form-group">
+    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+  </div>
+<% end %>

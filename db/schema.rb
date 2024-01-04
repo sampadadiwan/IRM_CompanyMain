@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_12_26_134100) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_03_130338) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -2135,6 +2135,27 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_26_134100) do
     t.index ["user_id"], name: "index_portfolio_scenarios_on_user_id"
   end
 
+  create_table "quick_link_steps", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name"
+    t.text "link"
+    t.text "description"
+    t.bigint "quick_link_id", null: false
+    t.integer "position"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["quick_link_id"], name: "index_quick_link_steps_on_quick_link_id"
+  end
+
+  create_table "quick_links", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name"
+    t.text "description"
+    t.string "tags"
+    t.bigint "entity_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_quick_links_on_entity_id"
+  end
+
   create_table "reminders", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "owner_type", null: false
@@ -2757,6 +2778,8 @@ ActiveRecord::Schema[7.1].define(version: 2023_12_26_134100) do
   add_foreign_key "portfolio_scenarios", "entities"
   add_foreign_key "portfolio_scenarios", "funds"
   add_foreign_key "portfolio_scenarios", "users"
+  add_foreign_key "quick_link_steps", "quick_links"
+  add_foreign_key "quick_links", "entities"
   add_foreign_key "reminders", "entities"
   add_foreign_key "reports", "entities"
   add_foreign_key "reports", "users"
