@@ -22,6 +22,10 @@ class ImportUploadsController < ApplicationController
                                  else
                                    @import_upload.owner.entity_id
                                  end
+
+    else
+      @import_upload.owner = current_user.entity
+      @import_upload.entity_id = current_user.entity_id                                 
     end
 
     authorize @import_upload
