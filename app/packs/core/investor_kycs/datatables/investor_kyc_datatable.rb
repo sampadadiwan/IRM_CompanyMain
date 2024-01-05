@@ -3,6 +3,7 @@ class InvestorKycDatatable < AjaxDatatablesRails::ActiveRecord
     @view_columns ||= {
       id: { source: "InvestorKyc.id" },
       full_name: { source: "InvestorKyc.full_name", orderable: true },
+      kyc_type: { source: "InvestorKyc.kyc_type", orderable: true },
       investor_name: { source: "InvestorKyc.investor_name", orderable: true },
       pan: { source: "InvestorKyc.PAN", orderable: true },
       docs_completed: { source: "InvestorKyc.docs_completed", orderable: true },
@@ -26,6 +27,7 @@ class InvestorKycDatatable < AjaxDatatablesRails::ActiveRecord
       {
         id: record.id,
         full_name: record.decorate.full_name,
+        kyc_type: record.kyc_type.titleize,
         investor_name: record.decorate.investor_link,
         pan: record.PAN,
         # address: record.address,

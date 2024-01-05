@@ -6,6 +6,7 @@ export default class extends ServerDatatableController {
   default = [
     {"data": "investor_name"},
     {"data": "full_name"},
+    {"data": "kyc_type"},
     {"data": "pan"},
     {"data": "pan_verified"},
     // {"data": "address"},
@@ -23,6 +24,7 @@ export default class extends ServerDatatableController {
   mobile = [
     {"data": "investor_name"},
     {"data": "full_name"},
+    {"data": "kyc_type"},
     {"data": "pan"},
   ]
 
