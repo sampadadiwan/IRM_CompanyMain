@@ -96,6 +96,7 @@ class DocumentDashboard < Administrate::BaseDashboard
     tag_list
     rich_text_text
     provider_doc_id
+    esign_status
   ].freeze
 
   # COLLECTION_FILTERS
