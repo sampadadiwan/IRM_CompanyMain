@@ -95,6 +95,7 @@ class DocumentDashboard < Administrate::BaseDashboard
     orignal
     tag_list
     rich_text_text
+    provider_doc_id
   ].freeze
 
   # COLLECTION_FILTERS
