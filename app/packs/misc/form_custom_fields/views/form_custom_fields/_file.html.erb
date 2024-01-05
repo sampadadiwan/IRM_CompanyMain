@@ -34,6 +34,7 @@
         <%= f.text_field "document_name",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][name]", value: document_name, hidden: true  %>
         <%= f.text_field "document_orignal",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][orignal]", value: true, hidden: true  %>
         <%= f.text_field "document_user_id",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][user_id]", value: current_user.id, hidden: true  %>
+        <%= f.text_field "document_user_id",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][send_email]", value: false, hidden: true  %>
         
         <%= f.text_field "document_id",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][id]", value: document&.id, hidden: true  %>
        
