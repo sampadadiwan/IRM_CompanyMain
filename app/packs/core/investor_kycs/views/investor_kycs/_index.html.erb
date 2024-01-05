@@ -66,15 +66,13 @@
             <div class="dropdown-divider"></div>
 
             <%= link_to "Upload KYC Details",
-              new_import_upload_path("import_upload[owner_id]": current_user.entity_id,
-                  "import_upload[owner_type]": "Entity",
+              new_import_upload_path(
                   "import_upload[import_type]": "InvestorKyc",
                   "sample_upload": "INVESTOR_KYCS_SAMPLE"),
                   { class: "dropdown-item"}  %>
 
             <%= link_to "Upload KYC Documents",
-              new_import_upload_path("import_upload[owner_id]": current_user.entity_id,
-                  "import_upload[owner_type]": "Entity",
+              new_import_upload_path(
                   "import_upload[import_type]": "KycDocs",
                   "sample_upload": "INVESTOR_KYCS_DOCS_SAMPLE"),
                   { class: "dropdown-item"}  %>

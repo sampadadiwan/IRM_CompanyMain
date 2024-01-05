@@ -53,5 +53,4 @@ class FormCustomField < ApplicationRecord
       record.update_column(:properties, record.properties)
     end
   end
-
 end
