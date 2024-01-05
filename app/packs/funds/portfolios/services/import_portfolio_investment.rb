@@ -34,6 +34,7 @@ class ImportPortfolioInvestment < ImportUtil
       # Save the PortfolioInvestment
       setup_custom_fields(user_data, portfolio_investment, custom_field_headers)
       portfolio_investment.notes = user_data["Notes"]
+      portfolio_investment.created_by_import = true
       portfolio_investment.portfolio_company = portfolio_company
       Rails.logger.debug { "Saving PortfolioInvestment with name '#{portfolio_investment.portfolio_company_name}'" }
       portfolio_investment.save!

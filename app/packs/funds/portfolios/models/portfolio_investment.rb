@@ -5,6 +5,8 @@ class PortfolioInvestment < ApplicationRecord
   include Trackable
   include PortfolioComputations
 
+  attr_accessor :created_by_import
+
   belongs_to :entity
   belongs_to :fund
   # This is only for co invest
@@ -75,7 +77,13 @@ class PortfolioInvestment < ApplicationRecord
     aggregate_portfolio_investment.save
   end
 
-  after_create_commit -> { PortfolioInvestmentJob.perform_later(id) if sell? }
+  after_create_commit lambda {
+    # After we save the PI, we need to create the attributions for sells.
+    # When we import the data we create it in the same thread, as we need to ensure the attribution is setup before we move on to the next row. However if the portfolio_investment is created by the user, we can do it in the background.
+    # Originally we were doing this in the background, but it was causing issues with the attribution being created in parallel and sometimes in the wrong order.
+    created_by_import && sell? ? PortfolioInvestmentJob.perform_now(id) : PortfolioInvestmentJob.perform_later(id)
+  }
+
   # Called from PortfolioInvestmentJob
   # This method is used to setup which sells are linked to which buys for purpose of attribution
   def setup_attribution
