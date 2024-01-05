@@ -27,7 +27,7 @@ class KycDocGenerator
   private
 
   def notify(doc_template, investor_kyc, user_id)
-    send_notification("KYC #{doc_template.name} generated for #{investor_kyc.full_name}. Please refresh the page.", user_id)
+    send_notification("#{doc_template.name} generated for #{investor_kyc.full_name}. Please refresh the page.", user_id)
   end
 
   # doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"

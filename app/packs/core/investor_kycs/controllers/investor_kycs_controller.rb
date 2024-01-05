@@ -209,14 +209,18 @@ class InvestorKycsController < ApplicationController
   end
 
   def generate_all_docs
+    # We get a ransack query for the KYCs for which we want to generate the docs
+    @q = InvestorKyc.ransack(params[:q])
+    # Get the kycs for the query
+    @investor_kycs = policy_scope(@q.result)
     if request.post?
       if params[:document_template_ids].present? && Date.parse(params[:start_date]) <= Date.parse(params[:end_date])
-        KycDocGenJob.perform_later(nil, params[:document_template_ids], params[:start_date], params[:end_date],
-                                   user_id: current_user.id, entity_id: params[:entity_id])
+        # Send the kyc ids, document template ids, start date and end date to the job
+        KycDocGenJob.perform_later(@investor_kycs.pluck(:id), params[:document_template_ids], params[:start_date], params[:end_date], user_id: current_user.id, entity_id: params[:entity_id])
 
-        redirect_to investor_kycs_url, notice: "Document generation in progress. Please check back in a few minutes."
+        redirect_to investor_kycs_url(q: params[:q].to_unsafe_h), notice: "Document generation in progress. Please check back in a few minutes."
       else
-        redirect_to generate_all_docs_investor_kycs_url, alert: "Invalid dates or document template."
+        redirect_to generate_all_docs_investor_kycs_url(q: params[:q].to_unsafe_h), alert: "Invalid dates or document template."
       end
     end
   end

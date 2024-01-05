@@ -40,7 +40,7 @@
 
             <%= link_to "E-Signatures Report" , report_entity_path(id: entity_id, report: "dashboard/e_signatures"), {class: "dropdown-item" } if policy(ESignature).index? %>
 
-            <%= link_to "Generate Kyc Docs", generate_all_docs_investor_kycs_path(entity_id:), class: "dropdown-item" if false && policy(investor_kyc).new?  %>
+            <%= link_to "Generate Kyc Docs", generate_all_docs_investor_kycs_path(entity_id:, q: params[:q].to_unsafe_h), class: "dropdown-item" if params[:debug].present? && policy(investor_kyc).new?  %>
 
             <%= link_to "Approve Kyc Docs", approve_documents_path(entity_id:, owner_type: "InvestorKyc"), class: "dropdown-item" if policy(Document).approve? %>
 
