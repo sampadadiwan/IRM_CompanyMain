@@ -1,0 +1,70 @@
+
+<%= render FormCard.new(title: "Capital Call : #{capital_call.name}") do %>
+
+    <%= form_with(model: capital_call, validate: true) do |form| %>
+      <% if capital_call.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(capital_call.errors.count, "error") %> prohibited this capital_call from being saved:</h2>
+
+          <ul>
+            <% capital_call.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div data-controller="call-copy">
+
+      <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
+
+      <div class="form-group">
+        <%= form.label :name %>
+        <%= form.text_field :name, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :due_date %>
+        <%= form.date_field :due_date, class: "form-control"  %>
+      </div>
+
+      <% if capital_call.fund.unit_types.present? %>
+        <div>
+          <% capital_call.fund.unit_types.split(",").each_with_index do |unit_type, index| %>
+            <%
+                unit_type = unit_type.strip
+                price = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["price"] : 0
+            %>
+            <div class="row">
+
+              <div class="form-group col-md-4">
+                <%= form.label :unit_type, "#{unit_type} Unit Price" %>
+                <%= form.number_field :unit_type, step: :any, class: "form-control price",
+                    name: "capital_call[unit_prices][#{unit_type}][price]",
+                    id: "#{unit_type}_price", value: price  %>
+              </div>
+              <% if index == 0 %>
+                <small><a href="#" data-action="click->call-copy#copy_all" class="small_text">Copy To All</a></small>
+              <% end %>
+
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%= custom_form_fields(capital_call, form) %>
+
+      <div class="form-group">
+        <%= form.label :notes, "Notes (Will be inserted into the email sent to investors)" %>
+        <%= form.rich_text_area :notes, class: "form-control"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      </div>
+
+      </div>
+    <% end %>
+
+<% end %>
