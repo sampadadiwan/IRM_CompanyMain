@@ -82,7 +82,7 @@ class PortfolioInvestment < ApplicationRecord
     # When we import the data we create it in the same thread, as we need to ensure the attribution is setup before we move on to the next row. However if the portfolio_investment is created by the user, we can do it in the background.
     # Originally we were doing this in the background, but it was causing issues with the attribution being created in parallel and sometimes in the wrong order.
     if sell?
-      created_by_import  ? PortfolioInvestmentJob.perform_now(id) : PortfolioInvestmentJob.perform_later(id)
+      created_by_import ? PortfolioInvestmentJob.perform_now(id) : PortfolioInvestmentJob.perform_later(id)
     end
   }
 
