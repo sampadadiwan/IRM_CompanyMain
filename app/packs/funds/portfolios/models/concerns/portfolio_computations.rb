@@ -76,6 +76,18 @@ module PortfolioComputations
     realized_gain
   end
 
+  # This method is specific for Pravega. Used similar to the above call, for allocation but on the basis of proforma dates
+  def allocation_of_realized_gain_cents_proforma(end_date, account_entry_name, capital_commitment)
+    realized_gain = 0
+    pas_before_end_date = portfolio_attributions.joins(:sold_pi).where("portfolio_investments.json_fields->'$.proforma_date' <= ?", end_date)
+    pas_before_end_date.each do |pa|
+      ae_date_of_buy = capital_commitment.account_entries.where(name: account_entry_name, reporting_date: ..pa.bought_pi.custom_fields.proforma_date).order(reporting_date: :desc).first
+      Rails.logger.debug { "pa.id = #{pa.id} gain cents = #{pa.gain.cents} percentage = #{ae_date_of_buy.amount_cents / 100}" }
+      realized_gain += pa.gain.cents * ae_date_of_buy.amount_cents / 100
+    end
+    realized_gain
+  end
+
   def sell_quantity_allowed
     if sell? && new_record?
 

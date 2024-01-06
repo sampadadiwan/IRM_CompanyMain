@@ -2533,6 +2533,18 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.index ["user_id"], name: "index_video_kycs_on_user_id"
   end
 
+  create_table "whatsapp_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "notification_id", null: false
+    t.json "params"
+    t.json "response"
+    t.json "entity_name"
+    t.boolean "name_matched"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "entity_id"
+    t.index ["notification_id"], name: "index_whatsapp_logs_on_notification_id"
+  end
+
   add_foreign_key "access_rights", "entities"
   add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
   add_foreign_key "access_rights", "users"
@@ -2823,4 +2835,5 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
   add_foreign_key "video_kycs", "entities"
   add_foreign_key "video_kycs", "investor_kycs"
   add_foreign_key "video_kycs", "users"
+  add_foreign_key "whatsapp_logs", "notifications"
 end

@@ -7,8 +7,6 @@ class JsonField < Administrate::Field::Base
   def json2table
     updated_data = if data.is_a?(Hash)
                      data.to_json
-                   elsif data.is_a?(String)
-                     data
                    else
                      # handle other cases
                      data
