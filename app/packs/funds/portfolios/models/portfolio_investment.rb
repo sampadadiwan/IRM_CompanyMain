@@ -70,7 +70,7 @@ class PortfolioInvestment < ApplicationRecord
 
   before_save :compute_fmv, unless: :destroyed?
 
-  after_commit :compute_avg_cost, unless: :destroyed?
+  after_create_commit :compute_avg_cost, unless: :destroyed?
   def compute_avg_cost
     aggregate_portfolio_investment.reload
     # save will recomute the avg costs

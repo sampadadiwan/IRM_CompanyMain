@@ -20,7 +20,7 @@ class PortfolioInvestmentPolicy < FundBasePolicy
   # No updates to investments as the current algorith for attribution cannot handle updates
   # So delete and create if you want to update
   def update?
-    false
+    create?
   end
 
   def edit?
