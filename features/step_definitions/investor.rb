@@ -433,6 +433,11 @@ Then('I can send KYC reminder to approved users') do
     last_name: user.last_name,
     email: user.email, approved: true)
   end
+  @last_user = @users.last
+  @last_user.update(whatsapp_enabled: true,phone: "1234567890", call_code: "91")
+  @last_user.entity.entity_setting.update(sandbox_numbers: "917721046692", sandbox: true)
+  investor.entity.permissions.set(:enable_whatsapp)
+  investor.entity.save!
   visit(investor_kycs_path)
   sleep(2)
   click_on("Send KYC Reminders")
@@ -446,6 +451,7 @@ Then('Notifications are created for KYC Reminders') do
   Notification.where(recipient_id: @users.pluck(:id)).count.should == 2
   Notification.where(recipient_id: @users.pluck(:id)).pluck(:type).uniq.count.should == 1
   Notification.where(recipient_id: @users.pluck(:id)).pluck(:type).uniq.last.should == "InvestorKycNotification"
+  WhatsappLog.where(notification_id: Notification.where(recipient_id: @users.pluck(:id)).pluck(:id)).count.should == 2
 end
 
 

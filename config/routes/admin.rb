@@ -2,6 +2,8 @@ namespace :admin do
   namespace :paper_trail do
     resources :versions, except: :index
   end
+  resources :whatsapp_logs
+  resources :notifications
   resources :investors
   resources :reports
   resources :quick_links

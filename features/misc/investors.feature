@@ -45,7 +45,7 @@ Scenario Outline: Send KYC notification
 
   Examples:
     |user	      |entity               |investor     |msg	|
-    |  	        |entity_type=Company  |name=Valo |Investor was successfully created|
+    |  	        |entity_type=Company  |name=valory |Investor was successfully created|
 
 Scenario Outline: Send KYC notification error
   Given Im logged in as a user "<user>" for an entity "<entity>"

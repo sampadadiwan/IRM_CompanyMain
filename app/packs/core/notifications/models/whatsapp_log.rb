@@ -1,0 +1,4 @@
+class WhatsappLog < ApplicationRecord
+  belongs_to :entity
+  belongs_to :notification
+end

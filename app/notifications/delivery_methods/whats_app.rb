@@ -14,7 +14,8 @@ module DeliveryMethods
         # Send the message
         WhatsappGeneralNotification.new.perform(entity.name, message,
                                                 notification.view_path,
-                                                notification.recipient.id)
+                                                notification.recipient.id,
+                                                notification.record.id) # pass id
       else
         Rails.logger.info "WhatsApp not enabled for #{notification.recipient.phone} and entity #{entity.name}"
       end

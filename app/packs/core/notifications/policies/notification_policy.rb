@@ -10,7 +10,7 @@ class NotificationPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.id == record.recipient_id && record.recipient_type == "User") || (user.entity_id == record.recipient_id && record.recipient_type == "Entity")
+    (user.id == record.recipient_id && record.recipient_type == "User") || (user.entity_id == record.recipient_id && record.recipient_type == "Entity") || super_user?
   end
 
   def mark_as_read?

@@ -4,7 +4,7 @@ require 'net/http'
 class WhatsappGeneralNotification < ApplicationJob
   TEMPLATE_NAME = ENV.fetch('CAPHIVE_NOTIFICATION')
   # link eg - "documents/90"  (template url is http://dev.altconnects.com/{{1}})
-  def perform(entity_name, message, link, user_id)
+  def perform(entity_name, message, link, user_id, notification_id)
     user = User.find(user_id)
     if user.blank?
       Rails.logger.error "Error: User required to send Whatsapp Notification"
@@ -16,7 +16,11 @@ class WhatsappGeneralNotification < ApplicationJob
 
     whatsapp_numbers = ApplicationMailer.new.sandbox_whatsapp_numbers(user, [user.phone_with_call_code])
     whatsapp_numbers.each do |whatsapp_number|
-      self.class.send_message(entity_name, message, link, whatsapp_number)
+      response = self.class.send_message(entity_name, message, link, whatsapp_number)
+      # log the Notification
+      notification = Notification.find(notification_id)
+      entity_name_json = Notification.get_entity_name_json(message, entity_name)
+      WhatsappLog.create(entity_id: notification.entity.id, notification_id:, params: { entity_name:, message:, link:, whatsapp_number: }, response:, entity_name: entity_name_json, name_matched: entity_name_json[entity_name.to_s] == entity_name)
     end
   end
 

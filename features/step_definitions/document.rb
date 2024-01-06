@@ -43,7 +43,7 @@ Given('I am at the documents page') do
 end
 
 When('I create a new document {string} in folder {string}') do |args, folder_name|
-  
+
   @folder = Folder.where("name like '%#{folder_name}%'").first
 
   @document = Document.new
@@ -73,7 +73,7 @@ When('I fill and submit the new document page') do
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
   check('document_download') if @document.download
   check('document_printing') if @document.printing
-  
+
   puts "Selecting #{@document.folder.name}" if @document.folder_id
   select(@document.folder.name, from: "document_folder_id") if @document.folder_id
 

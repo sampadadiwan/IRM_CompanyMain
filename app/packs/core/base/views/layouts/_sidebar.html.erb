@@ -8,9 +8,9 @@
             <li class="sidebar-item">
                 <a class="sidebar-link" href="/entities/dashboard" >
                     <span><i class="ti ti-layout-dashboard"></i></span>
-                    <span class="hide-menu">Dashboard</span></a>                
+                    <span class="hide-menu">Dashboard</span></a>
             </li>
-            
+
             <% if current_user && current_user.has_cached_role?(:super) %>
                 <li class="sidebar-item">
                     <a class="sidebar-link" href="/admin">
@@ -22,12 +22,12 @@
                     <a class="sidebar-link" href="/blazer">
                         <span><i class="ti ti-files"></i></span>
                         <span class="hide-menu">Reports</span></a>
-                </li>                
+                </li>
             <% end %>
 
             <% if current_user && current_user.curr_role == "holding" %>
                 <li class="sidebar-item">
-                        
+
                     <a class="sidebar-link" href="/holdings">
                         <span><i class="fas fa-xl fa-money-bill"></i></span>
                         <span class="hide-menu">Holdings</span>
@@ -38,13 +38,13 @@
                         <span class="hide-menu">Offers</span>
                     </a>
 
-                </li>                            
+                </li>
             <% end %>
 
             <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role) && Entity::SECONDARY_BUYERS.include?(current_user.entity_type) %>
                 <!-- Divider -->
                 <hr class="sidebar-divider">
-                <%= render "layouts/sidebars/sidebar_investor" %>                
+                <%= render "layouts/sidebars/sidebar_investor" %>
             <% end %>
 
             <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && (current_user.entity.is_fund?) %>
@@ -62,62 +62,62 @@
             <hr class="sidebar-divider">
 
             <% if current_user && current_user.enable_funds %>
-                <li class="sidebar-item">                
+                <li class="sidebar-item">
                     <a class="sidebar-link has-arrow" href="/funds" data-bs-toggle="collapse" data-bs-target="#fundMenus">
                         <span><i class="ti ti-currency-dollar"></i></span>
                         <span class="hide-menu">Funds</span>
                     </a>
 
-                
+
                     <ul aria-expanded="false" class="collapse first-level">
                         <li class="sidebar-item">
                             <a class="sidebar-link" href="/funds">
-                                
+
                                 <div class="round-16 d-flex align-items-center justify-content-center">
                                     <i class="ti ti-circle"></i>
                                 </div>
-                                <span class="hide-menu">Funds</span> 
+                                <span class="hide-menu">Funds</span>
                             </a>
                         </li>
-                            
+
                         <% if current_user.curr_role == "investor" %>
                             <li class="sidebar-item">
                                 <a class="sidebar-link" href="/capital_commitments?my_commitments=true">
-                                    
+
                                     <div class="round-16 d-flex align-items-center justify-content-center">
                                         <i class="ti ti-circle"></i>
                                     </div>
-                                    <span class="hide-menu">Commitments</span> 
+                                    <span class="hide-menu">Commitments</span>
                                 </a>
-                            </li>  
+                            </li>
                             <li class="sidebar-item">
                                 <a class="sidebar-link" href="/capital_commitments/documents">
-                                    
+
                                     <div class="round-16 d-flex align-items-center justify-content-center">
                                         <i class="ti ti-circle"></i>
                                     </div>
-                                    <span class="hide-menu">Statements</span> 
+                                    <span class="hide-menu">Statements</span>
                                 </a>
-                            </li>  
+                            </li>
                         <% elsif current_user.enable_reports %>
                             <li class="sidebar-item">
                                 <a class="sidebar-link" href="/reports">
-                                    
+
                                     <div class="round-16 d-flex align-items-center justify-content-center">
                                         <i class="ti ti-circle"></i>
                                     </div>
-                                    <span class="hide-menu">Reports</span> 
+                                    <span class="hide-menu">Reports</span>
                                 </a>
-                            </li>    
+                            </li>
                         <% end %>
 
                         <li class="sidebar-item">
                             <a class="sidebar-link" href="/investor_kycs">
-                                
+
                                 <div class="round-16 d-flex align-items-center justify-content-center">
                                     <i class="ti ti-circle"></i>
                                 </div>
-                                <span class="hide-menu">KYCs</span> 
+                                <span class="hide-menu">KYCs</span>
                             </a>
                         </li>
                     </ul>
@@ -125,24 +125,24 @@
                 </li>
             <% end %>
 
-            <% if current_user && current_user.enable_inv_opportunities %>                
+            <% if current_user && current_user.enable_inv_opportunities %>
                 <li class="sidebar-item">
-                    <a class="sidebar-link" href="/investment_opportunities" >                    
+                    <a class="sidebar-link" href="/investment_opportunities" >
                         <span><i class="ti ti-device-analytics"></i></span>
                         <span class="hide-menu">Opportunities</span>
-                    </a>                
+                    </a>
                 </li>
             <% end %>
 
 
-            
+
             <!-- Divider -->
             <hr class="sidebar-divider">
 
-            <% if current_user &&  
+            <% if current_user &&
                 (current_user.entity.is_fund? || current_user.entity.is_company?) %>
-                
-                <li class="sidebar-item"> 
+
+                <li class="sidebar-item">
                     <a class="sidebar-link has-arrow" href="/tasks" data-bs-toggle="collapse" data-bs-target="#taskMenus">
                         <span><i class="ti ti-checklist"></i></span>
                         <span class="hide-menu">Tasks</span>
@@ -172,7 +172,7 @@
 
 
 
-            <li class="sidebar-item"> 
+            <li class="sidebar-item">
                     <a class="sidebar-link has-arrow" href="/quick_links" data-bs-toggle="collapse" data-bs-target="#quickLinksMenus">
                         <span><i class="ti ti-map-pin"></i></span>
                         <span class="hide-menu">Quick Links</span>
