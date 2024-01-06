@@ -212,7 +212,7 @@ class InvestorKycsController < ApplicationController
     # We get a ransack query for the KYCs for which we want to generate the docs
     @q = InvestorKyc.ransack(params[:q])
     # Get the kycs for the query
-    @investor_kycs = policy_scope(@q.result)
+    @investor_kycs = policy_scope(@q.result).uniq
     if request.post?
       if params[:document_template_ids].present? && Date.parse(params[:start_date]) <= Date.parse(params[:end_date])
         # Send the kyc ids, document template ids, start date and end date to the job
