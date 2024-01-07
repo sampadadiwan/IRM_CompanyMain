@@ -50,7 +50,7 @@ class ImportInvestorAccess < ImportUtil
                             email: user_data["Email"], phone: user_data["Phone"].to_s,
                             approved:, whatsapp_enabled:, cc: user_data["Cc"],
                             entity_id: import_upload.entity_id, investor_id: investor.id,
-                            granted_by: import_upload.user_id,
+                            granted_by: import_upload.user_id, import_upload_id: import_upload.id,
                             send_confirmation: user_data["Send Confirmation Email"] == "Yes")
 
     Rails.logger.debug { "Saving InvestorAccess with email '#{ia.email}'" }

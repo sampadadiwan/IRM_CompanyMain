@@ -61,6 +61,7 @@ class ImportAccountEntry < ImportUtil
 
       if account_entry.new_record? && account_entry.valid?
         account_entry.notes = user_data["Notes"]
+        account_entry.import_upload_id = import_upload.id
         account_entry.commitment_type = user_data["Type"]
         setup_custom_fields(user_data, account_entry, custom_field_headers)
 

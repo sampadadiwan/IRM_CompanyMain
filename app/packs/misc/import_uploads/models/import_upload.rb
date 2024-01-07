@@ -25,7 +25,7 @@ class ImportUpload < ApplicationRecord
               "ACCOUNT_ENTRY_SAMPLE" => "/sample_uploads/account_entries.xlsx",
               "KPIS_SAMPLE" => "/sample_uploads/kpis.xlsx" }.freeze
 
-  TYPES = %w[InvestorAccess Investor CapitalCommittment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData Kpi KycDocs].sort.freeze
+  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData Kpi KycDocs].sort.freeze
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true
@@ -56,5 +56,9 @@ class ImportUpload < ApplicationRecord
 
   def success?
     status.nil? && total_rows_count == processed_row_count
+  end
+
+  def imported_data
+    import_type.constantize.where(import_upload_id: id)
   end
 end

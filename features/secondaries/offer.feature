@@ -89,7 +89,7 @@ Examples:
     |  	        |entity_type=Company  |name=Winter Sale;percent_allowed=100 |200        |
 
 
-
+@import
 Scenario Outline: Import offer to sale
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
   Given the user has role "company_admin"

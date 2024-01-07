@@ -273,6 +273,7 @@ class DocumentsController < ApplicationController
 
     # Filter by owner_tag
     @documents = @documents.where(owner_tag: params[:owner_tag]) if params[:owner_tag].present?
+    @documents = @documents.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     # This is specifically for non company_admins
     @documents = @documents.where(user_id: current_user.id) unless current_user.has_cached_role?(:company_admin)
 

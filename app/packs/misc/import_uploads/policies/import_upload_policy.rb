@@ -32,4 +32,8 @@ class ImportUploadPolicy < ApplicationPolicy
   def destroy?
     update?
   end
+
+  def delete_data?
+    update?
+  end
 end

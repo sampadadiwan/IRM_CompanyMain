@@ -22,10 +22,11 @@ class ImportInvestorKyc < ImportUtil
                                      entity_id: import_upload.entity_id, full_name:).first
 
     if investor_kyc.present? && update_only == "Yes"
+      investor_kyc.import_upload_id = import_upload.id
       save_kyc(investor_kyc, investor, user_data, custom_field_headers)
 
     elsif investor_kyc.nil?
-      investor_kyc = InvestorKyc.new(entity_id: import_upload.entity_id)
+      investor_kyc = InvestorKyc.new(entity_id: import_upload.entity_id, import_upload_id: import_upload.id)
       save_kyc(investor_kyc, investor, user_data, custom_field_headers)
 
     else

@@ -1,0 +1,25 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Advisors</h1>
+  <%= link_to "New Investor Advisor", new_investor_advisor_path("investor_advisor[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="investor_advisors" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>
+          User
+        </th>
+        <th>
+          Email
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% investor_advisors.each do |investor_advisor| %>
+        <%= render investor_advisor %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -1,5 +1,9 @@
-<% data_source ||= investor_kycs_path(params: params.to_unsafe_h, format: :json, all: true) %>
-<% lazy_load_data ||= false %>
+<% 
+  lazy_load_data ||= false 
+  import_upload_id ||= params[:import_upload_id]
+%>
+<% data_source ||= investor_kycs_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true) %>
+
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">KYCs</h1>

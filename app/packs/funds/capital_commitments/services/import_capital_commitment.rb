@@ -1,4 +1,4 @@
-class ImportCapitalCommittment < ImportUtil
+class ImportCapitalCommitment < ImportUtil
   STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type", "Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of", "Kyc Full Name", "Investor Signatory Emails"].freeze
 
   def standard_headers
@@ -49,6 +49,7 @@ class ImportCapitalCommittment < ImportUtil
                                                onboarding_completed:, imported: true,
                                                fund:, investor:, investor_name: investor.investor_name,
                                                folio_currency:, unit_type:,
+                                               import_upload_id: import_upload.id,
                                                esign_emails: user_data["Investor Signatory Emails"],
                                                notes: user_data["Notes"])
 

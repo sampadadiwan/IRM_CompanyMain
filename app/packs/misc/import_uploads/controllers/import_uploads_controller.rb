@@ -1,5 +1,5 @@
 class ImportUploadsController < ApplicationController
-  before_action :set_import_upload, only: %i[show edit update destroy]
+  before_action :set_import_upload, only: %i[show edit update destroy delete_data]
 
   # GET /import_uploads or /import_uploads.json
   def index
@@ -73,6 +73,11 @@ class ImportUploadsController < ApplicationController
       format.html { redirect_to import_uploads_url, notice: "Import upload was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
+
+  def delete_data
+    @import_upload.imported_data.each(&:destroy)
+    redirect_to import_upload_path(@import_upload), notice: "Imported data was successfully deleted."
   end
 
   private

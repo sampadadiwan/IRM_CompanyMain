@@ -9,6 +9,7 @@ class FundUnitsController < ApplicationController
     @fund_units = @fund_units.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id]
     @fund_units = @fund_units.where(fund_id: params[:fund_id]) if params[:fund_id]
     @fund_units = @fund_units.where(investor_id: params[:investor_id]) if params[:investor_id]
+    @fund_units = @fund_units.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id]
 
     if params[:owner_id] && params[:owner_type]
       @fund_units = @fund_units.where(owner_id: params[:owner_id])

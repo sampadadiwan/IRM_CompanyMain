@@ -19,6 +19,7 @@
   <% end %>
 
   <% 
+    owner ||= nil
     entity_id = @entity&.id
     entity_id ||= owner&.entity_id
     entity_id ||= current_user.entity_id

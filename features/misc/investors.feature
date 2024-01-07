@@ -79,7 +79,7 @@ Scenario Outline: Create new investor from exiting entity
   	|entity_type=Company |investor_name=Accelo;primary_email=a@b.c   |Investor was successfully created|
     |entity_type=Company |investor_name=Bearings;primary_email=a@b.c |Investor was successfully created|
 
-
+@import
 Scenario Outline: Import investor access
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
   Given the user has role "company_admin"
@@ -89,7 +89,7 @@ Scenario Outline: Import investor access
   Then There should be "2" investor access created
   And the investor accesses must have the data in the sheet
 
-
+@import
 Scenario Outline: Import investor kycs
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -102,6 +102,7 @@ Scenario Outline: Import investor kycs
   And the approved investor access should receive a notification
   And Aml Report should be generated for each investor kyc
 
+@import
 Scenario Outline: Import investors
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
   Given the user has role "company_admin"
@@ -110,6 +111,7 @@ Scenario Outline: Import investors
   Then There should be "6" investors created
   And the investors must have the data in the sheet
 
+@import
 Scenario Outline: Import Fund investors
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

@@ -1,7 +1,7 @@
 Feature: Import Fund
   Can import fund details
 
-
+@import
 Scenario Outline: Import capital commitments
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -19,7 +19,7 @@ Scenario Outline: Import capital commitments
   And the account_entries must have the data in the sheet
   And the account_entries must visible for each commitment
 
-
+@import
 Scenario Outline: Import capital calls
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -39,6 +39,7 @@ Scenario Outline: Import capital calls
   # And the capital remittance whatsapp notification is sent to the first investor
   # Then the whatsapp message should be send successfully to "917721046692"
 
+@import
 Scenario Outline: Import capital remittance payments
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -61,7 +62,7 @@ Scenario Outline: Import capital remittance payments
   Then the capital commitments are updated with remittance numbers
   And the funds are updated with remittance numbers
 
-
+@import
 Scenario Outline: Import capital remittance
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -87,7 +88,7 @@ Scenario Outline: Import capital remittance
   	|entity_type=Investment Fund;enable_funds=true  |name=SAAS Fund;currency=INR      |Fund was successfully created| name=Call 1;call_basis=Upload | 2120000 |
 
 
-
+@import
 Scenario Outline: Import capital distributions
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -101,7 +102,7 @@ Scenario Outline: Import capital distributions
   And the payments are generated for the capital distrbutions
 
 
-
+@import
 Scenario Outline: Import Investor Advisors
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

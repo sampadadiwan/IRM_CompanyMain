@@ -1,6 +1,7 @@
 class AccountEntriesController < ApplicationController
   include FundsHelper
 
+  after_action :verify_authorized, except: %i[index delete_all]
   before_action :set_account_entry, only: %i[show edit update destroy]
   has_scope :entry_type
   has_scope :folio_id
@@ -16,6 +17,7 @@ class AccountEntriesController < ApplicationController
     @account_entries = apply_scopes(policy_scope(@q.result)).includes(:capital_commitment, :fund)
     @account_entries = @account_entries.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
     @account_entries = @account_entries.where(investor_id: params[:investor_id]) if params[:investor_id].present?
+    @account_entries = @account_entries.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @account_entries = @account_entries.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @account_entries = @account_entries.where(capital_commitment_id: nil) if params[:fund_accounts_only].present?
 
@@ -88,6 +90,16 @@ class AccountEntriesController < ApplicationController
       format.html { redirect_to account_entries_url, notice: "Account entry was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
+
+  def delete_all
+    # We get a ransack query for the AEs to delete
+    @q = AccountEntry.ransack(params[:q])
+    # Get the AEs for the query
+    @account_entries = policy_scope(@q.result)
+    count = @account_entries.count
+    @account_entries.delete_all
+    redirect_to account_entries_path(q: params[:q].to_unsafe_h), notice: "#{count} account entries were deleted."
   end
 
   private

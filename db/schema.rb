@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_07_064909) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -74,6 +74,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.bigint "fund_formula_id"
     t.string "rule_for", limit: 10, default: "Accounting"
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative"], name: "idx_account_entries_reporting_date_uniq", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
@@ -442,6 +443,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.string "call_basis", limit: 40
     t.decimal "amount_to_be_called_cents", precision: 20, scale: 2, default: "0.0"
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["approved_by_user_id"], name: "index_capital_calls_on_approved_by_user_id"
     t.index ["deleted_at"], name: "index_capital_calls_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_calls_on_document_folder_id"
@@ -498,6 +500,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
     t.json "json_fields"
     t.string "esign_emails"
+    t.bigint "import_upload_id"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
@@ -532,6 +535,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "exchange_rate_id"
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
     t.index ["deleted_at"], name: "index_capital_distribution_payments_on_deleted_at"
@@ -571,6 +575,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.bigint "capital_commitment_id"
     t.integer "distribution_on", default: 0
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["approved_by_user_id"], name: "index_capital_distributions_on_approved_by_user_id"
     t.index ["capital_commitment_id"], name: "index_capital_distributions_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_distributions_on_deleted_at"
@@ -594,6 +599,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "exchange_rate_id"
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["capital_remittance_id"], name: "index_capital_remittance_payments_on_capital_remittance_id"
     t.index ["entity_id"], name: "index_capital_remittance_payments_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_capital_remittance_payments_on_exchange_rate_id"
@@ -636,6 +642,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.decimal "percentage", precision: 12, scale: 8, default: "0.0"
     t.date "remittance_date"
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"
@@ -875,6 +882,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.bigint "approved_by_id"
     t.boolean "approved", default: false, null: false
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
@@ -1234,6 +1242,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.datetime "updated_at", null: false
     t.decimal "carry", precision: 24, scale: 8, default: "0.0"
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["entity_id"], name: "index_fund_unit_settings_on_entity_id"
     t.index ["form_type_id"], name: "index_fund_unit_settings_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_unit_settings_on_fund_id"
@@ -1255,6 +1264,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.decimal "premium", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_premium_cents", precision: 20, scale: 2, default: "0.0"
     t.date "issue_date"
+    t.bigint "import_upload_id"
     t.index ["capital_commitment_id"], name: "index_fund_units_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_fund_units_on_entity_id"
     t.index ["fund_id"], name: "index_fund_units_on_fund_id"
@@ -1656,6 +1666,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.string "phone", limit: 15
     t.boolean "whatsapp_enabled", default: false
     t.string "cc"
+    t.bigint "import_upload_id"
     t.index ["deleted_at"], name: "index_investor_accesses_on_deleted_at"
     t.index ["email"], name: "index_investor_accesses_on_email"
     t.index ["entity_id"], name: "index_investor_accesses_on_entity_id"
@@ -1673,6 +1684,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.bigint "permissions", default: 0, null: false
     t.string "allowed_roles", limit: 100
     t.integer "extended_permissions"
+    t.bigint "import_upload_id"
     t.index ["entity_id"], name: "index_investor_advisors_on_entity_id"
     t.index ["user_id"], name: "index_investor_advisors_on_user_id"
   end
@@ -1723,6 +1735,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.decimal "due_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "uncalled_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "agreement_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "import_upload_id"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
@@ -1798,6 +1811,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.string "pan", limit: 40
     t.json "json_fields"
     t.string "primary_email"
+    t.bigint "import_upload_id"
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
@@ -1818,6 +1832,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.datetime "updated_at", null: false
     t.bigint "document_folder_id"
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["document_folder_id"], name: "index_kpi_reports_on_document_folder_id"
     t.index ["entity_id"], name: "index_kpi_reports_on_entity_id"
     t.index ["form_type_id"], name: "index_kpi_reports_on_form_type_id"
@@ -1835,6 +1850,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["entity_id"], name: "index_kpis_on_entity_id"
     t.index ["form_type_id"], name: "index_kpis_on_form_type_id"
     t.index ["kpi_report_id"], name: "index_kpis_on_kpi_report_id"
@@ -1970,6 +1986,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
     t.index ["custom_matching_vals"], name: "index_offers_on_custom_matching_vals"
     t.index ["deleted_at"], name: "index_offers_on_deleted_at"
@@ -2015,6 +2032,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.bigint "document_folder_id"
     t.text "formula"
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["deleted_at"], name: "index_option_pools_on_deleted_at"
     t.index ["document_folder_id"], name: "index_option_pools_on_document_folder_id"
     t.index ["entity_id"], name: "index_option_pools_on_entity_id"
@@ -2079,6 +2097,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "import_upload_id"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_cashflows_on_aggregate_portfolio_investment_id"
     t.index ["entity_id"], name: "index_portfolio_cashflows_on_entity_id"
     t.index ["fund_id"], name: "index_portfolio_cashflows_on_fund_id"
@@ -2114,6 +2133,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.string "investment_domicile", limit: 10, default: "Domestic"
     t.datetime "deleted_at"
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_portfolio_investments_on_deleted_at"
@@ -2494,6 +2514,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_04_082405) do
     t.string "category", limit: 10
     t.string "sub_category", limit: 100
     t.json "json_fields"
+    t.bigint "import_upload_id"
     t.index ["deleted_at"], name: "index_valuations_on_deleted_at"
     t.index ["entity_id"], name: "index_valuations_on_entity_id"
     t.index ["form_type_id"], name: "index_valuations_on_form_type_id"

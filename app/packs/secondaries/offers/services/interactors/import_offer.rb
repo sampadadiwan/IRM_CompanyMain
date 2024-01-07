@@ -59,9 +59,12 @@ class ImportOffer < ImportUtil
     full_name = "#{user_data['First Name']} #{user_data['Last Name']}"
 
     if holding
-      offer = Offer.new(PAN: user_data["Pan"], address: user_data["Address"], city: user_data["City"],
-                        demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"],
+      offer = Offer.new(PAN: user_data["Pan"], address: user_data["Address"],
+                        city: user_data["City"],
+                        demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"],
+                        ifsc_code: user_data["Ifsc Code"],
                         holding:, secondary_sale:, final_price: secondary_sale.final_price,
+                        import_upload_id: import_upload.id,
                         user:, investor: holding.investor, entity: holding.entity, full_name:)
 
       setup_custom_fields(user_data, offer, custom_field_headers)

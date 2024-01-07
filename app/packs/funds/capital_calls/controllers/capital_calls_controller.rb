@@ -5,6 +5,7 @@ class CapitalCallsController < ApplicationController
   def index
     @capital_calls = policy_scope(CapitalCall).includes(:fund)
     @capital_calls = @capital_calls.where(fund_id: params[:fund_id]) if params[:fund_id]
+    @capital_calls = @capital_calls.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
 
     respond_to do |format|
       format.xlsx

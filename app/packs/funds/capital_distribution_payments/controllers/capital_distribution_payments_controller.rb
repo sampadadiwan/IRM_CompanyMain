@@ -13,6 +13,8 @@ class CapitalDistributionPaymentsController < ApplicationController
 
     @capital_distribution_payments = @capital_distribution_payments.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
 
+    @capital_distribution_payments = @capital_distribution_payments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+
     @capital_distribution_payments = @capital_distribution_payments.page(params[:page]) if params[:all].blank?
 
     respond_to do |format|

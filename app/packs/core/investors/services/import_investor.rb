@@ -37,6 +37,7 @@ class ImportInvestor < ImportUtil
       Rails.logger.debug user_data
       investor = Investor.new(investor_name:, pan:, tag_list: user_data["Tags"],
                               category:, city: user_data["City"], primary_email:,
+                              import_upload_id: import_upload.id,
                               entity_id: import_upload.entity_id, imported: true, force_different_name:)
 
       custom_field_headers.delete("Fund")

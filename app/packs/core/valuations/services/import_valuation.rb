@@ -27,6 +27,7 @@ class ImportValuation < ImportUtil
 
     if valuation.new_record?
       Rails.logger.debug user_data
+      valuation.import_upload_id = import_upload.id
       setup_custom_fields(user_data, valuation, custom_field_headers)
       valuation.save!
     else

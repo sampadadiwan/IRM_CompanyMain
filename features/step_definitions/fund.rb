@@ -770,7 +770,7 @@ Then('the capital commitments must have the data in the sheet') do
     cc.folio_committed_amount_cents.should == user_data["Committed Amount"].to_i * 100
     cc.folio_id.should == user_data["Folio No"].to_s
     cc.esign_emails.should == user_data["Investor Signatory Emails"]
-
+    cc.import_upload_id.should == ImportUpload.last.id
     exchange_rate = cc.get_exchange_rate(cc.folio_currency, cc.fund.currency, cc.commitment_date)
     puts "Using exchange_rate #{exchange_rate}"
     committed = cc.foreign_currency? ? (cc.folio_committed_amount_cents * exchange_rate.rate) : cc.folio_committed_amount_cents
@@ -800,6 +800,7 @@ Then('the capital calls must have the data in the sheet') do
     cc.fund.name.should == user_data["Fund"]
     cc.percentage_called.should == user_data["Percentage Called"].to_d
     cc.due_date.should == user_data["Due Date"]
+    cc.import_upload_id.should == ImportUpload.last.id
   end
 end
 
@@ -826,6 +827,7 @@ Then('the capital distributions must have the data in the sheet') do
     cc.gross_amount_cents.should == user_data["Gross"].to_i * 100
     cc.reinvestment_cents.should == user_data["Reinvestment"].to_i * 100
     cc.distribution_date.should == user_data["Date"]
+    cc.import_upload_id.should == ImportUpload.last.id
   end
 end
 
@@ -1215,6 +1217,7 @@ Then('the account_entries must have the data in the sheet') do
       cc.entry_type.should == user_data["Entry Type"]
       cc.reporting_date.should == user_data["Reporting Date"]
       cc.notes.should == user_data["Notes"]
+      cc.import_upload_id.should == ImportUpload.where(import_type: "AccountEntry").last.id
     end
 
 end
@@ -1277,6 +1280,7 @@ Then('the capital remittance payments must have the data in the sheet') do
       cc.folio_amount_cents.should == user_data["Amount"].to_i * 100
       cc.reference_no.should == user_data["Reference No"].to_s
       cc.payment_date.should == user_data["Payment Date"]
+      cc.import_upload_id.should == ImportUpload.last.id
 
       capital_commitment = cc.capital_remittance.capital_commitment
       capital_commitment.folio_currency.should == user_data["Currency"]

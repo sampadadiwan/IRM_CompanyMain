@@ -44,6 +44,7 @@ class HoldingsController < ApplicationController
     @holdings = @holdings.where("excercised_quantity > 0") if params[:excercised].present?
 
     @holdings = @holdings.where(entity_id: params[:entity_id]) if params[:entity_id].present?
+    @holdings = @holdings.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @holdings = @holdings.where(funding_round_id: params[:funding_round_id]) if params[:funding_round_id].present?
     @holdings = @holdings.where(holding_type: params[:holding_type]) if params[:holding_type].present?
     @holdings = @holdings.where(investment_instrument: params[:investment_instrument]) if params[:investment_instrument].present?

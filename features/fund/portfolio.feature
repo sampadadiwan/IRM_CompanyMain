@@ -49,6 +49,7 @@ Scenario Outline: Create valuation and FMV
     |entity_type=Investment Fund;       |name=Test fund      |
     |entity_type=Investment Fund;       |name=Merger Fund;unit_types=Series A,Series B    |
 
+@import
 Scenario Outline: Import portfolio investments
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -63,6 +64,7 @@ Scenario Outline: Import portfolio investments
   And the portfolio investments must have the data in the sheet
   And the aggregate portfolio investments must have cost of sold computed
 
+@import
 Scenario Outline: Import portfolio investments failed
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -75,7 +77,7 @@ Scenario Outline: Import portfolio investments failed
   Then I should see the "Import in progress"
   Then There should be "1" portfolio investments created
 
-
+@import
 Scenario Outline: Import portfolio valuations
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

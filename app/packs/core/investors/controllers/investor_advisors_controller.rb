@@ -5,6 +5,7 @@ class InvestorAdvisorsController < ApplicationController
   # GET /investor_advisors or /investor_advisors.json
   def index
     @investor_advisors = policy_scope(InvestorAdvisor).includes(:entity, user: :entity)
+    @investor_advisors = @investor_advisors.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
   end
 
   # GET /investor_advisors/1 or /investor_advisors/1.json

@@ -54,6 +54,7 @@ class ImportOfferDocs < ImportUtil
         folder = offer.document_folder.children.where(name: folder, entity_id: offer.entity_id).first_or_create if folder
         # Create the document
         doc = Document.new(owner: offer, entity_id: offer.entity_id, folder:,
+                           import_upload_id: import_upload.id,
                            name: user_data["Document Name"], tag_list: user_data["Tags"],
                            user_id: import_upload.user_id, send_email:)
 

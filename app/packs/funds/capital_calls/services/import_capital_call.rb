@@ -53,6 +53,7 @@ class ImportCapitalCall < ImportUtil
                                        fund_closes:, commitment_type: user_data["Type"],
                                        percentage_called: user_data["Percentage Called"],
                                        manual_generation: true, call_basis: user_data["Call Basis"],
+                                       import_upload_id: import_upload.id,
                                        generate_remittances:, generate_remittances_verified:)
 
         setup_custom_fields(user_data, capital_call, custom_field_headers)

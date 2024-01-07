@@ -1,7 +1,7 @@
 Feature: Import Fund Unit Setting
   Can bulk import fund unit settings
 
-
+@import
 Scenario Outline: Import fund unit settings
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

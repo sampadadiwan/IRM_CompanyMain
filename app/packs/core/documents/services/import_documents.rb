@@ -87,6 +87,7 @@ class ImportDocuments
       # Create the document to the last created folder
       doc = Document.new(entity_id: import_upload.entity_id,
                          name: file_name, folder: parent,
+                         import_upload_id: import_upload.id,
                          user_id: import_upload.user_id, send_email: false)
 
       doc.setup_folder_defaults

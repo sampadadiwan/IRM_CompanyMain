@@ -27,8 +27,12 @@
 
   </div>
 
-  <% data_source ||= capital_distribution_payments_path(params, format: :json, all: true) %>    
-  <% lazy_load_data ||= false %>
+  <% 
+    lazy_load_data ||= false 
+    import_upload_id ||= params[:import_upload_id]
+  %>
+  <% data_source ||= capital_distribution_payments_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true) %>    
+  
 
   <div class="table-responsive" data-controller="distribution-payments" data-distribution-payments-lazy-load-data-value=<%= lazy_load_data %> data-distribution-payments-table-name-value="#capital_distribution_payments">
 

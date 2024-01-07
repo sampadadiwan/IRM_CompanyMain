@@ -47,7 +47,7 @@ class ImportCapitalRemittancePayment < ImportUtil
 
       @fund_ids.add(fund.id)
 
-      create_or_update_capital_remittance_payment(inputs, user_data, custom_field_headers)
+      create_or_update_capital_remittance_payment(inputs, user_data, custom_field_headers, import_upload)
 
     else
       raise "Fund not found" unless fund
@@ -57,7 +57,7 @@ class ImportCapitalRemittancePayment < ImportUtil
     end
   end
 
-  def create_or_update_capital_remittance_payment(inputs, user_data, custom_field_headers)
+  def create_or_update_capital_remittance_payment(inputs, user_data, custom_field_headers, import_upload)
     # Make the capital_remittance
     fund, _capital_call, _investor, _capital_commitment, capital_remittance, folio_amount_cents, _folio_currency, update_only = inputs
     capital_remittance_payment = CapitalRemittancePayment.where(entity_id: fund.entity_id, fund:,
@@ -66,11 +66,12 @@ class ImportCapitalRemittancePayment < ImportUtil
                                                                 reference_no: user_data["Reference No"],
                                                                 payment_date: user_data["Payment Date"]).first
     if capital_remittance_payment.present? && update_only&.downcase == "yes"
+      capital_remittance_payment.import_upload_id = import_upload.id
       save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
     elsif capital_remittance_payment.nil?
       raise "Capital Remittance Payment not found" if update_only&.downcase == "yes"
 
-      capital_remittance_payment = CapitalRemittancePayment.new
+      capital_remittance_payment = CapitalRemittancePayment.new(import_upload_id: import_upload.id)
       save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
     else
       raise "Skipping: CapitalRemittancePayment already exists"

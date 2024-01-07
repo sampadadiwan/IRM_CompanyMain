@@ -71,9 +71,9 @@ class ImportHolding < ImportUtil
 
     holding = Holding.new(user:, investor:, holding_type: user_data["Founder Or Employee"],
                           entity_id: import_upload.owner_id, orig_grant_quantity: user_data["Quantity"],
-                          price_cents:, employee_id: user_data["Employee Id"], department: user_data["Department"],
+                          price_cents:, employee_id: user_data["Employee Id"], department: user_data["Department"], import_upload_id: import_upload.id,
                           investment_instrument: user_data["Instrument"], funding_round: fr, option_pool: ep,
-                          import_upload_id: import_upload.id, grant_date:, approved: false, manual_vesting:,
+                          grant_date:, approved: false, manual_vesting:,
                           option_type: user_data["Option Type"], preferred_conversion: user_data["Preferred Conversion"])
 
     setup_custom_fields(user_data, holding, custom_field_headers)

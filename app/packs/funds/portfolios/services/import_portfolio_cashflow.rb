@@ -29,6 +29,7 @@ class ImportPortfolioCashflow < ImportUtil
       # Save the PortfolioCashflow
       setup_custom_fields(user_data, portfolio_cashflow, custom_field_headers)
       portfolio_cashflow.notes = user_data["Notes"]
+      portfolio_cashflow.import_upload_id = import_upload.id
       Rails.logger.debug { "Saving PortfolioCashflow with name '#{portfolio_cashflow.portfolio_company.investor_name}'" }
       portfolio_cashflow.save!
     else

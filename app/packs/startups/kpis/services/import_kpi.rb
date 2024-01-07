@@ -36,7 +36,8 @@ class ImportKpi < ImportUtil
 
       Rails.logger.debug user_data
 
-      kpi = Kpi.new(name:, notes:, value:, display_value: value, entity_id:, kpi_report_id: kpi_report.id)
+      kpi = Kpi.new(name:, notes:, value:, display_value: value, entity_id:,
+                    kpi_report_id: kpi_report.id, import_upload_id: import_upload.id)
       setup_custom_fields(user_data, kpi, custom_field_headers)
 
       Rails.logger.debug { "Saving kpi with name '#{kpi.name}'" }
@@ -53,7 +54,7 @@ class ImportKpi < ImportUtil
     if existing.present?
       Rails.logger.debug "Uploaded Kpis Document already exists"
     else
-      Document.create(name:, owner: kpi_report, user_id: import_upload.user_id, entity_id: kpi_report.entity_id, file_data: import_upload.import_file_data, orignal: true, send_email: false)
+      Document.create(name:, owner: kpi_report, user_id: import_upload.user_id, entity_id: kpi_report.entity_id, file_data: import_upload.import_file_data, import_upload_id: import_upload.id, orignal: true, send_email: false)
     end
   end
 

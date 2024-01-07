@@ -127,6 +127,7 @@ Then('the portfolio investments must have the data in the sheet') do
     end  
     pi.investment_date.should == Date.parse(user_data["Investment Date"].to_s)
     pi.properties["custom_field_1"].should == user_data["Custom Field 1"]    
+    pi.import_upload_id.should == ImportUpload.last.id
   end
 end
 
@@ -166,6 +167,7 @@ Then('the valuations must have the data in the sheet') do
     val.valuation_cents.should == user_data["Valuation"].to_d * 100
     val.per_share_value_cents.should == user_data["Per Share Value"].to_d * 100
     val.owner.investor_name.should == user_data["Portfolio Company"].strip
+    val.import_upload_id.should == ImportUpload.last.id
   end
 end
 

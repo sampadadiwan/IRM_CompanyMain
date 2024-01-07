@@ -7,6 +7,7 @@ class FundUnitSettingsController < ApplicationController
   def index
     @fund_unit_settings = policy_scope(FundUnitSetting)
     @fund_unit_settings = @fund_unit_settings.where(fund_id: params[:fund_id]) if params[:fund_id]
+    @fund_unit_settings = @fund_unit_settings.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     fund_bread_crumbs("Unit Settings")
   end
 

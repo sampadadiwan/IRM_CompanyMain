@@ -50,8 +50,13 @@
 </div>
 
 
-<% data_source ||= offers_path(params, format: :json, all: true, secondary_sale_id: @secondary_sale&.id, approved: params[:approved], verified: params[:verified]) %>
-<% lazy_load_data ||= false %>
+<% 
+    lazy_load_data ||= false 
+    import_upload_id ||= params[:import_upload_id]
+%>
+
+<% data_source ||= offers_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true, secondary_sale_id: @secondary_sale&.id, approved: params[:approved], verified: params[:verified]) %>
+
   
 <div class="table-responsive">
 

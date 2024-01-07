@@ -15,6 +15,7 @@ class CapitalCommitmentsController < ApplicationController
 
     @capital_commitments = @capital_commitments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @capital_commitments = @capital_commitments.where(investor_id: params[:investor_id]) if params[:investor_id].present?
+    @capital_commitments = @capital_commitments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @capital_commitments = @capital_commitments.where(onboarding_completed: params[:onboarding_completed]) if params[:onboarding_completed].present?
 
     @capital_commitments = @capital_commitments.page(params[:page]) if params[:all].blank?

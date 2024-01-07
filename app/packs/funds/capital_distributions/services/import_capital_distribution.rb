@@ -45,6 +45,7 @@ class ImportCapitalDistribution < ImportUtil
         capital_distribution = CapitalDistribution.new(entity_id: import_upload.entity_id, title:,
                                                        fund:, distribution_date: user_data["Date"],
                                                        manual_generation: true,
+
                                                        commitment_type: user_data["Type"],
                                                        generate_payments:, generate_payments_paid:)
 
@@ -52,6 +53,7 @@ class ImportCapitalDistribution < ImportUtil
           # If this is a co_invest, then we need to set the commitment
           capital_distribution.capital_commitment = capital_distribution.fund.capital_commitments.where(folio_id: user_data["Folio No"]).first
         end
+        capital_distribution.import_upload_id = import_upload.id
         capital_distribution.gross_amount = user_data["Gross"]
         capital_distribution.cost_of_investment = user_data["Face Value For Redemption"]
         capital_distribution.reinvestment = user_data["Reinvestment"]

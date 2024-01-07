@@ -22,7 +22,10 @@ class ImportInvestorAdvisor < ImportUtil
       Rails.logger.debug { "investor_advisor with email already exists for entity #{investor.investor_entity_id}" }
     else
       Rails.logger.debug user_data
-      investor_advisor = InvestorAdvisor.new(email:, entity_id: investor.investor_entity_id, allowed_roles: %i[employee investor], permissions: investor.investor_entity.permissions, extended_permissions: %i[investor_kyc_read investor_read])
+      investor_advisor = InvestorAdvisor.new(email:, entity_id: investor.investor_entity_id,
+                                             import_upload_id: import_upload.id,
+                                             allowed_roles: %i[employee investor],
+                                             permissions: investor.investor_entity.permissions, extended_permissions: %i[investor_kyc_read investor_read])
       saved = investor_advisor.save!
     end
 

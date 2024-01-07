@@ -10,6 +10,7 @@ class OffersController < ApplicationController
     @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
     @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
     @offers = @offers.where(secondary_sale_id: params[:secondary_sale_id]) if params[:secondary_sale_id].present?
+    @offers = @offers.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @offers = @offers.joins(:investor, :user).includes(:secondary_sale, :entity, :interest, holding: :funding_round)
 
     @offers = @offers.page(params[:page]) unless request.format.xlsx? || params[:all] == 'true'

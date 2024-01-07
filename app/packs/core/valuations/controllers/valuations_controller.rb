@@ -13,6 +13,7 @@ class ValuationsController < ApplicationController
       @valuations = policy_scope(Valuation)
     end
 
+    @valuations = @valuations.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @valuations = @valuations.includes(:entity)
   end
 

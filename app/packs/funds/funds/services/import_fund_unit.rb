@@ -32,7 +32,7 @@ class ImportFundUnit < ImportUtil
       save_fu(fund_unit, fund, capital_commitment, owner, row_data, custom_field_headers)
 
     elsif fund_unit.nil?
-      fund_unit = FundUnit.new(entity_id: import_upload.entity_id)
+      fund_unit = FundUnit.new(entity_id: import_upload.entity_id, import_upload_id: import_upload.id)
       save_fu(fund_unit, fund, capital_commitment, owner, row_data, custom_field_headers)
     else
       raise "Skipping: FundUnit #{fund_unit.id} already exists"

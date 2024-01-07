@@ -14,6 +14,7 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittances = @capital_remittances.where(verified: params[:verified] == "true") if params[:verified].present?
     @capital_remittances = @capital_remittances.where(capital_call_id: params[:capital_call_id]) if params[:capital_call_id].present?
     @capital_remittances = @capital_remittances.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
+    @capital_remittances = @capital_remittances.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
 
     @capital_remittances = @capital_remittances.page(params[:page]) if params[:all].blank?
 

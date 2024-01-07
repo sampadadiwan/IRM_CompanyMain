@@ -9,7 +9,7 @@
     <% if params[:dashboard].present? &&  allowed_dashboards.include?(params[:dashboard]) %>
         <%= render params[:dashboard] %>
     <% else %>   
-        <% if current_user.curr_role.to_sym == :investor %>
+        <% if current_user.curr_role && current_user.curr_role.to_sym == :investor %>
             <%= render "vc_dashboard" %>
         <% elsif current_user.curr_role == "holding" %>
             <%= render "holding_dashboard" %>

@@ -2,9 +2,12 @@
 
   <% if import_upload.failed_row_count > 0 %>
           <div class="alert alert-danger">
+          
             Failed to import <%= import_upload.failed_row_count %> rows.
-            Download <%= link_to "Results", import_upload.import_results.url, class: "btn-sm btn-primary" if import_upload.import_results.present? %> file to check which rows have errors and why.            
+            Download <%= link_to "Results", import_upload.import_results.url, class: "btn btn-sm btn-primary" if import_upload.import_results.present? %> file to check which rows have errors and why.            
+            
           </div>
+
   <% end %>
 
   <table class="table table-bordered dataTable">
@@ -134,11 +137,11 @@
       </tr>
     <% end %>
   </table>
-  <% if params[:debug] == "true" %>
-  <div>
-    <%= link_to "Edit" , edit_import_upload_path(import_upload), {class: "btn btn-outline-primary" } %> |
-    <%= button_to "Delete" , import_upload, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton" %>
-  </div>
+  <% if params[:debug].present? %>
+    <div>
+      <%= link_to "Edit" , edit_import_upload_path(import_upload), {class: "btn btn-outline-primary" } %> 
+      <%= button_to "Delete" , import_upload, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton" %>
+    </div>
   <% end %>
 
 </div>

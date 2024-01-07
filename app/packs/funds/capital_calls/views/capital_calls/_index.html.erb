@@ -23,8 +23,12 @@
 
 </div>
 
-<% data_source ||= capital_calls_path(params, format: :json, all: true) %>    
-<% lazy_load_data ||= false %>
+<% 
+    lazy_load_data ||= false 
+    import_upload_id ||= params[:import_upload_id]
+%>
+<% data_source ||= capital_calls_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true) %>    
+
 
 <div class="table-responsive" data-controller="capital-calls" data-capital-calls-lazy-load-data-value=<%= lazy_load_data %> data-capital-calls-table-name-value="#capital_calls">
 

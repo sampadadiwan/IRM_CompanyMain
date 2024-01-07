@@ -24,7 +24,7 @@ class ImportFundUnitSetting < ImportUtil
       save_fus(fund_unit_setting, fund, row_data, custom_field_headers)
 
     elsif fund_unit_setting.nil?
-      fund_unit_setting = FundUnitSetting.new(entity_id: import_upload.entity_id)
+      fund_unit_setting = FundUnitSetting.new(entity_id: import_upload.entity_id, import_upload_id: import_upload.id)
       save_fus(fund_unit_setting, fund, row_data, custom_field_headers)
 
     else

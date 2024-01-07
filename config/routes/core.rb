@@ -60,7 +60,9 @@ end
 
 resources :payments
 resources :nudges
-resources :import_uploads
+resources :import_uploads do
+  delete 'delete_data', on: :member
+end
 
 resources :folders do
   get 'download', on: :member

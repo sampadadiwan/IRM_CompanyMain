@@ -202,6 +202,7 @@ Then('the investor accesses must have the data in the sheet') do
     ia.phone.should == user_data["Phone"]&.to_s
     ia.approved.should == (user_data["Approved"] == "Yes" ? true : false)
     ia.whatsapp_enabled.should == (user_data["WhatsApp Enabled"] == "Yes" ? true : false)
+    ia.import_upload_id.should == ImportUpload.last.id
   end
 
 end
@@ -269,6 +270,7 @@ Then('the investors must have the data in the sheet') do
     inv.category.should == user_data["Category"]
     inv.city.should == user_data["City"]
     inv.primary_email.should == user_data["Primary Email"]
+    inv.import_upload_id.should == ImportUpload.last.id
   end
 
 end
@@ -328,6 +330,7 @@ Then('the investor kycs must have the data in the sheet') do
       cc.bank_account_number.should == user_data["Bank Account Number"]&.to_s
       cc.ifsc_code.should == user_data["Ifsc Code"]&.to_s
       cc.esign_emails.should == user_data["Investor Signatory Emails"]
+      cc.import_upload_id.should == ImportUpload.last.id
     end
     cc.class.name.should == cc.type_from_kyc_type
   end

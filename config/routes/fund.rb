@@ -25,7 +25,10 @@ resources :portfolio_investments do
   get 'sub_categories', on: :collection
 end
 
-resources :account_entries
+resources :account_entries do
+  post 'delete_all', on: :collection
+end
+
 resources :fund_units
 resources :fund_ratios
 resources :capital_remittance_payments

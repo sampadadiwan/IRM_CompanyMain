@@ -5,6 +5,7 @@ class CapitalDistributionsController < ApplicationController
   def index
     @capital_distributions = policy_scope(CapitalDistribution).includes(:fund)
     @capital_distributions = @capital_distributions.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    @capital_distributions = @capital_distributions.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
   end
 
   # GET /capital_distributions/1 or /capital_distributions/1.json

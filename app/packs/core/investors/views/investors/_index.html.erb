@@ -1,7 +1,11 @@
 <% 
-  data_source ||= investors_path(q: params.to_unsafe_h[:q], format: :json, all: true, perm: params[:perm], no_perm: params[:no_perm]) 
+  lazy_load_data ||= false 
+  import_upload_id ||= params[:import_upload_id]
+%>
+<% 
+  data_source ||= investors_path(q: params.to_unsafe_h[:q], import_upload_id:, format: :json, all: true, perm: params[:perm], no_perm: params[:no_perm]) 
 %>    
-<% lazy_load_data ||= false %>
+
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <% header=defined?(title) ? title : "Stakeholders" %>

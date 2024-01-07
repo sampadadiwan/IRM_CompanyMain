@@ -1,10 +1,11 @@
 <% 
   fund ||= nil; 
   cols ||= params[:cols] 
+  import_upload_id ||= params[:import_upload_id]
   fund_id ||= params[:fund_id] || fund&.id
 %>
 
-<% data_source ||= capital_commitments_path(params: params.to_unsafe_h, fund_id:, format: :json, all: true) %>
+<% data_source ||= capital_commitments_path(params: params.to_unsafe_h, fund_id:, import_upload_id:, format: :json, all: true) %>
 <% xl_link = download_xl_link(data_source) %>
 <% lazy_load_data ||= false %>
 <%= render "/capital_commitments/index_header", fund: fund, xl_link: xl_link %>

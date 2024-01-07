@@ -101,7 +101,7 @@ Scenario Outline: Create new holding
   And the entity must be updated with the investment  
   And the aggregate investments must be created
 
-
+@import
 Scenario Outline: Import holding
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
   Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"

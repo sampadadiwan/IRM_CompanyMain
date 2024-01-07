@@ -7,6 +7,7 @@ class PortfolioCashflowsController < ApplicationController
     @portfolio_cashflows = @portfolio_cashflows.where(aggregate_portfolio_investment_id: params[:aggregate_portfolio_investment_id]) if params[:aggregate_portfolio_investment_id].present?
 
     @portfolio_cashflows = @portfolio_cashflows.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
+    @portfolio_cashflows = @portfolio_cashflows.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
   end
 
   # GET /portfolio_cashflows/1 or /portfolio_cashflows/1.json

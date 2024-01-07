@@ -58,6 +58,7 @@ class ImportFundDocs < ImportUtil
         # Create the document
         doc = Document.new(owner: model, entity_id: model.entity_id, folder:,
                            name: user_data["Document Name"], tag_list: user_data["Tags"],
+                           import_upload_id: import_upload.id,
                            user_id: import_upload.user_id, send_email:)
 
         # Save the document
