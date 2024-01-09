@@ -18,7 +18,7 @@
     </div>
 
     <div class="associated_entity">
-      <% model_class = @import_upload.import_type.underscore.pluralize %>
+      <% model_class = @import_upload.model_class.name.underscore.pluralize %>
       <%= render "/#{model_class}/index", import_upload_id: @import_upload.id, "#{model_class}": @import_upload.imported_data %>
     </div>
 

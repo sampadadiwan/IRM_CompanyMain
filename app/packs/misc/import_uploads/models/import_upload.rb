@@ -61,6 +61,10 @@ class ImportUpload < ApplicationRecord
   end
 
   def imported_data
-    import_type.constantize.where(import_upload_id: id)
+    model_class.where(import_upload_id: id)
+  end
+
+  def model_class
+    DOC_TYPES.include?(import_type) ? Document : import_type.constantize
   end
 end
