@@ -27,6 +27,8 @@ class ImportUpload < ApplicationRecord
 
   TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Holding Offer OfferDocs OptionsCustomData Kpi KycDocs].sort.freeze
 
+  DOC_TYPES = %w[Documents FundDocs KycDocs OfferDocs].freeze
+
   belongs_to :entity
   belongs_to :owner, polymorphic: true
   belongs_to :user

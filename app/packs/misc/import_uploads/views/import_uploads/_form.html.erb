@@ -31,11 +31,19 @@
     <%= form.text_field :import_type, class: "form-control", hidden: true  %>
   <% end %>
   
-  
+  <% 
+    if import_upload.import_type.present?
+      ImportUpload::DOC_TYPES.include?(import_upload.import_type) ? allowed_types = ['.zip'].freeze : allowed_types = ['.xlsx'].freeze
+    else
+      allowed_types = ['.xlsx', '.zip'].freeze 
+    end    
+    
+  %>
   <div class="field" class="form-group" id="document_upload">
-    <%= render "layouts/single_upload", form: form, field_label: "Import Data", 
+    <%= render "layouts/single_upload", form: form, 
+                            field_label: "Import Data (#{allowed_types.join(', ')})", 
                             for_model: "import_upload", field_name: "import_file", 
-                            model: import_upload, allowed_types: ['.xlsx'].freeze %>
+                            model: import_upload, allowed_types: %>
 
     <small class="text-muted">
       <%= link_to "Sample upload format", ImportUpload::SAMPLES[params[:sample_upload]] if ImportUpload::SAMPLES[params[:sample_upload]] %> 
