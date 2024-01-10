@@ -2,7 +2,7 @@ class Notification < ApplicationRecord
   include Noticed::Model
   belongs_to :recipient, polymorphic: true, touch: true
   belongs_to :entity
-  has_many :whatsapp_logs
+  has_many :whatsapp_logs, dependent: :destroy
 
   # returns json that contains key entity name from message and value actual entity name
   def self.get_entity_name_json(message, entity_name)
