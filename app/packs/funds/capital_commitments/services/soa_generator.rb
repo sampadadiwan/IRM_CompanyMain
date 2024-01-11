@@ -41,11 +41,11 @@ class SoaGenerator
       capital_commitment: TemplateDecorator.decorate(capital_commitment),
       entity: capital_commitment.entity,
       fund: TemplateDecorator.decorate(capital_commitment.fund),
-      fund_units: fund_units(capital_commitment, start_date, end_date),
+      fund_units: TemplateDecorator.new(fund_units(capital_commitment, start_date, end_date)),
 
-      capital_remittances: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances),
-      capital_remittances_between_dates: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
-      capital_remittances_before_end_date: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances.where(remittance_date: ..end_date)),
+      capital_remittances: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances.order(:remittance_date)),
+      capital_remittances_between_dates: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date).order(:remittance_date)),
+      capital_remittances_before_end_date: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances.where(remittance_date: ..end_date).order(:remittance_date)),
 
       remittance_amounts: TemplateDecorator.decorate(remittance_amounts(capital_commitment.capital_remittances, capital_commitment.fund.currency)),
       remittance_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(capital_commitment.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date), capital_commitment.fund.currency)),
@@ -87,10 +87,12 @@ class SoaGenerator
   def remittance_amounts(remittances, currency)
     call_amount_cents = remittances.sum(:call_amount_cents)
     collected_amount_cents = remittances.sum(:collected_amount_cents)
+    committed_amount_cents = remittances.last&.committed_amount_cents || 0
     OpenStruct.new({
                      committed_amount: Money.new(remittances.sum(:committed_amount_cents), currency),
                      call_amount: Money.new(call_amount_cents, currency),
-                     collected_amount: Money.new(collected_amount_cents, currency)
+                     collected_amount: Money.new(collected_amount_cents, currency),
+                     uncalled_amount: Money.new(committed_amount_cents - call_amount_cents, currency)
                    })
   end
 

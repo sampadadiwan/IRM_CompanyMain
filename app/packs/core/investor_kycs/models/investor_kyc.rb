@@ -238,7 +238,10 @@ class InvestorKyc < ApplicationRecord
     %i[verified expired not_expired due]
   end
 
-  def face_value_for_redemption
-    Money.new(capital_distribution_payments.sum(:cost_of_investment_cents), entity.currency)
+  def face_value_for_redemption(start_date: nil, end_date: nil)
+      cdp = capital_distribution_payments
+      cdp = cdp.where(payment_date: start_date..) if start_date.present?
+      cdp = cdp.where(payment_date: ..end_date) if end_date.present?
+      Money.new(cdp.sum(:cost_of_investment_cents), entity.currency)
   end
 end

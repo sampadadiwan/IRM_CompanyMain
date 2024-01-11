@@ -3,8 +3,6 @@ module DeliveryMethods
     def deliver
       # Get the entity name sending the msg
       entity = notification.record.entity
-      response = notification.recipient.whatsapp_enabled && entity.permissions.enable_whatsapp? ? "" : "WhatsApp not enabled for #{notification.recipient.phone} and entity #{entity.name}"
-
       # Ensure that the message is sanitized to prevent XSS attacks
       message = ActionView::Base.full_sanitizer.sanitize(notification.message)
 
@@ -16,7 +14,7 @@ module DeliveryMethods
       whatsapp_numbers.each do |whatsapp_number|
         # log the Notification
         entity_name_json = Notification.get_entity_name_json(message, entity.name)
-        WhatsappLog.create(entity_id: entity.id, notification_id: notification.record.id, params: { entity_name: entity.name, message:, link: notification.view_path, whatsapp_number: }, response:, entity_name: entity_name_json, name_matched: entity_name_json[entity.name.to_s] == entity.name)
+        WhatsappLog.create(entity_id: entity.id, notification_id: notification.record.id, params: { entity_name: entity.name, message:, link: notification.view_path, whatsapp_number: }, entity_name: entity_name_json, name_matched: entity_name_json[entity.name.to_s] == entity.name)
       end
     end
   end
