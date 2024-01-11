@@ -202,7 +202,7 @@ class User < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[first_name last_name email phone]
+    %w[first_name last_name email phone].sort
   end
 
   def active_for_authentication?

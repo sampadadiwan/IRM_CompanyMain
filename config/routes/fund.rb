@@ -46,6 +46,7 @@ resources :capital_remittances do
   get 'search', on: :collection
   patch 'generate_docs', on: :member
   patch 'send_notification', on: :member
+  post 'bulk_actions', on: :collection
 end
 resources :capital_calls do
   get 'search', on: :collection

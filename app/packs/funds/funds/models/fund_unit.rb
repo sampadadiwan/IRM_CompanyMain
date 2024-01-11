@@ -23,7 +23,7 @@ class FundUnit < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[issue_date premium price quantity reason unit_type]
+    %w[issue_date premium price quantity reason unit_type].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

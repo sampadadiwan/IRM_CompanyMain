@@ -6,7 +6,7 @@ class ApplicationController < ActionController::Base
 
   skip_before_action :verify_authenticity_token if ENV['SKIP_AUTHENTICITY_TOKEN'] == "true"
 
-  after_action :verify_authorized, except: %i[index search], unless: :devise_controller?
+  after_action :verify_authorized, except: %i[index search bulk_actions], unless: :devise_controller?
   after_action :verify_policy_scoped, only: [:index]
 
   before_action :set_current_entity
@@ -14,6 +14,17 @@ class ApplicationController < ActionController::Base
   before_action :set_search_controller
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :set_paper_trail_whodunnit
+
+  # This is a common action for all models which have filters. Bulk actions can be applied to filtered results. A Job "#{controller_name}BulkActionJob", needs to be defined, which will be passed the ids of the filtered results. and the bulk action to perform on them. Note that the controller must implement a fetch_rows method which returns the filtered results.
+  def bulk_actions
+    # Here we get a ransack search
+    rows = fetch_rows
+    # and a bulk action to perform on the results
+    "#{controller_name}_bulk_action_job".classify.constantize.perform_later(rows.pluck(:id), current_user.id, params[:bulk_action])
+    # and redirect back to the page we came from
+    redirect_path = request.referer || root_path
+    redirect_to redirect_path, notice: "Bulk Action started, please check back in a few mins."
+  end
 
   protected
 

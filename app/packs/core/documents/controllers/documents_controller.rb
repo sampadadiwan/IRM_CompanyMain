@@ -27,7 +27,7 @@ class DocumentsController < ApplicationController
 
   # GET /documents or /documents.json
   def index
-    fetch_documents
+    fetch_rows
   end
 
   def folder
@@ -213,15 +213,6 @@ class DocumentsController < ApplicationController
     end
   end
 
-  def bulk_actions
-    # Here we get a ransack search and a bulk action to perform on the results
-    fetch_documents
-    DocumentBulkActionJob.perform_later(@documents.pluck(:id), current_user.id, params[:bulk_action])
-
-    redirect_path = request.referer || root_path
-    redirect_to redirect_path, notice: "Bulk Action started, please check back in a few mins."
-  end
-
   private
 
   # Use callbacks to share common setup or constraints between actions.
@@ -254,7 +245,8 @@ class DocumentsController < ApplicationController
     @show_steps = false
   end
 
-  def fetch_documents
+  # Used for bulk actions and index
+  def fetch_rows
     if params[:owner_id].present? && params[:owner_type].present?
       # This is typicaly for investors to view documents of a sale, offer, commitment etc
       owner_documents
@@ -279,6 +271,7 @@ class DocumentsController < ApplicationController
 
     # Newest docs first
     @documents = @documents.includes(:folder).order(id: :desc)
+    @documents
   end
 
   # Only allow a list of trusted parameters through.

@@ -227,7 +227,7 @@ class InvestorKyc < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[PAN full_name kyc_type address bank_name bank_branch bank_account_type bank_account_number ifsc_code birth_date verified expiry_date collected_amount committed_amount call_amount distribution_amount docs_completed]
+    %w[PAN full_name kyc_type address bank_name bank_branch bank_account_type bank_account_number ifsc_code birth_date verified expiry_date collected_amount committed_amount call_amount distribution_amount docs_completed].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

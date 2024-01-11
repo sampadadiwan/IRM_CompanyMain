@@ -1,4 +1,4 @@
-class DocumentBulkActionJob < ApplicationJob
+class DocumentsBulkActionJob < ApplicationJob
   queue_as :low
 
   # This is called every day at 2:01 am for all docs created in the last 10 days

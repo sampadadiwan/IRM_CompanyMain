@@ -20,6 +20,7 @@
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
+
     <span>
       
 
@@ -62,7 +63,8 @@
         </div>
         <%= render "capital_remittances/filter", capital_call_id: capital_call.id %>
       <% else %>
-        <%= link_to "Download", xl_link, {class: "btn btn-outline-primary" } %>
+          <%= link_to "Download", xl_link, {class: "btn btn-outline-primary" } %>
+          <%= render "/capital_remittances/bulk_actions" %>
       <% end %>
 
       <%#= render "/funds/search_bar", model_name: "capital_remittance" unless search == "No" %>

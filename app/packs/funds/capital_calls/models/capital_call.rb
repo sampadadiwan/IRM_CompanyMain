@@ -3,6 +3,8 @@ class CapitalCall < ApplicationRecord
   include WithFolder
   include Trackable
   include ActivityTrackable
+  include RansackerAmounts
+
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
   include ForInvestor
@@ -120,5 +122,13 @@ class CapitalCall < ApplicationRecord
     else
       CALL_BASIS
     end
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[name due_date approved call_date status verified].sort
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    ["fund"]
   end
 end

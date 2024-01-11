@@ -15,7 +15,7 @@ class AggregateInvestment < ApplicationRecord
   delegate :investor_name, to: :investor
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[equity full_diluted_percentage options percentage preferred preferred_converted_qty shareholder units]
+    %w[equity full_diluted_percentage options percentage preferred preferred_converted_qty shareholder units].sort
   end
 
   def self.for_investor(current_user, entity)

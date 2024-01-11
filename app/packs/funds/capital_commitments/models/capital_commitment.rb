@@ -273,7 +273,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[commitment_date commitment_type fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount]
+    %w[commitment_date commitment_type fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

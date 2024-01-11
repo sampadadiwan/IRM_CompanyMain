@@ -90,6 +90,6 @@ class Folder < ApplicationRecord
   }
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[full_path name owner_type]
+    %w[full_path name owner_type].sort
   end
 end

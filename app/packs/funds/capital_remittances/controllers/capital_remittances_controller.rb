@@ -3,6 +3,17 @@ class CapitalRemittancesController < ApplicationController
 
   # GET /capital_remittances or /capital_remittances.json
   def index
+    fetch_rows
+    @capital_remittances = @capital_remittances.page(params[:page]) if params[:all].blank?
+
+    respond_to do |format|
+      format.html
+      format.xlsx
+      format.json { render json: CapitalRemittanceDatatable.new(params, capital_remittances: @capital_remittances) }
+    end
+  end
+
+  def fetch_rows
     @q = CapitalRemittance.ransack(params[:q])
 
     @capital_remittances = policy_scope(@q.result).includes(:fund, :capital_call, :entity, capital_commitment: :fund)
@@ -16,13 +27,7 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittances = @capital_remittances.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
     @capital_remittances = @capital_remittances.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
 
-    @capital_remittances = @capital_remittances.page(params[:page]) if params[:all].blank?
-
-    respond_to do |format|
-      format.html
-      format.xlsx
-      format.json { render json: CapitalRemittanceDatatable.new(params, capital_remittances: @capital_remittances) }
-    end
+    @capital_remittances
   end
 
   def search_ids
@@ -121,11 +126,7 @@ class CapitalRemittancesController < ApplicationController
   end
 
   def verify
-    @capital_remittance.verified = !@capital_remittance.verified
-    @capital_remittance.save
-
-    @capital_remittance.payment_received_notification if @capital_remittance.verified
-
+    @capital_remittance.verify_remittance
     redirect_back fallback_location: capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: "Successfully updated."
   end
 

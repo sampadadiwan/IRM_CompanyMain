@@ -134,11 +134,11 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[call_amount collected_amount capital_fee other fee folio_id investor_name payment_date remittance_date status verified]
+    %w[call_amount collected_amount capital_fee other fee folio_id investor_name payment_date remittance_date status verified].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[capital_commitment fund investor]
+    %w[capital_call capital_commitment fund investor]
   end
 
   after_commit :touch_investor
@@ -150,4 +150,10 @@ class CapitalRemittance < ApplicationRecord
     entity.touch
   end
   # rubocop:enable Rails/SkipsModelValidations
+
+  def verify_remittance
+    self.verified = !verified
+    save
+    payment_received_notification if verified
+  end
 end
