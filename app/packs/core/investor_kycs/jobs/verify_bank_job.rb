@@ -26,7 +26,15 @@ class VerifyBankJob < ApplicationJob
     Rails.logger.debug response
     @model.bank_verification_status = nil
     @model.bank_verified = false
-    @model.bank_verification_response = JSON.parse(response.body) if response.body
+    @model.bank_verification_response = parsed_response(response) if response.body
+  end
+
+  def parsed_response(response)
+    JSON.parse(response.body)
+  rescue JSON::ParserError => e
+    # if response cannot be parsed, log the error and return the response body
+    Rails.logger.error { "JSON::ParserError: #{e.message}" }
+    nil
   end
 
   def check_details(response)
