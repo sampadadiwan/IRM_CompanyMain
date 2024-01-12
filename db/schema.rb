@@ -464,7 +464,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_07_064909) do
     t.bigint "form_type_id"
     t.decimal "percentage", precision: 11, scale: 8, default: "0.0"
     t.bigint "ppm_number", default: 0
-    t.string "investor_signature_types", limit: 20
     t.string "folio_id", limit: 20
     t.bigint "investor_signatory_id"
     t.boolean "esign_required", default: false
@@ -697,7 +696,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_07_064909) do
     t.string "title"
     t.text "details"
     t.string "url"
-    t.string "image_placement", limit: 6, default: "left"
+    t.string "image_placement", limit: 6, default: "Left"
     t.text "image_data"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -967,7 +966,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_07_064909) do
     t.string "primary_email"
     t.index ["deleted_at"], name: "index_entities_on_deleted_at"
     t.index ["name"], name: "index_entities_on_name"
-    t.index ["pan"], name: "index_entities_on_pan", unique: true
+    t.index ["pan"], name: "index_entities_on_pan"
     t.index ["parent_entity_id"], name: "index_entities_on_parent_entity_id"
     t.index ["sub_domain"], name: "index_entities_on_sub_domain", unique: true
   end
@@ -1311,7 +1310,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_07_064909) do
     t.bigint "funding_round_id"
     t.boolean "show_valuations", default: false
     t.boolean "show_fund_ratios", default: false
-    t.string "investor_signature_types", limit: 20
     t.bigint "fund_signatory_id"
     t.bigint "trustee_signatory_id"
     t.string "currency", limit: 5, null: false
@@ -1975,7 +1973,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_07_064909) do
     t.text "bank_verification_response"
     t.string "bank_verification_status"
     t.string "full_name", limit: 100
-    t.string "demat", limit: 40
+    t.string "demat", limit: 50
     t.string "city", limit: 20
     t.bigint "final_agreement_user_id"
     t.string "custom_matching_vals"
@@ -2502,7 +2500,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_07_064909) do
     t.bigint "entity_id", null: false
     t.date "valuation_date"
     t.decimal "valuation_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "per_share_value_cents", precision: 20, scale: 6, default: "0.0"
+    t.decimal "per_share_value_cents", precision: 20, scale: 8, default: "0.0"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "form_type_id"
@@ -2523,6 +2521,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_07_064909) do
 
   create_table "versions", charset: "utf8mb4", collation: "utf8mb4_general_ci", force: :cascade do |t|
     t.string "item_type"
+    t.string "{:null=>false, :limit=>191}"
     t.bigint "item_id", null: false
     t.string "event", null: false
     t.string "whodunnit"
@@ -2724,6 +2723,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_07_064909) do
   add_foreign_key "holding_actions", "users"
   add_foreign_key "holding_audit_trails", "entities"
   add_foreign_key "holdings", "entities"
+  add_foreign_key "holdings", "excercises", column: "created_from_excercise_id"
   add_foreign_key "holdings", "form_types"
   add_foreign_key "holdings", "investments"
   add_foreign_key "holdings", "investors"
@@ -2776,6 +2776,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_07_064909) do
   add_foreign_key "kyc_data", "investor_kycs"
   add_foreign_key "messages", "investors"
   add_foreign_key "messages", "users"
+  add_foreign_key "notifications", "entities"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "offers", "entities"
