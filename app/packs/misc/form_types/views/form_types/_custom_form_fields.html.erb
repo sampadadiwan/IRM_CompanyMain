@@ -1,6 +1,6 @@
 <% 
     struct = OpenStruct.new(model.properties) 
-    fields = model.form_type.form_custom_fields
+    fields = model.form_type.form_custom_fields.visible
     fields = fields.where(step: step) if step.present?    
 %>
 <%= form.fields_for :properties, struct  do |builder| %>

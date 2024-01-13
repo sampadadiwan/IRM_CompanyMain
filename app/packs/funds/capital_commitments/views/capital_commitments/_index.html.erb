@@ -3,14 +3,35 @@
   cols ||= params[:cols] 
   import_upload_id ||= params[:import_upload_id]
   fund_id ||= params[:fund_id] || fund&.id
+  title ||= "Capital Commitments" 
 %>
 
 <% data_source ||= capital_commitments_path(params: params.to_unsafe_h, fund_id:, import_upload_id:, format: :json, all: true) %>
 <% xl_link = download_xl_link(data_source) %>
 <% lazy_load_data ||= false %>
-<%= render "/capital_commitments/index_header", fund: fund, xl_link: xl_link %>
+<%= render "/capital_commitments/index_header", fund:, xl_link:, title: %>
 
-<div class="table-responsive" data-controller="commitments" data-commitments-lazy-load-data-value=<%= lazy_load_data %> data-commitments-table-name-value="#capital_commitments">
+<%
+    # Default Columns for KYC
+    column_names ||= CapitalCommitment::STANDARD_COLUMN_NAMES.join(",")
+    field_list ||= CapitalCommitment::STANDARD_COLUMN_FIELDS.join(",")
+  
+    # Custom Columns if applicable
+    entity = @current_entity.presence || current_user.entity
+    custom_cols = entity.customization_flags.capital_commitment_custom_cols?
+    column_names, field_list = custom_grid_columns(entity, "CapitalCommitment")  if custom_cols
+
+    if fund_id.blank?
+      column_names = "Fund," + column_names
+      field_list =  "fund_name," + field_list
+    end
+%>
+
+<div class="table-responsive" data-controller="commitments" 
+  data-commitments-lazy-load-data-value=<%= lazy_load_data %> 
+  data-commitments-table-name-value="#capital_commitments"
+  data-commitments-field-list-value=<%=field_list%> >
+
   <% if lazy_load_data %>
     <a class="load_data_link" data-action="click->commitments#loadData"><span>Load Data</span></a>
   <% end %>
@@ -19,57 +40,6 @@
     <input type="text" id="commitment_cols" hidden value="all">
   <% end %>
 
-  <table id="capital_commitments" class="table table-bordered dataTable action_table" 
-        data-source="<%= data_source %>" >
-    <thead>
-      <tr>
-        <% if fund_id.blank? %>
-          <th>
-            Fund
-          </th>
-        <% end %>
-        <th>
-          Type
-        </th>
-        <th>
-          Folio No
-        </th>
-        <th>
-          Investor
-        </th>
-        <th>
-          Full Name
-        </th>
-        <th>
-          Unit Type
-        </th>
-        <th>
-          Committed
-        </th>
-        <th>
-          Percentage
-        </th>
-        <th>
-          Called
-        </th>
-        <th>
-          Collected
-        </th>
-        <th>
-          Distributed
-        </th>
-        <% if params[:show_docs].present? %>
-          <input id="show_docs" value="true" hidden>
-          <th>
-            Documents
-          </th>
-        <% end %>
-        <th>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
+  <%= render CustomTable.new(data_source:, id: "capital_commitments", column_names:) %>
   
 </div>

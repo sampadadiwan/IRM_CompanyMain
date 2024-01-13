@@ -2,7 +2,7 @@
 <% model.properties&.each do |k,v| %>
     <% custom_field = map[k] %>
     <% if custom_field.nil? || custom_field.show_to_user(current_user) %>
-        <tr class="<%= collapsed ? 'collapse multi-collapse' : '' %>">
+        <tr>
             <td>
                 <%= custom_field&.human_label || k.to_s.humanize.titleize %>
             </td>
@@ -15,4 +15,16 @@
             </td>
         </tr>
     <% end %>
+<% end %>
+
+<% model.custom_calculations.each do |fcf| %>
+    <tr>
+        <td>
+            <%= fcf.human_label %>
+        </td>
+        <td>
+            <%= model.perform_custom_calculation(fcf.meta_data) %>
+            <div><small class="form-text text-muted"><%= fcf.help_text %></small></div>
+        </td>
+    </tr>
 <% end %>

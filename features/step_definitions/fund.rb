@@ -189,6 +189,7 @@
       fill_in('capital_commitment_fund_close', with: @new_capital_commitment.fund_close)
     end
     fill_in('capital_commitment_folio_id', with: rand(10**4))
+    fill_in('capital_commitment_commitment_date', with: @new_capital_commitment.commitment_date)
     select(@new_capital_commitment.folio_currency, from: "capital_commitment_folio_currency")
 
     if @fund.entity.permissions.enable_units?

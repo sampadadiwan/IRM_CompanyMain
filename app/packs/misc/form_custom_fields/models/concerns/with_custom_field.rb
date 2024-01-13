@@ -10,12 +10,19 @@ module WithCustomField
   end
 
   def map_custom_fields
-    form_custom_fields.index_by(&:name)
+    form_custom_fields.visible.index_by(&:name)
+  end
+
+  def custom_calculations
+    form_custom_fields.calculations
+  end
+
+  def perform_custom_calculation(calc)
+    eval(calc)
   end
 
   def custom_fields
     OpenStruct.new(json_fields)
   end
-
   # rubocop:enable Style/OpenStructUse
 end

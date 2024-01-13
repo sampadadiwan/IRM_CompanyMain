@@ -1,0 +1,16 @@
+<table id="<%= @id %>" class="table table-bordered dataTable action_table" data-source="<%= @data_source %>">
+
+    <thead>
+        <tr>
+            <% @column_names.each do |column| %>
+            <th>
+                <%= column %>
+            </th>
+            <% end %>
+        </tr>
+    </thead>
+
+    <!-- Filled in by jqDataTable -->
+    <tbody>
+    </tbody>
+</table>

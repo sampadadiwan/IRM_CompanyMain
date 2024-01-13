@@ -90,58 +90,27 @@
     </span>
   </div>
 
-  <div class="table-responsive" data-controller="investor-kycs"
+  <%
+    # Default Columns for KYC
+    column_names ||= InvestorKyc::STANDARD_COLUMN_NAMES.join(",")
+    field_list ||= InvestorKyc::STANDARD_COLUMN_FIELDS.join(",")
+
+    # Custom Columns if applicable
+    entity = @current_entity.presence || current_user.entity
+    custom_cols = entity.customization_flags.investor_kycs_custom_cols?
+    column_names, field_list = custom_grid_columns(entity, "InvestorKyc")  if custom_cols
+  %>
+
+   <div class="table-responsive" data-controller="investor-kycs"
        data-investor-kycs-lazy-load-data-value=<%= lazy_load_data %>
-       data-investor-kycs-table-name-value="#investor_kycs">
+       data-investor-kycs-table-name-value="#investor_kycs"
+       data-investor-kycs-field-list-value=<%=field_list%>>
 
     <% if lazy_load_data %>
       <a class="load_data_link" data-action="click->investor-kycs#loadData"><span>Load Data</span></a>
     <% end %>
 
-    <table id="investor_kycs" class="table table-bordered dataTable"
-           data-source="<%= data_source %>" style="width:100%" >
+    <%= render CustomTable.new(data_source:, id: "investor_kycs", column_names:) %>
 
-      <thead>
-        <tr>
-          <th>
-            Investor
-          </th>
-          <th>
-            Full Name
-          </th>
-          <th>
-            Type
-          </th>
-          <th>
-            Pan
-          </th>
-          <th class="hideMobP">
-            Pan Verified
-          </th>
-          <th class="hideMobP">
-            Committed Amount
-          </th>
-          <th class="hideMobP">
-            Collected Amount
-          </th>
-          <th class="hideMobP">
-            Bank Verified
-          </th>
-          <th class="hideMobP">
-            KYC Verified
-          </th>
-          <th class="hideMobP">
-            Expired
-          </th>
-
-          <th class="hideMobP">
-          </th>
-        </tr>
-      </thead>
-
-      <tbody>
-
-      </tbody>
-    </table>
 
   </div>

@@ -4,15 +4,19 @@ export default class ServerDatatableController extends Controller {
 
   static values = {
     lazyLoadData: String, // Do we want to eager or lazy load (for tabs)
-    tableName: String // Which table id are we targeting
+    tableName: String, // Which table id are we targeting
+    fieldList: String, // Which fields are we targeting
+    mobileFieldList: String // Which fields are we targeting
   }
 
   connect() {
     console.log(`Datatable setup for ${this.tableNameValue}`);
+    console.log(`lazyLoadDataValue = ${this.lazyLoadDataValue}`);
+    console.log(`fieldListValue = ${this.fieldListValue}`);
+    console.log(`mobileFieldListValue = ${this.mobileFieldListValue}`);
     
     this.buildTable(this.tableNameValue);
 
-    console.log(`lazyLoadDataValue = ${this.lazyLoadDataValue}`)
     if(this.lazyLoadDataValue == "false") {
       this.loadData();
     }
@@ -75,6 +79,28 @@ export default class ServerDatatableController extends Controller {
       }      
     });
 
+  }
+
+  columns() {    
+    let cols = this.customColumns();
+    console.log("cols", cols);  
+    return cols;
+  }
+
+  customColumns() {
+    let fields = this.fieldListValue.split(",");
+    var x = window.matchMedia("(max-width: 479px)")
+    if (x.matches) { // If media query matches
+      fields = this.mobileFieldListValue.split(",")
+    } 
+    
+    if (this.fieldListValue == "") {
+      return [];
+    } else  {
+      return fields.map(function(item) {
+        return {"data": item};
+      });
+    }    
   }
 
   loadData() {

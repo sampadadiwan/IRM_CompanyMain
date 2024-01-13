@@ -1,4 +1,7 @@
 class InvestorKyc < ApplicationRecord
+  STANDARD_COLUMN_NAMES = ["Investor", "Full Name", "Type", "Pan", "Pan Verified", "Committed Amount", "Collected Amount", "Bank Verified", "Kyc Verified", "Expired", " "].freeze
+  STANDARD_COLUMN_FIELDS = %w[investor_name full_name kyc_type pan pan_verified committed_amount collected_amount bank_verified verified expired dt_actions].freeze
+
   # Make all models searchable
   update_index('investor_kyc') { self }
   include WithCustomField
@@ -10,6 +13,7 @@ class InvestorKyc < ApplicationRecord
   belongs_to :investor
   belongs_to :entity
   has_many :capital_commitments
+  has_many :funds, through: :capital_commitments
   has_many :capital_remittances, through: :capital_commitments
   has_many :capital_remittance_payments, through: :capital_commitments
   has_many :capital_distribution_payments, through: :capital_commitments
@@ -231,7 +235,7 @@ class InvestorKyc < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[capital_commitments investor]
+    %w[capital_commitments investor funds]
   end
 
   def self.ransackable_scopes(_auth_object = nil)
@@ -239,9 +243,9 @@ class InvestorKyc < ApplicationRecord
   end
 
   def face_value_for_redemption(start_date: nil, end_date: nil)
-      cdp = capital_distribution_payments
-      cdp = cdp.where(payment_date: start_date..) if start_date.present?
-      cdp = cdp.where(payment_date: ..end_date) if end_date.present?
-      Money.new(cdp.sum(:cost_of_investment_cents), entity.currency)
+    cdp = capital_distribution_payments
+    cdp = cdp.where(payment_date: start_date..) if start_date.present?
+    cdp = cdp.where(payment_date: ..end_date) if end_date.present?
+    Money.new(cdp.sum(:cost_of_investment_cents), entity.currency)
   end
 end

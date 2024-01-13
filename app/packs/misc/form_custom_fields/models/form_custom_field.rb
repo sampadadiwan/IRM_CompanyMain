@@ -1,4 +1,6 @@
 class FormCustomField < ApplicationRecord
+  HIDDEN_FIELDS = %w[Calculation GridColumns].freeze
+
   belongs_to :form_type
   acts_as_list scope: :form_type
 
@@ -15,6 +17,13 @@ class FormCustomField < ApplicationRecord
   RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date" }.freeze
 
   scope :writable, -> { where(read_only: false) }
+  scope :visible, -> { where.not(field_type: HIDDEN_FIELDS) }
+  scope :calculations, -> { where(field_type: "Calculation") }
+
+  validate :meta_data_kosher?, if: -> { field_type == "Calculation" }
+  def meta_data_kosher?
+    errors.add(:meta_data, "You cannot do CRUD operations in meta_data") if meta_data.downcase.match?(/alter|truncate|drop|insert|select|destroy|delete|update|create|save|rollback|system|fork/)
+  end
 
   before_save :set_default_values
   def set_default_values

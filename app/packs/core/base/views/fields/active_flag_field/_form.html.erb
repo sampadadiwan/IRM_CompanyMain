@@ -18,12 +18,20 @@
               val: val, id: "permissions_#{val}", class: "form-check-input"}, val, nil   %>
         </div>
     <% end %>
-  <% elsif f.object.class.name == "Entity" %>
+  <% elsif f.object.class.name == "Entity" && field.attribute == :permissions %>
     <% Entity.permissions.pairs.each do |key, val| %>
         <div class="form-group col">
           <%= f.label :permissions, key.titleize, class: "no-wrap" %>
           <%= f.check_box :permissions, {name: "entity[permissions][]",
               val: val, id: "permissions_#{val}", class: "form-check-input"}, val, nil   %>
+        </div>
+    <% end %>
+  <% elsif f.object.class.name == "Entity" && field.attribute == :customization_flags %>
+    <% Entity.customization_flags.pairs.each do |key, val| %>
+        <div class="form-group col">
+          <%= f.label :customization_flags, key.titleize, class: "no-wrap" %>
+          <%= f.check_box :customization_flags, {name: "entity[customization_flags][]",
+              val: val, id: "customization_flags_#{val}", class: "form-check-input"}, val, nil   %>
         </div>
     <% end %>
   <% else %>

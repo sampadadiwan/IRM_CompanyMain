@@ -32,7 +32,8 @@ class EntityDashboard < Administrate::BaseDashboard
     created_by: Field::Number,
     investor_categories: Field::String,
     instrument_types: Field::String,
-    permissions: ActiveFlagField
+    permissions: ActiveFlagField,
+    customization_flags: ActiveFlagField
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -60,6 +61,7 @@ class EntityDashboard < Administrate::BaseDashboard
     url
     category
     permissions
+    customization_flags
     created_at
     updated_at
     active
@@ -72,8 +74,6 @@ class EntityDashboard < Administrate::BaseDashboard
     investors
     investor_entities
     entity_setting
-    activity_docs_required_for_completion
-    activity_details_required_for_na
   ].freeze
 
   # FORM_ATTRIBUTES
@@ -95,6 +95,7 @@ class EntityDashboard < Administrate::BaseDashboard
     activity_docs_required_for_completion
     activity_details_required_for_na
     permissions
+    customization_flags
     entity_setting
 
   ].freeze
@@ -120,6 +121,6 @@ class EntityDashboard < Administrate::BaseDashboard
 
   def permitted_attributes(action = nil)
     # This is to enable the custom_flags field to be editable
-    super + [permissions: []] # -- Adding our now removed field to the permitted list
+    super + [permissions: [], customization_flags: []] # -- Adding our now removed field to the permitted list
   end
 end

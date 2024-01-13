@@ -1,6 +1,4 @@
 class Entity < ApplicationRecord
-  PAN_MANDATORY_AFTER = Date.parse("01-07-2023")
-  EMAIL_MANDATORY_AFTER = Date.parse("25-12-2023")
 
   include Trackable
   # include EntityMerge
@@ -16,7 +14,7 @@ class Entity < ApplicationRecord
 
   has_many :custom_notifications, as: :owner, dependent: :destroy
 
-  validates :primary_email, presence: true, if: proc { |e| ((e.created_at && e.created_at >= EMAIL_MANDATORY_AFTER) || (e.new_record? && Time.zone.today >= EMAIL_MANDATORY_AFTER)) && !e.is_holdings_entity }
+  validates :primary_email, presence: true, if: proc { |e| e.new_record? && !e.is_holdings_entity }
 
   validates_uniqueness_of :name, scope: :pan
 

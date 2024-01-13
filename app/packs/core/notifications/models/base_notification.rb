@@ -5,13 +5,13 @@ class BaseNotification < Noticed::Base
     deliver_by :whats_app, class: "DeliveryMethods::WhatsApp", if: :whatsapp_enabled?
     deliver_by :whats_app_logger, class: "DeliveryMethods::WhatsAppLogger", unless: :whatsapp_enabled?
     deliver_by :email, mailer: :mailer_name, method: :email_method, format: :email_data
-    deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
+    # deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts"
   else
     # Randomize the delay so we dont flood aws SES / WATI
     deliver_by :whats_app, class: "DeliveryMethods::WhatsApp", if: :whatsapp_enabled?, delay: :email_delay
     deliver_by :whats_app_logger, class: "DeliveryMethods::WhatsAppLogger", unless: :whatsapp_enabled? # no delay for logger
     deliver_by :email, mailer: :mailer_name, method: :email_method, format: :email_data, delay: :email_delay
-    deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts", delay: :email_delay
+    # deliver_by :user_alerts, class: "DeliveryMethods::UserAlerts", delay: :email_delay
   end
 
   param :entity_id

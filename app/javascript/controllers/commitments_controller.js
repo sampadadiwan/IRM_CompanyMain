@@ -48,15 +48,15 @@ export default class extends ServerDatatableController {
   ];
 
 
-  columns() {
-    if ($("#show_docs").length > 0) {
-      return this.with_docs;
-    } else {
-      if($("#commitment_cols").val() == "all") {
-        return this.all;
-      } else {
-        return this.default; 
-      }
-    }
-  }
+  // columns() {
+  //   if ($("#show_docs").length > 0) {
+  //     return this.with_docs;
+  //   } else {
+  //     if($("#commitment_cols").val() == "all") {
+  //       return this.all;
+  //     } else {
+  //       return this.default; 
+  //     }
+  //   }
+  // }
 }

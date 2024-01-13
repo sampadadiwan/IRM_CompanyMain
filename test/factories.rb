@@ -338,6 +338,7 @@ FactoryBot.define do
     fund_close { "First Close" }
     notes { Faker::Company.catch_phrase }
     commitment_type { "Pool" }
+    commitment_date { Date.today - rand(24).months }
   end
 
   factory :fund do

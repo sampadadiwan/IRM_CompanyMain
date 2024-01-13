@@ -29,6 +29,10 @@ class TemplateDecorator < ApplicationDecorator
       attr_name = method_name.to_s.gsub("format_", "")
       return h.number_with_precision(send(attr_name).to_d, precision: 2, delimiter: ",")
 
+    elsif method_name.to_s.include?("format_nd_")
+      attr_name = method_name.to_s.gsub("format_nd_", "")
+      return h.number_with_precision(send(attr_name).to_d, precision: 0, delimiter: ",")
+
     elsif method_name.to_s.include?("rupees_")
       attr_name = method_name.to_s.gsub("rupees_", "")
       return send(attr_name).to_i.rupees.humanize

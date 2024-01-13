@@ -14,6 +14,10 @@ class CapitalCommitment < ApplicationRecord
   # Set by import upload when importing commitments
   attr_accessor :imported
 
+  STANDARD_COLUMN_NAMES = ["Type", "Folio", "Investor", "Full Name", "Unit Type", "Committed", "Percentage", "Called", "Collected", "Distributed", " "].freeze
+  STANDARD_COLUMN_FIELDS = %w[commitment_type folio_id investor_name full_name unit_type
+                              committed_amount percentage call_amount collected_amount distribution_amount dt_actions].freeze
+
   COMMITMENT_TYPES = %w[Pool CoInvest].freeze
   enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
   scope :pool, -> { where(commitment_type: 'Pool') }
@@ -56,6 +60,7 @@ class CapitalCommitment < ApplicationRecord
   # validates :committed_amount_cents, numericality: { greater_than_or_equal_to: :collected_amount_cents }
 
   validates :folio_id, :fund_close, :commitment_type, presence: true
+  validates :commitment_date, presence: true, if: proc { |c| c.new_record? }
   validates_uniqueness_of :folio_id, scope: :fund_id
 
   validates :commitment_type, length: { maximum: 10 }
