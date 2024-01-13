@@ -22,7 +22,8 @@
         <!-- Create document fields for this model. Note these are nested attributes -->
         <%= f.label field.name, document_name %> : <%= link_to "#{document.uploaded_file_name}", document if document %>
         <% idx = rand(100000) %>
-
+        
+        <!-- This is the hidden field that is used to store the document id in case of updates -->
         <%= f.hidden_field field_id.to_sym, name: "#{for_model}[documents_attributes][#{idx}][file]",
             data: { single_upload_target: "result" }, id: "id_#{idx}", 
             class: "validate_hidden" %>
@@ -31,10 +32,16 @@
         <%= f.file_field field.name, class: "form-control custom_field", id: field_id, 
             data: { single_upload_target: "input" }, required: required %>
         
+        <!-- document_name is the name of the document -->
         <%= f.text_field "document_name",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][name]", value: document_name, hidden: true  %>
+        <!-- document_orignal is always set to true -->
         <%= f.text_field "document_orignal",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][orignal]", value: true, hidden: true  %>
+        <!-- user uploading the doc is current_user -->
         <%= f.text_field "document_user_id",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][user_id]", value: current_user.id, hidden: true  %>
+        <!-- send_email is always set to false -->
         <%= f.text_field "document_user_id",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][send_email]", value: false, hidden: true  %>
+        <!-- owner tag is the metadata in the field -->
+        <%= f.text_field "document_owner_tag",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][owner_tag]", value: field.meta_data, hidden: true  %>
         
         <%= f.text_field "document_id",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][id]", value: document&.id, hidden: true  %>
        

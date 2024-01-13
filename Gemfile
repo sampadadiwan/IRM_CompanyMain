@@ -1,7 +1,7 @@
 source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-#ruby "3.1.2"
+# ruby "3.1.2"
 
 gem "interactor", "~> 3.0"
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
@@ -94,7 +94,7 @@ gem 'cocoon'
 # Allows for soft delete
 gem "paranoia"
 # Audit trail
-gem 'public_activity' #, github: 'chaps-io/public_activity', branch: 'master'
+gem 'public_activity' # , github: 'chaps-io/public_activity', branch: 'master'
 gem 'sanitize_email'
 # Cron
 gem 'whenever', require: false

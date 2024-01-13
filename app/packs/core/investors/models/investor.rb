@@ -67,7 +67,7 @@ class Investor < ApplicationRecord
   validates :pan, length: { maximum: 40 }
   normalizes :pan, with: ->(pan) { pan.strip.squeeze(" ") }
 
-  validates :primary_email, presence: true, if: proc { |e| (e.new_record? && !e.is_holdings_entity && !e.is_trust) }
+  validates :primary_email, presence: true, if: proc { |e| e.new_record? && !e.is_holdings_entity && !e.is_trust }
 
   validates_uniqueness_of :pan, scope: :entity_id, allow_blank: true, allow_nil: true, message: "already exists as an investor. Duplicate Investor."
   validates_uniqueness_of :investor_name, scope: :entity_id, message: "already exists as an investor. Duplicate Investor."

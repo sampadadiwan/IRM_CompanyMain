@@ -115,6 +115,7 @@ Lint/MissingSuper:
 
 Rails/OutputSafety:
   Exclude:
+    - 'app/packs/core/fields/json_field.rb'
     - 'config/initializers/client_side_validations.rb'
     - 'app/notifications/delivery_methods/user_alerts.rb'
     
