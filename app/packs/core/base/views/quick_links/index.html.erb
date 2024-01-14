@@ -4,15 +4,15 @@
   <%= link_to "New Quick Link", new_quick_link_path, {class: "btn btn-outline-primary"} if current_user.has_cached_role?(:super) %>
 </div>
 
-<div class="accordion accordion-flush">
+<div class="accordion" id="accordionExample">
   <% @quick_links.each_with_index do |quick_link, idx| %>
     <div class="accordion-item">
-      <h1 class="accordion-header" id="heading<%=idx%>">
+      <h2 class="accordion-header" id="heading<%=idx%>">
         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%=idx%>" aria-expanded="false" aria-controls="collapse<%=idx%>">
           <span class="h4 mb-0 text-gray-800"><%= idx + 1 %>. &nbsp <%= quick_link.name %>: <%= quick_link.description %></span>
         </button>
-      </h1>
-      <div id="collapse<%=idx%>" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+      </h2>
+      <div id="collapse<%=idx%>" class="accordion-collapse collapse" aria-labelledby="collapse<%=idx%>" data-bs-parent="#accordionExample">
         <div class="accordion-body">
           <%= render "/quick_links/preview", quick_link: quick_link %>
         </div>
@@ -21,4 +21,5 @@
 
   <% end %>
 </div>
+
 
