@@ -148,7 +148,7 @@ group :development, :test do
   gem "bundle-audit"
   gem "debug", platforms: %i[mri mingw x64_mingw]
   gem 'erubis'
-  gem 'net-ssh', '7.0.0.beta1'
+  gem "net-ssh", github: "net-ssh/net-ssh", branch: "master"
   # gem 'parallel_tests'
   gem 'pry-byebug'
   gem 'rubocop-performance', require: false
