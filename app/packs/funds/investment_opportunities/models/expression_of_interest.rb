@@ -10,7 +10,8 @@ class ExpressionOfInterest < ApplicationRecord
   has_rich_text :details
   serialize :properties, type: Hash
 
-  has_many :investor_kycs, through: :investor
+  belongs_to :investor_kyc, optional: true
+
   belongs_to :investor_signatory, class_name: "User", optional: true
   has_noticed_notifications
 
@@ -48,6 +49,12 @@ class ExpressionOfInterest < ApplicationRecord
     investor.approved_users.each do |user|
       ExpressionOfInterestNotification.with(entity_id:, expression_of_interest: self).deliver_later(user) if approved && approved_changed?
     end
+  end
+
+  after_create_commit :give_access_rights
+  def give_access_rights
+    # Give the investor access rights as an investor to the fund
+    AccessRight.create(entity_id:, owner: investment_opportunity, investor:, access_type: "InvestmentOpportunity", metadata: "Investor")
   end
 
   def folder_path

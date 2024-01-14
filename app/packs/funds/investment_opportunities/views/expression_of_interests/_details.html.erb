@@ -2,12 +2,6 @@
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab"
           data-action="click->tabdetails#loadData">Documents</a>
-    <% if expression_of_interest.entity.permissions.enable_kycs? %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab" 
-                data-action="click->tabdetails#loadData">
-        KYC
-      </a>
-    <% end %>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab" 
           data-action="click->tabdetails#loadData">
       Tasks
@@ -22,13 +16,6 @@
                 msg: expression_of_interest.investment_opportunity.buyer_docs_list %>
       </div>
     </div>
-
-    <div id="kycs-tab" class="tab-pane fade">
-      <div id="kycs" class="associated_entity">
-        <%= render "investor_kycs/index", data_source: investor_kycs_path(investor_id: expression_of_interest.investor_id, all: true), lazy_load_data: false %>
-      </div>
-    </div>
-
     
     <div id="tasks-tab" class="tab-pane fade">
       <div id="tasks" class="associated_entity">

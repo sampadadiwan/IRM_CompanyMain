@@ -18,30 +18,7 @@
           <%= @expression_of_interest.entity.name %>
         </td>
       </tr>
-      <tr>
-        <td>
-          Created By
-        </td>
-        <td>
-          <%= @expression_of_interest.user.full_name %>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Investor
-        </td>
-        <td>
-          <%= @expression_of_interest.investor.investor_name %>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          Signatory
-        </td>
-        <td>
-          <%= @expression_of_interest.investor_signatory.full_name if @expression_of_interest.investor_signatory %>
-        </td>
-      </tr>
+      
       <tr>
         <td>
           Investment Opportunity
@@ -51,6 +28,35 @@
             @expression_of_interest.investment_opportunity %>
         </td>
       </tr>
+
+      <tr>
+        <td>
+          Investor
+        </td>
+        <td>
+          <%= @expression_of_interest.investor.investor_name %>
+        </td>
+      </tr>
+
+      <tr>
+        <td>
+          KYC
+        </td>
+        <td>
+          <%= link_to @expression_of_interest.investor_kyc if @expression_of_interest.investor_kyc %>
+        </td>
+      </tr>
+
+      
+      <tr>
+        <td>
+          Signatory
+        </td>
+        <td>
+          <%= @expression_of_interest.investor_signatory.full_name if @expression_of_interest.investor_signatory %>
+        </td>
+      </tr>
+      
       <tr>
         <td>
           Amount
@@ -101,6 +107,15 @@
         </td>
       </tr>
 
+      <tr>
+        <td>
+          Created By
+        </td>
+        <td>
+          <%= @expression_of_interest.user.full_name %>
+        </td>
+      </tr>
+      
 
 
     </table>

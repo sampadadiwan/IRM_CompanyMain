@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_11_162856) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_14_091537) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1099,11 +1099,13 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_11_162856) do
     t.bigint "investor_signatory_id"
     t.bigint "document_folder_id"
     t.json "json_fields"
+    t.bigint "investor_kyc_id"
     t.index ["document_folder_id"], name: "index_expression_of_interests_on_document_folder_id"
     t.index ["entity_id"], name: "index_expression_of_interests_on_entity_id"
     t.index ["eoi_entity_id"], name: "index_expression_of_interests_on_eoi_entity_id"
     t.index ["investment_opportunity_id"], name: "index_expression_of_interests_on_investment_opportunity_id"
     t.index ["investor_id"], name: "index_expression_of_interests_on_investor_id"
+    t.index ["investor_kyc_id"], name: "index_expression_of_interests_on_investor_kyc_id"
     t.index ["investor_signatory_id"], name: "index_expression_of_interests_on_investor_signatory_id"
     t.index ["user_id"], name: "index_expression_of_interests_on_user_id"
   end
@@ -2691,6 +2693,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_11_162856) do
   add_foreign_key "expression_of_interests", "entities", column: "eoi_entity_id"
   add_foreign_key "expression_of_interests", "folders", column: "document_folder_id"
   add_foreign_key "expression_of_interests", "investment_opportunities"
+  add_foreign_key "expression_of_interests", "investor_kycs"
   add_foreign_key "expression_of_interests", "investors"
   add_foreign_key "expression_of_interests", "users"
   add_foreign_key "expression_of_interests", "users", column: "investor_signatory_id"

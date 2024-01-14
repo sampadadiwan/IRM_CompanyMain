@@ -1,4 +1,4 @@
-<% no_folders ||= false %>
+<% no_folders ||= false; show_steps = true if show_steps.nil? %>
 <%= render "/layouts/steps", steps: ["Create Folders", "Upload Docs", "Setup Access Rights"].freeze if show_steps %>
 
 <div class="row">
