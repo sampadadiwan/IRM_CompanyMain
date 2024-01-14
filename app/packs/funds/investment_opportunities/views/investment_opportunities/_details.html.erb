@@ -27,7 +27,7 @@
   
         <div id="docs-tab" class="tab-pane fade in show active">
           <div id="docs" class="associated_entity">
-            <% params[:folder_id] = @investment_opportunity.document_folder_id %>
+            <% params[:folder_id] = @investment_opportunity.document_folder.id %>
             <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
               <%= render "/documents/tree_view", documents: @investment_opportunity.documents, entity:  @investment_opportunity.entity, show_steps: false, owner: @investment_opportunity %>
             <% end %>
