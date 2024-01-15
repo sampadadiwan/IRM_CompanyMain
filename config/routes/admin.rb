@@ -27,6 +27,7 @@ namespace :admin do
   resources :option_pools
   resources :excercises
   resources :funds
+  resources :fund_formulas
   resources :valuations
   resources :capital_calls
   resources :capital_commitments
