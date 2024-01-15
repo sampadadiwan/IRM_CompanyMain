@@ -95,7 +95,6 @@
             <thead>
               <th>Name</th>
               <th>Formula</th>
-              <th></th>
             </thead>
                         
             <% FundFormula.where(entity_id: nil).to_a.group_by(&:rule_type).each do |rule_type, formulas| %>
@@ -108,9 +107,9 @@
                     <ul>                  
                       <li> <%= formula.formula %></li>
                       <li><%= formula.description %></li>
+                      <li><%= link_to "Clone", new_fund_formula_path(debug: true, "fund_formula[fund_id]": fund_formula.fund_id, **attrs), class: "btn btn-sm btn-primary" %></li>
                     </ul>
-                  </td>              
-                  <td><%= link_to "Clone", new_fund_formula_path(debug: true, "fund_formula[fund_id]": fund_formula.fund_id, **attrs), class: "btn btn-sm btn-primary" %></td>
+                  </td>
                 </tr>
               <% end %>
             <% end %>
