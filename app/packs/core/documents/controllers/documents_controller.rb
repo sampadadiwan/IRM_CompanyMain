@@ -67,7 +67,7 @@ class DocumentsController < ApplicationController
       @documents = Document.for_investor(current_user, @entity)
     end
 
-    @documents = @documents.order(id: :desc).page params[:page]
+    @documents = @documents.order(id: :desc)
 
     @no_folders = false
     render "index"
