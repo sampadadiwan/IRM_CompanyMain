@@ -8,9 +8,7 @@
   import_upload_id ||= params[:import_upload_id]
 %>
 
-<% data_source ||= capital_remittances_path(q: params.to_unsafe_h[:q], format: :json, all: true, 
-        capital_call_id: params[:capital_call_id], capital_commitment_id: params[:capital_commitment_id],  
-        fund_id: params[:fund_id], status: "", verified: "", import_upload_id:) %>
+<% data_source ||= capital_remittances_path(params: params.to_unsafe_h, format: :json, all: true, status: "", verified: "", import_upload_id:) %>
 
 <% xl_link = download_xl_link(data_source) %>
               
