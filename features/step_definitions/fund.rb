@@ -407,6 +407,7 @@
       click_on "Remittances"
       sleep(1)
       within("#capital_remittance_#{remittance.id}") do
+        click_on "Actions"
         click_on "Verify"
         sleep(1)
       end
