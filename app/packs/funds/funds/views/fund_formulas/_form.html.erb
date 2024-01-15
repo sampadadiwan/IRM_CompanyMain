@@ -99,15 +99,17 @@
                         
             <% FundFormula.where(entity_id: nil).to_a.group_by(&:rule_type).each do |rule_type, formulas| %>
               <% formulas.each_with_index do |formula, index| %>
-                <% attrs = formula.attributes.slice("name", "description", "formula", "rule_type", "rule_for", "roll_up").map{|k,v| ["fund_formula[#{k}]", v]}.to_h %>
+                <% attrs = formula.attributes.slice("name", "entry_type", "description", "formula", "rule_type", "rule_for", "roll_up").map{|k,v| ["fund_formula[#{k}]", v]}.to_h %>
 
                 <tr class="explanation <%=rule_type%>">
                   <td><%=formula.name%></td>
                   <td>
                     <ul>                  
                       <li> <%= formula.formula %></li>
-                      <li><small class="text-muted"><%= formula.description %></small></li>
-                      <li><%= link_to "Clone", new_fund_formula_path(debug: true, "fund_formula[fund_id]": fund_formula.fund_id, **attrs), class: "btn btn-sm btn-primary" %></li>
+                      <li>
+                        <small class="text-muted"><%= formula.description %></small>
+                        <%= link_to "Clone", new_fund_formula_path(debug: true, "fund_formula[fund_id]": fund_formula.fund_id, **attrs), class: "btn btn-sm btn-primary float-right" %>
+                      </li>
                     </ul>
                   </td>
                 </tr>
