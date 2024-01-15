@@ -4,10 +4,10 @@
     <%= link_to capital_remittance.investor_name, investor_path(id: capital_remittance.investor_id) %>
   </td>
   <td>
-    <%= capital_remittance.folio_id %>
+    <%= capital_remittance.capital_call.name %>
   </td>
   <td>
-    <%= link_to capital_remittance.investor_kyc.full_name, capital_remittance.investor_kyc if capital_remittance.investor_kyc %>
+    <%= link_to capital_remittance.folio_id, capital_commitment_path(capital_remittance.capital_commitment_id) %>
   </td>
   <td class="status">
     <%= render DisplayBooleanComponent.new(bool: capital_remittance.status == "Paid").
@@ -23,18 +23,9 @@
     <%= money_to_currency capital_remittance.collected_amount, params %>
   </td>
   <td>
-    <%= link_to "Show" , capital_remittance , {class: "btn btn-outline-primary" }%>
-    
-    <% if policy(capital_remittance).update? %>
-      <% if policy(capital_remittance).verify? %>
-        <% label = capital_remittance.verified ? "Unverify" : "Verify" %> 
-        <% msg = capital_remittance.verified ? "Mark as Unverified?" : "Mark as Verified?" %> 
-        <%= button_to label, verify_capital_remittance_path(capital_remittance), method: :patch, 
-            class: "btn btn-outline-success", form_class: "deleteButton", 
-            data: {action: "click->confirm#popup", msg: msg, turbo:false, method: :patch} if policy(capital_remittance).verify? %>      
-              
-      <% end %>
-    <% end %>
-
+    <%= l capital_remittance.payment_date if  capital_remittance.payment_date %>
+  </td>
+  <td>
+    <%= render "/capital_remittances/dt_actions", capital_remittance: capital_remittance %>
   </td>
 </tr>

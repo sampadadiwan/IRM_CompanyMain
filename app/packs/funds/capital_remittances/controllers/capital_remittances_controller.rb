@@ -127,7 +127,12 @@ class CapitalRemittancesController < ApplicationController
 
   def verify
     @capital_remittance.verify_remittance
-    redirect_back fallback_location: capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: "Successfully updated."
+
+    respond_to do |format|
+      format.html { redirect_back fallback_location: capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: "Successfully updated." }
+      format.json { render :show, status: :ok, location: @capital_remittance }
+      format.turbo_stream { render :verify }
+    end
   end
 
   private
