@@ -11,7 +11,7 @@ export default class extends Controller {
     let val = $("#fund_formula_rule_type").val();
     console.log(`ruleTypeChanged ${val}`);
     $(".explanation").hide();
-    $(`#${val}`).show();
+    $(`.${val}`).show();
   }
 
 }

@@ -87,125 +87,160 @@
   </div>
 
   <div class="col-lg-5 mb-4">
-    <%= render FormCard.new(title: "Notes") do %>
-      <table class="table table-bordered  dataTable">
-        <thead>
-          <th>Type</th>
-          <th>Available variables for rule</th>
-        </thead>
-        <tr id="AllocateAccountEntry-Name" class="explanation">
-          <td>Allocate Account Entry</td>
-          <td>
-            <ul>                  
-              <li> Uses the specific fund account entry with the same <b>Name</b> as the rule and allocates it to each commitment </li>
-              <li>fund_account_entry: The specific fund account entry getting allocated</li>
-              <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
-              <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
-              <li>fund_formula: The formula currently being run</li>
-              <li>ae: The specific account entry being created for the commitment</li>
-            </ul>
-          </td>              
-        </tr>
+    <div class="row">
+      <div class="col-12">
+        <%= render FormCard.new(title: "Formula Templates") do %>
+          <table class="table table-bordered  dataTable">
+            
+            <thead>
+              <th>Name</th>
+              <th>Formula</th>
+              <th></th>
+            </thead>
+                        
+            <% FundFormula.where(entity_id: nil).to_a.group_by(&:rule_type).each do |rule_type, formulas| %>
+              <% formulas.each_with_index do |formula, index| %>
+                <% attrs = formula.attributes.slice("name", "description", "formula", "rule_type", "rule_for", "roll_up").map{|k,v| ["fund_formula[#{k}]", v]}.to_h %>
 
-        <tr id="AllocateAccountEntry-EntryType" class="explanation">
-          <td>Allocate Account Entry</td>
-          <td>
-            <ul>                  
-              <li> Uses the specific fund account entry with the same <b>EntryType</b> as the rule and allocates it to each commitment </li>
-              <li>fund_account_entry: The specific fund account entry getting allocated</li>
-              <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
-              <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
-              <li>fund_formula: The formula currently being run</li>
-              <li>ae: The specific account entry being created for the commitment</li>
-            </ul>
-          </td>              
-        </tr>
+                <tr class="explanation <%=rule_type%>">
+                  <td><%=formula.name%></td>
+                  <td>
+                    <ul>                  
+                      <li> <%= formula.formula %></li>
+                      <li><%= formula.description %></li>
+                    </ul>
+                  </td>              
+                  <td><%= link_to "Clone", new_fund_formula_path(debug: true, "fund_formula[fund_id]": fund_formula.fund_id, **attrs), class: "btn btn-sm btn-primary" %></td>
+                </tr>
+              <% end %>
+            <% end %>
+            
+          </table>
+        <% end %>
+      </div>
 
-        <tr id="AllocatePortfolio" class="explanation">
-          <td>Allocate Portfolio</td>
-          <td>
-            <ul>
-              <li> Uses each Aggregate Portfolio Entry and allocates it to each commitment </li>
-              <li>api: The Aggregate Portfolio Investment (for a specific portfolio company) which has data (quantity, bought_quantity, bought_amount, sold_quantity, sold_amount, avg_cost_cents, cost_of_sold_cents) up till end_date </li>
-              <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
-              <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
-              <li>fund_formula: The formula currently being run</li>
-              <li>ae: The specific account entry being created for the commitment</li>
-            </ul>
-          </td>
-        </tr>
+      <div class="col-12">
+        <%= render FormCard.new(title: "Notes") do %>
+          <table class="table table-bordered  dataTable">
+            <thead>
+              <th>Type</th>
+              <th>Available variables for rule</th>
+            </thead>
+            <tr id="AllocateAccountEntry-Name" class="explanation AllocateAccountEntry-Name">
+              <td>Allocate Account Entry</td>
+              <td>
+                <ul>                  
+                  <li> Uses the specific fund account entry with the same <b>Name</b> as the rule and allocates it to each commitment </li>
+                  <li>fund_account_entry: The specific fund account entry getting allocated</li>
+                  <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
+                  <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
+                  <li>fund_formula: The formula currently being run</li>
+                  <li>ae: The specific account entry being created for the commitment</li>
+                </ul>
+              </td>              
+            </tr>
 
-        <tr id="AllocatePortfolioInvestment" class="explanation">
-          <td>Allocate Portfolio</td>
-          <td>
-            <ul>
-              <li> Uses each Portfolio Investment and allocates it to each commitment </li>
-              <li>portfolio_investment: The Portfolio Investment (for a specific portfolio company) which has data (quantity, bought_quantity, bought_amount, sold_quantity, sold_amount, avg_cost_cents, cost_of_sold_cents) up till end_date </li>
-              <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
-              <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
-              <li>fund_formula: The formula currently being run</li>
-              <li>ae: The specific account entry being created for the commitment</li>
-            </ul>
-          </td>
-        </tr>
+            <tr id="AllocateAccountEntry-EntryType" class="explanation AllocateAccountEntry-EntryType">
+              <td>Allocate Account Entry</td>
+              <td>
+                <ul>                  
+                  <li> Uses the specific fund account entry with the same <b>EntryType</b> as the rule and allocates it to each commitment </li>
+                  <li>fund_account_entry: The specific fund account entry getting allocated</li>
+                  <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
+                  <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
+                  <li>fund_formula: The formula currently being run</li>
+                  <li>ae: The specific account entry being created for the commitment</li>
+                </ul>
+              </td>              
+            </tr>
 
-        <tr id="GenerateAccountEntry" class="explanation">
-          <td>Generate Account Entry</td>
-          <td>
-            <ul>
-              <li> Uses the formula to generate an account entry to each commitment </li>
-              <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
-              <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
-              <li>fund_formula: The formula currently being run</li>
-              <li>ae: The specific account entry being created for the commitment</li>
-            </ul>
-          </td>
-        </tr>
+            <tr id="AllocatePortfolio" class="explanation AllocatePortfolio">
+              <td>Allocate Portfolio</td>
+              <td>
+                <ul>
+                  <li> Uses each Aggregate Portfolio Entry and allocates it to each commitment </li>
+                  <li>api: The Aggregate Portfolio Investment (for a specific portfolio company) which has data (quantity, bought_quantity, bought_amount, sold_quantity, sold_amount, avg_cost_cents, cost_of_sold_cents) up till end_date </li>
+                  <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
+                  <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
+                  <li>fund_formula: The formula currently being run</li>
+                  <li>ae: The specific account entry being created for the commitment</li>
+                </ul>
+              </td>
+            </tr>
 
-        <tr id="CumulateAccountEntry" class="explanation">
-          <td>Cumulate Account Entry</td>
-          <td>
-            <ul>
-              <li>No formula is applied here, it simply cumulates the given account entry for every commitment. Typically used for account entries which are uploaded per Folio e.x TDS</li>
-            </ul>
-          </td>
-        </tr>
+            <tr id="AllocatePortfolioInvestment" class="explanation AllocatePortfolioInvestment">
+              <td>Allocate Portfolio</td>
+              <td>
+                <ul>
+                  <li> Uses each Portfolio Investment and allocates it to each commitment </li>
+                  <li>portfolio_investment: The Portfolio Investment (for a specific portfolio company) which has data (quantity, bought_quantity, bought_amount, sold_quantity, sold_amount, avg_cost_cents, cost_of_sold_cents) up till end_date </li>
+                  <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
+                  <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
+                  <li>fund_formula: The formula currently being run</li>
+                  <li>ae: The specific account entry being created for the commitment</li>
+                </ul>
+              </td>
+            </tr>
 
-        <tr id="GenerateCustomField" class="explanation">
-          <td>Generate Custom Field</td>
-          <td>
-            <ul>  
-              <li>Does not create an Account Entry, but generates a variable with the name, which can be used in other rules</li>
-              <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
-              <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
-              <li>fund_formula: The formula currently being run</li>
-              <li>ae: The specific account entry being created for the commitment</li>
-            </ul>
-          </td>
-        </tr>
+            <tr id="GenerateAccountEntry" class="explanation GenerateAccountEntry">
+              <td>Generate Account Entry</td>
+              <td>
+                <ul>
+                  <li> Uses the formula to generate an account entry to each commitment </li>
+                  <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
+                  <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
+                  <li>fund_formula: The formula currently being run</li>
+                  <li>ae: The specific account entry being created for the commitment</li>
+                </ul>
+              </td>
+            </tr>
 
-        <tr id="Percentage" class="explanation">
-          <td>Percentage</td>
-          <td>
-            <ul>
-              <li>No formula is applied here, it simply computes the percentage of the given account entry for every commitment. Typically used for account entries which are used in further computations such as 'Opening Investable Capital Percentage'</li>
-            </ul>
-          </td>
-        </tr>
+            <tr id="CumulateAccountEntry" class="explanation CumulateAccountEntry">
+              <td>Cumulate Account Entry</td>
+              <td>
+                <ul>
+                  <li>No formula is applied here, it simply cumulates the given account entry for every commitment. Typically used for account entries which are uploaded per Folio e.x TDS</li>
+                </ul>
+              </td>
+            </tr>
 
-        <tr id="Other">
-          <td>Other Variables Available</td>
-          <td>
-            <ul>
-              <li>@remittances: Remittances of the commitment till @end_date</li>
-              <li>@distributions: Distributions of the commitment till @end_date</li>
-              <li>@income_before_start_date: Income allocated to the commitment till @start_date</li>
-              <li>@expense_before_start_date: Expense allocated to the commitment till @start_date</li>
-              <li>@units: Units of the commitment till @start_date</li>
-            </ul>
-          </td>
-        </tr>
+            <tr id="GenerateCustomField" class="explanation GenerateCustomField">
+              <td>Generate Custom Field</td>
+              <td>
+                <ul>  
+                  <li>Does not create an Account Entry, but generates a variable with the name, which can be used in other rules</li>
+                  <li>capital_commitment: This is the commitment to which the account entry will be allocated</li>
+                  <li>fund_unit_setting: This is the FundUnitSetting for the unit type of the commitment</li>
+                  <li>fund_formula: The formula currently being run</li>
+                  <li>ae: The specific account entry being created for the commitment</li>
+                </ul>
+              </td>
+            </tr>
 
-      </table>
-    <% end %>
-</div>
+            <tr id="Percentage" class="explanation Percentage">
+              <td>Percentage</td>
+              <td>
+                <ul>
+                  <li>No formula is applied here, it simply computes the percentage of the given account entry for every commitment. Typically used for account entries which are used in further computations such as 'Opening Investable Capital Percentage'</li>
+                </ul>
+              </td>
+            </tr>
+
+            <tr id="Other">
+              <td>Other Variables Available</td>
+              <td>
+                <ul>
+                  <li>@remittances: Remittances of the commitment till @end_date</li>
+                  <li>@distributions: Distributions of the commitment till @end_date</li>
+                  <li>@income_before_start_date: Income allocated to the commitment till @start_date</li>
+                  <li>@expense_before_start_date: Expense allocated to the commitment till @start_date</li>
+                  <li>@units: Units of the commitment till @start_date</li>
+                </ul>
+              </td>
+            </tr>
+
+          </table>
+        <% end %>
+      </div>
+    </div>
+  </div>

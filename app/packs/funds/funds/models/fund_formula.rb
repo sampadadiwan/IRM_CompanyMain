@@ -2,8 +2,8 @@ class FundFormula < ApplicationRecord
   include ForInvestor
   include Trackable
 
-  belongs_to :fund
-  belongs_to :entity
+  belongs_to :fund, optional: true
+  belongs_to :entity, optional: true
   acts_as_list scope: %i[fund_id], column: :sequence
 
   enum :rule_for, { accounting: "Accounting", reporting: "Reporting" }
