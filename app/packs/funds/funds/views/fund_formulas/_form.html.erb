@@ -106,7 +106,7 @@
                   <td>
                     <ul>                  
                       <li> <%= formula.formula %></li>
-                      <li><%= formula.description %></li>
+                      <li><small class="text-muted"><%= formula.description %></small></li>
                       <li><%= link_to "Clone", new_fund_formula_path(debug: true, "fund_formula[fund_id]": fund_formula.fund_id, **attrs), class: "btn btn-sm btn-primary" %></li>
                     </ul>
                   </td>
