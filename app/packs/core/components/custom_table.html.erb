@@ -2,8 +2,11 @@
 
     <thead>
         <tr>
-            <% @column_names.each do |column| %>
-            <th>
+            <% 
+                @column_names.each_with_index do |column, idx| 
+                css_class = idx > 2 ? 'hideMobP' : ''
+            %>
+            <th class="<%= css_class %>">
                 <%= column %>
             </th>
             <% end %>

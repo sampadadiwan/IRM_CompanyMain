@@ -91,7 +91,11 @@ export default class ServerDatatableController extends Controller {
     let fields = this.fieldListValue.split(",");
     var x = window.matchMedia("(max-width: 479px)")
     if (x.matches) { // If media query matches
-      fields = this.mobileFieldListValue.split(",")
+      if(this.mobileFieldListValue) {
+        fields = this.mobileFieldListValue.split(",")
+      } else {
+        fields = fields.slice(0,3);
+      }
     } 
     
     if (this.fieldListValue == "") {
