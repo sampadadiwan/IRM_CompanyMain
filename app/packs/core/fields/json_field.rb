@@ -5,12 +5,16 @@ class JsonField < Administrate::Field::Base
   delegate :to_s, to: :data
 
   def json2table
+    if data.present?
     updated_data = if data.is_a?(Hash)
                      data.to_json
                    else
                      # handle other cases
                      data
                    end
-    Json2table.get_html_table(updated_data, TABLE_OPTIONS).html_safe
+      Json2table.get_html_table(updated_data, TABLE_OPTIONS).html_safe
+    else
+      ""
+    end
   end
 end
