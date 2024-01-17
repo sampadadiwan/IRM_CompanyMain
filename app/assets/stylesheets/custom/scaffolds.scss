@@ -192,6 +192,10 @@ video { float: none; }
   // height: 100%;
 }
 
+#capital_remittances.dataTable {
+  overflow: visible !important;
+}
+
 div.dataTables_wrapper div.dataTables_filter input {
   min-width: 300px;
   margin-right: 10px;
