@@ -59,13 +59,18 @@
 
             <tr>
                 <td>Documents</td>
-                <% kpi_reports.each do |kpi_report| %>                               
+                <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
                         <td>
-                            <% kpi_report.documents.each do |doc| %>
-                                <small>
-                                    <%=  link_to doc.name, doc.file.url(expires_in: 60*60*24*7), target: "_blank" %>,
-                                </small>
+                            <ul>
+                            <% kpi_report.documents.order(name: :asc).each do |doc| %>
+                            <li>
+                             <small>
+                                <%= idx + 1 %>:
+                                <%=  link_to doc.name, doc.file.url(expires_in: 60*60*24*7), target: "_blank" %>,
+                             </small>
+                            </li>
                             <% end %>
+                            </ul>
                         </td>                    
                 <% end %>
             </tr>     
