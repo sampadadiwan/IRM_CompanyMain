@@ -123,4 +123,5 @@ resources :entities do
   get 'dashboard', on: :collection
   get 'investor_view', on: :member
   post 'delete_attachment', on: :collection
+  post 'kpi_reminder', on: :member
 end

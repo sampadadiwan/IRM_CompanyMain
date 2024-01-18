@@ -5,7 +5,7 @@
       Entity
     </td>
     <td>
-      <%= @kpi.entity_id %>
+      <%= @kpi.entity.name %>
     </td>
   </tr>
   <tr>
@@ -45,7 +45,7 @@
       Kpi Report
     </td>
     <td>
-      <%= @kpi.kpi_report_id %>
+      <%= link_to @kpi.kpi_report %>
     </td>
   </tr>
 </table>

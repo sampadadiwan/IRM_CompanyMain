@@ -9,6 +9,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     id: Field::Number,
+    kpi_reminder_before: Field::Number,
+    kpi_reminder_frequency: Field::String,
     sandbox: Field::BooleanEmoji,
     sandbox_emails: Field::String,
     custom_flags: ActiveFlagField,
@@ -80,6 +82,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     trial
     trial_end_date
     call_basis
+    kpi_reminder_frequency
+    kpi_reminder_before
     custom_flags
     created_at
     updated_at
@@ -107,6 +111,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     trial
     trial_end_date
     call_basis
+    kpi_reminder_frequency
+    kpi_reminder_before
     custom_flags
   ].freeze
 

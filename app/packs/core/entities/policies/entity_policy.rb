@@ -70,4 +70,8 @@ class EntityPolicy < ApplicationPolicy
     investor = Investor.for(user, record).first
     record.access_rights.investments.exists?(access_to_investor_id: investor.id)
   end
+
+  def kpi_reminder?
+    Entity.for_investor(user).collect(&:id).include?(record.id)
+  end
 end

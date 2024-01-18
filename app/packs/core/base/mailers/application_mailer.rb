@@ -30,8 +30,8 @@ class ApplicationMailer < ActionMailer::Base
   def setup_cc
     @cc = @entity.entity_setting.cc
     # Sometimes we have an ovveride for the cc field in the investor access
-    investor_cc = @entity.investor_accesses.where(email: @user.email).first&.cc
-    if (@cc.nil? || @cc.blank?) && investor_cc.present?
+    investor_cc = @entity.investor_accesses.where(email: @user.email).first&.cc if @user
+    if @user && (@cc.nil? || @cc.blank?) && investor_cc.present?
       @cc = investor_cc
     elsif @cc.present? && investor_cc.present?
       @cc += ",#{investor_cc}"

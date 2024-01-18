@@ -1,5 +1,6 @@
 class Kpi < ApplicationRecord
   include WithCustomField
+  include ForInvestor
 
   belongs_to :entity
   belongs_to :kpi_report
@@ -18,5 +19,13 @@ class Kpi < ApplicationRecord
     end
     field ||= FormCustomField.new(field_type: "Unknown", name:)
     field
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[name value notes]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    ["kpi_report"]
   end
 end

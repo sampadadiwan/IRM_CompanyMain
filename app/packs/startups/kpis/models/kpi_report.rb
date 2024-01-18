@@ -27,7 +27,7 @@ class KpiReport < ApplicationRecord
   end
 
   def name
-    "#{entity.name} KPI - #{as_of}"
+    "#{entity.name} - #{as_of}"
   end
 
   def to_s
@@ -40,5 +40,13 @@ class KpiReport < ApplicationRecord
 
   def folder_path
     "/KPIs/#{name.delete('/')}"
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    ["as_of"]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    ["kpis"]
   end
 end

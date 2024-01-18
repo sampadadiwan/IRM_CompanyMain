@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_15_031756) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_18_022351) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -739,6 +739,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_15_031756) do
     t.datetime "updated_at", null: false
     t.string "for", limit: 100
     t.boolean "show_details", default: false
+    t.boolean "password_protect_attachment", default: false
+    t.string "attachment_password"
+    t.string "attachment_password_hint"
     t.index ["entity_id"], name: "index_custom_notifications_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_custom_notifications_on_owner"
   end
@@ -1004,6 +1007,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_15_031756) do
     t.integer "email_delay_seconds", default: 0
     t.boolean "ckyc_enabled", default: false
     t.boolean "kra_enabled", default: false
+    t.string "kpi_reminder_frequency", limit: 10
+    t.integer "kpi_reminder_before"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 

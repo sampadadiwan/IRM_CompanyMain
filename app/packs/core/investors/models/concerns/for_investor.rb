@@ -10,6 +10,8 @@ module ForInvestor
         InvestmentOpportunity
       elsif %w[Offer Interest].include?(name)
         SecondarySale
+      elsif %w[Kpi].include?(name)
+        KpiReport
       else
         self
       end

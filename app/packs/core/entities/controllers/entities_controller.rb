@@ -1,6 +1,6 @@
 class EntitiesController < ApplicationController
   # prepend_view_path 'app/packs/core/entities/views'
-  before_action :set_entity, only: %w[show update destroy edit report]
+  before_action :set_entity, only: %w[show update destroy edit report kpi_reminder]
   after_action :verify_authorized, except: %i[dashboard search index investor_entities delete_attachment]
 
   # GET /entities or /entities.json
@@ -80,6 +80,12 @@ class EntitiesController < ApplicationController
       format.html { redirect_to entities_url, notice: "Entity was successfully deleted." }
       format.json { head :no_content }
     end
+  end
+
+  def kpi_reminder
+    EntityMailer.with(entity_id: @entity.id, requesting_entity_id: current_user.entity_id).kpi_reminder.deliver_later
+    redirect_path = request.referer || kpi_reports_path
+    redirect_to redirect_path, notice: "Reminder sent"
   end
 
   # Special method to delete attachments for any model

@@ -1,7 +1,7 @@
 <%= render "/layouts/alerts" %>
 
 <%= render "/layouts/steps", steps: ["Setup Funding Rounds", "Add Investments", "View Details", 
-                            "Permission Investors", "Setup Scenarios"].freeze if current_user.has_cached_role?(:employee) %>
+                            "Permission Investors", "Setup Scenarios"].freeze if policy(@entity).update? %>
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Shareholding for <%=@entity.name%> </h1>
@@ -136,21 +136,29 @@
       </table>
 
     </div>
+
   <% end %>
 
-<div class="text-center">
-  <small class="text-muted">
-    This is where you see your aggregated investments, i.e investments per investor. 
-    To see individual investments click on the drill down or click on the 'Details View' button
-  </small>
-</div>
 
 <% if policy(@entity).update? %>
-<div class="associated_entity">
-  <% 
-    access_right = AccessRight.new(entity: @entity, access_type: "Investment", owner: current_user.entity) 
-    params[:form_type] = "ai_form"
-  %>
-  <%= render "/access_rights/index", access_rights: @entity.access_rights.investments, access_right: %>
-</div>
+
+  <div class="text-center">
+    <small class="text-muted">
+      This is where you see your aggregated investments, i.e investments per investor. 
+      To see individual investments click on the drill down or click on the 'Details View' button
+    </small>
+  </div>
+
+  <div class="associated_entity">
+    <% 
+      access_right = AccessRight.new(entity: @entity, access_type: "Investment", owner: current_user.entity) 
+      params[:form_type] = "ai_form"
+    %>
+    <%= render "/access_rights/index", access_rights: @entity.access_rights.investments, access_right: %>
+  </div>
+
+<% else %>  
+  <% cache @entity do %>
+      <%= render "investments/charts", entity: @entity %>
+  <% end %>
 <% end %>

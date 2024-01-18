@@ -1,0 +1,2 @@
+class KpiReminderJob < ApplicationJob
+end

@@ -3,7 +3,8 @@ class KpiReportsController < ApplicationController
 
   # GET /kpi_reports or /kpi_reports.json
   def index
-    @kpi_reports = policy_scope(KpiReport).includes(:kpis, :documents)
+    @q = KpiReport.ransack(params[:q])
+    @kpi_reports = policy_scope(@q.result).includes(:kpis, :documents)
     authorize(KpiReport)
 
     if params[:period].present?

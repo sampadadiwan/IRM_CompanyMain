@@ -29,7 +29,7 @@
     </span>
   </div>
 
-  <% data_source ||= kpi_reports_path(format: :json, all: true, period: params[:period]) %>
+  <% data_source ||= kpi_reports_path(params: params.to_unsafe_h, format: :json, all: true, period: params[:period]) %>
   <% lazy_load_data ||= false %>
 
   <div class="table-responsive">

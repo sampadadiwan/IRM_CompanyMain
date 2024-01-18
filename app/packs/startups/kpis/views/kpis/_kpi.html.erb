@@ -1,4 +1,9 @@
 <tr id="<%= dom_id kpi %>">
+  <% unless kpi_report %>
+  <td>
+    <%= link_to kpi.kpi_report %>
+  </td>
+  <% end %>
   <td>
     <%= kpi.name %>
   </td>

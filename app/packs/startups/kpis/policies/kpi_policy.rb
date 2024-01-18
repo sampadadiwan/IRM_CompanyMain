@@ -2,6 +2,11 @@ class KpiPolicy < KpiPolicyBase
   class Scope < Scope
     def resolve
       scope.where(entity_id: user.entity_id)
+      if user.entity_type == "Company" || user.entity_type == "Investment Fund"
+        scope.where(entity_id: user.entity_id)
+      else
+        scope.for_investor(user)
+      end
     end
   end
 

@@ -4,11 +4,11 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h4 mb-0 text-gray-800">
         KPIs: 
-        <%= Entity.find(params[:entity_id]).name if params[:entity_id] %>
+        <%= Entity.find(params[:entity_id]).name if params[:entity_id].present? %>
     </h1>
 
     <span>
-        <%= render "kpi_reports/filter" %>
+        <%= render "kpi_reports/filter" if params[:q].blank? %>
 
         <button class="btn btn-outline-success", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button> 
     </span>
@@ -31,6 +31,16 @@
             </tr>
         </thead>
         <tbody>
+            <% if params[:entity_id].blank? %>
+                <tr>
+                    <td> Entity </td>
+                    <% kpi_reports.each do |kpi_report| %>            
+                        <td>
+                            <%= kpi_report.entity.name %>
+                        </td>
+                    <% end %>
+                </tr>
+            <% end %>
             <% form_custom_fields.each do |fcf| %>            
                 <tr>
                     <td><%= fcf.name.titleize %></td>
@@ -59,13 +69,13 @@
 
             <tr>
                 <td>Documents</td>
-                <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
+                <% kpi_reports.each do |kpi_report| %>                               
                         <td>
                             <ul>
-                            <% kpi_report.documents.order(name: :asc).each do |doc| %>
+                            <% kpi_report.documents.order(name: :asc).each_with_index do |doc, idx| %>
                             <li>
                              <small>
-                                <%= idx + 1 %>:
+                                <%= idx + 1 %>. 
                                 <%=  link_to doc.name, doc.file.url(expires_in: 60*60*24*7), target: "_blank" %>,
                              </small>
                             </li>

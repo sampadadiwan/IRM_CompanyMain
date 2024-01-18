@@ -1,3 +1,4 @@
+<% kpi_report ||= nil %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Kpis</h1>
   <%#= link_to "New Kpi", new_kpi_path, {class: "btn btn-outline-primary"}  %>
@@ -6,6 +7,11 @@
   <table id="kpis" class="table table-bordered dataTable jqDataTable">
     <thead>
       <tr>
+        <% unless kpi_report %>
+          <th>
+            Entity
+          </th>
+        <% end %>
         <th>
           Name
         </th>
@@ -22,7 +28,7 @@
     </thead>
     <tbody>
       <% kpis.each do |kpi| %>
-        <%= render kpi %>
+        <%= render "/kpis/kpi", kpi: kpi, kpi_report: kpi_report %>
       <% end %>
     </tbody>
   </table>
