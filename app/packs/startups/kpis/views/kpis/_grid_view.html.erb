@@ -1,0 +1,47 @@
+
+<div data-controller="export-xl">
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h4 mb-0 text-gray-800">
+            KPIs 
+        </h1>
+
+        <span>
+            <button class="btn btn-outline-success", data-action="click->export-xl#export" data-tableid="kpis_grid" data-filename='kpis'>Download</button> 
+        </span>    
+    </div>
+
+    <% 
+        dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :desc).pluck(:as_of).uniq 
+        grouped_kpis = kpis.group_by(&:entity_id)
+    %>
+    <div class="table-responsive" data-controller="datatable">
+        <table id="kpis_grid" class="table table-bordered dataTable jqDataTable">
+            <thead>
+                <tr>
+                    <th class="no-sort">Entity</th>
+                    <th class="no-sort">KPI</th>
+                    <% dates.each do |as_of| %>
+                        <th><%= l as_of %></th>
+                    <% end %>            
+                </tr>
+            </thead>
+            <tbody>
+                <% grouped_kpis.each do |entity_id, kpis| %>                    
+                    <% kpis.group_by(&:name).each do |name, kpis| %>
+                        <tr>
+                            <td><%= kpis.first.entity.name %></td>
+                            <td> <%= name %> </td>
+                            <% dates.each do |as_of| %>            
+                                <% kpi = kpis.find{|k| k.kpi_report.as_of == as_of} %>
+                                <td><%= link_to kpi.display_value, kpi if kpi %></td>
+                            <% end %>
+                        </tr>
+                    <% end %>
+                    
+                <% end %>
+            </tbody>
+        </table>
+    </div>
+
+</div>

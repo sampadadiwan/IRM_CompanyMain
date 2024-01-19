@@ -1,4 +1,5 @@
 <%= render "/layouts/alerts" %>
+<%= render FormCard.new(title: "Kpi : #{@kpi.name} : #{@kpi.kpi_report.as_of}") do %>
 <table class="table table-bordered dataTable">
   <tr>
     <td>
@@ -6,6 +7,14 @@
     </td>
     <td>
       <%= @kpi.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      As Of
+    </td>
+    <td>
+      <%= l @kpi.kpi_report.as_of %>
     </td>
   </tr>
   <tr>
@@ -49,6 +58,7 @@
     </td>
   </tr>
 </table>
+<% end %>
 <div>
   <%= button_to "Delete", @kpi, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@kpi).destroy? %>
 </div>

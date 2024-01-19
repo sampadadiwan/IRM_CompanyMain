@@ -1,3 +1,7 @@
 <%= render "/layouts/alerts" %>
-<%= render "/layouts/filter", associations: [:kpi_report] %>
-<%= render "/kpis/index", kpis: @kpis %>
+<%= render "/layouts/filter", associations: [:kpi_report], hidden_fields: {grid_view: params[:grid_view]} %>
+<% if params[:grid_view].present? %>
+    <%= render "/kpis/grid_view", kpis: @kpis %>
+<% else %>
+    <%= render "/kpis/index", kpis: @kpis %>
+<% end %>
