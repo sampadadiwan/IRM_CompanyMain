@@ -16,10 +16,8 @@ class DocumentMailer < ApplicationMailer
     @document = Document.find params[:document_id]
     @custom_notification = @document.entity.custom_notification("Commitment Agreement")
     subj = @custom_notification&.subject || "#{@document.name} uploaded by #{@document.entity.name}"
-
-    # Check for attachments
-    attachments["#{@document.name}.pdf"] = @document.file.read
-
+    # This password protects the file if required and attachs it
+    pw_protect_attach_file(@document, @custom_notification)
     send_mail(subject: subj)
   end
 

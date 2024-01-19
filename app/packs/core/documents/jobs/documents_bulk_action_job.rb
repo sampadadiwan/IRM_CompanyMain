@@ -33,15 +33,13 @@ class DocumentsBulkActionJob < ApplicationJob
       if document.approved && %w[InvestorKyc CapitalCommitment].include?(document.owner_type)
 
         document.notification_users.each do |user|
-            begin
-              DocumentNotification.with(entity_id: document.entity_id,
-                                        document:, email_method: "send_commitment_agreement",
-                                        custom_notification_for: "Commitment Agreement").deliver(user)
-            rescue Exception => e
-              msg = "Error sending #{document.name} to #{user.email} #{e.message}"
-              send_notification(msg, user_id, "danger")
-              @error_msg << { msg:, document: document.name, document_id: document.id, for: document.owner }
-            end
+          DocumentNotification.with(entity_id: document.entity_id,
+                                    document:, email_method: "send_commitment_agreement",
+                                    custom_notification_for: "Commitment Agreement").deliver(user)
+        rescue Exception => e
+          msg = "Error sending #{document.name} to #{user.email} #{e.message}"
+          send_notification(msg, user_id, "danger")
+          @error_msg << { msg:, document: document.name, document_id: document.id, for: document.owner }
         end
 
       else

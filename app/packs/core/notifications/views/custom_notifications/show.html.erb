@@ -44,6 +44,26 @@
 
   <tr>
     <td>
+      Password Protect Attachment
+    </td>
+    <td>
+      <%= display_boolean @custom_notification.password_protect_attachment%>
+    </td>
+  </tr>
+
+  <% if @custom_notification.password_protect_attachment %>
+  <tr>
+    <td>
+      Password
+    </td>
+    <td>
+      <%= @custom_notification.attachment_password %>
+    </td>
+  </tr>
+  <% end %>
+
+  <tr>
+    <td>
       Show Details
     </td>
     <td>

@@ -42,6 +42,20 @@
       <%= form.text_field :whatsapp, class: "form-control"  %>
     </div>
 
+    <% if params[:debug].present? %>
+    <div class="form-group">
+      <%= form.label :password_protect_attachment %>
+      <%= form.check_box :password_protect_attachment, class: "form-check-input"  %>
+      <small class="form-text text-muted">Password protect the attachment sent via email</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :attachment_password, "Field used to set the password" %>
+      <%= form.text_field :attachment_password, class: "form-control"  %>
+      <small class="form-text text-muted">Contact support to set this up, if you are unsure. E.x investor_kyc.PAN </small>
+    </div>
+    <% end %>
+
     <div class="form-group">
       <%= form.label :show_details %>
       <%= form.check_box :show_details, class: "form-check-input"  %>

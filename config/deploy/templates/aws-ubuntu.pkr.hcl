@@ -91,6 +91,9 @@ build {
       "sudo ufw allow 'Nginx HTTP'",
       "sudo ufw status",
       "systemctl status nginx"
+      // pdftk
+      "echo INSTALLING- pdftk",
+      "sudo apt install --yes pdftk",      
     ]
   }
 }

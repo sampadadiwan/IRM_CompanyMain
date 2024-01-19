@@ -69,7 +69,7 @@
 
             <tr>
                 <td>Documents</td>
-                <% kpi_reports.each do |kpi_report| %>                               
+                <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
                         <td>
                             <ul>
                             <% kpi_report.documents.order(name: :asc).each_with_index do |doc, idx| %>

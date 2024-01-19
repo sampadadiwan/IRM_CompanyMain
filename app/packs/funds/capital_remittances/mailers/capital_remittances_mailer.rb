@@ -10,8 +10,10 @@ class CapitalRemittancesMailer < ApplicationMailer
 
     # Check for attachments
     @capital_remittance.documents.generated.each do |doc|
-      attachments["#{doc.name}.pdf"] = doc.file.read
+      # This password protects the file if required and attachs it
+      pw_protect_attach_file(doc, @custom_notification)
     end
+
     send_mail(subject:) if @to.present?
 
     Chewy.strategy(:sidekiq) do
@@ -40,7 +42,12 @@ class CapitalRemittancesMailer < ApplicationMailer
 
     # Check for attachments
     @capital_remittance.documents.generated.each do |doc|
-      attachments["#{doc.name}.pdf"] = doc.file.read
+      file = if @custom_notification&.password_protect_attachment
+               password_protect_attachment(doc, @capital_remittance, @custom_notification)
+             else
+               doc.file
+             end
+      attachments["#{doc.name}.pdf"] = file.read
     end
     send_mail(subject:) if @to.present?
   end

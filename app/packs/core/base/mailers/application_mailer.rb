@@ -60,4 +60,33 @@ class ApplicationMailer < ActionMailer::Base
   def send_mail(subject: nil)
     mail(from: @from, to: @to, cc: @cc, reply_to: @reply_to, subject:)
   end
+
+  def password_protect_attachment(doc, model, custom_notification)
+    doc.file.download do |source_file|
+      dest_file = Rails.root.join("tmp/#{doc.id}.pdf").to_s
+      # Get the password from the model based on the method specfied
+      methods = custom_notification.attachment_password.split('.')
+      password = methods.inject(model, &:send)
+      # Execute the command
+      cmd = "pdftk #{source_file.path} output #{dest_file} user_pw #{password}"
+      Rails.logger.info "Executing command: #{cmd}"
+      system(cmd)
+      # Return the file - Delete file post use in the caller
+      File.new(dest_file)
+    end
+  end
+
+  def pw_protect_attach_file(document, custom_notification)
+    # Do we need to password protect the documents?
+    file = if custom_notification&.password_protect_attachment
+             password_protect_attachment(document, document.owner, custom_notification)
+           else
+             document.file
+           end
+
+    # Check for attachments
+    attachments["#{document.name}.pdf"] = file.read
+    file.close
+    File.delete(file) if file.instance_of?(::File)
+  end
 end
