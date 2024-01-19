@@ -3,9 +3,9 @@
     <ol>
         <% @error_msg.each do |error| %>
             <li>
-                Message: <%= error[:msg] %>,             
-                Template: <%= error[:template] %>, 
-                Investor: <%= error[:investor_name] %>
+                <% error.each do |k, v| %>
+                    <%= k.to_s.humanize %>: <%= v %>
+                <% end %>
             </li>
         <% end %>
     </ol>

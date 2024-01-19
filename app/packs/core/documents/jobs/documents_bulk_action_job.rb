@@ -5,6 +5,8 @@ class DocumentsBulkActionJob < ApplicationJob
   # to update the status of the e-signing process
   # Or it can be called with a document_id to update a single document
   def perform(document_ids, user_id, bulk_action)
+    @error_msg = []
+
     Chewy.strategy(:sidekiq) do
       docs = Document.where(id: document_ids)
       docs.each do |doc|
@@ -13,8 +15,14 @@ class DocumentsBulkActionJob < ApplicationJob
     end
 
     sleep(5)
-    msg = "#{bulk_action} completed for #{document_ids.count} documents"
-    send_notification(msg, user_id, :success)
+    if @error_msg.present?
+      msg = "#{bulk_action} completed for #{document_ids.count} documents, with #{@error_msg.length} errors. Errors will be sent via email"
+      send_notification(msg, user_id, :alert)
+      EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg: @error_msg).doc_gen_errors.deliver_now
+    else
+      msg = "#{bulk_action} completed for #{document_ids.count} documents"
+      send_notification(msg, user_id, :success)
+    end
   end
 
   def perform_action(document, user_id, bulk_action)
@@ -22,10 +30,25 @@ class DocumentsBulkActionJob < ApplicationJob
     send_notification(msg, user_id, :success)
     case bulk_action.downcase
     when "send commitment agreement"
-      document.notification_users.each do |user|
-        DocumentNotification.with(entity_id: document.entity_id,
-                                  document:, email_method: "send_commitment_agreement",
-                                  custom_notification_for: "Commitment Agreement").deliver_later(user)
+      if document.approved && %w[InvestorKyc CapitalCommitment].include?(document.owner_type)
+
+        document.notification_users.each do |user|
+            begin
+              DocumentNotification.with(entity_id: document.entity_id,
+                                        document:, email_method: "send_commitment_agreement",
+                                        custom_notification_for: "Commitment Agreement").deliver(user)
+            rescue Exception => e
+              msg = "Error sending #{document.name} to #{user.email} #{e.message}"
+              send_notification(msg, user_id, "danger")
+              @error_msg << { msg:, document: document.name, document_id: document.id, for: document.owner }
+            end
+        end
+
+      else
+        msg = "Document #{document.name} is not approved" unless document.approved
+        msg = "Document #{document.name} is not a commitment agreement" unless %w[InvestorKyc CapitalCommitment].include?(document.owner_type)
+        send_notification(msg, user_id, "danger")
+        @error_msg << { msg:, document: document.name, document_id: document.id, for: document.owner }
       end
 
     when "approve"
