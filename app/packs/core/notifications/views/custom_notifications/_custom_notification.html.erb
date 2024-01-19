@@ -1,6 +1,6 @@
 <tr id="<%= dom_id custom_notification %>">
   <td>
-    <%= custom_notification.subject %>
+    <%= link_to custom_notification.subject, custom_notification %>
   </td>
   <td>
     <%= custom_notification.whatsapp %>
@@ -9,7 +9,13 @@
     <%= link_to custom_notification.owner %>
   </td>
   <td>
+    <%= custom_notification.for %>
+  </td>
+  <td>
     <%= display_boolean custom_notification.show_details %>
+  </td>
+  <td>
+    <%= display_boolean custom_notification.password_protect_attachment %>
   </td>
   <td>
     <%= link_to "Show", custom_notification , {class: "btn btn-outline-primary"}%>
