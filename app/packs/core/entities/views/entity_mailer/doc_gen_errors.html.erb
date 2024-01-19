@@ -3,9 +3,11 @@
     <ol>
         <% @error_msg.each do |error| %>
             <li>
-                <% error.each do |k, v| %>
-                    <%= k.to_s.humanize %>: <%= v %>
-                <% end %>
+                <ul>
+                    <% error.each do |k, v| %>
+                        <li><%= k.to_s.humanize %>: <%= v %></li>
+                    <% end %>
+                </ul>
             </li>
         <% end %>
     </ol>

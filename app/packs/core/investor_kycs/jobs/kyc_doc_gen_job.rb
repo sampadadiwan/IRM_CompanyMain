@@ -15,23 +15,31 @@ class KycDocGenJob < ApplicationJob
 
       # Loop through each investor kyc and generate the documents
       investor_kycs.each do |investor_kyc|
-        # send_notification("Generating KYC documents for #{investor_kyc.full_name}", user_id)
-        Document.where(id: document_template_ids).find_each do |document_template|
-          send_notification("Generating #{document_template.name} for #{investor_kyc.full_name}", user_id)
-          KycDocGenerator.new(investor_kyc, document_template, start_date, end_date, user_id)
-        rescue Exception => e
-          msg = "Error generating #{document_template.name} for #{investor_kyc.full_name} #{e.message}"
+        msg = nil
+        if investor_kyc.verified
+          # send_notification("Generating KYC documents for #{investor_kyc.full_name}", user_id)
+          Document.where(id: document_template_ids).find_each do |document_template|
+            send_notification("Generating #{document_template.name} for #{investor_kyc.full_name}", user_id)
+            KycDocGenerator.new(investor_kyc, document_template, start_date, end_date, user_id)
+          rescue Exception => e
+            msg = "Error generating #{document_template.name} for #{investor_kyc.full_name} #{e.message}"
+          end
+        else
+          msg = "#{investor_kyc.full_name} is not verified"
+        end
+
+        if msg
           send_notification(msg, user_id, "danger")
-          # raise e
-          error_msg << { msg:, template: document_template&.name, folio_id: investor_kyc.capital_commitment.folio_id, investor_name: investor_kyc.full_name }
+          error_msg << { msg:, kyc: investor_kyc }
         end
       end
     end
 
     if error_msg.present?
-      send_notification("Documentation generation completed with errors. Errors will be sent via email", user_id, :danger)
-      EntityMailer.with(entity_id: investor_kycs.last.entity_id, user_id:, error_msg:).doc_gen_errors.deliver_now
+      send_notification("Documentation generation completed with #{error_msg.length} errors. Errors will be sent via email", user_id, :danger)
+      EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg:).doc_gen_errors.deliver_now
     end
+
     send_notification("Invalid Dates", user_id, "danger") if start_date > end_date
     send_notification("Invalid Document Template", user_id, "danger") if document_template_ids.blank?
   end
