@@ -34,7 +34,7 @@
                             <td> <%= name %> </td>
                             <% dates.each do |as_of| %>            
                                 <% kpi = kpis.find{|k| k.kpi_report.as_of == as_of} %>
-                                <td><%= link_to kpi.display_value, kpi if kpi %></td>
+                                <td><%= link_to kpi.value, kpi if kpi && kpi.value.present? %></td>
                             <% end %>
                         </tr>
                     <% end %>
