@@ -47,8 +47,9 @@
                     <!-- TODO Optimize this loop -->
                     <!-- Sometimes we have uploaded the data and setup aliases for the field names -->
                     <% aliases = fcf.meta_data.present? ? fcf.meta_data.downcase.split(",") : [] %>
-                    <% kpi_reports.each do |kpi_report| %>            
-                        <% kpis = kpi_report.kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h %>
+                    <% kpi_reports.each do |kpi_report| %>  
+                        <!-- Create a hash of the kpis with the name as the key -->
+                        <% kpis = kpi_report.kpis.map{|kpi| [kpi.name.titleize.gsub(" ", "").underscore, kpi]}.to_h %>
                         <!-- Find the kpi with the name or an alias for the name and show its value-->
                         <% kpi = kpis[fcf.name.downcase].presence || kpis.values_at(*aliases).find{|x| x.present?} %>
                         <td>
@@ -60,6 +61,8 @@
                                 <% else %>
                                     <%= kpi.display_value %> 
                                 <% end %>
+                            <% else %>
+                                N/A
                             <% end %>
                         </td>
                     <% end %>
