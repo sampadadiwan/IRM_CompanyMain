@@ -10,7 +10,7 @@ module KpisHelper
   end
 
   def multiple_entity_kpi_lines_by_date(kpis)
-    dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :desc).pluck(:as_of).uniq
+    dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
     grouped_kpis = kpis.group_by(&:entity)
 
     data_map = []
