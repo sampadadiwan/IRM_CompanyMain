@@ -9,6 +9,8 @@
 
     <span>
         <%= render "kpi_reports/filter" if params[:q].blank? %>
+        
+        <%= link_to "Reports", kpis_path(filter: true), class: "btn btn-outline-primary" %>
 
         <button class="btn btn-outline-success", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button> 
     </span>
