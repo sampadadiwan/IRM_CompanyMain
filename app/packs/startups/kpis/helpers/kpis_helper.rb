@@ -8,4 +8,25 @@ module KpisHelper
 
     column_chart chart_data
   end
+
+  def multiple_entity_kpi_lines_by_date(kpis)
+    dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :desc).pluck(:as_of).uniq
+    grouped_kpis = kpis.group_by(&:entity)
+
+    data_map = []
+    grouped_kpis.each do |entity, entity_kpis|
+      entity_kpis.group_by(&:name).each do |kpi_name, kpis|
+        data = []
+        dates.each do |date|
+          kpi = kpis.find { |kpi| kpi.kpi_report.as_of == date }
+          data << [date.strftime("%m/%y"), kpi&.value]
+        end
+        data_map << { name: "#{entity.name} - #{kpi_name}", data: }
+      end
+    end
+
+    # puts "############## Data"
+    # puts data_map
+    line_chart(data_map)
+  end
 end

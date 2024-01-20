@@ -51,7 +51,7 @@
                         <!-- Create a hash of the kpis with the name as the key -->
                         <% kpis = kpi_report.kpis.map{|kpi| [kpi.name.titleize.gsub(" ", "").underscore, kpi]}.to_h %>
                         <!-- Find the kpi with the name or an alias for the name and show its value-->
-                        <% kpi = kpis[fcf.name.downcase].presence || kpis.values_at(*aliases).find{|x| x.present?} %>
+                        <% kpi = kpis[fcf.name.downcase].presence || kpis.values_at(*aliases).find{|x| x.present?} %>                        
                         <td>
                             <% if kpi %>
                                 <% if fcf.field_type == "NumberField" %>

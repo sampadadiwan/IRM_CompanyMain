@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_18_022351) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_18_090201) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1009,6 +1009,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_18_022351) do
     t.boolean "kra_enabled", default: false
     t.string "kpi_reminder_frequency", limit: 10
     t.integer "kpi_reminder_before"
+    t.boolean "external_integration", default: false
+    t.integer "external_integration_flags", default: 0
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
 
