@@ -6,6 +6,7 @@ class ReportsController < ApplicationController
     @reports = policy_scope(Report)
     @reports = @reports.where(category: params[:category]) if params[:category].present?
     @reports = @reports.where("tag_list like ?", "%#{params[:tag_list]}%") if params[:tag_list].present?
+    @reports = @reports.where(id: params[:report_ids].split(",")) if params[:report_ids].present?
     @bread_crumbs = { Reports: reports_path, params[:tag_list] => "" }
   end
 
