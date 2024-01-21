@@ -6,7 +6,7 @@ class DealInvestor < ApplicationRecord
   monetize  :fee_cents, :pre_money_valuation_cents, :secondary_investment_cents,
             :primary_amount_cents, with_currency: ->(i) { i.deal.currency }
   # Make all models searchable
-  update_index('deal_investor') { self }
+  update_index('deal_investor') { self if index_record? }
 
   has_rich_text :notes
   belongs_to :deal, touch: true

@@ -3,7 +3,7 @@ class Excercise < ApplicationRecord
   include Trackable
   include WithFolder
 
-  update_index('entity') { self }
+  update_index('entity') { self if index_record? }
 
   belongs_to :entity
   belongs_to :holding

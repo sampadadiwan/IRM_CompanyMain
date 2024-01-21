@@ -4,7 +4,7 @@ class InvestmentOpportunity < ApplicationRecord
   include WithCustomField
   include InvestorsGrantedAccess
 
-  update_index('investment_opportunity') { self }
+  update_index('investment_opportunity') { self if index_record? }
 
   belongs_to :entity, touch: true
   has_many :access_rights, as: :owner, dependent: :destroy

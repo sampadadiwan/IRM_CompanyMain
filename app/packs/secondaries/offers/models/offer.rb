@@ -6,7 +6,7 @@ class Offer < ApplicationRecord
   include ForInvestor
 
   # Make all models searchable
-  update_index('offer') { self }
+  update_index('offer') { self if index_record? }
 
   belongs_to :user
   belongs_to :final_agreement_user, class_name: "User", optional: true

@@ -12,7 +12,7 @@ class Document < ApplicationRecord
   MODELS_WITH_DOCS = %w[Fund CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDitribution CapitalDitributionPayment Deal DealInvestor InvestmentOpportunity ExpressionOfInterest].freeze
 
   # Make all models searchable
-  update_index('document') { self }
+  update_index('document') { self if index_record? }
 
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :permissions, as: :owner, dependent: :destroy

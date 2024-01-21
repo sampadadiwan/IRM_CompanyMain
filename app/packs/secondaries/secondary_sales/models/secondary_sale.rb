@@ -9,7 +9,7 @@ class SecondarySale < ApplicationRecord
   include ForInvestor
 
   # Make all models searchable
-  update_index('secondary_sale') { self }
+  update_index('secondary_sale') { self if index_record? }
 
   SALE_TYPES = %w[Regular Tranche].freeze
 

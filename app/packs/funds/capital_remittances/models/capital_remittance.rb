@@ -10,7 +10,7 @@ class CapitalRemittance < ApplicationRecord
   include CapitalRemittanceCallBasis
   include RansackerAmounts
 
-  update_index('capital_remittance') { self }
+  update_index('capital_remittance') { self if index_record? }
 
   belongs_to :entity
   belongs_to :fund, touch: true

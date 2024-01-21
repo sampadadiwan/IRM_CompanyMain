@@ -40,7 +40,7 @@ class User < ApplicationRecord
   include FileUploader::Attachment(:signature)
 
   # Make all models searchable
-  update_index('user') { self }
+  update_index('user') { self if index_record? }
 
   rolify
   accepts_nested_attributes_for :roles, allow_destroy: true

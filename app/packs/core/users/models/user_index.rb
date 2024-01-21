@@ -8,6 +8,7 @@ class UserIndex < Chewy::Index
     }
   }
 
+  SEARCH_FIELDS = %i[first_name last_name email entity_id active].freeze
   index_scope User.includes(:entity)
   field :first_name
   field :last_name

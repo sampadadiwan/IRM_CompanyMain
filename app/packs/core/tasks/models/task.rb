@@ -1,5 +1,5 @@
 class Task < ApplicationRecord
-  update_index('task') { self }
+  update_index('task') { self if index_record? }
   include WithCustomField
 
   belongs_to :entity

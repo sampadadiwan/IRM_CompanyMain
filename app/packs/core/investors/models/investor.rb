@@ -4,7 +4,7 @@ class Investor < ApplicationRecord
   include UpdateInvestor
   include WithFolder
 
-  update_index('investor') { self }
+  update_index('investor') { self if index_record? }
 
   # This is to be set if we want the investor name to be different from the investor_entity name
   attr_accessor :force_different_name

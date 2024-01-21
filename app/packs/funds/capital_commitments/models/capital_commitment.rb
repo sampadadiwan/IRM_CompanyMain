@@ -23,7 +23,7 @@ class CapitalCommitment < ApplicationRecord
   scope :pool, -> { where(commitment_type: 'Pool') }
   scope :co_invest, -> { where(commitment_type: 'CoInvest') }
 
-  update_index('capital_commitment') { self }
+  update_index('capital_commitment') { self if index_record? }
 
   scope :lp_onboarding_complete, -> { where(onboarding_completed: true) }
   scope :lp_onboarding_incomplete, -> { where(onboarding_completed: false) }

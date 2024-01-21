@@ -3,7 +3,7 @@ class InvestorKyc < ApplicationRecord
   STANDARD_COLUMN_FIELDS = %w[investor_name full_name kyc_type pan pan_verified committed_amount collected_amount bank_verified verified expired dt_actions].freeze
 
   # Make all models searchable
-  update_index('investor_kyc') { self }
+  update_index('investor_kyc') { self if index_record? }
   include WithCustomField
   include Trackable
   include WithFolder

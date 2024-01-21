@@ -2,7 +2,7 @@ class Folder < ApplicationRecord
   include Trackable
   has_ancestry orphan_strategy: :destroy, touch: true
 
-  update_index('folder') { self }
+  update_index('folder') { self if index_record? }
 
   enum :folder_type, %i[regular system]
 

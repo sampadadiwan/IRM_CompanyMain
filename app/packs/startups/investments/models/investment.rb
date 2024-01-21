@@ -8,7 +8,7 @@ class Investment < ApplicationRecord
   include InvestmentScopes
   include InvestmentCounters
   # Make all models searchable
-  update_index('investment') { self }
+  update_index('investment') { self if index_record? }
 
   # "Equity,Preferred,Debt,Options"
   INSTRUMENT_TYPES = ENV["INSTRUMENT_TYPES"].split(",")

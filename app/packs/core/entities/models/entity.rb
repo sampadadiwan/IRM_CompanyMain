@@ -5,7 +5,7 @@ class Entity < ApplicationRecord
   include EntityEnabled
 
   # Make all models searchable
-  update_index('entity') { self }
+  update_index('entity') { self if index_record? }
 
   validates :name, :entity_type, presence: true
   validates_uniqueness_of :sub_domain, scope: :parent_entity_id, allow_blank: true, allow_nil: true

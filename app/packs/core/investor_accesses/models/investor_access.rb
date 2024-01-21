@@ -5,7 +5,7 @@ class InvestorAccess < ApplicationRecord
   attr_accessor :call_code
 
   # Make all models searchable
-  update_index('investor_access') { self }
+  update_index('investor_access') { self if index_record? }
 
   validates :email, :first_name, :last_name, presence: true
   belongs_to :entity

@@ -8,7 +8,9 @@ class Fund < ApplicationRecord
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model }, entity_id: proc { |_controller, model| model.entity_id }
 
-  update_index('fund') { self }
+  update_index('fund') do
+    self if index_record?
+  end
 
   CATEGORIES = ["Category I", "Category II", "Category III"].freeze
 

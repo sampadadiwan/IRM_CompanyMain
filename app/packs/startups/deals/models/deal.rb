@@ -12,7 +12,7 @@ class Deal < ApplicationRecord
   monetize :amount_cents, with_model_currency: :currency
 
   # Make all models searchable
-  update_index('deal') { self }
+  update_index('deal') { self if index_record? }
 
   belongs_to :entity
   # belongs_to :clone_from, optional: true, class_nane: "Deal"

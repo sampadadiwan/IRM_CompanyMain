@@ -9,7 +9,7 @@ class Holding < ApplicationRecord
   OPTION_TYPES = ["Regular", "Phantom", "Equity SAR"].freeze
   INVESTMENT_INSTRUMENTS = %w[Equity Options Preferred].freeze
 
-  update_index('holding') { self }
+  update_index('holding') { self if index_record? }
 
   belongs_to :user, optional: true
   belongs_to :entity

@@ -3,7 +3,7 @@ class AccessRight < ApplicationRecord
   include ActivityTrackable
   acts_as_paranoid
 
-  update_index('access_right') { self }
+  update_index('access_right') { self if index_record? }
 
   ALL = "All".freeze
   SELF = "Self".freeze
