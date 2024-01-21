@@ -1,0 +1,7 @@
+<% if params[:report_id].present? %>  
+  <turbo-frame id="report_<%=params[:report_id]%>" target="_top">    
+    <%= content %>  
+  </turbo-frame>
+<% else %>
+  <%= content %>
+<% end %>

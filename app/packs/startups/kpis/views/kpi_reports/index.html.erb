@@ -1,7 +1,7 @@
 <%= render "/layouts/alerts" %>
 <%= render "/layouts/filter", associations: [:kpis, :entity], hidden_fields: {grid_view: params[:grid_view]} %>
 
-<turbo-frame id="report_<%=params[:report_id]%>" target="_top">
+<%= render ReportingComponent.new do %>
     <% if params[:grid_view].present? %>
         <%= turbo_frame_tag "kpi_reports_list", target: "_top" do %>
             <%= render "/kpi_reports/grid_view", kpi_reports: @kpi_reports if @kpi_reports %>
@@ -9,4 +9,4 @@
     <% else %>
         <%= render "/kpi_reports/index", kpi_reports: @kpi_reports if @kpi_reports %>
     <% end %>
-</turbo-frame>
+<% end %>

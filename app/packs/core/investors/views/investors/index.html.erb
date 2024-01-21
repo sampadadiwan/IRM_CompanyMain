@@ -5,6 +5,6 @@
                       "Add/View Investments", "Add/View Notes"].freeze %>
 
 
-<turbo-frame id="report_<%=params[:report_id]%>" target="_top">
+<%= render ReportingComponent.new do %>
     <%= render "/investors/index", investors: @investors %>
-</turbo-frame>
+<% end %>

@@ -1,7 +1,7 @@
 <%= render "/layouts/alerts" %>
 <%= render "/layouts/filter", associations: [:investor_kyc, :investor] %>
 
-<turbo-frame id="report_<%=params[:report_id]%>" target="_top">
+<%= render ReportingComponent.new do %>
 
     <!-- If we provide the path /capital_commitments?my_commitments=true, 
         then we see if we can simply show the commitment -->
@@ -14,4 +14,4 @@
         <%= render "/capital_commitments/index", capital_commitments: @capital_commitments, fund: nil, lazy_load_data: false %>
     <% end %>
 
-</turbo-frame>
+<% end %>
