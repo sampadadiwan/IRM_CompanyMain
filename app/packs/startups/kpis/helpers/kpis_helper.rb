@@ -9,7 +9,7 @@ module KpisHelper
     column_chart chart_data
   end
 
-  def multiple_entity_kpi_lines_by_date(kpis)
+  def multiple_entity_kpi_lines_by_date(kpis, id: nil)
     dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
     grouped_kpis = kpis.group_by(&:entity)
 
@@ -27,6 +27,7 @@ module KpisHelper
 
     # puts "############## Data"
     # puts data_map
-    line_chart(data_map)
+    id ||= rand(10000)
+    line_chart(data_map, id: id)
   end
 end

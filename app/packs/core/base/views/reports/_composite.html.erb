@@ -1,4 +1,4 @@
 <% @reports.each do |report| %>
-    <turbo-frame id="report_<%=report.id%>" src="<%= report.url + '&report_id=' + report.id.to_s + '&title=' + report.name %>" loading="" target="_top">
+    <turbo-frame id="report_<%=report.id%>" src="<%= report.url + '&report_id=' + report.id.to_s + '&title=' + report.name %>" loading="lazy" target="_top">
     </turbo-frame>
 <% end %>
