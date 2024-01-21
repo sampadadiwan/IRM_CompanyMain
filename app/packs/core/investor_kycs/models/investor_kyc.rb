@@ -67,7 +67,7 @@ class InvestorKyc < ApplicationRecord
            with_currency: ->(i) { i.entity.currency }
 
   after_commit :send_kyc_form, if: :saved_change_to_send_kyc_form_to_user?
-  
+
   def send_kyc_form(reminder: false)
     if send_kyc_form_to_user || reminder
       email_method = :notify_kyc_required

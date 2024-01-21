@@ -6,6 +6,7 @@ class ReportsController < ApplicationController
     @reports = policy_scope(Report)
     @reports = @reports.where(category: params[:category]) if params[:category].present?
     @reports = @reports.where("tag_list like ?", "%#{params[:tag_list]}%") if params[:tag_list].present?
+    @bread_crumbs = { Reports: reports_path, params[:tag_list] => "" }
   end
 
   # GET /reports/1 or /reports/1.json

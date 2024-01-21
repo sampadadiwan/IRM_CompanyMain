@@ -1,4 +1,7 @@
 <%= render "/layouts/alerts" %>
 <%= render "/layouts/filter", associations: [:investor, :capital_commitments, :funds] %>
-<%= render "investor_kycs/index", investor_kycs: @investor_kycs, lazy_load_data: false %>
+<turbo-frame id="report_<%=params[:report_id]%>" target="_top">
+    <%= render "investor_kycs/index", investor_kycs: @investor_kycs, lazy_load_data: false %>
+</turbo-frame>
+
   

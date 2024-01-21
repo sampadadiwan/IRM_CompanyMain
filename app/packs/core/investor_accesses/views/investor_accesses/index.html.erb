@@ -1,4 +1,6 @@
 <%= render "/layouts/alerts" %>
 <%= render "/layouts/filter", associations: [:investor] %> 
-<%= render "/investor_accesses/index", investor_accesses: @investor_accesses, investor: nil %>
+<turbo-frame id="report_<%=params[:report_id]%>" target="_top">
+    <%= render "/investor_accesses/index", investor_accesses: @investor_accesses, investor: nil %>
+</turbo-frame>
 <%= paginate @investor_accesses %>

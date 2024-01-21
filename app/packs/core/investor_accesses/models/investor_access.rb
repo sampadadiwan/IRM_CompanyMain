@@ -121,7 +121,7 @@ class InvestorAccess < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[approved created_at email first_name granted_by last_name phone].sort
+    %w[approved created_at email first_name granted_by last_name phone whatsapp_enabled].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

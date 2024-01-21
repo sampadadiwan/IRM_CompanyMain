@@ -1,4 +1,6 @@
 <%= render "/layouts/alerts" %>
 <%= render "/layouts/filter", associations: [:capital_call, :capital_commitment, :investor] %>
 
-<%= render "/capital_remittances/index", capital_remittances: @capital_remittances, capital_call: nil, lazy_load_data: false %>
+<turbo-frame id="report_<%=params[:report_id]%>" target="_top">
+    <%= render "/capital_remittances/index", capital_remittances: @capital_remittances, capital_call: nil, lazy_load_data: false %>
+</turbo-frame>

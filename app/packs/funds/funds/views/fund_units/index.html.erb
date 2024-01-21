@@ -1,5 +1,8 @@
 <%= render "/layouts/alerts" %>
 <%= render "/layouts/filter", associations: [:fund, :capital_commitment, :investor] %>
-<%= turbo_frame_tag "fund_units_list", target: "_top" do %>
-  <%= render "/fund_units/index", fund_units: @fund_units, cols: params[:cols] %>
-<% end %>
+
+<turbo-frame id="report_<%=params[:report_id]%>" target="_top">
+  <%= turbo_frame_tag "fund_units_list", target: "_top" do %>
+    <%= render "/fund_units/index", fund_units: @fund_units, cols: params[:cols] %>
+  <% end %>
+</turbo-frame>

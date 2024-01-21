@@ -4,4 +4,7 @@
 <%= render "/layouts/steps", steps: ["Setup Investor Details", "Grant Access Rights", "Add Investor Users", 
                       "Add/View Investments", "Add/View Notes"].freeze %>
 
-<%= render "/investors/index", investors: @investors %>
+
+<turbo-frame id="report_<%=params[:report_id]%>" target="_top">
+    <%= render "/investors/index", investors: @investors %>
+</turbo-frame>

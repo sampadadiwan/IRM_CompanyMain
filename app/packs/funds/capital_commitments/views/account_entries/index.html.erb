@@ -2,6 +2,7 @@
 
 <%= render "/layouts/filter", associations: [:capital_commitment] %>
 
+<turbo-frame id="report_<%=params[:report_id]%>" target="_top">
 <%= turbo_frame_tag "account_entries_list", target: "_top" do %>
   <% if params[:ag].present? %>
     <%= render "/account_entries/index_ag", account_entries: @account_entries, 
@@ -11,3 +12,4 @@
         fund: nil, lazy_load_data: false, data_source: nil %>
   <% end %>
 <% end %>
+</turbo-frame>

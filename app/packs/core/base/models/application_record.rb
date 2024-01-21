@@ -10,12 +10,11 @@ class ApplicationRecord < ActiveRecord::Base
   end
 
   # Check if we should save the record to ES or not
-  def index_record?(index_class=nil)
+  def index_record?(index_class = nil)
     # For InvestorKyc we have STI, hence index_class is passed in as param, for all else we use the class name
     index_class ||= "#{self.class.name}Index".constantize
     # We need to check if the record is new or any of the searchable fields have changed
-    index_flag = previous_changes.empty? || previous_changes.keys.map(&:to_sym).intersect?(index_class::SEARCH_FIELDS)
+    previous_changes.empty? || previous_changes.keys.map(&:to_sym).intersect?(index_class::SEARCH_FIELDS)
     # Only if they have changed we index to ES
-    index_flag
   end
 end

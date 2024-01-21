@@ -27,7 +27,7 @@ module KpisHelper
 
     # puts "############## Data"
     # puts data_map
-    id ||= rand(10000)
-    line_chart(data_map, id: id)
+    id ||= rand(10_000)
+    line_chart(data_map, id:)
   end
 end
