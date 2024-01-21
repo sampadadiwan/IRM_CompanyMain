@@ -1,0 +1,45 @@
+<% if current_user.enable_funds %>
+<div class="row">
+    <div class="col">
+        <div class="card">
+        <div class="card-body">
+            <a href="<%= kpi_reports_path() %>">
+                <div class="d-flex flex-row align-items-center">
+                <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-success">
+                    <i class="ti ti-report-analytics fs-6"></i>
+                </div>
+                <div class="ms-3 align-self-center">
+                    <h3 class="mb-0 fs-6">
+                        KPI Reports
+                    </h3>
+                    <span class="text-muted">View KPI Reports</span>
+                </div>
+                </div>
+            </a>
+        </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="card">
+        <div class="card-body">
+            <a href="<%= kpis_path(filter: true) %>">
+                <div class="d-flex flex-row align-items-center">
+                <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-primary">
+                    <i class="ti ti-search fs-6"></i>
+                </div>
+                <div class="ms-3 align-self-center">
+                    <h3 class="mb-0 fs-6">
+                        Search KPIs
+                    </h3>
+                    <span class="text-muted">Search KPIs across Portfolio</span>
+                </div>
+                </div>
+            </a>
+        </div>
+        </div>
+    </div>
+
+
+</div>
+<% end %>

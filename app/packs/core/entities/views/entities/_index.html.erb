@@ -1,9 +1,4 @@
-
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Entities</h1>
-</div>
-
-<div class="">
+<%= render FormCard.new(title: "Entities") do %>
 
   <table id="entities" class="table table-bordered">
     <tr>
@@ -12,9 +7,6 @@
       </th>
       <th class="hideMobP">
         Category
-      </th>
-      <th>
-        Type
       </th>
       <th>
       </th>  
@@ -26,5 +18,7 @@
     <% end %>
   </table>
 
-</div>
+<% end %>
+
+
 

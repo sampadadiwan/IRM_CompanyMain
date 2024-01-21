@@ -1,7 +1,7 @@
 <% params[:units] = "Million" %>
 
 <%#= render "entities/vc_dashboard_stats" %>
-<%= render "entities/vc_dashboard_menus" %>
+
 
 <div data-controller="datatable">
 
@@ -17,6 +17,9 @@
                     </span>
                 </div>
                 <div class="card-body collapse show show_funds">
+
+                    <%= render "entities/vc_dashboard_menus" %>
+
                     <% capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc) %>
 
                     <% capital_commitments.each do |cc| %>
@@ -52,9 +55,20 @@
 
 
     
-    <div class="associated_entity">        
-        <%= render "/entities/index",  
-            entities: policy_scope(Entity).where(entity_type: "Company"), vc_view: true %>
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Entities</h6>
+            <span>
+                <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_entities"><i class="fa-solid fa-caret-down"></i></a>
+            </span>
+        </div>
+        <div class="card-body collapse show show_entities">
+            <div class="row" >
+                <%= render "entities/entities_dashboard_menus" %>     
+                <%= render "/entities/index",  
+                    entities: policy_scope(Entity).where(entity_type: "Company"), vc_view: true %>
+            </div>
+        </div>
     </div>
 
 </div>
