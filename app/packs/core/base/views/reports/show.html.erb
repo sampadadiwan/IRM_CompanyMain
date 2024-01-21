@@ -37,7 +37,7 @@
       Tag List
     </td>
     <td>
-      <% @report.tag_list.split(".").each do |tag| %>
+      <% @report.tag_list.split(",").each do |tag| %>
         <%= link_to tag, reports_path(tag_list: tag), class: "badge bg-primary" %>
       <% end %>
     </td>
