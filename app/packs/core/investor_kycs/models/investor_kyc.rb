@@ -3,7 +3,7 @@ class InvestorKyc < ApplicationRecord
   STANDARD_COLUMN_FIELDS = %w[investor_name full_name kyc_type pan pan_verified committed_amount collected_amount bank_verified verified expired dt_actions].freeze
 
   # Make all models searchable
-  update_index('investor_kyc') { self if index_record? }
+  update_index('investor_kyc') { self if index_record?(InvestorKycIndex) }
   include WithCustomField
   include Trackable
   include WithFolder
@@ -67,7 +67,7 @@ class InvestorKyc < ApplicationRecord
            with_currency: ->(i) { i.entity.currency }
 
   after_commit :send_kyc_form, if: :saved_change_to_send_kyc_form_to_user?
-
+  
   def send_kyc_form(reminder: false)
     if send_kyc_form_to_user || reminder
       email_method = :notify_kyc_required
