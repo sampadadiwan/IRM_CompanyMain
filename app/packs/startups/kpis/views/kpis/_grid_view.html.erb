@@ -12,7 +12,7 @@
     </div>
 
     <% 
-        dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :desc).pluck(:as_of).uniq 
+        dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq 
         grouped_kpis = kpis.group_by(&:entity_id)
     %>
     <div class="table-responsive" data-controller="datatable">

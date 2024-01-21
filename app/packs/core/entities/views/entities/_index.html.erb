@@ -1,22 +1,25 @@
 <%= render FormCard.new(title: "Entities") do %>
 
-  <table id="entities" class="table table-bordered">
-    <tr>
-      <th>
-        Name
-      </th>
-      <th class="hideMobP">
-        Category
-      </th>
-      <th>
-      </th>  
-    </tr>
+  <div class="table-responsive" data-controller="datatable">
+    <table id="entities" class="table table-bordered  dataTable jqDataTable">
+      <thead>
+        <th>
+          Name
+        </th>
+        <th class="hideMobP">
+          Category
+        </th>
+        <th>
+        </th>  
+      </thead>
 
-
-    <% entities.each do |entity| %>
-      <%= render partial: "entities/entity", locals: {entity: entity, vc_view: vc_view} %>
-    <% end %>
-  </table>
+      <tbody>
+        <% entities.each do |entity| %>
+          <%= render partial: "entities/entity", locals: {entity: entity, vc_view: vc_view} %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 
 <% end %>
 

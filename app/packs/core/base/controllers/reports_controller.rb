@@ -4,6 +4,7 @@ class ReportsController < ApplicationController
   # GET /reports or /reports.json
   def index
     @reports = policy_scope(Report)
+    @reports = @reports.where(category: params[:category]) if params[:category].present?
   end
 
   # GET /reports/1 or /reports/1.json
