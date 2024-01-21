@@ -15,10 +15,10 @@ module KpisHelper
 
     data_map = []
     grouped_kpis.each do |entity, entity_kpis|
-      entity_kpis.group_by(&:name).each do |kpi_name, kpis|
+      entity_kpis.group_by(&:name).each do |kpi_name, kpis_by_name|
         data = []
         dates.each do |date|
-          kpi = kpis.find { |kpi| kpi.kpi_report.as_of == date }
+          kpi = kpis_by_name.find { |k| k.kpi_report.as_of == date }
           data << [date.strftime("%m/%y"), kpi&.value]
         end
         data_map << { name: "#{entity.name} - #{kpi_name}", data: }
