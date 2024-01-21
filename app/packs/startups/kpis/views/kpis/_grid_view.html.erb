@@ -15,7 +15,7 @@
         dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq 
         grouped_kpis = kpis.group_by(&:entity_id)
     %>
-    <div class="table-responsive" data-controller="">
+    <div class="table-responsive" data-controller="<%= params[:title].present? ? '' : 'datatable' %>">
         <table id="kpis_grid" class="table table-bordered dataTable jqDataTable">
             <thead>
                 <tr>
@@ -57,7 +57,7 @@
                     <h6 class="m-0 font-weight-bold text-primary"> <%= params[:title].presence || "KPIs" %> </h6>
                 </div>
                 <div class="card-body">
-                    <% id = params[:report_id].presence || rand(10**10) %>
+                    <% id = params[:report_id] %>
                     <%= multiple_entity_kpi_lines_by_date(kpis, id:) %>
                 </div>
             </div>
