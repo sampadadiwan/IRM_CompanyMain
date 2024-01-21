@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_18_090201) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_21_120331) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -2211,6 +2211,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_18_090201) do
     t.text "url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "tag_list"
     t.index ["entity_id"], name: "index_reports_on_entity_id"
     t.index ["user_id"], name: "index_reports_on_user_id"
   end

@@ -5,6 +5,7 @@ class ReportsController < ApplicationController
   def index
     @reports = policy_scope(Report)
     @reports = @reports.where(category: params[:category]) if params[:category].present?
+    @reports = @reports.where("tag_list like ?", "%#{params[:tag_list]}%") if params[:tag_list].present?
   end
 
   # GET /reports/1 or /reports/1.json
@@ -80,6 +81,6 @@ class ReportsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def report_params
-    params.require(:report).permit(:entity_id, :user_id, :name, :description, :url, :category)
+    params.require(:report).permit(:entity_id, :user_id, :name, :description, :url, :category, :tag_list)
   end
 end

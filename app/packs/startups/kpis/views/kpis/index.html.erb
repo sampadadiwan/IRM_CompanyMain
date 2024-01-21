@@ -1,7 +1,9 @@
 <%= render "/layouts/alerts" %>
 <%= render "/layouts/filter", associations: [:kpi_report], hidden_fields: {grid_view: params[:grid_view]} %>
 <% if params[:grid_view].present? %>
-    <%= render "/kpis/grid_view", kpis: @kpis %>
+    <turbo-frame id="report_<%=params[:report_id]%>">
+        <%= render "/kpis/grid_view", kpis: @kpis %>
+    </turbo-frame>
 <% else %>
     <%= render "/kpis/index", kpis: @kpis %>
 <% end %>

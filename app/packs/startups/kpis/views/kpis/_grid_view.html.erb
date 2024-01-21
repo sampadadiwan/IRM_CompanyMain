@@ -3,7 +3,7 @@
 
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h4 mb-0 text-gray-800">
-            KPIs 
+            <%= params[:title].presence || "KPIs" %>            
         </h1>
 
         <span>
@@ -15,7 +15,7 @@
         dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq 
         grouped_kpis = kpis.group_by(&:entity_id)
     %>
-    <div class="table-responsive" data-controller="datatable">
+    <div class="table-responsive" data-controller="">
         <table id="kpis_grid" class="table table-bordered dataTable jqDataTable">
             <thead>
                 <tr>

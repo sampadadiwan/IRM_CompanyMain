@@ -1,0 +1,33 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Reports</h1>
+  <%#= link_to "New Report", new_report_path, {class: "btn btn-outline-primary"}  %>
+  <%= render "/reports/new_report" %>
+
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="reports" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Name
+        </th>
+        <th>
+          Category
+        </th>
+        <th>
+          Tags
+        </th>
+        <th>
+          Description
+        </th>        
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% reports.each do |report| %>
+        <%= render report %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

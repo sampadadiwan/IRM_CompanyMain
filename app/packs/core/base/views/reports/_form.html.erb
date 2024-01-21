@@ -20,8 +20,19 @@
   </div>
 
   <div class="form-group">
+    <% options = ["Remittances", "Commitments", "KPIs", "KYCs"].freeze %>
     <%= form.label :category %>
-    <%= form.text_field :category, class: "form-control"  %>
+    <%= form.text_field :category, class: "form-control", list: 'category-list'  %>
+    <datalist id="category-list" class="d-none">
+        <%= options_for_select(options) %>
+    </datalist>
+    <small class="form-text text-muted">Separate categories with commas.</small>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :tag_list %>
+    <%= form.text_field :tag_list, class: "form-control"  %>
+    <small class="form-text text-muted">Separate tags with commas.</small>
   </div>
 
   <div class="form-group">
