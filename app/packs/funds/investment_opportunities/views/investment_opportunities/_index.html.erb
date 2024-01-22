@@ -3,6 +3,12 @@
   <% if params[:view] != "row" %>
 
     <%= render ToggleCard.new(title: "Investment Opportunities", css_class: "show_opp") do %>
+
+      <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Investment Opportunities</h1>
+        <%= link_to "New Investment Opportunity", new_investment_opportunity_path(), 
+            {class: "btn btn-outline-primary"} if policy(InvestmentOpportunity.new(entity_id: params[:entity_id])).new?  %>
+      </div>
       <% investment_opportunities.each do |investment_opportunity| %>
           <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity %>
       <% end %>                
@@ -15,7 +21,7 @@
       <h1 class="h3 mb-0 text-gray-800">Investment Opportunities</h1>
       <%= link_to "New Investment Opportunity", new_investment_opportunity_path(), 
           {class: "btn btn-outline-primary"} if policy(InvestmentOpportunity.new(entity_id: params[:entity_id])).new?  %>
-  </div>
+    </div>
     <div class="table-responsive" data-controller="datatable">
   
       <table id="investment_opportunities" class="table table-bordered dataTable">

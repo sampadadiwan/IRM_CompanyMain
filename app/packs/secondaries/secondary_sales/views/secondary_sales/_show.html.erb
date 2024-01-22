@@ -1,5 +1,5 @@
 <% cache [secondary_sale, current_user, current_user.entity_id == secondary_sale.entity_id] do %>
-  <%= render ToggleCard.new(title: "Secondary Sale: #{secondary_sale.name}", css_class: "show_sale") do %>
+  <%= render ToggleCard.new(title: "Secondary Sale: #{secondary_sale.name}", css_class: "show_sale", state: "closed") do %>
 
       <table class="table table-bordered dataTable">
         <tr>
