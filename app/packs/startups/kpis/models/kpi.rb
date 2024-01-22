@@ -5,7 +5,10 @@ class Kpi < ApplicationRecord
   belongs_to :entity
   belongs_to :kpi_report
 
+  validates :name, :period, :value, presence: true
+
   validates :name, length: { maximum: 50 }
+  validates :period, length: { maximum: 12 }
   validates :notes, length: { maximum: 255 }
   validates :display_value, length: { maximum: 30 }
 
@@ -22,7 +25,7 @@ class Kpi < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name value notes]
+    %w[name period value notes]
   end
 
   def self.ransackable_associations(_auth_object = nil)

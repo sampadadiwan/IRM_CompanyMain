@@ -72,6 +72,6 @@ class KpisController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def kpi_params
-    params.require(:kpi).permit(:entity_id, :name, :value, :display_value, :notes, :kpi_report_id, :form_type_id, properties: {})
+    params.require(:kpi).permit(:entity_id, :name, period, :value, :display_value, :notes, :kpi_report_id, :form_type_id, properties: {})
   end
 end
