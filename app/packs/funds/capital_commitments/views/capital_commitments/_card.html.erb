@@ -25,7 +25,7 @@
         </div>
         <div class="row align-items-center">
             <div class="col-md-7">
-                <%= column_chart [["Committed", capital_commitment.committed_amount.to_f], ["Called", capital_commitment.call_amount.to_f], ["Collected", capital_commitment.collected_amount.to_f], ["Distributed", capital_commitment.distribution_amount.to_f] ],
+                <%= column_chart [["Committed", capital_commitment.committed_amount.to_f], ["Called", capital_commitment.call_amount.to_f], ["Collected", capital_commitment.collected_amount.to_f], ["Distributed", capital_commitment.distribution_amount.to_f] ], id: "capital_commitment_#{capital_commitment.id}", 
                  library: {
                    plotOptions: { 
                         column: {

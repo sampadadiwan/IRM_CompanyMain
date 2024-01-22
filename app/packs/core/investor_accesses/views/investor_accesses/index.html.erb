@@ -1,5 +1,5 @@
 <%= render "/layouts/alerts" %>
-<%= render "/layouts/filter", associations: [:investor] %> 
+<%= render "/layouts/filter", associations: [:investor, :user] %> 
 <%= render ReportingComponent.new do %>
     <%= render "/investor_accesses/index", investor_accesses: @investor_accesses, investor: nil %>
 <% end %>

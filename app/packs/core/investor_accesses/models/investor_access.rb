@@ -125,6 +125,6 @@ class InvestorAccess < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    ["investor"]
+    %w[investor user]
   end
 end
