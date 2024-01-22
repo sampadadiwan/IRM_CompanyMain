@@ -1,8 +1,20 @@
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Funds</h1>
-    <%= link_to "New Fund" , new_fund_path, {class: "btn btn-outline-primary" } if policy(Fund.new(entity_id: current_user.entity_id)).new? %>
-</div>
 
+<% if params[:card].present? %>
+  <% title = link_to("Funds", funds_path) %>
+  <%= render ToggleCard.new(title:, css_class: "show_funds") do %>
+    <%= render "entities/vc_dashboard_menus" %>
+
+    <% funds.each do |fund| %>
+        <%= render "/funds/card", fund: fund %>
+    <% end %>
+
+    <%= paginate funds %>
+  <% end %>
+<% else %>  
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+      <h1 class="h3 mb-0 text-gray-800">Funds</h1>
+      <%= link_to "New Fund" , new_fund_path, {class: "btn btn-outline-primary" } if policy(Fund.new(entity_id: current_user.entity_id)).new? %>
+  </div>
   <div class="table-responsive" data-controller="datatable">
 
     <table id="funds" class="table table-bordered dataTable jqDataTable">
@@ -30,3 +42,4 @@
     </table>
 
   </div>
+<% end %>

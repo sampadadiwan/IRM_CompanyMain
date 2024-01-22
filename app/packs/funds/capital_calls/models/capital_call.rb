@@ -31,6 +31,8 @@ class CapitalCall < ApplicationRecord
 
   has_many :capital_remittances, dependent: :destroy
   validates_uniqueness_of :name, scope: :fund_id
+  normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
+
   validates :name, :due_date, :call_date, :percentage_called, :fund_closes, :commitment_type, presence: true
   # validates :percentage_called, numericality: { in: 0..100 }
 

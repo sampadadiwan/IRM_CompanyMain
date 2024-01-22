@@ -1,13 +1,6 @@
 <%= render "/layouts/alerts" %>
 
-<div class="card shadow mb-4">
-  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
-      <h6 class="m-0 font-weight-bold text-primary">Distribution: <%= @capital_distribution.title %></h6>
-      <span>
-        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a>
-      </span>
-  </div>
-  <div class="card-body collapse show_details">
+  <%= render ToggleCard.new(title: "Distribution: #{@capital_distribution.title}", css_class: "show_cd", state: "closed") do %>
 
     <table class="table table-bordered dataTable">
 
@@ -180,8 +173,7 @@
 
     </table>
 
-  </div>
-</div>
+  <% end %>
 
   <div>
     <% if policy(@capital_distribution).update? %>

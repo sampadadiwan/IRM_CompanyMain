@@ -40,11 +40,14 @@ module PortfolioComputations
     self.net_quantity = quantity + sold_quantity if buy?
     self.gain_cents = amount_cents.abs + cost_of_sold_cents if sell?
 
-    self.fmv_cents = buy? ? compute_fmv_cents_on(Time.zone.today) : 0
+    self.fmv_cents = buy? ? compute_fmv_cents_on(Time.zone.today, create_valuation: true) : 0
   end
 
-  def compute_fmv_cents_on(date)
+  def compute_fmv_cents_on(date, create_valuation: false)
     last_valuation = portfolio_company.valuations.where(category:, sub_category:, valuation_date: ..date).order(valuation_date: :desc).first
+
+    # We dont have a valuation and we need to create one
+    last_valuation = portfolio_company.valuations.create(category:, sub_category:, valuation_date: investment_date, per_share_value_cents: cost_cents, entity_id:, owner: fund) if last_valuation.blank? && create_valuation
 
     nq = if date == Time.zone.today
            net_quantity

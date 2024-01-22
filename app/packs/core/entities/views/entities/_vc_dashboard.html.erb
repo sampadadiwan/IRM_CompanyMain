@@ -7,48 +7,27 @@
 
     <% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role], expires_in: 5.day) do %>
 
-        <% if current_user.enable_funds %>
-            
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Funds</h6>
-                    <span>
-                        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_funds"><i class="fa-solid fa-caret-down"></i></a>
-                    </span>
-                </div>
-                <div class="card-body collapse show show_funds">
+        <% if current_user.enable_funds %>                        
+            <%= render ToggleCard.new(title: "Funds", css_class: "show_funds") do %>
+                <%= render "entities/vc_dashboard_menus" %>
 
-                    <%= render "entities/vc_dashboard_menus" %>
+                <% capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc) %>
 
-                    <% capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc) %>
-
-                    <% capital_commitments.each do |cc| %>
-                        <%= render "/capital_commitments/card", capital_commitment: cc %>
-                    <% end %>
-
-                </div>
-            </div>
+                <% capital_commitments.each do |cc| %>
+                    <%= render "/capital_commitments/card", capital_commitment: cc %>
+                <% end %>
+            <% end %>
 
         <% end %>
 
     
         <% investment_opportunities = policy_scope(InvestmentOpportunity) %>
         <% if investment_opportunities.count > 0 %>
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Opportunities</h6>
-                    <span>
-                        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_opp"><i class="fa-solid fa-caret-down"></i></a>
-                    </span>
-                </div>
-                <div class="card-body collapse show show_opp">
-                    <div class="row" >
-                        <% investment_opportunities.each do |investment_opportunity| %>
-                            <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity %>
-                        <% end %>
-                    </div>
-                </div>
-            </div>
+            <%= render ToggleCard.new(title: "Investment Opportunities", css_class: "show_ios") do %>
+                <% investment_opportunities.each do |investment_opportunity| %>
+                    <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity %>
+                <% end %>
+            <% end %>   
         <% end %>
 
     <% end %>
@@ -56,19 +35,10 @@
 
     
     <div class="card shadow mb-4">
-        <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
-            <h6 class="m-0 font-weight-bold text-primary">Entities</h6>
-            <span>
-                <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_entities"><i class="fa-solid fa-caret-down"></i></a>
-            </span>
-        </div>
-        <div class="card-body collapse show show_entities">
-            <div class="row" >
-                <%= render "entities/entities_dashboard_menus" %>     
-                <%= render "/entities/index",  
-                    entities: policy_scope(Entity).where(entity_type: "Company"), vc_view: true %>
-            </div>
-        </div>
+        <%= render ToggleCard.new(title: "Entities", css_class: "show_inv_entities") do %>
+            <%= render "/entities/index",  
+                entities: policy_scope(Entity).where(entity_type: "Company"), vc_view: true %>
+        <% end %>
     </div>
 
 </div>

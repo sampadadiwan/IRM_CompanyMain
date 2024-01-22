@@ -10,7 +10,8 @@ class EntitiesController < ApplicationController
   end
 
   def dashboard
-    @entities = Entity.all
+    @dashboard = current_user.custom_dashboard
+    redirect_to @dashboard if @dashboard.present?
   end
 
   def report

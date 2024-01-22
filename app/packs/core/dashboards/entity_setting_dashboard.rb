@@ -9,6 +9,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
     id: Field::Number,
+    custom_dashboards: Field::String,
     kpi_reminder_before: Field::Number,
     kpi_reminder_frequency: Field::String,
     sandbox: Field::BooleanEmoji,
@@ -57,6 +58,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     from_email
     reply_to
     cc
+    custom_dashboards
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -64,6 +66,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
   SHOW_PAGE_ATTRIBUTES = %i[
     id
     entity
+    custom_dashboards
     sandbox
     sandbox_emails
     from_email

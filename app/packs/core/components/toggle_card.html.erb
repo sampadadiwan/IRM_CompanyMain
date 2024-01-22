@@ -1,0 +1,15 @@
+<div class="card shadow mb-4" data-controller=<%=@controller%>>
+    <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary"><%= @title %> </h6>
+        <span>
+            <% if @allow_toggle %>
+                <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".<%=@css_class%>"><i class="fa-solid fa-caret-down"></i></a>
+            <% end %>
+        </span>
+    </div>
+    <div class="card-body collapse <%=@state%> <%=@css_class%>">
+        <div class="row" >
+            <%= content %>
+        </div>
+    </div>
+</div>

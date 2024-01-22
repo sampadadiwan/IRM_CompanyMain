@@ -4,70 +4,60 @@
 %>
 <% if params[:filter].present? || params[:q].present? || params[:ag].present? %>
 
-  <div class="card filter_form" data-controller="filter">
-    <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
-      <h6 class="m-0 font-weight-bold text-primary">Filter</h6>
-      <span>
-        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a>
-      </span>
+  <%= render ToggleCard.new(title: "Filter", css_class: "show_filter", controller: "filter") do %>
 
-    </div>
-    <div class="card-body collapse show show_details">
-      <% @q.build_condition if @q.conditions.empty? %>
+    <% @q.build_condition if @q.conditions.empty? %>
 
-      <% if disabled %>
-        <!-- Disable the form if the disabled flag is set -->
-        <fieldset disabled="disabled">
-          <%= search_form_for @q, method: :post do |f| %>
-            <%= render "/funds/filter" %>
-            <%= f.condition_fields do |c| %>
-              <%= render "/layouts/condition_fields", f: c, associations: associations %>
-            <% end %>
-          <% end %>
-        </fieldset>
-      <% else %>
+    <% if disabled %>
+      <!-- Disable the form if the disabled flag is set -->
+      <fieldset disabled="disabled">
         <%= search_form_for @q, method: :post do |f| %>
-            <%= render "/funds/filter" %>
-            <%= f.condition_fields do |c| %>
-              <%= render "/layouts/condition_fields", f: c, associations: associations %>
-            <% end %>
-
-            <div class="action float-end">        
-
-              <% if %w[capital_commitments account_entries].include?(params[:controller]) %>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="ag_grid" name="ag" value="true" <%= params[:ag].present? ? "checked" : nil %> >
-                <label class="form-check-label" for="ag_grid">Enable Pivots</label>
-              </div>
-              <% end %>
-
-              <% if %w[kpis].include?(params[:controller]) %>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" id="grid_view" name="grid_view" value="true" <%= params[:grid_view].present? ? "checked" : nil %> >
-                <label class="form-check-label" for="grid_view">Grid View</label>
-              </div>
-              <% end %>
-
-              <%= f.button "", class: "btn btn-outline-primary", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Search" do %>
-                <i class="ti ti-search"></i>
-              <% end %>
-
-              <%= link_to_add_fields '<i class="ti ti-plus"></i>'.html_safe, f, :condition, associations %>
-              
-              <%= link_to new_report_path, class: "btn btn-outline-info", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Save Report" do %>
-                <i class="ti ti-database"></i>
-              <% end %>
-            </div>
-          
-            <% hidden_fields.each do |key, value| %>
-              <%= hidden_field_tag key, value if value %>
-            <% end %>
-
+          <%= render "/funds/filter" %>
+          <%= f.condition_fields do |c| %>
+            <%= render "/layouts/condition_fields", f: c, associations: associations %>
+          <% end %>
         <% end %>
-      <% end %>
-      
-      
-    </div>
-  </div>
+      </fieldset>
+    <% else %>
+      <%= search_form_for @q, method: :post do |f| %>
+          <%= render "/funds/filter" %>
+          <%= f.condition_fields do |c| %>
+            <%= render "/layouts/condition_fields", f: c, associations: associations %>
+          <% end %>
 
+          <div class="action float-end">        
+
+            <% if %w[capital_commitments account_entries].include?(params[:controller]) %>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" id="ag_grid" name="ag" value="true" <%= params[:ag].present? ? "checked" : nil %> >
+              <label class="form-check-label" for="ag_grid">Enable Pivots</label>
+            </div>
+            <% end %>
+
+            <% if %w[kpis].include?(params[:controller]) %>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="checkbox" id="grid_view" name="grid_view" value="true" <%= params[:grid_view].present? ? "checked" : nil %> >
+              <label class="form-check-label" for="grid_view">Grid View</label>
+            </div>
+            <% end %>
+
+            <%= f.button "", class: "btn btn-outline-primary", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Search" do %>
+              <i class="ti ti-search"></i>
+            <% end %>
+
+            <%= link_to_add_fields '<i class="ti ti-plus"></i>'.html_safe, f, :condition, associations %>
+            
+            <%= link_to new_report_path, class: "btn btn-outline-info", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Save Report" do %>
+              <i class="ti ti-database"></i>
+            <% end %>
+          </div>
+        
+          <% hidden_fields.each do |key, value| %>
+            <%= hidden_field_tag key, value if value %>
+          <% end %>
+
+      <% end %>
+    <% end %>
+    <!-- End of ToggleCard --> 
+  <% end %>
 <% end %>

@@ -208,4 +208,15 @@ class User < ApplicationRecord
   def active_for_authentication?
     super && active
   end
+
+  def custom_dashboard
+    if entity.entity_setting.custom_dashboards.present?
+      entity.entity_setting.custom_dashboards.split(";").each do |dashboard_role|
+        dashboard, role = dashboard_role.split(":")
+        next unless role == self.curr_role || role.nil?
+
+        return dashboard
+      end
+    end
+  end
 end

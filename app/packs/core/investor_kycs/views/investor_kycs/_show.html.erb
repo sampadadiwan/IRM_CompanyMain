@@ -1,11 +1,4 @@
-<div class="card shadow mb-4">
-  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
-      <h6 class="m-0 font-weight-bold text-primary">Kyc <%= investor_kyc.full_name %></h6>
-      <span>
-        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a>
-      </span>
-  </div>
-  <div class="card-body collapse show show_details">
+<%= render ToggleCard.new(title: "KYC #{investor_kyc.full_name}", css_class: "show_inv_entities") do %>
 
   <table class="table table-bordered dataTable">
 
@@ -322,6 +315,4 @@
 
   </table>
 
-  </div>
-
-</div>
+<% end %>

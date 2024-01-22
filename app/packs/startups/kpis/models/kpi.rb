@@ -24,11 +24,30 @@ class Kpi < ApplicationRecord
     field
   end
 
+  def to_s
+    "#{name}: #{value}"
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[name period value notes]
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    ["kpi_report"]
+    %w[kpi_report entity]
+  end
+
+  def self.calculate_growth_rates(kpis)
+    growth_rates = []
+    cagr = 0
+    values = []
+
+    kpis.each_cons(2) do |current, previous|
+      values << current.value
+      growth_rate = ((current.value - previous.value) / previous.value) * 100
+      growth_rates << growth_rate
+      cagr += growth_rate
+    end
+
+    [growth_rates, (growth_rates.sum / kpis.length), values]
   end
 end

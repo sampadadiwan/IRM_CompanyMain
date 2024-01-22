@@ -47,6 +47,6 @@ class KpiReport < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    ["kpis"]
+    %w[kpis entity]
   end
 end

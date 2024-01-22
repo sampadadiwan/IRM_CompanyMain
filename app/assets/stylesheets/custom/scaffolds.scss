@@ -973,3 +973,9 @@ select {
     font-size: 1.1rem;
   }
 }
+
+h6 {
+  a {
+    color: var(--bs-primary);
+  }
+}

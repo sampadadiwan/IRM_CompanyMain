@@ -260,4 +260,8 @@ class Entity < ApplicationRecord
   def is_company?
     ["Company"].include?(entity_type)
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[category name]
+  end
 end

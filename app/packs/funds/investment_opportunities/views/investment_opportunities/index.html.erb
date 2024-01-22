@@ -1,6 +1,10 @@
 <%= render "/layouts/alerts" %>
 
-<%= turbo_frame_tag "investment_opportunities_list", target: "_top" do %>
-    <%= render "/investment_opportunities/index",  investment_opportunities: @investment_opportunities %>
-    <%= paginate @investment_opportunities %>
+<%= render ReportingComponent.new do %>
+
+    <%= turbo_frame_tag "investment_opportunities_list", target: "_top" do %>
+        <%= render "/investment_opportunities/index",  investment_opportunities: @investment_opportunities %>
+        <%= paginate @investment_opportunities %>
+    <% end %>
+
 <% end %>

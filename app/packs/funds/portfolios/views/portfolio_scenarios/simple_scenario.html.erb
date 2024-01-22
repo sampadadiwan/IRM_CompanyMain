@@ -25,109 +25,99 @@
   <% end %>
 
 
-<div class="dynamic_form card shadow mb-4" data-controller="access">
+  <%= render ToggleCard.new(title: "Scenarios", css_class: "show_scenario", controller: "access") do %>
 
-  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
-        <h6 class="m-0 font-weight-bold text-primary">Scenario </h6>
-    <span>
-        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".show_details"><i class="fa-solid fa-caret-down"></i></a>
-    </span>
-  </div>
-  <div class="card-body collapse show show_details">
+    <%= form_with(model: nil) do |form| %>
 
-  <%= form_with(model: nil) do |form| %>
+        <%= text_field_tag :entity_id, current_user.entity_id, class: "form-control", hidden: true %>
+        <%= text_field_tag :fund_id, @fund.id, class: "form-control", hidden: true  %>
+        <%= text_field_tag :user_id, current_user.id, class: "form-control", hidden: true  %>
 
-      <%= text_field_tag :entity_id, current_user.entity_id, class: "form-control", hidden: true %>
-      <%= text_field_tag :fund_id, @fund.id, class: "form-control", hidden: true  %>
-      <%= text_field_tag :user_id, current_user.id, class: "form-control", hidden: true  %>
+      <div class="row">
 
-    <div class="row">
+        <div class="form-group col">
+          <% scenario_date = params[:scenario_date].present? ? Date.parse(params[:scenario_date]) : Date.today %>
+          <%= label_tag :scenario_date %>
+          <%= date_field_tag :scenario_date, scenario_date, class: "form-control"  %>
+        </div>
 
-      <div class="form-group col">
-        <% scenario_date = params[:scenario_date].present? ? Date.parse(params[:scenario_date]) : Date.today %>
-        <%= label_tag :scenario_date %>
-        <%= date_field_tag :scenario_date, scenario_date, class: "form-control"  %>
       </div>
 
-    </div>
+        <div class="row" data-controller="call-copy">
+          <div class="form-group col">
+            <%= label_tag :portfolio_company %>
+          </div>
+          <div class="form-group col">
+            <%= label_tag :percentage_change, "% Change in FMV" %>
+            <small class="badge bg-info float-right"><a href="#" data-action="click->call-copy#copy_all_percentage_changes">Copy All</a></small>
+          </div>
+          <div class="form-group col text-success">
+            <%= label_tag :current_irr, "Current IRR" %>
+          </div>
+          <div class="form-group col text-primary">
+            <%= label_tag :scenario_irr, "Scenario IRR" %>
+          </div>
+        </div>
 
-      <div class="row" data-controller="call-copy">
+      <% @fund.aggregate_portfolio_investments.where(quantity: 1..).order("portfolio_company_name asc").each_with_index do |api, idx| %>
+      <div class="row">
+
         <div class="form-group col">
-          <%= label_tag :portfolio_company %>
+          <%= link_to api.to_s, aggregate_portfolio_investment_path(api), target: "_top" %>
+          <%= text_field_tag :aggregate_portfolio_investment_id, api.id, name: "scenario[#{api.id}][aggregate_portfolio_investment_id]", class: "form-control", hidden: true  %>
         </div>
+
         <div class="form-group col">
-          <%= label_tag :percentage_change, "% Change in FMV" %>
-          <small class="badge bg-info float-right"><a href="#" data-action="click->call-copy#copy_all_percentage_changes">Copy All</a></small>
+          <% percentage_change = params["scenario"].present? ? params["scenario"][api.id.to_s]["percentage_change"] : 0 %>
+          <%= number_field_tag :percentage_change, percentage_change, name: "scenario[#{api.id}][percentage_change]", class: "form-control percentage_change" %>
         </div>
+
+        <div class="form-group col text-success">
+          <% oxirr = orig_xirr[api.id] ? orig_xirr[api.id][:xirr] : 0 %>
+          <%= text_field_tag :current_irr, oxirr, class: "form-control", disabled: true %>
+        </div>
+
+        <div class="form-group col text-primary">
+          <% xirr = scenario_xirr.nil? ? 0 : scenario_xirr[api.id][:xirr] %>
+          <% puts "scenario_xirr[api.id][:xirr] = #{scenario_xirr[api.id][:xirr]}" if scenario_xirr %>
+          <%= text_field_tag :scenario_irr, xirr , class: "form-control", disabled: true %>
+        </div>
+
+      </div>
+      <% end %>
+
+
+      <div class="row">
+
+        <div class="form-group col">
+          <%= label_tag :fund %>
+          <%= text_field_tag :fund, @fund.name, class: "form-control", disabled: true %>
+        </div>
+
+        <div class="form-group col">
+        </div>
+
         <div class="form-group col text-success">
           <%= label_tag :current_irr, "Current IRR" %>
+          <%= text_field_tag :current_irr, fund_orig_xirr, name: "fund_orig_xirr", class: "form-control", disabled: true %>
+          <%= text_field_tag :current_irr, fund_orig_xirr, name: "fund_orig_xirr", class: "form-control", hidden: true %>
         </div>
+
         <div class="form-group col text-primary">
           <%= label_tag :scenario_irr, "Scenario IRR" %>
+          <%= text_field_tag :scenario_irr, fund_scenario_xirr, class: "form-control", disabled: true %>
         </div>
       </div>
 
-    <% @fund.aggregate_portfolio_investments.where(quantity: 1..).order("portfolio_company_name asc").each_with_index do |api, idx| %>
-    <div class="row">
 
-      <div class="form-group col">
-        <%= link_to api.to_s, aggregate_portfolio_investment_path(api), target: "_top" %>
-        <%= text_field_tag :aggregate_portfolio_investment_id, api.id, name: "scenario[#{api.id}][aggregate_portfolio_investment_id]", class: "form-control", hidden: true  %>
+
+      <div class="form-group">
+        <%= form.submit "Compute", {class: "btn btn-outline-primary"}%>
       </div>
-
-      <div class="form-group col">
-        <% percentage_change = params["scenario"].present? ? params["scenario"][api.id.to_s]["percentage_change"] : 0 %>
-        <%= number_field_tag :percentage_change, percentage_change, name: "scenario[#{api.id}][percentage_change]", class: "form-control percentage_change" %>
-      </div>
-
-      <div class="form-group col text-success">
-        <% oxirr = orig_xirr[api.id] ? orig_xirr[api.id][:xirr] : 0 %>
-        <%= text_field_tag :current_irr, oxirr, class: "form-control", disabled: true %>
-      </div>
-
-      <div class="form-group col text-primary">
-        <% xirr = scenario_xirr.nil? ? 0 : scenario_xirr[api.id][:xirr] %>
-        <% puts "scenario_xirr[api.id][:xirr] = #{scenario_xirr[api.id][:xirr]}" if scenario_xirr %>
-        <%= text_field_tag :scenario_irr, xirr , class: "form-control", disabled: true %>
-      </div>
-
-    </div>
     <% end %>
 
-
-    <div class="row">
-
-      <div class="form-group col">
-        <%= label_tag :fund %>
-        <%= text_field_tag :fund, @fund.name, class: "form-control", disabled: true %>
-      </div>
-
-      <div class="form-group col">
-      </div>
-
-      <div class="form-group col text-success">
-        <%= label_tag :current_irr, "Current IRR" %>
-        <%= text_field_tag :current_irr, fund_orig_xirr, name: "fund_orig_xirr", class: "form-control", disabled: true %>
-        <%= text_field_tag :current_irr, fund_orig_xirr, name: "fund_orig_xirr", class: "form-control", hidden: true %>
-      </div>
-
-      <div class="form-group col text-primary">
-        <%= label_tag :scenario_irr, "Scenario IRR" %>
-        <%= text_field_tag :scenario_irr, fund_scenario_xirr, class: "form-control", disabled: true %>
-      </div>
-    </div>
-
-
-
-    <div class="form-group">
-      <%= form.submit "Compute", {class: "btn btn-outline-primary"}%>
-    </div>
   <% end %>
 
-  </div>
-
-</div>
-
-<%= render "portfolio_scenarios/simple_scenario_charts", fund: @fund, orig_xirr:, scenario_xirr:, fund_orig_xirr:, fund_scenario_xirr: %>
+  <%= render "portfolio_scenarios/simple_scenario_charts", fund: @fund, orig_xirr:, scenario_xirr:, fund_orig_xirr:, fund_scenario_xirr: %>
 
 <% end %>

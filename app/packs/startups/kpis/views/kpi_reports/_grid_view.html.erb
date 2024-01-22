@@ -64,6 +64,10 @@
                                 <% else %>
                                     <%= kpi.display_value %> 
                                 <% end %>
+
+                                <% if kpi.notes.present? %>
+                                    <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>
+                                <% end %>
                             <% else %>
                                 N/A
                             <% end %>

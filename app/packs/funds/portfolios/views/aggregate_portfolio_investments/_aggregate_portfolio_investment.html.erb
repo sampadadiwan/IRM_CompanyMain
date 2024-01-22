@@ -28,5 +28,6 @@
   </td>
   <td>
     <%= link_to "Show", aggregate_portfolio_investment , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Add Valuation", new_valuation_path("valuation[owner_id]": aggregate_portfolio_investment.portfolio_company_id, "valuation[owner_type]": "Investor", "valuation[category]": aggregate_portfolio_investment.category, "valuation[sub_category]": aggregate_portfolio_investment.sub_category), {class: "btn btn-outline-success"}%>
   </td>
 </tr>
