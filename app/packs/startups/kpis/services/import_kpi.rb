@@ -1,7 +1,7 @@
 class ImportKpi < ImportUtil
   include Interactor
 
-  STANDARD_HEADERS = ["Name", "Value", "As Of", "Notes"].freeze
+  STANDARD_HEADERS = ["Name", "Period", "Value", "As Of", "Notes"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -11,6 +11,7 @@ class ImportKpi < ImportUtil
 
   def save_kpi(user_data, import_upload, custom_field_headers)
     name = user_data['Name'].strip
+    period = user_data['Period'].strip
     value = user_data['Value']
     as_of = Date.parse(user_data['As Of'].to_s)
     notes = user_data['Notes']
@@ -26,7 +27,7 @@ class ImportKpi < ImportUtil
     Rails.logger.debug kpi_report.to_json
     Rails.logger.debug { "############ kpi_report = #{kpi_report.errors.full_messages}" }
 
-    kpi = Kpi.where(name:, entity_id:, kpi_report_id: kpi_report.id).first
+    kpi = Kpi.where(name:, period:, entity_id:, kpi_report_id: kpi_report.id).first
     attach_uploaded_document(kpi_report, import_upload)
 
     if kpi.present?
@@ -36,7 +37,7 @@ class ImportKpi < ImportUtil
 
       Rails.logger.debug user_data
 
-      kpi = Kpi.new(name:, notes:, value:, display_value: value, entity_id:,
+      kpi = Kpi.new(name:, period:, notes:, value:, display_value: value, entity_id:,
                     kpi_report_id: kpi_report.id, import_upload_id: import_upload.id)
       setup_custom_fields(user_data, kpi, custom_field_headers)
 
