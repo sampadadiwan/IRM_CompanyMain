@@ -5,7 +5,7 @@ class FundsController < ApplicationController
   def index
     @funds = policy_scope(Fund).includes(:entity)
     @funds = @funds.where(entity_id: params[:entity_id]) if params[:entity_id].present?
-    @funds = @funds.page(params[:page]) if params[:all].blank? && params[:page].present?
+    @funds = @funds.page(params[:page]) if params[:card].present? || params[:all].present?
   end
 
   def export
