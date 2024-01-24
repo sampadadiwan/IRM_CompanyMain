@@ -31,7 +31,10 @@
 
     <tbody>
       <% @notifications.each do |notification| %>
-        <%= render "notifications/notification", notification: notification.to_notification %>
+        <% begin %>
+          <%= render "notifications/notification", notification: notification.to_notification %>
+        <% rescue %>
+        <% end %>
       <% end %>
     </tbody>
   </table>

@@ -36,6 +36,8 @@ class Kpi < ApplicationRecord
     %w[kpi_report entity]
   end
 
+  # Note the input kpis must have the same name, this is not checked inside the method
+  # Returns an array of growth rates, the average growth rate and an array of values used in the growth rate calculation
   def self.calculate_growth_rates(kpis)
     growth_rates = []
     cagr = 0

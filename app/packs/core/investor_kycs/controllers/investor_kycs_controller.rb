@@ -11,12 +11,13 @@ class InvestorKycsController < ApplicationController
 
   # GET /investor_kycs or /investor_kycs.json
   def index
+    authorize(InvestorKyc)
+
     @q = InvestorKyc.ransack(params[:q])
     @investor_kycs = policy_scope(@q.result)
     @investor_kycs = apply_scopes(@investor_kycs)
 
     @investor = Investor.find(params[:investor_id]) if params[:investor_id].present?
-    authorize(InvestorKyc)
 
     @investor_kycs = KycSearch.perform(@investor_kycs, current_user, params)
 

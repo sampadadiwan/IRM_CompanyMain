@@ -9,6 +9,8 @@ class InvestorKycPolicy < ApplicationPolicy
         # We cant show them all the KYCs, only the ones for the funds they have been permissioned
         fund_ids = Fund.for_employee(user).pluck(:id)
         scope.joins(capital_commitments: :fund).where('funds.id': fund_ids)
+      else
+        scope.none
       end
     end
   end
