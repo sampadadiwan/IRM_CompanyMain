@@ -83,6 +83,9 @@ class InvestorKyc < ApplicationRecord
       investor.approved_users.each do |user|
         InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method:, msg:, user_id: user.id).deliver_later(user)
       end
+      # rubocop:disable Rails/SkipsModelValidations
+      update_column(:send_kyc_form_to_user, false)
+      # rubocop:enable Rails/SkipsModelValidations
     end
   end
 
