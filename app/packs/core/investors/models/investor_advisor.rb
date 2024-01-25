@@ -43,11 +43,14 @@ class InvestorAdvisor < ApplicationRecord
     user.add_role(:investor_advisor)
   end
 
-  def self.revert(user)
+  def self.revert(user, persona)
     user.entity_id = user.advisor_entity_id
     user.investor_advisor_id = nil
     user.setup_defaults
     user.save
+
+    # In case we also have a persona sent in
+    user.set_persona(persona) if persona.present?
 
     # Reset the roles to the ones specified in the advisor_entity_roles
     user.roles.delete_all

@@ -9,4 +9,8 @@ class CustomNotification < ApplicationRecord
   def to_s
     subject
   end
+
+  def show_link
+    !no_link
+  end
 end

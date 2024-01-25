@@ -69,7 +69,7 @@ class InvestorAdvisorsController < ApplicationController
       redirect_back(fallback_location: root_path, notice: "You have now been switched to the advisor role for #{@investor_advisor.entity.name}.")
     else
       # Switch back to normal
-      InvestorAdvisor.revert(current_user)
+      InvestorAdvisor.revert(current_user, params[:persona])
       redirect_back(fallback_location: root_path, notice: "You have now been switched out of the advisor role.")
     end
   end

@@ -133,7 +133,8 @@
             Roles
           </td>
           <td>
-            <%=@user.roles.collect(&:name) %>
+            Role Enabled: <%=@user.roles.collect(&:name) %><br>
+            Current Role: <%= @user.curr_role %>
           </td>
         </tr>
 

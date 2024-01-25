@@ -1,13 +1,18 @@
-<%= form_with(model: nil, method: :post, url: "/investor_advisors/switch", id: "persona_form") do |form| %>
+<%= form_with(model: nil, method: :post, url: "/investor_advisors/switch", id: "investor_advisors_form") do |form| %>
   <% 
-    personas = InvestorAdvisor.where(user_id: current_user.id).map{ |ia| [ia.entity.name, ia.id] }
+    investor_advisors = InvestorAdvisor.where(user_id: current_user.id).map{ |ia| [ia.entity.name, ia.id] }
   %>
   <div class="form-group" data-controller="persona">
-    <% selected = params[:persona].present? ? params[:persona] : current_user.investor_advisor_id %>
-    <%= form.select :persona, personas, {selected: selected, include_blank: 'Self'}, 
-        { id: "persona", class: "form-control", name: "id",
+
+    <% selected = params[:investor_advisor_id].present? ? params[:investor_advisor_id] : current_user.investor_advisor_id %>
+  
+    <%= form.select :investor_advisor, investor_advisors, {selected: selected, include_blank: 'Self'}, 
+        { id: "investor_advisor", class: "form-control", name: "id",
         data: { action: "change->persona#setPersona", toggle: "tooltip", title: "Choose Persona" } } %>
+  
   </div>
+
+  <%= form.text_field :persona, id: "persona", name: "persona", hidden: true %>
 
   <%= form.submit "Submit", {hidden: true, id: "submit"}%>
 

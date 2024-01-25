@@ -40,20 +40,25 @@ class ImportCapitalCommitment < ImportUtil
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
     raise "Investor not found" unless investor
 
+    update_only = user_data["Update Only"]
     folio_id, unit_type, commitment_type, commitment_date, folio_currency, onboarding_completed = get_params(user_data)
 
-    # Make the capital_commitment
-    capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:,
-                                               fund_close: user_data["Fund Close"],
-                                               commitment_type:, commitment_date:,
-                                               onboarding_completed:, imported: true,
-                                               fund:, investor:, investor_name: investor.investor_name,
-                                               folio_currency:, unit_type:,
-                                               import_upload_id: import_upload.id,
-                                               esign_emails: user_data["Investor Signatory Emails"],
-                                               notes: user_data["Notes"])
+    if update_only.present? && %w[yes y true].include?(update_only.downcase)
+      capital_commitment = CapitalCommitment.where(entity_id: import_upload.entity_id, folio_id:, fund_id: fund.id, investor_id: investor.id).first
+      raise "Capital Commitment not found for #{folio_id}" unless capital_commitment
+    else
+      # Make the capital_commitment
+      capital_commitment = CapitalCommitment.new(entity_id: import_upload.entity_id, folio_id:, fund:, folio_currency:)
+      capital_commitment.folio_committed_amount = user_data["Committed Amount"].to_d
+    end
 
-    capital_commitment.folio_committed_amount = user_data["Committed Amount"].to_d
+    capital_commitment.assign_attributes(fund_close: user_data["Fund Close"],
+                                         commitment_type:, commitment_date:,
+                                         onboarding_completed:, imported: true,
+                                         investor:, investor_name: investor.investor_name,
+                                         unit_type:, import_upload_id: import_upload.id,
+                                         esign_emails: user_data["Investor Signatory Emails"],
+                                         notes: user_data["Notes"])
 
     get_kyc(user_data, investor, fund, capital_commitment)
 

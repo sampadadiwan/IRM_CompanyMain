@@ -101,18 +101,18 @@ class User < ApplicationRecord
     elsif entity.entity_type == "Holding"
       add_role :holding
       self.curr_role = :holding
-    elsif ["Investor", "Investment Advisor", "Family Office"].include?(entity.entity_type) || InvestorAccess.where(user_id: id).first.present?
-      add_role :investor
-      self.curr_role ||= :investor
     elsif ["Investor Advisor"].include?(entity.entity_type)
       add_role :employee
       add_role :investor_advisor
-      self.curr_role ||= :employee
+      self.curr_role = :employee
       # This is specifically set for Investor Advisors. It is the orig entity_id of the advisor, and cannot change
       self.advisor_entity_id = entity_id
     elsif entity.is_fund?
       add_role :employee
       self.curr_role = :employee
+    elsif ["Investor", "Investment Advisor", "Family Office"].include?(entity.entity_type) || InvestorAccess.where(user_id: id).first.present?
+      add_role :investor
+      self.curr_role = :investor
     end
 
     self.permissions = User.permissions.keys if permissions.blank?
@@ -213,10 +213,15 @@ class User < ApplicationRecord
     if entity.entity_setting.custom_dashboards.present?
       entity.entity_setting.custom_dashboards.split(";").each do |dashboard_role|
         dashboard, role = dashboard_role.split(":")
-        next unless role == self.curr_role || role.nil?
+        next unless role == curr_role || role.nil?
 
         return dashboard
       end
     end
+  end
+
+  def set_persona(curr_role)
+    self.curr_role = curr_role if has_cached_role?(curr_role.to_sym)
+    save
   end
 end

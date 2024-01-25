@@ -32,7 +32,8 @@
     <tbody>
       <% @notifications.each do |notification| %>
         <% begin %>
-          <%= render "notifications/notification", notification: notification.to_notification %>
+          <%  notification = notification.to_notification %>
+          <%= render "notifications/notification", notification: notification if notification.record %>
         <% rescue %>
         <% end %>
       <% end %>

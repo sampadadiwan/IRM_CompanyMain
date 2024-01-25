@@ -65,6 +65,7 @@ class ImportUtil
   def post_process(import_upload, context); end
 
   def setup_custom_fields(user_data, model, custom_field_headers)
+    custom_field_headers -= ["Update Only"]
     # Were any custom fields passed in ? Set them up
     if custom_field_headers.length.positive?
       model.properties ||= {}

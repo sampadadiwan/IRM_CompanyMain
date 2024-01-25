@@ -9,8 +9,11 @@ export default class extends Controller {
   setPersona(event) {    
     // Make the call
     console.log("setPersona called");
-    let form = $("#persona_form");
+    let form = $(event.target).closest("form");
     let submit = form.find("input[type='submit']");
+    if ($("#investor_advisor").val().length == 0) {
+      console.log("investor_advisor is empty");
+    }
     submit.click();
   }
 

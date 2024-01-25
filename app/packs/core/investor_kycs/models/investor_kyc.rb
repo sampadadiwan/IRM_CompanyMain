@@ -66,8 +66,12 @@ class InvestorKyc < ApplicationRecord
            :call_amount_cents, :distribution_amount_cents, :uncalled_amount_cents,
            with_currency: ->(i) { i.entity.currency }
 
-  after_commit :send_kyc_form, if: :saved_change_to_send_kyc_form_to_user?
+  after_commit lambda {
+    SendKycFormJob.perform_later(id) if saved_change_to_send_kyc_form_to_user? && send_kyc_form_to_user
+  }
 
+  # Should be called only from SendKycFormJob
+  # If not this leads to bugs where the InvestorKycNotification cannot be created when the kyc_type changes
   def send_kyc_form(reminder: false)
     if send_kyc_form_to_user || reminder
       email_method = :notify_kyc_required

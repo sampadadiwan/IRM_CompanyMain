@@ -40,7 +40,8 @@
             <% if current_user && current_user.advisor_entity_id.present? %>
                 <div class="topbar-divider "></div>
                 <%= render "/investor_advisors/personas" %>
-            <% elsif current_user && 
+            <% end %>
+            <% if current_user && !current_user.investor_advisor? &&
                 (   
                     current_user.has_cached_role?(:investor) || 
                     current_user.has_cached_role?(:holding) 
