@@ -14,8 +14,8 @@
   data_source ||= capital_remittances_path(params: params.to_unsafe_h, format: :json, all: true, status: "", verified: "", import_upload_id:) 
   
   xl_link = download_xl_link(data_source) 
-  params = { fund_id: fund_id, capital_call_id: capital_call_id, capital_commitment_id: capital_commitment_id }
-  column_names, field_list = get_columns(CapitalRemittance, params:) 
+  col_params = { fund_id: fund_id, capital_call_id: capital_call_id, capital_commitment_id: capital_commitment_id }
+  column_names, field_list = get_columns(CapitalRemittance, params: col_params) 
 %>
 
               

@@ -18,8 +18,8 @@
                                               import_upload_id:, format: :json, all: true)  
     xl_link = download_xl_link(data_source) 
     lazy_load_data ||= false 
-    params = { fund_id: fund_id }
-    column_names, field_list = get_columns(CapitalCommitment, fund_id:) 
+    col_params = { fund_id: fund_id }
+    column_names, field_list = get_columns(CapitalCommitment, params: col_params) 
   %>
 
   <%= render "/capital_commitments/index_header", fund:, xl_link:, title: %>
