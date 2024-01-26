@@ -1,6 +1,6 @@
 <% if current_user %>
     <% notification_count = 
-        current_user.notifications.unread.count + current_user.entity.notifications.unread.count %>
+        current_user.notifications.unread.count %>
 
     <% if notification_count > 0 %>
         <!-- ------------------------------- -->
@@ -20,7 +20,7 @@
             </div>
 
             <div class="py-6 px-7 mb-1">
-                <a href="/notifications" class="btn btn-outline-primary w-100">See All Notifications</a>
+                <a href="/notifications?user_id=<%=current_user.id%>" class="btn btn-outline-primary w-100">See All Notifications</a>
             </div>
             </div>
         </li>

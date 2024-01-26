@@ -2,9 +2,20 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Notifications</h1>
   <span>
-    <%= link_to "Mark All As Read", notifications_path(mark_as_read: true), class: "btn btn-outline-info" %>
-    <%= link_to "View All", notifications_path(all: true), class: "btn btn-outline-warning" %>
-    <%= link_to "View Unread", notifications_path(), class: "btn btn-outline-success" %>
+    <div class="btn-group hideMobP">
+      <div class="dropdown">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Received
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          <%= link_to "View Unread", notifications_path(), class: "dropdown-item" %>          
+          <%= link_to "View All", notifications_path(all: true), class: "dropdown-item" %>
+          <%= link_to "Mark All As Read", notifications_path(mark_as_read: true), class: "dropdown-item" %>
+        </div>
+      </div>
+    </div>
+    <%= link_to "Sent", notifications_path(all: true, entity_id: current_user.entity_id), class: "btn btn-outline-warning" %>
   </span>
 </div>
 <div class="table-responsive" data-controller="datatable">
@@ -32,9 +43,9 @@
     <tbody>
       <% @notifications.each do |notification| %>
         <% begin %>
-          <%  notification = notification.to_notification %>
-          <%= render "notifications/notification", notification: notification if notification.record %>
-        <% rescue %>
+          <%#  notification = notification.to_notification %>
+          <%= render "notifications/notification", notification: notification %>
+        <%# rescue %>
         <% end %>
       <% end %>
     </tbody>

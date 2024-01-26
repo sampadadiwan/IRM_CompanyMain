@@ -1,19 +1,27 @@
 <%= render "/layouts/alerts" %>
-<table class="table table-bordered dataTable">
+<table class="table table-bordered dataTable no_hover_table">
   <tr>
     <td>
       Recipient
     </td>
     <td>
-      <%= @notification.recipient_id %>
+      <%= @notification.recipient %>
     </td>
   </tr>
   <tr>
     <td>
-      Type
+      For
     </td>
     <td>
-      <%= @notification.type %>
+      <%= link_to @notification.type, @notification.to_notification.url %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Message
+    </td>
+    <td>
+      <%= link_to @notification.to_notification.message %>
     </td>
   </tr>
   <tr>
@@ -21,7 +29,8 @@
       Params
     </td>
     <td>
-      <%= @notification.params %>
+      <% table_options = { table_class: "table table-bordered dataTable" } %>
+      <%= Json2table::get_html_table(@notification.params.to_json, table_options).html_safe %>
     </td>
   </tr>
   <tr>

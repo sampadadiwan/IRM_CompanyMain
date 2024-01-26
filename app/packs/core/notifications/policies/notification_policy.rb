@@ -1,7 +1,11 @@
 class NotificationPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      scope.where(recipient_type: "User", recipient_id: user.id).or(scope.where(recipient_type: "Entity", recipient_id: user.entity_id))
+      if user.curr_role == "investor"
+        scope.where(recipient_type: "User", recipient_id: user.id)
+      else
+        scope.where(entity_id: user.entity_id).or(scope.where(recipient_type: "User", recipient_id: user.id))
+      end
     end
   end
 
@@ -10,11 +14,11 @@ class NotificationPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.id == record.recipient_id && record.recipient_type == "User") || (user.entity_id == record.recipient_id && record.recipient_type == "Entity") || super_user?
+    (user.id == record.recipient_id && record.recipient_type == "User") || record.entity_id == user.entity_id || super_user?
   end
 
   def mark_as_read?
-    show?
+    user.id == record.recipient_id && record.recipient_type == "User"
   end
 
   def create?

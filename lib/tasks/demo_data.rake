@@ -237,7 +237,8 @@ namespace :irm do
             InvestorAccess.create!(investor:inv, user: user, first_name: user.first_name, last_name: user.last_name,  email: user.email, approved: rand(2), entity_id: inv.entity_id)
           end
 
-          FactoryBot.create(:investor_kyc, entity: e, investor: inv)
+          kyc = FactoryBot.build(:investor_kyc, entity: e, investor: inv)
+          kyc.save(validate: false)
         end
       end
 

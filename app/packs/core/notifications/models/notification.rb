@@ -9,4 +9,10 @@ class Notification < ApplicationRecord
     entity_name_in_msg = message&.downcase&.index("by") ? message&.split(/(?i)(by)/)&.last&.strip : ""
     { entity_name.to_s => entity_name_in_msg }
   end
+
+  before_save :set_msg
+  def set_msg
+    msg = to_notification.message
+    params[:msg] = msg if msg.present?
+  end
 end

@@ -4,8 +4,18 @@ class NotificationsController < ApplicationController
   # GET /notifications or /notifications.json
   def index
     @notifications = policy_scope(Notification).newest_first.page(params[:page])
+    # Filter by entity
+    @notifications = if params[:entity_id].present?
+                       @notifications.where(entity_id: params[:entity_id])
+                     else
+                       # Filter by user
+                       @notifications.where(recipient_id: current_user.id, recipient_type: "User")
+                     end
+    # Get only unread notifications
     @notifications = @notifications.unread if params[:all].blank?
-    if params[:mark_as_read].present?
+
+    # Mark all as read
+    if params[:mark_as_read].present? && params[:user_id].present?
       @notifications.mark_as_read!
       current_user.touch # This is to bust the topbar cache which shows new notifications
     end
@@ -15,8 +25,10 @@ class NotificationsController < ApplicationController
 
   # GET /notifications/1 or /notifications/1.json
   def show
-    @notification.mark_as_read!
-    redirect_to @notification.to_notification.url, allow_other_host: true
+    if policy(@notification).mark_as_read?
+      @notification.mark_as_read!
+      redirect_to @notification.to_notification.url, allow_other_host: true
+    end
   end
 
   def mark_as_read
