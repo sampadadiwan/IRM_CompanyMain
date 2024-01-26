@@ -13,8 +13,7 @@ class CapitalRemittancePayment < ApplicationRecord
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_remittance.capital_commitment.folio_currency }
 
   before_save :set_amount, if: :folio_amount_cents_changed?
-  after_commit :unverify_remittance, unless: :destroyed?
-
+  
   counter_culture :capital_remittance,
                   column_name: 'collected_amount_cents',
                   delta_column: 'amount_cents',
@@ -24,6 +23,9 @@ class CapitalRemittancePayment < ApplicationRecord
                   column_name: 'folio_collected_amount_cents',
                   delta_column: 'folio_amount_cents',
                   execute_after_commit: true
+
+  # This must come after the counter_cultures above                  
+  after_commit :unverify_remittance #, unless: :destroyed?
 
   validates_uniqueness_of :reference_no, scope: :fund_id, if: -> { reference_no.present? }
   validates :reference_no, length: { maximum: 40 }
