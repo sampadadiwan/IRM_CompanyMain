@@ -1,3 +1,4 @@
+# Deprecated, now WhatsApp msgs are saved in Notification
 module DeliveryMethods
   class WhatsAppLogger < Noticed::DeliveryMethods::Base
     def deliver
