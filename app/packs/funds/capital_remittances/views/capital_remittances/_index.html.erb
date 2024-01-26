@@ -3,18 +3,26 @@
   search ||= "Yes"
   capital_call ||= nil 
   capital_commitment ||= nil 
+  fund ||= nil
+  fund_id ||= params[:fund_id] || fund&.id
   capital_call_id ||= params[:capital_call_id] || capital_call&.id 
   capital_commitment_id ||= params[:capital_commitment_id] || capital_commitment&.id 
   import_upload_id ||= params[:import_upload_id]
 %>
 
-<% data_source ||= capital_remittances_path(params: params.to_unsafe_h, format: :json, all: true, status: "", verified: "", import_upload_id:) %>
+<% 
+  data_source ||= capital_remittances_path(params: params.to_unsafe_h, format: :json, all: true, status: "", verified: "", import_upload_id:) 
+  
+  xl_link = download_xl_link(data_source) 
+  params = { fund_id: fund_id, capital_call_id: capital_call_id, capital_commitment_id: capital_commitment_id }
+  column_names, field_list = get_columns(CapitalRemittance, params:) 
+%>
 
-<% xl_link = download_xl_link(data_source) %>
               
 <div data-controller="remittances"
      data-remittances-lazy-load-data-value=<%= lazy_load_data %>
-     data-remittances-table-name-value="#capital_remittances">
+     data-remittances-table-name-value="#capital_remittances"
+     data-remittances-field-list-value=<%=field_list%> >
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
@@ -69,62 +77,14 @@
     </span>
   </div>
 
-  
 
   
-
   <div class="table-responsive">
     <% if lazy_load_data %>
       <a class="load_data_link" data-action="click->remittances#loadData"><span>Load Data</span></a>
     <% end %>
 
-    <% if capital_call_id.blank? && capital_commitment_id.blank? %>        
-      <input type="text" id="capital_remittance_cols" hidden value="all">
-    <% end %>
-
-    <table id="capital_remittances" class="table table-bordered dataTable action_table"
-        data-source="<%= data_source %>" style="width:100%" >
-
-      <thead>
-        <tr>
-          <% if capital_call_id.blank? && capital_commitment_id.blank? %>        
-          <th>
-            Fund
-          </th>
-          <% end %>
-          <th>
-            Investor
-          </th>
-          <th>
-            Capital Call
-          </th>
-          <th>
-            Folio No
-          </th>
-          <th>
-            Status
-          </th>
-          <th>
-            Verified
-          </th>
-          <th>
-            Due Amount
-          </th>
-          <th>
-            Collected Amount
-          </th>
-          <th>
-            Payment Date
-          </th>
-          <th>
-          </th>
-        </tr>
-      </thead>
-
-      <tbody>
-      </tbody>
-
-    </table>
+    <%= render CustomTable.new(data_source:, id: "capital_remittances", column_names:) %>
 
   </div>
 </div>

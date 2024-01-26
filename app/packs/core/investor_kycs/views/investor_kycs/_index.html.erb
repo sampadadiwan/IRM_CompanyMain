@@ -91,14 +91,7 @@
   </div>
 
   <%
-    # Default Columns for KYC
-    column_names ||= InvestorKyc::STANDARD_COLUMN_NAMES.join(",")
-    field_list ||= InvestorKyc::STANDARD_COLUMN_FIELDS.join(",")
-
-    # Custom Columns if applicable
-    entity = @current_entity.presence || current_user.entity
-    custom_cols = entity.customization_flags.investor_kycs_custom_cols?
-    column_names, field_list = custom_grid_columns(entity, "InvestorKyc")  if custom_cols
+    column_names, field_list = get_columns(InvestorKyc, params: {no_fund: true}) 
   %>
 
    <div class="table-responsive" data-controller="investor-kycs"

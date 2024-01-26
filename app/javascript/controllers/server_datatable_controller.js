@@ -107,10 +107,11 @@ export default class ServerDatatableController extends Controller {
     }    
   }
 
-  loadData() {
-    console.log("loadData called");
+  loadData() {    
     let table = $(this.tableNameValue).DataTable();
-    table.ajax.url( $(this.tableNameValue).data('source') ).load();
+    let dataSource = $(this.tableNameValue).data('source')
+    console.log(`loadData called table = ${this.tableNameValue} dataSource= ${dataSource}`);
+    table.ajax.url( dataSource ).load();
   }
 
   replaceQueryParam(param, newval, path) {

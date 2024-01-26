@@ -10,6 +10,9 @@ class CapitalRemittance < ApplicationRecord
   include CapitalRemittanceCallBasis
   include RansackerAmounts
 
+  STANDARD_COLUMN_NAMES = ["Investor", "Capital Call", "Folio No", "Status", "Verified", "Due Amount", "Collected Amount", "Payment Date", " "].freeze
+  STANDARD_COLUMN_FIELDS = %w[investor_name capital_call_name folio_id status verified due_amount collected_amount payment_date dt_actions].freeze
+
   update_index('capital_remittance') { self if index_record? }
 
   belongs_to :entity

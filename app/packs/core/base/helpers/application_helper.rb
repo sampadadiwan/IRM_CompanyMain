@@ -35,6 +35,42 @@ module ApplicationHelper
     # Get the custom column db field names
     grid_column_values = form_type.form_custom_fields.where(field_type: "GridColumns", name: "grid_column_values").last
     # Return the custom column names and values
-    [grid_column_names&.meta_data, grid_column_values&.meta_data]
+    [grid_column_names&.meta_data&.split(","), grid_column_values&.meta_data&.split(",")]
+  end
+
+  def get_columns(model_class, params: {})
+    # Default Columns for KYC
+    column_names ||= model_class::STANDARD_COLUMN_NAMES
+    field_list ||= model_class::STANDARD_COLUMN_FIELDS
+
+    # Custom Columns if applicable
+    entity = @current_entity.presence || current_user.entity
+    custom_cols = entity.customization_flags.send(:"#{model_class.name.underscore}_custom_cols?")
+    column_names, field_list = custom_grid_columns(entity, model_class.name) if custom_cols
+
+    # Add Fund if fund is not present
+    if params[:no_fund].blank? && params[:fund_id].blank? && params[:capital_call_id].blank? && params[:capital_commitment_id].blank?
+      column_names = ["Fund"] + column_names
+      field_list = ["fund_name"] + field_list
+    end
+
+    # Remove Capital Call if capital call is present
+    if params[:capital_call_id].present?
+      column_names -= ["Capital Call"]
+      field_list -= ["capital_call_name"]
+    end
+
+    # Remove Investor and Folio if capital commitment is present
+    if params[:capital_commitment_id].present?
+      column_names -= ["Investor", "Folio No"]
+      field_list -= %w[investor_name folio_id]
+    end
+
+    if params[:investor_id].present?
+      column_names -= ["Investor"]
+      field_list -= %w[investor_name]
+    end
+
+    [column_names.join(","), field_list.join(",")]
   end
 end

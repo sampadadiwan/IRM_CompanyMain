@@ -1,0 +1,2 @@
+module CapitalRemittancesHelper
+end

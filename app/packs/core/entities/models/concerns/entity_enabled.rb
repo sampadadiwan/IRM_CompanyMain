@@ -12,7 +12,7 @@ module EntityEnabled
     # Add new flags to the end of this list
     flag :permissions, %i[enable_documents enable_deals enable_investments enable_holdings enable_secondary_sale enable_funds enable_inv_opportunities enable_options enable_captable enable_investors enable_account_entries enable_units enable_fund_portfolios enable_kpis enable_kycs enable_support enable_approvals enable_reports enable_whatsapp]
 
-    flag :customization_flags, %i[investor_kycs_custom_cols capital_commitment_custom_cols]
+    flag :customization_flags, %i[investor_kyc_custom_cols capital_commitment_custom_cols capital_remittance_custom_cols]
   end
 
   # This is for legacy code only, user entity.permissions.enable_xyz? going forward
