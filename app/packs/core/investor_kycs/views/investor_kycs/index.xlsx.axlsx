@@ -4,12 +4,12 @@ form_type, custom_field_names, custom_headers = get_form_type("IndividualKyc")
 
 wb.add_worksheet(name: "IndividualKyc") do |sheet|
   # Create the header row
-  sheet.add_row(["Investor", "Full Name", "PAN", "Address", "Bank Account", "IFSC Code", "Committed Amount", "Called Amount", "Collected Amount", "Distributed Amount"] + custom_headers)
+  sheet.add_row(["Investor", "Full Name", "PAN", "Address", "Bank Account", "IFSC Code", "Agreement Committed Amount", "Committed Amount", "Called Amount", "Collected Amount", "Distributed Amount"] + custom_headers)
 
   # Create entries for each item
   @investor_kycs.individual.each do |cc|
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
-    sheet.add_row [cc.investor.investor_name, cc.full_name, cc.PAN, cc.address, cc.bank_account_number, cc.ifsc_code, cc.custom_committed_amount.to_f, cc.call_amount.to_f, cc.collected_amount.to_f, cc.distribution_amount.to_f] + custom_field_values
+    sheet.add_row [cc.investor.investor_name, cc.full_name, cc.PAN, cc.address, cc.bank_account_number, cc.ifsc_code, cc.agreement_committed_amount.to_f, cc.custom_committed_amount.to_f, cc.call_amount.to_f, cc.collected_amount.to_f, cc.distribution_amount.to_f] + custom_field_values
   end
 end
 
@@ -17,11 +17,11 @@ form_type, custom_field_names, custom_headers = get_form_type("NonIndividualKyc"
 
 wb.add_worksheet(name: "NonIndividualKyc") do |sheet|
   # Create the header row
-  sheet.add_row(["Investor", "Full Name", "PAN", "Address", "Bank Account", "IFSC Code", "Committed Amount", "Called Amount", "Collected Amount", "Distributed Amount"] + custom_headers)
+  sheet.add_row(["Investor", "Full Name", "PAN", "Address", "Bank Account", "IFSC Code", "Agreement Committed Amount", "Committed Amount", "Called Amount", "Collected Amount", "Distributed Amount"] + custom_headers)
 
   # Create entries for each item
   @investor_kycs.non_individual.each do |cc|
     custom_field_values = get_custom_values(cc, form_type, custom_field_names)
-    sheet.add_row [cc.investor.investor_name, cc.full_name, cc.PAN, cc.address, cc.bank_account_number, cc.ifsc_code, cc.custom_committed_amount.to_f, cc.call_amount.to_f, cc.collected_amount.to_f, cc.distribution_amount.to_f] + custom_field_values
+    sheet.add_row [cc.investor.investor_name, cc.full_name, cc.PAN, cc.address, cc.bank_account_number, cc.ifsc_code, cc.agreement_committed_amount.to_f, cc.custom_committed_amount.to_f, cc.call_amount.to_f, cc.collected_amount.to_f, cc.distribution_amount.to_f] + custom_field_values
   end
 end
