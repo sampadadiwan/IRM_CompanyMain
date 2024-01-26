@@ -2,6 +2,9 @@ class InvestorKyc < ApplicationRecord
   STANDARD_COLUMN_NAMES = ["Investor", "Full Name", "Type", "Pan", "Pan Verified", "Committed Amount", "Collected Amount", "Bank Verified", "Kyc Verified", "Expired", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[investor_name full_name kyc_type pan pan_verified committed_amount collected_amount bank_verified verified expired dt_actions].freeze
 
+  INVESTOR_COLUMN_NAMES = STANDARD_COLUMN_NAMES - ["Investor"]
+  INVESTOR_COLUMN_FIELDS = STANDARD_COLUMN_FIELDS - ["investor_name"]
+
   # Make all models searchable
   update_index('investor_kyc') { self if index_record?(InvestorKycIndex) }
   include WithCustomField

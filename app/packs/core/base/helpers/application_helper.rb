@@ -40,8 +40,8 @@ module ApplicationHelper
 
   def get_columns(model_class, params: {})
     # Default Columns for KYC
-    column_names ||= model_class::STANDARD_COLUMN_NAMES
-    field_list ||= model_class::STANDARD_COLUMN_FIELDS
+    column_names ||= params[:column_names].presence || model_class::STANDARD_COLUMN_NAMES
+    field_list ||= params[:column_fields].presence || model_class::STANDARD_COLUMN_FIELDS
 
     # Custom Columns if applicable
     entity = @current_entity.presence || current_user.entity

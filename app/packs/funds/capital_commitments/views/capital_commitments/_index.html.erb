@@ -18,7 +18,12 @@
                                               import_upload_id:, format: :json, all: true)  
     xl_link = download_xl_link(data_source) 
     lazy_load_data ||= false 
+
     col_params = { fund_id: fund_id }
+    if current_user.curr_role == "investor"
+      col_params[:column_names] = CapitalCommitment::INVESTOR_COLUMN_NAMES
+      col_params[:column_fields] = CapitalCommitment::INVESTOR_COLUMN_FIELDS
+    end
     column_names, field_list = get_columns(CapitalCommitment, params: col_params) 
   %>
 
