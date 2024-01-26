@@ -23,7 +23,7 @@ every 1.day, at: '23:30 am' do
   runner "ReminderJob.perform_now"
   runner "InvestorNoticeJob.perform_now"
   runner "SignatureWorkflowJob.perform_now"
-  runner "Notification.where(created_at: ..(Date.today - 1.month)).delete_all"
+  runner "Notification.where(created_at: ..(Date.today - 1.month)).each(&:destroy)"
 end
 
 every :reboot do

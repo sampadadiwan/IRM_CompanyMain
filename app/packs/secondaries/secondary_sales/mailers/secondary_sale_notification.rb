@@ -9,6 +9,7 @@ class SecondarySaleNotification < BaseNotification
 
   def email_data
     {
+      notification_id: record.id,
       user_id: recipient.id,
       entity_id: params[:entity_id],
       secondary_sale_id: params[:secondary_sale].id

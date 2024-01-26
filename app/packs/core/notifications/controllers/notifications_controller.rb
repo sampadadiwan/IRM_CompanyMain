@@ -25,7 +25,7 @@ class NotificationsController < ApplicationController
 
   # GET /notifications/1 or /notifications/1.json
   def show
-    if policy(@notification).mark_as_read?
+    if policy(@notification).mark_as_read? && params[:debug].blank?
       @notification.mark_as_read!
       redirect_to @notification.to_notification.url, allow_other_host: true
     end

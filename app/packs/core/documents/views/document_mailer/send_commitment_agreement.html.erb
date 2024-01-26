@@ -14,6 +14,6 @@
 <% end %>
 
 <p class="btn btn-outline-primary">
-    <%= link_to  "View Document", document_url(@document, subdomain: @document.entity.sub_domain) if  @custom_notification&.show_link %>
+    <%= link_to  "View Document", document_url(@document, subdomain: @document.entity.sub_domain) if  @custom_notification.nil? || @custom_notification&.show_link %>
 </p>
 

@@ -8,6 +8,7 @@ class InvestorAccessNotification < BaseNotification
 
   def email_data
     {
+      notification_id: record.id,
       user_id: recipient.id,
       investor_access_id: params[:investor_access].id,
       entity_id: params[:entity_id]

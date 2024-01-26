@@ -12,6 +12,7 @@ class ReminderNotification < BaseNotification
 
   def email_data
     {
+      notification_id: record.id,
       user_id: recipient.id,
       entity_id: params[:entity_id],
       reminder_id: params[:reminder].id

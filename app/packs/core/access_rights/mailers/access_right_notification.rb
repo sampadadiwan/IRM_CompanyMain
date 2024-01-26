@@ -12,6 +12,7 @@ class AccessRightNotification < BaseNotification
 
   def email_data
     {
+      notification_id: record.id,
       user_id: recipient.id,
       access_right_id: params[:access_right].id,
       entity_id: params[:entity_id]

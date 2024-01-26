@@ -5,7 +5,7 @@
       Recipient
     </td>
     <td>
-      <%= @notification.recipient %>
+      <%= @notification.recipient %> : <%= @notification.recipient.email %>
     </td>
   </tr>
   <tr>
@@ -24,6 +24,7 @@
       <%= link_to @notification.to_notification.message %>
     </td>
   </tr>
+  <% if params[:show_params].present? %>
   <tr>
     <td>
       Params
@@ -33,6 +34,7 @@
       <%= Json2table::get_html_table(@notification.params.to_json, table_options).html_safe %>
     </td>
   </tr>
+  <% end %>
   <tr>
     <td>
       Read At
@@ -41,4 +43,54 @@
       <%= @notification.read_at %>
     </td>
   </tr>
+
+  <tr>
+    <td>
+      Email Sent
+    </td>
+    <td>
+      <%= display_boolean @notification.email_sent %>
+    </td>
+  </tr>
+
+  <% if @notification.email %>
+  <tr>
+    <td>
+      Email
+    </td>
+    <td>
+      <% 
+        table_options = { table_class: "table table-bordered dataTable" } 
+        details = JSON.parse(@notification.email)        
+      %>
+      <%= details["mail"]["body"]["raw_source"].html_safe if @notification.email %>
+      <% 
+        details.delete("params") 
+        details.delete("mail") 
+      %>
+      <%= Json2table::get_html_table(details, table_options).html_safe if @notification.email %>
+    </td>
+  </tr>
+  <% end %>
+
+  <tr>
+    <td>
+      WhatsApp Sent
+    </td>
+    <td>
+      <%= display_boolean @notification.whatsapp_sent %>
+    </td>
+  </tr>
+
+  <% if @notification.whatsapp %>
+  <tr>
+    <td>
+      WhatsApp
+    </td>
+    <td>
+      <%= @notification.whatsapp %>
+    </td>
+  </tr>
+  <% end %>
+
 </table>

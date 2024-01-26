@@ -9,6 +9,7 @@ class ExcerciseNotification < BaseNotification
 
   def email_data
     {
+      notification_id: record.id,
       user_id: recipient.id,
       entity_id: params[:entity_id],
       excercise_id: params[:excercise].id

@@ -2,10 +2,22 @@ class ApplicationMailer < ActionMailer::Base
   default from: ENV.fetch("SUPPORT_EMAIL", nil)
   layout "mailer"
 
+  after_deliver :mark_delivered
+  def mark_delivered
+    # Lets update the notification to say we have sent the email with details
+    # rubocop:disable Rails/SkipsModelValidations
+    @notification&.update_columns(email_sent: true, email: { to: @to, from: @from, cc: @cc, reply_to: @reply_to, params:, mail: }.to_json)
+    # rubocop:enable Rails/SkipsModelValidations
+  end
+
   # This will cause the to from and cc to be set from the entity and user
   # Note it will ensure that
   before_action :setup_defaults
   def setup_defaults
+    # Set the notification if this email was triggered by a notification, used in mark_delivered()
+    @notification = Notification.find(params[:notification_id]) if params[:notification_id]
+
+    # Set the entity and user
     @entity = Entity.find(params[:entity_id]) if params[:entity_id]
     @user = User.find(params[:user_id]) if params[:user_id]
     @additional_ccs ||= params[:additional_ccs]

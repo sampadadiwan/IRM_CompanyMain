@@ -21,6 +21,9 @@ class WhatsappGeneralNotification < ApplicationJob
       notification = Notification.find(notification_id)
       entity_name_json = Notification.get_entity_name_json(message, entity_name)
       WhatsappLog.create(entity_id: notification.entity.id, notification_id:, params: { entity_name:, message:, link:, whatsapp_number: }, response:, entity_name: entity_name_json, name_matched: entity_name_json[entity_name.to_s] == entity_name)
+      # rubocop:disable Rails/SkipsModelValidations
+      notification.update_columns(whatsapp_sent: true, whatsapp: { to: whatsapp_number, params: { entity_name:, message:, link: } }.to_json)
+      # rubocop:enable Rails/SkipsModelValidations
     end
   end
 

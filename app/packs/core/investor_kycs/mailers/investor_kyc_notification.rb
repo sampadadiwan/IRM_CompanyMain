@@ -8,6 +8,7 @@ class InvestorKycNotification < BaseNotification
 
   def email_data
     {
+      notification_id: record.id,
       user_id: recipient.id,
       investor_kyc_id: params[:investor_kyc].id,
       entity_id: params[:entity_id]

@@ -9,6 +9,7 @@ class OfferNotification < BaseNotification
 
   def email_data
     {
+      notification_id: record.id,
       user_id: recipient.id,
       entity_id: params[:entity_id],
       offer_id: params[:offer].id

@@ -18,4 +18,4 @@
 
 <% end %>
 
-<p class="btn btn-outline-primary"><%= link_to  "Login to Access", edit_investor_kyc_url(@investor_kyc) if  @custom_notification&.show_link %></p>
+<p class="btn btn-outline-primary"><%= link_to  "Login to Access", edit_investor_kyc_url(@investor_kyc) if  @custom_notification.nil? || @custom_notification&.show_link %></p>

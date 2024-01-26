@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_25_065659) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_26_114937) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1918,6 +1918,10 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_25_065659) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "entity_id", null: false
+    t.boolean "email_sent", default: false
+    t.text "email"
+    t.boolean "whatsapp_sent", default: false
+    t.text "whatsapp"
     t.index ["entity_id"], name: "index_notifications_on_entity_id"
     t.index ["read_at"], name: "index_notifications_on_read_at"
     t.index ["recipient_type", "recipient_id"], name: "index_notifications_on_recipient"

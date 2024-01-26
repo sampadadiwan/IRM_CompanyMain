@@ -13,6 +13,7 @@ class TaskNotification < BaseNotification
 
   def email_data
     {
+      notification_id: record.id,
       user_id: recipient.id,
       task_id: params[:task].id,
       entity_id: params[:entity_id]

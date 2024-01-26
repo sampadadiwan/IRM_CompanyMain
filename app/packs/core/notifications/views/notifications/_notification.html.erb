@@ -11,6 +11,12 @@
   <td class="hideMobP">
     <%= l notification.read_at if notification.read_at %>
   </td>
+  <td class="hideMobP">
+    <%= display_boolean notification.email_sent %>
+  </td>
+  <td class="hideMobP">
+    <%= display_boolean notification.whatsapp_sent %>
+  </td>
   <td>
     <% if policy(notification).mark_as_read? %>          
       <%= link_to "Show", notification , {class: "btn btn-outline-primary"}%>
