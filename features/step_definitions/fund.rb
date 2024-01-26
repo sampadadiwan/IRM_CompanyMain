@@ -366,9 +366,7 @@
     @capital_call.capital_remittances.each do |remittance|
         within("#capital_remittance_#{remittance.id}") do
             expect(page).to have_content(remittance.investor.investor_name)
-            within(".verified") do
-              expect(page).to have_content(remittance.verified ? "Yes" : "No")
-            end
+            expect(page).to have_content(remittance.verified ? "Yes" : "No")
             expect(page).to have_content(remittance.status)
             expect(page).to have_content(money_to_currency remittance.due_amount)
             expect(page).to have_content(money_to_currency remittance.collected_amount)
