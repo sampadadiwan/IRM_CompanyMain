@@ -23,7 +23,7 @@ class BaseNotification < Noticed::Base
       params:,
       type: self.class.name,
       entity_id: params[:entity_id],
-      whats_app: { whatsapp_enabled: whatsapp_enabled? } # This will be captured if whats_app is not sent
+      whatsapp: { whatsapp_enabled: whatsapp_enabled? }.to_json # This will be captured if whats_app is not sent
     }
   end
 
