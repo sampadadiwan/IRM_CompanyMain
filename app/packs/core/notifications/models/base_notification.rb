@@ -22,19 +22,9 @@ class BaseNotification < Noticed::Base
     {
       params:,
       type: self.class.name,
-      entity_id: params[:entity_id]
-      # unique_key: self.unique_key # This is sent as the notification_id to the mailer
+      entity_id: params[:entity_id],
+      whats_app: { whatsapp_enabled: whatsapp_enabled? } # This will be captured if whats_app is not sent
     }
-  end
-
-  def unique_key
-    if record.nil?
-      # If the record has not yet been saved, we add the current time
-      params[:at] = Time.zone.now
-    end
-    digest = OpenSSL::Digest.new('sha256')
-    # Generate a unique_key based on the recipient and the at time (Should be unique)
-    OpenSSL::HMAC.hexdigest(digest, self.class.name, [params[:at], recipient.id, recipient.class.name].to_json)
   end
 
   def email_delay
