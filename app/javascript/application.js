@@ -8,16 +8,11 @@ import '@client-side-validations/client-side-validations/src'
 import "@nathanvda/cocoon"
 import "turbo_progress_bar"
 
-// import "Chart.bundle"
-import Highcharts from "highcharts"
-window.Highcharts = Highcharts
-
 Highcharts.setOptions({
 	lang: {
   	thousandsSep: ','
   }
 });
-
 
 
 // https://github.com/basecamp/trix/issues/624

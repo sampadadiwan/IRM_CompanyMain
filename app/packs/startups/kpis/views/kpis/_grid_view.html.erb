@@ -63,7 +63,7 @@
                 </div>
                 <div class="card-body">
                     <% id = params[:report_id] %>
-                    <%= multiple_entity_kpi_lines_by_date(kpis, id:) %>
+                    <%= multiple_entity_kpi_lines_by_date(kpis, id:, chart_title: params[:title]) %>
                 </div>
             </div>
         </div>

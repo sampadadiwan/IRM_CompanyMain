@@ -9,7 +9,7 @@ module KpisHelper
     column_chart chart_data
   end
 
-  def multiple_entity_kpi_lines_by_date(kpis, id: nil)
+  def multiple_entity_kpi_lines_by_date(kpis, id: nil, chart_title: nil)
     dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
     grouped_kpis = kpis.group_by(&:entity)
 
@@ -25,6 +25,12 @@ module KpisHelper
       end
     end
 
-    line_chart(data_map, id:)
+    chart_name = chart_title ? "#{chart_title.delete(' ')}.jpg" : "chart.jpg"
+    line_chart(data_map, id:, download: { filename: chart_name },
+                         library: {
+                           exporting: {
+                             fallbackToExportServer: false
+                           }
+                         })
   end
 end
