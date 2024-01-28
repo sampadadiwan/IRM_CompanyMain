@@ -44,9 +44,11 @@ class CapitalCommitmentsController < ApplicationController
     term = { entity_id: current_user.entity_id }
 
     # Here we search for all the CapitalCommitments that belong to the entity of the current user
+    # Only return first 100 results
     index_search = CapitalCommitmentIndex.filter(term:)
                                          .query(query_string: { fields: CapitalCommitmentIndex::SEARCH_FIELDS,
-                                                                query:, default_operator: 'and' })
+                                                                query:, default_operator: 'and' }).per(100)
+
     index_search = index_search.filter(term: { fund_id: params[:fund_id] }) if params[:fund_id].present?
 
     index_search.map(&:id)
