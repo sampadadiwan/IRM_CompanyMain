@@ -19,7 +19,7 @@ class BaseNotification < Noticed::Base
   end
 
   def to_database
-    whatsapp = whatsapp_enabled? ? {} : { "#{recipient.phone}": {whatsapp_enabled: whatsapp_enabled?} }.to_json  
+    whatsapp = whatsapp_enabled? ? {} : { "#{recipient.phone}": { whatsapp_enabled: whatsapp_enabled? } }.to_json
     {
       params:,
       type: self.class.name,

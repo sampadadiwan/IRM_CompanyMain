@@ -17,7 +17,7 @@
         <div id="remittances-tab" class="tab-pane fade in show active">
           <div id="remittances" class="associated_entity">
            <%= render "/capital_remittances/index", capital_call: capital_call,
-                lazy_load_data: false, data_source: capital_remittances_path(capital_call_id: capital_call.id, all: true, status: "", verified: "") %>
+                lazy_load_data: false, data_source: capital_remittances_path(capital_call_id: capital_call.id, all: true, status: "", verified: "", format: :json) %>
           </div>
         </div>
 
