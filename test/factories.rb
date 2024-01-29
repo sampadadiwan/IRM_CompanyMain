@@ -1,4 +1,13 @@
 FactoryBot.define do
+  factory :investor_kpi_mapping do
+    entity { nil }
+    investor { nil }
+    reported_kpi_name { "MyString" }
+    standard_kpi_name { "MyString" }
+    lower_threshhold { "9.99" }
+    upper_threshold { "9.99" }
+  end
+
   factory :quick_link_step do
     name { "MyString" }
     link { "MyText" }

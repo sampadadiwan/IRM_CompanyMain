@@ -150,6 +150,7 @@ group :development, :test do
   gem 'erubis'
   gem 'net-ssh', '7.2.1'
   # gem 'parallel_tests'
+  gem 'htmlbeautifier'
   gem 'pry-byebug'
   gem 'rubocop-performance', require: false
   gem 'rubocop-rails', require: false

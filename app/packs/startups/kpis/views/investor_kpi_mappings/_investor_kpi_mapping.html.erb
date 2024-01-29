@@ -1,0 +1,24 @@
+<tr id="<%= dom_id investor_kpi_mapping %>">
+  <td>
+    <%= investor_kpi_mapping.investor.investor_name %>
+  </td>
+  <td>
+    <%= investor_kpi_mapping.reported_kpi_name %>
+  </td>
+  <td>
+    <%= investor_kpi_mapping.standard_kpi_name %>
+  </td>
+  <td>
+    <%= display_boolean investor_kpi_mapping.show_in_report %>
+  </td>
+  <td>
+    <%= investor_kpi_mapping.lower_threshold %>
+  </td>
+  <td>
+    <%= investor_kpi_mapping.upper_threshold %>
+  </td>
+  <td>
+    <%= link_to "Show", investor_kpi_mapping , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Edit", edit_investor_kpi_mapping_path(investor_kpi_mapping), {class: "btn btn-outline-success"} if policy(investor_kpi_mapping).edit? %>
+  </td>
+</tr>

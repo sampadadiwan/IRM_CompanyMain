@@ -29,6 +29,10 @@
           data-action="click->tabdetails#loadData">
           Kpis
         </a>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kpi-mappings-tab"
+          data-action="click->tabdetails#loadData">
+          Kpi Mapping
+        </a>
       <% end %>
     <% else %>
 
@@ -133,6 +137,18 @@
               <span>Loading...</span>
             <% end %>
             <%= turbo_frame_tag "kpi_reports_list", target: "_top" do %>
+            <% end %>
+          </div>     
+        </div>
+
+        <div id="kpi-mappings-tab" class="tab-pane fade">
+          <div id="investor_kpi_mappings" class="associated_entity">
+            <%= link_to investor_kpi_mappings_path(investor_id: investor.id), 
+                                    class: "load_data_link", 
+                                    data: { turbo_frame: 'investor_kpi_mappings_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "investor_kpi_mappings_list", target: "_top" do %>
             <% end %>
           </div>     
         </div>

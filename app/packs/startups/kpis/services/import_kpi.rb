@@ -7,7 +7,10 @@ class ImportKpi < ImportUtil
     STANDARD_HEADERS
   end
 
-  def post_process(import_upload, _context); end
+  def post_process(import_upload, _context)
+    # This recomputes the KPI percentage change for all KPIs of this entity
+    KpiPercentageChangeJob.perform_later(import_upload.entity_id, import_upload.user_id)
+  end
 
   def save_kpi(user_data, import_upload, custom_field_headers)
     name = user_data['Name'].strip

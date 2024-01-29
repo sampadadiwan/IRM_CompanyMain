@@ -1,18 +1,16 @@
-class KpiReportPolicy < KpiPolicyBase
+class InvestorKpiMappingPolicy < KpiPolicyBase
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:company_admin) && user.entity_type == "Company"
-        scope.where(entity_id: user.entity_id)
-      elsif user.curr_role == "employee" && user.entity_type == "Company"
-        scope.for_employee(user)
-      else
-        scope.for_investor(user)
-      end
+      scope.where(entity_id: user.entity_id)
     end
   end
 
   def index?
     user.enable_kpis
+  end
+
+  def generate?
+    index?
   end
 
   def show?
@@ -30,10 +28,6 @@ class KpiReportPolicy < KpiPolicyBase
 
   def update?
     create? && permissioned_employee?(:update)
-  end
-
-  def recompute_percentage_change?
-    index?
   end
 
   def edit?

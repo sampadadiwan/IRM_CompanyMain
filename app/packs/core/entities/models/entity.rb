@@ -33,6 +33,9 @@ class Entity < ApplicationRecord
   accepts_nested_attributes_for :entity_setting, allow_destroy: true
 
   has_many :kpi_reports, dependent: :destroy
+  has_many :kpis, dependent: :destroy
+  has_many :investor_kpi_mappings, dependent: :destroy
+
   has_many :option_pools, dependent: :destroy
   has_many :excercises, dependent: :destroy
   has_many :deals, dependent: :destroy

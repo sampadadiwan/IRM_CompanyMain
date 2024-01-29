@@ -1,36 +1,42 @@
 module KpisHelper
-  def kpi_lines_by_date(kpi_reports, kpi_type = nil)
-    kpis = Kpi.joins(:kpi_report).where(kpi_report_id: kpi_reports.pluck(:id).uniq).order("kpi_reports.as_of asc").group_by(&:name)
-
-    kpis = kpis.filter { |k, _v| KpiReport.custom_fields_map[k] == kpi_type } if kpi_type
-
-    chart_data = kpis.map { |name, arr| [name:, data: arr.map { |kpi| [kpi.kpi_report.as_of.strftime("%m/%y"), kpi.value] }] }.flatten
-
-    column_chart chart_data
-  end
-
-  def multiple_entity_kpi_lines_by_date(kpis, id: nil, chart_title: nil)
+  def multiple_entity_kpi_lines_by_date(kpis, id: nil, investor_kpi_mappings: nil)
     dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
-    grouped_kpis = kpis.group_by(&:entity)
+    grouped_kpis = kpis.includes(:kpi_report, :entity).group_by(&:entity)
 
     data_map = []
     grouped_kpis.each do |entity, entity_kpis|
-      entity_kpis.group_by(&:name).each do |kpi_name, kpis_by_name|
+      entity_kpis.group_by(&:name).each_value do |kpis_by_name|
+        standard_kpi = get_standard_kpi_name(investor_kpi_mappings, kpis_by_name.first)
         data = []
         dates.each do |date|
           kpi = kpis_by_name.find { |k| k.kpi_report.as_of == date }
           data << [date.strftime("%m/%y"), kpi&.value]
         end
-        data_map << { name: "#{entity.name} - #{kpi_name}", data: }
+        data_map << { name: "#{entity.name} - #{standard_kpi}", data: }
       end
     end
 
-    chart_name = chart_title ? "#{chart_title.delete(' ')}.jpg" : "chart.jpg"
-    line_chart(data_map, id:, download: { filename: chart_name },
-                         library: {
-                           exporting: {
-                             fallbackToExportServer: false
-                           }
-                         })
+    line_chart(data_map, id:)
+  end
+
+  def kpi_percentage_class(kpi, investor_kpi_mapping)
+    css_class = if  investor_kpi_mapping.lower_threshold.positive? &&
+                    kpi.percentage_change < investor_kpi_mapping.lower_threshold
+                  "text-danger"
+                elsif investor_kpi_mapping.upper_threshold.positive? &&
+                      kpi.percentage_change > investor_kpi_mapping.upper_threshold
+                  "text-success"
+                end
+
+    "<small class='fs-1 #{css_class}'> #{kpi.percentage_change} %</small>"
+  end
+
+  def get_standard_kpi_name(investor_kpi_mappings, kpi)
+    if investor_kpi_mappings
+      mapping = investor_kpi_mappings[[kpi.entity_id, kpi&.name]]
+      mapping.present? ? mapping[0].standard_kpi_name : kpi&.name
+    else
+      kpi&.name
+    end
   end
 end

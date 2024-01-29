@@ -3,6 +3,11 @@ class Kpi < ApplicationRecord
   include ForInvestor
 
   belongs_to :entity
+  # These are the investees, who will probably have investor_kpi_mappings for the kpis by this entity.
+  has_many :investees, through: :entity
+  # This is for ransack search only. For some reason crashes on single kpi instance
+  has_many :investor_kpi_mappings, -> { where("`investor_kpi_mappings`.`reported_kpi_name`=`kpis`.`name`") }, through: :investees
+
   belongs_to :kpi_report
 
   validates :name, :period, :value, presence: true
@@ -33,23 +38,18 @@ class Kpi < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[kpi_report entity]
+    %w[kpi_report entity investor_kpi_mappings]
   end
 
-  # Note the input kpis must have the same name, this is not checked inside the method
-  # Returns an array of growth rates, the average growth rate and an array of values used in the growth rate calculation
-  def self.calculate_growth_rates(kpis)
-    growth_rates = []
-    cagr = 0
-    values = []
+  def kpis_for_entity
+    entity.kpis.joins(:kpi_report).where(name:, period:).order("kpi_reports.as_of asc")
+  end
 
-    kpis.each_cons(2) do |current, previous|
-      values << current.value
-      growth_rate = ((current.value - previous.value) / previous.value) * 100
-      growth_rates << growth_rate
-      cagr += growth_rate
+  def recompute_percentage_change
+    # Get all the kpis for the entity with same name and period
+    kpis_for_entity.each_cons(2) do |current_kpi, next_kpi|
+      next_kpi.percentage_change = ((next_kpi.value - current_kpi.value) / current_kpi.value) * 100
+      next_kpi.save
     end
-
-    [growth_rates, (growth_rates.sum / kpis.length), values]
   end
 end

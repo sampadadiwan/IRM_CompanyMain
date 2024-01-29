@@ -18,7 +18,7 @@ class InvestorSearch
 
       ids = InvestorIndex.filter(term: { entity_id: current_user.entity_id })
                          .query(query_string: { fields: InvestorIndex::SEARCH_FIELDS,
-                                                query:, default_operator: 'and' }).map(&:id)
+                                                query:, default_operator: 'and' }).per(100).map(&:id)
 
       investors = investors.where(id: ids)
     end

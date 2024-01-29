@@ -14,10 +14,6 @@ class KpiReport < ApplicationRecord
     JSON.parse(ENV.fetch("KPIS", nil)).keys.map(&:titleize).sort
   end
 
-  def self.custom_fields_map
-    JSON.parse(ENV.fetch("KPIS", nil))
-  end
-
   def custom_kpis
     my_kpis = kpis.to_a
     form_type.form_custom_fields.each do |custom_field|
@@ -48,5 +44,13 @@ class KpiReport < ApplicationRecord
 
   def self.ransackable_associations(_auth_object = nil)
     %w[kpis entity]
+  end
+
+  def self.grid(kpi_reports)
+    Kpi.where(kpi_report_id: kpi_reports.pluck(:id)).group_by(&:name)
+  end
+
+  def investor_for(for_entity_id)
+    Investor.find_by(entity_id: for_entity_id, investor_entity_id: entity_id)
   end
 end

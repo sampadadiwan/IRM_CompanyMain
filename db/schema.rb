@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_01_26_114937) do
+ActiveRecord::Schema[7.1].define(version: 2024_01_28_155027) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1885,6 +1885,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_26_114937) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.string "period", limit: 12, default: "Quarter"
+    t.decimal "percentage_change", precision: 5, scale: 2, default: "0.0"
     t.index ["entity_id"], name: "index_kpis_on_entity_id"
     t.index ["form_type_id"], name: "index_kpis_on_form_type_id"
     t.index ["kpi_report_id"], name: "index_kpis_on_kpi_report_id"

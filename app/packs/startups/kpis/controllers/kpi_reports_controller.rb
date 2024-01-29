@@ -1,10 +1,10 @@
 class KpiReportsController < ApplicationController
-  before_action :set_kpi_report, only: %i[show edit update destroy]
+  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change]
 
   # GET /kpi_reports or /kpi_reports.json
   def index
     @q = KpiReport.ransack(params[:q])
-    @kpi_reports = policy_scope(@q.result).includes(:kpis, :documents)
+    @kpi_reports = policy_scope(@q.result).includes(:kpis, :documents, :entity)
     authorize(KpiReport)
 
     if params[:period].present?
@@ -77,6 +77,11 @@ class KpiReportsController < ApplicationController
       format.html { redirect_to kpi_reports_url, notice: "Kpi report was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
+
+  def recompute_percentage_change
+    KpiPercentageChangeJob.perform_later(@kpi_report.entity_id, current_user.id)
+    redirect_to request.referer || kpi_report_url(@kpi_report), notice: "Computation started."
   end
 
   private

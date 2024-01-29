@@ -1,3 +1,4 @@
+<% kpi_reports = kpi_reports.order(as_of: :asc) %>
 
 <div data-controller="export-xl">
 
@@ -14,14 +15,25 @@
         <%= link_to "Reports", kpis_path(filter: true), class: "btn btn-outline-primary" %>
 
         <button class="btn btn-outline-success", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button> 
-    </span>
 
-    
+        <%= button_to "Recompute Percentages", recompute_percentage_change_kpi_report_path(kpi_reports.last), method: :patch, class: "btn btn-outline-primary" if kpi_reports.last %>
+    </span>
 
 </div>
 
 <% if kpi_reports.present? %>
-<% form_custom_fields = kpi_reports[0].form_type ? kpi_reports[0].form_type.form_custom_fields.order(position: :asc) : [FormCustomField.new(field_type: "TextField", name: "")] %>
+<% 
+    
+    # Now it depends on who is looking at the KPI, the investor or the startup
+    if current_user.curr_role == "investor" 
+        # Get the mappings for the investor
+        investor = kpi_reports[0].investor_for(current_user.entity_id)
+        investor_kpi_mappings = investor ? investor.investor_kpi_mappings.show_in_report : []
+    else
+        # Create dummy mappings for the startup, which has all the kpi names
+        investor_kpi_mappings = Kpi.where(kpi_report_id: kpi_reports.pluck(:id)).pluck(:name).uniq.map{|kpi_name| InvestorKpiMapping.new(standard_kpi_name: kpi_name, reported_kpi_name: kpi_name)}
+    end
+%>
 
 <div class="table-responsive" data-controller="datatable">
     <table id="kpi_reports_grid" class="table table-bordered dataTable jqDataTable">
@@ -44,27 +56,23 @@
                     <% end %>
                 </tr>
             <% end %>
-            <% form_custom_fields.each do |fcf| %>            
+            <% investor_kpi_mappings.each do |ikm| %>            
                 <tr>
-                    <td><%= fcf.name.titleize %></td>
-                    <!-- TODO Optimize this loop -->
-                    <!-- Sometimes we have uploaded the data and setup aliases for the field names -->
-                    <% aliases = fcf.meta_data.present? ? fcf.meta_data.downcase.split(",") : [] %>
+                    <td><%= ikm.standard_kpi_name %></td>
                     <% kpi_reports.each do |kpi_report| %>  
                         <!-- Create a hash of the kpis with the name as the key -->
-                        <% kpis = kpi_report.kpis.map{|kpi| [kpi.name.titleize.gsub(" ", "").underscore, kpi]}.to_h %>
+                        <% 
+                            kpis = kpi_report.kpis                             
+                            kpis = kpis.map{|kpi| [kpi.name, kpi]}.to_h                             
+                        %>
+                        
                         <!-- Find the kpi with the name or an alias for the name and show its value-->
-                        <% kpi = kpis[fcf.name.downcase].presence || kpis.values_at(*aliases).find{|x| x.present?} %>                        
+                        <% kpi = kpis[ikm.reported_kpi_name].presence %>                        
                         <td>
                             <% if kpi %>
-                                <% if fcf.field_type == "NumberField" %>
-                                    <%= number_with_delimiter(kpi.value.round(2), delimiter: ',') if kpi.value %>
-                                <% elsif fcf.field_type == "DateField" %>
-                                    <%= l Date.parse(kpi.display_value) if kpi.display_value %>
-                                <% else %>
-                                    <%= kpi.display_value %> 
-                                <% end %>
-
+                                <%= number_with_delimiter(kpi.value.round(2), delimiter: ',') if kpi.value %>
+                                <br>
+                                <%= kpi_percentage_class(kpi, ikm).html_safe %>
                                 <% if kpi.notes.present? %>
                                     <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>
                                 <% end %>
@@ -82,7 +90,7 @@
                 <% kpi_reports.each_with_index do |kpi_report, idx| %>                               
                         <td>
                             <ul>
-                            <% kpi_report.documents.order(name: :asc).each_with_index do |doc, idx| %>
+                            <% kpi_report.documents.each_with_index do |doc, idx| %>
                             <li>
                              <small>
                                 <%= idx + 1 %>. 
@@ -109,55 +117,27 @@
 </div>
 </div>
 
-<div class="associated_entity">
-    <div class="row">
-        <div class="col-lg-12 mb-4">
+    <% 
+        kpi_names = investor_kpi_mappings.collect(&:reported_kpi_name)
+        kpis = Kpi.where(name: kpi_names, kpi_report_id: kpi_reports.pluck(:id))
+        kpi_mappings = investor_kpi_mappings.group_by{|ikm| [ikm.investor.investor_entity_id, ikm.reported_kpi_name] }
+    %>
+    <div class="associated_entity">
+        <div class="row">
+            <div class="col-lg-12 mb-4">
 
-            <!-- Illustrations -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary"> Income Statement </h6>
-                </div>
-                <div class="card-body">
-                    <%= kpi_lines_by_date(kpi_reports, "Income Statement")  %>
+                <!-- Illustrations -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary"> <%= "KPIs" %> </h6>
+                    </div>
+                    <div class="card-body">
+                        <% id = params[:report_id] %>
+                        <%= multiple_entity_kpi_lines_by_date(kpis, id:, investor_kpi_mappings: kpi_mappings) %>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-
-<div class="associated_entity">
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-
-            <!-- Illustrations -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary"> Operations </h6>
-                </div>
-                <div class="card-body">
-                    <%= kpi_lines_by_date(kpi_reports, "Operating")  %>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="associated_entity">
-    <div class="row">
-        <div class="col-lg-12 mb-4">
-
-            <!-- Illustrations -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary"> Balance Sheet </h6>
-                </div>
-                <div class="card-body">
-                    <%= kpi_lines_by_date(kpi_reports, "Balance Sheet")  %>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <% end %>
