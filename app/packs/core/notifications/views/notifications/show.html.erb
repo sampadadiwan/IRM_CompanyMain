@@ -88,7 +88,7 @@
       WhatsApp
     </td>
     <td>
-      <%= Json2table::get_html_table(@notification.whatsapp, table_options).html_safe  %>
+      <%= Json2table::get_html_table(@notification.whatsapp, table_options).html_safe if @notification.whatsapp %>
     </td>
   </tr>
   <% end %>
