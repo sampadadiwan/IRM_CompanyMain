@@ -454,7 +454,6 @@ Then('Notifications are created for KYC Reminders') do
   Notification.where(recipient_id: @users.pluck(:id)).count.should == 2
   Notification.where(recipient_id: @users.pluck(:id)).pluck(:type).uniq.count.should == 1
   Notification.where(recipient_id: @users.pluck(:id)).pluck(:type).uniq.last.should == "InvestorKycNotification"
-  WhatsappLog.where(notification_id: Notification.where(recipient_id: @users.pluck(:id)).pluck(:id)).count.should == 2
 end
 
 

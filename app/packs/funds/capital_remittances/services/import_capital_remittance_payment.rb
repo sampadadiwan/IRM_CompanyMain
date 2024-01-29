@@ -34,7 +34,8 @@ class ImportCapitalRemittancePayment < ImportUtil
   end
 
   def post_process(import_upload, _context)
-    CapitalRemittance.counter_culture_fix_counts where: { 'capital_remittances.entity_id': import_upload.entity_id }
+    CapitalRemittancePayment.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
+    CapitalRemittance.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
   end
 
   def save_capital_remittance_payment(user_data, import_upload, custom_field_headers)

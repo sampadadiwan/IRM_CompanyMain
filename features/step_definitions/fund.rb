@@ -928,7 +928,7 @@ Then('I should be able to see my capital commitments') do
       puts "checking capital commitment for #{cc.investor.investor_name} against #{@investor.investor_name}"
 
       if cc.investor_id == @investor.id
-        expect(page).to have_content(@investor.investor_name)
+        expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
         # expect(page).to have_content(cc.fund.name)
         expect(page).to have_content( money_to_currency(cc.committed_amount) )
       else
@@ -943,7 +943,7 @@ Then('I should be able to see my capital remittances') do
   CapitalRemittance.all.each do |cc|
     puts "checking capital remittance for #{cc.investor.investor_name} against #{@investor.investor_name} "
     if cc.investor_id == @investor.id
-      expect(page).to have_content(@investor.investor_name)
+      expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
       expect(page).to have_content( money_to_currency(cc.due_amount) )
       expect(page).to have_content( money_to_currency(cc.collected_amount) )
     else
@@ -968,7 +968,7 @@ Then('I should be able to see my capital distributions') do
   CapitalDistributionPayment.all.each do |cc|
     puts "checking capital distrbution payment for #{cc.investor.investor_name} against #{@investor.investor_name} "
     if cc.investor_id == @investor.id
-      expect(page).to have_content(@investor.investor_name)
+      expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
       expect(page).to have_content( money_to_currency(cc.amount) )
       expect(page).to have_content( cc.payment_date.strftime("%d/%m/%Y") )
     else

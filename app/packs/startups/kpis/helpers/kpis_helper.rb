@@ -20,10 +20,10 @@ module KpisHelper
   end
 
   def kpi_percentage_class(kpi, investor_kpi_mapping)
-    css_class = if  investor_kpi_mapping && investor_kpi_mapping.lower_threshold.positive? &&
+    css_class = if  investor_kpi_mapping&.lower_threshold&.positive? &&
                     kpi.percentage_change < investor_kpi_mapping.lower_threshold
                   "text-danger"
-                elsif investor_kpi_mapping && investor_kpi_mapping.upper_threshold.positive? &&
+                elsif investor_kpi_mapping&.upper_threshold&.positive? &&
                       kpi.percentage_change > investor_kpi_mapping.upper_threshold
                   "text-success"
                 end
@@ -35,10 +35,8 @@ module KpisHelper
     if investor_kpi_mappings
       mapping = investor_kpi_mappings[[kpi.entity_id, kpi&.name]]
       mapping.present? ? mapping[0] : nil
-    else
-      nil
     end
-  end 
+  end
 
   def get_standard_kpi_name(investor_kpi_mappings, kpi)
     if investor_kpi_mappings
