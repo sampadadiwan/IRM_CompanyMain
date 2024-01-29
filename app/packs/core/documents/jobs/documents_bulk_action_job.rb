@@ -30,7 +30,7 @@ class DocumentsBulkActionJob < ApplicationJob
     send_notification(msg, user_id, :success)
     case bulk_action.downcase
     when "send commitment agreement"
-      if document.approved && %w[InvestorKyc CapitalCommitment].include?(document.owner_type)
+      if document.approved && %w[InvestorKyc CapitalCommitment IndivdualKyc NonIndivdualKyc].include?(document.owner_type)
 
         document.notification_users.each do |user|
           DocumentNotification.with(entity_id: document.entity_id,

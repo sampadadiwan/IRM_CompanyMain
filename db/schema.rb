@@ -1706,6 +1706,22 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_26_114937) do
     t.index ["user_id"], name: "index_investor_advisors_on_user_id"
   end
 
+  create_table "investor_kpi_mappings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.bigint "investor_id", null: false
+    t.string "reported_kpi_name", limit: 50
+    t.string "standard_kpi_name", limit: 50
+    t.decimal "lower_threshold", precision: 20, scale: 2, default: "0.0"
+    t.decimal "upper_threshold", precision: 20, scale: 2, default: "0.0"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "show_in_report", default: false
+    t.index ["entity_id"], name: "index_investor_kpi_mappings_on_entity_id"
+    t.index ["investor_id"], name: "index_investor_kpi_mappings_on_investor_id"
+    t.index ["reported_kpi_name"], name: "index_investor_kpi_mappings_on_reported_kpi_name"
+    t.index ["standard_kpi_name"], name: "index_investor_kpi_mappings_on_standard_kpi_name"
+  end
+
   create_table "investor_kycs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "investor_id", null: false
     t.bigint "entity_id", null: false
@@ -2786,6 +2802,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_01_26_114937) do
   add_foreign_key "investor_accesses", "entities", column: "investor_entity_id"
   add_foreign_key "investor_advisors", "entities"
   add_foreign_key "investor_advisors", "users"
+  add_foreign_key "investor_kpi_mappings", "entities"
+  add_foreign_key "investor_kpi_mappings", "investors"
   add_foreign_key "investor_kycs", "entities"
   add_foreign_key "investor_kycs", "folders", column: "document_folder_id"
   add_foreign_key "investor_kycs", "form_types"

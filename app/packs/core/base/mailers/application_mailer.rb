@@ -6,7 +6,7 @@ class ApplicationMailer < ActionMailer::Base
   def mark_delivered
     # Lets update the notification to say we have sent the email with details
     # rubocop:disable Rails/SkipsModelValidations
-    @notification&.update_columns(email_sent: true, email: { to: @to, from: @from, cc: @cc, reply_to: @reply_to, params:, mail: }.to_json)
+    @notification&.update_columns(email_sent: true, email: { to: @to, from: @from, cc: @cc, reply_to: @reply_to, params:, mail: mail.parts[0] }.to_json) # parts[0] cause this is the actual email, attachments etc are not stored.
     # rubocop:enable Rails/SkipsModelValidations
   end
 
