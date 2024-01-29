@@ -91,6 +91,10 @@ class Document < ApplicationRecord
     esign_status&.casecmp?("expired") || esign_status&.casecmp?("cancelled")
   end
 
+  def esign_failed?
+    esign_status&.casecmp?("failed")
+  end
+
   def setup_folder
     self.folder = owner.document_folder if folder.nil? && owner
     self.owner ||= folder.owner

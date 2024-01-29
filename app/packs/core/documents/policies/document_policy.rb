@@ -56,11 +56,11 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def cancel_esign?
-    update? && user.has_cached_role?(:company_admin) && record.sent_for_esign && !record.esign_expired?
+    update? && user.has_cached_role?(:company_admin) && record.sent_for_esign && !record.esign_expired? && !record.esign_failed?
   end
 
   def fetch_esign_updates?
-    update? && record.sent_for_esign && !record.esign_expired?
+    update? && record.sent_for_esign && !record.esign_expired? && !record.esign_failed?
   end
 
   def edit?
@@ -73,7 +73,7 @@ class DocumentPolicy < ApplicationPolicy
 
   def destroy?
     (update? && record.entity_id == user.entity_id &&
-    (!record.sent_for_esign || record.esign_expired?)) || super_user?
+    (!record.sent_for_esign || record.esign_expired? || record.esign_failed?)) || super_user?
   end
 
   def show_investor?
