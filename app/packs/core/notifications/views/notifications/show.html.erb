@@ -59,14 +59,14 @@
       Email
     </td>
     <td>
-      <% 
-        table_options = { table_class: "table table-bordered dataTable" } 
-        details = JSON.parse(@notification.email)        
+      <%
+        table_options = { table_class: "table table-bordered dataTable" }
+        details = JSON.parse(@notification.email)
       %>
-      <%= details["mail"]["body"]["raw_source"].html_safe if @notification.email %>
-      <% 
-        details.delete("params") 
-        details.delete("mail") 
+      <%= details.dig("mail","body","raw_source")&.html_safe if @notification.email %>
+      <%
+        details.delete("params")
+        details.delete("mail")
       %>
       <%= Json2table::get_html_table(details, table_options).html_safe if @notification.email %>
     </td>
@@ -88,9 +88,9 @@
       WhatsApp
     </td>
     <td>
-      <%= 
-        table_options = { table_class: "table table-bordered dataTable" } 
-        Json2table::get_html_table(JSON.parse(@notification.whatsapp), table_options).html_safe if @notification.whatsapp.present? 
+      <%=
+        table_options = { table_class: "table table-bordered dataTable" }
+        Json2table::get_html_table(JSON.parse(@notification.whatsapp), table_options).html_safe if @notification.whatsapp.present?
       %>
     </td>
   </tr>
