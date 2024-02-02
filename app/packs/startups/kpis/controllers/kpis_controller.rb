@@ -4,7 +4,7 @@ class KpisController < ApplicationController
   # GET /kpis or /kpis.json
   def index
     @q = Kpi.ransack(params[:q])
-    @kpis = policy_scope(@q.result).includes(:kpi_report)
+    @kpis = policy_scope(@q.result).includes(:kpi_report, :owner, :entity)
     @kpis = @kpis.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     authorize(Kpi)
   end
@@ -72,6 +72,6 @@ class KpisController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def kpi_params
-    params.require(:kpi).permit(:entity_id, :name, period, :value, :display_value, :notes, :kpi_report_id, :form_type_id, properties: {})
+    params.require(:kpi).permit(:entity_id, :name, :value, :display_value, :notes, :kpi_report_id, :form_type_id, properties: {})
   end
 end

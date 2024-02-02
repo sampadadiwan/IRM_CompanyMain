@@ -4,9 +4,15 @@ class KpiReport < ApplicationRecord
   include WithFolder
 
   belongs_to :entity
+  # This is in case the fund is uploading the kpis
+  belongs_to :portfolio_company, class_name: "Investor", optional: true
+  belongs_to :owner, class_name: "Entity", optional: true
   belongs_to :user
   has_many :kpis, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
+
+  validates :period, length: { maximum: 12 }
+  validates :as_of, presence: true
 
   accepts_nested_attributes_for :kpis, reject_if: :all_blank, allow_destroy: true
 
@@ -15,15 +21,29 @@ class KpiReport < ApplicationRecord
   end
 
   def custom_kpis
-    my_kpis = kpis.to_a
-    form_type.form_custom_fields.each do |custom_field|
-      kpis << Kpi.new(name: custom_field.name, entity_id:) unless my_kpis.any? { |kpi| kpi.custom_form_field.id == custom_field.id }
+    if form_type
+      my_kpis = kpis.to_a
+      form_type.form_custom_fields.each do |custom_field|
+        kpis << Kpi.new(name: custom_field.name, entity_id:) unless my_kpis.any? { |kpi| kpi.custom_form_field.id == custom_field.id }
+      end
     end
     kpis
   end
 
   def name
-    "#{entity.name} - #{as_of}"
+    if portfolio_company_id.present?
+      "#{portfolio_company.investor_name} - #{as_of}"
+    else
+      "#{entity.name} - #{as_of}"
+    end
+  end
+
+  def for_name
+    if portfolio_company_id.present?
+      portfolio_company.investor_name
+    else
+      entity.name
+    end
   end
 
   def to_s
@@ -39,7 +59,7 @@ class KpiReport < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    ["as_of"]
+    %w[as_of period tag_list owner_id]
   end
 
   def self.ransackable_associations(_auth_object = nil)
@@ -51,6 +71,10 @@ class KpiReport < ApplicationRecord
   end
 
   def investor_for(for_entity_id)
-    Investor.find_by(entity_id: for_entity_id, investor_entity_id: entity_id)
+    if portfolio_company_id.present?
+      portfolio_company
+    else
+      Investor.find_by(entity_id: for_entity_id, investor_entity_id: entity_id)
+    end
   end
 end

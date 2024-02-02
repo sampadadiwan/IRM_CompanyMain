@@ -46,3 +46,28 @@ end
 Then('when I click on the link in the email {string}') do |link|
   current_email.click_link link
 end
+
+Given('I log out') do
+  sleep(1)
+  find("#profile_menu").click
+  click_on("Log Out")
+  click_on("Logout")
+end
+
+Given('I login as the investor user') do
+  @user = @investor_user
+  steps %(
+    And I am at the login page
+    When I fill and submit the login page
+  )
+end
+
+Given('I login as the portfolio company user') do
+  @user = @portfolio_company.investor_entity.employees.first
+  @user ||= FactoryBot.create(:user, entity: @portfolio_company.investor_entity)
+  @user.add_role(:company_admin)
+  steps %(
+    And I am at the login page
+    When I fill and submit the login page
+  )
+end

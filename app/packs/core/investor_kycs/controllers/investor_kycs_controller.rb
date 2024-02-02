@@ -167,7 +167,7 @@ class InvestorKycsController < ApplicationController
     respond_to do |format|
       if @investor_kyc.save(validate: investor_user)
         @investor_kyc = InvestorKyc.find(@investor_kyc.id) # reload the kyc in case it was changed from individual to non individual or visa versa
-        # Send notification to entity employees if the kyc is updated        
+        # Send notification to entity employees if the kyc is updated
         @investor_kyc.updated_notification if investor_user
 
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC." }

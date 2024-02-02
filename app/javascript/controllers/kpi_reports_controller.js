@@ -5,8 +5,10 @@ export default class extends ServerDatatableController {
   columns() {
     return [
       {"data": "as_of"},
+      {"data": "period"},
       {"data": "notes"},
       {"data": "user"},
+      {"data": "entity"},
       {"data": "dt_actions"}
     ]
   }

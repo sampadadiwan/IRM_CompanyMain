@@ -1,10 +1,11 @@
 module KpisHelper
   def multiple_entity_kpi_lines_by_date(kpis, id: nil, investor_kpi_mappings: nil)
     dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
-    grouped_kpis = kpis.includes(:kpi_report, :entity).group_by(&:entity)
+    grouped_kpis = kpis.includes(:kpi_report, :entity).group_by { |k| [k.entity, k.owner, k.kpi_report.tag_list] }
 
     data_map = []
-    grouped_kpis.each do |entity, entity_kpis|
+    grouped_kpis.each do |key, entity_kpis|
+      entity, owner, tags = key
       entity_kpis.group_by(&:name).each_value do |kpis_by_name|
         standard_kpi = get_standard_kpi_name(investor_kpi_mappings, kpis_by_name.first)
         data = []
@@ -12,7 +13,11 @@ module KpisHelper
           kpi = kpis_by_name.find { |k| k.kpi_report.as_of == date }
           data << [date.strftime("%m/%y"), kpi&.value]
         end
-        data_map << { name: "#{entity.name} - #{standard_kpi}", data: }
+
+        label = owner&.name || entity.name
+        label += " - #{tags}" if tags.present?
+
+        data_map << { name: "#{label} - #{standard_kpi}", data: }
       end
     end
 

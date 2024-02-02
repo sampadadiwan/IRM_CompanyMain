@@ -18,14 +18,16 @@
         else
             investor_kpi_mappings = nil
         end
-        grouped_kpis = kpis.group_by(&:entity_id)
+        grouped_kpis = kpis.group_by{|k| [k.entity_id, k.owner_id, k.kpi_report.tag_list]}
         dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq         
     %>
+
     <div class="table-responsive" data-controller="<%= params[:title].present? ? '' : 'datatable' %>">
         <table id="kpis_grid" class="table table-bordered dataTable jqDataTable">
             <thead>
                 <tr>
                     <th class="no-sort">Entity</th>
+                    <th class="no-sort">Tags</th>
                     <th class="no-sort">KPI</th>
                     <% dates.each do |as_of| %>
                         <th><%= l as_of %></th>
@@ -33,15 +35,27 @@
                 </tr>
             </thead>
             <tbody>
-                <% grouped_kpis.each do |entity_id, kpis| %>      
+                <% 
+                    grouped_kpis.each do |key, kpis| 
+                    entity_id, owner_id, tag_list = key
+                %>      
                     <% kpis.group_by(&:name).each do |name, kpis| %>
                         <tr>
                             <td><%= kpis.first.entity.name %></td>
                             <% 
-                                ikm = get_invester_kpi_mapping(investor_kpi_mappings, kpis.first)
-                                standard_kpi_name = get_standard_kpi_name(investor_kpi_mappings, kpis.first) 
+                                kpi = kpis.first
+                                ikm = get_invester_kpi_mapping(investor_kpi_mappings, kpi)
+                                standard_kpi_name = get_standard_kpi_name(investor_kpi_mappings, kpi) 
                             %>
-                            <td> <%= standard_kpi_name %> </td>
+                            <td>
+                                <span class="badge badge-pill bg-success-subtle text-success"><%= tag_list %></span>
+                                <% if kpi.owner %>
+                                    <span class="d-block"> <%= kpi.owner %> </span>
+                                <% end %>
+                            </td>
+                            <td> 
+                                <%= standard_kpi_name %> 
+                            </td>
                             <% dates.each do |as_of| %>            
                                 <% kpi = kpis.find{|k| k.kpi_report.as_of == as_of} %>
                                 <td>

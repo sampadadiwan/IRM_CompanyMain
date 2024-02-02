@@ -1,12 +1,14 @@
 class KpiReportPolicy < KpiPolicyBase
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:company_admin) && user.entity_type == "Company"
-        scope.where(entity_id: user.entity_id)
-      elsif user.curr_role == "employee" && user.entity_type == "Company"
-        scope.for_employee(user)
-      else
+      if user.curr_role == "investor"
+        # for_investor_sql = scope.for_investor(user).to_sql
+        # all_my_kpi_reports_sql = KpiReport.where(entity_id: user.entity_id).to_sql
+        # sql = "#{for_investor_sql} UNION #{all_my_kpi_reports_sql}"
+        # scope.from("(#{sql}) as kpi_reports")
         scope.for_investor(user)
+      else
+        scope.where(entity_id: user.entity_id).where(owner_id: nil)
       end
     end
   end
@@ -16,20 +18,20 @@ class KpiReportPolicy < KpiPolicyBase
   end
 
   def show?
-    user.enable_kpis &&
-      (belongs_to_entity?(user, record) || permissioned_employee? || permissioned_investor?)
+    (user.enable_kpis &&
+      ((belongs_to_entity?(user, record) || permissioned_employee?) && record.owner_id.nil?)) || permissioned_investor? || record.owner_id == user.entity_id
   end
 
   def create?
-    belongs_to_entity?(user, record)
+    (belongs_to_entity?(user, record) || permissioned_employee?) && record.owner_id.nil?
   end
 
   def new?
-    create? && permissioned_employee?(:create)
+    create?
   end
 
   def update?
-    create? && permissioned_employee?(:update)
+    create? || record.owner_id == user.entity_id
   end
 
   def recompute_percentage_change?

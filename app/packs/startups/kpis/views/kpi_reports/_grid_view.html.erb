@@ -1,3 +1,4 @@
+
 <% kpi_reports = kpi_reports.order(as_of: :asc) %>
 
 <div data-controller="export-xl">
@@ -12,11 +13,31 @@
         <% if params[:q].blank? %>
             <%= render "kpi_reports/filter" %> | 
         <% end %>
-        <%= link_to "Reports", kpis_path(filter: true), class: "btn btn-outline-primary" %>
 
-        <button class="btn btn-outline-success", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button> 
+        <div class="btn-group">
+        <div class="dropdown">
+            <button class="btn btn-outline-success dropdown-toggle" type="button"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Actions
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <%= link_to "Reports", kpis_path(filter: true), class: "dropdown-item" %>
 
-        <%= button_to "Recompute Percentages", recompute_percentage_change_kpi_report_path(kpi_reports.last), method: :patch, class: "btn btn-outline-primary" if kpi_reports.last %>
+                <button class="dropdown-item", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button> 
+
+                <%= button_to "Recompute Percentages", recompute_percentage_change_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item" if kpi_reports.last %>
+
+                <%= link_to "Upload", 
+                    new_import_upload_path(
+                        "import_upload[import_type]": "Kpi", 
+                        "import_upload[entity_id]": current_user.entity_id,
+                        "import_upload[owner_id]": params[:portfolio_company_id],
+                        "import_upload[owner_type]": "Investor",
+                        "sample_upload": "KPIS_SAMPLE"), 
+                        { class: "dropdown-item"} %> 
+            </div>
+        </div>
+        </div>
     </span>
 
 </div>
@@ -39,9 +60,21 @@
     <table id="kpi_reports_grid" class="table table-bordered dataTable jqDataTable">
         <thead>
             <tr>
-                <th class="no-sort">KPI</th>
+                <th>KPI</th>
                 <% kpi_reports.each do |kpi_report| %>
-                    <th><%= l kpi_report.as_of %></th>
+                    <th>
+                        <%= l kpi_report.as_of %>
+                        <span class="d-block">
+                        <% if kpi_report.tag_list.present? %>                            
+                            <small class="badge badge-pill bg-success-subtle text-success"><%= kpi_report.tag_list %></small>
+                        <% end %>
+                        <% if kpi_report.owner.present? %>
+                            <small class="badge badge-pill bg-info-subtle text-info"><%= kpi_report.owner %></small>
+                        <% else %>
+                            <small class="badge badge-pill bg-warning-subtle text-warning"><%= kpi_report.entity %></small>
+                        <% end %>
+                        </span>
+                    </th>
                 <% end %>            
             </tr>
         </thead>
@@ -51,24 +84,28 @@
                     <td> Entity </td>
                     <% kpi_reports.each do |kpi_report| %>            
                         <td>
-                            <%= kpi_report.entity.name %>
+                            <%= kpi_report.for_name %>
+                            <small class="mb-1 badge rounded-pill bg-success-subtle text-success"><%= kpi_report.tag_list if kpi_report.tag_list %></small>
                         </td>
                     <% end %>
                 </tr>
             <% end %>
             <% investor_kpi_mappings.each do |ikm| %>            
                 <tr>
-                    <td><%= ikm.standard_kpi_name %></td>
+                    <td>
+                        <%= ikm.standard_kpi_name %>
+                    </td>
+                    
                     <% kpi_reports.each do |kpi_report| %>  
                         <!-- Create a hash of the kpis with the name as the key -->
                         <% 
                             kpis = kpi_report.kpis                             
-                            kpis = kpis.map{|kpi| [kpi.name, kpi]}.to_h                             
+                            kpis = kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h                             
                         %>
                         
                         <!-- Find the kpi with the name or an alias for the name and show its value-->
-                        <% kpi = kpis[ikm.reported_kpi_name].presence %>                        
-                        <td>
+                        <% kpi = kpis[ikm.reported_kpi_name.downcase].presence %>                        
+                        <td class="value_<%=kpi&.id%>">
                             <% if kpi %>
                                 <%= number_with_delimiter(kpi.value.round(2), delimiter: ',') if kpi.value %>
                                 <br>
@@ -120,7 +157,7 @@
     <% 
         kpi_names = investor_kpi_mappings.collect(&:reported_kpi_name)
         kpis = Kpi.where(name: kpi_names, kpi_report_id: kpi_reports.pluck(:id))
-        kpi_mappings = investor_kpi_mappings.group_by{|ikm| [ikm.investor.investor_entity_id, ikm.reported_kpi_name] }
+        kpi_mappings = investor_kpi_mappings.group_by{|ikm| [ikm.investor&.investor_entity_id, ikm.reported_kpi_name] }
     %>
     <div class="associated_entity">
         <div class="row">

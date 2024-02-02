@@ -2,13 +2,16 @@
   <% unless kpi_report %>
   <td>
     <%= link_to kpi.kpi_report %>
+    <% if kpi.kpi_report.tag_list.present? %>
+      <small class="badge bg-success-subtle text-success"><%= kpi.kpi_report.tag_list %></small>
+    <% end %>
   </td>
   <% end %>
   <td>
     <%= kpi.name %>
   </td>
   <td>
-    <%= kpi.period %>
+    <%= kpi.kpi_report.period %>
   </td>
   <td>
     <%= kpi.display_value.present? ? kpi.display_value : kpi.value %>

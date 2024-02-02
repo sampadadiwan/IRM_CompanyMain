@@ -68,11 +68,15 @@ module ForInvestor
 
       Rails.logger.debug join_clause.to_sql
 
-      join_clause.merge(filter)
-                 .where("investors.investor_entity_id=?", user.entity_id)
-                 # Ensure this user has investor access
-                 .joins(entity: :investor_accesses)
-                 .merge(InvestorAccess.approved_for_user(user))
+      join_clause = join_clause.merge(filter)
+                               .where("investors.investor_entity_id=?", user.entity_id)
+
+      unless %w[KpiReport Kpi].include?(name)
+        # Ensure the investor access is approved
+        join_clause = join_clause.joins(entity: :investor_accesses).merge(InvestorAccess.approved_for_user(user))
+      end
+
+      join_clause
     }
   end
 end

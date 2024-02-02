@@ -107,6 +107,7 @@ Given('there is an existing portfolio company {string}') do |arg1|
 
   puts "\n####Portfolio Company####\n"
   puts @investor.to_json
+  @portfolio_company = @investor
 end
 
 

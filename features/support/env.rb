@@ -39,13 +39,10 @@ Cucumber::Rails::Database.autorun_database_cleaner = false
 
 begin
   # These tables are excluded simply to make truncation faster. If you write tests which include these models then you should remove them from this list.
-  DatabaseCleaner.strategy = [:truncation, except: %w[blazer_audits blazer_checks blazer_dashboard_queries   blazer_dashboards blazer_queries  active_admin_comments video_kycs taggings tags admin_users active_storage_attachments active_storage_blobs active_storage_variant_records user_alerts impressions activities exception_tracks impressions investment_snapshots messages nudges reminders payments holding_actions holding_audit_trails deal_docs kpi_reports share_transfers kpis action_mailbox_inbound_emails]]
+  DatabaseCleaner.strategy = [:truncation, except: %w[blazer_audits blazer_checks blazer_dashboard_queries   blazer_dashboards blazer_queries  active_admin_comments video_kycs taggings tags admin_users active_storage_attachments active_storage_blobs active_storage_variant_records user_alerts impressions activities exception_tracks impressions investment_snapshots messages nudges reminders payments holding_actions holding_audit_trails deal_docs share_transfers action_mailbox_inbound_emails]]
 
   Chewy.strategy :bypass
 
-  # UserIndex.reset!
-  # EntityIndex.reset!
-  # InvestorIndex.reset!
 rescue NameError => e
   puts e.backtrace
   raise "You need to add database_cleaner to your Gemfile (in the :test group) if you wish to use it."

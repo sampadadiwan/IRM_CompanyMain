@@ -131,9 +131,7 @@
 
         <div id="kpis-tab" class="tab-pane fade">
           <div id="kpis" class="associated_entity">
-            <%= link_to kpi_reports_path(entity_id: investor.investor_entity_id, grid_view: true), 
-                                    class: "load_data_link", 
-                                    data: { turbo_frame: 'kpi_reports_list' } do %>
+            <%= link_to kpi_reports_path(portfolio_company_id: investor.id, entity_id: investor.investor_entity_id, grid_view: true), class: "load_data_link", data: { turbo_frame: 'kpi_reports_list' } do %>
               <span>Loading...</span>
             <% end %>
             <%= turbo_frame_tag "kpi_reports_list", target: "_top" do %>

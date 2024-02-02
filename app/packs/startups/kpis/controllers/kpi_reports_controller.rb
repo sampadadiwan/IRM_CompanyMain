@@ -4,7 +4,7 @@ class KpiReportsController < ApplicationController
   # GET /kpi_reports or /kpi_reports.json
   def index
     @q = KpiReport.ransack(params[:q])
-    @kpi_reports = policy_scope(@q.result).includes(:kpis, :documents, :entity)
+    @kpi_reports = policy_scope(@q.result).includes(:kpis, :documents, :entity, :user, :portfolio_company)
     authorize(KpiReport)
 
     if params[:period].present?
@@ -13,6 +13,7 @@ class KpiReportsController < ApplicationController
     end
 
     @kpi_reports = @kpi_reports.where(entity_id: params[:entity_id]) if params[:entity_id].present?
+    @kpi_reports = @kpi_reports.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
 
     respond_to do |format|
       format.html { render :index }
@@ -95,6 +96,6 @@ class KpiReportsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def kpi_report_params
-    params.require(:kpi_report).permit(:entity_id, :as_of, :notes, :user_id, :form_type_id, properties: {}, kpis_attributes: %i[id entity_id name period value display_value notes _destroy])
+    params.require(:kpi_report).permit(:entity_id, :as_of, :tag_list, :notes, :user_id, :form_type_id, :period, properties: {}, kpis_attributes: %i[id entity_id name period value display_value notes _destroy])
   end
 end

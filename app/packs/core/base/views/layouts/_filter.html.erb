@@ -34,7 +34,7 @@
             </div>
             <% end %>
 
-            <% if %w[kpis].include?(params[:controller]) %>
+            <% if %w[kpis kpi_reports].include?(params[:controller]) %>
             <div class="form-check form-check-inline">
               <input class="form-check-input" type="checkbox" id="grid_view" name="grid_view" value="true" <%= params[:grid_view].present? ? "checked" : nil %> >
               <label class="form-check-label" for="grid_view">Grid View</label>

@@ -114,6 +114,10 @@ Given('the user has role {string}') do |roles|
   end
 end
 
+Given('the user has curr role {string}') do |role|
+  @user.curr_role = role
+  @user.save
+end
 
 Then(/^he must see the message "([^"]*)"$/) do |arg1|
   expect(page).to have_content(arg1)

@@ -17,6 +17,34 @@
     </td>
   </tr>
 
+  <tr>
+    <td>
+      Period
+    </td>
+    <td>
+      <%= @kpi_report.period %>
+    </td>
+  </tr>
+
+  <% if @kpi_report.tag_list.present? %>
+    <tr>
+      <td>
+        Tags
+      </td>
+      <td>
+        <%= @kpi_report.tag_list %>
+      </td>
+    </tr>
+  <% end %>
+  <tr>
+    <td>
+      As Of
+    </td>
+    <td>
+      <%= l @kpi_report.as_of %>
+    </td>
+  </tr>
+
   <%= display_custom_fields(@kpi_report, collapsed: false) if current_user %>
 
   <tr>

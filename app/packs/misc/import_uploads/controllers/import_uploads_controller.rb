@@ -77,6 +77,7 @@ class ImportUploadsController < ApplicationController
 
   def delete_data
     @import_upload.imported_data.each(&:destroy)
+    @import_upload.update(status: "All imported data deleted by #{current_user.email}", processed_row_count: 0, error_text: nil)
     redirect_to import_upload_path(@import_upload), notice: "Imported data was successfully deleted."
   end
 

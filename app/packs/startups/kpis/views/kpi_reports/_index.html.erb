@@ -10,10 +10,9 @@
     </h1>
     <span>
       
-      <% form_type = current_user.entity.form_types.where(name: "KpiReport").first %>
-      <% if form_type %>
         <%= link_to "New Kpi Report", new_kpi_report_path("kpi_report[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
-        <%= link_to "Grid View", kpi_reports_path(entity_id: current_user.entity_id, period: 12, grid_view: true), {class: "btn btn-outline-primary"}  %>
+        
+        <%= link_to "Grid View", kpi_reports_path(entity_id: current_user.entity_id, period: 12, grid_view: true), {class: "btn btn-outline-primary"} if params[:q].blank? %>
 
         <%= link_to "Upload", 
             new_import_upload_path(
@@ -22,10 +21,6 @@
                 "sample_upload": "KPIS_SAMPLE"), 
                 { class: "btn btn-outline-success"} %> 
 
-        <%#= link_to "Customize Kpis", edit_form_type_path(form_type), {class: "btn btn-outline-success"}  %>
-      <% else %>
-        <%#= link_to "Customize Kpis", new_form_type_path("form_type[name]": "KpiReport"), {class: "btn btn-outline-success"}  %>
-      <% end %>
     </span>
   </div>
 
@@ -45,10 +40,16 @@
             As Of
           </th>
           <th>
+            Period
+          </th>
+          <th>
             Notes
           </th>
           <th>
             User
+          </th>
+          <th>
+            For
           </th>
           <th>
           </th>

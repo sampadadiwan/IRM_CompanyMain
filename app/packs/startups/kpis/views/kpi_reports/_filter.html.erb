@@ -1,6 +1,7 @@
 <%= form_with(model: nil, method: :get, url: "/kpi_reports", id: "kpi_reports_filter",  data: {turbo_frame: "kpi_reports_list"} ) do |form| %>
     
   <input name="entity_id" value="<%= params[:entity_id] %>" hidden="hidden">
+  <input name="portfolio_company_id" value="<%= params[:portfolio_company_id] %>" hidden="hidden">
   <input name="grid_view" value="true" hidden="hidden">
 
   <div class="form-group col-md-1" data-controller="kpi_reports">    
