@@ -48,5 +48,5 @@ namespace :admin do
   #   resources :audits
   # end
 
-  root to: "investors#index"
+  root to: "entities#index"
 end
