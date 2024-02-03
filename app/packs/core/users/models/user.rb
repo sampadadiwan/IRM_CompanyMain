@@ -2,7 +2,10 @@ class User < ApplicationRecord
   include PublicActivity::Model
   include UserEnabled
   include WithCustomField
-  include Trackable
+
+  # include Trackable
+  audited only: %i[first_name last_name email phone permissions extended_permissions]
+  acts_as_paranoid
 
   attr_accessor :role_name
 
