@@ -1,0 +1,54 @@
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-sm-flex align-items-center justify-content-between">
+      <h6 class="m-0 font-weight-bold text-primary"><%= @title ? @title : "Audit Trail" %> </h6>
+      <span>
+          <% if @allow_toggle %>
+              <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".<%=@css_class%>"><i class="fa-solid fa-caret-down"></i></a>
+          <% end %>
+      </span>
+  </div>
+  <div class="card-body collapse <%=@state%> <%=@css_class%>" data-controller="datatable">
+    <table class="table table-bordered dataTable jqDataTable">
+      <thead>
+        <th>Time</th>
+        <th>User</th>
+        <th>Attribute</th>
+        <th>Old Value</th>
+        <th>New Value</th>
+      </thead>
+      <tbody>
+      <% @model.own_and_associated_audits.sort{|a,b| b.version <=> a.version}.each do |audit| %>
+      
+        <% if audit.associated %>
+        <tr>
+          <td><%= l(audit.created_at)  %></td>
+          <td><%= (audit.user ? audit.user.name : "System") %></td>
+          <td><%=  audit.auditable_type %></td>
+          <td><%= link_to audit.auditable %></td>
+          <td></td>
+        </tr>
+        <% else %>
+          <% audit.audited_changes.each_with_index do |key_val, idx| %>
+          <% k, v = key_val %>          
+            <% if v && (!v.kind_of?(Array) || v[0].present? || v[1].present?) %>                
+              <tr>            
+                <td><%= idx == 0 ? l(audit.created_at) : nil %></td>
+                <td><%= idx == 0 ? (audit.user ? audit.user.name : "System") : nil %></td>        
+                <td><%= k.humanize %></td>
+                <% if v.kind_of?(Array) %>
+                    <td> <%= v[0] %> </td> 
+                    <td> <%= v[1] %> </td>
+                  <% else %>
+                    <td> <%= v %> </td>
+                    <td> </td>
+                  <% end %>
+              </tr>
+            <% end %>          
+          <% end %>
+        <% end %>
+      
+      <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

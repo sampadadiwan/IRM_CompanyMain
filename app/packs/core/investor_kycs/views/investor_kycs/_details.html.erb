@@ -14,6 +14,11 @@
         data-action="click->tabdetails#loadData">Kyc Data</a>
     <% end %>
 
+    <% if params[:audit_trail].present? %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#audit-trail-tab"
+          data-action="click->tabdetails#loadData">Audit Trail</a>
+    <% end %>
+
   </nav>
 
 
@@ -39,6 +44,14 @@
       <div id="kyc-datas-tab" class="tab-pane fade in show">
         <div id="kyc-datas" class="associated_entity">
           <%= render partial: "/kyc_datas/index" , locals: {lazy_load_data: true, investor_kyc: @investor_kyc} %>
+        </div>
+      </div>
+      <% end %>
+
+      <% if params[:audit_trail].present? %>
+      <div id="audit-trail-tab" class="tab-pane fade in show">
+        <div id="audit-trail" class="associated_entity">
+          <%= render AuditTrail.new(@investor_kyc, css_class: "investor_kyc_audit_trail") %>
         </div>
       </div>
       <% end %>

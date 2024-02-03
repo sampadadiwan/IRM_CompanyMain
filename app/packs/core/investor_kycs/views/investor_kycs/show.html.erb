@@ -2,7 +2,6 @@
 
 <%= render "investor_kycs/show", investor_kyc: @investor_kyc %>
 
-
   <div>
 
     <%= link_to "Edit" , edit_investor_kyc_path(@investor_kyc), {class: "btn btn-outline-primary" } if policy(@investor_kyc).update? %>
@@ -13,11 +12,23 @@
     <% label_class = @investor_kyc.verified ? "btn btn-outline-warning" : "btn btn-outline-success" %>
     <%= button_to label, toggle_verified_investor_kyc_path(@investor_kyc), method: :put, class: label_class, form_class: "deleteButton" if policy(@investor_kyc).toggle_verified? %>
 
-    <%= button_to "Send KYC Reminder", send_kyc_reminder_investor_kyc_path(@investor_kyc), method: :get, class: "btn btn-outline-primary", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false,
-      method: :get, msg: "This will generate a notification to all users associated with this investor"} if policy(@investor_kyc).send_kyc_reminder? %>
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-outline-success dropdown-toggle" type="button"
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Actions
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          <%= button_to "Send KYC Reminder", send_kyc_reminder_investor_kyc_path(@investor_kyc), method: :get, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false,
+            method: :get, msg: "This will generate a notification to all users associated with this investor"} if policy(@investor_kyc).send_kyc_reminder? %>
 
-    <%= link_to "Generate Docs" , generate_docs_investor_kyc_path(@investor_kyc), {class: "btn btn-outline-primary" } if policy(@investor_kyc).generate_docs? %>
+          <%= link_to "Generate Docs" , generate_docs_investor_kyc_path(@investor_kyc), {class: "dropdown-item" } if policy(@investor_kyc).generate_docs? %>
 
+          <%= link_to "Audit Trail" , investor_kyc_path(@investor_kyc, audit_trail: true, tab: "audit-trail-tab"), {class: "dropdown-item" } if policy(@investor_kyc).toggle_verified? %>
+
+        </div>
+      </div>
+    </div>
   </div>
 
 <%= render "investor_kycs/details", investor_kyc: @investor_kyc %>

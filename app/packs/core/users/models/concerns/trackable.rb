@@ -3,8 +3,8 @@ module Trackable
 
   included do
     # Make all models versioned
-    has_paper_trail
-
+    audited on: %i[create update destroy]
+    has_associated_audits
     # Soft delete for all models
     acts_as_paranoid
   end

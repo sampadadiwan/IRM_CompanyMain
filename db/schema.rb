@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_02_092251) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_03_073410) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1769,11 +1769,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_02_092251) do
     t.decimal "uncalled_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "agreement_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "import_upload_id"
+    t.bigint "investor_user_id"
+    t.datetime "investor_user_updated_at"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
     t.index ["form_type_id"], name: "index_investor_kycs_on_form_type_id"
     t.index ["investor_id"], name: "index_investor_kycs_on_investor_id"
+    t.index ["investor_user_id"], name: "index_investor_kycs_on_investor_user_id"
     t.index ["verified_by_id"], name: "index_investor_kycs_on_verified_by_id"
   end
 
@@ -2818,6 +2821,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_02_092251) do
   add_foreign_key "investor_kycs", "folders", column: "document_folder_id"
   add_foreign_key "investor_kycs", "form_types"
   add_foreign_key "investor_kycs", "investors"
+  add_foreign_key "investor_kycs", "users", column: "investor_user_id"
   add_foreign_key "investor_kycs", "users", column: "verified_by_id"
   add_foreign_key "investor_notice_entries", "entities"
   add_foreign_key "investor_notice_entries", "entities", column: "investor_entity_id"
