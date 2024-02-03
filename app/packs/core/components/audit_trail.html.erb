@@ -10,12 +10,12 @@
   <div class="card-body collapse <%=@state%> <%=@css_class%>" data-controller="datatable">
     <table class="table table-bordered dataTable jqDataTable">
       <thead>
+        <th>Audit Id</th>
         <th>Time</th>
         <th>User</th>
         <th>Attribute</th>
         <th>Old Value</th>
-        <th>New Value</th>
-        <th>Audit Id</th>
+        <th>New Value</th>        
       </thead>
       <tbody>
       <!-- Audit trail consist of own changes and changes from associations -->
@@ -24,6 +24,7 @@
         <% if audit.associated %>
         <!-- Just a link to the association that was changed, we do not capture the fields -->
         <tr>
+          <td><%= audit.id %></td>
           <td>
             <%= l(audit.created_at)  %>
             <small class="text-muted">(<%= audit.action.humanize %>)</small>
@@ -31,32 +32,35 @@
           <td><%= (audit.user ? audit.user.name : "System") %></td>
           <td><%=  audit.auditable_type %></td>
           <td><%= link_to audit.auditable %></td>
-          <td></td>
-          <td><%= audit.id %></td>
+          <td></td>          
         </tr>
         <% else %>
           <!-- Capture the fields that were changed and publish them -->
           <% audit.audited_changes.each_with_index do |key_val, idx| %>
           <% k, v = key_val %>          
-              <% if v && (v[0].present? || v[1].present?) %>                
+              <% if v && (!v.kind_of?(Array) || v[0].present? || v[1].present?) %>                
                 <tr>            
-                  <!-- Only show the time and user for the first change in the change set -->
+                  <td><%= audit.id %></td>
                   <td>
                     <%= l(audit.created_at)  %>
                     <small class="text-muted">(<%= audit.action.humanize %>)</small>
                   </td>
+                  <!-- Only show the user for the first change in the change set -->
                   <td><%= idx == 0 ? (audit.user ? audit.user.name : "System") : nil %></td>        
                   <% if k == "json_fields" %>
                     <td> Custom Fields </td>
-                    <td> <%= Json2table.get_html_table(v[0], JsonTable::TABLE_OPTIONS).html_safe %> </td> 
-                    <td> <%= Json2table.get_html_table(v[1], JsonTable::TABLE_OPTIONS).html_safe %> </td>
+                    <td> <%= Json2table.get_html_table(v[0], JsonTable::TABLE_OPTIONS).html_safe if v[0] %> </td> 
+                    <td> <%= Json2table.get_html_table(v[1], JsonTable::TABLE_OPTIONS).html_safe if v[1]%> </td>
                   <% else %>
                     <td><%= k.humanize %></td>
-                    <td> <%= v[0] %> </td> 
-                    <td> <%= v[1] %> </td>
+                    <% if v.kind_of?(Array) %>
+                      <td> <%= v[0] %> </td> 
+                      <td> <%= v[1] %> </td>
+                    <% else %>
+                      <td> <%= v %> </td> 
+                      <td> </td>
+                    <% end %>
                   <% end %>
-
-                  <td><%= idx == 0 ? audit.id : nil %></td>
                 </tr>
               <% end %> 
           <% end %>

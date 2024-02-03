@@ -45,7 +45,10 @@ class ImportUtil
 
           # This sanitizes each row by stripping and squeezing spaces
           sanitized_row = row.map { |x| x&.to_s&.strip&.squeeze(" ") }
-          process_row(headers, custom_field_headers, sanitized_row, import_upload, context)
+          # Ensure the Audit trail is created as the user who uploaded the file
+          Audited.audit_class.as_user(import_upload.user) do
+            process_row(headers, custom_field_headers, sanitized_row, import_upload, context)
+          end
           # add row to results sheet
           sheet.add_row(sanitized_row)
           # To indicate progress
