@@ -77,7 +77,7 @@ gem 'to_words'
 gem "administrate"
 gem 'administrate-field-active_storage'
 # gem 'administrate-field-belongs_to_search'
-gem 'administrate-field-boolean_emoji', '~> 0.3.0'
+gem 'administrate-field-boolean_emoji'
 gem 'administrate-field-shrine'
 
 # This generates rails based datatables

@@ -17,6 +17,7 @@ namespace :admin do
   resources :entities
   resources :documents
   resources :investments
+  resources :aggregate_investments
   resources :access_rights
   resources :deals
   resources :deal_investors

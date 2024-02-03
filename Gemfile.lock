@@ -830,7 +830,7 @@ DEPENDENCIES
   acts_as_list
   administrate
   administrate-field-active_storage
-  administrate-field-boolean_emoji (~> 0.3.0)
+  administrate-field-boolean_emoji
   administrate-field-shrine
   after_commit_action
   ajax-datatables-rails
