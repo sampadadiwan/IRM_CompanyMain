@@ -19,6 +19,10 @@ class InvestorKycPolicy < ApplicationPolicy
     user.enable_kycs
   end
 
+  def bulk_actions?
+    index?
+  end
+
   def show?
     user.enable_kycs && (
       (belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :read)) ||

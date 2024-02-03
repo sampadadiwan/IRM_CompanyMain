@@ -11,15 +11,7 @@ class InvestorKycsController < ApplicationController
 
   # GET /investor_kycs or /investor_kycs.json
   def index
-    authorize(InvestorKyc)
-
-    @q = InvestorKyc.ransack(params[:q])
-    @investor_kycs = policy_scope(@q.result)
-    @investor_kycs = apply_scopes(@investor_kycs)
-
-    @investor = Investor.find(params[:investor_id]) if params[:investor_id].present?
-
-    @investor_kycs = KycSearch.perform(@investor_kycs, current_user, params)
+    fetch_rows
 
     respond_to do |format|
       format.html
@@ -27,6 +19,17 @@ class InvestorKycsController < ApplicationController
       format.xlsx
       format.json { render json: InvestorKycDatatable.new(params, investor_kycs: @investor_kycs) }
     end
+  end
+
+  def fetch_rows
+    authorize(InvestorKyc)
+    @q = InvestorKyc.ransack(params[:q])
+    @investor_kycs = policy_scope(@q.result)
+    @investor_kycs = apply_scopes(@investor_kycs)
+
+    @investor = Investor.find(params[:investor_id]) if params[:investor_id].present?
+
+    @investor_kycs = KycSearch.perform(@investor_kycs, current_user, params)
   end
 
   # GET /investor_kycs/1 or /investor_kycs/1.json

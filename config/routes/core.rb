@@ -40,6 +40,7 @@ resources :investor_kycs do
   patch 'generate_docs', on: :member # Actually generate the docs
   get 'generate_all_docs', on: :collection
   post 'generate_all_docs', on: :collection # Generate docs for entire fund or entity
+  get 'bulk_actions', on: :collection
 end
 
 resources :aml_reports do

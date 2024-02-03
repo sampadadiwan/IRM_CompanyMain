@@ -1,0 +1,38 @@
+
+<% if params[:q].present? %>
+  
+<div class="btn-group">
+    <div class="dropdown">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="doc_actions"
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Bulk Actions
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        
+            <% msg = "This will verify each KYC in the search results (including results on other pages). Proceed?" %>
+            <%= button_to "Verify", 
+            bulk_actions_investor_kycs_path("bulk_action": "Verify", q: params.to_unsafe_h[:q], all: true),
+            class: "dropdown-item", form_class: "w-100", 
+            data: {msg:, action: "click->confirm#popup", method: :get}  %>
+
+            <% msg = "This will unverify each KYC in the search results (including results on other pages). Proceed?" %>
+            <%= button_to "Unverify", 
+            bulk_actions_investor_kycs_path("bulk_action": "Unverify", q: params.to_unsafe_h[:q], all: true),
+            class: "dropdown-item", form_class: "w-100",
+            data: {msg:, action: "click->confirm#popup", method: :get}  %>
+
+
+            <div class="dropdown-divider"></div>
+
+
+            <% msg = "This will send a reminder to each KYC in the search results (including results on other pages). Proceed?" %>
+            <%= button_to "Send Reminder", 
+            bulk_actions_investor_kycs_path("bulk_action": "SendReminder", q: params.to_unsafe_h[:q], all: true),
+            class: "dropdown-item", form_class: "w-100",
+            data: {msg:, action: "click->confirm#popup", method: :get}  %>
+
+        </div>
+    </div>
+</div>
+
+<% end %>
