@@ -25,7 +25,7 @@ class FundingRoundDashboard < Administrate::BaseDashboard
     status: Field::String,
     closed_on: Field::Date,
     deleted_at: Field::DateTime,
-    versions: Field::HasMany
+    audits: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -59,7 +59,7 @@ class FundingRoundDashboard < Administrate::BaseDashboard
     closed_on
     deleted_at
     investments
-    versions
+    audits
   ].freeze
 
   # FORM_ATTRIBUTES

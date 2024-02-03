@@ -28,7 +28,7 @@ class FundDashboard < Administrate::BaseDashboard
     call_amount_cents: Field::String.with_options(searchable: false),
     properties: Field::Text,
     distribution_amount_cents: Field::String.with_options(searchable: false),
-    versions: Field::HasMany,
+    audits: Field::HasMany,
     editable_formulas: Field::BooleanEmoji
   }.freeze
 
@@ -67,7 +67,7 @@ class FundDashboard < Administrate::BaseDashboard
     capital_distributions
     capital_calls
     access_rights
-    versions
+    audits
 
   ].freeze
 

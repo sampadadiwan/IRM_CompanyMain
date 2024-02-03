@@ -22,7 +22,7 @@ class FundFormulaDashboard < Administrate::BaseDashboard
     rule_for: Field::Select.with_options(searchable: false, collection: ->(field) { field.resource.class.send(field.attribute.to_s.pluralize).keys }),
     rule_type: Field::String,
     sequence: Field::Number,
-    versions: Field::HasMany,
+    audits: Field::HasMany,
     created_at: Field::DateTime,
     updated_at: Field::DateTime
   }.freeze
@@ -60,7 +60,7 @@ class FundFormulaDashboard < Administrate::BaseDashboard
     rule_for
     rule_type
     sequence
-    versions
+    audits
     created_at
     updated_at
   ].freeze
@@ -82,7 +82,7 @@ class FundFormulaDashboard < Administrate::BaseDashboard
     rule_for
     rule_type
     sequence
-    versions
+    audits
   ].freeze
 
   # COLLECTION_FILTERS

@@ -22,7 +22,7 @@ class CapitalRemittanceDashboard < Administrate::BaseDashboard
     updated_at: Field::DateTime,
     properties: Field::Text,
     verified: Field::Boolean,
-    versions: Field::HasMany,
+    audits: Field::HasMany,
     capital_remittance_payments: Field::HasMany
   }.freeze
 
@@ -59,7 +59,7 @@ class CapitalRemittanceDashboard < Administrate::BaseDashboard
     properties
     verified
     capital_remittance_payments
-    versions
+    audits
   ].freeze
 
   # FORM_ATTRIBUTES

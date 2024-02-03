@@ -13,7 +13,6 @@ class ApplicationController < ActionController::Base
   before_action :authenticate_user!
   before_action :set_search_controller
   before_action :configure_permitted_parameters, if: :devise_controller?
-  before_action :set_paper_trail_whodunnit
 
   # This is a common action for all models which have filters. Bulk actions can be applied to filtered results. A Job "#{controller_name}BulkActionJob", needs to be defined, which will be passed the ids of the filtered results. and the bulk action to perform on them. Note that the controller must implement a fetch_rows method which returns the filtered results.
   def bulk_actions

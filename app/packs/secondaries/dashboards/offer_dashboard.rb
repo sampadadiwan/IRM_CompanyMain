@@ -39,7 +39,7 @@ class OfferDashboard < Administrate::BaseDashboard
     comments: Field::Text,
     auto_match: Field::BooleanEmoji,
     granted_by_user_id: Field::Number,
-    versions: Field::HasMany
+    audits: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -90,7 +90,7 @@ class OfferDashboard < Administrate::BaseDashboard
     granted_by_user_id
 
     documents
-    versions
+    audits
   ].freeze
 
   # FORM_ATTRIBUTES

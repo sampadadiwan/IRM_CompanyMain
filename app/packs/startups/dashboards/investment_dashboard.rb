@@ -22,7 +22,7 @@ class InvestmentDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     category: Field::String,
-    versions: Field::HasMany
+    audits: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -52,7 +52,7 @@ class InvestmentDashboard < Administrate::BaseDashboard
     quantity
     created_at
     updated_at
-    versions
+    audits
   ].freeze
 
   # FORM_ATTRIBUTES

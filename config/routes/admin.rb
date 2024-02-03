@@ -2,6 +2,11 @@ namespace :admin do
   namespace :paper_trail do
     resources :versions, except: :index
   end
+
+  namespace :audited do
+    resources :audits
+  end
+
   resources :whatsapp_logs
   resources :notifications
   resources :investors

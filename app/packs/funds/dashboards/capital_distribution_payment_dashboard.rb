@@ -19,7 +19,7 @@ class CapitalDistributionPaymentDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     completed: Field::Boolean,
-    versions: Field::HasMany
+    audits: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -50,7 +50,7 @@ class CapitalDistributionPaymentDashboard < Administrate::BaseDashboard
     created_at
     updated_at
     completed
-    versions
+    audits
   ].freeze
 
   # FORM_ATTRIBUTES

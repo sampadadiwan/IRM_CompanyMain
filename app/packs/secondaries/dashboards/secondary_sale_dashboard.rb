@@ -46,7 +46,7 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     disable_pan_kyc: Field::BooleanEmoji,
     disable_bank_kyc: Field::BooleanEmoji,
     sale_type: Field::Select.with_options(collection: SecondarySale::SALE_TYPES),
-    versions: Field::HasMany
+    audits: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -103,7 +103,7 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     access_rights
     offers
     interests
-    versions
+    audits
 
   ].freeze
 

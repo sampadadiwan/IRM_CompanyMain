@@ -17,7 +17,7 @@ class ApprovalResponseDashboard < Administrate::BaseDashboard
     response_user: Field::BelongsTo,
     rich_text_details: Field::HasOne,
     status: Field::String,
-    versions: Field::HasMany,
+    audits: Field::HasMany,
     created_at: Field::DateTime,
     updated_at: Field::DateTime
   }.freeze
@@ -46,7 +46,7 @@ class ApprovalResponseDashboard < Administrate::BaseDashboard
     response_user
     rich_text_details
     status
-    versions
+    audits
     created_at
     updated_at
   ].freeze
@@ -63,7 +63,7 @@ class ApprovalResponseDashboard < Administrate::BaseDashboard
     response_user
     rich_text_details
     status
-    versions
+    audits
   ].freeze
 
   # COLLECTION_FILTERS

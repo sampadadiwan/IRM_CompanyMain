@@ -20,7 +20,7 @@ class CapitalCommitmentDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     properties: Field::Text,
-    versions: Field::HasMany
+    audits: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -53,7 +53,7 @@ class CapitalCommitmentDashboard < Administrate::BaseDashboard
     updated_at
     properties
     capital_remittances
-    versions
+    audits
   ].freeze
 
   # FORM_ATTRIBUTES

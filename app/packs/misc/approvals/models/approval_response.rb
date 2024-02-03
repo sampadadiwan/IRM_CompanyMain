@@ -1,6 +1,4 @@
 class ApprovalResponse < ApplicationRecord
-  has_paper_trail
-
   belongs_to :entity
   belongs_to :investor
   belongs_to :response_entity, class_name: "Entity"

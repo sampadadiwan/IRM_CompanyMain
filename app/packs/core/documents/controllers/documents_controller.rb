@@ -2,7 +2,7 @@ class DocumentsController < ApplicationController
   include ActiveStorage::SetCurrent
   include DocumentHelper
 
-  skip_before_action :verify_authenticity_token, :set_current_entity, :authenticate_user!, :set_search_controller, :set_paper_trail_whodunnit, only: %i[signature_progress]
+  skip_before_action :verify_authenticity_token, :set_current_entity, :authenticate_user!, :set_search_controller, only: %i[signature_progress]
 
   before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign]
 

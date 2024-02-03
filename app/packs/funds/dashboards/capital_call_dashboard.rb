@@ -22,7 +22,7 @@ class CapitalCallDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     properties: Field::Text,
-    versions: Field::HasMany
+    audits: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -54,7 +54,7 @@ class CapitalCallDashboard < Administrate::BaseDashboard
     created_at
     updated_at
     properties
-    versions
+    audits
   ].freeze
 
   # FORM_ATTRIBUTES

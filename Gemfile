@@ -61,7 +61,7 @@ gem "aws-sdk-s3", require: false
 gem 'chewy'
 
 gem 'kaminari'
-gem 'paper_trail'
+# gem 'paper_trail'
 
 # Charting gems
 gem "chartkick"

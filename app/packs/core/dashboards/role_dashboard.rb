@@ -8,7 +8,7 @@ class RoleDashboard < Administrate::BaseDashboard
   # which determines how the attribute is displayed
   # on pages throughout the dashboard.
   ATTRIBUTE_TYPES = {
-    versions: Field::HasMany,
+    audits: Field::HasMany,
     activities: Field::HasMany,
     users: Field::HasMany,
     resource: Field::Polymorphic,

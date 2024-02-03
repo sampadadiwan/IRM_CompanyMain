@@ -21,7 +21,7 @@ class DealDashboard < Administrate::BaseDashboard
     updated_at: Field::DateTime,
     start_date: Field::Date,
     end_date: Field::Date,
-    versions: Field::HasMany
+    audits: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -52,7 +52,7 @@ class DealDashboard < Administrate::BaseDashboard
     deal_investors
     deal_activities
     access_rights
-    versions
+    audits
   ].freeze
 
   # FORM_ATTRIBUTES

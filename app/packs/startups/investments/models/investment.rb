@@ -1,10 +1,6 @@
 class Investment < ApplicationRecord
   audited
   include Trackable
-  # acts_as_paranoid
-  has_paper_trail only: %i[quantity funding_round_id investor_id category investment_instrument
-                           quantity price_cents liquidation_preference spv]
-
   include InvestmentScopes
   include InvestmentCounters
   # Make all models searchable

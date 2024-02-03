@@ -21,7 +21,7 @@ class DealActivityDashboard < Administrate::BaseDashboard
     details: Field::Text,
     sequence: Field::Number,
     days: Field::Number,
-    versions: Field::HasMany
+    audits: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -53,7 +53,7 @@ class DealActivityDashboard < Administrate::BaseDashboard
     deal
     deal_investor
     entity
-    versions
+    audits
 
   ].freeze
 

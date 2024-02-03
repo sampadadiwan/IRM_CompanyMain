@@ -34,7 +34,7 @@ class InterestDashboard < Administrate::BaseDashboard
     finalized: Field::BooleanEmoji,
     final_agreement: Field::BooleanEmoji,
     comments: Field::String,
-    versions: Field::HasMany
+    audits: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -82,7 +82,7 @@ class InterestDashboard < Administrate::BaseDashboard
 
     created_at
     updated_at
-    versions
+    audits
   ].freeze
 
   # FORM_ATTRIBUTES

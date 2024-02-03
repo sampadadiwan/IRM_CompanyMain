@@ -19,7 +19,7 @@ class DealInvestorDashboard < Administrate::BaseDashboard
     created_at: Field::DateTime,
     updated_at: Field::DateTime,
     investor_entity_id: Field::Number,
-    versions: Field::HasMany
+    audits: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -50,7 +50,7 @@ class DealInvestorDashboard < Administrate::BaseDashboard
     created_at
     updated_at
     deal_activities
-    versions
+    audits
   ].freeze
 
   # FORM_ATTRIBUTES

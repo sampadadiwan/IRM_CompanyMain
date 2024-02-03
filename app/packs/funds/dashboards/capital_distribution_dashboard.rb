@@ -22,7 +22,7 @@ class CapitalDistributionDashboard < Administrate::BaseDashboard
     completed: Field::Boolean,
     distribution_amount_cents: Field::String.with_options(searchable: false),
     net_amount_cents: Field::String.with_options(searchable: false),
-    versions: Field::HasMany
+    audits: Field::HasMany
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -55,7 +55,7 @@ class CapitalDistributionDashboard < Administrate::BaseDashboard
     completed
     distribution_amount_cents
     net_amount_cents
-    versions
+    audits
   ].freeze
 
   # FORM_ATTRIBUTES
