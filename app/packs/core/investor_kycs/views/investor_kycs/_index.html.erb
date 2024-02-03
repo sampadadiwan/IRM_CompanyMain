@@ -70,7 +70,7 @@
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-            <%= link_to "Download", investor_kycs_path(investor_id: @investor&.id, format: "xlsx", all: true),  {class: "dropdown-item" }  %>
+            <%= link_to "Download", download_xl_link(data_source),  {class: "dropdown-item" }  %>
 
             <div class="dropdown-divider"></div>
 
