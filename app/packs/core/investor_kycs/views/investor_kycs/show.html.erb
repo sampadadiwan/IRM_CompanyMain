@@ -16,7 +16,7 @@
       <div class="dropdown">
         <button class="btn btn-outline-success dropdown-toggle" type="button" id="kyc_actions"
                 data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          Actions
+          KYC Actions
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
           <%= button_to "Send KYC Reminder", send_kyc_reminder_investor_kyc_path(@investor_kyc), method: :get, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false,

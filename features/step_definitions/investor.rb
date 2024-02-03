@@ -473,7 +473,7 @@ Then('I cannot send KYC reminder as no approved users are present') do
   end
   visit(investor_kyc_path(@investor_kyc))
   sleep(2)
-  find("#kyc_actions").click
+  click_on("KYC Actions")
   click_on("Send KYC Reminder")
   sleep(1)
   click_on("Proceed")

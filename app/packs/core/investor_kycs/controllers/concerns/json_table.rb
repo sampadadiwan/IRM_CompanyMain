@@ -2,10 +2,9 @@ module JsonTable
   extend ActiveSupport::Concern
 
   TABLE_OPTIONS = {
-    table_style: "border: 1px solid black; max-width: 600px;",
-    table_class:
-    "table table-hover table-condensed table-bordered",
-    table_attributes: "border=1"
+    table_style: "",
+    table_class: "table table-bordered",
+    table_attributes: ""
   }.freeze
 
   def json_table
