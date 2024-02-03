@@ -48,7 +48,7 @@ Then('when I click on the link in the email {string}') do |link|
 end
 
 Given('I log out') do
-  sleep(1)
+  sleep(2)
   find("#profile_menu").click
   click_on("Log Out")
   click_on("Logout")

@@ -30,6 +30,7 @@ resources :non_individual_kycs, controller: "investor_kycs", type: "NonIndividua
 resources :investor_kycs do
   get 'search', on: :collection
   put 'toggle_verified', on: :member
+  patch 'send_notification', on: :member
   get 'send_kyc_reminder', on: :member
   get 'send_kyc_reminder_to_all', on: :collection
   put 'generate_new_aml_report', on: :member

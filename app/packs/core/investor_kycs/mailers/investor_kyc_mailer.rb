@@ -4,8 +4,9 @@ class InvestorKycMailer < ApplicationMailer
 
   def notify_kyc_updated
     @investor_kyc = InvestorKyc.find(params[:investor_kyc_id])
+    @message = params[:message]
     if @to.present?
-      subj = "KYC updated for #{@investor_kyc.full_name}"
+      subj = @message.presence || "KYC updated for #{@investor_kyc.full_name}"
       send_mail(subject: subj)
     end
   end

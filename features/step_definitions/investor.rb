@@ -495,7 +495,9 @@ end
 
 
 Then('when I upload the document for the kyc') do
-  click_on("Actions")
+  within("#docs_index") do
+    click_on("Actions")
+  end
   click_on("New Document")
   @document = FactoryBot.build(:document, entity: @entity, user: @entity.employees.sample)
 

@@ -83,6 +83,10 @@ class InvestorKycPolicy < ApplicationPolicy
     create?(:update) && !record.verified
   end
 
+  def send_notification?
+    record.investor.investor_entity_id == user.entity_id
+  end
+
   def edit?
     update?
   end
