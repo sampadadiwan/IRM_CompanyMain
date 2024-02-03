@@ -15,6 +15,7 @@
         <th>Attribute</th>
         <th>Old Value</th>
         <th>New Value</th>
+        <th>Audit Id</th>
       </thead>
       <tbody>
       <!-- Audit trail consist of own changes and changes from associations -->
@@ -23,11 +24,15 @@
         <% if audit.associated %>
         <!-- Just a link to the association that was changed, we do not capture the fields -->
         <tr>
-          <td><%= l(audit.created_at)  %></td>
+          <td>
+            <%= l(audit.created_at)  %>
+            <small class="text-muted">(<%= audit.action.humanize %>)</small>
+          </td>
           <td><%= (audit.user ? audit.user.name : "System") %></td>
           <td><%=  audit.auditable_type %></td>
           <td><%= link_to audit.auditable %></td>
           <td></td>
+          <td><%= audit.id %></td>
         </tr>
         <% else %>
           <!-- Capture the fields that were changed and publish them -->
@@ -36,7 +41,10 @@
               <% if v && (v[0].present? || v[1].present?) %>                
                 <tr>            
                   <!-- Only show the time and user for the first change in the change set -->
-                  <td><%= l(audit.created_at)  %></td>
+                  <td>
+                    <%= l(audit.created_at)  %>
+                    <small class="text-muted">(<%= audit.action.humanize %>)</small>
+                  </td>
                   <td><%= idx == 0 ? (audit.user ? audit.user.name : "System") : nil %></td>        
                   <% if k == "json_fields" %>
                     <td> Custom Fields </td>
@@ -47,6 +55,8 @@
                     <td> <%= v[0] %> </td> 
                     <td> <%= v[1] %> </td>
                   <% end %>
+
+                  <td><%= idx == 0 ? audit.id : nil %></td>
                 </tr>
               <% end %> 
           <% end %>
