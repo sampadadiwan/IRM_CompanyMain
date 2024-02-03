@@ -139,6 +139,7 @@ gem "image_processing", "~> 1.2"
 gem "combine_pdf"
 
 gem "blazer", "~> 2.6"
+gem "ruby-openai"
 
 # gem "strong_migrations"
 
