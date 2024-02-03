@@ -1,6 +1,4 @@
 class InvestorKycsBulkActionJob < BulkActionJob
-  BULK_ACTION_CLASS = InvestorKyc
-
   def perform_action(investor_kyc, user_id, bulk_action)
     msg = "#{bulk_action}: #{investor_kyc}"
     send_notification(msg, user_id, :success)
