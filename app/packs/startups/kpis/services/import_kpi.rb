@@ -43,7 +43,7 @@ class ImportKpi < ImportUtil
 
       kpi = Kpi.new(name:, notes:, value:, display_value: value, entity_id:, owner:,
                     kpi_report_id: kpi_report.id, import_upload_id: import_upload.id, portfolio_company:)
-      setup_custom_fields(user_data, kpi, custom_field_headers - ["Tags"])
+      setup_custom_fields(user_data, kpi, custom_field_headers - ["Tag"])
 
       Rails.logger.debug { "Saving kpi with name '#{kpi.name}'" }
       kpi.save!
@@ -56,7 +56,7 @@ class ImportKpi < ImportUtil
   def setup_kpi_report(entity_id, portfolio_company, owner, user_data, import_upload)
     _, _, as_of, period, = get_data(user_data)
 
-    kpi_report = KpiReport.find_or_initialize_by(as_of:, period:, entity_id:, portfolio_company:, owner:, tag_list: user_data['Tags'])
+    kpi_report = KpiReport.find_or_initialize_by(as_of:, period:, entity_id:, portfolio_company:, owner:, tag_list: user_data['Tag'])
     if kpi_report.new_record?
       # Save it as a new record
       kpi_report.user_id = import_upload.user_id
