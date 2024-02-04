@@ -1,6 +1,6 @@
 class Deal < ApplicationRecord
   include ForInvestor
-  include Trackable
+  include Trackable.new
   include WithFolder
   include WithDataRoom
   include WithCustomField

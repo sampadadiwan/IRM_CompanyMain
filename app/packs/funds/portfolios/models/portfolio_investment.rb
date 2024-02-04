@@ -2,7 +2,7 @@ class PortfolioInvestment < ApplicationRecord
   include WithCustomField
   include WithFolder
   include ForInvestor
-  include Trackable
+  include Trackable.new
   include PortfolioComputations
 
   attr_accessor :created_by_import

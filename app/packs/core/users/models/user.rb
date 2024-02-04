@@ -3,7 +3,7 @@ class User < ApplicationRecord
   include UserEnabled
   include WithCustomField
 
-  # include Trackable
+  # include Trackable.new
   audited only: %i[first_name last_name email phone permissions extended_permissions]
   acts_as_paranoid
 

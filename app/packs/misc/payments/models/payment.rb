@@ -15,7 +15,7 @@
 #
 
 class Payment < ApplicationRecord
-  include Trackable
+  include Trackable.new
   include ActivityTrackable
 
   belongs_to :entity

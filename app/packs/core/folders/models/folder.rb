@@ -1,5 +1,5 @@
 class Folder < ApplicationRecord
-  include Trackable
+  include Trackable.new
   has_ancestry orphan_strategy: :destroy, touch: true
 
   update_index('folder') { self if index_record? }

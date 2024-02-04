@@ -1,6 +1,6 @@
 class CapitalDistribution < ApplicationRecord
   include WithCustomField
-  include Trackable
+  include Trackable.new
   include ActivityTrackable
   include WithFolder
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }

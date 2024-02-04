@@ -1,7 +1,7 @@
 class CapitalDistributionPayment < ApplicationRecord
   include WithCustomField
   include WithExchangeRate
-  include Trackable
+  include Trackable.new
   include ActivityTrackable
   include WithFolder
 

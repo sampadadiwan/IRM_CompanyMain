@@ -5,8 +5,7 @@ class Document < ApplicationRecord
   include WithESignatures
   include DocumentScope
 
-  audited associated_with: :owner
-  acts_as_paranoid
+  include Trackable.new(associated_with: :owner)
 
   SIGNATURE_TYPES = { image: "Signature Image", adhaar: "Adhaar eSign", dsc: "Digital Signing" }.freeze
   SKIP_ESIGN_UPDATE_STATUSES = %w[Cancelled Completed cancelled completed expired Expired].freeze

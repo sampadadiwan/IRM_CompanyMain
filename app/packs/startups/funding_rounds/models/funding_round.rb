@@ -1,6 +1,6 @@
 class FundingRound < ApplicationRecord
   audited
-  include Trackable
+  include Trackable.new
   include ActivityTrackable
 
   monetize  :pre_money_valuation_cents, :price_cents,

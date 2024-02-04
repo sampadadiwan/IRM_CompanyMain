@@ -4,7 +4,7 @@ class Fund < ApplicationRecord
   include WithFolder
   include WithDataRoom
   include WithCustomField
-  include Trackable
+  include Trackable.new
   include ActivityTrackable
   tracked owner: proc { |_controller, model| model }, entity_id: proc { |_controller, model| model.entity_id }
 

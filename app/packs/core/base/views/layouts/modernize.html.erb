@@ -98,10 +98,12 @@
           <%= render "/layouts/accept_terms" if (current_user && !current_user.accept_terms) %>
 
           <span id="alert"></span>
-
-          <%= render "/layouts/breadcrumbs" %>
           
+          <%= render "/layouts/breadcrumbs" %>
+          <%= render "/layouts/audit" if params[:audit_trail].present? %>
           <%= yield %>
+
+          
         </div>
       </div>
       

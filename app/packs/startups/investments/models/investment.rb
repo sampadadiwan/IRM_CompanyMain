@@ -1,6 +1,6 @@
 class Investment < ApplicationRecord
   audited
-  include Trackable
+  include Trackable.new
   include InvestmentScopes
   include InvestmentCounters
   # Make all models searchable

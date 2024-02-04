@@ -1,5 +1,5 @@
 class Interest < ApplicationRecord
-  include Trackable
+  include Trackable.new
   include WithFolder
   include SaleChildrenScopes
   include WithCustomField

@@ -2,6 +2,7 @@
 # This enables us to make the Entity small as its used in every request,
 # while moving other attributes to EntitySetting
 class EntitySetting < ApplicationRecord
+  include Trackable.new(associated_with: :entity)
   belongs_to :entity
 
   validate :validate_ckyc_enabled
@@ -17,5 +18,9 @@ class EntitySetting < ApplicationRecord
 
   def ckyc_or_kra_enabled?
     ckyc_enabled || kra_enabled
+  end
+
+  def to_s
+    "#{entity.name} settings"
   end
 end

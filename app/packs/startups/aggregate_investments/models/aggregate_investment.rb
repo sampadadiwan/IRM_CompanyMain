@@ -1,5 +1,5 @@
 class AggregateInvestment < ApplicationRecord
-  include Trackable
+  include Trackable.new
   audited
 
   belongs_to :entity, touch: true

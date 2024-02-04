@@ -1,5 +1,5 @@
 class Entity < ApplicationRecord
-  include Trackable
+  include Trackable.new
   # include EntityMerge
   # include InvestorEntityMerge
   include EntityEnabled

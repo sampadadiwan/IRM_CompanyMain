@@ -25,7 +25,7 @@ class AggregateInvestmentDashboard < Administrate::BaseDashboard
     shareholder: Field::String,
     units: Field::Number,
     created_at: Field::DateTime,
-    updated_at: Field::DateTime,
+    updated_at: Field::DateTime
   }.freeze
 
   # COLLECTION_ATTRIBUTES

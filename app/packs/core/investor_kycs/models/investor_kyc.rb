@@ -8,7 +8,7 @@ class InvestorKyc < ApplicationRecord
   # Make all models searchable
   update_index('investor_kyc') { self if index_record?(InvestorKycIndex) }
   include WithCustomField
-  include Trackable
+  include Trackable.new
   include WithFolder
   include ForInvestor
   include RansackerAmounts

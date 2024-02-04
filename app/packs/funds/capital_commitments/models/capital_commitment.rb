@@ -2,7 +2,7 @@ class CapitalCommitment < ApplicationRecord
   include WithFolder
   include WithExchangeRate
   include WithCustomField
-  include Trackable
+  include Trackable.new
   include ActivityTrackable
   include CommitmentAccountEntry
   include RansackerAmounts

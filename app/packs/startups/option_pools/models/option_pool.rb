@@ -1,5 +1,5 @@
 class OptionPool < ApplicationRecord
-  include Trackable
+  include Trackable.new
   include WithFolder
   include WithCustomField
   audited

@@ -1,6 +1,6 @@
 class Investor < ApplicationRecord
   include WithCustomField
-  include Trackable
+  include Trackable.new
   include UpdateInvestor
   include WithFolder
 

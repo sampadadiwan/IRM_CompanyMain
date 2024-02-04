@@ -1,5 +1,5 @@
 class SecondarySale < ApplicationRecord
-  include Trackable
+  include Trackable.new
   include ActivityTrackable
   include WithFolder
   include SecondarySaleNotifiers

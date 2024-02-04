@@ -1,5 +1,5 @@
 class Valuation < ApplicationRecord
-  include Trackable
+  include Trackable.new
   include WithCustomField
 
   belongs_to :entity

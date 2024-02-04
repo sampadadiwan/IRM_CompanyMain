@@ -1,6 +1,6 @@
 class FundFormula < ApplicationRecord
   include ForInvestor
-  include Trackable
+  include Trackable.new
 
   belongs_to :fund, optional: true
   belongs_to :entity, optional: true

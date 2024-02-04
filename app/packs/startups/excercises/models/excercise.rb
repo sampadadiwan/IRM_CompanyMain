@@ -1,6 +1,6 @@
 class Excercise < ApplicationRecord
   audited
-  include Trackable
+  include Trackable.new
   include WithFolder
 
   update_index('entity') { self if index_record? }

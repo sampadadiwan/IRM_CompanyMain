@@ -1,7 +1,7 @@
 class CapitalCall < ApplicationRecord
   include WithCustomField
   include WithFolder
-  include Trackable
+  include Trackable.new
   include ActivityTrackable
   include RansackerAmounts
 

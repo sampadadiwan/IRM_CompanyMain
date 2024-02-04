@@ -1,5 +1,5 @@
 class AccessRight < ApplicationRecord
-  # include Trackable
+  # include Trackable.new
   include ActivityTrackable
   acts_as_paranoid
 

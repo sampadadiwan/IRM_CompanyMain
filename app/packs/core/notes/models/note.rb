@@ -1,5 +1,5 @@
 class Note < ApplicationRecord
-  # include Trackable
+  # include Trackable.new
   update_index('note') { self if index_record? }
 
   # encrypts :details

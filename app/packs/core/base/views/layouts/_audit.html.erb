@@ -1,0 +1,10 @@
+<% if params[:audit_trail].present? %>
+
+    <% 
+        model_class = controller_name.classify.constantize
+        model = model_class.find(params[:id])
+    %>
+
+    <%= render AuditTrail.new(model, css_class: "#{model_class.name.underscore}_#{model.id}") %>
+
+<% end %>

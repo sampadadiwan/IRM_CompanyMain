@@ -1,5 +1,5 @@
 class DealInvestor < ApplicationRecord
-  include Trackable
+  include Trackable.new
   include WithFolder
   include ForInvestor
 
