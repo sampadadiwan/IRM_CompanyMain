@@ -5,6 +5,6 @@
         model = model_class.find(params[:id])
     %>
 
-    <%= render AuditTrail.new(model, css_class: "#{model_class.name.underscore}_#{model.id}") %>
+    <%= render AuditTrail.new(model, title: "Audit Trail: #{model}", css_class: "#{model_class.name.underscore}_#{model.id}") %>
 
 <% end %>

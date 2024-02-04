@@ -99,10 +99,16 @@
 
           <span id="alert"></span>
           
+            
           <%= render "/layouts/breadcrumbs" %>
-          <%= render "/layouts/audit" if params[:audit_trail].present? %>
-          <%= yield %>
-
+          
+          <% if params[:audit_trail].present? && params[:id].present? %>
+            <!-- Audit Trail of the record with id -->
+            <%= render "/layouts/audit" %>
+          <% else %>
+            <!-- Page Content -->
+            <%= yield %>
+          <% end %>
           
         </div>
       </div>
