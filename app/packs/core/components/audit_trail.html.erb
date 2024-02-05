@@ -21,50 +21,27 @@
       <!-- Audit trail consist of own changes and changes from associations -->
       <% @model.own_and_associated_audits.sort{|a,b| b.version <=> a.version}.each do |audit| %>
 
-        <% if audit.associated %>
-        <!-- Just a link to the association that was changed, we do not capture the fields -->
-        <tr>
-          <td><%= audit.id %></td>
-          <td>
-            <%= l(audit.created_at)  %>
-            <small class="text-muted">(<%= audit.action.humanize %>)</small>
-          </td>
-          <td><%= (audit.user ? audit.user.name : "System") %></td>
-          <td><%=  audit.auditable_type %></td>
-          <% linkable = Rails.application.routes.url_helpers.respond_to?("#{audit.auditable.model_name.singular_route_key}_path") %>
-          <td><%= linkable ? link_to(audit.auditable) : audit.audited_changes %></td>
-          <td></td>          
-        </tr>
+        <% 
+          # Some associations may not have a path, so we need to check if the path is available
+          linkable = nil
+          linkable = Rails.application.routes.url_helpers.respond_to?("#{audit.auditable.model_name.singular_route_key}_path") if audit.associated           
+        %>
+        <% if audit.associated && linkable %>
+        <!-- Just a link to the association that was changed, we do not capture the fields -->        
+          <tr>
+            <td><%= audit.id %></td>
+            <td>
+              <%= l(audit.created_at)  %>
+              <small class="text-muted">(<%= audit.action.humanize %>)</small>
+            </td>
+            <td><%= (audit.user ? audit.user.name : "System") %></td>
+            <td><%=  audit.auditable_type %></td>
+            
+            <td><%= link_to(audit.auditable) %></td>
+            <td></td>          
+          </tr>
         <% else %>
-          <!-- Capture the fields that were changed and publish them -->
-          <% audit.audited_changes.each_with_index do |key_val, idx| %>
-          <% k, v = key_val %>          
-              <% if v && (!v.kind_of?(Array) || v[0].present? || v[1].present?) %>                
-                <tr>            
-                  <td><%= audit.id %></td>
-                  <td>
-                    <%= l(audit.created_at)  %>
-                    <small class="text-muted">(<%= audit.action.humanize %>)</small>
-                  </td>
-                  <!-- Only show the user for the first change in the change set -->
-                  <td><%= idx == 0 ? (audit.user ? audit.user.name : "System") : nil %></td>        
-                  <% if k == "json_fields" %>
-                    <td> Custom Fields </td>
-                    <td> <%= Json2table.get_html_table(v[0], JsonTable::TABLE_OPTIONS).html_safe if v[0] %> </td> 
-                    <td> <%= Json2table.get_html_table(v[1], JsonTable::TABLE_OPTIONS).html_safe if v[1]%> </td>
-                  <% else %>
-                    <td><%= k.humanize %></td>
-                    <% if v.kind_of?(Array) %>
-                      <td> <%= v[0] %> </td> 
-                      <td> <%= v[1] %> </td>
-                    <% else %>
-                      <td> <%= v %> </td> 
-                      <td> </td>
-                    <% end %>
-                  <% end %>
-                </tr>
-              <% end %> 
-          <% end %>
+          <%= render "/layouts/audit_changes", audit: audit, audited_changes: audit.audited_changes %>
         <% end %>
       
       <% end %>
