@@ -11,11 +11,13 @@ module DeliveryMethods
 
         Rails.logger.info "Sending WhatsApp to #{notification.recipient.phone} with message #{message} from #{entity.name}"
 
+        # Get the endpoint and token from the entity settings
+        endpoint = entity.entity_setting.fetch_whatsapp_endpoint
+        token = entity.entity_setting.fetch_whatsapp_token
+        template_name = entity.entity_setting.fetch_whatsapp_template("general_notification")
         # Send the message
         WhatsappGeneralNotification.new.perform(entity.name, message,
-                                                notification.view_path,
-                                                notification.recipient.id,
-                                                notification.record.id) # pass id
+                                                notification, endpoint:, token:, template_name:)
       else
         Rails.logger.info "WhatsApp not enabled for #{notification.recipient.phone} and entity #{entity.name}"
       end

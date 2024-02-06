@@ -29,6 +29,10 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     last_snapshot_on: Field::Date,
     snapshot_frequency_months: Field::Number,
     email_delay_seconds: Field::Number,
+    whatsapp_templates: JsonField,
+    whatsapp_token: Field::String,
+    whatsapp_endpoint: Field::String,
+
     trial: Field::BooleanEmoji,
     trial_end_date: Field::Date,
     call_basis: Field::String,
@@ -87,6 +91,9 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     call_basis
     kpi_reminder_frequency
     kpi_reminder_before
+    whatsapp_templates
+    whatsapp_token
+    whatsapp_endpoint
     custom_flags
     created_at
     updated_at
@@ -111,6 +118,9 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     stamp_paper_tags
     last_snapshot_on
     snapshot_frequency_months
+    whatsapp_templates
+    whatsapp_token
+    whatsapp_endpoint
     trial
     trial_end_date
     call_basis

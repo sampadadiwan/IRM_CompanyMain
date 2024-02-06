@@ -23,4 +23,16 @@ class EntitySetting < ApplicationRecord
   def to_s
     "#{entity.name} settings"
   end
+
+  def fetch_whatsapp_endpoint
+    whatsapp_endpoint.present? && whatsapp_token.present? ? whatsapp_endpoint : Rails.application.credentials[:WHATSAPP_API_ENDPOINT]
+  end
+
+  def fetch_whatsapp_token
+    whatsapp_token.present? && whatsapp_endpoint.present? ? whatsapp_token : Rails.application.credentials[:WHATSAPP_ACCESS_TOKEN]
+  end
+
+  def fetch_whatsapp_template(template_name)
+    whatsapp_templates.present? && whatsapp_token.present? && whatsapp_endpoint.present? ? JSON.parse(whatsapp_templates).dig(template_name.to_s) : ENV.fetch('CAPHIVE_NOTIFICATION')
+  end
 end
