@@ -26,7 +26,7 @@
     
     <div class="form-group col">
       <%= form.label :period %>
-      <%= form.select :period, ["Month", "Quarter", "Semi Annual", "Annual"], {}, class: "form-control" %>
+      <%= form.select :period, KpiReport::PERIODS, {}, class: "form-control" %>
     </div>
 
     <% if @kpi_report.portfolio_company_id.present? %>

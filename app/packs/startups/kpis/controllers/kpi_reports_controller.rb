@@ -7,11 +7,12 @@ class KpiReportsController < ApplicationController
     @kpi_reports = policy_scope(@q.result).includes(:kpis, :documents, :entity, :user, :portfolio_company)
     authorize(KpiReport)
 
-    if params[:period].present?
-      date = Time.zone.today - params[:period].to_i.months
+    if params[:months].present?
+      date = Time.zone.today - params[:months].to_i.months
       @kpi_reports = @kpi_reports.where(as_of: date..)
     end
 
+    @kpi_reports = @kpi_reports.where(period: params[:period]) if params[:period].present?
     @kpi_reports = @kpi_reports.where(entity_id: params[:entity_id]) if params[:entity_id].present?
     @kpi_reports = @kpi_reports.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
 

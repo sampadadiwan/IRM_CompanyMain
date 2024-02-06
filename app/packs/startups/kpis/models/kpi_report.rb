@@ -3,6 +3,8 @@ class KpiReport < ApplicationRecord
   include ForInvestor
   include WithFolder
 
+  PERIODS = ["Month", "Quarter", "Semi Annual", "Annual"].freeze
+
   belongs_to :entity
   # This is in case the fund is uploading the kpis
   belongs_to :portfolio_company, class_name: "Investor", optional: true
