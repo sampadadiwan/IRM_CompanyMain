@@ -24,7 +24,7 @@
         Stock Adjustments
       </a>
 
-      <% if current_user.enable_kpis %>
+      <% if current_user.enable_kpis && current_user.curr_role_investor? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kpis-tab"
           data-action="click->tabdetails#loadData">
           Kpis

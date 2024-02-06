@@ -179,6 +179,14 @@ class User < ApplicationRecord
     end
   end
 
+  def curr_role_investor?
+    curr_role == "investor"
+  end
+
+  def curr_role_employee?
+    curr_role == "employee"
+  end
+
   def investor_advisor?
     advisor_entity_id.present? && advisor_entity_id != entity_id
   end

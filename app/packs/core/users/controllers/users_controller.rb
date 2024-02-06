@@ -117,7 +117,7 @@ class UsersController < ApplicationController
 
   def set_persona
     current_user.set_persona(params[:persona]) if params[:persona].present?
-    redirect_to root_path
+    redirect_to request.referer || root_path
   end
 
   # This is used to reset password only for system generated users on the first login

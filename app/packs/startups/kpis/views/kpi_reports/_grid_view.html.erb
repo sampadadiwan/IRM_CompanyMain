@@ -4,9 +4,15 @@
 <div data-controller="export-xl">
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h4 mb-0 text-gray-800">
+    <h1 class="h4 mb-0 text-800">
         KPIs: 
-        <%= Entity.find(params[:entity_id]).name if params[:entity_id].present? %>
+        <% if params[:entity_id].present? %>
+            <%= Entity.find(params[:entity_id]).name if current_user.curr_role_employee? %>
+            <% if current_user.curr_role_investor? %>
+            <% investor = current_user.entity.investors.where(investor_entity_id: params[:entity_id]).first %>
+            <%= link_to investor if investor %>
+            <% end %>
+        <% end %>
     </h1>
 
     <span>
