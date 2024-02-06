@@ -16,6 +16,10 @@
     <%= form.select :period, KpiReport::PERIODS, {selected: period, include_blank: true}, class: "form-control" %>        
   </div>
 
+  <div class="form-group col-md-1">    
+    <%= form.text_field :tag_list, class: "form-control", value: params[:tag_list], placeholder: "Tag" %>        
+  </div>
+
   <%= form.submit "Filter", {class: "btn btn-outline-success", id: "submit"}%>
 
 <% end %>

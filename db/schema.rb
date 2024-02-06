@@ -1018,6 +1018,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_04_042934) do
     t.integer "kpi_reminder_before"
     t.text "custom_dashboards"
     t.datetime "deleted_at"
+    t.text "whatsapp_token"
+    t.string "whatsapp_endpoint"
+    t.json "whatsapp_templates"
     t.index ["deleted_at"], name: "index_entity_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end

@@ -13,6 +13,7 @@ class KpiReportsController < ApplicationController
     end
 
     @kpi_reports = @kpi_reports.where(period: params[:period]) if params[:period].present?
+    @kpi_reports = @kpi_reports.where(tag_list: params[:tag_list]) if params[:tag_list].present?
     @kpi_reports = @kpi_reports.where(entity_id: params[:entity_id]) if params[:entity_id].present?
     @kpi_reports = @kpi_reports.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
 
