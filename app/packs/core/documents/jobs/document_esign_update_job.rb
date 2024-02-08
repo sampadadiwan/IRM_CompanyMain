@@ -11,8 +11,13 @@ class DocumentEsignUpdateJob < ApplicationJob
       docs = Document.where('created_at > ?', 10.days.ago.beginning_of_day).sent_for_esign
       docs = Document.where(id: [document_id]) if document_id.present?
       docs.each do |doc|
-        # .where.not query skips nil esign statuses
-        EsignUpdateJob.perform_later(doc.id, user_id) unless Document::SKIP_ESIGN_UPDATE_STATUSES.include?(doc.esign_status)
+        if Document::SKIP_ESIGN_UPDATE_STATUSES.exclude?(doc.esign_status)
+          EsignUpdateJob.perform_later(doc.id, user_id)
+        else
+          message = "Document - #{doc.name}'s E-Sign status update Skipped"
+          # only showing user alert if a single document is getting updated
+          UserAlert.new(message:, user_id:, level: "warning").broadcast if user_id.present? && document_id.present?
+        end
       end
     end
   end

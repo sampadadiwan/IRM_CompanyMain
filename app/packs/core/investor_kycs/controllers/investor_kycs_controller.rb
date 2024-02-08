@@ -151,7 +151,7 @@ class InvestorKycsController < ApplicationController
     authorize(@investor_kyc)
     if investor_kyc_params[:kyc_data_id].present?
       @kyc_data = @investor_kyc.kyc_datas.find(investor_kyc_params[:kyc_data_id])
-      @investor_kyc.assign_kyc_data(@kyc_data)
+      @investor_kyc.assign_kyc_data(@kyc_data, current_user)
     else
       @investor_kyc.assign_attributes(investor_kyc_params)
       # when CKYC/KRA data is selected once and user goes back then selects no data the images need to be removed (sending nil is not allowed in params)

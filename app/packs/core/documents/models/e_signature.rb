@@ -53,8 +53,7 @@ class ESignature < ApplicationRecord
   end
 
   def new_status?(payload_status)
-    # status != payload_status && status != "signed"
-    ESignature.where(id:).where.not(status: payload_status).where.not(status: "signed").update_all(status: payload_status).positive?
+    ESignature.where(id:).where.not(status: payload_status).where.not(status: ["signed", "expired"]).update_all(status: payload_status).positive?
   end
 
   # status can be [nil, "signed", "failed", "requested"]
@@ -62,7 +61,7 @@ class ESignature < ApplicationRecord
     case status&.downcase
     when "signed"
       "success"
-    when "failed", "cancelled"
+    when "failed", "cancelled", "expired"
       "danger"
     when "requested"
       "warning"

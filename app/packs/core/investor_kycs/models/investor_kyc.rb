@@ -174,7 +174,7 @@ class InvestorKyc < ApplicationRecord
     expiry_date ? expiry_date < Time.zone.today : false
   end
 
-  def assign_kyc_data(kyc_data)
+  def assign_kyc_data(kyc_data, user)
     unless self.PAN.casecmp?(kyc_data.pan&.to_s&.strip)
       e = StandardError.new("PAN number does not match the KYC data")
       errors.add(:PAN, "does not match the KYC data")
@@ -187,14 +187,10 @@ class InvestorKyc < ApplicationRecord
       imgtype = image_data['image_type']
       file_name = "#{kyc_data.source.upcase}Data-#{id}-#{full_name.delete('/')}-#{imgtype}.png"
       file_path = "tmp/#{file_name}"
-      if imgtype.casecmp?("signature")
+      if imgtype.casecmp?("pan")
         Rails.logger.debug { "Uploading new image - #{file_name}" }
         Rails.root.join(file_path).binwrite(Base64.decode64(image_data['data']))
-        self.signature = File.open(file_path, "rb")
-      elsif imgtype.casecmp?("pan")
-        Rails.logger.debug { "Uploading new image - #{file_name}" }
-        Rails.root.join(file_path).binwrite(Base64.decode64(image_data['data']))
-        self.pan_card = File.open(file_path, "rb")
+        Document.create!(name: "Upload Pan Card", entity_id:, owner: self, user:, file: File.open(file_path, "rb"))
       end
 
       FileUtils.rm_f(file_path)

@@ -9,15 +9,24 @@ class EntitySetting < ApplicationRecord
   validates :from_email, length: { maximum: 100 }
   serialize :kpi_doc_list, type: Array
 
+  before_save :ensure_single_kra_enabled, if: -> { kra_enabled_changed? && kra_enabled == true }
+
   # Add new flags to the end of this list
   flag :custom_flags, %i[enable_approval_show_kycs enable_this enable_that]
 
-  def validate_ckyc_enabled
-    errors.add(:ckyc, "can not be enabled without FI Code") if ckyc_enabled == true && fi_code.blank?
-  end
-
   def ckyc_or_kra_enabled?
     ckyc_enabled || kra_enabled
+  end
+
+  private
+
+  def ensure_single_kra_enabled
+    # Update other EntitySetting records to set kra_enabled to false
+    self.class.where.not(id:).where(kra_enabled: true).update_all(kra_enabled: false)
+  end
+
+  def validate_ckyc_enabled
+    errors.add(:ckyc, "can not be enabled without FI Code") if ckyc_enabled == true && fi_code.blank?
   end
 
   def to_s

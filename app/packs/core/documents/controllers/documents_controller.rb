@@ -120,14 +120,18 @@ class DocumentsController < ApplicationController
   # allows to add a button to cancel esigning on document
   def cancel_esign
     if Document::SKIP_ESIGN_UPDATE_STATUSES.exclude?(@document.esign_status)
+      DigioEsignHelper.new.update_esign_status(@document)
+      @document.reload
+    end
+    if Document::SKIP_ESIGN_UPDATE_STATUSES.exclude?(@document.esign_status)
       DigioEsignHelper.new.cancel_esign(@document)
       if @document.esign_status.casecmp?("cancelled")
-        redirect_to document_url(@document), notice: "Document's E-Signature(s) was cancelled"
+        redirect_to [@document, { tab: "signatures-tab" }], alert: "Document's E-Signature(s) was cancelled"
       else
-        redirect_to document_url(@document, display_status: true), alert: "Error cancelling E-Signature(s)"
+        redirect_to [@document, { tab: "signatures-tab" }], alert: "Error cancelling E-Signature(s)"
       end
     else
-      redirect_to document_url(@document), alert: "Document's E-Signature(s) cannot be cancelled"
+      redirect_to [@document, { tab: "signatures-tab" }], alert: "Document's E-Signature(s) cannot be cancelled"
     end
   end
 

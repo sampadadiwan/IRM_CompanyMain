@@ -79,10 +79,13 @@ class KycVerify
   end
 
   def search_ckyc(fi_code, pan)
+    # onve digio's staging ckyc api is up, we roll this back
+    base_url = ENV.fetch("DIGIO_BASE_URL_PROD", nil)
+    auth_token = Base64.strict_encode64("#{Rails.application.credentials[:DIGIO_CLIENT_ID_PROD]}:#{Rails.application.credentials[:DIGIO_SECRET_PROD]}")
     HTTParty.post(
-      "#{BASE_URL}/v3/client/kyc/ckyc/search",
+      "#{base_url}/v3/client/kyc/ckyc/search",
       headers: {
-        "authorization" => "Basic #{AUTH_TOKEN}",
+        "authorization" => "Basic #{auth_token}",
         'Content-Type' => 'application/json'
       },
 
@@ -94,44 +97,43 @@ class KycVerify
     )
   end
 
-  def download_ckyc_response(_search_ckyc_parsed_response, _fi_code, _birth_date)
-    # downloaded_response = HTTParty.post(
-    #   "#{BASE_URL}/v3/client/kyc/ckyc/download",
-    #   headers: {
-    #     "authorization" => "Basic #{AUTH_TOKEN}",
-    #     'Content-Type' => 'application/json'
-    #   },
+  def download_ckyc_response(ckyc_number, fi_code, birth_date)
+    base_url = ENV.fetch("DIGIO_BASE_URL_PROD", nil)
+    auth_token = Base64.strict_encode64("#{Rails.application.credentials[:DIGIO_CLIENT_ID_PROD]}:#{Rails.application.credentials[:DIGIO_SECRET_PROD]}")
+    downloaded_response = HTTParty.post(
+      "#{base_url}/v3/client/kyc/ckyc/download",
+      headers: {
+        "authorization" => "Basic #{auth_token}",
+        'Content-Type' => 'application/json'
+      },
 
-    #   body: {
-    #     ckyc_no: search_ckyc_parsed_response["ckyc_number"],
-    #     date_of_birth: birth_date, # dd-MM-yyyy format
-    #     fi_code:,
-    #     unique_request_id: rand(5**5)
-    #   }.to_json
-    # )
-    # ckyc_response = downloaded_response.parsed_response
-    # dont commit below
-    ckyc_response = sample_ckyc_download_response
+      body: {
+        ckyc_no: ckyc_number,
+        date_of_birth: birth_date, # dd-MM-yyyy format
+        fi_code:,
+        unique_request_id: rand(5**5)
+      }.to_json
+    )
+    ckyc_response = downloaded_response.parsed_response
     Rails.logger.error("CKYC data not found. Error: #{ckyc_response['error']}") if ckyc_response["success"] == false
     ckyc_response
   end
 
-  def get_kra_pan_response(_pan, _dob)
-    # downloaded_response = HTTParty.post(
-    #   "#{BASE_URL}/v3/client/kyc/kra/get_pan_details",
-    #   headers: {
-    #     "authorization" => "Basic #{AUTH_TOKEN}",
-    #     'Content-Type' => 'application/json'
-    #   },
+  def get_kra_pan_response(pan, dob)
+    downloaded_response = HTTParty.post(
+      "#{BASE_URL}/v3/client/kyc/kra/get_pan_details",
+      headers: {
+        "authorization" => "Basic #{AUTH_TOKEN}",
+        'Content-Type' => 'application/json'
+      },
 
-    #   body: {
-    #     pan_no: pan,
-    #     dob: dob&.strftime("%m/%d/%Y"), # DD/MM/YYYY format
-    #     unique_request_id: rand(5**5)
-    #   }.to_json
-    # )
-    # kra_response = downloaded_response.parsed_response
-    kra_response = sample_kra_pan_data
+      body: {
+        pan_no: pan,
+        dob: dob&.strftime("%m/%d/%Y"), # DD/MM/YYYY format
+        unique_request_id: rand(5**5)
+      }.to_json
+    )
+    kra_response = downloaded_response.parsed_response
     Rails.logger.error("KRA data not found. Error: #{kra_response['error']}") if kra_response["result"] != "FOUND"
     kra_response
   end

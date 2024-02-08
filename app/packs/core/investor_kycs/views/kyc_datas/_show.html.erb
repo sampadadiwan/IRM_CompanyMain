@@ -41,6 +41,17 @@
       </td>
     </tr>
 
+    <%if kyc_data.source == "ckyc" %>
+    <tr>
+      <td>
+          CKYC Number
+      </td>
+      <td>
+        <%= kyc_data.ckyc_number %>
+      </td>
+    </tr>
+    <% end %>
+
     <tr>
       <td>
         Email
@@ -105,10 +116,18 @@
             <div>
                 <%= img_hash['image_type'].gsub("/"," / ").titleize+" :" %>
                 <br>
-                <%= image_tag src="data:image/jpeg;base64,#{img_hash['data']}",
-                width: 300,
-                height: 300,
-                class: "img-thumbnail file-upload-preview"  %>
+                <% if img_hash['type'] == 'pdf' %>
+                  <%= content_tag(:iframe, '', src: "data:application/pdf;base64,#{img_hash['data']}",
+                                            width: '100%',
+                                            height: '600px',
+                                            style: 'border: none;') %>
+                <% else %>
+                  <%= image_tag "data:image/jpeg;base64,#{img_hash['data']}",
+                              width: 300,
+                              height: 300,
+                              class: "img-thumbnail file-upload-preview" %>
+                <% end %>
+
                 <hr>
             </div>
             <% end %>
