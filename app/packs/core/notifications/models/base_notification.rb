@@ -40,7 +40,7 @@ class BaseNotification < Noticed::Base
   end
 
   def whatsapp_enabled?
-    recipient.whatsapp_enabled && recipient.phone.present? && !Rails.env.test?
+    entity.enable_whatsapp && recipient.whatsapp_enabled && recipient.phone.present? && !Rails.env.test?
   end
 
   def view_path

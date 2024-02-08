@@ -43,7 +43,7 @@ class ImportInvestorAccess < ImportUtil
 
     Rails.logger.debug user_data
     approved = user_data["Approved"] ? user_data["Approved"] == "Yes" : false
-    whatsapp_enabled = user_data["WhatsApp Enabled"] ? user_data["WhatsApp Enabled"] == "Yes" : false
+    whatsapp_enabled = user_data["Whatsapp Enabled"] ? user_data["Whatsapp Enabled"] == "Yes" : false
     call_code = user_data["Country Code"].present? ? extract_call_code(user_data["Country Code"].to_s) : "91"
 
     ia = InvestorAccess.new(first_name: user_data["First Name"], last_name: user_data["Last Name"], call_code:,
