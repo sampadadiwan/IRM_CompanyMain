@@ -58,8 +58,8 @@ class CapitalCommitment < ApplicationRecord
   monetize :orig_folio_committed_amount_cents, :folio_committed_amount_cents, :folio_collected_amount_cents,
            :adjustment_folio_amount_cents, with_currency: ->(i) { i.folio_currency }
   monetize :orig_committed_amount_cents, :committed_amount_cents, :collected_amount_cents,
-           :call_amount_cents, :distribution_amount_cents, :total_units_premium_cents,
-           :total_allocated_expense_cents, :total_allocated_income_cents, :adjustment_amount_cents,
+           :call_amount_cents, :distribution_amount_cents, :total_units_premium_cents, :other_fee_cents,
+           :total_allocated_expense_cents, :total_allocated_income_cents, :adjustment_amount_cents, 
            with_currency: ->(i) { i.fund.currency }
 
   validates :folio_committed_amount_cents, numericality: { greater_than: 0 }
@@ -139,7 +139,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def due_amount
-    call_amount - collected_amount
+    call_amount - collected_amount - other_fee
   end
 
   def changed_committed_amount_at_exchange_rate(date)

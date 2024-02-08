@@ -18,6 +18,11 @@ module CapitalRemittanceCounters
                            delta_column: 'other_fee_cents',
                            execute_after_commit: true
 
+
+    counter_culture :capital_commitment, column_name: 'other_fee_cents',
+                           delta_column: 'other_fee_cents',
+                           execute_after_commit: true
+
     counter_culture :capital_call, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
                                    delta_column: 'collected_amount_cents',
                                    column_names: {
