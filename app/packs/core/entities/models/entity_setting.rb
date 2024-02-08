@@ -33,6 +33,6 @@ class EntitySetting < ApplicationRecord
   end
 
   def fetch_whatsapp_template(template_name)
-    whatsapp_templates.present? && whatsapp_token.present? && whatsapp_endpoint.present? ? JSON.parse(whatsapp_templates).dig(template_name.to_s) : ENV.fetch('CAPHIVE_NOTIFICATION')
+    whatsapp_templates.present? && whatsapp_token.present? && whatsapp_endpoint.present? ? JSON.parse(whatsapp_templates)[template_name.to_s] : ENV.fetch('CAPHIVE_NOTIFICATION')
   end
 end
