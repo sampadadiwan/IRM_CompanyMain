@@ -26,10 +26,16 @@ class DigioEsignHelper
     display_on_page = document.display_on_page&.downcase || "last"
     body = prepare_data(document, document.name, encoded_file, display_on_page)
 
+    auth_token = if document.entity.entity_setting.digio_cutover_date.present? && document.entity.entity_setting.digio_cutover_date < Time.zone.now
+                   document.entity.entity_setting.digio_auth_token
+                 else
+                   AUTH_TOKEN
+                 end
+
     response = HTTParty.post(
       "#{BASE_URL}/v2/client/document/uploadpdf",
       headers: {
-        "authorization" => "Basic #{AUTH_TOKEN}",
+        "authorization" => "Basic #{auth_token}",
         'Content-Type' => 'application/json'
       },
       body: body.to_json,
@@ -40,11 +46,11 @@ class DigioEsignHelper
     response
   end
 
-  def retrieve_signed(esign_doc_id)
+  def retrieve_signed(esign_doc_id, auth_token)
     response = HTTParty.get(
       "#{BASE_URL}/v2/client/document/#{esign_doc_id}",
       headers: {
-        "authorization" => "Basic #{AUTH_TOKEN}",
+        "authorization" => "Basic #{auth_token}",
         'Content-Type' => 'application/json'
       },
       debug_output: @debug ? $stdout : nil
@@ -55,11 +61,11 @@ class DigioEsignHelper
     response
   end
 
-  def download(esign_doc_id)
+  def download(esign_doc_id, auth_token)
     HTTParty.get(
       "#{BASE_URL}/v2/client/document/download?document_id=#{esign_doc_id}",
       headers: {
-        "authorization" => "Basic #{AUTH_TOKEN}",
+        "authorization" => "Basic #{auth_token}",
         'Content-Type' => 'application/json'
       },
       debug_output: @debug ? $stdout : nil
@@ -115,11 +121,11 @@ class DigioEsignHelper
     ret
   end
 
-  def hit_cancel_esign_api(provider_doc_id)
+  def hit_cancel_esign_api(provider_doc_id, auth_token)
     response = HTTParty.post(
       "#{BASE_URL}/v2/client/document/#{provider_doc_id}/cancel",
       headers: {
-        "authorization" => "Basic #{AUTH_TOKEN}",
+        "authorization" => "Basic #{auth_token}",
         'Content-Type' => 'application/json'
       }
     )
@@ -129,7 +135,13 @@ class DigioEsignHelper
   end
 
   def cancel_esign(doc)
-    response = hit_cancel_esign_api(doc.provider_doc_id)
+    if doc.entity.entity_setting.digio_cutover_date.present? && doc.entity.entity_setting.digio_cutover_date < doc.sent_for_esign_date
+      doc.entity.entity_setting.digio_auth_token
+    else
+      AUTH_TOKEN
+    end
+    auth_token = doc.entity.entity_setting.digio_auth_token || AUTH_TOKEN
+    response = hit_cancel_esign_api(doc.provider_doc_id, auth_token)
     if response.success?
       # added transaction to avoid partial updates
       ActiveRecord::Base.transaction do
@@ -140,7 +152,8 @@ class DigioEsignHelper
         doc.update(esign_status: "cancelled")
       end
     else
-      ExceptionNotifier.notify_exception(StandardError.new("Error cancelling #{doc.name} - #{response}"))
+      e = StandardError.new("Error cancelling #{doc.name} - #{response}")
+      Rails.logger.error e.message
     end
   end
 
@@ -150,12 +163,18 @@ class DigioEsignHelper
       # document already completed
       Rails.logger.debug { "Document #{doc.name} #{doc.id} already completed" }
     else
+      auth_token = if doc.entity.entity_setting.digio_cutover_date.present? && doc.entity.entity_setting.digio_cutover_date < doc.sent_for_esign_date
+                     doc.entity.entity_setting.digio_auth_token
+                   else
+                     AUTH_TOKEN
+                   end
       # Get api response
-      response = retrieve_signed(doc.provider_doc_id)
+      response = retrieve_signed(doc.provider_doc_id, auth_token)
       overall_status = JSON.parse(response.body)["status"].presence || JSON.parse(response.body)["agreement_status"] # can be "completed" or "requested"
       if response.success? && overall_status.present?
-        # update document attribute
-        doc.update(esign_status: overall_status)
+        # not updating to completed as check_and_update_document_status does it
+        # if done here it wont download the signed document
+        doc.update(esign_status: overall_status) unless overall_status.casecmp?("completed")
         # Update each esignature's status
         response['signing_parties'].each do |signer|
           # Find esignature for this email
@@ -181,7 +200,6 @@ class DigioEsignHelper
       e = StandardError.new("Document not found for #{params}")
       ExceptionNotifier.notify_exception(e)
       Rails.logger.error e.message
-      # raise e
     end
   end
 
@@ -220,7 +238,12 @@ class DigioEsignHelper
 
   def signature_completed(doc)
     tmpfile = Tempfile.new("#{doc.name}.pdf", encoding: 'ascii-8bit')
-    content = DigioEsignHelper.new.download(doc.provider_doc_id).body
+    auth_token = if doc.entity.entity_setting.digio_cutover_date.present? && doc.entity.entity_setting.digio_cutover_date < doc.sent_for_esign_date
+                   doc.entity.entity_setting.digio_auth_token
+                 else
+                   AUTH_TOKEN
+                 end
+    content = DigioEsignHelper.new.download(doc.provider_doc_id, auth_token).body
     tmpfile.write(content)
     doc.signature_completed(tmpfile.path)
     tmpfile.close

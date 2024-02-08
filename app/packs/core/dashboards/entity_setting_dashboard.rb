@@ -36,6 +36,9 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     trial: Field::BooleanEmoji,
     trial_end_date: Field::Date,
     call_basis: Field::String,
+    digio_client_id: Field::String,
+    digio_client_secret: Field::String,
+    digio_cutover_date: Field::DateTime,
     created_at: Field::DateTime,
     updated_at: Field::DateTime
   }.freeze
@@ -84,6 +87,9 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     kra_enabled
     fi_code
     stamp_paper_tags
+    digio_client_id
+    digio_client_secret
+    digio_cutover_date
     snapshot_frequency_months
     last_snapshot_on
     trial
@@ -116,6 +122,9 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     kra_enabled
     fi_code
     stamp_paper_tags
+    digio_client_id
+    digio_client_secret
+    digio_cutover_date
     last_snapshot_on
     snapshot_frequency_months
     whatsapp_templates

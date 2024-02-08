@@ -35,4 +35,8 @@ class EntitySetting < ApplicationRecord
   def fetch_whatsapp_template(template_name)
     whatsapp_templates.present? && whatsapp_token.present? && whatsapp_endpoint.present? ? JSON.parse(whatsapp_templates)[template_name.to_s] : ENV.fetch('CAPHIVE_NOTIFICATION')
   end
+
+  def digio_auth_token
+    Base64.strict_encode64("#{digio_client_id}:#{digio_client_secret}") if digio_client_id.present? && digio_client_secret.present?
+  end
 end

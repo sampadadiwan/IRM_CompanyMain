@@ -24,6 +24,8 @@ class DocumentDashboard < Administrate::BaseDashboard
     name: Field::String,
     esign_status: Field::String,
     provider_doc_id: Field::String,
+    sent_for_esign: Field::BooleanEmoji,
+    sent_for_esign_date: Field::DateTime,
     text: Field::String,
     tag_list: Field::String,
     owner_tag: Field::String,
@@ -78,6 +80,8 @@ class DocumentDashboard < Administrate::BaseDashboard
     esign_status
     signature_enabled
     provider_doc_id
+    sent_for_esign
+    sent_for_esign_date
     from_template
 
     access_rights
@@ -96,6 +100,8 @@ class DocumentDashboard < Administrate::BaseDashboard
     tag_list
     rich_text_text
     provider_doc_id
+    sent_for_esign
+    sent_for_esign_date
     esign_status
   ].freeze
 
