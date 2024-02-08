@@ -18,7 +18,7 @@ class InvestorKycNotification < BaseNotification
 
   # Define helper methods to make rendering easier.
   def message
-    if email_method == "notify_kyc_required"
+    if email_method.to_s == "notify_kyc_required"
       @investor_kyc ||= params[:investor_kyc]
       @custom_notification = @investor_kyc.entity.custom_notification("InvestorKyc")
       @custom_notification&.whatsapp || params[:msg]
