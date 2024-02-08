@@ -202,7 +202,7 @@ Then('the investor accesses must have the data in the sheet') do
     ia.last_name.should == user_data["Last Name"]
     ia.phone.should == user_data["Phone"]&.to_s
     ia.approved.should == (user_data["Approved"] == "Yes" ? true : false)
-    ia.whatsapp_enabled.should == (user_data["WhatsApp Enabled"] == "Yes" ? true : false)
+    ia.whatsapp_enabled.should == (user_data["Whatsapp Enabled"] == "Yes" ? true : false)
     ia.import_upload_id.should == ImportUpload.last.id
   end
 

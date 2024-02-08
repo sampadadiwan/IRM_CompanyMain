@@ -31,7 +31,9 @@ class CapitalCommitmentsController < ApplicationController
 
   def documents
     capital_commitment_ids = policy_scope(CapitalCommitment).pluck(:id)
-    @documents = Document.where(owner_id: capital_commitment_ids, owner_type: "CapitalCommitment")
+    kyc_ids = policy_scope(InvestorKyc).joins(:investor).pluck(:id)
+    @documents = Document.where(owner_id: capital_commitment_ids, owner_type: "CapitalCommitment").or(Document.where(owner_id: kyc_ids, owner_type: "InvestorKyc"))
+
     @documents = @documents.order(id: :desc)
 
     @no_folders = false

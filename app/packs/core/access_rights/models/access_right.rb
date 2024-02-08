@@ -1,7 +1,6 @@
 class AccessRight < ApplicationRecord
-  # include Trackable.new
+  include Trackable.new
   include ActivityTrackable
-  acts_as_paranoid
 
   update_index('access_right') { self if index_record? }
 
