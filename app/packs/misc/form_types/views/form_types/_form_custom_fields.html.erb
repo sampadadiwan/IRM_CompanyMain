@@ -56,26 +56,60 @@
 
     <div class="row">
 
-    <div class="form-group col-md-4">
-        <%= f.label :label %>
-        <%= f.text_field :label, class: "form-control" %>
-        <small class="form-text text-muted">Custom label for the field, can be blank</small>
+        <div class="form-group col-md-4">
+            <%= f.label :label %>
+            <%= f.text_field :label, class: "form-control" %>
+            <small class="form-text text-muted">Custom label for the field, can be blank</small>
+        </div>
+
+        <div class="form-group col-md-4">
+            <%= f.label :help_text %>
+            <%= f.text_field :help_text, class: "form-control" %>
+            <small class="form-text text-muted">This help text will be displayed below the field</small>
+        </div>
+
+        <div class="form-group col-md-1">
+            <%= f.label :step %>
+            <%= f.select :step, FormCustomField.steps.keys, {}, class: "form-control" %>
+        </div>
+
+        <div class="form-group col-md-2">    
+            <%= f.label :none, "&nbsp;".html_safe %>
+            <span>
+                <%= link_to_remove_association "Delete" , f, class: "btn btn-outline-danger mt-4" %>
+                <% collapse_id = f.object.id || rand(100**100) %>
+                <a class="btn btn-primary mt-4" data-bs-toggle="collapse" href="#custom_condition_row_<%=collapse_id%>" >
+                <i class="ti ti-caret-down"></i>
+                </a>
+            </span>
+        </div>
+
     </div>
 
-    <div class="form-group col-md-5">
-        <%= f.label :help_text %>
-        <%= f.text_field :help_text, class: "form-control" %>
-        <small class="form-text text-muted">This help text will be displayed below the field</small>
-    </div>
+    <div class="row collapse" id="custom_condition_row_<%=collapse_id%>">
+        <div class="form-group col-md-2">
+            <%= f.label :condition_on %>
+            <%= f.text_field :condition_on, class: "form-control" %>
+            <small class="form-text text-muted">Field to check for condition</small>
+        </div>
 
-    <div class="form-group col-md-1">
-        <%= f.label :step %>
-        <%= f.select :step, FormCustomField.steps.keys, {}, class: "form-control" %>
-    </div>
+        <div class="form-group col-md-2">
+            <%= f.label :condition_criteria, "Criteria" %>
+            <%= f.select :condition_criteria, [:eq, :not_eq, :contains], {}, class: "form-control" %>
+            <small class="form-text text-muted">Criteria to check for condition</small>
+        </div>
 
-    <div class="form-group col-md-1">    
-        <%= f.label :none, "&nbsp;".html_safe %>
-        <%= link_to_remove_association "Delete" , f, class: "btn btn-outline-danger mt-4" %>
-    </div>
+        <div class="form-group col-md-3">
+            <%= f.label :condition_params, "Match Value" %>
+            <%= f.text_field :condition_params, class: "form-control" %>
+            <small class="form-text text-muted">Value to check for the input field</small>
+        </div>
+
+        <div class="form-group col-md-2">
+            <%= f.label :condition_state, "Initial State" %>
+            <%= f.select :condition_state, [:show, :hide], {}, class: "form-control" %>
+            <small class="form-text text-muted">Initial state of this field, will be toggled if condition matches</small>
+        </div>
+
     </div>
 </div>

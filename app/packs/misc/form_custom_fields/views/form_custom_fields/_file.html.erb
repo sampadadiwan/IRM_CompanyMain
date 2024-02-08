@@ -13,7 +13,7 @@
 %>
 
 
-<div class="form-group <%= field.read_only ? 'hidden_form_field' : '' %>"
+<div class="form-group <%= field.form_class %>" <%= field.data_attributes&.html_safe %> <%= field.data_attributes&.html_safe %> 
     data-controller="single-upload" 
     data-single-upload-types-value="<%= allowed_types.to_json %>" 
     data-single-upload-server-value="<%= upload_server %>">
@@ -59,6 +59,6 @@
     </div>
 
     <div>
-        <small class="text-muted"><%= field.help_text.html_safe %> </small>
+        <small class="text-muted"><%= field.help_text&.html_safe %> </small>
     </div>
 </div>

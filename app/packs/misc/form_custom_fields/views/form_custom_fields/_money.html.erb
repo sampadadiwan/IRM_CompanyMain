@@ -1,4 +1,4 @@
-<div class="form-group <%= field.read_only ? 'hidden_form_field' : '' %>" data-controller="currencyformat">
+<div class="form-group <%= field.form_class %>" <%= field.data_attributes&.html_safe %> <%= field.data_attributes&.html_safe %>  data-controller="currencyformat">
     <%= f.label field.name, field.human_label %> <span class="formatted_currency"></span>
     <%= f.number_field field.name, class: "form-control custom_field", required: field.required, step: :any, data: {action: "input->currencyformat#format"} %>
     <small class="text-muted"><%= field.help_text.html_safe %></small>

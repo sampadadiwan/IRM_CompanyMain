@@ -62,4 +62,18 @@ class FormCustomField < ApplicationRecord
       record.update_column(:properties, record.properties)
     end
   end
+
+  def form_class
+    css_class = "fcf"
+    css_class += read_only ? " hidden_form_field" : ""
+    if condition_on.present?
+      css_class += " conditional #{form_type.name.underscore}_properties_#{condition_on}"
+      css_class += " #{condition_state}"
+    end
+    css_class
+  end
+
+  def data_attributes
+    "data-match-value='#{condition_params}' data-match-criteria='#{condition_criteria}'" if condition_on.present?
+  end
 end

@@ -3,14 +3,17 @@
     fields = model.form_type.form_custom_fields.visible
     fields = fields.where(step: step) if step.present?    
 %>
-<%= form.fields_for :properties, struct  do |builder| %>
-    <% fields.each do |field| %>
-        <!-- Override the required attribute of the field if passed in -->
-        <% field.required = required if required == false %>
-        <%= render "form_custom_fields/#{field.field_type.underscore}", model:, 
-                    field: field, f: builder, struct: struct if field.show_to_user(current_user) %>
-    
-    <% end %>
-<% end %>
 
-<%= form.text_field :form_type_id, class: "form-control", hidden: true  %>
+<div data-controller="form-custom-fields">
+    <%= form.fields_for :properties, struct  do |builder| %>
+        <% fields.each do |field| %>
+            <!-- Override the required attribute of the field if passed in -->
+            <% field.required = required if required == false %>
+            <%= render "form_custom_fields/#{field.field_type.underscore}", model:, 
+                        field: field, f: builder, struct: struct if field.show_to_user(current_user) %>
+        
+        <% end %>
+    <% end %>
+
+    <%= form.text_field :form_type_id, class: "form-control", hidden: true  %>
+</div>
