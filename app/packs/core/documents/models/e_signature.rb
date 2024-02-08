@@ -53,7 +53,7 @@ class ESignature < ApplicationRecord
   end
 
   def new_status?(payload_status)
-    ESignature.where(id:).where.not(status: payload_status).where.not(status: ["signed", "expired"]).update_all(status: payload_status).positive?
+    ESignature.where(id:).where.not(status: payload_status).where.not(status: %w[signed expired]).update_all(status: payload_status).positive?
   end
 
   # status can be [nil, "signed", "failed", "requested"]

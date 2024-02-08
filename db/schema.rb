@@ -892,6 +892,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_08_093416) do
     t.boolean "approved", default: false, null: false
     t.json "json_fields"
     t.bigint "import_upload_id"
+    t.datetime "sent_for_esign_date"
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
@@ -1022,6 +1023,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_08_093416) do
     t.text "whatsapp_token"
     t.string "whatsapp_endpoint"
     t.json "whatsapp_templates"
+    t.string "digio_client_id"
+    t.string "digio_client_secret"
+    t.datetime "digio_cutover_date"
     t.index ["deleted_at"], name: "index_entity_settings_on_deleted_at"
     t.index ["entity_id"], name: "index_entity_settings_on_entity_id"
   end
