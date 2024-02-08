@@ -46,4 +46,8 @@ class BaseNotification < Noticed::Base
   def view_path
     notification_path(id: record.id, subdomain: record.entity.sub_domain)
   end
+
+  def entity
+    @entity ||= Entity.find(params[:entity_id])
+  end
 end
