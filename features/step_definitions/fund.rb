@@ -892,11 +892,11 @@ end
 
 
 Then('if the last remittance payment is deleted') do
-  CapitalRemittancePayment.last.destroy
+  CapitalRemittancePayment.last&.destroy
 end
 
 Then('if the first remittance is deleted') do
-  CapitalRemittance.first.destroy
+  CapitalRemittance.first&.destroy
 end
 
 
