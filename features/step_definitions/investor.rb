@@ -370,6 +370,8 @@ Given('Given Entity has ckyc_enabled kra_enabled set to true') do
 end
 
 Given('I create a new InvestorKyc with pan {string}') do |string|
+  allow_any_instance_of(KycVerify).to receive(:search_ckyc).and_return(OpenStruct.new(parsed_response:{"success": true}))
+  allow_any_instance_of(KycVerify).to receive(:download_ckyc_response).and_return(KycVerify.new.sample_ckyc_download_response)
   visit(investor_kycs_path)
   sleep(2)
   click_on("New KYC")

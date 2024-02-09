@@ -135,12 +135,11 @@ class DigioEsignHelper
   end
 
   def cancel_esign(doc)
-    if doc.entity.entity_setting.digio_cutover_date.present? && doc.entity.entity_setting.digio_cutover_date < doc.sent_for_esign_date
-      doc.entity.entity_setting.digio_auth_token
-    else
-      AUTH_TOKEN
-    end
-    auth_token = doc.entity.entity_setting.digio_auth_token || AUTH_TOKEN
+    auth_token = if doc.entity.entity_setting.digio_cutover_date.present? && doc.entity.entity_setting.digio_cutover_date < doc.sent_for_esign_date
+                   doc.entity.entity_setting.digio_auth_token
+                 else
+                   AUTH_TOKEN
+                 end
     response = hit_cancel_esign_api(doc.provider_doc_id, auth_token)
     if response.success?
       # added transaction to avoid partial updates

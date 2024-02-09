@@ -49,7 +49,7 @@ class KycData < ApplicationRecord
     return "" if response.blank? || response["success"] == false
 
     if source == "ckyc"
-      response.dig("download_response", "personal_details", "mob_code") + response.dig("download_response", "personal_details", "mob_no")
+      "#{response.dig('download_response', 'personal_details', 'mob_code')&.strip}#{response.dig('download_response', 'personal_details', 'mob_no')&.strip}"
     else
       response.dig("pan_details", "mobile_number")
     end

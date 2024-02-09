@@ -17,7 +17,8 @@ class WhatsappGeneralNotification < ApplicationJob
     link = notification.view_path
     whatsapp_numbers = ApplicationMailer.new.sandbox_whatsapp_numbers(notification.record, [user.phone_with_call_code])
     whatsapp_numbers.each do |whatsapp_number|
-      self.class.send_message(entity_name, message, link, whatsapp_number, endpoint, token, template_name)
+      params = { entity_name:, message:, link:, whatsapp_number:, endpoint:, token:, template_name: }
+      self.class.send_message(params)
       # log the Notification
       Notification.get_entity_name_json(message, entity_name)
 
@@ -27,16 +28,16 @@ class WhatsappGeneralNotification < ApplicationJob
     end
   end
 
-  def self.send_message(entity_name, message, link, whatsapp_no, endpoint, token, template_name)
-    url = URI(endpoint + "/api/v1/sendTemplateMessage?whatsappNumber=#{whatsapp_no}")
+  def self.send_message(params)
+    url = URI(params[:endpoint] + "/api/v1/sendTemplateMessage?whatsappNumber=#{params[:whatsapp_number]}")
     broadcast_name = "General Notification Broadcast"
     http = Net::HTTP.new(url.host, url.port)
     http.use_ssl = true
 
     request = Net::HTTP::Post.new(url)
     request["content-type"] = 'text/json'
-    request["Authorization"] = token
-    request.body = "{\"parameters\":[{\"name\":\"1\",\"value\":\"#{entity_name}\"},{\"name\":\"notification\",\"value\":\"#{message}\"},{\"name\":\"link\",\"value\":\"#{link}\"}],\"broadcast_name\":\"#{broadcast_name}\",\"template_name\":\"#{template_name}\"}"
+    request["Authorization"] = params[:token]
+    request.body = "{\"parameters\":[{\"name\":\"1\",\"value\":\"#{params[:entity_name]}\"},{\"name\":\"notification\",\"value\":\"#{params[:message]}\"},{\"name\":\"link\",\"value\":\"#{params[:link]}\"}],\"broadcast_name\":\"#{broadcast_name}\",\"template_name\":\"#{params[:template_name]}\"}"
 
     response = http.request(request)
 

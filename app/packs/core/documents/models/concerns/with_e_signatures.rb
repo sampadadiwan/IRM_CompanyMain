@@ -19,37 +19,47 @@ module WithESignatures
   # The e_signature in the generated document is the actual e_signature, with the user who needs to sign
   # The model must have a method with the same name as the label in the e_signature, which returns the user who needs to sign. Ex - if the e_signature label is "Buyer", then the model must have a method called "buyer" which returns the user who needs to sign
   def e_signatures_for(model)
-    if esign? && model
-      esigns = []
-      e_signatures.map do |e_signature|
-        es = e_signature.dup
-        method = e_signature.label.delete(' ').underscore
-        allowed_methods = %w[investor_signatories fund_signatories]
-        # if the label is investor or fund the model.send label will return unexpected objects, so in those cases we select email from notes
-        if model.respond_to?(method) && allowed_methods.include?(method)
-          emails = model.send(method)
-          emails&.each do |email|
-            email = email&.strip&.downcase
-            if esigns.pluck(:email).map(&:downcase).include?(email)
-              Rails.logger.debug { "Duplicate esign email - #{email} in #{model.class.to_s.titleize} #{model.id} document #{name}" }
-            else
-              tempsign = e_signature.dup
-              tempsign.assign_attributes(email:, label: e_signature.label&.singularize)
-              esigns << tempsign
-            end
-          end
-        else
-          # when label is other
-          es.email = e_signature.notes
-          if esigns.pluck(:email).map(&:downcase).include?(es.email)
-            Rails.logger.debug { "Duplicate esign email - #{es.email} in #{model.class.to_s.titleize} #{model.id} document #{name}" }
-          else
-            esigns << es
-          end
-        end
+    return unless esign? && model
+
+    e_signatures.map do |e_signature|
+      method = e_signature.label.delete(' ').underscore
+      allowed_methods = %w[investor_signatories fund_signatories]
+      if model.respond_to?(method) && allowed_methods.include?(method)
+        process_allowed_methods(model, method, e_signature)
+      else
+        process_other_labels(model, e_signature, e_signatures)
       end
-      esigns
+    end.flatten
+  end
+
+  def process_allowed_methods(model, method, e_signature)
+    e_signatures_created = []
+    model.send(method)&.each do |email|
+      email = email&.strip&.downcase
+      if e_signatures_created.pluck(:email).compact.map(&:downcase).include?(email)
+        Rails.logger.debug { "Duplicate esign email - #{email} in #{model.class.to_s.titleize} #{model.id} document #{name}" }
+      else
+        e_signatures_created << create_e_signature(email, e_signature.label&.singularize, model, e_signature)
+      end
     end
+    e_signatures_created
+  end
+
+  def process_other_labels(model, e_signature)
+    e_signatures_created = []
+    email = e_signature.notes
+    if e_signatures_created.pluck(:email).compact.map(&:downcase).include?(email)
+      Rails.logger.debug { "Duplicate esign email - #{email} in #{model.class.to_s.titleize} #{model.id} document #{name}" }
+    else
+      e_signatures_created << create_e_signature(email, e_signature.label, model, e_signature)
+    end
+    e_signatures_created
+  end
+
+  def create_e_signature(email, label, _model, e_signature)
+    e_signature = e_signature.dup
+    e_signature.assign_attributes(email:, label:)
+    e_signature
   end
 
   def stamp_papers_for(model)

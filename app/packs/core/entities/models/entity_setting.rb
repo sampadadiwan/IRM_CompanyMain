@@ -18,17 +18,6 @@ class EntitySetting < ApplicationRecord
     ckyc_enabled || kra_enabled
   end
 
-  private
-
-  def ensure_single_kra_enabled
-    # Update other EntitySetting records to set kra_enabled to false
-    self.class.where.not(id:).where(kra_enabled: true).update_all(kra_enabled: false)
-  end
-
-  def validate_ckyc_enabled
-    errors.add(:ckyc, "can not be enabled without FI Code") if ckyc_enabled == true && fi_code.blank?
-  end
-
   def to_s
     "#{entity.name} settings"
   end
@@ -47,5 +36,18 @@ class EntitySetting < ApplicationRecord
 
   def digio_auth_token
     Base64.strict_encode64("#{digio_client_id}:#{digio_client_secret}") if digio_client_id.present? && digio_client_secret.present?
+  end
+
+  private
+
+  # rubocop : disable Rails/SkipsModelValidations
+  def ensure_single_kra_enabled
+    # Update other EntitySetting records to set kra_enabled to false
+    self.class.where.not(id:).where(kra_enabled: true).update_all(kra_enabled: false)
+  end
+  # rubocop : enable Rails/SkipsModelValidations
+
+  def validate_ckyc_enabled
+    errors.add(:ckyc, "can not be enabled without FI Code") if ckyc_enabled == true && fi_code.blank?
   end
 end
