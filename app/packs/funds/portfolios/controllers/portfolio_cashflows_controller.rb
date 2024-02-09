@@ -75,6 +75,6 @@ class PortfolioCashflowsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def portfolio_cashflow_params
-    params.require(:portfolio_cashflow).permit(:entity_id, :fund_id, :portfolio_company_id, :aggregate_portfolio_investment_id, :payment_date, :amount, :notes)
+    params.require(:portfolio_cashflow).permit(:entity_id, :fund_id, :portfolio_company_id, :aggregate_portfolio_investment_id, :payment_date, :amount, :notes, :tag, :instrument)
   end
 end

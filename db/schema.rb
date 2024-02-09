@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_08_093416) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_09_065655) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -2163,6 +2163,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_08_093416) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "import_upload_id"
+    t.string "tag", limit: 100, default: ""
+    t.string "instrument"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_cashflows_on_aggregate_portfolio_investment_id"
     t.index ["entity_id"], name: "index_portfolio_cashflows_on_entity_id"
     t.index ["fund_id"], name: "index_portfolio_cashflows_on_fund_id"

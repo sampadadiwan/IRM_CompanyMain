@@ -10,9 +10,16 @@
     <%= money_to_currency portfolio_cashflow.amount, params %>
   </td>
   <td>
+    <%= portfolio_cashflow.tag %>
+  </td>
+  <td>
+    <%= portfolio_cashflow.instrument %>
+  </td>
+  <td>
     <%= portfolio_cashflow.notes %>
   </td>
   <td>
     <%= link_to "Show", portfolio_cashflow , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Edit", edit_portfolio_cashflow_path(portfolio_cashflow), {class: "btn btn-outline-success"}  if policy(portfolio_cashflow).update? %>
   </td>
 </tr>

@@ -9,6 +9,13 @@ class PortfolioCashflow < ApplicationRecord
 
   validates :payment_date, presence: true
   validates :amount_cents, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :tag, length: { maximum: 100 }
+  validates :instrument, length: { maximum: 255 }
 
   monetize :amount_cents, with_currency: ->(i) { i.fund.currency }
+
+  def initalize(*args)
+    super(*args)
+    self.tag ||= "Actual"
+  end
 end
