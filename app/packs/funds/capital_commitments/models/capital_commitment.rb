@@ -139,7 +139,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def due_amount
-    call_amount - collected_amount - other_fee
+    call_amount - collected_amount + other_fee
   end
 
   def changed_committed_amount_at_exchange_rate(date)
