@@ -48,10 +48,11 @@ Then('when I click on the link in the email {string}') do |link|
 end
 
 Given('I log out') do
-  sleep(2)
-  find("#profile_menu").click
-  click_on("Log Out")
-  click_on("Logout")
+  visit(destroy_user_session_path)
+  # sleep(3)
+  # find("#profile_menu").click
+  # click_on("Log Out")
+  # click_on("Logout")
 end
 
 Given('I login as the investor user') do
