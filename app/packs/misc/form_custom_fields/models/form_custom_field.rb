@@ -25,6 +25,11 @@ class FormCustomField < ApplicationRecord
     errors.add(:meta_data, "You cannot do CRUD operations in meta_data") if meta_data.downcase.match?(/alter|truncate|drop|insert|select|destroy|delete|update|create|save|rollback|system|fork/)
   end
 
+  def initialize(*args)
+    super(*args)
+    self.field_type ||= "TextField"
+  end
+
   before_save :set_default_values
   def set_default_values
     self.name = name.strip.downcase
