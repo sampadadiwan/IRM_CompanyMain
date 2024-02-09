@@ -47,7 +47,7 @@ export default class extends Controller {
         let data_match_value = $(elem).attr("data-match-value").toLowerCase();
         let matched = null;
         if(fcf_change_value && criteria == "contains") {
-            matched = data_match_value.includes(fcf_change_value) ? "matched" : "not-matched";
+            matched = (fcf_change_value.includes(data_match_value) || data_match_value.includes(fcf_change_value)) ? "matched" : "not-matched";
         } else {
             matched = data_match_value == fcf_change_value ? "matched" : "not-matched";
         }
