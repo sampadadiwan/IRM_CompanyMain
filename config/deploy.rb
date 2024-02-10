@@ -2,7 +2,7 @@
 lock "~> 3.18"
 
 set :application, "IRM"
-set :repo_url, "git@github.com:thimmaiah/IRM.git"
+set :repo_url, "git@github.com:ausangshukla/IRM.git"
 set :branch, ENV["branch"] || 'main'
 
 set :deploy_to, "/home/ubuntu/IRM"
