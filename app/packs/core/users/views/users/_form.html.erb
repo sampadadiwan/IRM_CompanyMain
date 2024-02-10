@@ -23,9 +23,10 @@
       <%= form.text_field :last_name, class: "form-control" %>
     </div>
 
+    <% disabled = !user.new_record?  %>
     <div class="form-group">
       <%= form.label :email %>
-      <%= form.text_field :email, class: "form-control", autocomplete: "nope" %>
+      <%= form.text_field :email, class: "form-control", autocomplete: "nope", disabled:  %>
     </div>
 
     <div class="row">

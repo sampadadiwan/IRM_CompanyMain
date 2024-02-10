@@ -524,7 +524,6 @@ GEM
     net-smtp (0.4.0.1)
       net-protocol
     net-ssh (7.2.1)
-    newrelic_rpm (9.7.1)
     nio4r (2.7.0)
     nokogiri (1.16.0-x86_64-linux)
       racc (~> 1.4)
@@ -894,7 +893,6 @@ DEPENDENCIES
   money-rails (~> 1.12)
   mysql2 (~> 0.5)
   net-ssh (= 7.2.1)
-  newrelic_rpm
   noticed
   overcommit (~> 0.58.0)
   packs-rails
