@@ -25,7 +25,8 @@ module Users
       else
         clean_up_passwords resource
         set_minimum_password_length
-        respond_with resource
+        # respond_with resource
+        redirect_to new_user_path(params.to_unsafe_h), alert: resource.errors.full_messages.join(", ")
       end
     end
 
