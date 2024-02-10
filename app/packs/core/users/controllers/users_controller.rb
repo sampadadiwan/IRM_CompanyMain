@@ -64,6 +64,8 @@ class UsersController < ApplicationController
   def new
     @user = User.new
     @user.entity_id = params[:entity_id]
+    @user.permissions = current_user.permissions
+    @user.extended_permissions = current_user.extended_permissions
     authorize @user
     setup_custom_fields(@user)
   end

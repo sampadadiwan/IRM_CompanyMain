@@ -2,7 +2,7 @@ class DocumentsBulkActionJob < BulkActionJob
   def perform_action(document, user_id, bulk_action)
     msg = "#{bulk_action}: #{document.name}"
     send_notification(msg, user_id, :success)
-    
+
     case bulk_action.downcase
 
     when "send commitment agreement"
@@ -26,7 +26,7 @@ class DocumentsBulkActionJob < BulkActionJob
     else
       msg = "Invalid bulk action"
       send_notification(msg, user_id, :error)
-    
+
     end
   end
 

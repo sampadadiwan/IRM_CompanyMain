@@ -117,11 +117,7 @@
     <%= form.text_field :entity_id, class: "form-control", hidden: true %>
 
     <% if current_user.has_cached_role?(:company_admin) %>
-
-      <div class="divider">
-        <hr/>
-      </div>
-
+    
       <div class="associated_entity row">
 
         <% User.permissions.pairs.each do |key, val| %>
