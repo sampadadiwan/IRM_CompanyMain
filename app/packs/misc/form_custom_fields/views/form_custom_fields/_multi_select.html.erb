@@ -2,5 +2,5 @@
     <%= f.label field.name, field.human_label %>
     <% options = field.meta_data.present? ? field.meta_data.split(",") : [] %>
     <%= f.select field.name, options, {include_blank: false, include_hidden: false}, class: "form-control  custom_field select2", required: field.required, multiple: true %>
-    <small class="text-muted"><%= field.help_text.html_safe %></small>
+    <small class="text-muted"><%= field.help_text&.html_safe %></small>
 </div>

@@ -4,7 +4,7 @@
     
     <%= f.text_field field.name, class: "form-control custom_field", required: field.required, 
         list: "options_#{field.name}", autocomlete: "off" %>
-    <small class="text-muted"><%= field.help_text.html_safe %></small>
+    <small class="text-muted"><%= field.help_text&.html_safe %></small>
 
     <datalist id="options_<%=field.name%>" class="d-none">
         <%= options_for_select(options) %>

@@ -12,5 +12,5 @@
         end 
     %>
     <%= f.date_field field.name, class: "form-control custom_field", required: field.required, value: val   %>
-    <small class="text-muted"><%= field.help_text.html_safe %></small>
+    <small class="text-muted"><%= field.help_text&.html_safe %></small>
 </div>
