@@ -44,7 +44,7 @@ class DocumentPolicy < ApplicationPolicy
 
   # remove user check in next iteration - only check email
   def send_for_esign?
-    update? && !record.sent_for_esign && record.e_signatures.all? { |esign| esign.email.present? } && !record.esign_expired?
+    update? && !record.sent_for_esign && record.e_signatures.all? { |esign| esign.email.present? } && !record.esign_expired? && record.approved
   end
 
   def force_send_for_esign?

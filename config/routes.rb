@@ -8,7 +8,7 @@ Rails.application.routes.draw do
 
   devise_for :users, controllers: {
     # We no longer allow users to register on their own
-    registrations: "users/registrations",
+    # registrations: "users/registrations",
     passwords: "users/passwords",
     confirmations: 'users/confirmations'
   }

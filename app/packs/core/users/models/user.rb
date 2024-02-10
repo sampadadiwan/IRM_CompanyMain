@@ -57,7 +57,8 @@ class User < ApplicationRecord
   belongs_to :entity
   belongs_to :advisor_entity, class_name: "Entity", optional: true
 
-  validates :first_name, :last_name, presence: true
+  validates :first_name, :last_name, :password, presence: true
+
   validates :email, format: { with: /\A[^@\s]+@[^@\s]+\z/ }, presence: true
   validates :call_code, presence: true, if: -> { phone.present? }
   validates :phone, length: { maximum: 100 }
