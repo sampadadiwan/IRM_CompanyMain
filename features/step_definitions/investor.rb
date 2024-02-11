@@ -586,6 +586,12 @@ Then('the document has {string} e_signatures') do |string|
   click_on("Send For eSignatures")
 end
 
+Then('when the document is approved') do
+  @doc = Document.last
+  @doc.approved = true
+  @doc.save!
+end
+
 Then('the document has {string} e_signatures with status {string}') do |string, string2|
   allow_any_instance_of(DigioEsignHelper).to receive(:sign).and_return(sample_doc_esign_init_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response)

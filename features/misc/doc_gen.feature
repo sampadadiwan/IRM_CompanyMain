@@ -42,6 +42,7 @@ Scenario Outline: Send Generated SOA for Esign
   Given the fund has a SOA template "name=SOA template"
   And we Generate SOA for the first capital commitment
   Then it is successfully generated
+  Then when the document is approved
   And the document has "2" e_signatures
   And the document is signed by the signatories
   Then the esign completed document is present
@@ -69,6 +70,7 @@ Scenario Outline: Send Generated SOA for Esign with status requested
   Given the fund has a SOA template "name=SOA template"
   And we Generate SOA for the first capital commitment
   Then it is successfully generated
+  Then when the document is approved
   And the document has "2" e_signatures with status "requested"
   And the document is signed by the signatories
   Then the esign completed document is present
@@ -96,6 +98,7 @@ Scenario Outline: Send Generated SOA for Esign with status empty
   Given the fund has a SOA template "name=SOA template"
   And we Generate SOA for the first capital commitment
   Then it is successfully generated
+  Then when the document is approved
   And the document has "2" e_signatures with status ""
   And the document is signed by the signatories
   Then the esign completed document is present
@@ -123,6 +126,7 @@ Scenario Outline: Send Generated SOA for Esign with callbacks
     Given the fund has a SOA template "name=SOA template"
     And we Generate SOA for the first capital commitment
     Then it is successfully generated
+    Then when the document is approved
     And the document has "2" e_signatures
     And the document get digio callbacks
     Then the esign completed document is present
@@ -146,6 +150,7 @@ Scenario Outline: Send Generated SOA for Esign with callbacks
     Given the fund has a Commitment template "name=Commitment template"
     And we Generate Commitment template for the first capital commitment
     And it is successfully generated
+    Then when the document is approved
     Then the document has esignatures based on the template
 
 
@@ -167,6 +172,7 @@ Scenario Outline: Cancel Esign for a document
     Given the fund has a Commitment template "name=Commitment template"
     And we Generate Commitment template for the first capital commitment
     And it is successfully generated
+    Then when the document is approved
     Then the document has esignatures based on the template
     And the document is partially signed
     And the document esign is cancelled

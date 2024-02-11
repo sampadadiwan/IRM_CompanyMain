@@ -62,7 +62,7 @@ class UsersController < ApplicationController
 
   # GET /users/new
   def new
-    @user = params[:user].present? ?  User.new(user_params) : User.new
+    @user = params[:user].present? ? User.new(user_params) : User.new
     @user.entity_id = current_user.entity_id
     @user.permissions ||= current_user.permissions
     @user.extended_permissions ||= current_user.extended_permissions
@@ -143,7 +143,7 @@ class UsersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def user_params
-    params.require(:user).permit(:first_name, :last_name, :email, 
+    params.require(:user).permit(:first_name, :last_name, :email,
                                  :phone, :whatsapp_enabled, :signature, :call_code,
                                  :dept, :sale_notification, :enable_support, role_name: [], permissions: [], extended_permissions: [], properties: {})
   end
