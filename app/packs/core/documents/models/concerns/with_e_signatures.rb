@@ -27,7 +27,7 @@ module WithESignatures
       if model.respond_to?(method) && allowed_methods.include?(method)
         process_allowed_methods(model, method, e_signature)
       else
-        process_other_labels(model, e_signature, e_signatures)
+        process_other_labels(model, e_signature)
       end
     end.flatten
   end
