@@ -2,13 +2,13 @@
 <div class="col-md-3 single-note-item all-category <%= type %>">
   <div class="card card-body">
     <span class="side-stick"></span>
-    <h6 class="note-title text-truncate w-75 mb-0"> <%= link_to report.name, report.url %> </h6>
+    <h6 class="note-title text-truncate w-75 mb-0"> <%= link_to report.name, report.url, class: "fw-bolder" %> </h6>
     <p class="note-date fs-2">
         <%= l report.updated_at %> 
     </p>
     <span class="note-date fs-1"><%= report.category.presence || "N/A" %></span>
     <div class="note-content">
-      <% label = report.description.presence || "Got To Report" %>
+      <% label = report.description.presence || "Go To Report" %>
       <p class="note-inner-content" style="min-height:50px;"> <%= link_to label, report.url %> </p>
     </div>
     <div class="d-flex align-items-center">
