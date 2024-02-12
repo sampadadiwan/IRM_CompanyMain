@@ -17,6 +17,7 @@ class ReportsController < ApplicationController
   def new
     @report = Report.new
     @report.user = current_user
+    @report.curr_role = current_user.curr_role
     @report.entity = current_user.entity
     @report.url = URI(request.referer).request_uri
 
@@ -35,6 +36,7 @@ class ReportsController < ApplicationController
   def create
     @report = Report.new(report_params)
     @report.user = current_user
+    @report.curr_role = current_user.curr_role
     @report.entity = current_user.entity
     authorize @report
 
@@ -51,6 +53,7 @@ class ReportsController < ApplicationController
 
   # PATCH/PUT /reports/1 or /reports/1.json
   def update
+    @report.curr_role = current_user.curr_role
     respond_to do |format|
       if @report.update(report_params)
         format.html { redirect_to report_url(@report), notice: "Report was successfully updated." }
@@ -83,6 +86,6 @@ class ReportsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def report_params
-    params.require(:report).permit(:entity_id, :user_id, :name, :description, :url, :category, :tag_list)
+    params.require(:report).permit(:entity_id, :user_id, :name, :description, :url, :category, :tag_list, :curr_role)
   end
 end

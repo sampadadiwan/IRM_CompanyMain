@@ -4,7 +4,7 @@ class ReportPolicy < ApplicationPolicy
       if user.has_cached_role?(:super)
         scope.all
       else
-        scope.where(entity_id: [user.entity_id, nil])
+        scope.where(entity_id: [user.entity_id, nil], curr_role: user.curr_role)
       end
     end
   end

@@ -21934,7 +21934,7 @@ body .connect-sorting-content {
   width: 15px;
   display: none;
 }
-.note-has-grid .single-note-item .category .category-business {
+/* .note-has-grid .single-note-item .category .category-business {
   background-color: var(--bs-success-bg-subtle);
   border: 2px solid var(--bs-success);
 }
@@ -21945,7 +21945,7 @@ body .connect-sorting-content {
 .note-has-grid .single-note-item .category .category-important {
   background-color: var(--bs-danger-bg-subtle);
   border: 2px solid var(--bs-danger);
-}
+} */
 .note-has-grid .single-note-item.all-category .point {
   color: rgba(var(--bs-gray-700), 0.5);
 }
@@ -21987,7 +21987,7 @@ body .connect-sorting-content {
 .note-has-grid .single-note-item.all-category.note-favourite.note-important .more-options,
 .note-has-grid .single-note-item.all-category.note-favourite.note-business .more-options,
 .note-has-grid .single-note-item.all-category.note-favourite.note-social .more-options {
-  display: none;
+  /* display: none; */
 }
 
 .invoice-inner-part .invoiceing-box #custom-invoice #printableArea {

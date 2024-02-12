@@ -2,6 +2,8 @@
 
 <% if params[:composite].present? %>
   <%= render "/reports/composite", report: @report %>
-<% else %>
+<% elsif params[:no_card].present? %>
   <%= render "/reports/index", reports: @reports %>
+<% else %>
+  <%= render "/reports/cards", reports: @reports %>
 <% end %>
