@@ -6,7 +6,11 @@
     <%= link_to fund.name, fund %>
   </td>
   <td class="hideMobP">
-    <%= fund.tag_list %>
+    <% if fund.tag_list.present? %>      
+      <% fund.tag_list.split(",").each do |tag| %>
+        <span class="mb-1 badge rounded-pill font-medium bg-primary-subtle text-primary"><%= tag %></span>
+      <% end %>
+    <% end %>
   </td>
   <td class="hideMobP">
     <%= link_to "Show" , fund , {class: "btn btn-outline-primary" }%>

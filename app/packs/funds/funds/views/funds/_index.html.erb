@@ -13,7 +13,17 @@
 <% else %>  
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
       <h1 class="h3 mb-0 text-gray-800">Funds</h1>
-      <%= link_to "New Fund" , new_fund_path, {class: "btn btn-outline-primary" } if policy(Fund.new(entity_id: current_user.entity_id)).new? %>
+      <span>
+        <%= link_to "New Fund" , new_fund_path, {class: "btn btn-outline-primary" } if policy(Fund.new(entity_id: current_user.entity_id)).new? %>
+        
+        <% if current_user.curr_role == "employee" %>
+          <a  class="p-8 bg-primary-subtle rounded-1 me-3 d-inline-flex align-middle align-items-center justify-content-center"  
+              href="<%=funds_path(card: true)%>" >
+            <i class="ti ti-grid-dots text-primary fs-6"></i>
+          </a>
+        <% end %>
+
+      </span>
   </div>
   <div class="table-responsive" data-controller="datatable">
 

@@ -124,6 +124,5 @@ module DocumentGeneratorBase
     generated_document.stamp_papers = doc_template.stamp_papers_for(model) || []
 
     generated_document.save!
-
   end
 end

@@ -1,159 +1,165 @@
 <%= render "/layouts/alerts" %>
-<table class="table table-bordered dataTable">
-  <tr>
-    <td>
-      Fund
-    </td>
-    <td>
-      <%= link_to @account_entry.fund.name, @account_entry.fund %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Investor
-    </td>
-    <td>
-      <%= link_to @account_entry.investor if @account_entry.investor %>
-    </td>
-  </tr>
 
-  <% if @account_entry.capital_commitment %>
+<%= render ToggleCard.new(title: "Account Entry: #{@account_entry}", css_class: "show_account_entry") do %>
+
+  <table class="table table-bordered dataTable">
     <tr>
       <td>
-        Capital Commitment
+        Fund
       </td>
       <td>
-        <%= link_to @account_entry.capital_commitment %>
+        <%= link_to @account_entry.fund.name, @account_entry.fund %>
       </td>
     </tr>
-    
     <tr>
       <td>
-        Folio
+        Investor
       </td>
       <td>
-        <%= @account_entry.folio_id %>
+        <%= link_to @account_entry.investor if @account_entry.investor %>
       </td>
     </tr>
-  <% end %>
-  <tr>
-    <td>
-      Reporting Date
-    </td>
-    <td>
-      <%= l @account_entry.reporting_date %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Period
-    </td>
-    <td>
-      <%= @account_entry.period %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Entry Type
-    </td>
-    <td>
-      <%= @account_entry.entry_type %>
-      <% if @account_entry.cumulative %>
-        <span class="badge bg-success">Cumulative<span>
-      <% end %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Name
-    </td>
-    <td>
-      <%= @account_entry.name %>
-      <br>
-      <small class="text-muted"><%= @account_entry.rule_for %></small>
-    </td>
-  </tr>
 
-  <tr>
-    <td>
-      Type
-    </td>
-    <td>
-      <%= @account_entry.commitment_type %>
-    </td>
-  </tr>
+    <% if @account_entry.capital_commitment %>
+      <tr>
+        <td>
+          Capital Commitment
+        </td>
+        <td>
+          <%= link_to @account_entry.capital_commitment %>
+        </td>
+      </tr>
+      
+      <tr>
+        <td>
+          Folio
+        </td>
+        <td>
+          <%= @account_entry.folio_id %>
+        </td>
+      </tr>
+    <% end %>
+    <tr>
+      <td>
+        Reporting Date
+      </td>
+      <td>
+        <%= l @account_entry.reporting_date %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Period
+      </td>
+      <td>
+        <%= @account_entry.period %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Entry Type
+      </td>
+      <td>
+        <%= @account_entry.entry_type %>
+        <% if @account_entry.cumulative %>
+          <span class="badge bg-success">Cumulative<span>
+        <% end %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Name
+      </td>
+      <td>
+        <%= @account_entry.name %>
+        <br>
+        <small class="text-muted"><%= @account_entry.rule_for %></small>
+      </td>
+    </tr>
 
-  <% if @account_entry.parent %>
-  <tr>
-    <td>
-      Parent
-    </td>
-    <td>
-      <%= link_to @account_entry.parent %>
-    </td>
-  </tr>
-  <% end %>
+    <tr>
+      <td>
+        Type
+      </td>
+      <td>
+        <%= @account_entry.commitment_type %>
+      </td>
+    </tr>
 
-  <% if @account_entry.fund_formula %>
-  <tr>
-    <td>
-      Formula
-    </td>
-    <td>
-      <%= link_to @account_entry.fund_formula %>      
-    </td>
-  </tr>
-  <% end %>
+    <% if @account_entry.parent %>
+    <tr>
+      <td>
+        Parent
+      </td>
+      <td>
+        <%= link_to @account_entry.parent %>
+      </td>
+    </tr>
+    <% end %>
 
-  <tr>
-    <td>
-      Amount
-    </td>
-    <td>
-      <% if @account_entry.name.include?("Percentage") %>
-        <%= @account_entry.amount_cents %> %
-      <% else %>
-        <%= money_to_currency @account_entry.amount, params %>
-      <% end %>
-    </td>
-  </tr>
+    <% if @account_entry.fund_formula %>
+    <tr>
+      <td>
+        Formula
+      </td>
+      <td>
+        <%= link_to @account_entry.fund_formula %>      
+      </td>
+    </tr>
+    <% end %>
 
-  <%= display_custom_fields(@account_entry, collapsed: false) if current_user %>
+    <tr>
+      <td>
+        Amount
+      </td>
+      <td>
+        <% if @account_entry.name.include?("Percentage") %>
+          <%= @account_entry.amount_cents %> %
+        <% else %>
+          <%= money_to_currency @account_entry.amount, params %>
+        <% end %>
+      </td>
+    </tr>
 
-  <tr>
-    <td>
-      Notes
-    </td>
-    <td>
-      <%= @account_entry.notes %>
-    </td>
-  </tr>
+    <%= display_custom_fields(@account_entry, collapsed: false) if current_user %>
 
-  <% if @account_entry.exchange_rate %>
-  <tr>
-    <td>
-      Exchange Rate
-    </td>
-    <td>
-      <%= link_to @account_entry.exchange_rate %>
-    </td>
-  </tr>
-  <% end %>
+    <tr>
+      <td>
+        Notes
+      </td>
+      <td>
+        <%= @account_entry.notes %>
+      </td>
+    </tr>
 
-  <% if @account_entry.explanation.present? %>
-  <tr>
-    <td>
-      Explanation
-    </td>
-    <td>
-      <% @account_entry.explanation.each do |exp| %>
-        <div><%= exp %></div>
-      <% end %>
-    </td>
-  </tr>
-  <% end %>
+    <% if @account_entry.exchange_rate %>
+    <tr>
+      <td>
+        Exchange Rate
+      </td>
+      <td>
+        <%= link_to @account_entry.exchange_rate %>
+      </td>
+    </tr>
+    <% end %>
 
-</table>
+    <% if @account_entry.explanation.present? %>
+    <tr>
+      <td>
+        Explanation
+      </td>
+      <td>
+        <% @account_entry.explanation.each do |exp| %>
+          <div><%= exp %></div>
+        <% end %>
+      </td>
+    </tr>
+    <% end %>
+
+  </table>
+
+<% end %>
+
 <div>
   <% if policy(@account_entry).update? %>
     <%= link_to "Edit", edit_account_entry_path(@account_entry), {class: "btn btn-outline-primary"} %> 
