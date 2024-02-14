@@ -1,0 +1,29 @@
+<div data-item="item-todo" class="task-list-container" data-action="sorting">
+  <div class="connect-sorting connect-sorting-todo">
+    <div class="task-container-header">
+      <h6 class="item-head mb-0 fs-4 fw-semibold" data-item-title="Todo"><%= deal_activity.title %></h6>
+      <div class="hstack gap-2">
+        <div class="add-kanban-title">
+          <a class="addTask d-flex align-items-center justify-content-center gap-1 lh-sm" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Add Task">
+            <i class="ti ti-plus text-dark"></i>
+          </a>
+        </div>
+        <div class="dropdown">
+          <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink-1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+            <i class="ti ti-dots-vertical text-dark"></i>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink-1">
+            <a class="dropdown-item list-edit" href="javascript:void(0);">Edit</a>
+            <a class="dropdown-item list-delete" href="javascript:void(0);">Delete</a>
+            <a class="dropdown-item list-clear-all" href="javascript:void(0);">Clear All</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="connect-sorting-content ui-sortable" data-sortable="true">
+      <% deal.deal_investors.where(deal_activity_id: deal_activity.id).each do |deal_investor| %>
+        <%= render "/deals/kanban_card", deal_investor:, deal:, deal_activity: %>
+      <% end %>
+    </div>
+  </div>
+</div>

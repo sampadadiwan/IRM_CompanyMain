@@ -12,6 +12,8 @@ class DealInvestor < ApplicationRecord
   belongs_to :deal, touch: true
   belongs_to :investor
   belongs_to :entity
+  # This is the currently active activity for the investor
+  belongs_to :deal_activity, optional: true
   counter_culture :entity
 
   has_many :deal_activities, -> { order(sequence: :asc) }, dependent: :destroy

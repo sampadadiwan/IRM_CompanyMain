@@ -1,0 +1,31 @@
+<div class="row scrumboard" id="cancel-row">
+  <div class="col-lg-12 layout-spacing pb-3">
+    <div data-simplebar="init" class="simplebar-scrollable-x">
+      <div class="simplebar-wrapper" style="margin: 0px;">
+        <div class="simplebar-height-auto-observer-wrapper">
+          <div class="simplebar-height-auto-observer"></div>
+        </div>
+        <div class="simplebar-mask">
+          <div class="simplebar-offset" style="right: 0px; bottom: 0px;">
+            <div class="simplebar-content-wrapper" tabindex="0" role="region" aria-label="scrollable content" style="height: auto; overflow: scroll hidden;">
+              <div class="simplebar-content" style="padding: 0px;">
+                <div class="task-list-section">
+                    <% DealActivity.templates(@deal).each do |deal_activity| %>
+                        <%= render "deals/kanban_column", deal_activity: deal_activity, deal: @deal %>
+                    <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="simplebar-placeholder" style="width: 999px; height: 737px;"></div>
+      </div>
+      <div class="simplebar-track simplebar-horizontal" style="visibility: visible;">
+        <div class="simplebar-scrollbar" style="width: 866px; display: block; transform: translate3d(0px, 0px, 0px);"></div>
+      </div>
+      <div class="simplebar-track simplebar-vertical" style="visibility: hidden;">
+        <div class="simplebar-scrollbar" style="height: 0px; display: none;"></div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,7 +1,11 @@
 
 <%= render "/layouts/alerts" %>
 
-<%= render "/deals/show", deal: @deal %>
+<% if params[:kanban].present? %>
+  <%= render "/deals/kanban", deal: @deal %>
+<% else %>
+  <%= render "/deals/show", deal: @deal %>
+<% end %>
 
 <% if current_user.entity_id == @deal.entity_id %>
   
