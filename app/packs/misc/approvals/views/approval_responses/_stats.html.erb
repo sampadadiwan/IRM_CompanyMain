@@ -2,8 +2,13 @@
 
 <% index = 0 %>
 <div class="row">
-    <% approval_responses.group(:status).count.each do |status, count| %>
-    <% color = colors[index % colors.length]; index += 1 %>
+    
+    <% status_count = approval_responses.group(:status).count %>
+    <% approval.response_status&.split(',')&.each do |status| %>
+    <% 
+        color = colors[index % colors.length]; index += 1 
+        count = status_count[status] || 0
+    %>
     <div class="col">
         <div class="card">
         <div class="card-body">
@@ -13,7 +18,7 @@
                 <h6 class="card-subtitle mb-1 text-muted"><%= status %></h6>
             </div>
             <div class="ms-auto">
-                <span class="text-<%=color%> display-6"><i class="ti ti-chevron-right"></i></span>
+                <span class="text-<%=color%> display-6"><i class="ti ti-clipboard-text"></i></span>
             </div>
             </div>
             <div class="progress text-bg-light">

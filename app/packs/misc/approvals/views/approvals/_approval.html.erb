@@ -16,9 +16,10 @@
       <%
         colors = ["bg-success", "bg-warning", "bg-secondary", "bg-info", "bg-primary", "bg-light", "bg-dark"].freeze
       %>
-        <%approval.response_status&.split(',')&.each do |status| %>
+        <% approval.response_status&.split(',')&.each do |status| %>
             <%
-              response_count = approval.approval_responses.where(status: status).count
+              status_count = approval.approval_responses.group(:status).count               
+              response_count = status_count[status]
               idx = approval.response_status&.split(',')&.index(status) || 0
             %>
             <span class="badge <%=colors[idx]%>"> <%= status %> : <%= response_count %> </span>
