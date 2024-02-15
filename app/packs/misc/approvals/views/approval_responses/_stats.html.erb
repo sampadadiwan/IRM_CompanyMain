@@ -1,15 +1,16 @@
 <% colors = ["success", "info", "danger", "warning"].freeze %>
 
+<% index = 0 %>
 <div class="row">
-    <% steps.each_with_index do |step, index| %>
-    <% color = colors[index % colors.length] %>
+    <% approval_responses.group(:status).count.each do |status, count| %>
+    <% color = colors[index % colors.length]; index += 1 %>
     <div class="col">
         <div class="card">
         <div class="card-body">
             <div class="d-flex align-items-center mb-3">
             <div>
-                <h3 class="fs-4">Step <%= index + 1 %></h3>
-                <h6 class="card-subtitle mb-1 text-muted"><%= step %></h6>
+                <h3 class="fs-4"><%= count %></h3>
+                <h6 class="card-subtitle mb-1 text-muted"><%= status %></h6>
             </div>
             <div class="ms-auto">
                 <span class="text-<%=color%> display-6"><i class="ti ti-chevron-right"></i></span>
