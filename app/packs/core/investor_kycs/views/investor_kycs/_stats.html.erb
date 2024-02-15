@@ -1,0 +1,136 @@
+<% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role], expires_in: 5.day) do %>
+
+<div class="row">
+  <div class="col">
+    <a href="<%=investor_kycs_path(verified: true)%>">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+          <div>
+            <h3 class="fs-8"><%= policy_scope(current_user.entity.investor_kycs.verified).count %></h3>
+            <h6 class="card-subtitle mb-1 text-muted">Verified</h6>
+          </div>
+          <div class="ms-auto">
+            <span class="text-success display-6"><i class="ti ti-check"></i></span>
+          </div>
+        </div>
+        <div class="progress text-bg-light">
+          <div class="progress-bar text-bg-success" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+      </div>
+    </div>
+    </a>
+  </div>
+
+  <div class="col">
+    <a href="<%=investor_kycs_path(verified: false)%>">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12">
+            <div class="d-flex align-items-center mb-3">
+              <div>
+                <h3 class="fs-8"><%= policy_scope(current_user.entity.investor_kycs.unverified).count %></h3>
+                <h6 class="card-subtitle mb-1 text-muted">Unverified</h6>
+              </div>
+              <div class="ms-auto">
+                <span class="text-warning display-6"><i class="ti ti-question-mark"></i></span>
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="progress text-bg-light">
+              <div class="progress-bar text-bg-warning" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </a>
+  </div>
+  
+  <div class="col">
+    <a href="<%=investor_kycs_path(expired: true)%>">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12">
+            <div class="d-flex align-items-center mb-3">
+              <div>
+                <h3 class="fs-8"><%= policy_scope(current_user.entity.investor_kycs.expired).count %></h3>
+                <h6 class="card-subtitle mb-1 text-muted">Expired</h6>
+              </div>
+              <div class="ms-auto">
+                <span class="text-danger display-6"><i class="ti ti-x"></i></span>
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="progress text-bg-light">
+              <div class="progress-bar text-bg-danger" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </a>
+  </div>
+
+
+  <div class="col">
+    <a href="<%=investor_kycs_path(kyc_type: :individual)%>">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12">
+            <div class="d-flex align-items-center mb-3">
+              <div>
+                <h3 class="fs-8"><%= policy_scope(current_user.entity.investor_kycs.individual).count %></h3>
+                <h6 class="card-subtitle mb-1 text-muted">Individual</h6>
+              </div>
+              <div class="ms-auto">
+                <span class="text-primary display-6"><i class="ti ti-user"></i></span>
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="progress text-bg-light">
+              <div class="progress-bar text-bg-primary" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </a>
+  </div>
+
+  <div class="col">
+    <a href="<%=investor_kycs_path(kyc_type: :non_individual)%>">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12">
+            <div class="d-flex align-items-center mb-3">
+              <div>
+                <h3 class="fs-8"><%= policy_scope(current_user.entity.investor_kycs.non_individual).count %></h3>
+                <h6 class="card-subtitle mb-1 text-muted">Non Individual</h6>
+              </div>
+              <div class="ms-auto">
+                <span class="text-secondary display-6"><i class="ti ti-building"></i></span>
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="progress text-bg-light">
+              <div class="progress-bar text-bg-secondary" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </a>
+  </div>
+  
+</div>
+
+<% end %>

@@ -34,6 +34,7 @@ class InvestorKyc < ApplicationRecord
   scope :agreement_overcalled, -> { where('agreement_committed_amount_cents <= call_amount_cents') }
 
   scope :verified, -> { where(verified: true) }
+  scope :unverified, -> { where(verified: false) }
   scope :expired, -> { where(expiry_date: ..Time.zone.today) }
   scope :not_expired, -> { where('expiry_date IS NULL OR expiry_date >= ?', Time.zone.today) }
 

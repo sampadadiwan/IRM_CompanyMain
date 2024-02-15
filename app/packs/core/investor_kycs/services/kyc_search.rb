@@ -5,6 +5,9 @@ class KycSearch
     investor_kycs = investor_kycs.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id]
 
     investor_kycs = investor_kycs.where(verified: params[:verified] == "true") if params[:verified].present?
+    investor_kycs = investor_kycs.where(expiry_date: ..Time.zone.today) if params[:expired].present?
+
+    investor_kycs = investor_kycs.where(kyc_type: params[:kyc_type]) if params[:kyc_type].present?
 
     investor_kycs = investor_kycs.includes(:investor, :entity)
     investor_kycs = investor_kycs.page(params[:page]) if params[:all].blank? && params[:search].blank?

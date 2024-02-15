@@ -5,7 +5,7 @@
       <div class="card-body">
         <div class="d-flex align-items-center mb-3">
           <div>
-            <h3 class="fs-8"><%= current_user.entity.funds.count %></h3>
+            <h3 class="fs-8"><%= policy_scope(current_user.entity.funds).count %></h3>
             <h6 class="card-subtitle mb-1 text-muted">Funds</h6>
           </div>
           <div class="ms-auto">
@@ -25,7 +25,7 @@
       <div class="card-body">
         <div class="d-flex align-items-center mb-3">
           <div>
-            <h3 class="fs-8"><%= current_user.entity.investors.count %></h3>
+            <h3 class="fs-8"><%= policy_scope(current_user.entity.investors).count %></h3>
             <h6 class="card-subtitle mb-1 text-muted">Investors</h6>
           </div>
           <div class="ms-auto">
@@ -47,7 +47,7 @@
           <div class="col-12">
             <div class="d-flex align-items-center mb-3">
               <div>
-                <h3 class="fs-8"><%= current_user.entity.investment_opportunities.count %></h3>
+                <h3 class="fs-8"><%= policy_scope(current_user.entity.investment_opportunities).count %></h3>
                 <h6 class="card-subtitle mb-1 text-muted">Opportunities</h6>
               </div>
               <div class="ms-auto">
@@ -73,7 +73,7 @@
           <div class="col-12">
             <div class="d-flex align-items-center mb-3">
               <div>
-                <h3 class="fs-8"><%= current_user.entity.capital_commitments.count %></h3>
+                <h3 class="fs-8"><%= policy_scope(current_user.entity.capital_commitments).count %></h3>
                 <h6 class="card-subtitle mb-1 text-muted">Commitments</h6>
               </div>
               <div class="ms-auto">
