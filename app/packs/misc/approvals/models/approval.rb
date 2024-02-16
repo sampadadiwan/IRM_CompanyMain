@@ -4,6 +4,9 @@ class Approval < ApplicationRecord
   include InvestorsGrantedAccess
 
   belongs_to :entity
+  # Associated owner such as Fund, Deal etc. The AccessRights of the owner will be copied over to the approval post creation
+  belongs_to :owner, polymorphic: true, optional: true
+
   has_rich_text :agreements_reference
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :approval_responses, dependent: :destroy
@@ -15,6 +18,12 @@ class Approval < ApplicationRecord
 
   validates :title, :due_date, :response_status, presence: true
 
+  def initialize(*args)
+    super(*args)
+    self.due_date ||= Time.zone.today + 7.days
+    default_response_status
+  end
+
   def name
     title
   end
@@ -24,7 +33,7 @@ class Approval < ApplicationRecord
   end
 
   def default_response_status
-    self.response_status = "Approved,Rejected,Pending"
+    self.response_status ||= "Approved,Rejected,Pending"
   end
 
   def folder_path
@@ -46,31 +55,31 @@ class Approval < ApplicationRecord
 
   def generate_responses
     investors.each do |inv|
-      existing = approval_responses.select { |resp| resp.response_entity_id == inv.investor_entity_id }
+      ar = ApprovalResponse.find_or_initialize_by(entity_id:, investor_id: inv.id,
+                                                  response_entity_id: inv.investor_entity_id, approval_id: id)
 
-      if existing.present?
-        logger.debug "Skipping ApprovalResponse creation, already exists #{existing}"
-      else
-        ApprovalResponse.create(entity_id:,
-                                investor_id: inv.id, response_entity_id: inv.investor_entity_id,
-                                response_user_id: nil, approval_id: id, status: "Pending")
+      if ar.new_record?
+        ar.status = "Pending"
+        ar.save
         logger.debug "Creating pending ApprovalResponse for #{inv.investor_name}"
+      else
+        logger.debug "ApprovalResponse already exists for #{inv.investor_name}"
       end
     end
     nil
   end
 
-  after_commit :send_notification, if: :saved_change_to_approved?
   def send_notification(reminder: false)
     # Send notification to all investors once its approved
     if approved && !destroyed?
       approval_responses.pending.each do |ar|
         ar.send_notification(reminder:)
       end
+      logger.debug "Approval #{id} send_notification completed"
+    else
+      logger.debug "Approval #{id} send_notification skipped"
     end
   end
-
-  after_create :generate_responses
 
   def access_rights_changed(access_right)
     access_right = AccessRight.where(id: access_right.id).first

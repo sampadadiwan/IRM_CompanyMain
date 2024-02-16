@@ -17,8 +17,8 @@ gem "json2table"
 gem 'mail-logger'
 gem "mysql2", "~> 0.5"
 gem "noticed"
+gem 'trailblazer'
 gem 'yajl-ruby', require: 'yajl'
-
 # To convert Doc into PDF
 gem 'libreconv'
 # Use the Puma web server [https://github.com/puma/puma]

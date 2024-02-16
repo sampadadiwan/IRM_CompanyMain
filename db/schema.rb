@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_15_152430) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_16_071656) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -316,9 +316,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_15_152430) do
     t.string "response_status"
     t.boolean "locked"
     t.json "json_fields"
+    t.string "owner_type"
+    t.bigint "owner_id"
     t.index ["document_folder_id"], name: "index_approvals_on_document_folder_id"
     t.index ["entity_id"], name: "index_approvals_on_entity_id"
     t.index ["form_type_id"], name: "index_approvals_on_form_type_id"
+    t.index ["owner_type", "owner_id"], name: "index_approvals_on_owner"
   end
 
   create_table "audits", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

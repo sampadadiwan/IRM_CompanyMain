@@ -34,7 +34,7 @@ class ApprovalsController < ApplicationController
     @approval = Approval.new(approval_params)
     authorize @approval
     respond_to do |format|
-      if @approval.save
+      if ApprovalCreate.call(approval: @approval).success?
         format.html { redirect_to approval_url(@approval), notice: "Approval was successfully created." }
         format.json { render :show, status: :created, location: @approval }
       else
@@ -68,10 +68,10 @@ class ApprovalsController < ApplicationController
   end
 
   def approve
-    @approval.approved = true
-    @approval.save
+    approved = ApprovalApprove.call(approval: @approval).success?
+    notice = approved ? "Successfully approved." : "Failed to approve."
     respond_to do |format|
-      format.html { redirect_to approval_url(@approval), notice: "Successfully approved." }
+      format.html { redirect_to approval_url(@approval), notice: }
       format.json { head :no_content }
     end
   end

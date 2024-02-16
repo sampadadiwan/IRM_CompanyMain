@@ -36,7 +36,6 @@ class DocumentsController < ApplicationController
       @entity = @folder.entity
       @show_steps = false
 
-
       if @folder.entity_id == current_user.entity_id
         @documents = policy_scope(Document)
       else
