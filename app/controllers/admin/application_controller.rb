@@ -7,7 +7,7 @@
 module Admin
   class ApplicationController < Administrate::ApplicationController
     include Administrate::Punditize
-    helper all_helpers_from_path "app/packs/core/base/helpers" 
+    helper all_helpers_from_path "app/packs/core/base/helpers"
 
     before_action :authenticate_admin
 
