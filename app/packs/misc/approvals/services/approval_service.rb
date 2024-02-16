@@ -4,8 +4,9 @@ class ApprovalService < Trailblazer::Operation
     approval.valid?
   end
 
-  def notify(_ctx, approval:, **)
-    ApprovalGenerateNotificationsJob.perform_later(approval.id) if approval.approved
+  def notify(ctx, approval:, **)
+    reminder = ctx[:reminder]
+    ApprovalGenerateNotificationsJob.perform_later(approval.id, reminder:) if approval.approved
     true
   end
 end

@@ -63,7 +63,7 @@ Rails/SkipsModelValidations:
     - 'app/packs/funds/portfolios/jobs/stock_adjustment_job.rb'
     - 'app/packs/core/notifications/controllers/notifications_controller.rb'
     - 'app/packs/misc/approvals/mailers/approval_mailer.rb'
-    - 'app/packs/misc/approvals/controllers/approvals_controller.rb'
+    - 'app/packs/misc/approvals/services/approval_reminder.rb'
     - 'app/packs/funds/funds/models/fund.rb'
     - 'app/packs/core/investors/models/investor.rb'
     - 'app/packs/core/investors/models/concerns/update_investor.rb'
