@@ -1,4 +1,5 @@
 class Fund < ApplicationRecord
+  acts_as_favoritable
   include ForInvestor
   include InvestorsGrantedAccess
   include WithFolder

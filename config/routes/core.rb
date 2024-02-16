@@ -4,6 +4,8 @@ resources :custom_notifications
 resources :reports
 
 resources :reminders
+resources :favorites
+
 resources :permissions
 resources :tasks do
   get 'search', on: :collection

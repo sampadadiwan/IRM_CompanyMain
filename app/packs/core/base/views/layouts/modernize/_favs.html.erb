@@ -1,0 +1,63 @@
+<!-- ------------------------------- -->
+<!-- start Favs -->
+<!-- ------------------------------- -->
+<li class="nav-item dropdown hover-dd d-none d-lg-block">
+  <a class="nav-link" href="javascript:void(0)" data-bs-toggle="dropdown">
+    Favorites<span class="mt-1"><i class="ti ti-chevron-down fs-3"></i></span>
+  </a>
+  <div class="dropdown-menu dropdown-menu-nav dropdown-menu-animate-up py-0">
+    <div class="row">
+      <div class="col">
+        <div class="ps-7 pt-7">
+          <div class="border-bottom">
+            <div class="row">
+              <% 
+                favs = current_user.favorites.order(id: :desc).limit(10).to_a
+                fav_splits = favs.present? ? favs.each_slice((favs.length + 1)/2).to_a : favs
+                colors = ["info", "primary", "success", "warning", "danger", "secondary"]
+              %>
+
+              <% fav_splits.each do |favs| %>
+                <div class="col">
+                    <div class="position-relative">
+                    
+                    <% favs.each do |favourite| %>
+                        <% color = colors.sample %>
+                        <%= link_to favourite.favoritable, class: "d-flex align-items-center pb-9 position-relative"  do %>
+                                    
+                            <div class="p-6 bg-<%= color %>-subtle rounded me-6 d-flex align-items-center justify-content-center">
+                                <i class="ti ti-bookmark text-<%= color %> fs-6"></i>
+                            </div>
+                            <div class="d-inline-block">
+                            <h6 class="mb-1 fw-semibold fs-3">
+                                <%= favourite.favoritable %>
+                            </h6>
+                            <span class="fs-2 d-block text-body-secondary"><%= favourite.favoritable_type %></span>
+                            </div>
+                        <% end %>                    
+                    <% end %>
+                    
+                    </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <div class="row align-items-center py-3">
+            <div class="col-8">
+              <a class="fw-semibold text-dark d-flex align-items-center lh-1" href="#"><i
+                        class="ti ti-help fs-6 me-2"></i>Frequently Asked Questions</a>
+            </div>
+            <div class="col-4">
+              <div class="d-flex justify-content-end pe-4">
+                <%= link_to "View All", favorites_path, class: "btn btn-outline-primary" %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</li>
+<!-- ------------------------------- -->
+<!-- end Favs -->
+<!-- ------------------------------- -->

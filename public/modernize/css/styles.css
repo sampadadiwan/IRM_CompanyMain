@@ -23,6 +23,7 @@
 [data-bs-theme=dark] .table {
   --bs-table-border-color: #333f55;
 }
+
 [data-bs-theme=dark] .table-hover > tbody > tr:hover > * {
   --bs-table-bg-state: $body-bg-dark;
 }
@@ -2327,7 +2328,7 @@ progress {
   --bs-table-active-color: var(--bs-emphasis-color);
   --bs-table-active-bg: rgba(var(--bs-emphasis-color-rgb), 0.1);
   --bs-table-hover-color: var(--bs-emphasis-color);
-  --bs-table-hover-bg: #f6f9fc;
+  --bs-table-hover-bg: initial;
   width: 100%;
   margin-bottom: 1rem;
   vertical-align: top;
@@ -2390,7 +2391,7 @@ progress {
 
 .table-hover > tbody > tr:hover > * {
   --bs-table-color-state: var(--bs-table-hover-color);
-  --bs-table-bg-state: var(--bs-table-hover-bg);
+  --bs-table-bg-state: var(--bs-table-hover-bg) !important;
 }
 
 .table-primary {
@@ -15976,7 +15977,7 @@ html[data-boxed-layout=boxed] .container-fluid, html[data-boxed-layout=boxed] .c
 }
 
 .message-body {
-  max-height: 360px;
+  max-height: 400px;
 }
 
 .hover-dd {
@@ -24543,13 +24544,13 @@ body .select2-container {
   padding-right: 0.625rem;
   font-size: 0.765625rem;
   border-radius: 5px;
-  border-color: var(--bs-gray-300);
+  /* border-color: var(--bs-gray-300); */
 }
 .table-responsive .dataTables_wrapper .dataTables_filter input {
   padding: 0.25rem 0.5rem;
   font-size: 0.765625rem;
   border-radius: 5px;
-  border: 1px solid var(--bs-gray-300);
+  /* border: 1px solid var(--bs-gray-300); */
 }
 .table-responsive .dataTables_wrapper .dataTables_paginate .paginate_button {
   padding: 6px 12px;

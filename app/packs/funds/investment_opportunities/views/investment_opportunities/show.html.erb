@@ -1,4 +1,4 @@
-<%= render "/layouts/alerts" %>
+
 <% if params[:preview].present? || !policy(@investment_opportunity).update? %>
     <%= render "/investment_opportunities/preview", investment_opportunity: @investment_opportunity %>
 <% else %>

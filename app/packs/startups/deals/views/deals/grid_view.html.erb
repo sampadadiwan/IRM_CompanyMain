@@ -1,4 +1,4 @@
-<%= render "/layouts/alerts" %>
+
 <% investor_label = @deal.entity.is_fund? ? "Company" : "Investor" %>
 
 <%= turbo_stream_from @deal, "deal_message" if current_user %>

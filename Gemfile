@@ -11,11 +11,11 @@ gem "rails", "~> 7.1"
 gem "sprockets-rails"
 
 # Use mysql as the database for Active Record
+gem 'acts_as_favoritor', git: "https://github.com/ausangshukla/acts_as_favoritor.git"
 gem "audited", "~> 5.0"
-gem "mysql2", "~> 0.5"
-
 gem "json2table"
 gem 'mail-logger'
+gem "mysql2", "~> 0.5"
 gem "noticed"
 gem 'yajl-ruby', require: 'yajl'
 

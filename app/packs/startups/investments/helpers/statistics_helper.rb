@@ -32,7 +32,8 @@ module StatisticsHelper
           enabled: true,
           format: "{point.y:,.2f}"
         }
-      } }
+      } },
+      **chart_theme_color
     }, prefix: "#{entity.currency}:"
   end
 
@@ -45,7 +46,8 @@ module StatisticsHelper
                        enabled: true,
                        format: "{point.y:,.2f}"
                      }
-                   } }
+                   } },
+                   **chart_theme_color
                  }, decimal: ",", prefix: "#{entity.currency}:"
   end
 
@@ -61,7 +63,8 @@ module StatisticsHelper
                        enabled: true,
                        format: "{point.y:,.2f}"
                      }
-                   } }
+                   } },
+                   **chart_theme_color
                  }, decimal: ",", prefix: "#{entity.currency}:"
   end
 
@@ -78,22 +81,9 @@ module StatisticsHelper
                       format: '{point.name}:<br>{point.percentage:.1f} %'
                     }
                   }
-                }
+                },
+                **chart_theme_color
               },
               donut: true
-  end
-
-  def notes_by_month(entity)
-    notes = Note.where(entity_id: entity.id)
-                .group('MONTH(created_at)')
-    group_by_month = notes.count.sort.to_h.transform_keys { |k| I18n.t('date.month_names')[k] }
-    column_chart group_by_month
-  end
-
-  def investor_interaction(entity)
-    investors = Investor.where("entity_id =? and last_interaction_date > ?", entity.id, Time.zone.today - 6.months)
-                        .group('MONTH(last_interaction_date)')
-    group_by_month = investors.count.sort.to_h.transform_keys { |k| I18n.t('date.month_names')[k] }
-    column_chart group_by_month
   end
 end

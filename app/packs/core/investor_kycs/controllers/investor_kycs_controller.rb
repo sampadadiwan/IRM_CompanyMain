@@ -256,6 +256,7 @@ class InvestorKycsController < ApplicationController
   def set_investor_kyc
     @investor_kyc = InvestorKyc.find(params[:id])
     authorize(@investor_kyc)
+    @bread_crumbs = { KYCs: investor_kycs_path, "#{@investor_kyc.full_name}": investor_kyc_path(@investor_kyc) }
   end
 
   # Only allow a list of trusted parameters through.

@@ -1,4 +1,4 @@
-<% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role], expires_in: 5.day) do %>
+<% cache_if(current_user != nil, cache_key("sidebar"), expires_in: 5.day) do %>
 
 <!-- Sidebar -->
 <nav class="sidebar-nav scroll-sidebar" data-simplebar>

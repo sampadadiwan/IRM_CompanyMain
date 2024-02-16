@@ -34,6 +34,8 @@ class DocumentsController < ApplicationController
     if params[:folder_id].present?
       @folder = Folder.find(params[:folder_id])
       @entity = @folder.entity
+      @show_steps = false
+
 
       if @folder.entity_id == current_user.entity_id
         @documents = policy_scope(Document)
@@ -70,6 +72,8 @@ class DocumentsController < ApplicationController
     @documents = @documents.order(id: :desc)
 
     @no_folders = false
+    @show_steps = false
+
     render "index"
   end
 
@@ -223,6 +227,7 @@ class DocumentsController < ApplicationController
   def set_document
     @document = Document.find(params[:id])
     authorize @document
+    @bread_crumbs = { Documents: documents_path, "#{@document.name}": document_path(@document) }
   end
 
   def entity_documents

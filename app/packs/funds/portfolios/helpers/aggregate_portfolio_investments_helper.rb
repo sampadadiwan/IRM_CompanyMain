@@ -40,7 +40,18 @@ module AggregatePortfolioInvestmentsHelper
       { name: "Bought", data: grouped.map { |k| [k[0], k[2]] } },
       { name: "Sold", data: grouped.map { |k| [k[0], k[3]] } },
       { name: "FMV", data: grouped.map { |k| [k[0], k[1]] } }
-    ]
+    ], library: {
+      plotOptions: {
+        column: {
+          pointWidth: 40,
+          dataLabels: {
+            enabled: false,
+            format: "{point.y:,.2f}"
+          }
+        }
+      },
+      **chart_theme_color
+    }
   end
 
   def buy_sell_timeline(fund)
@@ -48,6 +59,17 @@ module AggregatePortfolioInvestmentsHelper
 
     sell_data = fund.portfolio_investments.sells.group_by { |pi| pi.investment_date.year }.map { |k, arr| [k, arr.inject(0) { |sum, element| sum + element.amount.to_d }] }
 
-    column_chart [{ name: "Buys", data: buy_data }, { name: "Sells", data: sell_data }]
+    column_chart [{ name: "Buys", data: buy_data }, { name: "Sells", data: sell_data }], library: {
+      plotOptions: {
+        column: {
+          pointWidth: 40,
+          dataLabels: {
+            enabled: false,
+            format: "{point.y:,.2f}"
+          }
+        }
+      },
+      **chart_theme_color
+    }
   end
 end

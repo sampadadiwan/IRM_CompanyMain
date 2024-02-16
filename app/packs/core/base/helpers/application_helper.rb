@@ -73,4 +73,28 @@ module ApplicationHelper
 
     [column_names.join(","), field_list.join(",")]
   end
+
+  def chart_theme_color
+    if cookies[:theme] == "dark"
+      { chart: { backgroundColor: "#2a3447" },
+        xAxis: {
+          labels: { style: {
+            color: 'white'
+          } }
+        },
+        yAxis: {
+          labels: { style: {
+            color: 'white'
+          } }
+        } }
+    else
+      {}
+    end
+  end
+
+  def cache_key(key, include_theme: false)
+    key = [key, current_user, current_user&.entity, current_user&.curr_role, params[:page]]
+    key << cookies[:theme] if include_theme
+    key
+  end
 end

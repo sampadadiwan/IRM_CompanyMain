@@ -1,11 +1,14 @@
 module FundStatisticsHelper
   def pie_chart_with_options(data)
-    pie_chart data, library: { plotOptions: { pie: {
-      dataLabels: {
-        enabled: true,
-        format: '{point.name}:<br>{point.percentage:.1f} %'
-      }
-    } } },
+    pie_chart data, library: {
+                      **chart_theme_color,
+                      plotOptions: { pie: {
+                        dataLabels: {
+                          enabled: true,
+                          format: '{point.name}:<br>{point.percentage:.1f} %'
+                        }
+                      } }
+                    },
                     #  stacked: false,
                     decimal: ",",
                     prefix: ""
@@ -71,7 +74,8 @@ module FundStatisticsHelper
           enabled: true,
           format: "{point.y:,.2f}"
         }
-      } }
+      } },
+      **chart_theme_color
     }, prefix: "#{fund.currency}:"
   end
 
@@ -86,7 +90,8 @@ module FundStatisticsHelper
           enabled: true,
           format: "{point.y:,.2f}"
         }
-      } }
+      } },
+      **chart_theme_color
     }, prefix: "#{fund.currency}:"
   end
 end

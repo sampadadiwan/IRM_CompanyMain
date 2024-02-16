@@ -1,4 +1,4 @@
-<%= render "/layouts/alerts" %>
+
 <%= render "/layouts/filter", associations: [:kpis, :entity], hidden_fields: {grid_view: params[:grid_view]} %>
 
 <%= render ReportingComponent.new do %>

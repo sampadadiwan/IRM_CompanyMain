@@ -43,4 +43,8 @@ class Valuation < ApplicationRecord
   def instrument_type
     "#{category} : #{sub_category}"
   end
+
+  def to_s
+    "#{entity} - #{valuation_date}"
+  end
 end

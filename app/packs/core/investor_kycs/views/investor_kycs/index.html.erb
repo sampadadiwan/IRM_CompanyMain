@@ -1,4 +1,4 @@
-<%= render "/layouts/alerts" %>
+
 <%= render "/layouts/filter", associations: [:investor, :capital_commitments, :funds] %>
 <%= render "/investor_kycs/stats" if current_user.curr_role_employee?  %>
 <%= render ReportingComponent.new do %>

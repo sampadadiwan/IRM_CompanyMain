@@ -10,7 +10,8 @@ module PortfolioHelper
           enabled: true,
           format: "{point.y:,.2f}"
         }
-      } }
+      } },
+      **chart_theme_color
     }
   end
 
@@ -25,7 +26,8 @@ module PortfolioHelper
           enabled: true,
           format: "{point.y:,.2f}"
         }
-      } }
+      } },
+      **chart_theme_color
     }
   end
 
@@ -41,7 +43,8 @@ module PortfolioHelper
           enabled: true,
           format: "{point.y:,.2f} %"
         }
-      } }
+      } },
+      **chart_theme_color
     }
   end
 
@@ -57,7 +60,8 @@ module PortfolioHelper
           enabled: true,
           format: "{point.y:,.2f} %"
         }
-      } }
+      } },
+      **chart_theme_color
     }
   end
 
@@ -76,7 +80,8 @@ module PortfolioHelper
             enabled: true,
             format: "{point.y:,.2f} %"
           }
-        } }
+        } },
+        **chart_theme_color
       }
     else
       "No data available."

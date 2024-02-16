@@ -19,7 +19,8 @@ module FundingRoundsHelper
             format: "<b>{point.y:,.2f}</b>"
           }
         }
-      }
+      },
+      **chart_theme_color
     }
   end
 end

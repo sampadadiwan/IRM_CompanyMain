@@ -19,8 +19,8 @@
         <% approval.response_status&.split(',')&.each do |status| %>
             <%
               status_count = approval.approval_responses.group(:status).count               
-              response_count = status_count[status]
-              idx = approval.response_status&.split(',')&.index(status) || 0
+              response_count = status_count[status] || 0
+              idx = approval.response_status&.split(',')&.index(status)
             %>
             <span class="badge <%=colors[idx]%>"> <%= status %> : <%= response_count %> </span>
           

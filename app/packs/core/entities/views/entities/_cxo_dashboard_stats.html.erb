@@ -1,112 +1,86 @@
-
-    <div class="row">
-
-        <!-- Earnings (Monthly) Card Example -->
-        <div class="col-sm-3">
-            <div class="card border-left-primary shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                <%= link_to "Investors", investors_path, class: "text-primary" %>
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= current_user.entity.investors_count %></div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-tie fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
+<div class="row">
+  <div class="col-lg-3 col-md-6">
+    <a href="<%=documents_path%>">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-3">
+            <div>
+              <h3 class="fs-8"><%= policy_scope(current_user.entity.documents).count %></h3>
+              <h6 class="card-subtitle mb-1 text-muted">Documents</h6>
             </div>
+            <div class="ms-auto">
+              <span class="text-success display-6"><i class="ti ti-notes"></i></span>
+            </div>
+          </div>
+            <div class="progress-bar text-bg-success" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
-
-        <!-- Earnings (Monthly) Card Example -->
-        <div class="col-sm-3">
-            <div class="card border-left-success shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                <%= link_to "Pending Access", investor_accesses_path(approved:false), class: "text-success" %>
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= current_user.entity.pending_accesses_count %></div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-key fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <a href="<%=investors_path%>">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-3">
+            <div>
+              <h3 class="fs-8"><%= policy_scope(current_user.entity.investors).count %></h3>
+              <h6 class="card-subtitle mb-1 text-muted">Investors</h6>
             </div>
+            <div class="ms-auto">
+              <span class="text-info display-6"><i class="ti ti-users"></i></span>
+            </div>
+          </div>
+            <div class="progress-bar text-bg-info" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
-
-        <!-- Earnings (Monthly) Card Example -->
-        <div class="col-sm-3">
-            <div class="card border-left-info shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                <%= link_to "Documents", documents_path, class: "text-info" %>
-                            </div>
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800"><%= current_user.entity.documents_count %></div>
-                                </div>
-                                <div class="col">
-                                    
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <a href="<%=tasks_path%>">
+      <div class="card">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex align-items-center mb-3">
+                <div>
+                  <h3 class="fs-8"><%= policy_scope(current_user.entity.tasks).count %></h3>
+                  <h6 class="card-subtitle mb-1 text-muted">Tasks</h6>
                 </div>
+                <div class="ms-auto">
+                  <span class="text-danger display-6"><i class="ti ti-checklist"></i></span>
+                </div>
+              </div>
             </div>
+            <div class="col-12">
+                <div class="progress-bar text-bg-danger" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
         </div>
-
-        <% 
-            if current_user.entity.active_deal_id && false
-        %>
-            <div class="col-sm-3">
-                <div class="card border-left-warning shadow py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                    <%= link_to "Active Deal", deal_path(id: current_user.entity.active_deal_id), class: "text-warning" %>
-                                </div>
-                                <div class="h6 mb-0 font-weight-bold text-gray-800">
-                                    <%= deal.name %>
-                                </div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-briefcase fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                    </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <a href="<%=investor_accesses_path(approved:false)%>">
+      <div class="card">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex align-items-center mb-3">
+                <div>
+                  <h3 class="fs-8"><%= policy_scope(current_user.entity.investor_accesses.unapproved).count %></h3>
+                  <h6 class="card-subtitle mb-1 text-muted">Pending Access</h6>
                 </div>
+                <div class="ms-auto">
+                  <span class="text-warning display-6"><i class="ti ti-key"></i></span>
+                </div>
+              </div>
             </div>
-        <% else %>
-            <div class="col-sm-3">
-                <div class="card border-left-warning shadow py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                    <%= link_to "Open Tasks", tasks_path, class: "text-warning" %>
-                                </div>
-                                <div class="h6 mb-0 font-weight-bold text-gray-800">
-                                    <%= current_user.entity.tasks_count %> 
-                                </div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-briefcase fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>        
-        <% end %>
-
-    </div>
+            <div class="col-12">
+                <div class="progress-bar text-bg-warning" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>

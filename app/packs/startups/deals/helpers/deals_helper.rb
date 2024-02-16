@@ -10,7 +10,8 @@ module DealsHelper
             format: "<b>{point.y:,.2f}</b>"
           }
         }
-      }
+      },
+      **chart_theme_color
     }
   end
 
@@ -34,7 +35,8 @@ module DealsHelper
             format: "<b>{point.y:,.2f}</b>"
           }
         }
-      }
+      },
+      **chart_theme_color
     }
   end
 
@@ -46,7 +48,8 @@ module DealsHelper
         enabled: true,
         format: '<b>{point.name}</b>:<br>{point.percentage:.1f}% <br>Count: {point.y}'
       }
-    } } }
+    } },
+                                         **chart_theme_color }
   end
 
   def deal_activities_completion(deal)
@@ -60,6 +63,7 @@ module DealsHelper
         enabled: true,
         format: '<b>{point.name}</b>:<br>{point.percentage:.1f}% <br>Count: {point.y}'
       }
-    } } }
+    } },
+                                          **chart_theme_color }
   end
 end

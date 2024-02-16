@@ -1,4 +1,4 @@
-<%= render "/layouts/alerts" %>
+
 <%= turbo_stream_from "portfolio_scenario_#{@portfolio_scenario.id}" if current_user %>
 <%= render "portfolio_scenarios/show", portfolio_scenario: @portfolio_scenario %>
 <div>

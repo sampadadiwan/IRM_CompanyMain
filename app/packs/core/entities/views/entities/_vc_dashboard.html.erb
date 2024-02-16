@@ -5,7 +5,7 @@
 
 <div data-controller="datatable">
 
-    <% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role], expires_in: 5.day) do %>
+    <% cache_if(current_user != nil, cache_key("vc_dashboard", include_theme: true), expires_in: 5.day) do %>
 
         <% if current_user.enable_funds %>                        
             <%= render ToggleCard.new(title: "Funds", css_class: "show_funds") do %>

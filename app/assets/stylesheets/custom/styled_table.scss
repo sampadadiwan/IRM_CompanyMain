@@ -2,37 +2,56 @@ table.dataTable {
     border-spacing: 0;    
     border-radius: 8px;
     overflow:hidden;
-    padding: 1px 0px !important;
-    
-    thead th {
-      background-color: var(--bs-primary);
-      color: #ffffff;
-      text-align: left;
-      font-weight: normal;
-      .text-muted {
-        color: white !important;
-      }
-      font-weight: 500;
-      vertical-align: top;
-    }    
+    padding: 1px 0px !important;    
 
-    tbody tr:nth-child(even):hover td{
-      background-color: lighten($color: cornflowerblue, $amount: 30);
+    td {
+      border: none !important;
+      vertical-align: middle;
     }
-    
-    tbody tr:nth-child(odd):hover td {
-        background-color: lighten($color: cornflowerblue, $amount: 30);
-    }
+
 }
 
+[data-bs-theme=light] thead th {
+  background-color: var(--bs-primary);
+  color: #ffffff;
+  text-align: left;
+  font-weight: normal;
+  .text-muted {
+    color: white !important;
+  }
+  font-weight: 500;
+  vertical-align: top;
+}
+
+[data-bs-theme=light] tbody tr:nth-child(even):hover td{
+  background-color: lighten($color: cornflowerblue, $amount: 30);
+}
+
+[data-bs-theme=light] tbody tr:nth-child(odd):hover td {
+    background-color: lighten($color: cornflowerblue, $amount: 30);
+}
+
+[data-bs-theme=dark] thead th {
+    background-color: initial;
+    color: initial;
+    text-align: left;
+    font-weight: normal;
+    .text-muted {
+      color: white !important;
+    }
+    font-weight: 500;
+    vertical-align: top; 
+}
+
+
 .no_hover_table {
-  tbody tr:nth-child(even):hover td{
-    background-color: white !important;
-  }
+  // tbody tr:nth-child(even):hover td{
+  //   background-color: white !important;
+  // }
   
-  tbody tr:nth-child(odd):hover td {
-      background-color: white !important;
-  }
+  // tbody tr:nth-child(odd):hover td {
+  //     background-color: white !important;
+  // }
 }
 
 table.action_table {
@@ -799,13 +818,13 @@ div.dt-button-collection span.dt-button-spacer {
 }
 
 
-tr.even td {
-  background-color: white;
-}
+// tr.even td {
+//   background-color: white;
+// }
 
-tr.odd td {
-  background-color: white; //#f9f9f9;
-}
+// tr.odd td {
+//   background-color: white; //#f9f9f9;
+// }
 
 tr.selected td {
   background-color: #0088cc;

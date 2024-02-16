@@ -12,4 +12,8 @@ class Report < ApplicationRecord
       'Fund Units': "/fund_units?filter=true",
       KYCs: "/investor_kycs?filter=true" }
   end
+
+  def to_s
+    name
+  end
 end

@@ -38,7 +38,8 @@ module FundsHelper
                        enabled: true,
                        format: "{point.y:,.2f}"
                      }
-                   } }
+                   } },
+                   **chart_theme_color
                  }
   end
 end

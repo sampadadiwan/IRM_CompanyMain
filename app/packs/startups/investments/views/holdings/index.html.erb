@@ -1,4 +1,4 @@
-<%= render "/layouts/alerts" %>
+
 
 <%= render "/layouts/steps", steps: ["Invite Employees", "Add / Upload Holdings", "Setup Access Rights"].freeze if current_user.has_cached_role?(:employee) %>
 

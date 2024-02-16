@@ -1,4 +1,11 @@
 GIT
+  remote: https://github.com/ausangshukla/acts_as_favoritor.git
+  revision: 353fe5010c225a012cf6d34881827c165eb47281
+  specs:
+    acts_as_favoritor (6.0.1)
+      activerecord (>= 5.0)
+
+GIT
   remote: https://github.com/seuros/capistrano-sidekiq.git
   revision: 784b04c973e5c074dc78c30746077c9e6fd2bb9a
   ref: 784b04c973e5c074dc78c30746077c9e6fd2bb9a
@@ -197,7 +204,7 @@ GEM
       erubi (~> 1.4)
       parser (>= 2.4)
       smart_properties
-    bigdecimal (3.1.5)
+    bigdecimal (3.1.6)
     bindex (0.8.1)
     binding_of_caller (1.0.0)
       debug_inspector (>= 0.0.1)
@@ -279,7 +286,7 @@ GEM
     combine_pdf (1.0.26)
       matrix
       ruby-rc4 (>= 0.1.5)
-    concurrent-ruby (1.2.2)
+    concurrent-ruby (1.2.3)
     connection_pool (2.4.1)
     constant_resolver (0.2.0)
     content_disposition (1.0.0)
@@ -493,7 +500,7 @@ GEM
     method_source (1.0.0)
     mini_magick (4.12.0)
     mini_mime (1.1.5)
-    minitest (5.21.1)
+    minitest (5.22.2)
     monetize (1.12.0)
       money (~> 6.12)
     money (6.16.0)
@@ -827,6 +834,7 @@ DEPENDENCIES
   active_flag
   active_storage_validations
   activerecord-import (= 1.5.0)
+  acts_as_favoritor!
   acts_as_list
   administrate
   administrate-field-active_storage

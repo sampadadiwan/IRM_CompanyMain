@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr" data-bs-theme="light" data-color-theme="Blue_Theme">
+<% theme = cookies[:theme] || "light" %>
+<html lang="en" dir="ltr" data-bs-theme="<%= theme %>" data-color-theme="Blue_Theme">
 
 <head>
   <!-- Required meta tags -->
@@ -34,7 +35,6 @@
     <link href="https://vjs.zencdn.net/7.17.0/video-js.css" rel="stylesheet" />
 
     <!-- Datatables -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.11.4/b-2.2.2/fc-4.0.1/datatables.min.css"/>
     <script type="text/javascript" src="https://cdn.datatables.net/v/bs4/dt-1.11.4/b-2.2.2/fc-4.0.1/datatables.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -50,9 +50,8 @@
     <script src='/lib/core/pdf/PDFNet.js'></script>
     
     <script src="https://releases.transloadit.com/uppy/v2.12.1/uppy.min.js"></script>
-
     <link href="https://releases.transloadit.com/uppy/v2.12.1/uppy.min.css" rel="stylesheet">
-
+    <link href="https://code.highcharts.com/dashboards/css/dashboards.css" rel="stylesheet">
 
     <script type="text/javascript" src="https://unpkg.com/xlsx@0.15.1/dist/xlsx.full.min.js"></script>
 
@@ -99,7 +98,7 @@
 
           <span id="alert"></span>
           
-            
+          <%= render "/layouts/alerts" %>
           <%= render "/layouts/breadcrumbs" %>
           
           <% if params[:audit_trail].present? && params[:id].present? %>
@@ -137,6 +136,7 @@
   <script src="https://code.highcharts.com/highcharts.js"></script>
   <script src="https://code.highcharts.com/modules/exporting.js"></script>
   <script src="https://code.highcharts.com/modules/offline-exporting.js"></script>
+
 
 </body>
 

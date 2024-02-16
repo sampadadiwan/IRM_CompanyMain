@@ -24,7 +24,7 @@
             </p>
         </div>
         </div>
-        <div class="message-body">
+        <div class="message-body border-bottom">
         <a href="<%=user_path(current_user)%>" class="py-8 px-7 mt-8 d-flex align-items-center">
             <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
             <img src="/modernize/images/svgs/icon-account.svg" alt="" width="24" height="24" />
@@ -52,9 +52,36 @@
             <span class="fs-2 d-block text-body-secondary">To-do and Daily Tasks</span>
             </div>
         </a>
+
+        <a href="/favorites" class="py-8 px-7 d-flex align-items-center">
+            <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
+            <img src="/modernize/images/svgs/icon-star.svg" alt="" width="24" height="24" />
+            </span>
+            <div class="w-75 d-inline-block v-middle ps-3">
+            <h6 class="mb-1 fs-3 fw-semibold lh-base">Favorites</h6>
+            <span class="fs-2 d-block text-body-secondary">Favorites / Bookmarks</span>
+            </div>
+        </a>
         </div>
+        <div class="message-body py-1 mx-7 border-bottom">
+        
+            <div class="gap-3 customizer-box align-items-center py-8 px-7 d-flex align-items-center" role="group">
+                <input type="radio" class="btn-check" name="theme-layout" id="light-layout" autocomplete="off" />
+                <label class="btn p-9 btn-outline-primary" for="light-layout"><i
+                            class="icon ti ti-brightness-up fs-7 me-2"></i>Light</label>
+                <input type="radio" class="btn-check" name="theme-layout" id="dark-layout" autocomplete="off" />
+                <label class="btn p-9 btn-outline-primary" for="dark-layout"><i
+                            class="icon ti ti-moon fs-7 me-2"></i>Dark</label>
+            </div>
+        
+        </div>
+
         <div class="d-grid py-4 px-7 pt-8">                    
-        <a href="#" data-bs-toggle="modal" data-bs-target="#logoutModal" class="btn btn-outline-primary">Log Out</a>
+            
+            <a href="#" data-bs-toggle="modal" data-bs-target="#logoutModal" class="btn btn-outline-primary">
+                Log Out
+            </a>
+
         </div>
     </div>
     </div>

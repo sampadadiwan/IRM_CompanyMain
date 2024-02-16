@@ -109,6 +109,7 @@ class InvestorsController < ApplicationController
   def set_investor
     @investor = Investor.find(params[:id])
     authorize @investor
+    @bread_crumbs = { Investors: investors_path, "#{@investor.investor_name}": investor_path(@investor) }
   end
 
   # Only allow a list of trusted parameters through.

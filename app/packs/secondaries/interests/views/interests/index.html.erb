@@ -1,4 +1,4 @@
-<%= render "/layouts/alerts" %>
+
 <%= turbo_frame_tag "interests_frame", target: "_top" do %>
     <%= render "/interests/index", interests: @interests, secondary_sale: @secondary_sale %>
 <% end %>

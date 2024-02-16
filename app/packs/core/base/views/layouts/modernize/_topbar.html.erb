@@ -1,4 +1,4 @@
-<% cache_if(current_user != nil, [current_user, current_user&.entity, current_user&.curr_role], expires_in: 5.day) do %>
+<% cache_if(current_user != nil, cache_key("topbar"), expires_in: 5.day) do %>
 
 <!--  Header Start -->
 <header class="topbar">
@@ -20,7 +20,7 @@
         </li -->
       </ul>
       <ul class="navbar-nav quick-links d-none d-lg-flex">
-        <%#= render "/layouts/modernize/apps" %>        
+        <%= render "/layouts/modernize/favs" %>        
       </ul>
       <div class="d-block d-lg-none">
           <img src="/img/logo-without-tagline.jpg" width="80" alt="" />

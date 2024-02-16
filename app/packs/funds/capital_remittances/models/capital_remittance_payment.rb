@@ -30,8 +30,6 @@ class CapitalRemittancePayment < ApplicationRecord
   validates_uniqueness_of :reference_no, scope: :fund_id, if: -> { reference_no.present? }
   validates :reference_no, length: { maximum: 40 }
 
-  delegate :to_s, to: :amount
-
   def set_amount
     # Since the remittance amount is always in the folio currency, we compute the converted amount based on exchange rates.
     self.amount_cents = convert_currency(capital_remittance.capital_commitment.folio_currency, fund.currency,
@@ -42,5 +40,9 @@ class CapitalRemittancePayment < ApplicationRecord
     capital_remittance.reload
     capital_remittance.verified = false
     capital_remittance.save
+  end
+
+  def to_s
+    "#{capital_remittance.investor_name} - #{amount}"
   end
 end

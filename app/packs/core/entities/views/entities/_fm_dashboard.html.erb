@@ -1,5 +1,5 @@
 <% unless current_user.investor_advisor? %>
-    <% cache([current_user.entity, "FMDashBoardStats"], expires_in: 24.hour) do %>
+    <% cache_if(current_user != nil, cache_key("FMDashBoardStats"), expires_in: 5.day) do %>
         <%= render "entities/fm_dashboard_stats" %>
     <% end %>
 <% end %>

@@ -2,6 +2,7 @@ class User < ApplicationRecord
   include PublicActivity::Model
   include UserEnabled
   include WithCustomField
+  acts_as_favoritor
 
   # include Trackable.new
   audited only: %i[first_name last_name email phone permissions extended_permissions]
