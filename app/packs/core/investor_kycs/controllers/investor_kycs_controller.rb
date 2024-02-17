@@ -83,13 +83,12 @@ class InvestorKycsController < ApplicationController
   def create
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
     authorize(@investor_kyc)
-    investor_user = current_user.curr_role == "investor"
+    investor_user = current_user.curr_role_investor?
     @investor_kyc.documents.each(&:validate)
 
     respond_to do |format|
-      if @investor_kyc.save(validate: investor_user)
-        @investor_kyc = InvestorKyc.find(@investor_kyc.id) # reload the kyc in case it was changed from individual to non individual or visa versa
-        @investor_kyc.updated_notification if investor_user
+      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:).success?
+
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC." }
         format.json { render :show, status: :created, location: @investor_kyc }
       else
@@ -130,8 +129,8 @@ class InvestorKycsController < ApplicationController
     @investor_kyc = InvestorKyc.new(investor_kyc_params)
     authorize(@investor_kyc)
     respond_to do |format|
-      validate = current_user.curr_role.casecmp?("investor")
-      if @investor_kyc.save(validate:)
+      investor_user = current_user.curr_role_investor?
+      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:).success?
         format.html do
           if commit_param == "Continue without CKYC/KRA"
             redirect_to edit_investor_kyc_path(@investor_kyc)
@@ -158,7 +157,7 @@ class InvestorKycsController < ApplicationController
       @investor_kyc.remove_images
     end
     respond_to do |format|
-      if @investor_kyc.save(validate: false)
+      if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user: false).success?
         format.html { redirect_to edit_investor_kyc_path(@investor_kyc), notice: "Investor kyc was successfully updated." }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -168,16 +167,12 @@ class InvestorKycsController < ApplicationController
 
   # PATCH/PUT /investor_kycs/1 or /investor_kycs/1.json
   def update
-    investor_user = current_user.curr_role == "investor"
+    investor_user = current_user.curr_role_investor?
     @investor_kyc.assign_attributes(investor_kyc_params)
     @investor_kyc.documents.each(&:validate)
 
     respond_to do |format|
-      if @investor_kyc.save(validate: investor_user)
-        @investor_kyc = InvestorKyc.find(@investor_kyc.id) # reload the kyc in case it was changed from individual to non individual or visa versa
-        # Send notification to entity employees if the kyc is updated
-        @investor_kyc.updated_notification if investor_user
-
+      if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:).success?
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
@@ -188,12 +183,12 @@ class InvestorKycsController < ApplicationController
   end
 
   def toggle_verified
-    validate = current_user.curr_role == "investor"
+    investor_user = current_user.curr_role_investor?
     verified_by_id = @investor_kyc.verified ? nil : current_user.id
     @investor_kyc.assign_attributes(verified: !@investor_kyc.verified, verified_by_id:)
 
     respond_to do |format|
-      if @investor_kyc.save(validate:)
+      if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:).success?
         format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully updated." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else

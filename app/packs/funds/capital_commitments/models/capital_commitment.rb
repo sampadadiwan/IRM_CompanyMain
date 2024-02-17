@@ -117,7 +117,6 @@ class CapitalCommitment < ApplicationRecord
     end
   end
 
-  before_save :set_committed_amount
   def set_committed_amount
     set_orig_amounts
 
@@ -154,21 +153,7 @@ class CapitalCommitment < ApplicationRecord
     folio_committed_amount - folio_collected_amount
   end
 
-  after_create_commit :create_remittance
-  def create_remittance
-    # When the CapitalCommitment is created, ensure that for any capital calls prev created
-    # The corr CapitalRemittance are created
-    CapitalCommitmentRemittanceJob.perform_later(id)
-  end
-
-  after_create_commit :give_access_rights
-  def give_access_rights
-    # Give the investor access rights as an investor to the fund
-    AccessRight.create(entity_id:, owner: fund, investor:, access_type: "Fund", metadata: "Investor")
-  end
-
   after_destroy :compute_percentage
-  after_save :compute_percentage, if: :saved_change_to_committed_amount_cents?
   def compute_percentage
     total_committed_amount_cents = fund.capital_commitments.pool.sum(:committed_amount_cents)
     fund.capital_commitments.pool.update_all("percentage=100.0*committed_amount_cents/#{total_committed_amount_cents}")
@@ -253,7 +238,6 @@ class CapitalCommitment < ApplicationRecord
   end
 
   # The folio id is used in the folder names of commitments, remittances and distributions
-  after_commit :update_folio_id, if: :saved_change_to_folio_id?
   def update_folio_id
     # Only make changes if this is not a new record
     unless previous_changes[:folio_id].include?(nil) || destroyed?
@@ -276,7 +260,7 @@ class CapitalCommitment < ApplicationRecord
     end
   end
 
-  after_commit :touch_investor, unless: :destroyed?
+  # after_commit :touch_investor, unless: :destroyed?
   # This is to bust any cached dashboards showing the commitments
   def touch_investor
     investor.investor_entity.touch if investor&.investor_entity

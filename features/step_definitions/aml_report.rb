@@ -1,7 +1,7 @@
 Given('the investor has investor kyc and aml report') do
   RSpec::Mocks.with_temporary_scope do
     @investor_kyc = FactoryBot.build(:investor_kyc, investor: @investor, entity: @entity)
-    @investor_kyc.save(validate: false)
+    InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user: false)
     aml_report = FactoryBot.create(:aml_report, investor: @investor, entity: @entity, investor_kyc: @investor_kyc, name: @investor_kyc.full_name)
     InvestorKyc.stub(:generate_aml_report).and_return(aml_report)
     allow_any_instance_of(InvestorKyc).to receive(:generate_aml_report).and_return(aml_report)

@@ -8,7 +8,7 @@ class ApprovalsController < ApplicationController
     @approvals = policy_scope(Approval)
 
     @approvals = @approvals.where(entity_id: params[:entity_id]) if params[:entity_id].present?
-    @approvals = @approvals.includes(:entity)
+    @approvals = @approvals.includes(:entity).order(id: :desc)
   end
 
   # GET /approvals/1 or /approvals/1.json

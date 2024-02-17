@@ -39,9 +39,10 @@ class ImportCapitalRemittance < ImportUtil
       capital_remittance.verified = user_data["Verified"] == "Yes"
 
       setup_custom_fields(user_data, capital_remittance, custom_field_headers)
-      capital_remittance.set_call_amount
-      capital_remittance.save!
+      result = CapitalRemittanceCreate.call(capital_remittance:)
+      raise result[:errors].full_messages.join(",") unless result.success?
 
+      result.success?
     else
       raise "Fund not found" unless fund
       raise "Capital Call not found" unless capital_call

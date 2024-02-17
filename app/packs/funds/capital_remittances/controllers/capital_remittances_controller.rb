@@ -91,7 +91,7 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittance = CapitalRemittance.new(capital_remittance_params)
     authorize @capital_remittance
     respond_to do |format|
-      if @capital_remittance.save
+      if CapitalRemittanceCreate.call(capital_remittance: @capital_remittance).success?
         format.html { redirect_to capital_remittance_url(@capital_remittance), notice: "Capital remittance was successfully created." }
         format.json { render :show, status: :created, location: @capital_remittance }
       else
@@ -103,8 +103,9 @@ class CapitalRemittancesController < ApplicationController
 
   # PATCH/PUT /capital_remittances/1 or /capital_remittances/1.json
   def update
+    @capital_remittance.assign_attributes(capital_remittance_params)
     respond_to do |format|
-      if @capital_remittance.update(capital_remittance_params)
+      if CapitalRemittanceUpdate.call(capital_remittance: @capital_remittance).success?
         format.html { redirect_to capital_remittance_url(@capital_remittance), notice: "Capital remittance was successfully updated." }
         format.json { render :show, status: :ok, location: @capital_remittance }
       else

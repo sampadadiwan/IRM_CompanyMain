@@ -7,6 +7,8 @@
   <% end %>
 <% else %>
 
+    <%= render "approval_responses/stats", approval: approval, approval_responses:approval.approval_responses  if approval && approval.entity_id == current_user.entity_id %>
+
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
       <h1 class="h3 mb-0 text-gray-800">Approval Responses</h1>
       
@@ -18,7 +20,7 @@
       </span>
     </div>
 
-    <div class="table-responsive">
+    <div class="table-responsive" data-controller="datatable">
 
       <table id="approval_responses" class="table table-bordered dataTable jqDataTable">
     

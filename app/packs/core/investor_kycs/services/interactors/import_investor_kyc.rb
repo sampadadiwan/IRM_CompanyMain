@@ -56,7 +56,15 @@ class ImportInvestorKyc < ImportUtil
                                    send_kyc_form_to_user: user_data["Send Kyc Form To User"] == "Yes")
 
     setup_custom_fields(user_data, investor_kyc, custom_field_headers)
-    investor_kyc.save!(validate: false)
+    result = if investor_kyc.new_record?
+               InvestorKycCreate.call(investor_kyc:, investor_user: false)
+             else
+               InvestorKycUpdate.call(investor_kyc:, investor_user: false)
+             end
+
+    raise result[:errors].full_messages.join(",") unless result.success?
+
+    result.success?
   end
 
   def process_row(headers, custom_field_headers, row, import_upload, _context)

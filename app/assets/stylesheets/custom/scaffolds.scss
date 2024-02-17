@@ -548,6 +548,35 @@ ul.vesting_schedule {
 //   border-top: 1px solid lightgray !important;
 // }
 
+[data-bs-theme=dark] .sidebar-link span {
+    color: white !important;
+}
+
+[data-bs-theme=dark] .sidebar-divider {
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-bs-theme=dark] .paginate_button {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-bs-theme=dark] .uppy-FileInput-btn { 
+  color: #7c8fac !important;
+  border-color: #7c8fac !important;
+}
+
+[data-bs-theme=dark] .uppy-StatusBar {
+  background-color: unset !important;
+}
+
+[data-bs-theme=dark] .uppy-StatusBar-status {
+  color: #7c8fac !important
+}
+
+[data-bs-theme=dark] trix-toolbar .trix-button {
+  background: #7c8fac !important
+}
+
 .sidebar-brand-icon {
   img {
     margin: 15px 5px;

@@ -39,7 +39,7 @@ class CapitalRemittancePayment < ApplicationRecord
   def unverify_remittance
     capital_remittance.reload
     capital_remittance.verified = false
-    capital_remittance.save
+    CapitalRemittanceUpdate.call(capital_remittance:)
   end
 
   def to_s

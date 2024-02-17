@@ -60,8 +60,10 @@ class ImportCapitalCall < ImportUtil
 
         check_exchange_rate(capital_call)
 
-        capital_call.save!
-        Rails.logger.debug "Saved CapitalCall"
+        result = CapitalCallCreate.call(capital_call:)
+        raise result["errors"].full_messages.join(",") unless result.success?
+
+        result.success?
       end
     else
       raise "Fund not found"

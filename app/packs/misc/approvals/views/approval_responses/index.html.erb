@@ -1,2 +1,3 @@
-
-<%= render "/approval_responses/index", approval_responses: @approval_responses, approval: @approval %>
+<%= turbo_frame_tag "approval_responses" do %>
+    <%= render "/approval_responses/index", approval_responses: @approval_responses, approval: @approval %>
+<% end %>

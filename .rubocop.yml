@@ -79,6 +79,7 @@ Rails/SkipsModelValidations:
     - 'app/jobs/offer_spa_job.rb'
     - 'app/packs/funds/investment_opportunities/jobs/investment_opportunity_job.rb'
     - 'app/packs/funds/capital_commitments/models/capital_commitment.rb'
+    - 'app/packs/funds/capital_commitments/services/capital_commitment_action.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb'
     - 'app/packs/secondaries/secondary_sales/jobs/custom_allocation_job2.rb'
     - 'app/packs/misc/investor_notices/jobs/investor_notice_job.rb'

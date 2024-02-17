@@ -41,7 +41,7 @@
                 </li>
             <% end %>
 
-            <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role) && Entity::SECONDARY_BUYERS.include?(current_user.entity_type) %>
+            <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role)  %>
                 <!-- Divider -->
                 <hr class="sidebar-divider">
                 <%= render "layouts/sidebars/sidebar_investor" %>

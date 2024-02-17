@@ -386,7 +386,7 @@ end
 
 Given('I create a new InvestorKyc') do
   @investor_kyc = FactoryBot.build(:investor_kyc, entity: @entity)
-  # @investor_kyc.save(validate: false)
+  # InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user: false)
   puts "\n########### KYC ############"
   puts @investor_kyc.to_json
 
@@ -428,7 +428,7 @@ end
 
 Then('I can send KYC reminder to approved users') do
   @investor_kyc = FactoryBot.build(:investor_kyc, entity: @investor.entity, investor: @investor, verified: false)
-  @investor_kyc.save(validate: false)
+  InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user: false)
   entity = @investor_kyc.entity
   investor = @investor_kyc.investor
   @users = FactoryBot.create_list(:user, 2, entity: @investor.investor_entity)
@@ -462,7 +462,7 @@ end
 
 Then('I cannot send KYC reminder as no approved users are present') do
   @investor_kyc = FactoryBot.build(:investor_kyc, entity: @investor.entity, investor: @investor, verified: false)
-  @investor_kyc.save(validate: false)
+  InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user: false)
   entity = @investor_kyc.entity
   investor = @investor_kyc.investor
   @users = FactoryBot.create_list(:user, 2, entity: @investor.investor_entity)

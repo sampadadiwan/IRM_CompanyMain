@@ -65,7 +65,13 @@ class ImportCapitalCommitment < ImportUtil
     setup_custom_fields(user_data, capital_commitment, custom_field_headers)
     setup_exchange_rate(capital_commitment, user_data) if capital_commitment.foreign_currency?
 
-    capital_commitment.save!
+    result = if capital_commitment.new_record?
+               CapitalCommitmentCreate.call(capital_commitment:)
+             else
+               CapitalCommitmentUpdate.call(capital_commitment:)
+             end
+
+    raise result[:errors].full_messages.join(",") unless result.success?
   end
 
   def get_kyc(user_data, investor, fund, capital_commitment)

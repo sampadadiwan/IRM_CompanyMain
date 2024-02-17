@@ -229,7 +229,7 @@
     @fund.investors.each do |inv|
         commitment = FactoryBot.build(:capital_commitment, fund: @fund, investor: inv)
         key_values(commitment, args)
-        commitment.save
+        CapitalCommitmentCreate.call(capital_commitment: commitment)
         puts "\n####CapitalCommitment####\n"
         puts commitment.to_json
     end
@@ -240,7 +240,7 @@
     inv = Investor.last
     commitment = FactoryBot.build(:capital_commitment, fund: @fund, investor: inv)
     key_values(commitment, args)
-    commitment.save!
+    CapitalCommitmentCreate.call(capital_commitment: commitment)
     puts "\n####CapitalCommitment####\n"
     puts commitment.to_json
   end
@@ -248,7 +248,7 @@
   Given('there is a capital call {string}') do |arg|
     @capital_call = FactoryBot.build(:capital_call, fund: @fund, entity: @fund.entity)
     key_values(@capital_call, arg)
-    @capital_call.save
+    CapitalCallCreate.call(capital_call: @capital_call)
     puts "\n####CapitalCall####\n"
     puts @capital_call.to_json
   end
@@ -638,7 +638,7 @@ end
 Then('when the capital call is approved') do
   @capital_call.approved = true
   @capital_call.approved_by_user = @user
-  @capital_call.save
+  CapitalCallUpdate.call(capital_call: @capital_call)
   sleep(1)
   @capital_call.reload
 end

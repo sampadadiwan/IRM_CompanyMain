@@ -26,8 +26,8 @@ class CommitmentAdjustment < ApplicationRecord
     self.post_adjustment_cents = amount_cents + pre_adjustment_cents
   end
 
-  after_save -> { capital_commitment.reload.save }
-  after_destroy -> { capital_commitment.reload.save }
+  after_save -> { CapitalCommitmentUpdate.call(capital_commitment: capital_commitment.reload) }
+  after_destroy -> { CapitalCommitmentUpdate.call(capital_commitment: capital_commitment.reload) }
 
   def to_s
     "CommitmentAdjustment: #{capital_commitment.folio_id}, #{folio_amount}, #{amount}, #{owner}"

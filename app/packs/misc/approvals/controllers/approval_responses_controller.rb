@@ -9,6 +9,7 @@ class ApprovalResponsesController < ApplicationController
       @approval = Approval.find(params[:approval_id])
       @approval_responses = @approval_responses.where(approval_id: params[:approval_id])
     end
+    @approval_responses = @approval_responses.where(status: params[:status]) if params[:status].present?
   end
 
   # GET /approval_responses/1 or /approval_responses/1.json

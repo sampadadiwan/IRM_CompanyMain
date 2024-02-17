@@ -1,8 +1,10 @@
 
 
-<%= render FormCard.new(title: "Import Upload: #{@import_upload.name.presence || 'New'}") do %>
+<%= render ToggleCard.new(title: "Import Upload: #{@import_upload.name.presence || 'New'}", css_class: "import_upload_card") do %>
 
   <%= turbo_stream_from @import_upload %>
+
+  <%= render "/import_uploads/stats", import_upload: @import_upload %>
   <%= render "/import_uploads/show", import_upload: @import_upload %>
 
   <% if @import_upload.created_at > Date.parse("2024-01-06") %>
@@ -16,15 +18,14 @@
 
       </div>
     </div>
-
-    <div class="associated_entity">
-      <% model_class = @import_upload.model_class.name.underscore.pluralize %>
-      <%= render "/#{model_class}/index", import_upload_id: @import_upload.id, "#{model_class}": @import_upload.imported_data %>
-    </div>
-
   <% end %>
 
 <% end %>
+
+  <div class="associated_entity">
+      <% model_class = @import_upload.model_class.name.underscore.pluralize %>
+      <%= render "/#{model_class}/index", import_upload_id: @import_upload.id, "#{model_class}": @import_upload.imported_data %>
+  </div>
 
 
 

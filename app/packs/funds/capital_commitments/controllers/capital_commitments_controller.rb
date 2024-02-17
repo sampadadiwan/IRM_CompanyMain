@@ -97,7 +97,7 @@ class CapitalCommitmentsController < ApplicationController
     setup_doc_user(@capital_commitment)
 
     respond_to do |format|
-      if @capital_commitment.save
+      if CapitalCommitmentCreate.call(capital_commitment: @capital_commitment).success?
         format.html { redirect_to capital_commitment_url(@capital_commitment), notice: "Capital commitment was successfully created." }
         format.json { render :show, status: :created, location: @capital_commitment }
       else
@@ -109,10 +109,11 @@ class CapitalCommitmentsController < ApplicationController
 
   # PATCH/PUT /capital_commitments/1 or /capital_commitments/1.json
   def update
+    @capital_commitment.assign_attributes(capital_commitment_params)
     setup_doc_user(@capital_commitment)
 
     respond_to do |format|
-      if @capital_commitment.update(capital_commitment_params)
+      if CapitalCommitmentUpdate.call(capital_commitment: @capital_commitment).success?
         format.html { redirect_to capital_commitment_url(@capital_commitment), notice: "Capital commitment was successfully updated." }
         format.json { render :show, status: :ok, location: @capital_commitment }
       else

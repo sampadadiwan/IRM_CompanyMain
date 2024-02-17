@@ -48,7 +48,7 @@ class CapitalCallsController < ApplicationController
     authorize @capital_call
 
     respond_to do |format|
-      if @capital_call.save
+      if CapitalCallCreate.call(capital_call: @capital_call).success?
         format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was successfully created." }
         format.json { render :show, status: :created, location: @capital_call }
       else
@@ -60,8 +60,9 @@ class CapitalCallsController < ApplicationController
 
   # PATCH/PUT /capital_calls/1 or /capital_calls/1.json
   def update
+    @capital_call.assign_attributes(capital_call_params)
     respond_to do |format|
-      if @capital_call.update(capital_call_params)
+      if CapitalCallUpdate.call(capital_call: @capital_call).success?
         format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was successfully updated." }
         format.json { render :show, status: :ok, location: @capital_call }
       else
@@ -86,7 +87,7 @@ class CapitalCallsController < ApplicationController
     @capital_call.approved_by_user = current_user
 
     respond_to do |format|
-      if @capital_call.save
+      if CapitalCallUpdate.call(capital_call: @capital_call).success?
         format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was successfully approved." }
         format.json { render :show, status: :created, location: @capital_call }
       else

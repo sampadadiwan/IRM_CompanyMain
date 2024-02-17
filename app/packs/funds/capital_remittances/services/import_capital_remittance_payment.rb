@@ -81,7 +81,7 @@ class ImportCapitalRemittancePayment < ImportUtil
     # We need to reload the capital_remittance, as the capital_remittance_payment counter caches would have updated the capital_remittance
     capital_remittance.reload
     capital_remittance.verified = user_data["Verified"] == "Yes"
-    capital_remittance.save!
+    CapitalRemittanceUpdate.call(capital_remittance:)
   end
 
   def save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)

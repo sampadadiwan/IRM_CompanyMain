@@ -46,7 +46,7 @@ class CapitalRemittance < ApplicationRecord
   validates :folio_id, length: { maximum: 20 }
   validates :investor_name, length: { maximum: 255 }
 
-  before_save :set_call_amount
+  # before_save :set_call_amount
 
   include CapitalRemittanceCounters
 
@@ -147,7 +147,6 @@ class CapitalRemittance < ApplicationRecord
     %w[capital_call capital_commitment fund investor]
   end
 
-  after_commit :touch_investor
   after_destroy :touch_investor
   # rubocop:disable Rails/SkipsModelValidations
   # This is to bust any cached dashboards showing the commitments

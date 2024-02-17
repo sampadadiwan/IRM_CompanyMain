@@ -32,7 +32,7 @@ table.dataTable {
 }
 
 [data-bs-theme=dark] thead th {
-    background-color: initial;
+    background-color: var(--bs-primary);
     color: initial;
     text-align: left;
     font-weight: normal;

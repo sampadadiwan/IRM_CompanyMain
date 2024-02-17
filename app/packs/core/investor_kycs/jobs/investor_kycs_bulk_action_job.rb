@@ -6,10 +6,10 @@ class InvestorKycsBulkActionJob < BulkActionJob
 
     when "verify"
       investor_kyc.verified = true
-      investor_kyc.save(validate: false)
+      InvestorKycUpdate.call(investor_kyc:, investor_user: false)
     when "unverify"
       investor_kyc.verified = false
-      investor_kyc.save(validate: false)
+      InvestorKycUpdate.call(investor_kyc:, investor_user: false)
     when "sendreminder"
       if investor_kyc.investor.approved_users.blank?
         msg = "KYC Reminder could not be sent, no users for investor."

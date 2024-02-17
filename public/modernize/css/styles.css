@@ -86,6 +86,9 @@
   background-color: #333f55;
 }
 [data-bs-theme=dark] .form-select,
+[data-bs-theme=dark] .select2-selection,
+[data-bs-theme=dark] .select2-search,
+[data-bs-theme=dark] .select2-results,
 [data-bs-theme=dark] .form-select:focus,
 [data-bs-theme=dark] .form-control,
 [data-bs-theme=dark] .form-control:focus {

@@ -70,10 +70,6 @@ class InvestorKyc < ApplicationRecord
            :call_amount_cents, :distribution_amount_cents, :uncalled_amount_cents,
            with_currency: ->(i) { i.entity.currency }
 
-  after_commit lambda {
-    SendKycFormJob.perform_later(id) if saved_change_to_send_kyc_form_to_user? && send_kyc_form_to_user
-  }
-
   # Should be called only from SendKycFormJob
   # If not this leads to bugs where the InvestorKycNotification cannot be created when the kyc_type changes
   def send_kyc_form(reminder: false)
@@ -144,25 +140,19 @@ class InvestorKyc < ApplicationRecord
     docs + ["Other"] if docs.present?
   end
 
-  # after_commit :send_notification_if_changed, if: :approved
-
-  after_commit :validate_pan_card, unless: :destroyed?
   def validate_pan_card
     VerifyKycPanJob.perform_later(id) if saved_change_to_PAN? || saved_change_to_full_name? || saved_change_to_pan_card_data?
   end
 
-  after_commit :validate_bank, unless: :destroyed?
   def validate_bank
     VerifyKycBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
   end
 
-  after_save :enable_kyc
   def enable_kyc
     investor.investor_entity.permissions.set(:enable_kycs)
     investor.investor_entity.save
   end
-  after_create :generate_aml_report, if: ->(inv_kyc) { inv_kyc.full_name.present? }
-  after_update_commit :generate_aml_report, if: :full_name_has_changed?
+
   def generate_aml_report(user_id = nil)
     AmlReportJob.perform_later(id, user_id) if id.present? && full_name.present?
   end

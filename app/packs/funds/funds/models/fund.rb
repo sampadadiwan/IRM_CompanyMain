@@ -85,21 +85,6 @@ class Fund < ApplicationRecord
     investors.joins(:investor_accesses).where('investor_accesses.approved = true').pluck('investor_accesses.email')
   end
 
-  def mkdirs
-    # dirs = ["funds", "capital_calls", "capital_commitments", "capital_distributions", "capital_distribution_payments", "capital_remittances"]
-
-    # dirs = ["access_rights", "documents", "entities", "folders", "notes", "permissions", "reminders", "tasks", "users", "investors", "investor_accesses"]
-
-    subs = %w[models controllers views jobs policies mailers helpers]
-
-    dirs.each do |dir|
-      FileUtils.mkdir_p "app/packs/funds/#{dir}"
-      subs.each do |sub|
-        FileUtils.mkdir_p "app/packs/funds/#{dir}/#{sub}"
-      end
-    end
-  end
-
   TEMPLATE_TAGS = ["Commitment Template", "Call Template", "SOA Template"].freeze
   def document_tags
     TEMPLATE_TAGS
