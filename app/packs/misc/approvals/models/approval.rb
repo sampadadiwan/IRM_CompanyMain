@@ -33,7 +33,7 @@ class Approval < ApplicationRecord
   end
 
   def default_response_status
-    self.response_status ||= "Approved,Rejected,Pending"
+    self.response_status ||= "Approved,Pending,Rejected"
   end
 
   def folder_path

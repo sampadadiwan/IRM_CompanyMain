@@ -38,7 +38,11 @@ class ImportPortfolioInvestment < ImportUtil
       portfolio_investment.import_upload_id = import_upload.id
       portfolio_investment.portfolio_company = portfolio_company
       Rails.logger.debug { "Saving PortfolioInvestment with name '#{portfolio_investment.portfolio_company_name}'" }
-      portfolio_investment.save!
+
+      result = PortfolioInvestmentCreate.call(portfolio_investment:)
+      raise result.errors.full_messages.join(", ") unless result.success?
+
+      result.success?
     else
       raise "PortfolioInvestment already exists"
     end

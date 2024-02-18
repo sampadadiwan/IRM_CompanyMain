@@ -567,7 +567,7 @@ namespace :irm do
         begin
           pc = fund.entity.investors.portfolio_companies.sample
           pi = FactoryBot.build(:portfolio_investment, entity: fund.entity, fund:, portfolio_company: pc, quantity: 100 * rand(1..10))
-          pi.save!
+          PortfolioInvestmentCreate.call(portfolio_investment: pi)
           puts "Creating PI #{pi} for #{fund.name}"
         rescue Exception => e
           puts e.message
@@ -579,7 +579,7 @@ namespace :irm do
         begin
           pc = fund.entity.investors.portfolio_companies.sample
           pi = FactoryBot.build(:portfolio_investment, entity: fund.entity, fund:, portfolio_company: pc, quantity: -100 * rand(1..4))
-          pi.save!
+          PortfolioInvestmentCreate.call(portfolio_investment: pi)
           puts "Creating PI #{pi} for #{fund.name}"
         rescue Exception => e
           puts e.message

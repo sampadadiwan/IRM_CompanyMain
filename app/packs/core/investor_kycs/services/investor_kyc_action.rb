@@ -5,7 +5,10 @@ class InvestorKycAction < Trailblazer::Operation
   end
 
   def handle_errors(ctx, investor_kyc:, **)
-    ctx[:errors] = investor_kyc.errors unless investor_kyc.valid?
+    unless investor_kyc.valid?
+      ctx[:errors] = investor_kyc.errors
+      Rails.logger.error("Investor KYC errors: #{investor_kyc.errors.full_messages}")
+    end
     investor_kyc.valid?
   end
 

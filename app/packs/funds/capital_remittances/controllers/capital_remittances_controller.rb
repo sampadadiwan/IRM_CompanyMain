@@ -126,10 +126,10 @@ class CapitalRemittancesController < ApplicationController
   end
 
   def verify
-    @capital_remittance.verify_remittance
-
+    result = CapitalRemittanceVerify.call(capital_remittance: @capital_remittance)
+    notice = result.success? ? "Successfully verified." : "Failed to verify."
     respond_to do |format|
-      format.html { redirect_back fallback_location: capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: "Successfully updated." }
+      format.html { redirect_back fallback_location: capital_call_url(@capital_remittance.capital_call, tab: "remittances-tab"), notice: }
       format.json { render :show, status: :ok, location: @capital_remittance }
       format.turbo_stream { render :verify }
     end

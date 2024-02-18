@@ -19,6 +19,6 @@ class StockSplitter
     # self.net_quantity *= stock_split_ratio
     @portfolio_investment.notes ||= ""
     @portfolio_investment.notes += "Stock split #{stock_split_ratio} on #{Time.zone.today}\n"
-    @portfolio_investment.save
+    PortfolioInvestmentUpdate.call(portfolio_investment: @portfolio_investment)
   end
 end

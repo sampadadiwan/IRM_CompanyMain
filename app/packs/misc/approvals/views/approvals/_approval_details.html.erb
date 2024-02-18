@@ -23,7 +23,7 @@
 
     <div id="responses-tab" class="tab-pane fade in show active">
       <div id="approval_responses" class="associated_entity">
-        <%= turbo_frame_tag "approval_responses" do %>
+        <%= turbo_frame_tag "approval_responses", target: "_top" do %>
           <%= render "approval_responses/index", 
               approval_responses: policy_scope(approval.approval_responses).includes(:investor, :response_entity, :response_user), approval: approval %>
         <% end %>

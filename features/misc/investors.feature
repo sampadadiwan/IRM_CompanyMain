@@ -132,6 +132,28 @@ Scenario Outline: Create investor kyc - no ckyc
   Then I should see the "Document was successfully saved."
   Then I should see the investor kyc details on the details page
 
+
+Scenario Outline: Create investor kyc
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "name=Investor 1" with "1" users
+  Given the investor entity has no "enable_kycs" permissions
+  Given a InvestorKyc is created with details "<kyc>" by "<investor_user>"
+  And I visit the investor kyc page
+  Then I should see the investor kyc details on the details page
+  Then the kyc form should be sent "<kyc_form_sent>" to the investor
+  And the investor entity should have "enable_kycs" permissions
+  And the aml report should be generated for the investor kyc
+  And notification should be sent "<kyc_update_notification>" to the investor for kyc update
+
+  Examples:
+    |kyc_form_sent| kyc                                     | investor_user | kyc_update_notification |
+    |true         | PAN=ABCD9870;send_kyc_form_to_user=true | false         | false |
+    |false        | PAN=ABCD9876;send_kyc_form_to_user=false| false         | false |
+    |false        | PAN=ABCD9876;send_kyc_form_to_user=false| true          | true  |
+   
+  
+
 Scenario Outline: Create investor kyc
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

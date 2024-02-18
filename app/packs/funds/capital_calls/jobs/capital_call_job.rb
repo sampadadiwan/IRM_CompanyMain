@@ -39,43 +39,12 @@ class CapitalCallJob < ApplicationJob
                                    status:, verified: @capital_call.generate_remittances_verified)
 
         cr.payment_date = @capital_call.due_date if cr.verified
-        cr.setup_call_fees
-        cr.set_call_amount
-
-        cr.run_callbacks(:save) { false }
-        cr.run_callbacks(:create) { false }
-        if cr.valid?
-          @remittances << cr
-        else
-          Rails.logger.debug { "######Error generating remitance: #{cr.errors.full_messages}" }
-          Rails.logger.debug cr
-        end
+        CapitalRemittanceCreate.call(capital_remittance: cr)
       end
     end
 
-    # import the rows
-    Rails.logger.debug { "##### Importing #{@remittances.length} CapitalRemittances" }
-    CapitalRemittance.import @remittances, on_duplicate_key_ignore: true, track_validation_failures: true
-
     # Generate any payments for the imported remittances if required
     generate_remittance_payments
-
-    # Update the counter caches
-    update_counters(@capital_call)
-
-    # Mark all remittances for this call as paid if the called - collected < 100 cents
-    CapitalRemittance.where(capital_call_id: @capital_call.id).where("ABS(capital_remittances.collected_amount_cents - capital_remittances.call_amount_cents) <= 100").update_all(status: "Paid")
-  end
-
-  def update_counters(capital_call)
-    # Update the search index
-    CapitalRemittanceIndex.import(capital_call.capital_remittances)
-    CapitalRemittance.counter_culture_fix_counts where: { capital_remittances: { fund_id: capital_call.fund_id } }
-
-    # Update all the entities of the investors to but any cached data
-    capital_call.capital_remittances.each do |cr|
-      cr.investor.investor_entity.touch
-    end
   end
 
   def generate_remittance_payments
@@ -83,15 +52,8 @@ class CapitalCallJob < ApplicationJob
     @capital_call.reload.capital_remittances.verified.each do |cr|
       next unless cr.collected_amount_cents.zero?
 
-      crp = CapitalRemittancePayment.new(capital_remittance: cr, fund_id: cr.fund_id, entity_id: cr.entity_id, amount_cents: cr.call_amount_cents, folio_amount_cents: cr.folio_call_amount_cents, payment_date: @capital_call.due_date)
-
-      crp.run_callbacks(:save) { false }
-      crp.run_callbacks(:create) { false }
-      @payments << crp if crp.valid?
+      CapitalRemittancePayment.create(capital_remittance: cr, fund_id: cr.fund_id, entity_id: cr.entity_id, amount_cents: cr.call_amount_cents, folio_amount_cents: cr.folio_call_amount_cents, payment_date: @capital_call.due_date)
     end
-
-    CapitalRemittancePayment.import @payments, on_duplicate_key_ignore: true, track_validation_failures: true
-    CapitalRemittancePayment.counter_culture_fix_counts where: { capital_remittance_payments: { fund_id: @capital_call.fund_id } }
   end
 
   def notify(capital_call_id)

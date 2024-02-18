@@ -52,13 +52,11 @@ class ImportCapitalCommitment < ImportUtil
       capital_commitment.folio_committed_amount = user_data["Committed Amount"].to_d
     end
 
-    capital_commitment.assign_attributes(fund_close: user_data["Fund Close"],
-                                         commitment_type:, commitment_date:,
-                                         onboarding_completed:, imported: true,
-                                         investor:, investor_name: investor.investor_name,
-                                         unit_type:, import_upload_id: import_upload.id,
-                                         esign_emails: user_data["Investor Signatory Emails"],
-                                         notes: user_data["Notes"])
+    capital_commitment.assign_attributes(fund_close: user_data["Fund Close"], commitment_type:, commitment_date:,
+                                         onboarding_completed:, imported: true, investor:,
+                                         investor_name: investor.investor_name, unit_type:,
+                                         import_upload_id: import_upload.id, notes: user_data["Notes"],
+                                         esign_emails: user_data["Investor Signatory Emails"])
 
     get_kyc(user_data, investor, fund, capital_commitment)
 
@@ -72,6 +70,8 @@ class ImportCapitalCommitment < ImportUtil
              end
 
     raise result[:errors].full_messages.join(",") unless result.success?
+
+    result.success?
   end
 
   def get_kyc(user_data, investor, fund, capital_commitment)

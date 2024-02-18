@@ -11,6 +11,12 @@
             data-action="click->tabdetails#loadData">Units</a>
     <% end %>
 
+
+    <% if capital_remittance.has_arrears? %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#commitment-adjustments-tab"
+            data-action="click->tabdetails#loadData">Arrears</a>
+    <% end %>
+
   </nav>
 
   <div class="tab-content" data-controller="datatable">
@@ -37,6 +43,13 @@
         <%= turbo_frame_tag "fund_units_list", target: "_top" do %>
         <% end %>
       </div>     
+    </div>
+
+
+    <div id="commitment-adjustments-tab" class="tab-pane fade in">
+      <div id="commitment_adjustments" class="associated_entity">
+        <%= render "/commitment_adjustments/index", commitment_adjustments: capital_remittance.commitment_adjustments %>
+      </div>
     </div>
 
 

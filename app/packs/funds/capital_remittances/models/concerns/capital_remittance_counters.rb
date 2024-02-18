@@ -23,7 +23,7 @@ module CapitalRemittanceCounters
                                          execute_after_commit: true
 
     counter_culture :capital_call, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
-                                   delta_column: 'collected_amount_cents',
+                                   delta_column: 'net_collected_amount_cents',
                                    column_names: {
                                      ["capital_remittances.verified = ?", true] => 'collected_amount_cents'
                                    },
@@ -63,14 +63,14 @@ module CapitalRemittanceCounters
                                          execute_after_commit: true
 
     counter_culture :capital_commitment, column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
-                                         delta_column: 'collected_amount_cents',
+                                         delta_column: 'net_collected_amount_cents',
                                          column_names: {
                                            ["capital_remittances.verified = ?", true] => 'collected_amount_cents'
                                          },
                                          execute_after_commit: true
 
     counter_culture %i[capital_commitment investor_kyc], column_name: proc { |r| r.verified ? 'collected_amount_cents' : nil },
-                                                         delta_column: 'collected_amount_cents',
+                                                         delta_column: 'net_collected_amount_cents',
                                                          column_names: {
                                                            ["capital_remittances.verified = ?", true] => 'collected_amount_cents'
                                                          },
@@ -78,7 +78,7 @@ module CapitalRemittanceCounters
 
     counter_culture :fund, column_name:
                           proc { |r| r.verified && r.capital_commitment.Pool? ? 'collected_amount_cents' : nil },
-                           delta_column: 'collected_amount_cents',
+                           delta_column: 'net_collected_amount_cents',
                            column_names: lambda {
                                            {
                                              CapitalRemittance.verified.pool => :collected_amount_cents
@@ -88,7 +88,7 @@ module CapitalRemittanceCounters
 
     counter_culture :fund, column_name:
                           proc { |r| r.verified && r.capital_commitment.CoInvest? ? 'co_invest_collected_amount_cents' : nil },
-                           delta_column: 'collected_amount_cents',
+                           delta_column: 'net_collected_amount_cents',
                            column_names: lambda {
                                            {
                                              CapitalRemittance.verified.co_invest => :co_invest_collected_amount_cents

@@ -17,8 +17,8 @@ class PortfolioAttribution < ApplicationRecord
   # Compute the cost_of_sold for the sold_pi
   def update_cost_of_sold
     # This is required to trigger PI.compute_fmv
-    sold_pi.reload.save
-    bought_pi.reload.save
+    PortfolioInvestmentUpdate.call(portfolio_investment: sold_pi.reload)
+    PortfolioInvestmentUpdate.call(portfolio_investment: bought_pi.reload)
   end
 
   def compute_cost_of_sold_cents
@@ -26,7 +26,7 @@ class PortfolioAttribution < ApplicationRecord
   end
 
   # This is so that the bought_pi net_quantity is updated
-  after_destroy_commit -> { bought_pi.reload.save }
+  after_destroy_commit -> { PortfolioInvestmentUpdate.call(portfolio_investment: bought_pi.reload) }
 
   def gain
     Money.new((sold_pi.price_per_share_cents - bought_pi.price_per_share_cents) * quantity.abs, fund.currency)

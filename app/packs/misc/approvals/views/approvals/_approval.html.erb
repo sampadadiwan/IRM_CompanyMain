@@ -14,15 +14,14 @@
   <td class="responses_count hideMobP">
     <div class="container">
       <%
-        colors = ["bg-success", "bg-warning", "bg-secondary", "bg-info", "bg-primary", "bg-light", "bg-dark"].freeze
+        colors = ["success", "warning", "danger", "primary", "secondary", "info"].freeze
       %>
-        <% approval.response_status&.split(',')&.each do |status| %>
+        <% approval.response_status&.split(',')&.each_with_index do |status, idx| %>
             <%
               status_count = approval.approval_responses.group(:status).count               
               response_count = status_count[status] || 0
-              idx = approval.response_status&.split(',')&.index(status)
             %>
-            <span class="badge <%=colors[idx]%>"> <%= status %> : <%= response_count %> </span>
+            <span class="badge bg-<%=colors[idx % colors.length]%>"> <%= status %> : <%= response_count %> </span>
           
         <% end %>
     </div>

@@ -1,6 +1,9 @@
 
 <tr id="<%= dom_id commitment_adjustment %>">
   <td>
+    <%= commitment_adjustment.adjustment_type %>
+  </td>
+  <td>
     <%= money_to_currency commitment_adjustment.pre_adjustment, params %>
   </td>
   <td>

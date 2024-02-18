@@ -45,6 +45,7 @@ Scenario Outline: Grant Access Rights to approval
   Given the investors are added to the approval  
   When I visit the approval details page
   Then the approval responses are generated with status "Pending"  
+  Then I should see the approval response details for each response
   Given there is a custom notification in place for the approval with subject "<subject>"
   When the approval is approved  
   Then the investor gets the approval notification

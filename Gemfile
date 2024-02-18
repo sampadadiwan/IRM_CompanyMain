@@ -111,7 +111,7 @@ gem 'caxlsx'
 gem 'caxlsx_rails'
 # Maintain counter caches
 gem "after_commit_action"
-gem 'counter_culture', '~> 3.3'
+gem 'counter_culture'
 
 gem 'impressionist'
 gem 'roo'

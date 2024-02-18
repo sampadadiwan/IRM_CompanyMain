@@ -22,7 +22,9 @@ class AttributionService
           # Create the portfolio attribution
           PortfolioAttribution.create!(entity_id: @portfolio_investment.entity_id, fund_id: @portfolio_investment.fund_id, bought_pi: buy, sold_pi: @portfolio_investment, quantity: -attribution_quantity)
           # This triggers the computation of net_quantity
-          buy.reload.save
+          buy.reload
+          # binding.pry
+          PortfolioInvestmentUpdate.call(portfolio_investment: buy)
 
           # Update if we have more to allocate
           allocatable_quantity -= attribution_quantity

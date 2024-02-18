@@ -4,7 +4,6 @@
 
   <%= turbo_stream_from @import_upload %>
 
-  <%= render "/import_uploads/stats", import_upload: @import_upload %>
   <%= render "/import_uploads/show", import_upload: @import_upload %>
 
   <% if @import_upload.created_at > Date.parse("2024-01-06") %>

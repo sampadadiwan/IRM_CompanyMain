@@ -12,7 +12,7 @@ class CommitmentAdjustmentsController < ApplicationController
 
   # GET /commitment_adjustments/new
   def new
-    @commitment_adjustment = CommitmentAdjustment.new(capital_commitment_id: params[:capital_commitment_id])
+    @commitment_adjustment = CommitmentAdjustment.new(commitment_adjustment_params)
     @commitment_adjustment.entity_id = @commitment_adjustment.capital_commitment.entity_id
     @commitment_adjustment.fund_id = @commitment_adjustment.capital_commitment.fund_id
     @commitment_adjustment.as_of = Time.zone.today
@@ -28,7 +28,7 @@ class CommitmentAdjustmentsController < ApplicationController
     authorize @commitment_adjustment
 
     respond_to do |format|
-      if @commitment_adjustment.save
+      if AdjustmentCreate.call(commitment_adjustment: @commitment_adjustment).success?
         format.html { redirect_to commitment_adjustment_url(@commitment_adjustment), notice: "Commitment adjustment was successfully created." }
         format.json { render :show, status: :created, location: @commitment_adjustment }
       else
@@ -38,18 +38,18 @@ class CommitmentAdjustmentsController < ApplicationController
     end
   end
 
-  # PATCH/PUT /commitment_adjustments/1 or /commitment_adjustments/1.json
-  def update
-    respond_to do |format|
-      if @commitment_adjustment.update(commitment_adjustment_params)
-        format.html { redirect_to commitment_adjustment_url(@commitment_adjustment), notice: "Commitment adjustment was successfully updated." }
-        format.json { render :show, status: :ok, location: @commitment_adjustment }
-      else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @commitment_adjustment.errors, status: :unprocessable_entity }
-      end
-    end
-  end
+  # # PATCH/PUT /commitment_adjustments/1 or /commitment_adjustments/1.json
+  # def update
+  #   respond_to do |format|
+  #     if @commitment_adjustment.update(commitment_adjustment_params)
+  #       format.html { redirect_to commitment_adjustment_url(@commitment_adjustment), notice: "Commitment adjustment was successfully updated." }
+  #       format.json { render :show, status: :ok, location: @commitment_adjustment }
+  #     else
+  #       format.html { render :edit, status: :unprocessable_entity }
+  #       format.json { render json: @commitment_adjustment.errors, status: :unprocessable_entity }
+  #     end
+  #   end
+  # end
 
   # DELETE /commitment_adjustments/1 or /commitment_adjustments/1.json
   def destroy
@@ -71,6 +71,6 @@ class CommitmentAdjustmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def commitment_adjustment_params
-    params.require(:commitment_adjustment).permit(:entity_id, :fund_id, :capital_commitment_id, :pre_adjustment, :folio_amount, :post_adjustment, :reason, :as_of)
+    params.require(:commitment_adjustment).permit(:entity_id, :fund_id, :capital_commitment_id, :adjustment_type, :pre_adjustment, :folio_amount, :post_adjustment, :reason, :as_of, :folio_amount, :owner_id, :owner_type)
   end
 end

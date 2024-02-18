@@ -29,14 +29,16 @@ class CapitalRemittance < ApplicationRecord
   has_many :fund_units, as: :owner, dependent: :destroy
   has_noticed_notifications
 
+  has_many :commitment_adjustments, as: :owner, dependent: :destroy
+
   scope :paid, -> { where(status: "Paid") }
   scope :pending, -> { where(status: "Pending") }
   scope :verified, -> { where(verified: true) }
   scope :pool, -> { joins(:capital_commitment).where("capital_commitments.commitment_type=?", "Pool") }
   scope :co_invest, -> { joins(:capital_commitment).where("capital_commitments.commitment_type=?", "CoInvest") }
 
-  monetize :call_amount_cents, :capital_fee_cents, :other_fee_cents, :collected_amount_cents, :computed_amount_cents, :committed_amount_cents, with_currency: ->(i) { i.fund.currency }
-  monetize :folio_call_amount_cents, :folio_capital_fee_cents, :folio_other_fee_cents, :folio_collected_amount_cents, :folio_committed_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
+  monetize :call_amount_cents, :capital_fee_cents, :other_fee_cents, :collected_amount_cents, :computed_amount_cents, :committed_amount_cents, :arrear_amount_cents, :net_collected_amount_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :folio_call_amount_cents, :folio_capital_fee_cents, :folio_other_fee_cents, :folio_collected_amount_cents, :folio_committed_amount_cents, :arrear_folio_amount_cents, :net_folio_collected_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
 
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :capital_call_id
@@ -45,8 +47,6 @@ class CapitalRemittance < ApplicationRecord
   validates :status, length: { maximum: 10 }
   validates :folio_id, length: { maximum: 20 }
   validates :investor_name, length: { maximum: 255 }
-
-  # before_save :set_call_amount
 
   include CapitalRemittanceCounters
 
@@ -57,6 +57,7 @@ class CapitalRemittance < ApplicationRecord
     self.committed_amount_cents = capital_commitment.committed_amount_cents
 
     calc_call_amount_cents
+    calc_collected_amount_cents
     # Setup Paid or Pending status
     set_status
   end
@@ -78,6 +79,11 @@ class CapitalRemittance < ApplicationRecord
       call_basis_account_entry(capital_call.call_basis)
 
     end
+  end
+
+  def calc_collected_amount_cents
+    self.net_collected_amount_cents = collected_amount_cents + arrear_amount_cents
+    self.net_folio_collected_amount_cents = folio_collected_amount_cents + arrear_folio_amount_cents
   end
 
   def exchange_rate_adjustments
@@ -156,9 +162,7 @@ class CapitalRemittance < ApplicationRecord
   end
   # rubocop:enable Rails/SkipsModelValidations
 
-  def verify_remittance
-    self.verified = !verified
-    save
-    payment_received_notification if verified
+  def has_arrears?
+    arrear_amount_cents != 0
   end
 end

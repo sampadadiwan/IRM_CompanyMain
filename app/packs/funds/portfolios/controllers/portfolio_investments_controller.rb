@@ -44,7 +44,7 @@ class PortfolioInvestmentsController < ApplicationController
     authorize @portfolio_investment
 
     respond_to do |format|
-      if @portfolio_investment.save
+      if PortfolioInvestmentCreate.wtf?(portfolio_investment: @portfolio_investment).success?
         format.html { redirect_to portfolio_investment_url(@portfolio_investment), notice: "Portfolio investment was successfully created." }
         format.json { render :show, status: :created, location: @portfolio_investment }
       else
@@ -56,8 +56,9 @@ class PortfolioInvestmentsController < ApplicationController
 
   # PATCH/PUT /portfolio_investments/1 or /portfolio_investments/1.json
   def update
+    @portfolio_investment = @portfolio_investment.assign_attributes(portfolio_investment_params)
     respond_to do |format|
-      if @portfolio_investment.update(portfolio_investment_params)
+      if PortfolioInvestmentUpdate.wtf?(portfolio_investment: @portfolio_investment).success?
         format.html { redirect_to portfolio_investment_url(@portfolio_investment), notice: "Portfolio investment was successfully updated." }
         format.json { render :show, status: :ok, location: @portfolio_investment }
       else

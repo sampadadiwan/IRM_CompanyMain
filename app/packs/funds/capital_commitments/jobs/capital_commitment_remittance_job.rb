@@ -23,9 +23,7 @@ class CapitalCommitmentRemittanceJob < ApplicationJob
                                  created_by: "Call",
                                  status:, verified: capital_call.generate_remittances_verified)
 
-      cr.setup_call_fees
-      cr.set_call_amount
-      cr.save!
+      CapitalRemittanceCreate.call(capital_remittance: cr)
     end
   end
 end

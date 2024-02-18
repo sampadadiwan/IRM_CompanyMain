@@ -206,8 +206,11 @@ class Investor < ApplicationRecord
   # callback but only for category = Portfolio Company
   def valuation_updated(valuation)
     # Ensure the portfolio_investments calculate the fmv
-    entity.portfolio_investments.where(portfolio_company_id: id,
-                                       category: valuation.category, sub_category: valuation.sub_category).find_each(&:save)
+    pis = entity.portfolio_investments.where(portfolio_company_id: id, category: valuation.category,
+                                             sub_category: valuation.sub_category)
+    pis.each do |pi|
+      PortfolioInvestmentUpdate.call(portfolio_investment: pi)
+    end
   end
 
   def self.ransackable_associations(_auth_object = nil)

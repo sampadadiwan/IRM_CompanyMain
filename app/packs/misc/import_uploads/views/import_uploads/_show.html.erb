@@ -1,5 +1,7 @@
 <div id="<%= dom_id(import_upload) %>">
 
+  <%= render "/import_uploads/stats", import_upload: import_upload %>
+
   <% if import_upload.failed_row_count > 0 %>
           <div class="alert alert-danger">
           

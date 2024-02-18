@@ -58,9 +58,15 @@ class PortfolioInvestment < ApplicationRecord
   }
   scope :sells, -> { where("portfolio_investments.quantity < 0") }
 
-  before_validation :setup_aggregate
+  # before_validation :setup_aggregate
   def setup_aggregate
-    self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, investment_type:, commitment_type:, investment_domicile:) if aggregate_portfolio_investment_id.blank?
+    if aggregate_portfolio_investment_id.blank?
+      self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, investment_type:, commitment_type:, investment_domicile:)
+
+      aggregate_portfolio_investment.save
+    else
+      true
+    end
   end
 
   before_create :update_name
@@ -68,23 +74,14 @@ class PortfolioInvestment < ApplicationRecord
     self.portfolio_company_name ||= portfolio_company.investor_name
   end
 
-  before_save :compute_fmv, unless: :destroyed?
+  # before_save :compute_fmv, unless: :destroyed?
 
-  after_create_commit :compute_avg_cost, unless: :destroyed?
+  # after_create_commit :compute_avg_cost, unless: :destroyed?
   def compute_avg_cost
     aggregate_portfolio_investment.reload
     # save will recomute the avg costs
     aggregate_portfolio_investment.save
   end
-
-  after_create_commit lambda {
-    # After we save the PI, we need to create the attributions for sells.
-    # When we import the data we create it in the same thread, as we need to ensure the attribution is setup before we move on to the next row. However if the portfolio_investment is created by the user, we can do it in the background.
-    # Originally we were doing this in the background, but it was causing issues with the attribution being created in parallel and sometimes in the wrong order.
-    if sell?
-      created_by_import ? PortfolioInvestmentJob.perform_now(id) : PortfolioInvestmentJob.perform_later(id)
-    end
-  }
 
   # Called from PortfolioInvestmentJob
   # This method is used to setup which sells are linked to which buys for purpose of attribution

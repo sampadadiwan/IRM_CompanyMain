@@ -16,13 +16,19 @@
       <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
       <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
       <%= form.text_field :capital_commitment_id, class: "form-control", hidden: true  %>
-
+      <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
 
       <div class="form-group" data-controller="currencyformat">
         <%= form.label :folio_amount, "Amount in #{commitment_adjustment.capital_commitment.folio_currency}" %> 
             <span class="formatted_currency"></span>
         <%= form.text_field :folio_amount, class: "form-control", data: {action: "input->currencyformat#format"} %>
         <small class="text-muted">The  differential amount of the commitment that is to be adjusted, i.e. to be added to the commitment amount.</small>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :adjustment_type %>
+        <%= form.select :adjustment_type, CommitmentAdjustment::ADJUSTMENT_TYPES, {}, class: "form-control"  %>
       </div>
 
       <div class="form-group">

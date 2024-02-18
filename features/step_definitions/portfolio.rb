@@ -46,7 +46,7 @@ include CurrencyHelper
     (1..count.to_i).each do |i|
       pi = FactoryBot.build(:portfolio_investment, entity: @entity, fund: @fund)
       key_values(pi, args)
-      pi.save!
+      PortfolioInvestmentCreate.wtf?(portfolio_investment: pi).success?.should == true
       puts "\n#########PortfolioInvestment##########\n"
       puts pi.to_json
     end

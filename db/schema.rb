@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_16_071656) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_17_084244) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -505,6 +505,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_16_071656) do
     t.string "esign_emails"
     t.bigint "import_upload_id"
     t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "arrear_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "arrear_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_capital_commitments_on_deleted_at"
     t.index ["document_folder_id"], name: "index_capital_commitments_on_document_folder_id"
     t.index ["entity_id"], name: "index_capital_commitments_on_entity_id"
@@ -647,6 +649,10 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_16_071656) do
     t.date "remittance_date"
     t.json "json_fields"
     t.bigint "import_upload_id"
+    t.decimal "arrear_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "arrear_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "net_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "net_folio_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"
@@ -725,7 +731,10 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_16_071656) do
     t.bigint "exchange_rate_id"
     t.string "owner_type"
     t.bigint "owner_id"
+    t.string "adjustment_type", limit: 20, default: "Top Up", null: false
+    t.datetime "deleted_at"
     t.index ["capital_commitment_id"], name: "index_commitment_adjustments_on_capital_commitment_id"
+    t.index ["deleted_at"], name: "index_commitment_adjustments_on_deleted_at"
     t.index ["entity_id"], name: "index_commitment_adjustments_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_commitment_adjustments_on_exchange_rate_id"
     t.index ["fund_id"], name: "index_commitment_adjustments_on_fund_id"

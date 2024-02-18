@@ -238,11 +238,11 @@
   Given('there is a capital commitment of {string} for the last investor') do |args|
     @fund.reload
     inv = Investor.last
-    commitment = FactoryBot.build(:capital_commitment, fund: @fund, investor: inv)
-    key_values(commitment, args)
-    CapitalCommitmentCreate.call(capital_commitment: commitment)
+    @capital_commitment = FactoryBot.build(:capital_commitment, fund: @fund, investor: inv)
+    key_values(@capital_commitment, args)
+    result = CapitalCommitmentCreate.call(capital_commitment: @capital_commitment)
     puts "\n####CapitalCommitment####\n"
-    puts commitment.to_json
+    puts @capital_commitment.to_json
   end
 
   Given('there is a capital call {string}') do |arg|
@@ -726,6 +726,7 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   sleep(3)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(4)
+  # ImportUpload.last.failed_row_count.should == 0
 
 end
 
@@ -742,6 +743,7 @@ Then('Given I upload {string} file for Call remittances of the fund') do |file|
   sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   sleep(4)
+  ImportUpload.last.failed_row_count.should == 0
 end
 
 Then('There should be {string} capital commitments created') do |count|
@@ -1185,7 +1187,8 @@ Then('Given I upload {string} file for Account Entries') do |file|
   click_on("Save")
   sleep(1)
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(3)
+  sleep(4)
+  ImportUpload.last.failed_row_count.should == 0
 end
 
 Then('There should be {string} account_entries created') do |count|
@@ -1254,7 +1257,8 @@ Then('Given I upload {string} file for the remittances of the capital call') do 
   click_on("Save")
   sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(5)
+  sleep(4)
+  ImportUpload.last.failed_row_count.should == 0
 end
 
 Then('There should be {string} remittance payments created') do |count|
@@ -1373,6 +1377,8 @@ Given('Given I upload a fund unit setting file for the fund') do
   click_on("Save")
   sleep(10)
   ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(4)
+  ImportUpload.last.failed_row_count.should == 0
 end
 
 Then('There should be {string} fund unit settings created with data in the sheet') do |count|
@@ -1419,6 +1425,8 @@ Then('Given I upload {string} file for Distributions of the fund') do |string|
   click_on("Save")
   sleep(6)
   ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(4)
+  ImportUpload.last.failed_row_count.should == 0
 end
 
 Then('Given I upload {string} file for Fund Units of the fund') do |string|
@@ -1432,6 +1440,8 @@ Then('Given I upload {string} file for Fund Units of the fund') do |string|
   click_on("Save")
   sleep(6)
   ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(4)
+  ImportUpload.last.failed_row_count.should == 0
 end
 
 Then('There should be {string} fund units created with data in the sheet') do |count|
@@ -1483,4 +1493,35 @@ Then('the investors must have access rights to the fund') do
     ar = AccessRight.where(owner: @fund, access_to_investor_id: cc.investor_id, access_type: "Fund").first
     ar.should be_present
   end
+end
+
+
+When('a commitment adjustment {string} is created') do |args|
+  @commitment_adjustment = CommitmentAdjustment.new(entity: @entity, capital_commitment: @capital_commitment, fund: @fund, as_of: Date.today, reason: "Test Adjustment")
+  key_values(@commitment_adjustment, args)
+  AdjustmentCreate.wtf?(commitment_adjustment: @commitment_adjustment)
+end
+
+Then('the capital commitment should have a committed amount {string}') do |committed_amount_cents|
+  @capital_commitment.reload
+  @capital_commitment.committed_amount_cents.should == committed_amount_cents.to_i
+end
+
+Then('the capital commitment should have a arrears amount {string}') do |arrear_amount_cents|
+  @capital_commitment.reload
+  @capital_commitment.arrear_amount_cents.should == arrear_amount_cents.to_i
+end
+
+When('a commitment adjustment {string} is created for the last remittance') do |args|
+  @capital_remittance = @fund.capital_remittances.last
+  @commitment_adjustment = CommitmentAdjustment.new(entity: @entity, capital_commitment: @capital_commitment, fund: @fund, as_of: Date.today, reason: "Test Adjustment", owner: @capital_remittance)
+  key_values(@commitment_adjustment, args)
+  AdjustmentCreate.wtf?(commitment_adjustment: @commitment_adjustment)
+end
+
+Then('the last remittance should have a arrears amount {string}') do |arrear_amount_cents|
+  @capital_remittance.reload
+  puts @capital_remittance.to_json
+  @capital_remittance.arrear_amount_cents.should == arrear_amount_cents.to_i
+  @capital_remittance.net_collected_amount_cents.should == @capital_remittance.collected_amount_cents + @capital_remittance.arrear_amount_cents
 end

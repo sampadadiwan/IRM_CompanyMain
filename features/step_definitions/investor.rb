@@ -932,3 +932,51 @@ def sample_kra_pan_data
     }
   }
 end
+
+
+Given('the investor entity has no {string} permissions') do |perm|
+  @investor.investor_entity.permissions.unset(perm.to_sym)
+  @investor.investor_entity.save!
+  ap @investor.investor_entity.permissions
+end
+
+Given('a InvestorKyc is created with details {string} by {string}') do |args, investor_user|  
+  @investor_kyc = FactoryBot.build(:investor_kyc, entity: @entity, investor: @investor)
+  key_values(@investor_kyc, args)
+  InvestorKycCreate.wtf?(investor_kyc: @investor_kyc, investor_user:).success?.should == true
+end
+
+Given('I visit the investor kyc page') do
+  visit(investor_kyc_path(@investor_kyc))
+end
+
+Then('the kyc form should be sent {string} to the investor') do |flag|
+  user = InvestorAccess.includes(:user).first.user
+  open_email(user.email)
+  if flag == "true"
+    expect(current_email.subject).to include "Request to add KYC: #{@investor_kyc.entity.name}"
+  else
+    current_email.should == nil
+  end
+  
+end
+
+Then('the investor entity should have {string} permissions') do |args|
+  @investor.reload
+  @investor.investor_entity.permissions.set?(args.to_sym).should == true  
+end
+
+Then('the aml report should be generated for the investor kyc') do
+  AmlReport.first.should_not == nil
+end
+
+Then('notification should be sent {string} to the investor for kyc update') do |sent|
+  user = @entity.employees.first
+  open_email(user.email)
+  
+  if sent
+    expect(current_email.subject).to include "KYC updated for #{@investor_kyc.full_name}"
+  else
+    current_email.should == nil
+  end
+end

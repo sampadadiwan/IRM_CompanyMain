@@ -65,10 +65,15 @@ $primary-color-hover: scale-color($primary-color, $lightness: 32%);
         margin: 0;
         padding: 0;
         width: 100%;
+    }
+    
+    [data-bs-theme=light] .timeline {
         h1, h2, h3, h4, h5, h6 {
             line-height: inherit;
         }
     }
+
+    
 
     /*----- TIMELINE ITEM -----*/
 
@@ -298,4 +303,10 @@ $primary-color-hover: scale-color($primary-color, $lightness: 32%);
                 background: $primary-color;
             }
         }
+}
+
+
+[data-bs-theme=dark] .timeline h3 {
+        line-height: inherit;
+        color: white !important;        
 }

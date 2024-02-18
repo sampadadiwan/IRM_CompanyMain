@@ -7,8 +7,7 @@
     <%= link_to capital_remittance.folio_id, capital_commitment_path(capital_remittance.capital_commitment_id) %>
   </td>
   <td class="status">
-    <%= render DisplayBooleanComponent.new(bool: capital_remittance.status == "Paid").
-        with_content(capital_remittance.status) if capital_remittance.status %>
+    <%= capital_remittance.status %>
   </td>
   <td class="verified">
     <%= display_boolean(capital_remittance.verified) %>

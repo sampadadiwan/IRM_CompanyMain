@@ -235,7 +235,7 @@ div.divider {
   .sticky-col {
     position: -webkit-sticky;
     position: sticky;
-    background-color: white;
+    // background-color: white;
   }
 
   .sticky-col:hover {
@@ -536,21 +536,11 @@ ul.vesting_schedule {
   }
 }
 
-// .sidebar-dark .nav-item .nav-link i {
-//   color: lighten(#4e73df, 5%) !important;  
-// }
-
-// .sidebar .nav-item .nav-link span {
-//   color: #4e73df;
-// }
-
-// .sidebar-dark hr.sidebar-divider {
-//   border-top: 1px solid lightgray !important;
-// }
 
 [data-bs-theme=dark] .sidebar-link span {
     color: white !important;
 }
+
 
 [data-bs-theme=dark] .sidebar-divider {
   border-top: 1px solid rgba(255, 255, 255, 0.1) !important;

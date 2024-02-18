@@ -23,8 +23,10 @@ class ExchangeRateCommitmentAdjustmentJob < ApplicationJob
           reason = "Exchange Rate Changed: #{@exchange_rate}"
           as_of = @exchange_rate.as_of
 
-          ca = CommitmentAdjustment.create!(entity_id: cc.entity_id, fund_id: cc.fund_id, owner: @exchange_rate,
-                                            capital_commitment: cc, amount_cents:, reason:, as_of:)
+          ca = CommitmentAdjustment.new(entity_id: cc.entity_id, fund_id: cc.fund_id, owner: @exchange_rate,
+                                        capital_commitment: cc, amount_cents:, reason:, as_of:, adjustment_type: "Exchange Rate")
+
+          AdjustmentCreate.call(commitment_adjustment: ca)
           Rails.logger.debug ca
         end
 

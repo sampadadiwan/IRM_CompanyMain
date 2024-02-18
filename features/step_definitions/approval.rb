@@ -188,5 +188,21 @@ When('I select {string} for the approval response') do |response|
   click_on("Submit")
 end
 
-Given('there is a custom notification in place for the approval with subject {string}"') do |subject|  @custom_notification = CustomNotification.create!(entity: @approval.entity, subject:, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @approval)
+Given('there is a custom notification in place for the approval with subject {string}"') do |subject|         
+  @custom_notification = CustomNotification.create!(entity: @approval.entity, subject:, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @approval)
+end
+
+Then('I should see the approval response details for each response') do 
+  @approval.approval_responses.each do |response|
+    within("#approval_response_#{response.id}") do
+      click_on("Show")
+    end
+
+    expect(page).to have_content(@approval.to_s)
+    expect(page).to have_content(response.investor.investor_name)
+    expect(page).to have_content(response.status)
+
+    visit(approval_path(@approval))
+  
+  end
 end

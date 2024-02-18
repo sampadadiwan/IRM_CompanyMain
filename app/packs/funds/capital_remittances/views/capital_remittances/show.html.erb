@@ -31,6 +31,10 @@
                 <%= button_to label, send_notification_capital_remittance_path(@capital_remittance), method: :patch, 
                     class: "dropdown-item", form_class: "deleteButton", 
                     data: {action: "click->confirm#popup", msg: "This will send out an email notification to the investor for this remittances", method: :patch} if policy(@capital_remittance).send_notification? %>
+
+
+                <% adjustment_params = {commitment_adjustment: {capital_commitment_id: @capital_remittance.capital_commitment_id, owner_id: @capital_remittance.id, owner_type: "CapitalRemittance", folio_amount: @capital_remittance.folio_due_amount, adjustment_type: "Arrear", reason: "Arreas from Remittance #{@capital_remittance.id}"}} %>
+                <%= link_to "Create Arrears Adjustment", new_commitment_adjustment_path(adjustment_params), class: "dropdown-item" if policy(@capital_remittance).update? %>
             </div>
         </div>
     </div>

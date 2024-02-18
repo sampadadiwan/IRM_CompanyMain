@@ -246,6 +246,9 @@ FactoryBot.define do
     address { Faker::Address.full_address }
     corr_address { Faker::Address.full_address }
     bank_account_number  {Faker::Bank.account_number}
+    bank_name {Faker::Bank.name}
+    bank_branch {Faker::Address.city}
+    bank_account_type { ["Savings", "Current"].sample }
     ifsc_code {Faker::Bank.swift_bic}
     birth_date { Time.zone.today - rand(36).years }
     expiry_date { Time.zone.today + rand(36).months }
