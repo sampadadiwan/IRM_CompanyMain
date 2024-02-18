@@ -29,8 +29,8 @@ class DefaultUnitAllocationEngine
     capital_commitment = capital_remittance.capital_commitment
     capital_call = capital_remittance.capital_call
     unit_type = capital_commitment.unit_type
-    unit_price_cents = capital_call.unit_prices[unit_type]["price"]
-    unit_premium_cents = capital_call.unit_prices[unit_type]["premium"]
+    unit_price_cents = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["price"] : nil
+    unit_premium_cents = capital_call.unit_prices[unit_type] ? capital_call.unit_prices[unit_type]["premium"] : nil
     msg = []
 
     if  capital_remittance.verified && capital_remittance.collected_amount_cents.positive? &&
