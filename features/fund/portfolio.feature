@@ -53,7 +53,7 @@ Scenario Outline: Create valuation and FMV
 Scenario Outline: Import portfolio investments
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
-  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
   And Given I upload an investors file for the fund
   And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
   Then I should see the "Import in progress"
