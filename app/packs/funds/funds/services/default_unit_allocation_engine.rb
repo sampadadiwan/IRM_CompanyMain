@@ -66,10 +66,9 @@ class DefaultUnitAllocationEngine
     msg << "Skipping fund units generation for #{capital_remittance.folio_id}"
     msg << "Remittance not verified" unless capital_remittance.verified
     msg << "No collected amount" unless capital_remittance.collected_amount_cents.positive?
-    msg << "No unit prices in call" if capital_call.unit_prices.blank?
-    msg << "No unit type in commitment" if capital_commitment.unit_type.blank?
-    msg << "No unit price for commitment" if unit_price_cents.blank?
-    msg << "No unit premium for commitment" if unit_premium_cents.blank?
+    msg << "No unit prices in call" if capital_remittance.capital_call.unit_prices.blank?
+    msg << "No unit type in commitment" if capital_remittance.capital_commitment.unit_type.blank?
+    msg << "No unit price for commitment" if capital_remittance.capital_call.unit_prices[unit_type].blank?
     msg
   end
 
