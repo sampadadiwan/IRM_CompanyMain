@@ -72,6 +72,8 @@ class CapitalCommitment < ApplicationRecord
   validates :commitment_type, length: { maximum: 10 }
   validates :folio_currency, length: { maximum: 5 }
   validates :folio_id, :virtual_bank_account, length: { maximum: 20 }
+  normalizes :unit_type, with: ->(unit_type) { unit_type.strip.squeeze(" ") }
+  validate :allowed_unit_type
 
   delegate :currency, to: :fund
 
@@ -94,7 +96,12 @@ class CapitalCommitment < ApplicationRecord
   before_save :set_investor_name
   def set_investor_name
     self.investor_name = investor.investor_name
-    self.unit_type = unit_type.strip if unit_type
+  end
+
+  def allowed_unit_type
+    return unless unit_type
+
+    errors.add(:unit_type, "#{unit_type} is not allowed. Allowed values: #{fund.unit_types}") unless fund.unit_types.include?(unit_type)
   end
 
   # Note for manual updates to committed amounts
