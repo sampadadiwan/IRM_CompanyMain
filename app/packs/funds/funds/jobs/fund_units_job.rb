@@ -9,10 +9,10 @@ class FundUnitsJob < ApplicationJob
       case owner_type
       when "CapitalCall"
         reason ||= owner.name
-        DefaultUnitAllocationEngine.new.allocate_call(owner, reason)
+        DefaultUnitAllocationEngine.new.allocate_call(owner, reason, user_id)
       when "CapitalDistribution"
         reason ||= owner.title
-        DefaultUnitAllocationEngine.new.allocate_distribution(owner, reason)
+        DefaultUnitAllocationEngine.new.allocate_distribution(owner, reason, user_id)
       else
         raise "Cannot generate fund units for #{owner}"
       end

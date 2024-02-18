@@ -1,31 +1,44 @@
 class DefaultUnitAllocationEngine
-  def allocate_call(capital_call, reason)
+  def allocate_call(capital_call, reason, user_id)
+    @error_msg = []
+
     if capital_call.fund.unit_types.present?
       capital_call.capital_remittances.verified.each do |cr|
-        allocate_remittance(cr, reason)
+        _, error_msg = allocate_remittance(cr, reason)
+        @error_msg << { folio: cr.folio_id, errors: error_msg.join(",") } if error_msg.present?
       end
     end
+
+    cleanup("Unit allocations", user_id)
   end
 
-  def allocate_distribution(capital_distribution, reason)
+  def allocate_distribution(capital_distribution, reason, user_id)
+    @error_msg = []
+
     if capital_distribution.fund.unit_types.present?
       capital_distribution.capital_distribution_payments.completed.each do |cdp|
-        allocate_distribution_payment(cdp, reason)
+        _, error_msg = allocate_distribution_payment(cdp, reason)
+        @error_msg << { folio: cr.folio_id, errors: error_msg.join(",") } if error_msg.present?
       end
     end
+
+    cleanup("Unit redemptions", user_id)
   end
 
   def allocate_remittance(capital_remittance, reason)
     capital_commitment = capital_remittance.capital_commitment
     capital_call = capital_remittance.capital_call
+    unit_type = capital_commitment.unit_type
+    unit_price_cents = capital_call.unit_prices[unit_type]["price"]
+    unit_premium_cents = capital_call.unit_prices[unit_type]["premium"]
     msg = []
 
     if  capital_remittance.verified && capital_remittance.collected_amount_cents.positive? &&
-        capital_call.unit_prices.present? && capital_commitment.unit_type.present?
+        capital_call.unit_prices.present? && capital_commitment.unit_type.present? && unit_price_cents.present? && unit_premium_cents.present?
       # Get the price for the unit type for this commitment from the call
-      unit_type = capital_commitment.unit_type
-      price_cents = capital_call.unit_prices[unit_type]["price"].to_d * 100
-      premium_cents = capital_call.unit_prices[unit_type]["premium"].to_d * 100
+
+      price_cents = unit_price_cents.to_d * 100
+      premium_cents = unit_premium_cents.to_d * 100
 
       # Sometimes we collect more than the call amount, issue of funds units should be based on lesser of collected amount or call amount
       net_call_amount_cents = (capital_remittance.call_amount_cents - capital_remittance.capital_fee_cents)
@@ -42,14 +55,22 @@ class DefaultUnitAllocationEngine
 
       [fund_unit, msg]
     else
-      msg << "Skipping fund units generation"
-      msg << "Remittance not verified" unless capital_remittance.verified
-      msg << "No collected amount" unless capital_remittance.collected_amount_cents.positive?
-      msg << "No unit prices in call" if capital_call.unit_prices.blank?
-      msg << "No unit type in commitment" if capital_commitment.unit_type.blank?
+      msg = allocate_skip_reasons(capital_remittance)
       Rails.logger.debug msg.join(", ")
       [nil, msg]
     end
+  end
+
+  def allocate_skip_reasons(capital_remittance)
+    msg = []
+    msg << "Skipping fund units generation for #{capital_remittance.folio_id}"
+    msg << "Remittance not verified" unless capital_remittance.verified
+    msg << "No collected amount" unless capital_remittance.collected_amount_cents.positive?
+    msg << "No unit prices in call" if capital_call.unit_prices.blank?
+    msg << "No unit type in commitment" if capital_commitment.unit_type.blank?
+    msg << "No unit price for commitment" if unit_price_cents.blank?
+    msg << "No unit premium for commitment" if unit_premium_cents.blank?
+    msg
   end
 
   def new_fund_unit(capital_remittance, unit_type, quantity, price_cents, premium_cents, reason)
@@ -93,7 +114,7 @@ class DefaultUnitAllocationEngine
       fund_unit.save
       [fund_unit, msg]
     else
-      msg << "Skipping fund units generation"
+      msg << "Skipping fund units generation for #{capital_distribution_payment.folio_id}"
       msg << "Payment not completed" unless capital_distribution_payment.completed
       msg << "No payment amount" unless capital_distribution_payment.amount_cents.positive?
       msg << "No unit prices in distrbution" if capital_distribution.unit_prices.blank?
@@ -119,5 +140,20 @@ class DefaultUnitAllocationEngine
     fund_unit ||= FundUnit.new(entity_id: capital_distribution_payment.entity_id, fund_id: capital_distribution_payment.fund_id, capital_commitment: capital_distribution_payment.capital_commitment, investor_id: capital_distribution_payment.investor_id, unit_type:, owner: capital_distribution_payment)
 
     fund_unit
+  end
+
+  def cleanup(case_name, user_id)
+    if @error_msg.present?
+      msg = "#{case_name} completed, with #{@error_msg.length} errors. Errors will be sent via email"
+      send_notification(msg, user_id, :danger)
+      EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg: @error_msg).doc_gen_errors.deliver_now
+    else
+      msg = "#{case_name} completed"
+      send_notification(msg, user_id, :success)
+    end
+  end
+
+  def send_notification(message, user_id, level = "success")
+    UserAlert.new(user_id:, message:, level:).broadcast if user_id.present? && message.present?
   end
 end
