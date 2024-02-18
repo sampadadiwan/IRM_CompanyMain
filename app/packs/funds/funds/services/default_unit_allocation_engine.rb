@@ -68,6 +68,7 @@ class DefaultUnitAllocationEngine
     msg << "No collected amount" unless capital_remittance.collected_amount_cents.positive?
     msg << "No unit prices in call" if capital_remittance.capital_call.unit_prices.blank?
     msg << "No unit type in commitment" if capital_remittance.capital_commitment.unit_type.blank?
+    unit_type = capital_remittance.capital_commitment.unit_type
     msg << "No unit price for commitment" if capital_remittance.capital_call.unit_prices[unit_type].blank?
     msg
   end
