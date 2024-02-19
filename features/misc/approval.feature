@@ -100,3 +100,19 @@ Scenario Outline: Provide approval response
   	|user	    |entity               |approval                 |msg	|
   	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created|
     |  	        |entity_type=Company  |title=Merger Approval    |Approval was successfully created|
+
+
+
+Scenario Outline: Provide approval response
+  Given there is a user "<user>" for an entity "<entity>"
+  Given there is an existing investor "" with "1" users
+  Given there is an approval "<approval>" for the entity
+  Given the investors are added to the approval 
+  When the approval is approved internally 
+  When I select "<status>" in the approval notification email
+  Then the approval response is "<status>"
+  
+  Examples:
+  	|user	    |entity               |approval                 |msg	| status |
+  	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created| Approved |
+    |  	        |entity_type=Company  |title=Merger Approval    |Approval was successfully created| Rejected |

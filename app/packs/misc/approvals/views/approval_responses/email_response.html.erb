@@ -1,9 +1,17 @@
 <%= render NewCard.new do %>
 
 <div class="card">
+
+  <% if @approval_response %>
   <div class="card-header text-bg-primary">
     <h4 class="mb-0 text-white card-title"><%=@approval_response.approval.title%></h4>
   </div>
+  <% else %>
+  <div class="card-header text-bg-danger">
+    <h4 class="mb-0 text-white card-title"><%="Error"%></h4>
+  </div>
+  <% end %>
+
   <div class="card-body">
     <h3 class="card-title"><%= @msg %></h3>
     <p class="card-text">

@@ -75,7 +75,7 @@ class ApprovalResponsesController < ApplicationController
   def email_response
     if params[:signed_id]
       @approval_response = ApprovalResponse.find_signed(params[:signed_id], purpose: :approval_response)
-      @msg = if @approval_response.id == params[:id].to_i
+      @msg = if @approval_response && @approval_response.id == params[:id].to_i
                if @approval_response.update(status: params[:status])
                  "Successfully registered response: #{params[:status]}."
                else

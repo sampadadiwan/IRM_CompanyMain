@@ -107,6 +107,12 @@
     @approval.approved.should == true
   end
 
+
+  When('the approval is approved internally') do
+    @approval.approved = true
+    ApprovalApprove.wtf?(approval: @approval).success?.should == true
+  end
+
   Then('the investor gets the approval notification') do
     puts "\n#### Emails ###\n"
     puts @approval.pending_investors.collect(&:emails).flatten
@@ -205,4 +211,13 @@ Then('I should see the approval response details for each response') do
     visit(approval_path(@approval))
   
   end
+end
+
+When('I select {string} in the approval notification email') do |status|
+  investor = @approval.approval_responses.last.investor
+  email = investor.emails.last
+  open_email(email)
+  puts "clicking #{status} in current_email = to: #{current_email.to}, subj: #{current_email.subject}"
+  current_email.click_link status
+  ap @approval.approval_responses.last
 end
