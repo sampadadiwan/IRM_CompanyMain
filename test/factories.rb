@@ -1,4 +1,14 @@
 FactoryBot.define do
+  factory :investment_instrument do
+    name { "MyString" }
+    category { "MyString" }
+    sub_category { "MyString" }
+    sector { "MyString" }
+    entity { nil }
+    portfolio_company { nil }
+    deleted_at { "2024-02-19 19:51:47" }
+  end
+
   factory :investor_kpi_mapping do
     entity { nil }
     investor { nil }

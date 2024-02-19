@@ -30,7 +30,7 @@ module CapitalRemittanceCounters
                                    execute_after_commit: true
 
     counter_culture :capital_commitment, column_name: proc { |r| r.verified ? 'folio_collected_amount_cents' : nil },
-                                         delta_column: 'folio_collected_amount_cents',
+                                         delta_column: 'net_folio_collected_amount_cents',
                                          column_names: {
                                            ["capital_remittances.verified = ?", true] => 'folio_collected_amount_cents'
                                          },

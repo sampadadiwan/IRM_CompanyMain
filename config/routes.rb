@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  resources :investment_instruments
   draw :admin
   draw :fund
   draw :secondary

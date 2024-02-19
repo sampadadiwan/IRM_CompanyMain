@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_17_084244) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_19_142147) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1608,6 +1608,21 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_17_084244) do
     t.index ["user_id"], name: "index_interests_on_user_id"
   end
 
+  create_table "investment_instruments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name"
+    t.string "category", limit: 15
+    t.string "sub_category", limit: 100
+    t.string "sector", limit: 100
+    t.bigint "entity_id", null: false
+    t.bigint "portfolio_company_id", null: false
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_investment_instruments_on_deleted_at"
+    t.index ["entity_id"], name: "index_investment_instruments_on_entity_id"
+    t.index ["portfolio_company_id"], name: "index_investment_instruments_on_portfolio_company_id"
+  end
+
   create_table "investment_opportunities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.string "company_name", limit: 100
@@ -2853,6 +2868,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_17_084244) do
   add_foreign_key "interests", "secondary_sales"
   add_foreign_key "interests", "users"
   add_foreign_key "interests", "users", column: "final_agreement_user_id"
+  add_foreign_key "investment_instruments", "entities"
+  add_foreign_key "investment_instruments", "investors", column: "portfolio_company_id"
   add_foreign_key "investment_opportunities", "entities"
   add_foreign_key "investment_opportunities", "folders", column: "document_folder_id"
   add_foreign_key "investment_opportunities", "form_types"
