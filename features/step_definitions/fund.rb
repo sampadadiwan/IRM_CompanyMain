@@ -1523,5 +1523,32 @@ Then('the last remittance should have a arrears amount {string}') do |arrear_amo
   @capital_remittance.reload
   puts @capital_remittance.to_json
   @capital_remittance.arrear_amount_cents.should == arrear_amount_cents.to_i
-  @capital_remittance.net_collected_amount_cents.should == @capital_remittance.collected_amount_cents + @capital_remittance.arrear_amount_cents
+end
+
+
+Then('a reverse remittance payment must be generated for the remittance') do
+  @capital_remittance.reload
+  @reverse_payment = @capital_remittance.capital_remittance_payments.last
+  @reverse_payment.fund_id.should == @capital_remittance.fund_id
+  @reverse_payment.amount_cents.should == -@capital_remittance.arrear_amount_cents
+  @reverse_payment.folio_amount_cents.should == -@capital_remittance.arrear_folio_amount_cents  
+  @reverse_payment.amount_cents.should == -@commitment_adjustment.amount_cents
+  @reverse_payment.folio_amount_cents.should == -@commitment_adjustment.folio_amount_cents
+  @reverse_payment.payment_date.should == @commitment_adjustment.as_of
+end
+
+Then('the collected amounts must be computed properly') do
+  @capital_call.reload
+  @capital_remittance.reload
+  @capital_commitment.reload
+
+  @capital_call.collected_amount_cents.should == @capital_call.capital_remittances.sum(:collected_amount_cents)
+  @capital_commitment.collected_amount_cents.should == @capital_commitment.capital_remittances.sum(:collected_amount_cents)
+  @capital_commitment.folio_collected_amount_cents.should == @capital_commitment.capital_remittances.sum(:folio_collected_amount_cents)
+end
+
+Given('the remittances are verified') do
+  CapitalRemittance.all.each do |cr|
+    CapitalRemittanceVerify.wtf?(capital_remittance: cr)
+  end
 end

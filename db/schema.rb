@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_19_142147) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -651,8 +651,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_19_142147) do
     t.bigint "import_upload_id"
     t.decimal "arrear_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "arrear_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "net_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "net_folio_collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"
     t.index ["capital_commitment_id"], name: "index_capital_remittances_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_capital_remittances_on_deleted_at"

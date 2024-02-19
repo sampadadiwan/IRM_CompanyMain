@@ -150,45 +150,36 @@
 
 
         <% if capital_remittance.has_arrears? %>
-        <tr>
-          <td>
-            Arrear Amount
-          </td>
-          <td>
-            <%= money_to_currency capital_remittance.arrear_amount, params %>
-          </td>
-        </tr>
+          <tr>
+            <td>
+              Arrear Amount
+            </td>
+            <td>
+              <%= money_to_currency capital_remittance.arrear_amount, params %>
+            </td>
+          </tr>
 
-        <% if capital_remittance.collected_amount != capital_remittance.folio_collected_amount %>
-        <tr>
-          <td>
-            Folio Arrear Amount
-          </td>
-          <td>
-            <%= money_to_currency capital_remittance.folio_arrear_amount, params %>
-          </td>
-        </tr>
-        <% end %>
+          <% if capital_remittance.collected_amount != capital_remittance.folio_collected_amount %>
+          <tr>
+            <td>
+              Folio Arrear Amount
+            </td>
+            <td>
+              <%= money_to_currency capital_remittance.folio_arrear_amount, params %>
+            </td>
+          </tr>
+          <% end %>
 
-        <tr>
-          <td>
-            Net Collected Amount
-          </td>
-          <td>
-            <%= money_to_currency capital_remittance.net_collected_amount, params %>
-          </td>
-        </tr>
-
-        <% if capital_remittance.collected_amount != capital_remittance.folio_collected_amount %>
-        <tr>
-          <td>
-            Net Folio Collected Amount
-          </td>
-          <td>
-            <%= money_to_currency capital_remittance.net_folio_collected_amount, params %>
-          </td>
-        </tr>
-        <% end %>
+          <% if capital_remittance.collected_amount != capital_remittance.folio_collected_amount %>
+          <tr>
+            <td>
+              Net Folio Collected Amount
+            </td>
+            <td>
+              <%= money_to_currency capital_remittance.net_folio_collected_amount, params %>
+            </td>
+          </tr>
+          <% end %>
 
         <% end %>
         
