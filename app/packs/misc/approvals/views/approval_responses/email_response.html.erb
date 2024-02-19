@@ -1,0 +1,16 @@
+<%= render NewCard.new do %>
+
+<div class="card">
+  <div class="card-header text-bg-primary">
+    <h4 class="mb-0 text-white card-title">Approval Response: <%=@approval_response.approval.title%></h4>
+  </div>
+  <div class="card-body">
+    <h3 class="card-title">Thank You</h3>
+    <p class="card-text">
+      <%= @msg %>
+    </p>
+    <a href="/" class="btn btn-primary">Sign In</a>
+  </div>
+</div>
+
+<% end %>

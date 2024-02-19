@@ -18,5 +18,6 @@
 <% end %>
 
 <%= render "approval_responses/kyc_in_approval" %>
+<%= render "approval_mailer/response_link" %>
 
 <p class="btn btn-outline-primary"><%= link_to 'View Approval', approval_url(@approval, subdomain: @approval.entity.sub_domain) if  @custom_notification.nil? || @custom_notification&.show_link %></p>

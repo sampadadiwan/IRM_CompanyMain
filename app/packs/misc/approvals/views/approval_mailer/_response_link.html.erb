@@ -1,0 +1,18 @@
+<% colors = ["success", "warning", "danger", "primary", "secondary", "info"].freeze %>
+<div>
+    <p>Click on the any one of the links below to submit your response.</p>
+    <% responses = @approval_response.approval.response_status.split(',') - ["Pending"] %>
+    <% responses.each_with_index do |status, index| %>
+        
+        <% 
+            color = colors[index % colors.length]; index += 1 
+            signed_id = @approval_response.signed_id(expires_in: 7.days, purpose: :approval_response) 
+            subdomain = @approval_response.entity.sub_domain
+        %>
+        <ul>
+            <li>
+                <%= link_to status, email_response_approval_response_url(@approval_response, status:, signed_id:, subdomain:) %>
+            </li>
+        </ul>
+    <% end %>
+</div>

@@ -21,6 +21,7 @@ resources :exchange_rates
 
 resources :approval_responses do
   patch 'approve', on: :member
+  get 'email_response', on: :member
 end
 resources :approvals do
   patch 'approve', on: :member

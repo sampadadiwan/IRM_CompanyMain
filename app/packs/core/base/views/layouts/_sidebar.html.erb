@@ -136,11 +136,13 @@
 
 
 
-            <!-- Divider -->
-            <hr class="sidebar-divider">
+            
 
             <% if current_user &&
                 (current_user.entity.is_fund? || current_user.entity.is_company?) %>
+            
+                <!-- Divider -->
+                <hr class="sidebar-divider">
 
                 <li class="sidebar-item">
                     <a class="sidebar-link has-arrow" href="/tasks" data-bs-toggle="collapse" data-bs-target="#taskMenus">
@@ -171,8 +173,8 @@
             <% end %>
 
 
-
-            <li class="sidebar-item">
+            <% if current_user %>
+                <li class="sidebar-item">
                     <a class="sidebar-link has-arrow" href="/quick_links" data-bs-toggle="collapse" data-bs-target="#quickLinksMenus">
                         <span><i class="ti ti-map-pin"></i></span>
                         <span class="hide-menu">Quick Links</span>
@@ -199,8 +201,8 @@
                             </a>
                         </li>
                     </ul>
-
-            </li>
+                </li>
+            <% end %>
 
         </ul>
         <!-- End of Sidebar -->

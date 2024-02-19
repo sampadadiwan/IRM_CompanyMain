@@ -1,5 +1,7 @@
 class ApprovalResponsesController < ApplicationController
+  before_action :authenticate_user!, except: %w[email_response]
   before_action :set_approval_response, only: %i[show edit update destroy approve]
+  after_action :verify_authorized, except: %i[index search email_response]
 
   # GET /approval_responses or /approval_responses.json
   def index
@@ -67,6 +69,23 @@ class ApprovalResponsesController < ApplicationController
       redirect_to approval_url(@approval_response.approval), notice: "Successfully #{params[:status]}."
     else
       redirect_to approval_url(@approval_response.approval), alert: "Failed to register response: #{@approval_response.errors.messages.values.flatten}"
+    end
+  end
+
+  def email_response
+    if params[:signed_id]
+      @approval_response = ApprovalResponse.find_signed(params[:signed_id], purpose: :approval_response)
+      @msg = if @approval_response.id == params[:id].to_i
+               if @approval_response.update(status: params[:status])
+                 "Successfully registered response: #{params[:status]}."
+               else
+                 "Failed to register response: #{@approval_response.errors.full_messages.join(', ')}"
+               end
+             else
+               "Failed to register response: Invalid link."
+             end
+    else
+      @msg = "Failed to register response: Invalid link."
     end
   end
 
