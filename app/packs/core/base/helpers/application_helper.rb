@@ -78,11 +78,17 @@ module ApplicationHelper
     if cookies[:theme] == "dark"
       { chart: { backgroundColor: "#2a3447" },
         xAxis: {
+          lineColor: "#7c8fac",
+          # gridLineWidth: 0.5,
+          gridLineColor: "#7c8fac",
           labels: { style: {
             color: 'white'
           } }
         },
         yAxis: {
+          # lineColor: "#7c8fac",
+          gridLineWidth: 0.5,
+          gridLineColor: "#7c8fac",
           labels: { style: {
             color: 'white'
           } }

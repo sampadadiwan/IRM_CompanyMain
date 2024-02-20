@@ -61,6 +61,7 @@ class ValuationsController < ApplicationController
   def update
     @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
     @valuation.valuation_cents = valuation_params[:valuation].to_f * 100
+
     respond_to do |format|
       if @valuation.update(valuation_params)
         format.html { redirect_to valuation_url(@valuation), notice: "Valuation was successfully updated." }
@@ -95,7 +96,7 @@ class ValuationsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def valuation_params
-    params.require(:valuation).permit(:entity_id, :valuation_date, :category, :sub_category,
+    params.require(:valuation).permit(:entity_id, :valuation_date, :investment_instrument_id,
                                       :owner_id, :owner_type, :form_type_id, :per_share_value, :report, :valuation, properties: {})
   end
 end

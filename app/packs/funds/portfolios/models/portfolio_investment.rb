@@ -13,10 +13,11 @@ class PortfolioInvestment < ApplicationRecord
   belongs_to :capital_commitment, optional: true
   belongs_to :aggregate_portfolio_investment
   belongs_to :portfolio_company, class_name: "Investor"
+  belongs_to :investment_instrument, dependent: :destroy
   has_many :portfolio_attributions, foreign_key: :sold_pi_id, dependent: :destroy
   has_many :buys_portfolio_attributions, class_name: "PortfolioAttribution", foreign_key: :bought_pi_id, dependent: :destroy
 
-  validates :investment_date, :quantity, :amount_cents, :category, :sub_category, :sector, presence: true
+  validates :investment_date, :quantity, :amount_cents, presence: true
   monetize :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :cost_of_sold_cents, with_currency: ->(i) { i.fund.currency }
 
   counter_culture :aggregate_portfolio_investment, column_name: 'quantity', delta_column: 'quantity'
@@ -29,9 +30,6 @@ class PortfolioInvestment < ApplicationRecord
   validates :capital_commitment_id, presence: true, if: proc { |p| p.commitment_type == "CoInvest" }
   validate :sell_quantity_allowed
   validates :portfolio_company_name, length: { maximum: 100 }
-  validates :category, length: { maximum: 15 }
-  validates :sub_category, :sector, length: { maximum: 100 }
-  validates :investment_domicile, length: { maximum: 10 }
   validates :amount, numericality: { greater_than_or_equal_to: 0 }
 
   SECTORS = ENV["SECTORS"].split(",").sort
@@ -53,17 +51,19 @@ class PortfolioInvestment < ApplicationRecord
   }
 
   scope :buys, -> { where("portfolio_investments.quantity > 0") }
-  scope :allocatable_buys, lambda { |portfolio_company_id, category, _sub_category|
-    where("portfolio_company_id=? and category = ? and portfolio_investments.quantity > 0 and net_quantity > 0", portfolio_company_id, category).order(investment_date: :asc)
+  scope :allocatable_buys, lambda { |portfolio_company_id, investment_instrument_id|
+    where("portfolio_company_id=? and investment_instrument_id = ? and portfolio_investments.quantity > 0 and net_quantity > 0", portfolio_company_id, investment_instrument_id).order(investment_date: :asc)
   }
   scope :sells, -> { where("portfolio_investments.quantity < 0") }
 
   # before_validation :setup_aggregate
   def setup_aggregate
     if aggregate_portfolio_investment_id.blank?
-      self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, investment_type:, commitment_type:, investment_domicile:)
+      self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, commitment_type:, investment_instrument_id:)
 
-      aggregate_portfolio_investment.save
+      ret_val = aggregate_portfolio_investment.save
+      logger.error "Error in setting up aggregate portfolio investment #{aggregate_portfolio_investment.errors.full_messages}" unless ret_val
+      ret_val
     else
       true
     end
@@ -89,10 +89,6 @@ class PortfolioInvestment < ApplicationRecord
     AttributionService.new(self).setup_attribution
   end
 
-  def investment_type
-    "#{category} : #{sub_category}"
-  end
-
   def cost_cents
     quantity.positive? ? (amount_cents / quantity).abs : 0
   end
@@ -102,7 +98,7 @@ class PortfolioInvestment < ApplicationRecord
   end
 
   def to_s
-    "#{portfolio_company_name} #{category} : #{sub_category} #{buy_sell} #{investment_date}"
+    "#{portfolio_company_name} #{investment_instrument} #{buy_sell} #{investment_date}"
   end
 
   def folder_path

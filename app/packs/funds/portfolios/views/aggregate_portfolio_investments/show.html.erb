@@ -35,10 +35,10 @@
 
       <tr>
         <td>
-          Investment Type
+          Instrument
         </td>
         <td>
-          <%= @aggregate_portfolio_investment.investment_type %>
+          <%= link_to @aggregate_portfolio_investment.investment_instrument %>
         </td>
       </tr>
 
@@ -152,7 +152,7 @@
 <div class="associated_entity">
   <%= button_to "Delete", @aggregate_portfolio_investment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all buy and sell transactions associated with this aggregate portfolio entry?"} if policy(@aggregate_portfolio_investment).destroy? %> 
 
-  <%= link_to "Add Valuation", new_valuation_path("valuation[owner_id]": @aggregate_portfolio_investment.portfolio_company_id, "valuation[owner_type]": "Investor", "valuation[category]": @aggregate_portfolio_investment.category, "valuation[sub_category]": @aggregate_portfolio_investment.sub_category), {class: "btn btn-outline-success"}%>
+  <%= link_to "Add Valuation", new_valuation_path("valuation[owner_id]": @aggregate_portfolio_investment.portfolio_company_id, "valuation[owner_type]": "Investor",  "investment_instrument_name": @aggregate_portfolio_investment.investment_instrument.name), {class: "btn btn-outline-success"}%>
 
 </div>
 

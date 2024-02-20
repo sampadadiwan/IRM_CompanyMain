@@ -7,11 +7,10 @@ class ScenarioInvestment < ApplicationRecord
   belongs_to :portfolio_scenario
   belongs_to :user
   belongs_to :portfolio_company, class_name: 'Investor'
+  belongs_to :investment_instrument, dependent: :destroy
 
   validates :transaction_date, presence: true
   validates :price_cents, presence: true, numericality: { greater_than: 0 }
-  validates :category, length: { maximum: 15 }
-  validates :sub_category, length: { maximum: 100 }
 
   monetize :price_cents, with_currency: ->(i) { i.fund.currency }
 
@@ -19,7 +18,7 @@ class ScenarioInvestment < ApplicationRecord
   scope :sells, -> { where("scenario_investments.quantity < 0") }
 
   def to_portfolio_investment
-    pi = PortfolioInvestment.new(fund_id:, portfolio_company_id:, portfolio_company_name: portfolio_company.investor_name, investment_date: transaction_date, quantity:, amount_cents:, category:, sub_category:, created_at: transaction_date, commitment_type: "Pool")
+    pi = PortfolioInvestment.new(fund_id:, portfolio_company_id:, portfolio_company_name: portfolio_company.investor_name, investment_date: transaction_date, quantity:, amount_cents:, investment_instrument_id:, created_at: transaction_date, commitment_type: "Pool")
     pi.compute_fmv
     pi.readonly!
     pi

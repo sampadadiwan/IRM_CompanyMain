@@ -44,7 +44,7 @@ include CurrencyHelper
 
   Given('there are {string} portfolio investments {string}') do |count, args|
     (1..count.to_i).each do |i|
-      pi = FactoryBot.build(:portfolio_investment, entity: @entity, fund: @fund)
+      pi = FactoryBot.build(:portfolio_investment, entity: @entity, fund: @fund, investment_instrument: @investment_instrument)
       key_values(pi, args)
       PortfolioInvestmentCreate.wtf?(portfolio_investment: pi).success?.should == true
       puts "\n#########PortfolioInvestment##########\n"
@@ -81,10 +81,17 @@ include CurrencyHelper
 
 Given('there is a valuation {string} for the portfolio company') do |args|
   @portfolio_company = @entity.investors.portfolio_companies.last
-
-  @valuation = FactoryBot.build(:valuation, entity: @entity, owner: @portfolio_company)
+  @valuation = FactoryBot.build(:valuation, entity: @entity, owner: @portfolio_company, investment_instrument: @investment_instrument)
   key_values(@valuation, args)
   @valuation.save!
+end
+
+Given('the portfolio companies have investment instruments {string}') do |args|
+  @entity.investors.portfolio_companies.each do |pc|
+    @investment_instrument = FactoryBot.build(:investment_instrument, entity: @entity, portfolio_company: pc)
+    key_values(@investment_instrument, args)
+    @investment_instrument.save!
+  end
 end
 
 Then('the fmv must be calculated for the portfolio') do  
@@ -116,10 +123,11 @@ Then('the portfolio investments must have the data in the sheet') do
     pi.fund.name.should == user_data["Fund"]
     pi.amount_cents.should == user_data["Amount"].to_d * 100
     pi.quantity.should == user_data["Quantity"].to_d
-    pi.category.should == user_data["Category"]
-    pi.sub_category.should == user_data["Sub Category"]
-    pi.startup.should == (user_data["Startup"] == "Yes")
-    pi.investment_domicile.should == user_data["Investment Domicile"]
+    pi.investment_instrument.name.should == user_data["Instrument"]
+    pi.investment_instrument.category.should == user_data["Category"]
+    pi.investment_instrument.sub_category.should == user_data["Sub Category"]
+    pi.investment_instrument.startup.should == (user_data["Startup"] == "Yes")
+    pi.investment_instrument.investment_domicile.should == user_data["Investment Domicile"]
     pi.notes.should == user_data["Notes"]
     pi.commitment_type.should == user_data["Type"]
     if pi.commitment_type == "CoInvest"
@@ -161,8 +169,7 @@ Then('the valuations must have the data in the sheet') do
     user_data = [headers, row].transpose.to_h
     val = valuations[idx-1]
     puts "Checking import of #{val.owner.investor_name}"
-    val.category.should == user_data["Category"].strip
-    val.sub_category.should == user_data["Sub Category"].strip
+    val.investment_instrument.name.should == user_data["Instrument"].strip
     val.valuation_date.should == Date.parse(user_data["Valuation Date"].to_s)   
     val.valuation_cents.should == user_data["Valuation"].to_d * 100
     val.per_share_value_cents.should == user_data["Per Share Value"].to_d * 100
@@ -200,7 +207,7 @@ Given('I create a new stock adjustment {string}') do |args|
   @orig_portfolio_investments = PortfolioInvestment.includes(portfolio_company: :valuations).all.to_a
   @orig_portfolio_attributions = PortfolioAttribution.all.to_a
   
-  @stock_adjustment = StockAdjustment.new(portfolio_company: @investor, entity_id: @investor.entity_id, user_id: User.first.id)
+  @stock_adjustment = StockAdjustment.new(portfolio_company: @investor, entity_id: @investor.entity_id, user_id: User.first.id, investment_instrument: @investment_instrument)
   key_values(@stock_adjustment, args)
   @stock_adjustment.save!
   sleep(2)
@@ -248,4 +255,11 @@ Given('Given I upload an the portfolio companies') do
   click_on("Save")
   sleep(4)
   ImportUploadJob.perform_now(ImportUpload.last.id)
+end
+
+
+Given('there is an investment instrument for the portfolio company {string}') do |string|
+  @investment_instrument = FactoryBot.build(:investment_instrument, entity: @entity, portfolio_company: @portfolio_company)
+  key_values(@investment_instrument, string)
+  @investment_instrument.save!
 end

@@ -6,7 +6,8 @@ Scenario Outline: Create new portfolio investment
   Given the user has role "company_admin"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company" 
   Given there is a fund "<fund>" for the entity
-  When I create a new portfolio investment "portfolio_company_name=MyFavStartup;amount_cents=1000000;quantity=200;category=Unlisted"
+  Given there is an investment instrument for the portfolio company "name=XYZ;category=Unlisted;sub_category=Equity;sector=Tech"
+  When I create a new portfolio investment "portfolio_company_name=MyFavStartup;amount_cents=1000000;quantity=200;category=Unlisted;"
   Then a portfolio investment should be created
   Then I should see the portfolio investment details on the details page  
 
@@ -20,6 +21,7 @@ Scenario Outline: Create new PI and aggregate PI
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company" 
+  Given there is an investment instrument for the portfolio company "name=XYZ;category=Unlisted;sub_category=Equity;sector=Tech"
   Given there is a fund "<fund>" for the entity
   Given there are "3" portfolio investments "quantity=200;category=Unlisted"
   Given there are "3" portfolio investments "quantity=-100;category=Unlisted"
@@ -36,8 +38,9 @@ Scenario Outline: Create valuation and FMV
   Given there is a user "" for an entity "<entity>"
   # Given the user has role "company_admin"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company" 
+  Given there is an investment instrument for the portfolio company "name=XYZ;category=Unlisted;sub_category=Equity;sector=Tech"
   Given there is a fund "<fund>" for the entity
-  Given there is a valuation "per_share_value_cents=10000;category=Unlisted;sub_category=Equity;valuation_date=01/01/2022" for the portfolio company 
+  Given there is a valuation "per_share_value_cents=10000;valuation_date=01/01/2022" for the portfolio company 
   Given there are "3" portfolio investments "quantity=200;category=Unlisted"
   Given there is a valuation "per_share_value_cents=12000;category=Unlisted;sub_category=Equity;valuation_date=01/01/2023" for the portfolio company 
   Given there are "3" portfolio investments "quantity=-100;category=Unlisted"
@@ -83,6 +86,7 @@ Scenario Outline: Import portfolio valuations
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   And Given I upload an the portfolio companies
+  And the portfolio companies have investment instruments "name=Common Stock;category=Unlisted;sub_category=Equity;sector=Tech"
   And Given I upload "valuations.xlsx" file for portfolio companies of the fund
   Then I should see the "Import in progress"
   Then There should be "4" valuations created
@@ -91,19 +95,20 @@ Scenario Outline: Import portfolio valuations
 Scenario Outline: FIFO
   Given there is a user "" for an entity "entity_type=Investment Fund;"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company" 
+  Given there is an investment instrument for the portfolio company "name=Common Stock;category=Unlisted;sub_category=Equity;sector=Tech"
   Given there is a fund "name=Test fund" for the entity
-  Given there is a valuation "per_share_value_cents=10000;category=Unlisted;sub_category=Equity;valuation_date=01/01/2022" for the portfolio company 
-  Given there are "3" portfolio investments "quantity=200;category=Unlisted"
+  Given there is a valuation "per_share_value_cents=10000;valuation_date=01/01/2022" for the portfolio company 
+  Given there are "3" portfolio investments "quantity=200"
   Given there are "1" portfolio investments "<sell>"
   Then there must be "<attribution_count>" portfolio attributions created
 
   Examples:
-    |sell                                        |attribution_count                |
-    |quantity=-200;category=Unlisted;       |1       |
-    |quantity=-300;category=Unlisted;       |2       |
-    |quantity=-400;category=Unlisted;       |2       |
-    |quantity=-500;category=Unlisted;       |3       |
-    |quantity=-600;category=Unlisted;       |3       |
+    |sell                |attribution_count                |
+    |quantity=-200       |1       |
+    |quantity=-300       |2       |
+    |quantity=-400       |2       |
+    |quantity=-500       |3       |
+    |quantity=-600       |3       |
 
 
 
@@ -112,7 +117,8 @@ Scenario Outline: Stock Adjustment
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund;currency=INR" for the entity
   Given there is an existing portfolio company "name=Apple;primary_email=tc@apple.com;category=Portfolio Company" 
-  Given there is a valuation "per_share_value_cents=10000;category=Unlisted;sub_category=Equity" for the portfolio company
+  Given there is an investment instrument for the portfolio company "name=Stock;category=Unlisted;sub_category=Equity;sector=Tech;investment_domicile=Domestic;startup=true"
+  Given there is a valuation "per_share_value_cents=10000" for the portfolio company
   And Given I upload "portfolio_investments2.xlsx" file for "Portfolio" of the fund
   Then I should see the "Import in progress"
   Then There should be "2" portfolio investments created

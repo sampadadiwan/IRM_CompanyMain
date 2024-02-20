@@ -5,6 +5,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   belongs_to :entity
   belongs_to :fund
   belongs_to :portfolio_company, class_name: "Investor"
+  belongs_to :investment_instrument, dependent: :destroy
   has_many :portfolio_investments, dependent: :destroy
   has_many :portfolio_cashflows, dependent: :destroy
 
@@ -52,8 +53,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     api.cost_of_sold_cents = pis.sells.sum(:cost_of_sold_cents)
 
     # FMV is complicated, as the latest fmv is stored, so we need to recompute the fmv as of end_date
-    category, sub_category = investment_type.split(" : ")
-    valuation = api.portfolio_company.valuations.where(valuation_date: ..end_date, category:, sub_category:).order(valuation_date: :asc).last
+    valuation = api.portfolio_company.valuations.where(valuation_date: ..end_date, portfolio_investment_id:).order(valuation_date: :asc).last
     api.fmv_cents = valuation ? api.quantity * valuation.per_share_value_cents : 0
     api.freeze
   end
@@ -103,15 +103,8 @@ class AggregatePortfolioInvestment < ApplicationRecord
   # This will trigger a stock split for all portfolio_investments
   def split(stock_split_ratio)
     portfolio_investments.each do |pi|
+      logger.info "Stock split #{stock_split_ratio} for #{pi}"
       pi.split(stock_split_ratio)
     end
-  end
-
-  def category
-    investment_type.split(" : ").first
-  end
-
-  def sub_category
-    investment_type.split(" : ").last
   end
 end

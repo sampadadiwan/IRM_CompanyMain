@@ -32,38 +32,33 @@
         <%= form.date_field :transaction_date, class: "form-control"  %>
       </div>
 
-      <div class="form-group col">
-        <%= form.label :portfolio_company_id %>
-        <%= form.select :portfolio_company_id, scenario_investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control"  %>
+      <div data-controller="select" 
+        data-select-url-value="<%= investment_instruments_path %>"   
+        data-select-param-value="portfolio_company_id">
 
-        <small class="text-muted">
-          Create <%= link_to "New Portfolio Company", 
-            new_investor_path("investor[entity_id]": scenario_investment.entity_id, "investor[category]": "Portfolio Company",
-                "back_to": new_scenario_investment_path("scenario_investment[fund_id]": scenario_investment.fund_id,
-                "scenario_investment[entity_id]": scenario_investment.entity_id)) %>
-        </small>
+        <div class="form-group col">
+          <%= form.label :portfolio_company_id %>
+          <%= form.select :portfolio_company_id, scenario_investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control"  %>
+
+          <small class="text-muted">
+            Create <%= link_to "New Portfolio Company", 
+              new_investor_path("investor[entity_id]": scenario_investment.entity_id, "investor[category]": "Portfolio Company",
+                  "back_to": new_scenario_investment_path("scenario_investment[fund_id]": scenario_investment.fund_id,
+                  "scenario_investment[entity_id]": scenario_investment.entity_id)) %>
+          </small>
+        </div>
+
+      </div>
+
+      
+      <% investment_instruments = scenario_investment.new_record? ? [] : scenario_investment.portfolio_company.investment_instruments %>
+      <div class="form-group">
+        <%= form.label :investment_instrument_id, "Instrument" %>
+        <%= form.select :investment_instrument_id, investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control", data: { select_target: "select" }  %>
       </div>
 
     </div>
 
-    
-    <div class="row" data-controller="select" data-select-url-value="<%= sub_categories_portfolio_investments_path %>" data-select-param-value="category">
-
-      <div class="form-group col">
-        <%= form.label :category %>
-        <%= form.select :category, PortfolioInvestment::CATEGORIES.keys.sort, {include_blank: true}, class: 'form-control',
-            "data-action": "change->select#change" %>
-        <small class="text-muted">Select the category (For SEBI Reports)</small>
-      </div>
-
-      <div class="form-group col">
-        <% sub_categories = @scenario_investment.category.present? ? PortfolioInvestment::CATEGORIES[@scenario_investment.category] : ""  %>
-        <%= form.label :sub_category %>
-        <%= form.select :sub_category, sub_categories, {include_blank: true}, class: 'form-control', data: { select_target: "select" } %>
-        <small class="text-muted">Select the sub category (For SEBI Reports)</small>
-      </div>
-
-    </div>
 
     <div class="row">
       <div class="form-group col" data-controller="currencyformat">

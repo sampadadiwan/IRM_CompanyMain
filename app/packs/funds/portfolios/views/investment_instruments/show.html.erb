@@ -1,71 +1,60 @@
-<%= render "/layouts/alerts" %>
-
+<%= render FormCard.new(title: "Investment Instrument : #{@investment_instrument.name}") do %>
 <table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Name
+    </td>
+    <td>
+      <%= @investment_instrument.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Category
+    </td>
+    <td>
+      <%= @investment_instrument.category %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Sub Category
+    </td>
+    <td>
+      <%= @investment_instrument.sub_category %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Sector
+    </td>
+    <td>
+      <%= @investment_instrument.sector %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= @investment_instrument.entity.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Portfolio Company
+    </td>
+    <td>
+      <%= link_to @investment_instrument.portfolio_company %>
+    </td>
+  </tr>
 
-          <tr>
-        <td>
-          Name
-        </td>
-        <td>
-          <%= @investment_instrument.name %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Category
-        </td>
-        <td>
-          <%= @investment_instrument.category %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Sub Category
-        </td>
-        <td>
-          <%= @investment_instrument.sub_category %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Sector
-        </td>
-        <td>
-          <%= @investment_instrument.sector %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Entity
-        </td>
-        <td>
-          <%= @investment_instrument.entity_id %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Portfolio Company
-        </td>
-        <td>
-          <%= @investment_instrument.portfolio_company_id %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Deleted At
-        </td>
-        <td>
-          <%= @investment_instrument.deleted_at %>
-        </td>    
-      </tr>
-    
-  
 </table>
-
-
-<div>
-  <%= link_to "Edit", edit_investment_instrument_path(@investment_instrument), {class: "btn btn-outline-primary"} %> |
-  <%= link_to "Back", :back, {class: "btn btn-outline-primary"} %> |
-
-  <%= button_to "Delete", @investment_instrument, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+<div class="associated_entity">
+  <% if policy(@investment_instrument).edit? %>
+    <%= link_to "Edit", edit_investment_instrument_path(@investment_instrument), {class: "btn btn-outline-primary"} %> 
+    <%= button_to "Delete", @investment_instrument, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <% end %>
 </div>
+
+<% end %>

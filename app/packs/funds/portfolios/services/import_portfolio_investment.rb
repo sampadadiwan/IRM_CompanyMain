@@ -2,7 +2,7 @@ class ImportPortfolioInvestment < ImportUtil
   include Interactor
 
   STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount",
-                      "Quantity",	"Category", "Sub Category", "Sector", "Startup", "Investment Domicile", "Notes", "Type", "Folio No"].freeze
+                      "Quantity",	"Instrument", "Category", "Sub Category", "Sector", "Startup", "Investment Domicile", "Notes", "Type", "Folio No"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -16,20 +16,23 @@ class ImportPortfolioInvestment < ImportUtil
   end
 
   def save_portfolio_investment(user_data, import_upload, custom_field_headers)
-    portfolio_company_name, investment_date, amount_cents, quantity, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, capital_commitment = inputs(user_data, import_upload)
+    portfolio_company_name, investment_date, amount_cents, quantity, instrument, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, capital_commitment = inputs(user_data, import_upload)
+
+    portfolio_company = import_upload.entity.investors.portfolio_companies.where(investor_name: portfolio_company_name).first
+
+    raise "Portfolio Company not found" if portfolio_company.nil?
+
+    investment_instrument = portfolio_company.investment_instruments.find_or_initialize_by(name: instrument, category:, sub_category:, sector:, startup:, investment_domicile:, entity_id: import_upload.entity_id)
+
+    investment_instrument.save! if investment_instrument.new_record?
 
     portfolio_investment = PortfolioInvestment.find_or_initialize_by(
-      portfolio_company_name:, investment_date:, category:, sub_category:, amount_cents:, quantity:, sector:, startup:, capital_commitment:, commitment_type:, investment_domicile:, fund:, entity_id: fund.entity_id
+      portfolio_company_name:, investment_date:, amount_cents:, quantity:, investment_instrument:, capital_commitment:, commitment_type:, fund:, entity_id: fund.entity_id
     )
 
     if portfolio_investment.new_record?
 
       Rails.logger.debug user_data
-
-      # Setup the portfolio_company if required
-      pcs = fund.entity.investors.portfolio_companies
-      portfolio_company = pcs.where(investor_name: portfolio_company_name, category: "Portfolio Company").first
-      raise "PortfolioCompany #{portfolio_company_name} not found" if portfolio_company.nil?
 
       # Save the PortfolioInvestment
       setup_custom_fields(user_data, portfolio_investment, custom_field_headers)
@@ -53,6 +56,7 @@ class ImportPortfolioInvestment < ImportUtil
     investment_date = user_data["Investment Date"]
     amount_cents = user_data["Amount"].to_d * 100
     quantity = user_data["Quantity"].to_d
+    instrument = user_data["Instrument"]
     category = user_data["Category"]
     sub_category = user_data["Sub Category"]
     sector = user_data["Sector"]
@@ -63,7 +67,7 @@ class ImportPortfolioInvestment < ImportUtil
     folio_id = user_data["Folio No"].presence
     capital_commitment = commitment_type == "CoInvest" ? fund.capital_commitments.where(folio_id:).first : nil
 
-    [portfolio_company_name, investment_date, amount_cents, quantity, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, capital_commitment]
+    [portfolio_company_name, investment_date, amount_cents, quantity, instrument, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, capital_commitment]
   end
 
   def process_row(headers, custom_field_headers, row, import_upload, _context)

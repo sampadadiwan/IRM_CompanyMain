@@ -1,7 +1,7 @@
 class ImportValuation < ImportUtil
   include Interactor
 
-  STANDARD_HEADERS = ["Category", "Sub Category", "Valuation Date", "Valuation", "Per Share Value", "Portfolio Company"].freeze
+  STANDARD_HEADERS = ["Instrument", "Valuation Date", "Valuation", "Per Share Value", "Portfolio Company"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -15,15 +15,17 @@ class ImportValuation < ImportUtil
     valuation_cents = user_data['Valuation'].to_d * 100
     per_share_value_cents = user_data['Per Share Value'].to_d * 100
     investor_name = user_data['Portfolio Company']
-    category = user_data['Category']
-    sub_category = user_data['Sub Category']
+    instrument_name = user_data['Instrument']
     entity = import_upload.entity
 
     investor = entity.investors.where(investor_name:, category: "Portfolio Company").first
     raise "Investor #{investor_name} not found" if investor.nil?
 
+    investment_instrument = investor.investment_instruments.where(name: instrument_name).first
+    raise "Investment Instrument #{instrument_name} not found" if investment_instrument.nil?
+
     valuation = investor.valuations.find_or_initialize_by(entity_id: investor.entity_id,
-                                                          valuation_date:, per_share_value_cents:, category:, sub_category:, valuation_cents:)
+                                                          valuation_date:, per_share_value_cents:, investment_instrument:, valuation_cents:)
 
     if valuation.new_record?
       Rails.logger.debug user_data

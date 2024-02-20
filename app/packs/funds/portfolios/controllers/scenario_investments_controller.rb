@@ -81,6 +81,6 @@ class ScenarioInvestmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def scenario_investment_params
-    params.require(:scenario_investment).permit(:entity_id, :fund_id, :portfolio_scenario_id, :user_id, :transaction_date, :portfolio_company_id, :price, :quantity, :notes, :category, :sub_category)
+    params.require(:scenario_investment).permit(:entity_id, :fund_id, :portfolio_scenario_id, :user_id, :transaction_date, :portfolio_company_id, :price, :quantity, :notes, :investment_instrument_id)
   end
 end

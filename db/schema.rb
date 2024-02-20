@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_20_165150) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -238,9 +238,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
     t.string "commitment_type", limit: 10, default: "Pool"
     t.string "investment_domicile", limit: 10
     t.datetime "deleted_at"
+    t.bigint "investment_instrument_id"
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
+    t.index ["investment_instrument_id"], name: "idx_on_investment_instrument_id_9bc45b0212"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
   end
 
@@ -1616,6 +1618,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
     t.datetime "deleted_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "investment_domicile", limit: 15
+    t.boolean "startup", default: false
     t.index ["deleted_at"], name: "index_investment_instruments_on_deleted_at"
     t.index ["entity_id"], name: "index_investment_instruments_on_entity_id"
     t.index ["portfolio_company_id"], name: "index_investment_instruments_on_portfolio_company_id"
@@ -2246,6 +2250,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
     t.datetime "deleted_at"
     t.json "json_fields"
     t.bigint "import_upload_id"
+    t.bigint "investment_instrument_id"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_portfolio_investments_on_deleted_at"
@@ -2253,6 +2258,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
     t.index ["entity_id"], name: "index_portfolio_investments_on_entity_id"
     t.index ["form_type_id"], name: "index_portfolio_investments_on_form_type_id"
     t.index ["fund_id"], name: "index_portfolio_investments_on_fund_id"
+    t.index ["investment_instrument_id"], name: "index_portfolio_investments_on_investment_instrument_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_investments_on_portfolio_company_id"
   end
 
@@ -2346,8 +2352,10 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "investment_instrument_id"
     t.index ["entity_id"], name: "index_scenario_investments_on_entity_id"
     t.index ["fund_id"], name: "index_scenario_investments_on_fund_id"
+    t.index ["investment_instrument_id"], name: "index_scenario_investments_on_investment_instrument_id"
     t.index ["portfolio_company_id"], name: "index_scenario_investments_on_portfolio_company_id"
     t.index ["portfolio_scenario_id"], name: "index_scenario_investments_on_portfolio_scenario_id"
     t.index ["user_id"], name: "index_scenario_investments_on_user_id"
@@ -2494,7 +2502,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
     t.datetime "updated_at", null: false
     t.string "category", limit: 10
     t.string "sub_category", limit: 100
+    t.bigint "investment_instrument_id"
     t.index ["entity_id"], name: "index_stock_adjustments_on_entity_id"
+    t.index ["investment_instrument_id"], name: "index_stock_adjustments_on_investment_instrument_id"
     t.index ["portfolio_company_id"], name: "index_stock_adjustments_on_portfolio_company_id"
     t.index ["user_id"], name: "index_stock_adjustments_on_user_id"
   end
@@ -2639,9 +2649,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
     t.string "sub_category", limit: 100
     t.json "json_fields"
     t.bigint "import_upload_id"
+    t.bigint "investment_instrument_id"
     t.index ["deleted_at"], name: "index_valuations_on_deleted_at"
     t.index ["entity_id"], name: "index_valuations_on_entity_id"
     t.index ["form_type_id"], name: "index_valuations_on_form_type_id"
+    t.index ["investment_instrument_id"], name: "index_valuations_on_investment_instrument_id"
     t.index ["owner_type", "owner_id"], name: "index_valuations_on_owner"
   end
 
@@ -2711,6 +2723,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
   add_foreign_key "aggregate_investments", "investors"
   add_foreign_key "aggregate_portfolio_investments", "entities"
   add_foreign_key "aggregate_portfolio_investments", "funds"
+  add_foreign_key "aggregate_portfolio_investments", "investment_instruments"
   add_foreign_key "aggregate_portfolio_investments", "investors", column: "portfolio_company_id"
   add_foreign_key "allocation_runs", "entities"
   add_foreign_key "allocation_runs", "funds"
@@ -2944,6 +2957,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
   add_foreign_key "portfolio_investments", "folders", column: "document_folder_id"
   add_foreign_key "portfolio_investments", "form_types"
   add_foreign_key "portfolio_investments", "funds"
+  add_foreign_key "portfolio_investments", "investment_instruments"
   add_foreign_key "portfolio_investments", "investors", column: "portfolio_company_id"
   add_foreign_key "portfolio_scenarios", "entities"
   add_foreign_key "portfolio_scenarios", "funds"
@@ -2955,6 +2969,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
   add_foreign_key "reports", "users"
   add_foreign_key "scenario_investments", "entities"
   add_foreign_key "scenario_investments", "funds"
+  add_foreign_key "scenario_investments", "investment_instruments"
   add_foreign_key "scenario_investments", "investors", column: "portfolio_company_id"
   add_foreign_key "scenario_investments", "portfolio_scenarios"
   add_foreign_key "scenario_investments", "users"
@@ -2975,6 +2990,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
   add_foreign_key "signature_workflows", "entities"
   add_foreign_key "stamp_papers", "entities"
   add_foreign_key "stock_adjustments", "entities"
+  add_foreign_key "stock_adjustments", "investment_instruments"
   add_foreign_key "stock_adjustments", "investors", column: "portfolio_company_id"
   add_foreign_key "stock_adjustments", "users"
   add_foreign_key "taggings", "tags"
@@ -2986,6 +3002,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_19_154921) do
   add_foreign_key "users", "form_types"
   add_foreign_key "valuations", "entities"
   add_foreign_key "valuations", "form_types"
+  add_foreign_key "valuations", "investment_instruments"
   add_foreign_key "vesting_schedules", "entities"
   add_foreign_key "vesting_schedules", "option_pools"
   add_foreign_key "video_kycs", "entities"

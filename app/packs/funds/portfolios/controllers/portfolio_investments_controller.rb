@@ -23,11 +23,7 @@ class PortfolioInvestmentsController < ApplicationController
 
     if @portfolio_investment.portfolio_company
       last_pi = PortfolioInvestment.where(entity_id: @portfolio_investment.entity_id, portfolio_company_id: @portfolio_investment.portfolio_company_id).last
-      @portfolio_investment.category = last_pi.category
-      @portfolio_investment.sub_category = last_pi.sub_category
-      @portfolio_investment.sector = last_pi.sector
-      @portfolio_investment.startup = last_pi.startup
-      @portfolio_investment.investment_domicile = last_pi.investment_domicile
+      @portfolio_investment.investment_instrument = last_pi.investment_instrument
     end
 
     setup_custom_fields(@portfolio_investment)
@@ -44,7 +40,7 @@ class PortfolioInvestmentsController < ApplicationController
     authorize @portfolio_investment
 
     respond_to do |format|
-      if PortfolioInvestmentCreate.call(portfolio_investment: @portfolio_investment).success?
+      if PortfolioInvestmentCreate.wtf?(portfolio_investment: @portfolio_investment).success?
         format.html { redirect_to portfolio_investment_url(@portfolio_investment), notice: "Portfolio investment was successfully created." }
         format.json { render :show, status: :created, location: @portfolio_investment }
       else
@@ -78,10 +74,6 @@ class PortfolioInvestmentsController < ApplicationController
     end
   end
 
-  def sub_categories
-    @sub_categories = PortfolioInvestment::CATEGORIES[params[:category]]
-  end
-
   private
 
   # Use callbacks to share common setup or constraints between actions.
@@ -99,7 +91,6 @@ class PortfolioInvestmentsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def portfolio_investment_params
     params.require(:portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :investment_date,
-                                                 :amount, :quantity, :investment_type, :notes, :form_type_id, :category, :sub_category, :sector, :startup, :investment_domicile,
-                                                 :commitment_type, :capital_commitment_id, :folio_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+                                                 :amount, :quantity, :investment_type, :notes, :form_type_id, :investment_instrument_id, :commitment_type, :capital_commitment_id, :folio_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

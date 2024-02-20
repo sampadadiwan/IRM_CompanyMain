@@ -1,0 +1,3 @@
+<%= turbo_stream.update params[:target] do %>
+  <%= options_for_select @investment_instruments.order(name: :asc).map{|i| [i.name, i.id]} %>
+<% end %>

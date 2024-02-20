@@ -7,7 +7,7 @@ class StockAdjustmentJob < ApplicationJob
     @portfolio_company = @stock_adjustment.portfolio_company
     @entity = @portfolio_company.entity
 
-    Rails.logger.info("StockAdjustmentJob: #{@portfolio_company.investor_name} #{@stock_adjustment.category}:#{@stock_adjustment.sub_category} by #{@stock_adjustment.adjustment}")
+    Rails.logger.info("StockAdjustmentJob: #{@portfolio_company.investor_name} #{@stock_adjustment.investment_instrument} by #{@stock_adjustment.adjustment}")
 
     count = valuations.update_all("per_share_value_cents = (per_share_value_cents / #{@stock_adjustment.adjustment})")
     Rails.logger.info("StockAdjustmentJob: Adjusting #{count} valuations")
@@ -19,10 +19,10 @@ class StockAdjustmentJob < ApplicationJob
   end
 
   def aggregate_portfolio_investments
-    @entity.aggregate_portfolio_investments.where(portfolio_company_id: @portfolio_company.id, investment_type: @stock_adjustment.investment_type)
+    @entity.aggregate_portfolio_investments.where(portfolio_company_id: @portfolio_company.id, investment_instrument: @stock_adjustment.investment_instrument)
   end
 
   def valuations
-    @portfolio_company.valuations.where(owner: @portfolio_company, category: @stock_adjustment.category, sub_category: @stock_adjustment.sub_category)
+    @portfolio_company.valuations.where(owner: @portfolio_company, investment_instrument: @stock_adjustment.investment_instrument)
   end
 end

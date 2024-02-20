@@ -8,13 +8,13 @@ class InvestmentInstrumentPolicy < ApplicationPolicy
   end
 
   def show?
-    user.entity.permissions.enable_fund_portfolios? &&
-      permissioned_employee?
+    (user.entity.permissions.enable_fund_portfolios? &&
+    belongs_to_entity?(user, record)) || super_user?
   end
 
   def create?
     user.entity.permissions.enable_fund_portfolios? &&
-      permissioned_employee?
+      belongs_to_entity?(user, record)
   end
 
   def new?
@@ -22,7 +22,7 @@ class InvestmentInstrumentPolicy < ApplicationPolicy
   end
 
   def update?
-    permissioned_employee?(:update)
+    create? || super_user?
   end
 
   def edit?
@@ -30,6 +30,6 @@ class InvestmentInstrumentPolicy < ApplicationPolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy)
+    update?
   end
 end

@@ -23,25 +23,17 @@
         <%= link_to @valuation.owner&.investor_name, @valuation.owner %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Instrument
+      </td>
+      <td>
+        <%= link_to @valuation.investment_instrument %>
+      </td>
+    </tr>
+
   <% end %>
-  <tr>
-    <td>
-      Category
-    </td>
-    <td>
-      <%= @valuation.category %>
-    </td>
-  </tr>
-
-
-  <tr>
-    <td>
-      Sub Category
-    </td>
-    <td>
-      <%= @valuation.sub_category %>
-    </td>
-  </tr>
 
   <tr>
     <td>

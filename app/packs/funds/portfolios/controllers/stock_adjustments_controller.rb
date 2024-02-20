@@ -72,6 +72,6 @@ class StockAdjustmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def stock_adjustment_params
-    params.require(:stock_adjustment).permit(:entity_id, :portfolio_company_id, :user_id, :adjustment, :notes, :category, :sub_category)
+    params.require(:stock_adjustment).permit(:entity_id, :portfolio_company_id, :investment_instrument_id, :user_id, :adjustment, :notes)
   end
 end

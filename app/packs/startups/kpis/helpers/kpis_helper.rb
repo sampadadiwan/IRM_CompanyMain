@@ -21,7 +21,18 @@ module KpisHelper
       end
     end
 
-    line_chart(data_map, id:)
+    line_chart data_map, id:, library: {
+      plotOptions: {
+        column: {
+          pointWidth: 40,
+          dataLabels: {
+            enabled: false,
+            format: "{point.y:,.2f}"
+          }
+        }
+      },
+      **chart_theme_color
+    }
   end
 
   def kpi_percentage_class(kpi, investor_kpi_mapping)

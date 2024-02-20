@@ -4,6 +4,10 @@ class InvestmentInstrumentsController < ApplicationController
   # GET /investment_instruments or /investment_instruments.json
   def index
     @investment_instruments = policy_scope(InvestmentInstrument)
+    @investment_instruments = @investment_instruments.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
+    @investment_instruments = @investment_instruments.where(category: params[:category]) if params[:category].present?
+    @investment_instruments = @investment_instruments.where(sub_category: params[:sub_category]) if params[:sub_category].present?
+    @investment_instruments = @investment_instruments.where(sector: params[:sector]) if params[:sector].present?
   end
 
   # GET /investment_instruments/1 or /investment_instruments/1.json

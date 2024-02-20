@@ -1,5 +1,4 @@
-<%%= render "/layouts/alerts" %>
-
+<%%= render FormCard.new(title: "#{<%= model_resource_name(prefix: "@") %>}") do %>
 <table class="table table-bordered dataTable">
 
     <% attributes.reject(&:password_digest?).each do |attribute| -%>
@@ -15,10 +14,11 @@
   
 </table>
 
-
-<div>
+<div class="associated_entity">
   <%%= link_to "Edit", <%= edit_helper(type: :path) %>, {class: "btn btn-outline-primary"} %> |
   <%%= link_to "Back", :back, {class: "btn btn-outline-primary"} %> |
 
   <%%= button_to "Delete", <%= model_resource_name(prefix: "@") %>, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>
+
+<%% end %>

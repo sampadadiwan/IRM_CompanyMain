@@ -4,9 +4,8 @@ class Valuation < ApplicationRecord
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true, touch: true
-  validates :category, length: { maximum: 10 }
-  validates :sub_category, length: { maximum: 100 }
-  validates :category, :sub_category, presence: true, if: proc { |v| v.owner_type == "Investor" }
+  belongs_to :investment_instrument, optional: true
+
   validates :per_share_value, numericality: { greater_than: 0 }
   validates :valuation_date, presence: true
 
@@ -38,10 +37,6 @@ class Valuation < ApplicationRecord
        saved_change_to_valuation_date?) && owner.respond_to?(:valuation_updated)
       owner.valuation_updated(self)
     end
-  end
-
-  def instrument_type
-    "#{category} : #{sub_category}"
   end
 
   def to_s

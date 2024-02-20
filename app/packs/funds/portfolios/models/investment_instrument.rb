@@ -6,4 +6,8 @@ class InvestmentInstrument < ApplicationRecord
   validates :name, presence: true
   validates :category, length: { maximum: 15 }
   validates :sub_category, :sector, length: { maximum: 100 }
+
+  def to_s
+    "#{name}: #{category} #{sub_category} #{sector}"
+  end
 end

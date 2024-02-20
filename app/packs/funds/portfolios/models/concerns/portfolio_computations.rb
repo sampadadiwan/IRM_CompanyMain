@@ -14,7 +14,7 @@ module PortfolioComputations
       total_fmv_end_date = 0
       model.portfolio_investments.pool.buys.where(investment_date: ..end_date).find_each do |pi|
         # Find the valuation just prior to the end_date
-        valuation = pi.portfolio_company.valuations.where(category: pi.category, sub_category: pi.sub_category, valuation_date: ..end_date).order(valuation_date: :asc).last
+        valuation = pi.portfolio_company.valuations.where(investment_instrument_id: pi.investment_instrument_id, valuation_date: ..end_date).order(valuation_date: :asc).last
         total_fmv_end_date += pi.quantity * valuation.per_share_value_cents
       end
       total_fmv_end_date
@@ -45,10 +45,10 @@ module PortfolioComputations
   end
 
   def compute_fmv_cents_on(date, create_valuation: false)
-    last_valuation = portfolio_company.valuations.where(category:, sub_category:, valuation_date: ..date).order(valuation_date: :desc).first
+    last_valuation = portfolio_company.valuations.where(investment_instrument_id:, valuation_date: ..date).order(valuation_date: :desc).first
 
     # We dont have a valuation and we need to create one
-    last_valuation = portfolio_company.valuations.create(category:, sub_category:, valuation_date: investment_date, per_share_value_cents: cost_cents, entity_id:, owner: fund) if last_valuation.blank? && create_valuation
+    last_valuation = portfolio_company.valuations.create(investment_instrument_id:, valuation_date: investment_date, per_share_value_cents: cost_cents, entity_id:, owner: fund) if last_valuation.blank? && create_valuation
 
     nq = if date == Time.zone.today
            net_quantity
@@ -95,7 +95,7 @@ module PortfolioComputations
   def sell_quantity_allowed
     if sell? && new_record?
 
-      buys = fund.portfolio_investments.allocatable_buys(portfolio_company_id, category, sub_category)
+      buys = fund.portfolio_investments.allocatable_buys(portfolio_company_id, investment_instrument_id)
       buys = buys.where(capital_commitment_id:) if self.CoInvest?
       buys = buys.pool if self.Pool?
 
