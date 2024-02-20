@@ -10,7 +10,7 @@
         count = status_count[status] || 0
     %>
     <div class="col">
-        <a href="<%= approval_responses_path(approval_id: approval&.id, status:) %>">
+        <a href="<%= approval_responses_path(approval_id: approval&.id, status:) %>" data-turbo-frame="approval_responses">
             <div class="card">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-3">
@@ -33,7 +33,7 @@
 
     <% color = "success" %>
     <div class="col">
-        <a href="<%= approval_responses_path(approval_id: approval&.id, status: nil) %>">
+        <a href="<%= approval_responses_path(approval_id: approval&.id, status: nil) %>" data-turbo-frame="approval_responses">
             <div class="card">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-3">

@@ -1,9 +1,9 @@
 
-
-<%= render "/approval_responses/show", approval_response: @approval_response %>
+<%= render FormCard.new(title: @approval_response.investor.to_s) do  %>
+  <%= render "/approval_responses/show", approval_response: @approval_response %>
   
 
-  <div>
+  <div class="associated_entity">
     <% if policy(@approval_response).update? %>
       <%= link_to "Edit" , edit_approval_response_path(@approval_response), {class: "btn btn-outline-primary" } %> |
 
@@ -11,3 +11,5 @@
         form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo:false} %>
     <% end %>
   </div>
+
+<% end %>

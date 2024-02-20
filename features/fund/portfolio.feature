@@ -7,7 +7,7 @@ Scenario Outline: Create new portfolio investment
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company" 
   Given there is a fund "<fund>" for the entity
   Given there is an investment instrument for the portfolio company "name=XYZ;category=Unlisted;sub_category=Equity;sector=Tech"
-  When I create a new portfolio investment "portfolio_company_name=MyFavStartup;amount_cents=1000000;quantity=200;category=Unlisted;"
+  When I create a new portfolio investment "portfolio_company_name=MyFavStartup;amount_cents=1000000;quantity=200"
   Then a portfolio investment should be created
   Then I should see the portfolio investment details on the details page  
 
@@ -21,10 +21,10 @@ Scenario Outline: Create new PI and aggregate PI
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company" 
-  Given there is an investment instrument for the portfolio company "name=XYZ;category=Unlisted;sub_category=Equity;sector=Tech"
+  Given there is an investment instrument for the portfolio company "name=Stock;category=Unlisted;sub_category=Equity;sector=Tech"
   Given there is a fund "<fund>" for the entity
-  Given there are "3" portfolio investments "quantity=200;category=Unlisted"
-  Given there are "3" portfolio investments "quantity=-100;category=Unlisted"
+  Given there are "3" portfolio investments "quantity=200"
+  Given there are "3" portfolio investments "quantity=-100"
   Then an aggregate portfolio investment should be created
   Then I should see the aggregate portfolio investment details on the details page  
 

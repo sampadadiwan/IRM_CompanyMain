@@ -16,8 +16,6 @@ include CurrencyHelper
     select(portfolio_company.investor_name, from: "portfolio_investment_portfolio_company_id")
     fill_in('portfolio_investment_amount', with: @new_portfolio_investment.amount)
     fill_in('portfolio_investment_quantity', with: @new_portfolio_investment.quantity)
-    select(@new_portfolio_investment.category, from: 'portfolio_investment_category')
-    select(@new_portfolio_investment.sector, from: 'portfolio_investment_sector')
 
     click_on "Save"    
     sleep(1)
@@ -27,8 +25,8 @@ include CurrencyHelper
     @portfolio_investment = PortfolioInvestment.last
     @portfolio_investment.quantity.should == @new_portfolio_investment.quantity
     @portfolio_investment.amount.should == @new_portfolio_investment.amount
-    @portfolio_investment.category.should == @new_portfolio_investment.category
     @portfolio_investment.portfolio_company_name.should == @new_portfolio_investment.portfolio_company_name
+    @portfolio_investment.investment_instrument.name.should == @investment_instrument.name
   end
 
   Then('I should see the portfolio investment details on the details page') do
@@ -37,7 +35,7 @@ include CurrencyHelper
     expect(page).to have_content(@portfolio_investment.investment_date.strftime("%d/%m/%Y"))
     expect(page).to have_content(@portfolio_investment.portfolio_company_name)
     expect(page).to have_content(@portfolio_investment.quantity)
-    expect(page).to have_content(@portfolio_investment.category)
+    expect(page).to have_content(@portfolio_investment.investment_instrument)
     expect(page).to have_content( money_to_currency @portfolio_investment.amount)
   end
 
