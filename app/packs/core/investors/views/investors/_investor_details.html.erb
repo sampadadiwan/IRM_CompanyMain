@@ -15,6 +15,11 @@
         <span class="hideMobP">Portfolio</span> Investments
       </a>
 
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#instruments-tab"
+         data-action="click->tabdetails#loadData">
+        Instruments
+      </a>
+
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#cashflows-tab"
          data-action="click->tabdetails#loadData">
         Portfolio Income
@@ -116,6 +121,17 @@
           </div>     
         </div>
 
+        <div id="instruments-tab" class="tab-pane fade">
+          <div id="investment_instruments" class="associated_entity">
+            <%= link_to investment_instruments_path(portfolio_company_id: investor.id), 
+                                    class: "load_data_link", 
+                                    data: { turbo_frame: 'investment_instruments_list' } do %>
+              <span>Loading...</span>
+            <% end %>
+            <%= turbo_frame_tag "investment_instruments_list", target: "_top" do %>
+            <% end %>
+          </div>     
+        </div>
 
         <div id="cashflows-tab" class="tab-pane fade">
           <div id="portfolio_cashflows" class="associated_entity">

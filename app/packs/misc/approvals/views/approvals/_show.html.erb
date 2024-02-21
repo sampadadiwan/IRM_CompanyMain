@@ -74,6 +74,17 @@
         <% end %>
 
         <%= display_custom_fields(@approval) if current_user %>
+        
+
+        <tr>
+            <td>
+                Show KYCs in Approval
+            </td>
+            <td>
+                <%= display_boolean approval.enable_approval_show_kycs %>
+            </td>
+        </tr>
+
 
     </table>
 

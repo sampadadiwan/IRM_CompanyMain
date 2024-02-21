@@ -1,32 +1,35 @@
-<%= render "/layouts/alerts" %>
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Investment Instruments</h1>
-  <%= link_to "New Investment Instrument", new_investment_instrument_path, {class: "btn btn-outline-primary"}  %>
-</div>
-<div class="table-responsive" data-controller="datatable">
-  <table id="investment_instruments" class="table table-bordered dataTable">
-    <thead>
-      <tr>
-        <th>
-          Name
-        </th>
-        <th>
-          Category
-        </th>
-        <th>
-          Sub Category
-        </th>
-        <th>
-          Sector
-        </th>
-        <th>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @investment_instruments.each do |investment_instrument| %>
-        <%= render investment_instrument %>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+<%= turbo_frame_tag "investment_instruments_list", target: "_top" do %>
+
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Investment Instruments</h1>
+    <%= link_to "New Investment Instrument", new_investment_instrument_path("investment_instrument[portfolio_company_id]": params[:portfolio_company_id]), {class: "btn btn-outline-primary"}  %>
+  </div>
+  <div class="table-responsive" data-controller="datatable">
+    <table id="investment_instruments" class="table table-bordered dataTable jqDataTable">
+      <thead>
+        <tr>
+          <th>
+            Name
+          </th>
+          <th>
+            Category
+          </th>
+          <th>
+            Sub Category
+          </th>
+          <th>
+            Sector
+          </th>
+          <th>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @investment_instruments.each do |investment_instrument| %>
+          <%= render investment_instrument %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+<% end %>

@@ -10,7 +10,7 @@
     
     <p class="card-text">
       <%= approval.agreements_reference %>
-      <% if approval.entity.entity_setting.custom_flags.enable_approval_show_kycs? && !policy(approval).update? %>
+      <% if approval.enable_approval_show_kycs? && !policy(approval).update? %>
           <% @approval_response = policy_scope(approval.approval_responses).last %>
           <%= render "/approval_responses/kyc_in_approval" %>
       <% end %>

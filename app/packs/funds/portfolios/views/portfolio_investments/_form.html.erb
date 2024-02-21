@@ -29,17 +29,21 @@
 
         <small class="text-muted">
           Create <%= link_to "New Portfolio Company",
-            new_investor_path("investor[entity_id]": portfolio_investment.entity_id, "investor[category]": "Portfolio Company",
-                "back_to": new_portfolio_investment_path("portfolio_investment[fund_id]": portfolio_investment.fund_id,
-                "portfolio_investment[entity_id]": portfolio_investment.entity_id)) %>
+            new_investor_path("investor[entity_id]": portfolio_investment.entity_id, "investor[category]": "Portfolio Company", "back_to": new_portfolio_investment_path("portfolio_investment[fund_id]": portfolio_investment.fund_id, "portfolio_investment[entity_id]": portfolio_investment.entity_id)) %>
         </small>
 
       </div>
 
       <% investment_instruments = portfolio_investment.portfolio_company ?  portfolio_investment.portfolio_company.investment_instruments : [] %>
-      <div class="form-group">
+      <div class="form-group" data-select-target="select">
         <%= form.label :investment_instrument_id, "Instrument" %>
-        <%= form.select :investment_instrument_id, investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control", data: { select_target: "select" }  %>
+        <%= form.select :investment_instrument_id, investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control" %>
+
+        <small class="text-muted">
+          Create <%= link_to "New Instrument",
+            new_investment_instrument_path("investment_instrument[portfolio_company_id]": "X",
+                "back_to": new_portfolio_investment_path("portfolio_investment[fund_id]": portfolio_investment.fund_id, "portfolio_investment[entity_id]": portfolio_investment.entity_id)) %>
+        </small>
       </div>
     </div>
 

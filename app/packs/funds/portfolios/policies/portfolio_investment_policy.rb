@@ -36,8 +36,4 @@ class PortfolioInvestmentPolicy < FundBasePolicy
       create?
     end
   end
-
-  def sub_categories?
-    true
-  end
 end

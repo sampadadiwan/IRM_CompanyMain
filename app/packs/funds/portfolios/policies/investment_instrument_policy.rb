@@ -32,4 +32,8 @@ class InvestmentInstrumentPolicy < ApplicationPolicy
   def destroy?
     update?
   end
+
+  def sub_categories?
+    true
+  end
 end

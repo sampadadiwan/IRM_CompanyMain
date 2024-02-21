@@ -97,6 +97,6 @@ class ApprovalsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def approval_params
     params.require(:approval).permit(:title, :agreements_reference, :entity_id, :approved_count, :response_status,
-                                     :approved, :due_date, :rejected_count, :form_type_id, properties: {})
+                                     :enable_approval_show_kycs, :approved, :due_date, :rejected_count, :form_type_id, properties: {})
   end
 end

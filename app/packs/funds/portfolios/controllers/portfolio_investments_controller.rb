@@ -1,6 +1,5 @@
 class PortfolioInvestmentsController < ApplicationController
   before_action :set_portfolio_investment, only: %i[show edit update destroy]
-  skip_after_action :verify_authorized, only: %i[sub_categories]
 
   # GET /portfolio_investments or /portfolio_investments.json
   def index

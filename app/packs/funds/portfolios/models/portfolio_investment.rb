@@ -32,9 +32,6 @@ class PortfolioInvestment < ApplicationRecord
   validates :portfolio_company_name, length: { maximum: 100 }
   validates :amount, numericality: { greater_than_or_equal_to: 0 }
 
-  SECTORS = ENV["SECTORS"].split(",").sort
-  CATEGORIES = JSON.parse(ENV.fetch("PORTFOLIO_CATEGORIES", nil))
-
   counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "bought_quantity" : "sold_quantity" }, delta_column: 'quantity', column_names: {
     ["portfolio_investments.quantity > ?", 0] => 'bought_quantity',
     ["portfolio_investments.quantity < ?", 0] => 'sold_quantity'

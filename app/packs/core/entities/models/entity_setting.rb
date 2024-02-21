@@ -12,7 +12,7 @@ class EntitySetting < ApplicationRecord
   before_save :ensure_single_kra_enabled, if: -> { kra_enabled_changed? && kra_enabled == true }
 
   # Add new flags to the end of this list
-  flag :custom_flags, %i[enable_approval_show_kycs enable_this enable_that]
+  flag :custom_flags, %i[enable_this enable_that]
 
   def ckyc_or_kra_enabled?
     ckyc_enabled || kra_enabled
