@@ -6,12 +6,12 @@
         
         <% 
             color = colors[index % colors.length]; index += 1 
-            signed_id = @approval_response.signed_id(expires_in: 7.days, purpose: :approval_response) 
+            signed_id = @approval_response.signed_id(expires_in: 7.days, purpose: "approval_response-#{@to}") 
             subdomain = @approval_response.entity.sub_domain
         %>
         <ul>
             <li>
-                <%= link_to status, email_response_approval_response_url(@approval_response, status:, signed_id:, subdomain:) %>
+                <%= link_to status, email_response_approval_response_url(@approval_response, status:, email: @to, signed_id:, subdomain:) %>
             </li>
         </ul>
     <% end %>

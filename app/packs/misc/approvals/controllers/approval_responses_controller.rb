@@ -73,10 +73,14 @@ class ApprovalResponsesController < ApplicationController
   end
 
   def email_response
-    if params[:signed_id]
-      @approval_response = ApprovalResponse.find_signed(params[:signed_id], purpose: :approval_response)
+    if params[:signed_id] && params[:email]
+      @approval_response = ApprovalResponse.find_signed(params[:signed_id],
+                                                        purpose: "approval_response-#{params[:email]}")
+
+      logger.debug "Approval response for email_response by #{params[:email]} #{@approval_response}"
       @msg = if @approval_response && @approval_response.id == params[:id].to_i
-               if @approval_response.update(status: params[:status])
+               user = User.find_by(email: params[:email])
+               if user && @approval_response.update(status: params[:status], response_user_id: user.id)
                  "Successfully registered response: #{params[:status]}."
                else
                  "Failed to register response: #{@approval_response.errors.full_messages.join(', ')}"
