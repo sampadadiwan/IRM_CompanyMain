@@ -111,6 +111,7 @@ Scenario Outline: Provide approval response
   When the approval is approved internally 
   When I select "<status>" in the approval notification email
   Then the approval response is "<status>"
+  And the approval response user is correctly captured
   
   Examples:
   	|user	    |entity               |approval                 |msg	| status |

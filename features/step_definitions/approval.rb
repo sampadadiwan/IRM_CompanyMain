@@ -180,6 +180,12 @@
     @approval_response.status.should == arg
   end
 
+  
+Then('the approval response user is correctly captured') do
+  @approval_response.response_user_id.should == @approval_response.investor.investor_accesses.approved.first.user_id
+end
+
+
   Then('the approved count of the approval is {string}') do |arg|
     @approval.approved_count.should == arg.to_i
   end

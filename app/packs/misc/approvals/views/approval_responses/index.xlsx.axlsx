@@ -22,7 +22,7 @@ wb.add_worksheet(name: "ApprovalResponses") do |sheet|
       email  = o.response_user.email
       phone  = o.response_user.phone
     else
-      emp = o.investor.investor_entity.employees.first
+      emp = o.investor.investor_accesses.approved.first
       full_name = emp&.full_name
       email = emp&.email
       phone = emp&.phone
