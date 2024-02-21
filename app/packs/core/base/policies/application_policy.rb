@@ -68,4 +68,12 @@ class ApplicationPolicy
 
   class Scope < BaseScope
   end
+
+  def owner_policy
+    Pundit.policy(user, record.owner)
+  end
+
+  def new_policy(model)
+    Pundit.policy(user, model)
+  end
 end

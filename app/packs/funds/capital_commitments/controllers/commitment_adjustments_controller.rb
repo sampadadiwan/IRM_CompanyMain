@@ -26,13 +26,14 @@ class CommitmentAdjustmentsController < ApplicationController
   def create
     @commitment_adjustment = CommitmentAdjustment.new(commitment_adjustment_params)
     authorize @commitment_adjustment
-
+    result = AdjustmentCreate.call(commitment_adjustment: @commitment_adjustment)
     respond_to do |format|
-      if AdjustmentCreate.call(commitment_adjustment: @commitment_adjustment).success?
+      if result.success?
         format.html { redirect_to commitment_adjustment_url(@commitment_adjustment), notice: "Commitment adjustment was successfully created." }
         format.json { render :show, status: :created, location: @commitment_adjustment }
       else
-        format.html { render :new, status: :unprocessable_entity }
+        logger.error "Error creating commitment adjustment: #{result[:errors]}"
+        format.html { render :new, status: :unprocessable_entity, notice: result[:errors] }
         format.json { render json: @commitment_adjustment.errors, status: :unprocessable_entity }
       end
     end

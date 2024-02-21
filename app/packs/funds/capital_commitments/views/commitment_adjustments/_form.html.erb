@@ -16,8 +16,10 @@
       <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
       <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
       <%= form.text_field :capital_commitment_id, class: "form-control", hidden: true  %>
-      <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
-      <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+      <% if commitment_adjustment.owner.present? %>
+        <%= form.text_field :owner_id, class: "form-control", hidden: true  %>
+        <%= form.text_field :owner_type, class: "form-control", hidden: true  %>
+      <% end %>
 
       <div class="form-group" data-controller="currencyformat">
         <%= form.label :folio_amount, "Amount in #{commitment_adjustment.capital_commitment.folio_currency}" %> 

@@ -9,23 +9,16 @@ class AdjustmentCreate < AdjustmentAction
   step :touch_investor
 
   def validate(_ctx, commitment_adjustment:, **)
-    if commitment_adjustment.owner_type == "CapitalRemittance"
-      commitment_adjustment.owner.folio_id == commitment_adjustment.capital_commitment.folio_id && commitment_adjustment.valid?
-    else
-      commitment_adjustment.valid?
-    end
+    commitment_adjustment.valid?
   end
 
-  def compute_adjustments(ctx, commitment_adjustment:, **)
+  def compute_adjustments(_ctx, commitment_adjustment:, **)
     if commitment_adjustment.update_committed_amounts?
       commitment_adjustment.update_committed_amounts
       true
     elsif commitment_adjustment.update_arrear_amounts?
       commitment_adjustment.update_arrear_amounts
       true
-    else
-      ctx[:errors] = "Invalid adjustment type"
-      false
     end
   end
 

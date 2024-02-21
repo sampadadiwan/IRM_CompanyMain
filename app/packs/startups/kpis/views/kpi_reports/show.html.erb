@@ -5,9 +5,21 @@
       Entity
     </td>
     <td>
-      <%= @kpi_report.entity.name %>
+      <%= link_to @kpi_report.entity %>
     </td>
   </tr>
+
+  <% if @kpi_report.owner %>
+  <tr>
+    <td>
+      Owner
+    </td>
+    <td>
+      <%= link_to @kpi_report.owner %>
+    </td>
+  </tr>
+  <% end %>
+
   <tr>
     <td>
       As Of

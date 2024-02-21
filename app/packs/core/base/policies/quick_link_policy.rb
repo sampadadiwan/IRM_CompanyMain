@@ -18,7 +18,7 @@ class QuickLinkPolicy < ApplicationPolicy
   end
 
   def create?
-    belongs_to_entity?(user, record)
+    super_user? || belongs_to_entity?(user, record)
   end
 
   def new?

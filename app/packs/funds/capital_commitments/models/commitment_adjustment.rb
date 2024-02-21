@@ -3,6 +3,10 @@ class CommitmentAdjustment < ApplicationRecord
   include ForInvestor
   include Trackable.new(associated_with: :owner)
 
+  ADJUSTMENT_TYPES = ["Top Up", "Arrear", "Exchange Rate"].freeze
+  ADJUST_COMMITMENT_TYPES = ["Top Up", "Exchange Rate"].freeze
+  ADJUST_ARREAR_TYPES = ["Arrear"].freeze
+
   belongs_to :entity
   belongs_to :fund
   belongs_to :capital_commitment
@@ -10,9 +14,7 @@ class CommitmentAdjustment < ApplicationRecord
 
   validates :reason, :as_of, :folio_amount_cents, :adjustment_type, presence: true
   validates :adjustment_type, length: { maximum: 20 }
-  ADJUSTMENT_TYPES = ["Top Up", "Arrear", "Exchange Rate"].freeze
-  ADJUST_COMMITMENT_TYPES = ["Top Up", "Exchange Rate"].freeze
-  ADJUST_ARREAR_TYPES = ["Arrear"].freeze
+  validates :adjustment_type, inclusion: { in: ADJUSTMENT_TYPES }
 
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_commitment.folio_currency }
   monetize :amount_cents, :pre_adjustment_cents, :post_adjustment_cents, with_currency: ->(i) { i.fund.currency }
