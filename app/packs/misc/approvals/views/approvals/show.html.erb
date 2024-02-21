@@ -14,7 +14,7 @@
     <% end %>
     <%= button_to "Approve", approve_approval_path(@approval), method: :patch, class: "btn btn-outline-success", 
           form_class: "deleteButton", 
-          data: {action: "click->confirm#popup", msg: "Approve and send notificatons to investors?", turbo:true, method: :patch} if policy(@approval).approve?  %>
+          data: {action: "click->confirm#popup", msg: "Please check that investors are added to access rights before approving. Approve and send notificatons to investors?", turbo:true, method: :patch} if policy(@approval).approve?  %>
 
     <%= button_to "Send Reminder", send_reminder_approval_path(@approval), method: :patch, class: "btn btn-outline-success", 
           form_class: "deleteButton", 
