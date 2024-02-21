@@ -19,10 +19,13 @@ class InvestmentInstrumentsController < ApplicationController
     @investment_instrument = InvestmentInstrument.new(investment_instrument_params)
     @investment_instrument.entity_id = current_user.entity_id
     authorize @investment_instrument
+    setup_custom_fields(@investment_instrument)
   end
 
   # GET /investment_instruments/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@investment_instrument)
+  end
 
   # POST /investment_instruments or /investment_instruments.json
   def create
@@ -77,6 +80,6 @@ class InvestmentInstrumentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investment_instrument_params
-    params.require(:investment_instrument).permit(:name, :category, :sub_category, :sector, :entity_id, :portfolio_company_id, :investment_domicile, :deleted_at)
+    params.require(:investment_instrument).permit(:name, :category, :sub_category, :sector, :entity_id, :portfolio_company_id, :investment_domicile, :deleted_at, properties: {})
   end
 end

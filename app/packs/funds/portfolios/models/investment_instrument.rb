@@ -1,5 +1,6 @@
 class InvestmentInstrument < ApplicationRecord
   include Trackable.new
+  include WithCustomField
 
   SECTORS = ENV["SECTORS"].split(",").sort
   CATEGORIES = JSON.parse(ENV.fetch("PORTFOLIO_CATEGORIES", nil))

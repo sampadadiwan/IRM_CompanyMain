@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_21_151722) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_21_161225) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1621,8 +1621,11 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_21_151722) do
     t.datetime "updated_at", null: false
     t.string "investment_domicile", limit: 15
     t.boolean "startup", default: false
+    t.json "json_fields"
+    t.bigint "form_type_id"
     t.index ["deleted_at"], name: "index_investment_instruments_on_deleted_at"
     t.index ["entity_id"], name: "index_investment_instruments_on_entity_id"
+    t.index ["form_type_id"], name: "index_investment_instruments_on_form_type_id"
     t.index ["portfolio_company_id"], name: "index_investment_instruments_on_portfolio_company_id"
   end
 
@@ -2881,6 +2884,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_21_151722) do
   add_foreign_key "interests", "users"
   add_foreign_key "interests", "users", column: "final_agreement_user_id"
   add_foreign_key "investment_instruments", "entities"
+  add_foreign_key "investment_instruments", "form_types"
   add_foreign_key "investment_instruments", "investors", column: "portfolio_company_id"
   add_foreign_key "investment_opportunities", "entities"
   add_foreign_key "investment_opportunities", "folders", column: "document_folder_id"

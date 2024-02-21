@@ -52,6 +52,7 @@
     <%= form.text_field :investment_domicile, class: "form-control"  %>
   </div>
 
+  <%= custom_form_fields(investment_instrument, form) %>
 
   <div class="form-group">
     <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
