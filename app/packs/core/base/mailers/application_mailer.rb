@@ -99,7 +99,7 @@ class ApplicationMailer < ActionMailer::Base
            end
 
     # Check for attachments
-    attachments["#{document.name}.pdf"] = file.read
+    attachments["#{document.name}.#{document.uploaded_file_extension}"] = file.read
     file.close
     File.delete(file) if file.instance_of?(::File)
   end

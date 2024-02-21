@@ -160,6 +160,10 @@ class Document < ApplicationRecord
     file.metadata['filename'] if file.metadata
   end
 
+  def uploaded_file_extension
+    file.metadata['filename'].split(".")[-1] if file.metadata
+  end
+
   def duplicate(required_attributes = nil)
     doc = required_attributes ? Document.new(attributes.slice(*required_attributes)) : dup
     doc.file_data = nil

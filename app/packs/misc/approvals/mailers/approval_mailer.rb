@@ -8,6 +8,12 @@ class ApprovalMailer < ApplicationMailer
     @custom_notification = @approval.custom_notification
     subject = @custom_notification ? @custom_notification.subject : "Approval required for #{@approval.entity.name}: #{@approval.title}"
 
+    # Check for attachments
+    @approval.documents.each do |doc|
+      # This password protects the file if required and attachs it
+      pw_protect_attach_file(doc, @custom_notification)
+    end
+
     if @approval_response.status == "Pending"
 
       if @to.present?
@@ -26,6 +32,12 @@ class ApprovalMailer < ApplicationMailer
 
     @custom_notification = @approval.custom_notification
     subject = @custom_notification ? @custom_notification.subject : "Approval required for #{@approval.entity.name}: #{@approval.title}"
+
+    # Check for attachments
+    @approval.documents.each do |doc|
+      # This password protects the file if required and attachs it
+      pw_protect_attach_file(doc, @custom_notification)
+    end
 
     if @approval_response.status == "Pending"
 
