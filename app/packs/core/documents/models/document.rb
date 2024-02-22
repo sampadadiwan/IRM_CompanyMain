@@ -70,7 +70,7 @@ class Document < ApplicationRecord
 
   before_save :init
   def init
-    self.send_email = true if send_email.nil?
+    self.send_email = false if send_email.nil?
     self.approved = false if approved.nil?
     self.template = false if template.nil?
     self.sent_for_esign = false if sent_for_esign.nil?
