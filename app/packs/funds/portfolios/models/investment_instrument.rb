@@ -7,6 +7,9 @@ class InvestmentInstrument < ApplicationRecord
 
   belongs_to :entity
   belongs_to :portfolio_company, class_name: "Investor"
+  has_many :portfolio_cashflows, dependent: :destroy
+  has_one :aggregate_portfolio_investment, dependent: :destroy
+  has_many :portfolio_investments, dependent: :destroy
 
   validates :name, presence: true
   validates :name, uniqueness: { scope: :portfolio_company_id }

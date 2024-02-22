@@ -1,3 +1,4 @@
+<%= render FormCard.new(title: @commitment_adjustment.adjustment_type.presence || "New Adjustment") do %>
 
 <table class="table table-bordered dataTable">
   <tr>
@@ -95,10 +96,14 @@
 
 </table>
 
-<div>
+
+<div class="associated_entity">
 
   <%= link_to "Edit", edit_commitment_adjustment_path(@commitment_adjustment), {class: "btn btn-outline-primary"} if policy(@commitment_adjustment).update? %> 
 
   <%= button_to "Delete", @commitment_adjustment, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@commitment_adjustment).destroy?  %>
   
 </div>
+
+<% end %>
+

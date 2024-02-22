@@ -19,6 +19,7 @@ class PortfolioCashflowsController < ApplicationController
     @portfolio_cashflow.entity_id = @portfolio_cashflow.aggregate_portfolio_investment.entity_id
     @portfolio_cashflow.fund_id = @portfolio_cashflow.aggregate_portfolio_investment.fund_id
     @portfolio_cashflow.portfolio_company_id = @portfolio_cashflow.aggregate_portfolio_investment.portfolio_company_id
+    @portfolio_cashflow.investment_instrument_id = @portfolio_cashflow.aggregate_portfolio_investment.investment_instrument_id
     @portfolio_cashflow.payment_date = Time.zone.today
     authorize @portfolio_cashflow
   end
@@ -75,6 +76,6 @@ class PortfolioCashflowsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def portfolio_cashflow_params
-    params.require(:portfolio_cashflow).permit(:entity_id, :fund_id, :portfolio_company_id, :aggregate_portfolio_investment_id, :payment_date, :amount, :notes, :tag, :instrument)
+    params.require(:portfolio_cashflow).permit(:entity_id, :fund_id, :portfolio_company_id, :aggregate_portfolio_investment_id, :payment_date, :amount, :notes, :tag, :investment_instrument_id)
   end
 end

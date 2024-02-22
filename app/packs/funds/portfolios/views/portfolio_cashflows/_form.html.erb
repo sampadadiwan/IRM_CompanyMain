@@ -17,6 +17,7 @@
       <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
       <%= form.text_field :portfolio_company_id, class: "form-control", hidden: true  %>
       <%= form.text_field :aggregate_portfolio_investment_id, class: "form-control", hidden: true  %>
+      <%= form.text_field :investment_instrument_id, class: "form-control", hidden: true  %>
 
     <div class="form-group">
       <%= form.label :payment_date %>
@@ -33,13 +34,6 @@
       <%= form.label :tag %>
       <%= form.text_field :tag, class: "form-control"  %>
       <small class="form-text text-muted">Tag this cashflow for reporting purposes, leave blank for actual casflows</small>
-    </div>
-
-
-    <div class="form-group">
-      <%= form.label :instrument %>
-      <%= form.text_field :instrument, class: "form-control"  %>
-      <small class="form-text text-muted">Specific instrument if present</small>
     </div>
 
     <div class="form-group">

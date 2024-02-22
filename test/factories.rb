@@ -126,7 +126,7 @@ FactoryBot.define do
     quantity { rand(2) > 0 ? 100 * rand(1..10) : -100 * rand(1..10) }
     sub_category { "Equity" }
     category { "Unlisted" }
-    sector { PortfolioInvestment::SECTORS[0] }
+    sector { InvestmentInstrument::SECTORS[0] }
     notes { Faker::Company.buzzword }
   end
 

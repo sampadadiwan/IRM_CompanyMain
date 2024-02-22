@@ -60,3 +60,11 @@
 </div>
 
 <% end %>
+
+<div class="associated_entity">
+  <%= render "/portfolio_cashflows/index", portfolio_cashflows: @investment_instrument.portfolio_cashflows, aggregate_portfolio_investment: @investment_instrument.aggregate_portfolio_investment %> 
+</div>
+
+<div class="associated_entity">
+  <%= render "/portfolio_investments/index", portfolio_investments: @investment_instrument.portfolio_investments %> 
+</div>
