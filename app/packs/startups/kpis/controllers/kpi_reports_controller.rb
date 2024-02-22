@@ -15,6 +15,12 @@ class KpiReportsController < ApplicationController
     @kpi_reports = @kpi_reports.where(period: params[:period]) if params[:period].present?
     @kpi_reports = @kpi_reports.where(tag_list: params[:tag_list]) if params[:tag_list].present?
     @kpi_reports = @kpi_reports.where(entity_id: params[:entity_id]) if params[:entity_id].present?
+    if params[:owner_id].present? && params[:owner_id] != "all"
+      @kpi_reports = @kpi_reports.where(owner_id: params[:owner_id])
+    elsif params[:owner_id].blank?
+      @kpi_reports = @kpi_reports.where(owner_id: nil)
+    end
+    @kpi_reports = @kpi_reports.where(owner_type: params[:owner_type]) if params[:owner_type].present?
     @kpi_reports = @kpi_reports.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
 
     respond_to do |format|

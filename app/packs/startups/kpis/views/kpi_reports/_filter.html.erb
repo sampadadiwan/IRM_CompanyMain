@@ -12,9 +12,16 @@
 
   <div class="form-group col-md-1">    
     <% period = params[:period].presence %>
-    <%#= form.label :period %>
     <%= form.select :period, KpiReport::PERIODS, {selected: period, include_blank: true}, class: "form-control" %>        
   </div>
+
+  <% entity ||= nil %>
+  <% if entity %>
+    <div class="form-group col-md-1">    
+      <% owner_id = params[:owner_id] %>
+      <%= form.select :owner_id, [[entity.name, nil], [current_user.entity.name, current_user.entity.id], ["All", :all]], {selected: owner_id}, class: "form-control" %>        
+    </div>
+  <% end %>
 
   <div class="form-group col-md-1">    
     <%= form.text_field :tag_list, class: "form-control", value: params[:tag_list], placeholder: "Tag" %>        

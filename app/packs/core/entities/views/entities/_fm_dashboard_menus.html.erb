@@ -1,6 +1,6 @@
 <% if current_user.enable_funds %>
 <div class="row">
-    <div class="col">
+    <div class="col-md">
         <div class="card">
         <div class="card-body">
             <a href="<%= reports_path %>">
@@ -20,7 +20,7 @@
         </div>
     </div>
 
-    <div class="col">
+    <div class="col-md">
         <div class="card">
         <div class="card-body">
             <a href="<%= quick_links_path(tags: "Fund") %>">
@@ -40,8 +40,7 @@
         </div>
     </div>
 
-
-    <div class="col">
+    <div class="col-md">
         <div class="card">
         <div class="card-body">
             <a href="<%= investor_kycs_path %>">

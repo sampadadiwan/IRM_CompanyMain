@@ -7,17 +7,19 @@
     <h1 class="h4 mb-0 text-800">
         KPIs: 
         <% if params[:entity_id].present? %>
-            <%= Entity.find(params[:entity_id]).name if current_user.curr_role_employee? %>
             <% if current_user.curr_role_investor? %>
-            <% investor = current_user.entity.investors.where(investor_entity_id: params[:entity_id]).first %>
-            <%= link_to investor if investor %>
+                <% @entity = Entity.find(params[:entity_id]) %>
+                <%= @entity.name  %>
+                
+                <% investor = current_user.entity.investors.where(investor_entity_id: params[:entity_id]).first %>
+                <%= link_to investor if investor %>
             <% end %>
         <% end %>
     </h1>
 
     <span>
         <% if params[:q].blank? %>
-            <%= render "kpi_reports/filter" %> | 
+            <%= render "kpi_reports/filter", entity: @entity %> | 
         <% end %>
 
         <div class="btn-group">
