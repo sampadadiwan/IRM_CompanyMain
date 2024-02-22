@@ -87,7 +87,7 @@ module ApplicationHelper
         },
         yAxis: {
           # lineColor: "#7c8fac",
-          gridLineWidth: 0.5,
+          gridLineWidth: 0.2,
           gridLineColor: "#7c8fac",
           labels: { style: {
             color: 'white'

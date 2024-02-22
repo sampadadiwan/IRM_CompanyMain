@@ -1,7 +1,5 @@
+<%= render FormCard.new(title: "Fund Ratio : #{@fund_ratio.name}") do %>
 
- <div>
-      <h1> Fund Ratio - <%= @fund_ratio.name %> </h1>
-</div>
 <table class="table table-bordered dataTable">
   <tr>
     <td>
@@ -71,21 +69,18 @@
       <%= @fund_ratio.notes %>
     </td>
   </tr>
-
-  <% if @fund_ratio.cash_flows %>
-  <tr>
-    <td>
-      Cash Flows
-    </td>
-    <td>
-      <% table_options = { table_class: "table table-bordered dataTable" } %>
-      <%= Json2table::get_html_table(@fund_ratio.cash_flows, table_options).html_safe %>
-    </td>
-  </tr>
-  <% end %>
-
 </table>
-<div>
+
+<div class="associated_entity">
   <%= link_to "Edit", edit_fund_ratio_path(@fund_ratio), {class: "btn btn-outline-primary"} if policy(@fund_ratio).update? %>
   <%= button_to "Delete", @fund_ratio, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  if policy(@fund_ratio).destroy? %>
 </div>
+
+<% end %>
+
+<%= render FormCard.new(title: "Cash Flows For : #{@fund_ratio.name}") do %>
+  <% if @fund_ratio.cash_flows %>
+      <% table_options = { table_class: "table dataTable" } %>
+      <%= Json2table::get_html_table(@fund_ratio.cash_flows, table_options).html_safe %>
+  <% end %>
+<% end %>
