@@ -8,11 +8,9 @@
         KPIs: 
         <% if params[:entity_id].present? %>
             <% if current_user.curr_role_investor? %>
-                <% @entity = Entity.find(params[:entity_id]) %>
-                <%= @entity.name  %>
-                
+                <% @entity = Entity.find(params[:entity_id]) %>                
                 <% investor = current_user.entity.investors.where(investor_entity_id: params[:entity_id]).first %>
-                <%= link_to investor if investor %>
+                <%=  investor ? link_to(investor) : @entity.name %>
             <% end %>
         <% end %>
     </h1>

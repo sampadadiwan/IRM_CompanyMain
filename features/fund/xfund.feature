@@ -14,7 +14,7 @@ Scenario Outline: Create new fund
   And I should see the fund in all funds page
   And I visit the fund details page
   When I click on fund documents tab
-  When I create a new document "name=Quarterly Report" in folder "Data Room"
+  When I create a new document "name=Quarterly Report;send_email=true" in folder "Data Room"
   And an document should be created
   And an email must go out to the investors for the document
   And the fund document details must be setup right

@@ -73,6 +73,7 @@ When('I fill and submit the new document page') do
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
   check('document_download') if @document.download
   check('document_printing') if @document.printing
+  check('Send email', allow_label_click: true) if @document.send_email
 
   puts "Selecting #{@document.folder.name}" if @document.folder_id
   select(@document.folder.name, from: "document_folder_id") if @document.folder_id

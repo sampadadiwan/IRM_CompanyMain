@@ -6,26 +6,25 @@
   }
 
   .divTable.minimalistBlack .divTableBody .divTableCell {
-    border: 1px solid #e3e6f0;
+    border-bottom: 1px solid #8b8b8d;
     padding: 0.75rem;
     vertical-align: top;
   }
 
-  .odd .divTableCell {
+  [data-bs-theme=light] .odd .divTableCell {
     background-color: #f9f9f9;
   }
 
-  .even .divTableCell {
+  [data-bs-theme=light] .even .divTableCell {
     background-color: #fff;
   }
 
   .divTable.minimalistBlack .divTableHeading .divTableHead {
-    background-color: white;
-    color: #858796;
+    // background-color: white;
+    // color: #858796;
     font-weight: bold;
-    border: 1px solid #e3e6f0;
-    border-bottom: 2px solid #e3e6f0;
-    border-top: 2px solid #e3e6f0;
+    border-bottom: 1px solid #8b8b8d;
+    border-top: 1px solid #8b8b8d;
 
     padding: 0.75rem;
     vertical-align: top;
