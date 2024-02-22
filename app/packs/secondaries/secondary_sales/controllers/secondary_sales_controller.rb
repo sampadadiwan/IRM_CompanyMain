@@ -16,8 +16,10 @@ class SecondarySalesController < ApplicationController
                                               :interest, :documents)
 
     @offers = @offers.where(user_id: current_user.id) unless policy(@secondary_sale).owner?
-    @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
-    @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
+    @offers = @offers.where(approved: true) if params[:approved].present? && params[:approved] == "true"
+    @offers = @offers.where(approved: false) if params[:approved].present? && params[:approved] == "false"
+    @offers = @offers.where(verified: true) if params[:verified].present? && params[:verified] == "true"
+    @offers = @offers.where(verified: false) if params[:verified].present? && params[:verified] == "false"
     @offers = @offers.where(signature_data: nil) if params[:signature] == 'false'
     @offers = @offers.where(pan_card_data: nil) if params[:pan_card] == 'false'
     @offers = @offers.where(final_agreement: false) if params[:final_agreement] == 'false'
@@ -36,7 +38,12 @@ class SecondarySalesController < ApplicationController
     @interests = @secondary_sale.interests.includes(:entity, :interest_entity, :user)
     @interests = @interests.where(interest_entity_id: current_user.entity_id) unless policy(@secondary_sale).owner?
 
-    @interests = @interests.where(short_listed: params[:short_listed]) if params[:short_listed].present?
+    @interests = @interests.eligible(@secondary_sale) if params[:eligible].present? && params[:eligible] == "true"
+    @interests = @interests.not_eligible(@secondary_sale) if params[:eligible].present? && params[:eligible] == "false"
+    @interests = @interests.short_listed if params[:short_listed].present? && params[:short_listed] == "true"
+    @interests = @interests.not_short_listed if params[:short_listed].present? && params[:short_listed] == "false"
+    @interests = @interests.finalized if params[:finalized].present?
+
     @interests = @interests.where(signature_data: nil) if params[:signature] == 'false'
     @interests = @interests.where(final_agreement: false) if params[:final_agreement] == 'false'
 

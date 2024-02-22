@@ -1,3 +1,5 @@
+<%= render "/interests/stats", secondary_sale: @secondary_sale %>
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Interests</h1>
     <%= link_to "New Interest" , new_interest_path("interest[secondary_sale_id]": @secondary_sale.id), 

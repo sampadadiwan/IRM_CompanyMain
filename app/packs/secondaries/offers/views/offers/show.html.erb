@@ -17,8 +17,8 @@
     
 
     steps = ["Review your offer details below",  
-            "Please review the SPA and other generated #{link_to 'Documents', '#docs-tab', class: 'btn btn-primary'} below".html_safe, 
-            ("You to accept the SPA using the #{link_to 'Accept SPA', '#accept_spa_btn', class: 'btn btn-primary'} button below".html_safe unless @offer.final_agreement),
+            "Please review the SPA and other generated #{link_to 'Documents', '#docs-tab'} below".html_safe, 
+            ("You to accept the SPA using the #{link_to 'Accept SPA', '#accept_spa_btn'} button below".html_safe unless @offer.final_agreement),
             "Wait for communication from #{@offer.secondary_sale.entity.name}"].compact             
     %>
 

@@ -7,9 +7,16 @@ class InterestsController < ApplicationController
     @interests = policy_scope(Interest).includes(:entity, :interest_entity, :user)
     @secondary_sale = nil
     if params[:secondary_sale_id].present?
+      @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+
       @interests = @interests.where(secondary_sale_id: params[:secondary_sale_id])
       @interests = @interests.order(allocation_quantity: :desc)
-      @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
+      @interests = @interests.eligible(@secondary_sale) if params[:eligible].present? && params[:eligible] == "true"
+      @interests = @interests.not_eligible(@secondary_sale) if params[:eligible].present? && params[:eligible] == "false"
+      @interests = @interests.short_listed if params[:short_listed].present? && params[:short_listed] == "true"
+      @interests = @interests.not_short_listed if params[:short_listed].present? && params[:short_listed] == "false"
+      @interests = @interests.finalized if params[:finalized].present?
+
     end
 
     # @interests = @interests.page(params[:page]).per(params[:per_page] || 10)

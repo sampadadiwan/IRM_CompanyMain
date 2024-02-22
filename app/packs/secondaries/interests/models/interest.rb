@@ -43,10 +43,13 @@ class Interest < ApplicationRecord
 
   scope :cmv, ->(val) { where(custom_matching_vals: val) }
   scope :short_listed, -> { where(short_listed: true) }
+  scope :not_short_listed, -> { where(short_listed: false) }
   scope :not_final_agreement, -> { where(final_agreement: false) }
   scope :escrow_deposited, -> { where(escrow_deposited: true) }
   scope :priced_above, ->(price) { where("price >= ?", price) }
+  scope :priced_below, ->(price) { where("price < ?", price) }
   scope :eligible, ->(secondary_sale) { short_listed.priced_above(secondary_sale.final_price) }
+  scope :not_eligible, ->(secondary_sale) { short_listed.priced_below(secondary_sale.final_price) }
 
   before_validation :set_defaults
 

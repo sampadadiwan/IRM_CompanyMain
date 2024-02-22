@@ -1,0 +1,32 @@
+
+<% colors = ["success", "warning", "danger", "primary", "secondary", "info"].freeze %>
+
+<% index = 0 %>
+<div class="row">
+    
+    <% stats = [["Approved", secondary_sale.offers.approved.count, offers_secondary_sale_path(secondary_sale, approved: true)], ["Pending", secondary_sale.offers.pending_approval.count, offers_secondary_sale_path(secondary_sale, approved: false) ],  ["Un Verified", secondary_sale.offers.not_verified.count, offers_secondary_sale_path(secondary_sale, verified: false)], ["Verified", secondary_sale.offers.verified.count, offers_secondary_sale_path(secondary_sale, verified: true)]] %>
+    <% stats.each do |status, count, link| %>
+    <% 
+        color = colors[index % colors.length]; index += 1 
+    %>
+    <div class="col">
+        <a href="<%= link %>">
+            <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                <div>
+                    <h3 class="fs-8"><%= count %></h3>
+                    <h6 class="card-subtitle mb-1 text-muted" style="min-height: 30px;"><%= status %></h6>
+                </div>
+                
+                </div>
+
+                <div class="progress-bar text-bg-<%=color%>" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+
+            </div>
+            </div>
+        </a>
+    </div>
+    <% end %>
+  
+</div>

@@ -1,96 +1,79 @@
-
-    <div class="row">
-
-        <!-- Earnings (Monthly) Card Example -->
-        <div class="col-sm-3">
-            <div class="card border-left-primary shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Final Price
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <%= custom_format_number secondary_sale.final_price, params %>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-dollar fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<div class="row">
+  <div class="col-lg-3 col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+          <div>
+            <h3 class="fs-8"><%= custom_format_number secondary_sale.final_price, params %></h3>
+            <h6 class="card-subtitle mb-1 text-muted">Final Price</h6>
+          </div>
+          <div class="ms-auto">
+            <span class="text-success display-6"><i class="ti ti-currency-dollar"></i></span>
+          </div>
         </div>
-
-        <!-- Earnings (Monthly) Card Example -->
-        <div class="col-sm-3">
-            <div class="card border-left-success shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Total Offered Quantity
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                <%= custom_format_number secondary_sale.total_offered_quantity, params %>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Earnings (Monthly) Card Example -->
-        <div class="col-sm-3">
-            <div class="card border-left-info shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Total Interest Quantity
-                            </div>
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">
-                                        <%= custom_format_number secondary_sale.total_interest_quantity, params %>
-                                    </div>
-                                </div>
-                                <div class="col">
-                                    
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-     
-            <div class="col-sm-3">
-                <div class="card border-left-warning shadow py-2">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                    Offer Allocation Percentage
-                                </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                    <%= [secondary_sale.allocation_percentage * 100, 100].min %>
-                                </div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-percentage fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>        
-        
-
+          <div class="progress-bar text-bg-success" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
     </div>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+          <div>
+            <h3 class="fs-8"><%= custom_format_number secondary_sale.total_offered_quantity, params %></h3>
+            <h6 class="card-subtitle mb-1 text-muted">Total Offered Quantity</h6>
+          </div>
+          <div class="ms-auto">
+            <span class="text-info display-6"><i class="ti ti-minus"></i></span>
+          </div>
+        </div>
+          <div class="progress-bar text-bg-info" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12">
+            <div class="d-flex align-items-center mb-3">
+              <div>
+                <h3 class="fs-8"><%= custom_format_number secondary_sale.total_interest_quantity, params %></h3>
+                <h6 class="card-subtitle mb-1 text-muted">Total Interest Quantity</h6>
+              </div>
+              <div class="ms-auto">
+                <span class="text-danger display-6"><i class="ti ti-plus"></i></span>
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+              <div class="progress-bar text-bg-danger" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-3 col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12">
+            <div class="d-flex align-items-center mb-3">
+              <div>
+                <h3 class="fs-8"><%= [secondary_sale.allocation_percentage * 100, 100].min %></h3>
+                <h6 class="card-subtitle mb-1 text-muted">Offer Allocation Percentage</h6>
+              </div>
+              <div class="ms-auto">
+                <span class="text-warning display-6"><i class="ti ti-percentage"></i></span>
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+              <div class="progress-bar text-bg-warning" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
