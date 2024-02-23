@@ -15,7 +15,7 @@ class CommitmentAdjustmentsController < ApplicationController
     @commitment_adjustment = CommitmentAdjustment.new(commitment_adjustment_params)
     @commitment_adjustment.entity_id = @commitment_adjustment.capital_commitment.entity_id
     @commitment_adjustment.fund_id = @commitment_adjustment.capital_commitment.fund_id
-    @commitment_adjustment.as_of = (@commitment_adjustmentowner_type == "CapitalRemittance") ? @commitment_adjustment.owner.payment_date : Time.zone.today
+    @commitment_adjustment.as_of = @commitment_adjustmentowner_type == "CapitalRemittance" ? @commitment_adjustment.owner.payment_date : Time.zone.today
     authorize @commitment_adjustment
   end
 
