@@ -536,6 +536,13 @@ ul.vesting_schedule {
   }
 }
 
+[data-bs-theme=dark] .logo-light {
+  display: none;
+}
+
+[data-bs-theme=light] .logo-dark {
+  display: none;
+}
 
 [data-bs-theme=dark] .sidebar-link span {
     color: white !important;

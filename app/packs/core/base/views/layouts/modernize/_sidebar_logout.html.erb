@@ -1,11 +1,10 @@
 <% if current_user %>
 
-  <% if current_user && current_user.entity.logo %>
-    <div class="text-center">
-      <img src="/img/logo-without-tagline.jpg" width="100" alt="" />    
+    <div class="text-center logo-img">
+      <img src="/img/logo-without-tagline.jpg" width="100" class="logo-light" />    
+      <img src="/img/logo-transparent2.jpg" width="100" class="logo-dark" />    
     </div>  
-  <% end %>
-
+  
   <div class="fixed-profile p-3 mx-4 mb-2 bg-secondary-subtle rounded sidebar-ad mt-3">
     <div class="hstack gap-3">
       <div class="john-img text-primary">
