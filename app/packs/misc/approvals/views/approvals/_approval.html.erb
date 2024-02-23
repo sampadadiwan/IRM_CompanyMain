@@ -12,20 +12,22 @@
 
   <% if show_stats %>
   <td class="responses_count hideMobP">
-    <div class="container">
-      <%
-        colors = ["success", "warning", "danger", "primary", "secondary", "info"].freeze
-      %>
-        <% approval.response_status&.split(',')&.each_with_index do |status, idx| %>
-            <%
-              status_count = approval.approval_responses.group(:status).count               
-              response_count = status_count[status] || 0
-            %>
-            <span class="badge bg-<%=colors[idx % colors.length]%>"> <%= status %> : <%= response_count %> </span>
-          
-        <% end %>
-    </div>
-    </td>
+    <% if current_user.entity_id == approval.entity_id %>
+      <div class="container">
+        <%
+          colors = ["success", "warning", "danger", "primary", "secondary", "info"].freeze
+        %>
+          <% approval.response_status&.split(',')&.each_with_index do |status, idx| %>
+              <%
+                status_count = approval.approval_responses.group(:status).count               
+                response_count = status_count[status] || 0
+              %>
+              <span class="badge bg-<%=colors[idx % colors.length]%>"> <%= status %> : <%= response_count %> </span>
+            
+          <% end %>
+      </div>
+    <% end %>
+  </td>
   <% end %>
 
   <td>

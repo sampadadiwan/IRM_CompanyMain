@@ -25,7 +25,11 @@ class ApprovalNotification < BaseNotification
     @approval_response = params[:approval_response]
     @approval = @approval_response.approval
     @custom_notification = @approval.custom_notification
-    @custom_notification&.whatsapp.presence || params[:msg].presence || @approval.title
+    if email_method&.to_s == "notify_approval_response"
+      params[:msg].presence
+    else
+      @custom_notification&.whatsapp.presence || params[:msg].presence || @approval.title
+    end
   end
 
   def url
