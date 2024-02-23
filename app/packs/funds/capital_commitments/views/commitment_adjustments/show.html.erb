@@ -27,23 +27,27 @@
     </td>
   </tr>
 
+
   <tr>
     <td>
-      Top Up Folio Amount
-    </td>
-    <td>
-      <%= money_to_currency @commitment_adjustment.folio_amount, params %>
-    </td>
-  </tr>
-  
-  <tr>
-    <td>
-      Adjustment Amount
+      Amount
     </td>
     <td>
       <%= money_to_currency @commitment_adjustment.amount, params %>
     </td>
   </tr>
+
+  <% if @commitment_adjustment.amount_cents != @commitment_adjustment.folio_amount_cents %>
+  <tr>
+    <td>
+      Folio Amount
+    </td>
+    <td>
+      <%= money_to_currency @commitment_adjustment.folio_amount, params %>
+    </td>
+  </tr>
+  <% end %>
+  
 
   <tr>
     <td>
@@ -69,7 +73,7 @@
     <td>
       <%= @commitment_adjustment.reason %>
       <% if @commitment_adjustment.owner %>
-        <div><%= link_to @commitment_adjustment.owner %></div>
+        <br><%= link_to @commitment_adjustment.owner %>
       <% end %>
     </td>
   </tr>

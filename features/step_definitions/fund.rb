@@ -1532,8 +1532,8 @@ Then('a reverse remittance payment must be generated for the remittance') do
   @reverse_payment.fund_id.should == @capital_remittance.fund_id
   @reverse_payment.amount_cents.should == @capital_remittance.arrear_amount_cents
   @reverse_payment.folio_amount_cents.should == @capital_remittance.arrear_folio_amount_cents  
-  @reverse_payment.amount_cents.should == -@commitment_adjustment.amount_cents
-  @reverse_payment.folio_amount_cents.should == -@commitment_adjustment.folio_amount_cents
+  @reverse_payment.amount_cents.should == @commitment_adjustment.amount_cents
+  @reverse_payment.folio_amount_cents.should == @commitment_adjustment.folio_amount_cents
   @reverse_payment.payment_date.should == @commitment_adjustment.as_of
 end
 
