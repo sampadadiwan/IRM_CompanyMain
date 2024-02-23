@@ -10,6 +10,7 @@ class ImportKpi < ImportUtil
   def post_process(import_upload, _context)
     # This recomputes the KPI percentage change for all KPIs of this entity
     KpiPercentageChangeJob.perform_later(import_upload.entity_id, import_upload.user_id)
+    InvestorKpiMapping.create_from(import_upload.entity, import_upload.entity.kpi_report.last) if import_upload.entity.kpi_report.last.present?
   end
 
   def save_kpi(user_data, import_upload, custom_field_headers)

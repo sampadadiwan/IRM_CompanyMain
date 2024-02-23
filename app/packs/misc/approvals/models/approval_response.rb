@@ -1,4 +1,5 @@
 class ApprovalResponse < ApplicationRecord
+  include Trackable.new
   belongs_to :entity
   belongs_to :investor
   belongs_to :response_entity, class_name: "Entity"
