@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_23_061702) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_23_072339) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1921,7 +1921,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_23_061702) do
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
     t.index ["form_type_id"], name: "index_investors_on_form_type_id"
-    t.index ["investor_entity_id", "entity_id"], name: "index_investors_on_investor_entity_id_and_entity_id", unique: true
+    t.index ["investor_entity_id", "entity_id", "deleted_at"], name: "idx_on_investor_entity_id_entity_id_deleted_at_983d7c8e7a", unique: true
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
     t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
     t.index ["pan"], name: "index_investors_on_pan"

@@ -164,8 +164,7 @@ class AccessRight < ApplicationRecord
     end
   end
 
-  after_create_commit :update_owner
-  after_destroy :update_owner
+  after_commit :update_owner
   # rubocop:disable Rails/SkipsModelValidations
   # This is to bust any cached dashboards showing the commitments
   def update_owner

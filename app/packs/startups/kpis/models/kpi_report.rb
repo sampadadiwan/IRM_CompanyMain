@@ -60,6 +60,19 @@ class KpiReport < ApplicationRecord
     "/KPIs/#{name.delete('/')}"
   end
 
+  def access_rights_changed(access_right)
+    # For the specific case of KpiReport, we need to ensure that when the startup give access right to the report, then the startup is registered as a portfolio_company in the fund investor
+    if access_right.deleted_at.blank?
+      access_right.investors.each do |investor|
+        # Setup the portfolio company in the investor if required
+        portfolio_company = investor.investor_entity.investors.find_or_initialize_by(investor_entity_id: entity_id, category: "Portfolio Company", primary_email: entity.primary_email)
+        portfolio_company.save if portfolio_company.new_record?
+        # Update the investor kpi mappings for the portfolio_company
+        InvestorKpiMapping.create_from(portfolio_company.entity, self)
+      end
+    end
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[as_of period tag_list owner_id]
   end
