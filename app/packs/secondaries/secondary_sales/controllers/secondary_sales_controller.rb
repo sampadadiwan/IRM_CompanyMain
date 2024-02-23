@@ -62,8 +62,9 @@ class SecondarySalesController < ApplicationController
     @offers = @offers.where(interest_id: nil) if params[:matched] == "false"
     @offers = @offers.where.not(interest_id: nil) if params[:matched] == "true"
 
-    @offers = @offers.where(approved: params[:approved] == "true") if params[:approved].present?
+    @offers = @offers.where(approved: params[:approved]) if params[:approved].present?
     @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
+    @offers = @offers.where(verified: params[:final_agreement]) if params[:final_agreement].present?
     @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest).page(params[:page])
 
     render "/offers/finalize_allocation"

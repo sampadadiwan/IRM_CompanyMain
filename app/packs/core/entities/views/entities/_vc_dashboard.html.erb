@@ -7,7 +7,7 @@
 
     <% cache_if(current_user != nil, cache_key("vc_dashboard", include_theme: true), expires_in: 5.day) do %>
 
-        <% if current_user.enable_funds %>                        
+        <% if current_user.enable_funds && policy_scope(CapitalCommitment).count > 0 %>                        
             <%= render ToggleCard.new(title: "Funds", css_class: "show_funds") do %>
                 <%= render "entities/vc_dashboard_menus" %>
 

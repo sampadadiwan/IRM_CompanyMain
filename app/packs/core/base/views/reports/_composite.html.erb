@@ -1,6 +1,6 @@
 <% @reports.each do |report| %>
     <div class="associated_entity">
-        <turbo-frame id="report_<%=report.id%>" src="<%= report.url + '&report_id=' + report.id.to_s + '&title=' + report.name %>" loading="lazy" target="_top">
+        <turbo-frame id="report_<%=report.id%>" src="<%= report.url + '&report_id=' + report.id.to_s + '&title=' + ERB::Util.url_encode(report.name) %>" loading="lazy" target="_top">
         </turbo-frame>
     </div>
 <% end %>

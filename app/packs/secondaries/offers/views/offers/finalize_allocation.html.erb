@@ -24,18 +24,19 @@
                     <%= link_to "Verified", finalize_offer_allocation_secondary_sale_path(@secondary_sale, verified: true), {class: "dropdown-item" }  %> 
 
                     <%= link_to "Un-Verified", finalize_offer_allocation_secondary_sale_path(@secondary_sale, verified: false), {class: "dropdown-item" }  %> 
+
+                    <%= link_to "Accepted SPA", finalize_offer_allocation_secondary_sale_path(@secondary_sale, final_agreement: true), {class: "dropdown-item" }  %> 
+
+                    <%= link_to "Pending SPA", finalize_offer_allocation_secondary_sale_path(@secondary_sale, final_agreement: false), {class: "dropdown-item" }  %> 
+
+                    <%= link_to "Un-Matched", finalize_offer_allocation_secondary_sale_path(@secondary_sale, matched: false), {class: "dropdown-item" }  %> 
                     
+                    <%= link_to "Matched", finalize_offer_allocation_secondary_sale_path(@secondary_sale, matched: true), {class: "dropdown-item" }  %>         
                 </div>
             </div>
         </div>
-            |
-
-            <%= link_to "Un-Matched", finalize_offer_allocation_secondary_sale_path(@secondary_sale, matched: false), {class: "btn btn-outline-warning" }  %> 
-            <%= link_to "Matched", finalize_offer_allocation_secondary_sale_path(@secondary_sale, matched: true), {class: "btn btn-outline-success" }  %> 
                     
             |
-
-        
 
             <%= link_to download_secondary_sale_path(@secondary_sale, format: "xlsx"), 
                                                     {class: "btn btn-outline-success"  } do %> 
@@ -53,9 +54,9 @@
                         class: "btn btn-outline-danger" if policy(@secondary_sale).lock_allocations? %> 
         
         <% end %>
-        <form class="d-sm-inline-block form-inline navbar-search" action="<%= search_offers_path %>">
+        <form class="d-sm-inline-block form-inline" action="<%= search_offers_path %>">
             <div class="input-group">
-                <input name="query" type="text" class="form-control border-0 small" placeholder="Search for..." value="<%= params[:query] %>" aria-label="Search" aria-describedby="basic-addon2">
+                <input name="query" type="text" class="form-control border-0" placeholder="Search for..." value="<%= params[:query] %>" aria-label="Search" aria-describedby="basic-addon2">
                 <input type="hidden" name="secondary_sale_id" value="<%= @secondary_sale.id %>">
                 <input type="hidden" name="finalize_allocation" value="true">
             </div>
