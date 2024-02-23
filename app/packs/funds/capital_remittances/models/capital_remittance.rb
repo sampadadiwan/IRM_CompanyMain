@@ -128,7 +128,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def folio_due_amount
-    folio_call_amount - folio_collected_amount
+    folio_call_amount + other_fee - folio_collected_amount
   end
 
   def to_s

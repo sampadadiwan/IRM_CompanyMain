@@ -148,6 +148,16 @@
 
         <% end %>
 
+        
+        <tr>
+          <td>
+            Due Amount
+          </td>
+          <td>
+            <%= money_to_currency capital_remittance.due_amount, params %>
+          </td>
+        </tr>
+
 
         <% if capital_remittance.has_arrears? %>
           <tr>
