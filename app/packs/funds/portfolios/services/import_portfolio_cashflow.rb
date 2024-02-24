@@ -9,17 +9,17 @@ class ImportPortfolioCashflow < ImportUtil
   end
 
   def save_portfolio_cashflow(user_data, import_upload, custom_field_headers)
-    fund_id, portfolio_company, payment_date, amount_cents, instrument_name, commitment_type, _, tag, instrument = inputs(user_data, import_upload)
+    fund_id, portfolio_company, payment_date, amount_cents, commitment_type, tag, instrument_name = inputs(user_data, import_upload)
 
     investment_instrument = portfolio_company.investment_instruments.where(name: instrument_name).first
-    entity_id = import_upload.entity_id
+    raise "Investment Instrument not found" if investment_instrument.nil?
 
-    aggregate_pi = import_upload.entity.aggregate_portfolio_investments.where(fund_id:, portfolio_company_id:, investment_instrument:, commitment_type:).first
-
+    aggregate_pi = import_upload.entity.aggregate_portfolio_investments.where(fund_id:, portfolio_company_id: portfolio_company.id, investment_instrument:, commitment_type:).first
     raise "Aggregate Portfolio Investment not found" if aggregate_pi.nil?
 
-    portfolio_cashflow = PortfolioCashflow.find_or_initialize_by(entity_id:, fund_id:,
-                                                                 portfolio_company_id:, tag:, instrument:,
+    portfolio_cashflow = PortfolioCashflow.find_or_initialize_by(entity_id: import_upload.entity_id, fund_id:,
+                                                                 portfolio_company_id: portfolio_company.id,
+                                                                 tag:, investment_instrument:,
                                                                  aggregate_portfolio_investment_id: aggregate_pi.id, payment_date:, amount_cents:)
 
     if portfolio_cashflow.new_record?
@@ -45,7 +45,7 @@ class ImportPortfolioCashflow < ImportUtil
     payment_date = user_data["Payment Date"]
     amount_cents = user_data["Amount"].to_d * 100
     tag = user_data["Tag"].presence || "Actual"
-    instrument = user_data["Instrument"].presence || nil
+    instrument_name = user_data["Instrument"].presence || nil
 
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).last
     raise "Fund not found" if fund.nil?
@@ -54,7 +54,7 @@ class ImportPortfolioCashflow < ImportUtil
 
     commitment_type = user_data["Type"]
 
-    [fund_id, portfolio_company, payment_date, amount_cents, commitment_type, tag, instrument]
+    [fund_id, portfolio_company, payment_date, amount_cents, commitment_type, tag, instrument_name]
   end
 
   def process_row(headers, custom_field_headers, row, import_upload, _context)
