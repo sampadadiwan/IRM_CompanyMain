@@ -45,6 +45,12 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :response_enabled_email, "Enable response links in email" %>
+      <%= form.check_box :response_enabled_email, class: "form-check-input"  %>
+      <span class="text-muted">Send email with response links to the users. They dont need to login to respond.</span>
+    </div>
+
+    <div class="form-group">
       <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>

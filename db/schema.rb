@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_23_072339) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_24_043946) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -323,6 +323,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_23_072339) do
     t.string "owner_type"
     t.bigint "owner_id"
     t.boolean "enable_approval_show_kycs", default: false
+    t.boolean "response_enabled_email", default: false, null: false
     t.index ["document_folder_id"], name: "index_approvals_on_document_folder_id"
     t.index ["entity_id"], name: "index_approvals_on_entity_id"
     t.index ["form_type_id"], name: "index_approvals_on_form_type_id"

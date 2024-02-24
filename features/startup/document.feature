@@ -69,8 +69,8 @@ Scenario Outline: Add deal document
 
 Examples:
   	|user	      |entity               |deal          |document	       |
-  	|  	        |entity_type=Company  |name=Series A |name=Deal Summary|
-    |  	        |entity_type=Company  |name=Series B |name=Deal Details|
+  	|  	        |entity_type=Company  |name=Series A |name=Deal Summary;send_email=true|
+    |  	        |entity_type=Company  |name=Series B |name=Deal Details;send_email=true|
 
 Scenario Outline: Add deal investor document
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -111,8 +111,8 @@ Scenario Outline: Add Sale documents
 
   Examples:
   	|user	      |entity               |sale             |document	|
-  	|  	        |entity_type=Company  |name=Grand Sale  |name=Doc1111|
-    |  	        |entity_type=Company  |name=Winter Sale |name=Doc2222|
+  	|  	        |entity_type=Company  |name=Grand Sale  |name=Doc1111;send_email=true|
+    |  	        |entity_type=Company  |name=Winter Sale |name=Doc2222;send_email=true|
 
 
 Scenario Outline: Add Offer documents

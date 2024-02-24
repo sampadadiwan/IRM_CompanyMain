@@ -32,7 +32,7 @@ Scenario Outline: Import Kpis - as investor
   Then There should be "2" Kpi Report with "8" Kpis created
   And the KPIs must have the data in the sheet
   And when I setup the KPI mappings for the portfolio company
-  And when I view the KPI report for the portfolio company in grid view
+  And when I view the KPI report for the portfolio company in grid view as owner
   Then I should see the KPI Report with all Kpis
   Given I log out
   Given I login as the portfolio company user

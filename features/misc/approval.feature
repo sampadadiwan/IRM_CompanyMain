@@ -115,5 +115,5 @@ Scenario Outline: Provide approval response
   
   Examples:
   	|user	    |entity               |approval                 |msg	| status |
-  	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created| Approved |
-    |  	        |entity_type=Company  |title=Merger Approval    |Approval was successfully created| Rejected |
+  	|  	        |entity_type=Company  |title=Test approval;response_enabled_email=true      |Approval was successfully created| Approved |
+    |  	        |entity_type=Company  |title=Merger Approval;response_enabled_email=true    |Approval was successfully created| Rejected |
