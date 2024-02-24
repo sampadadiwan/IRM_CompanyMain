@@ -20,8 +20,7 @@ class ImportPortfolioCashflow < ImportUtil
 
     portfolio_cashflow = PortfolioCashflow.find_or_initialize_by(entity_id:, fund_id:,
                                                                  portfolio_company_id:, tag:, instrument:,
-                                                                 aggregate_portfolio_investment_id: aggregate_pi.id,
-                                                                 payment_date:, amount_cents:)
+                                                                 aggregate_portfolio_investment_id: aggregate_pi.id, payment_date:, amount_cents:)
 
     if portfolio_cashflow.new_record?
 
@@ -43,8 +42,6 @@ class ImportPortfolioCashflow < ImportUtil
     portfolio_company = import_upload.entity.investors.where(investor_name: portfolio_company_name).first
     raise "Portfolio Company not found" if portfolio_company.nil?
 
-    portfolio_company_id = portfolio_company.id
-
     payment_date = user_data["Payment Date"]
     amount_cents = user_data["Amount"].to_d * 100
     tag = user_data["Tag"].presence || "Actual"
@@ -57,7 +54,7 @@ class ImportPortfolioCashflow < ImportUtil
 
     commitment_type = user_data["Type"]
 
-    [fund_id, portfolio_company_id, payment_date, amount_cents, commitment_type, tag, instrument]
+    [fund_id, portfolio_company, payment_date, amount_cents, commitment_type, tag, instrument]
   end
 
   def process_row(headers, custom_field_headers, row, import_upload, _context)
