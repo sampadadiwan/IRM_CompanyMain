@@ -4,7 +4,10 @@ class CapitalRemittanceAction < Trailblazer::Operation
   end
 
   def handle_errors(ctx, capital_remittance:, **)
-    ctx[:errors] = capital_remittance.errors unless capital_remittance.valid?
+    unless capital_remittance.valid?
+      ctx[:errors] = capital_remittance.errors
+      Rails.logger.error "Capital remittance errors: #{capital_remittance.errors.full_messages}"
+    end
     capital_remittance.valid?
   end
 

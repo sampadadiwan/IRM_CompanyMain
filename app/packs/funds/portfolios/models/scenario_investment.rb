@@ -7,7 +7,7 @@ class ScenarioInvestment < ApplicationRecord
   belongs_to :portfolio_scenario
   belongs_to :user
   belongs_to :portfolio_company, class_name: 'Investor'
-  belongs_to :investment_instrument, dependent: :destroy
+  belongs_to :investment_instrument
 
   validates :transaction_date, presence: true
   validates :price_cents, presence: true, numericality: { greater_than: 0 }

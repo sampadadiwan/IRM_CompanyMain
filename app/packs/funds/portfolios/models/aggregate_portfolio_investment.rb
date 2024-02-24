@@ -5,7 +5,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   belongs_to :entity
   belongs_to :fund
   belongs_to :portfolio_company, class_name: "Investor"
-  belongs_to :investment_instrument, dependent: :destroy
+  belongs_to :investment_instrument
   has_many :portfolio_investments, dependent: :destroy
   has_many :portfolio_cashflows, dependent: :destroy
 

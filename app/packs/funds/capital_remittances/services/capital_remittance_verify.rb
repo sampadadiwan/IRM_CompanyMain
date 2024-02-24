@@ -8,6 +8,7 @@ class CapitalRemittanceVerify < CapitalRemittanceAction
 
   def toggle_verify(_ctx, capital_remittance:, **)
     capital_remittance.verified = !capital_remittance.verified
+    true
   end
 
   def payment_received_notification(_ctx, capital_remittance:, **)
