@@ -93,10 +93,10 @@
       <% end %>
 
     <% end %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab" 
-              data-action="click->tabdetails#loadData">
-            Documents
-        </a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab" 
+          data-action="click->tabdetails#loadData">
+        Documents
+    </a>
     
   </nav>
 
@@ -265,7 +265,7 @@
       <% end %>
 
 
-      <div id="docs-tab" class="tab-pane fade in show active">
+      <div id="docs-tab" class="tab-pane fade">
         <div id="docs" class="associated_entity">
           
           <%= link_to folder_documents_path(entity_id: investor.entity_id,
