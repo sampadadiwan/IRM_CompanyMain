@@ -106,9 +106,9 @@
         </div>
 
         <div class="form-group col-md-2">
-            <%= f.label :condition_state, "Initial State" %>
-            <%= f.select :condition_state, [:show, :hide], {}, class: "form-control" %>
-            <small class="form-text text-muted">Initial state of this field, will be toggled if condition matches</small>
+            <%= f.label :condition_state, "State" %>
+            <%= f.select :condition_state, [:show], {}, class: "form-control" %>
+            <small class="form-text text-muted">If conditions match this field, will be shown</small>
         </div>
 
     </div>

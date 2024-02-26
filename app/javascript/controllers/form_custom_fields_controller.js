@@ -25,9 +25,9 @@ export default class extends Controller {
  
   initialize() {
     // Hide all elements with the class 'fcf.conditional.hide'
-    $("body").find(".fcf.conditional.hide").hide();
+    $("body").find(".fcf.conditional").hide();
     // Show all elements with the class 'fcf.conditional.show'
-    $("body").find(".fcf.conditional.show").show();
+    // $("body").find(".fcf.conditional.show").show();
   }
 
   // This function is called when the value of an element with the class 'custom_field' changes
