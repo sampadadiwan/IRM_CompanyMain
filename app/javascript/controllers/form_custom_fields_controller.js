@@ -60,18 +60,16 @@ export default class extends Controller {
 
         console.log(`switch_val = ${switch_val}`)
         switch( switch_val ) {
-            case "matched-eq-hide": case "matched-contains-hide": case "not-matched-eq-show": case "not-matched-contains-show": case "not-matched-not_eq-hide": case "matched-not_eq-show":
+            case "matched-eq-show": case "matched-contains-show": case "not-matched-not_eq-show":
                 $(elem).show();
                 if(required_on_show) {
                   this.require_form_elements(elem);
                 }
                 break;
-            case "matched-eq-show": case "matched-contains-show": case "not-matched-eq-hide": case "not-matched-contains-hide": case "not-matched-eq-hide": case "matched-not_eq-hide":
+            default:
                 $(elem).hide();
                 this.clear_form_elements(elem);
                 break;
-            default:
-                console.log(`No match for ${switch_val}`);
         }
     });   
   }
