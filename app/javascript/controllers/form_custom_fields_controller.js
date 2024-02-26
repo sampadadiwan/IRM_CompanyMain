@@ -80,35 +80,66 @@ export default class extends Controller {
   // This function is called when the conditional element is hidden. 
   // It clears the form elements in the hidden element
   clear_form_elements(elem) {
-    $(elem).find(':input').each(function() {
-      switch(this.type) {
-          case 'password':
-          case 'text':
-          case 'textarea':
-          case 'file':
-          case 'select-one':
-          case 'select-multiple':
-          case 'date':
-          case 'number':
-          case 'tel':
-          case 'email':
-              jQuery(this).val('');
-              break;
-          case 'checkbox':
-          case 'radio':
-              this.checked = false;
-              break;
-      }
-      // Remove the required attribute from the form element
-      $(this).removeAttr('required');
-    });
+    let has_file_input = $(elem).find(':file').length > 0;
+    if (has_file_input) {
+      // File inputs need to be handled differently
+      // We should not clear the other fields associated with the file like name, send_email etc
+      // see _file.html.erb custom field
+      $(elem).find(':input').each(function() {
+        switch(this.type) {
+            case 'file':         
+                jQuery(this).val('');
+                break;
+        }
+        // Remove the required attribute from the form element
+        $(this).removeAttr('required');
+      });
+    } else {
+      $(elem).find(':input').each(function() {
+        switch(this.type) {
+            case 'password':
+            case 'text':
+            case 'textarea':
+            case 'file':
+            case 'select-one':
+            case 'select-multiple':
+            case 'date':
+            case 'number':
+            case 'tel':
+            case 'email':
+                jQuery(this).val('');
+                break;
+            case 'checkbox':
+            case 'radio':
+                this.checked = false;
+                break;
+        }
+        // Remove the required attribute from the form element
+        $(this).removeAttr('required');
+      });
+    }
   }
 
   require_form_elements(elem) {
-    $(elem).find(':input').each(function() {
-      console.log(`Adding required to ${this.type} ${this.id}`);
-      $(this).attr('required', 'required');
-    });
+    let has_file_input = $(elem).find(':file').length > 0;
+    if(has_file_input) {
+      // File inputs need to be handled differently
+      // We should not require other fields associated with the file like owner_tag, send_email etc
+      // see _file.html.erb custom field
+      console.log("File input found");
+      $(elem).find(':file').each(function() {
+        if(this.id) {
+          console.log(`Adding required to ${this.type} ${this.id}`);
+          $(this).attr('required', 'required');
+        }
+      });
+      return;
+    } else {          
+      $(elem).find(':input').each(function() {
+        console.log(`Adding required to ${this.type} ${this.id}`);
+        $(this).attr('required', 'required');
+      });
+    }
   }
 
 }

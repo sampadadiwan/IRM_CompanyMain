@@ -14,7 +14,7 @@ class SecondarySalesController < ApplicationController
   def offers
     @offers = policy_scope(@secondary_sale.offers)
     @offers = @offers.includes(:user, :investor, :secondary_sale, :entity,
-                                              :interest, :documents)
+                               :interest, :documents)
 
     @offers = OfferSearchService.new.fetch_rows(@offers, params)
     @offers = @offers.page(params[:page]) unless request.format.xlsx?

@@ -1,11 +1,14 @@
-<%= render "/offers/stats", secondary_sale: @secondary_sale %>
+<%= render "/offers/stats", secondary_sale: @secondary_sale if policy(@secondary_sale).update? %>
 
 <div data-controller="offers" 
      data-offers-lazy-load-data-value=<%= false %>
      data-offers-table-name-value="#offers">
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Offers</h1>
+    <h1 class="h3 mb-0 text-gray-800">
+        Offers:
+        <%= link_to @secondary_sale.name, secondary_sale_path(@secondary_sale) if @secondary_sale %>
+    </h1>
     <span>
         <%= link_to "View All Offers", offers_secondary_sale_path(@secondary_sale), 
                                   class: "btn btn-outline-primary" if @secondary_sale %>

@@ -1,6 +1,6 @@
 <div class="wizard_container" data-controller="wizard">
     
-    <div class="stepwizard <%= offer.secondary_sale.lock_allocations ? '': 'd-none' %>">
+    <div class="stepwizard <%= false && offer.secondary_sale.lock_allocations ? '': 'd-none' %>">
             <div class="stepwizard-row setup-panel">
                 
                 <div class="stepwizard-step">
