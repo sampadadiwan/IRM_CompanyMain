@@ -384,8 +384,10 @@ Given('I create a new InvestorKyc with pan {string}') do |string|
   sleep(3)
 end
 
-Given('I create a new InvestorKyc') do
+Given('I create a new InvestorKyc {string} with files {string}') do |args, files|
   @investor_kyc = FactoryBot.build(:investor_kyc, entity: @entity)
+  files = files.downcase
+  key_values(@investor_kyc, args)
   # InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user: false)
   puts "\n########### KYC ############"
   puts @investor_kyc.to_json
@@ -402,28 +404,93 @@ Given('I create a new InvestorKyc') do
   fill_in("#{class_name}_full_name", with: @investor_kyc.full_name)
   select(@investor_kyc.residency.titleize, from: "#{class_name}_residency")
   fill_in("#{class_name}_PAN", with: @investor_kyc.PAN)
+  
+  if files.include?("pan")
+    page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
+      within '#custom_file_upload_pan_card' do
+        click_on 'Choose file'
+      end
+    end
+  end
+
   fill_in("#{class_name}_birth_date", with: @investor_kyc.birth_date)
 
   click_on("Next")
   sleep(1)
   fill_in("#{class_name}_address", with: @investor_kyc.address)
+
+  if files.include?("address proof")
+    page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
+      within '#custom_file_upload_address_proof' do
+        click_on 'Choose file'
+      end
+    end
+  end
+
   fill_in("#{class_name}_corr_address", with: @investor_kyc.corr_address)
   fill_in("#{class_name}_bank_account_number", with: @investor_kyc.bank_account_number)
   fill_in("#{class_name}_ifsc_code", with: @investor_kyc.ifsc_code)
+
+  if files.include?("cancelled cheque")
+    page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
+      within '#custom_file_upload_cancelled_cheque' do
+        click_on 'Choose file'
+      end
+    end
+  end
+
   click_on("Next")
   sleep(1)
 
   fill_in("#{class_name}_expiry_date", with: @investor_kyc.expiry_date)
   fill_in("#{class_name}_comments", with: @investor_kyc.comments)
+  
+  if files.include?("f1")
+    page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
+      within '#custom_file_f1' do
+        click_on 'Choose file'
+      end
+    end
+  end
+
+  if files.include?("f2")
+    page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
+      within '#custom_file_f2' do
+        click_on 'Choose file'
+      end
+    end
+  end
+
+  sleep(3)
+
   click_on("Save")
   sleep(1)
 
 end
 
+Then('I should see the kyc documents {string}') do |docs|
+  @investor_kyc = InvestorKyc.last
+
+  document_names = @investor_kyc.documents.pluck(:name) 
+  docs.split(",").each do |doc_name|
+    puts "Checking for #{doc_name}"
+    document_names.include?(doc_name).should == true
+  end
+end
+
+Given('the entity has custom fields {string} for {string}') do |args, class_name|
+  puts "Creating custom fields for #{class_name} #{args.split('#')}"
+  ft = @entity.form_types.create!(name: class_name)
+  args.split("#").each do |arg|
+    cf = ft.form_custom_fields.build()
+    key_values(cf, arg)
+    cf.save!
+  end
+end
+
 Then('I should see ckyc and kra data comparison page') do
   expect(page).to have_content("CKYC")
   expect(page).to have_content("KRA")
-
 end
 
 Then('I can send KYC reminder to approved users') do
