@@ -1,7 +1,6 @@
-<% map = model.map_custom_fields %>
-<% model.properties&.each do |k,v| %>
-    <% custom_field = map[k] %>
-    <% if custom_field.nil? || custom_field.show_to_user(current_user) %>
+<% model.form_custom_fields.visible.order(position: :asc).each do |custom_field| %>
+    <% v = model.properties[custom_field.name] %>
+    <% if v.present? %>
         <tr>
             <td>
                 <%= custom_field&.human_label || k.to_s.humanize.titleize %>
@@ -15,6 +14,7 @@
             </td>
         </tr>
     <% end %>
+
 <% end %>
 
 <% model.custom_calculations.each do |fcf| %>
