@@ -35,6 +35,7 @@ export default class extends Controller {
 
     // Get the id and value of the changed element
     let fcf_change_id = $( changed_elem ).attr("id");
+    let required_on_show = $( changed_elem ).attr("required");
     let fcf_change_value = $( changed_elem ).val().toLowerCase();
     // console.log( `Input ${fcf_change_id} changed to ${fcf_change_value}` );
     
@@ -61,6 +62,9 @@ export default class extends Controller {
         switch( switch_val ) {
             case "matched-eq-hide": case "matched-contains-hide": case "not-matched-eq-show": case "not-matched-contains-show": case "not-matched-not_eq-hide": case "matched-not_eq-show":
                 $(elem).show();
+                if(required_on_show) {
+                  this.require_form_elements(elem);
+                }
                 break;
             case "matched-eq-show": case "matched-contains-show": case "not-matched-eq-hide": case "not-matched-contains-hide": case "not-matched-eq-hide": case "matched-not_eq-hide":
                 $(elem).hide();
@@ -95,6 +99,15 @@ export default class extends Controller {
               this.checked = false;
               break;
       }
+      // Remove the required attribute from the form element
+      $(this).removeAttr('required');
+    });
+  }
+
+  require_form_elements(elem) {
+    $(elem).find(':input').each(function() {
+      console.log(`Adding required to ${this.type} ${this.id}`);
+      $(this).attr('required', 'required');
     });
   }
 
