@@ -33,6 +33,7 @@ class FormCustomField < ApplicationRecord
   before_save :set_default_values
   def set_default_values
     self.name = name.strip.downcase
+    self.label ||= name.humanize
   end
 
   def renderer
