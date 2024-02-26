@@ -86,7 +86,7 @@ export default class extends Controller {
       $(elem).find(':input').each(function() {
         switch(this.type) {
             case 'file':         
-                jQuery(this).val('');
+                // jQuery(this).val('');
                 break;
         }
         // Remove the required attribute from the form element
