@@ -8,7 +8,7 @@ module FormTypeHelper
   end
 
   def file_fields(name, model, form, required: false)
-    render "/form_custom_fields/file", field: FormCustomField.new(name:, field_type: "file", required:, form_type_id: model.form_type&.id), model:, f: form
+    render "/form_custom_fields/file", field: FormCustomField.new(name:, label: name, field_type: "file", required:, form_type_id: model.form_type&.id), model:, f: form
   end
 
   def display_custom_fields(model, collapsed: false)
