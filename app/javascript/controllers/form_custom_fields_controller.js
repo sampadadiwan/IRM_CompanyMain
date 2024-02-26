@@ -16,7 +16,7 @@ export default class extends Controller {
     // Iterate over each element with the class 'custom_field'
     // If the value of the element is not an empty string, call the 'valueChanged' function with the element as an argument
     $( ".custom_field" ).each((idx, elem) => {
-        if($(elem).val() != "") {
+        if($(elem).val() !== null && $(elem).val() !== "") {
             this.valueChanged(elem);
         }
     });
@@ -32,7 +32,7 @@ export default class extends Controller {
 
   // This function is called when the value of an element with the class 'custom_field' changes
   valueChanged(changed_elem) {
-
+    
     // Get the id and value of the changed element
     let fcf_change_id = $( changed_elem ).attr("id");
     let required_on_show = $( changed_elem ).attr("required");
@@ -127,12 +127,12 @@ export default class extends Controller {
       let req = false;
       console.log("File input found");
       $(elem).find(':file').each(function() {
-        if(this.id) {
-          console.log(`Adding required to ${this.type} ${this.id}`);
+        let field_id = $(this).attr('id');
+        if(field_id) {          
           // Sometimes file has already been uploaded, so dont require it
-          let req = $(`#document_required_${this.id}`).val();
-          console.log(`req = ${req}`);
+          let req = $(`#document_required_${field_id}`).val();
           if(req == "true") {
+            console.log(`Adding required to ${this.type} ${field_id}`);
             $(this).attr('required', 'required');
           }
         }
