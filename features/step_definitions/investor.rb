@@ -461,6 +461,12 @@ Given('I create a new InvestorKyc {string} with files {string}') do |args, files
     end
   end
 
+  if args.include?("properties") 
+    @investor_kyc.properties.each do |key, value|
+      fill_in("#{class_name}_properties_#{key.strip.titleize.delete(" ").underscore}", with: value)
+    end
+  end
+
   sleep(3)
 
   click_on("Save")

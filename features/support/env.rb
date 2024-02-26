@@ -114,7 +114,15 @@ module IRMUtils
     key_val.each do |k, v|
       # model[k] = v
       puts "Setting #{k} to #{v} on #{model.class} #{model.id}"
-      model.send("#{k}=", v)
+      if k != "properties"
+        model.send("#{k}=", v)
+      else
+        v.split(",").each do |prop|
+          prop_key, prop_val = prop.split(":")
+          model.properties[prop_key] = prop_val
+          puts "Setting properties[#{prop_key}] = #{prop_val} on #{model.class} #{model.id} "
+        end
+      end
     end
   end
 

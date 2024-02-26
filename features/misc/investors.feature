@@ -138,7 +138,7 @@ Scenario Outline: Create investor kyc - no ckyc, with custom fields
   Given the user has role "company_admin"
   Given the entity has custom fields "<custom_fields>" for "IndividualKyc" 
   Given there is an existing investor "investor_name=Investor 1"
-  Given I create a new InvestorKyc "PAN=ABCD9876F" with files "<files>"
+  Given I create a new InvestorKyc "PAN=ABCD9876F;properties=F3:Test" with files "<files>"
   Then I should see the "Investor kyc was successfully saved. Please upload the required documents for the KYC."
   And I should see the kyc documents "<files>"
   Then I should see the investor kyc details on the details page
