@@ -12,19 +12,11 @@ class SecondarySalesController < ApplicationController
   end
 
   def offers
-    @offers = @secondary_sale.offers.includes(:user, :investor, :secondary_sale, :entity,
+    @offers = policy_scope(@secondary_sale.offers)
+    @offers = @offers.includes(:user, :investor, :secondary_sale, :entity,
                                               :interest, :documents)
 
-    @offers = @offers.where(user_id: current_user.id) unless policy(@secondary_sale).owner?
-    @offers = @offers.where(approved: true) if params[:approved].present? && params[:approved] == "true"
-    @offers = @offers.where(approved: false) if params[:approved].present? && params[:approved] == "false"
-    @offers = @offers.where(verified: true) if params[:verified].present? && params[:verified] == "true"
-    @offers = @offers.where(verified: false) if params[:verified].present? && params[:verified] == "false"
-    @offers = @offers.where(signature_data: nil) if params[:signature] == 'false'
-    @offers = @offers.where(pan_card_data: nil) if params[:pan_card] == 'false'
-    @offers = @offers.where(final_agreement: false) if params[:final_agreement] == 'false'
-    @offers = @offers.where(custom_matching_vals: params[:custom_matching_vals]) if params[:custom_matching_vals].present?
-
+    @offers = OfferSearchService.new.fetch_rows(@offers, params)
     @offers = @offers.page(params[:page]) unless request.format.xlsx?
 
     if params[:report]
@@ -57,7 +49,7 @@ class SecondarySalesController < ApplicationController
   end
 
   def finalize_offer_allocation
-    @offers = @secondary_sale.offers
+    @offers = policy_scope(@secondary_sale.offers)
 
     @offers = @offers.where(interest_id: nil) if params[:matched] == "false"
     @offers = @offers.where.not(interest_id: nil) if params[:matched] == "true"
