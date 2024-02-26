@@ -32,6 +32,9 @@
         <%= f.file_field field.name, class: "form-control custom_field", id: field_id, 
             data: { single_upload_target: "input" }, required: required %>
         
+        <!-- This is the hidden field that is used to store if the document is required, not sent to server, used by javascript to turn on/off required flag -->
+        <%= f.text_field "document_required",  class: "form-control", value: required, hidden: true, disabled: true, name: "document_required", id: "document_required_id_#{idx}" %>
+
         <!-- document_name is the name of the document -->
         <%= f.text_field "document_name",  class: "form-control", name: "#{for_model}[documents_attributes][#{idx}][name]", value: document_name, hidden: true  %>
         <!-- document_orignal is always set to true -->

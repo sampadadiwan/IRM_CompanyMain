@@ -124,11 +124,17 @@ export default class extends Controller {
       // File inputs need to be handled differently
       // We should not require other fields associated with the file like owner_tag, send_email etc
       // see _file.html.erb custom field
+      let req = false;
       console.log("File input found");
       $(elem).find(':file').each(function() {
         if(this.id) {
           console.log(`Adding required to ${this.type} ${this.id}`);
-          $(this).attr('required', 'required');
+          // Sometimes file has already been uploaded, so dont require it
+          let req = $(`#document_required_${this.id}`).val();
+          console.log(`req = ${req}`);
+          if(req == "true") {
+            $(this).attr('required', 'required');
+          }
         }
       });
       return;

@@ -42,6 +42,7 @@ module CommitmentAccountEntry
   def get_account_entry(name, date, raise_error: true)
     ae = account_entries.where(name:, reporting_date: ..date).order(reporting_date: :desc).first
     raise "No Account Entry found for #{name} on #{date}" if ae.nil? && raise_error
+
     ae
   end
 
