@@ -130,7 +130,7 @@ export default class extends Controller {
         let field_id = $(this).attr('id');
         if(field_id) {          
           // Sometimes file has already been uploaded, so dont require it
-          let req = $(`#document_required_${field_id}`).val();
+          let req = $(`#document_required_${this.id}`).val();
           if(req == "true") {
             console.log(`Adding required to ${this.type} ${field_id}`);
             $(this).attr('required', 'required');
@@ -140,8 +140,12 @@ export default class extends Controller {
       return;
     } else {          
       $(elem).find(':input').each(function() {
-        console.log(`Adding required to ${this.type} ${this.id}`);
-        $(this).attr('required', 'required');
+        let required = $(this).parent(".form-group").attr('data-mandatory');
+        console.log(`required = ${required}`);
+        if (required == "true") {
+          console.log(`Adding required to ${this.type} ${this.id}`);
+          $(this).attr('required', 'required');
+        }
       });
     }
   }

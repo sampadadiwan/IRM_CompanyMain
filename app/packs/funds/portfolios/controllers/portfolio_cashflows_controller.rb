@@ -22,10 +22,13 @@ class PortfolioCashflowsController < ApplicationController
     @portfolio_cashflow.investment_instrument_id = @portfolio_cashflow.aggregate_portfolio_investment.investment_instrument_id
     @portfolio_cashflow.payment_date = Time.zone.today
     authorize @portfolio_cashflow
+    setup_custom_fields(@portfolio_cashflow)
   end
 
   # GET /portfolio_cashflows/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@portfolio_cashflow)
+  end
 
   # POST /portfolio_cashflows or /portfolio_cashflows.json
   def create
@@ -76,6 +79,7 @@ class PortfolioCashflowsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def portfolio_cashflow_params
-    params.require(:portfolio_cashflow).permit(:entity_id, :fund_id, :portfolio_company_id, :aggregate_portfolio_investment_id, :payment_date, :amount, :notes, :tag, :investment_instrument_id)
+    params.require(:portfolio_cashflow).permit(:entity_id, :fund_id, :portfolio_company_id, :aggregate_portfolio_investment_id, :payment_date, :amount, :notes, :tag,
+                                               :investment_instrument_id, :form_type_id, properties: {})
   end
 end

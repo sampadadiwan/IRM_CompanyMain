@@ -58,7 +58,13 @@ class ImportUtil
     end
 
     # Sometimes we import custom fields. Ensure custom fields get created
-    FormType.save_cf_from_import(custom_field_headers, import_upload) if import_upload.processed_row_count.positive?
+    if import_upload.processed_row_count.positive?
+      custom_fields_created = FormType.save_cf_from_import(custom_field_headers, import_upload)
+      if custom_fields_created.present?
+        import_upload.custom_fields_created = custom_fields_created.join(";")
+        import_upload.save
+      end
+    end
     # Save the results file
     File.binwrite("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
 

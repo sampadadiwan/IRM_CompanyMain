@@ -1,6 +1,6 @@
-<%= render FormCard.new(title: "Portfolio Income: #{@portfolio_cashflow.aggregate_portfolio_investment}") do %>
+<%= render FormCard.new(title: "Portfolio Income: #{@portfolio_cashflow.aggregate_portfolio_investment}", controller: "form-validation") do %>
 
-  <%= form_with(model: portfolio_cashflow) do |form| %>
+  <%= form_with(model: portfolio_cashflow, validate: true, class: "validate_form") do |form| %>
     <% if portfolio_cashflow.errors.any? %>
       <div class="alert alert-danger">
         <h2><%= pluralize(portfolio_cashflow.errors.count, "error") %> prohibited this portfolio_cashflow from being saved:</h2>
@@ -13,37 +13,42 @@
       </div>
     <% end %>
 
+    <div class="setup_content">
       <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
       <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
       <%= form.text_field :portfolio_company_id, class: "form-control", hidden: true  %>
       <%= form.text_field :aggregate_portfolio_investment_id, class: "form-control", hidden: true  %>
       <%= form.text_field :investment_instrument_id, class: "form-control", hidden: true  %>
 
-    <div class="form-group">
-      <%= form.label :payment_date %>
-      <%= form.date_field :payment_date, class: "form-control"  %>
+      <div class="form-group">
+        <%= form.label :payment_date %>
+        <%= form.date_field :payment_date, class: "form-control"  %>
+      </div>
+
+      <div class="form-group" data-controller="currencyformat">
+        <%= form.label :amount %> <span class="formatted_currency"></span>
+        <%= form.number_field :amount, class: "form-control", step: :any,
+            data: {action: "input->currencyformat#format"} %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :tag %>
+        <%= form.text_field :tag, class: "form-control"  %>
+        <small class="form-text text-muted">Tag this cashflow for reporting purposes, leave blank for actual casflows</small>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :notes %>
+        <%= form.text_area :notes, class: "form-control"  %>
+      </div>
+
+      <%= custom_form_fields(portfolio_cashflow, form) %>
+
+      <div class="form-group">
+        <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+      </div>
     </div>
 
-    <div class="form-group" data-controller="currencyformat">
-      <%= form.label :amount %> <span class="formatted_currency"></span>
-      <%= form.number_field :amount, class: "form-control", step: :any,
-          data: {action: "input->currencyformat#format"} %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :tag %>
-      <%= form.text_field :tag, class: "form-control"  %>
-      <small class="form-text text-muted">Tag this cashflow for reporting purposes, leave blank for actual casflows</small>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :notes %>
-      <%= form.text_area :notes, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-    </div>
   <% end %>
 
 <% end %>

@@ -246,13 +246,12 @@ class InvestorKyc < ApplicationRecord
     Money.new(cdp.sum(:cost_of_investment_cents), entity.currency)
   end
 
-  def self.cleanup_zeros
-    e.investor_kycs.each do |kyc|
+  def self.cleanup_zeros(ent)
+    ent.investor_kycs.each do |kyc|
       kyc.properties.each do |name, val|
-           kyc.properties.delete(name) if val == "0"
+        kyc.properties.delete(name) if val == "0"
       end
       kyc.save(validate: false)
-    end;nil
+    end; nil
   end
-  
 end

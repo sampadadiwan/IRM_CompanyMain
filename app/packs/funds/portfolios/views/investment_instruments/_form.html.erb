@@ -1,6 +1,6 @@
 <%= render FormCard.new(title: "Instrument : #{investment_instrument&.portfolio_company&.investor_name.presence || 'New'}") do %>
 
-<%= form_with(model: investment_instrument) do |form| %>
+<%= form_with(model: investment_instrument, validate: true) do |form| %>
   <% if investment_instrument.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(investment_instrument.errors.count, "error") %> prohibited this investment_instrument from being saved:</h2>

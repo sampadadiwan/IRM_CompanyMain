@@ -1,6 +1,7 @@
 class PortfolioCashflow < ApplicationRecord
   include WithCustomField
   include ForInvestor
+  include WithFolder
 
   belongs_to :entity
   belongs_to :fund

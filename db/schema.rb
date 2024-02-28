@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_24_050330) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_28_152926) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1593,6 +1593,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_24_050330) do
     t.integer "failed_row_count", default: 0
     t.text "import_file_data"
     t.text "import_results_data"
+    t.text "custom_fields_created"
     t.index ["entity_id"], name: "index_import_uploads_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_import_uploads_on_owner"
     t.index ["user_id"], name: "index_import_uploads_on_user_id"
@@ -2298,8 +2299,13 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_24_050330) do
     t.string "tag", limit: 100, default: ""
     t.string "instrument"
     t.bigint "investment_instrument_id", null: false
+    t.bigint "form_type_id"
+    t.json "json_fields"
+    t.bigint "document_folder_id"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_cashflows_on_aggregate_portfolio_investment_id"
+    t.index ["document_folder_id"], name: "index_portfolio_cashflows_on_document_folder_id"
     t.index ["entity_id"], name: "index_portfolio_cashflows_on_entity_id"
+    t.index ["form_type_id"], name: "index_portfolio_cashflows_on_form_type_id"
     t.index ["fund_id"], name: "index_portfolio_cashflows_on_fund_id"
     t.index ["investment_instrument_id"], name: "index_portfolio_cashflows_on_investment_instrument_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_cashflows_on_portfolio_company_id"
@@ -3039,6 +3045,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_24_050330) do
   add_foreign_key "portfolio_attributions", "portfolio_investments", column: "sold_pi_id"
   add_foreign_key "portfolio_cashflows", "aggregate_portfolio_investments"
   add_foreign_key "portfolio_cashflows", "entities"
+  add_foreign_key "portfolio_cashflows", "folders", column: "document_folder_id"
+  add_foreign_key "portfolio_cashflows", "form_types"
   add_foreign_key "portfolio_cashflows", "funds"
   add_foreign_key "portfolio_cashflows", "investment_instruments"
   add_foreign_key "portfolio_cashflows", "investors", column: "portfolio_company_id"

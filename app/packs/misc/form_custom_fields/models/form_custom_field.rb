@@ -25,6 +25,23 @@ class FormCustomField < ApplicationRecord
     errors.add(:meta_data, "You cannot do CRUD operations in meta_data") if meta_data.downcase.match?(/alter|truncate|drop|insert|select|destroy|delete|update|create|save|rollback|system|fork/)
   end
 
+  validate :read_only_and_required, if: -> { read_only && required }
+  def read_only_and_required
+    errors.add(:read_only, "Read only fields cannot be required")
+  end
+
+  validate :condition_on_custom_field, if: -> { condition_on.present? }
+  def condition_on_custom_field
+    parent_field = form_type.form_custom_fields.where(name: condition_on).first
+    errors.add(:condition_on, "Conditions can be applied only on existing custom fields") if parent_field.nil?
+  end
+
+  validate :condition_on_one_level, if: -> { condition_on.present? }
+  def condition_on_one_level
+    parent_field = form_type.form_custom_fields.where(name: condition_on).first
+    errors.add(:condition_on, "Conditions can be applied only at one level") if parent_field.present? && parent_field.condition_on.present?
+  end
+
   def initialize(*args)
     super(*args)
     self.field_type ||= "TextField"
@@ -80,6 +97,10 @@ class FormCustomField < ApplicationRecord
   end
 
   def data_attributes
-    "data-match-value='#{condition_params}' data-match-criteria='#{condition_criteria}'" if condition_on.present?
+    if condition_on.present?
+      "data-match-value='#{condition_params}' data-match-criteria='#{condition_criteria}' data-mandatory='#{required}'"
+    else
+      "data-mandatory='#{required}'"
+    end
   end
 end

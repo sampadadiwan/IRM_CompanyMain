@@ -8,6 +8,7 @@ class FormType < ApplicationRecord
   # But there exists no custom form fields for the import - hence we can see it but not edit it.
   # This automatically sets up the custom form fields, given that custom fields have been imported into the record
   def self.save_cf_from_import(custom_field_headers, import_upload)
+    newly_created_cf = []
     if custom_field_headers.present?
       # Create the form type
       name = import_upload.import_type
@@ -20,9 +21,13 @@ class FormType < ApplicationRecord
       custom_field_headers.each do |cfh|
         # Create the custom form fields for the form type
         cust_field_key = cfh
-        form_type.form_custom_fields.create(name: cust_field_key, field_type: "text_field") unless form_type.form_custom_fields.exists?(name: cust_field_key)
+        unless form_type.form_custom_fields.exists?(name: cust_field_key)
+          form_type.form_custom_fields.create(name: cust_field_key, field_type: "TextField")
+          newly_created_cf << cust_field_key
+        end
       end
     end
+    newly_created_cf
   end
 
   def dup_cf_names?
@@ -36,5 +41,14 @@ class FormType < ApplicationRecord
       end
       true
     end
+  end
+
+  def deep_clone(entity_id)
+    ftd = dup
+    ftd.entity_id = entity_id
+    form_custom_fields.each do |fcf|
+      ftd.form_custom_fields << fcf.dup
+    end
+    ftd.save
   end
 end
