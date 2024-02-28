@@ -1,4 +1,4 @@
-<%= render "/offers/stats", secondary_sale: @secondary_sale if policy(@secondary_sale).update? %>
+<%= render "/offers/stats", secondary_sale: @secondary_sale if @secondary_sale && policy(@secondary_sale).update? %>
 
 <div data-controller="offers" 
      data-offers-lazy-load-data-value=<%= false %>

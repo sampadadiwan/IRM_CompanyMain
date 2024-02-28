@@ -91,7 +91,7 @@ Scenario Outline: Create new interest and check obfuscation
   Then I should see the interest details
   And I am at the sales details page
   And I click "Interests"
-  And I click "Shortlist"
+  And I "Shortlist" the interest
   Then the interest should be shortlisted
   
   

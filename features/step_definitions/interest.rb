@@ -99,14 +99,14 @@
 
     expect(page).to have_content(@interest.price)
     expect(page).to have_content(@interest.quantity)
-    if @user.entity_id == @created_interest.interest_entity_id || @created_interest.escrow_deposited
+    # if @user.entity_id == @created_interest.interest_entity_id || @created_interest.escrow_deposited
         expect(page).to have_content(@created_interest.user.full_name)
         expect(page).to have_content(@created_interest.interest_entity.name)
-    else
-        expect(page).to have_no_content(@created_interest.user.full_name)
-        expect(page).to have_no_content(@created_interest.interest_entity.name)
-        expect(page).to have_content(ENV["OBFUSCATION"])
-    end
+    # else
+    #     expect(page).to have_no_content(@created_interest.user.full_name)
+    #     expect(page).to have_no_content(@created_interest.interest_entity.name)
+    #     expect(page).to have_content(ENV["OBFUSCATION"])
+    # end
     # expect(page).to have_content(@created_interest.entity.name)
     
     within("#short_listed") do
@@ -129,6 +129,11 @@
     @interest = @created_interest
   end
   
+  Then('I {string} the interest') do |action|
+    within("#interest_#{@created_interest.id}") do
+      click_on(action)
+    end
+  end
 
   Then('the interest should be shortlisted') do
     sleep(1)

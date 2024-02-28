@@ -245,4 +245,13 @@ class InvestorKyc < ApplicationRecord
     cdp = cdp.where(payment_date: ..end_date) if end_date.present?
     Money.new(cdp.sum(:cost_of_investment_cents), entity.currency)
   end
+
+  def self.cleanup_zeros
+    e.investor_kycs.each do |kyc|
+      kyc.properties.each do |name, val|
+           kyc.properties.delete(name) if val == "0"
+         ennil
+         kynil?ve(validate: false)
+      3.3.0 :016 > end;nil
+  end
 end

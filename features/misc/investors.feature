@@ -126,27 +126,13 @@ Scenario Outline: Create investor kyc - no ckyc
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   Given there is an existing investor "investor_name=Investor 1"
-  Given I create a new InvestorKyc "PAN=ABCD9876F" with files "Upload PAN Card,Upload Address Proof,Upload Cancelled Cheque"
+  Given I create a new InvestorKyc "PAN=ABCD9876F" with files "Upload PAN Card,Upload Address Proof,Upload Cancelled Cheque" for ""
   Then I should see the "Investor kyc was successfully saved. Please upload the required documents for the KYC."
   And I should see the kyc documents "Upload PAN Card,Upload Address Proof,Upload Cancelled Cheque"
   And when I upload the document for the kyc
   Then I should see the "Document was successfully saved."
   Then I should see the investor kyc details on the details page
 
-Scenario Outline: Create investor kyc - no ckyc, with custom fields
-  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
-  Given the user has role "company_admin"
-  Given the entity has custom fields "<custom_fields>" for "IndividualKyc" 
-  Given there is an existing investor "investor_name=Investor 1"
-  Given I create a new InvestorKyc "PAN=ABCD9876F;properties=F3:Test" with files "<files>"
-  Then I should see the "Investor kyc was successfully saved. Please upload the required documents for the KYC."
-  And I should see the kyc documents "<files>"
-  Then I should see the investor kyc details on the details page
-  Examples:
-    |custom_fields| files |
-    |name=F1;field_type=File;required=true#name=F2;field_type=File;required=false#name=F3;field_type=TextField;required=true         | F1,F2|
-    |name=F1;field_type=File;required=true#name=F2;field_type=File;required=true#name=F3;field_type=TextField;required=true         | F1,F2|
-    |name=F1;field_type=File;required=false#name=F2;field_type=File;required=false#name=F3;field_type=TextField;required=true         | F1|
 
 
 

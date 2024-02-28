@@ -55,7 +55,7 @@ class OfferPolicy < SaleBasePolicy
   end
 
   def update?
-    (create? || super_user?) && !record.verified && !record.secondary_sale.lock_allocations
+    (create? || super_user?) && !record.verified # && !record.secondary_sale.lock_allocations
   end
 
   def allocation_form?

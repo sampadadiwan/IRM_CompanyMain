@@ -384,7 +384,8 @@ Given('I create a new InvestorKyc with pan {string}') do |string|
   sleep(3)
 end
 
-Given('I create a new InvestorKyc {string} with files {string}') do |args, files|
+Given('I create a new InvestorKyc {string} with files {string} for {string}') do |args, files, kyc_url_params|
+
   @investor_kyc = FactoryBot.build(:investor_kyc, entity: @entity)
   files = files.downcase
   key_values(@investor_kyc, args)
@@ -394,16 +395,17 @@ Given('I create a new InvestorKyc {string} with files {string}') do |args, files
 
   class_name = @investor_kyc.type_from_kyc_type.underscore
 
-
-  visit(investor_kycs_path)
-  click_on("New KYC")
-  click_on("Individual")
-
-  sleep(5)
-  select(@investor_kyc.investor.investor_name, from: "#{class_name}_investor_id")
-  fill_in("#{class_name}_full_name", with: @investor_kyc.full_name)
-  select(@investor_kyc.residency.titleize, from: "#{class_name}_residency")
-  fill_in("#{class_name}_PAN", with: @investor_kyc.PAN)
+  if kyc_url_params.present?  
+    # For Investors create thier own KYC
+    visit(new_investor_kyc_path(eval(kyc_url_params)))
+  else
+    # For Funds creating KYCs
+    visit(investor_kycs_path)
+    click_on("New KYC")
+    click_on("Individual")
+    sleep(2)
+    select(@investor_kyc.investor.investor_name, from: "#{class_name}_investor_id")
+  end
   
   if files.include?("pan")
     page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
@@ -412,13 +414,16 @@ Given('I create a new InvestorKyc {string} with files {string}') do |args, files
       end
     end
   end
+  sleep(1)
 
+  fill_in("#{class_name}_full_name", with: @investor_kyc.full_name)
+  select(@investor_kyc.residency.titleize, from: "#{class_name}_residency")
+  fill_in("#{class_name}_PAN", with: @investor_kyc.PAN)
   fill_in("#{class_name}_birth_date", with: @investor_kyc.birth_date)
-
   click_on("Next")
   sleep(1)
-  fill_in("#{class_name}_address", with: @investor_kyc.address)
 
+  
   if files.include?("address proof")
     page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
       within '#custom_file_upload_address_proof' do
@@ -426,11 +431,6 @@ Given('I create a new InvestorKyc {string} with files {string}') do |args, files
       end
     end
   end
-
-  fill_in("#{class_name}_corr_address", with: @investor_kyc.corr_address)
-  fill_in("#{class_name}_bank_account_number", with: @investor_kyc.bank_account_number)
-  fill_in("#{class_name}_ifsc_code", with: @investor_kyc.ifsc_code)
-
   if files.include?("cancelled cheque")
     page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
       within '#custom_file_upload_cancelled_cheque' do
@@ -438,12 +438,21 @@ Given('I create a new InvestorKyc {string} with files {string}') do |args, files
       end
     end
   end
-
+  sleep(1)
+  
+  fill_in("#{class_name}_address", with: @investor_kyc.address)
+  fill_in("#{class_name}_corr_address", with: @investor_kyc.corr_address)
+  fill_in("#{class_name}_bank_name", with: @investor_kyc.bank_account_number)
+  fill_in("#{class_name}_bank_branch", with: @investor_kyc.bank_account_number)
+  fill_in("#{class_name}_bank_account_number", with: @investor_kyc.bank_account_number)
+  fill_in("#{class_name}_ifsc_code", with: @investor_kyc.ifsc_code)
   click_on("Next")
   sleep(1)
 
-  fill_in("#{class_name}_expiry_date", with: @investor_kyc.expiry_date)
-  fill_in("#{class_name}_comments", with: @investor_kyc.comments)
+  unless kyc_url_params.present?  
+    fill_in("#{class_name}_expiry_date", with: @investor_kyc.expiry_date)
+    fill_in("#{class_name}_comments", with: @investor_kyc.comments)
+  end
   
   if files.include?("f1")
     page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
@@ -460,14 +469,13 @@ Given('I create a new InvestorKyc {string} with files {string}') do |args, files
       end
     end
   end
+  sleep(1)
 
   if args.include?("properties") 
     @investor_kyc.properties.each do |key, value|
       fill_in("#{class_name}_properties_#{key.strip.titleize.delete(" ").underscore}", with: value)
     end
   end
-
-  sleep(3)
 
   click_on("Save")
   sleep(1)
