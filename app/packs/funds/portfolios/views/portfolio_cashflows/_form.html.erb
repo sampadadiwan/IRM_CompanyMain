@@ -1,6 +1,6 @@
-<%= render FormCard.new(title: "Portfolio Income: #{@portfolio_cashflow.aggregate_portfolio_investment}", controller: "form-validation") do %>
+<%= render FormCard.new(title: "Portfolio Income: #{@portfolio_cashflow.aggregate_portfolio_investment}") do %>
 
-  <%= form_with(model: portfolio_cashflow, validate: true, class: "validate_form") do |form| %>
+  <%= form_with(model: portfolio_cashflow, validate: true) do |form| %>
     <% if portfolio_cashflow.errors.any? %>
       <div class="alert alert-danger">
         <h2><%= pluralize(portfolio_cashflow.errors.count, "error") %> prohibited this portfolio_cashflow from being saved:</h2>

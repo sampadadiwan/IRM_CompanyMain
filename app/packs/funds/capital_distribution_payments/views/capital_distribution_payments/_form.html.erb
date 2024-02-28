@@ -1,10 +1,6 @@
-<div class="card shadow mb-4">
-  <div class="card-header py-3">
-      <h6 class="m-0 font-weight-bold text-primary">
-          Distribution Payment : <%= capital_distribution_payment.capital_commitment&.investor_name %>
-      </h6>
-  </div>
-  <div class="card-body">
+
+<%= render FormCard.new(title: "Distribution Payment : #{capital_distribution_payment.capital_commitment&.investor_name}") do %>
+
 
     <%= form_with(model: capital_distribution_payment, validate: true) do |form| %>
       <% if capital_distribution_payment.errors.any? %>
@@ -57,5 +53,4 @@
       </div>
     <% end %>
 
-  </div>
-</div>  
+<% end %>

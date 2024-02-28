@@ -6,7 +6,7 @@
 
 <%= render FormCard.new(title: "Unit Setting : #{fund_unit_setting.fund&.name}") do %>
 
-    <%= form_with(model: fund_unit_setting) do |form| %>
+    <%= form_with(model: fund_unit_setting, validate: true) do |form| %>
       <% if fund_unit_setting.errors.any? %>
         <div class="alert alert-danger">
           <h2><%= pluralize(fund_unit_setting.errors.count, "error") %> prohibited this fund_unit_setting from being saved:</h2>
