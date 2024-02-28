@@ -250,8 +250,9 @@ class InvestorKyc < ApplicationRecord
     e.investor_kycs.each do |kyc|
       kyc.properties.each do |name, val|
            kyc.properties.delete(name) if val == "0"
-         ennil
-         kynil?ve(validate: false)
-      3.3.0 :016 > end;nil
+      end
+      kyc.save(validate: false)
+    end;nil
   end
+  
 end
