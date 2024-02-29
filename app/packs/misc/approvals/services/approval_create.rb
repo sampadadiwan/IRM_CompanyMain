@@ -11,12 +11,7 @@ class ApprovalCreate < ApprovalService
 
   def setup_owner_access_rights(_ctx, approval:, **)
     if approval.owner.present?
-      approval.owner.access_rights.each do |ar|
-        new_ar = ar.dup
-        new_ar.entity_id = approval.entity_id
-        new_ar.owner = approval
-        new_ar.save
-      end
+      ApprovalAccessRightsJob.perform_later(approval.id)
     else
       Rails.logger.debug "No access rights to setup"
     end

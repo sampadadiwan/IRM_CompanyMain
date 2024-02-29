@@ -55,6 +55,7 @@ Lint/UselessAssignment:
 
 Rails/SkipsModelValidations:
   Exclude:
+    - 'app/packs/misc/form_types/models/form_type.rb'
     - 'app/packs/core/documents/models/concerns/with_e_signatures.rb'
     - 'app/packs/core/documents/models/e_signature.rb'
     - 'app/packs/misc/form_custom_fields/models/form_custom_field.rb'

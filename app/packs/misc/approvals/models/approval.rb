@@ -88,4 +88,18 @@ class Approval < ApplicationRecord
       generate_responses
     end
   end
+
+  def setup_owner_access_rights
+    if owner.present?
+      owner.access_rights.each do |ar|
+        new_ar = ar.dup
+        new_ar.entity_id = entity_id
+        new_ar.owner = self
+        new_ar.save
+      end
+    else
+      Rails.logger.debug "No access rights to setup"
+    end
+    true
+  end
 end

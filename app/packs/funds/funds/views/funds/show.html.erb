@@ -102,6 +102,7 @@
                   form_class: "deleteButton",
                   data: {action: "click->confirm#popup" , turbo:false} if policy(@fund).destroy? %>
 
+              <%= link_to "Fund Approval" , new_approval_path("approval[owner_id]": @fund.id, "approval[owner_type]": "Fund"), {class: "dropdown-item" } %>
             <% end %>
 
             <% if @fund.entity.permissions.enable_account_entries? %>
