@@ -1,4 +1,8 @@
-<%= render FormCard.new(title: "Approval : #{approval.title.presence || 'New'}") do %>
+<% 
+  title = "Approval : " 
+  title += approval.owner.present? ? "For #{approval.owner}" : "#{approval.title.presence || 'New'}"
+%>
+<%= render FormCard.new(title:) do %>
 
   <%= form_with(model: approval, validate: true, class: "") do |form| %>
     <% if approval.errors.any? %>
