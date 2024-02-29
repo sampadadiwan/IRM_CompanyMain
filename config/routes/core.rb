@@ -12,7 +12,9 @@ resources :tasks do
   patch 'completed', on: :member
 end
 resources :form_custom_fields
-resources :form_types
+resources :form_types do
+  get 'clone', on: :member
+end
 
 resources :e_signatures
 resources :stamp_papers

@@ -1,5 +1,5 @@
 class FormTypesController < ApplicationController
-  before_action :set_form_type, only: %i[show edit update destroy]
+  before_action :set_form_type, only: %i[show edit update destroy clone]
 
   # GET /form_types or /form_types.json
   def index
@@ -8,6 +8,11 @@ class FormTypesController < ApplicationController
 
   # GET /form_types/1 or /form_types/1.json
   def show; end
+
+  def clone
+    @clone = @form_type.deep_clone(current_user.entity_id)
+    redirect_to form_type_path(@clone), notice: "Form type was successfully cloned."
+  end
 
   # GET /form_types/new
   def new

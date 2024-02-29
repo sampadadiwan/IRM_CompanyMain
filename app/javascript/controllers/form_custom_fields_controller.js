@@ -35,8 +35,11 @@ export default class extends Controller {
     
     // Get the id and value of the changed element
     let fcf_change_id = $( changed_elem ).attr("id");
+    console.log(`fcf_change_id = ${fcf_change_id}`);
     let required_on_show = $( changed_elem ).attr("required");
-    let fcf_change_value = $( changed_elem ).val().toLowerCase();
+    let val = $( changed_elem ).val().toString();
+    console.log(`required_on_show = ${required_on_show}, ${val}`);
+    let fcf_change_value = val.toLowerCase();
     // console.log( `Input ${fcf_change_id} changed to ${fcf_change_value}` );
     
     // Iterate over each element with the class 'fcf.conditional' which is dependent on fcf_change_id

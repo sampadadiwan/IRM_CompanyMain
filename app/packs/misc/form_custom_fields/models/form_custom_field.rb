@@ -32,13 +32,13 @@ class FormCustomField < ApplicationRecord
 
   validate :condition_on_custom_field, if: -> { condition_on.present? }
   def condition_on_custom_field
-    parent_field = form_type.form_custom_fields.where(name: condition_on).first
+    parent_field = form_type.form_custom_fields.find { |fcf| fcf.name == condition_on }
     errors.add(:condition_on, "#{name} can be applied only on existing custom fields") if parent_field.nil?
   end
 
   validate :condition_on_one_level, if: -> { condition_on.present? }
   def condition_on_one_level
-    parent_field = form_type.form_custom_fields.where(name: condition_on).first
+    parent_field = form_type.form_custom_fields.find { |fcf| fcf.name == condition_on }
     errors.add(:condition_on, "#{name} cannot be dependent on another conditional field") if parent_field.present? && parent_field.condition_on.present?
   end
 

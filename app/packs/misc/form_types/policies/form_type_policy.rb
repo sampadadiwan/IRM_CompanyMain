@@ -36,4 +36,8 @@ class FormTypePolicy < ApplicationPolicy
   def destroy?
     update?
   end
+
+  def clone?
+    true
+  end
 end
