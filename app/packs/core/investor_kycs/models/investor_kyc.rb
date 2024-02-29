@@ -1,5 +1,5 @@
 class InvestorKyc < ApplicationRecord
-  STANDARD_COLUMN_NAMES = ["Investor", "Full Name", "Type", "Kyc Verified", "Expired", " "].freeze
+  STANDARD_COLUMN_NAMES = ["Investor", "Investing Entity", "Type", "Kyc Verified", "Expired", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[investor_name full_name kyc_type verified expired dt_actions].freeze
 
   INVESTOR_COLUMN_NAMES = STANDARD_COLUMN_NAMES - ["Investor"]
