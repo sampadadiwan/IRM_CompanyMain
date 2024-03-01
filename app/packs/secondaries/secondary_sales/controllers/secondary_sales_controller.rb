@@ -170,6 +170,7 @@ class SecondarySalesController < ApplicationController
   def lock_allocations
     result = SecondarySaleLockAllocations.call(secondary_sale: @secondary_sale)
     label = result[:label]
+    
     respond_to do |format|
       if result.success?
         format.html do
@@ -179,7 +180,12 @@ class SecondarySalesController < ApplicationController
 
         format.json { render :show, status: :created, location: @secondary_sale }
       else
-        format.html { render :new, status: :unprocessable_entity }
+        logger.info(result[:errors])
+    
+        format.html do
+          redirect_to finalize_offer_allocation_secondary_sale_url(secondary_sale_id: @secondary_sale.id),
+                      alert: "Error: #{result[:errors].full_messages}"
+        end
         format.json { render json: @secondary_sale.errors, status: :unprocessable_entity }
       end
     end
