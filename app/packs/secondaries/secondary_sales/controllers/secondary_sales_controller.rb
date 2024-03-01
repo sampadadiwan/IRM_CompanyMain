@@ -8,11 +8,13 @@ class SecondarySalesController < ApplicationController
   # GET /secondary_sales or /secondary_sales.json
   def index
     authorize(SecondarySale)
-    @secondary_sales = policy_scope(SecondarySale)
+    @q = SecondarySale.ransack(params[:q])
+    @secondary_sales = policy_scope(@q.result)
   end
 
   def offers
-    @offers = policy_scope(@secondary_sale.offers)
+    @q = @secondary_sale.offers.ransack(params[:q])
+    @offers = policy_scope(@q.result)
     @offers = @offers.includes(:user, :investor, :secondary_sale, :entity,
                                :interest, :documents)
 
@@ -27,7 +29,8 @@ class SecondarySalesController < ApplicationController
   end
 
   def interests
-    @interests = @secondary_sale.interests.includes(:entity, :interest_entity, :user)
+    @q = @secondary_sale.interests.ransack(params[:q])
+    @interests = policy_scope(@q.result).includes(:entity, :interest_entity, :user)
     @interests = @interests.where(interest_entity_id: current_user.entity_id) unless policy(@secondary_sale).owner?
 
     @interests = @interests.eligible(@secondary_sale) if params[:eligible].present? && params[:eligible] == "true"

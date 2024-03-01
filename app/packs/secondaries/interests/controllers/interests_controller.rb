@@ -4,8 +4,10 @@ class InterestsController < ApplicationController
 
   # GET /interests or /interests.json
   def index
-    @interests = policy_scope(Interest).includes(:entity, :interest_entity, :user)
+    @q = Interest.ransack(params[:q])
+    @interests = policy_scope(@q.result).includes(:entity, :interest_entity, :user)
     @secondary_sale = nil
+
     if params[:secondary_sale_id].present?
       @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
 

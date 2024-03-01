@@ -91,7 +91,7 @@
     @sale = FactoryBot.build(:secondary_sale, entity: @entity)
     @sale.start_date = Time.zone.today    
     key_values(@sale, arg1)
-    @sale.save!
+    SecondarySaleCreate.wtf?(secondary_sale: @sale)
     @sale.reload
     puts "\n####Sale####\n"
     puts @sale.to_json
@@ -227,7 +227,7 @@ Given('there are {string} investments {string} in the company') do |count, args|
     i = FactoryBot.build(:investment, entity: @company, investor: @investor, 
       funding_round: @funding_round)
     key_values(i, args)
-    i = SaveInvestment.call(investment: i).investment
+    i = SaveInvestment.wtf?(investment: i).investment
     puts "\n####Investment Created####\n"
     puts i.to_json
   end
@@ -307,9 +307,7 @@ end
 Then('when the offer is approved') do
   @offer = Offer.last
   puts @offer.to_json
-
-  @offer.approved = true
-  @offer.save
+  OfferApprove.wtf?(offer: @offer, current_user: @user)
 end
 
 
@@ -332,13 +330,11 @@ Given('there are offers {string} for the sale') do |args|
 
 
     key_values(offer, args)
-    saved = offer.save!    
-    if saved
-      key_values(offer, args)
-      offer.save
-      puts "\n####Offer Created####\n"
-      puts offer.to_json                      
-    end
+    approved = offer.approved
+    OfferCreate.wtf?(offer: offer, current_user: @user).success?
+    OfferApprove.wtf?(offer: offer, current_user: @user) if approved
+    puts "\n####Offer Created####\n"
+    puts offer.to_json                      
   end
 end
 
@@ -349,13 +345,13 @@ Given('there are {string} offers for the sale') do |approved_flag|
   )
   approved = approved_flag == "approved"
   Holding.all.each do |h|
-    offer = Offer.create(holding: h, entity: h.entity, secondary_sale: @sale, 
+    offer = Offer.new(holding: h, entity: h.entity, secondary_sale: @sale, 
                           user: h.entity.employees.sample, investor: h.investor,
                           quantity: h.quantity * @sale.percent_allowed / 100, approved: approved)
 
-
-    offer.approved = approved
-    offer.save    
+    OfferCreate.wtf?(offer: offer)
+    OfferApprove.wtf?(offer: offer, current_user: @user) if approved
+        
     puts "\n####Offer Created####\n"
     puts offer.to_json                      
   end
@@ -407,14 +403,9 @@ Given('there are {string} interests {string} for the sale') do |count, args|
                   short_listed: true)
 
     key_values(interest, args)
-    saved = interest.save
-    if saved
-      puts "\n####Interest Created####\n"
-      puts interest.to_json
-    else
-      puts "Interest not saved"
-      puts interest.errors.full_messages
-    end
+    interest.save!
+    puts "\n####Interest Created####\n"
+    puts interest.to_json    
   end
 
 end
@@ -598,15 +589,14 @@ end
 
 Then('when the offers are verified') do
   @sale.offers.not_verified.each do |offer|
-    offer.verified = true
-    offer.save
+    OfferVerify.wtf?(offer: offer, current_user: @user)
   end
 end
 
 Then('the SPAs must be generated for each verified offer') do
   @sale.reload
   @sale.offers.verified.each do |offer|
-    offer.documents.where(name: "SPA").should_not == []
+    offer.documents.where(name: "SPA").to_a.should_not == []
   end
 end
 
@@ -627,8 +617,7 @@ Then('each seller must receive email with subject {string}') do |eval_subject|
   all_emails = @sale.investor_users("Seller").collect(&:email).flatten +
                  @sale.employee_users("Seller").collect(&:email).flatten
 
-  puts "All emails #{all_emails.uniq}"
-
+  puts "All emails #{all_emails.uniq}"  
   @sale.investor_users("Seller").collect(&:email).each do |email|
     puts "Checking investor email #{email} with subject #{subject}"
     open_email(email)

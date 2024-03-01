@@ -145,7 +145,6 @@ class Offer < ApplicationRecord
     OfferNotification.with(entity_id:, offer: self, email_method: :notify_approval, msg: "Offer for #{secondary_sale.name} has been approved").deliver_later(user) unless secondary_sale.no_offer_emails
   end
 
-  after_commit :notify_accept_spa, if: proc { |o| o.final_agreement && o.saved_change_to_final_agreement? && !o.destroyed? }
   def notify_accept_spa
     OfferNotification.with(entity_id:, offer: self, email_method: :notify_accept_spa, msg: "SPA confirmation received for #{secondary_sale.name}").deliver_later(user) unless secondary_sale.no_offer_emails
   end
@@ -158,17 +157,14 @@ class Offer < ApplicationRecord
     secondary_sale.seller_doc_list&.split(",")
   end
 
-  after_save :validate_pan_card, if: proc { |o| !o.secondary_sale.disable_pan_kyc }
   def validate_pan_card
     VerifyOfferPanJob.perform_later(id) if saved_change_to_PAN? || saved_change_to_full_name? || saved_change_to_pan_card_data?
   end
 
-  after_save :validate_bank, if: proc { |o| !o.secondary_sale.disable_bank_kyc }
   def validate_bank
     VerifyOfferBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
   end
 
-  after_commit :generate_spa, unless: :destroyed?
   def generate_spa
     OfferSpaJob.perform_later(id) if saved_change_to_verified? && verified
   end
@@ -229,5 +225,17 @@ class Offer < ApplicationRecord
 
   def seller_signatory
     user
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[PAN acquirer_name address allocation_amount_cents allocation_percentage allocation_quantity amount_cents approved bank_account_number bank_name bank_routing_info bank_verification_response bank_verification_status bank_verified buyer_confirmation demat full_name ifsc_code percentage quantity verified]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[secondary_sale investor interest user]
+  end
+
+  def self.ransackable_scopes(_auth_object = nil)
+    %i[]
   end
 end

@@ -1,5 +1,7 @@
 <%= render "/offers/stats", secondary_sale: @secondary_sale if @secondary_sale && policy(@secondary_sale).update? %>
 
+<%= render "/layouts/filter", associations: [:investor, :user, :secondary_sale, :interest] %>
+
 <div data-controller="offers" 
      data-offers-lazy-load-data-value=<%= false %>
      data-offers-table-name-value="#offers">

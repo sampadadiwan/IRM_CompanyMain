@@ -159,4 +159,12 @@ class Interest < ApplicationRecord
       [user.email]
     end
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[PAN address allocation_amount allocation_percentage allocation_quantity amount bank_account_number buyer_entity_name city contact_name demat email entity_id ifsc_code quantity short_listed verified]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[secondary_sale investor]
+  end
 end

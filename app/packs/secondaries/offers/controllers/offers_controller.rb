@@ -5,7 +5,8 @@ class OffersController < ApplicationController
   # GET /offers or /offers.json
   def index
     # Default to policy
-    @offers = policy_scope(Offer)
+    @q = Offer.ransack(params[:q])
+    @offers = policy_scope(@q.result)
     @offers = OfferSearchService.new.fetch_rows(@offers, params)
     @offers = @offers.page(params[:page]) unless request.format.xlsx? || params[:all] == 'true'
 
@@ -80,22 +81,20 @@ class OffersController < ApplicationController
   end
 
   def approve
-    @offer.approved = !@offer.approved
-    label = @offer.approved ? "approved" : "unapproved"
-    @offer.granted_by_user_id = current_user.id
-    @offer.save!
+    result = OfferApprove.call(offer: @offer, current_user:)
+    label = result[:label]
+    notice = result.success? ? "Offer was successfully #{label}." : "Error: #{result.errors.full_messages}"
     respond_to do |format|
-      format.html { redirect_to offer_url(@offer), notice: "Offer was successfully #{label}." }
+      format.html { redirect_to offer_url(@offer), notice: }
       format.json { @offer.to_json }
     end
   end
 
   def accept_spa
-    @offer.final_agreement = true
-    @offer.final_agreement_user_id = current_user.id
-    @offer.save!
+    result = OfferAcceptSpa.call(offer: @offer, current_user:)
+    notice = result.success? ? "Offer was successfully updated. Your acceptance has been recorded" : "Error: #{result.errors.full_messages}"
     respond_to do |format|
-      format.html { redirect_to offer_url(@offer, display_status: true), notice: "Offer was successfully updated. Your acceptance has been recorded" }
+      format.html { redirect_to offer_url(@offer, display_status: true), notice: }
       format.json { @offer.to_json }
     end
   end
@@ -106,13 +105,9 @@ class OffersController < ApplicationController
   end
 
   def allocate
-    @offer.allocation_quantity = offer_params[:allocation_quantity]
-    @offer.comments = offer_params[:comments]
-    @offer.verified = offer_params[:verified]
-    @offer.interest_id = offer_params[:interest_id]
-
+    result = OfferAllocate.call(offer: @offer, current_user:, offer_params:)
     respond_to do |format|
-      if @offer.save
+      if result.success?
         format.turbo_stream do
           render turbo_stream: [
             turbo_stream.replace("tf_offer_#{@offer.id}", partial: "offers/final_offer", locals: { offer: @offer })
@@ -138,14 +133,11 @@ class OffersController < ApplicationController
   # POST /offers or /offers.json
   def create
     @offer = Offer.new(offer_params)
-    @offer.user_id = current_user.id
-    @offer.entity_id = @offer.secondary_sale.entity_id
-
     authorize @offer
     setup_doc_user(@offer)
-
+    result = OfferCreate.call(offer: @offer, current_user:)
     respond_to do |format|
-      if @offer.save
+      if result.success?
         format.html { redirect_to offer_url(@offer), notice: "Offer was successfully created." }
         format.json { render :show, status: :created, location: @offer }
       else
@@ -157,10 +149,11 @@ class OffersController < ApplicationController
 
   # PATCH/PUT /offers/1 or /offers/1.json
   def update
+    @offer.assign_attributes(offer_params)
     setup_doc_user(@offer)
-
+    result = OfferUpdate.wtf?(offer: @offer, current_user:)
     respond_to do |format|
-      if @offer.update(offer_params)
+      if result.success?
         format.html { redirect_to offer_url(@offer, display_status: true), notice: "Offer was successfully updated. You will be notified on next steps." }
         format.json { render :show, status: :ok, location: @offer }
       else

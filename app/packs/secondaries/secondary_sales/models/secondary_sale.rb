@@ -51,8 +51,6 @@ class SecondarySale < ApplicationRecord
     self.show_quantity ||= "Actual"
   end
 
-  # Run allocation if the sale is finalized and price is changed
-  before_save :allocate_sale, if: :finalized
   def allocate_sale
     CustomAllocationJob.perform_later(id) if finalized && final_price_changed?
   end
@@ -121,5 +119,9 @@ class SecondarySale < ApplicationRecord
 
   def display_amounts
     self.price_type == "Fixed Price" ? [Money.new(display_quantity * final_price, entity.currency)] : [Money.new(display_quantity * min_price * 100, entity.currency), Money.new(display_quantity * max_price * 100, entity.currency)]
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[active start_date]
   end
 end
