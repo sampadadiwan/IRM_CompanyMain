@@ -39,8 +39,7 @@
   end
 
   Then('when the interest is shortlisted') do
-    @created_interest.short_listed = true
-    @created_interest.save
+    InterestShortList.call(interest: @created_interest).success?.should == true
   end
   
   
@@ -77,7 +76,7 @@
     puts "max_price #{@interest.price < @sale.max_price}"
     puts @interest.to_json
 
-    @interest.save!
+    InterestCreate.call(interest: @interest).success?.should == true
 
   end
   

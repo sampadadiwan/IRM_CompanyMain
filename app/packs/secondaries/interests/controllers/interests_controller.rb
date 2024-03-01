@@ -61,9 +61,9 @@ class InterestsController < ApplicationController
     authorize @interest
 
     setup_doc_user(@interest)
-
+    result = InterestCreate.call(interest: @interest)
     respond_to do |format|
-      if @interest.save
+      if result.success?
         format.html { redirect_to interest_url(@interest), notice: "Interest was successfully created." }
         format.json { render :show, status: :created, location: @interest }
       else
@@ -89,12 +89,10 @@ class InterestsController < ApplicationController
   end
 
   def allocate
-    @interest.allocation_quantity = interest_params[:allocation_quantity]
-    @interest.comments = interest_params[:comments]
-    @interest.verified = interest_params[:verified]
+    result = InterestAllocate.call(interest: @interest, interest_params:)
 
     respond_to do |format|
-      if @interest.save
+      if result.success?
         format.turbo_stream do
           render turbo_stream: [
             turbo_stream.replace("tf_interest_#{@interest.id}", partial: "interests/final_interest", locals: { interest: @interest })
@@ -103,6 +101,13 @@ class InterestsController < ApplicationController
         format.html { redirect_to interest_url(@interest), notice: "Interest was successfully updated." }
         format.json { render :show, status: :ok, location: @interest }
       else
+        @interest.reload
+        @interest.comments = result[:errors]
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.replace("tf_interest_#{@interest.id}", partial: "interests/final_interest", locals: { interest: @interest })
+          ]
+        end
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @interest.errors, status: :unprocessable_entity }
       end
@@ -112,27 +117,34 @@ class InterestsController < ApplicationController
   def allocation_form; end
 
   def short_list
-    @interest.short_listed = !@interest.short_listed
-    @interest.save!
-
+    result = InterestShortList.call(interest: @interest)
     respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: [
-          turbo_stream.replace(@interest, partial: "interests/interest",
-                                          locals: { interest: @interest, secondary_sale: @interest.secondary_sale })
-        ]
+      if result.success?
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.replace(@interest, partial: "interests/interest",
+                                            locals: { interest: @interest, secondary_sale: @interest.secondary_sale })
+          ]
+        end
+        format.html { redirect_to interest_url(@interest), notice: "Interest was successfully shortlisted." }
+      else
+        format.turbo_stream do
+          @interest = @interest.reload
+          render turbo_stream: [
+            turbo_stream.replace(@interest, partial: "interests/interest",
+                                            locals: { interest: @interest, secondary_sale: @interest.secondary_sale })
+          ]
+        end
+        format.html { redirect_to interest_url(@interest), notice: "Failed to shortlist." }
       end
-      format.html { redirect_to interest_url(@interest), notice: "Interest was successfully shortlisted." }
       format.json { @interest.to_json }
     end
   end
 
   def accept_spa
-    @interest.final_agreement = true
-    @interest.final_agreement_user = current_user
-
+    result = InterestAcceptSpa.call(interest: @interest, current_user:)
     respond_to do |format|
-      if @interest.save
+      if result.success?
         format.turbo_stream do
           render turbo_stream: [
             turbo_stream.replace(@interest, partial: "interests/interest",
@@ -149,8 +161,7 @@ class InterestsController < ApplicationController
   end
 
   def finalize
-    @interest.finalized = true
-    @interest.save
+    InterestFinalize.call(interest: @interest, current_user:)
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [

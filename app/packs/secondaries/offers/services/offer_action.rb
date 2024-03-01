@@ -7,7 +7,7 @@ class OfferAction < Trailblazer::Operation
 
   def handle_errors(ctx, offer:, **)
     unless offer.valid?
-      ctx[:errors] = offer.errors
+      ctx[:errors] = offer.errors.full_messages
       Rails.logger.error("Errors: #{offer.errors.full_messages}")
     end
     offer.valid?

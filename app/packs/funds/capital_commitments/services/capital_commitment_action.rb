@@ -17,7 +17,7 @@ class CapitalCommitmentAction < Trailblazer::Operation
   end
 
   def handle_errors(ctx, capital_commitment:, **)
-    ctx[:errors] = capital_commitment.errors unless capital_commitment.valid?
+    ctx[:errors] = capital_commitment.errors.full_messages unless capital_commitment.valid?
     capital_commitment.valid?
   end
 end

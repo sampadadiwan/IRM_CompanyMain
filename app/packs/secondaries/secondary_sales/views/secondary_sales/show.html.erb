@@ -18,10 +18,10 @@
 
           <%= link_to "Edit" , edit_secondary_sale_path(@secondary_sale), {class: "dropdown-item" } %> 
 
-          <% label = @secondary_sale.visible_externally ? "Hide Externally" : "Make Visible Externally" %>
-          <% popupMsg = @secondary_sale.visible_externally ? "This will hide the Sale from external investment advisors" : "This will allow external investment advisors to view this sale and place interests for buying." %>
+          <%# label = @secondary_sale.visible_externally ? "Hide Externally" : "Make Visible Externally" %>
+          <%# popupMsg = @secondary_sale.visible_externally ? "This will hide the Sale from external investment advisors" : "This will allow external investment advisors to view this sale and place interests for buying." %>
 
-          <%= button_to label , make_visible_secondary_sale_path(@secondary_sale), method: :patch, 
+          <%#= button_to label , make_visible_secondary_sale_path(@secondary_sale), method: :patch, 
               class: "dropdown-item" , 
               data: {action: "click->confirm#popup", turbo:false, msg: popupMsg, title: label, method: "patch"}  %> 
           

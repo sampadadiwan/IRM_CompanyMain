@@ -1,6 +1,6 @@
 class ApprovalService < Trailblazer::Operation
   def handle_errors(ctx, approval:, **)
-    ctx[:errors] = approval.errors unless approval.valid?
+    ctx[:errors] = approval.errors.full_messages unless approval.valid?
     approval.valid?
   end
 

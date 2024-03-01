@@ -4,7 +4,7 @@ class CapitalCallAction < Trailblazer::Operation
   end
 
   def handle_errors(ctx, capital_call:, **)
-    ctx[:errors] = capital_call.errors unless capital_call.valid?
+    ctx[:errors] = capital_call.errors.full_messages unless capital_call.valid?
     capital_call.valid?
   end
 

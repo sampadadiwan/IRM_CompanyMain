@@ -27,7 +27,7 @@ class: "allocation_form divTableRow #{cycle('even', 'odd')}") do |form| %>
     <div class="divTableCell"><%= @interest.offer_quantity %></div>
     <div class="divTableCell"><%= money_to_currency(@interest.offer_amount, params) %></div>
     <div class="divTableCell">
-        <%= form.check_box :verified, class: "form-control"  %>
+        <%= form.check_box :verified, class: "form-check-input"  %>
     </div>
     <div class="divTableCell">
         <%= form.text_area :comments, class: "form-control", rows: 2  %>

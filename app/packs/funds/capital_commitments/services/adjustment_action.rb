@@ -11,7 +11,7 @@ class AdjustmentAction < Trailblazer::Operation
 
   def handle_errors(ctx, commitment_adjustment:, **)
     unless commitment_adjustment.valid?
-      ctx[:errors] = commitment_adjustment.errors
+      ctx[:errors] = commitment_adjustment.errors.full_messages
       Rails.logger.error commitment_adjustment.errors.full_messages
     end
     commitment_adjustment.valid?

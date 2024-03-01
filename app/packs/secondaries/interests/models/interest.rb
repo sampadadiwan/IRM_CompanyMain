@@ -56,10 +56,6 @@ class Interest < ApplicationRecord
   validates :quantity, :price, presence: true
   validates :buyer_entity_name, :address, :city, :PAN, :contact_name, :email, presence: true, if: proc { |i| i.secondary_sale.finalized }
 
-  after_create_commit :notify_interest
-  after_save :notify_shortlist, if: :short_listed
-  after_save :notify_finalized, if: :finalized
-
   monetize :amount_cents, :allocation_amount_cents, with_currency: ->(i) { i.entity.currency }
 
   counter_culture :secondary_sale,
@@ -86,7 +82,6 @@ class Interest < ApplicationRecord
     end
   end
 
-  after_save :notify_accept_spa, if: proc { |o| o.final_agreement && o.saved_change_to_final_agreement? }
   def notify_accept_spa
     unless secondary_sale.no_interest_emails
       investor.approved_users.each do |user|
