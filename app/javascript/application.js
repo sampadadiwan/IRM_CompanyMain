@@ -34,6 +34,7 @@ $(document).on('turbo:before-cache', function() {
     $('#access_right_access_to_category').select2('destroy');    
     $('#access_right_access_to_investor_id').select2('destroy');    
   }
+
 });
 
 $( document ).on('turbo:load', function() {
@@ -49,6 +50,11 @@ $( document ).on('turbo:load', function() {
     $('.select2').select2();
     $(document).on('select2:open', () => {
       document.querySelector('.select2-search__field').focus();
+    });
+
+    // data-simplebar
+    $(".data-simplebar").each(function() {
+      new SimpleBar(this);
     });
     
     "use strict"; 

@@ -2,20 +2,20 @@
 
 <li class="nav-item dropdown">
     
-        <% if current_user && current_user.entity %>
-                <a class="nav-link nav-icon-hover" href="javascript:void(0)" id="drop2" data-bs-toggle="dropdown"
-                    aria-expanded="false">
-                    <i class="ti ti-home"></i>
-                    <div class="bg-primary rounded-circle"></div>
-                </a>
-        <% end %>
+    <% if current_user && current_user.entity %>
+        <a class="nav-link nav-icon-hover" href="javascript:void(0)" id="drop3" data-bs-toggle="dropdown"
+            aria-expanded="false">
+            <i class="ti ti-home"></i>
+            <div class="bg-primary rounded-circle"></div>
+        </a>
+    <% end %>
     
 
     
     <% if current_user %>
     <div class="dropdown-menu content-dd dropdown-menu-end dropdown-menu-animate-up"
-            aria-labelledby="drop1">
-    <div class="profile-dropdown position-relative" data-simplebar>
+            aria-labelledby="drop3" id="company_menus">
+    <div class="profile-dropdown position-relative data-simplebar" data-simplebar>
         
         
         <div class="d-flex align-items-center py-9 mx-7 border-bottom">
