@@ -39,7 +39,7 @@ class PortfolioInvestmentsController < ApplicationController
     authorize @portfolio_investment
 
     respond_to do |format|
-      if PortfolioInvestmentCreate.wtf?(portfolio_investment: @portfolio_investment).success?
+      if PortfolioInvestmentCreate.call(portfolio_investment: @portfolio_investment).success?
         format.html { redirect_to portfolio_investment_url(@portfolio_investment), notice: "Portfolio investment was successfully created." }
         format.json { render :show, status: :created, location: @portfolio_investment }
       else

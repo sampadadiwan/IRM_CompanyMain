@@ -151,7 +151,7 @@ class OffersController < ApplicationController
   def update
     @offer.assign_attributes(offer_params)
     setup_doc_user(@offer)
-    result = OfferUpdate.wtf?(offer: @offer, current_user:)
+    result = OfferUpdate.call(offer: @offer, current_user:)
     respond_to do |format|
       if result.success?
         format.html { redirect_to offer_url(@offer, display_status: true), notice: "Offer was successfully updated. You will be notified on next steps." }

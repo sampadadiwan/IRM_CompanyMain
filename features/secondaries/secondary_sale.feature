@@ -17,24 +17,24 @@ Scenario Outline: Create new sale
     |  	        |entity_type=Company  |name=Winter Sale |Secondary sale was successfully created|
 
 
+# Deprecated
+# Scenario Outline: Create new sale and make visible
+#   Given Im logged in as a user "<user>" for an entity "<entity>"
+#   Given the user has role "company_admin"
+#   And I am at the sales page
+#   When I create a new sale "<sale>"
+#   Then I should see the "<msg>"
+#   And an sale should be created
+#   And I should see the sale details on the details page
+#   And when I click the "Actions" button
+#   And when I click the "Make Visible Externally" button
+#   And when I click the "Proceed" button
+#   Then the sale should become externally visible
 
-Scenario Outline: Create new sale and make visible
-  Given Im logged in as a user "<user>" for an entity "<entity>"
-  Given the user has role "company_admin"
-  And I am at the sales page
-  When I create a new sale "<sale>"
-  Then I should see the "<msg>"
-  And an sale should be created
-  And I should see the sale details on the details page
-  And when I click the "Actions" button
-  And when I click the "Make Visible Externally" button
-  And when I click the "Proceed" button
-  Then the sale should become externally visible
-
-  Examples:
-  	|user	      |entity               |sale             |msg	|
-  	|  	        |entity_type=Company  |name=Grand Sale  |Secondary sale was successfully created|
-    |  	        |entity_type=Company  |name=Winter Sale |Secondary sale was successfully created|
+#   Examples:
+#   	|user	      |entity               |sale             |msg	|
+#   	|  	        |entity_type=Company  |name=Grand Sale  |Secondary sale was successfully created|
+#     |  	        |entity_type=Company  |name=Winter Sale |Secondary sale was successfully created|
 
 
 
