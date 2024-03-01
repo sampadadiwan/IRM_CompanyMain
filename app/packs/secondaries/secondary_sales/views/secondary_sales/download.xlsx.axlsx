@@ -70,11 +70,14 @@ wb.add_worksheet(name: "Interests") do |sheet|
   @secondary_sale.interests.short_listed.includes(:user, :interest_entity).find_each do |o|
     custom_field_values = get_custom_values(o, form_type, custom_field_names)
 
-    user_name, entity_name = if o.escrow_deposited
-                               [o.user.full_name, o.interest_entity.name]
-                             else
-                               [ENV.fetch('OBFUSCATION', nil), ENV.fetch('OBFUSCATION', nil)]
-                             end
+    # user_name, entity_name = if o.escrow_deposited
+    #                           [o.user.full_name, o.interest_entity.name]
+    #                         else
+    #                           [ENV.fetch('OBFUSCATION', nil), ENV.fetch('OBFUSCATION', nil)]
+    #                         end
+
+    user_name = o.user.full_name
+    entity_name = o.interest_entity.name
 
     row = sheet.add_row ["Link", user_name, entity_name,
                          custom_format_number(o.quantity, params), custom_format_number(o.price, params),

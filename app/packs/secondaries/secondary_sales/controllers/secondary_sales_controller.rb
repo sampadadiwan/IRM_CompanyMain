@@ -52,24 +52,32 @@ class SecondarySalesController < ApplicationController
   end
 
   def finalize_offer_allocation
-    @offers = policy_scope(@secondary_sale.offers)
+    @q = @secondary_sale.offers.ransack(params[:q])
+    @offers = policy_scope(@q.result)
+    @offers = @offers.includes(:user, :investor, :secondary_sale, :entity,
+                               :interest, :documents)
 
-    @offers = @offers.where(interest_id: nil) if params[:matched] == "false"
-    @offers = @offers.where.not(interest_id: nil) if params[:matched] == "true"
-
-    @offers = @offers.where(approved: params[:approved]) if params[:approved].present?
-    @offers = @offers.where(verified: params[:verified]) if params[:verified].present?
-    @offers = @offers.where(verified: params[:final_agreement]) if params[:final_agreement].present?
-    @offers = @offers.includes(:user, :investor, :secondary_sale, :entity, :interest).page(params[:page])
+    @offers = OfferSearchService.new.fetch_rows(@offers, params).page(params[:page])
 
     render "/offers/finalize_allocation"
   end
 
   def approve_offers
+    errors = []
+    success = 0
     @offers = @secondary_sale.offers.where(approved: false)
-    @offers.update(approved: true, granted_by_user_id: current_user.id)
+    @offers.each do |offer|
+      result = OfferApprove.call(offer:, current_user:)
+      if result.success?
+        success += 1
+      else
+        errors << "Offer: #{offer.id} #{result[:errors].full_messages}"
+      end
+    end
 
-    redirect_to secondary_sale_url(@secondary_sale), notice: "Approved all pending offers"
+    notice = errors.empty? ? "Approved all pending offers" : "Approved #{success},  <br>Errors:<br> #{errors.join('<br>')}"
+
+    redirect_to secondary_sale_url(@secondary_sale), notice:
   end
 
   def finalize_interest_allocation
@@ -140,20 +148,6 @@ class SecondarySalesController < ApplicationController
 
   def spa_upload; end
 
-  def make_visible
-    @secondary_sale.visible_externally = !@secondary_sale.visible_externally
-
-    respond_to do |format|
-      if @secondary_sale.save
-        format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "Secondary sale was successfully updated." }
-        format.json { render :show, status: :created, location: @secondary_sale }
-      else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @secondary_sale.errors, status: :unprocessable_entity }
-      end
-    end
-  end
-
   def allocate
     CustomAllocationJob.perform_later(@secondary_sale.id)
 
@@ -174,12 +168,10 @@ class SecondarySalesController < ApplicationController
   end
 
   def lock_allocations
-    @secondary_sale.lock_allocations = !@secondary_sale.lock_allocations
-    @secondary_sale.finalized = !@secondary_sale.finalized
-
-    label = @secondary_sale.lock_allocations ? "Locked" : "Unlocked"
+    result = SecondarySaleLockAllocations.call(secondary_sale: @secondary_sale)
+    label = result[:label]
     respond_to do |format|
-      if @secondary_sale.save
+      if result.success?
         format.html do
           redirect_to finalize_offer_allocation_secondary_sale_url(secondary_sale_id: @secondary_sale.id),
                       notice: "Allocations are now #{label}."
@@ -208,9 +200,9 @@ class SecondarySalesController < ApplicationController
     authorize @secondary_sale
 
     setup_doc_user(@secondary_sale)
-
+    result = SecondarySaleCreate.call(secondary_sale: @secondary_sale, current_user:)
     respond_to do |format|
-      if @secondary_sale.save
+      if result.success?
         format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "Secondary sale was successfully created." }
         format.json { render :show, status: :created, location: @secondary_sale }
       else

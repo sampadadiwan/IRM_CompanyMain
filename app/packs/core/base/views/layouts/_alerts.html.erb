@@ -2,13 +2,13 @@
   <div class="page_alerts">
     <% if notice %> 
       <div id="notice" class="alert alert-info alert-dismissible border-0 fade show" role="alert">
-        <%= notice %>
+        <%= notice.html_safe %>
         <button type="button" class="btn-close btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div> 
     <% end %>
     <% if alert %> 
       <div id="alert" class="alert alert-danger alert-dismissible bg-secondary text-white border-0 fade show" role="alert">
-        <%= alert %>
+        <%= alert.html_safe %>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
       </div> 
     <% end %>

@@ -17,7 +17,7 @@ resources :interests do
 end
 
 resources :secondary_sales do
-  patch 'make_visible', on: :member
+  # patch 'make_visible', on: :member
   get 'search', on: :collection
   get 'download', on: :member
   patch 'allocate', on: :member
