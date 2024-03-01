@@ -70,7 +70,7 @@
             <div class="form-group">
               <%= form.label :agreement_committed_amount %>
               <%= form.text_field :agreement_committed_amount, class: "form-control"  %>
-              <small class="form-text text-muted">Please enter the commitment amount</small>
+              <small class="form-text text-muted">Please enter the commitment amount. As per SEBI requirements, the minimum commitment is INR 2,500,000</small>
             </div>
             <% end %>
 
@@ -115,9 +115,19 @@
         <div class="card-body">
 
           <div class="form-group">
+              <%= file_fields("Upload Address Proof", investor_kyc, form, required: is_investor) %>
+
+              <small class="form-text text-muted"> Any one of:
+                Passport,
+                Aadhar Card
+              </small>
+
+          </div>
+
+          <div class="form-group">
             <%= form.label :permanent_address, "Address" %>
             <%= form.text_area :address, class: "form-control"  %>
-            <small class="form-text text-muted">Address as per the address proof attached.</small>
+            <small class="form-text text-muted">Address as per the address proof attached</small>
           </div>
 
           <div class="form-group">
@@ -127,15 +137,7 @@
           </div>
 
 
-          <div class="form-group">
-              <%= file_fields("Upload Address Proof", investor_kyc, form, required: is_investor) %>
-
-              <small class="form-text text-muted"> Any one of:
-                Passport,
-                Aadhar Card
-              </small>
-
-          </div>
+          
 
 
           <div class="form-group">
@@ -152,7 +154,7 @@
 
           <div class="form-group">
             <%= form.label :bank_account_type, "Account Type" %>
-            <%= form.select :bank_account_type, ["Savings Account", "Current Account ", "Non-Resident Ordinary", "(NRO) Account", "Non-Resident External (NRE) Account", "Foreign Bank Account", "Other"], {}, class: "form-control"  %>
+            <%= form.select :bank_account_type, ["Savings Account", "Current Account ", "Non-Resident Ordinary (NRO) Account", "Non-Resident External (NRE) Account", "Foreign Bank Account", "Other"], {}, class: "form-control"  %>
           </div>
 
           <div class="form-group">
@@ -168,7 +170,7 @@
 
           <div class="form-group">
               <%= file_fields("Upload Cancelled Cheque", investor_kyc, form, required: is_investor) %>
-              <small class="form-text text-muted">Upload Cancelled Cheque or Bank account statement</small>
+              <small class="form-text text-muted">Upload Cancelled Cheque / Bank Statement</small>
           </div>
 
           <%= custom_form_fields(investor_kyc, form, step: :two, required: is_investor) %>
