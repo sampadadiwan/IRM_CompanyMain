@@ -368,6 +368,8 @@ GEM
     elasticsearch-transport (7.13.3)
       faraday (~> 1)
       multi_json
+    enumerize (2.7.0)
+      activesupport (>= 3.2)
     erubi (1.12.0)
     erubis (2.7.0)
     eu_central_bank (1.7.0)
@@ -744,6 +746,7 @@ GEM
       sprockets (> 3.0)
       sprockets-rails
       tilt
+    secure_headers (6.5.0)
     selectize-rails (0.12.6)
     selenium-webdriver (4.10.0)
       rexml (~> 3.2, >= 3.2.5)
@@ -919,6 +922,7 @@ DEPENDENCIES
   devise
   dotenv-rails
   draper
+  enumerize
   erubis
   eu_central_bank
   exception_notification
@@ -968,6 +972,7 @@ DEPENDENCIES
   sablon
   sanitize_email
   sassc-rails
+  secure_headers
   selenium-webdriver
   shrine (~> 3.3)
   sidekiq (~> 7.0)

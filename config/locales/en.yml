@@ -73,7 +73,6 @@ en:
     update: 'Investor access was updated'
     destroy: 'Investor access was removed'
 
-
   fund:
     create: 'Fund was created'
     update: 'Fund was updated'
@@ -117,3 +116,9 @@ en:
       previous: "&lsaquo;"
       next: "&rsaquo;"
       truncate: "&hellip;"        
+
+  
+  activerecord:
+    attributes:
+      investor_kyc:
+        full_name: 'Investing Entity'

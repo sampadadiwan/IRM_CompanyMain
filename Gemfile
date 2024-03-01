@@ -13,6 +13,7 @@ gem "sprockets-rails"
 # Use mysql as the database for Active Record
 gem 'acts_as_favoritor', git: "https://github.com/ausangshukla/acts_as_favoritor.git"
 gem "audited", "~> 5.0"
+gem 'enumerize'
 gem "json2table"
 gem 'mail-logger'
 gem "mysql2", "~> 0.5"
@@ -23,6 +24,7 @@ gem 'yajl-ruby', require: 'yajl'
 gem 'libreconv'
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", "~> 5.0"
+# gem "secure_headers"
 # Used to produce mail merge documents from word templates and DB data
 gem 'sablon'
 
