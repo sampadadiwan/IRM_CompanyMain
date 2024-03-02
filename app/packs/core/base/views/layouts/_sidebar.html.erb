@@ -27,17 +27,17 @@
 
             <% if current_user && current_user.curr_role == "holding" %>
                 <li class="sidebar-item">
-
                     <a class="sidebar-link" href="/holdings">
-                        <span><i class="fas fa-xl fa-money-bill"></i></span>
+                        <span><i class="ti ti-file-plus"></i></span>
                         <span class="hide-menu">Holdings</span>
                     </a>
+                </li>
 
+                <li class="sidebar-item">
                     <a class="sidebar-link" href="/offers">
-                        <span><i class="fas fa-xl fa-file-import"></i></span>
+                        <span><i class="ti ti-file-minus"></i></span>
                         <span class="hide-menu">Offers</span>
                     </a>
-
                 </li>
             <% end %>
 

@@ -21,7 +21,7 @@
         <div class="d-flex align-items-center mb-3">
           <div>
             <h3 class="fs-8"><%= custom_format_number secondary_sale.total_offered_quantity, params %></h3>
-            <h6 class="card-subtitle mb-1 text-muted">Total Offered Quantity</h6>
+            <h6 class="card-subtitle mb-1 text-muted">Sell Quantity (<%= secondary_sale.offers.count %> Offers)</h6>
           </div>
           <div class="ms-auto">
             <span class="text-info display-6"><i class="ti ti-minus"></i></span>
@@ -39,7 +39,7 @@
             <div class="d-flex align-items-center mb-3">
               <div>
                 <h3 class="fs-8"><%= custom_format_number secondary_sale.total_interest_quantity, params %></h3>
-                <h6 class="card-subtitle mb-1 text-muted">Total Interest Quantity</h6>
+                <h6 class="card-subtitle mb-1 text-muted"> Buy Quantity (<%= secondary_sale.interests.count %> Interests)</h6>
               </div>
               <div class="ms-auto">
                 <span class="text-danger display-6"><i class="ti ti-plus"></i></span>

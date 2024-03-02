@@ -16,6 +16,9 @@
       </div>
     </div>
     <%= link_to "Sent", notifications_path(all: true, entity_id: current_user.entity_id), class: "btn btn-outline-warning" %>
+  
+    <%= link_to "Custom Notifications", custom_notifications_path, {class: "btn btn-outline-success"}  if current_user.curr_role_employee? %>
+  
   </span>
 </div>
 <div class="table-responsive" data-controller="datatable">

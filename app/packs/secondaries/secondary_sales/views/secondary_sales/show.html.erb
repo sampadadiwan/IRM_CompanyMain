@@ -1,11 +1,7 @@
-  
-
   <%= render "/secondary_sales/stats", secondary_sale: @secondary_sale %>
-
   <%= render "/secondary_sales/show", secondary_sale: @secondary_sale %>
 
-  <div>
-    
+  <div>    
     <% if policy(@secondary_sale).update? %>
 
       <div class="btn-group">

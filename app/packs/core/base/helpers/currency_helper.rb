@@ -8,7 +8,6 @@ module CurrencyHelper
     raw_units = params[:units].presence || (cookies && cookies[:currency_units])
 
     if raw_units.present? && !ignore_units
-
       case raw_units
       when "Crores"
         number_with_delimiter(number, delimiter_pattern: INDIA_FORMAT)
@@ -20,7 +19,7 @@ module CurrencyHelper
         number_with_delimiter(number)
       end
     else
-      number
+      number_with_delimiter(number)
     end
   end
 

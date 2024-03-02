@@ -12,18 +12,18 @@
     <% if policy(secondary_sale).owner? %>
       <% access_right_active = true %>
       <input hidden=true value="#access-rights-tab" id="clickOnLoad" />
-
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
-
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fees-tab">Fees</a>
       
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab"   
             data-action="click->tabdetails#loadData">Pending Offers</a>
       
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab" data-action="click->tabdetails#loadData">Interests</a>
 
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab" 
-            data-action="click->tabdetails#loadData">Reminders</a>
+      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
+
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fees-tab">Fees</a>
+      
+      <!-- a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab" 
+            data-action="click->tabdetails#loadData">Reminders</a -->
     
     <% elsif policy(secondary_sale).seller? %>
       <% holdings_active = true; document_tag="Seller" %>
