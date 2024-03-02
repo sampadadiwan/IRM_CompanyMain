@@ -73,18 +73,19 @@
 
       <div id="docs-tab" class="tab-pane fade">
         <div id="docs" class="associated_entity">
-          <% documents = secondary_sale.documents.includes(:folder) %>
+          
+          <%= link_to folder_documents_path(entity_id: secondary_sale.entity_id,
+                                        folder_id: secondary_sale.document_folder.id),
+                                        class: "load_data_link",
+                                        data: { turbo_frame: 'documents_tree_frame' } do %>
 
-          <%= link_to documents_path(owner_id: secondary_sale.id, owner_type: "SecondarySale", 
-                                     owner_tag: document_tag,
-                                     entity_id: secondary_sale.entity_id, no_folders: true), 
-                                     class: "load_data_link", 
-                                     data: { turbo_frame: 'documents_frame' } do %>
               <span>Loading...</span>
           <% end %>
-          <%= turbo_frame_tag "documents_frame", target: "_top" do %>
+          
+          <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
           <% end %>
-        </div>     
+
+        </div>
       </div>
 
 
