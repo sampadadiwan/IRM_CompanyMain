@@ -98,11 +98,11 @@ class SecondarySale < ApplicationRecord
   end
 
   def buyer_investors
-    investor_list = []
-    access_rights.where("access_rights.metadata=?", "Buyer").includes(:investor).find_each do |ar|
-      investor_list += ar.investors
-    end
-    investor_list.uniq
+    investors_granted_access("Buyer")
+  end
+
+  def seller_investors
+    investors_granted_access("Seller")
   end
 
   def offers_by_funding_round

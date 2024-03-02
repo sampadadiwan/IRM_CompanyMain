@@ -130,7 +130,7 @@ Scenario Outline: Access as Buyer Investor User
   Given there is a user "<user>" for an entity "<entity>"
   Given there is a sale "<sale>"
   Given there is an existing investor entity "name=Sequoia" with employee "first_name=Emp1"
-  And existing investor has "Buyer" access rights to the sale
+  And existing investors have "Buyer" access rights to the sale
   And employee investor should have "show" access to the sale "true"
   And employee investor should have "finalize_offer_allocation" access to the sale "false"
   And employee investor should have "finalize_interest_allocation" access to the sale "false"
@@ -153,7 +153,7 @@ Scenario Outline: Access as Seller Investor User
   Given there is a user "<user>" for an entity "<entity>"
   Given there is a sale "<sale>"
   Given there is an existing investor entity "name=Sequoia" with employee "first_name=Emp1"
-  And existing investor has "Seller" access rights to the sale
+  And existing investors have "Seller" access rights to the sale
   And employee investor should have "show" access to the sale "true"
   And employee investor should have "finalize_offer_allocation" access to the sale "false"
   And employee investor should have "finalize_interest_allocation" access to the sale "false"

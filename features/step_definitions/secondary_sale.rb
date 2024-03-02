@@ -161,22 +161,30 @@ Given('employee investor has {string} access rights to the sale') do |metadata|
 end
 
 
-Given('existing investor has {string} access rights to the sale') do |metadata|
-  @access_right = AccessRight.create!(owner: @sale, access_type: "SecondarySale", metadata: metadata,
-    entity: @entity, access_to_investor_id: @investor.id)
+Given('existing investors have {string} access rights to the sale') do |metadata|
 
-  
-  ia = InvestorAccess.create!(investor:@investor, user: @employee_investor, 
-              last_name: @employee_investor.last_name, 
-              first_name: @employee_investor.first_name, 
-              email: @employee_investor.email,  approved: true, 
-              entity_id: @sale.entity_id)
+  @entity.investors.not_holding.not_trust.each do |inv|
+    if @sale.access_rights.where(access_to_investor_id: inv.id).empty?
+      @access_right = AccessRight.create!(owner: @sale, access_type: "SecondarySale", metadata: metadata,
+        entity: @entity, access_to_investor_id: inv.id)
 
-  puts "\n####Investor AccessRight####\n"
-  puts @access_right.to_json
-  puts "\n####InvestorAccess####\n"
-  puts ia.to_json
-    
+      inv.investor_entity.employees.each do |emp|
+        ia = InvestorAccess.create(investor:inv, user: emp, 
+                    last_name: emp.last_name, 
+                    first_name: emp.first_name, 
+                    email: emp.email,  approved: true, 
+                    entity_id: @sale.entity_id)
+        puts "\n####InvestorAccess####\n"
+        puts ia.to_json
+      end
+
+      puts "\n####Investor AccessRight####\n"
+      puts @access_right.to_json
+      
+    else
+      puts "Skipping access right for investor #{inv.investor_name}, alread has access"
+    end
+  end
 end
 
 
@@ -618,6 +626,7 @@ Then('each seller must receive email with subject {string}') do |eval_subject|
                  @sale.employee_users("Seller").collect(&:email).flatten
 
   puts "All emails #{all_emails.uniq}"  
+  
   @sale.investor_users("Seller").collect(&:email).each do |email|
     puts "Checking investor email #{email} with subject #{subject}"
     open_email(email)

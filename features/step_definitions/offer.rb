@@ -32,7 +32,19 @@
         puts "\n#########Holding##########\n"
         puts holding.to_json
     end
+  end
 
+  Given('there is a holding {string} for each investor') do |args|
+    @sale.seller_investors.each do |inv|
+      emp = inv.investor_entity.employees.first
+      holding = FactoryBot.build(:holding, user: emp, entity: @entity, holding_type: "Investor",
+                                  funding_round: @funding_round, investor_id: inv.id)
+      key_values(holding, args)
+      holding = CreateHolding.call(holding: holding).holding
+      ApproveHolding.call(holding: holding)
+      puts "\n#########Holding##########\n"
+      puts holding.to_json
+    end
   end
 
 

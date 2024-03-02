@@ -134,6 +134,14 @@ Given('there is an existing investor {string} with {string} users') do |arg1, co
   puts @investor.to_json
 end
 
+Given('there are {string} existing investor {string} with {string} users') do |count, arg1, emp_count|
+  (1..count.to_i).each do
+    steps %(
+      Given there is an existing investor "#{arg1}" with "#{emp_count}" users
+    )
+  end
+end
+
 Given('there are {string} existing investor {string}') do |count, arg1|
   (1..count.to_i).each do
     steps %(
