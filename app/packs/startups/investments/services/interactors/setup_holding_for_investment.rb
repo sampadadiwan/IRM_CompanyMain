@@ -24,11 +24,11 @@ class SetupHoldingForInvestment
 
       if holding.investment.nil?
         Rails.logger.debug { "Creating investment for #{holding.id}" }
-        employee_investor = Investor.for(holding.user, holding.entity).first
+        employee_holdings = holding.holding_type != "Investor"
         investment = Investment.new(investment_type: "#{holding.holding_type} Holdings",
                                     investment_instrument: holding.investment_instrument,
                                     category: holding.holding_type, entity_id: holding.entity.id,
-                                    investor_id: employee_investor.id, employee_holdings: true,
+                                    investor_id: holding.investor_id, employee_holdings:,
                                     quantity: 0, price_cents: holding.price_cents,
                                     investment_date: holding.grant_date,
                                     currency: holding.entity.currency, funding_round: holding.funding_round,

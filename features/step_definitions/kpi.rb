@@ -43,7 +43,7 @@
     data.each_with_index do |row, idx|
         next if idx.zero? # skip header row
 
-        # binding.pry
+        
         # create hash from headers and cells
         user_data = [headers, row].transpose.to_h
         kpi = kpis[idx-1]

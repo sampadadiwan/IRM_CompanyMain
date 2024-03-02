@@ -759,7 +759,7 @@ Then('the capital commitments must have the data in the sheet') do
   data.each_with_index do |row, idx|
     next if idx.zero? # skip header row
 
-    # binding.pry
+    
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
     cc = capital_commitments[idx-1]
@@ -838,7 +838,7 @@ Then('the capital commitments must have the percentages updated') do
 end
 
 Then('the fund must have the counter caches updated') do
-  # binding.pry
+  
   @fund.reload
   @fund.collected_amount_cents.should == CapitalCommitment.pool.sum(:collected_amount_cents)
   @fund.committed_amount_cents.should == CapitalCommitment.pool.sum(:committed_amount_cents)
@@ -850,7 +850,7 @@ end
 Then('the remittances are generated for the capital calls') do
   Fund.all.each do |fund|
     fund.capital_calls.each do |cc|
-      # binding.pry
+      
       commitments = cc.Pool? ? fund.capital_commitments.pool : fund.capital_commitments.co_invest
       puts "Checking remittances for #{cc.name} #{commitments.count} #{cc.capital_remittances.count}"
       cc.capital_remittances.count.should == commitments.count
@@ -1215,7 +1215,7 @@ Then('the account_entries must have the data in the sheet') do
       cc.fund.name.should == user_data["Fund"]
       cc.investor.investor_name.should == user_data["Investor"]
       cc.folio_id.should == user_data["Folio No"].to_s
-      # binding.pry if cc.name == "Investable Capital Percentage"
+
       cc.amount_cents.should == user_data["Amount"].to_f * 100
       cc.entry_type.should == user_data["Entry Type"]
       cc.reporting_date.should == user_data["Reporting Date"]

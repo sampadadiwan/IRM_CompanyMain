@@ -249,7 +249,7 @@ end
 
 Then('when the holdings are approved') do
   Holding.all.each do |h|
-    ApproveHolding.call(holding: h) if h.holding_type != "Investor"
+    ApproveHolding.call(holding: h) #if h.holding_type != "Investor"
   end
 end
 

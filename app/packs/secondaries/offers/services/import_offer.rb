@@ -41,7 +41,7 @@ class ImportOffer < ImportUtil
       raise "Investor #{user_data['Investor']} not found" unless investor
 
       # Get the holding for which the offer is being made
-      holding = Holding.where("holdings.investor_id=? and holdings.entity_id=?", investor.id, import_upload.entity_id).first
+      holding = Holding.where("holdings.investor_id=? and holdings.entity_id=?", investor.id, import_upload.entity_id).last
 
       raise "User not found for investor #{user_data['Investor']}" unless user.entity_id == investor.investor_entity_id
 
@@ -69,10 +69,7 @@ class ImportOffer < ImportUtil
 
       setup_custom_fields(user_data, offer, custom_field_headers)
 
-      ret_val = offer.save
-      raise offer.errors.full_messages.to_s unless ret_val
-
-      ret_val
+      offer.save!
     else
       raise "No holding found for user with email #{email}"
     end

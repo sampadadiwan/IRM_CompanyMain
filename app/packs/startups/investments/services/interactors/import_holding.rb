@@ -1,6 +1,6 @@
 class ImportHolding < ImportUtil
-  STANDARD_HEADERS = ["Funding Round Or Option Pool", "Employee Id", "Email",
-                      "First Name", "Last Name", "Founder Or Employee", "Instrument", "Quantity",
+  STANDARD_HEADERS = ["Funding Round Or Option Pool", "Investor", "Employee Id", "Email",
+                      "First Name", "Last Name", "Founder/Employee/Investor", "Instrument", "Quantity",
                       "Price", "Grant Date (dd/mm/yyyy)", "Option Type", "Manual Vesting (Options Only)"].freeze
 
   def standard_headers
@@ -31,9 +31,12 @@ class ImportHolding < ImportUtil
   end
 
   def save_user(user_data, import_upload, _custom_field_headers)
-    # Find the Founder Or Employee Investor for the entity
-    investor = Investor.where(entity_id: import_upload.owner_id,
-                              is_holdings_entity: true, category: user_data["Founder Or Employee"]).first
+    category = user_data["Founder/Employee/Investor"]
+    # Find the Investor for the entity
+    investor_name = user_data["Investor"]
+    investor = Investor.where(investor_name:, entity_id: import_upload.owner_id).first
+
+    raise "Investor not found for #{category}" unless investor
 
     # Create the user if he does not exists
     user = User.find_by(email: user_data['Email'].strip)
@@ -46,7 +49,7 @@ class ImportHolding < ImportUtil
                       entity_id: investor.investor_entity_id)
 
       user.skip_confirmation! if user_data["Send Confirmation Email"] && user_data["Send Confirmation Email"].strip == "No"
-      user.save
+      user.save!
     end
 
     # create the Investor Access
@@ -69,7 +72,7 @@ class ImportHolding < ImportUtil
     manual_vesting = user_data["Manual Vesting (Options Only)"]
     manual_vesting = manual_vesting.strip.casecmp("yes").zero? if manual_vesting.present?
 
-    holding = Holding.new(user:, investor:, holding_type: user_data["Founder Or Employee"],
+    holding = Holding.new(user:, investor:, holding_type: user_data["Founder/Employee/Investor"],
                           entity_id: import_upload.owner_id, orig_grant_quantity: user_data["Quantity"],
                           price_cents:, employee_id: user_data["Employee Id"], department: user_data["Department"], import_upload_id: import_upload.id,
                           investment_instrument: user_data["Instrument"], funding_round: fr, option_pool: ep,

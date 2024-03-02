@@ -1,6 +1,6 @@
 
 
-<%= render ToggleCard.new(title: "Import Upload: #{@import_upload.name.presence || 'New'}", css_class: "import_upload_card") do %>
+<%= render ToggleCard.new(title: "Import Upload: #{@import_upload.to_s || 'New'}", css_class: "import_upload_card") do %>
 
   <%= turbo_stream_from @import_upload %>
 

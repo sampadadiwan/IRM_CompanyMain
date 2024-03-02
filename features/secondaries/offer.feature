@@ -93,6 +93,8 @@ Examples:
 Scenario Outline: Import offer to sale
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
   Given the user has role "company_admin"
+  And Given I upload an investors file for the company
+  # And Given I upload an investor access file for employees
   Given there is a sale "name=Summer Sale"
   Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"
   And Given I upload a holdings file
@@ -101,4 +103,4 @@ Scenario Outline: Import offer to sale
   And Given I upload a offer file
   Then I should see the "Import in progress"
   And when the offers are approved
-  And the sale offered quantity should be "100"
+  And the sale offered quantity should be "120"

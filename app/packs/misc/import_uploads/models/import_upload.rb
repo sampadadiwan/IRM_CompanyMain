@@ -67,4 +67,8 @@ class ImportUpload < ApplicationRecord
   def model_class
     DOC_TYPES.include?(import_type) ? Document : import_type.constantize
   end
+
+  def to_s
+    "#{name} : #{import_type}"
+  end
 end

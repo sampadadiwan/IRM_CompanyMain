@@ -242,7 +242,6 @@ class AccountEntryAllocationEngine
 
   # Used to generate cumulative account entries for things such as TDS which is uploaded by the fund per commitment
   def cumulate_account_entries(fund_formula, _fund_unit_settings)
-    # binding.pry
     fund_formula.commitments(@sample).each do |capital_commitment|
       Rails.logger.debug { "Cumulating #{fund_formula} to #{capital_commitment}" }
 
