@@ -276,7 +276,6 @@ Then('when the offers are approved') do
 end
 
 Then('the sale offered quantity should be {string}') do |quantity|
-  binding.pry
   @sale.reload
   @sale.total_offered_quantity.should == quantity.to_i
 end

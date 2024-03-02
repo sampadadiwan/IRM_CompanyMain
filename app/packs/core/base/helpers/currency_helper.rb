@@ -19,7 +19,7 @@ module CurrencyHelper
         number_with_delimiter(number)
       end
     else
-      number_with_delimiter(number)
+      number
     end
   end
 
