@@ -1,3 +1,4 @@
+<% if @approval.response_enabled_email %>
 <% colors = ["success", "warning", "danger", "primary", "secondary", "info"].freeze %>
 <div>
     <p>You may respond by clicking on any one of the below links or login to view the detailed approval and respond thereafter:</p>
@@ -16,3 +17,4 @@
         </ul>
     <% end %>
 </div>
+<% end %>
