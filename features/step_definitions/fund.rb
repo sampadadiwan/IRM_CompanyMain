@@ -1476,8 +1476,8 @@ Then('There should be {string} fund units created with data in the sheet') do |c
   end
 end
 
-Given('there is a custom notification for the capital call with subject {string}') do |subject|
-  @custom_notification = CustomNotification.create!(entity: @capital_call.entity, subject:, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @capital_call)
+Given('there is a custom notification for the capital call with subject {string} with email_method {string}') do |subject, email_method|
+  @custom_notification = CustomNotification.create!(entity: @capital_call.entity, subject:, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @capital_call, email_method:)
 end
 
 Given('Given the commitments have a cc {string}') do |email|
@@ -1551,4 +1551,29 @@ Given('the remittances are verified') do
   CapitalRemittance.all.each do |cr|
     CapitalRemittanceVerify.wtf?(capital_remittance: cr)
   end
+end
+
+
+Given('notification should be sent {string} to the remittance investors for {string}') do |sent, cn_args|
+  cn = CustomNotification.new
+  key_values(cn, cn_args)
+  
+  @capital_call.capital_remittances.each do |cr|
+    user = cr.investor.investor_accesses.approved.first.user
+    open_email(user.email)
+    puts "Checking email for #{user.email} with email_method: #{cn.email_method}, subject: #{current_email&.subject}"
+    if sent == "true"
+      expect(current_email.subject).to include @capital_call.custom_notification(cn.email_method).subject
+    else
+      current_email.should == nil
+    end  
+  end
+  
+end
+
+Given('there is a custom notification {string} in place for the Call') do |args|
+    @capital_call = CapitalCall.last
+    @custom_notification = CustomNotification.build(entity: @entity, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @capital_call)
+    key_values(@custom_notification, args)
+    @custom_notification.save!
 end

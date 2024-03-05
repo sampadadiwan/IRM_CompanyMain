@@ -16,6 +16,6 @@ class EntityMailer < ApplicationMailer
     @requesting_entity = Entity.find params[:requesting_entity_id]
     @to ||= @entity.employees.pluck(:email).join(',')
     subject = "Reminder: KPIs requested by #{@requesting_entity.name}"
-    send_mail(subject:) if @to.present?
+    send_mail(subject:)
   end
 end

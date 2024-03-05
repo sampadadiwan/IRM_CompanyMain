@@ -1,12 +1,15 @@
 class ApprovalMailer < ApplicationMailer
   helper ApplicationHelper
 
-  def notify_new_approval
+  before_action :set_approval
+  def set_approval
     @approval_response = ApprovalResponse.find params[:approval_response_id]
     @approval = @approval_response.approval
+    @custom_notification = @approval.custom_notification(@notification.to_notification.email_method)
+  end
 
-    @custom_notification = @approval.custom_notification
-    subject = @custom_notification ? @custom_notification.subject : "Approval required for #{@approval.entity.name}: #{@approval.title}"
+  def notify_new_approval
+    subject = "Approval required for #{@approval.entity.name}: #{@approval.title}"
 
     # Check for attachments
     @approval.documents.each do |doc|
@@ -27,11 +30,7 @@ class ApprovalMailer < ApplicationMailer
   end
 
   def approval_reminder
-    @approval_response = ApprovalResponse.find params[:approval_response_id]
-    @approval = @approval_response.approval
-
-    @custom_notification = @approval.custom_notification
-    subject = @custom_notification ? @custom_notification.subject : "Approval required for #{@approval.entity.name}: #{@approval.title}"
+    subject = "Approval required for #{@approval.entity.name}: #{@approval.title}"
 
     # Check for attachments
     @approval.documents.each do |doc|
@@ -53,9 +52,8 @@ class ApprovalMailer < ApplicationMailer
   end
 
   def notify_approval_response
-    @approval_response = ApprovalResponse.find params[:approval_response_id]
-    @approval = @approval_response.approval
+    subject = "#{@approval_response.entity.name}: #{@approval_response.status} for #{@approval_response.approval.title}"
 
-    send_mail(subject: "#{@approval_response.entity.name}: #{@approval_response.status} for #{@approval_response.approval.title}") if @to.present?
+    send_mail(subject:)
   end
 end

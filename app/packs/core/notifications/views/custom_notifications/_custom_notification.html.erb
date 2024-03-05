@@ -6,7 +6,9 @@
     <%= custom_notification.whatsapp %>
   </td>
   <td>
-    <%= custom_notification.for %> <%= link_to custom_notification.owner %>
+    <%= custom_notification.for_type %> 
+    <%= custom_notification.email_method&.humanize %> 
+    <%= link_to custom_notification.owner %>
   </td>
   <td>
     <%= display_boolean custom_notification.show_details %>

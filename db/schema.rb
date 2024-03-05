@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_28_152926) do
+ActiveRecord::Schema[7.1].define(version: 2024_03_02_154250) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -754,11 +754,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_28_152926) do
     t.bigint "owner_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "for", limit: 100
+    t.string "for_type", limit: 100
     t.boolean "show_details", default: false
     t.boolean "password_protect_attachment", default: false
     t.string "attachment_password"
     t.boolean "no_link", default: false
+    t.string "email_method", limit: 100
     t.index ["entity_id"], name: "index_custom_notifications_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_custom_notifications_on_owner"
   end

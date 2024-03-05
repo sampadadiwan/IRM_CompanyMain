@@ -33,8 +33,7 @@
     <div id="custom-notification-tab" class="tab-pane fade">
       <div id="custom_notifications" class="associated_entity">
 
-          <%= render "custom_notifications/index", custom_notifications: [capital_call.custom_notification].compact, 
-                      owner: capital_call %>
+          <%= render "custom_notifications/index", custom_notifications: capital_call.custom_notifications,owner: capital_call %>
 
       </div>  
     </div>

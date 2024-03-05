@@ -72,6 +72,9 @@ class ApplicationMailer < ActionMailer::Base
 
   # Convinience method to send mail with simply the subject
   def send_mail(subject: nil)
+    # Change the subject if we have a custom notification
+    subject = @custom_notification&.subject || subject
+    # send the email
     mail(from: @from, to: @to, cc: @cc, reply_to: @reply_to, subject:) if @to.present?
   end
 

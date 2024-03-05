@@ -1,6 +1,7 @@
 <% if @custom_notification.present? %>
-    <%= @custom_notification.body.html_safe %>
-    <%= render "approval_responses/kyc_in_approval" if @custom_notification.show_details %>
+    <%= render "/custom_notifications/mail" do %>
+        <%= render "approval_responses/kyc_in_approval" if @custom_notification.show_details %>
+    <% end %>
 <% else %>
 
     <h3>Dear <%= @approval_response.investor.investor_name %> </h3>
@@ -15,9 +16,10 @@
     </p>
     <%end%>
 
+    <%= render "approval_responses/kyc_in_approval" %>
+
 <% end %>
 
-<%= render "approval_responses/kyc_in_approval" %>
 <%= render "approval_mailer/response_link" if @approval.response_enabled_email %>
 
 <p class="btn btn-outline-primary"><%= link_to 'View Approval', approval_url(@approval, subdomain: @approval.entity.sub_domain) if  @custom_notification.nil? || @custom_notification&.show_link %></p>

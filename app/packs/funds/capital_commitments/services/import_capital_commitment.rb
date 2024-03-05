@@ -1,5 +1,5 @@
 class ImportCapitalCommitment < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type", "Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of", "Kyc Full Name", "Investor Signatory Emails", "Update Only"].freeze
+  STANDARD_HEADERS = ["Investor", "Fund", "Folio Currency", "Committed Amount", "Fund Close", "Notes", "Folio No", "Unit Type", "Type", "Commitment Date", "Onboarding Completed", "From Currency", "To Currency", "Exchange Rate", "As Of", "Kyc Investing Entity", "Investor Signatory Emails", "Update Only"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -69,13 +69,13 @@ class ImportCapitalCommitment < ImportUtil
                CapitalCommitmentUpdate.call(capital_commitment:)
              end
 
-    raise result[:errors].full_messages.join(",") unless result.success?
+    raise result[:errors] unless result.success?
 
     result.success?
   end
 
   def get_kyc(user_data, investor, fund, capital_commitment)
-    kyc_full_name = user_data["Kyc Full Name"]
+    kyc_full_name = user_data["Kyc Investing Entity"]
     if kyc_full_name.present?
       kyc = fund.entity.investor_kycs.where(investor_id: investor.id, full_name: kyc_full_name).last
       raise "KYC not found" unless kyc

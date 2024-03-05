@@ -5,7 +5,7 @@ kyc_form_type, kyc_custom_field_names, kyc_custom_headers = get_form_type("Inves
 
 wb.add_worksheet(name: "CapitalCommitment") do |sheet|
   # Create the header row
-  sheet.add_row(["Fund", "Investor", "Full Name", "Type", "Folio No", "Commitment Date", "Unit Type", "Percentage", "Folio Currency", "Committed (Folio Currency)", "Fund Currency", "Committed", "Called", "Collected", "Distributed", "Fund Close", "Virtual Bank Account"] + custom_headers + ["Full Name", "PAN", "Address", "Bank Account", "IFSC Code"] + kyc_custom_headers)
+  sheet.add_row(["Fund", "Investor", "Investing Entity", "Type", "Folio No", "Commitment Date", "Unit Type", "Percentage", "Folio Currency", "Committed (Folio Currency)", "Fund Currency", "Committed", "Called", "Collected", "Distributed", "Fund Close", "Virtual Bank Account"] + custom_headers + ["Investing Entity", "PAN", "Address", "Bank Account", "IFSC Code"] + kyc_custom_headers)
 
   # Create entries for each item
   @capital_commitments.each do |cc|

@@ -19,6 +19,7 @@ class DocumentsBulkActionJob < BulkActionJob
     when "send for esignatures"
       if document.to_be_esigned?
         DigioEsignJob.perform_now(document.id, user_id)
+        sleep(1) # This is so that we dont flood Digio, throttle requests sent
       else
         msg = "Document #{document.name} is not ready for e-signature"
         set_error(msg, document, user_id)

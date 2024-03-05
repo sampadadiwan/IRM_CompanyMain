@@ -4,7 +4,7 @@ class CapitalRemittanceNotification < BaseNotification
   param :email_method
 
   def mailer_name
-    CapitalRemittancesMailer
+    CapitalRemittanceMailer
   end
 
   def email_data
@@ -21,9 +21,9 @@ class CapitalRemittanceNotification < BaseNotification
   def message
     @capital_remittance = params[:capital_remittance]
     @capital_call = @capital_remittance.capital_call
-    @custom_notification = @capital_call.custom_notification
+    @custom_notification = @capital_call.custom_notification(email_method)
 
-    @custom_notification&.whatsapp || "Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}"
+    @custom_notification&.whatsapp || params[:msg].presence || "Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}"
   end
 
   def url

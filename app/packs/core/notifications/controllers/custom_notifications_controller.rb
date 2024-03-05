@@ -15,15 +15,6 @@ class CustomNotificationsController < ApplicationController
     @custom_notification = CustomNotification.new(custom_notification_params)
     @custom_notification.owner ||= current_user.entity
     authorize @custom_notification
-
-    # Entity can have mulitple custom notifications for
-    existing = @custom_notification.owner.instance_of?(::Entity) ? @custom_notification.owner.custom_notification(@custom_notification.for) : @custom_notification.owner.custom_notification
-
-    if existing
-      # Send them to edit the existing one
-      @custom_notification = existing
-      redirect_to edit_custom_notification_url(@custom_notification)
-    end
   end
 
   # GET /custom_notifications/1/edit
@@ -81,6 +72,6 @@ class CustomNotificationsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def custom_notification_params
-    params.require(:custom_notification).permit(:subject, :body, :whatsapp, :for, :show_details, :entity_id, :owner_id, :owner_type, :attachment_password, :password_protect_attachment, :no_link)
+    params.require(:custom_notification).permit(:subject, :body, :whatsapp, :for_type, :show_details, :entity_id, :owner_id, :owner_type, :attachment_password, :password_protect_attachment, :no_link, :email_method)
   end
 end

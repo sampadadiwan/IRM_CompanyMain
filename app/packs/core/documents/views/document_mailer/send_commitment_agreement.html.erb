@@ -1,15 +1,13 @@
 <% if @custom_notification %>
-
-    <p><%= @custom_notification.body.html_safe %></p>
-
+    <%= render "/custom_notifications/mail"%>
 <% else %>
 
-<p>Dear User</p>
+    <p>Dear User</p>
 
-<p>
-    A new document has been uploaded for your review by <%= @document.entity.name %>. 
-    Please click on the button below to view the document.
-</p>
+    <p>
+        A new document has been uploaded for your review by <%= @document.entity.name %>. 
+        Please click on the button below to view the document.
+    </p>
 
 <% end %>
 

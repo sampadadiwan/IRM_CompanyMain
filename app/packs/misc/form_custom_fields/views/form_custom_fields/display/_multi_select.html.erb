@@ -1,0 +1,5 @@
+<% if value.present? && value.instance_of?(Array) %>
+    <%= value.join(', ') %>
+<% else %>
+    <%= value %>
+<% end %>

@@ -1,7 +1,15 @@
 <h3>Dear  <%= @approval_response.investor.investor_name %></h3>
 
-<p>
-Your response for Approval <%= @approval_response.approval.name %> has been registered as <%= @approval_response.status%>.
-</p>
+<% if @custom_notification.present? %>
+    <%= render "/custom_notifications/mail" do %>        
+        <p>
+            Your response for Approval <%= @approval_response.approval.name %> has been registered as <%= @approval_response.status%>.
+        </p>
+    <% end %>
+<% else %>
+    <p>
+        Your response for Approval <%= @approval_response.approval.name %> has been registered as <%= @approval_response.status%>.
+    </p>
+<% end %>
 
 <p class="btn btn-outline-primary"><%= link_to 'View Approval Response', approval_response_url(@approval_response, subdomain: @approval_response.entity.sub_domain) %></p>

@@ -134,6 +134,22 @@
     clear_emails
   end
 
+  Then('the investor gets the approval custom notification') do
+    puts "\n#### Emails ###\n"
+    puts @approval.pending_investors.collect(&:emails).flatten
+
+    @approval.pending_investors.collect(&:emails).flatten.each do |email|
+        open_email(email)
+
+        @custom_notification.should_not be_nil
+        puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}, body: #{@custom_notification.body}"
+        expect(current_email.subject).to have_content @custom_notification.subject
+        expect(current_email.body).to have_content @custom_notification.body
+    end
+
+    clear_emails
+  end
+
 
   Then('I should see my approval response') do
     @approval.approval_responses.pending.each do |response|
@@ -200,8 +216,8 @@ When('I select {string} for the approval response') do |response|
   click_on("Submit")
 end
 
-Given('there is a custom notification in place for the approval with subject {string}"') do |subject|         
-  @custom_notification = CustomNotification.create!(entity: @approval.entity, subject:, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @approval)
+Given('there is a custom notification in place for the approval with subject {string} with email_method {string}') do |subject, email_method|  
+  @custom_notification = CustomNotification.create!(entity: @approval.entity, subject:, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @approval, email_method:)
 end
 
 Then('I should see the approval response details for each response') do 
@@ -226,4 +242,8 @@ When('I select {string} in the approval notification email') do |status|
   puts "clicking #{status} in current_email = to: #{current_email.to}, subj: #{current_email.subject}"
   current_email.click_link status
   ap @approval.approval_responses.last
+end
+
+When('the approval reminder is sent internally') do
+  ApprovalReminder.wtf?(approval: @approval).success?.should == true
 end

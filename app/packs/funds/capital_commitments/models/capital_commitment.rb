@@ -14,12 +14,12 @@ class CapitalCommitment < ApplicationRecord
   # Set by import upload when importing commitments
   attr_accessor :imported
 
-  STANDARD_COLUMN_NAMES = ["Type", "Folio", "Investor", "Full Name", "Unit Type", "Committed", "Percentage",
+  STANDARD_COLUMN_NAMES = ["Type", "Folio", "Investor", "Investing Entity", "Unit Type", "Committed", "Percentage",
                            "Called", "Collected", "Distributed", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[commitment_type folio_id investor_name full_name unit_type committed_amount
                               percentage call_amount collected_amount distribution_amount dt_actions].freeze
 
-  INVESTOR_COLUMN_NAMES = ["Folio", "Full Name", "Unit Type", "Committed", "Called",
+  INVESTOR_COLUMN_NAMES = ["Folio", "Investing Entity", "Unit Type", "Committed", "Called",
                            "Collected", "Distributed", " "].freeze
   INVESTOR_COLUMN_FIELDS = %w[folio_id full_name unit_type committed_amount call_amount
                               collected_amount distribution_amount dt_actions].freeze

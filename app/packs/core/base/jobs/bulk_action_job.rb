@@ -5,11 +5,11 @@ class BulkActionJob < ApplicationJob
   def perform(record_ids, user_id, bulk_action)
     @error_msg = []
     Chewy.strategy(:sidekiq) do
-      investor_kycs = get_class.where(id: record_ids)
+      records = get_class.where(id: record_ids)
       user = User.find(user_id)
-      investor_kycs.each do |kyc|
+      records.each do |rec|
         Audited.audit_class.as_user(user) do
-          perform_action(kyc, user_id, bulk_action)
+          perform_action(rec, user_id, bulk_action)
         end
       end
     end

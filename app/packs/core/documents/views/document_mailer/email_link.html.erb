@@ -1,8 +1,11 @@
 Dear User
 
-<p>
-    The zipfile of the documents you requested is available at the link below. Note this link will expire in 7 days
-</p>
-
+<% if @custom_notification %>
+    <%= render "/custom_notifications/mail" %>
+<% else %>
+    <p>
+        The zipfile of the documents you requested is available at the link below. Note this link will expire in 7 days
+    </p>
+<% end %>
 
 <p class="btn btn-outline-primary"><%= link_to 'Download Zip', @link %></p>

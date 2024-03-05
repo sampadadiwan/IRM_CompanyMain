@@ -114,7 +114,7 @@ Scenario Outline: Create new capital call
   And Given I upload "account_entries.xlsx" file for Account Entries
   When I create a new capital call "<call>"
   Then I should see the capital call details
-  Given there is a custom notification for the capital call with subject "<subject>"
+  Given there is a custom notification for the capital call with subject "<subject>" with email_method "notify_capital_remittance"
   Then when the capital call is approved
   Then the corresponding remittances should be created
   Then I should see the remittances

@@ -3,6 +3,7 @@ class Entity < ApplicationRecord
   # include EntityMerge
   # include InvestorEntityMerge
   include EntityEnabled
+  include WithCustomNotifications
 
   # Make all models searchable
   update_index('entity') { self if index_record? }
@@ -10,8 +11,6 @@ class Entity < ApplicationRecord
   validates :name, :entity_type, presence: true
   validates_uniqueness_of :sub_domain, scope: :parent_entity_id, allow_blank: true, allow_nil: true
   validates_uniqueness_of :pan, allow_blank: true, allow_nil: true
-
-  has_many :custom_notifications, as: :owner, dependent: :destroy
 
   validates :primary_email, presence: true, if: proc { |e| e.new_record? && !e.is_holdings_entity }
 
@@ -239,10 +238,6 @@ class Entity < ApplicationRecord
     end
 
     no_pans
-  end
-
-  def custom_notification(for_type = nil)
-    custom_notifications.where(for: for_type).first
   end
 
   def is_fund?

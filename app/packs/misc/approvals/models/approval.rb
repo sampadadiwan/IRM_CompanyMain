@@ -2,6 +2,7 @@ class Approval < ApplicationRecord
   include WithFolder
   include WithCustomField
   include InvestorsGrantedAccess
+  include WithCustomNotifications
 
   belongs_to :entity
   # Associated owner such as Fund, Deal etc. The AccessRights of the owner will be copied over to the approval post creation
@@ -12,9 +13,6 @@ class Approval < ApplicationRecord
   has_many :approval_responses, dependent: :destroy
   has_many :approval_investors, through: :approval_responses, class_name: "Investor", source: :investor
   has_many :pending_investors, -> { where('approval_responses.status': "Pending") }, through: :approval_responses, class_name: "Investor", source: :investor
-
-  has_noticed_notifications
-  has_one :custom_notification, as: :owner, dependent: :destroy
 
   validates :title, :due_date, :response_status, presence: true
 

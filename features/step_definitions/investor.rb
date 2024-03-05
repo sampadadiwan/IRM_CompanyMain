@@ -328,8 +328,8 @@ Then('the investor kycs must have the data in the sheet') do
     ap cc
 
     puts "Checking import of #{cc.full_name} #{cc.class.name}}"
-    if user_data["Full Name"].present?
-      cc.full_name.should == user_data["Full Name"]
+    if user_data["Investing Entity"].present?
+      cc.full_name.should == user_data["Investing Entity"]
       cc.birth_date.to_date.should == user_data["Date Of Birth"]
       cc.address.should == user_data["Address"]
       cc.corr_address.should == user_data["Correspondence Address"]
@@ -339,6 +339,7 @@ Then('the investor kycs must have the data in the sheet') do
       cc.bank_account_number.should == user_data["Bank Account Number"]&.to_s
       cc.ifsc_code.should == user_data["Ifsc Code"]&.to_s
       cc.esign_emails.should == user_data["Investor Signatory Emails"]
+      cc.agreement_committed_amount.to_d.should == user_data["Agreement Committed Amount"]&.to_d || 0
       cc.import_upload_id.should == ImportUpload.last.id
     end
     cc.class.name.should == cc.type_from_kyc_type
@@ -441,7 +442,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
   end
   if files.include?("cancelled cheque")
     page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
-      within '#custom_file_upload_cancelled_cheque' do
+      within '#custom_file_upload_cancelled_chequebank_statement' do
         click_on 'Choose file'
       end
     end
@@ -1032,6 +1033,7 @@ end
 Given('a InvestorKyc is created with details {string} by {string}') do |args, investor_user|  
   @investor_kyc = FactoryBot.build(:investor_kyc, entity: @entity, investor: @investor)
   key_values(@investor_kyc, args)
+  investor_user = investor_user == "true"
   InvestorKycCreate.wtf?(investor_kyc: @investor_kyc, investor_user:).success?.should == true
 end
 
@@ -1046,9 +1048,15 @@ Then('the kyc form should be sent {string} to the investor') do |flag|
     expect(current_email.subject).to include "Request to add KYC: #{@investor_kyc.entity.name}"
   else
     current_email.should == nil
-  end
-  
+  end  
 end
+
+Given('there is a custom notification {string} in place for the KYC') do |args|
+  @custom_notification = CustomNotification.build(entity: @entity, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), for_type: "InvestorKyc", owner: @entity)
+  key_values(@custom_notification, args)
+  @custom_notification.save!
+end
+
 
 Then('the investor entity should have {string} permissions') do |args|
   @investor.reload
@@ -1063,9 +1071,45 @@ Then('notification should be sent {string} to the investor for kyc update') do |
   user = @entity.employees.first
   open_email(user.email)
   
-  if sent
+  if sent == "true"
     expect(current_email.subject).to include "KYC updated for #{@investor_kyc.full_name}"
   else
     current_email.should == nil
   end
 end
+
+Given('notification should be sent {string} to the investor for {string}') do |sent, cn_args|
+  cn = CustomNotification.new
+  key_values(cn, cn_args)
+  user = InvestorAccess.includes(:user).first.user
+  open_email(user.email)
+  puts "Checking email for #{user.email} with email_method: #{cn.email_method}, subject: #{current_email&.subject}"
+  if sent == "true"
+    expect(current_email.subject).to include @entity.custom_notification(cn.email_method).subject
+    clear_emails
+  else
+    current_email.should == nil
+  end  
+  
+end
+
+Given('notification should be sent {string} to the user for {string}') do |sent, cn_args|
+  cn = CustomNotification.new
+  key_values(cn, cn_args)
+  user = @entity.employees.first
+  open_email(user.email)
+  puts "Checking email for #{user.email} with email_method: #{cn.email_method}, subject: #{current_email&.subject}"
+  if sent == "true"
+    expect(current_email.subject).to include @entity.custom_notification(cn.email_method).subject
+    clear_emails
+  else
+    current_email.should == nil
+  end  
+end
+
+Given('the kyc reminder is sent to the investor') do
+  @entity.reload.investor_kycs.each do |kyc|
+    kyc.send_kyc_form(reminder: true)
+  end
+end
+

@@ -3,7 +3,7 @@
 <div data-controller="datatable">
   <%
     title = "Onboarding Report: #{link_to(@fund.name, @fund)}"
-    column_names = ["Type", "Folio", "Investor", "Full Name", "Unit Type", "Committed", "Documents", "Onboarding Complete", " "].join(",")
+    column_names = ["Type", "Folio", "Investor", "Investing Entity", "Unit Type", "Committed", "Documents", "Onboarding Complete", " "].join(",")
     field_list = ["commitment_type", "folio_id", "investor_name", "full_name", "unit_type", "committed_amount", "document_names", "onboarding_completed", "dt_actions"].join(",")
   %>
   <%= render "/capital_commitments/index", column_names:, field_list:, title:,

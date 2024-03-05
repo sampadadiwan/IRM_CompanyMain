@@ -27,8 +27,8 @@ class InvestorKycAction < Trailblazer::Operation
     true
   end
 
-  def send_kyc_form(_ctx, investor_kyc:, **)
-    SendKycFormJob.perform_later(investor_kyc.id) if investor_kyc.saved_change_to_send_kyc_form_to_user? && investor_kyc.send_kyc_form_to_user
+  def send_kyc_form(_ctx, investor_kyc:, investor_user:, **)
+    SendKycFormJob.perform_later(investor_kyc.id) if investor_kyc.saved_change_to_send_kyc_form_to_user? && investor_kyc.send_kyc_form_to_user && !investor_user
     true
   end
 

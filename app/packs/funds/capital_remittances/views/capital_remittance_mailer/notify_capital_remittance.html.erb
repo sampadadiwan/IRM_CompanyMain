@@ -1,7 +1,8 @@
 <% if @custom_notification %>
 
-    <%= @custom_notification.body.html_safe %>
-    <%= render "/capital_remittances/show", capital_remittance: @capital_remittance, current_user: nil, params: {} if @custom_notification.show_details %>
+    <%= render "/custom_notifications/mail" do %>
+        <%= render "/capital_remittances/show", capital_remittance: @capital_remittance, current_user: nil, params: {} if @custom_notification.show_details %>
+    <% end %>    
 
 <% else %>
 

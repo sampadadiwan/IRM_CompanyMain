@@ -87,7 +87,7 @@ class CapitalRemittance < ApplicationRecord
   def send_notification(reminder: false)
     if capital_call.approved && !capital_call.manual_generation
       investor.approved_users.each do |user|
-        email_method = reminder ? :reminder_capital_remittance : :send_notification
+        email_method = reminder ? :reminder_capital_remittance : :notify_capital_remittance
         CapitalRemittanceNotification.with(entity_id:, capital_remittance: self, email_method:).deliver_later(user)
       end
     end

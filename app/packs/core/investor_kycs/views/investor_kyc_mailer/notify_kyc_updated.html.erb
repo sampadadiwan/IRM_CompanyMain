@@ -1,10 +1,18 @@
-<p>
-    <% if @message.present? %>
-        <%= @message %>
-    <% else %>
-        The KYC for the user <%= @investor_kyc.full_name %> has been updated.
-    <% end %>
-</p>
+<% if @custom_notification %>
+
+    <%= render "/custom_notifications/mail" %>    
+
+<% else %>
+
+    <p>
+        <% if @message.present? %>
+            <%= @message %>
+        <% else %>
+            The KYC for the user <%= @investor_kyc.full_name %> has been updated.
+        <% end %>
+    </p>
+
+<% end %>
 
 <p class="btn btn-outline-primary"><%= link_to  "View KYC", investor_kyc_url(@investor_kyc, subdomain: @investor_kyc.entity.sub_domain) %></p>
 

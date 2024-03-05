@@ -71,7 +71,7 @@ class SecondarySalesController < ApplicationController
       if result.success?
         success += 1
       else
-        errors << "Offer: #{offer.id} #{result[:errors].full_messages}"
+        errors << "Offer: #{offer.id} #{result[:errors]}"
       end
     end
 
@@ -184,7 +184,7 @@ class SecondarySalesController < ApplicationController
 
         format.html do
           redirect_to finalize_offer_allocation_secondary_sale_url(secondary_sale_id: @secondary_sale.id),
-                      alert: "Error: #{result[:errors].full_messages}"
+                      alert: "Error: #{result[:errors]}"
         end
         format.json { render json: @secondary_sale.errors, status: :unprocessable_entity }
       end

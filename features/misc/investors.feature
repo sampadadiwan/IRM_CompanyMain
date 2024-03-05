@@ -86,7 +86,7 @@ Scenario Outline: Import investor access
   And Given I upload an investors file for the company
   And Given I upload an investor access file for employees
   Then I should see the "Import in progress"
-  Then There should be "2" investor access created
+  Then There should be "3" investor access created
   And the investor accesses must have the data in the sheet
 
 @import
@@ -126,9 +126,9 @@ Scenario Outline: Create investor kyc - no ckyc
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   Given there is an existing investor "investor_name=Investor 1"
-  Given I create a new InvestorKyc "PAN=ABCD9876F" with files "Upload PAN Card,Upload Address Proof,Upload Cancelled Cheque" for ""
+  Given I create a new InvestorKyc "PAN=ABCD9876F" with files "Upload PAN Card,Upload Address Proof,Upload Cancelled Cheque / Bank Statement" for ""
   Then I should see the "Investor kyc was successfully saved. Please upload the required documents for the KYC."
-  And I should see the kyc documents "Upload PAN Card,Upload Address Proof,Upload Cancelled Cheque"
+  And I should see the kyc documents "Upload PAN Card,Upload Address Proof,Upload Cancelled Cheque / Bank Statement"
   And when I upload the document for the kyc
   Then I should see the "Document was successfully saved."
   Then I should see the investor kyc details on the details page

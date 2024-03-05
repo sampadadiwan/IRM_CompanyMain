@@ -1,0 +1,11 @@
+<% if @custom_notification.present? %>
+
+    <!-- Custom Notification Details -->
+    <%= @custom_notification.body.html_safe %>
+
+    <!-- Anything else passed into the block -->
+    <% if (block = yield).present? %>
+        <%= block %>
+    <% end %>
+
+<% end %>

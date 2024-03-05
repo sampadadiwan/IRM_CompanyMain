@@ -104,11 +104,13 @@ Scenario Outline: Create new holding
 @import
 Scenario Outline: Import holding
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
+  Given the user has role "company_admin"  
   Given a esop pool "name=Pool 1" is created with vesting schedule "12:20,24:30,36:50"
+  And Given I upload an investors file for the company
   And Given I upload a holdings file
   Then I should see the "Import in progress"
-  Then There should be "6" holdings created
-  And There should be "6" users created for the holdings  
+  Then There should be "8" holdings created
+  And There should be "8" users created for the holdings  
   And There should be "0" Investments created for the holdings
   And when the holdings are approved
   And Investments is updated with the holdings 

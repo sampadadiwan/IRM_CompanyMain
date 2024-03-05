@@ -1,21 +1,19 @@
-<% if @custom_notification %>
-
-    <%= @custom_notification.body.html_safe %>
-
-<% else %>
-
 <p>Dear <%= @investor_kyc.full_name.present? ? @investor_kyc.full_name : "User" %></p>
 
-<p>
+<% if @custom_notification %>
 
-    <% if @investor_kyc.notification_msg.present? %>
-        <%= @investor_kyc.notification_msg.html_safe %>
-    <% else %>
-        <%= @investor_kyc.entity.name %> has requested that you kindly add / update your KYC details by clicking on the button below.
-    <% end %>
+    <%= render "/custom_notifications/mail" %>    
 
-</p>
+<% else %>
+    <p>
 
+        <% if @investor_kyc.notification_msg.present? %>
+            <%= @investor_kyc.notification_msg.html_safe %>
+        <% else %>
+            <%= @investor_kyc.entity.name %> has requested that you kindly add / update your KYC details by clicking on the button below.
+        <% end %>
+
+    </p>
 <% end %>
 
 <p class="btn btn-outline-primary"><%= link_to  "Login to Access", edit_investor_kyc_url(@investor_kyc) if  @custom_notification.nil? || @custom_notification&.show_link %></p>

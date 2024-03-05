@@ -1,11 +1,17 @@
 Dear User
 
-<p>
-    The firm <%= @document.entity.name %> has uploaded a new document <%= @document.name %>. Please click the button below to access the document.
-</p>
+<% if @custom_notification %>
+    <%= render "/custom_notifications/mail" do %>
+        <%= @document.text if @custom_notification.show_details %>
+    <% end %>
+<% else %>
+    <p>
+        The firm <%= @document.entity.name %> has uploaded a new document <%= @document.name %>. Please click the button below to access the document.
+    </p>
 
-<p>
-    <%= @document.text %>
-</p>
+    <p>
+        <%= @document.text %>
+    </p>
+<% end %>
 
 <p class="btn btn-outline-primary"><%= link_to 'View Document', document_url(@document, subdomain: @document.entity.sub_domain) %></p>

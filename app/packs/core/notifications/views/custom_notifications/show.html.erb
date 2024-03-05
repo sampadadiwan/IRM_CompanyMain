@@ -5,7 +5,15 @@
       For
     </td>
     <td>
-      <%= @custom_notification.for ? @custom_notification.for : @custom_notification.owner %>
+      <%= @custom_notification.for_type.present? ? @custom_notification.for_type : link_to(@custom_notification.owner) %>
+    </td>
+  </tr>
+   <tr>
+    <td>
+      For Notification
+    </td>
+    <td>
+      <%= @custom_notification.email_method&.humanize %>
     </td>
   </tr>
   <tr>

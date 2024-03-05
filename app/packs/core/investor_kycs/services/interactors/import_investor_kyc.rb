@@ -1,7 +1,7 @@
 class ImportInvestorKyc < ImportUtil
   include Interactor
 
-  STANDARD_HEADERS = ["Investor", "Full Name", "Pan", "Address", "Correspondence Address", "Kyc Type", "Residency", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User", "Investor Signatory Emails"].freeze
+  STANDARD_HEADERS = ["Investor", "Investing Entity", "Pan", "Address", "Correspondence Address", "Kyc Type", "Residency", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User", "Investor Signatory Emails", "Agreement Committed Amount"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -11,7 +11,7 @@ class ImportInvestorKyc < ImportUtil
     Rails.logger.debug user_data
 
     saved = true
-    full_name = user_data["Full Name"]
+    full_name = user_data["Investing Entity"]
     update_only = user_data["Update Only"]
     pan = user_data["Pan"]
 
@@ -40,7 +40,8 @@ class ImportInvestorKyc < ImportUtil
     kyc_type = user_data["Kyc Type"].presence || "Individual"
 
     investor_kyc.assign_attributes(investor:, PAN: user_data["Pan"],
-                                   full_name: user_data["Full Name"],
+                                   agreement_committed_amount: user_data["Agreement Committed Amount"],
+                                   full_name: user_data["Investing Entity"],
                                    address: user_data["Address"],
                                    corr_address: user_data["Correspondence Address"],
                                    birth_date: user_data["Date Of Birth"],
@@ -62,7 +63,7 @@ class ImportInvestorKyc < ImportUtil
                InvestorKycUpdate.call(investor_kyc:, investor_user: false)
              end
 
-    raise result[:errors].full_messages.join(",") unless result.success?
+    raise result[:errors] unless result.success?
 
     result.success?
   end

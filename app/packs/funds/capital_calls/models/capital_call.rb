@@ -4,6 +4,7 @@ class CapitalCall < ApplicationRecord
   include Trackable.new
   include ActivityTrackable
   include RansackerAmounts
+  include WithCustomNotifications
 
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
@@ -18,8 +19,6 @@ class CapitalCall < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund, touch: true
-  has_many :notifications, as: :recipient, dependent: :destroy
-  has_one :custom_notification, as: :owner, dependent: :destroy
 
   belongs_to :approved_by_user, class_name: "User", optional: true
   # Stores the prices for unit types for this call
