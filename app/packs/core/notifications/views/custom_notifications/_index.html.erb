@@ -1,10 +1,6 @@
 <% 
-  owner ||= current_user.entity 
-  if owner == current_user.entity
-    entity_id = current_user.entity_id
-  else
-    entity_id = owner.entity_id
-  end
+  owner ||= nil #current_user.entity 
+  entity_id = owner&.entity_id || current_user.entity_id
 %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">

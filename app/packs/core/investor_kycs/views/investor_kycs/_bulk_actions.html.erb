@@ -31,6 +31,13 @@
             class: "dropdown-item", form_class: "w-100",
             data: {msg:, action: "click->confirm#popup", method: :get}  %>
 
+
+            <% msg = "This will try and verify the bank details using external bank APIs for KYCs below (including results on other pages). Proceed?" %>
+            <%= button_to "Verify Bank Details", 
+            bulk_actions_investor_kycs_path("bulk_action": "BankVerification", q: params.to_unsafe_h[:q], all: true),
+            class: "dropdown-item", form_class: "w-100",
+            data: {msg:, action: "click->confirm#popup", method: :get}  if current_user.entity.entity_setting.bank_verification %>
+
         </div>
     </div>
 </div>

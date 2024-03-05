@@ -15,16 +15,18 @@ class CustomNotification < ApplicationRecord
   end
 
   def email_methods
-    if for_type == "InvestorKyc"
-      "InvestorKycMailer".constantize.instance_methods(false).map(&:to_s)
-    elsif for_type == "Commitment Agreement"
-      %w[send_commitment_agreement]
-    elsif owner_type == "CapitalCall"
-      "CapitalRemittanceMailer".constantize.instance_methods(false).map(&:to_s)
-    elsif owner
-      "#{owner.class.name}Mailer".constantize.instance_methods(false).map(&:to_s)
-    else
-      []
-    end
+    mailer_methods = if for_type == "InvestorKyc"
+                       "InvestorKycMailer".constantize.instance_methods(false).map(&:to_s)
+                     elsif for_type == "Commitment Agreement"
+                       %w[send_commitment_agreement]
+                     elsif owner_type == "CapitalCall"
+                       "CapitalRemittanceMailer".constantize.instance_methods(false).map(&:to_s)
+                     elsif owner
+                       "#{owner.class.name}Mailer".constantize.instance_methods(false).map(&:to_s)
+                     else
+                       []
+                     end
+
+    mailer_methods.filter { |method| !method.start_with?("set_") }
   end
 end
