@@ -20,8 +20,8 @@ Scenario Outline: Approval Notifications
 
   Examples:
   	|user	    |entity               |approval                 |msg	|   subject | reminder |
-  	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created| Please respond to approval| Reminder 1 | 
-    |  	        |entity_type=Company  |title=Merger Approval    |Approval was successfully created| Approval from XYZ| Reminder 2 |
+  	|  	        |entity_type=Company  |title=Test approval;enable_approval_show_kycs=true;response_enabled_email=true      |Approval was successfully created| Please respond to approval| Reminder 1 | 
+    |  	        |entity_type=Company  |title=Merger Approval;enable_approval_show_kycs=false;response_enabled_email=false    |Approval was successfully created| Approval from XYZ| Reminder 2 |
 
 
 Scenario Outline: KYC Notifications - not investor_user

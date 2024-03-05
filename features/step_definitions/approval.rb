@@ -145,6 +145,22 @@
         puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}, body: #{@custom_notification.body}"
         expect(current_email.subject).to have_content @custom_notification.subject
         expect(current_email.body).to have_content @custom_notification.body
+
+        if @approval.response_enabled_email
+          expect(current_email.body).to have_content "You may respond by clicking on any one of the below links or login to view the detailed approval and respond thereafter"
+          statuses = @approval.response_status.split(',') - ["Pending"]
+          statuses.each do |status|
+            expect(current_email.body).to have_content status
+          end
+        else
+          expect(current_email.body).not_to have_content "You may respond by clicking on any one of the below links or login to view the detailed approval and respond thereafter"
+        end
+
+        if @approval.enable_approval_show_kycs
+          expect(current_email.body).to have_content "KYCs in this approval:"
+        else
+          expect(current_email.body).not_to have_content "KYCs in this approval:"
+        end
     end
 
     clear_emails

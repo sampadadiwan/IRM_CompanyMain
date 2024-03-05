@@ -1,6 +1,7 @@
 <% if @approval_response && @approval.enable_approval_show_kycs? %>
     <p>
     <div>
+        KYCs in this approval:
         <ol>        
         <% @approval_response.investor.investor_kycs.not_expired.each do |kyc| %>        
             <li>
