@@ -30,7 +30,7 @@
       <h1>Custom Fields</h1>
       <div id='form_custom_fields'>
         <%= form.fields_for :form_custom_fields do |field| %>
-          <%= render 'form_custom_fields', :f => field  unless field.object.field_type == "Calculation" && params[:debug].blank? %>
+          <%= render 'form_custom_fields', :f => field  unless (field.object.field_type == "Calculation" || field.object.internal) && params[:debug].blank? %>
         <% end %>
         <div class='links'>
         </div>
