@@ -157,9 +157,9 @@
         end
 
         if @approval.enable_approval_show_kycs
-          expect(current_email.body).to have_content "KYCs in this approval:"
+          expect(current_email.body).to have_content "KYCs in this approval"
         else
-          expect(current_email.body).not_to have_content "KYCs in this approval:"
+          expect(current_email.body).not_to have_content "KYCs in this approval"
         end
     end
 

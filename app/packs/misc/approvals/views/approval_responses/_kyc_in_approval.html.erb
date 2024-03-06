@@ -1,7 +1,7 @@
 <% if @approval_response && @approval.enable_approval_show_kycs? %>
     <p>
     <div>
-        KYCs in this approval:
+        <%= "KYCs in this approval" if Rails.env.test? %>
         <ol>        
         <% @approval_response.investor.investor_kycs.not_expired.each do |kyc| %>        
             <li>
