@@ -215,7 +215,7 @@ class User < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[first_name last_name email phone whatsapp_enabled].sort
+    %w[first_name last_name email phone whatsapp_enabled advisor_entity_id].sort
   end
 
   def active_for_authentication?
