@@ -38,12 +38,17 @@ class DocumentsBulkActionJob < BulkActionJob
   def send_commitment_agreement(document, user_id)
     if document.approved && %w[InvestorKyc CapitalCommitment IndivdualKyc NonIndivdualKyc].include?(document.owner_type)
 
-      document.notification_users.each do |user|
-        DocumentNotification.with(entity_id: document.entity_id,
-                                  document:, email_method: "send_commitment_agreement",
-                                  custom_notification_for: "Commitment Agreement").deliver(user)
-      rescue Exception => e
-        msg = "Error sending #{document.name} to #{user.email} #{e.message}"
+      if document.notification_users.present?
+        document.notification_users.each do |user|
+          DocumentNotification.with(entity_id: document.entity_id,
+                                    document:, email_method: "send_commitment_agreement",
+                                    custom_notification_for: "Commitment Agreement").deliver(user)
+        rescue Exception => e
+          msg = "Error sending #{document.name} to #{user.email} #{e.message}"
+          set_error(msg, document, user_id)
+        end
+      else
+        msg = "No users to send #{document.name} #{document.id} to"
         set_error(msg, document, user_id)
       end
 
@@ -55,6 +60,7 @@ class DocumentsBulkActionJob < BulkActionJob
   end
 
   def set_error(msg, document, user_id)
+    Rails.logger.error(msg)
     send_notification(msg, user_id, "danger")
     @error_msg << { msg:, document: document.name, document_id: document.id, for: document.owner }
   end
