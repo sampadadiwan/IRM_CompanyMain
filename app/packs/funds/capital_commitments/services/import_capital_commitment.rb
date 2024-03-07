@@ -64,9 +64,9 @@ class ImportCapitalCommitment < ImportUtil
     setup_exchange_rate(capital_commitment, user_data) if capital_commitment.foreign_currency?
 
     result = if capital_commitment.new_record?
-               CapitalCommitmentCreate.call(capital_commitment:)
+               CapitalCommitmentCreate.call(capital_commitment:, import_upload:)
              else
-               CapitalCommitmentUpdate.call(capital_commitment:)
+               CapitalCommitmentUpdate.call(capital_commitment:, import_upload:)
              end
 
     raise result[:errors] unless result.success?
@@ -99,5 +99,11 @@ class ImportCapitalCommitment < ImportUtil
     onboarding_completed = user_data["Onboarding Completed"] == "Yes"
 
     [folio_id, unit_type, commitment_type, commitment_date, folio_currency, onboarding_completed]
+  end
+
+  def post_process(import_upload, context)
+    super(import_upload, context)
+    last_cc = import_upload.imported_data.last
+    last_cc.compute_percentage
   end
 end

@@ -7,8 +7,11 @@ class CapitalCommitmentCreate < CapitalCommitmentAction
   step :compute_percentage
   step :touch_investor
 
-  def create_remittance(_ctx, capital_commitment:, **)
-    CapitalCommitmentRemittanceJob.perform_later(capital_commitment.id)
+  def create_remittance(ctx, capital_commitment:, **)
+    if capital_commitment.fund.capital_calls.count.positive? && ctx[:import_upload].blank?
+      # If we have pre existing calls, then we need to generate the remittances for those.
+      CapitalCommitmentRemittanceJob.perform_later(capital_commitment.id)
+    end
     true
   end
 
