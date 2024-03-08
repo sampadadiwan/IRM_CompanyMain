@@ -236,6 +236,19 @@ Then('There should be {string} investor access created') do |count|
   InvestorAccess.count.should == count.to_i
 end
 
+Given('Given I upload an investors file large for the fund') do
+    visit(investors_path)
+    click_on("Actions")
+    click_on("Upload")
+    sleep(3)
+    fill_in('import_upload_name', with: "Test Investor Upload")
+    attach_file('files[]', File.absolute_path('./public/sample_uploads/investors-large.xlsx'), make_visible: true)
+    sleep(4)
+    click_on("Save")
+    sleep(5)
+    ImportUploadJob.perform_now(ImportUpload.last.id)
+    sleep(4)
+end
 
 Given('Given I upload an investors file for the company') do
   visit(investors_path)

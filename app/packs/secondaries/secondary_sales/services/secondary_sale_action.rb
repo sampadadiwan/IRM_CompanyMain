@@ -6,7 +6,7 @@ class SecondarySaleAction < Trailblazer::Operation
 
   def handle_errors(ctx, secondary_sale:, **)
     unless secondary_sale.valid?
-      ctx[:errors] = secondary_sale.errors.full_messages
+      ctx[:errors] = secondary_sale.errors.full_messages.join(", ")
       Rails.logger.error("Errors: #{secondary_sale.errors.full_messages}")
     end
     secondary_sale.valid?

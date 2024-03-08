@@ -104,6 +104,6 @@ class ImportCapitalCommitment < ImportUtil
   def post_process(import_upload, context)
     super(import_upload, context)
     last_cc = import_upload.imported_data.last
-    last_cc.compute_percentage
+    last_cc&.compute_percentage
   end
 end

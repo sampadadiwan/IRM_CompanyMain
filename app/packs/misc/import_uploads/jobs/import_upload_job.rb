@@ -1,6 +1,6 @@
 class ImportUploadJob < ApplicationJob
   queue_as :serial
-  sidekiq_options retry: 1
+  sidekiq_options retry: 0
 
   def perform(import_upload_id)
     Chewy.strategy(:sidekiq) do

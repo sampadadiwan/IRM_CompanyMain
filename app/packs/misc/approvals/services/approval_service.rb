@@ -1,6 +1,9 @@
 class ApprovalService < Trailblazer::Operation
   def handle_errors(ctx, approval:, **)
-    ctx[:errors] = approval.errors.full_messages unless approval.valid?
+    unless approval.valid?
+      ctx[:errors] = approval.errors.full_messages.join(", ")
+      Rails.logger.error approval.errors.full_messages
+    end
     approval.valid?
   end
 

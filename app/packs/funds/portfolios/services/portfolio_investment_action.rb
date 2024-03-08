@@ -13,7 +13,7 @@ class PortfolioInvestmentAction < Trailblazer::Operation
 
   def handle_errors(ctx, portfolio_investment:, **)
     unless portfolio_investment.valid?
-      ctx[:errors] = portfolio_investment.errors.full_messages
+      ctx[:errors] = portfolio_investment.errors.full_messages.join(", ")
       Rails.logger.error portfolio_investment.errors.full_messages
     end
     portfolio_investment.valid?

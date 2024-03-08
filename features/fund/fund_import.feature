@@ -19,6 +19,21 @@ Scenario Outline: Import capital commitments
   And the account_entries must have the data in the sheet
   And the account_entries must visible for each commitment
 
+
+@import
+Scenario Outline: Import capital commitments - LArge set
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
+  And Given I upload an investors file large for the fund
+  And Given I upload "capital_commitments_multi_currency_large.xlsx" file for "Commitments" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "100" capital commitments created
+  And the capital commitments must have the data in the sheet
+  And the capital commitments must have the percentages updated
+  And the fund must have the counter caches updated
+  And the investors must have access rights to the fund
+  
 @import
 Scenario Outline: Import capital calls
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
