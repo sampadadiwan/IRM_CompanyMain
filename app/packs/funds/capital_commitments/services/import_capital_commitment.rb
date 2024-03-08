@@ -103,7 +103,12 @@ class ImportCapitalCommitment < ImportUtil
 
   def post_process(import_upload, context)
     super(import_upload, context)
+    # Recompute the percentages
     last_cc = import_upload.imported_data.last
     last_cc&.compute_percentage
+    # Create remittances if required
+    import_upload.imported_data.each do |capital_commitment|
+      CapitalCommitmentRemittanceJob.perform_now(capital_commitment.id) if capital_commitment.fund.capital_calls.count.positive?
+    end
   end
 end
