@@ -13,7 +13,7 @@ class ImportInvestor < ImportUtil
     end
   end
 
-  def save_investor(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers)
     # puts "processing #{user_data}"
     saved = true
     investor_name = user_data['Name']
@@ -71,30 +71,6 @@ class ImportInvestor < ImportUtil
       else
         Rails.logger.debug { "Specified fund #{user_data['Fund']} not found in import_upload #{import_upload.id}" }
       end
-    end
-  end
-
-  def process_row(headers, custom_field_headers, row, import_upload, _context)
-    # create hash from headers and cells
-
-    user_data = [headers, row].transpose.to_h
-    Rails.logger.debug { "#### user_data = #{user_data}" }
-    begin
-      if save_investor(user_data, import_upload, custom_field_headers)
-        import_upload.processed_row_count += 1
-        row << "Success"
-      else
-        import_upload.failed_row_count += 1
-        row << "Error"
-      end
-    rescue ActiveRecord::Deadlocked => e
-      raise e
-    rescue StandardError => e
-      Rails.logger.debug e.message
-      row << "Error #{e.message}"
-      Rails.logger.debug user_data
-      Rails.logger.debug row
-      import_upload.failed_row_count += 1
     end
   end
 end

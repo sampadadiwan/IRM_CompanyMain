@@ -7,13 +7,14 @@ class ImportKpi < ImportUtil
     STANDARD_HEADERS
   end
 
-  def post_process(import_upload, _context)
+  def post_process(import_upload, context)
+    super(import_upload, context)
     # This recomputes the KPI percentage change for all KPIs of this entity
     KpiPercentageChangeJob.perform_later(import_upload.entity_id, import_upload.user_id)
     InvestorKpiMapping.create_from(import_upload.entity, import_upload.entity.kpi_reports.last) if import_upload.entity.kpi_reports.last.present?
   end
 
-  def save_kpi(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers)
     name, value, _, _, notes = get_data(user_data)
     entity_id = import_upload.entity_id
 
@@ -107,30 +108,6 @@ class ImportKpi < ImportUtil
       Rails.logger.debug "Uploaded Kpis Document already exists"
     else
       Document.create(name:, owner: kpi_report, user_id: import_upload.user_id, entity_id: kpi_report.entity_id, file_data: import_upload.import_file_data, import_upload_id: import_upload.id, orignal: true, send_email: false)
-    end
-  end
-
-  def process_row(headers, custom_field_headers, row, import_upload, _context)
-    # create hash from headers and cells
-
-    user_data = [headers, row].transpose.to_h
-    Rails.logger.debug { "#### user_data = #{user_data}" }
-    begin
-      if save_kpi(user_data, import_upload, custom_field_headers)
-        import_upload.processed_row_count += 1
-        row << "Success"
-      else
-        import_upload.failed_row_count += 1
-        row << "Error"
-      end
-    rescue ActiveRecord::Deadlocked => e
-      raise e
-    rescue StandardError => e
-      Rails.logger.debug e.message
-      row << "Error #{e.message}"
-      Rails.logger.debug user_data
-      Rails.logger.debug row
-      import_upload.failed_row_count += 1
     end
   end
 end

@@ -4,7 +4,16 @@ class ImportUtil
   def call
     if context.import_upload.present? && context.import_file.present?
       begin
-        process_rows(context.import_upload, context.headers, context.data, context)
+        if defer_counter_culture_updates
+          # In some cases we dont want the counter caches to run during the import
+          # As this causes deadlocks. We will update the counter caches after the import
+          model_class = context.import_upload.model_class
+          model_class.defer_counter_culture_updates do
+            process_rows(context.import_upload, context.headers, context.data, context)
+          end
+        else
+          process_rows(context.import_upload, context.headers, context.data, context)
+        end
       rescue StandardError => e
         Rails.logger.debug { "e.message = #{e.message}" }
         Rails.logger.debug e.backtrace
@@ -21,6 +30,10 @@ class ImportUtil
         raise "Column not found #{header_name}" unless headers.include?(header_name.downcase.strip.squeeze(" ").titleize)
       end
     end
+  end
+
+  def defer_counter_culture_updates
+    false
   end
 
   def pre_process(import_upload, context); end
@@ -71,7 +84,36 @@ class ImportUtil
     post_process(import_upload, context)
   end
 
-  def post_process(import_upload, context); end
+  def process_row(headers, custom_field_headers, row, import_upload, _context)
+    # create hash from headers and cells
+
+    user_data = [headers, row].transpose.to_h
+    Rails.logger.debug { "#### user_data = #{user_data}" }
+    begin
+      if save_row(user_data, import_upload, custom_field_headers)
+        import_upload.processed_row_count += 1
+        row << "Success"
+      else
+        import_upload.failed_row_count += 1
+        row << "Error"
+      end
+    rescue ActiveRecord::Deadlocked => e
+      raise e
+    rescue StandardError => e
+      Rails.logger.debug e.message
+      row << "Error #{e.message}"
+      Rails.logger.debug user_data
+      Rails.logger.debug row
+      import_upload.failed_row_count += 1
+    end
+  end
+
+  def post_process(import_upload, _context)
+    if defer_counter_culture_updates
+      model_class = import_upload.model_class
+      model_class.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
+    end
+  end
 
   def setup_custom_fields(user_data, model, custom_field_headers)
     custom_field_headers -= ["Update Only"]

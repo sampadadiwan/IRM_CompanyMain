@@ -8,14 +8,15 @@ class ImportPortfolioInvestment < ImportUtil
     STANDARD_HEADERS
   end
 
-  def post_process(import_upload, _context)
+  def post_process(import_upload, context)
+    super(import_upload, context)
     # This ensures all the counters for this funds API are fixed
-    PortfolioInvestment.counter_culture_fix_counts only: :aggregate_portfolio_investment, where: { fund_id: import_upload.owner_id }
+    # PortfolioInvestment.counter_culture_fix_counts only: :aggregate_portfolio_investment, where: { fund_id: import_upload.owner_id }
     # This will cause the compute_avg_cost to be called
     AggregatePortfolioInvestment.where(fund_id: import_upload.owner_id).find_each(&:save)
   end
 
-  def save_portfolio_investment(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers)
     portfolio_company_name, investment_date, amount_cents, quantity, instrument, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, capital_commitment = inputs(user_data, import_upload)
 
     portfolio_company = import_upload.entity.investors.portfolio_companies.where(investor_name: portfolio_company_name).first
@@ -70,27 +71,7 @@ class ImportPortfolioInvestment < ImportUtil
     [portfolio_company_name, investment_date, amount_cents, quantity, instrument, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, capital_commitment]
   end
 
-  def process_row(headers, custom_field_headers, row, import_upload, _context)
-    # create hash from headers and cells
-
-    user_data = [headers, row].transpose.to_h
-    Rails.logger.debug { "#### user_data = #{user_data}" }
-    begin
-      if save_portfolio_investment(user_data, import_upload, custom_field_headers)
-        import_upload.processed_row_count += 1
-        row << "Success"
-      else
-        import_upload.failed_row_count += 1
-        row << "Error"
-      end
-    rescue ActiveRecord::Deadlocked => e
-      raise e
-    rescue StandardError => e
-      Rails.logger.debug e.message
-      row << "Error #{e.message}"
-      Rails.logger.debug user_data
-      Rails.logger.debug row
-      import_upload.failed_row_count += 1
-    end
+  def defer_counter_culture_updates
+    true
   end
 end

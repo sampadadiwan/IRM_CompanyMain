@@ -7,7 +7,7 @@ class ImportFundUnitSetting < ImportUtil
     STANDARD_HEADERS
   end
 
-  def save_fund_unit_setting(row_data, import_upload, custom_field_headers)
+  def save_row(row_data, import_upload, custom_field_headers)
     Rails.logger.debug row_data
 
     saved = true
@@ -44,30 +44,5 @@ class ImportFundUnitSetting < ImportUtil
     setup_custom_fields(row_data, fund_unit_setting, custom_field_headers)
 
     fund_unit_setting.save!
-  end
-
-  def process_row(headers, custom_field_headers, row, import_upload, _context)
-    # create hash from headers and cells
-
-    row_data = [headers, row].transpose.to_h
-
-    Rails.logger.debug { "#### row_data = #{row_data}" }
-    begin
-      if save_fund_unit_setting(row_data, import_upload, custom_field_headers)
-        import_upload.processed_row_count += 1
-        row << "Success"
-      else
-        import_upload.failed_row_count += 1
-        row << "Error"
-      end
-    rescue ActiveRecord::Deadlocked => e
-      raise e
-    rescue StandardError => e
-      Rails.logger.debug e.message
-      row << "Error #{e.message}"
-      Rails.logger.debug row_data
-      Rails.logger.debug row
-      import_upload.failed_row_count += 1
-    end
   end
 end

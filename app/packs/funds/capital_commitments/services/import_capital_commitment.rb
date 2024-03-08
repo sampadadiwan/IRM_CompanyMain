@@ -10,28 +10,7 @@ class ImportCapitalCommitment < ImportUtil
     @commitments = []
   end
 
-  def process_row(headers, custom_field_headers, row, import_upload, _context)
-    # create hash from headers and cells
-    user_data = [headers, row].transpose.to_h
-
-    begin
-      status = save_capital_commitment(user_data, import_upload, custom_field_headers)
-      if status
-        import_upload.processed_row_count += 1
-      else
-        import_upload.failed_row_count += 1
-      end
-    rescue ActiveRecord::Deadlocked => e
-      raise e
-    rescue StandardError => e
-      Rails.logger.debug e.backtrace
-      Rails.logger.debug { "Error #{e.message}" }
-      row << "Error #{e.message}"
-      import_upload.failed_row_count += 1
-    end
-  end
-
-  def save_capital_commitment(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing capital_commitment #{user_data}" }
     # Get the Fund
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).first
@@ -110,5 +89,9 @@ class ImportCapitalCommitment < ImportUtil
     import_upload.imported_data.each do |capital_commitment|
       CapitalCommitmentRemittanceJob.perform_now(capital_commitment.id) if capital_commitment.fund.capital_calls.count.positive?
     end
+  end
+
+  def defer_counter_culture_updates
+    true
   end
 end

@@ -7,7 +7,7 @@ class ImportInvestorKyc < ImportUtil
     STANDARD_HEADERS
   end
 
-  def save_investor_kyc(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers)
     Rails.logger.debug user_data
 
     saved = true
@@ -66,29 +66,5 @@ class ImportInvestorKyc < ImportUtil
     raise result[:errors] unless result.success?
 
     result.success?
-  end
-
-  def process_row(headers, custom_field_headers, row, import_upload, _context)
-    # create hash from headers and cells
-
-    user_data = [headers, row].transpose.to_h
-    Rails.logger.debug { "#### user_data = #{user_data}" }
-    begin
-      if save_investor_kyc(user_data, import_upload, custom_field_headers)
-        import_upload.processed_row_count += 1
-        row << "Success"
-      else
-        import_upload.failed_row_count += 1
-        row << "Error"
-      end
-    rescue ActiveRecord::Deadlocked => e
-      raise e
-    rescue StandardError => e
-      Rails.logger.debug e.message
-      row << "Error #{e.message}"
-      Rails.logger.debug user_data
-      Rails.logger.debug row
-      import_upload.failed_row_count += 1
-    end
   end
 end

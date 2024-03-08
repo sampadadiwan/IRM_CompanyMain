@@ -5,29 +5,7 @@ class ImportOffer < ImportUtil
     STANDARD_HEADERS
   end
 
-  def process_row(headers, custom_field_headers, row, import_upload, _context)
-    # create hash from headers and cells
-    user_data = [headers, row].transpose.to_h
-
-    begin
-      if save_offer(user_data, import_upload, custom_field_headers)
-        import_upload.processed_row_count += 1
-        row << "Success"
-      else
-        import_upload.failed_row_count += 1
-        row << "Error"
-      end
-    rescue ActiveRecord::Deadlocked => e
-      raise e
-    rescue StandardError => e
-      Rails.logger.debug e.message
-      Rails.logger.debug e.backtrace
-      row << "Error #{e.message}"
-      import_upload.failed_row_count += 1
-    end
-  end
-
-  def save_offer(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing offer #{user_data}" }
 
     email = user_data["Email"]

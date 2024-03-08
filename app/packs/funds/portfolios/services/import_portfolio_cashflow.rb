@@ -8,7 +8,7 @@ class ImportPortfolioCashflow < ImportUtil
     STANDARD_HEADERS
   end
 
-  def save_portfolio_cashflow(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers)
     fund_id, portfolio_company, payment_date, amount_cents, commitment_type, tag, instrument_name = inputs(user_data, import_upload)
 
     investment_instrument = portfolio_company.investment_instruments.where(name: instrument_name).first
@@ -55,29 +55,5 @@ class ImportPortfolioCashflow < ImportUtil
     commitment_type = user_data["Type"]
 
     [fund_id, portfolio_company, payment_date, amount_cents, commitment_type, tag, instrument_name]
-  end
-
-  def process_row(headers, custom_field_headers, row, import_upload, _context)
-    # create hash from headers and cells
-
-    user_data = [headers, row].transpose.to_h
-    Rails.logger.debug { "#### user_data = #{user_data}" }
-    begin
-      if save_portfolio_cashflow(user_data, import_upload, custom_field_headers)
-        import_upload.processed_row_count += 1
-        row << "Success"
-      else
-        import_upload.failed_row_count += 1
-        row << "Error"
-      end
-    rescue ActiveRecord::Deadlocked => e
-      raise e
-    rescue StandardError => e
-      Rails.logger.debug e.message
-      row << "Error #{e.message}"
-      Rails.logger.debug user_data
-      Rails.logger.debug row
-      import_upload.failed_row_count += 1
-    end
   end
 end

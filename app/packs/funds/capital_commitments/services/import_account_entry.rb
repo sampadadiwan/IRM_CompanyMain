@@ -11,29 +11,7 @@ class ImportAccountEntry < ImportUtil
     @account_entries = []
   end
 
-  def process_row(headers, custom_field_headers, row, import_upload, _context)
-    # create hash from headers and cells
-    user_data = [headers, row].transpose.to_h
-
-    begin
-      status, msg = save_account_entry(user_data, import_upload, custom_field_headers)
-      if status
-        import_upload.processed_row_count += 1
-      else
-        import_upload.failed_row_count += 1
-      end
-      row << msg
-    rescue ActiveRecord::Deadlocked => e
-      raise e
-    rescue StandardError => e
-      Rails.logger.debug e.backtrace
-      Rails.logger.debug { "Error #{e.message}" }
-      row << "Error #{e.message}"
-      import_upload.failed_row_count += 1
-    end
-  end
-
-  def save_account_entry(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing account_entry #{user_data}" }
 
     folio_id, name, entry_type, reporting_date, investor_name, amount_cents, fund, capital_commitment, investor = get_fields(user_data, import_upload)
@@ -104,7 +82,7 @@ class ImportAccountEntry < ImportUtil
   end
 
   def post_process(import_upload, context)
-    # Import it
+    super(import_upload, context)
 
     begin
       results = AccountEntry.import @account_entries, on_duplicate_key_ignore: true, validate_uniqueness: true, track_validation_failures: true

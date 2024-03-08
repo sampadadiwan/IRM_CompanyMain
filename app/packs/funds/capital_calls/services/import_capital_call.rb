@@ -9,29 +9,7 @@ class ImportCapitalCall < ImportUtil
     @exchange_rates = get_exchange_rates(context.import_file, import_upload)
   end
 
-  def process_row(headers, custom_field_headers, row, import_upload, _context)
-    # create hash from headers and cells
-    user_data = [headers, row].transpose.to_h
-
-    begin
-      if save_capital_call(user_data, import_upload, custom_field_headers)
-        import_upload.processed_row_count += 1
-        row << "Success"
-      else
-        import_upload.failed_row_count += 1
-        row << "Error"
-      end
-    rescue ActiveRecord::Deadlocked => e
-      raise e
-    rescue StandardError => e
-      Rails.logger.debug e.backtrace
-      Rails.logger.debug e
-      row << "Error #{e}"
-      import_upload.failed_row_count += 1
-    end
-  end
-
-  def save_capital_call(user_data, import_upload, custom_field_headers)
+  def save_row(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing capital_call #{user_data}" }
 
     # Get the Fund
