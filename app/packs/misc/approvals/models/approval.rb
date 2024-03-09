@@ -1,4 +1,5 @@
 class Approval < ApplicationRecord
+  include Trackable.new
   include WithFolder
   include WithCustomField
   include InvestorsGrantedAccess

@@ -27,7 +27,7 @@ class ApprovalResponse < ApplicationRecord
     errors.add(:status, 'You need to select a response other than Pending') if status == "Pending"
   end
 
-  after_commit :send_notification, unless: :destroyed?
+  after_commit :send_notification, unless: proc { |r| r.destroyed? || r.deleted_at.present? }
   def send_notification(reminder: false)
     # send notification to the investor only if the approval is approved
     if approval.approved
