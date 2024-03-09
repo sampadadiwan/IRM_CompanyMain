@@ -21,7 +21,7 @@ Scenario Outline: Import capital commitments
 
 
 @import
-Scenario Outline: Import capital commitments - LArge set
+Scenario Outline: Import capital commitments - Large set
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
@@ -33,6 +33,13 @@ Scenario Outline: Import capital commitments - LArge set
   And the capital commitments must have the percentages updated
   And the fund must have the counter caches updated
   And the investors must have access rights to the fund
+  And Given I upload "capital_calls.xlsx" file for "Calls" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "3" capital calls created
+  And the capital calls must have the data in the sheet
+  And the remittances are generated for the capital calls
+  And the capital commitments are updated with remittance numbers
+  And the funds are updated with remittance numbers
   
 @import
 Scenario Outline: Import capital calls
