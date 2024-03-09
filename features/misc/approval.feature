@@ -50,9 +50,9 @@ Scenario Outline: Grant Access Rights to approval
   Then the investor gets the approval notification
 
   Examples:
-  	|user	    |entity               |approval                 |msg	|   subject |
-  	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created| Please respond to approval"|
-    |  	        |entity_type=Company  |title=Merger Approval    |Approval was successfully created| Approval from XYZ"|
+  	|user	    |entity               |approval                 |
+  	|  	        |entity_type=Company  |title=Test approval      |
+    |  	        |entity_type=Company  |title=Merger Approval    |
 
 
 Scenario Outline: Grant Access Rights to approval after approved

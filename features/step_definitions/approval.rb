@@ -114,12 +114,12 @@
   end
 
   Then('the investor gets the approval notification') do
+    sleep(2)
     puts "\n#### Emails ###\n"
     puts @approval.pending_investors.collect(&:emails).flatten
 
     @approval.pending_investors.collect(&:emails).flatten.each do |email|
         open_email(email)
-
         @custom_notification ||= nil
         if @custom_notification.present?
           puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}, body: #{@custom_notification.body}"
