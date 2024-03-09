@@ -8,7 +8,7 @@ class ImportUtil
           # In some cases we dont want the counter caches to run during the import
           # As this causes deadlocks. We will update the counter caches after the import
           model_class = context.import_upload.model_class
-          model_class.defer_counter_culture_updates do
+          model_class.skip_counter_culture_updates do
             process_rows(context.import_upload, context.headers, context.data, context)
           end
         else
