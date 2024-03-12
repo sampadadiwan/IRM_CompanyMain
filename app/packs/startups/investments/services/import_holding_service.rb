@@ -1,5 +1,5 @@
-class ImportHoldingService
-  include Interactor::Organizer
-
-  organize ImportPreProcess, ImportHolding, ImportPostProcess
+class ImportHoldingService < ImportServiceBase
+  step :read_file
+  step Subprocess(ImportHolding)
+  step :save_results_file
 end

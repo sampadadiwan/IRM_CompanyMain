@@ -1,6 +1,4 @@
 class ImportFundUnitSetting < ImportUtil
-  include Interactor
-
   STANDARD_HEADERS = ["Fund", "Class/Series", "Management Fee %",	"Setup Fee %",	"Carry %", "Update Only"].freeze
 
   def standard_headers

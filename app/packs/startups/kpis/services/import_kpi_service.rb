@@ -1,5 +1,5 @@
-class ImportKpiService
-  include Interactor::Organizer
-
-  organize ImportPreProcess, ImportKpi, ImportPostProcess
+class ImportKpiService < ImportServiceBase
+  step :read_file
+  step Subprocess(ImportKpi)
+  step :save_results_file
 end

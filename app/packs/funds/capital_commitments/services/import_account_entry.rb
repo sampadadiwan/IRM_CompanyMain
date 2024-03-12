@@ -6,8 +6,8 @@ class ImportAccountEntry < ImportUtil
     STANDARD_HEADERS
   end
 
-  def initialize(params)
-    super(params)
+  def initialize(**)
+    super(**)
     @account_entries = []
   end
 
@@ -81,8 +81,8 @@ class ImportAccountEntry < ImportUtil
     [folio_id, name, entry_type, reporting_date, period, investor_name, amount_cents, fund, capital_commitment, investor]
   end
 
-  def post_process(import_upload, context)
-    super(import_upload, context)
+  def post_process(ctx, import_upload:, **)
+    super(ctx, import_upload:, **)
 
     begin
       results = AccountEntry.import @account_entries, on_duplicate_key_ignore: true, validate_uniqueness: true, track_validation_failures: true
@@ -92,10 +92,6 @@ class ImportAccountEntry < ImportUtil
       import_upload.save
     end
 
-    # Check for failures - this is bug in the gem, its not returning the errors
-
-    # Sometimes we import custom fields. Ensure custom fields get created
-    custom_field_headers = context.headers - standard_headers
-    FormType.save_cf_from_import(custom_field_headers, import_upload) if import_upload.processed_row_count.positive?
+    true
   end
 end

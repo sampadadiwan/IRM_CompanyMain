@@ -1,50 +1,79 @@
-class ImportUtil
-  include Interactor
+class ImportUtil < Trailblazer::Operation
+  step :validate_headers
+  step :pre_process
+  step :save_data
+  step :create_custom_fields
+  step :post_process
+  left :cleanup
 
-  def call
-    if context.import_upload.present? && context.import_file.present?
-      begin
-        if defer_counter_culture_updates
-          # In some cases we dont want the counter caches to run during the import
-          # As this causes deadlocks. We will update the counter caches after the import
-          model_class = context.import_upload.model_class
-          model_class.skip_counter_culture_updates do
-            process_rows(context.import_upload, context.headers, context.data, context)
-          end
-        else
-          process_rows(context.import_upload, context.headers, context.data, context)
-        end
-      rescue StandardError => e
-        Rails.logger.debug { "e.message = #{e.message}" }
-        Rails.logger.debug e.backtrace
-        raise e
+  def save_data(ctx, import_upload:, import_file:, headers:, data:, **)
+    if defer_counter_culture_updates
+      # In some cases we dont want the counter caches to run during the import
+      # As this causes deadlocks. We will update the counter caches after the import
+      model_class = import_upload.model_class
+      model_class.skip_counter_culture_updates do
+        process_rows(import_upload, headers, data, ctx)
       end
     else
-      context.fail!(message: "Required inputs not present")
+      process_rows(import_upload, headers, data, ctx)
     end
+  rescue StandardError => e
+    Rails.logger.debug { "e.message = #{e.message}" }
+    Rails.logger.debug e.backtrace
+    raise e
   end
 
-  def validate_headers(headers)
+  def validate_headers(_ctx, import_upload:, headers:, **)
+    valid = true
     if respond_to?(:standard_headers)
       standard_headers.each do |header_name|
-        raise "Column not found #{header_name}" unless headers.include?(header_name.downcase.strip.squeeze(" ").titleize)
+        next if headers.include?(header_name.downcase.strip.squeeze(" ").titleize)
+
+        import_upload.status = "Column not found #{header_name}"
+        import_upload.failed_row_count = import_upload.total_rows_count
+        import_upload.save
+        valid = false
+        break
       end
     end
+    valid
   end
 
-  def defer_counter_culture_updates
+  def pre_process(_ctx, import_upload:, **)
+    true
+  end
+
+  def create_custom_fields(_ctx, import_upload:, custom_field_headers:, **)
+    # Sometimes we import custom fields. Ensure custom fields get created
+    result = true
+    if import_upload.processed_row_count.positive?
+      custom_fields_created = FormType.save_cf_from_import(custom_field_headers, import_upload)
+      if custom_fields_created.present?
+        import_upload.custom_fields_created = custom_fields_created.join(";")
+        result = import_upload.save
+      end
+    end
+    result
+  end
+
+  def post_process(_ctx, import_upload:, **)
+    if defer_counter_culture_updates
+      model_class = import_upload.model_class
+      model_class.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
+    end
+    true
+  end
+
+  def cleanup(_ctx, import_upload:, **)
     false
   end
 
-  def pre_process(import_upload, context); end
+  private
 
-  def process_rows(import_upload, headers, data, context)
+  def process_rows(import_upload, headers, data, ctx)
     Rails.logger.debug { "##### process_rows #{data.count}" }
     custom_field_headers = headers - standard_headers
-
-    validate_headers(headers)
-
-    pre_process(import_upload, context)
+    ctx[:custom_field_headers] = custom_field_headers
 
     # Parse the XL rows
     package = Axlsx::Package.new do |p|
@@ -60,7 +89,7 @@ class ImportUtil
           sanitized_row = row.map { |x| x&.to_s&.strip&.squeeze(" ") }
           # Ensure the Audit trail is created as the user who uploaded the file
           Audited.audit_class.as_user(import_upload.user) do
-            process_row(headers, custom_field_headers, sanitized_row, import_upload, context)
+            process_row(headers, custom_field_headers, sanitized_row, import_upload, ctx)
           end
           # add row to results sheet
           sheet.add_row(sanitized_row)
@@ -70,21 +99,11 @@ class ImportUtil
       end
     end
 
-    # Sometimes we import custom fields. Ensure custom fields get created
-    if import_upload.processed_row_count.positive?
-      custom_fields_created = FormType.save_cf_from_import(custom_field_headers, import_upload)
-      if custom_fields_created.present?
-        import_upload.custom_fields_created = custom_fields_created.join(";")
-        import_upload.save
-      end
-    end
     # Save the results file
     File.binwrite("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
-
-    post_process(import_upload, context)
   end
 
-  def process_row(headers, custom_field_headers, row, import_upload, _context)
+  def process_row(headers, custom_field_headers, row, import_upload, _ctx)
     # create hash from headers and cells
 
     user_data = [headers, row].transpose.to_h
@@ -105,13 +124,6 @@ class ImportUtil
       Rails.logger.debug user_data
       Rails.logger.debug row
       import_upload.failed_row_count += 1
-    end
-  end
-
-  def post_process(import_upload, _context)
-    if defer_counter_culture_updates
-      model_class = import_upload.model_class
-      model_class.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
     end
   end
 
@@ -158,5 +170,9 @@ class ImportUtil
 
   def stz(val)
     val&.strip&.squeeze(" ")
+  end
+
+  def defer_counter_culture_updates
+    false
   end
 end

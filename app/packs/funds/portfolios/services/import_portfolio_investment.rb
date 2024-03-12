@@ -1,6 +1,4 @@
 class ImportPortfolioInvestment < ImportUtil
-  include Interactor
-
   STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount",
                       "Quantity",	"Instrument", "Category", "Sub Category", "Sector", "Startup", "Investment Domicile", "Notes", "Type", "Folio No"].freeze
 
@@ -8,12 +6,13 @@ class ImportPortfolioInvestment < ImportUtil
     STANDARD_HEADERS
   end
 
-  def post_process(import_upload, context)
-    super(import_upload, context)
+  def post_process(ctx, import_upload:, **)
+    super(ctx, import_upload:, **)
     # This ensures all the counters for this funds API are fixed
     # PortfolioInvestment.counter_culture_fix_counts only: :aggregate_portfolio_investment, where: { fund_id: import_upload.owner_id }
     # This will cause the compute_avg_cost to be called
     AggregatePortfolioInvestment.where(fund_id: import_upload.owner_id).find_each(&:save)
+    true
   end
 
   def save_row(user_data, import_upload, custom_field_headers)

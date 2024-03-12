@@ -1,6 +1,4 @@
 class ImportValuation < ImportUtil
-  include Interactor
-
   STANDARD_HEADERS = ["Instrument", "Valuation Date", "Valuation", "Per Share Value", "Portfolio Company"].freeze
 
   def standard_headers

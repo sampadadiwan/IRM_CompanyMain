@@ -1,13 +1,9 @@
 class ImportInvestorAdvisor < ImportUtil
-  include Interactor
-
   STANDARD_HEADERS = ["Email", "Add To", "Name", "Investor"].freeze
 
   def standard_headers
     STANDARD_HEADERS
   end
-
-  def post_process(import_upload, _context); end
 
   def save_row(user_data, import_upload, _custom_field_headers)
     # puts "processing #{user_data}"

@@ -3,8 +3,8 @@ class ImportCapitalRemittancePayment < ImportUtil
 
   attr_accessor :fund_ids
 
-  def initialize(params)
-    super(params)
+  def initialize(**)
+    super(**)
     @fund_ids = Set.new
   end
 
@@ -12,9 +12,10 @@ class ImportCapitalRemittancePayment < ImportUtil
     STANDARD_HEADERS
   end
 
-  def post_process(import_upload, context)
-    super(import_upload, context)
+  def post_process(ctx, import_upload:, **)
+    super(ctx, import_upload:, **)
     CapitalRemittance.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
+    true
   end
 
   def save_row(user_data, import_upload, custom_field_headers)

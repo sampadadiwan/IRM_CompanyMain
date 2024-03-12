@@ -1,22 +1,10 @@
-class ImportDocuments
-  include Interactor
+class ImportDocuments < ImportUtil
+  step nil, delete: :validate_headers
+  step nil, delete: :create_custom_fields
 
-  def call
-    if context.import_upload.present? && context.import_file.present?
-      begin
-        process_rows(context.import_upload)
-      rescue StandardError => e
-        Rails.logger.debug { "e.message = #{e.message}" }
-        Rails.logger.debug e.backtrace
-        raise e
-      end
-    else
-      context.fail!(message: "Required inputs not present")
-    end
-  end
-
-  def process_rows(import_upload)
-    unzipped_files = Dir.glob("#{context.unzip_dir}/**/*.*")
+  def save_data(ctx, import_upload:, **)
+    unzip_dir = ctx[:unzip_dir]
+    unzipped_files = Dir.glob("#{unzip_dir}/**/*.*")
     import_upload.total_rows_count = unzipped_files.length
 
     package = Axlsx::Package.new do |p|
@@ -24,7 +12,7 @@ class ImportDocuments
         # We go thru each directory recursively and try to upload the file
         unzipped_files.each_with_index do |file_path, idx|
           row = [file_path]
-          process_row(context.import_upload, context.unzip_dir, file_path, row)
+          process_row(import_upload, unzip_dir, file_path, row)
           # add row to results sheet
           sheet.add_row(row)
           # To indicate progress
@@ -35,8 +23,6 @@ class ImportDocuments
 
     # Save the results file
     File.binwrite("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
-
-    post_process(import_upload, context)
   end
 
   def process_row(import_upload, unzip_dir, file_path, row)
@@ -85,25 +71,34 @@ class ImportDocuments
       [true, "Directory"]
     else
       # Create the document to the last created folder
-      doc = Document.new(entity_id: import_upload.entity_id,
-                         name: file_name, folder: parent,
-                         import_upload_id: import_upload.id,
-                         user_id: import_upload.user_id, send_email: false)
+      doc = Document.find_or_initialize_by(entity_id: import_upload.entity_id,
+                                           name: file_name, folder: parent,
+                                           import_upload_id: import_upload.id)
 
-      doc.setup_folder_defaults
-      # Attach the actual document on the file system to the document in our app
-      raise "#{file_path} does not exist. Check for missing file or extension" unless File.exist?(file_path)
+      if doc.new_record?
+        save_doc(doc, file_path, import_upload)
+      else
+        [false, "Document with same name already exists in the folder"]
+      end
 
-      doc.file = File.open(file_path, "rb")
-
-      # Allow download of zip
-      doc.orignal = true if File.extname(file_path) == ".zip"
-
-      [doc.save, doc.errors.full_messages]
     end
   end
 
-  def post_process(_import_upload, context)
-    FileUtils.rm_rf context.unzip_dir
+  def save_doc(doc, file_path, import_upload)
+    doc.user_id = import_upload.user_id
+    doc.send_email = false
+    doc.setup_folder_defaults
+    # Attach the actual document on the file system to the document in our app
+    raise "#{file_path} does not exist. Check for missing file or extension" unless File.exist?(file_path)
+
+    doc.file = File.open(file_path, "rb")
+
+    # Allow download of zip
+    doc.orignal = true if File.extname(file_path) == ".zip"
+    [doc.save, doc.errors.full_messages]
+  end
+
+  def post_process(ctx, **)
+    FileUtils.rm_rf ctx[:unzip_dir]
   end
 end

@@ -1,16 +1,16 @@
 class ImportInvestor < ImportUtil
-  include Interactor
-
   STANDARD_HEADERS = ["Name", "Pan", "Primary Email", "Category", "Tags", "City"].freeze
 
   def standard_headers
     STANDARD_HEADERS
   end
 
-  def post_process(import_upload, _context)
+  def post_process(ctx, import_upload:, **)
+    super(ctx, import_upload:, **)
     import_upload.entity.investor_notices.each do |notice|
       InvestorNoticeJob.perform_now(notice.id)
     end
+    true
   end
 
   def save_row(user_data, import_upload, custom_field_headers)

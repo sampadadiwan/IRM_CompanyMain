@@ -117,6 +117,10 @@ Lint/MissingSuper:
   Exclude:
     - 'app/services/*'
 
+Lint/UnusedMethodArgument:
+  Exclude:
+    - 'app/packs/misc/import_uploads/services/import_util.rb'
+    
 Rails/OutputSafety:
   Exclude:
     - 'app/packs/core/fields/json_field.rb'

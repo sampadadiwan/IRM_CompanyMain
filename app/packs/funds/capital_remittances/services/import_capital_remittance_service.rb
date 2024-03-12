@@ -1,5 +1,5 @@
-class ImportCapitalRemittanceService
-  include Interactor::Organizer
-
-  organize ImportPreProcess, ImportCapitalRemittance, ImportPostProcess
+class ImportCapitalRemittanceService < ImportServiceBase
+  step :read_file
+  step Subprocess(ImportCapitalRemittance)
+  step :save_results_file
 end

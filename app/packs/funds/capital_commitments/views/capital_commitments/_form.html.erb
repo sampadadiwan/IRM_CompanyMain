@@ -118,7 +118,7 @@
         <%= form.number_field :folio_committed_amount, class: "form-control", data: {action: "input->currencyformat#format"}, disabled: !capital_commitment.new_record?  %>
 
         <% unless capital_commitment.new_record? %>
-          <small class="text-muted">Changes can be made only via <%= link_to 'Commitment Adjustment', new_commitment_adjustment_path(capital_commitment_id: capital_commitment.id) %></small>  
+          <small class="text-muted">Changes can be made only via <%= link_to 'Commitment Adjustment', new_commitment_adjustment_path("commitment_adjustment[capital_commitment_id]": capital_commitment.id) %></small>  
         <% end %>
         
       </div>

@@ -5,8 +5,8 @@ class ImportInvestorAccess < ImportUtil
     STANDARD_HEADERS
   end
 
-  def initialize(params)
-    super(params)
+  def initialize(**)
+    super(**)
     @investor_accesses = []
   end
 

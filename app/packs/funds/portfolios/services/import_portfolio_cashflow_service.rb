@@ -1,5 +1,5 @@
-class ImportPortfolioCashflowService
-  include Interactor::Organizer
-
-  organize ImportPreProcess, ImportPortfolioCashflow, ImportPostProcess
+class ImportPortfolioCashflowService < ImportServiceBase
+  step :read_file
+  step Subprocess(ImportPortfolioCashflow)
+  step :save_results_file
 end

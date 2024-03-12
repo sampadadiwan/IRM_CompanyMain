@@ -5,8 +5,10 @@ class ImportCapitalCall < ImportUtil
     STANDARD_HEADERS
   end
 
-  def pre_process(import_upload, context)
-    @exchange_rates = get_exchange_rates(context.import_file, import_upload)
+  def pre_process(ctx, import_upload:, **)
+    super(ctx, import_upload:, **)
+    @exchange_rates = get_exchange_rates(ctx[:import_file], import_upload)
+    true
   end
 
   def save_row(user_data, import_upload, custom_field_headers)

@@ -1,17 +1,17 @@
 class ImportKpi < ImportUtil
-  include Interactor
-
   STANDARD_HEADERS = ["Name", "Period", "Value", "As Of", "Notes"].freeze
 
   def standard_headers
     STANDARD_HEADERS
   end
 
-  def post_process(import_upload, context)
-    super(import_upload, context)
+  def post_process(ctx, import_upload:, **)
+    super(ctx, import_upload:, **)
     # This recomputes the KPI percentage change for all KPIs of this entity
     KpiPercentageChangeJob.perform_later(import_upload.entity_id, import_upload.user_id)
     InvestorKpiMapping.create_from(import_upload.entity, import_upload.entity.kpi_reports.last) if import_upload.entity.kpi_reports.last.present?
+
+    true
   end
 
   def save_row(user_data, import_upload, custom_field_headers)

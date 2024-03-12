@@ -1,6 +1,4 @@
 class ImportFundUnit < ImportUtil
-  include Interactor
-
   STANDARD_HEADERS = ["Fund", "Folio No", "Call / Distribution Name", "Unit Type",	"Quantity",	"Price", "Reason", "Premium", "Issue Date", "Update Only"].freeze
 
   def standard_headers

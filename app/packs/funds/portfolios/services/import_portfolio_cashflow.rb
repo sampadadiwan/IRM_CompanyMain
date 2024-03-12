@@ -1,6 +1,4 @@
 class ImportPortfolioCashflow < ImportUtil
-  include Interactor
-
   STANDARD_HEADERS = ["Fund", "Portfolio Company",	"Payment Date",	"Amount", "Tag", "Instrument",
                       "Instrument", "Notes", "Type", "Folio No"].freeze
 

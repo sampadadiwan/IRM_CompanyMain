@@ -1,5 +1,5 @@
-class ImportAccountEntryService
-  include Interactor::Organizer
-
-  organize ImportPreProcess, ImportAccountEntry, ImportPostProcess
+class ImportAccountEntryService < ImportServiceBase
+  step :read_file
+  step Subprocess(ImportAccountEntry)
+  step :save_results_file
 end

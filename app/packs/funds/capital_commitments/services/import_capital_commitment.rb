@@ -5,11 +5,6 @@ class ImportCapitalCommitment < ImportUtil
     STANDARD_HEADERS
   end
 
-  def initialize(params)
-    super(params)
-    @commitments = []
-  end
-
   def save_row(user_data, import_upload, custom_field_headers)
     Rails.logger.debug { "Processing capital_commitment #{user_data}" }
     # Get the Fund
@@ -80,8 +75,8 @@ class ImportCapitalCommitment < ImportUtil
     [folio_id, unit_type, commitment_type, commitment_date, folio_currency, onboarding_completed]
   end
 
-  def post_process(import_upload, context)
-    super(import_upload, context)
+  def post_process(ctx, import_upload:, **)
+    super(ctx, import_upload:, **)
     # Recompute the percentages
     last_cc = import_upload.imported_data.last
     last_cc&.compute_percentage
@@ -89,6 +84,7 @@ class ImportCapitalCommitment < ImportUtil
     import_upload.imported_data.each do |capital_commitment|
       CapitalCommitmentRemittanceJob.perform_now(capital_commitment.id) if capital_commitment.fund.capital_calls.count.positive?
     end
+    true
   end
 
   def defer_counter_culture_updates
