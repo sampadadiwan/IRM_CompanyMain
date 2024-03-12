@@ -2,6 +2,7 @@ class CallFee < ApplicationRecord
   belongs_to :entity
   belongs_to :fund
   belongs_to :capital_call
+  validates :name, :start_date, :end_date, :fee_type, presence: true
 
   NESTED_ATTRIBUTES = %i[id name start_date end_date fee_type notes _destroy].freeze
 
