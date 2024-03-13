@@ -143,17 +143,16 @@ class Entity < ApplicationRecord
 
   after_save :run_post_process, if: :saved_change_to_entity_type?
   def run_post_process
-    case entity_type
-    when "Company"
-      SetupStartup.call(entity: self)
+    result = SetupCompany.wtf?(entity: self)
+    if result.success?
+      # Ensure users entity_type is saved
+      employees.each do |user|
+        user.entity_type = entity_type
+        user.save
+      end
     else
-      SetupFolders.call(entity: self)
-    end
-
-    # Ensure users entity_type is saved
-    employees.each do |user|
-      user.entity_type = entity_type
-      user.save
+      Rails.logger.error "Error in SetupStartup for #{name}"
+      raise result[:errors]
     end
   end
 

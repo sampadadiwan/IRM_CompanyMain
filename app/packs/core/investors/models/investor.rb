@@ -61,7 +61,7 @@ class Investor < ApplicationRecord
   validates :investor_name, uniqueness: { scope: :entity_id, message: "already exists as an investor. Duplicate Investor." }
   normalizes :investor_name, with: ->(investor_name) { investor_name.strip.squeeze(" ") }
 
-  # Ensure unique investor_entity_id per entity_id, except for is_holdings_entity. See SetupHoldingEntity where a Founder Investor is created for startups.
+  # Ensure unique investor_entity_id per entity_id, except for is_holdings_entity. See SetupCompany where a Founder Investor is created for startups.
   validates :investor_entity_id, uniqueness: { scope: :entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }, if: proc { |i| !i.is_holdings_entity }
 
   validates :category, length: { maximum: 100 }

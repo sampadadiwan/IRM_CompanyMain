@@ -16,7 +16,6 @@ class AggregatePortfolioInvestment < ApplicationRecord
   scope :co_invest, -> { where(commitment_type: 'CoInvest') }
 
   validates :portfolio_company_name, length: { maximum: 100 }
-  validates :investment_type, length: { maximum: 120 }
   validates :commitment_type, length: { maximum: 10 }
   validates :investment_domicile, length: { maximum: 10 }
 
@@ -26,7 +25,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   end
 
   def to_s
-    "#{portfolio_company_name}  #{investment_type}"
+    "#{portfolio_company_name}  #{investment_instrument}"
   end
 
   before_save :compute_avg_cost

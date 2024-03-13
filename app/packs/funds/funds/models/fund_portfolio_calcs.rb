@@ -188,11 +188,8 @@ class FundPortfolioCalcs
       quantity = portfolio_investments.inject(0) { |sum, pi| sum + pi.quantity }
 
       portfolio_company_id = api.portfolio_company_id
-      category = api.category
-      sub_category = api.sub_category
 
-      valuation = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", category:,
-                                  sub_category:, valuation_date: ..@end_date).order(valuation_date: :asc).last
+      valuation = Valuation.where(owner_id: portfolio_company_id, owner_type: "Investor", investment_instrument: api.investment_instrument, valuation_date: ..@end_date).order(valuation_date: :asc).last
 
       # We cannot proceed without a valid valuation
       raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name} prior to date #{@end_date}" unless valuation

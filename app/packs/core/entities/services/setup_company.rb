@@ -1,17 +1,29 @@
-class SetupHoldingEntity
-  include Interactor
+class SetupCompany < Trailblazer::Operation
+  step :setup_folders
+  step :setup_holding_entity
 
-  def call
-    Rails.logger.debug "Interactor: SetupHoldingEntity called"
-    if context.entity.present?
-      setup_holding_entity(context.entity)
-    else
-      Rails.logger.error "No Entity specified"
-      context.fail!(message: "No Entity specified")
-    end
+  def setup_folders(_ctx, entity:, **)
+    entity.root_folder.presence ||
+      Folder.create(name: "/", entity_id: entity.id, level: 0, folder_type: :regular)
   end
 
-  def setup_holding_entity(entity)
+  def setup_holding_entity(ctx, entity:, **)
+    result = true
+
+    if entity.entity_type == "Company"
+      begin
+        setup_employee_holding(entity)
+        setup_trust(entity)
+      rescue StandardError => e
+        Rails.logger.debug e.message
+        ctx[:errors] = e.message
+        result = false
+      end
+    end
+    result
+  end
+
+  def setup_employee_holding(entity)
     e = Entity.where(parent_entity_id: entity.id, name: "#{entity.name} - Employees").first
 
     unless e
@@ -27,7 +39,9 @@ class SetupHoldingEntity
                            entity_id: entity.id, category: "Founder", is_holdings_entity: true)
       Rails.logger.debug { "Created Investor for Founder Holding entity #{i.investor_name} #{i.id} for #{entity.name}" }
     end
+  end
 
+  def setup_trust(entity)
     e = Entity.where(parent_entity_id: entity.id, name: "#{entity.name} - Trust").first
 
     unless e
