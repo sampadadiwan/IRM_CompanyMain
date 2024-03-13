@@ -7,8 +7,8 @@ class ImportOfferDocs < ImportUtil
     STANDARD_HEADERS
   end
 
-  def initialize(params)
-    super(params)
+  def initialize(**)
+    super(**)
     @commitments = []
   end
 
@@ -41,7 +41,7 @@ class ImportOfferDocs < ImportUtil
     raise "Offer #{user_data['Id']} not found" unless offer
 
     send_email = user_data["Send Email"] == "Yes"
-    file_name = "#{context.unzip_dir}/#{user_data['File Name']}"
+    file_name = "#{context[:unzip_dir]}/#{user_data['File Name']}"
 
     if offer
       # Create the doc and attach it to the commitment
@@ -68,7 +68,7 @@ class ImportOfferDocs < ImportUtil
     end
   end
 
-  def post_process(_import_upload, context)
-    FileUtils.rm_rf context.unzip_dir
+  def post_process(_ctx, unzip_dir:, **)
+    FileUtils.rm_rf unzip_dir
   end
 end

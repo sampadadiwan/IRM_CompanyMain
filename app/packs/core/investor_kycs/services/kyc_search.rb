@@ -23,6 +23,6 @@ class KycSearch
     entity_ids = [current_user.entity_id]
     InvestorKycIndex.filter(terms: { entity_id: entity_ids })
                     .query(query_string: { fields: InvestorKycIndex::SEARCH_FIELDS,
-                                           query:, default_operator: 'and' }).map(&:id)
+                                           query:, default_operator: 'and' }).per(100).map(&:id)
   end
 end

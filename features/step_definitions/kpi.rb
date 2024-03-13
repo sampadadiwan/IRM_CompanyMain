@@ -37,7 +37,7 @@
   Then('the KPIs must have the data in the sheet') do
     file = File.open("./public/sample_uploads/#{@import_file}", "r")
     data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-    headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+    headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
     kpis = Kpi.all
     data.each_with_index do |row, idx|

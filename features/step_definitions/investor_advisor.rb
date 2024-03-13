@@ -25,7 +25,7 @@
   Then('the investor advisors should be added to each investor') do
     file = File.open("./public/sample_uploads/#{@import_file}", "r")
     data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-    headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+    headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
     data.each_with_index do |row, idx|
         next if idx.zero? # skip header row

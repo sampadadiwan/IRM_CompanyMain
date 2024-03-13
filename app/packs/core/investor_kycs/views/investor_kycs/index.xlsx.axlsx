@@ -17,7 +17,7 @@ form_type, custom_field_names, custom_headers = get_form_type("NonIndividualKyc"
 
 wb.add_worksheet(name: "NonIndividualKyc") do |sheet|
   # Create the header row
-  sheet.add_row(["Investor", "Investing Entity", "Date of Birth", "PAN", "Address", "Correspondence Address", "KYC Type", "Residency", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "IFSC Code", "Verified", "Expiry Date", "Expired", "Agreement Committed Amount", "Committed Amount", "Called Amount", "Collected Amount", "Distributed Amount"] + custom_headers)
+  sheet.add_row(["Investor", "Investing Entity", "Date of Birth", "PAN", "Address", "Correspondence Address", "KYC Type", "Residency", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "IFSC Code", "Verified", "Expiry Date", "Expired", "Esign Emails", "Agreement Committed Amount", "Committed Amount", "Called Amount", "Collected Amount", "Distributed Amount"] + custom_headers)
 
   # Create entries for each item
   @investor_kycs.non_individual.each do |cc|

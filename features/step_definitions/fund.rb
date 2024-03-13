@@ -327,7 +327,7 @@
         elsif @capital_call.call_basis == "Upload"
           file = File.open("./public/sample_uploads/capital_remittances.xlsx", "r")
           data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-          headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+          headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
           row = data.row(idx+2)
           # create hash from headers and cells
           user_data = [headers, row].transpose.to_h
@@ -753,7 +753,7 @@ end
 Then('the capital commitments must have the data in the sheet') do
   file = File.open("./public/sample_uploads/#{@import_file}", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
   capital_commitments = @fund.capital_commitments.order(id: :asc).to_a
   data.each_with_index do |row, idx|
@@ -788,7 +788,7 @@ end
 Then('the capital calls must have the data in the sheet') do
   file = File.open("./public/sample_uploads/#{@import_file}", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
   capital_calls = @fund.capital_calls.order(id: :asc).to_a
   data.each_with_index do |row, idx|
@@ -814,7 +814,7 @@ end
 Then('the capital distributions must have the data in the sheet') do
   file = File.open("./public/sample_uploads/#{@import_file}", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
   capital_distributions = @fund.capital_distributions.order(id: :asc).to_a
   data.each_with_index do |row, idx|
@@ -1198,7 +1198,7 @@ end
 Then('the account_entries must have the data in the sheet') do
     file = File.open("./public/sample_uploads/#{@import_file}", "r")
     data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-    headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+    headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
     account_entries = @fund.account_entries.order(id: :asc).to_a
     data.each_with_index do |row, idx|
@@ -1268,7 +1268,7 @@ end
 Then('the capital remittance payments must have the data in the sheet') do
     file = File.open("./public/sample_uploads/#{@import_file}", "r")
     data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-    headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+    headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
     capital_remittance_payments = @fund.capital_remittance_payments.order(id: :asc).to_a
     data.each_with_index do |row, idx|
@@ -1384,7 +1384,7 @@ end
 Then('There should be {string} fund unit settings created with data in the sheet') do |count|
   file = File.open("./public/sample_uploads/fund_unit_setting.xlsx", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
   data.each_with_index do |row, idx|
     next if idx.zero? # skip header row
@@ -1447,7 +1447,7 @@ end
 Then('There should be {string} fund units created with data in the sheet') do |count|
   file = File.open("./public/sample_uploads/fund_units.xlsx", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
   data.each_with_index do |row, idx|
     next if idx.zero? # skip header row

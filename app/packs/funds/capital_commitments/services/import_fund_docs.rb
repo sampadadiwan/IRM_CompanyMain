@@ -7,8 +7,8 @@ class ImportFundDocs < ImportUtil
     STANDARD_HEADERS
   end
 
-  def initialize(params)
-    super(params)
+  def initialize(**)
+    super(**)
     @commitments = []
   end
 
@@ -43,7 +43,7 @@ class ImportFundDocs < ImportUtil
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
     folio_id = user_data["Folio No"].presence
     send_email = user_data["Send Email"] == "Yes"
-    file_name = "#{context.unzip_dir}/#{user_data['File Name']}"
+    file_name = "#{context[:unzip_dir]}/#{user_data['File Name']}"
 
     model = find_model(user_data, fund)
     if fund && investor && model
@@ -95,7 +95,7 @@ class ImportFundDocs < ImportUtil
     nil
   end
 
-  def post_process(_import_upload, context)
-    FileUtils.rm_rf context.unzip_dir
+  def post_process(_ctx, unzip_dir:, **)
+    FileUtils.rm_rf unzip_dir
   end
 end

@@ -106,7 +106,7 @@ end
 Then('the portfolio investments must have the data in the sheet') do
   file = File.open("./public/sample_uploads/#{@import_file}", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
   portfolio_investments = @fund.portfolio_investments.order(id: :asc).to_a
   data.each_with_index do |row, idx|
@@ -157,7 +157,7 @@ end
 Then('the valuations must have the data in the sheet') do
   file = File.open("./public/sample_uploads/#{@import_file}", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-  headers = ImportPreProcess.new.get_headers(data.row(1)) # get header row
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
   valuations = @entity.valuations.order(id: :asc).to_a
   data.each_with_index do |row, idx|

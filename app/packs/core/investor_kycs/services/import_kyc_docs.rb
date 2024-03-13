@@ -6,8 +6,8 @@ class ImportKycDocs < ImportUtil
     STANDARD_HEADERS
   end
 
-  def initialize(params)
-    super(params)
+  def initialize(**)
+    super(**)
     @commitments = []
   end
 
@@ -37,18 +37,14 @@ class ImportKycDocs < ImportUtil
 
     # Get the Fund
     investor = import_upload.entity.investors.where(investor_name: user_data["Investor"]).first
-    file_name = "#{context.unzip_dir}/#{user_data['File Name']}"
+    file_name = "#{context[:unzip_dir]}/#{user_data['File Name']}"
     name = user_data["Document Name"]
     model = InvestorKyc.where(investor_id: investor.id, PAN: user_data["Pan"]).first if user_data["Document Type"] == "KYC"
     send_email = user_data["Send Email"] == "Yes"
 
     if investor && model && File.exist?(file_name)
-      if name == "PAN"
-        # PAN is handled slightly differently, its not a separate document.
-        model.pan_card = File.open(file_name, "rb")
-        [model.save, model.errors.full_messages]
-      elsif Document.exists?(owner: model, entity_id: model.entity_id,
-                             name: user_data["Document Name"])
+      if Document.exists?(owner: model, entity_id: model.entity_id,
+                          name: user_data["Document Name"])
         # All other docs are attached as documents
         # Create the doc and attach it to the commitment
         [false, "#{user_data['Document Name']} already present"]
@@ -73,7 +69,7 @@ class ImportKycDocs < ImportUtil
     end
   end
 
-  def post_process(_import_upload, context)
-    FileUtils.rm_rf context.unzip_dir
+  def post_process(_ctx, unzip_dir:, **)
+    FileUtils.rm_rf unzip_dir
   end
 end

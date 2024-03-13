@@ -68,6 +68,14 @@ class ImportUtil < Trailblazer::Operation
     false
   end
 
+  # get header row without the mandatory *
+  def get_headers(headers)
+    # The headers are transformed by strip, squeeze and titleize and then stripped of *
+    ret_headers = headers.each { |x| x&.delete!("*") }.map { |h| h&.downcase&.strip&.squeeze(" ")&.titleize }
+    Rails.logger.debug { "ret_headers = #{ret_headers}" }
+    ret_headers
+  end
+
   private
 
   def process_rows(import_upload, headers, data, ctx)
@@ -141,11 +149,6 @@ class ImportUtil < Trailblazer::Operation
 
   def setup_exchange_rate(model, user_data)
     ExchangeRate.create(from: user_data["From Currency"], to: user_data["To Currency"], as_of: user_data["As Of"], rate: user_data["Exchange Rate"], entity_id: model.entity_id, notes: "Imported with #{model}")
-  end
-
-  # get header row without the mandatory *
-  def get_headers(headers)
-    headers.filter(&:present?).each { |x| x.delete!("*") }.each(&:strip!)
   end
 
   def get_exchange_rates(file, _import_upload)
