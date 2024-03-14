@@ -415,7 +415,7 @@ namespace :irm do
     Entity.startups.each do |e|
       3.times do
         deal = FactoryBot.build(:deal, entity: e)
-        deal = CreateDeal.call(deal: deal).deal
+        CreateDeal.wtf?(deal: deal)
         puts "Deal #{deal.id}"
         deal.entity.investors.not_holding.not_trust.each do |inv|
           di = FactoryBot.create(:deal_investor, investor: inv, entity: e, deal: deal)
