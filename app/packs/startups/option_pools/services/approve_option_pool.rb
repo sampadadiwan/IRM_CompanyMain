@@ -31,5 +31,4 @@ class ApproveOptionPool < OptionAction
 
     SaveInvestment.call(investment:, audit_comment: "#{ctx[:audit_comment]} : Investment setup for Trust").success?
   end
-
 end

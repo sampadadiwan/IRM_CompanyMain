@@ -407,8 +407,7 @@ Given('there are {string} exisiting investments {string} from my firm in startup
       @investment = FactoryBot.build(:investment, entity:
           @startup_entity, investor: @investor, funding_round: @funding_round)
 
-      @investment = SaveInvestment..wtf?(investment: @investment).investment
-
+      SaveInvestment.wtf?(investment: @investment)
       ap @investment
     end
   end
@@ -427,7 +426,7 @@ Given('there are {string} exisiting investments {string} from another firm in st
 
       @investment = FactoryBot.build(:investment, entity: company,
                         investor: @investor, funding_round: @funding_round)
-      @investment = SaveInvestment..wtf?(investment: @investment).investment
+      SaveInvestment.wtf?(investment: @investment)
     end
   end
 end

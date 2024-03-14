@@ -35,5 +35,4 @@ class ApproveExcercise < OptionAction
     excercise.notify_approval
     true
   end
-
 end

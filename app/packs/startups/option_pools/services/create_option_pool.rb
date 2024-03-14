@@ -19,5 +19,4 @@ class CreateOptionPool < OptionAction
   def create_pool(_ctx, option_pool:, **)
     option_pool.save
   end
-
 end
