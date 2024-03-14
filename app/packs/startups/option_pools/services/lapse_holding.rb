@@ -1,26 +1,25 @@
-class LapseHolding
-  include Interactor::Organizer
-  organize HoldingLapsed, CreateAuditTrail
+class LapseHolding < HoldingAction
+  step :lapse_holding
+  step :update_trust_holdings
+  left :handle_error
 
-  before do |_organizer|
-    context.audit_comment = "Lapse Holding"
+  def lapse_holding(_ctx, holding:, **)
+    check_lapsed(holding)
   end
 
-  around do |organizer|
-    ActiveRecord::Base.transaction do
-      organizer.call
-    end
-  rescue StandardError => e
-    Rails.logger.error e.message
-    Rails.logger.error context.holding.to_json
-    raise e
+  def notify_holding_lapse(_ctx, holding:, **)
+    holding.notify_lapse
+    true
   end
 
-  after do
-    if context.holding.option_pool
-      # The trust must be updated only after the counter caches have updated the option pool
-      context.holding.option_pool.reload
-      UpdateTrustHoldings.call(holding: context.holding)
+  LAPSE_WARNING_DAYS = [30, 20, 10, 5].freeze
+  def check_lapsed(holding)
+    # Check if the Options have lapsed
+    if holding.lapsed?
+      holding.lapse
+      holding.reload.notify_lapsed
+    elsif LAPSE_WARNING_DAYS.include?(holding.days_to_lapse)
+      holding.notify_lapse_upcoming
     end
   end
 end

@@ -34,7 +34,7 @@ class VestedJob < ApplicationJob
       end
       holding.update(vested_quantity:, audit_comment:) if holding.vested_quantity != vested_quantity
 
-      LapseHolding.call(holding:)
+      LapseHolding.wtf?(holding:)
     end
 
     pool.save

@@ -106,7 +106,7 @@ Given('given there is a investment {string} for the entity') do |arg1|
                                   investment_instrument: Investment::EQUITY_LIKE[rand(3)])
   @investment.currency = @entity.currency
   key_values(@investment, arg1)
-  @investment = SaveInvestment.call(investment: @investment).investment
+  SaveInvestment.wtf?(investment: @investment)
 
   puts "\n####Investment####\n"
   puts @investment.errors.full_messages
@@ -249,7 +249,7 @@ end
 
 Then('when the holdings are approved') do
   Holding.all.each do |h|
-    ApproveHolding.call(holding: h) #if h.holding_type != "Investor"
+    ApproveHolding.wtf?(holding: h) #if h.holding_type != "Investor"
   end
 end
 
@@ -326,7 +326,7 @@ Given('there are {string} investments {string}') do |count, args|
       i.funding_round = @option_pool.funding_round
     end
 
-    i = SaveInvestment.call(investment: i).investment
+    SaveInvestment.wtf?(investment: i).success?.should == true
     puts "\n####Investment Created####\n"
     puts i.to_json
   end
@@ -407,7 +407,7 @@ Given('there are {string} exisiting investments {string} from my firm in startup
       @investment = FactoryBot.build(:investment, entity:
           @startup_entity, investor: @investor, funding_round: @funding_round)
 
-      @investment = SaveInvestment.call(investment: @investment).investment
+      @investment = SaveInvestment..wtf?(investment: @investment).investment
 
       ap @investment
     end
@@ -427,7 +427,7 @@ Given('there are {string} exisiting investments {string} from another firm in st
 
       @investment = FactoryBot.build(:investment, entity: company,
                         investor: @investor, funding_round: @funding_round)
-      @investment = SaveInvestment.call(investment: @investment).investment
+      @investment = SaveInvestment..wtf?(investment: @investment).investment
     end
   end
 end

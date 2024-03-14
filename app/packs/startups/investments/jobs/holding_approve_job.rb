@@ -15,7 +15,7 @@ class HoldingApproveJob < ApplicationJob
       end
 
       holdings.find_each(batch_size: 1000) do |holding|
-        ApproveHolding.call(holding:)
+        ApproveHolding.wtf?(holding:)
       end
 
       # Ensure the approved holdings go thru the vesting algo

@@ -1,18 +1,10 @@
-class DoHoldingTransfer
-  include Interactor::Organizer
-  organize TransferCreateToHolding, TransferUpdateFromHolding, CreateShareTransfer
+class DoHoldingTransfer < HoldingAction
+  step Subprocess(TransferCreateToHolding)
+  step Subprocess(TransferUpdateFromHolding)
+  step :create_share_transfer
+  left :handle_error
 
-  before do |_organizer|
-    context.audit_comment = "#{context.share_transfer.transfer_type} from #{context.share_transfer.from_holding.user.full_name}"
-  end
-
-  around do |organizer|
-    ActiveRecord::Base.transaction do
-      organizer.call
-    end
-  rescue StandardError => e
-    Rails.logger.error e.message
-    Rails.logger.error context.investment.to_json
-    raise e
+  def create_share_transfer(_ctx, share_transfer:, **)
+    share_transfer.save
   end
 end

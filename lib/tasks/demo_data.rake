@@ -336,8 +336,8 @@ namespace :irm do
           # 10 + 20 + 30 + 40
           pool.vesting_schedules << pool.vesting_schedules.build(months_from_grant: i*12, vesting_percent: 10*i, entity_id: e.id)
         end
-        pool = CreateOptionPool.call(option_pool: pool).option_pool
-        ApproveOptionPool.call(option_pool: pool)
+        CreateOptionPool.wtf?(option_pool: pool).success?.should == true
+        ApproveOptionPool.wtf?(option_pool: pool).success?.should == true
       end
     end
 
@@ -373,7 +373,7 @@ namespace :irm do
               investment_instrument: investment_instrument, option_pool: pool, grant_date: grant_date,
               holding_type: investor.category, funding_round: funding_round)
       
-          holding = CreateHolding.call(holding: holding).holding
+          CreateHolding.call(holding: holding)
         end
       end
     end

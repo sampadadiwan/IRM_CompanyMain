@@ -1,24 +1,9 @@
-class TransferCreateToHolding
-  include Interactor
+class TransferCreateToHolding < BaseShareTransferAction
+  step :validate
+  step :process
+  left :handle_error
 
-  def call
-    Rails.logger.debug "Interactor: TransferCreateToHolding called"
-
-    share_transfer = context.share_transfer
-
-    Rails.logger.debug { "share_transfer.quantity_valid? = #{share_transfer.quantity_valid?}" }
-    Rails.logger.debug { "share_transfer.investor_valid? = #{share_transfer.investor_valid?}" }
-    Rails.logger.debug { "share_transfer.pre_validation = #{share_transfer.pre_validation}" }
-
-    if share_transfer.present? && share_transfer.pre_validation
-      create_to_investment(context.share_transfer)
-    else
-      Rails.logger.debug "No valid share_transfer specified"
-      context.fail!(message: "No valid share_transfer specified")
-    end
-  end
-
-  def create_to_investment(share_transfer)
+  def process(_ctx, share_transfer:, **)
     from_holding = share_transfer.from_holding
     share_transfer.from_user_id = share_transfer.from_holding.user_id
 
@@ -47,8 +32,8 @@ class TransferCreateToHolding
 
     # puts to_holding.to_json
 
-    to_holding = CreateHolding.call(holding: to_holding).holding
-    ApproveHolding.call(holding: to_holding)
+    CreateHolding.wtf?(holding: to_holding).success? &&
+      ApproveHolding.wtf?(holding: to_holding).success?
   end
 
   def setup_transfer(share_transfer)

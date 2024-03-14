@@ -1,19 +1,8 @@
-class TransferCreateToInvestment
-  include Interactor
+class TransferCreateToInvestment < BaseShareTransferAction
+  step :validate
+  step :process
 
-  def call
-    Rails.logger.debug "Interactor: TransferCreateToInvestment called"
-
-    share_transfer = context.share_transfer
-    if share_transfer.present? && share_transfer.pre_validation
-      create_to_investment(context.share_transfer)
-    else
-      Rails.logger.debug "No valid share_transfer specified"
-      context.fail!(message: "No valid share_transfer specified")
-    end
-  end
-
-  def create_to_investment(share_transfer)
+  def process(_ctx, share_transfer:, **)
     from_investment = share_transfer.from_investment
     to_investment = share_transfer.build_to_investment
 
@@ -39,6 +28,7 @@ class TransferCreateToInvestment
     end
 
     SaveInvestment.call(investment: to_investment)
+    true
   end
 
   def setup_conversion(share_transfer)

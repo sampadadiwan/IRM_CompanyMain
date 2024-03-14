@@ -91,9 +91,8 @@ class HoldingsController < ApplicationController
     @holding = Holding.new(holding_params)
     authorize @holding
 
-    @holding = CreateHolding.call(holding: @holding).holding
     respond_to do |format|
-      if @holding.errors.any?
+      if CreateHolding.wtf?(holding: @holding).success?
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @holding.errors, status: :unprocessable_entity }
       else
@@ -142,7 +141,7 @@ class HoldingsController < ApplicationController
   def investor_calc; end
 
   def cancel
-    result = CancelHolding.call(holding: @holding, all_or_unvested: params[:type])
+    result = CancelHolding.wtf?(holding: @holding, all_or_unvested: params[:type])
 
     respond_to do |format|
       if result.success?
@@ -170,7 +169,7 @@ class HoldingsController < ApplicationController
   end
 
   def approve
-    result = ApproveHolding.call(holding: @holding)
+    result = ApproveHolding.wtf?(holding: @holding)
     respond_to do |format|
       if result.success?
         format.html { redirect_to holding_url(@holding), notice: "Holding was successfully approved." }

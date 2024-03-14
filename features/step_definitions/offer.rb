@@ -27,8 +27,8 @@
         holding = FactoryBot.build(:holding, user: emp, entity: @entity,
                                     funding_round: @funding_round, investor_id: @entity.investors.first.id)
         key_values(holding, args)
-        holding = CreateHolding.call(holding: holding).holding
-        ApproveHolding.call(holding: holding)
+        CreateHolding.wtf?(holding: holding).success?.should == true
+        ApproveHolding.wtf?(holding: holding).success?.should == true
         puts "\n#########Holding##########\n"
         puts holding.to_json
     end
@@ -40,8 +40,8 @@
       holding = FactoryBot.build(:holding, user: emp, entity: @entity, holding_type: "Investor",
                                   funding_round: @funding_round, investor_id: inv.id)
       key_values(holding, args)
-      holding = CreateHolding.call(holding: holding).holding
-      ApproveHolding.call(holding: holding)
+      CreateHolding.wtf?(holding: holding).success?.should == true
+      ApproveHolding.wtf?(holding: holding).success?.should == true
       puts "\n#########Holding##########\n"
       puts holding.to_json
     end
@@ -53,13 +53,13 @@
         holding = FactoryBot.build(:holding, user: emp, entity: @entity, option_pool: @option_pool,
                                     funding_round: @option_pool.funding_round, investor_id: @entity.investors.first.id)
         key_values(holding, args)
-        holding = CreateHolding.call(holding:holding).holding
+        CreateHolding.wtf?(holding:holding).success?.should == true
 
         puts "\n#########Option Holding##########\n"
         puts holding.to_json
 
         if holding.approved
-          ApproveHolding.call(holding: holding)
+          ApproveHolding.wtf?(holding: holding).success?.should == true
         end
     end
 

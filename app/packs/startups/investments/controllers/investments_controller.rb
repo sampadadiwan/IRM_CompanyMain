@@ -93,9 +93,8 @@ class InvestmentsController < ApplicationController
 
     saved_count = 0
     Investment.transaction do
-      investments.each do |i|
-        inv = SaveInvestment.call(investment: i).investment
-        saved_count += 1 unless inv.errors.any?
+      investments.each do |inv|
+        saved_count += 1 if SaveInvestment.call(investment: inv).success?
       end
     end
 
@@ -113,10 +112,9 @@ class InvestmentsController < ApplicationController
   # PATCH/PUT /investments/1 or /investments/1.json
   def update
     @investment.assign_attributes(investment_params)
-    @investment = SaveInvestment.call(investment: @investment).investment
 
     respond_to do |format|
-      if @investment.errors.any?
+      if SaveInvestment.call(investment: @investment).success?
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @investment.errors, status: :unprocessable_entity }
       else

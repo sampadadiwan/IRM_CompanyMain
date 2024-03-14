@@ -58,7 +58,7 @@ class ImportHolding < ImportUtil
 
     setup_custom_fields(user_data, holding, custom_field_headers)
 
-    holding = CreateHolding.call(holding:).holding
+    CreateHolding.wtf?(holding:)
     raise holding.errors.full_messages.join(", ") unless holding.errors.empty?
 
     holding
