@@ -39,9 +39,15 @@ class CapitalCallJob < ApplicationJob
                                    status:, verified: @capital_call.generate_remittances_verified)
 
         cr.payment_date = @capital_call.due_date if cr.verified
-        CapitalRemittanceCreate.call(capital_remittance: cr)
+        # Skip the counter culture updates to avoid deadlocks
+        CapitalRemittance.skip_counter_culture_updates do
+          CapitalRemittanceCreate.call(capital_remittance: cr)
+        end
       end
     end
+
+    # Fix the counters
+    CapitalRemittance.counter_culture_fix_counts where: { entity_id: @capital_call.entity_id }
 
     # Generate any payments for the imported remittances if required
     generate_remittance_payments
@@ -52,8 +58,14 @@ class CapitalCallJob < ApplicationJob
     @capital_call.reload.capital_remittances.verified.each do |cr|
       next unless cr.collected_amount_cents.zero?
 
-      CapitalRemittancePayment.create(capital_remittance: cr, fund_id: cr.fund_id, entity_id: cr.entity_id, amount_cents: cr.call_amount_cents, folio_amount_cents: cr.folio_call_amount_cents, payment_date: @capital_call.due_date)
+      # skip the counter culture updates to avoid deadlocks
+      CapitalRemittancePayment.skip_counter_culture_updates do
+        CapitalRemittancePayment.create(capital_remittance: cr, fund_id: cr.fund_id, entity_id: cr.entity_id, amount_cents: cr.call_amount_cents, folio_amount_cents: cr.folio_call_amount_cents, payment_date: @capital_call.due_date)
+      end
     end
+
+    # Fix the counters
+    CapitalRemittancePayment.counter_culture_fix_counts where: { entity_id: @capital_call.entity_id }
   end
 
   def notify(capital_call_id)

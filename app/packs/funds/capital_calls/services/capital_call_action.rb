@@ -11,8 +11,10 @@ class CapitalCallAction < Trailblazer::Operation
     capital_call.valid?
   end
 
-  def generate_capital_remittances(_ctx, capital_call:, **)
-    capital_call.generate_capital_remittances unless capital_call.destroyed?
+  def generate_capital_remittances(ctx, capital_call:, **)
+    # If this is called via import of calls, then we don't want to generate remittances in poerform_later but we want to generate in perform_now. if import_upload is not present, then later is false.
+    later = ctx[:import_upload].blank?
+    capital_call.generate_capital_remittances(later:) unless capital_call.destroyed?
     true
   end
 

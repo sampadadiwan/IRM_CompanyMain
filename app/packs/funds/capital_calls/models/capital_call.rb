@@ -67,10 +67,14 @@ class CapitalCall < ApplicationRecord
   end
 
   # after_commit :generate_capital_remittances, unless: :destroyed?
-  def generate_capital_remittances
+  def generate_capital_remittances(later: true)
     if call_basis != "Upload" && generate_remittances &&
        (saved_change_to_percentage_called? || saved_change_to_amount_to_be_called_cents? || saved_change_to_fund_closes?)
-      CapitalCallJob.perform_later(id, "Generate")
+      if later
+        CapitalCallJob.perform_later(id, "Generate")
+      else
+        CapitalCallJob.perform_now(id, "Generate")
+      end
     end
   end
 

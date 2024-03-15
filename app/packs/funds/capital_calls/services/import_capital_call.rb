@@ -40,7 +40,7 @@ class ImportCapitalCall < ImportUtil
 
         check_exchange_rate(capital_call)
 
-        result = CapitalCallCreate.call(capital_call:)
+        result = CapitalCallCreate.call(capital_call:, import_upload:)
         raise result["errors"].full_messages.join(",") unless result.success?
 
         result.success?
