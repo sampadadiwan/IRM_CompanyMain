@@ -11,19 +11,17 @@ class FormType < ApplicationRecord
     newly_created_cf = []
     if custom_field_headers.present?
       # Create the form type
-      name = import_upload.import_type
-      # We have a special case for InvestorKyc - there are 2 type IndividualKyc and NonIndividualKyc
-      name = import_upload.entity.investor_kycs.last&.class&.name if name == "InvestorKyc"
+      import_upload.form_type_names.each do |name|
+        # Find or create the form type
+        form_type = FormType.find_or_create_by(name:, entity_id: import_upload.entity_id)
 
-      # Find or create the form type
-      form_type = FormType.find_or_create_by(name:, entity_id: import_upload.entity_id)
-
-      custom_field_headers.each do |cfh|
-        # Create the custom form fields for the form type
-        cust_field_key = cfh
-        unless form_type.form_custom_fields.exists?(name: cust_field_key)
-          form_type.form_custom_fields.create(name: cust_field_key, field_type: "TextField")
-          newly_created_cf << cust_field_key
+        custom_field_headers.each do |cfh|
+          # Create the custom form fields for the form type
+          cust_field_key = cfh
+          unless form_type.form_custom_fields.exists?(name: cust_field_key)
+            form_type.form_custom_fields.create(name: cust_field_key, field_type: "TextField")
+            newly_created_cf << cust_field_key
+          end
         end
       end
     end

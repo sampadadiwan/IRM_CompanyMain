@@ -57,10 +57,17 @@ class ImportUtil < Trailblazer::Operation
   end
 
   def post_process(_ctx, import_upload:, **)
+    # Update the counter caches
     if defer_counter_culture_updates
       model_class = import_upload.model_class
       model_class.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
     end
+    # The custom fields have been created. Now we can update the form_type for newly created records
+    import_upload.form_type_names.each do |form_type_name|
+      form_type = import_upload.entity.form_types.where(name: form_type_name).last
+      form_type_name.constantize.update_all(entity_id: import_upload.entity_id, import_upload_id: import_upload.id, form_type_id: form_type.id) if form_type.present?
+    end
+
     true
   end
 

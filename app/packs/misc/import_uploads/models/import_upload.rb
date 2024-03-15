@@ -71,4 +71,8 @@ class ImportUpload < ApplicationRecord
   def to_s
     "#{name} : #{import_type}"
   end
+
+  def form_type_names
+    import_type == "InvestorKyc" ? %w[IndividualKyc NonIndividualKyc] : [import_type]
+  end
 end

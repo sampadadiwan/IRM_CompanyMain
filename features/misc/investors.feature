@@ -99,6 +99,7 @@ Scenario Outline: Import investor kycs
   Then I should see the "Import in progress"
   Then There should be "4" investor kycs created
   And the investor kycs must have the data in the sheet
+  And the imported data must have the form_type updated
   And the approved investor access should receive a notification
   And Aml Report should be generated for each investor kyc
 

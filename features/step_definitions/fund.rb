@@ -1577,3 +1577,14 @@ Given('there is a custom notification {string} in place for the Call') do |args|
     key_values(@custom_notification, args)
     @custom_notification.save!
 end
+
+Then('the imported data must have the form_type updated') do
+  @import_upload = ImportUpload.last
+  @import_upload.imported_data.all.each do |row|
+    form_type = @import_upload.entity.form_types.where(name: row.class.name).first
+    if form_type.present?
+      puts "Checking form_type for #{row.class.name}"
+      row.form_type_id.should == form_type.id 
+    end
+  end
+end
