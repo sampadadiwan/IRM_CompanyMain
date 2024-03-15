@@ -47,11 +47,19 @@ class ImportUtil < Trailblazer::Operation
     # Sometimes we import custom fields. Ensure custom fields get created
     result = true
     if import_upload.processed_row_count.positive?
+
       custom_fields_created = FormType.save_cf_from_import(custom_field_headers, import_upload)
       if custom_fields_created.present?
         import_upload.custom_fields_created = custom_fields_created.join(";")
         result = import_upload.save
       end
+
+      # The custom fields have been created. Now we can update the form_type for newly created records
+      import_upload.form_type_names.each do |form_type_name|
+        form_type = import_upload.entity.form_types.where(name: form_type_name).last
+        form_type_name.constantize.where(entity_id: import_upload.entity_id, import_upload_id: import_upload.id).update_all(form_type_id: form_type.id) if form_type.present?
+      end
+
     end
     result
   end
@@ -62,12 +70,6 @@ class ImportUtil < Trailblazer::Operation
       model_class = import_upload.model_class
       model_class.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
     end
-    # The custom fields have been created. Now we can update the form_type for newly created records
-    import_upload.form_type_names.each do |form_type_name|
-      form_type = import_upload.entity.form_types.where(name: form_type_name).last
-      form_type_name.constantize.update_all(entity_id: import_upload.entity_id, import_upload_id: import_upload.id, form_type_id: form_type.id) if form_type.present?
-    end
-
     true
   end
 

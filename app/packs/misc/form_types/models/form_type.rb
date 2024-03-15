@@ -12,6 +12,10 @@ class FormType < ApplicationRecord
     if custom_field_headers.present?
       # Create the form type
       import_upload.form_type_names.each do |name|
+        # We could get the rows imported from import_upload. However for KYCs, we could import Individual and Non Individual in the same file. So we need to create the appropriate custom fields for each form type
+        imported_row_count = name.constantize.where(entity_id: import_upload.entity_id, import_upload_id: import_upload.id).count
+        next unless imported_row_count.positive?
+
         # Find or create the form type
         form_type = FormType.find_or_create_by(name:, entity_id: import_upload.entity_id)
 

@@ -221,8 +221,6 @@ GEM
     bullet (7.1.5)
       activesupport (>= 3.0.0)
       uniform_notifier (~> 1.11)
-    bundle-audit (0.1.0)
-      bundler-audit
     bundler-audit (0.9.1)
       bundler (>= 1.2.0, < 3)
       thor (~> 1.0)
@@ -897,7 +895,7 @@ DEPENDENCIES
   bootsnap (= 1.15.0)
   brakeman
   bullet
-  bundle-audit
+  bundler-audit
   capistrano (~> 3.5)
   capistrano-bundler (~> 2.0)
   capistrano-rails
