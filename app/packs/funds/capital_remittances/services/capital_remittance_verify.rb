@@ -1,5 +1,7 @@
 class CapitalRemittanceVerify < CapitalRemittanceAction
+  step :setup_call_fees
   step :set_call_amount
+  step :set_status
   step :toggle_verify
   step :save
   left :handle_errors

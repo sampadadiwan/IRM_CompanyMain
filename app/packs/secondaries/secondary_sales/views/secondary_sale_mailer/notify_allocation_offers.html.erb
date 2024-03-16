@@ -1,28 +1,35 @@
-<h3>Dear Seller</h3>
+<% if @custom_notification.present? %>
+    <%= render "/custom_notifications/mail" do %>
+        <%= render "/secondary_sale_mailer/sale", secondary_sale: @secondary_sale, current_user: nil if @custom_notification.show_details %>
+    <% end %>
+<% else %>
 
-<p>
-    The allocation process for the secondary sale <%= @secondary_sale.name %> has been completed. Please ensure that all the required documentation is has been uploaded by you, to finalize the sale.   
-</p>
+    <h3>Dear Seller</h3>
 
-<% if @secondary_sale.seller_doc_list.present? %>
-<p>
-    You will be required to upload the following documents: <%= @secondary_sale.seller_doc_list %>
-</p>
+    <p>
+        The allocation process for the secondary sale <%= @secondary_sale.name %> has been completed. Please ensure that all the required documentation is has been uploaded by you, to finalize the sale.   
+    </p>
+
+    <% if @secondary_sale.seller_doc_list.present? %>
+    <p>
+        You will be required to upload the following documents: <%= @secondary_sale.seller_doc_list %>
+    </p>
+    <% end %>
+
+    <p>
+        <%= render "/secondary_sale_mailer/sale", secondary_sale: @secondary_sale, current_user: nil %>
+    </p>
+
+    <h3>Next Steps</h3>
+    <p>
+        <ul>
+            <li>Login and check details of your offer.</li>
+            <li>Read the SPA attached to your offer.</li>
+            <li>Accept the SPA.</li>
+            <li>A separate email from <%= @secondary_sale.entity.name %>, will be sent to you with the details of next steps </li>
+        </ul>
+    </p>
+
 <% end %>
 
-<p>
-    <%= render "/secondary_sale_mailer/sale", secondary_sale: @secondary_sale, current_user: nil %>
-</p>
-
 <p class="btn btn-outline-primary"><%= link_to 'View Sale & Upload Docs', secondary_sale_url(@secondary_sale, tab: "offerings-tab", subdomain: @secondary_sale.entity.sub_domain) %></p>
-
-<h3>Next Steps</h3>
-<p>
-    <ul>
-        <li>Login and check details of your offer.</li>
-        <li>Read the SPA attached to your offer.</li>
-        <li>Accept the SPA.</li>
-        <li>A separate email from <%= @secondary_sale.entity.name %>, will be sent to you with the details of next steps </li>
-    </ul>
-</p>
-

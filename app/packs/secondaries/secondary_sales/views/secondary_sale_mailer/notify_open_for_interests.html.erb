@@ -1,25 +1,32 @@
+<% if @custom_notification.present? %>
+    <%= render "/custom_notifications/mail" do %>
+        <%= render "/secondary_sale_mailer/sale", secondary_sale: @secondary_sale, current_user: nil if @custom_notification.show_details %>
+    <% end %>
+<% else %>
 
-<h3>Dear User</h3>
+    <h3>Dear User</h3>
 
-<p>
-    A new secondary sale <%= @secondary_sale.name %> has been opened by <%= @secondary_sale.entity.name %>  
-    and is accepting interests. If you want to place an indication of interest in the sale, 
-    then this is your chance.     
-</p>
+    <p>
+        A new secondary sale <%= @secondary_sale.name %> has been opened by <%= @secondary_sale.entity.name %>  
+        and is accepting interests. If you want to place an indication of interest in the sale, 
+        then this is your chance.     
+    </p>
 
 
-<p>
-    <%= render "/secondary_sale_mailer/sale", secondary_sale: @secondary_sale, current_user: nil %>
-</p>
+    <p>
+        <%= render "/secondary_sale_mailer/sale", secondary_sale: @secondary_sale, current_user: nil %>
+    </p>
+
+
+    <h3>Next Steps</h3>
+    <p>
+        <ul>
+            <li>Login and enter an interest.</li>
+            <li>Wait for the interest to be short listed.</li>
+            <li>Wait for notification that the purchase has gone through</li>
+        </ul>
+    </p>
+
+<% end %>
 
 <p class="btn btn-outline-primary"><%= link_to 'View Sale', secondary_sale_url(@secondary_sale, subdomain: @secondary_sale.entity.sub_domain) %></p>
-
-<h3>Next Steps</h3>
-<p>
-    <ul>
-        <li>Login and enter an interest.</li>
-        <li>Wait for the interest to be short listed.</li>
-        <li>Wait for notification that the purchase has gone through</li>
-    </ul>
-</p>
-

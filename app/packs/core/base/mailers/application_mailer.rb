@@ -6,9 +6,13 @@ class ApplicationMailer < ActionMailer::Base
   def mark_delivered
     # Lets update the notification to say we have sent the email with details
     # This is because if we have attachments, then we only want to body which is in mail.parts[0]
-    mail_body = mail&.parts.present? ? mail.parts[0] : mail
+    begin
+      db_mail_body = mail&.parts.present? ? mail.parts[0] : mail
+    rescue StandardError
+      db_mail_body = mail
+    end
     # rubocop:disable Rails/SkipsModelValidations
-    @notification&.update_columns(email_sent: true, email: { to: @to, from: @from, cc: @cc, reply_to: @reply_to, params:, mail: mail_body }.to_json) # parts[0] cause this is the actual email, attachments etc are not stored.
+    @notification&.update_columns(email_sent: true, email: { to: @to, from: @from, cc: @cc, reply_to: @reply_to, params:, mail: db_mail_body }.to_json) # parts[0] cause this is the actual email, attachments etc are not stored.
     # rubocop:enable Rails/SkipsModelValidations
   end
 

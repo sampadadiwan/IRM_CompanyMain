@@ -1,11 +1,19 @@
-<h3>Dear User</h3>
+<% if @custom_notification.present? %>
+    <%= render "/custom_notifications/mail" do %>
+        <%= render "/secondary_sale_mailer/sale", secondary_sale: @secondary_sale, current_user: nil if @custom_notification.show_details %>
+    <% end %>
+<% else %>
 
-<p>
-    A new secondary sale <%= @secondary_sale.name %> has been opened by <%= @secondary_sale.entity.name %>
-</p>
+    <h3>Dear User</h3>
 
-<p>
-    <%= render "/secondary_sale_mailer/sale", secondary_sale: @secondary_sale, current_user: nil %>
-</p>
+    <p>
+        A new secondary sale <%= @secondary_sale.name %> has been opened by <%= @secondary_sale.entity.name %>
+    </p>
+
+    <p>
+        <%= render "/secondary_sale_mailer/sale", secondary_sale: @secondary_sale, current_user: nil %>
+    </p>
+
+<% end %>
 
 <p class="btn btn-outline-primary"><%= link_to 'View Sale', secondary_sale_url(@secondary_sale, subdomain: @secondary_sale.entity.sub_domain) %></p>

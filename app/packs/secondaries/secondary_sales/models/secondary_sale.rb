@@ -7,6 +7,7 @@ class SecondarySale < ApplicationRecord
   include WithCustomField
   include InvestorsGrantedAccess
   include ForInvestor
+  include WithCustomNotifications
 
   # Make all models searchable
   update_index('secondary_sale') { self if index_record? }
@@ -21,7 +22,6 @@ class SecondarySale < ApplicationRecord
   has_many :interests, dependent: :destroy
   has_many :access_rights, as: :owner, dependent: :destroy
   has_many :fees, as: :owner, dependent: :destroy
-  has_noticed_notifications
 
   serialize :cmf_allocation_percentage, type: Hash
 

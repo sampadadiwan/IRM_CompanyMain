@@ -24,6 +24,9 @@
       
       <!-- a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab" 
             data-action="click->tabdetails#loadData">Reminders</a -->
+
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">
+            Notifications</a>
     
     <% elsif policy(secondary_sale).seller? %>
       <% holdings_active = true; document_tag="Seller" %>
@@ -133,6 +136,15 @@
           <%= turbo_frame_tag "reminders_list", target: "_top" do %>
           <% end %>
         </div>     
+      </div>
+
+
+      <div id="custom-notification-tab" class="tab-pane fade">
+        <div id="custom_notifications" class="associated_entity">
+
+            <%= render "custom_notifications/index", custom_notifications: secondary_sale.custom_notifications, owner: secondary_sale %>
+
+        </div>  
       </div>
 
   </div>

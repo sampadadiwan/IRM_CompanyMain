@@ -19,6 +19,10 @@ class CapitalRemittanceAction < Trailblazer::Operation
     capital_remittance.setup_call_fees
   end
 
+  def set_status(_ctx, capital_remittance:, **)
+    capital_remittance.set_status
+  end
+
   def touch_investor(_ctx, capital_remittance:, **)
     capital_remittance.touch_investor
   end
