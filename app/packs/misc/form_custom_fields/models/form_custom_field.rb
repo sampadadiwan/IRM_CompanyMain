@@ -6,7 +6,7 @@ class FormCustomField < ApplicationRecord
 
   enum :step,  { one: 1, two: 2, three: 3, end: 100 }
 
-  normalizes :name, with: ->(name) { name.strip.titleize.delete(" ").underscore.gsub(/[^0-9A-Za-z_]/, '') }
+  normalizes :name, with: ->(name) { FormCustomField.to_name(name) }
   validates :name, :show_user_ids, length: { maximum: 100 }
   validates :label, length: { maximum: 254 }
   validates :field_type, length: { maximum: 20 }
@@ -105,5 +105,9 @@ class FormCustomField < ApplicationRecord
     else
       "data-mandatory='#{required}'"
     end
+  end
+
+  def self.to_name(header)
+    header.strip.titleize.delete(" ").underscore.gsub(/[^0-9A-Za-z_]/, '')
   end
 end

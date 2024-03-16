@@ -10,28 +10,7 @@ class ImportInvestorAccess < ImportUtil
     @investor_accesses = []
   end
 
-  def process_row(headers, _custom_field_headers, row, import_upload, _context)
-    # create hash from headers and cells
-    user_data = [headers, row].transpose.to_h
-    begin
-      status, msg = save_investor_access(user_data, import_upload)
-      if status
-        import_upload.processed_row_count += 1
-      else
-        import_upload.failed_row_count += 1
-      end
-      row << msg
-    rescue ActiveRecord::Deadlocked => e
-      raise e
-    rescue StandardError => e
-      Rails.logger.debug e.backtrace
-      Rails.logger.debug { "Error #{e.message}" }
-      row << "Error #{e.message}"
-      import_upload.failed_row_count += 1
-    end
-  end
-
-  def save_investor_access(user_data, import_upload)
+  def save_row(user_data, import_upload)
     # next if user exists
 
     if user_data['Investor'].present?
