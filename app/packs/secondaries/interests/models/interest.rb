@@ -99,7 +99,7 @@ class Interest < ApplicationRecord
   end
 
   def to_s
-    "#{investor.investor_name} - #{quantity} shares @ #{price}"
+    "#{investor&.investor_name} - #{quantity} shares @ #{price}"
   end
 
   def set_defaults

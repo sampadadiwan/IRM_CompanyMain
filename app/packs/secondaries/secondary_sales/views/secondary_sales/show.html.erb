@@ -1,4 +1,4 @@
-  <%= render "/secondary_sales/stats", secondary_sale: @secondary_sale %>
+  <%= render "/secondary_sales/stats", secondary_sale: @secondary_sale if policy(@secondary_sale).owner? %>
   <%= render "/secondary_sales/show", secondary_sale: @secondary_sale %>
 
   <div>    

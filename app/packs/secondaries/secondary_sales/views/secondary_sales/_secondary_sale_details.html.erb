@@ -26,7 +26,7 @@
             data-action="click->tabdetails#loadData">Reminders</a -->
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">
-            Notifications</a>
+            Notification</a>
     
     <% elsif policy(secondary_sale).seller? %>
       <% holdings_active = true; document_tag="Seller" %>
@@ -37,7 +37,7 @@
           data-action="click->tabdetails#loadData">My Offers</a>      
 
     <% elsif policy(secondary_sale).show_interest? %>
-      <% interests_active = true;document_tag="Buyer" %>
+      <% interests_active = true; document_tag="Buyer" %>
       <input hidden=true value="#interests-tab" id="clickOnLoad" />
       
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#interests-tab"    
@@ -50,6 +50,8 @@
   </nav>
 
   <div class="tab-content">
+
+    <% if policy(secondary_sale).owner? %>
       <div id="access-rights-tab" class="tab-pane fade <%= access_right_active ? 'in show active' : '' %>">
 
         <% cache([secondary_sale, "access_rights"]) do %>
@@ -65,7 +67,6 @@
         <% end %>
       </div>
 
-
       <div id="fees-tab" class="tab-pane fade">
         <% cache([secondary_sale, "fees"]) do %>
           <div id="fees" class="associated_entity">
@@ -74,23 +75,28 @@
         <% end %>
       </div>
 
-      <div id="docs-tab" class="tab-pane fade">
-        <div id="docs" class="associated_entity">
-          
-          <%= link_to folder_documents_path(entity_id: secondary_sale.entity_id,
-                                        folder_id: secondary_sale.document_folder.id),
-                                        class: "load_data_link",
-                                        data: { turbo_frame: 'documents_tree_frame' } do %>
+      <div id="custom-notification-tab" class="tab-pane fade">
+        <div id="custom_notifications" class="associated_entity">
 
-              <span>Loading...</span>
-          <% end %>
-          
-          <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
-          <% end %>
+            <%= render "custom_notifications/index", custom_notifications: secondary_sale.custom_notifications, owner: secondary_sale %>
 
-        </div>
+        </div>  
       </div>
 
+
+    <% end %>
+
+    <% if policy(secondary_sale).seller? || policy(secondary_sale).owner? %>
+
+      <div id="holdings-tab" class="tab-pane fade <%= holdings_active ? 'in show active' : '' %>">
+        <div id="holdings" class="associated_entity">
+          <%= turbo_frame_tag "holdings_frame", target: "_top" do %>
+            <%= link_to holdings_path(secondary_sale_id: secondary_sale.id), class: "load_data_link", data: { turbo_frame: 'holdings_frame' } do %>
+              <span>Loading...</span>
+            <% end %>
+          <% end %>
+        </div>     
+      </div>
 
       <div id="offerings-tab" class="tab-pane fade">
         <div id="offerings" class="associated_entity">
@@ -104,7 +110,9 @@
           <% end %>
         </div>     
       </div>
+    <% end %>
 
+    <% if policy(secondary_sale).show_interest? || policy(secondary_sale).owner? %>
       <div id="interests-tab" class="tab-pane fade <%= interests_active ? 'in show active' : '' %>">
         <div id="interests" class="associated_entity">
           <%= link_to interests_secondary_sale_path(secondary_sale), class: "load_data_link", data: { turbo_frame: 'interests_frame' } do %>
@@ -115,38 +123,28 @@
           <% end %>
         </div>     
       </div>
+    <% end %>
 
-      <div id="holdings-tab" class="tab-pane fade <%= holdings_active ? 'in show active' : '' %>">
-        <div id="holdings" class="associated_entity">
-          <%= turbo_frame_tag "holdings_frame", target: "_top" do %>
-            <%= link_to holdings_path(secondary_sale_id: secondary_sale.id), class: "load_data_link", data: { turbo_frame: 'holdings_frame' } do %>
-              <span>Loading...</span>
-            <% end %>
-          <% end %>
-        </div>     
-      </div>
+    <<!-- Docs is visible to all -->
+    <div id="docs-tab" class="tab-pane fade">
+      <div id="docs" class="associated_entity">
+        
+        <%= link_to folder_documents_path(entity_id: secondary_sale.entity_id,
+                                      folder_id: secondary_sale.document_folder.id),
+                                      class: "load_data_link",
+                                      data: { turbo_frame: 'documents_tree_frame' } do %>
 
-      <div id="reminders-tab" class="tab-pane fade">
-        <div id="reminders" class="associated_entity">
-          <%= link_to reminders_path( owner_id: secondary_sale.id, owner_type: "SecondarySale", sent: false), 
-                                  class: "load_data_link", 
-                                  data: { turbo_frame: 'reminders_list' } do %>
             <span>Loading...</span>
-          <% end %>
-          <%= turbo_frame_tag "reminders_list", target: "_top" do %>
-          <% end %>
-        </div>     
+        <% end %>
+        
+        <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
+        <% end %>
+
       </div>
+    </div>
+      
 
-
-      <div id="custom-notification-tab" class="tab-pane fade">
-        <div id="custom_notifications" class="associated_entity">
-
-            <%= render "custom_notifications/index", custom_notifications: secondary_sale.custom_notifications, owner: secondary_sale %>
-
-        </div>  
-      </div>
-
+      
   </div>
 
 </div>

@@ -52,7 +52,7 @@ class SecondarySalePolicy < SaleBasePolicy
 
   def show_interest?
     record.active? &&
-      (permissioned_investor?(:buyer) || external_sale?)
+      (buyer? || external_sale?)
   end
 
   def see_private_docs?

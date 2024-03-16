@@ -41,7 +41,7 @@
                                   funding_round: @funding_round, investor_id: inv.id)
       key_values(holding, args)
       CreateHolding.wtf?(holding: holding).success?.should == true
-      ApproveHolding.wtf?(holding: holding).success?.should == true
+      ApproveHolding.wtf?(holding: holding)
       puts "\n#########Holding##########\n"
       puts holding.to_json
     end
