@@ -1,6 +1,6 @@
 class HoldingAction < Trailblazer::Operation
   def handle_error(ctx, holding:, **)
-    Rails.logger.error "Error approving holding #{holding.errors.full_messages.join(', ')}"
+    Rails.logger.error "Error: #{holding.errors.full_messages.join(', ')}"
     ctx[:errors] = holding.errors.full_messages.join(", ")
   end
 

@@ -35,7 +35,7 @@ class Offer < ApplicationRecord
   belongs_to :granter, class_name: "User", foreign_key: :granted_by_user_id, optional: true
   belongs_to :buyer, class_name: "Entity", optional: true
 
-  has_many :messages, as: :owner, dependent: :destroy
+  # has_many :messages, as: :owner, dependent: :destroy
 
   include FileUploader::Attachment(:signature)
   include FileUploader::Attachment(:pan_card)

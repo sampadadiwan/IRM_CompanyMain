@@ -36,7 +36,7 @@
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#offerings-tab" 
           data-action="click->tabdetails#loadData">My Offers</a>      
 
-    <% elsif policy(secondary_sale).show_interest? %>
+    <% elsif policy(secondary_sale).buyer? %>
       <% interests_active = true; document_tag="Buyer" %>
       <input hidden=true value="#interests-tab" id="clickOnLoad" />
       
@@ -112,7 +112,7 @@
       </div>
     <% end %>
 
-    <% if policy(secondary_sale).show_interest? || policy(secondary_sale).owner? %>
+    <% if policy(secondary_sale).buyer? || policy(secondary_sale).owner? %>
       <div id="interests-tab" class="tab-pane fade <%= interests_active ? 'in show active' : '' %>">
         <div id="interests" class="associated_entity">
           <%= link_to interests_secondary_sale_path(secondary_sale), class: "load_data_link", data: { turbo_frame: 'interests_frame' } do %>

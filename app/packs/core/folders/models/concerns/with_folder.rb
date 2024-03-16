@@ -10,7 +10,6 @@ module WithFolder
     end
 
     validates_associated :documents
-
     has_many :folders, as: :owner, dependent: :destroy
     # The folder in which all the documents of this model should go
     belongs_to :document_folder, class_name: "Folder", dependent: :destroy, optional: true
