@@ -1,4 +1,6 @@
 class ImportInvestorAccess < ImportUtil
+  step nil, delete: :create_custom_fields
+
   STANDARD_HEADERS = ["Investor", "First Name", "Last Name", "Email", "Cc", "Country Code", "Phone", "WhatsApp Enabled", "Approved", "Send Confirmation Email"].freeze
 
   def standard_headers
@@ -10,7 +12,7 @@ class ImportInvestorAccess < ImportUtil
     @investor_accesses = []
   end
 
-  def save_row(user_data, import_upload)
+  def save_row(user_data, import_upload, _custom_field_headers)
     # next if user exists
 
     if user_data['Investor'].present?

@@ -1585,6 +1585,11 @@ Then('the imported data must have the form_type updated') do
     if form_type.present?
       puts "Checking form_type for #{row.class.name}"
       row.form_type_id.should == form_type.id 
+      form_type.form_custom_fields.each do |fcf|
+        # Ensure that the data json fields are exactly the same as the form custom fields name
+        puts "Checking #{fcf.name} in imported data #{row.custom_fields[fcf.name]}"
+        row.custom_fields[fcf.name].should_not == nil
+      end
     end
   end
 end
