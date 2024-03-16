@@ -14,7 +14,7 @@ class Entity < ApplicationRecord
 
   validates :primary_email, presence: true, if: proc { |e| e.new_record? && !e.is_holdings_entity }
 
-  validates_uniqueness_of :name, scope: :pan
+  validates_uniqueness_of :name, scope: :primary_email
 
   validates :name, length: { maximum: 255 }
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
