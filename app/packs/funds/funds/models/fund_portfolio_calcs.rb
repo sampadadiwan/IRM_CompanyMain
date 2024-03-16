@@ -170,7 +170,7 @@ class FundPortfolioCalcs
       sold_amount = portfolio_investments.filter { |pi| pi.quantity.negative? }.sum(&:amount_cents)
       fmv = fmv_on_date(api)
 
-      @api_map[api.id] = { name: api.to_s, value_to_cost: (sold_amount + fmv) / bought_amount }
+      @api_map[api.id] = { name: api.to_s, value_to_cost: (sold_amount + fmv) / bought_amount } if bought_amount.positive?
     end
 
     @api_map
