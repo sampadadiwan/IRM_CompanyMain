@@ -246,8 +246,8 @@ class Offer < ApplicationRecord
   end
 
   # rubocop:disable Rails/SkipsModelValidations
-  def self.fix_ambit
-    sale = SecondarySale.find(4)
+  def self.fix_ambit(secondary_sale_id)
+    sale = SecondarySale.find(secondary_sale_id)
     entity = sale.entity
     users_no_investor = []
     sale.offers.each do |o|
