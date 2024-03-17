@@ -22,7 +22,7 @@ class PortfolioInvestmentsController < ApplicationController
 
     if @portfolio_investment.portfolio_company
       last_pi = PortfolioInvestment.where(entity_id: @portfolio_investment.entity_id, portfolio_company_id: @portfolio_investment.portfolio_company_id).last
-      @portfolio_investment.investment_instrument = last_pi.investment_instrument
+      @portfolio_investment.investment_instrument = last_pi&.investment_instrument
     end
 
     setup_custom_fields(@portfolio_investment)
