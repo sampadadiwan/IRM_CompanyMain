@@ -29,7 +29,7 @@ class ImportValuation < ImportUtil
       setup_custom_fields(user_data, valuation, custom_field_headers)
       valuation.save!
     else
-      Rails.logger.debug { "valuation for #{investor_name} on #{valuation_date} already exists for entity #{investor.entity_id}" }
+      raise "Valuation for #{investor_name} on #{valuation_date} already exists for entity #{investor.entity_id}"
     end
 
     true
