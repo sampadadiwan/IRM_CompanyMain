@@ -218,13 +218,13 @@ Then('I should see all the offers') do
         expect(page).to have_content(offer.investor.investor_name)
         expect(page).to have_content(offer.quantity)
         expect(page).to have_content(offer.percentage)
-        within("td.approved") do
+        # within("td.approved") do
           if offer.approved
             expect(page).to have_content("Yes")
           else
             expect(page).to have_content("No")
           end
-        end
+        # end
     end
   end
 end

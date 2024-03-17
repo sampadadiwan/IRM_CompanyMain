@@ -30,6 +30,7 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     min_price: ObfuscatedField,
     max_price: ObfuscatedField,
     active: Field::BooleanEmoji,
+    show_holdings: Field::BooleanEmoji,
     no_offer_emails: Field::BooleanEmoji,
     no_interest_emails: Field::BooleanEmoji,
     manage_offers: Field::BooleanEmoji,
