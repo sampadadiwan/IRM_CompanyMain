@@ -5,6 +5,12 @@ class Offer < ApplicationRecord
   include WithCustomField
   include ForInvestor
 
+  STANDARD_COLUMN_NAMES = ["User", "Investor", "Quantity", "Allocation Quantity", "Allocation %", "Price", "Allocation Amount", "Notes", "Approved", "Verified", " "].freeze
+  STANDARD_COLUMN_FIELDS = %w[user investor_name quantity allocation_quantity allocation_percentage final_price allocation_amount notes approved verified dt_actions].freeze
+
+  INVESTOR_COLUMN_NAMES = ["Quantity", "Allocation Quantity", "Allocation %", "Price", "Allocation Amount", "Approved", "Verified", " "].freeze
+  INVESTOR_COLUMN_FIELDS = %w[quantity allocation_quantity allocation_percentage final_price allocation_amount approved verified dt_actions].freeze
+
   # Make all models searchable
   update_index('offer') { self if index_record? }
 

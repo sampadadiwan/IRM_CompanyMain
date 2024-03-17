@@ -21,7 +21,7 @@ class OfferDatatable < AjaxDatatablesRails::ActiveRecord
     records.map do |record|
       {
         id: record.id,
-        user: record.user,
+        user: record.user.full_name,
         investor_name: record.decorate.investor_link,
         quantity: record.quantity,
         percentage: record.decorate.percentage,
