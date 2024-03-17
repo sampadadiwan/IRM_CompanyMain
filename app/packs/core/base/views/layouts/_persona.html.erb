@@ -17,7 +17,7 @@
     
   %>
   <div class="form-group" data-controller="persona">
-    <% selected = params[:persona].present? ? params[:persona] : current_user.curr_role.to_sym %>
+    <% selected = params[:persona].present? ? params[:persona] : current_user.curr_role&.to_sym %>
     <%= form.select :persona, personas, {selected: selected}, 
         { id: "persona", class: "form-control", 
         data: { action: "change->persona#setPersona", toggle: "tooltip", title: "Choose Persona" } } %>

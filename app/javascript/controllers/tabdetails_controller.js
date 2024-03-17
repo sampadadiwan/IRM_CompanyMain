@@ -8,8 +8,11 @@ export default class extends Controller {
     // // This tab is stored in a hidden field #clickOnLoad 
     if( $("#clickOnLoad").length > 0 ) {
       let link = $("#clickOnLoad").val();
-      $(`${link} .load_data_link`).find('span').trigger('click'); // Works
-      $(`${link} .load_data_link`).hide();  
+      console.log(`#clickOnLoad ${link}`);
+      // setTimeout(() => {
+        $(`${link} .load_data_link`).find('span').trigger('click'); // Works
+        $(`${link} .load_data_link`).hide();  
+      // }, 1000);
     }
   }
 

@@ -7,6 +7,10 @@ class OfferDecorator < ApplicationDecorator
     h.render partial: "/offers/percentage", locals: { offer: object }, formats: [:html]
   end
 
+  def investor_link
+    h.link_to object.investor.investor_name, h.investor_path(id: object.investor_id)
+  end
+
   # Just an example of a complex method you can add to you decorator
   # To render it in a datatable just add a column 'dt_actions' in
   # 'view_columns' and 'data' methods and call record.decorate.dt_actions

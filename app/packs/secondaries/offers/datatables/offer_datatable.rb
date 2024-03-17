@@ -22,7 +22,7 @@ class OfferDatatable < AjaxDatatablesRails::ActiveRecord
       {
         id: record.id,
         user: record.user,
-        investor_name: record.investor.investor_name,
+        investor_name: record.decorate.investor_link,
         quantity: record.quantity,
         percentage: record.decorate.percentage,
         allocation_quantity: record.allocation_quantity,
