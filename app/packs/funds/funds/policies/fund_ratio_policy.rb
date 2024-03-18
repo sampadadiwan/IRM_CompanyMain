@@ -1,4 +1,4 @@
-class FundRatioPolicy < ApplicationPolicy
+class FundRatioPolicy < FundBasePolicy
   def index?
     true
   end

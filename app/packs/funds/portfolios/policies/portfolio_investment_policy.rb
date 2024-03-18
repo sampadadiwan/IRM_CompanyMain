@@ -4,8 +4,8 @@ class PortfolioInvestmentPolicy < FundBasePolicy
   end
 
   def show?
-    user.enable_funds &&
-      permissioned_employee?
+    (user.enable_funds && permissioned_employee?) ||
+      (record.fund.show_portfolios && permissioned_investor?)
   end
 
   def create?

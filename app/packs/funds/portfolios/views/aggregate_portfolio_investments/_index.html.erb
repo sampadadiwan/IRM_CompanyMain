@@ -6,22 +6,24 @@
   <h1 class="h3 mb-0 text-gray-800">Aggregate Portfolio Investments</h1>
 
   <span>
-    <%= link_to "New Investment",
-        new_portfolio_investment_path("portfolio_investment[entity_id]": current_user.entity_id,
-        "portfolio_investment[fund_id]": params[:fund_id]),
-        {class: "btn btn-outline-primary"} if params[:fund_id].present?  %>
+    <% if fund && policy(fund).update? %>
+      <%= link_to "New Investment",
+          new_portfolio_investment_path("portfolio_investment[entity_id]": current_user.entity_id,
+          "portfolio_investment[fund_id]": params[:fund_id]),
+          {class: "btn btn-outline-primary"} if params[:fund_id].present?  %>
 
-    <%= link_to "Scenarios", portfolio_scenarios_path(fund_id: params[:fund_id]), { class: "btn btn-outline-success"} if params[:fund_id].present? %>
+      <%= link_to "Scenarios", portfolio_scenarios_path(fund_id: params[:fund_id]), { class: "btn btn-outline-success"} if params[:fund_id].present? %>
 
-      <%= link_to "Upload",
-          new_import_upload_path("import_upload[owner_id]": params[:fund_id],
-          "import_upload[owner_type]": "Fund",
-          "import_upload[import_type]": "PortfolioInvestment",
-          "sample_upload": "PORTFOLIO_SAMPLE"),
-          { class: "btn btn-outline-primary"}   %>
+        <%= link_to "Upload",
+            new_import_upload_path("import_upload[owner_id]": params[:fund_id],
+            "import_upload[owner_type]": "Fund",
+            "import_upload[import_type]": "PortfolioInvestment",
+            "sample_upload": "PORTFOLIO_SAMPLE"),
+            { class: "btn btn-outline-primary"}   %>
 
-      <%= link_to "Download", aggregate_portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true),
-          {class: "btn btn-outline-success" } %>
+        <%= link_to "Download", aggregate_portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true),
+            {class: "btn btn-outline-success" } %>
+    <% end %>
   </span>
 
 </div>

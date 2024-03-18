@@ -31,6 +31,6 @@
   </td>
   <td>
     <%= link_to "Show", aggregate_portfolio_investment , {class: "btn btn-outline-primary"}%>
-    <%= link_to "Add Valuation", new_valuation_path("valuation[owner_id]": aggregate_portfolio_investment.portfolio_company_id, "valuation[owner_type]": "Investor", "valuation[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id), {class: "btn btn-outline-success"}%>
+    <%= link_to "Add Valuation", new_valuation_path("valuation[owner_id]": aggregate_portfolio_investment.portfolio_company_id, "valuation[owner_type]": "Investor", "valuation[investment_instrument_id]": aggregate_portfolio_investment.investment_instrument_id), {class: "btn btn-outline-success"} if policy(aggregate_portfolio_investment).add_valuation? %>
   </td>
 </tr>

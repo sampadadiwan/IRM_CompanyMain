@@ -177,7 +177,7 @@ class FundsController < ApplicationController
                                  :entity_id, :tag_list, :show_valuations, :show_fund_ratios,
                                  :currency, :unit_types, :units_allocation_engine, :form_type_id,
                                  :registration_number, :category, :sub_category, :sponsor_name, :manager_name,
-                                 :trustee_name, :contact_name, :contact_email,
+                                 :trustee_name, :contact_name, :contact_email, :show_portfolios,
                                  :esign_emails, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

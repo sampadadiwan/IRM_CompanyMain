@@ -34,6 +34,11 @@
               data-action="click->tabdetails#loadData">Ratios</a>
         <% end %>
 
+        <% if fund.show_portfolios %>
+          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-investments-tab"
+              data-action="click->tabdetails#loadData">Portfolio</a>
+        <% end %>
+
 
       <% end %>
 
@@ -114,21 +119,7 @@
             <%= turbo_frame_tag "task_list", target: "_top" do %>
             <% end %>
           </div>
-        </div>
-
-        <% if fund.entity.permissions.enable_fund_portfolios? %>
-          <div id="portfolio-investments-tab" class="tab-pane fade">
-            <div id="portfolio_investments" class="associated_entity">
-              <%= link_to aggregate_portfolio_investments_path( fund_id: fund.id),
-                                      class: "load_data_link",
-                                      data: { turbo_frame: 'aggregate_portfolio_investments_list' } do %>
-                <span>Loading...</span>
-              <% end %>
-              <%= turbo_frame_tag "aggregate_portfolio_investments_list", target: "_top" do %>
-              <% end %>
-            </div>
-          </div>
-        <% end %>
+        </div>        
 
         <% else %>
 
@@ -149,6 +140,20 @@
 
         <% end %>
 
+
+        <% if fund.entity.permissions.enable_fund_portfolios? %>
+          <div id="portfolio-investments-tab" class="tab-pane fade">
+            <div id="portfolio_investments" class="associated_entity">
+              <%= link_to aggregate_portfolio_investments_path( fund_id: fund.id),
+                                      class: "load_data_link",
+                                      data: { turbo_frame: 'aggregate_portfolio_investments_list' } do %>
+                <span>Loading...</span>
+              <% end %>
+              <%= turbo_frame_tag "aggregate_portfolio_investments_list", target: "_top" do %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
 
 
         <div id="fund-ratios-tab" class="tab-pane fade in">

@@ -4,9 +4,8 @@ class AggregatePortfolioInvestmentPolicy < FundBasePolicy
   end
 
   def show?
-    user.enable_funds &&
-
-      permissioned_employee?
+    (user.enable_funds && permissioned_employee?) ||
+      (record.fund.show_portfolios && permissioned_investor?)
   end
 
   def create?
@@ -23,6 +22,14 @@ class AggregatePortfolioInvestmentPolicy < FundBasePolicy
 
   def edit?
     update?
+  end
+
+  def add_valuation?
+    belongs_to_entity?(user, record)
+  end
+
+  def add_investment?
+    belongs_to_entity?(user, record)
   end
 
   def destroy?
