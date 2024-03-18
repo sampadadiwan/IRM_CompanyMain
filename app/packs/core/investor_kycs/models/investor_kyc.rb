@@ -55,7 +55,7 @@ class InvestorKyc < ApplicationRecord
   normalizes :full_name, with: ->(full_name) { full_name.strip.squeeze(" ") }
   validates :kyc_type, length: { maximum: 15 }
   validates :residency, length: { maximum: 10 }
-  validates :bank_name, length: { maximum: 50 }
+  validates :bank_name, length: { maximum: 100 }
 
   validate :birth_date_cannot_be_in_the_future
   def birth_date_cannot_be_in_the_future
