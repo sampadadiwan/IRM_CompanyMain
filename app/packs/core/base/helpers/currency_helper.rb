@@ -5,7 +5,7 @@ module CurrencyHelper
 
   def custom_format_number(number, params = {}, ignore_units = false)
     cookies ||= nil
-    raw_units = params[:units].presence || (cookies && cookies[:currency_units])
+    raw_units = params[:force_units].presence || params[:units].presence || (cookies && cookies[:currency_units])
 
     if raw_units.present? && !ignore_units
       case raw_units
@@ -29,7 +29,7 @@ module CurrencyHelper
 
     units = ""
     cookies ||= nil
-    raw_units = params[:units].presence || (cookies && cookies[:currency_units])
+    raw_units = params[:force_units].presence || params[:units].presence || (cookies && cookies[:currency_units])
 
     if raw_units.present? && !ignore_units
 

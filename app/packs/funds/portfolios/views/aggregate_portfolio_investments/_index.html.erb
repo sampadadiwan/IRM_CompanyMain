@@ -1,4 +1,7 @@
-<%show_fund_name ||= false%>
+<%
+  show_fund_name ||= false
+  fund = params[:fund_id].present? ? Fund.find(params[:fund_id]) : nil
+%>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Aggregate Portfolio Investments</h1>
 
@@ -22,6 +25,9 @@
   </span>
 
 </div>
+
+<%= render "aggregate_portfolio_investments/stats",  aggregate_portfolio_investments:, fund: %>
+
 <div class="table-responsive" data-controller="datatable">
   <table id="aggregate_portfolio_investments" class="table table-bordered dataTable jqDataTable">
     <thead>

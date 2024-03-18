@@ -140,4 +140,8 @@ class Fund < ApplicationRecord
   def name_change
     document_folder.update_columns(name:, full_path: folder_path)
   end
+
+  def default_currency_units
+    currency == "INR" ? "Crores" : "Million"
+  end
 end
