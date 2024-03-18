@@ -1,4 +1,4 @@
-<% params[:units] = "Million" %>
+<% params[:units] ||= "Million" %>
 
 <% unless current_user.investor_advisor? %>
     <% cache_if(current_user != nil, cache_key("FMDashBoardStats"), expires_in: 5.day) do %>

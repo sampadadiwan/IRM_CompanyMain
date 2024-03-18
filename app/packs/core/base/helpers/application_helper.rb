@@ -94,7 +94,7 @@ module ApplicationHelper
   end
 
   def cache_key(key, include_theme: false)
-    key = [key, current_user, current_user&.entity, current_user&.curr_role, params[:page]]
+    key = [key, current_user, current_user&.entity, current_user&.curr_role, params[:page], params[:units]]
     key << cookies[:theme] if include_theme
     key
   end
