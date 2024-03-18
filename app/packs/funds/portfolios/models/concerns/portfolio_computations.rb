@@ -15,6 +15,8 @@ module PortfolioComputations
       model.portfolio_investments.pool.buys.where(investment_date: ..end_date).find_each do |pi|
         # Find the valuation just prior to the end_date
         valuation = pi.portfolio_company.valuations.where(investment_instrument_id: pi.investment_instrument_id, valuation_date: ..end_date).order(valuation_date: :asc).last
+        raise "Valuation not found for #{pi.portfolio_company.name} on #{end_date}" unless valuation
+
         total_fmv_end_date += pi.quantity * valuation.per_share_value_cents
       end
       total_fmv_end_date
