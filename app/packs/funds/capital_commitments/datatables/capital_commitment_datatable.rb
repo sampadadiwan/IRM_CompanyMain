@@ -33,7 +33,7 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
         collected_amount: record.decorate.money_to_currency(record.collected_amount, params),
         call_amount: record.decorate.money_to_currency(record.call_amount, params),
         distribution_amount: record.decorate.money_to_currency(record.distribution_amount, params),
-        percentage: record.percentage,
+        percentage: record.percentage.round(2),
         onboarding_completed: record.decorate.onboarding_completed,
         document_names: record.decorate.document_names(params),
         dt_actions: record.decorate.dt_actions,
