@@ -716,12 +716,19 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   @import_file = file
   visit(fund_path(@fund))
   click_on(tab)
-  sleep(1)
-  click_on("Upload")
-  sleep(2)
+  # sleep(1)
+
+  if page.has_button?("Upload / Download")
+    click_on("Upload / Download")
+    click_on("Upload")
+  else
+    click_on("Upload")
+  end
+  
+  # sleep(1)
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(2)
+  sleep(1)
   click_on("Save")
   sleep(3)
   ImportUploadJob.perform_now(ImportUpload.last.id)
