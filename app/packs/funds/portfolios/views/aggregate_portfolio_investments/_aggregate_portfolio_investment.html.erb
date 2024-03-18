@@ -12,7 +12,19 @@
     <%= link_to aggregate_portfolio_investment.portfolio_company.investor_name, aggregate_portfolio_investment.portfolio_company %>
   </td>
   <td>
-    <%= link_to aggregate_portfolio_investment.investment_instrument %>
+    <%= link_to aggregate_portfolio_investment.investment_instrument if aggregate_portfolio_investment.investment_instrument %>
+  </td>
+  <td>
+    <%= aggregate_portfolio_investment.bought_quantity %>
+  </td>
+  <td>
+    <%= aggregate_portfolio_investment.bought_amount %>
+  </td>
+  <td>
+    <%= aggregate_portfolio_investment.sold_quantity %>
+  </td>
+  <td>
+    <%= aggregate_portfolio_investment.sold_amount %>
   </td>
   <td>
     <%= aggregate_portfolio_investment.quantity %>
@@ -21,10 +33,13 @@
     <%= money_to_currency aggregate_portfolio_investment.fmv, params %>
   </td>
   <td>
-    <%= money_to_currency aggregate_portfolio_investment.cost_of_sold, params %>
+    <%= money_to_currency aggregate_portfolio_investment.cost, params %>
   </td>
   <td>
     <%= money_to_currency aggregate_portfolio_investment.avg_cost, params %>
+  </td>
+  <td>
+    <%= money_to_currency aggregate_portfolio_investment.cost_of_sold, params %>
   </td>
   <td>
     <%= link_to "Show", aggregate_portfolio_investment , {class: "btn btn-outline-primary"}%>
