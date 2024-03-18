@@ -1,0 +1,14 @@
+wb = xlsx_package.workbook
+
+form_type, custom_field_names, custom_headers = get_form_type("AggregatePortfolioInvestment")
+
+wb.add_worksheet(name: "AggregatePortfolioInvestment") do |sheet|
+  # Create the header row
+  sheet.add_row(["Fund", "For", "Portfolio Company", "Instrument", "Bought Quantity", "Bought Amount", "Sold Quantity", "Sold Amount", "Current Quantity", "FMV", "Cost", "Avg Cost / Share", "FIFO Cost"] + custom_headers)
+
+  # Create entries for each item
+  @aggregate_portfolio_investments.each do |api|
+    custom_field_values = get_custom_values(api, form_type, custom_field_names)
+    sheet.add_row [api.fund.name, api.commitment_type, api.portfolio_company_name, api.investment_instrument, api.bought_quantity, api.bought_amount.to_d, api.sold_quantity, api.sold_amount.to_d, api.quantity, api.fmv, api.cost.to_d, api.avg_cost.to_d, api.cost_of_sold.to_d] + custom_field_values
+  end
+end
