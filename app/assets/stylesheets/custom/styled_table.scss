@@ -12,7 +12,7 @@ table.dataTable {
 }
 
 [data-bs-theme=light] thead th {
-  background-color: var(--bs-primary);
+  background-color: var(--bs-primary) !important;
   color: #ffffff;
   text-align: left;
   font-weight: normal;
