@@ -1,12 +1,20 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
+  static values = {
+    moneyColumns: String // Which columns are money, so we can appply better sorting
+  }
+
   connect() {
+
+    console.log(`moneyColumns = ${this.moneyColumnsValue}`);
 
       let table = {};
       
+      let columnDefs = this.columnDefs();
+
       $.each( $('.jqDataTable'), function( key, value ) {
-        // console.log( key + ": " + value );
+        console.log( key + ": " + value );
         if ( $.fn.dataTable.isDataTable( value ) ) {
         }
         else {
@@ -14,6 +22,7 @@ export default class extends Controller {
             order: [],     
             stateSave: false,
             retrieve: true,
+            columnDefs: columnDefs, // https://cdn.datatables.net/plug-ins/2.0.2/sorting/formatted-numbers.js      
             lengthMenu: [
               [10, 25, 50, -1],
               [10, 25, 50, 'All'],
@@ -46,6 +55,21 @@ export default class extends Controller {
       if (searchTerm.length > 0) {
         table.search(searchTerm.val()).draw();
       }
+  }
+
+  columnDefs() {
+    if (this.moneyColumnsValue == "") {
+      return [];
+    } else {
+      // Convert the string to an array of integers
+      let moneyColumns = this.moneyColumnsValue.split(',');
+      // Convert the array of integers to an array of columnDefs, which is used by cdn.datatables.net/plug-ins/2.0.2/sorting/formatted-numbers.js, to allow the right formatting for currency cols
+      let cols = moneyColumns.map(function(item) {
+        return { type: 'formatted-num', targets: parseInt(item) }
+      });
+      // console.log(cols);
+      return cols;
+    }
   }
 
 }

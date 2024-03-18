@@ -2,7 +2,8 @@ V7.0.65
 #####################################
 1. Enable portfolios for investors
 2. Increased bank name to 100 chars
-3. force_units for currency to enable fund specific numbers
+3. Force_units for currency to enable fund specific numbers
+4. Basic length validation for kyc form, even for fund inputs
 
 
 22/12/2023 - V7.0.25    
