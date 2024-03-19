@@ -15,13 +15,13 @@
     <%= link_to aggregate_portfolio_investment.investment_instrument if aggregate_portfolio_investment.investment_instrument %>
   </td>
   <td>
-    <%= aggregate_portfolio_investment.bought_amount %>
+    <%= money_to_currency aggregate_portfolio_investment.bought_amount, params %>
   </td>
   <td>
-    <%= aggregate_portfolio_investment.sold_amount %>
+    <%= money_to_currency aggregate_portfolio_investment.sold_amount, params %>
   </td>
   <td>
-    <%= aggregate_portfolio_investment.quantity %>
+    <%= custom_format_number aggregate_portfolio_investment.quantity, params %>
   </td>
   <td>
     <%= money_to_currency aggregate_portfolio_investment.fmv, params %>
