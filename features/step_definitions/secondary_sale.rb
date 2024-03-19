@@ -354,11 +354,11 @@ Given('there are {string} offers for the sale') do |approved_flag|
   approved = approved_flag == "approved"
   Holding.all.each do |h|
     offer = Offer.new(holding: h, entity: h.entity, secondary_sale: @sale, 
-                          user: h.entity.employees.sample, investor: h.investor,
+                          user: h.entity.employees.sample, investor: h.investor, user_id: h.user_id,
                           quantity: h.quantity * @sale.percent_allowed / 100, approved: approved)
 
-    OfferCreate.wtf?(offer: offer)
-    OfferApprove.wtf?(offer: offer, current_user: @user) if approved
+    OfferCreate.wtf?(offer: offer, current_user: @user).success?.should == true
+    OfferApprove.wtf?(offer: offer, current_user: @user).success?.should == true if approved
         
     puts "\n####Offer Created####\n"
     puts offer.to_json                      
