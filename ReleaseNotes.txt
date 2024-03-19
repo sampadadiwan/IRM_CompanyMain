@@ -4,6 +4,7 @@ V7.0.65
 2. Increased bank name to 100 chars
 3. Force_units for currency to enable fund specific numbers
 4. Basic length validation for kyc form, even for fund inputs
+5. Sorting of money cols for local data tables
 
 
 22/12/2023 - V7.0.25    

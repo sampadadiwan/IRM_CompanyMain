@@ -1,4 +1,14 @@
 class PortfolioInvestmentPolicy < FundBasePolicy
+  class Scope < FundBasePolicy::Scope
+    def resolve
+      if user.curr_role == "investor"
+        super.joins(:fund).where("funds.show_portfolios = true")
+      else
+        super
+      end
+    end
+  end
+
   def index?
     true
   end

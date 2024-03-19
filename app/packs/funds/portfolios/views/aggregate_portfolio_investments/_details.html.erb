@@ -15,7 +15,7 @@
             params[:portfolio_company_id] = @aggregate_portfolio_investment.portfolio_company_id
         %>
         <%= render "/portfolio_investments/index", 
-          portfolio_investments: @aggregate_portfolio_investment.portfolio_investments.includes(:aggregate_portfolio_investment), aggregate_portfolio_investment: @aggregate_portfolio_investment %>
+          portfolio_investments: @aggregate_portfolio_investment.portfolio_investments.includes(:aggregate_portfolio_investment, :fund), aggregate_portfolio_investment: @aggregate_portfolio_investment %>
       </div>
     </div>
     <div id="cashflows-tab" class="tab-pane fade in">
