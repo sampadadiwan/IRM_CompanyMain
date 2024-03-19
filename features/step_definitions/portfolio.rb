@@ -194,8 +194,10 @@ end
 Then('the aggregate portfolio investments must have cost of sold computed') do
   @fund.reload
   @fund.portfolio_investments.sells.each do |pi|
-    
-    pi.aggregate_portfolio_investment.cost_of_sold_cents.should == pi.aggregate_portfolio_investment.portfolio_investments.sells.sum(:cost_of_sold_cents)
+    api = pi.aggregate_portfolio_investment
+    puts "Cost: #{api.cost} = Bought Amount: #{api.bought_amount} - Cost of sold: #{api.cost_of_sold}"
+    api.cost_of_sold_cents.should == api.portfolio_investments.sells.sum(:cost_of_sold_cents)    
+    api.cost_cents.should == api.bought_amount_cents + api.cost_of_sold_cents
   end
 end
 
