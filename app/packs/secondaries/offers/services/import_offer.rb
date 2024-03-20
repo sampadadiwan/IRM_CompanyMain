@@ -26,8 +26,7 @@ class ImportOffer < ImportUtil
     else
 
       # Get the holding for which the offer is being made
-      holding = Holding.joins(:user).where("users.email=? and holdings.entity_id=?",
-                                           email, import_upload.entity_id).last
+      holding = Holding.joins(:user).where("users.email=? and holdings.entity_id=?", email, import_upload.entity_id).last
 
     end
     # Get the Secondary Sale
@@ -41,16 +40,13 @@ class ImportOffer < ImportUtil
       offer = Offer.find_or_initialize_by(entity_id: import_upload.entity_id, user_id: user.id, investor_id: holding.investor_id, secondary_sale_id: secondary_sale.id, PAN: user_data["Pan"])
 
       if update_only
-        raise "No offer found for update, for user with email #{email}, user_id #{user.id}, entity_id #{import_upload.entity_id}, secondary_sale_id #{secondary_sale.id}, PAN #{user_data['Pan']} " if offer.new_record?
+        raise "No offer found for update, for user with #{email}, secondary_sale_id #{secondary_sale.id}, #{user_data['Pan']} " if offer.new_record?
       else
         offer.holding_id = holding.id
       end
 
       offer.assign_attributes(address: user_data["Address"], city: user_data["City"],
-                              demat: user_data["Demat"], quantity: user_data["Offer Quantity"],
-                              bank_account_number: user_data["Bank Account"],
-                              ifsc_code: user_data["Ifsc Code"], final_price: secondary_sale.final_price,
-                              import_upload_id: import_upload.id, full_name:)
+                              demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"], final_price: secondary_sale.final_price, import_upload_id: import_upload.id, full_name:)
 
       setup_custom_fields(user_data, offer, custom_field_headers)
 
