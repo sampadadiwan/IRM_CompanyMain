@@ -41,7 +41,6 @@ class OfferSpaGenerator
 
     context.store  :secondary_sale, offer.secondary_sale
     context.store  :interest, offer.interest
-    context.store  :interest_investor, offer.interest.investor
 
     amount_in_words = offer.entity.currency == "INR" ? offer.allocation_amount.to_i.rupees.humanize : offer.allocation_amount.to_i.to_words.humanize
     context.store :offer_allocation_amount_words, amount_in_words

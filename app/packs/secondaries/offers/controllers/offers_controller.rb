@@ -81,9 +81,9 @@ class OffersController < ApplicationController
   end
 
   def approve
-    result = OfferApprove.call(offer: @offer, current_user:)
+    result = OfferApprove.wtf?(offer: @offer, current_user:)
     label = result[:label]
-    notice = result.success? ? "Offer was successfully #{label}." : "Error: #{result.errors.full_messages}"
+    notice = result.success? ? "Offer was successfully #{label}." : "Error: #{result[:errors]}"
     respond_to do |format|
       format.html { redirect_to offer_url(@offer), notice: }
       format.json { @offer.to_json }
