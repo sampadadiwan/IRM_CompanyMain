@@ -42,13 +42,10 @@ class ImportOffer < ImportUtil
 
       raise "No offer found for update, for user with email #{email}" if update_only && offer.new_record?
 
-      offer.assign_attributes(address: user_data["Address"],
-                              city: user_data["City"],
-                              demat: user_data["Demat"],
-                              quantity: user_data["Offer Quantity"],
+      offer.assign_attributes(address: user_data["Address"], city: user_data["City"],
+                              demat: user_data["Demat"], quantity: user_data["Offer Quantity"],
                               bank_account_number: user_data["Bank Account"],
-                              ifsc_code: user_data["Ifsc Code"],
-                              final_price: secondary_sale.final_price,
+                              ifsc_code: user_data["Ifsc Code"], final_price: secondary_sale.final_price,
                               import_upload_id: import_upload.id, full_name:)
 
       setup_custom_fields(user_data, offer, custom_field_headers)

@@ -48,8 +48,7 @@
                     <%= form.text_field :secondary_sale_name, class: "form-control", disabled: true, value: offer.secondary_sale.name  %>
                     <%= form.text_field :secondary_sale_id, class: "form-control", hidden: true  %>
                     <%= form.text_field :holding_id, class: "form-control", hidden: true  %>
-                    <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
-                    <small class="text-muted"> Percentage of holdings authorized in this sale is <%= offer.secondary_sale.percent_allowed %>% </small>
+                    <%= form.text_field :investor_id, class: "form-control", hidden: true  %>                    
                 </div>
 
 
@@ -60,7 +59,6 @@
                     <% else %>
                         <%= form.number_field :quantity, class: "form-control", required: true, data: {action: "input->currencyformat#format"} %> 
                     <% end %>
-                    <small class="text-muted"><%= offer.secondary_sale.percent_allowed %>% of your <%=offer.total_holdings_quantity%> holdings is <%= offer.allowed_quantity %> units</small>
                 </div>
 
                 <div class="form-group">

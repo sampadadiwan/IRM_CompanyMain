@@ -35,7 +35,7 @@
 
     
     <div class="card shadow mb-4">
-        <%= render ToggleCard.new(title: "Entities", css_class: "show_inv_entities") do %>
+        <%= render ToggleCard.new(title: "Entities", css_class: "show_inv_entities", state: "") do %>
             <%= render "/entities/index",  
                 entities: policy_scope(Entity).where(entity_type: "Company"), vc_view: true %>
         <% end %>

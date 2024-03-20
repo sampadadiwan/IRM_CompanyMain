@@ -273,7 +273,6 @@ Then('when the offers are approved') do
     offer.granted_by_user_id = @user.id
     OfferApprove.wtf?(offer: offer, current_user: @user).success?.should == true
   end
-  binding.pry
 end
 
 Then('the sale offered quantity should be {string}') do |quantity|
