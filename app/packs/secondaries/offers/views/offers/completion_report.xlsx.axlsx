@@ -7,8 +7,8 @@ wb.add_worksheet(name: "Offers") do |sheet|
   # Create entries for each item
   @offers.includes(:user, :documents).find_each do |o|
     verified = o.verified ? 'Yes' : 'No'
-    sig = o.signature.present? ? 'Yes' : 'No'
-    pan = o.pan_card.present? ? 'Yes' : 'No'
+    sig = o.documents.any? { |d| d.name.include? "Signature" } ? 'Yes' : 'No'
+    pan = o.documents.any? { |d| d.name.include? "PAN" } ? 'Yes' : 'No'
     docs = o.documents.collect(&:name).join(", ")
     spa = o.final_agreement ? 'Yes' : 'No'
     sheet.add_row([o.id, o.user&.full_name, o.user&.email, o.user&.sign_in_count, verified, sig, pan, spa, docs])

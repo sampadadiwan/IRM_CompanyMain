@@ -67,12 +67,12 @@
                 <td><%= o.user&.sign_in_count %></td>
                 <td><%= display_boolean o.verified %></td>
                 <td>
-                    <%= display_boolean o.signature.present? %>
+                    <%= display_boolean (o.documents.any?{|d| d.name.include? "Signature"}) %>
                     <%= image_tag o.signature_url, 
                     style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if o.signature.present? %>
                 </td>
                 <td>
-                    <%= display_boolean o.pan_card.present? %>
+                    <%= display_boolean (o.documents.any?{|d| d.name.include? "PAN"}) %>
                     <%= link_to o.PAN, o.pan_card.url, target: "_blank" if o.pan_card.present? %>
                 </td>
                 <td>

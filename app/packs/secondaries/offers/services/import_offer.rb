@@ -1,5 +1,5 @@
 class ImportOffer < ImportUtil
-  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Last Name", "Address", "PAN", "Bank Account", "Ifsc Code", "Founder/Employee/Investor", "Investor", "Update Only"].freeze
+  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Last Name", "Address", "Pan", "Bank Account", "Ifsc Code", "Founder/Employee/Investor", "Investor", "Update Only"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -9,7 +9,7 @@ class ImportOffer < ImportUtil
     Rails.logger.debug { "Processing offer #{user_data}" }
 
     email = user_data["Email"]
-    update_only = user_data["Update Only"] == "Yes"    
+    update_only = user_data["Update Only"] == "Yes"
     user = User.find_by(email:)
     raise "User #{email} not found" unless user
 
@@ -40,17 +40,16 @@ class ImportOffer < ImportUtil
 
       offer = Offer.find_or_initialize_by(entity_id: import_upload.entity_id, user_id: user.id, investor_id: holding.investor_id, holding_id: holding.id, secondary_sale_id: secondary_sale.id, PAN: user_data["Pan"])
 
-
-      if update_only && offer.new_record? 
-        raise "No offer found for update, for user with email #{email}"
-      end
+      raise "No offer found for update, for user with email #{email}" if update_only && offer.new_record?
 
       offer.assign_attributes(address: user_data["Address"],
-                        city: user_data["City"],
-                        demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"],
-                        ifsc_code: user_data["Ifsc Code"],
-                        final_price: secondary_sale.final_price,
-                        import_upload_id: import_upload.id, full_name:)
+                              city: user_data["City"],
+                              demat: user_data["Demat"],
+                              quantity: user_data["Offer Quantity"],
+                              bank_account_number: user_data["Bank Account"],
+                              ifsc_code: user_data["Ifsc Code"],
+                              final_price: secondary_sale.final_price,
+                              import_upload_id: import_upload.id, full_name:)
 
       setup_custom_fields(user_data, offer, custom_field_headers)
 

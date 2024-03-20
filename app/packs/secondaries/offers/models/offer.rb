@@ -274,4 +274,18 @@ class Offer < ApplicationRecord
     users_no_investor
   end
   # rubocop:enable Rails/SkipsModelValidations
+
+  def self.copy_docs(from_sale, to_sale)
+    to_sale.offers.each do |to_offer|
+      from_offer = from_sale.offers.where(user_id: to_offer.user_id).last
+      next unless from_offer
+
+      doc = from_offer.documents.where("name like ?", "%cheque%").last
+      Document.find_or_create_by(name: doc.name, file_data: doc.file_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id) if doc
+
+      # Extract the PAN and signature
+      Document.find_or_create_by(name: "Signature", file_data: from_offer.signature_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id)
+      Document.find_or_create_by(name: "PAN", file_data: from_offer.pan_card_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id)
+    end
+  end
 end
