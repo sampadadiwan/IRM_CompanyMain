@@ -197,8 +197,8 @@ class User < ApplicationRecord
     entity.investor_advisors.where(user_id: id).first
   end
 
-  def send_magic_link
-    UserMailer.with(id:).magic_link.deliver_later
+  def send_magic_link(current_entity_id)
+    UserMailer.with(id:, current_entity_id:).magic_link.deliver_later
   end
 
   def show_all_cols?

@@ -29,7 +29,7 @@ class UsersController < ApplicationController
     @user = User.find_by(email: params[:user][:email]) if params[:user].present?
     @user ||= nil
     if @user.present?
-      @user.send_magic_link
+      @user.send_magic_link(params[:current_entity_id])
       redirect_to new_session_path(User, display_status: true), notice: "Login link sent, please check your mailbox."
     else
       redirect_to new_session_path(User), notice: "User not found. Please signup."
