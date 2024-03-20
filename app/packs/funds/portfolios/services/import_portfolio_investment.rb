@@ -43,7 +43,7 @@ class ImportPortfolioInvestment < ImportUtil
       Rails.logger.debug { "Saving PortfolioInvestment with name '#{portfolio_investment.portfolio_company_name}'" }
 
       result = PortfolioInvestmentCreate.call(portfolio_investment:)
-      raise result.errors.full_messages.join(", ") unless result.success?
+      raise result[:errors] unless result.success?
 
       result.success?
     else

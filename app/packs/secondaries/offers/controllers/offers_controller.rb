@@ -92,7 +92,7 @@ class OffersController < ApplicationController
 
   def accept_spa
     result = OfferAcceptSpa.call(offer: @offer, current_user:)
-    notice = result.success? ? "Offer was successfully updated. Your acceptance has been recorded" : "Error: #{result.errors.full_messages}"
+    notice = result.success? ? "Offer was successfully updated. Your acceptance has been recorded" : "Error: #{result[:errors]}"
     respond_to do |format|
       format.html { redirect_to offer_url(@offer, display_status: true), notice: }
       format.json { @offer.to_json }
