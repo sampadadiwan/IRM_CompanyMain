@@ -1,3 +1,4 @@
+<% @current_entity ||= nil %>
 <!-- Sidebar Start -->
     <aside class="left-sidebar with-vertical">
       <div><!-- ---------------------------------- -->
@@ -6,7 +7,7 @@
         <div class="brand-logo mt-2 align-items-center justify-content-between text-center">
           <div class="sidebar-brand-icon left-logo">
           <a href="/" class="text-nowrap logo-img">            
-             <% if current_user && current_user.entity.logo %>
+             <% if @current_entity && @current_entity.logo %>
               <%= image_tag image_url(current_user.entity.logo.url(expires_in: 60*60*24*7), class: "img-responsive") %>              
             <% else %>
               <img src="/img/logo-without-tagline.jpg" class="dark-logo" alt="Logo-Dark" />
