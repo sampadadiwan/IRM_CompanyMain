@@ -1,5 +1,5 @@
 class ImportOffer < ImportUtil
-  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Last Name", "Address", "PAN", "Bank Account", "Ifsc Code", "Founder/Employee/Investor", "Investor"].freeze
+  STANDARD_HEADERS = ["Email", "Offer Quantity", "First Name", "Last Name", "Address", "PAN", "Bank Account", "Ifsc Code", "Founder/Employee/Investor", "Investor", "Update Only"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -9,7 +9,7 @@ class ImportOffer < ImportUtil
     Rails.logger.debug { "Processing offer #{user_data}" }
 
     email = user_data["Email"]
-
+    update_only = user_data["Update Only"] == "Yes"    
     user = User.find_by(email:)
     raise "User #{email} not found" unless user
 
@@ -37,13 +37,20 @@ class ImportOffer < ImportUtil
     full_name = "#{user_data['First Name']} #{user_data['Last Name']}"
 
     if holding
-      offer = Offer.new(PAN: user_data["Pan"], address: user_data["Address"],
+
+      offer = Offer.find_or_initialize_by(entity_id: import_upload.entity_id, user_id: user.id, investor_id: holding.investor_id, holding_id: holding.id, secondary_sale_id: secondary_sale.id, PAN: user_data["Pan"])
+
+
+      if update_only && offer.new_record? 
+        raise "No offer found for update, for user with email #{email}"
+      end
+
+      offer.assign_attributes(address: user_data["Address"],
                         city: user_data["City"],
                         demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"],
                         ifsc_code: user_data["Ifsc Code"],
-                        holding:, secondary_sale:, final_price: secondary_sale.final_price,
-                        import_upload_id: import_upload.id,
-                        user:, investor: holding.investor, entity: holding.entity, full_name:)
+                        final_price: secondary_sale.final_price,
+                        import_upload_id: import_upload.id, full_name:)
 
       setup_custom_fields(user_data, offer, custom_field_headers)
 
