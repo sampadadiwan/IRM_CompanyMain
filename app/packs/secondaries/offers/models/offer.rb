@@ -275,6 +275,14 @@ class Offer < ApplicationRecord
   end
   # rubocop:enable Rails/SkipsModelValidations
 
+  def pan_card
+    documents.where("name like ?", "%PAN%").last&.file
+  end
+
+  def signature
+    documents.where("name like ?", "%Signature%").last&.file
+  end
+
   def self.copy_docs(from_sale, to_sale)
     to_sale.offers.each do |to_offer|
       from_offer = from_sale.offers.where(user_id: to_offer.user_id).last

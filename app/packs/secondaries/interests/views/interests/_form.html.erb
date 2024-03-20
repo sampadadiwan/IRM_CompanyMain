@@ -69,9 +69,8 @@
 
         <div class="form-group">
 
-          <%= render "layouts/single_upload", form: form, field_label: "Upload Signature Image", 
-                                  for_model: "interest", field_name: "signature", 
-                                  model: interest %>
+          <%= file_fields("Signature", interest, form) %>
+          <small class="form-text text-muted"></small>
       
         </div>
         

@@ -18,7 +18,6 @@ class Interest < ApplicationRecord
   has_noticed_notifications
 
   include FileUploader::Attachment(:spa)
-  include FileUploader::Attachment(:signature)
 
   has_rich_text :details
 
@@ -134,6 +133,10 @@ class Interest < ApplicationRecord
 
   def offer_amount
     Money.new(offer_quantity * final_price * 100, entity.currency)
+  end
+
+  def signature
+    documents.where("name like ?", "%Signature%").last&.file
   end
 
   def document_list

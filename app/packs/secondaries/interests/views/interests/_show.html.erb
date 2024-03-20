@@ -248,16 +248,6 @@
             </td>
           </tr>
 
-          <tr>
-            <td>
-              Signature
-            </td>
-            <td>
-              <%= image_tag interest.signature_url, 
-                style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if interest.signature.present? %>
-            </td>
-        </tr>
-
           
           <% if interest.secondary_sale.spa.present? || interest.spa.present? %>
 
