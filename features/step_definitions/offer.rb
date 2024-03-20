@@ -269,7 +269,6 @@ end
 Then('when the offers are approved') do  
   @sale.reload
   @sale.offers.each do |offer|
-    offer.approved = true
     offer.granted_by_user_id = @user.id
     OfferApprove.wtf?(offer: offer, current_user: @user).success?.should == true
   end

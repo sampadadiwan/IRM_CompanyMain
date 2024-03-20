@@ -42,9 +42,6 @@ class Offer < ApplicationRecord
   belongs_to :buyer, class_name: "Entity", optional: true
 
   # has_many :messages, as: :owner, dependent: :destroy
-
-  # include FileUploader::Attachment(:signature)
-  # include FileUploader::Attachment(:pan_card)
   include FileUploader::Attachment(:spa)
 
   serialize :pan_verification_response, type: Hash
