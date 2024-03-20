@@ -232,7 +232,7 @@
           </div>     
         </div>
 
-
+        <% if investor.entity.permissions.enable_kycs? %>
         <div id="kycs-tab" class="tab-pane fade">
           <div id="kycs" class="associated_entity">
           
@@ -240,6 +240,7 @@
 
           </div>     
         </div>
+        <% end %>
 
 
         <div id="commitments-tab" class="tab-pane fade in">
