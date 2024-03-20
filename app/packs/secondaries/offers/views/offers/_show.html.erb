@@ -182,18 +182,6 @@
 
         <tr>
           <td>
-            Pan Card
-          </td>
-          <td>
-            <%= link_to "Download Pan Card", @offer.pan_card_url, target: "_blank", class: "btn btn-outline-success" if @offer.pan_card.present? %>
-            <br>
-            <%= render "investor_kycs/pan_verification", model: @offer if current_user && !@offer.secondary_sale.disable_pan_kyc %>
-          </td>
-        </tr>
-
-
-        <tr>
-          <td>
             Demat
           </td>
           <td>
@@ -227,17 +215,6 @@
 
           <tr>
               <td colspan="2" class="bg-primary"></td>
-          </tr>
-
-
-          <tr>
-              <td>
-                Signature
-              </td>
-              <td>
-                <%= image_tag @offer.signature_url, 
-                  style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if @offer.signature.present? %>
-              </td>
           </tr>
 
       

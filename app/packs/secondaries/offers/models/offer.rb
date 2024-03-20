@@ -43,8 +43,8 @@ class Offer < ApplicationRecord
 
   # has_many :messages, as: :owner, dependent: :destroy
 
-  include FileUploader::Attachment(:signature)
-  include FileUploader::Attachment(:pan_card)
+  # include FileUploader::Attachment(:signature)
+  # include FileUploader::Attachment(:pan_card)
   include FileUploader::Attachment(:spa)
 
   serialize :pan_verification_response, type: Hash
