@@ -57,7 +57,7 @@ class OfferSpaGenerator
     additional_headers = []
     if offer.interest
       # Get any footers from the interest
-      additional_footers += offer.interest.documents.where(name: %w[Footer Signature])
+      additional_footers += offer.interest.documents.where(name: %w[Footer])
       additional_footers += offer.interest.documents.where(name: ["#{template_document.name} Footer", "#{template_document.name} Signature"])
       additional_headers += offer.interest.documents.where(name: ["Header", "Stamp Paper"])
       additional_headers += offer.interest.documents.where(name: ["#{template_document.name} Header", "#{template_document.name} Stamp Paper"])

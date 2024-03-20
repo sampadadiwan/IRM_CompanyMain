@@ -41,7 +41,7 @@ class ImportOffer < ImportUtil
       offer = Offer.find_or_initialize_by(entity_id: import_upload.entity_id, user_id: user.id, investor_id: holding.investor_id, secondary_sale_id: secondary_sale.id, PAN: user_data["Pan"])
 
       if update_only
-        raise "No offer found for update, for user with email #{email}, user_id #{user.id}, entity_id #{import_upload.entity_id}, secondary_sale_id #{secondary_sale.id}, PAN #{user_data["Pan"]} " if offer.new_record?
+        raise "No offer found for update, for user with email #{email}, user_id #{user.id}, entity_id #{import_upload.entity_id}, secondary_sale_id #{secondary_sale.id}, PAN #{user_data['Pan']} " if offer.new_record?
       else
         offer.holding_id = holding.id
       end

@@ -130,9 +130,7 @@ class Offer < ApplicationRecord
     already_offered = secondary_sale.offers.where(user_id: holding.user_id).sum(:quantity)
     Rails.logger.debug { "already_offered: #{already_offered}" }
 
-    unless self.new_record?
-      already_offered -= self.quantity_was
-    end
+    already_offered -= quantity_was unless new_record?
 
     total_offered_quantity = already_offered + quantity
     total_offered_quantity -= quantity_was unless new_record?
