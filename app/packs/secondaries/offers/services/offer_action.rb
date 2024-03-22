@@ -23,8 +23,8 @@ class OfferAction < Trailblazer::Operation
     true
   end
 
-  def generate_spa(_ctx, offer:, **)
-    offer.generate_spa if offer.verified # offer.final_agreement && offer.saved_change_to_final_agreement?
+  def generate_spa(ctx, offer:, **)
+    offer.generate_spa(ctx[:current_user]) if offer.verified # offer.final_agreement && offer.saved_change_to_final_agreement?
     true
   end
 

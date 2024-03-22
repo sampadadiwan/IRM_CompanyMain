@@ -1,5 +1,4 @@
 class FoldersController < ApplicationController
-  # prepend_view_path 'app/packs/core/folders/views'
   before_action :set_folder, only: %i[show edit update destroy download]
 
   # GET /folders or /folders.json

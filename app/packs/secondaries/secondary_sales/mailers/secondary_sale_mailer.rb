@@ -5,7 +5,7 @@ class SecondarySaleMailer < ApplicationMailer
   before_action :set_secondary_sale
   def set_secondary_sale
     @secondary_sale = SecondarySale.find(params[:secondary_sale_id])
-    @custom_notification = @secondary_sale.custom_notification(@notification.to_notification.email_method)
+    @custom_notification = @secondary_sale.custom_notification(@notification.params[:email_method])
   end
 
   def notify_open_for_interests

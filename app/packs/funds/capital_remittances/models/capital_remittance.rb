@@ -27,7 +27,7 @@ class CapitalRemittance < ApplicationRecord
   belongs_to :exchange_rate, optional: true
   has_many :capital_remittance_payments, dependent: :destroy
   has_many :fund_units, as: :owner, dependent: :destroy
-  has_noticed_notifications
+  has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   has_many :commitment_adjustments, as: :owner, dependent: :destroy
 
@@ -88,14 +88,14 @@ class CapitalRemittance < ApplicationRecord
     if capital_call.approved && !capital_call.manual_generation
       investor.approved_users.each do |user|
         email_method = reminder ? :reminder_capital_remittance : :notify_capital_remittance
-        CapitalRemittanceNotification.with(entity_id:, capital_remittance: self, email_method:).deliver_later(user)
+        CapitalRemittanceNotifier.with(entity_id:, capital_remittance: self, email_method:).deliver_later(user)
       end
     end
   end
 
   def payment_received_notification
     investor.approved_users.each do |user|
-      CapitalRemittanceNotification.with(entity_id:, capital_remittance: self, email_method: :payment_received).deliver_later(user)
+      CapitalRemittanceNotifier.with(entity_id:, capital_remittance: self, email_method: :payment_received).deliver_later(user)
     end
   end
 

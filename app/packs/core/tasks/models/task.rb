@@ -8,7 +8,7 @@ class Task < ApplicationRecord
   belongs_to :assigned_to, class_name: "User", optional: true
   belongs_to :owner, polymorphic: true, optional: true
 
-  has_noticed_notifications
+  has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   validates :details, presence: true, length: { maximum: 255 }
   validates :tags, length: { maximum: 50 }
@@ -27,7 +27,7 @@ class Task < ApplicationRecord
     users << user if response.blank?
     users << assigned_to if assigned_to
     users.uniq.each do |u|
-      TaskNotification.with(entity_id:, task: self).deliver_later(u)
+      TaskNotifier.with(entity_id:, task: self).deliver_later(u)
     end
   end
 end

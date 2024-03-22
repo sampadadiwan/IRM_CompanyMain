@@ -1,7 +1,7 @@
 class Reminder < ApplicationRecord
   belongs_to :entity
   belongs_to :owner, polymorphic: true
-  has_noticed_notifications
+  has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   NESTED_ATTRIBUTES = %i[id note due_date email _destroy].freeze
 
@@ -14,7 +14,7 @@ class Reminder < ApplicationRecord
   def send_reminder
     email.split(",").each do |user_email|
       user = User.find_by(email: user_email.strip)
-      ReminderNotification.with(entity_id:, reminder: self).deliver_later(user) if user
+      ReminderNotifier.with(entity_id:, reminder: self).deliver_later(user) if user
     end
   end
 end

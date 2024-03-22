@@ -40,9 +40,9 @@ class DocumentsBulkActionJob < BulkActionJob
 
       if document.notification_users.present?
         document.notification_users.each do |user|
-          DocumentNotification.with(entity_id: document.entity_id,
-                                    document:, email_method: "send_commitment_agreement",
-                                    custom_notification_for: "Commitment Agreement").deliver(user)
+          DocumentNotifier.with(entity_id: document.entity_id,
+                                document:, email_method: "send_commitment_agreement",
+                                custom_notification_for: "Commitment Agreement").deliver(user)
         rescue Exception => e
           msg = "Error sending #{document.name} to #{user.email} #{e.message}"
           set_error(msg, document, user_id)

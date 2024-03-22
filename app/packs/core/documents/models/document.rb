@@ -28,7 +28,7 @@ class Document < ApplicationRecord
   belongs_to :from_template, class_name: "Document", optional: true
 
   belongs_to :owner, polymorphic: true, optional: true, touch: true
-  has_noticed_notifications
+  has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   NESTED_ATTRIBUTES = %i[id name file tags owner_tag user_id entity_id orignal send_email].freeze
   counter_culture :entity
@@ -110,7 +110,7 @@ class Document < ApplicationRecord
 
   def send_notification_for_owner
     notification_users.each do |user|
-      DocumentNotification.with(entity_id:, document: self).deliver_later(user)
+      DocumentNotifier.with(entity_id:, document: self).deliver_later(user)
     end
   end
 

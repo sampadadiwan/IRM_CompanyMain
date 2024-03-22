@@ -4,15 +4,17 @@ class ApplicationMailer < ActionMailer::Base
 
   after_deliver :mark_delivered
   def mark_delivered
-    # Lets update the notification to say we have sent the email with details
-    # This is because if we have attachments, then we only want to body which is in mail.parts[0]
     begin
+      # Lets update the notification to say we have sent the email with details
+      # This is because if we have attachments, then we only want to body which is in mail.parts[0]
+
       db_mail_body = mail&.parts.present? ? mail.parts[0] : mail
     rescue StandardError
       db_mail_body = mail
     end
+
     # rubocop:disable Rails/SkipsModelValidations
-    @notification&.update_columns(email_sent: true, email: { to: @to, from: @from, cc: @cc, reply_to: @reply_to, params:, mail: db_mail_body }.to_json) # parts[0] cause this is the actual email, attachments etc are not stored.
+    @notification&.update_columns(email: { email: { to: @to, from: @from, cc: @cc, reply_to: @reply_to, params:, mail: db_mail_body } }, email_sent: true)
     # rubocop:enable Rails/SkipsModelValidations
   end
 
@@ -21,7 +23,7 @@ class ApplicationMailer < ActionMailer::Base
   before_action :setup_defaults
   def setup_defaults
     # Set the notification if this email was triggered by a notification, used in mark_delivered()
-    @notification = Notification.find(params[:notification_id]) if params[:notification_id]
+    @notification = Noticed::Notification.find(params[:notification_id]) if params[:notification_id]
 
     # Set the entity and user
     @entity = Entity.find(params[:entity_id]) if params[:entity_id]

@@ -23,7 +23,7 @@ class InvestorKyc < ApplicationRecord
   has_many :account_entries, through: :capital_commitments
   has_many :fund_units, through: :capital_commitments
 
-  has_noticed_notifications
+  has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   has_many :aml_reports, dependent: :destroy
   has_many :kyc_datas, dependent: :destroy
@@ -67,7 +67,7 @@ class InvestorKyc < ApplicationRecord
 
   # Note this rollups work only where Fund and Entity currency are the same.
   monetize :committed_amount_cents, :collected_amount_cents, :agreement_committed_amount_cents,
-           :call_amount_cents, :distribution_amount_cents, :uncalled_amount_cents,
+           :call_amount_cents, :distribution_amount_cents, :uncalled_amount_cents, :other_fee_cents,
            with_currency: ->(i) { i.entity.currency }
 
   # Should be called only from SendKycFormJob
@@ -81,7 +81,7 @@ class InvestorKyc < ApplicationRecord
         msg = "Reminder to kindly update your KYC details for #{entity.name} by clicking on the button below."
       end
       investor.approved_users.each do |user|
-        InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method:, msg:, user_id: user.id).deliver_later(user)
+        InvestorKycNotifier.with(entity_id:, investor_kyc: self, email_method:, msg:, user_id: user.id).deliver_later(user)
       end
       # rubocop:disable Rails/SkipsModelValidations
       update_column(:send_kyc_form_to_user, false)
@@ -92,7 +92,7 @@ class InvestorKyc < ApplicationRecord
   def updated_notification(msg: nil)
     msg ||= "KYC updated for #{full_name}"
     entity.employees.each do |user|
-      InvestorKycNotification.with(entity_id:, investor_kyc: self, email_method: "notify_kyc_updated", msg:, user_id: user.id).deliver_later(user) unless user.investor_advisor?
+      InvestorKycNotifier.with(entity_id:, investor_kyc: self, email_method: "notify_kyc_updated", msg:, user_id: user.id).deliver_later(user) unless user.investor_advisor?
     end
   end
 
@@ -104,7 +104,7 @@ class InvestorKyc < ApplicationRecord
   end
 
   def due_amount
-    custom_committed_amount - collected_amount
+    call_amount - collected_amount + other_fee
   end
 
   def uncalled_amount

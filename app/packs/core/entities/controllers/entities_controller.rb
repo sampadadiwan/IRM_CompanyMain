@@ -1,5 +1,4 @@
 class EntitiesController < ApplicationController
-  # prepend_view_path 'app/packs/core/entities/views'
   before_action :set_entity, only: %w[show update destroy edit report kpi_reminder]
   after_action :verify_authorized, except: %i[dashboard search index investor_entities delete_attachment]
 

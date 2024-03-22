@@ -5,7 +5,7 @@ class ApprovalResponse < ApplicationRecord
   belongs_to :response_entity, class_name: "Entity"
   belongs_to :response_user, class_name: "User", optional: true
   belongs_to :approval, touch: true
-  has_noticed_notifications
+  has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   has_rich_text :details
 
@@ -35,13 +35,13 @@ class ApprovalResponse < ApplicationRecord
       if status == "Pending"
         investor.approved_users.each do |user|
           email_method = reminder ? :approval_reminder : :notify_new_approval
-          ApprovalNotification.with(entity_id:, approval_response: self, email_method:).deliver_later(user) unless notification_sent
+          ApprovalNotifier.with(entity_id:, approval_response: self, email_method:).deliver_later(user) unless notification_sent
         end
       else
         msg = "Your response for Approval #{approval.title} has been registered as #{status}"
         # msg = "#{approval.entity.name} : #{status} for #{approval.title}"
         investor.approved_users.each do |user|
-          ApprovalNotification.with(entity_id:, approval_response: self, email_method: :notify_approval_response, msg:).deliver_later(user)
+          ApprovalNotifier.with(entity_id:, approval_response: self, email_method: :notify_approval_response, msg:).deliver_later(user)
         end
       end
 

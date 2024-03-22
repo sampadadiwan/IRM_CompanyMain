@@ -1,8 +1,8 @@
 module DeliveryMethods
-  class WhatsApp < Noticed::DeliveryMethods::Base
+  class WhatsApp < Noticed::DeliveryMethod
     def deliver
       # Get the entity name sending the msg
-      entity = notification.record.entity
+      entity = notification.event.entity
 
       if notification.recipient.whatsapp_enabled && entity.permissions.enable_whatsapp?
 
@@ -22,12 +22,5 @@ module DeliveryMethods
         Rails.logger.info "WhatsApp not enabled for #{notification.recipient.phone} and entity #{entity.name}"
       end
     end
-
-    # You may override this method to validate options for the delivery method
-    # Invalid options should raise a ValidationError
-    #
-    # def self.validate!(options)
-    #   raise ValidationError, "required_option missing" unless options[:required_option]
-    # end
   end
 end

@@ -10,7 +10,7 @@ class Excercise < ApplicationRecord
   has_one :created_holding, foreign_key: :created_from_excercise_id, class_name: "Holding", dependent: :destroy
   belongs_to :user
   belongs_to :option_pool
-  has_noticed_notifications
+  has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   include FileUploader::Attachment(:payment_proof)
 
@@ -56,14 +56,14 @@ class Excercise < ApplicationRecord
 
   def notify_excercise
     if cashless
-      ExcerciseNotification.with(entity_id:, excercise: self, email_method: :notify_cashless_excercise, msg: "Cashless Exercise of Option").deliver_later(user)
+      ExcerciseNotifier.with(entity_id:, excercise: self, email_method: :notify_cashless_excercise, msg: "Cashless Exercise of Option").deliver_later(user)
     else
-      ExcerciseNotification.with(entity_id:, excercise: self, email_method: :notify_excercise, msg: "Exercise of Option").deliver_later(user)
+      ExcerciseNotifier.with(entity_id:, excercise: self, email_method: :notify_excercise, msg: "Exercise of Option").deliver_later(user)
     end
   end
 
   def notify_approval
-    ExcerciseNotification.with(entity_id:, excercise: self, email_method: :notify_approval, msg: "Exercise of Option Approved").deliver_later(user)
+    ExcerciseNotifier.with(entity_id:, excercise: self, email_method: :notify_approval, msg: "Exercise of Option Approved").deliver_later(user)
   end
 
   def folder_path

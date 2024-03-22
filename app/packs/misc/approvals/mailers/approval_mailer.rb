@@ -5,7 +5,7 @@ class ApprovalMailer < ApplicationMailer
   def set_approval
     @approval_response = ApprovalResponse.find params[:approval_response_id]
     @approval = @approval_response.approval
-    @custom_notification = @approval.custom_notification(@notification.to_notification.email_method)
+    @custom_notification = @approval.custom_notification(@notification.params[:email_method])
   end
 
   def notify_new_approval

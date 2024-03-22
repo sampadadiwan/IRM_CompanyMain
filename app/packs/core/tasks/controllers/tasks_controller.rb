@@ -1,6 +1,4 @@
 class TasksController < ApplicationController
-  # prepend_view_path 'app/packs/core/tasks/views'
-
   before_action :set_task, only: %i[show edit update destroy completed]
   after_action :verify_authorized, except: %i[index search]
   after_action :verify_policy_scoped, only: []

@@ -1,9 +1,12 @@
 <tr id="<%= dom_id notification %>">
   <td class="hideMobP">
-    <%= notification.type %>
+    <%= notification.recipient %>
+  </td>
+  <td class="hideMobP">
+    <%= notification.recipient.email %>
   </td>
   <td>
-    <%= link_to notification.params[:msg].html_safe, notification if notification.params[:msg] %>
+    <%= link_to notification.params[:msg].html_safe, notification_path(id: notification.id) if notification.params[:msg] %>
   </td>
   <td class="hideMobP">
     <%= l notification.created_at %>
@@ -18,8 +21,8 @@
     <%= display_boolean notification.whatsapp_sent %>
   </td>
   <td>
-    <% if policy(notification).mark_as_read? %>          
-      <%= link_to "Show", notification , {class: "btn btn-outline-primary"}%>
+    <% if Noticed::NotificationPolicy.new(current_user, notification).mark_as_read? %>          
+      <%= link_to "Show", notification_path(id: notification.id) , {class: "btn btn-outline-primary"}%>
       <%= link_to "Mark As Read", mark_as_read_notification_path(notification, mark: :read) , {class: "btn btn-outline-success"} if notification.unread? %>
       <%= link_to "Mark As UnRead", mark_as_read_notification_path(notification, mark: :unread) , {class: "btn btn-outline-warning"} if notification.read? %>
     <% end %>

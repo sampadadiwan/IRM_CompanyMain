@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_03_18_143634) do
+ActiveRecord::Schema[7.1].define(version: 2024_03_22_064222) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1863,6 +1863,17 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_18_143634) do
     t.index ["standard_kpi_name"], name: "index_investor_kpi_mappings_on_standard_kpi_name"
   end
 
+  create_table "investor_kyc_sebi_datas", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "investor_category"
+    t.string "investor_sub_category"
+    t.bigint "investor_kyc_id", null: false
+    t.bigint "entity_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_investor_kyc_sebi_datas_on_entity_id"
+    t.index ["investor_kyc_id"], name: "index_investor_kyc_sebi_datas_on_investor_kyc_id"
+  end
+
   create_table "investor_kycs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "investor_id", null: false
     t.bigint "entity_id", null: false
@@ -1912,6 +1923,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_18_143634) do
     t.bigint "import_upload_id"
     t.bigint "investor_user_id"
     t.datetime "investor_user_updated_at"
+    t.decimal "other_fee_cents", precision: 12, scale: 2, default: "0.0"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
     t.index ["entity_id"], name: "index_investor_kycs_on_entity_id"
@@ -1965,17 +1977,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_18_143634) do
     t.string "category", limit: 30
     t.index ["entity_id"], name: "index_investor_notices_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_investor_notices_on_owner"
-  end
-
-  create_table "investor_sebi_infos", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.string "investor_category"
-    t.string "investor_sub_category"
-    t.bigint "entity_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.bigint "investor_kyc_id", null: false
-    t.index ["entity_id"], name: "index_investor_sebi_infos_on_entity_id"
-    t.index ["investor_kyc_id"], name: "index_investor_sebi_infos_on_investor_kyc_id"
   end
 
   create_table "investors", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2093,6 +2094,36 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_18_143634) do
     t.index ["entity_id"], name: "index_notes_on_entity_id"
     t.index ["investor_id"], name: "index_notes_on_investor_id"
     t.index ["user_id"], name: "index_notes_on_user_id"
+  end
+
+  create_table "noticed_events", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "type"
+    t.string "record_type"
+    t.bigint "record_id"
+    t.json "params"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "notifications_count"
+    t.virtual "entity_id", type: :bigint, as: "json_extract(`params`,_utf8mb4'$.entity_id')"
+    t.index ["entity_id"], name: "index_noticed_events_on_entity_id"
+    t.index ["record_type", "record_id"], name: "index_noticed_events_on_record"
+  end
+
+  create_table "noticed_notifications", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "type"
+    t.bigint "event_id", null: false
+    t.string "recipient_type", null: false
+    t.bigint "recipient_id", null: false
+    t.datetime "read_at", precision: nil
+    t.datetime "seen_at", precision: nil
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "email_sent", default: false
+    t.json "email"
+    t.boolean "whatsapp_sent", default: false
+    t.text "whatsapp"
+    t.index ["event_id"], name: "index_noticed_notifications_on_event_id"
+    t.index ["recipient_type", "recipient_id"], name: "index_noticed_notifications_on_recipient"
   end
 
   create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2995,6 +3026,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_18_143634) do
   add_foreign_key "investor_advisors", "users"
   add_foreign_key "investor_kpi_mappings", "entities"
   add_foreign_key "investor_kpi_mappings", "investors"
+  add_foreign_key "investor_kyc_sebi_datas", "entities"
+  add_foreign_key "investor_kyc_sebi_datas", "investor_kycs"
   add_foreign_key "investor_kycs", "entities"
   add_foreign_key "investor_kycs", "folders", column: "document_folder_id"
   add_foreign_key "investor_kycs", "form_types"
@@ -3008,7 +3041,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_18_143634) do
   add_foreign_key "investor_notice_items", "entities"
   add_foreign_key "investor_notice_items", "investor_notices"
   add_foreign_key "investor_notices", "entities"
-  add_foreign_key "investor_sebi_infos", "entities"
   add_foreign_key "investors", "folders", column: "document_folder_id"
   add_foreign_key "investors", "form_types"
   add_foreign_key "kpi_reports", "entities"

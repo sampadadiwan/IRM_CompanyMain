@@ -4,7 +4,7 @@ class DocumentMailer < ApplicationMailer
   before_action :set_document
   def set_document
     @document = Document.find params[:document_id]
-    @custom_notification = @document.entity.custom_notification(@notification.to_notification.email_method)
+    @custom_notification = @document.entity.custom_notification(@notification.params[:email_method])
   end
 
   def notify_new_document

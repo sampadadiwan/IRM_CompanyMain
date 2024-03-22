@@ -15,7 +15,7 @@ class KycReminderJob < ApplicationJob
                       end
 
       investor_kycs.each do |investor_kyc|
-        InvestorKycNotification.with(entity_id: investor_kyc.entity_id, investor_kyc:, user_id: @user.id).notify_kyc_required_inv_kyc.deliver_later(@user)
+        InvestorKycNotifier.with(entity_id: investor_kyc.entity_id, investor_kyc:, user_id: @user.id).notify_kyc_required_inv_kyc.deliver_later(@user)
       end
     end
   end

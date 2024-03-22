@@ -22,7 +22,7 @@ class CapitalDistributionPayment < ApplicationRecord
   belongs_to :investor
   belongs_to :capital_commitment
   has_one :investor_kyc, through: :capital_commitment
-  has_noticed_notifications
+  has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   # Note that cost_of_investment_cents is Face value for redemption
   monetize :folio_amount_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }
@@ -96,7 +96,7 @@ class CapitalDistributionPayment < ApplicationRecord
   def send_notification
     if saved_change_to_completed? && capital_distribution.approved && !capital_distribution.manual_generation
       investor.approved_users.each do |user|
-        CapitalDistributionPaymentNotification.with(entity_id:, capital_distribution_payment: self).deliver_later(user)
+        CapitalDistributionPaymentNotifier.with(entity_id:, capital_distribution_payment: self).deliver_later(user)
       end
     end
   end

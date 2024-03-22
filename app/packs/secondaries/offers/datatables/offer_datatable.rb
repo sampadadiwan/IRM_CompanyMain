@@ -13,6 +13,8 @@ class OfferDatatable < AjaxDatatablesRails::ActiveRecord
       notes: { source: "Offer.notes", searchable: false },
       approved: { source: "Offer.approved", searchable: false },
       verified: { source: "Offer.verified", searchable: false },
+      created_at: { source: "Offer.created_at", searchable: false },
+      updated_at: { source: "Offer.updated_at", searchable: false },
       dt_actions: { source: "", orderable: false, searchable: false }
     }
   end
@@ -32,6 +34,8 @@ class OfferDatatable < AjaxDatatablesRails::ActiveRecord
         notes: record.notes,
         approved: record.decorate.display_boolean(record.approved),
         verified: record.decorate.display_boolean(record.verified),
+        created_at: record.decorate.display_date(record.created_at),
+        updated_at: record.decorate.display_date(record.updated_at),
         dt_actions: record.decorate.dt_actions,
         DT_RowId: "offer_#{record.id}" # This will automagically set the id attribute on the corresponding <tr> in the datatable
       }

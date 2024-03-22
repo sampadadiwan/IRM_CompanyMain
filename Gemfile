@@ -16,7 +16,7 @@ gem 'enumerize'
 gem "json2table"
 gem 'mail-logger'
 gem "mysql2", "~> 0.5"
-gem "noticed"
+gem "noticed", git: "https://github.com/ausangshukla/noticed.git"
 gem 'trailblazer'
 gem 'yajl-ruby', require: 'yajl'
 # To convert Doc into PDF

@@ -1,5 +1,4 @@
 class NotesController < ApplicationController
-  # prepend_view_path 'app/packs/core/notes/views'
   before_action :set_note, only: %w[show update destroy edit]
 
   # GET /notes or /notes.json

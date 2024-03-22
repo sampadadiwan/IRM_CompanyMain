@@ -13,7 +13,8 @@ class InvestmentOpportunity < ApplicationRecord
   has_many :ci_track_records, dependent: :destroy
   has_many :ci_widgets, dependent: :destroy
 
-  has_noticed_notifications
+  has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
+
   has_rich_text :details
 
   validates :company_name, :fund_raise_amount_cents, :min_ticket_size_cents,
@@ -58,7 +59,7 @@ class InvestmentOpportunity < ApplicationRecord
   def notify_open_for_interests
     investors.each do |investor|
       investor.approved_users.each do |user|
-        InvestmentOpportunityNotification.with(entity_id:, investment_opportunity: self, email_method: :notify_open_for_interests, msg: "New Investment Opportunity: #{name}").deliver_later(user)
+        InvestmentOpportunityNotifier.with(entity_id:, investment_opportunity: self, email_method: :notify_open_for_interests, msg: "New Investment Opportunity: #{name}").deliver_later(user)
       end
     end
   end
@@ -66,7 +67,7 @@ class InvestmentOpportunity < ApplicationRecord
   def notify_allocation
     investors.each do |investor|
       investor.approved_users.each do |user|
-        InvestmentOpportunityNotification.with(entity_id:, investment_opportunity: self, email_method: :notify_allocation, msg: "Allocation completed for Investment Opportunity: #{name}").deliver_later(user)
+        InvestmentOpportunityNotifier.with(entity_id:, investment_opportunity: self, email_method: :notify_allocation, msg: "Allocation completed for Investment Opportunity: #{name}").deliver_later(user)
       end
     end
   end

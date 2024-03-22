@@ -76,6 +76,13 @@ module CapitalRemittanceCounters
                                                          },
                                                          execute_after_commit: true
 
+    counter_culture %i[capital_commitment investor_kyc], column_name: proc { |r| r.verified ? 'other_fee_cents' : nil },
+                                                         delta_column: 'other_fee_cents',
+                                                         column_names: {
+                                                           ["capital_remittances.verified = ?", true] => 'other_fee_cents'
+                                                         },
+                                                         execute_after_commit: true
+
     counter_culture :fund, column_name:
                           proc { |r| r.verified && r.capital_commitment.Pool? ? 'collected_amount_cents' : nil },
                            delta_column: 'collected_amount_cents',

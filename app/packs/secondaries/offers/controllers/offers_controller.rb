@@ -184,6 +184,9 @@ class OffersController < ApplicationController
   def set_offer
     @offer = Offer.find(params[:id])
     authorize @offer
+    @bread_crumbs = { Secondaries: secondary_sales_path,
+                      "#{@offer.secondary_sale.name}": offers_secondary_sale_path(@offer.secondary_sale),
+                      "#{@offer}": nil }
   end
 
   # Only allow a list of trusted parameters through.

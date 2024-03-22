@@ -190,6 +190,9 @@ class InterestsController < ApplicationController
   def set_interest
     @interest = Interest.find(params[:id])
     authorize @interest
+    @bread_crumbs = { Secondaries: secondary_sales_path,
+                      "#{@interest.secondary_sale.name}": secondary_sale_path(@interest.secondary_sale, tab: "interests-tab"),
+                      "#{@interest}": nil }
   end
 
   # Only allow a list of trusted parameters through.

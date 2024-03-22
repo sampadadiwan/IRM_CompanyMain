@@ -3,10 +3,10 @@ class NotificationsController < ApplicationController
 
   # GET /notifications or /notifications.json
   def index
-    @notifications = policy_scope(Notification).newest_first.page(params[:page])
+    @notifications = policy_scope(Noticed::Notification)
     # Filter by entity
     @notifications = if params[:entity_id].present?
-                       @notifications.where(entity_id: params[:entity_id])
+                       @notifications.joins(:event).where("JSON_UNQUOTE(JSON_EXTRACT(noticed_events.params, '$.entity_id')) = ?", params[:entity_id])
                      else
                        # Filter by user
                        @notifications.where(recipient_id: current_user.id, recipient_type: "User")
@@ -16,62 +16,26 @@ class NotificationsController < ApplicationController
 
     # Mark all as read
     if params[:mark_as_read].present? && params[:user_id].present?
-      @notifications.mark_as_read!
+      @notifications.mark_as_read
       current_user.touch # This is to bust the topbar cache which shows new notifications
     end
 
-    @notifications = @notifications.page(params[:page])
+    @notifications = @notifications.order(id: :desc).page(params[:page])
   end
 
   # GET /notifications/1 or /notifications/1.json
   def show
-    if policy(@notification).mark_as_read? && params[:debug].blank?
-      @notification.mark_as_read!
-      redirect_to @notification.to_notification.url, allow_other_host: true
+    if Noticed::NotificationPolicy.new(current_user, @notification).mark_as_read? && params[:debug].blank?
+      @notification.mark_as_read
+      redirect_to @notification.url, allow_other_host: true
     end
   end
 
   def mark_as_read
-    params[:mark] == "read" ? @notification.mark_as_read! : @notification.mark_as_unread!
+    params[:mark] == "read" ? @notification.mark_as_read : @notification.mark_as_unread
     respond_to do |format|
       format.html { redirect_to notifications_url, notice: "Notification was successfully marked as #{params[:mark]}." }
       format.json { head :no_content }
-    end
-  end
-
-  # GET /notifications/new
-  def new
-    @notification = Notification.new
-  end
-
-  # GET /notifications/1/edit
-  def edit; end
-
-  # POST /notifications or /notifications.json
-  def create
-    @notification = Notification.new(notification_params)
-
-    respond_to do |format|
-      if @notification.save
-        format.html { redirect_to notification_url(@notification), notice: "Notification was successfully created." }
-        format.json { render :show, status: :created, location: @notification }
-      else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @notification.errors, status: :unprocessable_entity }
-      end
-    end
-  end
-
-  # PATCH/PUT /notifications/1 or /notifications/1.json
-  def update
-    respond_to do |format|
-      if @notification.update(notification_params)
-        format.html { redirect_to notification_url(@notification), notice: "Notification was successfully updated." }
-        format.json { render :show, status: :ok, location: @notification }
-      else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @notification.errors, status: :unprocessable_entity }
-      end
     end
   end
 
@@ -89,8 +53,8 @@ class NotificationsController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_notification
-    @notification = Notification.find(params[:id])
-    authorize @notification
+    @notification = Noticed::Notification.find(params[:id])
+    authorize @notification, policy_class: Noticed::NotificationPolicy
   end
 
   # Only allow a list of trusted parameters through.

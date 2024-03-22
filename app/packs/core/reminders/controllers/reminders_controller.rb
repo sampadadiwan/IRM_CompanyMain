@@ -1,5 +1,4 @@
 class RemindersController < ApplicationController
-  # prepend_view_path 'app/packs/core/reminders/views'
   before_action :set_reminder, only: %i[show edit update destroy]
 
   # GET /reminders or /reminders.json

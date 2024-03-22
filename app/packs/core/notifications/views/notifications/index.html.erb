@@ -27,7 +27,10 @@
     <thead>
       <tr>
         <th class="hideMobP">
-          Type
+          Recipient
+        </th>
+        <th class="hideMobP">
+          Email
         </th>
         <th>
           Notification
@@ -52,7 +55,6 @@
     <tbody>
       <% @notifications.each do |notification| %>
         <% begin %>
-          <%#  notification = notification.to_notification %>
           <%= render "notifications/notification", notification: notification if notification.params[:msg].present? %>
         <%# rescue %>
         <% end %>

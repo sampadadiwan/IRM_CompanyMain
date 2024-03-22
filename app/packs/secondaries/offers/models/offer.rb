@@ -5,8 +5,8 @@ class Offer < ApplicationRecord
   include WithCustomField
   include ForInvestor
 
-  STANDARD_COLUMN_NAMES = ["User", "Investor", "Quantity", "Allocation Quantity", "Allocation %", "Price", "Allocation Amount", "Notes", "Approved", "Verified", " "].freeze
-  STANDARD_COLUMN_FIELDS = %w[user investor_name quantity allocation_quantity allocation_percentage final_price allocation_amount notes approved verified dt_actions].freeze
+  STANDARD_COLUMN_NAMES = ["User", "Investor", "Quantity", "Allocation Quantity", "Allocation %", "Price", "Allocation Amount", "Approved", "Verified", "Updated At", " "].freeze
+  STANDARD_COLUMN_FIELDS = %w[user investor_name quantity allocation_quantity allocation_percentage final_price allocation_amount approved verified updated_at dt_actions].freeze
 
   INVESTOR_COLUMN_NAMES = ["Quantity", "Allocation Quantity", "Allocation %", "Price", "Allocation Amount", "Approved", "Verified", " "].freeze
   INVESTOR_COLUMN_FIELDS = %w[quantity allocation_quantity allocation_percentage final_price allocation_amount approved verified dt_actions].freeze
@@ -150,11 +150,11 @@ class Offer < ApplicationRecord
   end
 
   def notify_approval
-    OfferNotification.with(entity_id:, offer: self, email_method: :notify_approval, msg: "Offer for #{secondary_sale.name} has been approved").deliver_later(user) unless secondary_sale.no_offer_emails
+    OfferNotifier.with(entity_id:, offer: self, email_method: :notify_approval, msg: "Offer for #{secondary_sale.name} has been approved").deliver_later(user) unless secondary_sale.no_offer_emails
   end
 
   def notify_accept_spa
-    OfferNotification.with(entity_id:, offer: self, email_method: :notify_accept_spa, msg: "SPA confirmation received for #{secondary_sale.name}").deliver_later(user) unless secondary_sale.no_offer_emails
+    OfferNotifier.with(entity_id:, offer: self, email_method: :notify_accept_spa, msg: "SPA confirmation received for #{secondary_sale.name}").deliver_later(user) unless secondary_sale.no_offer_emails
   end
 
   def folder_path
@@ -173,8 +173,8 @@ class Offer < ApplicationRecord
     VerifyOfferBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
   end
 
-  def generate_spa
-    OfferSpaJob.perform_later(id) if saved_change_to_verified? && verified
+  def generate_spa(user = nil)
+    OfferSpaJob.perform_later(id, user_id: user&.id) if saved_change_to_verified? && verified
   end
 
   def compute_fees(fees)
@@ -283,6 +283,10 @@ class Offer < ApplicationRecord
 
   def signature
     documents.where("name like ?", "%Signature%").last&.file
+  end
+
+  def to_s
+    "Offer: #{user}"
   end
 
   def self.copy_docs(from_sale, to_sale)

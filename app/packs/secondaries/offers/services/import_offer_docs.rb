@@ -1,6 +1,6 @@
 class ImportOfferDocs < ImportUtil
   STANDARD_HEADERS = ["Id", "User", "Email", "Folder", "Document Name", "File Name",
-                      "Tags", "Send Email"].freeze
+                      "Tags", "Send Email", "Orignal Format"].freeze
   attr_accessor :commitments
 
   def standard_headers
@@ -41,6 +41,7 @@ class ImportOfferDocs < ImportUtil
     raise "Offer #{user_data['Id']} not found" unless offer
 
     send_email = user_data["Send Email"] == "Yes"
+    orignal = user_data["Orignal Format"] == "Yes"
     file_name = "#{context[:unzip_dir]}/#{user_data['File Name']}"
 
     if offer
@@ -54,7 +55,7 @@ class ImportOfferDocs < ImportUtil
         folder = offer.document_folder.children.where(name: folder, entity_id: offer.entity_id).first_or_create if folder
         # Create the document
         doc = Document.new(owner: offer, entity_id: offer.entity_id, folder:,
-                           import_upload_id: import_upload.id,
+                           import_upload_id: import_upload.id, orignal:,
                            name: user_data["Document Name"], tag_list: user_data["Tags"],
                            user_id: import_upload.user_id, send_email:)
 

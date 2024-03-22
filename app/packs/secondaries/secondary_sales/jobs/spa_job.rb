@@ -1,7 +1,7 @@
 class SpaJob < ApplicationJob
   queue_as :default
 
-  def perform(secondary_sale_id)
+  def perform(secondary_sale_id, user_id: nil)
     Chewy.strategy(:sidekiq) do
       # Counters
       succeeded = 0
@@ -19,6 +19,7 @@ class SpaJob < ApplicationJob
         secondary_sale.offers.verified.each do |offer|
           OfferSpaGenerator.new(offer, master_spa_path)
           succeeded += 1
+          send_notification("SPA generated for user #{offer.user}, Offer Id #{offer.id}", user_id, "success") if user_id.present?
         rescue StandardError => e
           logger.error "Error creating offer SPA for offer id #{offer.id}"
           logger.error e.backtrace
@@ -27,6 +28,7 @@ class SpaJob < ApplicationJob
             data: { message: "Error generating SPA for offer #{offer.id}" }
           )
           failed += 1
+          send_notification("SPA failed for user #{offer.user}, Offer Id #{offer.id}", user_id, "danger") if user_id.present?
         end
 
         # cleanup
@@ -36,6 +38,7 @@ class SpaJob < ApplicationJob
       end
 
       logger.debug "SpaJob: succeeded #{succeeded}, failed #{failed}"
+      send_notification("SPA generated succeeded #{succeeded}, failed #{failed}", user_id, "success") if user_id.present?
     end
   end
 end

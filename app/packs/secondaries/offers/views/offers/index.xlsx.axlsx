@@ -4,7 +4,7 @@ form_type, custom_field_names, custom_headers = get_form_type("Offer")
 
 wb.add_worksheet(name: "Offers") do |sheet|
   # Create the header row
-  sheet.add_row(["Id", "User", "Email", "Seller", "Funding Round", "Quantity", "Holding %", "Allocation Quantity", "Allocation %", "Price", "Amount", "Approved", "Full Name", "Address", "PAN", "Pan Verified", "Bank Account", "IFSC Code", "Bank Account Verified", "SPA Accepted", "Buyer"] + custom_headers)
+  sheet.add_row(["Id", "User", "Email", "Seller", "Funding Round", "Quantity", "Holding %", "Allocation Quantity", "Allocation %", "Price", "Amount", "Approved", "Full Name", "Address", "PAN", "Pan Verified", "Bank Account", "IFSC Code", "Bank Account Verified", "SPA Accepted", "Buyer", "Created", "Updated"] + custom_headers)
 
   # Create entries for each item
   @offers.each do |o|
@@ -13,6 +13,6 @@ wb.add_worksheet(name: "Offers") do |sheet|
     investor_name = o.investor.investor_name
     interest = o.interest
 
-    sheet.add_row([o.id, o.user.full_name, o.user.email, investor_name, o.holding.funding_round.name, o.quantity, o.percentage, o.allocation_quantity, o.allocation_percentage, o.final_price, money_to_currency(o.allocation_amount, params), o.approved, o.full_name, o.address, o.PAN, o.pan_verified, o.bank_account_number, o.ifsc_code, o.bank_verified, o.final_agreement, interest&.buyer_entity_name] + custom_field_values)
+    sheet.add_row([o.id, o.user.full_name, o.user.email, investor_name, o.holding.funding_round.name, o.quantity, o.percentage, o.allocation_quantity, o.allocation_percentage, o.final_price, money_to_currency(o.allocation_amount, params), o.approved, o.full_name, o.address, o.PAN, o.pan_verified, o.bank_account_number, o.ifsc_code, o.bank_verified, o.final_agreement, interest&.buyer_entity_name, o.created_at, o.updated_at] + custom_field_values)
   end
 end

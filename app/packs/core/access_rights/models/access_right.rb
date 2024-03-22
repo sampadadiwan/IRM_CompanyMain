@@ -20,7 +20,7 @@ class AccessRight < ApplicationRecord
   belongs_to :granted_by, class_name: "User", optional: true
   # If this is a specific investor access
   belongs_to :investor, foreign_key: :access_to_investor_id, optional: true # , strict_loading: true
-  has_noticed_notifications
+  has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   delegate :name, to: :entity, prefix: :entity
   delegate :name, to: :owner, prefix: :owner
@@ -147,7 +147,7 @@ class AccessRight < ApplicationRecord
     if notify && (%w[Document Folder].exclude?(owner_type) || owner.send_email)
       users.each do |user|
         msg = "You have been granted access to #{owner_type} #{owner.name} by #{entity.name}"
-        AccessRightNotification.with(entity_id:, access_right: self, msg:).deliver_later(user)
+        AccessRightNotifier.with(entity_id:, access_right: self, msg:).deliver_later(user)
       end
     end
   end

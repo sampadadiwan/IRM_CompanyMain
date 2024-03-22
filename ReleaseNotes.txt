@@ -1,3 +1,13 @@
+V7.0.67    
+#####################################
+1. Moved uppy.js to inside caphive, file uploads should work inside Ambit now
+2. Fixed remittance other fee, now KYC should have correct due amounts for Sirius
+3. Dark theme for ag grid
+4. Login via email, now retains the subdomain of the fund/entity 
+5. Notifications lib Upgraded
+6. Offer docs upload with Orignal Format
+
+
 V7.0.65    
 #####################################
 1. Enable portfolios for investors

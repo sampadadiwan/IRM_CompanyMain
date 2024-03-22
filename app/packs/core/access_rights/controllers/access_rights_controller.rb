@@ -1,5 +1,4 @@
 class AccessRightsController < ApplicationController
-  # prepend_view_path 'app/packs/core/access_rights/views'
   include AccessRightsHelper
 
   before_action :set_access_right, only: %w[show update destroy edit]

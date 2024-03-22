@@ -39,7 +39,7 @@ class User < ApplicationRecord
   has_many :investor_accesses, dependent: :destroy
 
   # Noticed gem
-  has_many :notifications, as: :recipient, dependent: :destroy
+  has_many :notifications, as: :recipient, dependent: :destroy, class_name: "Noticed::Notification"
 
   include FileUploader::Attachment(:signature)
 

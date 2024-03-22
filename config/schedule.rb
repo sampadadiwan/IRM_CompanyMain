@@ -13,6 +13,8 @@ every 1.day, at: '02:01 am' do
   # runner "InvestmentSnapshotJob.perform_now"
   # runner "ResendConfirmationJob.perform_now"
   runner "DocumentEsignUpdateJob.perform_now"
+  runner "Noticed::Notification.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
+  runner "Noticed::Event.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
 end
 
 every 1.hour do

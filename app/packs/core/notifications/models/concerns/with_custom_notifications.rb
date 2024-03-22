@@ -2,7 +2,8 @@ module WithCustomNotifications
   extend ActiveSupport::Concern
 
   included do
-    has_noticed_notifications
+    has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
+
     has_many :custom_notifications, as: :owner, dependent: :destroy
   end
 

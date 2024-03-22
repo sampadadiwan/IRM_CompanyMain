@@ -14,16 +14,14 @@ class WhatsappGeneralNotification < ApplicationJob
       return
     end
 
-    link = notification.view_path
-    whatsapp_numbers = ApplicationMailer.new.sandbox_whatsapp_numbers(notification.record, [user.phone_with_call_code])
+    link = notification.url
+    whatsapp_numbers = ApplicationMailer.new.sandbox_whatsapp_numbers(notification.event, [user.phone_with_call_code])
     whatsapp_numbers.each do |whatsapp_number|
       params = { entity_name:, message:, link:, whatsapp_number:, endpoint:, token:, template_name: }
       self.class.send_message(params)
-      # log the Notification
-      Notification.get_entity_name_json(message, entity_name)
 
       # rubocop:disable Rails/SkipsModelValidations
-      notification.record.update_columns(whatsapp_sent: true, whatsapp: { to: whatsapp_number, params: { entity_name:, message:, link: } }.to_json)
+      notification.update_columns(whatsapp_sent: true, whatsapp: { to: whatsapp_number, params: { entity_name:, message:, link: } }.to_json)
       # rubocop:enable Rails/SkipsModelValidations
     end
   end

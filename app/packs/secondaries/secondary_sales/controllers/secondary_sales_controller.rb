@@ -19,7 +19,7 @@ class SecondarySalesController < ApplicationController
                                :interest, :documents)
 
     @offers = OfferSearchService.new.fetch_rows(@offers, params)
-    @offers = @offers.page(params[:page]) unless request.format.xlsx?
+    # @offers = @offers.page(params[:page]) unless request.format.xlsx?
 
     if params[:report]
       render "/offers/#{params[:report]}"
@@ -159,7 +159,7 @@ class SecondarySalesController < ApplicationController
 
   def generate_spa
     # Post the allocation, we need to upload the SPAs for verified offers
-    SpaJob.perform_later(@secondary_sale.id)
+    SpaJob.perform_later(@secondary_sale.id, user_id: current_user.id)
 
     respond_to do |format|
       format.html { redirect_to secondary_sale_url(@secondary_sale), notice: "SPA generation in progress, checkback in a few minutes." }
@@ -249,6 +249,9 @@ class SecondarySalesController < ApplicationController
   def set_secondary_sale
     @secondary_sale = SecondarySale.find(params[:id])
     authorize @secondary_sale
+
+    @bread_crumbs = { Secondaries: secondary_sales_path,
+                      "#{@secondary_sale.name}": secondary_sale_path(@secondary_sale) }
   end
 
   # Only allow a list of trusted parameters through.

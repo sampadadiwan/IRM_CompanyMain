@@ -1,5 +1,4 @@
 class PermissionsController < ApplicationController
-  # prepend_view_path 'app/packs/core/permissions/views'
   before_action :set_permission, only: %i[show edit update destroy]
 
   # GET /permissions or /permissions.json

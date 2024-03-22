@@ -22,7 +22,7 @@ class Holding < ApplicationRecord
 
   has_many :offers, dependent: :destroy
   has_many :excercises, dependent: :destroy
-  has_noticed_notifications
+  has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   # The Investment to which this is linked
   belongs_to :investment, optional: true
@@ -64,22 +64,22 @@ class Holding < ApplicationRecord
   end
 
   def notify_approval
-    HoldingNotification.with(entity_id:, holding: self, email_method: :notify_approval, msg: "Your #{investment_instrument} have been approved").deliver_later(user)
+    HoldingNotifier.with(entity_id:, holding: self, email_method: :notify_approval, msg: "Your #{investment_instrument} have been approved").deliver_later(user)
   end
 
   def notify_cancellation
     label = cancelled ? "Cancelled" : nil
     label ||= lapsed ? "Lapsed" : "Updated"
 
-    HoldingNotification.with(entity_id:, holding: self, email_method: :notify_cancellation, msg: "Your #{investment_instrument} have been #{label}").deliver_later(user)
+    HoldingNotifier.with(entity_id:, holding: self, email_method: :notify_cancellation, msg: "Your #{investment_instrument} have been #{label}").deliver_later(user)
   end
 
   def notify_lapsed
-    HoldingNotification.with(entity_id:, holding: self, email_method: :notify_lapsed, msg: "Your #{investment_instrument} have lapsed").deliver_later(user)
+    HoldingNotifier.with(entity_id:, holding: self, email_method: :notify_lapsed, msg: "Your #{investment_instrument} have lapsed").deliver_later(user)
   end
 
   def notify_lapse_upcoming
-    HoldingNotification.with(entity_id:, holding: self, email_method: :notify_lapse_upcoming, msg: "Your #{investment_instrument} will lapse in #{days_to_lapse} days").deliver_later(user)
+    HoldingNotifier.with(entity_id:, holding: self, email_method: :notify_lapse_upcoming, msg: "Your #{investment_instrument} will lapse in #{days_to_lapse} days").deliver_later(user)
   end
 
   before_save :update_quantity

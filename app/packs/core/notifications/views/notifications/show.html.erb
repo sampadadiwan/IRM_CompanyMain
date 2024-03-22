@@ -13,7 +13,7 @@
       For
     </td>
     <td>
-      <%= link_to @notification.type, @notification.to_notification.url %>
+      <%= link_to @notification.type, @notification.url %>
     </td>
   </tr>
   <tr>
@@ -21,7 +21,7 @@
       Message
     </td>
     <td>
-      <%= link_to @notification.to_notification.message %>
+      <%= @notification.message %>
     </td>
   </tr>
   <% if params[:show_params].present? %>
@@ -60,13 +60,13 @@
     </td>
     <td>
       <%
-        table_options = { table_class: "table table-bordered dataTable" }
-        details = JSON.parse(@notification.email)
+        table_options = { table_class: "table table-bordered dataTable no_hover_table" }
+        details = @notification.email
       %>
-      <%= details.dig("mail","body","raw_source")&.html_safe if @notification.email %>
+      <%= details["email"].dig("mail","body","raw_source")&.html_safe if @notification.email %>
       <%
-        details.delete("params")
-        details.delete("mail")
+        details["email"].delete("params")
+        details["email"].delete("mail")
       %>
       <%= Json2table::get_html_table(details, table_options).html_safe if @notification.email %>
     </td>

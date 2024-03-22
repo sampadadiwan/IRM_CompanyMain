@@ -14,7 +14,7 @@ class InvestorAccess < ApplicationRecord
 
   belongs_to :user, touch: true
   belongs_to :granter, class_name: "User", foreign_key: :granted_by, optional: true
-  has_noticed_notifications
+  has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   delegate :name, to: :entity, prefix: :entity
   delegate :investor_name, to: :investor
@@ -113,7 +113,7 @@ class InvestorAccess < ApplicationRecord
 
   def send_notification
     msg = "You have been granted access to '#{entity.name}'"
-    InvestorAccessNotification.with(entity_id:, investor_access: self, email_method: :notify_access, msg:).deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
+    InvestorAccessNotifier.with(entity_id:, investor_access: self, email_method: :notify_access, msg:).deliver_later(user) if URI::MailTo::EMAIL_REGEXP.match?(email)
   end
 
   def send_notification_if_changed
