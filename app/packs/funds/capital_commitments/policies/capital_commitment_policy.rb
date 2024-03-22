@@ -9,7 +9,7 @@ class CapitalCommitmentPolicy < FundBasePolicy
 
   def show?
     permissioned_employee? ||
-      permissioned_investor?
+      permissioned_investor? || super_user?
   end
 
   def documents?
@@ -21,7 +21,7 @@ class CapitalCommitmentPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update)
+    permissioned_employee?(:update) || super_user?
   end
 
   def generate_documentation?
@@ -41,6 +41,6 @@ class CapitalCommitmentPolicy < FundBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy)
+    permissioned_employee?(:destroy) || super_user?
   end
 end
