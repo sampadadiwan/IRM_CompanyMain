@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_03_22_064222) do
+ActiveRecord::Schema[7.1].define(version: 2024_03_22_131827) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -2536,6 +2536,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_22_064222) do
     t.bigint "document_folder_id"
     t.json "json_fields"
     t.boolean "show_holdings", default: true
+    t.bigint "data_room_folder_id"
+    t.index ["data_room_folder_id"], name: "index_secondary_sales_on_data_room_folder_id"
     t.index ["deleted_at"], name: "index_secondary_sales_on_deleted_at"
     t.index ["document_folder_id"], name: "index_secondary_sales_on_document_folder_id"
     t.index ["entity_id"], name: "index_secondary_sales_on_entity_id"
@@ -3110,6 +3112,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_22_064222) do
   add_foreign_key "scenario_investments", "portfolio_scenarios"
   add_foreign_key "scenario_investments", "users"
   add_foreign_key "secondary_sales", "entities"
+  add_foreign_key "secondary_sales", "folders", column: "data_room_folder_id"
   add_foreign_key "secondary_sales", "folders", column: "document_folder_id"
   add_foreign_key "secondary_sales", "form_types"
   add_foreign_key "share_transfers", "entities"

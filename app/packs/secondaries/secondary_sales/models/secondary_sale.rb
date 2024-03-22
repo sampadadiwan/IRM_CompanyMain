@@ -2,6 +2,7 @@ class SecondarySale < ApplicationRecord
   include Trackable.new
   include ActivityTrackable
   include WithFolder
+  include WithDataRoom
   include SecondarySaleNotifiers
   include SaleAccessScopes
   include WithCustomField
