@@ -54,10 +54,7 @@
 
     <tbody>
       <% @notifications.each do |notification| %>
-        <% begin %>
-          <%= render "notifications/notification", notification: notification if notification.params[:msg].present? %>
-        <%# rescue %>
-        <% end %>
+          <%= render "notifications/notification", notification: notification %>
       <% end %>
     </tbody>
   </table>
