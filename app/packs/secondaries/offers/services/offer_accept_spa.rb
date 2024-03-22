@@ -1,7 +1,7 @@
 class OfferAcceptSpa < OfferAction
   step :accept_spa
   left :handle_errors
-  # step :notify_accept_spa
+  step :notify_accept_spa
 
   def accept_spa(_ctx, offer:, current_user:, **)
     offer.final_agreement = true
