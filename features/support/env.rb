@@ -86,6 +86,7 @@ options.add_argument('--ignore-certificate-errors')
 options.add_argument('--disable-popup-blocking')
 options.add_argument('--disable-translate')
 options.add_argument('--disable-dev-shm-usage')
+options.add_argument('--enable-features=NetworkService,NetworkServiceInProcess')
 
 Capybara.register_driver :selenium do |app|
   Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)

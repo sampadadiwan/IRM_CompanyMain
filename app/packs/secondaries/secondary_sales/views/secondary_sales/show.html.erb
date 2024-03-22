@@ -30,6 +30,10 @@
 
           <%= button_to "Allocate Sale" , allocate_secondary_sale_path(@secondary_sale), 
               method: :patch, class: "dropdown-item", data: { action: "click->confirm#popup", turbo:false, method: "patch",msg: "This will kick off the allocation process, which will take a few mins."}  if policy(@secondary_sale).allocate? %> 
+
+          <%= button_to "Generate All SPAs" , generate_spa_secondary_sale_path(@secondary_sale), method: :patch, class: 
+            "dropdown-item", data: { action: "click->confirm#popup", turbo:false, method: "patch",
+            msg: "This will kick off the SPA generation process for all offers, which will take a few mins. Note existing SPAs will be deleted and regenerated."} if policy(@secondary_sale).generate_spa?  %> 
         </div>
       </div>
     </div>
@@ -38,10 +42,7 @@
       
     <% end %>    
 
-    <%= button_to "Generate SPA" , generate_spa_secondary_sale_path(@secondary_sale), method: :patch, class: 
-    "btn btn-outline-success", 
-    data: { action: "click->confirm#popup", turbo:false, method: "patch",
-            msg: "This will kick off the SPA generation process, which will take a few mins."} if policy(@secondary_sale).generate_spa?  %> 
+    
                               
 
 
