@@ -13,7 +13,7 @@
     <div class="divTableCell"><%= custom_format_number(offer.quantity, params) %></div>
     <div class="divTableCell"><%= offer.percentage %></div>
     <div class="divTableCell">
-        <%= offer.pan_card.present? ? link_to(offer.PAN, offer.pan_card.url, target: "_blank") : offer.PAN %>
+        <%= offer.PAN %>
         <% if offer.pan_verified %>
             <span class="badge bg-success">Verified</span>
         <% else %>
