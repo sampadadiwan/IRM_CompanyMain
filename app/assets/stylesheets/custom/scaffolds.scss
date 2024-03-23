@@ -548,6 +548,9 @@ ul.vesting_schedule {
     color: white !important;
 }
 
+[data-bs-theme=dark] .topbar .navbar .navbar-nav .nav-item .nav-link {
+  color: white !important;
+}
 
 [data-bs-theme=dark] .sidebar-divider {
   border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
