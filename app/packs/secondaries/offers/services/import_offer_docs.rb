@@ -39,6 +39,7 @@ class ImportOfferDocs < ImportUtil
     # Get the Offer
     offer = import_upload.entity.offers.where(id: user_data["Id"]).first
     raise "Offer #{user_data['Id']} not found" unless offer
+    raise "Offer user is #{offer.user.full_name} but import has #{user_data['User']}" if offer.user.full_name != user_data["User"]
 
     send_email = user_data["Send Email"] == "Yes"
     orignal = user_data["Orignal Format"] == "Yes"
