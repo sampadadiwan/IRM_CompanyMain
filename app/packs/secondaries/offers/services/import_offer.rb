@@ -37,15 +37,16 @@ class ImportOffer < ImportUtil
 
     if holding
 
-      offer = Offer.find_or_initialize_by(entity_id: import_upload.entity_id, user_id: user.id, investor_id: holding.investor_id, secondary_sale_id: secondary_sale.id, PAN: user_data["Pan"])
-
       if update_only
+        raise "No Offer Id specified for update" unless user_data["Offer Id"]
+
+        offer = Offer.find_by(entity_id: import_upload.entity_id, id: user_data["Offer Id"])
         raise "No offer found for update, for user with #{email}, secondary_sale_id #{secondary_sale.id}, #{user_data['Pan']} " if offer.new_record?
       else
-        offer.holding_id = holding.id
+        offer = Offer.new(entity_id: import_upload.entity_id, user_id: user.id, investor_id: holding.investor_id, secondary_sale_id: secondary_sale.id, holding_id: holding.id)
       end
 
-      offer.assign_attributes(address: user_data["Address"], city: user_data["City"],
+      offer.assign_attributes(address: user_data["Address"], city: user_data["City"], PAN: user_data["Pan"],
                               demat: user_data["Demat"], quantity: user_data["Offer Quantity"], bank_account_number: user_data["Bank Account"], ifsc_code: user_data["Ifsc Code"], final_price: secondary_sale.final_price, import_upload_id: import_upload.id, full_name:)
 
       setup_custom_fields(user_data, offer, custom_field_headers)

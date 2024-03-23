@@ -70,7 +70,7 @@ module SecondarySaleNotifiers
 
   def notify_spa_sellers
     # Send email to only those who are verified but not confirmed SPA
-    offers.verified.each do |offer|
+    offers.verified.not_final_agreement.each do |offer|
       email_users = offer.offer_type == "Employee" ? [offer.user] : [offer.investor.approved_users]
       email_users.each do |user|
         SecondarySaleNotifier.with(entity_id:, secondary_sale: self, email_method: :notify_spa_offers, msg: "Secondary Sale: #{name}, please accept uploaded SPA.").deliver_later(user)

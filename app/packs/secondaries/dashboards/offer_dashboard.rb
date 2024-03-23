@@ -39,6 +39,7 @@ class OfferDashboard < Administrate::BaseDashboard
     comments: Field::Text,
     auto_match: Field::BooleanEmoji,
     granted_by_user_id: Field::Number,
+    final_agreement: Field::BooleanEmoji,
     audits: Field::HasMany
   }.freeze
 
@@ -53,6 +54,9 @@ class OfferDashboard < Administrate::BaseDashboard
     entity
     secondary_sale
     quantity
+    approved
+    verified
+    final_agreement
     auto_match
   ].freeze
 
@@ -85,6 +89,7 @@ class OfferDashboard < Administrate::BaseDashboard
     updated_at
     approved
     verified
+    final_agreement
 
     auto_match
     granted_by_user_id
@@ -116,10 +121,8 @@ class OfferDashboard < Administrate::BaseDashboard
     bank_verified
     demat
     city
-
     notes
-    approved
-    verified
+    final_agreement
     auto_match
     granted_by_user_id
   ].freeze

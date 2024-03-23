@@ -103,12 +103,6 @@ en:
     destroy: 'Capital Distribution was deleted'
     started: 'Capital Distribution was started' 
 
-  activerecord:
-    attributes:
-      fund_unit_setting:
-        name: "Class / Series / Unit Type"
-
-
   views:
     pagination:
       first: "&laquo; First"
@@ -122,3 +116,8 @@ en:
     attributes:
       investor_kyc:
         full_name: 'Investing Entity'
+      fund_unit_setting:
+        name: "Class / Series / Unit Type"
+      offer:
+        final_agreement: "Accept SPA"
+

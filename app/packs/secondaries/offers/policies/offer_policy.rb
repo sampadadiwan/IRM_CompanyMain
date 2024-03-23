@@ -35,7 +35,7 @@ class OfferPolicy < SaleBasePolicy
       record.holding.user_id == user.id && record.holding.entity_id == record.entity_id
 
     else
-      false
+      super_user?
     end
   end
 
@@ -51,11 +51,11 @@ class OfferPolicy < SaleBasePolicy
   end
 
   def new?
-    create?
+    super_user? || create?
   end
 
   def update?
-    (create? || super_user?) && !record.verified # && !record.secondary_sale.lock_allocations
+    (super_user? || create?) && !record.verified # && !record.secondary_sale.lock_allocations
   end
 
   def allocation_form?

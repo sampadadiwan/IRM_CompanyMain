@@ -61,6 +61,27 @@
               finalize_interest_allocation_secondary_sale_path(@secondary_sale), 
               {class: "dropdown-item" } %> 
 
+          <%= link_to "Add Investor Notice" , 
+                new_investor_notice_path( "investor_notice[owner_id]": @secondary_sale.id, 
+                "investor_notice[owner_type]": "SecondarySale"), {class: "dropdown-item" } %>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="btn-group">
+      <div class="dropdown">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Reports
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          <%= link_to "Generated Docs",
+              documents_path({"q"=>{"c"=>{"0"=>{"a"=>{"0"=>{"name"=>"owner_tag"}}, "p"=>"eq", "v"=>{"0"=>{"value"=>"Generated"}}}, "1"=>{"a"=>{"0"=>{"name"=>"approved"}}, "p"=>"eq", "v"=>{"0"=>{"value"=>"false"}}}}}, "no_folders"=>"true", "folder_id"=>"#{@secondary_sale.document_folder_id}", "button"=>""}), 
+              {class: "dropdown-item" } %> 
+
+          <div class="dropdown-divider"></div>
+          
           <%= link_to "View Payments",
               payments_secondary_sale_path(@secondary_sale), 
               {class: "dropdown-item" } %> 
@@ -73,9 +94,6 @@
               interests_secondary_sale_path(@secondary_sale, report: "completion_report"), 
               class: "dropdown-item" %>
 
-          <%= link_to "Add Investor Notice" , 
-                new_investor_notice_path( "investor_notice[owner_id]": @secondary_sale.id, 
-                "investor_notice[owner_type]": "SecondarySale"), {class: "dropdown-item" } %>
         </div>
       </div>
     </div>
