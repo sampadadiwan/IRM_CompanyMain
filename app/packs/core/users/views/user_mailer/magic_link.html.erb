@@ -13,7 +13,8 @@
 %>
 
 <p class="btn btn-outline-primary">
-    <%= link_to 'Click To Login', no_password_login_users_url(signed_id:, subdomain:) %>
+    <!-- redirect_to is the page from where the user was redirected to the login page -->
+    <%= link_to 'Click To Login', no_password_login_users_url(signed_id:, subdomain:, redirect_to: params[:redirect_to]) %>
 </p>
 
 <p>

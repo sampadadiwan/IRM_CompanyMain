@@ -29,7 +29,8 @@ class UsersController < ApplicationController
     @user = User.find_by(email: params[:user][:email]) if params[:user].present?
     @user ||= nil
     if @user.present?
-      @user.send_magic_link(params[:current_entity_id])
+      # redirect_to is the page from where the user was redirected to the login page
+      @user.send_magic_link(params[:current_entity_id], params[:redirect_to])
       redirect_to new_session_path(User, display_status: true), notice: "Login link sent, please check your mailbox."
     else
       redirect_to new_session_path(User), notice: "User not found. Please signup."
@@ -46,7 +47,9 @@ class UsersController < ApplicationController
         # Sign in user
         sign_in @user
         # Redirect to root path
-        redirect_to root_path, notice: "Signed in successfully"
+        redirect_to ( params[:redirect_to].presence ||
+                      session[:user_return_to].presence ||
+                      root_path), notice: "Signed in successfully"
       else
         redirect_to new_session_path(User), notice: "Invalid login link"
       end

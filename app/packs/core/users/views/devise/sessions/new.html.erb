@@ -53,6 +53,7 @@
                                         <%= form_for(resource, as: resource_name, url: "/users/magic_link", html: {id: "new_user_wo_pass"}) do |f| %>
                                         
                                         <input type="hidden" name="current_entity_id" value="<%= @current_entity&.id %>" />
+                                        <input type="hidden" name="redirect_to" value="<%= session[:user_return_to] %>" />
 
                                         <form class="user">
                                             <div class="form-group">
