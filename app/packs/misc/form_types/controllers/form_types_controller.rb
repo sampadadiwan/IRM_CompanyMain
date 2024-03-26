@@ -1,5 +1,5 @@
 class FormTypesController < ApplicationController
-  before_action :set_form_type, only: %i[show edit update destroy clone]
+  before_action :set_form_type, only: %i[show edit update destroy clone rename_fcf]
 
   # GET /form_types or /form_types.json
   def index
@@ -78,6 +78,21 @@ class FormTypesController < ApplicationController
       format.html { redirect_to form_types_url, notice: "Form type was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
+
+  def rename_fcf
+    old_name = params[:old_name]
+    new_name = params[:new_name]
+    fcf = @form_type.form_custom_fields.where(name: old_name).last
+    if fcf
+      fcf.name = new_name
+      fcf.save
+      fcf.change_name(old_name)
+      notice = "Field name and data successfully changed."
+    else
+      notice = "Field name #{old_name} not found."
+    end
+    redirect_to form_type_url(@form_type), notice:
   end
 
   private

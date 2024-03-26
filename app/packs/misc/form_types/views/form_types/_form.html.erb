@@ -1,3 +1,18 @@
+<% if params[:debug].present? && !@form_type.new_record? %>  
+  <%= render FormCard.new(title: "Rename Custom Field: #{@form_type.name}") do %>
+    <div class="alert alert-info">
+      Renaming a custom field will change the name of the field and the data stored for that custom field. Please do this only during off peak hours as it loads the DB with updates
+    </div>
+    <form action="/form_types/<%= @form_type.id %>/rename_fcf" method="post" class="row">
+      <input type="hidden" name="_method" value="patch">
+      <input type="hidden" name="id" value="<%= @form_type.id %>">
+      <div class="col-5"><input type="text" name="old_name" class="form-control" placeholder="Old Name"></div>
+      <div class="col-5"><input type="text" name="new_name" class="form-control" placeholder="New Name"></div>
+      <div class="col-1"><input type="submit" class="btn btn-outline-primary"></div>      
+    </form>
+  <% end %>
+<% end %>
+
 <%= render FormCard.new(title: "Customize: #{@form_type.name.presence || 'New'}") do %>
 
   <%= form_with(model: form_type, validate: true) do |form| %>

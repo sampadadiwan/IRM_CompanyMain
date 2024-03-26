@@ -37,6 +37,10 @@ class FormTypePolicy < ApplicationPolicy
     update?
   end
 
+  def rename_fcf?
+    update?
+  end
+
   def clone?
     true
   end

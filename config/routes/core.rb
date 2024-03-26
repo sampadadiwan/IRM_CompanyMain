@@ -14,6 +14,7 @@ end
 resources :form_custom_fields
 resources :form_types do
   get 'clone', on: :member
+  patch 'rename_fcf', on: :member
 end
 
 resources :e_signatures
