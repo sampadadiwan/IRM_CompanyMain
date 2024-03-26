@@ -19,7 +19,9 @@ export default class ServerDatatableController extends Controller {
 
     if(this.lazyLoadDataValue == "false") {
       this.loadData();
-    }
+    }    
+
+    this.finalzeTable();
   }
 
   buildTable(table_id) {
@@ -82,12 +84,14 @@ export default class ServerDatatableController extends Controller {
   }
 
   columns() {    
+    console.log("server_datatable_controller columns called");
     let cols = this.customColumns();
     console.log("cols", cols);  
     return cols;
   }
 
   customColumns() {
+    console.log("server_datatable_controller customColumns called");
     let fields = this.fieldListValue.split(",");
     var x = window.matchMedia("(max-width: 479px)")
     if (x.matches) { // If media query matches
@@ -96,8 +100,7 @@ export default class ServerDatatableController extends Controller {
       } else {
         fields = fields.slice(0,3);
       }
-    } 
-    
+    }     
     if (this.fieldListValue == "") {
       return [];
     } else  {
@@ -119,5 +122,9 @@ export default class ServerDatatableController extends Controller {
     var query = path.replace(regex, "$1").replace(/&$/, '');
 
     return (query.length > 2 ? query + "&" : "?") + (newval ? param + "=" + newval : '');
+  }
+
+  finalzeTable() {
+    console.log("server_datatable_controller finalizeTable called");
   }
 }

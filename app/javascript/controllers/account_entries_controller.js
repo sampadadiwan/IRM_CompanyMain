@@ -3,18 +3,8 @@ import ServerDatatableController from "controllers/server_datatable_controller"
 
 export default class extends ServerDatatableController {
 
-  default = [
-    { "data": "folio_id" },
-    { "data": "reporting_date" },
-    { "data": "period" },
-    { "data": "entry_type" },
-    { "data": "name" },
-    { "data": "amount" },
-    { "data": "commitment_type" },
-    { "data": "dt_actions" }
-  ];
 
-  all = [
+  default = [
     { "data": "fund_name" },
     { "data": "investor_name" },
     { "data": "folio_id" },
@@ -28,12 +18,7 @@ export default class extends ServerDatatableController {
   ];
 
   columns() {
-    console.log(`cols: ${$("#account_entry_cols").val()}`);
-    if($("#account_entry_cols").val() == "all") {
-      return this.all;
-    } else {
-      return this.default; 
-    }
+    return this.default;    
   }
 
   filterData(event) {
@@ -48,5 +33,17 @@ export default class extends ServerDatatableController {
     url = this.replaceQueryParam("folio_id", $("#folio_id").val(), url)
     console.log(ds);
     table.ajax.url(url).load();
+  }
+
+  finalzeTable() {    
+    var x = window.matchMedia("(max-width: 479px)")
+    console.log("account_entries_controller finalizeTable called");
+    let table = $(this.tableNameValue).DataTable();
+      
+    if($("#account_entry_cols").val() == "all") {
+      table.column(0).visible(true);
+    } else {
+      table.column(0).visible(false);
+    }
   }
 }

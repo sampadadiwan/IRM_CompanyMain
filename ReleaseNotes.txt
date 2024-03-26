@@ -1,4 +1,4 @@
-V7.0.67    
+V7.0.69    
 #####################################
 1. Moved uppy.js to inside caphive, file uploads should work inside Ambit now
 2. Fixed remittance other fee, now KYC should have correct due amounts for Sirius

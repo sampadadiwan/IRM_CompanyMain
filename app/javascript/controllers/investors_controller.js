@@ -12,18 +12,23 @@ export default class extends ServerDatatableController {
     {"data": "dt_actions"}
   ]
 
-  mobile = [
-    {"data": "investor_name"},
-    {"data": "pan"}
-  ]
-
   columns() {
+    return this.default; 
+  }
 
+  finalzeTable() {    
     var x = window.matchMedia("(max-width: 479px)")
+    console.log("investors_controller finalizeTable called");
+    let table = $(this.tableNameValue).DataTable();
+      
     if (x.matches) { // If media query matches
-      return this.mobile;
+      for (var i = 2; i < this.default.length; i++) {
+        table.column(i).visible(false);
+      }
     } else {
-      return this.default; 
+      for (var i = 2; i < this.default.length; i++) {
+        table.column(i).visible(true);
+      }
     }
   }
 }
