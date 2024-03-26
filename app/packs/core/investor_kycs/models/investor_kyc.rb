@@ -50,7 +50,7 @@ class InvestorKyc < ApplicationRecord
 
   validates :PAN, length: { maximum: 15 }
   validates :bank_account_number, :bank_branch, :bank_account_type, length: { maximum: 40 }
-  validates :ifsc_code, length: { maximum: 20 }
+  validates :ifsc_code, :agreement_unit_type, length: { maximum: 20 }
   validates :full_name, length: { maximum: 255 }
   normalizes :full_name, with: ->(full_name) { full_name.strip.squeeze(" ") }
   validates :kyc_type, length: { maximum: 15 }
