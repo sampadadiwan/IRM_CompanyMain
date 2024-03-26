@@ -214,7 +214,6 @@
 
   
 Then('the approval response user is correctly captured') do
-  binding.pry
   @approval_response.response_user_id.should == @approval_response.investor.investor_accesses.approved.first.user_id
 end
 
