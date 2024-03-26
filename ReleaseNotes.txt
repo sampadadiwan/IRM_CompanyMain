@@ -6,7 +6,9 @@ V7.0.67
 4. Login via email, now retains the subdomain of the fund/entity 
 5. Notifications lib Upgraded
 6. Offer docs upload with Orignal Format
-
+7. Login via email link remembers orignal location and redirects correctly
+8. CF can be renamed via debug=true 
+9. Added agreement_unit_type for Angel Funds
 
 V7.0.65    
 #####################################
