@@ -144,12 +144,13 @@ class FundPortfolioCalcs
         fmv_val = fmv_on_date(api, scenarios:).round(4)
         cf << Xirr::Transaction.new(fmv_val, date: @end_date, notes: "FMV api: #{api}") if fmv_val != 0
 
-        Rails.logger.debug { "fmv = #{fmv_val}" }
+        Rails.logger.debug { "#{api.id} fmv = #{fmv_val}" }
         # Calculate and store the xirr
 
         lxirr = XirrApi.new.xirr(cf, "portfolio_company_irr:#{portfolio_company_id}")
         xirr_val = lxirr ? (lxirr * 100).round(2) : 0
-        Rails.logger.debug { "xirr = #{xirr_val}" }
+        Rails.logger.debug { "#{api.id} xirr = #{xirr_val}" }
+        Rails.logger.debug { "#{api.id} cash_flows = #{cf.to_json}" }
 
         cash_flows = return_cash_flows ? cf : nil
         @api_map[api.id] = { name: api.to_s, xirr: xirr_val, cash_flows: }
