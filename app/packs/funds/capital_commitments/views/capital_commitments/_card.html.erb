@@ -1,4 +1,10 @@
-<% params[:force_units] = capital_commitment.fund.default_currency_units %>
+<% 
+    params[:force_units] = capital_commitment.fund.default_currency_units 
+    if params[:force_units] == "Crores" && capital_commitment.committed_amount.to_d < 100_00000
+        # If committed_amount is less than a crore, then show in lakhs
+        params[:force_units] = "Lakhs"
+    end
+%>
 <div class="row">
     <div class="col-lg-8 d-flex align-items-strech">
     <div class="card w-100">
