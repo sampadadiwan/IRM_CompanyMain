@@ -150,7 +150,6 @@ class FundPortfolioCalcs
         lxirr = XirrApi.new.xirr(cf, "portfolio_company_irr:#{portfolio_company_id}")
         xirr_val = lxirr ? (lxirr * 100).round(2) : 0
         Rails.logger.debug { "#{api.id} xirr = #{xirr_val}" }
-        Rails.logger.debug { "#{api.id} cash_flows = #{cf.to_json}" }
 
         cash_flows = return_cash_flows ? cf : nil
         @api_map[api.id] = { name: api.to_s, xirr: xirr_val, cash_flows: }

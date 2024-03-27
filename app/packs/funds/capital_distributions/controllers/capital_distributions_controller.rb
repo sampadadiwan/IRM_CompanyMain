@@ -3,7 +3,8 @@ class CapitalDistributionsController < ApplicationController
 
   # GET /capital_distributions or /capital_distributions.json
   def index
-    @capital_distributions = policy_scope(CapitalDistribution).includes(:fund)
+    @q = CapitalDistribution.ransack(params[:q])
+    @capital_distributions = policy_scope(@q.result).includes(:fund)
     @capital_distributions = @capital_distributions.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @capital_distributions = @capital_distributions.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
   end

@@ -4,6 +4,7 @@ class PortfolioInvestment < ApplicationRecord
   include ForInvestor
   include Trackable.new
   include PortfolioComputations
+  include RansackerAmounts
 
   attr_accessor :created_by_import
 
@@ -112,5 +113,13 @@ class PortfolioInvestment < ApplicationRecord
 
   def split(stock_split_ratio)
     StockSplitter.new(self).split(stock_split_ratio)
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[amount commitment_type cost_of_sold created_at fmv folio_id gain investment_date net_quantity notes portfolio_company_name quantity sector sold_quantity updated_at]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[fund portfolio_company investment_instrument]
   end
 end

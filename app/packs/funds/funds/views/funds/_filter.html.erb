@@ -1,6 +1,6 @@
 <!-- This partial is used in /layouts/filter, to include funds if required. -->
 
-<% fund_related_conts = %w[capital_commitments capital_remittances account_entries fund_units].freeze %>
+<% fund_related_conts = %w[capital_commitments capital_remittances capital_distributions account_entries fund_units].freeze %>
 <% search_wo_fund = params[:q].present? && params[:fund_id].blank? # The fund drop down is deleted %> 
 
 <% if fund_related_conts.include?(params[:controller]) %>                          

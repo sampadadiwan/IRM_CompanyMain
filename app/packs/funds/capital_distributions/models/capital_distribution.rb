@@ -3,6 +3,8 @@ class CapitalDistribution < ApplicationRecord
   include Trackable.new
   include ActivityTrackable
   include WithFolder
+  include RansackerAmounts
+
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
   include ForInvestor
@@ -81,5 +83,13 @@ class CapitalDistribution < ApplicationRecord
 
   def fund_units
     FundUnit.where(fund_id:, owner_type: "CapitalDistributionPayment", owner_id: capital_distribution_payment_ids)
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[approved carry commitment_type completed cost_of_investment created_at distribution_amount distribution_date distribution_on fee gross_amount net_amount reinvestment title updated_at]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[fund]
   end
 end

@@ -10,7 +10,9 @@ class Report < ApplicationRecord
       Remittances: "/capital_remittances?filter=true",
       Kpis: "/kpis?filter=true",
       'Fund Units': "/fund_units?filter=true",
-      KYCs: "/investor_kycs?filter=true" }
+      KYCs: "/investor_kycs?filter=true",
+      'Portfolio Investments': "/portfolio_investments?filter=true",
+      Distributions: "/capital_distributions?filter=true" }
   end
 
   def to_s

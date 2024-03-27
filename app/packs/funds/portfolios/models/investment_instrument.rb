@@ -19,4 +19,8 @@ class InvestmentInstrument < ApplicationRecord
   def to_s
     name
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[category created_at investment_domicile name sector startup sub_category updated_at]
+  end
 end

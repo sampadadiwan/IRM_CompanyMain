@@ -3,7 +3,8 @@ class PortfolioInvestmentsController < ApplicationController
 
   # GET /portfolio_investments or /portfolio_investments.json
   def index
-    @portfolio_investments = policy_scope(PortfolioInvestment).includes(:aggregate_portfolio_investment, :capital_commitment, :fund)
+    @q = PortfolioInvestment.ransack(params[:q])
+    @portfolio_investments = policy_scope(@q.result).includes(:aggregate_portfolio_investment, :capital_commitment, :fund)
     @portfolio_investments = @portfolio_investments.where(fund_id: params[:fund_id]) if params[:fund_id]
     @portfolio_investments = @portfolio_investments.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @portfolio_investments = @portfolio_investments.where(aggregate_portfolio_investment_id: params[:aggregate_portfolio_investment_id]) if params[:aggregate_portfolio_investment_id]

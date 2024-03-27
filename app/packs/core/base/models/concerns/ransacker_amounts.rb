@@ -2,32 +2,10 @@ module RansackerAmounts
   extend ActiveSupport::Concern
 
   included do
-    ransacker :collected_amount, formatter: proc { |v| v.to_d } do |_parent|
-      Arel.sql("#{table_name}.collected_amount_cents / 100.0")
-    end
-
-    ransacker :committed_amount, formatter: proc { |v| v.to_d } do |_parent|
-      Arel.sql("#{table_name}.committed_amount_cents / 100.0")
-    end
-
-    ransacker :distribution_amount, formatter: proc { |v| v.to_d } do |_parent|
-      Arel.sql("#{table_name}.distribution_amount_cents / 100.0")
-    end
-
-    ransacker :call_amount, formatter: proc { |v| v.to_d } do |_parent|
-      Arel.sql("#{table_name}.call_amount_cents / 100.0")
-    end
-
-    ransacker :amount, formatter: proc { |v| v.to_d } do |_parent|
-      Arel.sql("#{table_name}.amount_cents / 100.0")
-    end
-
-    ransacker :capital_fee, formatter: proc { |v| v.to_d } do |_parent|
-      Arel.sql("#{table_name}.capital_fee_cents / 100.0")
-    end
-
-    ransacker :other_fee, formatter: proc { |v| v.to_d } do |_parent|
-      Arel.sql("#{table_name}.other_fee_cents / 100.0")
+    %w[collected_amount committed_amount distribution_amount call_amount capital_fee other_fee amount cost_of_sold fmv gain carry cost_of_investment fee gross_amount net_amount reinvestment].each do |field|
+      ransacker field.to_sym, formatter: proc { |v| v.to_d } do |_parent|
+        Arel.sql("#{table_name}.#{field}_cents / 100.0")
+      end
     end
 
     # This is just a sample for json fields
