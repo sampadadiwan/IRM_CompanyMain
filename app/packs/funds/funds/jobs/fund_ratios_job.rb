@@ -78,7 +78,7 @@ class FundRatiosJob < ApplicationJob
 
     # Compute the portfolio_company_ratios
     calc.portfolio_company_cost_to_value.each do |api_id, values|
-      FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Value To Cost", value: values[:value_to_cost], display_value: "#{values[:value_to_cost].round(2)} x")
+      FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Value To Cost", value: values[:value_to_cost], display_value: "#{values[:value_to_cost]&.round(2)} x")
     end
 
     value = calc.gross_portfolio_irr
