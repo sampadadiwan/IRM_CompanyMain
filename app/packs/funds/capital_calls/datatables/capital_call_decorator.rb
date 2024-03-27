@@ -5,6 +5,10 @@ class CapitalCallDecorator < ApplicationDecorator
     "#{object.percentage_called.round(2)} %"
   end
 
+  def name_link
+    h.link_to object.name, object
+  end
+
   def fund_link
     h.link_to object.fund.name, object.fund
   end

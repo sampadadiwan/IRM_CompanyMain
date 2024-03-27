@@ -3,7 +3,7 @@
     <%= capital_distribution.commitment_type %>
   </td>
   <td>
-    <%= capital_distribution.title %>
+    <%= link_to capital_distribution.title, capital_distribution %>
   </td>
   <td>
     <%= money_to_currency capital_distribution.gross_amount, params %>

@@ -34,6 +34,9 @@ export default class ServerDatatableController extends Controller {
         "processing": true,
         "serverSide": true,
         "deferLoading": 0,
+        responsive: {
+          details: this.showDetailsResponsive(),
+        },        
         stateSave: true,
         search: {
           // return: true,
@@ -83,6 +86,10 @@ export default class ServerDatatableController extends Controller {
 
   }
 
+  showDetailsResponsive() {
+    return true;
+  }
+
   columns() {    
     console.log("server_datatable_controller columns called");
     let cols = this.customColumns();
@@ -93,14 +100,6 @@ export default class ServerDatatableController extends Controller {
   customColumns() {
     console.log("server_datatable_controller customColumns called");
     let fields = this.fieldListValue.split(",");
-    var x = window.matchMedia("(max-width: 479px)")
-    if (x.matches) { // If media query matches
-      if(this.mobileFieldListValue) {
-        fields = this.mobileFieldListValue.split(",")
-      } else {
-        fields = fields.slice(0,3);
-      }
-    }     
     if (this.fieldListValue == "") {
       return [];
     } else  {

@@ -5,14 +5,14 @@
   <td>
     <%= link_to fund.name, fund %>
   </td>
-  <td class="hideMobP">
+  <td>
     <% if fund.tag_list.present? %>      
       <% fund.tag_list.split(",").each do |tag| %>
         <span class="mb-1 badge rounded-pill font-medium bg-primary-subtle text-primary"><%= tag %></span>
       <% end %>
     <% end %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= link_to "Show" , fund , {class: "btn btn-outline-primary" }%>
     <% if params[:debug].present? %>
       <%= link_to "Analytics" , fund_path(id: fund.id, charts: true) , {class: "btn btn-outline-success" }%>

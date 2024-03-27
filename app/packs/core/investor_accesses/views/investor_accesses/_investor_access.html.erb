@@ -1,8 +1,8 @@
 <tr id="<%= dom_id investor_access %>">
-  <td class="hideMobP">
+  <td>
     <%= investor_access.investor_name %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= investor_access.user.name if investor_access.user %>
   </td>
   <td>
@@ -14,11 +14,11 @@
   <td>
     <%= investor_access.cc %>
   </td>
-  <td class="hideMobP">
+  <td>
 
     <%= "(#{investor_access.user.call_code})#{investor_access.user.phone}" %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= display_boolean investor_access.user.whatsapp_enabled %>
     <% unless investor_access.user.whatsapp_enabled %>
     <br>
@@ -28,7 +28,7 @@
   <td>
     <%= display_boolean investor_access.approved %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= investor_access.granter&.name %>
   </td>
   <td>

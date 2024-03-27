@@ -14,11 +14,11 @@
             <%= link_to access_right.access_to_category, investors_path(category: access_right.access_to_category) %>
         <% end %>
     </td>  
-    <td class="hideMobP">
+    <td>
         <%= access_right.access_type.present? ? access_right.access_type : access_right.owner&.class&.name %>
     </td>  
     <% if show_metadata == "Yes" %>
-    <td class="hideMobP">
+    <td>
         <%= access_right.metadata %>
         <%= "Permissions: #{access_right.permissions}" if access_right.permissions.present?  %>
     </td>  
@@ -28,7 +28,7 @@
         <%= link_to access_right.owner.name, access_right.owner if access_right.owner %>
     </td> 
 
-    <td class="hideMobP">
+    <td>
         <%= access_right.granted_by&.full_name %>
     </td>  
     

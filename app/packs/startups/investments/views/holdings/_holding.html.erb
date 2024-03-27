@@ -1,10 +1,10 @@
 <% investor_view ||= false %>
 <tr id="holding_<%= holding.id %>">
-  <td class="hideMobP">
+  <td>
     <%= belongs_to_entity_id?(current_user, holding.entity_id)  ?  
         link_to(holding.funding_round.name, holding.funding_round) : holding.funding_round.name  %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= holding.holding_type %>
   </td>
   <td>
@@ -23,41 +23,41 @@
   </td>
   <% end %>
 
-  <td class="hideMobP">
+  <td>
     <%= custom_format_number holding.quantity, params %>    
   </td>
-  <td class="hideMobP">
+  <td>
    <%= render "/holdings/status", holding: %>
   </td>
   
   <% if only_options.present? %>
-    <td class="hideMobP">
+    <td>
       <%= custom_format_number holding.vested_quantity, params %>
     </td>
-    <td class="hideMobP">
+    <td>
       <%= custom_format_number holding.excercised_quantity, params %>
     </td>
-    <td class="hideMobP">
+    <td>
       <%= custom_format_number holding.net_avail_to_excercise_quantity, params %>
     </td>
 
-    <td class="hideMobP">
+    <td>
       <%= custom_format_number holding.net_unvested_quantity, params %>
     </td>
     
-    <td class="hideMobP">
+    <td>
       <%= l holding.grant_date if holding.grant_date %>
     </td>
-    <td class="hideMobP">
+    <td>
       <%= display_boolean holding.manual_vesting %>
     </td>
   <% else %>
-    <td class="hideMobP">
+    <td>
       <%= l holding.created_at %>
     </td>
   <% end %>
 
-  <td class="hideMobP">
+  <td>
     <%= custom_format_number holding.price, params %>
   </td>
   

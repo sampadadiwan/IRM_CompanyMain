@@ -1,10 +1,10 @@
 
 <tr id="<%= dom_id approval %>">
-  <td class="hideMobP">
+  <td>
     <%= approval.entity.name %>
   </td>
   <td>
-    <%= approval.title %>
+    <%= link_to approval.title, approval %>
   </td>
   <td>
     <%= l approval.due_date %>

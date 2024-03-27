@@ -19,7 +19,7 @@ class CapitalCallDatatable < AjaxDatatablesRails::ActiveRecord
     records.map do |record|
       {
         id: record.id,
-        name: record.name,
+        name: record.decorate.name_link,
         commitment_type: record.commitment_type,
         fund_name: record.decorate.fund_link,
         call_amount: record.decorate.money_to_currency(record.call_amount, params),

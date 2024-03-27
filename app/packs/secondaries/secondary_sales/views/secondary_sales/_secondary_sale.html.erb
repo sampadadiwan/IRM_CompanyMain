@@ -5,22 +5,22 @@
   <td>
     <%= custom_format_number secondary_sale.total_offered_quantity, params %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= secondary_sale.entity.name %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= l secondary_sale.start_date %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= l secondary_sale.end_date %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= custom_format_number secondary_sale.min_price, params %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= custom_format_number secondary_sale.max_price, params %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= secondary_sale.active? ? "Yes" : "No" %>
   </td>
   <td>

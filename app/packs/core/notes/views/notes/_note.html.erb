@@ -2,13 +2,13 @@
 <td>
     <%= link_to note.user_full_name, notes_path(user_id: note.user_id) %>
 </td>
-<td class="hideMobP">
+<td>
     <%= note.on.is_a?(Date) ? l(note.on) : l(Date.parse(note.on)) %>
 </td>    
 <td>
     <%= link_to note.investor_name, investor_path(note.investor_id) %>
 </td>  
-<td class="hideMobP">
+<td>
     <%= note.details %>
 </td>  
 

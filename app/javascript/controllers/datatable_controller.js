@@ -2,16 +2,19 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static values = {
-    moneyColumns: String // Which columns are money, so we can appply better sorting
+    moneyColumns: String, // Which columns are money, so we can appply better sorting
+    responsiveDetails: Boolean
   }
 
   connect() {
 
     console.log(`moneyColumns = ${this.moneyColumnsValue}`);
+    console.log(`responsiveDetails = ${this.responsiveDetailsValue}`);
 
       let table = {};
       
       let columnDefs = this.columnDefs();
+      let responsiveDetails = this.responsiveDetailsValue;
 
       $.each( $('.jqDataTable'), function( key, value ) {
         console.log( key + ": " + value );
@@ -22,6 +25,9 @@ export default class extends Controller {
             order: [],     
             stateSave: false,
             retrieve: true,
+            responsive: {
+              details: responsiveDetails,
+            },            
             columnDefs: columnDefs, // https://cdn.datatables.net/plug-ins/2.0.2/sorting/formatted-numbers.js      
             lengthMenu: [
               [10, 25, 50, -1],
@@ -56,6 +62,7 @@ export default class extends Controller {
         table.search(searchTerm.val()).draw();
       }
   }
+
 
   columnDefs() {
     if (this.moneyColumnsValue == "") {

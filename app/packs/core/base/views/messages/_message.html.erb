@@ -1,6 +1,6 @@
 
 <tr id="<%= dom_id message %>">
-  <td class="hideMobP">
+  <td>
       <% if message.entity_id == current_user.entity_id %>
         <%= link_to message.user.name, messages_path(user_id: message.user_id) %>
       <% else %>

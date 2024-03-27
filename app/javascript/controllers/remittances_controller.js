@@ -13,5 +13,4 @@ export default class extends ServerDatatableController {
     table.ajax.url( url ).load();
   }
 
-
 }

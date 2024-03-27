@@ -25,7 +25,7 @@
       <% @documents.each do |document| %>
         <tr id="document_<%= document.id %>">
               
-            <td class="hideMobP">
+            <td>
                 <%= link_to document.owner %>
             </td>
             <td>
@@ -36,7 +36,7 @@
                     <% end %>          
                 <% end %>
             </td>  
-            <td class="hideMobP">
+            <td>
                 <%= document.tag_list %>
                 <%= document.owner_tag %>
             </td>

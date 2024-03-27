@@ -10,10 +10,10 @@
   <td>
     <%= link_to task.owner_type, "/#{task.owner_type.underscore.pluralize}/#{task.owner_id}" %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= task.for_entity.name %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= l task.due_date if task.due_date %>
     <% if !task.completed && task.due_date && task.due_date < Time.zone.today %>
       <br>
@@ -23,13 +23,13 @@
   <td>
     <%= display_boolean(task.completed) %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= task.user.full_name %>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= l task.created_at %>
   </td>
-  <td class="hideMobP">
+  <td>
     <% if policy(task).update? %>
       <% checked = task.completed == 1 ? "checked" : ""%>
       <%= form_with(model: task, url: completed_task_path(task), class: "inline_form") do |form| %>

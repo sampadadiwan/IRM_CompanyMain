@@ -16,19 +16,4 @@ export default class extends ServerDatatableController {
     return this.default; 
   }
 
-  finalizeTable() {    
-    var x = window.matchMedia("(max-width: 479px)")
-    console.log("investors_controller finalizeTable called");
-    let table = $(this.tableNameValue).DataTable();
-      
-    if (x.matches) { // If media query matches
-      for (var i = 2; i < this.default.length; i++) {
-        table.column(i).visible(false);
-      }
-    } else {
-      for (var i = 2; i < this.default.length; i++) {
-        table.column(i).visible(true);
-      }
-    }
-  }
 }

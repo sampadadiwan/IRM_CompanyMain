@@ -8,19 +8,19 @@
     <td>
         <%= link_to(deal_activity.title, deal_activity) %>
     </td>
-    <td class="hideMobP">
+    <td>
         <%= belongs_to_entity_id?(current_user, deal_activity.entity_id) ? 
                 link_to(deal_activity.deal_name, deal_activity.deal) : deal_activity.deal_name %>
         
     </td>
-    <td class="hideMobP">
+    <td>
         <%= belongs_to_entity_id?(current_user, deal_activity.entity_id) && deal_activity.deal_investor ? 
             link_to(deal_activity.investor_name, deal_activity.deal_investor) : deal_activity.investor_name %>
     </td>
-    <td class="hideMobP">
+    <td>
         <%= l deal_activity.by_date if deal_activity.by_date %>
     </td>
-    <td class="hideMobP">
+    <td>
         <%= deal_activity.status %>
     </td>
     <td>
@@ -28,10 +28,10 @@
             <%= deal_activity.completed_status %>
         </span>
     </td>
-    <td class="hideMobP">
+    <td>
         <%= deal_activity.days %>
     </td>
-    <td class="hideMobP">
+    <td>
         <%= link_to "Show", deal_activity, class: "btn btn-outline-primary" %>
         <%= link_to "Edit", edit_deal_activity_path(deal_activity), class: "btn btn-outline-success" if policy(deal_activity).update? %>
     </td>

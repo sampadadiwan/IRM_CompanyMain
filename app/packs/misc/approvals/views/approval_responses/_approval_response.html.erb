@@ -4,11 +4,11 @@
     <%= link_to approval_response.investor %>
   </td>
 
-  <td class="hideMobP">
+  <td>
     <%= approval_response.investor.tag_list %>
   </td>
 
-  <td class="hideMobP">
+  <td>
     <%= approval_response.response_user&.full_name %>
   </td>
   <td>
@@ -20,7 +20,7 @@
     %>
     <span class="badge <%=colors[idx]%>"><%= approval_response.status %></span>
   </td>
-  <td class="hideMobP">
+  <td>
     <%= l approval_response.updated_at %>
   </td>
   <td>

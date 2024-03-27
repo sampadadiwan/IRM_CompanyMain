@@ -2,6 +2,7 @@ class RansackerAmounts < Module
   extend ActiveSupport::Concern
 
   def initialize(fields: {})
+    super()
     @fields = fields
   end
 
