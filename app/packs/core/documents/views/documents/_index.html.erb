@@ -9,11 +9,11 @@
       # link for users or just path for investors
       link = (@folder.entity_id == current_user.entity_id) ? link_to(@folder.name, @folder) : @folder.name 
     %>
-    <h4 class="mb-0 text-gray-800 hideMobP">
+    <h4 class="mb-0 text-gray-800 d-none d-sm-block">
       Documents: <%= link %>
     </h4>
   <% else %>
-    <h4 class="mb-0 text-gray-800  hideMobP">
+    <h4 class="mb-0 text-gray-800  d-none d-sm-block">
       Documents
     </h4>
   <% end %>
@@ -45,7 +45,7 @@
         <% if folder_id.present? %>
       
             <%= link_to "Download Folder", download_folder_path(id: folder_id), 
-                class: "dropdown-item hideMobP", data: {action: "click->confirm#popup"} if policy(@folder).download? %>
+                class: "dropdown-item d-none d-sm-block", data: {action: "click->confirm#popup"} if policy(@folder).download? %>
 
             <%= link_to "New Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
                 "folder[parent_id]": @folder.id), 
@@ -62,7 +62,7 @@
                     "import_upload[owner_type]": "Folder", 
                     "import_upload[import_type]": "Documents", 
                     "sample_upload": "DOCS_SAMPLE"), 
-                    { class: "dropdown-item hideMobP"} if policy(@folder).update? %> 
+                    { class: "dropdown-item d-none d-sm-block"} if policy(@folder).update? %> 
 
 
             <div class="dropdown-divider"></div>

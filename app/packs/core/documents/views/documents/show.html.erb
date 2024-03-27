@@ -52,7 +52,7 @@
                      </td>
                      <td>
                         <%= @document&.folder.full_path %>
-                        <span  class="hideMobP">
+                        <span  class="d-none d-sm-block">
                            <%= link_to "View Docs", folder_documents_path(folder_id: @document.folder_id),
                                  class: "badge bg-primary" %>
                            <%= link_to "View Folder", folder_path(id: @document.folder_id),
@@ -101,7 +101,7 @@
                   <% end %>
 
 
-                  <tr class="hideMobP">
+                  <tr class="d-none d-sm-block">
                      <td>
                         Allow
                      </td>

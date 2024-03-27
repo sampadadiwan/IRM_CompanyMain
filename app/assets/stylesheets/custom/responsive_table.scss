@@ -22,28 +22,3 @@
         visibility: collapse;
     } 
 }
-/* #Mobile (Landscape)
-================================================== */
-/* Note: Design for a width of 480px */
-@media all and (min-width: 480px) and (max-width: 599px) {
-    th.hideMobL, td.hideMobL{
-        display:none;
-        width:0;
-        height:0;
-        opacity:0;
-        visibility: collapse;
-    } 
-}
-/*  #Mobile (Portrait)
-================================================== */
-/* Note: Design for a width of 320px */
-@media all and (max-width: 479px) {
-    th.hideMobP, td.hideMobP{
-        display:none;
-        width:0;
-        height:0;
-        opacity:0;
-        visibility: collapse;
-    }
-    
-}

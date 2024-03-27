@@ -1,6 +1,6 @@
 <% colors = ["success", "info", "danger", "warning"].freeze %>
 
-<div class="row hideMobP">
+<div class="row d-none d-sm-block">
     <% steps.each_with_index do |step, index| %>
     <% color = colors[index % colors.length] %>
     <div class="col">

@@ -36,7 +36,7 @@
       </div>
 
 
-      <div class="btn-group hideMobP">
+      <div class="btn-group d-none d-sm-block">
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle" type="button"
                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -113,7 +113,7 @@
                   account_entries_path(fund_id: @fund.id, fund_accounts_only: true, all: true),
                   class: "dropdown-item" %>
 
-              <div class="hideMobP">
+              <div class="d-none d-sm-block">
                 <%= link_to "Allocation Formulas" , fund_formulas_path(fund_id: @fund.id), {class: "dropdown-item" } %>
 
                 <%= link_to "Allocate Account Entries", allocate_form_fund_path(@fund),
@@ -142,7 +142,7 @@
               doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
               %>
 
-              <div class="hideMobP">
+              <div class="d-none d-sm-block">
 
                 <%= link_to "New Template", new_document_path(
                   document: doc_attributes,

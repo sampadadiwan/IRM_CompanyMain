@@ -824,15 +824,6 @@ ul.vesting_schedule {
 /* Note: Design for a width of 320px */
 @media all and (max-width: 479px) {
   
-  // Hide stuff in mobile view
-  .hideMobP {
-      display:none;
-      width:0;
-      height:0;
-      opacity:0;
-      visibility: collapse;
-  }
-
   // Smaller buttons in mobile
   .btn {
       padding: 0.25rem 0.5rem !important;
