@@ -47,7 +47,7 @@ class CustomCalcs
     @model.perform_custom_calculation(calc.meta_data)
   end
 
-  def respond_to_missing? *args
+  def respond_to_missing? *_args
     true
   end
 end
