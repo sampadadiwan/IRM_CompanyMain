@@ -87,6 +87,7 @@ options.add_argument('--disable-popup-blocking')
 options.add_argument('--disable-translate')
 options.add_argument('--disable-dev-shm-usage')
 options.add_argument('--enable-features=NetworkService,NetworkServiceInProcess')
+options.add_argument('--window-size=1583,900')
 
 Capybara.register_driver :selenium do |app|
   Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
