@@ -21,7 +21,7 @@ export default class ServerDatatableController extends Controller {
       this.loadData();
     }    
 
-    this.finalzeTable();
+    this.finalizeTable();
   }
 
   buildTable(table_id) {
@@ -124,7 +124,7 @@ export default class ServerDatatableController extends Controller {
     return (query.length > 2 ? query + "&" : "?") + (newval ? param + "=" + newval : '');
   }
 
-  finalzeTable() {
+  finalizeTable() {
     console.log("server_datatable_controller finalizeTable called");
   }
 }

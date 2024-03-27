@@ -35,7 +35,7 @@ export default class extends ServerDatatableController {
     table.ajax.url(url).load();
   }
 
-  finalzeTable() {    
+  finalizeTable() {    
     var x = window.matchMedia("(max-width: 479px)")
     console.log("account_entries_controller finalizeTable called");
     let table = $(this.tableNameValue).DataTable();
