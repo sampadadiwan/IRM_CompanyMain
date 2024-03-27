@@ -1,3 +1,10 @@
+table.dataTable>tbody>tr.child ul.dtr-details {
+  width: 100%;
+  li .dtr-title {
+    width: 50%;
+  }
+}
+
 table.dataTable {
     border-spacing: 0;    
     border-radius: 8px;

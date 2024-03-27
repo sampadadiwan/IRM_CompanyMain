@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static values = {
     moneyColumns: String, // Which columns are money, so we can appply better sorting
-    responsiveDetails: Boolean
+    responsiveDetails: String
   }
 
   connect() {
@@ -14,7 +14,13 @@ export default class extends Controller {
       let table = {};
       
       let columnDefs = this.columnDefs();
-      let responsiveDetails = this.responsiveDetailsValue;
+
+      // Setup whether the responsive details are shown or not, default to true
+      let responsiveDetails = true;
+      if(this.responsiveDetailsValue.length > 0) {
+        responsiveDetails = this.responsiveDetailsValue == "true";
+      } 
+      
 
       $.each( $('.jqDataTable'), function( key, value ) {
         console.log( key + ": " + value );

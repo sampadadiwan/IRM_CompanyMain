@@ -4,7 +4,7 @@
   <%= link_to "New Payment", new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id), {class: "btn btn-outline-primary"} if capital_remittance %>
 </div>
 <div class="table-responsive" data-controller="datatable">
-  <table id="capital_remittance_payments" class="table table-bordered dataTable">
+  <table id="capital_remittance_payments" class="table table-bordered dataTable jqDataTable">
     <thead>
       <tr>
         <th>
