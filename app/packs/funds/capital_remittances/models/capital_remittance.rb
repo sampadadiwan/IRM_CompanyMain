@@ -8,7 +8,7 @@ class CapitalRemittance < ApplicationRecord
   include WithExchangeRate
   include CapitalRemittanceFees
   include CapitalRemittanceCallBasis
-  include RansackerAmounts
+  include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fee other_fee arrear_amount])
 
   STANDARD_COLUMN_NAMES = ["Investor", "Capital Call", "Folio No", "Status", "Verified", "Due Amount", "Collected Amount", "Payment Date", " "].freeze
   STANDARD_COLUMN_FIELDS = %w[investor_name capital_call_name folio_id status verified due_amount collected_amount payment_date dt_actions].freeze
@@ -140,7 +140,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[call_amount collected_amount capital_fee other fee folio_id investor_name payment_date remittance_date status verified].sort
+    %w[call_amount collected_amount capital_fee other_fee folio_id investor_name payment_date remittance_date status verified arrear_amount].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

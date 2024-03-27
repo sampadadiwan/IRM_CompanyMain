@@ -5,7 +5,7 @@ class CapitalCommitment < ApplicationRecord
   include Trackable.new
   include ActivityTrackable
   include CommitmentAccountEntry
-  include RansackerAmounts
+  include RansackerAmounts.new(fields: %w[committed_amount collected_amount call_amount distribution_amount])
 
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
@@ -275,7 +275,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[commitment_date commitment_type fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount].sort
+    %w[commitment_date commitment_type fund_close investor_name onboarding_completed percentage unit_type committed_amount collected_amount call_amount distribution_amount].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

@@ -3,7 +3,7 @@ class CapitalCall < ApplicationRecord
   include WithFolder
   include Trackable.new
   include ActivityTrackable
-  include RansackerAmounts
+  include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fees other_fees])
   include WithCustomNotifications
 
   tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
@@ -130,7 +130,7 @@ class CapitalCall < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name due_date approved call_date status verified].sort
+    %w[name due_date approved call_date status verified call_amount collected_amount capital_fees other_fees percentage_called].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

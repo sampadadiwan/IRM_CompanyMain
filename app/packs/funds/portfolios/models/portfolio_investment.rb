@@ -4,7 +4,7 @@ class PortfolioInvestment < ApplicationRecord
   include ForInvestor
   include Trackable.new
   include PortfolioComputations
-  include RansackerAmounts
+  include RansackerAmounts.new(fields: %w[amount cost_of_sold fmv gain])
 
   attr_accessor :created_by_import
 
