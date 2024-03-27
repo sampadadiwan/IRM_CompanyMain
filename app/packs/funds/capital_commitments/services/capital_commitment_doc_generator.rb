@@ -39,9 +39,11 @@ class CapitalCommitmentDocGenerator
       fund_unit_setting: TemplateDecorator.decorate(capital_commitment.fund_unit_setting)
     }
 
+    
     # Can we have more than one LP signer ?
     add_image(context, :investor_signature, capital_commitment.investor_kyc.signature)
     Rails.logger.debug { "Using context #{context} to render template" }
+    Rails.logger.debug { "first_call #{context[:capital_commitment].custom_calcs.first_call}" }
 
     file_name = generated_file_name(capital_commitment)
     convert(template, context, file_name)
