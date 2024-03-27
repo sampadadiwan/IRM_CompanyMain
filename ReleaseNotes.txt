@@ -1,3 +1,9 @@
+V7.0.70    
+#####################################
+1. Custom calcs in templates
+2. Investor screen on mobile - bug fix
+3. 
+
 V7.0.69    
 #####################################
 1. Moved uppy.js to inside caphive, file uploads should work inside Ambit now

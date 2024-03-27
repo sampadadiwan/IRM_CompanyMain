@@ -90,6 +90,7 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     manage_offers
     no_interest_emails
     manage_interests
+    show_holdings
     created_at
     updated_at
     total_offered_quantity
@@ -137,6 +138,7 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     manage_offers
     no_interest_emails
     manage_interests
+    show_holdings
   ].freeze
 
   # COLLECTION_FILTERS
