@@ -255,6 +255,8 @@ class InvestorKyc < ApplicationRecord
     end; nil
   end
 
+  # In some cases the agreement_unit_type is specified in the KYC, before a commitment is created.
+  # And we need the corresponding fund unit setting (for document generation), from any fund in the entity. This is for Angel Funds only. For other funds, the agreement_unit_type is not used.
   def agreement_unit_setting
     entity.funds.first.fund_unit_settings.where(name: agreement_unit_type).first
   end
