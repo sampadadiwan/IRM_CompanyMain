@@ -254,4 +254,8 @@ class InvestorKyc < ApplicationRecord
       kyc.save(validate: false)
     end; nil
   end
+
+  def agreement_unit_setting
+    entity.funds.first.fund_unit_settings.where(name: agreement_unit_type).first
+  end
 end
