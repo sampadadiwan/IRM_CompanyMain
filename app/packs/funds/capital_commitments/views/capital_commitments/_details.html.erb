@@ -21,9 +21,13 @@
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#adjustments-tab"
             data-action="click->tabdetails#loadData">Adjustments</a>
 
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab"     
+    <% end %>
+
+    <% if policy(capital_commitment).update? || capital_commitment.fund.show_fund_ratios %>
+          <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#fund-ratios-tab"     
             data-action="click->tabdetails#loadData">Ratios</a>
     <% end %>
+
 
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab" 
           data-action="click->tabdetails#loadData">
