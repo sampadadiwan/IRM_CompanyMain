@@ -70,8 +70,7 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def create?
-    user.enable_secondary_sale &&
-      permissioned_employee?(:create)
+    user.enable_secondary_sale && permissioned_employee?(:create)
   end
 
   def new?
@@ -79,8 +78,8 @@ class SecondarySalePolicy < SaleBasePolicy
   end
 
   def update?
-    user.enable_secondary_sale && !record.finalized &&
-      permissioned_employee?(:update)
+    (user.enable_secondary_sale && !record.finalized &&
+      permissioned_employee?(:update)) || super_user?
   end
 
   def spa_upload?

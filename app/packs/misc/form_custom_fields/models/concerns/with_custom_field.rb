@@ -46,4 +46,8 @@ class CustomCalcs
     calc = @custom_calcs.find { |cf| cf.name == method_name.to_s }
     @model.perform_custom_calculation(calc.meta_data)
   end
+
+  def respond_to_missing?
+    true
+  end
 end

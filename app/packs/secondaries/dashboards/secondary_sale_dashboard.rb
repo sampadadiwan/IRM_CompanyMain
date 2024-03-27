@@ -118,19 +118,10 @@ class SecondarySaleDashboard < Administrate::BaseDashboard
     start_date
     end_date
     custom_matching_fields
-    percent_allowed
-    min_price
-    max_price
-    seller_doc_list
-    buyer_doc_list
     support_email
     show_quantity
 
-    total_interest_quantity
-    offer_allocation_quantity
-    interest_allocation_quantity
     visible_externally
-    lock_allocations
     disable_pan_kyc
     disable_bank_kyc
 
