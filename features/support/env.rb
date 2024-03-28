@@ -87,14 +87,14 @@ options.add_argument('--disable-popup-blocking')
 options.add_argument('--disable-translate')
 options.add_argument('--disable-dev-shm-usage')
 options.add_argument('--enable-features=NetworkService,NetworkServiceInProcess')
-options.add_argument('--window-size=1583,900')
+options.add_argument('--window-size=1583,850')
 
-Capybara.register_driver :selenium do |app|
-  Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
-  # Selenium::WebDriver.for :chrome, options: options
-end
+
 
 if ENV['BROWSER'] == "true"
+  Capybara.register_driver :selenium do |app|
+    Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
+  end
   Capybara.javascript_driver = :chrome #
 
   Capybara.configure do |config|
@@ -102,6 +102,10 @@ if ENV['BROWSER'] == "true"
     config.default_driver        = :selenium #
   end
 else
+  options.add_argument('--headless')
+  Capybara.register_driver :selenium_chrome_headless do |app|
+    Capybara::Selenium::Driver.new(app, browser: :chrome, options: options)
+  end
   Capybara.javascript_driver = :selenium_chrome_headless # :chrome #
 
   Capybara.configure do |config|
