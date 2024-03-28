@@ -2,7 +2,7 @@ V7.0.70
 #####################################
 1. Custom calcs in templates
 2. Investor screen on mobile - bug fix
-3. 
+3. Grids now mobile friendly
 
 V7.0.69    
 #####################################

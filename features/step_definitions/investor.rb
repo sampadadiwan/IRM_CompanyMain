@@ -732,7 +732,7 @@ Then('the esign completed document is present') do
   expected_status = "Signed"
   expect(page).to have_content(expected_status)
   visit(capital_commitment_path(@capital_commitment))
-  click_on("Documents")
+  # click_on("Documents")
   # the signed document owner tag will be signed
   expect(page).to have_content("Signed").once
 end
