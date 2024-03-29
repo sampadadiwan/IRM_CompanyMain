@@ -1,1 +1,41 @@
-<%= render "funds/dashboard/investor_commitments", fund: @fund %>
+<% fund = @fund %>
+<%= render "/funds/fund_stats", fund:  %>
+
+<%= render "/funds/dashboard/investor_commitments", fund:  %>
+
+<div id="fund-ratios-tab" class="">
+    <div id="fund-ratios" class="associated_entity">
+    <%= render "/fund_ratios/index", fund: fund,
+        lazy_load_data: false, data_source: fund_ratios_path(fund_id: fund.id, all: true, fund_ratios_only: true, latest: true) %>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"> FMV/Bought/Sold </h6>
+            </div>
+            <div class="card-body">
+                <%= bought_sold_fmv(fund) %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 mb-4">
+
+        <!-- Illustrations -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"> Portfolio IRR </h6>
+            </div>
+            <div class="card-body">
+                <%= portfolio_last_xirr(fund) %>
+            </div>
+        </div>
+    </div>
+</div>

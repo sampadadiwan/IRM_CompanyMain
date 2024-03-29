@@ -22,6 +22,9 @@ class FundRatiosJob < ApplicationJob
         end
       end
 
+      # Update the latest flag
+      fund.update_latest_fund_ratios(end_date)
+
       # Notify the user
       notify("#{fund.name} fund ratio calculations are now complete. Please refresh the page.", user_id)
     rescue StandardError => e

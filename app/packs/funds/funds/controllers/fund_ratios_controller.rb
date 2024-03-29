@@ -12,6 +12,7 @@ class FundRatiosController < ApplicationController
     @fund_ratios = @fund_ratios.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
     @fund_ratios = @fund_ratios.where(capital_commitment_id: nil) if params[:fund_ratios_only].present?
     @fund_ratios = @fund_ratios.where(owner_type: params[:owner_type]) if params[:owner_type].present?
+    @fund_ratios = @fund_ratios.where(latest: true) if params[:latest] == "true"
     @fund_ratios = @fund_ratios.where(valuation_id: params[:valuation_id]) if params[:valuation_id].present?
     respond_to do |format|
       format.html

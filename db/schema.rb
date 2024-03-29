@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_03_26_105417) do
+ActiveRecord::Schema[7.1].define(version: 2024_03_29_075328) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1278,6 +1278,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_26_105417) do
     t.string "owner_type"
     t.bigint "owner_id"
     t.json "cash_flows"
+    t.boolean "latest", default: false
     t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"
