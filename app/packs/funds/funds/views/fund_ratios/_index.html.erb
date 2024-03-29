@@ -11,7 +11,7 @@
         data: {action: "click->confirm#popup" , turbo: false,
         msg: "Computation will take a few mins, please be patient. Proceed?", method: :get} if fund && policy(fund).generate_fund_ratios? %>
 
-    <%= link_to "Download", fund_ratios_path(fund_id: params[:fund_id], capital_commitment_id: params[:capital_commitment_id], format: :xlsx), class: "btn btn-outline-success" %>
+    <%= link_to "Download", download_xl_link(data_source), class: "btn btn-outline-success" %>
 
   </span>
 </div>

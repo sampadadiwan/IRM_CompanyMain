@@ -1,3 +1,10 @@
+V7.0.71    
+#####################################
+1. Added latest flag to fund ratios
+2. Added PI and Fund Ratios to API downloads
+3. Better Fund Numbers screen
+
+
 V7.0.70    
 #####################################
 1. Custom calcs in templates
