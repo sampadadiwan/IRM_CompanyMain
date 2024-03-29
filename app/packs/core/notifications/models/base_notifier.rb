@@ -14,8 +14,7 @@ class BaseNotifier < Noticed::Event
       config.if = lambda {
         event.entity.permissions.enable_whatsapp? &&
           recipient.whatsapp_enabled &&
-          recipient.phone.present? &&
-          !Rails.env.test?
+          recipient.phone.present?
       }
       config.wait = :email_delay
     end

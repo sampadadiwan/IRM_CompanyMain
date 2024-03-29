@@ -141,11 +141,19 @@ class InvestorKyc < ApplicationRecord
   end
 
   def validate_pan_card
-    VerifyKycPanJob.perform_later(id) if saved_change_to_PAN? || saved_change_to_full_name? || saved_change_to_pan_card_data?
+    if Rails.env.test?
+      VerifyKycPanJob.perform_now(id) if saved_change_to_PAN? || saved_change_to_full_name? || saved_change_to_pan_card_data?
+    elsif saved_change_to_PAN? || saved_change_to_full_name? || saved_change_to_pan_card_data?
+      VerifyKycPanJob.set(wait: rand(120).seconds).perform_later(id)
+    end
   end
 
   def validate_bank
-    VerifyKycBankJob.perform_later(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
+    if Rails.env.test?
+      VerifyKycBankJob.perform_now(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
+    elsif saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
+      VerifyKycBankJob.set(wait: rand(120).seconds).perform_later(id)
+    end
   end
 
   def enable_kyc
