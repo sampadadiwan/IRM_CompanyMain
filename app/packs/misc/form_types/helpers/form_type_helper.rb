@@ -15,8 +15,9 @@ module FormTypeHelper
     render partial: "/form_types/display_custom_fields", locals: { model:, collapsed: }
   end
 
-  def get_form_type(name)
-    form_type = FormType.where(entity_id: current_user.entity_id, name:).first
+  def get_form_type(name, entity_id: nil)
+    entity_id ||= current_user.entity_id
+    form_type = FormType.where(entity_id:, name:).first
     custom_field_names = form_type ? form_type.form_custom_fields.collect(&:name) : []
     custom_headers = custom_field_names.map(&:titleize)
 

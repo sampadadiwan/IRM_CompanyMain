@@ -4,8 +4,7 @@ form_type, custom_field_names, custom_headers = get_form_type("AggregatePortfoli
 
 # Get the latest FundRatios for the APIs
 first_api = @aggregate_portfolio_investments[0]
-latest_fund_ratio = FundRatio.where(owner: first_api).order(end_date: :desc).first
-api_fund_ratios = FundRatio.where(entity_id: first_api.entity_id, owner_type: "AggregatePortfolioInvestment", end_date: latest_fund_ratio.end_date)
+api_fund_ratios = FundRatio.latest.where(entity_id: first_api.entity_id, owner_type: "AggregatePortfolioInvestment")
 
 wb.add_worksheet(name: "AggregatePortfolioInvestments") do |sheet|
   # Create the header row
