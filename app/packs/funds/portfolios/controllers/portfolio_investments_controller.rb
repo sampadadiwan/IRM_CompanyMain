@@ -52,9 +52,9 @@ class PortfolioInvestmentsController < ApplicationController
 
   # PATCH/PUT /portfolio_investments/1 or /portfolio_investments/1.json
   def update
-    @portfolio_investment = @portfolio_investment.assign_attributes(portfolio_investment_params)
+    @portfolio_investment.assign_attributes(portfolio_investment_params)
     respond_to do |format|
-      if PortfolioInvestmentUpdate.call(portfolio_investment: @portfolio_investment).success?
+      if PortfolioInvestmentUpdate.wtf?(portfolio_investment: @portfolio_investment).success?
         format.html { redirect_to portfolio_investment_url(@portfolio_investment), notice: "Portfolio investment was successfully updated." }
         format.json { render :show, status: :ok, location: @portfolio_investment }
       else
