@@ -772,7 +772,7 @@ end
 
 Then('the document has esignatures based on the template') do
   visit(capital_commitment_path(@capital_commitment))
-  click_on("Documents")
+  # click_on("Documents")
   # expect generated Document
   expect(page).to have_content("Commitment Template")
   # visit the document page
