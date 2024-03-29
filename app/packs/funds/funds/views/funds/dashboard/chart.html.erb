@@ -1,8 +1,6 @@
 <% fund = @fund %>
 <%= render "/funds/fund_stats", fund:  %>
 
-<%= render "/funds/dashboard/investor_commitments", fund:  %>
-
 <div id="fund-ratios-tab" class="">
     <div id="fund-ratios" class="associated_entity">
     <%= render "/fund_ratios/index", fund: fund,
