@@ -7,8 +7,10 @@ class XlReportJob < ApplicationJob
     Chewy.strategy(:sidekiq) do
       # Find the fund
       fund = Fund.find(fund_id)
+      templates = fund.reports_folder.documents.templates
+
       # Find the templates in the reports folder
-      fund.reports_folder.documents.templates.each do |template|
+      templates.each do |template|
         if template.uploaded_file_extension == "xlsx"
           FundXl.new.merge_data(fund, template, user_id)
           UserAlert.new(user_id:, message: "#{template.name} creation completed", level: "success").broadcast
@@ -16,8 +18,13 @@ class XlReportJob < ApplicationJob
           UserAlert.new(user_id:, message: "Skipping #{template.name}, it is not an excel file", level: "error").broadcast
         end
       end
-      # Update the user with the completion message
-      UserAlert.new(user_id:, message: "Fund Report creation completed", level: "info").broadcast
+      
+      if templates.empty?
+        UserAlert.new(user_id:, message: "No templates found in the reports folder", level: "error").broadcast
+      else
+        # Update the user with the completion message
+        UserAlert.new(user_id:, message: "Fund Report creation completed", level: "info").broadcast
+      end
     end
   end
 end
