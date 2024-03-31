@@ -999,3 +999,27 @@ h6 {
     color: var(--bs-primary);
   }
 }
+
+
+.dropdown-submenu {
+  position: relative;
+}
+
+.dropdown-submenu .dropdown-menu {
+  top: 10%;
+  left: 100%;
+  margin-left: 0px;
+  margin-top: -1px;
+}
+
+// To open dropdown buttons on hover 
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+
+.navbar-nav li:hover > ul.dropdown-menu {
+    display: block;
+}
+
+
+    

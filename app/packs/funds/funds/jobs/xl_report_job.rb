@@ -18,7 +18,7 @@ class XlReportJob < ApplicationJob
           UserAlert.new(user_id:, message: "Skipping #{template.name}, it is not an excel file", level: "error").broadcast
         end
       end
-      
+
       if templates.empty?
         UserAlert.new(user_id:, message: "No templates found in the reports folder", level: "error").broadcast
       else
