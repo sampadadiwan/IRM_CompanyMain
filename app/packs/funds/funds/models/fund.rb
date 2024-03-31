@@ -153,4 +153,8 @@ class Fund < ApplicationRecord
       fund_ratios.where(end_date:).update_all(latest: true)
     end
   end
+
+  def reports_folder
+    document_folder.children.where(name: "Fund Reports").first.presence || document_folder.children.create(entity_id:, owner: self, name: "Fund Reports", parent: document_folder)
+  end
 end

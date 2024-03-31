@@ -1,0 +1,25 @@
+# This depends on a service for XIRR
+# see: https://github.com/thimmaiah/xirr_py
+
+# Deployed as: https://hub.docker.com/repository/docker/thimmaiah/xirr_py/general
+
+# Ensure you run: docker run -p 8000:80 thimmaiah/xirr_py
+
+class MergeXlApi
+  include HTTParty
+  debug_output $stdout
+  attr_accessor :debug # Rails.env.development?
+
+  def process(template_path, data_path, output_path, caller_id = nil)
+    response = HTTParty.post(
+      "#{ENV.fetch('XIRR_API', nil)}/merge_xl?template_path=#{template_path}&data_path=#{data_path}&output_path=#{output_path}&caller_id=#{caller_id}",
+      headers: {
+        'Content-Type' => 'application/json'
+      },
+      body: {},
+      debug_output: @debug ? $stdout : nil
+    )
+    Rails.logger.debug response
+    response.success?
+  end
+end

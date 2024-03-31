@@ -178,6 +178,9 @@ group :development do
   gem "better_errors"
   gem "binding_of_caller"
 
+  gem 'rubyXL', git: "https://github.com/weshatheleopard/rubyXL.git"
+  gem 'spreadsheet'
+
   # gem 'rails-erd'
 
   # Add speed badges [https://github.com/MiniProfiler/rack-mini-profiler]
