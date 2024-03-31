@@ -1,6 +1,6 @@
 class AddLatestToFundRatio < ActiveRecord::Migration[7.1]
   def change
-    add_column :fund_ratios, :latest, :boolean, default: false
+    # add_column :fund_ratios, :latest, :boolean, default: false
 
     Fund.all.each do |fund|
       last_fund_ratio = fund.fund_ratios.order(end_date: :desc).first
