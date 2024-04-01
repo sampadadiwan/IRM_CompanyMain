@@ -1,3 +1,12 @@
+V7.0.72    
+#####################################
+1. Removed responsive grid for deals
+2. Changed url to show path instead of _url in notifiers - KYC whatsapp bug fix
+3. Help slide out, currently set to contact support msg only
+4. Nested menus for fund reports btn
+5. 
+
+
 V7.0.71    
 #####################################
 1. Added latest flag to fund ratios
