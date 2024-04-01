@@ -105,6 +105,7 @@
           
           <%= render "/layouts/alerts" %>
           <%= render "/layouts/breadcrumbs" %>
+          <%= render HelpSlideOut.new(class_name: "#{controller_path.classify}", action: controller.action_name, id: params[:id], current_user: current_user) %>
           
           <% if params[:audit_trail].present? && params[:id].present? %>
             <!-- Audit Trail of the record with id -->

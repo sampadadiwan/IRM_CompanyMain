@@ -21,106 +21,26 @@
     
 %>
 
-    <div class="row center">
-        <% if fund %>
-        <div class="col">
-            <div class="card border-left-success shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Name
-                            </div>
-                            <div class=" h5 mb-0 font-weight-bold text-gray-800"><%= fund.name %></div>
-                        </div>
-                        <div class="col-auto">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <% end %>
-        
-        <div class="col">
-            <div class="card border-left-primary shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Committed
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= money_to_currency(committed_amount, params) %></div>
-                        </div>
-                        <div class="col-auto">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<%
+cards_data = [  
+  { path: nil, stat: money_to_currency(committed_amount, params), subtitle: "Committed", progress_bar_color: "warning" },
+  { path: nil, stat: money_to_currency(call_amount, params), subtitle: "Called", progress_bar_color: "primary" },
+  { path: nil, stat: money_to_currency(collected_amount, params), subtitle: "Collected", progress_bar_color: "danger" },
+  { path: nil, stat: money_to_currency(distribution_amount, params), subtitle: "Distributed", progress_bar_color: "info" }
+]
 
-        <div class="col">
-            <div class="card border-left-warning shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Called
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= money_to_currency(call_amount, params) %></div>
-                        </div>
-                        <div class="col-auto">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+cards_data.insert(0, { path: nil, stat: fund.name, subtitle: "Name", progress_bar_color: "success" }) if fund 
+%>
 
+<div class="row">
+    <% cards_data.each do |card_data| %>
+    
+        <%= render(NumberStatsComponent.new(
+            path: card_data[:path],
+            amount: card_data[:stat],
+            subtitle: card_data[:subtitle],
+            progress_bar_color: card_data[:progress_bar_color]
+        )) %>
 
-        <div class="col">
-            <div class="card border-left-success shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Collected
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= money_to_currency(collected_amount, params) %></div>
-                        </div>
-                        <div class="col-auto">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-        <div class="col">
-            <div class="card border-left-info shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Distributed
-                            </div>
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800"><%= money_to_currency(distribution_amount, params) %></div>
-                                </div>
-                                <div class="col">
-                                    
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
+    <% end %>
+</div>

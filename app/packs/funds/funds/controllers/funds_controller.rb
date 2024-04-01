@@ -172,8 +172,8 @@ class FundsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_fund
     @fund = Fund.find(params[:id])
-    @bread_crumbs = { Funds: funds_path, "#{@fund.name}": fund_path(@fund) }
     authorize(@fund)
+    @bread_crumbs = { Funds: funds_path, "#{@fund.name}": fund_path(@fund) }
   end
 
   # Only allow a list of trusted parameters through.
