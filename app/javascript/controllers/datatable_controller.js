@@ -3,25 +3,20 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static values = {
     moneyColumns: String, // Which columns are money, so we can appply better sorting
-    responsiveDetails: String
+    responsiveDetails: String, // Whether the responsive details are shown or not, default to true
+    responsive: String // set to false only if the grid should not be responsive, true by default
   }
 
   connect() {
 
     console.log(`moneyColumns = ${this.moneyColumnsValue}`);
     console.log(`responsiveDetails = ${this.responsiveDetailsValue}`);
+    console.log(`responsive = ${this.responsiveValue}`);
 
       let table = {};
       
       let columnDefs = this.columnDefs();
-
-      // Setup whether the responsive details are shown or not, default to true
-      let responsiveDetails = true;
-      if(this.responsiveDetailsValue.length > 0) {
-        responsiveDetails = this.responsiveDetailsValue == "true";
-      } 
-      
-
+      let responsive = this.responsive();      
       $.each( $('.jqDataTable'), function( key, value ) {
         console.log( key + ": " + value );
         if ( $.fn.dataTable.isDataTable( value ) ) {
@@ -31,9 +26,7 @@ export default class extends Controller {
             order: [],     
             stateSave: false,
             retrieve: true,
-            responsive: {
-              details: responsiveDetails,
-            },            
+            responsive: responsive,  
             columnDefs: columnDefs, // https://cdn.datatables.net/plug-ins/2.0.2/sorting/formatted-numbers.js      
             lengthMenu: [
               [10, 25, 50, -1],
@@ -67,6 +60,24 @@ export default class extends Controller {
       if (searchTerm.length > 0) {
         table.search(searchTerm.val()).draw();
       }
+  }
+
+  responsive() {
+    // Sometimes we dont wnat the grid to be responsive e.x. deals screen
+    let responsive = null;
+    let responsiveDetails = false;
+    if (this.responsiveValue.length == 0 || this.responsiveValue == "true") {          
+      // Setup whether the responsive details are shown or not, default to true
+      responsiveDetails = true;
+      if(this.responsiveDetailsValue.length > 0) {
+        responsiveDetails = this.responsiveDetailsValue == "true";
+      }
+      responsive = {
+        details: responsiveDetails
+      }
+    }
+
+    return responsive;
   }
 
 
