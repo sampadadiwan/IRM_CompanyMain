@@ -22,7 +22,7 @@ class InvestorAccessNotifier < BaseNotifier
     end
 
     def url
-      investor_access_url(id: params[:investor_access].id)
+      investor_access_path(id: params[:investor_access].id)
     end
   end
 end

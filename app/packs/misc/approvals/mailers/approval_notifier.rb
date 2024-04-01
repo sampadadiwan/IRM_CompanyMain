@@ -29,7 +29,7 @@ class ApprovalNotifier < BaseNotifier
       if params[:email_method]&.to_s == "notify_approval_response"
         approval_response_path(id: params[:approval_response].id)
       else
-        approval_url(@approval, subdomain: @approval.entity.sub_domain)
+        approval_path(@approval, subdomain: @approval.entity.sub_domain)
       end
     end
   end

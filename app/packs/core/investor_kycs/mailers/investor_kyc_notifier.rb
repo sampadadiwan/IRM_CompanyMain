@@ -24,7 +24,7 @@ class InvestorKycNotifier < BaseNotifier
     end
 
     def url
-      investor_kyc_url(id: params[:investor_kyc].id)
+      investor_kyc_path(id: params[:investor_kyc].id)
     end
   end
 end
