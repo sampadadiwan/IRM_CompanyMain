@@ -27,7 +27,7 @@ export default class extends Controller {
             stateSave: false,
             retrieve: true,
             responsive: responsive,  
-            columnDefs: columnDefs, // https://cdn.datatables.net/plug-ins/2.0.2/sorting/formatted-numbers.js      
+            // columnDefs: columnDefs, // https://cdn.datatables.net/plug-ins/2.0.2/sorting/formatted-numbers.js      
             lengthMenu: [
               [10, 25, 50, -1],
               [10, 25, 50, 'All'],
@@ -43,9 +43,7 @@ export default class extends Controller {
   
         }
         
-      });
-
-      
+      });      
       
       // Ensure DataTable is destroyed, else it gets duplicated
       $(document).on('turbo:before-cache', function() {    
