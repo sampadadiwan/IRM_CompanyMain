@@ -16,6 +16,6 @@ class HelpSlideOut < ViewComponent::Base
       # "Fund-show-employee" => [HelpItem.new('Fund Show Help', 'Fund show page help text...', 'https://example.com')],
       # "Fund-index-employee" => [HelpItem.new('Fund Index Help', 'Fund index page help text...', 'https://example.com')]
       # Add more pages as needed
-    }["#{@class_name}-#{@action}-#{@current_user.curr_role}"] || [HelpItem.new('Contact Support', "Please contact support at support@caphive.com", '#')]
+    }["#{@class_name}-#{@action}-#{@current_user&.curr_role}"] || [HelpItem.new('Contact Support', "Please contact support at support@caphive.com", '#')]
   end
 end
