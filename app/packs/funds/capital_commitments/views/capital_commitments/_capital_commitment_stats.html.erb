@@ -1,77 +1,21 @@
-  <div class="row">
-    <div class="col-sm-3">
-      <div class="card border-left-primary shadow py-2">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                Committed Amount
-              </div>
-              <div class="h6 mb-0 text-gray-800"><%= money_to_currency(capital_commitment.committed_amount, params) %></div>
-            </div>
-            <div class="col-auto">
-              
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-sm-3">
-      <div class="card border-left-warning shadow py-2">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                Called Amount
-              </div>
-              <div class="h6 mb-0 text-gray-800"><%= money_to_currency(capital_commitment.call_amount, params) %></div>
-            </div>
-            <div class="col-auto">
-              
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-sm-3">
-      <div class="card border-left-success shadow py-2">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                Collected Amount
-              </div>
-              <div class="h6 mb-0 text-gray-800"><%= money_to_currency(capital_commitment.collected_amount, params) %></div>
-            </div>
-            <div class="col-auto">
-              
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-sm-3">
-      <div class="card border-left-info shadow py-2">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                Distributed Amount
-              </div>
-              <div class="row no-gutters align-items-center">
-                <div class="col-auto">
-                  <div class="h6 mb-0 text-gray-800"><%= money_to_currency(capital_commitment.distribution_amount, params) %></div>
-                </div>
-                <div class="col">
-                </div>
-              </div>
-            </div>
-            <div class="col-auto">
-              
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+<%
+cards_data = [
+  {path: nil, stat: money_to_currency(capital_commitment.committed_amount, params), subtitle: "Committed", progress_bar_color: "success"},
+  {path: nil, stat: money_to_currency(capital_commitment.call_amount, params), subtitle: "Called", progress_bar_color: "warning"},
+  {path: nil, stat: money_to_currency(capital_commitment.collected_amount, params), subtitle: "Collected", progress_bar_color: "danger"},
+  {path: nil, stat: money_to_currency(capital_commitment.distribution_amount, params), subtitle: "Distributed", progress_bar_color: "info"}
+]
+%>
+
+<div class="row">
+    <% cards_data.each do |card_data| %>
     
-  </div>
+        <%= render(NumberStatsComponent.new(
+            path: card_data[:path],
+            amount: card_data[:stat],
+            subtitle: card_data[:subtitle],
+            progress_bar_color: card_data[:progress_bar_color]
+        )) %>
+
+    <% end %>
+</div>
