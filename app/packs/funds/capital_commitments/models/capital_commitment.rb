@@ -285,4 +285,8 @@ class CapitalCommitment < ApplicationRecord
   def cc
     properties["cc"]
   end
+
+  def soa_folder
+    get_or_create_folder("SOA", AccessRight.new(entity_id:, access_to_investor_id: investor_id))
+  end
 end

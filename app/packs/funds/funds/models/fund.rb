@@ -155,6 +155,6 @@ class Fund < ApplicationRecord
   end
 
   def reports_folder
-    document_folder.children.where(name: "Fund Reports").first.presence || document_folder.children.create(entity_id:, owner: self, name: "Fund Reports", parent: document_folder)
+    get_or_create_folder("Fund Reports")
   end
 end

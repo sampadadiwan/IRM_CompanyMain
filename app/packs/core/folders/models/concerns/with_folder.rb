@@ -77,4 +77,16 @@ module WithFolder
       AccessRight.grant(document, investor_id) if doc.present?
     end
   end
+
+  def get_or_create_folder(name, access_right = nil)
+    folder = document_folder.children.where(name:).first.presence
+    if folder.nil?
+      folder = document_folder.children.create(entity_id:, owner: self, name:, parent: document_folder)
+      if access_right
+        access_right.owner = folder
+        access_right.save
+      end
+    end
+    folder
+  end
 end
