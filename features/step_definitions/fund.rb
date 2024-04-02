@@ -1007,6 +1007,7 @@ Then('the user goes to the fund e-signature report') do
   ESignature.create!(user: @user, entity: @fund.entity, document: @template_dup, status: "failed")
   visit(fund_path(@fund))
   click_on("Reports")
+  find("#basic_reports").hover
   click_on("E-Signatures Report")
   sleep(2)
 end
