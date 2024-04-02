@@ -109,6 +109,7 @@ class InvestorAccess < ApplicationRecord
     end
     self.user = u
     self.is_investor_advisor = user.investor_advisor?
+    self.cc = parse_cc if cc
   end
 
   def send_notification
@@ -126,5 +127,9 @@ class InvestorAccess < ApplicationRecord
 
   def self.ransackable_associations(_auth_object = nil)
     %w[investor user]
+  end
+
+  def parse_cc
+    cc&.scan(%r{\b[a-zA-Z0-9.!\#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\b})&.join(",")
   end
 end
