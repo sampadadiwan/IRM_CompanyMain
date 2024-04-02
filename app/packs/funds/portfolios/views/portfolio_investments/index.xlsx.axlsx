@@ -4,11 +4,11 @@ form_type, custom_field_names, custom_headers = get_form_type("PortfolioInvestme
 
 wb.add_worksheet(name: "PortfolioInvestment") do |sheet|
   # Create the header row
-  sheet.add_row(["Fund", "Portfolio Company", "Investment Date", "Amount", "Quantity", "Cost", "FMV", "Instrument", "Notes"] + custom_headers)
+  sheet.add_row(["Fund", "Portfolio Company", "Investment Date", "Amount", "Quantity", "Cost", "Cost Of Sold", "FMV", "Instrument", "Notes"] + custom_headers)
 
   # Create entries for each item
   @portfolio_investments.each do |pi|
     custom_field_values = get_custom_values(pi, form_type, custom_field_names)
-    sheet.add_row [pi.fund.name, pi.portfolio_company_name, pi.investment_date, pi.amount, pi.quantity, pi.cost, pi.fmv, pi.investment_instrument, pi.notes] + custom_field_values
+    sheet.add_row [pi.fund.name, pi.portfolio_company_name, pi.investment_date, pi.amount, pi.quantity, pi.cost, pi.cost_of_sold, pi.fmv, pi.investment_instrument, pi.notes] + custom_field_values
   end
 end

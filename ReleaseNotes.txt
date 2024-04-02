@@ -4,7 +4,9 @@ V7.0.72
 2. Changed url to show path instead of _url in notifiers - KYC whatsapp bug fix
 3. Help slide out, currently set to contact support msg only
 4. Nested menus for fund reports btn
-5. 
+5. Better rollups of cost of sold
+6. Removed Individual PI downlods from API
+7. SOA folder for commitment SOAs
 
 
 V7.0.71    

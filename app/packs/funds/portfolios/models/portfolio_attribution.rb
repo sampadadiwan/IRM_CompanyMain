@@ -3,7 +3,6 @@ class PortfolioAttribution < ApplicationRecord
   belongs_to :fund
   belongs_to :sold_pi, class_name: "PortfolioInvestment"
   belongs_to :bought_pi, class_name: "PortfolioInvestment", touch: true
-
   before_save :compute_cost_of_sold_cents
 
   monetize :cost_of_sold_cents, with_currency: ->(i) { i.fund.currency }
@@ -13,6 +12,7 @@ class PortfolioAttribution < ApplicationRecord
   counter_culture :bought_pi, column_name: 'sold_quantity', delta_column: 'quantity'
   # counter_culture :bought_pi, column_name: 'cost_of_sold_cents', delta_column: 'cost_of_sold_cents'
   counter_culture :sold_pi, column_name: 'cost_of_sold_cents', delta_column: 'cost_of_sold_cents'
+  counter_culture %i[sold_pi aggregate_portfolio_investment], column_name: 'cost_of_sold_cents', delta_column: 'cost_of_sold_cents'
 
   # Compute the cost_of_sold for the sold_pi
   def update_cost_of_sold

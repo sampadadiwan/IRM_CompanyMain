@@ -2,7 +2,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   include ForInvestor
   include Trackable.new
 
-  belongs_to :entity
+  belongs_to :entity, touch: true
   belongs_to :fund
   belongs_to :portfolio_company, class_name: "Investor"
   belongs_to :investment_instrument
@@ -85,19 +85,19 @@ class AggregatePortfolioInvestment < ApplicationRecord
     total
   end
 
-  def fifo_cost_of_sold_allocation(capital_commitment, _end_date)
-    total = 0
-    portfolio_investments.each do |portfolio_investment|
-      # Do not move this check into the query. Sometimes we get as_of API (see method above), then query filtering does not work
-      next unless portfolio_investment.sell?
+  # def fifo_cost_of_sold_allocation(capital_commitment, _end_date)
+  #   total = 0
+  #   portfolio_investments.each do |portfolio_investment|
+  #     # Do not move this check into the query. Sometimes we get as_of API (see method above), then query filtering does not work
+  #     next unless portfolio_investment.sell?
 
-      icp_ae = capital_commitment.account_entries.where(name: "Investable Capital Percentage", reporting_date: ..portfolio_investment.investment_date).order(reporting_date: :asc).last
+  #     icp_ae = capital_commitment.account_entries.where(name: "Investable Capital Percentage", reporting_date: ..portfolio_investment.investment_date).order(reporting_date: :asc).last
 
-      percentage = icp_ae.amount_cents / 10_000
-      total += portfolio_investment.cost_of_sold_cents * portfolio_investment.quantity * percentage
-    end
-    total
-  end
+  #     percentage = icp_ae.amount_cents / 10_000
+  #     total += portfolio_investment.cost_of_sold_cents * portfolio_investment.quantity * percentage
+  #   end
+  #   total
+  # end
 
   # This will trigger a stock split for all portfolio_investments
   def split(stock_split_ratio)

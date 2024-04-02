@@ -26,9 +26,9 @@
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
 
-              <%= link_to "Aggregate Investments", aggregate_portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true), { class: "dropdown-item"}  %>
+              <%= link_to "Download Investments", aggregate_portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true), { class: "dropdown-item"}  %>
 
-              <%= link_to "Individual Investments", portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true), { class: "dropdown-item"}  %>
+              <%#= link_to "Individual Investments", portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true), { class: "dropdown-item"}  %>
 
               <div class="dropdown-divider"></div>
               

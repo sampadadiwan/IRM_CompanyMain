@@ -38,11 +38,6 @@ class PortfolioInvestment < ApplicationRecord
     ["portfolio_investments.quantity < ?", 0] => 'sold_quantity'
   }
 
-  # Cost of sold must be computed only from sells
-  counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.sell? ? "cost_of_sold_cents" : nil }, delta_column: 'cost_of_sold_cents', column_names: {
-    ["portfolio_investments.quantity < ?", 0] => 'cost_of_sold_cents'
-  }
-
   counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.quantity.positive? ? "bought_amount_cents" : "sold_amount_cents" }, delta_column: 'amount_cents', column_names: {
     ["portfolio_investments.quantity > ?", 0] => 'bought_amount_cents',
     ["portfolio_investments.quantity < ?", 0] => 'sold_amount_cents'
