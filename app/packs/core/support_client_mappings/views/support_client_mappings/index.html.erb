@@ -4,7 +4,7 @@
   <%= link_to "New Support Client Mapping", new_support_client_mapping_path, {class: "btn btn-outline-primary"}  %>
 </div>
 <div class="table-responsive" data-controller="datatable">
-  <table id="support_client_mappings" class="table table-bordered dataTable">
+  <table id="support_client_mappings" class="table table-bordered dataTable jqDataTable">
 
     <thead>
       <tr>
@@ -16,6 +16,9 @@
         </th>
         <th>
           End Date
+        </th>
+        <th>
+          Enabled
         </th>
         <th>
         </th>

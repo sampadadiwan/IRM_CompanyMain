@@ -79,6 +79,14 @@ class User < ApplicationRecord
     confirm unless confirmed?
   end
 
+  # Ensure that support gets enabled if a mapping is already there.
+  before_save :update_support, if: :enable_support_changed?
+  # rubocop:disable Rails/SkipsModelValidations
+  def update_support
+    SupportClientMapping.where(entity_id:).update_all(enabled: enable_support, end_date: Time.zone.today + 1.day)
+  end
+  # rubocop:enable Rails/SkipsModelValidations
+
   def password_changed?
     encrypted_password_changed? && persisted?
   end
