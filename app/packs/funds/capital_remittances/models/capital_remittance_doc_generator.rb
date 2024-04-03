@@ -35,7 +35,7 @@ class CapitalRemittanceDocGenerator
 
     context = {}
 
-    context.store :effective_date, Time.zone.today.strftime("%d %B %Y")
+    context.store :date, Time.zone.today.strftime("%d %B %Y")
 
     context.store :entity, capital_remittance.entity
     context.store :fund, TemplateDecorator.decorate(capital_remittance.fund)

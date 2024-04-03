@@ -31,7 +31,7 @@ class CapitalCommitmentDocGenerator
     template = Sablon.template(File.expand_path(fund_doc_template_path))
 
     context = {
-      effective_date: Time.zone.today.strftime("%d %B %Y"),
+      date: Time.zone.today.strftime("%d %B %Y"),
       entity: capital_commitment.entity,
       fund: TemplateDecorator.decorate(capital_commitment.fund),
       capital_commitment: TemplateDecorator.decorate(capital_commitment),

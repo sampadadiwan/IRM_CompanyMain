@@ -28,10 +28,13 @@ class DocumentDownloadJob < ApplicationJob
   end
 
   def add_documents(zipfile, user, folder_ids)
+    document_list = {}
     Pundit.policy_scope(user, Document).where(folder_id: folder_ids).includes(:folder).find_each do |doc|
       doc.file.download do |tmp|
         file_name = get_file_name(doc, tmp)
-        zipfile.add(file_name, file_name)
+        zipfile.add(file_name, file_name) if document_list[file_name].nil?
+        # This is done to avoid duplicates in the zip file
+        document_list[file_name] = "Added"
         Rails.logger.debug { "Added file #{file_name}" }
       end
     end
