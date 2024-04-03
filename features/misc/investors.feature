@@ -128,7 +128,7 @@ Scenario Outline: Create investor kyc - no ckyc
   Given the user has role "company_admin"
   Given there is an existing investor "investor_name=Investor 1"
   Given I create a new InvestorKyc "PAN=ABCD9876F" with files "Upload PAN Card,Upload Address Proof,Upload Cancelled Cheque / Bank Statement" for ""
-  Then I should see the "Investor kyc was successfully saved. Please upload the required documents for the KYC."
+  Then I should see the "Investor kyc was successfully saved."
   And I should see the kyc documents "Upload PAN Card,Upload Address Proof,Upload Cancelled Cheque / Bank Statement"
   And when I upload the document for the kyc
   Then I should see the "Document was successfully saved."
@@ -155,8 +155,8 @@ Scenario Outline: Create investor kyc
     |true         | PAN=ABCD9870;send_kyc_form_to_user=true | false         | false |
     |false        | PAN=ABCD9876;send_kyc_form_to_user=false| false         | false |
     |false        | PAN=ABCD9876;send_kyc_form_to_user=false| true          | true  |
-   
-  
+
+
 
 Scenario Outline: Create investor kyc
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"

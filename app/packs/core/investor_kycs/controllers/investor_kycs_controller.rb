@@ -89,7 +89,7 @@ class InvestorKycsController < ApplicationController
     respond_to do |format|
       if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:).success?
 
-        format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC." }
+        format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
         format.json { render :show, status: :created, location: @investor_kyc }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -173,7 +173,7 @@ class InvestorKycsController < ApplicationController
 
     respond_to do |format|
       if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:).success?
-        format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved. Please upload the required documents for the KYC." }
+        format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
         format.html { render :edit, status: :unprocessable_entity }
