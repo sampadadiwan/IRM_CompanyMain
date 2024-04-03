@@ -142,16 +142,16 @@ class InvestorKyc < ApplicationRecord
 
   def validate_pan_card
     if Rails.env.test?
-      VerifyKycPanJob.perform_now(id) if saved_change_to_PAN? || saved_change_to_full_name? || saved_change_to_pan_card_data?
-    elsif saved_change_to_PAN? || saved_change_to_full_name? || saved_change_to_pan_card_data?
+      VerifyKycPanJob.perform_now(id) if (saved_change_to_PAN? && self.PAN.present?) || (saved_change_to_full_name? && full_name.present?) || (saved_change_to_birth_date? && birth_date.present?)
+    elsif (saved_change_to_PAN? && self.PAN.present?) || (saved_change_to_full_name? && full_name.present?) || (saved_change_to_birth_date? && birth_date.present?)
       VerifyKycPanJob.set(wait: rand(300).seconds).perform_later(id)
     end
   end
 
   def validate_bank
     if Rails.env.test?
-      VerifyKycBankJob.perform_now(id) if saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
-    elsif saved_change_to_bank_account_number? || saved_change_to_ifsc_code? || saved_change_to_full_name?
+      VerifyKycBankJob.perform_now(id) if (saved_change_to_bank_account_number? && bank_account_number.present?) || (saved_change_to_ifsc_code? && ifsc_code.present?) || (saved_change_to_full_name? && full_name.present?)
+    elsif (saved_change_to_bank_account_number? && bank_account_number.present?) || (saved_change_to_ifsc_code? && ifsc_code.present?) || (saved_change_to_full_name? && full_name.present?)
       VerifyKycBankJob.set(wait: rand(300).seconds).perform_later(id)
     end
   end

@@ -6,7 +6,7 @@ class VerifyKycBankJob < VerifyBankJob
       @model = InvestorKyc.find(id)
       if @model.entity.entity_setting.bank_verification
         verify
-        @model.save
+        @model.save(validate: false)
       else
         Rails.logger.debug { "Skipping: bank_verification set to false for #{@model.entity.name}" }
       end

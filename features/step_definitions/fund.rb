@@ -712,7 +712,7 @@ end
 
 
 Given('Given I upload {string} file for {string} of the fund') do |file, tab|
-  
+
   @import_file = file
   visit(fund_path(@fund))
   click_on(tab)
@@ -724,7 +724,7 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   else
     click_on("Upload")
   end
-  
+
   # sleep(1)
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
@@ -766,7 +766,7 @@ Then('the capital commitments must have the data in the sheet') do
   data.each_with_index do |row, idx|
     next if idx.zero? # skip header row
 
-    
+
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
     cc = capital_commitments[idx-1]
@@ -845,7 +845,7 @@ Then('the capital commitments must have the percentages updated') do
 end
 
 Then('the fund must have the counter caches updated') do
-  
+
   @fund.reload
   @fund.collected_amount_cents.should == CapitalCommitment.pool.sum(:collected_amount_cents)
   @fund.committed_amount_cents.should == CapitalCommitment.pool.sum(:committed_amount_cents)
@@ -857,7 +857,7 @@ end
 Then('the remittances are generated for the capital calls') do
   Fund.all.each do |fund|
     fund.capital_calls.each do |cc|
-      
+
       commitments = cc.Pool? ? fund.capital_commitments.pool : fund.capital_commitments.co_invest
       puts "Checking remittances for #{cc.name} #{commitments.count} #{cc.capital_remittances.count}"
       cc.capital_remittances.count.should == commitments.count
@@ -1539,7 +1539,7 @@ Then('a reverse remittance payment must be generated for the remittance') do
   @reverse_payment = @capital_remittance.capital_remittance_payments.last
   @reverse_payment.fund_id.should == @capital_remittance.fund_id
   @reverse_payment.amount_cents.should == @capital_remittance.arrear_amount_cents
-  @reverse_payment.folio_amount_cents.should == @capital_remittance.arrear_folio_amount_cents  
+  @reverse_payment.folio_amount_cents.should == @capital_remittance.arrear_folio_amount_cents
   @reverse_payment.amount_cents.should == @commitment_adjustment.amount_cents
   @reverse_payment.folio_amount_cents.should == @commitment_adjustment.folio_amount_cents
   @reverse_payment.payment_date.should == @commitment_adjustment.as_of
@@ -1565,7 +1565,7 @@ end
 Given('notification should be sent {string} to the remittance investors for {string}') do |sent, cn_args|
   cn = CustomNotification.new
   key_values(cn, cn_args)
-  
+
   @capital_call.capital_remittances.each do |cr|
     user = cr.investor.investor_accesses.approved.first.user
     open_email(user.email)
@@ -1574,9 +1574,9 @@ Given('notification should be sent {string} to the remittance investors for {str
       expect(current_email.subject).to include @capital_call.custom_notification(cn.email_method).subject
     else
       current_email.should == nil
-    end  
+    end
   end
-  
+
 end
 
 Given('there is a custom notification {string} in place for the Call') do |args|
@@ -1592,7 +1592,7 @@ Then('the imported data must have the form_type updated') do
     form_type = @import_upload.entity.form_types.where(name: row.class.name).first
     if form_type.present?
       puts "Checking form_type for #{row.class.name}"
-      row.form_type_id.should == form_type.id 
+      row.form_type_id.should == form_type.id
       form_type.form_custom_fields.each do |fcf|
         # Ensure that the data json fields are exactly the same as the form custom fields name
         puts "Checking #{fcf.name} in imported data #{row.custom_fields[fcf.name]}"

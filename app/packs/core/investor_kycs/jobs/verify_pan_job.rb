@@ -33,13 +33,19 @@ class VerifyPanJob < ApplicationJob
   def check_details(response)
     id_number = response[:id_no].strip
 
-    if id_number.strip != @model.PAN.strip
+    if id_number.strip != @model.PAN&.strip
       @model.pan_verification_status += " PAN number does not match"
       @model.pan_verified = false
     end
 
-    if response[:name_matched] != true && response[:name]&.downcase != @model.full_name&.downcase
+    if response[:name_matched] != true || response[:name]&.downcase != @model.full_name&.downcase
       @model.pan_verification_status += " Name does not match"
+      @model.pan_verified = false
+    end
+
+    # dob format "dd/mm/yyyy"
+    if response[:is_pan_dob_valid] != true || response[:dob] != @model.birth_date&.strftime("%d/%m/%Y")
+      @model.pan_verification_status += " Date of birth does not match"
       @model.pan_verified = false
     end
   end

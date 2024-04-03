@@ -31,6 +31,12 @@ class DigioEsignJob < ApplicationJob
       logger.error msg
       send_notification(msg, user_id, :danger)
     end
+  rescue JSON::ParserError => e
+    # 502 bad gateway response cannot be parsed
+    msg = "Error sending #{doc.name} for e-signing - #{e.message}"
+    ExceptionNotifier.notify_exception(StandardError.new(msg))
+    logger.error msg
+    send_notification(msg, user_id, :danger)
   end
 
   def send_documents_for_esign(folder_id, user_id)

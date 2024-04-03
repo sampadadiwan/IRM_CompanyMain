@@ -6,7 +6,7 @@ class VerifyKycPanJob < VerifyPanJob
       @model = InvestorKyc.find(id)
       if @model.entity.entity_setting.pan_verification
         verify
-        @model.save
+        @model.save(validate: false)
       else
         Rails.logger.debug { "Skipping: pan_verification set to false for #{@model.entity.name}" }
       end

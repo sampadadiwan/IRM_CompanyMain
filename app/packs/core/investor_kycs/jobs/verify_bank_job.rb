@@ -17,7 +17,7 @@ class VerifyBankJob < ApplicationJob
         @model.bank_verification_status = response["error_msg"]
       end
     else
-      @model.bank_verification_status = "No Bank Account or IFSC Code Entered"
+      @model.bank_verification_status = "No Bank Account Number / IFSC Code Entered"
     end
   end
 
@@ -32,7 +32,7 @@ class VerifyBankJob < ApplicationJob
   def parsed_response(response)
     JSON.parse(response.body)
   rescue JSON::ParserError => e
-    # if response cannot be parsed, log the error and return the response body
+    # if response cannot be parsed, log the error and return nil as its shown on UI
     Rails.logger.error { "JSON::ParserError: #{e.message}" }
     nil
   end

@@ -14,7 +14,8 @@ Given('I create an investment {string}') do |arg1|
 
   puts @investment.investor.to_json
 
-  click_on("New Investment")
+  # click_on("New Investment")
+  page.all(:link, "New Investment").last.click
 
   select(@investment.investor.investor_name, from: "investment_investor_id")
   select(@investment.funding_round.name, from: "investment_funding_round_id")
@@ -164,7 +165,7 @@ Given('there are {string} employee investors') do |arg|
   @holdings_investor = @entity.investors.where(is_holdings_entity: true).first
   @investor_entity = @holdings_investor.investor_entity
   puts @investor_entity.to_json
-  
+
   (0..arg.to_i-1).each do
     user = FactoryBot.create(:user, entity: @investor_entity, phone: "9449025878")
     puts "\n####Employee Investors####\n"
