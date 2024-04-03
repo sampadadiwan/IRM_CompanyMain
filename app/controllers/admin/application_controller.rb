@@ -12,7 +12,7 @@ module Admin
     before_action :authenticate_admin
 
     def authenticate_admin
-      redirect_to '/', alert: 'Not authorized.' unless current_user&.has_role?(:super)
+      redirect_to '/', alert: 'Not authorized.' unless current_user&.has_role?(:super) || current_user&.has_role?(:support)
     end
 
     rescue_from Pundit::NotAuthorizedError do |_exception|

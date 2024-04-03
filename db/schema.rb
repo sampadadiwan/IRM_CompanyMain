@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_03_29_075328) do
+ActiveRecord::Schema[7.1].define(version: 2024_04_03_080404) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -2641,6 +2641,18 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_29_075328) do
     t.index ["user_id"], name: "index_stock_adjustments_on_user_id"
   end
 
+  create_table "support_client_mappings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "entity_id", null: false
+    t.date "end_date"
+    t.datetime "deleted_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_support_client_mappings_on_deleted_at"
+    t.index ["entity_id"], name: "index_support_client_mappings_on_entity_id"
+    t.index ["user_id"], name: "index_support_client_mappings_on_user_id"
+  end
+
   create_table "taggings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "tag_id"
     t.string "taggable_type"
@@ -3134,6 +3146,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_03_29_075328) do
   add_foreign_key "stock_adjustments", "investment_instruments"
   add_foreign_key "stock_adjustments", "investors", column: "portfolio_company_id"
   add_foreign_key "stock_adjustments", "users"
+  add_foreign_key "support_client_mappings", "entities"
+  add_foreign_key "support_client_mappings", "users"
   add_foreign_key "taggings", "tags"
   add_foreign_key "tasks", "entities"
   add_foreign_key "tasks", "form_types"

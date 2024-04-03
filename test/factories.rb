@@ -1,4 +1,10 @@
 FactoryBot.define do
+  factory :support_client_mapping do
+    user { nil }
+    entity { nil }
+    end_date { "2024-04-03" }
+  end
+
   factory :investment_instrument do
     name { (0...8).map { (65 + rand(26)).chr }.join }
     category { "Unlisted" }

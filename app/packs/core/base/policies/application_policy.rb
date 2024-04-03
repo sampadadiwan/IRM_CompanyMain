@@ -44,7 +44,7 @@ class ApplicationPolicy
   end
 
   def super_user?
-    user.has_cached_role?(:super)
+    user.has_cached_role?(:super) || user.has_cached_role?(:support)
   end
 
   # This method checks if the user is of the record entity or of the parent group company

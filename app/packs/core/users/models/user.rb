@@ -69,6 +69,9 @@ class User < ApplicationRecord
   validates :entity_type, length: { maximum: 25 }
   validates :call_code, length: { maximum: 3 }
 
+  scope :support_users, -> { joins(:roles).where("roles.name =?", "support") }
+  scope :super_users, -> { joins(:roles).where("roles.name =?", "super") }
+
   before_create :setup_defaults
   after_create :update_investor_access
   before_save :confirm_user, if: :password_changed?

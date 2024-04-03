@@ -1,0 +1,32 @@
+<%= render FormCard.new(title: "#{@support_client_mapping}") do %>
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>
+        User
+      </td>
+      <td>
+        <%= link_to @support_client_mapping.user %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Entity
+      </td>
+      <td>
+        <%= link_to @support_client_mapping.entity %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        End Date
+      </td>
+      <td>
+        <%= @support_client_mapping.end_date %>
+      </td>
+    </tr>
+  </table>
+  <div class="associated_entity">
+    <%= link_to "Edit", edit_support_client_mapping_path(@support_client_mapping), {class: "btn btn-outline-primary"} %> 
+    <%= button_to "Delete", @support_client_mapping, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  </div>
+<% end %>

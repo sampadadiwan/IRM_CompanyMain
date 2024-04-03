@@ -13,8 +13,11 @@ every 1.day, at: '02:01 am' do
   # runner "InvestmentSnapshotJob.perform_now"
   # runner "ResendConfirmationJob.perform_now"
   runner "DocumentEsignUpdateJob.perform_now"
+  # Delete old notifications
   runner "Noticed::Notification.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
   runner "Noticed::Event.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
+  # Ensure that enable_support is set to false for all users and EOD
+  runner "User.where(enable_support: true).update_all(enable_support: false)"
 end
 
 every 1.hour do

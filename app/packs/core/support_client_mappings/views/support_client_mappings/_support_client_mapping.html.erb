@@ -1,0 +1,16 @@
+
+<tr id="<%= dom_id support_client_mapping %>">
+  <td>
+    <%= link_to support_client_mapping.user %>
+  </td>
+  <td>
+    <%= link_to support_client_mapping.entity %>
+  </td>
+  <td>
+    <%= l support_client_mapping.end_date %>
+  </td>
+  <td>
+    <%= link_to "Show", support_client_mapping , {class: "btn btn-outline-primary"}%>
+    <%= link_to "Edit", edit_support_client_mapping_path(support_client_mapping) , {class: "btn btn-outline-primary"}%>
+  </td>
+</tr>
