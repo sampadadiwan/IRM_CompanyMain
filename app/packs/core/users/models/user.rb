@@ -240,4 +240,10 @@ class User < ApplicationRecord
     self.curr_role = curr_role if has_cached_role?(curr_role.to_sym)
     save
   end
+
+  # rubocop:disable Rails/SkipsModelValidations
+  def self.disable_support_for_all
+    User.where(enable_support: true).update_all(enable_support: false)
+  end
+  # rubocop:enable Rails/SkipsModelValidations
 end

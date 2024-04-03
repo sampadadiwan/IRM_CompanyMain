@@ -4,6 +4,7 @@ class CreateSupportClientMappings < ActiveRecord::Migration[7.1]
       t.references :user, null: false, foreign_key: true
       t.references :entity, null: false, foreign_key: true
       t.date :end_date
+      t.boolean :enabled, default: true
       t.datetime :deleted_at
       t.timestamps
     end

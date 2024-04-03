@@ -17,7 +17,9 @@ every 1.day, at: '02:01 am' do
   runner "Noticed::Notification.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
   runner "Noticed::Event.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
   # Ensure that enable_support is set to false for all users and EOD
-  runner "User.where(enable_support: true).update_all(enable_support: false)"
+  runner "User.disable_support_for_all"
+  # Ensure that enable is set to false for all SupportClientMappings after end_date
+  runner "SupportClientMapping.disable_expired"
 end
 
 every 1.hour do

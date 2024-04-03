@@ -11,7 +11,7 @@ class EntityPolicy < ApplicationPolicy
     def resolve_admin
       # scope.where(enable_support: true)
       if user.has_cached_role?(:support)
-        scope.joins(:support_client_mappings).where(support_client_mappings: { user_id: user.id }).merge(Entity.where_permissions(:enable_support))
+        scope.joins(:support_client_mappings).where(support_client_mappings: { user_id: user.id, enabled: true }).merge(Entity.where_permissions(:enable_support))
       elsif user.has_cached_role?(:super)
         scope
       end

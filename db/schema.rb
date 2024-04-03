@@ -2645,6 +2645,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_03_080404) do
     t.bigint "user_id", null: false
     t.bigint "entity_id", null: false
     t.date "end_date"
+    t.boolean "enabled", default: true
     t.datetime "deleted_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

@@ -24,6 +24,14 @@
         <%= @support_client_mapping.end_date %>
       </td>
     </tr>
+    <tr>
+      <td>
+        Enabled
+      </td>
+      <td>
+        <%= display_boolean @support_client_mapping.enabled %>
+      </td>
+    </tr>
   </table>
   <div class="associated_entity">
     <%= link_to "Edit", edit_support_client_mapping_path(@support_client_mapping), {class: "btn btn-outline-primary"} %> 
