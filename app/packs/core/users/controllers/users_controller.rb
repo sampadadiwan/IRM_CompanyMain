@@ -38,6 +38,9 @@ class UsersController < ApplicationController
   end
 
   def no_password_login
+    # If we have support trying to log in as this user, lets track that
+    support_user_id = current_user&.has_cached_role?(:support) ? current_user.id : nil
+
     if params[:signed_id]
       # Find user by signed id, the signed_id is generated as per https://kukicola.io/posts/signed-urls-with-ruby/
       @user = User.find_signed params[:signed_id]
@@ -46,6 +49,8 @@ class UsersController < ApplicationController
         @user.confirm unless @user.confirmed?
         # Sign in user
         sign_in @user
+        # Set support user id if present, so audit trail can reflect who actually made changes. see ApplicationController.current_user_or_support_user and config/initializers/audited.rb
+        session[:support_user_id] = support_user_id if support_user_id.present?
         # Redirect to root path
         redirect_to ( params[:redirect_to].presence ||
                       session[:user_return_to].presence ||

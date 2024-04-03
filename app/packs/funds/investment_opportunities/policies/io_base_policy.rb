@@ -27,7 +27,7 @@ class IoBasePolicy < ApplicationPolicy
         end
       end
     else
-      super_user?
+      support?
     end
   end
 

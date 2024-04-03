@@ -8,7 +8,7 @@ class PaymentPolicy < ApplicationPolicy
   end
 
   def create?
-    user.has_cached_role?(:super)
+    support?
   end
 
   def new?

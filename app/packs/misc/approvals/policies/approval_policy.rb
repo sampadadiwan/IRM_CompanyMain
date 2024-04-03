@@ -16,13 +16,13 @@ class ApprovalPolicy < ApplicationPolicy
   def show?
     (user.entity.permissions.enable_approvals? &&
       (belongs_to_entity?(user, record) ||
-        Approval.for_investor(user).where(id: record.id).present?)) || super_user?
+        Approval.for_investor(user).where(id: record.id).present?)) || support?
   end
 
   def create?
     (user.entity.permissions.enable_approvals? &&
       belongs_to_entity?(user, record) &&
-      user.has_cached_role?("company_admin")) || super_user?
+      user.has_cached_role?("company_admin")) || support?
   end
 
   def new?
@@ -30,7 +30,7 @@ class ApprovalPolicy < ApplicationPolicy
   end
 
   def update?
-    (create? && record.due_date >= Time.zone.today && !record.locked) || super_user?
+    (create? && record.due_date >= Time.zone.today && !record.locked) || support?
   end
 
   def edit?

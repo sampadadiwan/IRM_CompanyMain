@@ -26,7 +26,7 @@ class InvestorAdvisorPolicy < ApplicationPolicy
   end
 
   def update?
-    create? || super_user?
+    create? || support?
   end
 
   def edit?

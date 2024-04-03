@@ -80,7 +80,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def update?
-    (create?(:update) || super_user?) && !record.verified
+    (create?(:update) || support?) && !record.verified
   end
 
   def send_notification?

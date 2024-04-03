@@ -4,7 +4,7 @@ class AccessRightPolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record) || super_user? || record.user_id == user.id || record.investor.investor_entity_id == user.entity_id
+    belongs_to_entity?(user, record) || support? || record.user_id == user.id || record.investor.investor_entity_id == user.entity_id
   end
 
   def create?
@@ -16,7 +16,7 @@ class AccessRightPolicy < ApplicationPolicy
   end
 
   def update?
-    create? || Pundit.policy(user, record.owner).update? || super_user?
+    create? || Pundit.policy(user, record.owner).update? || support?
   end
 
   def start_deal?

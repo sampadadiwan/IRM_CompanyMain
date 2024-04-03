@@ -1,11 +1,7 @@
 class ReportPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
-        scope.all
-      else
-        scope.where(entity_id: [user.entity_id, nil], curr_role: user.curr_role)
-      end
+      scope.where(entity_id: [user.entity_id, nil], curr_role: user.curr_role)
     end
   end
 
@@ -14,7 +10,7 @@ class ReportPolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record) || record.entity.nil? || super_user?
+    belongs_to_entity?(user, record) || record.entity.nil? || support?
   end
 
   def create?

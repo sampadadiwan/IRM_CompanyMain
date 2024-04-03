@@ -15,7 +15,7 @@ module Noticed
     end
 
     def show?
-      (user.id == record.recipient_id && record.recipient_type == "User") || record.params[:entity_id] == user.entity_id || super_user?
+      (user.id == record.recipient_id && record.recipient_type == "User") || record.params[:entity_id] == user.entity_id || support?
     end
 
     def mark_as_read?

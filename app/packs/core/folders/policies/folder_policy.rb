@@ -7,7 +7,7 @@ class FolderPolicy < ApplicationPolicy
     if user.investor_advisor?
       belongs_to_entity?(user, record) && record.owner && Pundit.policy(user, record.owner).show?
     else
-      belongs_to_entity?(user, record) || super_user?
+      belongs_to_entity?(user, record) || support?
     end
   end
 
@@ -24,7 +24,7 @@ class FolderPolicy < ApplicationPolicy
   end
 
   def update?
-    (create? || super_user?) && !record.system?
+    (create? || support?) && !record.system?
   end
 
   def edit?

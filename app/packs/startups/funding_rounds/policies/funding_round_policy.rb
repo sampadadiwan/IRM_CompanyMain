@@ -4,7 +4,7 @@ class FundingRoundPolicy < ApplicationPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record) || super_user?
+    belongs_to_entity?(user, record) || support?
   end
 
   def create?
@@ -16,7 +16,7 @@ class FundingRoundPolicy < ApplicationPolicy
   end
 
   def update?
-    create? || super_user?
+    create? || support?
   end
 
   def edit?

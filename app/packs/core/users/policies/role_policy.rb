@@ -6,6 +6,6 @@ class RolePolicy < ApplicationPolicy
   end
 
   def destroy?
-    super_user?
+    support?
   end
 end

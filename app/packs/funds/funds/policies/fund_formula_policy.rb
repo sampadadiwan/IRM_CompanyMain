@@ -8,7 +8,7 @@ class FundFormulaPolicy < ApplicationPolicy
   end
 
   def create?
-    super_user? || (belongs_to_entity?(user, record) && record.fund.editable_formulas)
+    support? || (belongs_to_entity?(user, record) && record.fund.editable_formulas)
   end
 
   def new?

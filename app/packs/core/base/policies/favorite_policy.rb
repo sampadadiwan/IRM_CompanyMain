@@ -1,11 +1,7 @@
 class FavoritePolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
-        scope.all
-      else
-        scope.where(favoritor: user)
-      end
+      scope.where(favoritor: user)
     end
   end
 

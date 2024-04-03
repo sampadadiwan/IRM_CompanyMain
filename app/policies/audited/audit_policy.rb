@@ -8,7 +8,7 @@ module Audited
     end
 
     def index?
-      super_user?
+      support?
     end
 
     def show?

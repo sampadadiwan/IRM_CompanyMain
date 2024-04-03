@@ -1,6 +1,6 @@
 class DocumentPolicy < ApplicationPolicy
   def index?
-    user.enable_documents || super_user?
+    user.enable_documents || support?
   end
 
   def bulk_actions?
@@ -13,7 +13,7 @@ class DocumentPolicy < ApplicationPolicy
         (user.enable_documents && belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) ||
         (user.enable_documents && show_investor? && !user.investor_advisor?) ||
         (record.owner && owner_policy.show? && not_generated_or_approved) ||
-        allow_external?(:read) || super_user?
+        allow_external?(:read) || support?
       ))
   end
 
@@ -73,7 +73,7 @@ class DocumentPolicy < ApplicationPolicy
 
   def destroy?
     (update? && record.entity_id == user.entity_id &&
-    (!record.sent_for_esign || record.esign_expired? || record.esign_failed?)) || super_user?
+    (!record.sent_for_esign || record.esign_expired? || record.esign_failed?)) || support?
   end
 
   def show_investor?

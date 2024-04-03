@@ -36,7 +36,7 @@ class FundPolicy < FundBasePolicy
       (
         permissioned_employee? ||
         permissioned_investor? ||
-        super_user?
+        support?
       )
   end
 
@@ -62,7 +62,7 @@ class FundPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update) || super_user?
+    permissioned_employee?(:update) || support?
   end
 
   def edit?
@@ -74,7 +74,7 @@ class FundPolicy < FundBasePolicy
   end
 
   def destroy?
-    Rails.env.test? ? permissioned_employee?(:destroy) : super_user?
+    Rails.env.test? ? permissioned_employee?(:destroy) : support?
   end
 
   def grant_access_rights?

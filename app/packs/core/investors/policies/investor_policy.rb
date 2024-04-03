@@ -5,7 +5,7 @@ class InvestorPolicy < ApplicationPolicy
 
   def show?
     user.enable_investors &&
-      ((belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :read)) || user.entity_id == record.investor_entity_id || super_user?)
+      ((belongs_to_entity?(user, record) && company_admin_or_emp_crud?(user, record, :read)) || user.entity_id == record.investor_entity_id || support?)
   end
 
   def create?(emp_perm = :create)
@@ -17,7 +17,7 @@ class InvestorPolicy < ApplicationPolicy
   end
 
   def update?(emp_perm = :update)
-    create?(emp_perm) || super_user?
+    create?(emp_perm) || support?
   end
 
   def merge?

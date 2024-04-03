@@ -5,7 +5,7 @@ class ValuationPolicy < ApplicationPolicy
 
   def show?
     belongs_to_entity?(user, record) ||
-      (record.owner && owner_policy.show?) || super_user?
+      (record.owner && owner_policy.show?) || support?
   end
 
   def create?
@@ -17,7 +17,7 @@ class ValuationPolicy < ApplicationPolicy
   end
 
   def update?
-    create? || super_user?
+    create? || support?
   end
 
   def edit?

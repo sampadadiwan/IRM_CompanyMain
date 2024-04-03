@@ -43,8 +43,12 @@ class ApplicationPolicy
     extenal ? extenal.set?(action) : false
   end
 
+  def support?
+    user.has_cached_role?(:support)
+  end
+
   def super_user?
-    user.has_cached_role?(:super) || user.has_cached_role?(:support)
+    user.has_cached_role?(:super)
   end
 
   # This method checks if the user is of the record entity or of the parent group company
@@ -53,7 +57,7 @@ class ApplicationPolicy
   # If user is of entity "A" and record is of entity "B" and entity "B" is not a child of entity "A", then user cannot perform actions
   def belongs_to_entity?(user, record)
     user.entity_id == record.entity_id ||
-      (user.entity_type == "Group Company" && user.entity.child_ids.include?(record.entity_id)) || super_user?
+      (user.entity_type == "Group Company" && user.entity.child_ids.include?(record.entity_id)) || support?
   end
 
   def company_admin_or_emp_crud?(user, record, crud = "read")

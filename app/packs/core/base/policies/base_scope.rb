@@ -13,9 +13,9 @@ class BaseScope
   end
 
   def resolve_admin
-    if user.has_cached_role?(:super) || instance_of?(::Audited::AuditPolicy::Scope) || instance_of?(ReportPolicy::Scope) || instance_of?(QuickLinkPolicy::Scope) || instance_of?(QuickLinkStepPolicy::Scope)
+    if instance_of?(::Audited::AuditPolicy::Scope) || instance_of?(ReportPolicy::Scope) || instance_of?(QuickLinkPolicy::Scope) || instance_of?(QuickLinkStepPolicy::Scope)
       scope
-    elsif user.has_cached_role?(:support)
+    elsif user.has_cached_role?(:support) || user.has_cached_role?(:super)
       scope.joins(entity: :support_client_mappings).where(support_client_mappings: { user_id: user.id, enabled: true }).merge(Entity.where_permissions(:enable_support))
     else
       scope.none

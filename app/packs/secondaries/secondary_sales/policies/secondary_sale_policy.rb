@@ -65,7 +65,7 @@ class SecondarySalePolicy < SaleBasePolicy
       true
     else
       permissioned_investor? ||
-        external_sale? || super_user?
+        external_sale? || support?
     end
   end
 
@@ -79,7 +79,7 @@ class SecondarySalePolicy < SaleBasePolicy
 
   def update?
     (user.enable_secondary_sale && !record.finalized &&
-      permissioned_employee?(:update)) || super_user?
+      permissioned_employee?(:update)) || support?
   end
 
   def spa_upload?

@@ -35,7 +35,7 @@ class EntityPolicy < ApplicationPolicy
   end
 
   def show?
-    if user.entity_id == record.id || super_user?
+    if user.entity_id == record.id || support?
       true
     else
       user.entity_id != record.id
@@ -43,7 +43,7 @@ class EntityPolicy < ApplicationPolicy
   end
 
   def create?
-    user.has_cached_role?(:super)
+    support?
   end
 
   def new?
@@ -51,7 +51,7 @@ class EntityPolicy < ApplicationPolicy
   end
 
   def update?
-    ((user.entity_id == record.id) && user.curr_role != "holding" && user.has_cached_role?(:company_admin)) || super_user?
+    ((user.entity_id == record.id) && user.curr_role != "holding" && user.has_cached_role?(:company_admin)) || support?
   end
 
   def edit?

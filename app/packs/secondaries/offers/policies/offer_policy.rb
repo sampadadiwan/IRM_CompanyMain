@@ -21,7 +21,7 @@ class OfferPolicy < SaleBasePolicy
     create? ||
       belongs_to_entity?(user, record) ||
       sale_policy.owner? ||
-      interest_policy.owner? || super_user?
+      interest_policy.owner?
   end
 
   def create?
@@ -33,9 +33,6 @@ class OfferPolicy < SaleBasePolicy
 
     elsif user.has_cached_role?(:holding)
       record.holding.user_id == user.id && record.holding.entity_id == record.entity_id
-
-    else
-      super_user?
     end
   end
 
@@ -51,11 +48,11 @@ class OfferPolicy < SaleBasePolicy
   end
 
   def new?
-    super_user? || create?
+    create?
   end
 
   def update?
-    (super_user? || create?) && !record.verified # && !record.secondary_sale.lock_allocations
+    (support? || create?) && !record.verified # && !record.secondary_sale.lock_allocations
   end
 
   def allocation_form?

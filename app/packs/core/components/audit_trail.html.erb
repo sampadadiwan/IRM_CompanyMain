@@ -19,7 +19,7 @@
       </thead>
       <tbody>
       <!-- Audit trail consist of own changes and changes from associations -->
-      <% @model.own_and_associated_audits.sort{|a,b| b.version <=> a.version}.each do |audit| %>
+      <% @model.own_and_associated_audits.order(id: :desc).each do |audit| %>
 
         <% 
           # Some associations may not have a path, so we need to check if the path is available
@@ -34,7 +34,7 @@
               <%= l(audit.created_at)  %>
               <small class="text-muted">(<%= audit.action.humanize %>)</small>
             </td>
-            <td><%= (audit.user ? audit.user.name : "System") %></td>
+            <td>XXXXXXXX<%= (audit.user ? audit.user : "System") %></td>
             <td><%=  audit.auditable_type %></td>
             
             <td><%= link_to(audit.auditable) %></td>

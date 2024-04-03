@@ -1,1 +1,1 @@
-Audited.current_user_method = :current_user
+Audited.current_user_method = :current_user_or_support_user

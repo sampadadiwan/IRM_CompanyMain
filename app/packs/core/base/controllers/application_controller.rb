@@ -99,4 +99,9 @@ class ApplicationController < ActionController::Base
       redirect_to(ENV.fetch('BASE_URL', nil), allow_other_host: true) unless @current_entity
     end
   end
+
+  # This is called by the audited get see config/initializers/audited.rb For support staff that login as a user, we need to return the support user. This is so that any changes made will be logged under the support user and not the user they are importsonating
+  def current_user_or_support_user
+    session[:support_user_id].present? ? User.find(session[:support_user_id]) : current_user
+  end
 end

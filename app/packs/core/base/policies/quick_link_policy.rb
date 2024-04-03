@@ -1,7 +1,7 @@
 class QuickLinkPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:super)
+      if support?
         scope.all
       else
         scope.where(entity_id: [user.entity_id, nil])
@@ -18,7 +18,7 @@ class QuickLinkPolicy < ApplicationPolicy
   end
 
   def create?
-    super_user? || belongs_to_entity?(user, record)
+    support? || belongs_to_entity?(user, record)
   end
 
   def new?

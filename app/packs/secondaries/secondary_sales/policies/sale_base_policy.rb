@@ -27,7 +27,7 @@ class SaleBasePolicy < ApplicationPolicy
         end
       end
     else
-      super_user?
+      support?
     end
   end
 
