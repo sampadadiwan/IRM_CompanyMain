@@ -141,7 +141,7 @@
           </div>
 
 
-
+          
 
 
           <div class="form-group">
@@ -186,14 +186,6 @@
             </div>
           <% end %>
 
-          <div data-controller="select" data-select-url-value="<%= sub_categories_investor_kyc_sebi_datas_path %>"
-          data-select-param-value="investor_category">
-
-          <%= form.fields_for :investor_kyc_sebi_data do |kyc_sebi_data_subform| %>
-            <%= render "kyc_sebi_data_fields", form: kyc_sebi_data_subform, investor_kyc: investor_kyc %>
-          <% end %>
-          </div>
-
           <div class="form-group">
             <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button">Next</button>
           </div>
@@ -211,7 +203,7 @@
 
           <% if investor_kyc.entity_id == current_user.entity_id %>
           <div class="form-group">
-            <%= form.label :esign_emails, "Investor Signatory Emails" %>
+            <%= form.label :esign_emails, "Investor Signatory Emails" %>          
             <%= form.text_field :esign_emails, class: "form-control" %>
             <small class="text-muted">Comma separated list of investor emails to send the esignature request to</small>
           </div>
@@ -219,7 +211,7 @@
 
           <%= custom_form_fields(investor_kyc, form, required: is_investor) %>
 
-          <% unless current_user.curr_role == "investor" %>
+          <% unless current_user.curr_role == "investor" %> 
             <div class="form-group">
               <%= form.label :expiry_date %>
               <%= form.date_field :expiry_date, class: "form-control"  %>

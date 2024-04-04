@@ -26,16 +26,16 @@
             </td>
          </tr>
 
-
+         
          <tr>
             <td>
             Primary Email
             </td>
             <td>
             <%= @entity.primary_email %>
-            </td>
+            </td>    
          </tr>
-
+         
          <tr>
             <td>
                Type
@@ -205,7 +205,6 @@
       <div>
          <% if policy(@entity).edit? %>
             <%= link_to "Edit", edit_entity_path(@entity), {class: "btn btn-outline-primary"} %>
-            <%= button_to "Add SEBI Fields", add_sebi_fields_entity_path(@entity),{class: "btn btn-outline-secondary", method: :patch} if policy(@entity).add_sebi_fields? %>
             <%= link_to "View Payments", payments_path, {class: "btn btn-outline-success"} if @entity.entity_type == "Company" %>
          <% end %>
       </div>

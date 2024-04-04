@@ -6,9 +6,9 @@ include CurrencyHelper
 
     visit(fund_path(@fund))
     sleep(1)
-    click_on "Portfolio"
+    click_on "Portfolio"    
     click_on "New Investment"
-
+    
     portfolio_company = @entity.investors.portfolio_companies.where(investor_name: @new_portfolio_investment.portfolio_company_name).first
 
     puts @new_portfolio_investment.to_json
@@ -17,10 +17,10 @@ include CurrencyHelper
     fill_in('portfolio_investment_amount', with: @new_portfolio_investment.amount)
     fill_in('portfolio_investment_quantity', with: @new_portfolio_investment.quantity)
 
-    click_on "Save"
+    click_on "Save"    
     sleep(1)
   end
-
+  
   Then('a portfolio investment should be created') do
     @portfolio_investment = PortfolioInvestment.last
     @portfolio_investment.quantity.should == @new_portfolio_investment.quantity
@@ -48,20 +48,20 @@ include CurrencyHelper
       puts "\n#########PortfolioInvestment##########\n"
       puts pi.to_json
     end
-
+    
   end
-
+  
   Then('an aggregate portfolio investment should be created') do
     @api = AggregatePortfolioInvestment.last
     @api.quantity.should == PortfolioInvestment.all.sum(:quantity)
     @api.bought_quantity.should == PortfolioInvestment.buys.sum(:quantity)
-    @api.bought_amount_cents.should == PortfolioInvestment.buys.sum(:amount_cents)
+    @api.bought_amount_cents.should == PortfolioInvestment.buys.sum(:amount_cents)    
     @api.sold_quantity.should == PortfolioInvestment.sells.sum(:quantity)
     @api.sold_amount_cents.should == PortfolioInvestment.sells.sum(:amount_cents)
     @api.avg_cost_cents.round.should == (PortfolioInvestment.buys.sum(:amount_cents) / PortfolioInvestment.buys.sum(:quantity)).round(0)
-
+    
   end
-
+  
   Then('I should see the aggregate portfolio investment details on the details page') do
     visit(aggregate_portfolio_investment_path(@api))
     expect(page).to have_content(@fund.name)
@@ -75,7 +75,7 @@ include CurrencyHelper
   end
 
 
-
+  
 
 Given('there is a valuation {string} for the portfolio company') do |args|
   @portfolio_company = @entity.investors.portfolio_companies.last
@@ -92,7 +92,7 @@ Given('the portfolio companies have investment instruments {string}') do |args|
   end
 end
 
-Then('the fmv must be calculated for the portfolio') do
+Then('the fmv must be calculated for the portfolio') do  
   PortfolioInvestment.all.each do |pi|
     pi.fmv_cents.should == (pi.net_quantity * @valuation.per_share_value_cents)
   end
@@ -122,14 +122,17 @@ Then('the portfolio investments must have the data in the sheet') do
     pi.amount_cents.should == user_data["Amount"].to_d * 100
     pi.quantity.should == user_data["Quantity"].to_d
     pi.investment_instrument.name.should == user_data["Instrument"]
+    pi.investment_instrument.category.should == user_data["Category"]
+    pi.investment_instrument.sub_category.should == user_data["Sub Category"]
+    pi.investment_instrument.startup.should == (user_data["Startup"] == "Yes")
     pi.investment_instrument.investment_domicile.should == user_data["Investment Domicile"]
     pi.notes.should == user_data["Notes"]
     pi.commitment_type.should == user_data["Type"]
     if pi.commitment_type == "CoInvest"
       pi.capital_commitment_id.should == @fund.capital_commitments.where(folio_id: user_data["Folio No"]).first.id
-    end
+    end  
     pi.investment_date.should == Date.parse(user_data["Investment Date"].to_s)
-    pi.properties["custom_field_1"].should == user_data["Custom Field 1"]
+    pi.properties["custom_field_1"].should == user_data["Custom Field 1"]    
     pi.import_upload_id.should == ImportUpload.last.id
   end
 end
@@ -165,7 +168,7 @@ Then('the valuations must have the data in the sheet') do
     val = valuations[idx-1]
     puts "Checking import of #{val.owner.investor_name}"
     val.investment_instrument.name.should == user_data["Instrument"].strip
-    val.valuation_date.should == Date.parse(user_data["Valuation Date"].to_s)
+    val.valuation_date.should == Date.parse(user_data["Valuation Date"].to_s)   
     val.valuation_cents.should == user_data["Valuation"].to_d * 100
     val.per_share_value_cents.should == user_data["Per Share Value"].to_d * 100
     val.owner.investor_name.should == user_data["Portfolio Company"].strip
@@ -193,7 +196,7 @@ Then('the aggregate portfolio investments must have cost of sold computed') do
   @fund.portfolio_investments.sells.each do |pi|
     api = pi.aggregate_portfolio_investment
     puts "Cost: #{api.cost} = Bought Amount: #{api.bought_amount} - Cost of sold: #{api.cost_of_sold}"
-    api.cost_of_sold_cents.should == api.portfolio_investments.sells.sum(:cost_of_sold_cents)
+    api.cost_of_sold_cents.should == api.portfolio_investments.sells.sum(:cost_of_sold_cents)    
     api.cost_cents.should == api.bought_amount_cents + api.cost_of_sold_cents
   end
 end
@@ -203,27 +206,27 @@ Given('I create a new stock adjustment {string}') do |args|
   puts "#### #{args}"
   @orig_portfolio_investments = PortfolioInvestment.includes(portfolio_company: :valuations).all.to_a
   @orig_portfolio_attributions = PortfolioAttribution.all.to_a
-
+  
   @stock_adjustment = StockAdjustment.new(portfolio_company: @investor, entity_id: @investor.entity_id, user_id: User.first.id, investment_instrument: @investment_instrument)
   key_values(@stock_adjustment, args)
   @stock_adjustment.save!
   sleep(2)
 end
 
-Then('the valuations must be adjusted') do
-  (@valuation.per_share_value_cents / @stock_adjustment.adjustment).round(0).should == @valuation.reload.per_share_value_cents.round(0)
+Then('the valuations must be adjusted') do  
+  (@valuation.per_share_value_cents / @stock_adjustment.adjustment).round(0).should == @valuation.reload.per_share_value_cents.round(0) 
 end
 
 Then('the Portfolio investments must be adjusted') do
   @current_portfolio_investments = PortfolioInvestment.all
   @orig_portfolio_investments.each_with_index do |opi, idx|
     ap opi
-
+    
     cpi = @current_portfolio_investments[idx]
     # ap cpi
 
     cpi.quantity.should == opi.quantity * @stock_adjustment.adjustment
-    cpi.amount_cents.should == opi.amount_cents
+    cpi.amount_cents.should == opi.amount_cents 
     # cpi.fmv_cents.should be_within(100).of(opi.fmv_cents)
     cpi.cost_of_sold_cents.should == opi.cost_of_sold_cents
     cpi.net_quantity.should == opi.net_quantity * @stock_adjustment.adjustment
@@ -259,46 +262,4 @@ Given('there is an investment instrument for the portfolio company {string}') do
   @investment_instrument = FactoryBot.build(:investment_instrument, entity: @entity, portfolio_company: @portfolio_company)
   key_values(@investment_instrument, string)
   @investment_instrument.save!
-end
-
-Given('The user generates all fund reports for the fund') do
-  visit(fund_path(@fund))
-  click_button("Sebi Reports")
-  click_link("All Reports")
-  click_link("New Fund Report")
-  select(@fund.name, from: "fund_report_fund_id")
-  select("All", from: "fund_report_name")
-  fill_in('fund_report_start_date', with: "01/01/2020")
-  fill_in('fund_report_end_date', with: Time.zone.now.strftime("%d/%m/%Y"))
-  click_button("Save")
-  sleep(3)
-
-end
-
-Then('There should be {string} reports created') do |string|
-  expect(page).to have_content("Fund report will be generated, please check back in a few mins")
-  FundReport.where(fund_id: @fund.id).count.should == string.to_i
-  FundReportJob::ALL_REPORT_JOBS.each do |report_name|
-    FundReport.where(fund_id: @fund.id).pluck(:name).include?(report_name).should == true
-  end
-end
-
-Then('Sebi report should be generated for the fund') do
-  # doc name should include SEBI Report
-  Document.last.owner_id.should == @fund.id
-  Document.last.name.include?("SEBI Report").should == true
-  doc = Document.last
-  ff = doc.file.download
-  generated_excel =  Spreadsheet.open(Rails.root.join(ff.path))
-  result_excel = Spreadsheet.open(Rails.root.join("./public/sample_uploads/result_sebi_report.xls"))
-  generated_excel.worksheets.count.should == result_excel.worksheets.count
-  generated_excel.worksheets.each_with_index do |ws, idx|
-    ws.name.should == result_excel.worksheets[idx].name
-    ws.rows.count.should == result_excel.worksheets[idx].rows.count
-    result_sheet_rows = result_excel.worksheets[idx].rows
-
-    ws.rows.each_with_index do |row, ridx|
-      row.should == result_sheet_rows[ridx]
-    end
-  end
 end

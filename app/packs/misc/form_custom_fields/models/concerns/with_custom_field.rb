@@ -2,8 +2,6 @@ module WithCustomField
   extend ActiveSupport::Concern
 
   included do
-    attr_accessor :cached_custom_fields
-
     attribute :json_fields, :json, default: {}
     alias_attribute :properties, :json_fields
 
@@ -24,8 +22,7 @@ module WithCustomField
   end
 
   def custom_fields
-    @cached_custom_fields ||= OpenStruct.new(json_fields)
-    @cached_custom_fields
+    OpenStruct.new(json_fields)
   end
   # rubocop:enable Style/OpenStructUse
 

@@ -10,6 +10,30 @@
   </tr>
   <tr>
     <td>
+      Category
+    </td>
+    <td>
+      <%= @investment_instrument.category %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Sub Category
+    </td>
+    <td>
+      <%= @investment_instrument.sub_category %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Sector
+    </td>
+    <td>
+      <%= @investment_instrument.sector %>
+    </td>
+  </tr>
+  <tr>
+    <td>
       Entity
     </td>
     <td>
@@ -30,7 +54,7 @@
 </table>
 <div class="associated_entity">
   <% if policy(@investment_instrument).edit? %>
-    <%= link_to "Edit", edit_investment_instrument_path(@investment_instrument), {class: "btn btn-outline-primary"} %>
+    <%= link_to "Edit", edit_investment_instrument_path(@investment_instrument), {class: "btn btn-outline-primary"} %> 
     <%= button_to "Delete", @investment_instrument, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "This will permanently delete this item and also all associated portfolio transactions across funds. Proceed?"}  %>
   <% end %>
 </div>
@@ -38,9 +62,9 @@
 <% end %>
 
 <div class="associated_entity">
-  <%= render "/portfolio_cashflows/index", portfolio_cashflows: @investment_instrument.portfolio_cashflows %>
+  <%= render "/portfolio_cashflows/index", portfolio_cashflows: @investment_instrument.portfolio_cashflows %> 
 </div>
 
 <div class="associated_entity">
-  <%= render "/portfolio_investments/index", portfolio_investments: @investment_instrument.portfolio_investments %>
+  <%= render "/portfolio_investments/index", portfolio_investments: @investment_instrument.portfolio_investments %> 
 </div>

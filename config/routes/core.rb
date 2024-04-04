@@ -49,9 +49,6 @@ resources :investor_kycs do
   post 'generate_all_docs', on: :collection # Generate docs for entire fund or entity
   get 'bulk_actions', on: :collection
 end
-resources :investor_kyc_sebi_datas do
-  get 'sub_categories', on: :collection
-end
 
 resources :aml_reports do
   get 'search', on: :collection
@@ -135,5 +132,4 @@ resources :entities do
   get 'investor_view', on: :member
   post 'delete_attachment', on: :collection
   post 'kpi_reminder', on: :member
-  patch 'add_sebi_fields', on: :member
 end

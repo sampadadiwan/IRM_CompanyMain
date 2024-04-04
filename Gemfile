@@ -107,7 +107,6 @@ gem "acts_as_list"
 
 # Tree relationship of folders/documents
 gem 'ancestry'
-gem 'spreadsheet'
 # Generating XL
 gem 'caxlsx'
 gem 'caxlsx_rails'
@@ -180,6 +179,7 @@ group :development do
   gem "binding_of_caller"
 
   gem 'rubyXL', git: "https://github.com/weshatheleopard/rubyXL.git"
+  gem 'spreadsheet'
 
   # gem 'rails-erd'
 

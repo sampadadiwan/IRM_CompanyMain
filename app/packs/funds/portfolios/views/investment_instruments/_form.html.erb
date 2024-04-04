@@ -23,6 +23,30 @@
     <%= form.text_field :name, class: "form-control"  %>
   </div>
 
+  <div data-controller="select" data-select-url-value="<%= sub_categories_investment_instruments_path %>"
+            data-select-param-value="category">
+
+      <div class="form-group">
+        <%= form.label :category %>
+        <%= form.select :category, InvestmentInstrument::CATEGORIES.keys.sort, {include_blank: true}, class: 'form-control',
+            "data-action": "change->select#change" %>
+        <small class="text-muted">Select the category (For SEBI Reports)</small>
+      </div>
+
+      <div class="form-group">
+        <% sub_categories = @investment_instrument.category.present? ? InvestmentInstrument::CATEGORIES[@investment_instrument.category] : ""  %>
+        <%= form.label :sub_category %>
+        <%= form.select :sub_category, sub_categories, {include_blank: true}, class: 'form-control', data: { select_target: "select" } %>
+        <small class="text-muted">Select the sub category (For SEBI Reports)</small>
+      </div>
+
+  </div>
+
+  <div class="form-group">
+    <%= form.label :sector %>
+    <%= form.select :sector, InvestmentInstrument::SECTORS, {}, class: "form-control"  %>
+  </div>
+
   <div class="form-group">
     <%= form.label :investment_domicile %>
     <%= form.text_field :investment_domicile, class: "form-control"  %>

@@ -65,12 +65,8 @@
             Sebi Reports
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <%= link_to "Generate Reports", new_fund_report_path(fund_id: @fund.id), {class: "dropdown-item"} if policy(FundReport).new? %>
             <%= link_to "All Reports", fund_reports_path(fund_id: @fund.id), {class: "dropdown-item" }  %>
-            <%= link_to "Corpus Details" , fund_reports_path(fund_id: @fund.id, name: "CorpusDetails"), {class: "dropdown-item" } %>
-            <%= link_to "Information on Investments" , fund_reports_path(fund_id: @fund.id, name: "InformationOnInvestments" ), {class: "dropdown-item" } %>
-            <%= link_to "Info on Investors" , fund_reports_path(fund_id: @fund.id, name: "InfoOnInvestors"), {class: "dropdown-item" } %>
-            <%= link_to "Download SEBI Report" , report_fund_path(@fund, report: "sebi_reports/sebi_report", report_class:"SebiReport"), {class: "dropdown-item" } %>
+            <%= link_to "Capital and Investments" , report_fund_path(@fund, report: "sebi_reports/cumulative_funds_raised"), {class: "dropdown-item" } %>
           </div>
         </div>
       </div>
@@ -99,7 +95,7 @@
                       "sample_upload": "FUND_DOCS_SAMPLE"),
                       { class: "dropdown-item"}   %>
 
-
+        
               <%= link_to "Import Investor Advisors",
                   new_import_upload_path("import_upload[owner_id]": @fund.id,
                       "import_upload[owner_type]": "Fund",

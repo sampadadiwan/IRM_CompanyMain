@@ -1,5 +1,5 @@
 class EntitiesController < ApplicationController
-  before_action :set_entity, only: %w[show update destroy edit report kpi_reminder add_sebi_fields]
+  before_action :set_entity, only: %w[show update destroy edit report kpi_reminder]
   after_action :verify_authorized, except: %i[dashboard search index investor_entities delete_attachment]
 
   # GET /entities or /entities.json
@@ -15,15 +15,6 @@ class EntitiesController < ApplicationController
 
   def report
     render "entities/#{params[:report]}"
-  end
-
-  def add_sebi_fields
-    if @entity.investment_instruments.last.present?
-      @entity.investment_instruments.last.add_sebi_custom_fields
-      redirect_to entity_url(@entity), notice: "SEBI fields added"
-    else
-      redirect_to entity_url(@entity), notice: "No investment instruments found"
-    end
   end
 
   def investor_entities

@@ -1,6 +1,5 @@
 class ImportInvestorKyc < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Investing Entity", "Pan", "Address", "Correspondence Address", "Kyc Type", "Residency", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User", "Investor Signatory Emails", "Agreement Committed Amount", "Sebi Investor Category", "Sebi Investor Sub Category"].freeze
-  # add them as standard fields above
+  STANDARD_HEADERS = ["Investor", "Investing Entity", "Pan", "Address", "Correspondence Address", "Kyc Type", "Residency", "Date Of Birth", "Bank Name", "Branch Name", "Bank Account Number", "Account Type", "Ifsc Code", "Verified", "Update Only", "Send Kyc Form To User", "Investor Signatory Emails", "Agreement Committed Amount"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -62,21 +61,8 @@ class ImportInvestorKyc < ImportUtil
                InvestorKycUpdate.call(investor_kyc:, investor_user: false)
              end
 
-    update_investor_kyc_sebi_data(investor_kyc, user_data)
     raise result[:errors] unless result.success?
 
     result.success?
-  end
-
-  def update_investor_kyc_sebi_data(investor_kyc, user_data)
-    return if investor_kyc.investor_kyc_sebi_data.blank?
-
-    investor_kyc.investor_kyc_sebi_data.investor_category = user_data["Sebi Investor Category"]&.downcase
-    investor_kyc.investor_kyc_sebi_data.investor_sub_category = user_data["Sebi Investor Sub Category"]
-    if investor_kyc.investor_kyc_sebi_data.valid?
-      investor_kyc.investor_kyc_sebi_data.save
-    else
-      raise "Investor KYC Sebi Data errors: #{investor_kyc.investor_kyc_sebi_data.errors.full_messages}"
-    end
   end
 end

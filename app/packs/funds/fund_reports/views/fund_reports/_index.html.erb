@@ -1,8 +1,6 @@
-<% fund_id ||= params[:fund_id] || nil%>
-<% name ||= params[:name] || nil%>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Fund Reports</h1>
-  <%= link_to "New Fund Report", new_fund_report_path(fund_id: fund_id), {class: "btn btn-outline-primary"} if fund_id.present?  && policy(FundReport).new? %>
+  <%= link_to "New Fund Report", new_fund_report_path, {class: "btn btn-outline-primary"}  %>
 </div>
 <div class="table-responsive" data-controller="fund-reports" data-fund-reports-lazy-load-data-value=<%= lazy_load_data %> data-fund-reports-table-name-value="#fund_reports">
 
@@ -10,12 +8,9 @@
         <a class="load_data_link" data-action="click->fund-reports#loadData"><span>Load Data</span></a>
     <% end %>
 
-  <table id="fund_reports" class="table table-bordered dataTable" data-source=<%=fund_reports_path(fund_id: fund_id, name: name)%>>
+  <table id="fund_reports" class="table table-bordered dataTable" data-source="/fund_reports">
     <thead>
       <tr>
-        <th>
-          Id
-        </th>
         <th>
           Name
         </th>
@@ -33,7 +28,7 @@
       </tr>
     </thead>
     <tbody>
-
+      
     </tbody>
   </table>
 </div>

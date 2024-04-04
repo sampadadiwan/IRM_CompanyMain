@@ -10,10 +10,7 @@ resources :portfolio_scenarios do
   post 'simple_scenario', on: :collection
 end
 
-resources :fund_reports do
-  patch "regenerate", on: :member
-  patch "download_page", on: :member
-end
+resources :fund_reports
 resources :commitment_adjustments
 
 resources :investor_advisors do

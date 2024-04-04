@@ -65,7 +65,6 @@ class Entity < ApplicationRecord
   has_many :investors, dependent: :destroy
   has_many :investor_advisors, dependent: :destroy
   has_many :investor_entities, through: :investors
-  has_many :investor_kyc_sebi_datas, dependent: :destroy
   # List of investor records in which this company is an investee
 
   # List of investors where this entity is an investor
