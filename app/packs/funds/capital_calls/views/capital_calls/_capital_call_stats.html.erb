@@ -1,164 +1,26 @@
+<%
+cards_data = [
+  {path: nil, stat: money_to_currency(capital_call.call_amount, params), subtitle: "Called", progress_bar_color: "primary"},
+    {path: nil, stat: money_to_currency(capital_call.collected_amount, params), subtitle: "Collected", progress_bar_color: "success"},
+    {path: nil, stat: capital_call.percentage_called, subtitle: "Percentage", progress_bar_color: "warning"},
+    {path: nil, stat: money_to_currency(capital_call.amount_to_be_called, params), subtitle: "Amount To Be Called", progress_bar_color: "warning"},
+    {path: nil, stat: money_to_currency(capital_call.due_amount, params), subtitle: "Due", progress_bar_color: "info"},
+    {path: nil, stat: capital_call.fund_closes.join(","), subtitle: "Applicable", progress_bar_color: "warning"},
+    {path: nil, stat: l(capital_call.due_date), subtitle: "Due Date", progress_bar_color: "success"}
+]
+%>
 
-    <div class="row">
+<div class="row">
+    <% cards_data.each do |card_data| %>
+    
+        <%= render(NumberStatsComponent.new(
+            path: card_data[:path],
+            amount: card_data[:stat],
+            subtitle: card_data[:subtitle],
+            progress_bar_color: card_data[:progress_bar_color],
+            fs_size: 4
+        )) %>
 
-        <div class="col-sm-12 col-xl-2 col-md-4">
-            <div class="card border-left-primary shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Called
-                            </div>
-                            <div class="h6 mb-0 text-gray-800"><%= money_to_currency(capital_call.call_amount, params) %></div>
-                        </div>
-                        <div class="col-auto">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <% end %>
+</div>
 
-        
-        <div class="col-sm-12 col-xl-2 col-md-4">
-            <div class="card border-left-success shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Collected
-                            </div>
-                            <div class="h6 mb-0 text-gray-800"><%= money_to_currency(capital_call.collected_amount, params) %></div>
-                        </div>
-                        <div class="col-auto">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <% if capital_call.percentage_called > 0 %>
-        <div class="col-sm-12 col-xl-2 col-md-4">
-            <div class="card border-left-warning shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Percentage
-                            </div>
-                            <div class="h6 mb-0 text-gray-800"><%= capital_call.percentage_called %> %</div>
-                        </div>
-                        <div class="col-auto">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <% elsif capital_call.amount_to_be_called_cents > 0 %>
-        <div class="col-sm-12 col-xl-2 col-md-4">
-            <div class="card border-left-warning shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Amount To Be Called
-                            </div>
-                            <div class="h6 mb-0 text-gray-800"><%= money_to_currency capital_call.amount_to_be_called, params %> </div>
-                        </div>
-                        <div class="col-auto">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <% else %>
-        <div class="col-sm-12 col-xl-2 col-md-4">
-            <div class="card border-left-warning shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Call Date
-                            </div>
-                            <div class="h6 mb-0 text-gray-800"><%= l capital_call.call_date %> </div>
-                        </div>
-                        <div class="col-auto">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <% end %>
-
-        
-        <div class="col-sm-12 col-xl-2 col-md-4">
-            <div class="card border-left-info shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Due
-                            </div>
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <div class="h6 mb-0 text-gray-800"><%= money_to_currency(capital_call.due_amount, params) %></div>
-                                </div>
-                                <div class="col">
-                                    
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-     
-        <div class="col-sm-12 col-xl-2 col-md-4">
-            <div class="card border-left-warning shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Applicable                            </div>
-                            <div class="h6 mb-0 text-gray-800">
-                                <%= capital_call.fund_closes.join(",") %>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div> 
-
-        <div class="col-sm-12 col-xl-2 col-md-4">
-            <div class="card border-left-success shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Due Date
-                            </div>
-                            <div class="h6 mb-0 text-gray-800">
-                                <%=l capital_call.due_date %>
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>        
-        
-
-    </div>
