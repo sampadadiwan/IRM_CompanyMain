@@ -15,6 +15,7 @@ class InvestorKyc < ApplicationRecord
 
   belongs_to :investor
   belongs_to :entity
+  has_one :investor_kyc_sebi_data, dependent: :destroy
   has_many :capital_commitments
   has_many :funds, through: :capital_commitments
   has_many :capital_remittances, through: :capital_commitments
@@ -28,6 +29,7 @@ class InvestorKyc < ApplicationRecord
   has_many :aml_reports, dependent: :destroy
   has_many :kyc_datas, dependent: :destroy
 
+  accepts_nested_attributes_for :investor_kyc_sebi_data, allow_destroy: true
   scope :uncalled, -> { where('committed_amount_cents > call_amount_cents') }
   scope :due, -> { where('committed_amount_cents > collected_amount_cents') }
   scope :agreement_uncalled, -> { where('agreement_committed_amount_cents > call_amount_cents') }
@@ -69,6 +71,12 @@ class InvestorKyc < ApplicationRecord
   monetize :committed_amount_cents, :collected_amount_cents, :agreement_committed_amount_cents,
            :call_amount_cents, :distribution_amount_cents, :uncalled_amount_cents, :other_fee_cents,
            with_currency: ->(i) { i.entity.currency }
+
+  def create_investor_kyc_sebi_data
+    InvestorKycSebiData.create(entity_id:, investor_kyc_id: id) if investor_kyc_sebi_data.blank?
+    reload
+    investor_kyc_sebi_data.present?
+  end
 
   # Should be called only from SendKycFormJob
   # If not this leads to bugs where the InvestorKycNotification cannot be created when the kyc_type changes

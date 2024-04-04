@@ -41,7 +41,7 @@
           <%= form.label :commitment_date %>
           <%= form.date_field :commitment_date, class: 'form-control' %>
         </div>
-        
+
         <div class="form-group">
           <%= form.label :feeder_fund %>
           <%= form.check_box :feeder_fund, class: "form-check-input"  %>
@@ -49,7 +49,7 @@
         </div>
 
         <div class="form-group">
-          <%= form.label :esign_emails, "Investor Signatory Emails" %>          
+          <%= form.label :esign_emails, "Investor Signatory Emails" %>
           <%= form.text_field :esign_emails, class: "form-control" %>
           <small class="text-muted">Comma separated list of investor emails to send the esignature request to</small>
         </div>
@@ -57,7 +57,7 @@
         <div class="form-group">
           <%= form.label :investor_kyc %>
           <% investor_kycs = capital_commitment.investor ? capital_commitment.investor.investor_kycs.map{|e| [e.full_name, e.id]} : [] %>
-          
+
           <%= form.select :investor_kyc_id, investor_kycs, {include_blank: true}, {class: 'form-control', data: { commitmentselect_target: "kycSelect" } } %>
         </div>
 
@@ -77,7 +77,7 @@
 
       <div class="form-group" data-controller="otherselect" data-otherselect-select-id-value="#capital_commitment_fund_close">
         <%
-          closes = capital_commitment.fund.capital_commitments.pluck(:fund_close).uniq 
+          closes = capital_commitment.fund.capital_commitments.pluck(:fund_close).uniq
           closes += ["Other"]
         %>
         <%= form.label :fund_close %>
@@ -92,7 +92,7 @@
       <% if capital_commitment.fund.unit_types.present? %>
         <div class="form-group">
           <%= form.label :unit_type %>
-          <%= form.select :unit_type, capital_commitment.fund.unit_types.split(","), 
+          <%= form.select :unit_type, capital_commitment.fund.unit_types.split(","),
               {include_blank: true}, class: "form-control"  %>
           <small class="text-muted">They type of unit issued for this commitment</small>
         </div>
@@ -102,7 +102,7 @@
         <%
           currency = capital_commitment.entity.exchange_rates
                     .where(to: capital_commitment.fund.currency)
-                    .latest.pluck(:to, :from).flatten.uniq 
+                    .latest.pluck(:to, :from).flatten.uniq
 
           currency = [capital_commitment.fund.currency] if currency.length == 0
         %>
@@ -111,16 +111,16 @@
 
         <small class="text-muted"><%= link_to "Setup Exchange Rates", exchange_rates_path %></small>
       </div>
-      
+
 
       <div class="form-group" data-controller="currencyformat">
         <%= form.label :folio_committed_amount %> <span class="formatted_currency"></span>
         <%= form.number_field :folio_committed_amount, class: "form-control", data: {action: "input->currencyformat#format"}, disabled: !capital_commitment.new_record?  %>
 
         <% unless capital_commitment.new_record? %>
-          <small class="text-muted">Changes can be made only via <%= link_to 'Commitment Adjustment', new_commitment_adjustment_path("commitment_adjustment[capital_commitment_id]": capital_commitment.id) %></small>  
+          <small class="text-muted">Changes can be made only via <%= link_to 'Commitment Adjustment', new_commitment_adjustment_path("commitment_adjustment[capital_commitment_id]": capital_commitment.id) %></small>
         <% end %>
-        
+
       </div>
 
       <%= custom_form_fields(capital_commitment, form) %>

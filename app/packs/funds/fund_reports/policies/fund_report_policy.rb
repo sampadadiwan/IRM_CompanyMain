@@ -4,23 +4,22 @@ class FundReportPolicy < FundBasePolicy
   end
 
   def show?
-    permissioned_employee? ||
-      permissioned_investor?
+    user.has_cached_role?(:company_admin)
   end
 
-  def new?
+  def regenerate?
     create?
   end
 
-  def update?
-    permissioned_employee?(:update)
+  def download_page?
+    create?
   end
 
-  def edit?
-    update?
+  def create?
+    user.has_cached_role?(:company_admin)
   end
 
   def destroy?
-    permissioned_employee?(:destroy)
+    create?
   end
 end

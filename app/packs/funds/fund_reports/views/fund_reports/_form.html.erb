@@ -13,31 +13,38 @@
     <% end %>
 
     <%= form.text_field :entity_id, class: "form-control", hidden: true %>
-    
+
+    <% options = current_user.entity.funds.map{|f| [f.name, f.id]} %>
+    <% selected= "All" %>
+    <% if params[:fund_id].present? %>
+      <% fund = Fund.find(params[:fund_id]) %>
+      <% options = [[fund.name, fund.id]] %>
+      <% selected = fund.id %>
+    <% end %>
     <div class="form-group">
       <%= form.label :fund_id %>
-      <%= form.select :fund_id, current_user.entity.funds.map{|f| [f.name, f.id]}, {include_blank: "All"}, class: "form-control"  %>
+      <%= form.select :fund_id, options, {include_blank: "All", selected: selected}, class: "form-control"  %>
     </div>
-    
+
     <div class="form-group">
       <%= form.label :name, "Report Name" %>
-      <%= form.select :name, [], {include_blank: "All"}, class: "form-control"  %>
+      <%= form.select :name, FundReportJob::ALL_REPORTS, {include_blank: "All"}, class: "form-control"  %>
     </div>
-    
+
     <div class="form-group">
       <%= form.label :start_date %>
       <%= form.date_field :start_date, class: "form-control"  %>
     </div>
-    
+
     <div class="form-group">
       <%= form.label :end_date %>
       <%= form.date_field :end_date, class: "form-control"  %>
     </div>
-    
+
     <div class="form-group">
       <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
     </div>
-    
+
   <% end %>
 
 <% end %>

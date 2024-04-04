@@ -34,7 +34,7 @@
       </td>
       <td>
         <%= raw @investor.tag_list.split(",")&.collect{|tag| link_to(tag, search_investors_path(query: tag))}.join(", ") if @investor.tag_list %>
-      </td>    
+      </td>
     </tr>
     <tr>
       <td>
@@ -42,7 +42,7 @@
       </td>
       <td>
         <%= @investor.category %>
-      </td>    
+      </td>
     </tr>
 
     <tr>
@@ -51,7 +51,7 @@
       </td>
       <td>
         <%= @investor.primary_email %>
-      </td>    
+      </td>
     </tr>
 
     <tr>
@@ -63,7 +63,7 @@
         <% if @investor.pan&.strip != @investor.investor_entity.pan&.strip %>
           <span class="badge bg-danger">Mismatched PAN, please contact support</span>
         <% end %>
-      </td>    
+      </td>
     </tr>
     <tr>
       <td>
@@ -71,23 +71,23 @@
       </td>
       <td>
         <%= @investor.city %>
-      </td>    
+      </td>
     </tr>
-    
+
     <%= display_custom_fields(@investor) if current_user %>
 
-   
+
   </table>
-  
+
 <% end %>
 
 
 <div style=" display: inline-block;">
-  <%= link_to "Edit" , edit_investor_path(@investor), {class: "btn btn-outline-primary" } if policy(@investor).update? %> 
+  <%= link_to "Edit" , edit_investor_path(@investor), {class: "btn btn-outline-primary" } if policy(@investor).update? %>
 
-  <%= link_to "View Notes" , notes_path(investor_id: @investor.id), class: "btn btn-outline-success" %> 
-  <%= link_to "Add Note" , new_note_path("note[investor_id]": @investor.id), class: "btn btn-outline-success"if policy(@investor).update? %> 
-  
+  <%= link_to "View Notes" , notes_path(investor_id: @investor.id), class: "btn btn-outline-success" %>
+  <%= link_to "Add Note" , new_note_path("note[investor_id]": @investor.id), class: "btn btn-outline-success"if policy(@investor).update? %>
+
   <%= button_to "Delete" , @investor, method: :delete, class: "btn btn-outline-danger" ,
       form_class: "deleteButton" , data: {action: "click->confirm#popup" , turbo: false} if policy(@investor).destroy? %>
 </div>

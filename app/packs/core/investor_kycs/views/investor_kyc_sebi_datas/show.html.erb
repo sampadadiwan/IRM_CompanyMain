@@ -1,0 +1,45 @@
+<%= render "/layouts/alerts" %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Investor SEBI Info</h1>
+</div>
+<table class="table table-bordered dataTable">
+  <tr>
+    <th>Entity</th>
+    <td><%= link_to @investor_kyc_sebi_data.entity.name, @investor_kyc_sebi_data.entity %> </td>
+  </tr>
+
+  <tr>
+    <th>Investor KYC</th>
+    <td><%= link_to @investor_kyc_sebi_data.investor_kyc.full_name.presence || "-" , @investor_kyc_sebi_data.investor_kyc %> </td>
+  </tr>
+
+  <tr>
+    <th>SEBI Investor Category</th>
+    <td><%= @investor_kyc_sebi_data.investor_category&.titleize %></td>
+  </tr>
+
+  <tr>
+    <th>SEBI Investor Sub Category</th>
+    <td><%= @investor_kyc_sebi_data.investor_sub_category %></td>
+  </tr>
+
+  <tr>
+    <th>Created At</th>
+    <td><%= @investor_kyc_sebi_data.created_at %></td>
+  </tr>
+
+  <tr>
+    <th>Updated At</th>
+    <td><%= @investor_kyc_sebi_data.updated_at %></td>
+  </tr>
+
+
+</table>
+
+
+<div>
+  <%= link_to "Edit", edit_investor_kyc_sebi_data_path(@investor_kyc_sebi_data), {class: "btn btn-outline-primary"} %> |
+  <%= link_to "Back", :back, {class: "btn btn-outline-primary"} %> |
+
+  <%= button_to "Delete", @investor_kyc_sebi_data, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+</div>

@@ -1,6 +1,8 @@
 class InvestorKycCreate < InvestorKycAction
   step :save
   left :handle_errors
+  step :create_investor_kyc_sebi_data
+  step :handle_kyc_sebi_data_errors
   step :send_kyc_form
   step :enable_kyc
   step :validate_bank

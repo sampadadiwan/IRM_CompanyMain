@@ -2,8 +2,36 @@ class InvestmentInstrument < ApplicationRecord
   include Trackable.new
   include WithCustomField
 
-  SECTORS = ENV["SECTORS"].split(",").sort
+  # SECTORS = ENV["SECTORS"].split(",").sort
+  # rubocop:disable Layout/SpaceAfterComma
+  TYPES_OF_INVESTEE_COMPANY = ["Company","LLP","AIF","REIT","InvIT","Mutual Fund (MF)","Venture Capital Undertaking","Startup","Trust set up by an Asset Reconstruction Company (ARC)","ARC","Micro enterprise","Small enterprise","Medium enterprise","SPV","Social Enterprise"].freeze
+
+  TYPES_OF_SECURITY = ["Listed/Proposed to be listed Equity","Unlisted Equity/Equity Linked","Listed/Proposed to be listed Debt","Unlisted Debt","Listed/Proposed to be listed equity on SME exchange","Others (Listed)","Others (Unlisted)","Units of Mutual Funds","Units of Cat-1 AIFs","Units of Cat-2 AIFs","Units of Cat-3 AIFs","REITs/Invits","G-Sec","LLP Interest","Security Receipts","Securitised Debt","Grants","Special Situation asset as provided in Reg 19I 2(a),(c),CDS"].freeze
+
+  SECTORS = ["Agriculture & Allied activities","Aerospace & Defense","Air freight & logistics","Airways","Auto Components","Automobiles","Banks","Beverages","Biotechnology","BPOs","Building Products","Capital Markets","Cement","Chemicals","Commercial services & Supplies","Communications Equipment","Construction & Engineering","Construction materials","Consumer Durables","Consumer Finance","Containers & Packaging","Dairy Industry","Defence","Derivatives","Distributors","Diversified Consumer Services","Diversified Financial Services","Diversified Telecommunication Services","E-Commerce","Education & Training","Electric Utilities","Electrical Equipment","Electronic Equipment,Instruments & Components","Energy Equipment & Services","Engineering & Capital Goods","Entertainment","Equity Real Estate Investment Trusts (REITs)","Ferrous Metals","Fertilisers","Financial Services","FMCG","Food & Staples Retailing","Food Products","Gas Utilities","Gems & Jewellery","Hardware","Health Care Equipment & Supplies","Health Care Providers & Services","Health Care Technology","Hotels,Restaurants & Leisure","Household Durables","Household Products","Independent Power and Renewable Electricity Producers","Industrial Parks","Industrial Products","Insurance","Interactive Media & Services","Internet & Direct Marketing Retail","IT/ ITes","Leisure Products","Life Sciences Tools & Services","Logistics","Machinery","Manufacturing","Marine","Media & Entertainment","Metallurgy","Metals & Mining","Mortgage Real Estate Investment Trusts (REITs)","Multiline Retail","Multi-Utilities","Nanotechnology","NBFCs","Non - Ferrous Metals","Oil,Gas & Consumable Fuels","Packaging & Labelling","Paper & Forest Products","Personal Products","Pesticides","Petroleum Products","Pharmaceuticals","Poultry Industry","Power","Production of Bio-Fuels","Professional Services","Railways","Real Estate","Real Estate Management & Development","Renewable energy","Research & Development","Retail","Road Transport","Robotics","Science & Technology","Seed R&D","Semiconductors & Semiconductor Equipment","Shipping & Ports","Software","Specialty Retail","Technology Hardware,Storage & Peripherals","Telecom - Equipment and Accessories","Telecom - Services","Textiles,Apparel & Luxury Goods","Thrifts & Mortgage Finance","Tobacco","Tourism & Hospitality","Trading Companies & Distributors","Transportation infrastructure","Urban Infrastructure","Water Transport","Water Utilities","Wireless Telecommunication Services","Others"].freeze
   CATEGORIES = JSON.parse(ENV.fetch("PORTFOLIO_CATEGORIES", nil))
+
+  SEBI_REPORTING_FIELDS = {
+    type_of_investee_company: "Select",
+    type_of_security: "Select",
+    details_of_security: "TextField",
+    isin: "TextField",
+    sebi_registration_number: "TextField",
+    is_associate: "Select",
+    is_managed_or_sponsored_by_aif: "Select",
+    sector: "Select",
+    offshore_investment: "Select"
+  }.freeze
+
+  SELECT_FIELDS_OPTIONS = {
+    type_of_investee_company: TYPES_OF_INVESTEE_COMPANY,
+    type_of_security: TYPES_OF_SECURITY,
+    offshore_investment: %w[Yes No],
+    is_associate: %w[Yes No],
+    is_managed_or_sponsored_by_aif: %w[Yes No],
+    sector: SECTORS
+  }.freeze
+  # rubocop:enable Layout/SpaceAfterComma
 
   belongs_to :entity
   belongs_to :portfolio_company, class_name: "Investor"
@@ -15,6 +43,43 @@ class InvestmentInstrument < ApplicationRecord
   validates :name, uniqueness: { scope: :portfolio_company_id }
   validates :category, length: { maximum: 15 }
   validates :sub_category, :sector, length: { maximum: 100 }
+
+  before_save :update_offshore_investment
+
+  def update_offshore_investment
+    return if investment_domicile.blank? || !json_fields.key?("offshore_investment")
+
+    json_fields["offshore_investment"] = if investment_domicile.casecmp?("domestic")
+                                           "No"
+                                         else
+                                           "Yes"
+                                         end
+  end
+
+  def add_sebi_custom_fields
+    form_type = self.form_type.presence || FormType.find_or_create_by(name: self.class.name, entity_id:)
+
+    SEBI_REPORTING_FIELDS.each do |cust_field_key, type|
+      # Create the custom form fields for the form type
+      cust_field_key = cust_field_key.to_s
+      next if form_type.form_custom_fields.exists?(name: cust_field_key, field_type: type)
+
+      label = cust_field_key.humanize.titleize
+      if type == "Select"
+        form_type.form_custom_fields.create!(name: cust_field_key, label:, field_type: type, internal: true, meta_data: SELECT_FIELDS_OPTIONS.stringify_keys[cust_field_key].join(","))
+      else
+        label = label.upcase if label.casecmp?("isin")
+        label += " (if Type of Security chosen is Others)" if label.casecmp?("details of security")
+        begin
+          form_type.form_custom_fields.create!(name: cust_field_key, label:, field_type: type, internal: true)
+        rescue StandardError => e
+          msg = "Error creating custom field for #{cust_field_key} with type #{type} for #{form_type.name} - #{e.message}"
+          Rails.logger.error(msg)
+          ExceptionNotifier.notify_exception(e)
+        end
+      end
+    end
+  end
 
   def to_s
     name

@@ -12,7 +12,7 @@
     <% label_class = @investor_kyc.verified ? "btn btn-outline-warning" : "btn btn-outline-success" %>
     <%= button_to label, toggle_verified_investor_kyc_path(@investor_kyc), method: :put, class: label_class, form_class: "deleteButton" if policy(@investor_kyc).toggle_verified? %>
 
-    <%= button_to "Updates Required", send_notification_investor_kyc_path(@investor_kyc, message: "Investor #{@investor_kyc.investor}, #{current_user.email} has requested updates/changes for KYC  #{@investor_kyc.full_name}"), method: :put, class: label_class, form_class: "deleteButton", data: {action: "click->confirm#popup", 
+    <%= button_to "Updates Required", send_notification_investor_kyc_path(@investor_kyc, message: "Investor #{@investor_kyc.investor}, #{current_user.email} has requested updates/changes for KYC  #{@investor_kyc.full_name}"), method: :put, class: label_class, form_class: "deleteButton", data: {action: "click->confirm#popup",
             method: :patch, msg: "This will generate a notification to #{@investor_kyc.entity.name}, requesting for changes to me made to the KYC #{@investor_kyc.full_name}. Proceed?"} if policy(@investor_kyc).send_notification? %>
 
     <% if current_user.curr_role != "investor" %>
@@ -29,7 +29,6 @@
             <%= link_to "Generate Docs" , generate_docs_investor_kyc_path(@investor_kyc), {class: "dropdown-item" } if policy(@investor_kyc).generate_docs? %>
 
             <%= link_to "Audit Trail" , investor_kyc_path(@investor_kyc, audit_trail: true, tab: "audit-trail-tab"), {class: "dropdown-item" } if policy(@investor_kyc).toggle_verified? %>
-
           </div>
         </div>
       </div>

@@ -65,7 +65,7 @@
 
     <tr>
       <td>
-        <%= (investor_kyc.kyc_type == "individual") ? "Date Of Birth" : "Date Of Incorporation" %>        
+        <%= (investor_kyc.kyc_type == "individual") ? "Date Of Birth" : "Date Of Incorporation" %>
       </td>
       <td>
         <%= investor_kyc.birth_date&.strftime("%d %B, %Y") %>
@@ -98,6 +98,8 @@
           style: "margin:0px; padding:0px; max-width:200px; max-height:200px;" if investor_kyc.signature.present? %>
       </td>
     </tr>
+
+    <%=render "show_kyc_sebi_data_fields", kyc_sebi_data: investor_kyc.investor_kyc_sebi_data %>
 
     <tr>
       <td>

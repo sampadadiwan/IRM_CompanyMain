@@ -1,0 +1,90 @@
+<%
+    if @fund_report.present?
+        fund_report = @fund_report
+    elsif params[:fund_report_id].present?
+        fund_report = FundReport.where(id: params[:fund_report_id]).last
+    elsif params[:id].present?
+        fund_report = FundReport.where(fund_id: params[:id], name: params['report'].split('/').last.camelize).last
+    end
+    data = fund_report&.data
+%>
+
+<% unless fund_report && policy(fund_report).show? %>
+    <div class="alert alert-danger" style="text-align: center;">Permission Denied</div>
+<% end %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h4 mb-0 text-gray-800" style="width:100%">Details of Investments <%= "(#{fund_report.start_date.strftime("%-d %b, %Y")} - #{fund_report.end_date.strftime("%-d %b, %Y")})" %> </h1>
+    <span>
+        <div class="btn-group">
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Actions
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+                    <%= button_to "Regenerate", regenerate_fund_report_path(id: fund_report.id),{class: "dropdown-item", method: :patch} if policy(fund_report).regenerate? %>
+                    <%= button_to "Download", download_page_fund_report_path(id: fund_report.id, single: true),{class: "dropdown-item", method: :patch} if policy(fund_report).download_page? %>
+                    <%= button_to "Download (All Funds)", download_page_fund_report_path(id: fund_report.id),{class: "dropdown-item", method: :patch} if policy(fund_report).download_page? %>
+                    <%= button_to "Delete", fund_report, method: :delete, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(fund_report).destroy? %>
+
+                </div>
+            </div>
+        </div>
+    </span>
+</div>
+
+<div class="table-responsive">
+
+<table id="holding_details" class="table table-bordered dataTable" style="width:100%">
+    <tr>
+       <th colspan="12" style="text-align: center;">
+       Table 1: Details of Holdings as at the end of reporting quarter
+        </th>
+    </tr>
+    <tr>
+        <th>S.No</th>
+        <th>Name of Scheme (A)</th>
+        <th>Name of Investee Company (B)</th>
+        <th>PAN of Investee Company, if available (C)</th>
+        <th>Type of Investee Company (D)</th>
+        <th>Type of Security (E)</th>
+        <th>Provide details , if Type of Security chosen is Others (Listed) or Others (Unlisted) (F)</th>
+        <th>Whether its an offshore investment? (Yes/No/NA) (G)</th>
+        <th>ISIN, if available (H)</th>
+        <th>SEBI Registration Number of investee Company (If investee company is an AIF) (I)</th>
+        <th>Whether Investee company is an Associate (Yes/No/NA) (J)</th>
+        <th>Whether it is managed or sponsored by AIFs manager or sponsor or their associates (If investee company is an AIF) (Yes/No/NA) (K)</th>
+        <th>Sector (L)</th>
+        <th>Amount Invested (for all investments including offshore)(M)</th>
+        <th>Amount invested (for offshore investment only) (N)</th>
+        <th>Latest Value of Investment (O)</th>
+        <th>Date of valuation of column O (P)</th>
+    </tr>
+    <% if fund_report && policy(fund_report).show? %>
+        <% fund_report.data.each_with_index do |data, index| %>
+            <tr>
+                <td><%= index+1 %></td>
+                <td><%= data.last["Name of Scheme"]["Value"] %></td>
+                <td><%= data.last["Name of Investee Company"]["Value"] %></td>
+                <td><%= data.last["PAN of Investee Company if available"]["Value"] %></td>
+                <td><%= data.last["Type of Investee Company"]["Value"] %></td>
+                <td><%= data.last["Type of Security"]["Value"] %></td>
+                <td><%= data.last["Other Security Type"]["Value"] %></td>
+                <td><%= data.last["Whether its an offshore investment?"]["Value"] %></td>
+                <td><%= data.last["ISIN"]["Value"] %></td>
+                <td><%= data.last["SEBI Registration Number of investee Company"]["Value"] %></td>
+                <td><%= data.last["Whether Investee company is an Associate"]["Value"] %></td>
+                <td><%= data.last["Whether it is managed or sponsored by AIF's manager or sponsor or their associates"]["Value"] %></td>
+                <td><%= data.last["Sector"]["Value"] %></td>
+                <td><%= data.last["Amount Invested (for all investments including offshore) (Rs. Cr)"]["Value"] %></td>
+                <td><%= data.last["Amount invested (for offshore investment only) in $Mn"]["Value"] %></td>
+                <td><%= data.last["Latest Value of Investment in Rs. Cr"]["Value"] %></td>
+                <td><%= data.last["Date of valuation of column O"]["Value"] %></td>
+            </tr>
+        <% end %>
+    <% end %>
+
+</table>
+</div>

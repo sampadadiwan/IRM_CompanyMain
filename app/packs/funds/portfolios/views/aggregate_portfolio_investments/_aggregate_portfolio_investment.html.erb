@@ -9,7 +9,7 @@
   </td>
   <%end%>
   <td>
-    <%= link_to aggregate_portfolio_investment.portfolio_company.investor_name, aggregate_portfolio_investment.portfolio_company %>
+    <%= link_to aggregate_portfolio_investment.portfolio_company.investor_name || "-", aggregate_portfolio_investment.portfolio_company %>
   </td>
   <td>
     <%= link_to aggregate_portfolio_investment.investment_instrument if aggregate_portfolio_investment.investment_instrument %>
