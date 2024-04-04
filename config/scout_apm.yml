@@ -9,7 +9,7 @@ common: &defaults
   # log_level: Verboseness of logs.
   # - Default: 'info'
   # - Valid Options: debug, info, warn, error
-  log_level: debug
+  # log_level: debug
 
   # use_prepend: Use the newer `prepend` instrumentation method. In some cases, gems
   #              that use `alias_method` can conflict with gems that use `prepend`.
@@ -35,10 +35,12 @@ common: &defaults
 
 production:
   <<: *defaults
+  name: "CapHive (Production)"
 
 development:
   <<: *defaults
-  monitor: false
+  monitor: true
+  name: "CapHive (Development)"
 
 test:
   <<: *defaults
@@ -46,3 +48,4 @@ test:
 
 staging:
   <<: *defaults
+  name: "CapHive (Staging)"
