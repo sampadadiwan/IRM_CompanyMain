@@ -50,7 +50,6 @@ export default class ServerDatatableController extends Controller {
           search: '',
           searchPlaceholder: "Search...",
           paginate: {
-            "previous": "Prev"
           }          
         },
         "columns": this.columns(),

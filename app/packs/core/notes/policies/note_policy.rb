@@ -1,16 +1,11 @@
 class NotePolicy < ApplicationPolicy
-  class Scope < Scope
+  class Scope < BaseScope
     def resolve
       if user.has_cached_role?(:company_admin)
         scope.where(entity_id: user.entity_id)
       else
         scope.where(user_id: user.id)
       end
-    end
-
-    def resolve_admin
-      # scope.where(enable_support: true)
-      scope.all
     end
   end
 

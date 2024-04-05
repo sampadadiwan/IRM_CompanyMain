@@ -9,8 +9,7 @@ export default class extends Controller {
       language: {
         search: '',
         searchPlaceholder: "Search...",
-        paginate: {
-          "previous": "Prev"
+        paginate: {          
         }
       }
     };

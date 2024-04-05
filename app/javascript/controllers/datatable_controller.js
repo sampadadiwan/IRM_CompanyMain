@@ -36,7 +36,6 @@ export default class extends Controller {
               search: '',
               searchPlaceholder: "Search...",
               paginate: {
-                "previous": "Prev"
               }          
             }
           });
