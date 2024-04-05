@@ -41,7 +41,7 @@ class DocumentsController < ApplicationController
       else
         # Ensure that the IA user has access to the folder, as IAs can only access certain funds/deals etc
         Pundit.policy(current_user, @folder).show? || (@folder.owner && Pundit.policy(current_user, @folder.owner).show?)
-        @documents = Document.for_investor(current_user, @folder.entity)
+        @documents = Document.for_investor(current_user, @folder.entity).not_template
       end
 
       if params[:no_folders].present?
