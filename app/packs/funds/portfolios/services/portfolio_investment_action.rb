@@ -1,4 +1,8 @@
 class PortfolioInvestmentAction < Trailblazer::Operation
+  def compute_quantity_as_of_date(_ctx, portfolio_investment:, **)
+    portfolio_investment.compute_quantity_as_of_date
+  end
+
   def compute_fmv(_ctx, portfolio_investment:, **)
     portfolio_investment.compute_fmv
   end

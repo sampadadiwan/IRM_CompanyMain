@@ -2,6 +2,7 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
   step :setup_aggregate
   left :handle_setup_aggregate_errors
   step :compute_fmv
+  step :compute_quantity_as_of_date
   step :save
   left :handle_errors
   step :compute_avg_cost

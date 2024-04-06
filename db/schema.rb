@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_04_03_080404) do
+ActiveRecord::Schema[7.1].define(version: 2024_04_06_155719) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -2380,6 +2380,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_03_080404) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.bigint "investment_instrument_id"
+    t.decimal "quantity_as_of_date", precision: 10, default: "0"
     t.index ["aggregate_portfolio_investment_id"], name: "index_portfolio_investments_on_aggregate_portfolio_investment_id"
     t.index ["capital_commitment_id"], name: "index_portfolio_investments_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_portfolio_investments_on_deleted_at"

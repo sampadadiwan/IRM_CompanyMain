@@ -49,7 +49,6 @@ class PortfolioInvestment < ApplicationRecord
   }
   scope :sells, -> { where("portfolio_investments.quantity < 0") }
 
-  # before_validation :setup_aggregate
   def setup_aggregate
     if aggregate_portfolio_investment_id.blank?
       self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, commitment_type:, investment_instrument_id:)
@@ -62,14 +61,15 @@ class PortfolioInvestment < ApplicationRecord
     end
   end
 
+  def compute_quantity_as_of_date
+    aggregate_portfolio_investment.portfolio_investments.where("investment_date < ?", investment_date).sum(:quantity)
+  end
+
   before_create :update_name
   def update_name
     self.portfolio_company_name ||= portfolio_company.investor_name
   end
 
-  # before_save :compute_fmv, unless: :destroyed?
-
-  # after_create_commit :compute_avg_cost, unless: :destroyed?
   def compute_avg_cost
     aggregate_portfolio_investment.reload
     # save will recomute the avg costs
