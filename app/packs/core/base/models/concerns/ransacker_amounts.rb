@@ -9,16 +9,11 @@ class RansackerAmounts < Module
   def included(base)
     fields = @fields
     base.class_eval do
+      # This creates a ransacker for each field in the fields hash, typically for amounts
       fields.each do |field|
         ransacker field.to_sym, formatter: proc { |v| v.to_d } do |_parent|
           Arel.sql("#{table_name}.#{field}_cents / 100.0")
         end
-      end
-
-      # This is just a sample for json fields
-      ransacker :custom_field do |parent|
-        Arel::Nodes::InfixOperation.new('->>', parent.table[:json_fields],
-                                        Arel::Nodes.build_quoted('$.custom_field'))
       end
     end
   end

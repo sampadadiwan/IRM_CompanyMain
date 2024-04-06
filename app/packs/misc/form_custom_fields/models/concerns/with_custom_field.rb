@@ -7,6 +7,48 @@ module WithCustomField
 
     belongs_to :form_type, optional: true
     has_many :form_custom_fields, through: :form_type
+
+    # Scope to search for custom fields Useage: InvestorKyc.search_custom_fields("nationality", "Indian")
+    scope :search_custom_fields, lambda { |key, value|
+      where("JSON_UNQUOTE(json_fields -> ?) = ?", "$.#{key}", value)
+    }
+
+    # This is search for Json Fields via ransack
+    # Useage:  InvestorKyc.ransack(InvestorKyc.json_fields_query("json_fields.nationality_cont" => "India")).result
+    ransacker :json_fields, args: %i[parent ransacker_args] do |parent, args|
+      Rails.logger.debug { "parent: #{parent} args: #{args}" }
+      key = args
+      Arel::Nodes::InfixOperation.new('->>', parent.table[:json_fields],
+                                      Arel::Nodes.build_quoted("$.#{key}"))
+    end
+
+    # This is used to create the query for json fields, used in the above ransacker
+    def self.json_fields_query(query)
+      return unless query
+
+      query = query.try(:permit!).try(:to_h) unless query.is_a?(Hash)
+      query.each_with_object({}) do |(k, v), obj|
+        if k.starts_with?('json_fields.')
+          field = k.split('json_fields.').last
+          operation = Ransack::Predicate.detect_and_strip_from_string!(field)
+
+          raise ArgumentError, "No valid predicate for #{field}" unless operation
+
+          (obj[:c] ||= []) << {
+            a: {
+              '0' => {
+                name: 'json_fields',
+                ransacker_args: field
+              }
+            },
+            p: operation,
+            v: [v]
+          }
+        else
+          obj[k] = v
+        end
+      end
+    end
   end
 
   def map_custom_fields
