@@ -31,7 +31,7 @@ class PortfolioInvestment < ApplicationRecord
   validates :capital_commitment_id, presence: true, if: proc { |p| p.commitment_type == "CoInvest" }
   validate :sell_quantity_allowed
   validates :portfolio_company_name, length: { maximum: 100 }
-  validates :amount, numericality: { greater_than_or_equal_to: 0 }
+  # validates :amount, numericality: { greater_than_or_equal_to: 0 }
 
   counter_culture :aggregate_portfolio_investment, column_name: proc { |r| r.buy? ? "bought_quantity" : "sold_quantity" }, delta_column: 'quantity', column_names: {
     ["portfolio_investments.quantity > ?", 0] => 'bought_quantity',
