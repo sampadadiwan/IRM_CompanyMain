@@ -32,6 +32,7 @@
       <%= link_to "Download", xl_link, 
                               class: "btn btn-outline-success" %>
 
+      <%= button_to "Delete Results", delete_all_account_entries_path(q: params[:q].to_unsafe_h), class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false, msg: "Delete all account entries in search results?", method: :post}  if params[:q].present? %>
     </span>
 
     <% else %>

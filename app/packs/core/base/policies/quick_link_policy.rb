@@ -1,7 +1,7 @@
 class QuickLinkPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      if support?
+      if user.has_cached_role?(:super) || user.has_cached_role?(:support)
         scope.all
       else
         scope.where(entity_id: [user.entity_id, nil])
