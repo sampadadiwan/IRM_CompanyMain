@@ -24,6 +24,8 @@
     <% if valuation.owner %>
       
       <% investment_instruments = valuation.owner.investment_instruments %>
+
+      
       <div class="form-group">
         <%= form.label :investment_instrument_id, "Instrument" %>
         <%= form.select :investment_instrument_id, investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control", data: { select_target: "select" } %>

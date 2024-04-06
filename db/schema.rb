@@ -239,8 +239,10 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_06_155719) do
     t.string "investment_domicile", limit: 10
     t.datetime "deleted_at"
     t.bigint "investment_instrument_id"
+    t.bigint "form_type_id"
     t.index ["deleted_at"], name: "index_aggregate_portfolio_investments_on_deleted_at"
     t.index ["entity_id"], name: "index_aggregate_portfolio_investments_on_entity_id"
+    t.index ["form_type_id"], name: "index_aggregate_portfolio_investments_on_form_type_id"
     t.index ["fund_id"], name: "index_aggregate_portfolio_investments_on_fund_id"
     t.index ["investment_instrument_id"], name: "idx_on_investment_instrument_id_9bc45b0212"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
@@ -914,6 +916,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_06_155719) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "sent_for_esign_date"
+    t.boolean "embedded", default: false
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
@@ -1671,6 +1674,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_06_155719) do
     t.bigint "document_folder_id"
     t.bigint "investor_id"
     t.json "json_fields"
+    t.string "buyer_signatory_emails"
     t.index ["custom_matching_vals"], name: "index_interests_on_custom_matching_vals"
     t.index ["deleted_at"], name: "index_interests_on_deleted_at"
     t.index ["document_folder_id"], name: "index_interests_on_document_folder_id"
@@ -2215,14 +2219,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_06_155719) do
     t.string "city", limit: 20
     t.bigint "final_agreement_user_id"
     t.string "custom_matching_vals"
-    t.boolean "esign_required", default: false
     t.boolean "esign_completed", default: false
-    t.string "esign_provider", limit: 10
-    t.string "esign_link"
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
     t.json "json_fields"
     t.bigint "import_upload_id"
+    t.string "seller_signatory_emails"
     t.index ["buyer_id"], name: "index_offers_on_buyer_id"
     t.index ["custom_matching_vals"], name: "index_offers_on_custom_matching_vals"
     t.index ["deleted_at"], name: "index_offers_on_deleted_at"
@@ -2868,6 +2870,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_06_155719) do
   add_foreign_key "aggregate_investments", "funding_rounds"
   add_foreign_key "aggregate_investments", "investors"
   add_foreign_key "aggregate_portfolio_investments", "entities"
+  add_foreign_key "aggregate_portfolio_investments", "form_types"
   add_foreign_key "aggregate_portfolio_investments", "funds"
   add_foreign_key "aggregate_portfolio_investments", "investment_instruments"
   add_foreign_key "aggregate_portfolio_investments", "investors", column: "portfolio_company_id"
