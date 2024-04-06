@@ -1,6 +1,7 @@
 class AggregatePortfolioInvestment < ApplicationRecord
   include ForInvestor
   include Trackable.new
+  include WithCustomField
 
   belongs_to :entity, touch: true
   belongs_to :fund

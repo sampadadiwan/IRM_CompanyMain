@@ -18,13 +18,24 @@ module FormTypeHelper
   def get_form_type(name, entity_id: nil)
     entity_id ||= current_user.entity_id
     form_type = FormType.where(entity_id:, name:).first
-    custom_field_names = form_type ? form_type.form_custom_fields.collect(&:name) : []
+    custom_field_names = form_type ? form_type.form_custom_fields.visible.collect(&:name) : []
     custom_headers = custom_field_names.map(&:titleize)
+    custom_calcs = form_type ? form_type.form_custom_fields.calculations : []
+    custom_calc_headers = form_type ? form_type.form_custom_fields.calculations.collect(&:human_label) : []
 
-    [form_type, custom_field_names, custom_headers]
+    [form_type, custom_field_names, custom_headers, custom_calcs, custom_calc_headers]
   end
 
   def get_custom_values(model, form_type, custom_field_names)
     form_type && model&.properties ? model.properties.values_at(*custom_field_names) : []
+  end
+
+  def get_custom_calc_values(model, form_type, custom_calcs)
+    calc_values = []
+    custom_calcs.each do |custom_calc|
+      val = form_type && model&.properties ? model.perform_custom_calculation(custom_calc.meta_data) : nil
+      calc_values << val
+    end
+    calc_values
   end
 end

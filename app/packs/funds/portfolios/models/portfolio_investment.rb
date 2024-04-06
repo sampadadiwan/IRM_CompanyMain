@@ -53,9 +53,14 @@ class PortfolioInvestment < ApplicationRecord
     if aggregate_portfolio_investment_id.blank?
       self.aggregate_portfolio_investment = AggregatePortfolioInvestment.find_or_initialize_by(fund_id:, portfolio_company_id:, entity:, commitment_type:, investment_instrument_id:)
 
+      aggregate_portfolio_investment.form_type = entity.form_types.where(name: "AggregatePortfolioInvestment").last
       ret_val = aggregate_portfolio_investment.save
+
       logger.error "Error in setting up aggregate portfolio investment #{aggregate_portfolio_investment.errors.full_messages}" unless ret_val
       ret_val
+    elsif aggregate_portfolio_investment.form_type_id.blank?
+      aggregate_portfolio_investment.form_type = entity.form_types.where(name: "AggregatePortfolioInvestment").last
+      aggregate_portfolio_investment.save
     else
       true
     end
