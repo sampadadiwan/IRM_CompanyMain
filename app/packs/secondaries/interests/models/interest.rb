@@ -30,6 +30,7 @@ class Interest < ApplicationRecord
   validates :buyer_entity_name, length: { maximum: 100 }
   validates :contact_name, length: { maximum: 50 }
   validates :email, length: { maximum: 100 }
+  validates :buyer_signatory_emails, length: { maximum: 255 }
   validates :PAN, length: { maximum: 15 }
   validates :demat, :city, :ifsc_code, length: { maximum: 20 }
   validates :bank_account_number, length: { maximum: 15 }

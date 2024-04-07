@@ -23,7 +23,7 @@ module WithESignatures
 
     e_signatures.map do |e_signature|
       method = e_signature.label.delete(' ').underscore
-      allowed_methods = %w[investor_signatories fund_signatories]
+      allowed_methods = %w[investor_signatories fund_signatories buyer_signatories seller_signatories]
       if model.respond_to?(method) && allowed_methods.include?(method)
         process_allowed_methods(model, method, e_signature)
       else

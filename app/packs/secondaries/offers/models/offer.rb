@@ -72,8 +72,8 @@ class Offer < ApplicationRecord
   validates :ifsc_code, :city, length: { maximum: 20 }
 
   validates :bank_name, length: { maximum: 50 }
-  validates :buyer_confirmation, :esign_provider, length: { maximum: 10 }
-  validates :acquirer_name, length: { maximum: 255 }
+  validates :buyer_confirmation, length: { maximum: 10 }
+  validates :acquirer_name, :seller_signatory_emails, length: { maximum: 255 }
   validates :full_name, length: { maximum: 100 }
 
   monetize :amount_cents, :allocation_amount_cents, with_currency: ->(o) { o.entity.currency }
@@ -227,13 +227,15 @@ class Offer < ApplicationRecord
 
   ################# eSign stuff follows ###################
 
-  def buyer_signatory
-    interest&.user
+  def buyer_signatories
+    self.buyer_signatory_emails&.split(",")
   end
 
-  def seller_signatory
-    user
+  def seller_signatories
+    self.seller_signatory_emails&.split(",")
   end
+
+  ################# ransack stuff follows ###################
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[PAN acquirer_name address allocation_amount_cents allocation_percentage allocation_quantity amount_cents approved bank_account_number bank_name bank_routing_info bank_verification_response bank_verification_status bank_verified buyer_confirmation demat full_name ifsc_code percentage quantity verified]
@@ -245,6 +247,34 @@ class Offer < ApplicationRecord
 
   def self.ransackable_scopes(_auth_object = nil)
     %i[]
+  end
+
+  def pan_card
+    documents.where("name like ?", "%PAN%").last&.file
+  end
+
+  def signature
+    documents.where("name like ?", "%Signature%").last&.file
+  end
+
+  def to_s
+    "Offer: #{user}"
+  end
+
+  ################### Adhoc fn for prod data management ##############
+
+  def self.copy_docs(from_sale, to_sale)
+    to_sale.offers.each do |to_offer|
+      from_offer = from_sale.offers.where(user_id: to_offer.user_id).last
+      next unless from_offer
+
+      doc = from_offer.documents.where("name like ?", "%cheque%").last
+      Document.find_or_create_by(name: doc.name, file_data: doc.file_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id) if doc
+
+      # Extract the PAN and signature
+      Document.find_or_create_by(name: "Signature", file_data: from_offer.signature_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id)
+      Document.find_or_create_by(name: "PAN", file_data: from_offer.pan_card_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id)
+    end
   end
 
   # rubocop:disable Rails/SkipsModelValidations
@@ -277,29 +307,4 @@ class Offer < ApplicationRecord
   end
   # rubocop:enable Rails/SkipsModelValidations
 
-  def pan_card
-    documents.where("name like ?", "%PAN%").last&.file
-  end
-
-  def signature
-    documents.where("name like ?", "%Signature%").last&.file
-  end
-
-  def to_s
-    "Offer: #{user}"
-  end
-
-  def self.copy_docs(from_sale, to_sale)
-    to_sale.offers.each do |to_offer|
-      from_offer = from_sale.offers.where(user_id: to_offer.user_id).last
-      next unless from_offer
-
-      doc = from_offer.documents.where("name like ?", "%cheque%").last
-      Document.find_or_create_by(name: doc.name, file_data: doc.file_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id) if doc
-
-      # Extract the PAN and signature
-      Document.find_or_create_by(name: "Signature", file_data: from_offer.signature_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id)
-      Document.find_or_create_by(name: "PAN", file_data: from_offer.pan_card_data, owner: to_offer, entity_id: to_offer.entity_id, user_id: to_offer.user_id)
-    end
-  end
 end

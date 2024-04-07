@@ -201,7 +201,6 @@ class InterestsController < ApplicationController
                                      :comments, :escrow_deposited, :details, :allocation_quantity,
                                      :investor_id, :secondary_sale_id, :buyer_entity_name,
                                      :demat, :city, :bank_account_number, :ifsc_code, :form_type_id,
-                                     :address, :contact_name, :email, :PAN, :final_agreement, :signature,
-                                     documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+                                     :address, :contact_name, :email, :PAN, :final_agreement, :signature, :buyer_signatory_emails, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

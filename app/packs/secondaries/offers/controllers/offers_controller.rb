@@ -194,6 +194,6 @@ class OffersController < ApplicationController
     params.require(:offer).permit(:user_id, :entity_id, :secondary_sale_id, :investor_id,
                                   :holding_id, :quantity, :percentage, :notes, :full_name, :PAN, :address, :bank_account_number, :bank_name, :ifsc_code, :city, :demat,
                                   :comments, :verified, :interest_id, :form_type_id, :allocation_quantity,
-                                  :acquirer_name, :bank_routing_info, :id_proof, :address_proof, :spa, docs_uploaded_check: {}, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+                                  :acquirer_name, :bank_routing_info, :id_proof, :address_proof, :spa, :seller_signatory_emails, docs_uploaded_check: {}, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

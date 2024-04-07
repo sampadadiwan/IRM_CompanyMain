@@ -95,7 +95,7 @@ class SecondarySale < ApplicationRecord
   end
 
   def signature_labels
-    ["Buyer Signatory", "Seller Signatory", "Other"]
+    ["Buyer Signatories", "Seller Signatories", "Other"]
   end
 
   def buyer_investors
