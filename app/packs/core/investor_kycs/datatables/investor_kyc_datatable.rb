@@ -1,4 +1,4 @@
-class InvestorKycDatatable < AjaxDatatablesRails::ActiveRecord
+class InvestorKycDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "InvestorKyc.id" },

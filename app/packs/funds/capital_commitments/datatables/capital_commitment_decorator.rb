@@ -3,6 +3,10 @@ class CapitalCommitmentDecorator < ApplicationDecorator
     "#{object.percentage.round(2)} %"
   end
 
+  def custom_fields
+    object.json_fields
+  end
+
   def onboarding_completed
     h.display_boolean(object.onboarding_completed)
   end

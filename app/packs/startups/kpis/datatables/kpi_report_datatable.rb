@@ -1,4 +1,4 @@
-class KpiReportDatatable < AjaxDatatablesRails::ActiveRecord
+class KpiReportDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "KpiReport.id", searchable: false },

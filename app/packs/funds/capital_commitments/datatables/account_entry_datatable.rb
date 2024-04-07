@@ -1,4 +1,4 @@
-class AccountEntryDatatable < AjaxDatatablesRails::ActiveRecord
+class AccountEntryDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "AccountEntry.id", searchable: false },

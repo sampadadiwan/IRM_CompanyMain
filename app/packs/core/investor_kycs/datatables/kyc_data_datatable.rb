@@ -1,4 +1,4 @@
-class KycDataDatatable < AjaxDatatablesRails::ActiveRecord
+class KycDataDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "KycData.id", searchable: false },

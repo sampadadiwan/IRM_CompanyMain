@@ -1,4 +1,4 @@
-class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
+class CapitalCommitmentDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "CapitalCommitment.id" },
@@ -15,6 +15,7 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
       percentage: { source: "CapitalCommitment.percentage" },
       onboarding_completed: { source: "CapitalCommitment.onboarding_completed" },
       document_names: { source: "", orderable: false },
+      # custom_fields: { source: "", orderable: false },
       dt_actions: { source: "", orderable: false }
     }
   end
@@ -37,6 +38,7 @@ class CapitalCommitmentDatatable < AjaxDatatablesRails::ActiveRecord
         onboarding_completed: record.decorate.onboarding_completed,
         document_names: record.decorate.document_names(params),
         dt_actions: record.decorate.dt_actions,
+        # custom_fields: record.decorate.custom_fields,
         DT_RowId: "capital_commitment_#{record.id}" # This will automagically set the id attribute on the corresponding <tr> in the datatable
       }
     end

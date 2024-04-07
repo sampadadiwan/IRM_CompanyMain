@@ -1,4 +1,4 @@
-class FundRatioDatatable < AjaxDatatablesRails::ActiveRecord
+class FundRatioDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "FundRatio.id", searchable: false },

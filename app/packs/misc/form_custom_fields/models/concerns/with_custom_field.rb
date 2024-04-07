@@ -75,6 +75,21 @@ module WithCustomField
   def custom_calcs_with_td
     TemplateDecorator.decorate(custom_calcs)
   end
+
+  def ensure_json_fields
+    return unless form_type && json_fields
+
+    updated = false
+    form_type.form_custom_fields.visible.each do |cf|
+      json_fields ||= {}
+      unless json_fields.key?(cf.name)
+        json_fields[cf.name] ||= nil
+        updated = true
+      end
+    end
+    save(validate: false) if updated
+    updated
+  end
 end
 
 # This is a class that is required for word templates which is used for document generation

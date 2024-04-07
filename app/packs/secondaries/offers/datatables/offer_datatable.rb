@@ -1,4 +1,4 @@
-class OfferDatatable < AjaxDatatablesRails::ActiveRecord
+class OfferDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "Offer.id", searchable: false },

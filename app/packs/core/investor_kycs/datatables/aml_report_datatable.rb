@@ -1,4 +1,4 @@
-class AmlReportDatatable < AjaxDatatablesRails::ActiveRecord
+class AmlReportDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "AmlReport.id" },

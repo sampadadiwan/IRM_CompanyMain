@@ -1,4 +1,4 @@
-class HoldingDatatable < AjaxDatatablesRails::ActiveRecord
+class HoldingDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "Holding.id" },

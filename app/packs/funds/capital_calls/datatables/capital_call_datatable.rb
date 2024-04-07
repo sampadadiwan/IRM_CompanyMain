@@ -1,4 +1,4 @@
-class CapitalCallDatatable < AjaxDatatablesRails::ActiveRecord
+class CapitalCallDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "CapitalCall.id", searchable: false },

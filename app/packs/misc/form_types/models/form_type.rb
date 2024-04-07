@@ -66,4 +66,19 @@ class FormType < ApplicationRecord
     end
     ftd
   end
+
+  # Ensure that all the models of this entity have the form type id set
+  after_save :update_models
+  def update_models
+    cn = name.constantize
+    cn.where(entity_id:, form_type_id: nil).update_all(form_type_id: id)
+    FormTypeJob.perform_later(id)
+  end
+
+  # Ensure that all the custom fields defined in the form type are present in the json_fields of the models
+  # Called by FormTypeJob
+  def ensure_json_fields
+    cn = name.constantize
+    cn.where(entity_id:).find_each(&:ensure_json_fields)
+  end
 end

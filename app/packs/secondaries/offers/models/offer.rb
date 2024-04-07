@@ -228,11 +228,11 @@ class Offer < ApplicationRecord
   ################# eSign stuff follows ###################
 
   def buyer_signatories
-    self.buyer_signatory_emails&.split(",")
+    buyer_signatory_emails&.split(",")
   end
 
   def seller_signatories
-    self.seller_signatory_emails&.split(",")
+    seller_signatory_emails&.split(",")
   end
 
   ################# ransack stuff follows ###################
@@ -306,5 +306,4 @@ class Offer < ApplicationRecord
     users_no_investor
   end
   # rubocop:enable Rails/SkipsModelValidations
-
 end
