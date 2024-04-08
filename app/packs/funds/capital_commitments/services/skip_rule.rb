@@ -1,0 +1,1 @@
+class SkipRule < StandardError; end

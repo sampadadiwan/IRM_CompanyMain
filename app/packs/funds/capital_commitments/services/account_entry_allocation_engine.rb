@@ -183,23 +183,26 @@ class AccountEntryAllocationEngine
   end
 
   def create_account_entry(account_entry, fund_formula, capital_commitment, parent, bdg)
-    account_entry.capital_commitment = capital_commitment
-    account_entry.folio_id = capital_commitment.folio_id
-    account_entry.amount_cents = @helper.safe_eval(fund_formula.formula, bdg)
+    begin
+      account_entry.capital_commitment = capital_commitment
+      account_entry.folio_id = capital_commitment.folio_id
+      account_entry.amount_cents = @helper.safe_eval(fund_formula.formula, bdg)
 
-    account_entry.explanation = []
-    account_entry.explanation << fund_formula.formula
-    account_entry.explanation << fund_formula.description
-    account_entry.explanation << @helper.print_formula(fund_formula, bdg)
+      account_entry.explanation = []
+      account_entry.explanation << fund_formula.formula
+      account_entry.explanation << fund_formula.description
+      account_entry.explanation << @helper.print_formula(fund_formula, bdg)
 
-    account_entry.parent = parent
-    account_entry.generated = true
-    account_entry.commitment_type = fund_formula.commitment_type
-    account_entry.fund_formula = fund_formula
+      account_entry.parent = parent
+      account_entry.generated = true
+      account_entry.commitment_type = fund_formula.commitment_type
+      account_entry.fund_formula = fund_formula
 
-    account_entry.save!
-    @helper.add_to_computed_fields_cache(capital_commitment, account_entry)
-
+      account_entry.save!
+      @helper.add_to_computed_fields_cache(capital_commitment, account_entry)
+    rescue SkipRule => e
+      Rails.logger.debug { "Skipping #{fund_formula.name} for #{capital_commitment}: #{e.message}" }
+    end
     account_entry
   end
 
