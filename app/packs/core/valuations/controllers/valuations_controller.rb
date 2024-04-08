@@ -36,18 +36,29 @@ class ValuationsController < ApplicationController
 
   # POST /valuations or /valuations.json
   def create
-    @valuation = Valuation.new(valuation_params)
-    @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
-    @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
-    @valuation.valuation_cents = valuation_params[:valuation].to_f * 100
-    authorize @valuation
+    valuations = []
+    saved_all = true
+    # We need to create a valuation for each investment instrument
+    Valuation.transaction do
+      params[:investment_instrument_ids].each do |investment_instrument_id|
+        @valuation = Valuation.new(valuation_params)
+        @valuation.investment_instrument_id = investment_instrument_id
+        @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
+        @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
+        @valuation.valuation_cents = valuation_params[:valuation].to_f * 100
+        authorize @valuation
+        saved_all &&= @valuation.save
+        valuations << @valuation
+      end
+    end
 
     respond_to do |format|
-      if @valuation.save
+      if saved_all
+        notice = "Valuation was successfully created."
         if @valuation.owner_type == "Entity"
-          format.html { redirect_to valuation_url(@valuation), notice: "Valuation was successfully created." }
+          format.html { redirect_to valuation_url(@valuation), notice: }
         else
-          format.html { redirect_to [@valuation.owner, { tab: "valuations-tab" }], notice: "Valuation was successfully created." }
+          format.html { redirect_to [@valuation.owner, { tab: "valuations-tab" }], notice: }
         end
         format.json { render :show, status: :created, location: @valuation }
       else
@@ -96,7 +107,6 @@ class ValuationsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def valuation_params
-    params.require(:valuation).permit(:entity_id, :valuation_date, :investment_instrument_id,
-                                      :owner_id, :owner_type, :form_type_id, :per_share_value, :report, :valuation, properties: {})
+    params.require(:valuation).permit(:entity_id, :valuation_date, :investment_instrument_id, :owner_id, :owner_type, :form_type_id, :per_share_value, :report, :valuation, properties: {})
   end
 end
