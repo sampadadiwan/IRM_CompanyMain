@@ -27,14 +27,28 @@
 
       <% if valuation.new_record? %>      
         <!-- New record : allow multiple valuations to be created simeltaneously -->  
-        <div class="form-group">
-          <%= form.label :investment_instrument_ids, "Instrument" %>
-          <%= form.select :investment_instrument_ids, investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control select2", multiple: "multiple", name: "investment_instrument_ids[]", data: { select_target: "select" } %>
+        <div class="row">
+          <div class="form-group col">
+            <%= form.label :investment_instrument_ids, "Instrument" %>
+            <%= form.select :investment_instrument_ids, investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control select2", multiple: "multiple", name: "investment_instrument_ids[]", data: { select_target: "select" } %>
+          </div>
+          <div class="form-group col" data-controller="currencyformat">
+                <%= form.label :per_share_value %> <span class="formatted_currency"></span>
+                <%= form.number_field :per_share_value, class: "form-control",  step: :any,
+                    data: {action: "input->currencyformat#format"} %>
+          </div>
         </div>
       <% else %>
-        <div class="form-group">
-          <%= form.label :investment_instrument_id, "Instrument" %>
-          <%= form.select :investment_instrument_id, investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control", data: { select_target: "select" } %>
+        <div class="row">
+          <div class="form-group col">
+            <%= form.label :investment_instrument_id, "Instrument" %>
+            <%= form.select :investment_instrument_id, investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control", data: { select_target: "select" } %>
+          </div>
+          <div class="form-group col" data-controller="currencyformat">
+              <%= form.label :per_share_value %> <span class="formatted_currency"></span>
+              <%= form.number_field :per_share_value, class: "form-control",  step: :any,
+                  data: {action: "input->currencyformat#format"} %>
+          </div>
         </div>
       <% end %>
 
@@ -45,14 +59,6 @@
       <%= form.number_field :valuation, class: "form-control",  step: :any, 
           data: {action: "input->currencyformat#format"}  %>
     </div>
-
-    
-    <div class="form-group" data-controller="currencyformat">
-        <%= form.label :per_share_value %> <span class="formatted_currency"></span>
-        <%= form.number_field :per_share_value, class: "form-control",  step: :any,
-            data: {action: "input->currencyformat#format"} %>
-    </div>
-
 
     <div class="form-group">
       
