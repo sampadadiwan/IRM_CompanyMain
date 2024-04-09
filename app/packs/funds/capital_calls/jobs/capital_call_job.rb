@@ -46,11 +46,11 @@ class CapitalCallJob < ApplicationJob
       end
     end
 
-    # Fix the counters
-    CapitalRemittance.counter_culture_fix_counts where: { entity_id: @capital_call.entity_id }
-
     # Generate any payments for the imported remittances if required
     generate_remittance_payments
+    
+    # Fix the counters
+    CapitalRemittance.counter_culture_fix_counts where: { entity_id: @capital_call.entity_id }
   end
 
   def generate_remittance_payments
@@ -66,6 +66,11 @@ class CapitalCallJob < ApplicationJob
 
     # Fix the counters
     CapitalRemittancePayment.counter_culture_fix_counts where: { entity_id: @capital_call.entity_id }
+
+    # We also need to fix the status of the CapitalRemittances, as the payments will have been created
+    @capital_call.capital_remittances.each do |capital_remittance|
+      CapitalRemittanceUpdate.call(capital_remittance:)
+    end
   end
 
   def notify(capital_call_id)
