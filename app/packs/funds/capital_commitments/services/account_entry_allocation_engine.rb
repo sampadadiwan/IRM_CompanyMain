@@ -248,11 +248,11 @@ class AccountEntryAllocationEngine
     fund_formula.commitments(@sample).each do |capital_commitment|
       Rails.logger.debug { "Cumulating #{fund_formula} to #{capital_commitment}" }
 
-      if fund_formula.roll_up
-        # Rollup this allocation for each commitment
-        cumulative_ae = capital_commitment.rollup_account_entries(fund_formula.name, fund_formula.entry_type, @start_date, @end_date) 
-        @helper.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
-      end
+      next unless fund_formula.roll_up
+
+      # Rollup this allocation for each commitment
+      cumulative_ae = capital_commitment.rollup_account_entries(fund_formula.name, fund_formula.entry_type, @start_date, @end_date)
+      @helper.add_to_computed_fields_cache(capital_commitment, cumulative_ae)
     end
   end
 

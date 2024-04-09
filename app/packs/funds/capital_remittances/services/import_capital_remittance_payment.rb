@@ -1,21 +1,13 @@
 class ImportCapitalRemittancePayment < ImportUtil
   STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Amount", "Currency", "Folio No", "Virtual Bank Account", "Verified", "Reference No", "Payment Date", "Notes", "Update Only"].freeze
 
-  attr_accessor :fund_ids
-
   def initialize(**)
     super(**)
-    @fund_ids = Set.new
+    @capital_remittance_ids = {}
   end
 
   def standard_headers
     STANDARD_HEADERS
-  end
-
-  def post_process(ctx, import_upload:, **)
-    super(ctx, import_upload:, **)
-    CapitalRemittance.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
-    true
   end
 
   def save_row(user_data, import_upload, custom_field_headers)
@@ -26,8 +18,6 @@ class ImportCapitalRemittancePayment < ImportUtil
     if fund && capital_call && investor && capital_commitment &&
        capital_remittance && folio_currency == capital_commitment.folio_currency
 
-      @fund_ids.add(fund.id)
-
       create_or_update_capital_remittance_payment(inputs, user_data, custom_field_headers, import_upload)
 
     else
@@ -36,6 +26,8 @@ class ImportCapitalRemittancePayment < ImportUtil
       raise "Capital Remittance not found" unless capital_remittance
       raise "Currency not same as commitment currency" unless folio_currency == capital_commitment.folio_currency
     end
+
+    true
   end
 
   def create_or_update_capital_remittance_payment(inputs, user_data, custom_field_headers, import_upload)
@@ -58,10 +50,8 @@ class ImportCapitalRemittancePayment < ImportUtil
       raise "Skipping: CapitalRemittancePayment already exists"
     end
 
-    # We need to reload the capital_remittance, as the capital_remittance_payment counter caches would have updated the capital_remittance
-    capital_remittance.reload
-    capital_remittance.verified = user_data["Verified"] == "Yes"
-    CapitalRemittanceUpdate.call(capital_remittance:)
+    # Add the capital_remittance to the set, so we can save them after all the payment numbers are rolled up
+    @capital_remittance_ids[capital_remittance.id] = user_data["Verified"] == "Yes"
   end
 
   def save_crp(capital_remittance_payment, inputs, user_data, custom_field_headers)
@@ -110,6 +100,21 @@ class ImportCapitalRemittancePayment < ImportUtil
   end
 
   def defer_counter_culture_updates
+    true
+  end
+
+  def post_process(ctx, import_upload:, **)
+    super(ctx, import_upload:, **)
+
+    @capital_remittances = CapitalRemittance.where(id: @capital_remittance_ids.keys)
+    @capital_remittances.each do |capital_remittance|
+      # We need to reload the capital_remittance, as the capital_remittance_payment counter caches would have updated the capital_remittance
+      capital_remittance.verified = @capital_remittance_ids[capital_remittance.id]
+      CapitalRemittanceUpdate.call(capital_remittance:)
+    end
+
+    CapitalRemittance.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
+
     true
   end
 end

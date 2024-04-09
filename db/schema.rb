@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_04_06_155719) do
+ActiveRecord::Schema[7.1].define(version: 2024_04_08_094026) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -426,6 +426,17 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_06_155719) do
     t.index ["capital_call_id"], name: "index_call_fees_on_capital_call_id"
     t.index ["entity_id"], name: "index_call_fees_on_entity_id"
     t.index ["fund_id"], name: "index_call_fees_on_fund_id"
+  end
+
+  create_table "caphive_agents", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.text "task"
+    t.json "messages"
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_caphive_agents_on_entity_id"
+    t.index ["user_id"], name: "index_caphive_agents_on_user_id"
   end
 
   create_table "capital_calls", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -916,6 +927,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_06_155719) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "sent_for_esign_date"
+    t.boolean "embedded", default: false
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
@@ -2890,6 +2902,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_06_155719) do
   add_foreign_key "call_fees", "capital_calls"
   add_foreign_key "call_fees", "entities"
   add_foreign_key "call_fees", "funds"
+  add_foreign_key "caphive_agents", "entities"
+  add_foreign_key "caphive_agents", "users"
   add_foreign_key "capital_calls", "entities"
   add_foreign_key "capital_calls", "folders", column: "document_folder_id"
   add_foreign_key "capital_calls", "funds"

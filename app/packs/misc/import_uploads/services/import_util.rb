@@ -68,6 +68,7 @@ class ImportUtil < Trailblazer::Operation
     # Update the counter caches
     if defer_counter_culture_updates
       model_class = import_upload.model_class
+      Rails.logger.debug { "Running counter_culture_fix_counts after import for #{model_class}" }
       model_class.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
     end
     true

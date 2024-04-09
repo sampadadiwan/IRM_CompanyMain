@@ -862,6 +862,10 @@ Then('the remittances are generated for the capital calls') do
       cc.capital_remittances.count.should == commitments.count
       cc.capital_remittances.sum(:call_amount_cents).should == cc.call_amount_cents
       cc.capital_remittances.verified.sum(:collected_amount_cents).should == cc.collected_amount_cents
+      # Ensure status are set coorectly post the import
+      cc.capital_remittances.each do |cr|
+        cr.status.should == cr.set_status
+      end
     end
   end
 end
