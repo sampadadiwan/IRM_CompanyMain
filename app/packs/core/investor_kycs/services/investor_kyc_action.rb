@@ -12,9 +12,23 @@ class InvestorKycAction < Trailblazer::Operation
     investor_kyc.valid?
   end
 
+  def handle_kyc_sebi_data_errors(ctx, investor_kyc:, **)
+    unless investor_kyc.investor_kyc_sebi_data.valid?
+      ctx[:errors] = investor_kyc.investor_kyc_sebi_data.errors.full_messages.join(", ")
+      Rails.logger.error("Investor KYC SEBI Data errors: #{investor_kyc.investor_kyc_sebi_data.errors.full_messages}")
+    end
+    investor_kyc.investor_kyc_sebi_data.valid?
+  end
+
   def validate_bank(_ctx, investor_kyc:, **)
     investor_kyc.validate_bank unless investor_kyc.destroyed?
     true
+  end
+
+  def create_investor_kyc_sebi_data(_ctx, investor_kyc:, **)
+    result = true
+    result = investor_kyc.create_investor_kyc_sebi_data unless investor_kyc.destroyed?
+    result
   end
 
   def validate_pan_card(_ctx, investor_kyc:, **)

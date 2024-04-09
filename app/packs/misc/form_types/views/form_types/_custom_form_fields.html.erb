@@ -1,7 +1,7 @@
-<% 
-    struct = OpenStruct.new(model.properties) 
+<%
+    struct = OpenStruct.new(model.properties)
     fields = model.form_type.form_custom_fields.visible
-    fields = fields.where(step: step) if step.present?    
+    fields = fields.where(step: step) if step.present?
 %>
 
 <div data-controller="form-custom-fields">
@@ -9,9 +9,8 @@
         <% fields.each do |field| %>
             <!-- Override the required attribute of the field if passed in -->
             <% field.required = required if required == false %>
-            <%= render "form_custom_fields/#{field.field_type.underscore}", model:, 
+            <%= render "form_custom_fields/#{field.field_type.underscore}", model:,
                         field: field, f: builder, struct: struct if field.show_to_user(current_user) %>
-        
         <% end %>
     <% end %>
 

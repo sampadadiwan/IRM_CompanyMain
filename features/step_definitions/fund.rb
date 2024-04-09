@@ -17,7 +17,6 @@
     # fill_in('fund_details', with: @fund.details)
     find('trix-editor').click.set(@fund.details)
     click_on("Next")
-    click_on("Next")
     click_on("Save")
   end
 

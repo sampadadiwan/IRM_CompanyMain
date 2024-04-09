@@ -1,11 +1,15 @@
 class FundReportsController < ApplicationController
-  before_action :set_fund_report, only: %i[show edit update destroy]
+  before_action :set_fund_report, only: %i[show edit update destroy regenerate download_page]
 
   # GET /fund_reports or /fund_reports.json
   def index
-    @fund_reports = policy_scope(FundReport).includes(:fund)
+    @fund_reports = policy_scope(FundReport).includes(:fund).order(id: :desc)
     @fund_reports = @fund_reports.where(fund_id: params[:fund_id]) if params[:fund_id].present?
     @fund_reports = @fund_reports.where(name: params[:name]) if params[:name].present?
+    if params[:fund_id].present?
+      @fund = Fund.find(params[:fund_id])
+      @bread_crumbs = { Funds: funds_path, "#{@fund.name}": fund_path(@fund), 'Fund Reports': nil }
+    end
 
     respond_to do |format|
       format.html
@@ -36,12 +40,39 @@ class FundReportsController < ApplicationController
     respond_to do |format|
       if FundReportJob.perform_later(@fund_report.entity_id, @fund_report.fund_id, @fund_report.name,
                                      @fund_report.start_date, @fund_report.end_date, current_user.id)
-        format.html { redirect_to fund_reports_url, notice: "Fund report will be generated, please check back in a few mins." }
-        format.json { render :show, status: :created, location: @fund_report }
+
+        format.html do
+          if @fund_report.name.casecmp?("sebi report")
+            # show notice and dont redirect
+            redirect_to @fund_report.fund, notice: "Fund report will be generated, please check back in a few mins."
+          else
+            redirect_to fund_reports_url(fund_id: @fund_report.fund.id), notice: "Fund report will be generated, please check back in a few mins."
+            format.json { render :show, status: :created, location: @fund_report }
+          end
+        end
       else
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @fund_report.errors, status: :unprocessable_entity }
       end
+    end
+  end
+
+  def regenerate
+    if FundReportJob.perform_later(@fund_report.entity_id, @fund_report.fund_id, @fund_report.name,
+                                   @fund_report.start_date, @fund_report.end_date, current_user.id)
+      redirect_to fund_reports_url(fund_id: @fund_report.fund.id), notice: "Fund report will be regenerated, please check back in a few mins."
+    else
+      redirect_to fund_reports_url(fund_id: @fund_report.fund.id), alert: "Failed to regenerate fund report."
+    end
+  end
+
+  def download_page
+    single = params[:single].present? && params[:single] == "true"
+    if FundReportJob.perform_later(@fund_report.entity_id, @fund_report.fund_id, @fund_report.name,
+                                   @fund_report.start_date, @fund_report.end_date, current_user.id, excel: true, single:)
+      redirect_to fund_reports_url(fund_id: @fund_report.fund.id), notice: "Fund report will be regenerated, please check back in a few mins."
+    else
+      redirect_to fund_reports_url(fund_id: @fund_report.fund.id), alert: "Failed to regenerate fund report."
     end
   end
 
@@ -60,10 +91,11 @@ class FundReportsController < ApplicationController
 
   # DELETE /fund_reports/1 or /fund_reports/1.json
   def destroy
+    fund_id = @fund_report.fund_id
     @fund_report.destroy
 
     respond_to do |format|
-      format.html { redirect_to fund_reports_url, notice: "Fund report was successfully destroyed." }
+      format.html { redirect_to fund_reports_url(fund_id:), notice: "Fund report was successfully destroyed." }
       format.json { head :no_content }
     end
   end
@@ -73,6 +105,7 @@ class FundReportsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_fund_report
     @fund_report = FundReport.find(params[:id])
+    @bread_crumbs = { Funds: funds_path, "#{@fund_report.fund.name}": fund_path(@fund_report.fund), "#{@fund_report.name}": fund_report_path(@fund_report) }
     authorize @fund_report
   end
 

@@ -1,0 +1,32 @@
+<tr>
+    <td>
+        <%= f.position %>
+    </td>
+    <td>
+        <%= f.name %>
+    </td>
+    <td>
+        <%= f.human_label %>
+    </td>
+    <td>
+        <%= f.field_type %>
+    </td>
+    <td>
+        Required <%= display_boolean f.required %>,
+        Read Only <%= display_boolean f.read_only %> <br>
+        Metadata: <%= f.meta_data %> <br>
+        Help Text: <%= f.help_text&.html_safe %> <br>
+    </td>
+    <td>
+        <% if f.condition_on.present? %>
+        On: <%= f.condition_on %> <br>
+        Criteria: <%= f.condition_criteria %> <br>
+        Match Value: <%= f.condition_params %> <br>
+        Initial State: <%= f.condition_state %>
+        <% end %>
+    </td>
+    <td>
+        <%= f.step.humanize %>
+    </td>
+
+</tr>

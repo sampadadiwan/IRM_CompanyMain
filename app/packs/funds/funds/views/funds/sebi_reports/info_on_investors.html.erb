@@ -1,0 +1,268 @@
+<%
+    if @fund_report.present?
+        fund_report = @fund_report
+    elsif params[:fund_report_id].present?
+        fund_report = FundReport.where(id: params[:fund_report_id]).last
+    elsif params[:id].present?
+        fund_report = FundReport.where(fund_id: params[:id], name: params['report'].split('/').last.camelize).last
+    end
+    data = fund_report&.data
+%>
+
+<% unless fund_report && policy(fund_report).show? %>
+    <div class="alert alert-danger" style="text-align: center;">Permission Denied</div>
+<% end %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4" >
+    <h1 class="h4 mb-0 text-gray-800" style="width:100%">Break up of Investors in the AIF <%= "(#{fund_report.start_date.strftime("%-d %b, %Y")} - #{fund_report.end_date.strftime("%-d %b, %Y")})" %> </h1>
+    <span>
+        <div class="btn-group">
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Actions
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+                    <%= button_to "Regenerate", regenerate_fund_report_path(id: fund_report.id),{class: "dropdown-item", method: :patch} if policy(fund_report).regenerate? %>
+                    <%= button_to "Download", download_page_fund_report_path(id: fund_report.id, single: true),{class: "dropdown-item", method: :patch} if policy(fund_report).download_page? %>
+                    <%= button_to "Download (All Funds)", download_page_fund_report_path(id: fund_report.id),{class: "dropdown-item", method: :patch} if policy(fund_report).download_page? %>
+                    <%= button_to "Delete", fund_report, method: :delete, class: "dropdown-item", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(fund_report).destroy? %>
+
+                </div>
+            </div>
+        </div>
+    </span>
+</div>
+
+<div class="table-responsive">
+
+<table id="commitment_received_nos" class="table table-bordered dataTable" style="width:100%">
+    <tr>
+       <th colspan="21" style="text-align: center;">
+       Table 1: Details of investors in AIFs (in Nos.)
+        </th>
+    </tr>
+    <tr>
+        <th>S.No</th>
+        <th>Name of Scheme</th>
+        <th colspan="5" style="text-align: center;"> Internal </th>
+        <th colspan="10" style="text-align: center;"> Domestic </th>
+        <th colspan="4" style="text-align: center;"> Foreign </th>
+        <th colspan="2" style="text-align: center;"> Others </th>
+        <th> Total </th>
+    </tr>
+    <tr>
+        <th></th>
+        <th></th>
+        <th> Sponsor </th>
+        <th> Manager </th>
+        <th> Directors/Partners/Employees of Sponsor</th>
+        <th> Directors/Partners/Employees of Manager</th>
+        <th> Employee Benefit Trust of Manager </th>
+        <th> Banks</th>
+        <th> NBFCs </th>
+        <th> Insurance Companies </th>
+        <th> Pension Funds </th>
+        <th> Provident Funds </th>
+        <th> AIFs </th>
+        <th> Other Corporates </th>
+        <th> Resident Individuals </th>
+        <th> Non-Corporate (other than Trusts) </th>
+        <th> Trusts </th>
+        <th> FPIs </th>
+        <th> FVCIs </th>
+        <th> NRIs </th>
+        <th> Others </th>
+        <th> Domestic Developmental Agencies / Government Agencies </th>
+        <th> Others </th>
+        <th></th>
+    </tr>
+    <% if fund_report && policy(fund_report).show? %>
+
+
+    <tr>
+        <td>1</td>
+        <td> <%= data["Name of the Scheme"]["Value"] %> </td>
+        <td> <%= data["T1_Sponsor"]["Value"] %> </td>
+        <td> <%= data["T1_Manager"]["Value"] %> </td>
+        <td> <%= data["T1_Directors/Partners/Employees of Sponsor"]["Value"] %> </td>
+        <td> <%= data["T1_Directors/Partners/Employees of Manager"]["Value"] %> </td>
+        <td> <%= data["T1_Employee Benefit Trust of Manager"]["Value"] %> </td>
+        <td> <%= data["T1_Banks"]["Value"] %> </td>
+        <td> <%= data["T1_NBFCs"]["Value"] %> </td>
+        <td> <%= data["T1_Insurance Companies"]["Value"] %> </td>
+        <td> <%= data["T1_Pension Funds"]["Value"] %> </td>
+        <td> <%= data["T1_Provident Funds"]["Value"] %> </td>
+        <td> <%= data["T1_AIFs"]["Value"] %> </td>
+        <td> <%= data["T1_Other Corporates"]["Value"] %> </td>
+        <td> <%= data["T1_Resident Individuals"]["Value"] %> </td>
+        <td> <%= data["T1_Non-Corporate (other than Trusts)"]["Value"] %> </td>
+        <td> <%= data["T1_Trusts"]["Value"] %> </td>
+        <td> <%= data["T1_FPIs"]["Value"] %> </td>
+        <td> <%= data["T1_FVCIs"]["Value"] %> </td>
+        <td> <%= data["T1_NRIs"]["Value"] %> </td>
+        <td> <%= data["T1_Foreign Others"]["Value"] %> </td>
+        <td> <%= data["T1_Domestic Developmental Agencies / Government Agencies"]["Value"] %> </td>
+        <td> <%= data["T1_Other Others"]["Value"] %> </td>
+        <td> <%= data["T1_Total"]["Value"] %> </td>
+    </tr>
+    <% end %>
+
+</table>
+</div>
+
+<div class="table-responsive">
+
+<table id="funds_raised" class="table table-bordered dataTable" style="width:100%">
+    <tr>
+       <th colspan="21" style="text-align: center;">
+       Table 2: Funds raised from various categories of investors in AIFs
+        </th>
+    </tr>
+    <tr>
+        <th>S.No</th>
+        <th>Name of Scheme</th>
+        <th colspan="5" style="text-align: center;"> Internal </th>
+        <th colspan="10" style="text-align: center;"> Domestic </th>
+        <th colspan="4" style="text-align: center;"> Foreign </th>
+        <th colspan="2" style="text-align: center;"> Others </th>
+        <th> Total </th>
+    </tr>
+    <tr>
+        <th></th>
+        <th></th>
+        <th> Sponsor </th>
+        <th> Manager </th>
+        <th> Directors/Partners/Employees of Sponsor</th>
+        <th> Directors/Partners/Employees of Manager</th>
+        <th> Employee Benefit Trust of Manager </th>
+        <th> Banks</th>
+        <th> NBFCs </th>
+        <th> Insurance Companies </th>
+        <th> Pension Funds </th>
+        <th> Provident Funds </th>
+        <th> AIFs </th>
+        <th> Other Corporates </th>
+        <th> Resident Individuals </th>
+        <th> Non-Corporate (other than Trusts) </th>
+        <th> Trusts </th>
+        <th> FPIs </th>
+        <th> FVCIs </th>
+        <th> NRIs </th>
+        <th> Others </th>
+        <th> Domestic Developmental Agencies / Government Agencies </th>
+        <th> Others </th>
+        <th></th>
+    </tr>
+    <% if fund_report && policy(fund_report).show? %>
+
+
+    <tr>
+        <td>1</td>
+        <td> <%= data["Name of the Scheme"]["Value"] %> </td>
+        <td> <%= data["T2_Sponsor"]["Value"] %> </td>
+        <td> <%= data["T2_Manager"]["Value"] %> </td>
+        <td> <%= data["T2_Directors/Partners/Employees of Sponsor"]["Value"] %> </td>
+        <td> <%= data["T2_Directors/Partners/Employees of Manager"]["Value"] %> </td>
+        <td> <%= data["T2_Employee Benefit Trust of Manager"]["Value"] %> </td>
+        <td> <%= data["T2_Banks"]["Value"] %> </td>
+        <td> <%= data["T2_NBFCs"]["Value"] %> </td>
+        <td> <%= data["T2_Insurance Companies"]["Value"] %> </td>
+        <td> <%= data["T2_Pension Funds"]["Value"] %> </td>
+        <td> <%= data["T2_Provident Funds"]["Value"] %> </td>
+        <td> <%= data["T2_AIFs"]["Value"] %> </td>
+        <td> <%= data["T2_Other Corporates"]["Value"] %> </td>
+        <td> <%= data["T2_Resident Individuals"]["Value"] %> </td>
+        <td> <%= data["T2_Non-Corporate (other than Trusts)"]["Value"] %> </td>
+        <td> <%= data["T2_Trusts"]["Value"] %> </td>
+        <td> <%= data["T2_FPIs"]["Value"] %> </td>
+        <td> <%= data["T2_FVCIs"]["Value"] %> </td>
+        <td> <%= data["T2_NRIs"]["Value"] %> </td>
+        <td> <%= data["T2_Foreign Others"]["Value"] %> </td>
+        <td> <%= data["T2_Domestic Developmental Agencies / Government Agencies"]["Value"] %> </td>
+        <td> <%= data["T2_Other Others"]["Value"] %> </td>
+        <td> <%= data["T2_Total"]["Value"] %> </td>
+    </tr>
+    <% end %>
+
+</table>
+
+</div>
+
+<div class="table-responsive">
+
+<table id="commitment_received_inr" class="table table-bordered dataTable" style="width:100%">
+    <tr>
+       <th colspan="21" style="text-align: center;">
+       Table 3: Commitment received  from various categories of investors in AIFs
+        </th>
+    </tr>
+    <tr>
+        <th>S.No</th>
+        <th>Name of Scheme</th>
+        <th colspan="5" style="text-align: center;"> Internal </th>
+        <th colspan="10" style="text-align: center;"> Domestic </th>
+        <th colspan="4" style="text-align: center;"> Foreign </th>
+        <th colspan="2" style="text-align: center;"> Others </th>
+        <th> Total </th>
+    </tr>
+    <tr>
+        <th></th>
+        <th></th>
+        <th> Sponsor </th>
+        <th> Manager </th>
+        <th> Directors/Partners/Employees of Sponsor</th>
+        <th> Directors/Partners/Employees of Manager</th>
+        <th> Employee Benefit Trust of Manager </th>
+        <th> Banks</th>
+        <th> NBFCs </th>
+        <th> Insurance Companies </th>
+        <th> Pension Funds </th>
+        <th> Provident Funds </th>
+        <th> AIFs </th>
+        <th> Other Corporates </th>
+        <th> Resident Individuals </th>
+        <th> Non-Corporate (other than Trusts) </th>
+        <th> Trusts </th>
+        <th> FPIs </th>
+        <th> FVCIs </th>
+        <th> NRIs </th>
+        <th> Others </th>
+        <th> Domestic Developmental Agencies / Government Agencies </th>
+        <th> Others </th>
+        <th></th>
+    </tr>
+    <% if fund_report && policy(fund_report).show? %>
+
+
+    <tr>
+        <td>1</td>
+        <td> <%= data["Name of the Scheme"]["Value"] %> </td>
+        <td> <%= data["T3_Sponsor"]["Value"] %> </td>
+        <td> <%= data["T3_Manager"]["Value"] %> </td>
+        <td> <%= data["T3_Directors/Partners/Employees of Sponsor"]["Value"] %> </td>
+        <td> <%= data["T3_Directors/Partners/Employees of Manager"]["Value"] %> </td>
+        <td> <%= data["T3_Employee Benefit Trust of Manager"]["Value"] %> </td>
+        <td> <%= data["T3_Banks"]["Value"] %> </td>
+        <td> <%= data["T3_NBFCs"]["Value"] %> </td>
+        <td> <%= data["T3_Insurance Companies"]["Value"] %> </td>
+        <td> <%= data["T3_Pension Funds"]["Value"] %> </td>
+        <td> <%= data["T3_Provident Funds"]["Value"] %> </td>
+        <td> <%= data["T3_AIFs"]["Value"] %> </td>
+        <td> <%= data["T3_Other Corporates"]["Value"] %> </td>
+        <td> <%= data["T3_Resident Individuals"]["Value"] %> </td>
+        <td> <%= data["T3_Non-Corporate (other than Trusts)"]["Value"] %> </td>
+        <td> <%= data["T3_Trusts"]["Value"] %> </td>
+        <td> <%= data["T3_FPIs"]["Value"] %> </td>
+        <td> <%= data["T3_FVCIs"]["Value"] %> </td>
+        <td> <%= data["T3_NRIs"]["Value"] %> </td>
+        <td> <%= data["T3_Foreign Others"]["Value"] %> </td>
+        <td> <%= data["T3_Domestic Developmental Agencies / Government Agencies"]["Value"] %> </td>
+        <td> <%= data["T3_Other Others"]["Value"] %> </td>
+        <td> <%= data["T3_Total"]["Value"] %> </td>
+    </tr>
+    <% end %>
+
+</table>
+</div>

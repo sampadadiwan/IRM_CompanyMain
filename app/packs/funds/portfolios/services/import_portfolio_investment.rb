@@ -1,6 +1,6 @@
 class ImportPortfolioInvestment < ImportUtil
   STANDARD_HEADERS = ["Fund", "Portfolio Company Name",	"Investment Date",	"Amount",
-                      "Quantity",	"Instrument", "Category", "Sub Category", "Sector", "Startup", "Investment Domicile", "Notes", "Type", "Folio No"].freeze
+                      "Quantity",	"Instrument", "Investment Domicile", "Notes", "Type", "Folio No"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -16,15 +16,18 @@ class ImportPortfolioInvestment < ImportUtil
   end
 
   def save_row(user_data, import_upload, custom_field_headers)
-    portfolio_company_name, investment_date, amount_cents, quantity, instrument, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, capital_commitment = inputs(user_data, import_upload)
+    portfolio_company_name, investment_date, amount_cents, quantity, instrument, investment_domicile, fund, commitment_type, capital_commitment = inputs(user_data, import_upload)
 
     portfolio_company = import_upload.entity.investors.portfolio_companies.where(investor_name: portfolio_company_name).first
 
     raise "Portfolio Company not found" if portfolio_company.nil?
 
-    investment_instrument = portfolio_company.investment_instruments.find_or_initialize_by(name: instrument, category:, sub_category:, sector:, startup:, investment_domicile:, entity_id: import_upload.entity_id)
+    investment_instrument = portfolio_company.investment_instruments.find_or_initialize_by(name: instrument, investment_domicile:, entity_id: import_upload.entity_id)
 
-    investment_instrument.save! if investment_instrument.new_record?
+    # add the sebi reporting fields in invesment instrument in json_fields (merge with any existing)
+    investment_instrument.json_fields = (investment_instrument.json_fields || {}).merge(user_data.slice(*InvestmentInstrument::SEBI_REPORTING_FIELDS.stringify_keys.keys.map(&:titleize))&.transform_keys { |key| key.downcase.tr(' ', '_') })
+
+    investment_instrument.save! # if investment_instrument.new_record?
 
     portfolio_investment = PortfolioInvestment.find_or_initialize_by(
       portfolio_company_name:, investment_date:, amount_cents:, quantity:, investment_instrument:, capital_commitment:, commitment_type:, fund:, entity_id: fund.entity_id
@@ -51,23 +54,24 @@ class ImportPortfolioInvestment < ImportUtil
     end
   end
 
+  def create_custom_fields(ctx, import_upload:, custom_field_headers:, **)
+    custom_field_headers -= ["Type Of Investee Company", "Type Of Security", "Isin", "Sebi Registration Number", "Is Associate", "Is Managed Or Sponsored By Aif"]
+    super(ctx, import_upload:, custom_field_headers:)
+  end
+
   def inputs(user_data, import_upload)
     portfolio_company_name = user_data['Portfolio Company Name']
     investment_date = user_data["Investment Date"]
     amount_cents = user_data["Amount"].to_d * 100
     quantity = user_data["Quantity"].to_d
     instrument = user_data["Instrument"]
-    category = user_data["Category"]
-    sub_category = user_data["Sub Category"]
-    sector = user_data["Sector"]
-    startup = user_data["Startup"] == "Yes"
     investment_domicile = user_data["Investment Domicile"]
     fund = import_upload.entity.funds.where(name: user_data["Fund"]).last
     commitment_type = user_data["Type"]
     folio_id = user_data["Folio No"].presence
     capital_commitment = commitment_type == "CoInvest" ? fund.capital_commitments.where(folio_id:).first : nil
 
-    [portfolio_company_name, investment_date, amount_cents, quantity, instrument, category, sub_category, sector, startup, investment_domicile, fund, commitment_type, capital_commitment]
+    [portfolio_company_name, investment_date, amount_cents, quantity, instrument, investment_domicile, fund, commitment_type, capital_commitment]
   end
 
   def defer_counter_culture_updates

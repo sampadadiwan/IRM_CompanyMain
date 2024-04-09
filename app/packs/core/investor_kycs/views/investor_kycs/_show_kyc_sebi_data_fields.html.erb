@@ -1,0 +1,19 @@
+<% kyc_sebi_data ||= nil %>
+
+<tr>
+    <td>
+        SEBI Investor Category
+    </td>
+    <td>
+        <%= kyc_sebi_data&.investor_category&.titleize %>
+    </td>
+    </tr>
+
+    <tr>
+      <td>
+        SEBI Investor Sub Category
+    </td>
+    <td>
+        <%= kyc_sebi_data&.investor_sub_category %>
+    </td>
+</tr>

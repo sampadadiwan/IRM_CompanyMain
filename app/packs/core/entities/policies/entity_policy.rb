@@ -25,6 +25,10 @@ class EntityPolicy < ApplicationPolicy
     true
   end
 
+  def add_sebi_fields?
+    user.has_cached_role?(:company_admin) || super_user?
+  end
+
   def dashboard?
     true
   end

@@ -1,0 +1,33 @@
+<%= render "/layouts/alerts" %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Investor Sebi Infos</h1>
+  <%= link_to "New Investor Sebi Info", new_investor_kyc_sebi_data_path, {class: "btn btn-outline-primary"}  %>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+
+  <table id="investor_kyc_sebi_datas" class="table table-bordered dataTable">
+   <thead>
+      <tr>
+        <th>
+          Investor KYC
+        </th>
+        <th>
+          Category
+        </th>
+        <th>
+          Sub-Category
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+    <% @investor_kyc_sebi_datas.each do |investor_kyc_sebi_data| %>
+      <%= render investor_kyc_sebi_data %>
+    <% end %>
+    </tbody>
+  </table>
+
+</div>
