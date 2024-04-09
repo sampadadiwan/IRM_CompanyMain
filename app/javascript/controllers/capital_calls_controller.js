@@ -7,7 +7,6 @@ export default class extends ServerDatatableController {
       {"data": "fund_name"},
       {"data": "name"},
       {"data": "commitment_type"},
-      {"data": "percentage_called"},
       {"data": "due_date"},
       {"data": "call_amount"},
       {"data": "collected_amount"},
