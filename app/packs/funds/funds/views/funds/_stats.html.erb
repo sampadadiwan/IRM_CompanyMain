@@ -1,97 +1,22 @@
 <% cache_if(current_user != nil, cache_key("fund_stats"), expires_in: 5.day) do %>
+  <% colors = ["success", "warning", "danger", "info"].freeze %>
 
-<div class="row">
-  <div class="col">
-    <a href="<%=funds_path%>">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex align-items-center mb-3">
-          <div>
-            <h3 class="fs-8"><%= policy_scope(current_user.entity.funds).count %></h3>
-            <h6 class="card-subtitle mb-1 text-muted">Funds</h6>
-          </div>
-          <div class="ms-auto">
-            <span class="text-success display-6"><i class="ti ti-currency-dollar"></i></span>
-          </div>
-        </div>
+  <% cards_data = [
+    { path: funds_path, stat: policy_scope(current_user.entity.funds).count, subtitle: "Funds", progress_bar_color: "success", text_info: "currency-dollar" },
+    { path: capital_commitments_path(filter: true), stat: policy_scope(current_user.entity.capital_commitments).count, subtitle: "Commitments", progress_bar_color: "warning", text_info: "lock" },
+    { path: capital_remittances_path(filter: true), stat: policy_scope(current_user.entity.capital_remittances).count, subtitle: "Remittances", progress_bar_color: "danger", text_info: "cash" },
+    { path: investor_kycs_path(filter: true), stat: policy_scope(current_user.entity.investor_kycs).count, subtitle: "KYCs", progress_bar_color: "info", text_info: "list-check" }
+  ] %>
 
-        <div class="progress-bar text-bg-success" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-
-      </div>
-    </div>
-    </a>
+  <div class="row">
+    <% cards_data.each do |card_data| %>
+      <%= render(NumberStatsComponent.new(
+                  path: card_data[:path],
+                  amount: card_data[:stat],
+                  subtitle: card_data[:subtitle],
+                  progress_bar_color: card_data[:progress_bar_color],
+                  text_info: card_data[:text_info]
+      )) %>
+    <% end %>
   </div>
-
-  <div class="col">
-    <a href="<%=capital_commitments_path(filter: true)%>">
-    <div class="card">
-      <div class="card-body">
-        <div class="row">
-          <div class="col-12">
-            <div class="d-flex align-items-center mb-3">
-              <div>
-                <h3 class="fs-8"><%= policy_scope(current_user.entity.capital_commitments).count %></h3>
-                <h6 class="card-subtitle mb-1 text-muted">Commitments</h6>
-              </div>
-              <div class="ms-auto">
-                <span class="text-warning display-6"><i class="ti ti-lock"></i></span>
-              </div>
-            </div>
-          </div>
-          <div class="col-12">
-              <div class="progress-bar text-bg-warning" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    </a>
-  </div>
-  
-  <div class="col">
-    <a href="<%=capital_remittances_path(filter: true)%>">
-    <div class="card">
-      <div class="card-body">
-        <div class="row">
-          <div class="col-12">
-            <div class="d-flex align-items-center mb-3">
-              <div>
-                <h3 class="fs-8"><%= policy_scope(current_user.entity.capital_remittances).count %></h3>
-                <h6 class="card-subtitle mb-1 text-muted">Remittances</h6>
-              </div>
-              <div class="ms-auto">
-                <span class="text-danger display-6"><i class="ti ti-cash"></i></span>
-              </div>
-            </div>
-          </div>
-          <div class="col-12">
-              <div class="progress-bar text-bg-danger" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    </a>
-  </div>
-  
-
-  <div class="col">
-    <a href="<%=investor_kycs_path(filter: true)%>">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex align-items-center mb-3">
-          <div>
-            <h3 class="fs-8"><%= policy_scope(current_user.entity.investor_kycs).count %></h3>
-            <h6 class="card-subtitle mb-1 text-muted">KYCs</h6>
-          </div>
-          <div class="ms-auto">
-            <span class="text-info display-6"><i class="ti ti-list-check"></i></span>
-          </div>
-        </div>
-          <div class="progress-bar text-bg-info" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-      </div>
-    </div>
-    </a>
-  </div>
-  
-</div>
-
 <% end %>

@@ -1,79 +1,29 @@
-<div class="row">
-  <div class="col-lg-3 col-md-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex align-items-center mb-3">
-          <div>
-            <h3 class="fs-8"><%= custom_format_number secondary_sale.final_price, params %></h3>
-            <h6 class="card-subtitle mb-1 text-muted">Final Price</h6>
-          </div>
-          <div class="ms-auto">
-            <span class="text-success display-6"><i class="ti ti-currency-dollar"></i></span>
-          </div>
-        </div>
-          <div class="progress-bar text-bg-success" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-3 col-md-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="d-flex align-items-center mb-3">
-          <div>
-            <h3 class="fs-8"><%= number_with_delimiter secondary_sale.total_offered_quantity %></h3>
-            <h6 class="card-subtitle mb-1 text-muted">Sell Quantity (<%= secondary_sale.offers.count %> Offers)</h6>
-          </div>
-          <div class="ms-auto">
-            <span class="text-info display-6"><i class="ti ti-minus"></i></span>
-          </div>
-        </div>
-          <div class="progress-bar text-bg-info" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-3 col-md-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="row">
-          <div class="col-12">
-            <div class="d-flex align-items-center mb-3">
-              <div>
-                <h3 class="fs-8"><%= number_with_delimiter secondary_sale.total_interest_quantity %></h3>
-                <h6 class="card-subtitle mb-1 text-muted"> Buy Quantity (<%= secondary_sale.interests.count %> Interests)</h6>
-              </div>
-              <div class="ms-auto">
-                <span class="text-danger display-6"><i class="ti ti-plus"></i></span>
-              </div>
-            </div>
-          </div>
-          <div class="col-12">
-              <div class="progress-bar text-bg-danger" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-3 col-md-6">
-    <div class="card">
-      <div class="card-body">
-        <div class="row">
-          <div class="col-12">
-            <div class="d-flex align-items-center mb-3">
-              <div>
-                <h3 class="fs-8"><%= [secondary_sale.allocation_percentage * 100, 100].min %></h3>
-                <h6 class="card-subtitle mb-1 text-muted">Offer Allocation Percentage</h6>
-              </div>
-              <div class="ms-auto">
-                <span class="text-warning display-6"><i class="ti ti-percentage"></i></span>
-              </div>
-            </div>
-          </div>
-          <div class="col-12">
-              <div class="progress-bar text-bg-warning" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+<%
+  final_price = custom_format_number(secondary_sale.final_price, params)
+  sell_quantity = number_with_delimiter(secondary_sale.total_offered_quantity)
+  buy_quantity = number_with_delimiter(secondary_sale.total_interest_quantity)
+  offer_allocation_percentage = [secondary_sale.allocation_percentage * 100, 100].min
+%>
 
+<%
+cards_data = [
+  { path: nil, stat: final_price, subtitle: "Final Price", progress_bar_color: "success", text_info: "currency-dollar"},
+  { path: nil, stat: sell_quantity, subtitle: "Sell Quantity", progress_bar_color: "info", text_info: "minus" },
+  { path: nil, stat: buy_quantity, subtitle: "Buy Quantity", progress_bar_color: "danger", text_info: "plus" },
+  { path: nil, stat: offer_allocation_percentage, subtitle: "Offer Allocation Percentage", progress_bar_color: "warning", text_info: "percentage" }
+]
+%>
+
+<div class="row">
+    <% cards_data.each do |card_data| %>
+
+        <%= render(NumberStatsComponent.new(
+            path: card_data[:path],
+            amount: card_data[:stat],
+            subtitle: card_data[:subtitle],
+            progress_bar_color: card_data[:progress_bar_color],
+            text_info: card_data[:text_info]
+        )) %>
+
+    <% end %>
+</div>
