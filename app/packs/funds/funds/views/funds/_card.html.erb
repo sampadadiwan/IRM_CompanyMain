@@ -9,15 +9,15 @@
                 <div class="row">
                     <span class="col">
                         <h4 class="card-title fw-semibold">
-                            <%= link_to fund %>  
-                        </h4>                
+                            <%= link_to fund %>
+                        </h4>
 
                         <span class="fs3 mb-1">
                         </span>
 
                     <span>
-                </div>                
-            </div>     
+                </div>
+            </div>
 
             <div class="btn-group float-right d-none d-sm-block">
                 <div class="dropdown">
@@ -36,15 +36,15 @@
                   class: "dropdown-item" %>
                     </div>
                 </div>
-            </div>  
+            </div>
 
-            
+
         </div>
         <div class="row align-items-center">
             <div class="col-md-5 d-none d-sm-block">
                 <%= column_chart [["Committed", fund.committed_amount.to_f], ["Called", fund.call_amount.to_f], ["Collected", fund.collected_amount.to_f], ["Distributed", fund.distribution_amount.abs.to_f] ],
                  library: {
-                   plotOptions: { 
+                   plotOptions: {
                         column: {
                             pointWidth: 40,
                             dataLabels: {
@@ -92,14 +92,14 @@
                         <i class="ti ti-grid-dots text-primary fs-6"></i>
                         </div>
                         <div>
-                        <h4 class="mb-0 fs-5"><%= fund.capital_commitments.count %></h4>
+                        <h4 class="mb-0 fs-5"><%= fund.capital_commitments_count %></h4>
                         <p class="fs-3 mb-0">Folios</p>
                     </div>
                 </div>
 
-                <div>                    
+                <div>
                     <div class="text-center">
-                        
+
                     </div>
                 </div>
             </div>
@@ -110,5 +110,6 @@
         </div>
     </div>
     </div>
-    
+
 </div>
+

@@ -55,6 +55,8 @@ class CapitalCommitment < ApplicationRecord
 
   belongs_to :investor_signatory, class_name: "User", optional: true
 
+  counter_culture :fund
+
   monetize :orig_folio_committed_amount_cents, :folio_committed_amount_cents, :folio_collected_amount_cents,
            :adjustment_folio_amount_cents, with_currency: ->(i) { i.folio_currency }
   monetize :orig_committed_amount_cents, :committed_amount_cents, :collected_amount_cents,
