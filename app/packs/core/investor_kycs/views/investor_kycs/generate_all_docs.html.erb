@@ -4,12 +4,9 @@
 %>
 
 
+<%= render NewCard.new do %>
 
-
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Generate documents for KYCs based on filters below. Count: <%= @investor_kycs.count %></h1>
-</div>
-
+<%= render FormCard.new(title: "Generate Documents for KYCs based on filters below. Count: #{@investor_kycs.count}") do %>
 
 <%= form_with(model: nil, url: generate_all_docs_investor_kycs_path(entity_id: params[:entity_id], q: params[:q].to_unsafe_h), html: {method: :post, "data-turbo": false}, "data-turbo": false) do |form| %>
   
@@ -36,6 +33,10 @@
     <br>
     <small class="text-muted">All generated documents will be attached to the KYC.</small>
   </div>
+<% end %>
+
+<% end %>
+
 <% end %>
 
 <%= render "/layouts/filter", associations: [:investor, :capital_commitments], disabled: true %>
