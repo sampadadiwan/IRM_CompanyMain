@@ -26,7 +26,7 @@
     <%= money_to_currency fund_unit.total_premium, params %>
   </td>
   <td>
-    <%= fund_unit.reason %>
+    <%= link_to fund_unit.reason, url_for(controller: fund_unit.owner_type.underscore.pluralize, action: :show, id: fund_unit.owner_id)  %>
   </td>
   <td>
     <%= link_to "Show", fund_unit , {class: "btn btn-outline-primary"}%>

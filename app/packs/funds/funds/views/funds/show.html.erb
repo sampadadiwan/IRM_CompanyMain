@@ -155,7 +155,7 @@
 
               <%= link_to "Fund Unit Settings" , fund_unit_settings_path(fund_id: @fund.id), {class: "dropdown-item" } %>
 
-              <%= link_to "Fund Units" , fund_units_path(fund_id: @fund.id), {class: "dropdown-item" } %>
+              <%= link_to "Fund Units" , fund_units_path(fund_id: @fund.id, cols: :all), {class: "dropdown-item" } %>
             <% end %>
 
             <div class="dropdown-divider"></div>
