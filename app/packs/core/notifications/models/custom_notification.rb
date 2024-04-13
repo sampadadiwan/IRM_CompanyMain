@@ -3,6 +3,8 @@ class CustomNotification < ApplicationRecord
   belongs_to :entity
   belongs_to :owner, polymorphic: true, touch: true
 
+  scope :enabled, -> { where(enabled: true) }
+
   validates :subject, :body, presence: true
   validates :whatsapp, :subject, length: { maximum: 255 }
   validates :for_type, :email_method, length: { maximum: 100 }

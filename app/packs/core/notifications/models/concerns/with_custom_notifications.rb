@@ -8,7 +8,8 @@ module WithCustomNotifications
   end
 
   def custom_notification(email_method, for_type: nil)
-    cns = custom_notifications.where(email_method:)
+    # Get the last notification for the email method which is enabled
+    cns = custom_notifications.enabled.where(email_method:)
     cns = cns.where(for_type:) if for_type.present?
     cns.last
   end
