@@ -2,9 +2,18 @@ class CustomNotification < ApplicationRecord
   belongs_to :entity
   belongs_to :owner, polymorphic: true, touch: true
 
-  validates :subject, :body, :whatsapp, presence: true
+  validates :subject, :body, presence: true
   validates :whatsapp, :subject, length: { maximum: 255 }
   validates :for_type, :email_method, length: { maximum: 100 }
+
+  # We need to ensure that the whatsapp message does not have special characters, otherwise they are escaped by WA and look bad in the actual message
+  validate :check_whatsapp
+  SPECIAL = "&^#`~".freeze
+  WA_REGEXP = /[#{SPECIAL.gsub(/./) { |char| "\\#{char}" }}]/
+  def check_whatsapp
+    # Check if the whatsapp message has special chars
+    errors.add(:whatsapp, "can't have special characters") if WA_REGEXP.match?(whatsapp)
+  end
 
   def to_s
     subject

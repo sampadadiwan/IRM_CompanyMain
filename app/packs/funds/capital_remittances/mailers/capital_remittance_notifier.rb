@@ -23,7 +23,7 @@ class CapitalRemittanceNotifier < BaseNotifier
       @capital_call = @capital_remittance.capital_call
       @custom_notification = @capital_call.custom_notification(params[:email_method])
 
-      @custom_notification&.whatsapp || params[:msg].presence || "Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}"
+      @custom_notification&.subject || params[:msg].presence || "Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}"
     end
 
     def url

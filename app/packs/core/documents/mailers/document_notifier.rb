@@ -23,7 +23,7 @@ class DocumentNotifier < BaseNotifier
     def message
       @document = params[:document]
       @custom_notification = @document.entity.custom_notification(params[:email_method])
-      @custom_notification&.whatsapp || params[:msg] || "Document Uploaded: #{@document.name}"
+      @custom_notification&.subject || params[:msg] || "Document Uploaded: #{@document.name}"
     end
 
     def url

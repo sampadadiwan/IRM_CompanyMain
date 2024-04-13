@@ -20,7 +20,7 @@ class InvestorKycNotifier < BaseNotifier
     def message
       @investor_kyc ||= params[:investor_kyc]
       @custom_notification = @investor_kyc.entity.custom_notification(params[:email_method])
-      @custom_notification&.whatsapp || params[:msg]
+      @custom_notification&.subject || params[:msg]
     end
 
     def url
