@@ -10,23 +10,23 @@ class ApprovalPolicy < ApplicationPolicy
   end
 
   def index?
-    user.entity.permissions.enable_approvals?
+    user.enable_approvals
   end
 
   def show?
-    (user.entity.permissions.enable_approvals? &&
+    (user.enable_approvals &&
       (belongs_to_entity?(user, record) ||
         Approval.for_investor(user).where(id: record.id).present?)) || support?
   end
 
   def create?
-    (user.entity.permissions.enable_approvals? &&
+    (user.enable_approvals &&
       belongs_to_entity?(user, record) &&
       user.has_cached_role?("company_admin")) || support?
   end
 
   def new?
-    user.entity.permissions.enable_approvals? && user.has_cached_role?("company_admin")
+    user.enable_approvals && user.has_cached_role?("company_admin")
   end
 
   def update?
