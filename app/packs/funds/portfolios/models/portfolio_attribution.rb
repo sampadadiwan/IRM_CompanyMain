@@ -8,7 +8,7 @@ class PortfolioAttribution < ApplicationRecord
 
   monetize :cost_of_sold_cents, with_currency: ->(i) { i.fund.currency }
 
-  after_commit :update_cost_of_sold
+  after_commit :update_cost_of_sold, unless: :destroyed?
 
   counter_culture :bought_pi, column_name: 'sold_quantity', delta_column: 'quantity'
   # counter_culture :bought_pi, column_name: 'cost_of_sold_cents', delta_column: 'cost_of_sold_cents'

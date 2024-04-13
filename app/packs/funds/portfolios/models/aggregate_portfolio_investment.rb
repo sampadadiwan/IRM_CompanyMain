@@ -7,8 +7,8 @@ class AggregatePortfolioInvestment < ApplicationRecord
   belongs_to :fund
   belongs_to :portfolio_company, class_name: "Investor"
   belongs_to :investment_instrument
-  has_many :portfolio_investments, dependent: :destroy
   has_many :portfolio_cashflows, dependent: :destroy
+  has_many :portfolio_investments, dependent: :destroy
 
   monetize :bought_amount_cents, :sold_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_cents, with_currency: ->(i) { i.fund.currency }
 
