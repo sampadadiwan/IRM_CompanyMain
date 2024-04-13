@@ -66,6 +66,18 @@ class Folder < ApplicationRecord
     FolderAccessJob.perform_later(id, access_right.id) if access_right&.cascade
   end
 
+  # This is required when really destroying a folder. 
+  # We need to remove circular references, else the destroy will fail
+  before_real_destroy :remove_owner_reference
+  def remove_owner_reference
+    if owner.respond_to?(:document_folder_id) && owner.document_folder_id == id
+      owner.update_column(:document_folder_id, nil)
+    elsif owner.respond_to?(:data_room_folder_id) && owner.data_room_folder_id == id
+      owner.update_column(:data_room_folder_id, nil)
+    end
+  end
+
+
   after_commit :folder_changed, unless: :destroyed?
   def folder_changed
     FolderDefaultsJob.perform_later(id) if saved_change_to_orignal? || saved_change_to_printing? || saved_change_to_download?

@@ -4,15 +4,6 @@ module WithDataRoom
   included do
     belongs_to :data_room_folder, class_name: "Folder", dependent: :destroy, optional: true
     after_create_commit :create_data_room
-
-    # This is required as there is a circular dependency between Folder and owner
-    # So if we try and destroy the owner, it will try and destroy the folder which will fail as the owner will be invalid reference.
-    before_destroy :update_data_room_reference
-    def update_data_room_reference
-      # rubocop:disable Rails/SkipsModelValidations
-      data_room_folder.update_column(:owner_id, nil) if data_room_folder.present?
-      # rubocop:enable Rails/SkipsModelValidations
-    end
   end
 
   def create_data_room

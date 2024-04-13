@@ -13,15 +13,7 @@ module WithFolder
     has_many :folders, as: :owner, dependent: :destroy
     # The folder in which all the documents of this model should go
     belongs_to :document_folder, class_name: "Folder", dependent: :destroy, optional: true
-
-    # This is required as there is a circular dependency between Folder and owner
-    # So if we try and destroy the owner, it will try and destroy the folder which will fail as the owner will be invalid reference.
-    before_destroy :update_folder_reference
-    def update_folder_reference
-      # rubocop:disable Rails/SkipsModelValidations
-      document_folder.update_column(:owner_id, nil) if document_folder.present?
-      # rubocop:enable Rails/SkipsModelValidations
-    end
+    
   end
 
   def folder_type
