@@ -5,7 +5,6 @@ class AggregatePortfolioInvestment < ApplicationRecord
 
   belongs_to :entity, touch: true
   belongs_to :fund
-  belongs_to :form_type, optional: true
   belongs_to :portfolio_company, class_name: "Investor"
   belongs_to :investment_instrument
   has_many :portfolio_investments, dependent: :destroy

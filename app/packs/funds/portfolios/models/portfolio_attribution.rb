@@ -1,4 +1,5 @@
 class PortfolioAttribution < ApplicationRecord
+  include Trackable.new
   belongs_to :entity
   belongs_to :fund
   belongs_to :sold_pi, class_name: "PortfolioInvestment"
@@ -26,7 +27,7 @@ class PortfolioAttribution < ApplicationRecord
   end
 
   # This is so that the bought_pi net_quantity is updated
-  after_destroy_commit -> { PortfolioInvestmentUpdate.call(portfolio_investment: bought_pi.reload) }
+  after_destroy_commit -> { PortfolioInvestmentUpdate.call(portfolio_investment: bought_pi.reload) unless being_destroyed }
 
   def gain
     Money.new((sold_pi.price_per_share_cents - bought_pi.price_per_share_cents) * quantity.abs, fund.currency)

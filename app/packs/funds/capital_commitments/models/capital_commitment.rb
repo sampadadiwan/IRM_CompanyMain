@@ -52,6 +52,7 @@ class CapitalCommitment < ApplicationRecord
   has_many :fund_units, dependent: :destroy
   # Fund ratios computed per investor
   has_many :fund_ratios, dependent: :destroy
+  has_many :commitment_adjustments, dependent: :destroy
 
   belongs_to :investor_signatory, class_name: "User", optional: true
 

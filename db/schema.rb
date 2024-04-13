@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_04_13_110252) do
+ActiveRecord::Schema[7.1].define(version: 2024_04_13_153109) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -2346,7 +2346,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_13_110252) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.decimal "cost_of_sold_cents", precision: 20, scale: 2, default: "0.0"
+    t.datetime "deleted_at"
     t.index ["bought_pi_id"], name: "index_portfolio_attributions_on_bought_pi_id"
+    t.index ["deleted_at"], name: "index_portfolio_attributions_on_deleted_at"
     t.index ["entity_id"], name: "index_portfolio_attributions_on_entity_id"
     t.index ["fund_id"], name: "index_portfolio_attributions_on_fund_id"
     t.index ["sold_pi_id"], name: "index_portfolio_attributions_on_sold_pi_id"
