@@ -29,7 +29,7 @@ class Fund < ApplicationRecord
   has_many :portfolio_scenarios, dependent: :destroy
   has_many :portfolio_cashflows, dependent: :destroy
   has_many :portfolio_attributions, dependent: :destroy
-  has_many :portfolio_investments, dependent: :destroy
+  has_many :portfolio_investments #, dependent: :destroy
   has_many :aggregate_portfolio_investments, dependent: :destroy
 
   has_many :fund_unit_settings, dependent: :destroy

@@ -207,7 +207,7 @@ class InvestorKycsController < ApplicationController
 
         redirect_to investor_kyc_path(@investor_kyc), notice: "Document generation in progress. Please check back in a few minutes."
       else
-        redirect_to generate_docs_investor_kycs_path, alert: "Invalid dates or document template."
+        redirect_to request.referer, alert: "Invalid dates or document template."
       end
     end
   end
