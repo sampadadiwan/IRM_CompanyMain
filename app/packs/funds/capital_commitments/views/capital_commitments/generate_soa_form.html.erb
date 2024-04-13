@@ -1,31 +1,33 @@
 
+<%= render NewCard.new do %>
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Generate SOA For : <%= @capital_commitment.investor_name %> </h1>
-</div>
+  <%= render FormCard.new(title: "Generate SOA For : #{@capital_commitment.investor_name}") do %>
 
+    <%= form_with(model: @capital_commitment, url: generate_soa_capital_commitment_path(@capital_commitment), method: :patch) do |form| %>
+      
+      <%= form.text_field :id, class: "form-control", hidden: true  %>
+      
+      
+      <div class="form-group">
+        <%= form.label :template_name %>
+        <%= form.select :template_name, @capital_commitment.templates("SOA Template"), {}, class: "form-control", name: "template_name"  %>
+      </div>
 
-<%= form_with(model: @capital_commitment, url: generate_soa_capital_commitment_path(@capital_commitment), method: :patch) do |form| %>
+      <div class="form-group">
+        <%= form.label :start_date %>
+        <%= form.date_field :start_date, class: "form-control", name: "start_date"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :end_date %>
+        <%= form.date_field :end_date, class: "form-control", name: "end_date"  %>
+      </div>
+
+      <div class="form-group">
+        <%= form.submit "Generate SOA Now", {class: "btn btn-outline-primary"}%>
+      </div>
+    <% end %>
+
+  <% end %>
   
-  <%= form.text_field :id, class: "form-control", hidden: true  %>
-  
-  
-  <div class="form-group">
-    <%= form.label :template_name %>
-    <%= form.select :template_name, @capital_commitment.templates("SOA Template"), {}, class: "form-control", name: "template_name"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :start_date %>
-    <%= form.date_field :start_date, class: "form-control", name: "start_date"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :end_date %>
-    <%= form.date_field :end_date, class: "form-control", name: "end_date"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit "Generate SOA Now", {class: "btn btn-outline-primary"}%>
-  </div>
 <% end %>

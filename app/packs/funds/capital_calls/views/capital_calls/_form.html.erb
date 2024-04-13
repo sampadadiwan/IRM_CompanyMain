@@ -111,13 +111,18 @@
       <div id='form_call_fee'>
         <%= form.fields_for :call_fees do |field| %>
           <%= render 'call_fee_fields', :f => field, fund: capital_call.fund %>
-        <% end %>
-        <div class='links'>
-        </div>
+        <% end %>        
       </div>
 
       <div class="form-group">
         <%= link_to_add_association 'Add Fees', form, :call_fees, class: "btn btn-outline-success" %>
+        <%= link_to "Upload Account Entries", 
+                    new_import_upload_path("import_upload[owner_id]": capital_call.fund_id, 
+                    "import_upload[owner_type]": "Fund", 
+                    "import_upload[import_type]": "AccountEntry", 
+                    "sample_upload": "ACCOUNT_ENTRY_SAMPLE"), 
+                    { class: "btn btn-outline-success", target: "_blank"}   %> 
+
         <%= form.submit "Save", {class: "btn btn-outline-primary"}%>    
       </div>
 

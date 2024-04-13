@@ -72,8 +72,12 @@ class CapitalCommitmentsController < ApplicationController
   def generate_soa_form; end
 
   def generate_soa
-    CapitalCommitmentSoaJob.perform_later(@capital_commitment.id, params[:start_date], params[:end_date], user_id: current_user.id, template_name: params[:template_name])
-    redirect_to capital_commitment_url(@capital_commitment), notice: "Documentation generation started, please check back in a few mins."
+    if params[:start_date].present? && params[:end_date].present? && Date.parse(params[:start_date]) <= Date.parse(params[:end_date])
+      CapitalCommitmentSoaJob.perform_later(@capital_commitment.id, params[:start_date], params[:end_date], user_id: current_user.id, template_name: params[:template_name])
+      redirect_to capital_commitment_url(@capital_commitment), notice: "Documentation generation started, please check back in a few mins."
+    else
+      redirect_to request.referer, alert: "Please provide valid start and end dates"
+    end
   end
 
   # GET /capital_commitments/new

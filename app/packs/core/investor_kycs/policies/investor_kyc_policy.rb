@@ -84,7 +84,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def send_notification?
-    record.investor.investor_entity_id == user.entity_id
+    record.investor.investor_entity_id == user.entity_id && !record.verified
   end
 
   def edit?

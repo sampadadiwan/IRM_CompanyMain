@@ -42,9 +42,7 @@
                       <%= link_to "Pending Remittances" , report_fund_path(@fund, report: "dashboard/calls_report"), {class: "dropdown-item" } %>
                     </li>
                 </ul>
-            </li>
-
-            
+            </li>            
             
             <div class="dropdown-divider"></div>
 
@@ -135,18 +133,22 @@
 
               <div class="dropdown-divider"></div>
 
-              <%= link_to "Fund Account Entries",
-                  account_entries_path(fund_id: @fund.id, fund_accounts_only: true, all: true),
-                  class: "dropdown-item" %>
 
-              <div class="d-none d-sm-block">
-                <%= link_to "Allocation Formulas" , fund_formulas_path(fund_id: @fund.id), {class: "dropdown-item" } %>
-
-                <%= link_to "Allocate Account Entries", allocate_form_fund_path(@fund),
-                    class: "dropdown-item" if policy(@fund).allocate? %>
-
-              </div>
-
+              <li class="dropdown-submenu dropend">
+                <a href="#" id="basic_reports" data-bs-toggle="dropdown" class="dropdown-item dropdown-toggle">Account Entries</a>
+                <ul class="dropdown-menu">
+                    <li>
+                        <%= link_to "Fund Account Entries", account_entries_path(fund_id: @fund.id, fund_accounts_only: true, all: true), class: "dropdown-item" %>                                            
+                    </li>
+                    <li>
+                        <%= link_to "Allocation Formulas" , fund_formulas_path(fund_id: @fund.id), {class: "dropdown-item" } %>
+                    </li>
+                    <li>
+                        <%= link_to "Allocate Account Entries", allocate_form_fund_path(@fund), class: "dropdown-item" if policy(@fund).allocate? %>
+                    </li>
+                </ul>
+              </li> 
+                          
             <% end %>
 
 
@@ -170,24 +172,24 @@
 
               <div class="d-none d-sm-block">
 
-                <%= link_to "New Template", new_document_path(
-                  document: doc_attributes,
-                    "document[folder_id]": @fund.document_folder.id),
-                    {class: "dropdown-item" }  if policy(@fund).update? %>
-
-
-                <%= link_to "Add Investor Notice" ,
-                          new_investor_notice_path( "investor_notice[owner_id]": @fund.id,
-                          "investor_notice[owner_type]": "Fund"), {class: "dropdown-item" }  %>
-
-                <%= link_to 'Send Email', "mailto:?bcc=#{@fund.get_lps_emails&.join(',')}&subject=#{@fund.name}:", class: "dropdown-item" %>
-
-                <%= link_to "Check Access Rights" , check_access_rights_fund_path(@fund, create_missing: false), {class: "dropdown-item" }  %>
-
-                </div>
+                <li class="dropdown-submenu dropend">
+                  <a href="#" id="basic_reports" data-bs-toggle="dropdown" class="dropdown-item dropdown-toggle">Misc</a>
+                  <ul class="dropdown-menu">
+                      <li>
+                          <%= link_to "New Template", new_document_path(document: doc_attributes, "document[folder_id]": @fund.document_folder.id), {class: "dropdown-item"} %>                                            
+                      </li>
+                      <li>
+                          <%= link_to "Add Investor Notice" , new_investor_notice_path( "investor_notice[owner_id]": @fund.id, "investor_notice[owner_type]": "Fund"), {class: "dropdown-item" }  %>
+                      </li>
+                      <li>
+                          <%= link_to 'Send Email', "mailto:?bcc=#{@fund.get_lps_emails&.join(',')}&subject=#{@fund.name}:", class: "dropdown-item" %>
+                      </li>
+                      <li>
+                        <%= link_to "Check Access Rights" , check_access_rights_fund_path(@fund, create_missing: false), {class: "dropdown-item" }  %>
+                      </li>
+                  </ul>
+                </li>             
               </div>
-
-
             <% end %>
         </div>
       </div>
