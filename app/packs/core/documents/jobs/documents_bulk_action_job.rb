@@ -5,8 +5,8 @@ class DocumentsBulkActionJob < BulkActionJob
 
     case bulk_action.downcase
 
-    when "send commitment agreement"
-      send_commitment_agreement(document, user_id)
+    when "send document"
+      send_document(document, user_id)
 
     when "approve"
       if document.to_be_approved?
@@ -35,14 +35,14 @@ class DocumentsBulkActionJob < BulkActionJob
     Document
   end
 
-  def send_commitment_agreement(document, user_id)
+  def send_document(document, user_id)
     if document.approved && %w[InvestorKyc CapitalCommitment IndivdualKyc NonIndivdualKyc].include?(document.owner_type)
 
       if document.notification_users.present?
         document.notification_users.each do |user|
           DocumentNotifier.with(entity_id: document.entity_id,
-                                document:, email_method: "send_commitment_agreement",
-                                custom_notification_for: "Commitment Agreement").deliver(user)
+                                document:, email_method: "send_document",
+                                custom_notification_for: "Send Document").deliver(user)
         rescue Exception => e
           msg = "Error sending #{document.name} to #{user.email} #{e.message}"
           set_error(msg, document, user_id)
@@ -54,7 +54,7 @@ class DocumentsBulkActionJob < BulkActionJob
 
     else
       msg = "Document #{document.name} is not approved" unless document.approved
-      msg = "Document #{document.name} is not a commitment agreement" unless %w[InvestorKyc CapitalCommitment].include?(document.owner_type)
+      msg = "Document #{document.name} does not belong to KYC or Commitment" unless %w[InvestorKyc CapitalCommitment].include?(document.owner_type)
       set_error(msg, document, user_id)
     end
   end

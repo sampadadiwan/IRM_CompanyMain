@@ -22,9 +22,9 @@
 
     <span class="dropdown-item-text">Email Using Template:</span>
 
-    <% msg = "This will send an email for each document in the search results (including results on other pages), based on the template setup for 'Commitment Agreement'. Proceed?" %>
-    <%= button_to "&nbsp;&nbsp;&nbsp;&nbspCommitment Agreement".html_safe, 
-        bulk_actions_documents_path("bulk_action": "Send Commitment Agreement", q: params.to_unsafe_h[:q], folder_id:),
+    <% msg = "This will send an email for each document in the search results (including results on other pages), based on the template setup. Proceed?" %>
+    <%= button_to "&nbsp;&nbsp;&nbsp;&nbspSend Document".html_safe, 
+        bulk_actions_documents_path("bulk_action": "Send Document", q: params.to_unsafe_h[:q], folder_id:),
         class: "dropdown-item", 
         data: {msg:, action: "click->confirm#popup", method: :get} if params[:q].present? %>
 

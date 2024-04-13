@@ -27,8 +27,8 @@ class CustomNotification < ApplicationRecord
   def email_methods
     mailer_methods = if for_type == "InvestorKyc"
                        "InvestorKycMailer".constantize.instance_methods(false).map(&:to_s)
-                     elsif for_type == "Commitment Agreement"
-                       %w[send_commitment_agreement]
+                     elsif for_type == "Send Document"
+                       %w[send_document]
                      elsif owner_type == "CapitalCall"
                        "CapitalRemittanceMailer".constantize.instance_methods(false).map(&:to_s)
                      elsif owner

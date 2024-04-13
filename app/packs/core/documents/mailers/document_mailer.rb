@@ -12,7 +12,7 @@ class DocumentMailer < ApplicationMailer
     send_mail(subject:)
   end
 
-  def send_commitment_agreement
+  def send_document
     subject = "#{@document.name} uploaded by #{@document.entity.name}"
     # This password protects the file if required and attachs it
     pw_protect_attach_file(@document, @custom_notification)
