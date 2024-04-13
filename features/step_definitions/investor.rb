@@ -646,6 +646,7 @@ Given('the fund has a SOA template {string}') do |string|
   visit(fund_path(Fund.last))
   sleep(3)
   click_on("Actions")
+  find('#misc_action_menu').hover
   click_on("New Template")
   sleep(2)
   fill_in('document_name', with: "SOA Template")
@@ -740,8 +741,10 @@ end
 Given('the fund has a Commitment template {string}') do |string|
   @fund = Fund.last
   visit(fund_path(@fund))
-  sleep(3)
+  sleep(1)
   click_on("Actions")
+  find('#misc_action_menu').hover
+  sleep(1)
   click_on("New Template")
   sleep(2)
   fill_in('document_name', with: "Commitment Template")

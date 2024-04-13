@@ -7,7 +7,7 @@ module WithCustomField
     attribute :json_fields, :json, default: {}
     alias_attribute :properties, :json_fields
 
-    belongs_to :form_type, optional: true
+    belongs_to :form_type, optional: true, dependent: :destroy
     has_many :form_custom_fields, through: :form_type
 
     # Scope to search for custom fields Useage: InvestorKyc.search_custom_fields("nationality", "Indian")

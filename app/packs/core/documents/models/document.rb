@@ -26,6 +26,7 @@ class Document < ApplicationRecord
   belongs_to :signed_by, class_name: "User", optional: true
   belongs_to :approved_by, class_name: "User", optional: true
   belongs_to :from_template, class_name: "Document", optional: true
+  has_many :generated_documents, class_name: "Document", foreign_key: "from_template_id"
 
   belongs_to :owner, polymorphic: true, optional: true, touch: true
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"

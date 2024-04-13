@@ -10,10 +10,17 @@ module WithFolder
     end
 
     validates_associated :documents
-    has_many :folders, as: :owner, dependent: :destroy
     # The folder in which all the documents of this model should go
     belongs_to :document_folder, class_name: "Folder", dependent: :destroy, optional: true
-    
+    has_many :folders, as: :owner, dependent: :destroy
+
+    # Used to check if its being destroyed and not setup_document_folder
+    attr_accessor :being_destroyed
+
+    def really_destroy!(update_destroy_attributes: true)
+      self.being_destroyed = true
+      super(update_destroy_attributes:)
+    end
   end
 
   def folder_type
@@ -25,12 +32,13 @@ module WithFolder
   end
 
   def document_folder
-    super || setup_document_folder
+    Rails.logger.debug { "self.being_destroyed: #{being_destroyed}" }
+    super || setup_document_folder unless being_destroyed || destroyed?
   end
 
   # Get or Create the folder based on folder_path
   def setup_document_folder
-    if folder_path.present? && !destroyed?
+    if folder_path.present?
       folder = Folder.where(entity_id:, full_path: folder_path).last
       folder ||= setup_folder_from_path(folder_path)
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_04_13_070534) do
+ActiveRecord::Schema[7.1].define(version: 2024_04_13_110252) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -949,7 +949,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_13_070534) do
     t.index ["entity_id"], name: "index_documents_on_entity_id"
     t.index ["folder_id"], name: "index_documents_on_folder_id"
     t.index ["form_type_id"], name: "index_documents_on_form_type_id"
-    t.index ["from_template_id"], name: "index_documents_on_from_template_id"
     t.index ["owner_type", "owner_id"], name: "index_documents_on_owner"
     t.index ["signed_by_id"], name: "index_documents_on_signed_by_id"
     t.index ["user_id"], name: "index_documents_on_user_id"
@@ -2987,7 +2986,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_13_070534) do
   add_foreign_key "deals", "form_types"
   add_foreign_key "document_chats", "documents"
   add_foreign_key "document_chats", "entities"
-  add_foreign_key "documents", "documents", column: "from_template_id"
   add_foreign_key "documents", "folders"
   add_foreign_key "documents", "form_types"
   add_foreign_key "documents", "users"
