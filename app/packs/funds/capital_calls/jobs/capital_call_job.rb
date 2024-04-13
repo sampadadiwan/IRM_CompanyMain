@@ -48,7 +48,7 @@ class CapitalCallJob < ApplicationJob
 
     # Generate any payments for the imported remittances if required
     generate_remittance_payments
-    
+
     # Fix the counters
     CapitalRemittance.counter_culture_fix_counts where: { entity_id: @capital_call.entity_id }
   end

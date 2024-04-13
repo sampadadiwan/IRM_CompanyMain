@@ -1,10 +1,10 @@
-<p>Dear <%= @investor_kyc.full_name.present? ? @investor_kyc.full_name : "User" %></p>
-
 <% if @custom_notification %>
 
     <%= render "/custom_notifications/mail" %>    
 
 <% else %>
+    <p>Dear <%= @investor_kyc.full_name.present? ? @investor_kyc.full_name : "User" %></p>
+
     <p>
 
         <% if @investor_kyc.notification_msg.present? %>
