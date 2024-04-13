@@ -21,18 +21,17 @@ class Fund < ApplicationRecord
 
   has_many :fund_ratios, dependent: :destroy
   has_many :valuations, as: :owner, dependent: :destroy
-  
+
   has_many :account_entries, dependent: :destroy
   has_many :allocation_runs, dependent: :destroy
   has_many :fund_reports, dependent: :destroy
-  
+
   has_many :portfolio_scenarios, dependent: :destroy
   has_many :portfolio_cashflows, dependent: :destroy
   has_many :portfolio_attributions, dependent: :destroy
   has_many :portfolio_investments, dependent: :destroy
   has_many :aggregate_portfolio_investments, dependent: :destroy
-    
-  
+
   has_many :fund_unit_settings, dependent: :destroy
   has_many :fund_units, dependent: :destroy
   has_many :investor_notices, as: :owner, dependent: :destroy
@@ -43,7 +42,7 @@ class Fund < ApplicationRecord
   has_many :capital_distribution_payments, dependent: :destroy
   has_many :capital_calls, dependent: :destroy
   has_many :capital_commitments, dependent: :destroy
-  
+
   has_many :fund_formulas, dependent: :destroy
 
   has_many :fund_account_entries, ->(_ae) { where(account_entries: { capital_commitment_id: nil }) }, class_name: "AccountEntry", dependent: :destroy
