@@ -25,20 +25,19 @@ class CapitalCall < ApplicationRecord
   serialize :unit_prices, type: Hash
   serialize :fund_closes, type: Array
 
+  has_many :capital_remittances, dependent: :destroy
   has_many :call_fees, dependent: :destroy
   accepts_nested_attributes_for :call_fees, allow_destroy: true
 
-  has_many :capital_remittances, dependent: :destroy
   validates_uniqueness_of :name, scope: :fund_id
   normalizes :name, with: ->(name) { name.strip.squeeze(" ") }
-
   validates :name, :due_date, :call_date, :percentage_called, :fund_closes, :commitment_type, presence: true
   # validates :percentage_called, numericality: { in: 0..100 }
+  validates :commitment_type, length: { maximum: 10 }
+  validates :name, :fund_closes, length: { maximum: 255 }
 
   monetize :call_amount_cents, :amount_to_be_called_cents, :capital_fee_cents, :other_fee_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
 
-  validates :commitment_type, length: { maximum: 10 }
-  validates :name, :fund_closes, length: { maximum: 255 }
   # This is a list of commitments for which this call is applicable
   def applicable_to
     commitments = Pool? ? fund.capital_commitments.pool : fund.capital_commitments.co_invest
@@ -66,7 +65,6 @@ class CapitalCall < ApplicationRecord
     self.generate_remittances = true if call_basis != "Upload"
   end
 
-  # after_commit :generate_capital_remittances, unless: :destroyed?
   def generate_capital_remittances(later: true)
     if call_basis != "Upload" && generate_remittances &&
        (saved_change_to_percentage_called? || saved_change_to_amount_to_be_called_cents? || saved_change_to_fund_closes?)
@@ -78,7 +76,6 @@ class CapitalCall < ApplicationRecord
     end
   end
 
-  # after_commit :send_notification, if: :approved
   def send_notification
     CapitalCallJob.perform_later(id, "Notify") if !manual_generation && saved_change_to_approved?
   end

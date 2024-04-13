@@ -82,8 +82,6 @@ class InvestorAccess < ApplicationRecord
     email
   end
 
-  # after_commit :send_notification_if_changed, if: :approved
-
   def update_user
     self.investor_entity_id = investor.investor_entity_id
     self.email = email.strip
