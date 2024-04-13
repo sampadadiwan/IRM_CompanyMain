@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_04_10_113905) do
+ActiveRecord::Schema[7.1].define(version: 2024_04_13_070534) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -775,6 +775,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_10_113905) do
     t.string "attachment_password"
     t.boolean "no_link", default: false
     t.string "email_method", limit: 100
+    t.datetime "deleted_at"
+    t.index ["deleted_at"], name: "index_custom_notifications_on_deleted_at"
     t.index ["entity_id"], name: "index_custom_notifications_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_custom_notifications_on_owner"
   end

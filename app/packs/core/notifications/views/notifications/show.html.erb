@@ -1,3 +1,4 @@
+<%= render ToggleCard.new(title: "Notification: #{@notification.recipient.email}", css_class: "show_notification", state: "show") do %>
 
 <table class="table table-bordered dataTable no_hover_table">
   <tr>
@@ -97,3 +98,5 @@
   <% end %>
 
 </table>
+
+<% end %>

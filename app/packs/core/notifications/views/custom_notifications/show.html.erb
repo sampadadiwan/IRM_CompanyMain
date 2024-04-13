@@ -1,3 +1,4 @@
+<%= render ToggleCard.new(title: "Custom Notification: #{@custom_notification.owner}", css_class: "show_custom_notification", state: "show") do %>
 
 <table class="table table-bordered dataTable">
   <tr>
@@ -50,35 +51,39 @@
     </td>
   </tr>
 
-  <tr>
-    <td>
-      Password Protect Attachment
-    </td>
-    <td>
-      <%= display_boolean @custom_notification.password_protect_attachment%>
-    </td>
-  </tr>
-
   <% if @custom_notification.password_protect_attachment %>
-  <tr>
-    <td>
-      Password
-    </td>
-    <td>
-      <%= @custom_notification.attachment_password %>
-    </td>
-  </tr>
+
+    <tr>
+      <td>
+        Password Protect Attachment
+      </td>
+      <td>
+        <%= display_boolean @custom_notification.password_protect_attachment%>
+      </td>
+    </tr>
+    
+    <tr>
+      <td>
+        Password
+      </td>
+      <td>
+        <%= @custom_notification.attachment_password %>
+      </td>
+    </tr>
+    
   <% end %>
 
-  <tr>
-    <td>
-      Show Details
-    </td>
-    <td>
-      <%= display_boolean @custom_notification.show_details%>
-    </td>
-  </tr>
-
+  <% if @custom_notification.show_details %>
+    <tr>
+      <td>
+        Show Details
+      </td>
+      <td>
+        <%= display_boolean @custom_notification.show_details%>
+      </td>
+    </tr>
+  <% end %>
+  
   <tr>
     <td>
       No Link
@@ -92,3 +97,5 @@
 <div>
   <%= link_to "Edit", edit_custom_notification_path(@custom_notification), {class: "btn btn-outline-primary"} %>   <%= button_to "Delete", @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 </div>
+
+<% end %>
