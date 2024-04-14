@@ -1,3 +1,23 @@
+V7.0.76    
+#####################################
+3ff5f3022 Fixed issues with really_destroy! for secondary
+cfd8793bd Validate unit_type length for commitments
+8365e5ba5 Fixed issue of circular dependency using being_destroyed
+a22adc9b1 Fixed really_destroy circular dependency for folders
+c323dc65f Fixed destroy of calls
+8ccc2f0b0 Misc fixes
+98b4dec06 Added link to owner for fund_unit grid
+c69f03fd9 Added create_at date for import upload grid
+326c8cb28 Added CustomNotification.enabled
+70b3f9ad4 Renamed 'Commitment Agreement' bulk action to 'Send Document'
+f29a321ab show_details and password_protect is now conditional for custom notifications
+95ed27ddd Changed url to edit for kyc notification:
+03330660d Made WA non mandatory in custom notifications
+ee92c33fd Fixed SOA generation owner tags
+a0ba88572 Counter cache folios in dashboard (#229)
+21a955c40 Added esign_emails to ransack
+14935661e Component usage (#228)
+
 V7.0.75    
 #####################################
 1. Sebi reports
