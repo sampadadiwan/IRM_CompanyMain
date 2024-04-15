@@ -26,6 +26,10 @@ class TaskNotifier < BaseNotifier
       @task.details
     end
 
+    def custom_notification
+      nil
+    end
+
     def url
       task_path(id: params[:task].id)
     end

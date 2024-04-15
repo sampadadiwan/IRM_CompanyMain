@@ -38,8 +38,9 @@ class InvestmentInstrument < ApplicationRecord
   has_many :portfolio_cashflows, dependent: :destroy
   has_many :portfolio_investments, dependent: :destroy
   has_many :aggregate_portfolio_investment, dependent: :destroy
+  has_many :valuations, dependent: :destroy
 
-  validates :name, presence: true
+  validates :name, :currency, presence: true
   validates :name, uniqueness: { scope: :portfolio_company_id }
   validates :category, length: { maximum: 15 }
   validates :sub_category, :sector, length: { maximum: 100 }

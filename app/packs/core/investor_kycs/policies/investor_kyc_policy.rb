@@ -83,8 +83,9 @@ class InvestorKycPolicy < ApplicationPolicy
     (create?(:update) || support?) && !record.verified
   end
 
+  # Used to send notification to fund that kyc needs updates
   def send_notification?
-    record.investor.investor_entity_id == user.entity_id && !record.verified
+    record.investor.investor_entity_id == user.entity_id && record.verified
   end
 
   def edit?

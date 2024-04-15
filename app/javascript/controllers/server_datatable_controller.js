@@ -6,14 +6,12 @@ export default class ServerDatatableController extends Controller {
     lazyLoadData: String, // Do we want to eager or lazy load (for tabs)
     tableName: String, // Which table id are we targeting
     fieldList: String, // Which fields are we targeting
-    mobileFieldList: String // Which fields are we targeting
   }
 
   connect() {
     console.log(`Datatable setup for ${this.tableNameValue}`);
     console.log(`lazyLoadDataValue = ${this.lazyLoadDataValue}`);
     console.log(`fieldListValue = ${this.fieldListValue}`);
-    console.log(`mobileFieldListValue = ${this.mobileFieldListValue}`);
     
     this.buildTable(this.tableNameValue);
 

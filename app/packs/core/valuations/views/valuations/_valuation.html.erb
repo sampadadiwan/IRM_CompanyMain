@@ -6,10 +6,10 @@
     <%= l valuation.valuation_date %>
   </td>
   <td>
-    <%= money_to_currency valuation.valuation, params %>
+    <%= money_to_currency valuation.per_share_value, params %>
   </td>
   <td>
-    <%= money_to_currency valuation.per_share_value, params %>
+    <%= valuation.currency %>
   </td>
   <td>
     <%= link_to "Show" , valuation , {class: "btn btn-outline-primary" }%>

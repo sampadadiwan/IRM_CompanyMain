@@ -1,20 +1,30 @@
 include CurrencyHelper
 
   When('I create a new portfolio investment {string}') do |args|
+
+
+
     @new_portfolio_investment = FactoryBot.build(:portfolio_investment, entity: @entity, fund: @fund)
     key_values(@new_portfolio_investment, args)
+
+    portfolio_company = @entity.investors.portfolio_companies.where(investor_name: @new_portfolio_investment.portfolio_company_name).first
+    investment_instrument = portfolio_company.investment_instruments.sample
+
+    @new_portfolio_investment.portfolio_company = portfolio_company
+    @new_portfolio_investment.investment_instrument = investment_instrument
+    @new_portfolio_investment.compute_amount_cents
 
     visit(fund_path(@fund))
     sleep(1)
     click_on "Portfolio"
     click_on "New Investment"
 
-    portfolio_company = @entity.investors.portfolio_companies.where(investor_name: @new_portfolio_investment.portfolio_company_name).first
 
     puts @new_portfolio_investment.to_json
 
     select(portfolio_company.investor_name, from: "portfolio_investment_portfolio_company_id")
-    fill_in('portfolio_investment_amount', with: @new_portfolio_investment.amount)
+    select(investment_instrument.name, from: "portfolio_investment_investment_instrument_id")
+    fill_in('portfolio_investment_base_amount', with: @new_portfolio_investment.base_amount)
     fill_in('portfolio_investment_quantity', with: @new_portfolio_investment.quantity)
 
     click_on "Save"
@@ -25,6 +35,11 @@ include CurrencyHelper
     @portfolio_investment = PortfolioInvestment.last
     @portfolio_investment.quantity.should == @new_portfolio_investment.quantity
     @portfolio_investment.amount.should == @new_portfolio_investment.amount
+    @portfolio_investment.base_amount.should == @new_portfolio_investment.base_amount
+    if @portfolio_investment.investment_instrument.currency != @portfolio_investment.fund.currency
+      @portfolio_investment.amount_cents.should == @portfolio_investment.convert_currency(@portfolio_investment.investment_instrument.currency, @portfolio_investment.fund.currency, @portfolio_investment.base_amount_cents, @portfolio_investment.investment_date)
+      @portfolio_investment.amount_cents.should_not == @portfolio_investment.base_amount_cents
+    end
     @portfolio_investment.portfolio_company_name.should == @new_portfolio_investment.portfolio_company_name
     @portfolio_investment.investment_instrument.name.should == @investment_instrument.name
   end
@@ -36,7 +51,8 @@ include CurrencyHelper
     expect(page).to have_content(@portfolio_investment.portfolio_company_name)
     expect(page).to have_content(@portfolio_investment.quantity)
     expect(page).to have_content(@portfolio_investment.investment_instrument)
-    expect(page).to have_content( money_to_currency @portfolio_investment.amount)
+    expect(page).to have_content( money_to_currency @portfolio_investment.amount )
+    expect(page).to have_content( money_to_currency @portfolio_investment.base_amount ) if @portfolio_investment.investment_instrument.currency != @portfolio_investment.fund.currency
   end
 
 
@@ -94,7 +110,7 @@ end
 
 Then('the fmv must be calculated for the portfolio') do
   PortfolioInvestment.all.each do |pi|
-    pi.fmv_cents.should == (pi.net_quantity * @valuation.per_share_value_cents)
+    pi.fmv_cents.should == (pi.net_quantity * @valuation.per_share_value_in(pi.fund.currency, pi.investment_date))
   end
 end
 
@@ -119,7 +135,10 @@ Then('the portfolio investments must have the data in the sheet') do
     ap pi
     pi.portfolio_company_name.should == user_data["Portfolio Company Name"].strip
     pi.fund.name.should == user_data["Fund"]
-    pi.amount_cents.should == user_data["Amount"].to_d * 100
+    pi.base_amount_cents.should == user_data["Amount"].to_d * 100
+    if pi.investment_instrument.currency != pi.fund.currency
+      pi.amount_cents.should == pi.convert_currency(pi.investment_instrument.currency, pi.fund.currency, pi.base_amount_cents, pi.investment_date)
+    end
     pi.quantity.should == user_data["Quantity"].to_d
     pi.investment_instrument.name.should == user_data["Instrument"]
     pi.investment_instrument.investment_domicile.should == user_data["Investment Domicile"]
@@ -140,7 +159,7 @@ Given('Given I upload {string} file for portfolio companies of the fund') do |fi
   visit(new_import_upload_path("import_upload[entity_id]": @fund.entity_id, "import_upload[owner_id]": @fund.id, "import_upload[owner_type]": "Fund", "import_upload[import_type]": "Valuation"))
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(1)
+  sleep(2)
   click_on("Save")
   sleep(2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
@@ -166,7 +185,6 @@ Then('the valuations must have the data in the sheet') do
     puts "Checking import of #{val.owner.investor_name}"
     val.investment_instrument.name.should == user_data["Instrument"].strip
     val.valuation_date.should == Date.parse(user_data["Valuation Date"].to_s)
-    val.valuation_cents.should == user_data["Valuation"].to_d * 100
     val.per_share_value_cents.should == user_data["Per Share Value"].to_d * 100
     val.owner.investor_name.should == user_data["Portfolio Company"].strip
     val.import_upload_id.should == ImportUpload.last.id

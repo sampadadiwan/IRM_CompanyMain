@@ -25,6 +25,10 @@ class ReminderNotifier < BaseNotifier
       params[:msg] || "Reminder: #{@reminder.note}"
     end
 
+    def custom_notification
+      nil
+    end
+
     def url
       reminder_path(id: params[:reminder].id)
     end

@@ -25,6 +25,10 @@ class ExpressionOfInterestNotifier < BaseNotifier
       params[:msg] || "Expression Of Interest Approved: #{@expression_of_interest.investment_opportunity.company_name}"
     end
 
+    def custom_notification
+      nil
+    end
+
     def url
       expression_of_interest_path(id: params[:expression_of_interest].id)
     end

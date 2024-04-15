@@ -27,6 +27,10 @@ class PortfolioInvestmentPolicy < FundBasePolicy
     create?
   end
 
+  def base_amount_form?
+    true
+  end
+
   # No updates to investments as the current algorith for attribution cannot handle updates
   # So delete and create if you want to update
   def update?

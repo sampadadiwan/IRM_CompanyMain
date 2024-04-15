@@ -1,6 +1,12 @@
 <tr id="<%= dom_id investment_instrument %>">
   <td>
-    <%= investment_instrument.name %>
+    <%= link_to investment_instrument.portfolio_company %>
+  </td>
+  <td>
+    <%= link_to investment_instrument.name, investment_instrument %>
+  </td>
+  <td>
+    <%= investment_instrument.currency %>
   </td>
   <td>
     <%= link_to "Show", investment_instrument , {class: "btn btn-outline-primary"}%>

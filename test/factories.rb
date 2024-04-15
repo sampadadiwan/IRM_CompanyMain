@@ -10,6 +10,7 @@ FactoryBot.define do
     category { "Unlisted" }
     sub_category { "Equity" }
     sector { "Tech" }
+    currency { "INR" }
     entity { nil }
     portfolio_company { nil }
   end
@@ -128,7 +129,7 @@ FactoryBot.define do
     entity { fund.entity }
     portfolio_company { entity.investors.portfolio_companies.sample }
     investment_date { Time.zone.today - rand(36).months }
-    amount_cents { 10000000 * rand(1..20) }
+    base_amount_cents { 10000000 * rand(1..20) }
     quantity { rand(2) > 0 ? 100 * rand(1..10) : -100 * rand(1..10) }
     sub_category { "Equity" }
     category { "Unlisted" }

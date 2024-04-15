@@ -1,13 +1,14 @@
  <%= form.text_field :id, hidden: true %>
 <div class="form-group">
     <%= form.label :investor_category, "SEBI Investor Category" %>
-    <%= form.select :investor_category, hash = InvestorKycSebiData::INVESTOR_CATEGORIES.sort.map { |element| [element.to_s.titleize, element.downcase] }.to_h, {include_blank: true}, class: 'form-control', "data-action": "change->select#change" %>
+    <%= form.select :investor_category, hash = InvestorKycSebiData::INVESTOR_CATEGORIES.sort.map { |element| [element.to_s.titleize, element.downcase] }.to_h, {include_blank: true}, class: 'form-control', "data-action": "change->select#change", "data-url": "#{sub_categories_investor_kyc_sebi_datas_path}",
+          "data-param": "investor_category", "data-target": "sub_category_select" %>
     <small class="text-muted">Select the investor category (For SEBI Reports)</small>
 </div>
 
 <div class="form-group">
     <% sub_categories = investor_kyc.investor_kyc_sebi_data.investor_category.present? ? InvestorKycSebiData::INVESTOR_SUB_CATEGORIES.stringify_keys[investor_kyc.investor_kyc_sebi_data.investor_category.to_s.downcase] : "" %>
     <%= form.label :investor_sub_category, "SEBI Investor Sub-Category" %>
-    <%= form.select :investor_sub_category, sub_categories, {include_blank: true}, class: 'form-control', data: { select_target: "select" } %>
+    <%= form.select :investor_sub_category, sub_categories, {include_blank: true}, class: 'form-control', id: "sub_category_select" %>
     <small class="text-muted">Select the investor sub category (For SEBI Reports)</small>
 </div>

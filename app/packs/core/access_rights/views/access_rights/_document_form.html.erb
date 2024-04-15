@@ -32,19 +32,18 @@
             users_url = investor_accesses_path
             select_investor_users = true
         %>
-        <div data-controller="select" data-select-url-value="<%= users_url %>"
-           data-select-param-value="email_or_cat">
+        <div data-controller="select">
 
           <div class="form-group">
             <%= form.label :access_type %>
             <%= form.select :email_or_cat, types, {}, class: "form-control", 
-              name: "email_or_cat", "data-action": "change->access#onChange change->select#change" %>
+              name: "email_or_cat", "data-action": "change->access#onChange change->select#change", "data-url": "#{users_url}", "data-param": "email_or_cat", "data-target": "employee_id" %>
           </div>
 
           <% if select_investor_users %>
             <div class="form-group" id="employee_form_group">
               <%= form.label :user_id, "Select Specific User" %>
-              <%= form.select :user_id, [], {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" }  %>
+              <%= form.select :user_id, [], {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", id: "employee_id"  %>
             </div>
           <% end %>
 

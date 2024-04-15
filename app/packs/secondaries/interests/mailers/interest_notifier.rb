@@ -22,6 +22,10 @@ class InterestNotifier < BaseNotifier
       params[:msg] || "Interest: #{@interest}"
     end
 
+    def custom_notification
+      nil
+    end
+
     def url
       interest_path(id: params[:interest].id)
     end

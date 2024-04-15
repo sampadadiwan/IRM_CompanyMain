@@ -6,15 +6,15 @@ Scenario Outline: Create new portfolio investment
   Given the user has role "company_admin"
   Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
   Given there is a fund "<fund>" for the entity
-  Given there is an investment instrument for the portfolio company "name=XYZ;category=Unlisted;sub_category=Equity;sector=Tech"
-  When I create a new portfolio investment "portfolio_company_name=MyFavStartup;amount_cents=1000000;quantity=200"
+  Given there is an investment instrument for the portfolio company "<portfolio_instrument>"
+  When I create a new portfolio investment "portfolio_company_name=MyFavStartup;base_amount_cents=1000000;quantity=200"
   Then a portfolio investment should be created
   Then I should see the portfolio investment details on the details page
 
   Examples:
-    |entity                             |fund                |
-    |entity_type=Investment Fund;       |name=Test fund      |
-    |entity_type=Investment Fund;       |name=Merger Fund;unit_types=Series A,Series B    |
+    |entity                             |fund                           | portfolio_instrument |
+    |entity_type=Investment Fund;       |name=Test fund;currency=INR    | name=XYZ;currency=INR |
+    |entity_type=Investment Fund;       |name=Merger Fund;currency=INR  | name=XYZ;currency=USD |
 
 
 Scenario Outline: Create new PI and aggregate PI

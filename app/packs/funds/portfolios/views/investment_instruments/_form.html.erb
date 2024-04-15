@@ -24,6 +24,11 @@
   </div>
 
   <div class="form-group">
+    <%= form.label :currency %>
+    <%= form.select :currency, investment_instrument.entity.currency_list, {}, class: "form-control"  %>
+  </div>
+
+  <div class="form-group">
     <%= form.label :investment_domicile %>
     <%= form.text_field :investment_domicile, class: "form-control"  %>
   </div>

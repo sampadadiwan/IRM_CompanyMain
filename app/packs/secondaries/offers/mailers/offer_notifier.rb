@@ -22,6 +22,10 @@ class OfferNotifier < BaseNotifier
       params[:msg] || "Offer: #{@offer}"
     end
 
+    def custom_notification
+      nil
+    end
+
     def url
       offer_path(id: params[:offer].id)
     end

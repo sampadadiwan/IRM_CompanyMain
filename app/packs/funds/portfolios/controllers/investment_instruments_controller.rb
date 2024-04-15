@@ -4,7 +4,7 @@ class InvestmentInstrumentsController < ApplicationController
 
   # GET /investment_instruments or /investment_instruments.json
   def index
-    @investment_instruments = policy_scope(InvestmentInstrument)
+    @investment_instruments = policy_scope(InvestmentInstrument).includes(:portfolio_company, :entity)
     @investment_instruments = @investment_instruments.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
     @investment_instruments = @investment_instruments.where(category: params[:category]) if params[:category].present?
     @investment_instruments = @investment_instruments.where(sub_category: params[:sub_category]) if params[:sub_category].present?
@@ -80,6 +80,6 @@ class InvestmentInstrumentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investment_instrument_params
-    params.require(:investment_instrument).permit(:name, :category, :sub_category, :sector, :entity_id, :portfolio_company_id, :investment_domicile, :deleted_at, properties: {})
+    params.require(:investment_instrument).permit(:name, :category, :sub_category, :sector, :entity_id, :portfolio_company_id, :investment_domicile, :deleted_at, :currency, properties: {})
   end
 end

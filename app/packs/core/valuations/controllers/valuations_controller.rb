@@ -45,7 +45,6 @@ class ValuationsController < ApplicationController
         @valuation.investment_instrument_id = investment_instrument_id
         @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
         @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
-        @valuation.valuation_cents = valuation_params[:valuation].to_f * 100
         authorize @valuation
         saved_all &&= @valuation.save
         valuations << @valuation
@@ -71,7 +70,6 @@ class ValuationsController < ApplicationController
   # PATCH/PUT /valuations/1 or /valuations/1.json
   def update
     @valuation.per_share_value_cents = valuation_params[:per_share_value].to_f * 100
-    @valuation.valuation_cents = valuation_params[:valuation].to_f * 100
 
     respond_to do |format|
       if @valuation.update(valuation_params)

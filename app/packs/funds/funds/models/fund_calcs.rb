@@ -20,18 +20,12 @@ class FundCalcs
   end
 
   def quarterly_irr
-    vals = @model.valuations.order("valuation_date desc").limit(2)
-    if vals.length == 2
-      prev_valuation = vals[1]
-      ((@valuation.valuation_cents - @valuation.collection_last_quarter_cents) / prev_valuation.valuation_cents) - 1
-    else
-      0
-    end
+    0
   end
 
   # Fund and Commitment
   def compute_rvpi
-    @rvpi = (@valuation.valuation_cents / @collected_amount_cents).round(2) if @collected_amount_cents.positive?
+    @rvpi = 0
   end
 
   # Fund and Commitment
@@ -46,27 +40,5 @@ class FundCalcs
 
   def compute_moic
     # (self.tvpi / self.collected_amount_cents).round(2) if self.tvpi && self.collected_amount_cents > 0
-  end
-
-  # Fund and Commitment
-  def compute_xirr
-    cf = Xirr::Cashflow.new
-
-    @model.capital_remittance_payments.where("capital_remittance_payments.payment_date <= ?", @valuation.valuation_date).find_each do |cr|
-      # puts "Adding capital_remittance_payment #{-1 * cr.amount_cents} #{cr.payment_date}"
-      cf << Xirr::Transaction.new(-1 * cr.amount_cents, date: cr.payment_date)
-    end
-
-    @model.capital_distribution_payments.where("capital_distribution_payments.payment_date <= ?", @valuation.valuation_date).find_each do |cdp|
-      # puts "Adding capital_distribution_payment #{cdp.amount_cents} #{cdp.payment_date}"
-      cf << Xirr::Transaction.new(cdp.amount_cents, date: cdp.payment_date)
-    end
-
-    # puts "Adding valuation #{@valuation.valuation_cents} #{@valuation.valuation_date}"
-    cf << Xirr::Transaction.new(@valuation.valuation_cents, date: @valuation.valuation_date)
-
-    Rails.logger.debug { "fund.xirr cf: #{cf}" }
-    Rails.logger.debug { "fund.xirr irr: #{cf.xirr}" }
-    (cf.xirr * 100).round(2)
   end
 end

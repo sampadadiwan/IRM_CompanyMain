@@ -1,6 +1,6 @@
 module PortfolioHelper
-  def share_price_line(portfolio_company)
-    valuations = portfolio_company.valuations
+  def share_price_line(investment_instrument)
+    valuations = investment_instrument.valuations
     valuations = valuations.group_by { |v| v.valuation_date.strftime("%m/%Y") }
                            .map { |date, vals| [date, vals[-1].per_share_value_cents / 100] }
 

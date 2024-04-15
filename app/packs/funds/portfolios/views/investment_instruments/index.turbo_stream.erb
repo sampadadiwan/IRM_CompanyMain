@@ -1,17 +1,14 @@
 <%= turbo_stream.update params[:target] do %>
   
-
-    <div class="form-group" data-select-target="select" id="0.bll5a055e6">
       <div class=""><label for="portfolio_investment_investment_instrument_id">Instrument</label></div>
       <div class="">
-      <select class="form-control" name="portfolio_investment[investment_instrument_id]" id="portfolio_investment_investment_instrument_id" data-validate="true">
-        <%= options_for_select @investment_instruments.order(name: :asc).map{|i| [i.name, i.id]} %>
+      <select class="form-control" name="portfolio_investment[investment_instrument_id]" id="portfolio_investment_investment_instrument_id" data-action="change->select#change" data-target="base_amount_help_text" data-url="<%= base_amount_form_portfolio_investments_path(params: params.to_unsafe_h) %>" data-param= "investment_instrument_id" >
+        <%= options_for_select [nil] + @investment_instruments.order(name: :asc).map{|i| [i.name, i.id]} %>
       </select>
       
       <small class="text-muted">
         Create <%= link_to "New Instrument",
           new_investment_instrument_path("investment_instrument[portfolio_company_id]": params[:portfolio_company_id]) %>
       </small>
-    </div>
-
+  
 <% end %>

@@ -195,7 +195,7 @@ class FundPortfolioCalcs
       raise "No valuation found for #{Investor.find(portfolio_company_id).investor_name} prior to date #{@end_date}" unless valuation
 
       # Get the fmv for this portfolio_company on the @end_date
-      fmv_on_end_date_cents = quantity * valuation.per_share_value_cents
+      fmv_on_end_date_cents = quantity * valuation.per_share_value_in(@fund.currency, @end_date)
       fmv_on_end_date_cents = (fmv_on_end_date_cents * (1 + (scenarios[api.id.to_s]["percentage_change"].to_f / 100))).round(4) if api && scenarios && scenarios[api.id.to_s]["percentage_change"].present?
 
       # Aggregate the fmv across the fun

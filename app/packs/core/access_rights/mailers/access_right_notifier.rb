@@ -25,6 +25,10 @@ class AccessRightNotifier < BaseNotifier
       params[:msg] || "Access granted to #{@access_right.owner}"
     end
 
+    def custom_notification
+      nil
+    end
+
     def url
       @access_right ||= params[:access_right]
       polymorphic_url(@access_right.owner_type.tableize.singularize, id: @access_right.owner_id)

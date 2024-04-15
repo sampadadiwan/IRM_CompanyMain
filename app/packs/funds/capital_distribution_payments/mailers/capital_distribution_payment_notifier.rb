@@ -26,6 +26,10 @@ class CapitalDistributionPaymentNotifier < BaseNotifier
       params[:msg] || "CapitalDistributionPayment: #{@capital_distribution_payment}"
     end
 
+    def custom_notification
+      nil
+    end
+
     def url
       capital_distribution_payment_path(id: params[:capital_distribution_payment].id)
     end

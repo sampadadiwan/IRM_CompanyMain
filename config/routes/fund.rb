@@ -24,7 +24,10 @@ resources :aggregate_portfolio_investments
 
 resources :fund_formulas
 resources :fund_unit_settings
-resources :portfolio_investments
+resources :portfolio_investments do
+  get 'base_amount_form', on: :collection
+end
+
 resources :investment_instruments do
   get 'sub_categories', on: :collection
 end

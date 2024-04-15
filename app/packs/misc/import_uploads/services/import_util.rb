@@ -137,7 +137,7 @@ class ImportUtil < Trailblazer::Operation
     rescue ActiveRecord::Deadlocked => e
       raise e
     rescue StandardError => e
-      Rails.logger.debug e.message
+      Rails.logger.debug e.backtrace
       row << "Error #{e.message}"
       Rails.logger.debug user_data
       Rails.logger.debug row

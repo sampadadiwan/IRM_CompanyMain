@@ -7,7 +7,8 @@ module DeliveryMethods
       if notification.recipient.whatsapp_enabled && entity.permissions.enable_whatsapp?
 
         # Ensure that the message is sanitized to prevent XSS attacks
-        message = ActionView::Base.full_sanitizer.sanitize(notification.message)
+        message = notification.custom_notification&.whatsapp || notification.message
+        message = ActionView::Base.full_sanitizer.sanitize(message)
 
         Rails.logger.info "Sending WhatsApp to #{notification.recipient.phone} with message #{message} from #{entity.name}"
 

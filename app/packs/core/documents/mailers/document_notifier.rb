@@ -22,8 +22,14 @@ class DocumentNotifier < BaseNotifier
   notification_methods do
     def message
       @document = params[:document]
-      @custom_notification = @document.entity.custom_notification(params[:email_method])
+      @custom_notification ||= custom_notification
       @custom_notification&.subject || params[:msg] || "Document Uploaded: #{@document.name}"
+    end
+
+    def custom_notification
+      @document ||= params[:document]
+      @custom_notification ||= @document.entity.custom_notification(params[:email_method])
+      @custom_notification
     end
 
     def url

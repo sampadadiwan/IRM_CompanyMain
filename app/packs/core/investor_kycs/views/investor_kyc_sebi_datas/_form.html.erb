@@ -16,13 +16,13 @@
   <%= form.text_field :investor_kyc_id, class: "form-control", hidden: true  %>
   <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
 
-   <div data-controller="select" data-select-url-value="<%= sub_categories_investor_kyc_sebi_datas_path %>"
-          data-select-param-value="investor_category">
+   <div data-controller="select">
 
       <%= form.text_field :id, hidden: true %>
       <div class="form-group">
         <%= form.label :investor_category %>
-        <%= form.select :investor_category, hash = InvestorKycSebiData::INVESTOR_CATEGORIES.sort.map { |element| [element.to_s.titleize, element.downcase] }.to_h, {include_blank: false}, class: 'form-control', "data-action": "change->select#change" %>
+        <%= form.select :investor_category, hash = InvestorKycSebiData::INVESTOR_CATEGORIES.sort.map { |element| [element.to_s.titleize, element.downcase] }.to_h, {include_blank: false}, class: 'form-control', "data-action": "change->select#change", "data-url": "#{sub_categories_investor_kyc_sebi_datas_path}"
+          "data-param": "investor_category", "data-target": "sub_category_select" %>
         <small class="text-muted">Select the investor category (For SEBI Reports)</small>
       </div>
 
@@ -30,7 +30,7 @@
         <% sub_categories = []  %>
         <% sub_categories = investor_kyc_sebi_data.investor_category.present? ? InvestorKycSebiData::INVESTOR_SUB_CATEGORIES.stringify_keys[investor_kyc_sebi_data.investor_category.to_s.downcase] : "" %>
         <%= form.label :investor_sub_category %>
-        <%= form.select :investor_sub_category, sub_categories, {include_blank: false}, class: 'form-control', data: { select_target: "select" } %>
+        <%= form.select :investor_sub_category, sub_categories, {include_blank: false}, class: 'form-control', id: "sub_category_select" %>
         <small class="text-muted">Select the investor sub category (For SEBI Reports)</small>
       </div>
     </div>

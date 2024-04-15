@@ -19,11 +19,18 @@ class CapitalRemittanceNotifier < BaseNotifier
 
   notification_methods do
     def message
-      @capital_remittance = params[:capital_remittance]
-      @capital_call = @capital_remittance.capital_call
-      @custom_notification = @capital_call.custom_notification(params[:email_method])
+      @capital_remittance ||= params[:capital_remittance]
+      @capital_call ||= @capital_remittance.capital_call
+      @custom_notification = custom_notification
 
       @custom_notification&.subject || params[:msg].presence || "Capital Call by #{@capital_remittance.entity.name} : #{@capital_remittance.capital_call.name}"
+    end
+
+    def custom_notification
+      @capital_remittance ||= params[:capital_remittance]
+      @capital_call ||= @capital_remittance.capital_call
+      @custom_notification ||= @capital_call.custom_notification(params[:email_method])
+      @custom_notification
     end
 
     def url

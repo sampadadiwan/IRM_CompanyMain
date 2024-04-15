@@ -264,4 +264,9 @@ class Entity < ApplicationRecord
   def self.ransackable_attributes(_auth_object = nil)
     %w[category name]
   end
+
+  def currency_list
+    list = exchange_rates.pluck(:from) << currency
+    list.uniq
+  end
 end

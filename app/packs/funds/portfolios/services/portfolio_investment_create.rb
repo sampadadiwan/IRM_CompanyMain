@@ -1,4 +1,5 @@
 class PortfolioInvestmentCreate < PortfolioInvestmentAction
+  step :compute_amount_cents
   step :setup_aggregate
   left :handle_setup_aggregate_errors
   step :compute_fmv

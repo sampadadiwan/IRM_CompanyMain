@@ -25,6 +25,10 @@ class DocumentDownloadNotifier < BaseNotifier
       params[:msg]
     end
 
+    def custom_notification
+      nil
+    end
+
     def url
       document_path(id: params[:document].id)
     end

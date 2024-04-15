@@ -15,8 +15,8 @@ class PortfolioInvestmentsController < ApplicationController
 
   # GET /portfolio_investments/new
   def new
-    @portfolio_investment = PortfolioInvestment.new(portfolio_investment_params)
-    @portfolio_investment.entity_id = @portfolio_investment.fund.entity_id
+    @portfolio_investment = params[:portfolio_investment].present? ? PortfolioInvestment.new(portfolio_investment_params) : PortfolioInvestment.new
+    @portfolio_investment.entity_id = current_user.entity_id
     @portfolio_investment.investment_date ||= Time.zone.today
 
     authorize @portfolio_investment
@@ -27,6 +27,14 @@ class PortfolioInvestmentsController < ApplicationController
     end
 
     setup_custom_fields(@portfolio_investment)
+  end
+
+  def base_amount_form
+    @portfolio_investment = PortfolioInvestment.new
+    @portfolio_investment.entity_id = current_user.entity_id
+    @portfolio_investment.fund_id = params[:fund_id]
+    @portfolio_investment.investment_instrument_id = params[:investment_instrument_id]
+    authorize @portfolio_investment
   end
 
   # GET /portfolio_investments/1/edit
@@ -91,6 +99,6 @@ class PortfolioInvestmentsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def portfolio_investment_params
     params.require(:portfolio_investment).permit(:entity_id, :fund_id, :portfolio_company_id, :investment_date,
-                                                 :amount, :quantity, :notes, :form_type_id, :investment_instrument_id, :commitment_type, :capital_commitment_id, :folio_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+                                                 :base_amount, :quantity, :notes, :form_type_id, :investment_instrument_id, :commitment_type, :capital_commitment_id, :folio_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

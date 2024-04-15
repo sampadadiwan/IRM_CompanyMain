@@ -17,7 +17,8 @@ module PortfolioComputations
         valuation = pi.portfolio_company.valuations.where(investment_instrument_id: pi.investment_instrument_id, valuation_date: ..end_date).order(valuation_date: :asc).last
         raise "Valuation not found for #{pi.portfolio_company.investor_name} on #{end_date}" unless valuation
 
-        total_fmv_end_date += pi.quantity * valuation.per_share_value_cents
+        currency = model.instance_of?(::Fund) ? model.currency : model.fund.currency
+        total_fmv_end_date += pi.quantity * valuation.per_share_value_in(currency, end_date)
       end
       total_fmv_end_date
     end
@@ -49,7 +50,7 @@ module PortfolioComputations
     last_valuation = portfolio_company.valuations.where(investment_instrument_id:, valuation_date: ..date).order(valuation_date: :desc).first
 
     # We dont have a valuation and we need to create one
-    last_valuation = portfolio_company.valuations.create(investment_instrument_id:, valuation_date: investment_date, per_share_value_cents: cost_cents, entity_id:, owner: fund) if last_valuation.blank? && create_valuation
+    last_valuation = portfolio_company.valuations.create(investment_instrument_id:, valuation_date: investment_date, per_share_value_cents: base_cost_cents, entity_id:, owner: fund) if last_valuation.blank? && create_valuation
 
     nq = if date == Time.zone.today
            net_quantity
@@ -57,7 +58,7 @@ module PortfolioComputations
            net_quantity_on(date)
          end
 
-    last_valuation ? nq * last_valuation.per_share_value_cents : 0
+    last_valuation ? nq * last_valuation.per_share_value_in(fund.currency, date) : 0
   end
 
   def net_quantity_on(date)

@@ -14,13 +14,11 @@ module WithExchangeRate
       @exchange_rate = get_exchange_rate(from, to, as_of)
       if @exchange_rate
         # This sets the exchange rate being used for the conversion
-        self.exchange_rate = @exchange_rate
-        # puts "Using exchange_rate #{exchange_rate} for #{self}"
-        self.exchange_rate = @exchange_rate if respond_to? :exchange_rate
-        amount * exchange_rate.rate
+        self.exchange_rate = @exchange_rate if respond_to?(:exchange_rate_id)
+        amount * @exchange_rate.rate
       else
         errors.add(:base, "Exchange rate from #{from} to #{to} not found for date #{as_of}.")
-        throw(:abort)
+        # throw(:abort)
       end
     end
   end

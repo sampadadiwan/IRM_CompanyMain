@@ -186,12 +186,10 @@
             </div>
           <% end %>
 
-          <div data-controller="select" data-select-url-value="<%= sub_categories_investor_kyc_sebi_datas_path %>"
-          data-select-param-value="investor_category">
-
-          <%= form.fields_for :investor_kyc_sebi_data do |kyc_sebi_data_subform| %>
-            <%= render "kyc_sebi_data_fields", form: kyc_sebi_data_subform, investor_kyc: investor_kyc %>
-          <% end %>
+          <div data-controller="select">
+            <%= form.fields_for :investor_kyc_sebi_data do |kyc_sebi_data_subform| %>
+              <%= render "kyc_sebi_data_fields", form: kyc_sebi_data_subform, investor_kyc: investor_kyc %>
+            <% end %>
           </div>
 
           <div class="form-group">

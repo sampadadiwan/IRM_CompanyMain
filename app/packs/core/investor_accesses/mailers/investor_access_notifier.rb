@@ -21,6 +21,10 @@ class InvestorAccessNotifier < BaseNotifier
       params[:msg] || "Access granted to #{@investor_access.entity.name}"
     end
 
+    def custom_notification
+      nil
+    end
+
     def url
       investor_access_path(id: params[:investor_access].id)
     end

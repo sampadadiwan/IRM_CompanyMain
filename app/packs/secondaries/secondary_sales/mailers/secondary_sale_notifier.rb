@@ -18,8 +18,15 @@ class SecondarySaleNotifier < BaseNotifier
 
   notification_methods do
     def message
-      @secondary_sale = params[:secondary_sale]
-      params[:msg] || "SecondarySale: #{@secondary_sale}"
+      @secondary_sale ||= params[:secondary_sale]
+      @custom_notification ||= custom_notification
+      @custom_notification&.subject.presence || params[:msg].presence || "SecondarySale: #{@secondary_sale}"
+    end
+
+    def custom_notification
+      @secondary_sale ||= params[:secondary_sale]
+      @custom_notification ||= @secondary_sale.custom_notification(params[:email_method])
+      @custom_notification
     end
 
     def url

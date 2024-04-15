@@ -17,15 +17,13 @@
       <%= form.text_field :fund_id, class: "form-control", hidden: true  %>
 
     <% if portfolio_investment.new_record? %>
-    <div data-controller="select" 
-        data-select-url-value="<%= investment_instruments_path %>"   
-        data-select-param-value="portfolio_company_id">
+    <div data-controller="select">
 
       <div class="form-group">
         <%= form.label :portfolio_company_id, "Portfolio Company" %>
         <%= form.select :portfolio_company_id, 
             portfolio_investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, 
-            class: "form-control", "data-action": "change->select#change"  %>
+            class: "form-control", "data-action": "change->select#change", "data-target": "instrument_form_group", "data-url": "#{investment_instruments_path(fund_id: portfolio_investment.fund_id)}", "data-param": "portfolio_company_id" %>
 
         <small class="text-muted">
           Create <%= link_to "New Portfolio Company",
@@ -35,9 +33,9 @@
       </div>
 
       <% investment_instruments = portfolio_investment.portfolio_company ?  portfolio_investment.portfolio_company.investment_instruments : [] %>
-      <div class="form-group" data-select-target="select">
+      <div class="form-group" id="instrument_form_group">
         <%= form.label :investment_instrument_id, "Instrument" %>
-        <%= form.select :investment_instrument_id, investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control" %>
+        <%= form.select :investment_instrument_id, investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control", "data-action": "change->select#change", "data-target": "base_amount_help_text", "data-url": "#{base_amount_form_portfolio_investments_path(params: params.to_unsafe_h)}", "data-param": "investment_instrument_id" %>
 
         <small class="text-muted">
           Create <%= link_to "New Instrument",
@@ -53,9 +51,10 @@
     </div>
 
     <div class="form-group" data-controller="currencyformat">
-      <%= form.label :amount %> <span class="formatted_currency"></span>
-      <%= form.number_field :amount, class: "form-control", step: :any,
+      <%= form.label :base_amount, "Amount" %> <span class="formatted_currency"></span>
+      <%= form.number_field :base_amount, class: "form-control", step: :any,
           data: {action: "input->currencyformat#format"} %>
+      <div id="base_amount_help_text"><small class="text-muted">Enter amount</small></div>
     </div>
 
     <div class="form-group">

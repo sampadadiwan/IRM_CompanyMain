@@ -22,6 +22,10 @@ class ExcerciseNotifier < BaseNotifier
       params[:msg] || "Excercise: #{@excercise}"
     end
 
+    def custom_notification
+      nil
+    end
+
     def url
       excercise_path(id: params[:excercise].id)
     end

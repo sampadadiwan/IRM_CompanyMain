@@ -1,6 +1,7 @@
 class PortfolioInvestment < ApplicationRecord
   include WithCustomField
   include WithFolder
+  include WithExchangeRate
   include ForInvestor
   include Trackable.new
   include PortfolioComputations
@@ -19,6 +20,9 @@ class PortfolioInvestment < ApplicationRecord
   has_many :buys_portfolio_attributions, class_name: "PortfolioAttribution", foreign_key: :bought_pi_id, dependent: :destroy
 
   validates :investment_date, :quantity, :amount_cents, presence: true
+
+  monetize :base_amount_cents, with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
+
   monetize :amount_cents, :cost_cents, :fmv_cents, :gain_cents, :cost_of_sold_cents, with_currency: ->(i) { i.fund.currency }
 
   counter_culture :aggregate_portfolio_investment, column_name: 'quantity', delta_column: 'quantity'
@@ -66,6 +70,18 @@ class PortfolioInvestment < ApplicationRecord
     end
   end
 
+  def compute_amount_cents
+    if fund.currency == investment_instrument.currency || investment_instrument.currency.nil?
+      # No conversion required
+      self.amount_cents = base_amount_cents
+    else
+      # Setup the conversion from the base currency to the fund currency
+      self.amount_cents = convert_currency(investment_instrument.currency, fund.currency, base_amount_cents, investment_date)
+      # This sets the exchange rate being used for the conversion
+      self.exchange_rate = get_exchange_rate(investment_instrument.currency, fund.currency, investment_date)
+    end
+  end
+
   def compute_quantity_as_of_date
     aggregate_portfolio_investment.portfolio_investments.where("investment_date <= ?", investment_date).sum(:quantity)
   end
@@ -89,6 +105,10 @@ class PortfolioInvestment < ApplicationRecord
 
   def cost_cents
     quantity.positive? ? (amount_cents / quantity).abs : 0
+  end
+
+  def base_cost_cents
+    quantity.positive? ? (base_amount_cents / quantity).abs : 0
   end
 
   def buy_sell

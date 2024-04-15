@@ -1,6 +1,7 @@
 class Valuation < ApplicationRecord
   include Trackable.new
   include WithCustomField
+  include WithExchangeRate
 
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true, touch: true
@@ -16,13 +17,7 @@ class Valuation < ApplicationRecord
   include FileUploader::Attachment(:report)
 
   monetize :valuation_cents, :per_share_value_cents,
-           with_currency: lambda { |s|
-                            if s.owner && s.owner.respond_to?(:currency) && s.owner.currency.present?
-                              s.owner.currency
-                            else
-                              s.entity.currency
-                            end
-                          }
+           with_currency: ->(s) { s.currency }
 
   def update_entity
     if owner_type.blank?
@@ -41,5 +36,19 @@ class Valuation < ApplicationRecord
 
   def to_s
     "#{entity} - #{valuation_date}"
+  end
+
+  def currency
+    if investment_instrument
+      investment_instrument.currency
+    elsif owner.respond_to?(:currency) && owner.currency.present?
+      owner.currency
+    else
+      entity.currency
+    end
+  end
+
+  def per_share_value_in(to_currency, as_of)
+    convert_currency(currency, to_currency, per_share_value_cents, as_of)
   end
 end

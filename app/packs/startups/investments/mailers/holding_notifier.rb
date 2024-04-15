@@ -22,6 +22,10 @@ class HoldingNotifier < BaseNotifier
       params[:msg] || "Holding: #{@holding}"
     end
 
+    def custom_notification
+      nil
+    end
+
     def url
       holding_path(id: params[:holding].id)
     end

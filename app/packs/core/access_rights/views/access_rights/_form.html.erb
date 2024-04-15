@@ -36,19 +36,18 @@
             select_employees = true
           end
         %>
-        <div data-controller="select" data-select-url-value="<%= users_url %>"
-           data-select-param-value="email_or_cat">
+        <div data-controller="select">
 
           <div class="form-group">
             <%= form.label :access_type %>
             <%= form.select :email_or_cat, types, {}, class: "form-control", 
-              name: "email_or_cat", "data-action": "change->access#onChange change->select#change" %>
+              name: "email_or_cat", "data-action": "change->access#onChange change->select#change", "data-url": "#{users_url}", "data-param": "email_or_cat", "data-target": "employee_id" %>
           </div>
 
           <% if select_investor_users %>
             <div class="form-group" id="employee_form_group">
               <%= form.label :user_id, "Select Specific User" %>
-              <%= form.select :user_id, [], {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" }  %>
+              <%= form.select :user_id, [], {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple" %>
             </div>
           <% end %>
 
@@ -73,8 +72,7 @@
             "data-action": "change->access#addErrorCheck"  %>
           </div>
 
-        <div data-controller="select" data-select-url-value="<%= investors_path %>"
-           data-select-param-value="metadata">
+        <div data-controller="select">
           
           <% if access_right.owner_type == "SecondarySale" %>
             <div class="form-group" id="metadata_form_group">
@@ -87,7 +85,7 @@
           <div class="form-group" id="investor_form_group">
             <%= form.label :access_to_investor_id, "Select Stakeholder" %>
             <%= form.select :access_to_investor_id, investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, 
-              {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" },
+              {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple",
               "data-action": "change->access#addErrorCheck" %>
           </div>
 

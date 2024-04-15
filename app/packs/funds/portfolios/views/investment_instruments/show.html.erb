@@ -8,6 +8,16 @@
       <%= @investment_instrument.name %>
     </td>
   </tr>
+
+  <tr>
+    <td>
+      Currency
+    </td>
+    <td>
+      <%= @investment_instrument.currency %>
+    </td>
+  </tr>
+
   <tr>
     <td>
       Entity
@@ -43,4 +53,9 @@
 
 <div class="associated_entity">
   <%= render "/portfolio_investments/index", portfolio_investments: @investment_instrument.portfolio_investments %>
+</div>
+
+
+<div class="associated_entity">
+  <%= render "/valuations/index", valuations: @investment_instrument.valuations %>
 </div>

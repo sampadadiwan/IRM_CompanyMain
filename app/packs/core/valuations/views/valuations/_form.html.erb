@@ -54,12 +54,6 @@
 
     <% end %>
 
-    <div class="form-group" data-controller="currencyformat">
-      <%= form.label :valuation, "Company Valuation" %> <span class="formatted_currency"></span>
-      <%= form.number_field :valuation, class: "form-control",  step: :any, 
-          data: {action: "input->currencyformat#format"}  %>
-    </div>
-
     <div class="form-group">
       
       <%= render "layouts/single_upload", form: form, field_label: "Upload the valuation report", 

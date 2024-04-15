@@ -22,6 +22,10 @@ class InvestmentOpportunityNotifier < BaseNotifier
       params[:msg] || "Investment Opportunity: #{@investment_opportunity.name}"
     end
 
+    def custom_notification
+      nil
+    end
+
     def url
       investment_opportunity_path(id: params[:investment_opportunity].id)
     end

@@ -29,13 +29,12 @@
           investor_advisors = current_user.entity.investor_advisors
           users = current_user.entity.employees
         %>
-        <div data-controller="select" data-select-url-value="<%= users_url %>"
-           data-select-param-value="email_or_cat">
+        <div>
 
           <div class="form-group">
             <%= form.label :access_type %>
             <%= form.select :email_or_cat, types, {}, class: "form-control", 
-              name: "email_or_cat", "data-action": "change->access#onChange change->select#change" %>
+              name: "email_or_cat", "data-action": "change->access#onChange" %>
           </div>
 
         </div>
@@ -48,8 +47,7 @@
             "data-action": "change->access#addErrorCheck"  %>
           </div>
 
-        <div data-controller="select" data-select-url-value="<%= investors_path %>"
-           data-select-param-value="metadata">
+        <div>
           
           <div class="form-group" id="metadata_form_group">
               <%= form.label :metadata, "Select All or Self" %>
@@ -60,8 +58,7 @@
           <div class="form-group" id="investor_form_group">
             <%= form.label :access_to_investor_id, "Select Stakeholder" %>
             <%= form.select :access_to_investor_id, investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, 
-              {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", data: { select_target: "select" },
-              "data-action": "change->access#addErrorCheck" %>
+              {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", "data-action": "change->access#addErrorCheck" %>
           </div>
 
         </div>

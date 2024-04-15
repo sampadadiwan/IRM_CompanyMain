@@ -18,10 +18,17 @@ class ApprovalNotifier < BaseNotifier
 
   notification_methods do
     def message
-      @approval_response = params[:approval_response]
-      @approval = @approval_response.approval
-      @custom_notification = @approval.custom_notification(params[:email_method])
+      @approval_response ||= params[:approval_response]
+      @approval ||= @approval_response.approval
+      @custom_notification ||= custom_notification
       @custom_notification&.subject.presence || params[:msg].presence || @approval.title
+    end
+
+    def custom_notification
+      @approval_response ||= params[:approval_response]
+      @approval ||= @approval_response.approval
+      @custom_notification ||= @approval.custom_notification(params[:email_method])
+      @custom_notification
     end
 
     def url

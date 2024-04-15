@@ -1,11 +1,6 @@
 <%= turbo_frame_tag "new_scenario_investment" do %>
 
-<div class="dynamic_form card shadow mb-4" data-controller="access">
-
-  <div class="card-header py-3">
-    <h6 class="m-0 font-weight-bold text-primary">Scenario Investment</h6>
-  </div>
-  <div class="card-body">
+<%= render FormCard.new(title: "Scenario Investment", controller: "access") do %>
       
   <%= form_with(model: scenario_investment) do |form| %>
     <% if scenario_investment.errors.any? %>
@@ -32,13 +27,11 @@
         <%= form.date_field :transaction_date, class: "form-control"  %>
       </div>
 
-      <div data-controller="select" 
-        data-select-url-value="<%= investment_instruments_path %>"   
-        data-select-param-value="portfolio_company_id">
+      <div data-controller="select">
 
         <div class="form-group col">
           <%= form.label :portfolio_company_id %>
-          <%= form.select :portfolio_company_id, scenario_investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control"  %>
+          <%= form.select :portfolio_company_id, scenario_investment.entity.investors.portfolio_companies.order(investor_name: :asc).map{|i| [i.investor_name, i.id]}, {include_blank: true}, class: "form-control", "data-action": "change->select#change", "data-target": "instrument_form_group", "data-url": "#{investment_instruments_path}", "data-param": "portfolio_company_id"  %>
 
           <small class="text-muted">
             Create <%= link_to "New Portfolio Company", 
@@ -52,7 +45,7 @@
 
       
       <% investment_instruments = scenario_investment.new_record? ? [] : scenario_investment.portfolio_company.investment_instruments %>
-      <div class="form-group">
+      <div class="form-group" id="instrument_form_group">
         <%= form.label :investment_instrument_id, "Instrument" %>
         <%= form.select :investment_instrument_id, investment_instruments.map{|i| [i.name, i.id]}, {}, class: "form-control", data: { select_target: "select" }  %>
       </div>
@@ -83,8 +76,6 @@
     </div>
   <% end %>
 
-  </div>
-
-</div>
+<% end %>
 
 <% end %>
