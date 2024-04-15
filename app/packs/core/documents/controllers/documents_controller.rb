@@ -35,6 +35,7 @@ class DocumentsController < ApplicationController
       @folder = Folder.find(params[:folder_id])
       @entity = @folder.entity
       @show_steps = false
+      @owner = @folder.owner
 
       if @folder.entity_id == current_user.entity_id
         @documents = policy_scope(Document)
@@ -122,6 +123,7 @@ class DocumentsController < ApplicationController
 
   # allows to add a button to cancel esigning on document
   def cancel_esign
+    # update the esign status of the document before cancelling
     if Document::SKIP_ESIGN_UPDATE_STATUSES.exclude?(@document.esign_status)
       DigioEsignHelper.new.update_esign_status(@document)
       @document.reload

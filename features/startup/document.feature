@@ -99,7 +99,7 @@ Scenario Outline: Add Sale documents
   Given there is an existing investor "" with "1" users
   Given the investors are added to the sale
   When I visit the sale details page
-  When I click the tab "Documents" 
+  When I click the tab "Documents"
   When I create a new document "<document>"
   And an document should be created
   And an email must go out to the investors for the document
@@ -124,7 +124,7 @@ Scenario Outline: Add Offer documents
   And there is a holding "orig_grant_quantity=100;investment_instrument=Equity" for each employee investor
   Given there are offers "quantity=50;approved=true" for the sale
   When I visit the offer details page
-  When I click the tab "Documents" 
+  When I click the tab "Documents"
   When I create a new document "<document>"
   And an document should be created
   Then the offer document details must be setup right
@@ -148,7 +148,7 @@ Scenario Outline: Add Interest documents
   Given there are offers "quantity=50;approved=true" for the sale
   Given there are "1" interests "quantity=50;short_listed=true" for the sale
   When I visit the interest details page
-  When I click the tab "Documents" 
+  When I click the tab "Documents"
   When I create a new document "<document>"
   And an document should be created
   Then the interest document details must be setup right
@@ -160,3 +160,16 @@ Scenario Outline: Add Interest documents
   	|user	      |entity               |sale             |document	|
   	|  	        |entity_type=Company  |name=Grand Sale  |name=Doc1111|
     |  	        |entity_type=Company  |name=Winter Sale |name=Doc2222|
+
+Scenario Outline: Esignature for a Fund Documeent
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Test fund" for the entity
+  And user goes to add a new document "<document>" for the fund
+  Then user should be able to add esignatures
+  Then user should be able to add estamp_stamps
+  Then user should be able to save the document
+
+Examples:
+  |user	    |entity                       |document   |
+  |  	      |entity_type=Investment Fund  |test doc   |

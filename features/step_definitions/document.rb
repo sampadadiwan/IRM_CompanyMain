@@ -241,3 +241,49 @@ Given('the document is approved') do
   @document.approved_by_id = @user.id
   @document.save
 end
+
+Given('user goes to add a new document {string} for the fund') do |doc_name|
+  @es = @fund.entity.entity_setting
+  @es.stamp_paper_tags = "GJ-100-BOB_Test,DL-100-test"
+  @es.save!
+  visit(fund_path(@fund))
+  # click on element with id documents_tab
+  find("#documents_tab").click
+  find("#doc_actions").click
+  click_on("New Document")
+  fill_in("document_name", with: doc_name)
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/SOA Template.docx'), make_visible: true)
+  # check checkbox id id="document_template"
+  check('document_template')
+end
+
+Then('user should be able to add esignatures') do
+  click_on("Add Signature")
+  expect(page).to have_text("Esign display on page")
+  # click on form's text input field with id starting with document_e_signatures_attributes_...
+  all("input[id^='document_e_signatures_attributes_']").first.click
+
+  datalist = find('#label-list', visible:false)
+
+  # Check for the presence of labels within the datalist
+  datalist.all(:option, visible:false).each do |option|
+    @fund.signature_labels.include?(option.value).should == true
+  end
+  all("input[id^='document_e_signatures_attributes_']").first.set(@fund.signature_labels.first)
+end
+
+Then('user should be able to add estamp_stamps') do
+  click_on("Add Stamp Paper")
+  @fund.entity.entity_setting.stamp_paper_tags.split(",").each do |stamp_paper_tag|
+    expect(page).to have_text stamp_paper_tag
+  end
+  expect(page).to have_text "Sign on page"
+  expect(page).to have_text "Note on page"
+  all("input[id^='document_stamp_papers_attributes_']").first.set("#{@fund.entity.entity_setting.stamp_paper_tags.split(",").first.strip}:1")
+end
+
+Then('user should be able to save the document') do
+  click_on("Save")
+  sleep(2)
+  expect(page).to have_text "Document was successfully saved."
+end
