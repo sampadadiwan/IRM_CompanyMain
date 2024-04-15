@@ -1,3 +1,9 @@
+V7.0.77
+#####################################
+07dba47f1 Added instrument currency and corr FMV calculations in fund currency
+Fixed WA messsages from custom notification
+
+
 V7.0.76    
 #####################################
 3ff5f3022 Fixed issues with really_destroy! for secondary
