@@ -14,7 +14,7 @@ class InvestorKycSebiDataPolicy < InvestorKycPolicy
   end
 
   def show?
-    belongs_to_entity?(user, record)
+    belongs_to_entity?(user, record) && user.curr_role != "investor"
   end
 
   def create?

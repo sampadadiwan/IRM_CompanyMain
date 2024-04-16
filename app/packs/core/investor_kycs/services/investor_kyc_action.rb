@@ -13,7 +13,9 @@ class InvestorKycAction < Trailblazer::Operation
   end
 
   def handle_kyc_sebi_data_errors(ctx, investor_kyc:, **)
-    unless investor_kyc.investor_kyc_sebi_data.valid?
+    if investor_kyc.investor_kyc_sebi_data.valid?
+      investor_kyc.investor_kyc_sebi_data.save!
+    else
       ctx[:errors] = investor_kyc.investor_kyc_sebi_data.errors.full_messages.join(", ")
       Rails.logger.error("Investor KYC SEBI Data errors: #{investor_kyc.investor_kyc_sebi_data.errors.full_messages}")
     end

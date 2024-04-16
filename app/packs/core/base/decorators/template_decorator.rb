@@ -41,6 +41,10 @@ class TemplateDecorator < ApplicationDecorator
       attr_name = method_name.to_s.gsub("dollars_", "")
       return send(attr_name).to_i.to_words.humanize
 
+    elsif method_name.to_s.include?("list_")
+      attr_name = method_name.to_s.gsub("list_", "")
+      return send(attr_name)&.join("; ")
+
     end
     super
   end
