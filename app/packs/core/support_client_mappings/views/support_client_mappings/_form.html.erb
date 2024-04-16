@@ -1,37 +1,41 @@
-<%= form_with(model: support_client_mapping) do |form| %>
-  <% if support_client_mapping.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(support_client_mapping.errors.count, "error") %> prohibited this support_client_mapping from being saved:</h2>
+<%= render FormCard.new(title: "Support : #{support_client_mapping.entity.presence || 'New'}") do %>
 
-      <ul>
-        <% support_client_mapping.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+  <%= form_with(model: support_client_mapping) do |form| %>
+    <% if support_client_mapping.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(support_client_mapping.errors.count, "error") %> prohibited this support_client_mapping from being saved:</h2>
+
+        <ul>
+          <% support_client_mapping.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= form.label :user_id %>
+      <%= form.select :user_id, User.support_users.map{|u| [u.full_name, u.id]}, {}, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :entity_id, "Entity ID" %>
+      <%= form.text_field :entity_id, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :end_date %>
+      <%= form.date_field :end_date, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :enabled %>
+      <%= form.check_box :enabled, class: "form-check-input"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>
 
-  <div class="form-group">
-    <%= form.label :user_id %>
-    <%= form.select :user_id, User.support_users.map{|u| [u.full_name, u.id]}, {}, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :entity_id, "Entity ID" %>
-    <%= form.text_field :entity_id, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :end_date %>
-    <%= form.date_field :end_date, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :enabled %>
-    <%= form.check_box :enabled, class: "form-check-input"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
 <% end %>

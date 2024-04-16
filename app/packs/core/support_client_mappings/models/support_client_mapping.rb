@@ -8,15 +8,35 @@ class SupportClientMapping < ApplicationRecord
   end
 
   def self.disable_expired
-    SupportClientMapping.where('enabled = ? and end_date < ?', true, Time.zone.today).update_all(enabled: false)
+    SupportClientMapping.where('enabled = ? and end_date < ?', true, Time.zone.today).find_each do |scm|
+      scm.user.disable_support
+    end
   end
 
-  after_create :enable_support
+  after_commit :enable_disable
+  def enable_disable
+    if enabled
+      enable_support
+    else
+      disable_support
+    end
+  end
+
   def enable_support
+    update_column(:enabled, true)
     entity.permissions.set(:enable_support)
     entity.save
     entity.employees.each do |user|
       user.update_column(:enable_support, true)
+    end
+  end
+
+  def disable_support
+    update_column(:enabled, false)
+    entity.permissions.unset(:enable_support)
+    entity.save
+    entity.employees.each do |user|
+      user.update_column(:enable_support, false)
     end
   end
 end

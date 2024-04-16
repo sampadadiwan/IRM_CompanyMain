@@ -13,6 +13,8 @@ class SupportClientMappingsController < ApplicationController
   def new
     @support_client_mapping = SupportClientMapping.new
     @support_client_mapping.end_date = Time.zone.today + 1.week
+    @support_client_mapping.enabled = true
+    @support_client_mapping.entity_id = params[:entity_id]
     authorize @support_client_mapping
   end
 

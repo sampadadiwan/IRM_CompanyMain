@@ -15,12 +15,10 @@ every 1.day, at: '02:01 am' do
   runner "DocumentEsignUpdateJob.perform_now"
   # Delete old notifications
   runner "Noticed::Notification.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
-  runner "Noticed::Event.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"  
+  runner "Noticed::Event.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
 end
 
 every 1.week, at: '02:00 am' do
-  # Ensure that enable_support is set to false for all users and EOD
-  runner "User.disable_support_for_all"
   # Ensure that enable is set to false for all SupportClientMappings after end_date
   runner "SupportClientMapping.disable_expired"
 end
