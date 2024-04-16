@@ -17,7 +17,7 @@ class InvestorKycsController < ApplicationController
       format.html
       format.turbo_stream
       format.xlsx
-      format.json { render json: InvestorKycDatatable.new(params, investor_kycs: @investor_kycs) }
+      format.json { render json: InvestorKycDatatable.new(params, investor_kycs: @investor_kycs) if params[:jbuilder].blank? }
     end
   end
 

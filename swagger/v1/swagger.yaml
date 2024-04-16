@@ -1,0 +1,167 @@
+openapi: 3.0.3
+info:
+  title: My API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3001
+  - url: https://app.caphive.com
+paths:
+  /users:
+    get:
+      summary: Get a list of users for the authenticated user
+      operationId: getUsers
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A list of users for the authenticated user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    user:
+      summary: Create a new user for the authenticated user
+      operationId: createUser
+      security:
+        - BearerAuth: []
+      requestBody:
+        description: The user to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: The created user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /users/{userId}:
+    parameters:
+      - in: path
+        name: userId
+        required: true
+        description: The ID of the user to retrieve, update or delete
+        schema:
+          type: integer
+    get:
+      summary: Get a user by ID
+      operationId: getUserById
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: The user with the given ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update a user by ID
+      operationId: updateUserById
+      security:
+        - BearerAuth: []
+      requestBody:
+        description: The updated user data
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '200':
+          description: The updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete a user by ID
+      operationId: deleteUserById
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: The user was successfully deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The unique identifier for the user
+        first_name:
+          type: string
+          description: The first name of the user
+        last_name:
+          type: string
+          description: The last name of the user        
+      required:
+        - id
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    BadRequest:
+      description: Invalid request body or parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: A description of the error
+            required:
+              - message
+    Unauthorized:
+      description: Authentication credentials were missing or invalid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: A description of the error
+            required:
+              - message
+    NotFound:
+      description: Record not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: A description of the error
+            required:
+              - message

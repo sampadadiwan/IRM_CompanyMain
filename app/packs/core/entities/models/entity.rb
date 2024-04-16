@@ -269,4 +269,11 @@ class Entity < ApplicationRecord
     list = exchange_rates.pluck(:from) << currency
     list.uniq
   end
+
+  def merge_entity(retained_entity, defunct_entity)
+    Investor.where(investor_entity_id: defunct_entity.id).update_all(investor_entity_id: retained_entity.id)
+    InvestorAccess.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
+    User.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
+    defunct_entity.update_column(:name, "#{defunct_entity.name} - Defunct")
+  end
 end

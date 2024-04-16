@@ -1,6 +1,6 @@
 class UsersController < ApplicationController
   before_action :authenticate_user!, except: %w[magic_link no_password_login welcome]
-  skip_before_action :verify_authenticity_token, only: %i[magic_link]
+  # skip_before_action :verify_authenticity_token, only: %i[magic_link]
 
   before_action :set_user, only: %w[show update destroy edit]
   after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona magic_link no_password_login]

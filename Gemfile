@@ -38,11 +38,14 @@ gem "stimulus-rails"
 
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
+gem 'rswag-api'
+gem 'rswag-ui'
 
 # Use Redis adapter to run Action Cable in production
 gem "redis", "~> 4.0"
 
 gem 'devise'
+gem 'devise-api', github: 'nejdetkadir/devise-api', branch: 'main'
 gem 'has_scope'
 gem "pundit", git: "https://github.com/varvet/pundit.git"
 gem "rolify"

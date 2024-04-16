@@ -4,15 +4,29 @@ class ApplicationController < ActionController::Base
   include Pundit::Authorization
   include PublicActivity::StoreController
 
-  skip_before_action :verify_authenticity_token if ENV['SKIP_AUTHENTICITY_TOKEN'] == "true"
-
   after_action :verify_authorized, except: %i[index search bulk_actions], unless: :devise_controller?
   after_action :verify_policy_scoped, only: [:index]
 
   before_action :set_current_entity
-  before_action :authenticate_user!
-  before_action :set_search_controller
+  before_action :authenticate_user!, unless: :devise_controller?
   before_action :configure_permitted_parameters, if: :devise_controller?
+
+  def authenticate_user!
+    if request.headers['Authorization'].present?
+      authenticate_devise_api_token!
+      # set the current user to the user that is logged in
+      @current_user = current_devise_api_user
+      # Ensure that we always use the jbuilder and not the DataTable json (thats for UI only)
+      params.merge(jbuilder: true)
+    else
+      # Authenticate using normal devise authentication using UI
+      super
+    end
+  end
+
+  def verify_authenticity_token
+    super if request.headers['Authorization'].blank? && ENV['SKIP_AUTHENTICITY_TOKEN'] != "true"
+  end
 
   # This is a common action for all models which have filters. Bulk actions can be applied to filtered results. A Job "#{controller_name}BulkActionJob", needs to be defined, which will be passed the ids of the filtered results. and the bulk action to perform on them. Note that the controller must implement a fetch_rows method which returns the filtered results.
   def bulk_actions
@@ -31,15 +45,12 @@ class ApplicationController < ActionController::Base
     devise_parameter_sanitizer.permit(:sign_up, keys: %i[first_name last_name phone role entity_id whatsapp_enabled dept call_code])
   end
 
-  SEARCH_CONTROLLERS = %w[notes access_rights entities holdings excercises
-                          holding_audit_trails offers documents tasks investment_opportunities].freeze
-
-  def set_search_controller
-    @search_controller = SEARCH_CONTROLLERS.include?(params[:controller]) ? params[:controller] : nil
-  end
-
   rescue_from Pundit::NotAuthorizedError do |_exception|
-    redirect_to root_path, alert: "Access Denied"
+    if request.headers['Authorization'].present?
+      render json: { error: "Access Denied" }, status: :forbidden
+    else
+      redirect_to root_path, alert: "Access Denied"
+    end
   end
 
   rescue_from ActionController::InvalidAuthenticityToken do |_exception|

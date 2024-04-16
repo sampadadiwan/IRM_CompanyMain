@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_04_14_064103) do
+ActiveRecord::Schema[7.1].define(version: 2024_04_16_073025) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -888,6 +888,22 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_14_064103) do
     t.index ["document_folder_id"], name: "index_deals_on_document_folder_id"
     t.index ["entity_id"], name: "index_deals_on_entity_id"
     t.index ["form_type_id"], name: "index_deals_on_form_type_id"
+  end
+
+  create_table "devise_api_tokens", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "resource_owner_type", null: false
+    t.bigint "resource_owner_id", null: false
+    t.string "access_token", null: false
+    t.string "refresh_token"
+    t.integer "expires_in", null: false
+    t.datetime "revoked_at"
+    t.string "previous_refresh_token"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["access_token"], name: "index_devise_api_tokens_on_access_token"
+    t.index ["previous_refresh_token"], name: "index_devise_api_tokens_on_previous_refresh_token"
+    t.index ["refresh_token"], name: "index_devise_api_tokens_on_refresh_token"
+    t.index ["resource_owner_type", "resource_owner_id"], name: "index_devise_api_tokens_on_resource_owner"
   end
 
   create_table "document_chats", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

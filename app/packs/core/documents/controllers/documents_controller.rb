@@ -2,7 +2,7 @@ class DocumentsController < ApplicationController
   include ActiveStorage::SetCurrent
   include DocumentHelper
 
-  skip_before_action :verify_authenticity_token, :set_current_entity, :authenticate_user!, :set_search_controller, only: %i[signature_progress]
+  skip_before_action :verify_authenticity_token, :authenticate_user!, only: %i[signature_progress]
 
   before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign]
 
@@ -199,6 +199,8 @@ class DocumentsController < ApplicationController
       fields = %w[entity_id owner_id owner_type description owner_tag orignal download printing]
       dup = @document.duplicate(fields)
       redirect_to new_document_url({ document: dup.attributes.slice(*fields) }), notice: "Document #{@document.name} was successfully saved. Please upload new document below."
+    elsif params[:redirect_to].present?
+      redirect_to params[:redirect_to], notice: "Document was successfully saved."
     elsif @document.owner
       redirect_to [@document.owner, { tab: "docs-tab" }], notice: "Document was successfully saved."
     else
