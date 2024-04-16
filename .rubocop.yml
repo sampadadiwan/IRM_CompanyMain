@@ -55,6 +55,7 @@ Lint/UselessAssignment:
 
 Rails/SkipsModelValidations:
   Exclude:
+    - 'app/packs/core/support_client_mappings/models/support_client_mapping.rb'
     - 'app/packs/misc/import_uploads/services/import_util.rb'
     - 'app/packs/misc/form_types/models/form_type.rb'
     - 'app/packs/core/documents/models/concerns/with_e_signatures.rb'

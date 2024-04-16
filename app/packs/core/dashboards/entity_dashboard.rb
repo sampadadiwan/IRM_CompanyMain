@@ -12,7 +12,7 @@ class EntityDashboard < Administrate::BaseDashboard
     documents: Field::HasMany,
     employees: Field::HasMany,
     investors: Field::HasMany,
-    investor_entities: Field::HasMany,
+    investees: Field::HasMany,
     entity_setting: Field::HasOne,
     investments: Field::HasMany,
     id: Field::Number,
@@ -72,7 +72,7 @@ class EntityDashboard < Administrate::BaseDashboard
     instrument_types
     employees
     investors
-    investor_entities
+    investees
     entity_setting
   ].freeze
 

@@ -13,7 +13,8 @@
         Entity
       </td>
       <td>
-        <%= link_to @support_client_mapping.entity %>
+        <%= link_to @support_client_mapping.entity.name, 
+            "/admin/entities/#{@support_client_mapping.entity.id}" %>
       </td>
     </tr>
     <tr>

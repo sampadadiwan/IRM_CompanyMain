@@ -7,9 +7,16 @@ class SupportClientMapping < ApplicationRecord
     "#{user} - #{entity}"
   end
 
-  # rubocop:disable Rails/SkipsModelValidations
   def self.disable_expired
     SupportClientMapping.where('enabled = ? and end_date < ?', true, Time.zone.today).update_all(enabled: false)
   end
-  # rubocop:enable Rails/SkipsModelValidations
+
+  after_create :enable_support
+  def enable_support
+    entity.permissions.set(:enable_support)
+    entity.save
+    entity.employees.each do |user|
+      user.update_column(:enable_support, true)
+    end
+  end
 end
