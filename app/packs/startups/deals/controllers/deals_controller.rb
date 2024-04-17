@@ -40,7 +40,7 @@ class DealsController < ApplicationController
             'Content-Disposition'
           ] = "attachment; filename=deal.xlsx"
 
-          render "grid_view"
+          render params[:kanban].present? ? "show" : "grid_view" 
         end
         format.html { render "grid_view" }
       end

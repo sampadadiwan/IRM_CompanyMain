@@ -1,5 +1,6 @@
 class EsopLetterJob < ApplicationJob
   queue_as :doc_gen
+  sidekiq_options retry: 1
 
   def perform(id)
     Chewy.strategy(:sidekiq) do

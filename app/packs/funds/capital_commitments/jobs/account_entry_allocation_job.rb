@@ -1,5 +1,5 @@
 class AccountEntryAllocationJob < ApplicationJob
-  queue_as :doc_gen
+  queue_as :high
   # Ensure this job does not run multiple times if it fails
   sidekiq_options retry: 0
 

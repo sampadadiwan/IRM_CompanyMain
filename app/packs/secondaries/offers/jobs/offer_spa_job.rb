@@ -1,5 +1,6 @@
 class OfferSpaJob < ApplicationJob
   queue_as :doc_gen
+  sidekiq_options retry: 1
 
   def perform(offer_id, user_id: nil)
     succeeded = false

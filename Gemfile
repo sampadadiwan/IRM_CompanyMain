@@ -60,7 +60,7 @@ gem 'sassc-rails'
 # Background Jobs
 gem 'sidekiq', '~> 7.0'
 
-gem 'action_mailbox_amazon_ingress', '~> 0.1.3'
+gem 'action_mailbox_amazon_ingress'
 gem "aws-sdk-s3", require: false
 # Elastic search client
 gem 'chewy'

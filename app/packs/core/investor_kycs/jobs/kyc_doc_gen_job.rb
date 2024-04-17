@@ -1,5 +1,6 @@
 class KycDocGenJob < ApplicationJob
   queue_as :serial
+  sidekiq_options retry: 1
 
   def perform(investor_kyc_id, document_template_ids, start_date, end_date,
               user_id: nil, entity_id: nil)

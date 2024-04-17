@@ -1,5 +1,6 @@
 class CapitalCommitmentDocJob < ApplicationJob
   queue_as :doc_gen
+  sidekiq_options retry: 1
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(capital_commitment_id, user_id = nil, template_name: nil)
