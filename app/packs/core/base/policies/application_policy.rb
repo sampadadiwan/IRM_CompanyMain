@@ -66,7 +66,7 @@ class ApplicationPolicy
 
   # This method checks if the user has the extended permission to perform the action on the record
   def crud?(user, record, crud = "read")
-    perm = "#{record.class.name.underscore}_#{crud}"
+    perm = "#{self.class.name.gsub("Policy", "").underscore}_#{crud}"
     user.get_extended_permissions.set?(perm.to_sym)
   end
 
