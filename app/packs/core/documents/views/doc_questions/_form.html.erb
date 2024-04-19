@@ -1,0 +1,35 @@
+<%= render FormCard.new(title: "Question : #{doc_question.tags.presence || 'New'}") do %>
+
+  <%= form_with(model: doc_question) do |form| %>
+    <% if doc_question.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(doc_question.errors.count, "error") %> prohibited this doc_question from being saved:</h2>
+
+        <ul>
+          <% doc_question.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+
+    <div class="form-group">
+      <%= form.label :tags %>
+      <%= form.text_field :tags, class: "form-control"  %>
+      <span class="text-muted">Comma separated tags</span>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :question %>
+      <%= form.text_area :question, class: "form-control"  %>
+      <span class="text-muted">Question to be answered by the LLM for docs with the tags above.</span>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+    </div>
+  <% end %>
+
+<% end %>

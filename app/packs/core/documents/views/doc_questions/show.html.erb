@@ -1,0 +1,27 @@
+<%= render FormCard.new(title: "#{@doc_question}") do %>
+  <table class="table table-bordered dataTable">
+    
+    <tr>
+      <td>
+        Tags
+      </td>
+      <td>
+        <%= @doc_question.tags %>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Question
+      </td>
+      <td>
+        <%= @doc_question.question %>
+      </td>
+    </tr>
+  </table>
+  <div class="associated_entity">
+    <% if policy(@doc_question).update? %>
+      <%= link_to "Edit", edit_doc_question_path(@doc_question), {class: "btn btn-outline-primary"} %> 
+      <%= button_to "Delete", @doc_question, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+    <% end %>
+  </div>
+<% end %>

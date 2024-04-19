@@ -1,37 +1,41 @@
-<%%= form_with(model: <%= model_resource_name %>) do |form| %>
-  <%% if <%= singular_table_name %>.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%%= pluralize(<%= singular_table_name %>.errors.count, "error") %> prohibited this <%= singular_table_name %> from being saved:</h2>
+<%%= render FormCard.new(title: "<%= human_name.pluralize.titleize %> : #{<%=model_resource_name%>.presence || 'New'}") do %>
 
-      <ul>
-        <%% <%= singular_table_name %>.errors.each do |error| %>
-          <li><%%= error.full_message %></li>
-        <%% end %>
-      </ul>
+  <%%= form_with(model: <%= model_resource_name %>) do |form| %>
+    <%% if <%= singular_table_name %>.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%%= pluralize(<%= singular_table_name %>.errors.count, "error") %> prohibited this <%= singular_table_name %> from being saved:</h2>
+
+        <ul>
+          <%% <%= singular_table_name %>.errors.each do |error| %>
+            <li><%%= error.full_message %></li>
+          <%% end %>
+        </ul>
+      </div>
+    <%% end %>
+
+  <% attributes.each do |attribute| -%>
+    <div class="form-group">
+  <% if attribute.password_digest? -%>
+      <%%= form.label :password %>
+      <%%= form.password_field :password , class: "form-control" %>
+    </div>
+
+    <div class="form-group">
+      <%%= form.label :password_confirmation %>
+      <%%= form.password_field :password_confirmation, class: "form-control"  %>
+  <% elsif attribute.attachments? -%>
+      <%%= form.label :<%= attribute.column_name %> %>
+      <%%= form.<%= attribute.field_type %> :<%= attribute.column_name %>, multiple: true %>
+  <% else -%>
+      <%%= form.label :<%= attribute.column_name %> %>
+      <%%= form.<%= attribute.field_type %> :<%= attribute.column_name %>, class: "form-control"  %>
+  <% end -%>
+    </div>
+
+  <% end -%>
+    <div class="form-group">
+      <%%= form.submit "Save", {class: "btn btn-outline-primary"}%>
     </div>
   <%% end %>
 
-<% attributes.each do |attribute| -%>
-  <div class="form-group">
-<% if attribute.password_digest? -%>
-    <%%= form.label :password %>
-    <%%= form.password_field :password , class: "form-control" %>
-  </div>
-
-  <div class="form-group">
-    <%%= form.label :password_confirmation %>
-    <%%= form.password_field :password_confirmation, class: "form-control"  %>
-<% elsif attribute.attachments? -%>
-    <%%= form.label :<%= attribute.column_name %> %>
-    <%%= form.<%= attribute.field_type %> :<%= attribute.column_name %>, multiple: true %>
-<% else -%>
-    <%%= form.label :<%= attribute.column_name %> %>
-    <%%= form.<%= attribute.field_type %> :<%= attribute.column_name %>, class: "form-control"  %>
-<% end -%>
-  </div>
-
-<% end -%>
-  <div class="form-group">
-    <%%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
 <%% end %>
