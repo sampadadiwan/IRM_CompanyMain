@@ -1,4 +1,10 @@
 FactoryBot.define do
+  factory :doc_question do
+    entity { nil }
+    tags { "MyString" }
+    question { "MyText" }
+  end
+
   factory :support_client_mapping do
     user { nil }
     entity { nil }

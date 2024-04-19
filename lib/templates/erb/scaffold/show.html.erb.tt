@@ -15,10 +15,10 @@
 </table>
 
 <div class="associated_entity">
-  <%%= link_to "Edit", <%= edit_helper(type: :path) %>, {class: "btn btn-outline-primary"} %> |
-  <%%= link_to "Back", :back, {class: "btn btn-outline-primary"} %> |
-
-  <%%= button_to "Delete", <%= model_resource_name(prefix: "@") %>, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <%% if policy(<%= model_resource_name(prefix: "@") %>).update? %>
+    <%%= link_to "Edit", <%= edit_helper(type: :path) %>, {class: "btn btn-outline-primary"} %> 
+    <%%= button_to "Delete", <%= model_resource_name(prefix: "@") %>, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <%% end %>
 </div>
 
 <%% end %>
