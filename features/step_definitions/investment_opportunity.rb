@@ -43,9 +43,15 @@
   
   Then('I should see the investment_opportunity in all investment_opportunities page') do
     visit(investment_opportunities_path)
+    force_units = @investment_opportunity.default_currency_units
     expect(page).to have_content(@investment_opportunity.company_name)
-    expect(page).to have_content(money_to_currency @investment_opportunity.fund_raise_amount)
-    expect(page).to have_content(money_to_currency @investment_opportunity.min_ticket_size)
+    expect(page).to have_content(money_to_currency @investment_opportunity.fund_raise_amount, {force_units: })
+
+    if force_units == "Crores" && @investment_opportunity.min_ticket_size.to_d < 100_00000
+      # If committed_amount is less than a crore, then show in lakhs
+      force_units = "Lakhs"
+    end
+    expect(page).to have_content(money_to_currency @investment_opportunity.min_ticket_size, {force_units:})
     expect(page).to have_content(@investment_opportunity.last_date.strftime("%d/%m/%Y"))    
   end
 
