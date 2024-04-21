@@ -1,0 +1,19 @@
+wb = xlsx_package.workbook
+
+form_type, custom_field_names, custom_headers = get_form_type("KpiReport")
+
+wb.add_worksheet(name: "KpiReports") do |sheet|
+  # Create the header row
+  sheet.add_row(["Kpi"] + kpi_reports.collect(&:as_of))
+  sheet.add_row([] + kpi_reports.collect(&:tag_list))
+
+  # Create entries for each item
+  @kpi_reports.each do |o|
+    custom_field_values = get_custom_values(o, form_type, custom_field_names)
+
+    investor_name = o.investor.investor_name
+    interest = o.interest
+
+    sheet.add_row([o.id, o.user.full_name, o.user.email, investor_name, o.holding.funding_round.name, o.quantity, o.percentage, o.allocation_quantity, o.allocation_percentage, o.final_price, money_to_currency(o.allocation_amount, params), o.approved, o.full_name, o.address, o.PAN, o.pan_verified, o.bank_account_number, o.ifsc_code, o.bank_verified, o.final_agreement, interest&.buyer_entity_name, o.created_at, o.updated_at] + custom_field_values)
+  end
+end

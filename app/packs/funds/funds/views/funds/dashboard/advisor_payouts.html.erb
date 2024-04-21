@@ -1,0 +1,70 @@
+<% @account_entries = @fund.account_entries.where(entry_type: "Advisor Payout") %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Advisor Payouts</h1>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+
+  <table class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>
+          Advisor Name
+        </th>
+        <th>
+          Investing Entity
+        </th>
+        <th>
+          Committed Amount
+        </th>
+        <th>
+          Folio Number
+        </th>
+        <th>
+          Fees Payable
+        </th>
+        <th>
+          For
+        </th>
+        <th>
+          Start Date
+        </th>
+        <th>
+          End Date
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @account_entries.each do |account_entry| %>
+        <tr>
+          <td>
+            <%= account_entry.capital_commitment.properties["advisor_name"] %>
+          </td>
+          <td>
+            <%= @account_entry.capital_commitment.investor_name %>
+          </td>
+          <td>
+            <%= money_to_currency @account_entry.capital_commitment.committed_amount, params %>
+          </td>
+          <td>
+            <%= @account_entry.capital_commitment.folio_id %>
+          </td>
+          <td>
+            <%= money_to_currency @account_entry.amount, params %>
+          </td>
+          <td>
+            <%=  @account_entry.name %>
+          </td>
+          <td>
+            <%= l @account_entry.start_date %>
+          </td>
+          <td>
+            <%= l @account_entry.end_date %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+</div>

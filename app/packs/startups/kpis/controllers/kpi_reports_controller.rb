@@ -25,6 +25,7 @@ class KpiReportsController < ApplicationController
 
     respond_to do |format|
       format.html { render :index }
+      format.xlsx { render :index }
       format.json { render json: KpiReportDatatable.new(params, kpi_reports: @kpi_reports) }
     end
   end

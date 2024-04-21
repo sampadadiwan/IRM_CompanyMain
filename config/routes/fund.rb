@@ -102,4 +102,5 @@ resources :investment_opportunities do
   get 'search', on: :collection
   patch 'send_notification', on: :member
   get 'finalize_allocation', on: :member
+  get 'no_password_show', on: :collection
 end

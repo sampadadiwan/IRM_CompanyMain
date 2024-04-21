@@ -1,0 +1,14 @@
+wb = xlsx_package.workbook
+
+form_type, custom_field_names, custom_headers = get_form_type("ExpressionOfInterest")
+
+wb.add_worksheet(name: "ExpressionOfInterest") do |sheet|
+  # Create the header row
+  sheet.add_row(["Created By", "Investor", "Investing Entity", "Amount", "Approved", "Verified", "Allocation %", "Allocation Amount"] + custom_headers)
+
+  # Create entries for each item
+  @expression_of_interests.each do |eoi|
+    custom_field_values = get_custom_values(eoi, form_type, custom_field_names)
+    sheet.add_row [eoi.user.full_name, eoi.investor.investor_name, eoi.investor_name, eoi.amount, eoi.approved, eoi.verified, eoi.allocation_percentage, eoi.allocation_amount] + custom_field_values
+  end
+end

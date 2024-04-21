@@ -1,13 +1,15 @@
 class InvestmentOpportunitiesController < ApplicationController
+  before_action :authenticate_user!, except: %i[no_password_show]
   before_action :set_investment_opportunity, only: %i[show edit update destroy toggle allocate send_notification finalize_allocation]
 
+  skip_after_action :verify_authorized, only: [:no_password_show]
   # GET /investment_opportunities or /investment_opportunities.json
   def index
     authorize(InvestmentOpportunity)
     @investment_opportunities = policy_scope(InvestmentOpportunity)
 
     @investment_opportunities = @investment_opportunities.where(entity_id: params[:entity_id]) if params[:entity_id].present?
-
+    @investment_opportunities = @investment_opportunities.where("tag_list like ?", "%#{params[:tag]}%") if params[:tag].present?
     @investment_opportunities = @investment_opportunities.page(params[:page])
   end
 
@@ -27,6 +29,16 @@ class InvestmentOpportunitiesController < ApplicationController
 
   # GET /investment_opportunities/1 or /investment_opportunities/1.json
   def show; end
+
+  # Called when advisors share a link to the IO, the IO is shared without a password
+  def no_password_show
+    @investment_opportunity = InvestmentOpportunity.find_signed(params[:signed_id], purpose: "shared_by_#{params[:shared_by]}")
+    if @investment_opportunity.shareable
+      render "show"
+    else
+      redirect_to root_path, alert: "You are not authorized to view this page"
+    end
+  end
 
   # GET /investment_opportunities/new
   def new
@@ -130,7 +142,6 @@ class InvestmentOpportunitiesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investment_opportunity_params
-    params.require(:investment_opportunity).permit(:entity_id, :company_name, :fund_raise_amount, :valuation, :min_ticket_size, :last_date, :currency, :logo, :video, :tag_list, :details, :buyer_docs_list,
-                                                   :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+    params.require(:investment_opportunity).permit(:entity_id, :company_name, :fund_raise_amount, :valuation, :min_ticket_size, :last_date, :currency, :logo, :video, :tag_list, :details, :buyer_docs_list, :shareable, :form_type_id, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

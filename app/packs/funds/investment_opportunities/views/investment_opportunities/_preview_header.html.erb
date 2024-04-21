@@ -2,7 +2,7 @@
     <div class="card w-100 bg-primary-subtle overflow-hidden shadow-none">
     <div class="card-body position-relative">
         <div class="row">
-        <div class="col-sm-10">
+        <div class="col-sm-9">
             <div class="d-flex align-items-center mb-7">            
                 <h3 class="mb-1 fw-semibold fs-8 d-flex align-content-center"><%= investment_opportunity.company_name %></h3>
             </div>
@@ -14,17 +14,27 @@
                 <% end %>            
             </div>
         </div>
-        <div class="col-sm-2">
-            <% if false && investment_opportunity.logo.present? %>
-                <%= image_tag investment_opportunity.logo.url(expires_in: 60*60*24*7), class: "ci-logo" %> 
-            <% end %>
+        <div class="col-sm-3">
+            
+            <div class="d-flex align-items-center mb-7"></div>
 
-            <div class="d-flex align-items-center mb-7">            
-                
-            </div>
-            <div class="d-flex align-items-center">                        
-                <%= link_to "Express Interest", new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-outline-primary btn-lg btn-hover-shadow"}  %>
-            </div>
+            <% if current_user %>
+                <div class="d-flex align-items-center">         
+
+                    <%= link_to "Express Interest", new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-primary btn-lg btn-hover-shadow"}  %>
+
+                    
+                    <% if investment_opportunity.shareable %>
+                        <a class="btn btn-primary btn-lg" role="button" title="Copy URL for Sharing"
+                            class="fas fa-lg fa-copy" data-action="click->confirm#copy" data-target="#copy_io_link" data-notify="#copy_io_link_notice"> Copy URL 
+                        </a>
+
+                        <span id="copy_io_link" class="d-none"><%= io_magic_link(investment_opportunity, current_user)  %></span>
+                        <span id="copy_io_link_notice" class="d-none"></span>
+                    <% end %>
+        
+                </div>
+            <% end %>
         </div>
         </div>
     </div>

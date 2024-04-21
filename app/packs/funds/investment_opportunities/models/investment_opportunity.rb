@@ -89,4 +89,8 @@ class InvestmentOpportunity < ApplicationRecord
     end
   end
   # rubocop:enable Rails/SkipsModelValidations
+
+  def default_currency_units
+    currency == "INR" ? "Crores" : "Million"
+  end
 end

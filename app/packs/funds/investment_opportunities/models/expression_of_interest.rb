@@ -16,6 +16,7 @@ class ExpressionOfInterest < ApplicationRecord
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   validate :check_amount
+  validates :investor_name, length: { maximum: 100 }
   counter_culture :investment_opportunity,
                   column_name: proc { |o| o.approved ? 'eoi_amount_cents' : nil },
                   delta_column: 'amount_cents',

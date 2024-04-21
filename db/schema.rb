@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_04_19_062829) do
+ActiveRecord::Schema[7.1].define(version: 2024_04_19_102722) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1198,6 +1198,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_19_062829) do
     t.bigint "document_folder_id"
     t.json "json_fields"
     t.bigint "investor_kyc_id"
+    t.string "investor_name", limit: 100
     t.index ["document_folder_id"], name: "index_expression_of_interests_on_document_folder_id"
     t.index ["entity_id"], name: "index_expression_of_interests_on_entity_id"
     t.index ["eoi_entity_id"], name: "index_expression_of_interests_on_eoi_entity_id"
@@ -1782,6 +1783,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_19_062829) do
     t.string "tag_list", limit: 120
     t.bigint "document_folder_id"
     t.json "json_fields"
+    t.boolean "shareable", default: false
     t.index ["document_folder_id"], name: "index_investment_opportunities_on_document_folder_id"
     t.index ["entity_id"], name: "index_investment_opportunities_on_entity_id"
     t.index ["form_type_id"], name: "index_investment_opportunities_on_form_type_id"

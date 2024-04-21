@@ -77,6 +77,11 @@
       <%= form.rich_text_area :details, class: "form-control trix-content"  %>
     </div>
 
+    <div class="form-group">
+      <%= form.label :shareable %>
+      <%= form.check_box :shareable, class: "form-check-input"  %>
+      <span class="text-muted"> Enable sharing a link of this opportunity, where anyone with the link can see the details. </span>
+    </div>
 
     <div class="form-group">
       <%= form.submit "Save", {class: "btn btn-outline-primary"}%>

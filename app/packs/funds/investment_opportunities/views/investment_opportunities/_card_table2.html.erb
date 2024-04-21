@@ -1,6 +1,7 @@
-<div class="row">
+<% col_size ||= 4 %>
+<div class="io_facts row">
 
-  <div class="col">
+  <div class="col-<%=col_size%>">
     <div class="card">
       <div class="card-body">
         <div class="d-flex flex-row align-items-center">
@@ -17,8 +18,14 @@
     </div>
   </div>
 
+  <% 
+    if params[:force_units] == "Crores" && investment_opportunity.min_ticket_size.to_d < 100_00000
+        # If committed_amount is less than a crore, then show in lakhs
+        params[:force_units] = "Lakhs"
+    end 
+  %>
 
-  <div class="col">
+  <div class="col-<%=col_size%>">
     <div class="card">
       <div class="card-body">
         <div class="d-flex flex-row align-items-center">
@@ -27,7 +34,7 @@
             <i class="ti ti-ticket fs-6"></i>
           </div>
           <div class="ms-3 align-self-center">
-            <h3 class="mb-0 fs-6"><%= money_to_currency investment_opportunity.min_ticket_size, {} %></h3>
+            <h3 class="mb-0 fs-6"><%= money_to_currency investment_opportunity.min_ticket_size, params %></h3>
             <span class="text-muted">Min Ticket Size</span>
           </div>
         </div>
@@ -35,8 +42,7 @@
     </div>
   </div>
 
-
-  <div class="col">
+  <div class="col-<%=col_size%>">
     <div class="card">
       <div class="card-body">
         <div class="d-flex flex-row align-items-center">
@@ -52,5 +58,29 @@
       </div>
     </div>
   </div>
-    
+
+  <% if show_tags %>
+
+  <% tags = investment_opportunity.tag_list&.split(",") %>
+  
+  <div class="col-<%=col_size%>">
+    <div class="card">
+      <div class="card-body">
+        <div class="row text-center">
+          <div
+            class="">
+            <i class=""></i>
+          </div>
+          <div class="text-center">
+              <% tags&.each do |tag| %>
+                <span class="badge rounded-pill bg-primary"><%= link_to tag, investment_opportunities_path(tag:) %></span>
+              <% end %>                      
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% end %>
+
 </div>

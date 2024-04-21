@@ -10,7 +10,7 @@
             {class: "btn btn-outline-primary"} if policy(InvestmentOpportunity.new(entity_id: params[:entity_id])).new?  %>
       </div>
       <% investment_opportunities.each do |investment_opportunity| %>
-          <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity %>
+          <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity, show_tags: true, col_size: 12 %>
       <% end %>                
       <%= paginate investment_opportunities %>
     <% end %>

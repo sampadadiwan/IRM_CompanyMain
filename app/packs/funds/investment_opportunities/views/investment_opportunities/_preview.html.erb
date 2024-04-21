@@ -5,7 +5,7 @@
     <div class="container">
         <div class="row align-items-center">        
             <div class="col">
-                <%= render "/investment_opportunities/card_table2", investment_opportunity: investment_opportunity %>
+                <%= render "/investment_opportunities/card_table2", investment_opportunity: investment_opportunity, show_tags: false %>
             </div>
         </div>        
     </div>
@@ -22,5 +22,5 @@
 </div>                
 
 <div class="align-items-center text-center">                        
-    <%= link_to "Express Interest", new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-primary btn-lg px-5 py-6 btn-hover-shadow mb-3 mb-sm-0"} %>
+    <%= link_to "Express Interest", new_expression_of_interest_path("expression_of_interest[investment_opportunity_id]": investment_opportunity.id ), {class: "btn btn-primary btn-lg px-5 py-6 btn-hover-shadow mb-3 mb-sm-0"} if current_user %>
 </div>

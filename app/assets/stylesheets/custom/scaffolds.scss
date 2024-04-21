@@ -522,7 +522,7 @@ ul.vesting_schedule {
 }
 
 .io_card {
-  margin-bottom: 20px;
+  margin-bottom: 20px;  
   .logo_cell {
     text-align: center;
     .io_logo {
@@ -533,6 +533,16 @@ ul.vesting_schedule {
         max-width: 400px;      
       }
     }
+  }
+  .inner_card {
+    border: 2px solid #ebf1f6
+  }
+
+  .io_facts {
+    .card {
+      margin-bottom: 3px;
+    }
+    margin-bottom: 10px;
   }
 }
 
@@ -770,8 +780,7 @@ ul.vesting_schedule {
 }
 
 .ci-logo {
-  max-height: 150px !important;
-  max-width: 150px !important;
+  height: 150px !important;
   margin: auto;
   margin-bottom: 10px;
 }
