@@ -1,6 +1,6 @@
 wb = xlsx_package.workbook
 
-form_type, custom_field_names, custom_headers = get_form_type("KpiReport")
+form_type, custom_field_names, = get_form_type("KpiReport")
 
 wb.add_worksheet(name: "KpiReports") do |sheet|
   # Create the header row

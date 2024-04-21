@@ -135,7 +135,7 @@ class FundPortfolioCalcs
 
         Rails.logger.debug "#########Portfolio CF#########"
         # Get the portfolio income cash flows, but only for pool and for this investment_type
-        portfolio_cashflows = api.portfolio_cashflows.where(payment_date: ..@end_date)
+        portfolio_cashflows = api.portfolio_cashflows.actual.where(payment_date: ..@end_date)
         portfolio_cashflows.each do |pcf|
           cf << Xirr::Transaction.new(pcf.amount_cents, date: pcf.payment_date, notes: "Portfolio Income") if pcf.amount_cents.positive?
         end
