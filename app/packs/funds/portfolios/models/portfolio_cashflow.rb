@@ -15,9 +15,9 @@ class PortfolioCashflow < ApplicationRecord
 
   monetize :amount_cents, with_currency: ->(i) { i.fund.currency }
 
-  scope actual -> { where(tag: "Actual") }
-  scope not_actual -> { where.not(tag: "Actual") }
-
+  scope :actual, -> { where(tag: "Actual") }
+  scope :not_actual, -> { where.not(tag: "Actual") }
+  
   def initalize(*args)
     super(*args)
     self.tag ||= "Actual"
