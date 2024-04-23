@@ -5,6 +5,9 @@ class FundFormulasController < ApplicationController
   def index
     @fund_formulas = policy_scope(FundFormula)
     @fund_formulas = @fund_formulas.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    @fund_formulas = @fund_formulas.where(enabled: true) if params[:enabled].present? && params[:enabled] == 'true'
+    @fund_formulas = @fund_formulas.where(enabled: false) if params[:enabled].present? && params[:enabled] == 'false'
+    @fund_formulas = @fund_formulas.where(rule_for: params[:rule_for]) if params[:rule_for].present?
     @fund_formulas = @fund_formulas.order(:fund_id, sequence: :asc)
 
     if params[:fund_id].present?

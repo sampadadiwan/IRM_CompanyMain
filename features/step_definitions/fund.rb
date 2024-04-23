@@ -808,6 +808,12 @@ Then('the capital calls must have the data in the sheet') do
     cc.fund.name.should == user_data["Fund"]
     cc.percentage_called.should == user_data["Percentage Called"].to_d
     cc.due_date.should == user_data["Due Date"]
+    user_data["Unit Price/Premium"].split(",").each do |unit_price|
+      puts "Checking unit price #{unit_price}"
+      unit_type, price, premium = unit_price.split(":")
+      cc.unit_prices[unit_type.strip][:price].should == price
+      cc.unit_prices[unit_type.strip][:premium].should == premium
+    end
     cc.import_upload_id.should == ImportUpload.last.id
   end
 end

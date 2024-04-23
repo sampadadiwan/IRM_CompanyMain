@@ -35,7 +35,6 @@ class DocumentsController < ApplicationController
       @folder = Folder.find(params[:folder_id])
       @entity = @folder.entity
       @show_steps = false
-      # @owner = @folder.owner
 
       if @folder.entity_id == current_user.entity_id
         @documents = policy_scope(Document)

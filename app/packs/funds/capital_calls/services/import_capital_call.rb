@@ -1,5 +1,5 @@
 class ImportCapitalCall < ImportUtil
-  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date", "Call Date", "Fund Closes", "Generate Remittances", "Remittances Verified", "Type", "Call Basis"].freeze
+  STANDARD_HEADERS = ["Fund", "Name", "Percentage Called", "Due Date", "Call Date", "Fund Closes", "Generate Remittances", "Remittances Verified", "Type", "Call Basis", "Unit Price/Premium"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -40,6 +40,8 @@ class ImportCapitalCall < ImportUtil
 
         check_exchange_rate(capital_call)
 
+        setup_unit_prices(user_data, capital_call)
+
         result = CapitalCallCreate.call(capital_call:, import_upload:)
         raise result["errors"].full_messages.join(",") unless result.success?
 
@@ -47,6 +49,18 @@ class ImportCapitalCall < ImportUtil
       end
     else
       raise "Fund not found"
+    end
+  end
+
+  def setup_unit_prices(user_data, capital_call)
+    # Setup the unit prices specified as unit_type_1:price:premium,unit_type_2:price:premium
+    unit_price_premium = user_data["Unit Price/Premium"]&.split(",")&.map(&:strip)
+    if unit_price_premium.present?
+      unit_price_premium.each do |upp|
+        unit_type, price, premium = upp.split(":").map(&:strip)
+        capital_call.unit_prices ||= {}
+        capital_call.unit_prices[unit_type] = { price:, premium: }
+      end
     end
   end
 

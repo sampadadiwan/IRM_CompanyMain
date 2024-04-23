@@ -2,13 +2,14 @@ class FundFormula < ApplicationRecord
   include ForInvestor
   include Trackable.new
 
-  belongs_to :fund, optional: true
+  belongs_to :fund, optional: true, touch: true
   belongs_to :entity, optional: true
   acts_as_list scope: %i[fund_id], column: :sequence
 
   enum :rule_for, { accounting: "Accounting", reporting: "Reporting" }
 
   scope :enabled, -> { where(enabled: true) }
+  scope :disabled, -> { where(enabled: false) }
   scope :accounting, -> { where(rule_for: "Accounting") }
   scope :reporting, -> { where(rule_for: "Reporting") }
 
