@@ -239,7 +239,7 @@ class AccountEntryAllocationEngine
       account_entries = account_entries.where(reporting_date: ..@end_date)
       account_entries = account_entries.where(reporting_date: @start_date..)
 
-      @fund.fund_account_entries.create(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, entry_type: fund_formula.entry_type, generated: true, cumulative: true, amount_cents: account_entries.sum(:amount_cents))
+      @fund.fund_account_entries.create(name: fund_formula.name, entity_id: @fund.entity_id, fund: @fund, reporting_date: @end_date, entry_type: fund_formula.entry_type, generated: true, cumulative: true, commitment_type: fund_formula.commitment_type, amount_cents: account_entries.sum(:amount_cents))
     end
   end
 
