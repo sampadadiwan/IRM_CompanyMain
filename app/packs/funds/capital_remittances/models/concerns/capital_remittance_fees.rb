@@ -30,12 +30,17 @@ module CapitalRemittanceFees
 
         if call_fee.fee_type == "Other Fees"
           total_other_fees_cents += fees
-          json_fields["other_fees_audit"] = fees_audit if fees_audit.present?
+          json_fields["other_fees_audit"] ||= []
+          json_fields["other_fees_audit"] << fees_audit if fees_audit.present?
         else
           total_capital_fees_cents += fees
-          json_fields["capital_fees_audit"] = fees_audit if fees_audit.present?
+          json_fields["capital_fees_audit"] ||= []
+          json_fields["capital_fees_audit"] << fees_audit if fees_audit.present?
         end
       end
+
+      json_fields["capital_fees_audit"] = json_fields["capital_fees_audit"].flatten if json_fields["capital_fees_audit"].present?
+      json_fields["other_fees_audit"] = json_fields["other_fees_audit"].flatten if json_fields["other_fees_audit"].present?
 
     end
 
