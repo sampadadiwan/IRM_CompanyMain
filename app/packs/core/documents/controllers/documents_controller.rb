@@ -3,11 +3,8 @@ class DocumentsController < ApplicationController
   include DocumentHelper
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, only: %i[signature_progress]
-
   before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign]
-
   after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions]
-
   after_action :verify_policy_scoped, only: []
 
   impressionist actions: [:show]
@@ -69,10 +66,7 @@ class DocumentsController < ApplicationController
     end
 
     @documents = @documents.order(id: :desc)
-
-    @no_folders = false
-    @show_steps = false
-
+    @show_steps, @no_folders = false
     render "index"
   end
 
