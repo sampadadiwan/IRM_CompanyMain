@@ -1,4 +1,4 @@
-<% @account_entries = @fund.account_entries.where(entry_type: "Advisor Payout") %>
+<% @account_entries = @fund.account_entries.includes(:capital_commitment, :fund).not_cumulative.where(entry_type: "Advisor Payout") %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Advisor Payouts</h1>
@@ -13,7 +13,7 @@
           Advisor Name
         </th>
         <th>
-          Investing Entity
+          Investor
         </th>
         <th>
           Committed Amount
@@ -28,10 +28,7 @@
           For
         </th>
         <th>
-          Start Date
-        </th>
-        <th>
-          End Date
+          Reporting Date
         </th>
       </tr>
     </thead>
@@ -39,28 +36,25 @@
       <% @account_entries.each do |account_entry| %>
         <tr>
           <td>
-            <%= account_entry.capital_commitment.properties["advisor_name"] %>
+            <%= account_entry.capital_commitment.json_fields["advisor_name"] %>
           </td>
           <td>
-            <%= @account_entry.capital_commitment.investor_name %>
+            <%= account_entry.capital_commitment.investor_name %>
           </td>
           <td>
-            <%= money_to_currency @account_entry.capital_commitment.committed_amount, params %>
+            <%= money_to_currency account_entry.capital_commitment.committed_amount, params %>
           </td>
           <td>
-            <%= @account_entry.capital_commitment.folio_id %>
+            <%= link_to account_entry.capital_commitment.folio_id, account_entry.capital_commitment %>
           </td>
           <td>
-            <%= money_to_currency @account_entry.amount, params %>
+            <%= money_to_currency account_entry.amount, params %>
           </td>
           <td>
-            <%=  @account_entry.name %>
+            <%=  account_entry.name %>
           </td>
           <td>
-            <%= l @account_entry.start_date %>
-          </td>
-          <td>
-            <%= l @account_entry.end_date %>
+            <%= l account_entry.reporting_date %>
           </td>
         </tr>
       <% end %>

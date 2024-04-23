@@ -39,6 +39,7 @@ module CapitalRemittanceFees
         end
       end
 
+      # Flatten the array of arrays
       json_fields["capital_fees_audit"] = json_fields["capital_fees_audit"].flatten if json_fields["capital_fees_audit"].present?
       json_fields["other_fees_audit"] = json_fields["other_fees_audit"].flatten if json_fields["other_fees_audit"].present?
 
