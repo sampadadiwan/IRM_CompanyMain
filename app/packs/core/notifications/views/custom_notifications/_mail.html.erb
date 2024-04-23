@@ -1,8 +1,7 @@
 <% if @custom_notification.present? %>
-
-    <!-- Custom Notification Details -->
-    <%= @custom_notification.body.html_safe %>
-
+    
+    <%= @custom_notification.render_erb_string %>
+    
     <!-- Anything else passed into the block -->
     <% if (block = yield).present? %>
         <%= block %>

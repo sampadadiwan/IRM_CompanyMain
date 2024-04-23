@@ -41,4 +41,10 @@ class CustomNotification < ApplicationRecord
 
     mailer_methods.filter { |method| !method.start_with?("set_") }
   end
+
+  def render_erb_string
+    renderer = ERB.new(body)
+    # You need to set up the binding context. Here it’s done with the top-level binding, but it might be your controller or view context.
+    renderer.result(binding)
+  end
 end
