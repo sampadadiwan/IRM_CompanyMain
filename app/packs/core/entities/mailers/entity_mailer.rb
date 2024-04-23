@@ -7,8 +7,8 @@ class EntityMailer < ApplicationMailer
 
   def doc_gen_errors
     setup_defaults
-    @error_msg = params[:error_msg]
-    mail(from: @from, to: @to, subject: "Errors")
+    @error_msg = params[:error_msg]    
+    mail(from: @from, to: @to, cc: ENV["SUPPORT_EMAIL"], subject: "Errors")
   end
 
   def kpi_reminder
