@@ -1,3 +1,16 @@
+V7.0.80
+#####################################
+80a808092 Allow user to edit premium for call
+774eba921 cc to support for errors emails 
+a0bea0324 Added commitment_type to cumulative AE
+5423feb4d Added advisor payouts fund formulas
+7768424b5 Added capability to capture computed capital / other fees audits in remittances
+d2dcd803f Fixed investor view of IO
+603476a99 Use only actual portfolio cashflows for computations
+9905d65be Io changes to support features such as anonymous link etc
+6ff121283 Added required queues to sidekiq.rb
+873a7f45e Doc questions 
+
 V7.0.77
 #####################################
 07dba47f1 Added instrument currency and corr FMV calculations in fund currency

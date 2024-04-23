@@ -287,9 +287,11 @@ Given('The user generates all fund reports for the fund') do
   select(@fund.name, from: "fund_report_fund_id")
   select("All", from: "fund_report_name")
   fill_in('fund_report_start_date', with: "01/01/2020")
-  fill_in('fund_report_end_date', with: Time.zone.now.strftime("%d/%m/%Y"))
+  sleep(1)
+  fill_in('fund_report_end_date', with: Time.zone.now.strftime("%m/%d/%Y"))
+  sleep(1)
   click_button("Save")
-  sleep(3)
+  sleep(2)
 
 end
 
