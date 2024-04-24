@@ -38,15 +38,15 @@
       <%= form.text_area :whatsapp, class: "form-control"  %>
     </div>
 
-    <% if params[:debug].present? %>
-
-      <% if custom_notification.owner_type == "CapitalCall" %>        
+    <% if custom_notification.owner_type == "CapitalCall" %>        
         <div class="form-group">
           <%= form.label :show_details %>
           <%= form.check_box :show_details, class: "form-check-input"  %>
-          <small class="form-text text-muted">Show details in the sent email</small>
+          <small class="form-text text-muted">This will insert a table to the end of the email outlining all the details of that remittance</small>
         </div>
-      <% end %>
+    <% end %>
+
+    <% if params[:debug].present? %>      
 
       <div class="form-group">
         <%= form.label :password_protect_attachment %>
