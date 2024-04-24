@@ -69,6 +69,9 @@ class CommitmentAdjustmentsController < ApplicationController
   def set_commitment_adjustment
     @commitment_adjustment = CommitmentAdjustment.find(params[:id])
     authorize @commitment_adjustment
+    @bread_crumbs = { Funds: funds_path,
+                      "#{@commitment_adjustment.fund.name}": fund_path(@commitment_adjustment.fund),
+                      "#{@commitment_adjustment.capital_commitment}": capital_commitment_path(@commitment_adjustment.capital_commitment), "#{@commitment_adjustment.adjustment_type}": nil }
   end
 
   # Only allow a list of trusted parameters through.
