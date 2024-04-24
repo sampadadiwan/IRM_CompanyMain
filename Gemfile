@@ -168,6 +168,7 @@ gem 'awesome_print'
 group :development, :staging, :test do
   gem 'factory_bot_rails'
   gem "faker"
+  gem "selenium-webdriver"
 end
 
 group :development do
@@ -214,7 +215,7 @@ group :test do
   gem 'cucumber-rails', require: false
   gem 'database_cleaner-active_record'
   gem 'rspec-rails'
-  gem "selenium-webdriver"
+
   gem 'simplecov', require: false, group: :test
   gem "webdrivers"
 end
