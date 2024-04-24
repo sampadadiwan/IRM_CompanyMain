@@ -1,3 +1,14 @@
+
+V7.0.82
+#####################################
+771aced4f Fixed SOA generator
+0c6eca2f3 Added help text for show_details in CN
+f90165d8c Added created_at to kyc ransack
+6d1fd1394 Added audits page
+44c0b21bf Fixed bug with errors on allocate distribution
+84ede3922 Enable fund formula edit only with debug flag
+0bee03741 Added import of unit_prices in calls
+
 V7.0.81
 #####################################
 80a808092 Allow user to edit premium for call
