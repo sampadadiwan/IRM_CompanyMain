@@ -18,7 +18,7 @@ class DefaultUnitAllocationEngine
     if capital_distribution.fund.unit_types.present?
       capital_distribution.capital_distribution_payments.completed.each do |cdp|
         _, error_msg = allocate_distribution_payment(cdp, reason)
-        @error_msg << { folio: cr.folio_id, errors: error_msg.join(",") } if error_msg.present?
+        @error_msg << { folio: cdp.capital_commitment.folio_id, errors: error_msg.join(",") } if error_msg.present?
       end
     end
 
