@@ -1,0 +1,34 @@
+<div class="table-responsive">
+
+<table class="table table-bordered dataTable">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Auditable</th>
+            <th>User</th>
+            <th>Action</th>
+            <th>Changes</th>
+            <th>Created At</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% @audits.each do |audit| %>
+        <tr>
+            <td><%= audit.id %></td>
+            <% if respond_to?("#{audit.auditable.class.name.underscore}_path") %>
+                <td><%= link_to audit.auditable %></td>
+            <% else %>
+                <td><%= audit.auditable %></td>
+            <% end %>
+            <td><%= audit.user %></td>
+            <td><%= audit.action %></td>
+            <td><%= audit.audited_changes %></td>
+            <td><%= l audit.created_at %></td>
+        </tr>
+        <% end %>
+    </tbody>
+</table>
+
+<%= paginate @audits %>
+
+</div>
