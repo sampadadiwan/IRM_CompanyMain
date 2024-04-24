@@ -72,8 +72,6 @@ class SoaGenerator
       commitment_amount_words: amount_in_words
     }
 
-    binding.pry
-
     # add_account_entries(context, capital_commitment, start_date, end_date)
     add_reporting_entries(context, capital_commitment, start_date, end_date)
 
