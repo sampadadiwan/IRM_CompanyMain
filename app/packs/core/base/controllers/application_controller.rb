@@ -116,7 +116,7 @@ class ApplicationController < ActionController::Base
     # Check if the current entity exists and redirect accordingly
     if @current_entity.present?
       # Redirect to the path with subdomain in the parameter
-      redirect_to "#{request.protocol}#{@current_entity.sub_domain}.#{ENV.fetch('HOST', nil)}#{request.path}?#{request.query_string}", allow_other_host: true if request.subdomain.blank?
+      redirect_to "#{request.protocol}#{@current_entity.sub_domain}.#{ENV.fetch('HOST', nil)}#{request.path}?#{request.query_string}", allow_other_host: true if request.subdomain.blank? || ["app"].include?(request.subdomain)   
     elsif !ENV['HOST'].starts_with?(request.subdomain)
       logger.debug "set_current_entity: Redirecting to base URL."
       # Redirect to the base URL if no entity is found
