@@ -102,7 +102,7 @@
                         Recent Documents
                     </h5>
                     <table class="table">
-                        <% capital_commitment.documents.not_template.limit(3).order(id: :desc).each do |doc| %>
+                        <% capital_commitment.docs_for_investor.limit(3).order(id: :desc).each do |doc| %>
                             <tr>
                                 <td><%= link_to doc.name, doc %></td> 
                                 <td><%= l doc.created_at.to_date %></td>
