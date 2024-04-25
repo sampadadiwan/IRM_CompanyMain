@@ -44,7 +44,7 @@
   <div class="tab-content">
     <div id="docs-tab" class="tab-pane fade in show active" data-controller="datatable" data-datatable-responsive-details-value=false>
       <div id="docs" class="associated_entity">
-        <% documents = policy(capital_commitment).update? ? capital_commitment.documents : capital_commitment.documents.not_template %>
+        <% documents = policy(capital_commitment).update? ? capital_commitment.documents : capital_commitment.docs_for_investor %>
         <%= render "/documents/index", documents:, 
                 owner: capital_commitment, entity: capital_commitment.entity %>
       </div>
