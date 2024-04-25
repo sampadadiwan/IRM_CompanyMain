@@ -221,7 +221,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   def docs_for_investor
-    documents.not_template.where(owner_tag: "Generated", approved: true).or(documents.not_template.where.not(owner_tag: "Generated")).order(:name)
+    documents.where(owner_tag: "Generated", approved: true).or(documents.where.not(owner_tag: "Generated")).or(documents.where(owner_tag: nil)).not_template.order(:name)
   end
 
   # Retrieves the templates to be used for rendering as SOA, FRA etc.
