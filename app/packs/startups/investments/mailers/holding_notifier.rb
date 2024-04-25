@@ -27,7 +27,7 @@ class HoldingNotifier < BaseNotifier
     end
 
     def url
-      holding_path(id: params[:holding].id)
+      holding_path(id: params[:holding].id, sub_domain: params[:holding].entity.sub_domain)
     end
   end
 end

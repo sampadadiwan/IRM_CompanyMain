@@ -26,7 +26,7 @@ class InvestorAccessNotifier < BaseNotifier
     end
 
     def url
-      investor_access_path(id: params[:investor_access].id)
+      investor_access_path(id: params[:investor_access].id, sub_domain: params[:investor_access].entity.sub_domain)
     end
   end
 end

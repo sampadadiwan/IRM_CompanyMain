@@ -30,7 +30,7 @@ class ExpressionOfInterestNotifier < BaseNotifier
     end
 
     def url
-      expression_of_interest_path(id: params[:expression_of_interest].id)
+      expression_of_interest_path(id: params[:expression_of_interest].id, sub_domain: params[:expression_of_interest].entity.sub_domain)
     end
   end
 end

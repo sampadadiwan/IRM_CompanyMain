@@ -27,7 +27,7 @@ class InvestmentOpportunityNotifier < BaseNotifier
     end
 
     def url
-      investment_opportunity_path(id: params[:investment_opportunity].id)
+      investment_opportunity_path(id: params[:investment_opportunity].id, sub_domain: params[:investment_opportunity].entity.sub_domain)
     end
   end
 end

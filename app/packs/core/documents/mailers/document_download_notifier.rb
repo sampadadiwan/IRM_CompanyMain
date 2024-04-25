@@ -30,7 +30,7 @@ class DocumentDownloadNotifier < BaseNotifier
     end
 
     def url
-      document_path(id: params[:document].id)
+      document_path(id: params[:document].id, sub_domain: params[:document].entity.sub_domain)
     end
   end
 end

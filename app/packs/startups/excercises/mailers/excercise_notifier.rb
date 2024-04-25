@@ -27,7 +27,7 @@ class ExcerciseNotifier < BaseNotifier
     end
 
     def url
-      excercise_path(id: params[:excercise].id)
+      excercise_path(id: params[:excercise].id, sub_domain: params[:excercise].entity.sub_domain)
     end
   end
 end

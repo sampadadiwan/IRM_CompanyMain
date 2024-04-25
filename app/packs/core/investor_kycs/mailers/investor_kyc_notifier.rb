@@ -31,9 +31,9 @@ class InvestorKycNotifier < BaseNotifier
 
     def url
       if %i[notify_kyc_required kyc_required_reminder].include? params[:email_method]
-        edit_investor_kyc_path(id: params[:investor_kyc].id)
+        edit_investor_kyc_path(id: params[:investor_kyc].id, sub_domain: params[:investor_kyc].entity.sub_domain)
       else
-        investor_kyc_path(id: params[:investor_kyc].id)
+        investor_kyc_path(id: params[:investor_kyc].id, sub_domain: params[:investor_kyc].entity.sub_domain)
       end
     end
   end

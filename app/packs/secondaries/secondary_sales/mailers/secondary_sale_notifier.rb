@@ -30,7 +30,7 @@ class SecondarySaleNotifier < BaseNotifier
     end
 
     def url
-      secondary_sale_path(id: params[:secondary_sale].id)
+      secondary_sale_path(id: params[:secondary_sale].id, sub_domain: params[:secondary_sale].entity.sub_domain)
     end
   end
 end

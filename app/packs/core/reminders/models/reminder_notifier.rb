@@ -30,7 +30,7 @@ class ReminderNotifier < BaseNotifier
     end
 
     def url
-      reminder_path(id: params[:reminder].id)
+      reminder_path(id: params[:reminder].id, sub_domain: params[:reminder].entity.sub_domain)
     end
   end
 end

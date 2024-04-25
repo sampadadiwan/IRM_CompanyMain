@@ -34,7 +34,7 @@ class CapitalRemittanceNotifier < BaseNotifier
     end
 
     def url
-      capital_remittance_path(id: params[:capital_remittance].id)
+      capital_remittance_path(id: params[:capital_remittance].id, sub_domain: params[:capital_remittance].entity.sub_domain)
     end
   end
 end

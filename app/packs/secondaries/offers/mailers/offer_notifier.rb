@@ -27,7 +27,7 @@ class OfferNotifier < BaseNotifier
     end
 
     def url
-      offer_path(id: params[:offer].id)
+      offer_path(id: params[:offer].id, sub_domain: params[:offer].entity.sub_domain)
     end
   end
 end

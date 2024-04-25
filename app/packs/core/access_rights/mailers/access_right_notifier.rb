@@ -31,7 +31,7 @@ class AccessRightNotifier < BaseNotifier
 
     def url
       @access_right ||= params[:access_right]
-      polymorphic_url(@access_right.owner_type.tableize.singularize, id: @access_right.owner_id)
+      polymorphic_url(@access_right.owner_type.tableize.singularize, id: @access_right.owner_id, sub_domain: @access_right.entity.sub_domain)
     end
   end
 end

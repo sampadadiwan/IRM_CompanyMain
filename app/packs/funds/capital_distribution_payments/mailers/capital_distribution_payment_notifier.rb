@@ -31,7 +31,7 @@ class CapitalDistributionPaymentNotifier < BaseNotifier
     end
 
     def url
-      capital_distribution_payment_path(id: params[:capital_distribution_payment].id)
+      capital_distribution_payment_path(id: params[:capital_distribution_payment].id, sub_domain: params[:capital_distribution_payment].entity.sub_domain)
     end
   end
 end

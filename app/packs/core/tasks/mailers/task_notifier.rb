@@ -31,7 +31,7 @@ class TaskNotifier < BaseNotifier
     end
 
     def url
-      task_path(id: params[:task].id)
+      task_path(id: params[:task].id, sub_domain: params[:task].entity.sub_domain)
     end
   end
 end

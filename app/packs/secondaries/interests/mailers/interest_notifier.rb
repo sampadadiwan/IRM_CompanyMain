@@ -27,7 +27,7 @@ class InterestNotifier < BaseNotifier
     end
 
     def url
-      interest_path(id: params[:interest].id)
+      interest_path(id: params[:interest].id, sub_domain: params[:interest].entity.sub_domain)
     end
   end
 end
