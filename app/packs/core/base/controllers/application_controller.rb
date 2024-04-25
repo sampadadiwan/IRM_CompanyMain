@@ -105,9 +105,22 @@ class ApplicationController < ActionController::Base
   end
 
   def set_current_entity
-    if request.subdomain.present? && !ENV['HOST'].starts_with?(request.subdomain)
-      @current_entity = Entity.where(sub_domain: request.subdomain).load_async.first
-      redirect_to(ENV.fetch('BASE_URL', nil), allow_other_host: true) unless @current_entity
+    @current_entity = nil
+
+    # Check if subdomain is present in the request
+    @current_entity = Entity.where(sub_domain: request.subdomain).load_async.first if request.subdomain.present?
+
+    # Check if subdomain parameter is present
+    @current_entity = Entity.where(sub_domain: params[:sub_domain]).load_async.first if params[:sub_domain].present?
+
+    # Check if the current entity exists and redirect accordingly
+    if @current_entity.present?
+      # Redirect to the path with subdomain in the parameter
+      redirect_to "#{request.protocol}#{@current_entity.sub_domain}.#{ENV.fetch('HOST', nil)}#{request.path}?#{request.query_string}", allow_other_host: true if request.subdomain.blank?
+    elsif !ENV['HOST'].starts_with?(request.subdomain)
+      logger.debug "set_current_entity: Redirecting to base URL."
+      # Redirect to the base URL if no entity is found
+      redirect_to ENV.fetch('BASE_URL', nil), allow_other_host: true
     end
   end
 
