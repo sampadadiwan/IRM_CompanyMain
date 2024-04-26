@@ -30,7 +30,7 @@ export default class ServerDatatableController extends Controller {
     else {
     table = $(table_id).DataTable({
         "processing": true,
-        "serverSide": true,
+        // "serverSide": true,
         "deferLoading": 0,
         responsive: {
           details: this.showDetailsResponsive(),
@@ -38,10 +38,7 @@ export default class ServerDatatableController extends Controller {
         stateSave: true,
         search: {
           
-        },        
-        "ajax": {
-          "url": null, // Now uses loadData() to set the url and load data
-        },
+        },                
         language: {
           search: '',
           searchPlaceholder: "Search...",
