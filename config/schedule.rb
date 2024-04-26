@@ -25,6 +25,7 @@ end
 
 every 1.hour do
   rake "db:backup"
+  rake "s3:check_latest_file" if Rails.env.production?
 end
 
 every 1.day, at: '23:30 am' do
