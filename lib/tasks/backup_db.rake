@@ -44,7 +44,7 @@ namespace :db do  desc "Backup database to AWS-S3"
       end
   
       puts "Uploading tmp/#{backup_filename}.gz to S3 bucket #{bucket_name}"
-      object = s3.bucket(bucket_name).object(File.basename(backup_filename))
+      object = s3.bucket(bucket_name).object("#{backup_filename}.gz")
       object.upload_file("tmp/#{backup_filename}.gz")
       puts "Upload completed successfully"
       # remove local backup file
