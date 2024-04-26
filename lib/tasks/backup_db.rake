@@ -1,4 +1,6 @@
 namespace :db do  desc "Backup database to AWS-S3"
+
+
     task :backup => [:environment] do
       puts "Backing up db to S3"
       datestamp = Time.now.strftime("%Y-%m-%d_%H-%M-%S")
@@ -60,7 +62,90 @@ namespace :db do  desc "Backup database to AWS-S3"
       end
   
     end
-  end
+
+    desc 'Test the latest database backup from S3'
+    task :test_backup do
+
+      client = Aws::S3::Client.new(
+        :access_key_id => Rails.application.credentials[:AWS_ACCESS_KEY_ID],
+        :secret_access_key => Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],
+        region: 'ap-south-1'
+      )
+      
+      s3 = Aws::S3::Resource.new(client: client)
+  
+      
+      # Get the latest backup file from the S3 bucket      
+      bucket_name = "#{Rails.env}-db-backup.caphive.com"
+      puts "Checking for latest backup in bucket #{bucket_name}"
+      bucket = s3.bucket(bucket_name)
+      objects = bucket.objects()
+      latest_backup = objects.max_by(&:last_modified)
+      puts "Latest backup found: #{latest_backup.key}"
+  
+      # Download the latest backup file to a temporary location
+      temp_file = '/tmp/latest_backup.sql.gz'
+      latest_backup.get(response_target: temp_file)
+
+  
+      # Gunzip the backup file
+      unzipped_file = '/tmp/latest_backup.sql'
+      Zlib::GzipReader.open(temp_file) do |gz|
+        File.open(unzipped_file, 'wb') do |out|
+          out.write gz.read
+        end
+      end
+      puts "Downloaded and unzipped backup to #{unzipped_file}"
+  
+      # Connect to the local MySQL server
+      DB = Mysql2::Client.new(
+        host: Rails.application.credentials[:DB_HOST],
+        username: Rails.application.credentials[:DB_USER],
+        password: Rails.application.credentials[:DB_PASS]
+      )    
+      
+
+      # Drop and recreate the test database
+      DB.query('DROP DATABASE IF EXISTS test_db_restore')
+      DB.query('CREATE DATABASE test_db_restore')
+      DB.query('USE test_db_restore')
+      puts "Dropped and recreated test database"
+
+      # Restore the backup to the local MySQL database
+      file_size = File.size(unzipped_file)
+
+      puts "Loading backup #{human_readable_size(file_size)}, to test database. Please be patient ....."
+      `mysql -u#{Rails.application.credentials[:DB_USER]} -p#{Rails.application.credentials[:DB_PASS]} -h#{Rails.application.credentials[:DB_HOST]} test_db_restore < #{unzipped_file}`
+      puts "Restored backup to test database"
+
+
+      # Run a query on the restored database
+      result = DB.query('SELECT COUNT(*) FROM users')
+  
+      # Send an email if the query returns 0 rows
+      if result.first['COUNT(*)'] == 0
+        puts "Test failed: restored database has no users"
+        e = StandardError.new "Test failed: restored database has no users"
+        ExceptionNotifier.notify_exception(e)
+        raise e
+      else
+        puts "Test passed: restored database has users"
+      end
+  
+      # Clean up the temporary files
+      File.delete(temp_file)
+      File.delete(unzipped_file)
+    end
+
+
+    def human_readable_size(size)
+      units = %w{B KB MB GB TB}
+      e = (Math.log(size) / Math.log(1024)).floor
+      s = "%.1f" % (size.to_f / 1024**e)
+      s.sub(/\.?0*$/, '') + units[e]
+    end
+
+end
   
   # USAGE
   # =====
