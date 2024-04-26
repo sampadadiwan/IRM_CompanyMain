@@ -98,4 +98,10 @@ module ApplicationHelper
     key << cookies[:theme] if include_theme
     key
   end
+
+  def bulk_action_button(action, msg, options = {})
+    button_to action, bulk_actions_documents_path(bulk_action: action, q: params.to_unsafe_h[:q], folder_id: options[:folder_id]),
+              class: "dropdown-item",
+              data: { msg:, action: "click->confirm#popup", method: :get }
+  end
 end
