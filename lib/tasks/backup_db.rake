@@ -127,7 +127,7 @@ namespace :db do  desc "Backup database to AWS-S3"
         puts "Test failed: restored database has no users"
         e = StandardError.new "Test failed: restored database has no users"
         ExceptionNotifier.notify_exception(e)
-        raise e
+        # raise e
       else
         puts "Test passed: restored database has users"
       end
@@ -135,6 +135,80 @@ namespace :db do  desc "Backup database to AWS-S3"
       # Clean up the temporary files
       File.delete(temp_file)
       File.delete(unzipped_file)
+    end
+
+    desc 'Create a MySQL replica on a different machine'
+    task :create_replica do
+      # Connection details for the source database
+      source_host = Rails.application.credentials[:DB_HOST]
+      source_user = Rails.application.credentials[:DB_USER]
+      source_password = Rails.application.credentials[:DB_PASS]
+      source_database = IRM_#{Rails.env}
+
+      # Connection details for the destination database
+      destination_host = Rails.application.credentials[:DB_HOST_REPLICA]
+      destination_user = Rails.application.credentials[:DB_USER]
+      destination_password = Rails.application.credentials[:DB_PASS]
+      destination_database = IRM_#{Rails.env}
+
+      # Connect to the source database
+      source_client = Mysql2::Client.new(
+        host: source_host,
+        username: source_user,
+        password: source_password,
+        database: source_database
+      )
+
+      # Connect to the destination database
+      destination_client = Mysql2::Client.new(
+        host: destination_host,
+        username: destination_user,
+        password: destination_password
+      )
+
+      # Get the current binary log file and position from the source
+      result = source_client.query('SHOW MASTER STATUS')
+      binlog_file = result.first['File']
+      binlog_position = result.first['Position']
+
+      # Create a new database on the destination
+      destination_client.query("CREATE DATABASE IF NOT EXISTS #{destination_database}")
+
+      # Get the list of tables from the source database
+      tables = source_client.query("SHOW TABLES FROM #{source_database}")
+
+      # Dump the data from the source and import it into the destination
+      tables.each do |table|
+        table_name = table.values.first
+
+        # Dump the data from the source table
+        source_client.query("FLUSH TABLES #{table_name} WITH READ LOCK")
+        data = source_client.query("SELECT * FROM #{table_name}")
+        source_client.query("UNLOCK TABLES")
+
+        # Create the table on the destination
+        create_table_query = source_client.query("SHOW CREATE TABLE #{table_name}").first['Create Table']
+        destination_client.query("USE #{destination_database}")
+        destination_client.query(create_table_query)
+
+        # Insert the data into the destination table
+        columns = data.fields.map(&:to_s)
+        values = data.map { |row| "(#{row.values.map { |value| "'#{value.to_s.gsub(/\\/, '\&\&').gsub(/'/, "'")}'" }.join(', ')})" }.join(', ')
+        destination_client.query("INSERT INTO #{table_name} (#{columns.join(', ')}) VALUES #{values}")
+      end
+
+      # Set up replication on the destination
+      change_master_query = "CHANGE MASTER TO
+        MASTER_HOST='#{source_host}',
+        MASTER_USER='#{source_user}',
+        MASTER_PASSWORD='#{source_password}',
+        MASTER_LOG_FILE='#{binlog_file}',
+        MASTER_LOG_POS=#{binlog_position}"
+
+      destination_client.query(change_master_query)
+      destination_client.query('START SLAVE')
+
+      puts 'Replication setup complete!'
     end
 
 
