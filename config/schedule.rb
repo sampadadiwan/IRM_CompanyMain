@@ -24,7 +24,9 @@ every 1.week, at: '02:00 am' do
 end
 
 every 1.hour do
+  # Backup the database
   rake "db:backup"
+  # Check if the latest file in the source bucket is present in the destination bucket
   rake "s3:check_latest_file" if Rails.env.production?
 end
 
