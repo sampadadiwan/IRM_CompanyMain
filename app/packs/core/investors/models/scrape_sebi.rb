@@ -11,7 +11,7 @@ class ScrapeSebi
       next if index.zero?
 
       td_elements = tr.find_elements(css: 'td')
-      return if td_elements.empty?
+      break if td_elements.empty?
 
       record = {
         name: td_elements[0].text,

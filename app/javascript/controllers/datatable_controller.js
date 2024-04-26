@@ -18,7 +18,7 @@ export default class extends Controller {
       let columnDefs = this.columnDefs();
       let responsive = this.responsive();      
       $.each( $('.jqDataTable'), function( key, value ) {
-        console.log( key + ": " + value );
+        // console.log( key + ": " + value );
         if ( $.fn.dataTable.isDataTable( value ) ) {
         }
         else {

@@ -1,4 +1,4 @@
-<div class="associated_entity" data-controller="tabs tabdetails datatable">
+<div class="associated_entity" data-controller="tabs tabdetails">
 
   <% 
     label = investor.is_holdings_entity ? "#{investor.category} Users" : "Users" 
@@ -245,8 +245,8 @@
 
         <div id="commitments-tab" class="tab-pane fade in">
             <div id="commitments" class="associated_entity">
-              <%= render "/capital_commitments/index", investor: investor, cols: "all",
-                  lazy_load_data: true, data_source: capital_commitments_path(investor_id: investor.id, all: true, format: :json) %>
+              <%= render "/capital_commitments/index", 
+                  lazy_load_data: true, data_source: capital_commitments_path(investor_id: investor.id, all: true, format: :json), cols: "all" %>
             </div>     
         </div>
 

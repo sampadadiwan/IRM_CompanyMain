@@ -37,13 +37,11 @@ export default class ServerDatatableController extends Controller {
         },        
         stateSave: true,
         search: {
-          // return: true,
-        },
-        
+          
+        },        
         "ajax": {
-          "url": $(table_id).data('source')
+          "url": null, // Now uses loadData() to set the url and load data
         },
-        // "pagingType": "full_numbers",
         language: {
           search: '',
           searchPlaceholder: "Search...",
