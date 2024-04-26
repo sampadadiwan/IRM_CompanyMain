@@ -1,7 +1,6 @@
 class Entity < ApplicationRecord
   include Trackable.new
-  # include EntityMerge
-  # include InvestorEntityMerge
+  include EntityMerge
   include EntityEnabled
   include WithCustomNotifications
 
@@ -268,80 +267,5 @@ class Entity < ApplicationRecord
   def currency_list
     list = exchange_rates.pluck(:from) << currency
     list.uniq
-  end
-
-  def self.merge_entity(retained_entity, defunct_entity)
-    # For Investors
-    Investor.where(investor_entity_id: defunct_entity.id).update_all(investor_entity_id: retained_entity.id)
-    InvestorAccess.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    User.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Portfolio Companies
-    KpiReport.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    Kpi.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    InvestorKpiMapping.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For startups
-    Deal.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    DealInvestor.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    DealActivity.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Holdings
-    Holding.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Funds
-    Fund.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    CapitalCommitment.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    CapitalCall.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    CapitalRemittance.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    CapitalRemittancePayment.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    CapitalDistribution.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    CapitalDistributionPayment.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    CommitmentAdjustment.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    FundRatio.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    FundUnit.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    FundReport.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    FundFormula.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Investment Opportunities
-    InvestmentOpportunity.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    ExpressionOfInterest.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Portfolio Investments
-    PortfolioInvestment.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    InvestmentInstrument.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    AggregatePortfolioInvestment.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Secondary Sales
-    SecondarySale.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Interests
-    Interest.where(interest_entity_id: defunct_entity.id).update_all(interest_entity_id: retained_entity.id)
-    # For Offers
-    Offer.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Documents
-    Document.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Messages
-    Message.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Tasks
-    Task.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Form Types
-    FormType.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Approvals
-    Approval.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    ApprovalResponse.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Notes
-    Note.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Folders
-    Folder.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Exchange Rates
-    ExchangeRate.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Fees
-    Fee.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Import Uploads
-    ImportUpload.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Investor Accesses
-    InvestorAccess.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Investor KYCs
-    InvestorKyc.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Access Rights
-    AccessRight.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    # For Investments
-    Investment.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-    AggregateInvestment.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
-
-    defunct_entity.update_column(:name, "#{defunct_entity.name} - Defunct")
   end
 end

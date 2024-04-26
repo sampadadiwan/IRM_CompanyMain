@@ -8,6 +8,14 @@ class DocumentsBulkActionJob < BulkActionJob
     when "send document"
       send_document(document, user_id)
 
+    when "delete"
+      if document.owner_tag == "Signed"
+        msg = "Document #{document.name} is signed document, it cannot be deleted."
+        set_error(msg, document, user_id)
+      else
+        document.destroy
+      end
+
     when "approve"
       if document.to_be_approved?
         document.update(approved: true, approved_by_id: user_id)

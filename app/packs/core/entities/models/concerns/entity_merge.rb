@@ -2,7 +2,7 @@ module EntityMerge
   extend ActiveSupport::Concern
 
   included do
-    def self.merge(old_entity, new_entity)
+    def self.merge_entity(old_entity, new_entity)
       old_entity.investors.update_all(entity_id: new_entity.id)
       Investor.where(investor_entity_id: old_entity.id).update_all(investor_entity_id: new_entity.id)
       Investor.where(entity_id: old_entity.id).update_all(entity_id: new_entity.id)
@@ -29,6 +29,10 @@ module EntityMerge
       merge_secondary_sale(old_entity, new_entity)
       merge_deal(old_entity, new_entity)
       merge_notices(old_entity, new_entity)
+
+      merge_investor_data(old_entity, new_entity)
+
+      old_entity.update_columns(name: "#{old_entity.name} (Defunct)")
     end
 
     def self.merge_notices(old_entity, new_entity)
@@ -93,6 +97,24 @@ module EntityMerge
       old_entity.investment_opportunities.update_all(entity_id: new_entity.id)
       old_entity.expression_of_interests.update_all(entity_id: new_entity.id)
       ExpressionOfInterest.where(eoi_entity_id: old_entity.id).update_all(eoi_entity_id: new_entity.id)
+    end
+
+    def self.merge_investor_data(old_entity, new_entity)
+      # Many models have a dependency on the investor_entity_id, search schema.rb for t.integer ".*_entity_id" or t.bigint ".*_entity_id"
+      # These models will need to be updated to use the new entity_id
+      ApprovalResponse.where(response_entity_id: old_entity.id).update_all(response_entity_id: new_entity.id)
+      ExpressionOfInterest.where(eoi_entity_id: old_entity.id).update_all(eoi_entity_id: new_entity.id)
+      InvestorAccess.where(investor_entity_id: old_entity.id).update_all(investor_entity_id: new_entity.id)
+
+      InvestorNoticeEntry.where(entity_id: old_entity.id, investor_entity_id: old_entity.id).update_all(investor_entity_id: new_entity.id)
+
+      Task.where(for_entity_id: old_entity.id).update_all(for_entity_id: new_entity.id)
+
+      DealInvestor.where(investor_entity_id: old_entity.id).update_all(investor_entity_id: new_entity.id)
+      Interest.where(interest_entity_id: old_entity.id).update_all(interest_entity_id: new_entity.id)
+      Investor.where(investor_entity_id: old_entity.id).update_all(investor_entity_id: new_entity.id)
+
+      User.where(entity_id: old_entity.id).update_all(entity_id: new_entity.id)
     end
   end
 end

@@ -189,6 +189,7 @@ Metrics/MethodLength:
   Enabled: true
   Exclude:
     - 'app/packs/core/users/models/user.rb'
+    - 'app/packs/core/documents/jobs/documents_bulk_action_job.rb'
     - 'app/packs/core/investor_kycs/services/kyc_doc_generator.rb'
     - 'app/packs/funds/capital_commitments/services/soa_generator.rb'
   

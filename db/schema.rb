@@ -968,7 +968,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_04_19_102722) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "sent_for_esign_date"
-    t.boolean "embedded", default: false
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"
