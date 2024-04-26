@@ -15,7 +15,7 @@
         <div id="payments-tab" class="tab-pane fade in show active">
           <div id="payments" class="associated_entity">
             <%= render "/capital_distribution_payments/index", capital_distribution: capital_distribution,
-                lazy_load_data: false, data_source: capital_distribution_payments_path(capital_distribution_id: capital_distribution.id, all: true) %>
+                lazy_load_data: false, data_source: capital_distribution_payments_path(capital_distribution_id: capital_distribution.id, all: true, format: :json) %>
           </div>     
         </div>
 

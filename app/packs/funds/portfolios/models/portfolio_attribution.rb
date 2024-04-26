@@ -32,4 +32,8 @@ class PortfolioAttribution < ApplicationRecord
   def gain
     Money.new((sold_pi.price_per_share_cents - bought_pi.price_per_share_cents) * quantity.abs, fund.currency)
   end
+
+  def to_s
+    "#{sold_pi} #{quantity}"
+  end
 end
