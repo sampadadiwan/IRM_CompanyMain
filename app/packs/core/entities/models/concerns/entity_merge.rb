@@ -5,7 +5,7 @@ module EntityMerge
     # Used to merge two entities, which are of entity_type Investor
     def self.merge_investor_entity(defunct_entity, retained_entity)
       Investor.where(investor_entity_id: defunct_entity.id).update_all(investor_entity_id: retained_entity.id)
-      InvestorAccess.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
+      InvestorAccess.where(investor_entity_id: defunct_entity.id).update_all(investor_entity_id: retained_entity.id)
       User.where(entity_id: defunct_entity.id).update_all(entity_id: retained_entity.id)
       defunct_entity.update_columns(name: "#{defunct_entity.name} (Defunct)")
     end
