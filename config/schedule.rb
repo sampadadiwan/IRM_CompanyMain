@@ -25,7 +25,11 @@ end
 
 every 1.hour do
   # Backup the database
-  rake "db:backup"
+  if Rails.env.production?
+    rake "db:backup"
+  else
+    rake "db:backup_and_test"
+  end
   # Check if the latest file in the source bucket is present in the destination bucket
   rake "s3:check_latest_file" if Rails.env.production?
 end
