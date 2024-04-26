@@ -9,6 +9,10 @@ class AuditsController < ApplicationController
     @audits = @audits.where(user_id: params[:user_id]) if params[:user_id].present?
     @audits = @audits.where(created_at: ..Date.parse(params[:created_at_before])) if params[:created_at_before].present?
     @audits = @audits.where(created_at: Date.parse(params[:created_at_after])..) if params[:created_at_after].present?
-    @audits = @audits.order("id desc").page params[:page]
+    @audits = if params[:format] == 'xlsx' && (params[:created_at_before].blank? || params[:created_at_after].blank?)
+                @audits.limit(1000)
+              else
+                @audits.order("id desc").page params[:page]
+              end
   end
 end
