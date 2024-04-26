@@ -58,6 +58,8 @@ class ImportCapitalCall < ImportUtil
     if unit_price_premium.present?
       unit_price_premium.each do |upp|
         unit_type, price, premium = upp.split(":").map(&:strip)
+        raise("Unit Type #{unit_type} not found in Fund") unless capital_call.fund.unit_types_list.include?(unit_type)
+
         capital_call.unit_prices ||= {}
         capital_call.unit_prices[unit_type] = { price:, premium: }
       end

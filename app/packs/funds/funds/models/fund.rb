@@ -162,4 +162,8 @@ class Fund < ApplicationRecord
   def reports_folder
     get_or_create_folder("Fund Reports")
   end
+
+  def unit_types_list
+    unit_types&.split(",")&.map(&:strip)
+  end
 end
