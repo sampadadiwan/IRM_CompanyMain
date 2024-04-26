@@ -5,8 +5,8 @@ module UpdateInvestor
     after_commit :update_association_name, only: :update?
 
     # Be very careful using this method, it is used to move all investors associations to a new investor
-    def self.merge(old_investor, new_investor)
-      raise "Cannot merge investors from different entities" if old_investor.entity_id != new_investor.entity_id
+    def self.merge(old_investor, new_investor, allow_cross_entity: false)
+      raise "Cannot merge investors from different entities" if !allow_cross_entity && old_investor.entity_id != new_investor.entity_id
 
       # Fund related stuff
       old_investor.investor_kycs.update_all(investor_name: new_investor.investor_name, investor_id: new_investor.id)

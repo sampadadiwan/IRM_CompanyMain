@@ -86,13 +86,13 @@ class EntitiesController < ApplicationController
       authorize Entity, :merge?
       render "merge"
     else
-      old_entity = Entity.find(params[:old_entity_id])
-      authorize old_entity, :merge?
+      defunct_entity = Entity.find(params[:old_entity_id])
+      authorize defunct_entity, :merge?
 
-      new_entity = Entity.find(params[:new_entity_id])
-      authorize new_entity, :merge?
+      retained_entity = Entity.find(params[:new_entity_id])
+      authorize retained_entity, :merge?
 
-      Entity.merge_entity(old_entity, new_entity)
+      Entity.merge_investor_entity(defunct_entity, retained_entity)
       redirect_to entity_url(new_entity), notice: "Entity Merge Completed"
     end
   end
