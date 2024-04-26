@@ -234,6 +234,14 @@ end
 
 Then('There should be {string} investor access created') do |count|
   InvestorAccess.count.should == count.to_i
+  InvestorAccess.all.each do |ia|
+    ia.whatsapp_enabled.should == ia.user.whatsapp_enabled
+    puts "Checking import of #{ia.first_name} #{ia.last_name} #{ia.email} #{ia.phone} #{ia.approved} #{ia.whatsapp_enabled}"
+    ia.first_name.should == ia.user.first_name
+    ia.last_name.should == ia.user.last_name
+    ia.phone.should == ia.user.phone
+    ia.email.should == ia.user.email
+  end
 end
 
 Given('Given I upload an investors file large for the fund') do
