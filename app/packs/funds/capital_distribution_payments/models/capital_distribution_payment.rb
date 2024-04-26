@@ -19,6 +19,8 @@ class CapitalDistributionPayment < ApplicationRecord
   belongs_to :fund, touch: true
   belongs_to :entity
   belongs_to :capital_distribution, touch: true
+  has_many :fund_units, as: :owner, dependent: :destroy
+
   belongs_to :investor
   belongs_to :capital_commitment
   has_one :investor_kyc, through: :capital_commitment
