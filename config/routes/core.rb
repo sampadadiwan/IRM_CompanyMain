@@ -137,4 +137,6 @@ resources :entities do
   post 'delete_attachment', on: :collection
   post 'kpi_reminder', on: :member
   patch 'add_sebi_fields', on: :member
+  get 'merge', on: :collection
+  post 'merge', on: :collection
 end

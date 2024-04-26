@@ -81,6 +81,22 @@ class EntitiesController < ApplicationController
     end
   end
 
+  def merge
+    if request.get?
+      authorize Entity, :merge?
+      render "merge"
+    else
+      old_entity = Entity.find(params[:old_entity_id])
+      authorize old_entity, :merge?
+
+      new_entity = Entity.find(params[:new_entity_id])
+      authorize new_entity, :merge?
+
+      Entity.merge_entity(old_entity, new_entity)
+      redirect_to entity_url(new_entity), notice: "Entity Merge Completed"
+    end
+  end
+
   # DELETE /entities/1 or /entities/1.json
   def destroy
     @entity.destroy

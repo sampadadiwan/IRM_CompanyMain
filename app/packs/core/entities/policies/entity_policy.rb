@@ -21,6 +21,10 @@ class EntityPolicy < ApplicationPolicy
     true
   end
 
+  def merge?
+    user.has_cached_role?(:support)
+  end
+
   def report?
     true
   end
