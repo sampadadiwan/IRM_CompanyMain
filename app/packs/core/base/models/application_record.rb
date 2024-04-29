@@ -1,4 +1,6 @@
 class ApplicationRecord < ActiveRecord::Base
+  SAFE_EVAL_REGEX = /alter|truncate|drop|insert|select|destroy|delete|update|create|save|rollback|system|fork/
+
   primary_abstract_class
 
   def investors

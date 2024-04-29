@@ -28,6 +28,11 @@ class OptionPool < ApplicationRecord
   scope :manual_vesting, -> { where(manual_vesting: true) }
   scope :not_manual_vesting, -> { where(manual_vesting: false) }
 
+  validate :formula_kosher?, if: -> { formula.present? }
+  def formula_kosher?
+    errors.add(:formula, "You cannot do CRUD operations in formula") if formula.downcase.match?(SAFE_EVAL_REGEX)
+  end
+
   def check_vesting_schedules
     unless manual_vesting
       total_percent = vesting_schedules.inject(0) { |sum, e| sum + e.vesting_percent }

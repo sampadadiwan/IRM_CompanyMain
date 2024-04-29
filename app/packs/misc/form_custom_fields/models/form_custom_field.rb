@@ -25,7 +25,7 @@ class FormCustomField < ApplicationRecord
 
   validate :meta_data_kosher?, if: -> { field_type == "Calculation" }
   def meta_data_kosher?
-    errors.add(:meta_data, "You cannot do CRUD operations in meta_data") if meta_data.downcase.match?(/alter|truncate|drop|insert|select|destroy|delete|update|create|save|rollback|system|fork/)
+    errors.add(:meta_data, "You cannot do CRUD operations in meta_data") if meta_data.downcase.match?(SAFE_EVAL_REGEX)
   end
 
   validate :read_only_and_required, if: -> { read_only && required }
