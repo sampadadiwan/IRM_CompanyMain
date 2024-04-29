@@ -30,15 +30,20 @@ export default class ServerDatatableController extends Controller {
     else {
     table = $(table_id).DataTable({
         "processing": true,
-        // "serverSide": true,
+        "serverSide": true,
         "deferLoading": 0,
         responsive: {
           details: this.showDetailsResponsive(),
         },        
         stateSave: true,
         search: {
-          
-        },                
+          // return: true,
+        },
+        
+        "ajax": {
+          "url": $(table_id).data('source')
+        },
+        // "pagingType": "full_numbers",
         language: {
           search: '',
           searchPlaceholder: "Search...",
