@@ -63,6 +63,11 @@ namespace :puma do
   end
 end
 
+# These recovery tasks are to be invoked ONLY if you are rebuilding an environment from scratch
+# For example, if you are setting up a new environment or if you are recovering from a disaster
+# This is not to be used for regular deployments
+# Prerequisites:
+# 1. The DB backups should be available in the S3 bucket
 namespace :recovery do
   desc 'Setup the DB and the Replica from the latest backup'
   task :load_db_from_backups do
