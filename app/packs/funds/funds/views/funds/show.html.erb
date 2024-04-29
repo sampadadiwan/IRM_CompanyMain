@@ -10,7 +10,7 @@
 <% end %>
 
   <div>        
-    <% if belongs_to_entity_id?(current_user, @fund.entity_id) %>
+    <% if policy(@fund).update? %>
 
       <div class="btn-group">
         <div class="dropdown">

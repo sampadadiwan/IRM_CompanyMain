@@ -17,7 +17,7 @@ class FormTypesController < ApplicationController
   # GET /form_types/new
   def new
     @form_type = params[:form_type].present? ? FormType.new(form_type_params) : FormType.new
-    @form_type.entity_id = current_user.entity_id
+    @form_type.entity_id ||= current_user.entity_id
     authorize(@form_type)
   end
 
@@ -27,7 +27,7 @@ class FormTypesController < ApplicationController
   # POST /form_types or /form_types.json
   def create
     @form_type = FormType.new(form_type_params)
-    @form_type.entity_id = current_user.entity_id
+    @form_type.entity_id ||= current_user.entity_id
     authorize(@form_type)
 
     begin
@@ -105,6 +105,6 @@ class FormTypesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def form_type_params
-    params.require(:form_type).permit(:name, form_custom_fields_attributes: %i[id name position help_text field_type meta_data required read_only has_attachment show_user_ids step label _destroy condition_on condition_criteria condition_params condition_state internal])
+    params.require(:form_type).permit(:name, :entity_id, form_custom_fields_attributes: %i[id name position help_text field_type meta_data required read_only has_attachment show_user_ids step label _destroy condition_on condition_criteria condition_params condition_state internal])
   end
 end

@@ -1,6 +1,5 @@
 # Serves as the base class for all BulkActions
 class BulkActionJob < ApplicationJob
-  
   def perform(record_ids, user_id, bulk_action)
     @error_msg = []
     Chewy.strategy(:sidekiq) do

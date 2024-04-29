@@ -22,7 +22,7 @@ class FundFormulasController < ApplicationController
   # GET /fund_formulas/new
   def new
     @fund_formula = FundFormula.new(fund_formula_params)
-    @fund_formula.entity_id ||= current_user.entity_id
+    @fund_formula.entity_id = @fund_formula.fund.entity_id
     authorize @fund_formula
   end
 

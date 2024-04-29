@@ -1,14 +1,24 @@
 class FundFormulaPolicy < ApplicationPolicy
+  class Scope < BaseScope
+    def resolve
+      if user.has_cached_role?(:support)
+        scope.all
+      else
+        super
+      end
+    end
+  end
+
   def index?
     true
   end
 
   def show?
-    belongs_to_entity?(user, record)
+    belongs_to_entity?(user, record) || support?
   end
 
   def create?
-    support? || (belongs_to_entity?(user, record) && record.fund.editable_formulas)
+    support? # || (belongs_to_entity?(user, record) && record.fund.editable_formulas)
   end
 
   def new?
