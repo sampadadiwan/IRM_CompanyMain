@@ -12,9 +12,7 @@ export default class ServerDatatableController extends Controller {
     console.log(`Datatable setup for ${this.tableNameValue}`);
     console.log(`lazyLoadDataValue = ${this.lazyLoadDataValue}`);
     console.log(`fieldListValue = ${this.fieldListValue}`);
-    
-    this.buildTable(this.tableNameValue);
-
+        
     if(this.lazyLoadDataValue == "false") {
       this.loadData();
     }    
@@ -22,6 +20,9 @@ export default class ServerDatatableController extends Controller {
     this.finalizeTable();
   }
 
+  // This is the main function that builds the datatable
+  // In server_datatable_controller.js, we call this inside the loadData function
+  // To only create the table when we want to load the data
   buildTable(table_id) {
     let table = null;
 
@@ -31,7 +32,6 @@ export default class ServerDatatableController extends Controller {
     table = $(table_id).DataTable({
         "processing": true,
         "serverSide": true,
-        "deferLoading": 0,
         responsive: {
           details: this.showDetailsResponsive(),
         },        
@@ -81,6 +81,7 @@ export default class ServerDatatableController extends Controller {
       }      
     });
 
+    return table;
   }
 
   showDetailsResponsive() {
@@ -106,11 +107,11 @@ export default class ServerDatatableController extends Controller {
     }    
   }
 
-  loadData() {    
-    let table = $(this.tableNameValue).DataTable();
+  loadData() {        
+    let table = this.buildTable(this.tableNameValue);
     let dataSource = $(this.tableNameValue).data('source')
     console.log(`loadData called table = ${this.tableNameValue} dataSource= ${dataSource}`);
-    table.ajax.url( dataSource ).load();
+    // table.ajax.url( dataSource ).load();
   }
 
   replaceQueryParam(param, newval, path) {
