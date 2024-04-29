@@ -62,3 +62,37 @@ namespace :puma do
     end
   end
 end
+
+namespace :recovery do
+  desc 'Setup the DB and the Replica from the latest backup'
+  task :load_db_from_backups do
+    on roles(:recovery), in: :sequence, wait: 5 do
+      within release_path do
+        execute :rake, "'db:restore['IRM_#{fetch(:stage)}', 'Primary']' RAILS_ENV=#{fetch(:stage)}"
+        execute :rake, "db:create_replica RAILS_ENV=#{fetch(:stage)}"
+      end
+    end
+  end
+
+  task :create_replica do
+    on roles(:recovery), in: :sequence, wait: 5 do
+      within release_path do
+        execute :rake, "db:create_replica RAILS_ENV=#{fetch(:stage)}"
+      end
+    end
+  end
+
+  task :delete_old_assets do
+    on roles(:app) do |_host|
+      execute :docker, 'stop uptime-kuma|| true'
+      execute :rm, '-rf', '/home/ubuntu/IRM/shared/releases/* || true'
+      execute :rm, '-rf', '/home/ubuntu/IRM/shared/tmp/cache/assets/* || true'
+    end
+  end
+
+  task :stop_kuma do
+    on roles(:app) do |_host|
+      execute :docker, 'stop uptime-kuma|| true'
+    end
+  end
+end

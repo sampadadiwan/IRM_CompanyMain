@@ -25,11 +25,8 @@ end
 
 every 1.hour do
   # Backup the database
-  if Rails.env.production?
-    rake "db:backup"
-  else
-    rake "db:backup_and_test"
-  end
+  rake "db:backup"
+
   # Check if the latest file in the source bucket is present in the destination bucket
   rake "s3:check_latest_file" if Rails.env.production?
 end
@@ -46,7 +43,3 @@ every :reboot do
   bundle "puma --yjit -C /home/ubuntu/IRM/shared/puma.rb"
   command 'sudo docker run -d --rm --name xirr_py -p 8000:80 thimmaiah/xirr_py'
 end
-
-# every 1.hour do
-#   # runner "Money.default_bank.save_rates('tmp/exchange_rates.xml')"
-# end

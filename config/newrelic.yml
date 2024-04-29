@@ -61,9 +61,6 @@ staging:
   <<: *default_settings
   app_name: Caphive (Staging)
 
-sandbox:
-  <<: *default_settings
-  app_name: Caphive (Sandbox)
 
 production:
   <<: *default_settings

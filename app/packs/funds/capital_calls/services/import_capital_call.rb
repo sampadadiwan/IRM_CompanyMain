@@ -82,4 +82,8 @@ class ImportCapitalCall < ImportUtil
       Rails.logger.debug { "No ExchangeRate specified for Call #{capital_call}" }
     end
   end
+
+  def defer_counter_culture_updates
+    true
+  end
 end

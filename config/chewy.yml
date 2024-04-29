@@ -6,9 +6,6 @@ test:
 staging:
   host: '<%= ENV["ELASTIC_SEARCH_URL"] %>'
   prefix: 'staging'
-sandbox:
-  host: '<%= ENV["ELASTIC_SEARCH_URL"] %>'
-  prefix: 'staging'
 production:
   host: '<%= ENV["ELASTIC_SEARCH_URL"] %>'
   prefix: 'production'

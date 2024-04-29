@@ -49,8 +49,9 @@ class AggregatePortfolioInvestment < ApplicationRecord
     api.bought_amount_cents = pis.buys.sum(:amount_cents)
     api.sold_quantity = pis.sells.sum(:quantity)
     api.sold_amount_cents = pis.sells.sum(:amount_cents)
-    api.compute_avg_cost
+
     api.cost_of_sold_cents = pis.sells.sum(:cost_of_sold_cents)
+    api.compute_avg_cost
 
     # FMV is complicated, as the latest fmv is stored, so we need to recompute the fmv as of end_date
     valuation = api.portfolio_company.valuations.where(valuation_date: ..end_date, investment_instrument_id:).order(valuation_date: :asc).last

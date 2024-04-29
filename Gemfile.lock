@@ -200,6 +200,9 @@ GEM
       aws-partitions (~> 1, >= 1.651.0)
       aws-sigv4 (~> 1.8)
       jmespath (~> 1, >= 1.6.1)
+    aws-sdk-ec2 (1.452.0)
+      aws-sdk-core (~> 3, >= 3.191.0)
+      aws-sigv4 (~> 1.1)
     aws-sdk-kms (1.76.0)
       aws-sdk-core (~> 3, >= 3.188.0)
       aws-sigv4 (~> 1.1)
@@ -927,6 +930,7 @@ DEPENDENCIES
   annotate
   audited (~> 5.0)
   awesome_print
+  aws-sdk-ec2
   aws-sdk-s3
   better_errors
   binding_of_caller
