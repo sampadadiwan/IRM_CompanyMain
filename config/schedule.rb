@@ -21,6 +21,8 @@ end
 every 1.week, at: '02:00 am' do
   # Ensure that enable is set to false for all SupportClientMappings after end_date
   runner "SupportClientMapping.disable_expired"
+  rake "'create_and_copy_ami[AppServer]'"
+  rake "'create_and_copy_ami[DB-Redis-ES]'"
 end
 
 every 1.hour do
@@ -28,7 +30,7 @@ every 1.hour do
   rake "db:backup"
 
   # Check if the latest file in the source bucket is present in the destination bucket
-  rake "s3:check_latest_file" if Rails.env.production?
+  rake "s3:check_latest_file"
 end
 
 every 1.day, at: '23:30 am' do
