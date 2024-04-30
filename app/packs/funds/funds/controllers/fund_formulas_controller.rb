@@ -81,6 +81,11 @@ class FundFormulasController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def fund_formula_params
-    params.require(:fund_formula).permit(:fund_id, :name, :description, :formula, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :commitment_type, :rule_for)
+    if current_user.has_cached_role?(:support)
+      # Only support can change the formula
+      params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :commitment_type, :rule_for, :formula)
+    else
+      params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :commitment_type, :rule_for)
+    end
   end
 end

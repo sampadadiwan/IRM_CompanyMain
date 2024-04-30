@@ -29,9 +29,15 @@ class FormTypesController < ApplicationController
     @form_type = FormType.new(form_type_params)
     @form_type.entity_id ||= current_user.entity_id
     authorize(@form_type)
-
+    allowed = true
     begin
-      saved = @form_type.save
+      unless current_user.has_cached_role?(:support)
+        # We dont allow non support users to update calculations
+        @form_type.form_custom_fields.each do |fcf|
+          allowed = false if fcf.field_type == "Calculation"
+        end
+      end
+      saved = allowed ? @form_type.save : false
     rescue ActiveRecord::RecordNotUnique
       @form_type.errors.add(:base, "Duplicate names detected. Please ensure all names are unique.")
       @form_type.dup_cf_names?
@@ -51,8 +57,15 @@ class FormTypesController < ApplicationController
 
   # PATCH/PUT /form_types/1 or /form_types/1.json
   def update
+    allowed = true
     begin
-      saved = @form_type.update(form_type_params)
+      unless current_user.has_cached_role?(:support)
+        # We dont allow non support users to update calculations
+        @form_type.form_custom_fields.each do |fcf|
+          allowed = false if fcf.field_type == "Calculation"
+        end
+      end
+      saved = allowed ? @form_type.update(form_type_params) : false
     rescue ActiveRecord::RecordNotUnique
       @form_type.errors.add(:base, "Duplicate names detected. Please ensure all names are unique.")
       @form_type.dup_cf_names?
