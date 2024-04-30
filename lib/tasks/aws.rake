@@ -7,6 +7,7 @@ include AwsUtils
 
 namespace :aws do  
 
+  # This is the task that will be called whenever we need to do a complete DR into another region
   task :setup_infra, [:stack, :web_server_name, :db_server_name, :region] => [:environment] do |t, args|
     args.with_defaults(region: ENV["AWS_REGION"])
     setup_infra(args[:stack], args[:web_server_name], args[:db_server_name], args[:region])
