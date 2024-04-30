@@ -1,4 +1,4 @@
-
+<%= render ToggleCard.new(title: "#{@fund_formula.name}", css_class: "show_fund_formula", allow_toggle: false) do %>
 <table class="table table-bordered dataTable">
   <tr>
     <td>
@@ -99,3 +99,4 @@
   <%= button_to "Delete", @fund_formula, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@fund_formula).destroy? %> 
 
 </div>
+<% end %>
