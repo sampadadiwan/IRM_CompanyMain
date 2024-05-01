@@ -61,7 +61,7 @@ class ImportCapitalCall < ImportUtil
         raise("Unit Type #{unit_type} not found in Fund") unless capital_call.fund.unit_types_list.include?(unit_type)
 
         capital_call.unit_prices ||= {}
-        capital_call.unit_prices[unit_type] = { price:, premium: }
+        capital_call.unit_prices[unit_type] = { price:, premium: }.stringify_keys
       end
     end
   end
