@@ -28,7 +28,7 @@ class DocumentNotifier < BaseNotifier
 
     def custom_notification
       @document ||= params[:document]
-      @custom_notification ||= @document.entity.custom_notification(params[:email_method])
+      @custom_notification ||= @document.entity.custom_notification(params[:email_method], custom_notification_id: params[:custom_notification_id])
       @custom_notification
     end
 

@@ -10,6 +10,9 @@
   
     <span class="dropdown-item-text">Email Using Template:</span>
     <% msg = "This will send an email for each document in the search results (including results on other pages), based on the template setup. Proceed?" %>  
-    <%= bulk_action_button("Send Document", msg, folder_id: folder_id) if params[:q].present? %>
+
+    <% current_user.entity.custom_notifications.enabled.where(for_type: "Send Document").each do |cust_not| %>
+        <%= bulk_action_button("Send Document", msg, folder_id: folder_id, custom_notification_id: cust_not.id, label: cust_not.subject) if params[:q].present? %>
+    <% end %>
 
 <% end %>

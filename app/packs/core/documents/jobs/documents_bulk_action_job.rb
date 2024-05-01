@@ -1,12 +1,12 @@
 class DocumentsBulkActionJob < BulkActionJob
-  def perform_action(document, user_id, bulk_action)
+  def perform_action(document, user_id, bulk_action, params: {})
     msg = "#{bulk_action}: #{document.name}"
     send_notification(msg, user_id, :success)
 
     case bulk_action.downcase
 
     when "send document"
-      send_document(document, user_id)
+      send_document(document, user_id, params[:custom_notification_id])
 
     when "delete"
       if document.owner_tag == "Signed"
@@ -43,14 +43,13 @@ class DocumentsBulkActionJob < BulkActionJob
     Document
   end
 
-  def send_document(document, user_id)
+  def send_document(document, user_id, custom_notification_id)
     if document.approved && %w[InvestorKyc CapitalCommitment IndivdualKyc NonIndivdualKyc].include?(document.owner_type)
-
       if document.notification_users.present?
         document.notification_users.each do |user|
           DocumentNotifier.with(entity_id: document.entity_id,
                                 document:, email_method: "send_document",
-                                custom_notification_for: "Send Document").deliver(user)
+                                custom_notification_id:).deliver(user)
         rescue Exception => e
           msg = "Error sending #{document.name} to #{user.email} #{e.message}"
           set_error(msg, document, user_id)

@@ -411,7 +411,7 @@ Given('I create a new InvestorKyc with pan {string}') do |string|
   fill_in("#{class_name}_birth_date", with: Date.today - 20.years)
   fill_in("#{class_name}_PAN", with: "PANNUMBER1")
   click_on("Next")
-  sleep(3)
+  sleep(4)
 end
 
 Given('I create a new InvestorKyc {string} with files {string} for {string}') do |args, files, kyc_url_params|
@@ -451,7 +451,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
   fill_in("#{class_name}_PAN", with: @investor_kyc.PAN)
   fill_in("#{class_name}_birth_date", with: @investor_kyc.birth_date)
   click_on("Next")
-  sleep(1)
+  sleep(3)
 
   
   if files.include?("address proof")

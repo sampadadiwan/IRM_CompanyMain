@@ -3,7 +3,7 @@ class CapitalRemittancesBulkActionJob < BulkActionJob
     CapitalRemittance
   end
 
-  def perform_action(capital_remittance, user_id, bulk_action)
+  def perform_action(capital_remittance, user_id, bulk_action, params: {})
     msg = "#{bulk_action}: #{capital_remittance}"
     send_notification(msg, user_id, :success)
     case bulk_action.downcase

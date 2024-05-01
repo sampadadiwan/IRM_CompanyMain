@@ -1,13 +1,13 @@
 # Serves as the base class for all BulkActions
 class BulkActionJob < ApplicationJob
-  def perform(record_ids, user_id, bulk_action)
+  def perform(record_ids, user_id, bulk_action, params: {})
     @error_msg = []
     Chewy.strategy(:sidekiq) do
       records = get_class.where(id: record_ids)
       user = User.find(user_id)
       records.each do |rec|
         Audited.audit_class.as_user(user) do
-          perform_action(rec, user_id, bulk_action)
+          perform_action(rec, user_id, bulk_action, params:)
         end
       end
     end
