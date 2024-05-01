@@ -83,7 +83,4 @@ class ImportCapitalCall < ImportUtil
     end
   end
 
-  def defer_counter_culture_updates
-    true
-  end
 end
