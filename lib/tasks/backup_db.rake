@@ -106,7 +106,7 @@ namespace :db do  desc "Backup database to AWS-S3"
     puts "Created backup: tmp/#{backup_filename} of size #{human_readable_size(size_kb)}"
 
     # save to aws-s3
-    bucket_name = "#{Rails.env}-db-backup.caphive.com" #gotcha: bucket names are unique across AWS-S3
+    bucket_name = "#{AWS_S3_BUCKET}.db-backup" #gotcha: bucket names are unique across AWS-S3
     
     client = Aws::S3::Client.new(
       :access_key_id => Rails.application.credentials[:AWS_ACCESS_KEY_ID],
