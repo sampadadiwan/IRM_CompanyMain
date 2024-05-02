@@ -3,8 +3,8 @@
 # Defines a single server with a list of roles and multiple properties.
 # You can define all roles on a single server, or split them:
 
-server "18.60.42.100", user: "ubuntu", roles: %w[recovery app db web]
-# server "18.60.157.176", user: "ubuntu", roles: %w[app db web]
+server "13.201.43.251", user: "ubuntu", roles: %w[recovery app db web]
+server "13.233.75.106", user: "ubuntu", roles: %w[app db web]
 
 set :rails_env, "staging"
 set :stage, :staging
