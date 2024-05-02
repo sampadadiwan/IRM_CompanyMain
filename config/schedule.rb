@@ -1,4 +1,5 @@
 # Learn more: http://github.com/javan/whenever
+# env 'MAILTO', 'support@caphive.com'
 
 set :path, "/home/ubuntu/IRM/current"
 job_type :bundle, 'cd :path && :environment_variable=:environment bundle exec :task'
@@ -16,6 +17,8 @@ every 1.day, at: '02:01 am' do
   # Delete old notifications
   runner "Noticed::Notification.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
   runner "Noticed::Event.where(created_at: ..(Date.today - 2.month)).each(&:destroy)"
+
+  # Add Full DB backup https://www.percona.com/mysql/software/percona-xtrabackup
 end
 
 every 1.week, at: '02:00 am' do
@@ -28,6 +31,7 @@ end
 every 1.hour do
   # Backup the database
   rake "db:backup"
+  # Replace with Incremental DB backup # Add Full DB backup https://www.percona.com/mysql/software/percona-xtrabackup
 
   # Check if the latest file in the source bucket is present in the destination bucket
   rake "s3:check_latest_file"

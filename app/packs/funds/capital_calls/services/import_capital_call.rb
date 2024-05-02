@@ -82,5 +82,4 @@ class ImportCapitalCall < ImportUtil
       Rails.logger.debug { "No ExchangeRate specified for Call #{capital_call}" }
     end
   end
-
 end

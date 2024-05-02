@@ -13,7 +13,7 @@ namespace :db do  desc "Backup database to AWS-S3"
     client = Aws::S3::Client.new(
       :access_key_id => Rails.application.credentials[:AWS_ACCESS_KEY_ID],
       :secret_access_key => Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],
-      region: 'ap-south-1'
+      region: ENV["AWS_REGION"]
     )
     
     s3 = Aws::S3::Resource.new(client: client)
@@ -85,6 +85,13 @@ namespace :db do  desc "Backup database to AWS-S3"
     File.delete(unzipped_file)
   end
 
+  def backup_bd_full_xtrabackup
+  end
+
+  def backup_bd_full_incremental_xtrabackup
+  end
+
+
   def backup_db
     puts "Backing up IRM_#{Rails.env} to S3"
     datestamp = Time.now.strftime("%Y-%m-%d_%H-%M-%S")
@@ -96,7 +103,7 @@ namespace :db do  desc "Backup database to AWS-S3"
 
     size_kb = File.size("tmp/#{backup_filename}").to_f / 1024
 
-    if size_kb < 10
+    if size_kb < 100
       e = StandardError.new "mysqldump created file which is too small, backup aborted"
       ExceptionNotifier.notify_exception(e)
       raise e
@@ -106,12 +113,12 @@ namespace :db do  desc "Backup database to AWS-S3"
     puts "Created backup: tmp/#{backup_filename} of size #{human_readable_size(size_kb)}"
 
     # save to aws-s3
-    bucket_name = "#{AWS_S3_BUCKET}.db-backup" #gotcha: bucket names are unique across AWS-S3
+    bucket_name = "#{ENV['AWS_S3_BUCKET']}.db-backup" #gotcha: bucket names are unique across AWS-S3
     
     client = Aws::S3::Client.new(
       :access_key_id => Rails.application.credentials[:AWS_ACCESS_KEY_ID],
       :secret_access_key => Rails.application.credentials[:AWS_SECRET_ACCESS_KEY],
-      region: 'ap-south-1'
+      region: ENV["AWS_REGION"]
     )
     
     s3 = Aws::S3::Resource.new(client: client)
@@ -124,7 +131,7 @@ namespace :db do  desc "Backup database to AWS-S3"
         acl: "private", # accepts private, public-read, public-read-write, authenticated-read
         bucket: bucket_name,
         create_bucket_configuration: {
-          location_constraint: "ap-south-1", # accepts EU, eu-west-1, us-west-1, us-west-2, ap-south-1, ap-southeast-1, ap-southeast-2, ap-northeast-1, sa-east-1, cn-north-1, eu-central-1
+          location_constraint: ENV["AWS_REGION"], # accepts EU, eu-west-1, us-west-1, us-west-2, ap-south-1, ap-southeast-1, ap-southeast-2, ap-northeast-1, sa-east-1, cn-north-1, eu-central-1
         },
       })
     end
