@@ -314,10 +314,10 @@ module AwsUtils
     get_confirmation
 
     # Deploy the app
-    run_cmd("branch=dd_replica LB=true bundle exec cap #{stack} recovery:delete_old_assets")
-    run_cmd("branch=dd_replica LB=true bundle exec cap #{stack} deploy")
+    run_cmd("LB=true bundle exec cap #{stack} recovery:delete_old_assets")
+    run_cmd("LB=true bundle exec cap #{stack} deploy")
     # Load the DB from backups and create the replica
-    run_cmd("branch=dd_replica bundle exec cap #{stack} recovery:load_db_from_backups")
+    run_cmd("bundle exec cap #{stack} recovery:load_db_from_backups")
   end
 
 end

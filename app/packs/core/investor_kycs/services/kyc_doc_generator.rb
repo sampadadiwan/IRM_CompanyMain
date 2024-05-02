@@ -55,10 +55,11 @@ class KycDocGenerator
       account_entries_before_end_date: TemplateDecorator.new(investor_kyc.account_entries.where(reporting_date: ..end_date)),
 
       fund_units: TemplateDecorator.new(fund_units(investor_kyc, start_date, end_date)),
+      agreement_unit_setting: TemplateDecorator.new(investor_kyc.agreement_unit_setting),
 
       capital_commitments: TemplateDecorator.decorate_collection(capital_commitments),
       amounts: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments, currency, nil, nil)),
-
+      
       capital_commitments_between_dates: TemplateDecorator.decorate_collection(capital_commitments_between_dates),
       amounts_between_dates: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments_between_dates, currency, start_date, end_date)),
 

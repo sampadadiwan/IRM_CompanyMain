@@ -4,7 +4,7 @@
 # You can define all roles on a single server, or split them:
 
 server "13.201.43.251", user: "ubuntu", roles: %w[recovery app db web]
-server "13.233.75.106", user: "ubuntu", roles: %w[app db web]
+# server "13.233.75.106", user: "ubuntu", roles: %w[app db web]
 
 set :rails_env, "staging"
 set :stage, :staging
