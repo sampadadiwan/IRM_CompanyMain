@@ -2,10 +2,16 @@ wb = xlsx_package.workbook
 
 wb.add_worksheet(name: "Audits") do |sheet|
   # Create the header row
-  sheet.add_row(%w[Id Type Auditable User Action Changes On])
+  sheet.add_row(%w[Id Type Auditable User Action Field Old New On])
 
   # Create entries for each item
   @audits.each do |audit|
-    sheet.add_row [audit.id, audit.auditable_type, audit.auditable, audit.user, audit.action, audit.audited_changes, audit.created_at]
+    audit.audited_changes.each do |key, value|
+      if value.kind_of?(Array)
+        sheet.add_row [audit.id, audit.auditable_type, audit.auditable, audit.user, audit.action, key, value[0], value[1], audit.created_at]
+      else
+        sheet.add_row [audit.id, audit.auditable_type, audit.auditable, audit.user, audit.action, key, nil, value, audit.created_at]
+      end
+    end
   end
 end

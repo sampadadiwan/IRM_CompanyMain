@@ -5,7 +5,7 @@ class AuditDownloadJob < ApplicationJob
     # Ensure we can only download audits that the user has access to
     @audits = AuditPolicy::Scope.new(@user, Audit).resolve
     # Apply the filters
-    @audits = @audits.ransack(params[:q]).result
+    @audits = @audits.ransack(params[:q]).result.order(id: :desc)
 
     # Render the XL
     controller = ActionController::Base.new

@@ -16,26 +16,42 @@
             <th>Auditable</th>
             <th>User</th>
             <th>Action</th>
-            <th>Changes</th>
+            <th>Field</th>
+            <th>Old Value</th>
+            <th>New Value</th>
             <th>Created At</th>
         </tr>
     </thead>
     <tbody>
-        <% @audits.each do |audit| %>
-        <tr>
-            <td><%= audit.id %></td>
-            <td><%= audit.auditable_type %></td>
-            <% if respond_to?("#{audit.auditable.class.name.underscore}_path") %>
-                <td><%= link_to audit.auditable %></td>
-            <% else %>
-                <td><%= audit.auditable %></td>
-            <% end %>
-            <td><%= audit.user %></td>
-            <td><%= audit.action %></td>
-            <td><%= audit.audited_changes %></td>
-            <td><%= l audit.created_at %></td>
-        </tr>
-        <% end %>
+        <% 
+            @audits.each do |audit| 
+                audit.audited_changes.each do |key, value| 
+        %>
+                    <tr>
+                        <td><%= audit.id %></td>
+                        <td><%= audit.auditable_type %></td>
+                        <% if respond_to?("#{audit.auditable.class.name.underscore}_path") %>
+                            <td><%= link_to audit.auditable %></td>
+                        <% else %>
+                            <td><%= audit.auditable %></td>
+                        <% end %>
+                        <td><%= audit.user %></td>
+                        <td><%= audit.action %></td>
+                        <td><%= key %></td>
+                        <% if value.kind_of?(Array) %>
+                            <td><%= value[0] %></td>
+                            <td><%= value[1] %></td>
+                        <% else %>
+                            <td></td>
+                            <td><%= value %></td>
+                        <% end %>
+
+                        <td><%= l audit.created_at %></td>
+                    </tr>
+        <%  
+                end
+            end 
+        %>
     </tbody>
 </table>
 
