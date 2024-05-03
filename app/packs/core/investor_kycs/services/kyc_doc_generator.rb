@@ -59,7 +59,7 @@ class KycDocGenerator
 
       capital_commitments: TemplateDecorator.decorate_collection(capital_commitments),
       amounts: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments, currency, nil, nil)),
-      
+
       capital_commitments_between_dates: TemplateDecorator.decorate_collection(capital_commitments_between_dates),
       amounts_between_dates: TemplateDecorator.decorate(amounts(investor_kyc, capital_commitments_between_dates, currency, start_date, end_date)),
 

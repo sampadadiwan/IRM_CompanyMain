@@ -107,6 +107,7 @@ Lint/RescueException:
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_helper.rb'
     - 'app/packs/core/investor_kycs/jobs/kyc_doc_gen_job.rb'
+    - 'app/packs/funds/funds/services/fund_doc_generator.rb'
     - 'app/packs/funds/capital_commitments/jobs/capital_commitment_doc_job.rb'
     - 'app/packs/funds/capital_commitments/jobs/capital_commitment_soa_job.rb'
     - 'app/packs/funds/capital_remittances/jobs/capital_remittance_doc_job.rb'
@@ -192,6 +193,7 @@ Metrics/MethodLength:
     - 'app/packs/core/documents/jobs/documents_bulk_action_job.rb'
     - 'app/packs/core/investor_kycs/services/kyc_doc_generator.rb'
     - 'app/packs/funds/capital_commitments/services/soa_generator.rb'
+    - 'app/packs/funds/funds/services/fund_doc_generator.rb'
   
 Metrics/BlockNesting:
   Exclude:
