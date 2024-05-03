@@ -30,10 +30,7 @@ class KycDocGenerator
     send_notification("#{doc_template.name} generated for #{investor_kyc.full_name}. Please refresh the page.", user_id)
   end
 
-  # doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
-  def generate(investor_kyc, start_date, end_date, doc_template, doc_template_path)
-    template = Sablon.template(File.expand_path(doc_template_path))
-
+  def prepare_context(investor_kyc, start_date, end_date)
     currency = investor_kyc.entity.currency
     investor_kyc.entity.currency == "INR" ? investor_kyc.committed_amount.to_i.rupees.humanize : investor_kyc.committed_amount.to_i.to_words.humanize
 
@@ -41,7 +38,7 @@ class KycDocGenerator
     capital_commitments_between_dates = investor_kyc.capital_commitments.where(commitment_date: start_date..).where(commitment_date: ..end_date)
     capital_commitments_before_end_date = investor_kyc.capital_commitments.where(commitment_date: ..end_date)
 
-    context = {
+    {
       date: Time.zone.today.strftime("%d %B %Y"),
       start_date:,
       format_start_date: Time.zone.parse(start_date).strftime("%d %B %Y"),
@@ -79,6 +76,13 @@ class KycDocGenerator
       capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.capital_distribution_payments.where(payment_date: ..end_date))
 
     }
+  end
+
+  # doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
+  def generate(investor_kyc, start_date, end_date, doc_template, doc_template_path)
+    template = Sablon.template(File.expand_path(doc_template_path))
+
+    context = prepare_context(investor_kyc, start_date, end_date)
 
     generate_custom_fields(context, investor_kyc)
 

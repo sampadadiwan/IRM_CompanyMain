@@ -26,13 +26,8 @@ class SoaGenerator
     send_notification("SOA #{fund_doc_template.name} generated for #{capital_commitment.investor_name}. Please refresh the page.", user_id)
   end
 
-  # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
-  def generate(capital_commitment, start_date, end_date, fund_doc_template_path)
-    template = Sablon.template(File.expand_path(fund_doc_template_path))
-
-    amount_in_words = capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
-
-    context = {
+  def prepare_context(capital_commitment, start_date, end_date)
+    {
       date: Time.zone.today.strftime("%d %B %Y"),
       start_date:,
       format_start_date: Time.zone.parse(start_date).strftime("%d %B %Y"),
@@ -71,6 +66,15 @@ class SoaGenerator
 
       commitment_amount_words: amount_in_words
     }
+  end
+
+  # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
+  def generate(capital_commitment, start_date, end_date, fund_doc_template_path)
+    template = Sablon.template(File.expand_path(fund_doc_template_path))
+
+    capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
+
+    context = prepare_context(capital_commitment, start_date, end_date)
 
     # add_account_entries(context, capital_commitment, start_date, end_date)
     add_reporting_entries(context, capital_commitment, start_date, end_date)

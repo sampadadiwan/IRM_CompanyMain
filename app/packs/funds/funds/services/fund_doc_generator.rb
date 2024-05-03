@@ -20,17 +20,8 @@ class FundDocGenerator
     end
   end
 
-  private
-
-  def notify(fund_doc_template, fund, user_id)
-    UserAlert.new(user_id:, message: "Document #{fund_doc_template.name} generated for #{fund.investor_name}. Please refresh the page.", level: "success").broadcast
-  end
-
-  # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
-  def generate(fund, fund_doc_template_path)
-    template = Sablon.template(File.expand_path(fund_doc_template_path))
-
-    context = {
+  def prepare_context(fund, start_date, end_date)
+    {
       date: Time.zone.today.strftime("%d %B %Y"),
       entity: fund.entity,
       fund: TemplateDecorator.decorate(fund),
@@ -67,6 +58,18 @@ class FundDocGenerator
       capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(fund.capital_distribution_payments.where(payment_date: ..end_date))
 
     }
+  end
+
+  private
+
+  def notify(fund_doc_template, fund, user_id)
+    UserAlert.new(user_id:, message: "Document #{fund_doc_template.name} generated for #{fund.investor_name}. Please refresh the page.", level: "success").broadcast
+  end
+
+  # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
+  def generate(fund, fund_doc_template_path, start_date, end_date)
+    template = Sablon.template(File.expand_path(fund_doc_template_path))
+    context = prepare_context(fund, start_date, end_date)
 
     # Can we have more than one LP signer ?
     add_image(context, :investor_signature, fund.fund.signature)

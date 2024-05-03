@@ -7,7 +7,7 @@ wb.add_worksheet(name: "Audits") do |sheet|
   # Create entries for each item
   @audits.each do |audit|
     audit.audited_changes.each do |key, value|
-      if value.kind_of?(Array)
+      if value.is_a?(Array)
         sheet.add_row [audit.id, audit.auditable_type, audit.auditable, audit.user, audit.action, key, value[0], value[1], audit.created_at]
       else
         sheet.add_row [audit.id, audit.auditable_type, audit.auditable, audit.user, audit.action, key, nil, value, audit.created_at]
