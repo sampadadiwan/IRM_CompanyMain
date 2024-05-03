@@ -2,8 +2,8 @@ class AuditsController < ApplicationController
   after_action :verify_policy_scoped, except: :index
 
   def index
-    user_ids = current_user.entity.employees.pluck(:id)
-    @audits = Audited::Audit.where(user_id: user_ids).includes(:user)
+    @q = Audit.ransack(params[:q])
+    @audits = policy_scope(@q.result).includes(:user)
     @audits = @audits.where(auditable_type: params[:auditable_type]) if params[:auditable_type].present?
     @audits = @audits.where(auditable_id: params[:auditable_id]) if params[:auditable_id].present?
     @audits = @audits.where(user_id: params[:user_id]) if params[:user_id].present?
@@ -14,5 +14,14 @@ class AuditsController < ApplicationController
               else
                 @audits.order("id desc").page params[:page]
               end
+
+    respond_to do |format|
+      format.html
+      format.xlsx do
+        AuditDownloadJob.perform_later(params.to_unsafe_h, user_id: current_user.id)
+        flash[:notice] = "Your request is being processed. You will receive an email shortly."
+        redirect_to request.referer
+      end
+    end
   end
 end

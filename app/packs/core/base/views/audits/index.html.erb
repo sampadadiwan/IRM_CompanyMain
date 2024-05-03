@@ -1,3 +1,11 @@
+<%= render "layouts/filter", associations: [] %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Audit Trail</h1>
+    <%= link_to "Download", audits_path(params: params.to_unsafe_h, format: :xlsx), {class: "btn btn-outline-primary"} %>
+</div>
+
+
 <div class="table-responsive">
 
 <table class="table table-bordered dataTable">

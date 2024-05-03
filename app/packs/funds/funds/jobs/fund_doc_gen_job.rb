@@ -9,11 +9,11 @@ class FundDocGenJob < ApplicationJob
       send_notification("Invalid Dates", user_id, "danger")
     else
 
+      # Find the fund
+      fund = Fund.find(fund_id)
+      # Find the template with owner_tag "Fund Template"
+      templates = fund.documents.templates.where(owner_tag: "Fund Template")
       Chewy.strategy(:sidekiq) do
-        # Find the fund
-        Fund.where(id: fund_id)
-        # Find the template with owner_tag "Fund Template"
-        templates = fund.documents.templates.where(owner_tag: "Fund Template")
         # Loop through each fund and generate the documents
         templates.each do |document_template|
           send_notification("Generating #{document_template.name} for #{fund.name}", user_id)
@@ -30,6 +30,8 @@ class FundDocGenJob < ApplicationJob
         send_notification("Documentation generation completed with #{error_msg.length} errors. Errors will be sent via email", user_id, :danger)
         EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg:).doc_gen_errors.deliver_now
       end
+
+      send_notification("No templates found for #{fund.name}", user_id, "danger") if templates.blank?
 
     end
   end
