@@ -66,8 +66,7 @@ class FundDocGenerator
     UserAlert.new(user_id:, message: "Document #{fund_doc_template.name} generated for #{fund.investor_name}. Please refresh the page.", level: "success").broadcast
   end
 
-  # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
-  def generate(fund, fund_doc_template_path, start_date, end_date)
+  def generate(fund, start_date, end_date, fund_doc_template_path)
     template = Sablon.template(File.expand_path(fund_doc_template_path))
     context = prepare_context(fund, start_date, end_date)
 
