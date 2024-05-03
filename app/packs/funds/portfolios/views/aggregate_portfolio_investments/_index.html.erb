@@ -14,7 +14,7 @@
 
       <%= link_to "Scenarios", portfolio_scenarios_path(fund_id: params[:fund_id]), { class: "btn btn-outline-success"} if params[:fund_id].present? %>
 
-        
+
 
 
         <div class="btn-group">
@@ -31,7 +31,7 @@
               <%#= link_to "Individual Investments", portfolio_investments_path(fund_id: params[:fund_id], format: "xlsx", all: true), { class: "dropdown-item"}  %>
 
               <div class="dropdown-divider"></div>
-              
+
               <%= link_to "Upload",
                   new_import_upload_path("import_upload[owner_id]": params[:fund_id],
                   "import_upload[owner_type]": "Fund",
@@ -49,51 +49,24 @@
 
 <%= render "aggregate_portfolio_investments/stats",  aggregate_portfolio_investments:, fund: %>
 
-<div class="table-responsive" data-controller="datatable" data-datatable-money-columns-value="3,4,6,7" data-datatable-responsive-details-value=true>
-  <table id="aggregate_portfolio_investments" class="table table-bordered dataTable jqDataTable">
-    <thead>
-      <tr>
-        <th>
-          For
-        </th>
-        <%if show_fund_name%>
-        <th>
-          Fund
-        </th>
-        <%end%>
-        <th>
-          Portfolio Company
-        </th>
-        <th>
-          Instrument
-        </th>
-        <th>
-          Bought Amount
-        </th>
-        <th>
-          Sold Amount
-        </th>
-        <th>
-          Current Quantity
-        </th>
-        <th>
-          Fmv
-        </th>
-        <th>
-          Avg Cost / Share
-        </th>
-        <th>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <% aggregate_portfolio_investments.each do |aggregate_portfolio_investment| %>
-        <%= render aggregate_portfolio_investment, show_fund_name: show_fund_name %>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+<%
+    import_upload_id ||= params[:import_upload_id]
+    lazy_load_data ||= false
+    data_source ||= aggregate_portfolio_investments_path( params: params.to_unsafe_h,
+                          import_upload_id:, format: :json, all: true)
+    col_params = {no_fund: true}
+    column_names, field_list = get_columns(AggregatePortfolioInvestment, params: col_params)
+  %>
 
-<div class="associated_entity">
-  <%= render "aggregate_portfolio_investments/index_charts" %>
-</div>
+  <div class="table-responsive" data-controller="aggregate-portfolio-investments"
+   data-aggregate-portfolio-investments-lazy-load-data-value=<%= lazy_load_data %>
+   data-aggregate-portfolio-investments-table-name-value="#aggregate_portfolio_investments"
+   data-aggregate-portfolio-investments-field-list-value=<%=field_list%>>
+
+    <% if lazy_load_data %>
+        <a class="load_data_link" data-action="click->aggregate-portfolio-investments#loadData"><span>Load Data</span></a>
+    <% end %>
+
+    <%= render CustomTable.new(data_source:, id: "aggregate_portfolio_investments", column_names:)%>
+  </div>
+  

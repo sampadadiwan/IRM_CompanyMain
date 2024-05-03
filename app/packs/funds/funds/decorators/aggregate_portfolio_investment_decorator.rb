@@ -1,12 +1,24 @@
 class AggregatePortfolioInvestmentDecorator < ApplicationDecorator
-  delegate_all
+  def company_link
+    h.link_to object.portfolio_company_name, object
+  end
 
-  # Define presentation-specific methods here. Helpers are accessed through
-  # `helpers` (aka `h`). You can override attributes, for example:
-  #
-  #   def created_at
-  #     helpers.content_tag :span, class: 'time' do
-  #       object.created_at.strftime("%a %m/%d/%y")
-  #     end
-  #   end
+  def investment_instrument
+    h.link_to object.investment_instrument, object
+  end
+
+  def dt_actions
+    links = []
+    links << h.link_to('Show', h.aggregate_portfolio_investment_path(object), class: "btn btn-outline-primary")
+    if h.policy(object).add_valuation?
+      valuation_params = {
+        'valuation[owner_id]': object.portfolio_company_id,
+        'valuation[owner_type]': 'Investor',
+        'valuation[investment_instrument_id]': object.investment_instrument_id
+      }
+      valuation_path = h.new_valuation_path(valuation_params)
+      links << h.link_to('Add Valuation', valuation_path, class: "btn btn-outline-success")
+    end
+    h.safe_join(links, '')
+  end
 end

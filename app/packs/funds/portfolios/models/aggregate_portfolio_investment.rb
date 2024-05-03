@@ -2,7 +2,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   include ForInvestor
   include Trackable.new
   include WithCustomField
-
+  include RansackerAmounts.new(fields: %w[sold_amount bought_amount fmv avg_cost])
   belongs_to :entity, touch: true
   belongs_to :fund
   belongs_to :portfolio_company, class_name: "Investor"
@@ -11,6 +11,9 @@ class AggregatePortfolioInvestment < ApplicationRecord
   has_many :portfolio_investments, dependent: :destroy
 
   monetize :bought_amount_cents, :sold_amount_cents, :avg_cost_cents, :cost_of_sold_cents, :fmv_cents, :cost_cents, with_currency: ->(i) { i.fund.currency }
+
+  STANDARD_COLUMN_NAMES = ["For", "Portfolio Company", "Instrument", "Bought Amount", "Sold Amount", "Current Quantity", "Fmv", "Avg Cost / Share", " "].freeze
+  STANDARD_COLUMN_FIELDS = %w[commitment_type portfolio_company_name investment_instrument bought_amount sold_amount current_quantity fmv avg_cost dt_actions].freeze
 
   enum :commitment_type, { Pool: "Pool", CoInvest: "CoInvest" }
   scope :pool, -> { where(commitment_type: 'Pool') }
