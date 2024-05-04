@@ -182,3 +182,5 @@ Scenario Outline: Cancel Esign for a document
     Examples:
     |user	      |entity                         |role       |given  |should	|access | crud |
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
+
+    

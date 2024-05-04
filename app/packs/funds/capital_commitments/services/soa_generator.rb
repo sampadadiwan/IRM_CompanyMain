@@ -16,17 +16,22 @@ class SoaGenerator
         cleanup
       end
     else
-      Rails.logger.debug "Skipping SOA generation, no kyc found"
+      msg = "SOA generation failed. KYC not found for #{capital_commitment.investor_name}."
+      send_notification(msg, user_id) if user_id
+      Rails.logger.debug msg
     end
   end
 
   private
 
   def notify(fund_doc_template, capital_commitment, user_id)
-    send_notification("SOA #{fund_doc_template.name} generated for #{capital_commitment.investor_name}. Please refresh the page.", user_id)
+    msg = "SOA #{fund_doc_template.name} generated for #{capital_commitment.investor_name}. Please refresh the page."
+    send_notification(msg, user_id)
   end
 
   def prepare_context(capital_commitment, start_date, end_date)
+    amount_in_words = capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
+
     {
       date: Time.zone.today.strftime("%d %B %Y"),
       start_date:,
@@ -71,9 +76,6 @@ class SoaGenerator
   # fund_doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
   def generate(capital_commitment, start_date, end_date, fund_doc_template_path)
     template = Sablon.template(File.expand_path(fund_doc_template_path))
-
-    capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
-
     context = prepare_context(capital_commitment, start_date, end_date)
 
     # add_account_entries(context, capital_commitment, start_date, end_date)
