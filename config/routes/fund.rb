@@ -71,6 +71,8 @@ resources :capital_commitments do
   get 'search', on: :collection
   get 'report', on: :member
   get 'documents', on: :collection
+  get 'transfer_fund_units', on: :member
+  post 'transfer_fund_units', on: :member
 end
 
 resources :funds do

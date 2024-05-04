@@ -136,7 +136,8 @@ class InvestorKyc < ApplicationRecord
   end
 
   def to_s
-    "#{full_name} - #{self.PAN}"
+    # "#{full_name} - #{self.PAN}"
+    full_name
   end
 
   def document_list

@@ -1,6 +1,6 @@
 class CapitalCommitmentsController < ApplicationController
   before_action :set_capital_commitment, only: %i[show edit update destroy generate_documentation
-                                                  report generate_soa generate_soa_form]
+                                                  report generate_soa generate_soa_form transfer_fund_units]
 
   after_action :verify_authorized, only: %i[show edit update destroy generate_documentation
                                             report generate_soa generate_soa_form]
@@ -54,6 +54,30 @@ class CapitalCommitmentsController < ApplicationController
     index_search = index_search.filter(term: { fund_id: params[:fund_id] }) if params[:fund_id].present?
 
     index_search.map(&:id)
+  end
+
+  def transfer_fund_units
+    if request.post?
+      fund = @capital_commitment.fund
+      from_commitment = @capital_commitment
+      price = params[:price].to_d
+      premium = params[:premium].to_d
+      quantity = params[:quantity].to_d
+      to_folio_id = params[:to_folio_id]
+
+      valid_params = params.to_unsafe_h.slice(:to_folio_id, :quantity, :price, :premium)
+
+      to_commitment = @capital_commitment.fund.capital_commitments.find_by(folio_id: to_folio_id)
+      redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **valid_params), alert: "Invalid folio #{params[:to_folio_id]}" if to_commitment.blank?
+      authorize to_commitment, :transfer_fund_units?
+
+      result = FundUnitTransferService.wtf?(from_commitment:, to_commitment:, fund:, price:, premium:, quantity:)
+      if result.success?
+        redirect_to capital_commitment_url(@capital_commitment), notice: "Units transferred successfully"
+      else
+        redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **valid_params), alert: result[:error]
+      end
+    end
   end
 
   def report

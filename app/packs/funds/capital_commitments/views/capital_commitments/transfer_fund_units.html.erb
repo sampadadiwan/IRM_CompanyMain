@@ -1,0 +1,50 @@
+<%= render NewCard.new do %>
+  <%= render FormCard.new(title: "Transfer Fund Units") do %>
+    <%= form_with(model: nil, url: transfer_fund_units_capital_commitment_path(@capital_commitment), method: :post) do |form| %>
+        <% if @capital_commitment.errors.any? %>
+            <div class="alert alert-danger">
+            <h2><%= pluralize(capital_commitment.errors.count, "error") %> prohibited this capital_commitment from being saved:</h2>
+
+            <ul>
+                <% @capital_commitment.errors.each do |error| %>
+                <li><%= error.full_message %></li>
+                <% end %>
+            </ul>
+            </div>
+        <% end %>
+
+        <%= form.text_field :entity_id, class: "form-control", hidden: true, value: @capital_commitment.entity_id  %>
+        <%= form.text_field :fund_id, class: "form-control", hidden: true, value: @capital_commitment.fund_id  %>
+
+        <div class="form-group">
+          <%= form.label :folio_id, "From Folio" %>
+          <%= form.text_field :folio_id, class: 'form-control', disabled: true, value: @capital_commitment.folio_id %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :quantity %>
+          <%= form.number_field :quantity, class: 'form-control', step: :any, name: :quantity, value: params[:quantity] %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :price %>
+          <%= form.number_field :price, class: 'form-control', step: :any, name: :price, value: params[:price] %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :premium %>
+          <%= form.number_field :premium, class: 'form-control', step: :any, name: :premium, value: params[:premium] %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :folio_id, "To Folio" %>
+          <%= form.text_field :folio_id, class: 'form-control', name: :to_folio_id, value: params[:to_folio_id] %>
+        </div>
+
+        <div class="form-group">
+            <%= form.submit "Transfer", {class: "btn btn-outline-primary"}%>
+        </div>
+
+    <% end %>
+  <% end %>
+<% end %>

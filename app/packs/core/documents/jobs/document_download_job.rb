@@ -20,7 +20,7 @@ class DocumentDownloadJob < ApplicationJob
 
         uploaded_document = upload(user, folder, zip_file.path)
         msg = "Zipfile of folder #{folder.name} created. Please download."
-        DocumentDownloadNotifier.with(entity_id: folder.entity_id, document: uploaded_document, msg: ).deliver(user)
+        DocumentDownloadNotifier.with(entity_id: folder.entity_id, document: uploaded_document, msg:).deliver(user)
         send_notification(msg, user_id)
       end
 

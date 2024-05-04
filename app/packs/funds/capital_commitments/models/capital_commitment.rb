@@ -204,7 +204,11 @@ class CapitalCommitment < ApplicationRecord
   delegate :fund_signatories, to: :fund
 
   def to_s
-    "#{investor_name}, Folio: #{folio_id}"
+    if investor_kyc.present?
+      "#{investor_kyc.full_name} - #{folio_id}"
+    else
+      "#{investor_name}, Folio: #{folio_id}"
+    end
   end
 
   def folder_path

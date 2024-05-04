@@ -182,6 +182,7 @@ Metrics/ParameterLists:
   Exclude:
     - 'app/packs/funds/capital_commitments/jobs/account_entry_allocation_job.rb'
     - 'app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb'
+    - 'app/packs/funds/funds/services/fund_unit_transfer_service.rb'
 
 Metrics/MethodLength:
   Description: 'Avoid methods longer than 5 lines of code.'

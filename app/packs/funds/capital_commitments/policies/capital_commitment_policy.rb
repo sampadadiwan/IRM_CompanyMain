@@ -24,6 +24,10 @@ class CapitalCommitmentPolicy < FundBasePolicy
     permissioned_employee?(:update) || support?
   end
 
+  def transfer_fund_units?
+    update?
+  end
+
   def generate_documentation?
     update? && !record.esign_completed && record.investor_kyc&.verified
   end

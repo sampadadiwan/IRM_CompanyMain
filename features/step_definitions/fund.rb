@@ -1040,7 +1040,7 @@ end
 
 Then('the generated doc must be attached to the capital commitments') do
   CapitalCommitment.all.each do |cc|
-    cc.documents.where(name: @commitment_template.name, owner_tag: "Generated").count.should == 1
+    cc.documents.where(name: "#{@commitment_template.name}-#{cc}", owner_tag: "Generated").count.should == 1
     visit(capital_commitment_path(cc))
     expect(page).to have_content(@commitment_template.name)
     expect(page).to have_content("Generated")
@@ -1607,4 +1607,53 @@ Then('the imported data must have the form_type updated') do
       end
     end
   end
+end
+
+
+When('fund units are transferred {string}') do |transfer|
+  
+  @fund.reload
+  @price, @premium, @transfer_quantity = transfer.split(",").map{|x| x.split("=")[1].to_d}
+  from_cc = @fund.capital_commitments.first
+  to_cc = @fund.capital_commitments.last
+
+  result = FundUnitTransferService.wtf?(from_commitment: from_cc, to_commitment: to_cc, fund: @fund, price: @price, premium: @premium, quantity: @transfer_quantity)
+  puts result[:error]
+  result.success?.should == true
+end
+
+Then('the units should be transferred') do
+  from_cc = @fund.capital_commitments.first
+  to_cc = @fund.capital_commitments.last
+  from_fu = from_cc.fund_units.last
+  to_fu = to_cc.fund_units.last
+
+  from_fu.quantity.should == -@transfer_quantity
+  from_fu.price.should == @price
+  from_fu.premium.should == @premium
+  from_fu.reason.should == "Transfer from #{from_cc.folio_id} to #{to_cc.folio_id}"
+  to_fu.quantity.should == @transfer_quantity
+  to_fu.price.should == @price
+  to_fu.premium.should == @premium
+  to_fu.reason.should == "Transfer from #{from_cc.folio_id} to #{to_cc.folio_id}"
+
+end
+
+Then('I should be able to see the transferred fund units') do
+  from_cc = @fund.capital_commitments.first
+  to_cc = @fund.capital_commitments.last
+  from_fu = from_cc.fund_units.last
+  to_fu = to_cc.fund_units.last
+
+  visit(fund_unit_path(from_fu))
+  expect(page).to have_content(from_fu.quantity)
+  expect(page).to have_content(from_fu.price)
+  expect(page).to have_content(from_fu.premium)
+  expect(page).to have_content(from_fu.reason)
+
+  visit(fund_unit_path(to_fu))
+  expect(page).to have_content(to_fu.quantity)
+  expect(page).to have_content(to_fu.price)
+  expect(page).to have_content(to_fu.premium)
+  expect(page).to have_content(to_fu.reason)
 end

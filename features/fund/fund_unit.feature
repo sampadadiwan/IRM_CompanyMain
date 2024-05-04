@@ -100,3 +100,26 @@ Scenario Outline: Import fund units
   	|entity                                         |fund                |msg	| call | collected_amount |
   	|entity_type=Investment Fund;enable_funds=true  |name=SAAS Fund;currency=INR      |Fund was successfully created| name=Call 1;call_basis=Upload | 2120000 |
   
+
+Scenario Outline: Transfer Fund Units
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund;enable_funds=true"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund  
+  Given there are capital commitments of "folio_committed_amount_cents=100000000;unit_type=A" from each investor
+  Given there is a capital call "<call>"
+  Given there is an existing investor "" with "1" users
+  Given there is a capital commitment of "folio_committed_amount_cents=100000000;unit_type=A" for the last investor 
+  Given the investors are added to the fund  
+  Given the remittances are paid and verified
+  Given the units are generated
+  When fund units are transferred "<transfer>"
+  Then the units should be transferred
+  And I should be able to see the transferred fund units
+
+Examples:
+  	|fund                 | call                 | transfer |
+  	|name=Test;unit_types=A,B,C  | percentage_called=20 | price=100,premium=10,quantity=1|
+    |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,quantity=2 |
