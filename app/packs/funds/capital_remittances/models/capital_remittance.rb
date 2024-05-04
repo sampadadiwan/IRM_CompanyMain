@@ -132,11 +132,12 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def to_s
-    if status == "Paid"
-      "#{investor_name}: #{collected_amount} : #{status}"
-    else
-      "#{investor_name}: #{due_amount} : #{status}"
-    end
+    "#{investor_name}: #{status}"
+    # if status == "Paid"
+    #   "#{investor_name}: #{collected_amount} : #{status}"
+    # else
+    #   "#{investor_name}: #{due_amount} : #{status}"
+    # end
   end
 
   def self.ransackable_attributes(_auth_object = nil)
