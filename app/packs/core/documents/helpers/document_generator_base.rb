@@ -101,7 +101,7 @@ module DocumentGeneratorBase
     generated_document.name = if start_date && end_date
                                 "#{doc_template.name} #{start_date} to #{end_date}"
                               else
-                                doc_template.name
+                                "#{doc_template.name}-#{model}"
                               end
 
     # Destroy existing docs with the same name for the model
