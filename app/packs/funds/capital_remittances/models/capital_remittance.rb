@@ -132,7 +132,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def to_s
-    "#{investor_name}: #{status}"
+    "#{investor_name}: #{folio_id}"
     # if status == "Paid"
     #   "#{investor_name}: #{collected_amount} : #{status}"
     # else
