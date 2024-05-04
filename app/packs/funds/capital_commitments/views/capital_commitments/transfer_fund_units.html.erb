@@ -18,12 +18,17 @@
 
         <div class="form-group">
           <%= form.label :folio_id, "From Folio" %>
-          <%= form.text_field :folio_id, class: 'form-control', disabled: true, value: @capital_commitment.folio_id %>
+          <%= form.text_field :folio_id, class: 'form-control', disabled: true, value: @capital_commitment %>
         </div>
 
         <div class="form-group">
           <%= form.label :quantity %>
           <%= form.number_field :quantity, class: 'form-control', step: :any, name: :quantity, value: params[:quantity], required: true %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :transfer_date %>
+          <%= form.date_field :transfer_date, class: 'form-control', name: :transfer_date, value: params[:transfer_date], required: true %>
         </div>
 
         <div class="form-group">
@@ -38,7 +43,7 @@
 
         <div class="form-group">
           <%= form.label :folio_id, "To Folio" %>
-          <%= form.select :folio_id, @capital_commitment.fund.capital_commitments.pluck(:folio_id), {}, class: 'form-control select2', name: :to_folio_id, value: params[:to_folio_id], required: true %>
+          <%= form.select :folio_id, @capital_commitment.fund.capital_commitments.map{|c| [c, c.folio_id]}, {selected: params[:to_folio_id]}, class: 'form-control select2', name: :to_folio_id, required: true %>
         </div>
 
         <div class="form-group">

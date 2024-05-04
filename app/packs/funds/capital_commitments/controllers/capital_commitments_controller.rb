@@ -63,9 +63,10 @@ class CapitalCommitmentsController < ApplicationController
       price = params[:price].to_d
       premium = params[:premium].to_d
       quantity = params[:quantity].to_d
+      transfer_date = params[:transfer_date]
       to_folio_id = params[:to_folio_id]
 
-      valid_params = params.to_unsafe_h.slice(:to_folio_id, :quantity, :price, :premium)
+      valid_params = params.to_unsafe_h.slice(:to_folio_id, :quantity, :price, :premium, :transfer_date)
       # Check if the to_folio_id is valid
       to_commitment = @capital_commitment.fund.capital_commitments.find_by(folio_id: to_folio_id)
       
@@ -76,7 +77,7 @@ class CapitalCommitmentsController < ApplicationController
         # Check if the user is authorized to transfer fund units
         authorize to_commitment, :transfer_fund_units?
         # Transfer fund units using the TB
-        result = FundUnitTransferService.wtf?(from_commitment:, to_commitment:, fund:, price:, premium:, quantity:)
+        result = FundUnitTransferService.wtf?(from_commitment:, to_commitment:, fund:, price:, premium:, quantity:, transfer_date:)
         if result.success?
           # Redirect to the fund units tab
           redirect_to capital_commitment_url(@capital_commitment, tab: "fund-units-tab"), notice: "Units transferred successfully"
