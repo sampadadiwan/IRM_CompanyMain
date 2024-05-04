@@ -23,22 +23,22 @@
 
         <div class="form-group">
           <%= form.label :quantity %>
-          <%= form.number_field :quantity, class: 'form-control', step: :any, name: :quantity, value: params[:quantity] %>
+          <%= form.number_field :quantity, class: 'form-control', step: :any, name: :quantity, value: params[:quantity], required: true %>
         </div>
 
         <div class="form-group">
           <%= form.label :price %>
-          <%= form.number_field :price, class: 'form-control', step: :any, name: :price, value: params[:price] %>
+          <%= form.number_field :price, class: 'form-control', step: :any, name: :price, value: params[:price], required: true %>
         </div>
 
         <div class="form-group">
           <%= form.label :premium %>
-          <%= form.number_field :premium, class: 'form-control', step: :any, name: :premium, value: params[:premium] %>
+          <%= form.number_field :premium, class: 'form-control', step: :any, name: :premium, value: params[:premium], required: true %>
         </div>
 
         <div class="form-group">
           <%= form.label :folio_id, "To Folio" %>
-          <%= form.text_field :folio_id, class: 'form-control', name: :to_folio_id, value: params[:to_folio_id] %>
+          <%= form.select :folio_id, @capital_commitment.fund.capital_commitments.pluck(:folio_id), {}, class: 'form-control select2', name: :to_folio_id, value: params[:to_folio_id], required: true %>
         </div>
 
         <div class="form-group">
