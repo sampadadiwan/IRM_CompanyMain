@@ -242,17 +242,18 @@ Given('the document is approved') do
   @document.save
 end
 
-Given('user goes to add a new document {string} for the fund') do |doc_name|
+Given('user goes to add a new template {string} for the fund') do |doc_name|
   @es = @fund.entity.entity_setting
   @es.stamp_paper_tags = "GJ-100-BOB_Test,DL-100-test"
   @es.save!
   visit(fund_path(@fund))
-  # click on element with id documents_tab
-  find("#documents_tab").click
-  find("#doc_actions").click
-  click_on("New Document")
+  click_on("Actions")
+  find('#misc_action_menu').hover
+  click_on("New Template")
+  sleep(2)
   fill_in("document_name", with: doc_name)
   attach_file('files[]', File.absolute_path('./public/sample_uploads/SOA Template.docx'), make_visible: true)
+  sleep(2)
   # check checkbox id id="document_template"
   check('document_template')
 end
@@ -286,4 +287,18 @@ Then('user should be able to save the document') do
   click_on("Save")
   sleep(2)
   expect(page).to have_text "Document was successfully saved."
+end
+
+Given('user goes to add a new document {string} for the fund') do |doc_name|
+  visit(fund_path(@fund))
+  # click on element with id documents_tab
+  find("#documents_tab").click
+  find("#doc_actions").click
+  click_on("New Document")
+  fill_in("document_name", with: doc_name)
+end
+
+Then('the template checkbox is not present') do
+  expect(page).not_to have_text "Template"
+  expect(page).not_to have_selector('#document_template')
 end

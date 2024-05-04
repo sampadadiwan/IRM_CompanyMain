@@ -425,7 +425,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
 
   class_name = @investor_kyc.type_from_kyc_type.underscore
 
-  if kyc_url_params.present?  
+  if kyc_url_params.present?
     # For Investors create thier own KYC
     visit(new_investor_kyc_path(eval(kyc_url_params)))
   else
@@ -436,7 +436,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
     sleep(2)
     select(@investor_kyc.investor.investor_name, from: "#{class_name}_investor_id")
   end
-  
+
   if files.include?("pan")
     page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
       within '#custom_file_upload_pan_card' do
@@ -453,7 +453,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
   click_on("Next")
   sleep(3)
 
-  
+
   if files.include?("address proof")
     page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
       within '#custom_file_upload_address_proof' do
@@ -469,7 +469,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
     end
   end
   sleep(1)
-  
+
   fill_in("#{class_name}_address", with: @investor_kyc.address)
   fill_in("#{class_name}_corr_address", with: @investor_kyc.corr_address)
   fill_in("#{class_name}_bank_name", with: @investor_kyc.bank_account_number)
@@ -479,11 +479,11 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
   click_on("Next")
   sleep(1)
 
-  unless kyc_url_params.present?  
+  unless kyc_url_params.present?
     fill_in("#{class_name}_expiry_date", with: @investor_kyc.expiry_date)
     fill_in("#{class_name}_comments", with: @investor_kyc.comments)
   end
-  
+
   if files.include?("f1")
     page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
       within '#custom_file_f1' do
@@ -501,7 +501,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
   end
   sleep(1)
 
-  if args.include?("properties") 
+  if args.include?("properties")
     @investor_kyc.properties.each do |key, value|
       fill_in("#{class_name}_properties_#{key.strip.titleize.delete(" ").underscore}", with: value)
     end
@@ -515,7 +515,7 @@ end
 Then('I should see the kyc documents {string}') do |docs|
   @investor_kyc = InvestorKyc.last
 
-  document_names = @investor_kyc.documents.pluck(:name) 
+  document_names = @investor_kyc.documents.pluck(:name)
   docs.split(",").each do |doc_name|
     puts "Checking for #{doc_name}"
     document_names.include?(doc_name).should == true
@@ -817,8 +817,6 @@ Then('the document is partially signed') do
   allow_any_instance_of(DigioEsignHelper).to receive(:sign).and_return(sample_doc_esign_init_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response_first_signed)
 
-  # stub DigioEsignHelper's sign method to return
-  @doc = Document.where(name: "Commitment Template").last
   visit(document_path(@doc))
   click_on("Signatures")
   sleep(1)
@@ -839,8 +837,6 @@ end
 Then('the document esign is cancelled') do
   allow_any_instance_of(DigioEsignHelper).to receive(:hit_cancel_esign_api).and_return(cancel_api_success_response)
 
-  @doc = Document.where(name: "Commitment Template").last
-
   visit(document_path(@doc))
   click_on("Signatures")
   sleep(1)
@@ -849,7 +845,6 @@ Then('the document esign is cancelled') do
 end
 
 Then('the document and esign status is cancelled') do
-  @doc = Document.where(name: "Commitment Template").last
   visit(document_path(@doc))
   click_on("Signatures")
   sleep(1)
@@ -1054,7 +1049,7 @@ Given('the investor entity has no {string} permissions') do |perm|
   ap @investor.investor_entity.permissions
 end
 
-Given('a InvestorKyc is created with details {string} by {string}') do |args, investor_user|  
+Given('a InvestorKyc is created with details {string} by {string}') do |args, investor_user|
   @investor_kyc = FactoryBot.build(:investor_kyc, entity: @entity, investor: @investor)
   key_values(@investor_kyc, args)
   investor_user = investor_user == "true"
@@ -1072,7 +1067,7 @@ Then('the kyc form should be sent {string} to the investor') do |flag|
     expect(current_email.subject).to include "Request to add KYC: #{@investor_kyc.entity.name}"
   else
     current_email.should == nil
-  end  
+  end
 end
 
 Given('there is a custom notification {string} in place for the KYC') do |args|
@@ -1084,7 +1079,7 @@ end
 
 Then('the investor entity should have {string} permissions') do |args|
   @investor.reload
-  @investor.investor_entity.permissions.set?(args.to_sym).should == true  
+  @investor.investor_entity.permissions.set?(args.to_sym).should == true
 end
 
 Then('the aml report should be generated for the investor kyc') do
@@ -1094,7 +1089,7 @@ end
 Then('notification should be sent {string} to the investor for kyc update') do |sent|
   user = @entity.employees.first
   open_email(user.email)
-  
+
   if sent == "true"
     expect(current_email.subject).to include "KYC updated for #{@investor_kyc.full_name}"
   else
@@ -1113,8 +1108,8 @@ Given('notification should be sent {string} to the investor for {string}') do |s
     clear_emails
   else
     current_email.should == nil
-  end  
-  
+  end
+
 end
 
 Given('notification should be sent {string} to the user for {string}') do |sent, cn_args|
@@ -1128,7 +1123,7 @@ Given('notification should be sent {string} to the user for {string}') do |sent,
     clear_emails
   else
     current_email.should == nil
-  end  
+  end
 end
 
 Given('the kyc reminder is sent to the investor') do
@@ -1136,4 +1131,3 @@ Given('the kyc reminder is sent to the investor') do
     kyc.send_kyc_form(reminder: true)
   end
 end
-
