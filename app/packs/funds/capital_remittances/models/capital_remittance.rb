@@ -110,7 +110,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def folder_path
-    "#{capital_call.folder_path}/Remittances/#{investor.investor_name.delete('/')}-#{folio_id.delete('/')}"
+    "#{capital_call.folder_path}/#{investor.investor_name.delete('/')}-#{folio_id.delete('/')}"
   end
 
   def set_status
