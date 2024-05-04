@@ -1,3 +1,15 @@
+V7.0.88
+#####################################
+d4fae6554 Datalist fix (#235)
+87ca13b81 Fund unit transfer (#248)
+16f95c9a3 Better notification from DocumentDownload Job
+578fc8f02 Doc gen, append model name to template name, for file
+c89983d3a Btter pagination of audits
+87a9d138b Changed folder path for Remittances and Payments
+c8024fe0e Minor UI changes to call form
+8273dba78 Added audit_download_job
+4c004e105 Server side sorting (#240)
+0b67375b2 Added fund doc generator
 
 V7.0.82
 #####################################
