@@ -119,6 +119,10 @@ module CapHive
 
     # end
 
+    # We make sure that the ES index gets updated in the background.
+    # This helps in reducing the impact to app if ES is down
+    Chewy.request_strategy = :active_job
+
     # config.active_storage.replace_on_assign_to_many = false
     config.active_storage.analyzers = []
     config.active_storage.previewers = []
