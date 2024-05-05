@@ -1,13 +1,13 @@
 class KycDocGenJob < ApplicationJob
   queue_as :serial
-  sidekiq_options retry: 1
+  retry_on StandardError, attempts: 1
 
   def perform(investor_kyc_id, document_template_ids, start_date, end_date,
               user_id: nil, entity_id: nil)
 
     error_msg = []
 
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       investor_kycs = InvestorKyc.where(id: investor_kyc_id) if investor_kyc_id.present?
       # # If we have a fund then lets get the kycs for that fund
       # investor_kycs ||= InvestorKyc.joins(:capital_commitments).where("capital_commitments.fund_id=?", fund_id) if fund_id.present?

@@ -42,5 +42,5 @@ Shrine.plugin :uppy_s3_multipart # load the plugin
 Shrine.plugin :backgrounding # load the plugin globally
 
 Shrine::Attacher.destroy_block do
-  DestroyShrineJob.perform_async(self.class.name, data)
+  DestroyShrineJob.perform_later(self.class.name, data)
 end

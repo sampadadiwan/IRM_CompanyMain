@@ -13,7 +13,7 @@ class FundReportJob < ApplicationJob
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   # rubocop:disable Metrics/ParameterLists
   def perform(entity_id, fund_id, report_name, start_date, end_date, user_id, excel: false, single: false)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       fund_ids = fund_id.present? ? [fund_id] : Entity.find(entity_id).fund_ids
       fund_ids.each do |fid|
         generate(fid, report_name, start_date, end_date, user_id, excel:, single:)

@@ -1,4 +1,3 @@
-require 'exception_notification/sidekiq'
 require 'exception_notification/rails'
 
 ExceptionNotification.configure do |config|

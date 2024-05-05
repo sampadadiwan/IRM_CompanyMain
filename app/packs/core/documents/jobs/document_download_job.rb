@@ -3,7 +3,7 @@ class DocumentDownloadJob < ApplicationJob
   attr_accessor :tmp_dir
 
   def perform(folder_id, user_id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       user = User.find(user_id)
       folder = Folder.find(folder_id)
 

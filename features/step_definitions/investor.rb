@@ -176,7 +176,6 @@ end
 
 
 Given('Given I upload an investor access file for employees') do
-  # Sidekiq.redis(&:flushdb)
 
   visit(investor_path(Investor.first))
   find("#stakeholder_users_tab").click
@@ -218,8 +217,6 @@ end
 
 
 Given('Given I upload an investor kyc file for employees') do
-  # Sidekiq.redis(&:flushdb)
-
   visit(investor_kycs_path)
   click_on("Upload/Download")
   click_on("Upload KYC Details")

@@ -1,6 +1,6 @@
 class CustomAllocationJob < AllocationBase
   def perform(secondary_sale_id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       secondary_sale = SecondarySale.find(secondary_sale_id)
 
       unless secondary_sale.lock_allocations

@@ -5,7 +5,7 @@ class CapitalCommitmentRemittanceJob < ApplicationJob
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCall
   def perform(capital_commitment_id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       generate_for_commitment(capital_commitment_id)
     end
   end

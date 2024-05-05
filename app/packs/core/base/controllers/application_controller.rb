@@ -11,6 +11,13 @@ class ApplicationController < ActionController::Base
   before_action :authenticate_user!, unless: :devise_controller?
   before_action :configure_permitted_parameters, if: :devise_controller?
 
+  # skip_after_action :verify_authorized, if: :mission_control_controller?
+  # skip_after_action :verify_policy_scoped, if: :mission_control_controller?
+
+  # def mission_control_controller?
+  #   is_a?(::MissionControl::Jobs::ApplicationController)
+  # end
+
   def authenticate_user!
     if request.headers['Authorization'].present?
       authenticate_devise_api_token!

@@ -69,10 +69,10 @@ class CapitalCommitmentsController < ApplicationController
       valid_params = params.to_unsafe_h.slice(:to_folio_id, :quantity, :price, :premium, :transfer_date)
       # Check if the to_folio_id is valid
       to_commitment = @capital_commitment.fund.capital_commitments.find_by(folio_id: to_folio_id)
-      
+
       if to_commitment.blank?
         # Redirect back to the form with an error message
-        redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **valid_params), alert: "Invalid folio #{params[:to_folio_id]}" 
+        redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **valid_params), alert: "Invalid folio #{params[:to_folio_id]}"
       else
         # Check if the user is authorized to transfer fund units
         authorize to_commitment, :transfer_fund_units?

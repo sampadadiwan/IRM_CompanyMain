@@ -1,10 +1,10 @@
 class EoiDocJob < ApplicationJob
   queue_as :doc_gen
-  sidekiq_options retry: 1
+  retry_on StandardError, attempts: 1
 
   # This is idempotent, we should be able to call it multiple times for the same ExpressionOfInterest
   def perform(expression_of_interest_id, user_id = nil)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       @expression_of_interest = ExpressionOfInterest.find(expression_of_interest_id)
       @investment_opportunity = @expression_of_interest.investment_opportunity
       @investor = @expression_of_interest.investor

@@ -59,3 +59,5 @@ plugin :tmp_restart
 
 #   PrometheusExporter::Instrumentation::Process.start(type: "web")
 # end
+
+# plugin :solid_queue

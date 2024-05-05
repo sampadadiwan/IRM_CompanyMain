@@ -1,9 +1,9 @@
 class EsopLetterJob < ApplicationJob
   queue_as :doc_gen
-  sidekiq_options retry: 1
+  retry_on StandardError, attempts: 1
 
   def perform(id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       Rails.logger.debug { "EsopLetterJob: Holding #{id} start" }
       holding = Holding.find(id)
       EsopLetterGenerator.new(holding) if holding.option_pool.grant_letter.present?

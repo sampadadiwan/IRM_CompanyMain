@@ -1,9 +1,9 @@
 class ImportUploadJob < ApplicationJob
   queue_as :serial
-  sidekiq_options retry: 0
+  retry_on StandardError, attempts: 0
 
   def perform(import_upload_id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       import_upload = ImportUpload.find(import_upload_id)
       begin
         # Download the S3 file to tmp

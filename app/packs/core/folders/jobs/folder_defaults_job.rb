@@ -2,7 +2,7 @@ class FolderDefaultsJob < ApplicationJob
   queue_as :low
 
   def perform(folder_id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       # Ensure all child documents have the same access rights
       folder = Folder.find(folder_id)
       folder.documents.update_all(printing: folder.printing, download: folder.download, orignal: folder.orignal)

@@ -2,7 +2,7 @@ class ExchangeRateCommitmentAdjustmentJob < ApplicationJob
   queue_as :serial
 
   def perform(id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       @exchange_rate = ExchangeRate.find(id)
       count = 0
       # Find the commitment with folio_currency

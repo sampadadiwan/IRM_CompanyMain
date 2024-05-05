@@ -1,10 +1,10 @@
 class CapitalCommitmentSoaJob < ApplicationJob
   queue_as :doc_gen
-  sidekiq_options retry: 1
+  retry_on StandardError, attempts: 1
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(capital_commitment_id, start_date, end_date, user_id: nil, template_name: nil)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       @capital_commitment = CapitalCommitment.find(capital_commitment_id)
       @fund = @capital_commitment.fund
       @investor = @capital_commitment.investor

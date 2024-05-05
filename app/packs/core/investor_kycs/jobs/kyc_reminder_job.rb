@@ -6,7 +6,7 @@ class KycReminderJob < ApplicationJob
   end
 
   def perform(user_id, investor_kyc_id = nil)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       @user = User.find(user_id)
       investor_kycs = if investor_kyc_id.present?
                         [InvestorKyc.find(investor_kyc_id)]

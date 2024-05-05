@@ -1,7 +1,7 @@
 # /method_length
 class EsignUpdateJob < ApplicationJob
   def perform(document_id, user_id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       # Find the document
       doc = Document.find(document_id)
       DigioEsignHelper.new.update_esign_status(doc)

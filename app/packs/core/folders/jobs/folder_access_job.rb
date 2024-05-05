@@ -2,7 +2,7 @@ class FolderAccessJob < ApplicationJob
   queue_as :serial
 
   def perform(folder_id, access_right_id)
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       # Ensure all child documents have the same access rights
       ar = AccessRight.find(access_right_id)
       folder = Folder.find(folder_id)

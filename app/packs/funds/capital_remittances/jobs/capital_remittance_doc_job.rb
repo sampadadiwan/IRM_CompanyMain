@@ -1,11 +1,11 @@
 class CapitalRemittanceDocJob < ApplicationJob
   queue_as :doc_gen
-  sidekiq_options retry: 1
+  retry_on StandardError, attempts: 1
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalRemittance
   def perform(capital_remittance_id, user_id = nil)
     error_msg = []
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       @capital_remittance = CapitalRemittance.find(capital_remittance_id)
       @capital_commitment = @capital_remittance.capital_commitment
       @investor_kyc = @capital_commitment.investor_kyc

@@ -43,6 +43,9 @@ gem 'rswag-ui'
 
 # Use Redis adapter to run Action Cable in production
 gem "redis", "~> 4.0"
+# Background Jobs
+gem "mission_control-jobs"
+gem "solid_queue"
 
 gem 'devise'
 gem 'devise-api', github: 'nejdetkadir/devise-api', branch: 'main'
@@ -57,8 +60,6 @@ gem 'dotenv-rails'
 # Send error emails to support
 gem 'exception_notification'
 gem 'sassc-rails'
-# Background Jobs
-gem 'sidekiq', '~> 7.0'
 
 gem 'action_mailbox_amazon_ingress'
 gem "aws-sdk-ec2", require: false
@@ -173,6 +174,7 @@ group :development, :staging, :test do
 end
 
 group :development do
+  gem 'capistrano-solid_queue', require: false
   gem 'packs-rails'
   # gem 'stimpack'
   # Use console on exceptions pages [https://github.com/rails/web-console]
@@ -205,7 +207,6 @@ group :development do
   gem "capistrano3-puma"
   gem "capistrano-rails", require: false
   gem 'capistrano-rvm'
-  gem 'capistrano-sidekiq', github: 'seuros/capistrano-sidekiq', ref: "784b04c973e5c074dc78c30746077c9e6fd2bb9a"
   gem 'foreman'
 end
 

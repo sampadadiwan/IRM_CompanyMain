@@ -248,8 +248,6 @@ Offer.all.each do |offer|
 end
 
 Given('Given I upload a offer file') do
-    Sidekiq.redis(&:flushdb)
-
     @existing_user_count = User.count
     visit(secondary_sale_path(@sale))
     click_on("Pending Offers")

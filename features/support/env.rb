@@ -54,7 +54,6 @@ end
 
 After do |scenario|
   DatabaseCleaner.clean
-  Sidekiq.redis(&:flushdb)
 
   if scenario.failed?
     puts scenario.location.to_s

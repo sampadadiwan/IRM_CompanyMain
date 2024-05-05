@@ -2,7 +2,7 @@
 class BulkActionJob < ApplicationJob
   def perform(record_ids, user_id, bulk_action, params: {})
     @error_msg = []
-    Chewy.strategy(:sidekiq) do
+    Chewy.strategy(:active_job) do
       records = get_class.where(id: record_ids)
       user = User.find(user_id)
       records.each do |rec|

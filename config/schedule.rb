@@ -45,7 +45,7 @@ every 1.day, at: '23:30 am' do
 end
 
 every :reboot do
-  bundle "sidekiq"
+  bundle "solid_queue:start"
   bundle "puma --yjit -C /home/ubuntu/IRM/shared/puma.rb"
   command 'sudo docker run -d --rm --name xirr_py -p 8000:80 thimmaiah/xirr_py'
 end

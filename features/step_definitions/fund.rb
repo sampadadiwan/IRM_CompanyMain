@@ -1617,7 +1617,7 @@ When('fund units are transferred {string}') do |transfer|
   from_cc = @fund.capital_commitments.first
   to_cc = @fund.capital_commitments.last
 
-  result = FundUnitTransferService.wtf?(from_commitment: from_cc, to_commitment: to_cc, fund: @fund, price: @price, premium: @premium, quantity: @transfer_quantity)
+  result = FundUnitTransferService.wtf?(from_commitment: from_cc, to_commitment: to_cc, fund: @fund, price: @price, premium: @premium, quantity: @transfer_quantity, transfer_date: Date.today)
   puts result[:error]
   result.success?.should == true
 end

@@ -504,7 +504,6 @@ end
 
 
 Given('Given I upload a holdings file') do
-  Sidekiq.redis(&:flushdb)
 
   puts "##############\n"
   puts @user.entity.investors.holding.first.to_json
