@@ -669,15 +669,21 @@ Given('we Generate SOA for the first capital commitment') do
   visit(capital_commitment_path(@capital_commitment))
   find("#commitment_actions").click
   click_on("Generate SOA")
-  fill_in('start_date', with: "01/01/2020")
-  fill_in('end_date', with: "01/01/2021")
+  @start_date = Date.parse "01/01/2020"
+  @end_date = Date.parse "01/01/2021"
+  fill_in('start_date', with: @start_date)
+  fill_in('end_date', with: @end_date)
   click_on("Generate SOA Now")
   sleep(2)
 end
 
-Then('it is successfully generated') do
+Then('the SOA is successfully generated') do
   expect(page).to have_content("Generated")
   expect(page).to have_content("Documentation generation started, please check back in a few mins")
+  soa = Document.where(owner_tag: "Generated").last
+  soa.name.should == "SOA Template #{@start_date.strftime("%d %B,%Y")} to #{@end_date.strftime("%d %B,%Y")} - #{@capital_commitment}"
+  soa.name.include?("SOA Template").should == true
+  soa.name.include?(@capital_commitment.investor_kyc.full_name).should == true
 end
 
 Then('the document has {string} e_signatures') do |string|

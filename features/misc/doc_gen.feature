@@ -18,7 +18,7 @@ Scenario Outline: Generate SOA for a Capital Commitment
   Given the capital distributions are approved
   Given the fund has a SOA template "name=SOA template"
   And we Generate SOA for the first capital commitment
-  Then it is successfully generated
+  Then the SOA is successfully generated
 
   Examples:
   	|user	    |entity                         |role       |given  |should	|access | crud |
@@ -41,7 +41,7 @@ Scenario Outline: Send Generated SOA for Esign
   Given the capital distributions are approved
   Given the fund has a SOA template "name=SOA template"
   And we Generate SOA for the first capital commitment
-  Then it is successfully generated
+  Then the SOA is successfully generated
   Then when the document is approved
   And the document has "2" e_signatures
   And the document is signed by the signatories
@@ -69,7 +69,7 @@ Scenario Outline: Send Generated SOA for Esign with status requested
   Given the capital distributions are approved
   Given the fund has a SOA template "name=SOA template"
   And we Generate SOA for the first capital commitment
-  Then it is successfully generated
+  Then the SOA is successfully generated
   Then when the document is approved
   And the document has "2" e_signatures with status "requested"
   And the document is signed by the signatories
@@ -97,7 +97,7 @@ Scenario Outline: Send Generated SOA for Esign with status empty
   Given the capital distributions are approved
   Given the fund has a SOA template "name=SOA template"
   And we Generate SOA for the first capital commitment
-  Then it is successfully generated
+  Then the SOA is successfully generated
   Then when the document is approved
   And the document has "2" e_signatures with status ""
   And the document is signed by the signatories
@@ -125,7 +125,7 @@ Scenario Outline: Send Generated SOA for Esign with callbacks
     Given the capital distributions are approved
     Given the fund has a SOA template "name=SOA template"
     And we Generate SOA for the first capital commitment
-    Then it is successfully generated
+    Then the SOA is successfully generated
     Then when the document is approved
     And the document has "2" e_signatures
     And the document get digio callbacks
@@ -149,7 +149,7 @@ Scenario Outline: Send Generated SOA for Esign with callbacks
     And each Investor has an approved Investor Kyc
     Given the fund has a Commitment template "name=Commitment template"
     And we Generate Commitment template for the first capital commitment
-    And it is successfully generated
+    And the SOA is successfully generated
     Then when the document is approved
     Then the document has esignatures based on the template
 
@@ -171,7 +171,7 @@ Scenario Outline: Cancel Esign for a document
     And each Investor has an approved Investor Kyc
     Given the fund has a Commitment template "name=Commitment template"
     And we Generate Commitment template for the first capital commitment
-    And it is successfully generated
+    And the SOA is successfully generated
     Then when the document is approved
     Then the document has esignatures based on the template
     And the document is partially signed
