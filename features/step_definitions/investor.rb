@@ -647,19 +647,21 @@ Given('each Investor has an approved Investor Kyc') do
   end
 end
 
-Given('the fund has a SOA template {string}') do |string|
+Given('the fund has a template {string} of type {string}') do |name, owner_tag|
+  @template_name = name
   visit(fund_path(Fund.last))
   sleep(3)
   click_on("Actions")
   find('#misc_action_menu').hover
   click_on("New Template")
   sleep(2)
-  fill_in('document_name', with: "SOA Template")
-  #document_owner_tag is the type of document
-  select("SOA Template", from: "document_owner_tag")
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/SOA Template.docx'), make_visible: true)
+  fill_in('document_name', with: name)
+
+  select(owner_tag, from: "document_owner_tag")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{name}.docx"), make_visible: true)
   check("document_template")
   click_on("Save")
+  sleep(2)
 end
 
 Given('we Generate SOA for the first capital commitment') do
@@ -677,13 +679,30 @@ Given('we Generate SOA for the first capital commitment') do
   sleep(2)
 end
 
-Then('the SOA is successfully generated') do
+Given('we Generate Commitment Agreement for the first capital commitment') do
+  @capital_commitment = CapitalCommitment.last
+  @capital_commitment.investor_kyc = InvestorKyc.last
+  @capital_commitment.save!
+  
+  visit(capital_commitment_path(@capital_commitment))
+  find("#commitment_actions").click
+  click_on("Generate #{@template_name}")
+  sleep(2)
+  click_on("Proceed")
+  sleep(2)
+end
+
+Then('the {string} is successfully generated') do |name|
   expect(page).to have_content("Generated")
   expect(page).to have_content("Documentation generation started, please check back in a few mins")
-  soa = Document.where(owner_tag: "Generated").last
-  soa.name.should == "SOA Template #{@start_date.strftime("%d %B,%Y")} to #{@end_date.strftime("%d %B,%Y")} - #{@capital_commitment}"
-  soa.name.include?("SOA Template").should == true
-  soa.name.include?(@capital_commitment.investor_kyc.full_name).should == true
+  generated_doc = Document.where(owner_tag: "Generated").last
+  if name.include?("SOA")
+    generated_doc.name.should == "#{name} #{@start_date.strftime("%d %B,%Y")} to #{@end_date.strftime("%d %B,%Y")} - #{@capital_commitment}"
+  else
+    generated_doc.name.should == "#{name} - #{@capital_commitment}"
+  end
+  generated_doc.name.include?(name).should == true
+  generated_doc.name.include?(@capital_commitment.investor_kyc.full_name).should == true
 end
 
 Then('the document has {string} e_signatures') do |string|
@@ -749,48 +768,23 @@ Then('the esign completed document is present') do
   expect(page).to have_content("Signed").once
 end
 
-Given('the fund has a Commitment template {string}') do |string|
-  @fund = Fund.last
-  visit(fund_path(@fund))
-  sleep(1)
-  click_on("Actions")
-  find('#misc_action_menu').hover
-  sleep(1)
-  click_on("New Template")
-  sleep(2)
-  fill_in('document_name', with: "Commitment Template")
-  #document_owner_tag is the type of document
-  select("Commitment Template", from: "document_owner_tag")
-  attach_file('files[]', File.absolute_path('./public/sample_uploads/Mutual-Confidentiality-Agreement.docx'), make_visible: true)
-  check("document_template")
-  click_on("Save")
-  sleep(2)
+
+Given('the template has esigns setup') do 
   @fund.esign_emails = "shrikantgour018@gmail.com,aseemak56@yahoo.com"
   @fund.save!
-  @doc = Document.where(name: "Commitment Template").last
+  
+  @doc = Document.where(template: true).last
   @template_esign1 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, label: "Fund Signatories", position: 1, status: "")
   @template_esign2 = FactoryBot.create(:e_signature, document: @doc, entity: @doc.entity, label: "Investor Signatories", position: 2, status: "")
-end
-
-Given('we Generate Commitment template for the first capital commitment') do
-  @capital_commitment = CapitalCommitment.last
-  @capital_commitment.investor_kyc = InvestorKyc.last
-  @capital_commitment.esign_emails = "testmail@testsite1.com,testmail@testsite2.com,"
-  @capital_commitment.save!
-  visit(capital_commitment_path(@capital_commitment))
-  find("#commitment_actions").click
-  click_on("Generate Commitment Template")
-  click_on("Proceed")
-  sleep(2)
 end
 
 Then('the document has esignatures based on the template') do
   visit(capital_commitment_path(@capital_commitment))
   # click_on("Documents")
   # expect generated Document
-  expect(page).to have_content("Commitment Template")
+  expect(page).to have_content(@template_name)
   # visit the document page
-  click_on("Commitment Template")
+  click_on(@template_name)
   click_on("Signatures")
   # page should contain emails of all Signatories
   @fund.esign_emails.split(",").each do |email|

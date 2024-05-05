@@ -433,7 +433,7 @@ end
 Given('the fund has capital commitments from each investor') do
   @entity.investors.each do |inv|
     if inv.investor_entity.entity_type != "Investor Advisor" # IAs cannot have commitments
-      cc = FactoryBot.create(:capital_commitment, fund: @fund, investor: inv)
+      cc = FactoryBot.create(:capital_commitment, fund: @fund, investor: inv, esign_emails: "emp1@gmail.com,emp2@gmail.com")
       puts "\n####CapitalCommitment####\n"
       puts cc.to_json
     end
