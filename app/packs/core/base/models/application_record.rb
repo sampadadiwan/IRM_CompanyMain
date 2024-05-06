@@ -3,6 +3,10 @@ class ApplicationRecord < ActiveRecord::Base
 
   primary_abstract_class
 
+  # Currently we write and read from the primary database
+  # Someday when we have RDS, we can have reads go to the replica
+  connects_to database: { writing: :primary, reading: :primary }
+
   def investors
     investor_list = []
     access_rights.includes(:investor).find_each do |ar|

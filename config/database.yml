@@ -17,22 +17,47 @@ default: &default
   password: <%= Rails.application.credentials[:DB_PASS] %>
   host: <%= Rails.application.credentials[:DB_HOST] %>
 
+default: &default_replica
+  adapter: mysql2
+  encoding: utf8mb4
+  pool: 15
+  username: <%= Rails.application.credentials[:DB_USER] %>
+  password: <%= Rails.application.credentials[:DB_PASS] %>
+  host: <%= Rails.application.credentials[:DB_HOST_REPLICA] %>
+
+
 
 development:
-  <<: *default
-  database: IRM_development
-  
+  primary:
+    <<: *default
+    database: IRM_development
+  primary_replica:
+    <<: *default_replica
+    database: IRM_development
+    database_tasks: false
+
+
 staging:
-  <<: *default  
-  database: IRM_staging
+  primary:
+    <<: *default  
+    database: IRM_staging
+  primary_replica:
+    <<: *default_replica
+    database: IRM_staging
+    database_tasks: false
+
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
 # Do not set this db to the same as development or production.
 test: &test
-  <<: *default
-  database: IRM_test<%= ENV['TEST_ENV_NUMBER'] %>
-  
+  primary:
+    <<: *default
+    database: IRM_test
+  primary_replica:
+    <<: *default_replica
+    database: IRM_test<%= ENV['TEST_ENV_NUMBER'] %>
+    database_tasks: false
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
@@ -55,8 +80,14 @@ test: &test
 # for a full overview on how database connection configuration can be specified.
 #
 production:
-  <<: *default
-  database: IRM_production
+  primary:
+    <<: *default
+    database: IRM_production
+  primary_replica:
+    <<: *default_replica
+    database: IRM_production
+    database_tasks: false
+
 
 cucumber:
   <<: *test

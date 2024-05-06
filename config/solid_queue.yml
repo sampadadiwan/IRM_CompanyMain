@@ -2,6 +2,7 @@ default: &default
   dispatchers:
     - polling_interval: 1
       batch_size: 100
+
   workers:
     - queues: "*"
       threads: 5
@@ -13,11 +14,20 @@ default: &default
       processes: 1
 
 development:
- <<: *default
+  <<: *default  
 
 test:
- <<: *default
+  <<: *default
+
+staging:
+  <<: *default
 
 production:
- <<: *default
-    
+  <<: *default
+  dispatchers:
+    - recurring_tasks:
+        replication_health_job:
+          class: ReplicationHealthJob
+          args: [ ]
+          schedule: every 5 minute
+  

@@ -1,6 +1,6 @@
 class HealthCheckController < ApplicationController
-  before_action :authenticate_user!, except: %i[redis_check db_check elastic_check xirr_check]
-  skip_after_action :verify_authorized, only: %i[redis_check db_check elastic_check xirr_check]
+  before_action :authenticate_user!, except: %i[redis_check db_check elastic_check xirr_check replication_check]
+  skip_after_action :verify_authorized, only: %i[redis_check db_check elastic_check xirr_check replication_check]
 
   def redis_check
     now = Time.zone.now.to_s
@@ -21,6 +21,17 @@ class HealthCheckController < ApplicationController
         format.json { render json: "Ok", status: :ok }
       else
         raise "DB not reachable"
+      end
+    end
+  end
+
+  def replication_check
+    respond_to do |format|
+      status = ReplicationHealthJob.new.replication_health_status
+      if status == "Ok"
+        format.json { render json: "Ok", status: :ok }
+      else
+        raise status
       end
     end
   end

@@ -1040,7 +1040,7 @@ end
 
 Then('the generated doc must be attached to the capital commitments') do
   CapitalCommitment.all.each do |cc|
-    cc.documents.where(name: "#{@commitment_template.name}-#{cc}", owner_tag: "Generated").count.should == 1
+    cc.documents.where(name: "#{@commitment_template.name} - #{cc}", owner_tag: "Generated").count.should == 1
     visit(capital_commitment_path(cc))
     expect(page).to have_content(@commitment_template.name)
     expect(page).to have_content("Generated")
