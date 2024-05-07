@@ -21,8 +21,6 @@ module WithFolder
       self.being_destroyed = true
       super(update_destroy_attributes:)
     end
-
-    after_create :document_folder
   end
 
   def folder_type
@@ -42,17 +40,22 @@ module WithFolder
   def setup_document_folder
     if folder_path.present?
       folder = Folder.where(entity_id:, full_path: folder_path).last
-      folder ||= setup_folder_from_path(folder_path)
+      # Since the folder gets created lazily, it sometimes gets called in a show action
+      # So we need to ensure that its created on the primary and not replica
+      ActiveRecord::Base.connected_to(role: :writing) do
+        folder ||= setup_folder_from_path(folder_path)
 
-      # Ensure the owner is setup right
-      self.document_folder = folder
-      save
+        # Ensure the owner is setup right
+        self.document_folder = folder
+        save
 
-      document_folder.owner = self
-      document_folder.save
+        document_folder.owner = self
+        document_folder.save
+      end
 
       folder
     end
+    # self.document_folder
   end
 
   def folder_name
