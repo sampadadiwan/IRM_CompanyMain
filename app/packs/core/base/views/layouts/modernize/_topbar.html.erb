@@ -38,6 +38,10 @@
           
           <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-center">
             
+            <% if session[:support_user_id].present? %>
+              <span class="blink text-danger fs-8"> Support for: <%= current_user.entity.name %> </span>
+            <% end %>
+
             <% if current_user && current_user.advisor_entity_id.present? %>
                 <div class="topbar-divider "></div>
                 <%= render "/investor_advisors/personas" %>
