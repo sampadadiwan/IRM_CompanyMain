@@ -90,7 +90,7 @@ resources :access_rights do
   get 'search', on: :collection
 end
 resources :notifications do
-  get 'mark_as_read', on: :member
+  patch 'mark_as_read', on: :member
 end
 
 resources :messages do

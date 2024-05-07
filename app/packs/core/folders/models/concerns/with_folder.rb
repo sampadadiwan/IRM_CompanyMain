@@ -21,6 +21,8 @@ module WithFolder
       self.being_destroyed = true
       super(update_destroy_attributes:)
     end
+
+    after_create :document_folder
   end
 
   def folder_type

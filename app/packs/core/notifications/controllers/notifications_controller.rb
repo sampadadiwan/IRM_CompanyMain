@@ -26,7 +26,9 @@ class NotificationsController < ApplicationController
   # GET /notifications/1 or /notifications/1.json
   def show
     if Noticed::NotificationPolicy.new(current_user, @notification).mark_as_read? && params[:debug].blank?
-      @notification.mark_as_read
+      ActiveRecord::Base.connected_to(role: :writing) do
+        @notification.mark_as_read
+      end
       redirect_to @notification.url, allow_other_host: true
     end
   end
@@ -34,7 +36,7 @@ class NotificationsController < ApplicationController
   def mark_as_read
     params[:mark] == "read" ? @notification.mark_as_read : @notification.mark_as_unread
     respond_to do |format|
-      format.html { redirect_to notifications_url, notice: "Notification was successfully marked as #{params[:mark]}." }
+      format.html { redirect_to request.referer, notice: "Notification was successfully marked as #{params[:mark]}." }
       format.json { head :no_content }
     end
   end
