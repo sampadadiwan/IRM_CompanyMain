@@ -60,8 +60,8 @@
       <% if params[:q].present? %>
         <%= render "investor_kycs/bulk_actions" %>
       <% else %>
-        <%= button_to "Send KYC Reminders", send_kyc_reminder_to_all_investor_kycs_path("entity_id": entity_id), method: :get, class: "btn btn-outline-primary", data: {action: "click->confirm#popup", turbo:false,
-        method: :get, msg: "This will generate a notification to all investor users whose KYC is unverified"} if policy(InvestorKyc).send_kyc_reminder_to_all? %>
+        <%= button_to "Send KYC Reminders", send_kyc_reminder_to_all_investor_kycs_path("entity_id": entity_id), method: :post, class: "btn btn-outline-primary", data: {action: "click->confirm#popup", turbo:false,
+        method: :post, msg: "This will generate a notification to all investor users whose KYC is unverified"} if policy(InvestorKyc).send_kyc_reminder_to_all? %>
       <% end %>
 
       <% if current_user && policy(InvestorKyc).import? %>

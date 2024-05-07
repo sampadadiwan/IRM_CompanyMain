@@ -39,7 +39,7 @@ resources :investor_kycs do
   put 'toggle_verified', on: :member
   patch 'send_notification', on: :member
   get 'send_kyc_reminder', on: :member
-  get 'send_kyc_reminder_to_all', on: :collection
+  post 'send_kyc_reminder_to_all', on: :collection
   put 'generate_new_aml_report', on: :member
   post 'compare_kyc_datas', on: :collection
   put 'assign_kyc_data', on: :member
