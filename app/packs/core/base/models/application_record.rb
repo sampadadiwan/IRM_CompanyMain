@@ -4,13 +4,9 @@ class ApplicationRecord < ActiveRecord::Base
   primary_abstract_class
 
   # Currently we write and read from the primary database
-  if Rails.env.production?
-    connects_to database: { writing: :primary, reading: :primary }
-  else
-    # Test this is staging till we are happy
-    connects_to database: { writing: :primary, reading: :primary_replica }
-  end
-
+  connects_to database: { writing: :primary, reading: :primary }
+  # connects_to database: { writing: :primary, reading: :primary_replica }
+  
   def investors
     investor_list = []
     access_rights.includes(:investor).find_each do |ar|
