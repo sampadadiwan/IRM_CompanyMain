@@ -71,6 +71,7 @@ When('I fill and submit the new document page') do
 
   fill_in("document_tag_list", with: @document.tag_list.join(",")) if @document.tag_list.present?
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
+  sleep(3)
   check('document_download') if @document.download
   check('document_printing') if @document.printing
   check('Send email', allow_label_click: true) if @document.send_email
@@ -273,6 +274,15 @@ Then('user should be able to add esignatures') do
   all("input[id^='document_e_signatures_attributes_']").first.set(@fund.signature_labels.first)
 end
 
+Then('user should be able to add esignatures without label list') do
+  click_on("Add Signature")
+  expect(page).to have_text("Esign display on page")
+  # click on form's text input field with id starting with document_e_signatures_attributes_...
+  all("input[id^='document_e_signatures_attributes_']").first.click
+
+  all("input[id^='document_e_signatures_attributes_']").first.set(@fund.signature_labels.first)
+end
+
 Then('user should be able to add estamp_stamps') do
   click_on("Add Stamp Paper")
   @fund.entity.entity_setting.stamp_paper_tags.split(",").each do |stamp_paper_tag|
@@ -290,12 +300,19 @@ Then('user should be able to save the document') do
 end
 
 Given('user goes to add a new document {string} for the fund') do |doc_name|
+  @es = @fund.entity.entity_setting
+  @es.stamp_paper_tags = "GJ-100-BOB_Test,DL-100-test"
+  @es.save!
   visit(fund_path(@fund))
   # click on element with id documents_tab
   find("#documents_tab").click
   find("#doc_actions").click
   click_on("New Document")
   fill_in("document_name", with: doc_name)
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/SOA Template.docx'), make_visible: true)
+  sleep(2)
+  # check checkbox id id="document_template"
+  check('document_template')
 end
 
 Then('the template checkbox is not present') do

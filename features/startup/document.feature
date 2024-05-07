@@ -174,12 +174,25 @@ Examples:
   |user	    |entity                       |document   |
   |  	      |entity_type=Investment Fund  |test doc   |
 
-Scenario Outline: Template disabled unless owner present
+# Scenario Outline: Template disabled unless owner present
+#   Given Im logged in as a user "<user>" for an entity "<entity>"
+#   Given the user has role "company_admin"
+#   Given there is a fund "name=Test fund" for the entity
+#   And user goes to add a new document "<document>" for the fund
+#   Then the template checkbox is not present
+
+# Examples:
+#   |user	    |entity                       |document   |
+#   |  	      |entity_type=Investment Fund  |test doc   |
+
+Scenario Outline: Template enabled even if owner is not present
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   Given there is a fund "name=Test fund" for the entity
   And user goes to add a new document "<document>" for the fund
-  Then the template checkbox is not present
+  Then user should be able to add esignatures without label list
+  Then user should be able to add estamp_stamps
+  Then user should be able to save the document
 
 Examples:
   |user	    |entity                       |document   |
