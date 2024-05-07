@@ -21,13 +21,14 @@ test:
 
 staging:
   <<: *default
-
-production:
-  <<: *default
   dispatchers:
     - recurring_tasks:
         replication_health_job:
           class: ReplicationHealthJob
           args: [ ]
-          schedule: every 5 minute
+          schedule: every 5 minutes
+
+production:
+  <<: *default
+  
   

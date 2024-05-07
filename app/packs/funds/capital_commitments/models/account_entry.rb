@@ -2,6 +2,7 @@ class AccountEntry < ApplicationRecord
   include WithCustomField
   include WithExchangeRate
   include ForInvestor
+  include Trackable.new
   include RansackerAmounts.new(fields: %w[amount])
 
   belongs_to :capital_commitment, optional: true

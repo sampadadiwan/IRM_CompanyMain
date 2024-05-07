@@ -4,8 +4,12 @@ class ApplicationRecord < ActiveRecord::Base
   primary_abstract_class
 
   # Currently we write and read from the primary database
-  # Someday when we have RDS, we can have reads go to the replica
-  connects_to database: { writing: :primary, reading: :primary }
+  if Rails.env.production?
+    connects_to database: { writing: :primary, reading: :primary }
+  else
+    # Test this is staging till we are happy
+    connects_to database: { writing: :primary, reading: :primary_replica }
+  end
 
   def investors
     investor_list = []
