@@ -1,8 +1,6 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
-      <!-- a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#viewers-tab">Viewed By</a -->
-
       <% if document.entity_id == current_user&.entity_id %>
         <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
 
@@ -33,13 +31,6 @@
 
 
     <div class="tab-content" data-controller="datatable">
-
-        <!-- div id="viewers-tab" class="tab-pane fade in show active">
-          <div id="users" class="associated_entity">
-            <% entity_id = policy(document).update? ? nil : current_user.entity_id   %>
-            <%= render "/users/index", users: policy_scope(document.viewed_by(entity_id:).includes(:entity)) %>
-          </div>
-        </div -->
 
         <% if policy(document).update? %>
           <div id="access-rights-tab" class="tab-pane fade show active">
