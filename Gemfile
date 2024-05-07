@@ -121,7 +121,6 @@ gem 'caxlsx_rails'
 gem "after_commit_action"
 gem 'counter_culture'
 
-gem 'impressionist'
 gem 'roo'
 
 gem 'ransack'

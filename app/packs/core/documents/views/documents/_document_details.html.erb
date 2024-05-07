@@ -1,10 +1,10 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#viewers-tab">Viewed By</a>
+      <!-- a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#viewers-tab">Viewed By</a -->
 
       <% if document.entity_id == current_user&.entity_id %>
-        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
+        <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
 
         <% if document.e_signatures.present? %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#signatures-tab">
@@ -34,15 +34,15 @@
 
     <div class="tab-content" data-controller="datatable">
 
-        <div id="viewers-tab" class="tab-pane fade in show active">
+        <!-- div id="viewers-tab" class="tab-pane fade in show active">
           <div id="users" class="associated_entity">
             <% entity_id = policy(document).update? ? nil : current_user.entity_id   %>
             <%= render "/users/index", users: policy_scope(document.viewed_by(entity_id:).includes(:entity)) %>
           </div>
-        </div>
+        </div -->
 
         <% if policy(document).update? %>
-          <div id="access-rights-tab" class="tab-pane fade">
+          <div id="access-rights-tab" class="tab-pane fade show active">
               <div id="access_rights" class="associated_entity">
                 <%  access_right = AccessRight.new(
                     owner_id: document.id,
@@ -54,6 +54,18 @@
                 <%= render "/access_rights/index", access_rights: document.access_rights.includes(:investor, :owner), access_right: access_right %>
               </div>
           </div>
+
+            <div id="signatures-tab" class="tab-pane fade">
+              <div id="e_signatures" class="associated_entity">
+                <%= render "/e_signatures/index", e_signatures: policy_scope(document.e_signatures), owner: document %>
+              </div>
+            </div>
+
+            <div id="stamp-papers-tab" class="tab-pane fade">
+              <div id="stamp_papers" class="associated_entity">
+                <%= render "/stamp_papers/index", stamp_papers: policy_scope(document.stamp_papers), owner: document %>
+              </div>
+            </div>
         <% end %>
 
         <div id="tasks-tab" class="tab-pane fade">
@@ -83,17 +95,7 @@
           </div>
         </div>
 
-        <div id="signatures-tab" class="tab-pane fade">
-          <div id="e_signatures" class="associated_entity">
-            <%= render "/e_signatures/index", e_signatures: policy_scope(document.e_signatures), owner: document %>
-          </div>
-        </div>
-
-        <div id="stamp-papers-tab" class="tab-pane fade">
-          <div id="stamp_papers" class="associated_entity">
-            <%= render "/stamp_papers/index", stamp_papers: policy_scope(document.stamp_papers), owner: document %>
-          </div>
-        </div>
+       
 
     </div>
 

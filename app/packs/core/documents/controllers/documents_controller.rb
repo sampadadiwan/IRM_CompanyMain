@@ -7,8 +7,6 @@ class DocumentsController < ApplicationController
   after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions]
   after_action :verify_policy_scoped, only: []
 
-  impressionist actions: [:show]
-
   def signature_progress
     # Check response  - if contains proper info then update doc esign status
     # if not then just respond with 200 OK

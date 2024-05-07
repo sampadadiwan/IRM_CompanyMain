@@ -476,8 +476,6 @@ GEM
       actionpack (>= 6.0.0)
       activesupport (>= 6.0.0)
       railties (>= 6.0.0)
-    impressionist (2.0.0)
-      nokogiri (~> 1)
     iniparse (1.5.0)
     io-console (0.7.2)
     irb (1.12.0)
@@ -978,7 +976,6 @@ DEPENDENCIES
   httparty
   image_processing (~> 1.2)
   importmap-rails
-  impressionist
   jbuilder
   json2table
   kaminari
