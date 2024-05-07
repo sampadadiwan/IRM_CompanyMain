@@ -1,5 +1,4 @@
 class Document < ApplicationRecord
-  include Impressionable
   include WithCustomField
   include InvestorsGrantedAccess
   include WithESignatures
