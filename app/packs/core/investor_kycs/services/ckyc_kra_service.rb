@@ -8,9 +8,9 @@ class CkycKraService
       # dd-MM-yyyy format
       # search_ckyc_resp.parsed_response["search_results"] and parsed_response["search_response"] have the same data
       ckyc_response = KycVerify.new.download_ckyc_response(search_ckyc_resp.parsed_response["search_results"]&.last&.[]("ckyc_number"), investor_kyc.entity.entity_setting.fi_code, investor_kyc.birth_date.strftime("%d-%m-%Y"))
-      
+
       KycData.create(entity: investor_kyc.entity, investor_kyc:, response: ckyc_response, source: "ckyc")
-      
+
     end
   end
 

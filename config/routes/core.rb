@@ -48,7 +48,7 @@ resources :investor_kycs do
   patch 'generate_docs', on: :member # Actually generate the docs
   get 'generate_all_docs', on: :collection
   post 'generate_all_docs', on: :collection # Generate docs for entire fund or entity
-  get 'bulk_actions', on: :collection
+  post 'bulk_actions', on: :collection
 end
 resources :investor_kyc_sebi_datas do
   get 'sub_categories', on: :collection
@@ -125,7 +125,7 @@ resources :documents do
   get 'owner', on: :collection
   get 'approve', on: :collection
   post 'approve', on: :collection
-  get 'bulk_actions', on: :collection
+  post 'bulk_actions', on: :collection
 end
 
 resources :entities do

@@ -107,6 +107,10 @@ class PortfolioInvestment < ApplicationRecord
     quantity.positive? ? (amount_cents / quantity).abs : 0
   end
 
+  def unrealized_gain
+    fmv - (net_quantity * cost)
+  end
+
   def base_cost_cents
     quantity.positive? ? (base_amount_cents / quantity).abs : 0
   end

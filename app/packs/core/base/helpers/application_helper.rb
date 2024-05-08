@@ -103,6 +103,6 @@ module ApplicationHelper
     label = options[:label] || action.titleize
     button_to label, bulk_actions_documents_path(bulk_action: action, q: params.to_unsafe_h[:q], **options),
               class: "dropdown-item",
-              data: { msg:, action: "click->confirm#popup", method: :get }
+              data: { msg:, action: "click->confirm#popup", method: :post }
   end
 end

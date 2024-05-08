@@ -1,7 +1,7 @@
 class InvestorKycsBulkActionJob < BulkActionJob
   DELAY_SECONDS = 180
-  def perform_action(investor_kyc, user_id, bulk_action, _params: {})
-    msg = "#{bulk_action}: #{investor_kyc}"
+  def perform_action(investor_kyc, user_id, bulk_action, params: {})
+    msg = "#{bulk_action}: #{investor_kyc}, #{params}"
     send_notification(msg, user_id, :success)
     case bulk_action.downcase
 

@@ -1,3 +1,22 @@
+V7.0.89
+#####################################
+fce9e6db7 Import formulas (#254)
+1e7d6db07 Turned off ReplicationHealthJob for staging
+c247675ee write and read from the primary database only
+e149b13a6 Fixed the issue with KycData.create in show
+d0df94500 Fixed the issue with approval email response
+e9a4cda41 Changed fetch_esign_updates to post
+6919baa13 Fixed the issue with folder creation in show
+abffcf728 Removed impressionist gem
+7602d1df3 Datalist fix (#251)
+bf832e3a6 Added Support for warning, when login by support
+549e9ae67 Added trackable to AccountEntry
+ae889e05a Read replica (#252)
+f41fa4621 Set Chewy.request_strategy = :active_job to reduce ES blast radius
+0bc2b721f Better tests for doc_gen
+12ea2dd3a TEst for kyc name in the SOA
+622e8c923 Solid queue (#249)
+
 V7.0.88
 #####################################
 d4fae6554 Datalist fix (#235)
