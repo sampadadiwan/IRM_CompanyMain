@@ -53,16 +53,17 @@ class KycDatasController < ApplicationController
     if params[:investor_kyc_id].present?
       @investor_kyc = InvestorKyc.find(params[:investor_kyc_id])
       @kyc_datas = policy_scope(KycData).where(investor_kyc_id: params[:investor_kyc_id])
-
-      if @investor_kyc.entity.entity_setting.ckyc_enabled?
-        @ckyc_data = @kyc_datas.where(source: "ckyc").last
-        @ckyc_data = CkycKraService.new.get_ckyc_data(@investor_kyc) if @ckyc_data.blank?
-        authorize(@ckyc_data)
-      end
-      if @investor_kyc.entity.entity_setting.kra_enabled?
-        @kra_data = @kyc_datas.where(source: "kra").last
-        @kra_data = CkycKraService.new.get_kra_data(@investor_kyc) if @kra_data.blank?
-        authorize(@kra_data)
+      ActiveRecord::Base.connected_to(role: :writing) do
+        if @investor_kyc.entity.entity_setting.ckyc_enabled?
+          @ckyc_data = @kyc_datas.where(source: "ckyc").last
+          @ckyc_data = CkycKraService.new.get_ckyc_data(@investor_kyc) if @ckyc_data.blank?
+          authorize(@ckyc_data)
+        end
+        if @investor_kyc.entity.entity_setting.kra_enabled?
+          @kra_data = @kyc_datas.where(source: "kra").last
+          @kra_data = CkycKraService.new.get_kra_data(@investor_kyc) if @kra_data.blank?
+          authorize(@kra_data)
+        end
       end
     end
 
