@@ -81,15 +81,15 @@ class ApprovalResponsesController < ApplicationController
 
         logger.debug "Approval response for email_response by #{params[:email]} #{@approval_response}"
         @msg = if @approval_response && @approval_response.id == params[:id].to_i
-                user = User.find_by(email: params[:email])
-                if user && @approval_response.update(status: params[:status], response_user_id: user.id)
-                  "Successfully registered response: #{params[:status]}."
-                else
-                  "Failed to register response: #{@approval_response.errors.full_messages.join(', ')}"
-                end
-              else
-                "Failed to register response: Invalid link."
-              end
+                 user = User.find_by(email: params[:email])
+                 if user && @approval_response.update(status: params[:status], response_user_id: user.id)
+                   "Successfully registered response: #{params[:status]}."
+                 else
+                   "Failed to register response: #{@approval_response.errors.full_messages.join(', ')}"
+                 end
+               else
+                 "Failed to register response: Invalid link."
+               end
       else
         @msg = "Failed to register response: Invalid link."
       end

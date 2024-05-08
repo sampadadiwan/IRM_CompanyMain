@@ -6,7 +6,7 @@ class ApplicationRecord < ActiveRecord::Base
   # Currently we write and read from the primary database
   connects_to database: { writing: :primary, reading: :primary }
   # connects_to database: { writing: :primary, reading: :primary_replica }
-  
+
   def investors
     investor_list = []
     access_rights.includes(:investor).find_each do |ar|

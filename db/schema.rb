@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_07_054237) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_08_074830) do
   create_table "abraham_histories", id: :integer, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "controller_name"
     t.string "action_name"
@@ -1310,6 +1310,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_07_054237) do
     t.string "commitment_type", limit: 10
     t.string "rule_for", limit: 10, default: "Accounting"
     t.datetime "deleted_at"
+    t.integer "import_upload_id"
     t.index ["deleted_at"], name: "index_fund_formulas_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"

@@ -22,6 +22,7 @@ class ImportUpload < ApplicationRecord
               "OPTIONS_CUSTOM_DATA_SAMPLE" => "/sample_uploads/options_custom_data.xlsx",
               "FUND_UNIT_SETTING_SAMPLE" => "/sample_uploads/fund_unit_setting.xlsx",
               "FUND_UNIT_SAMPLE" => "/sample_uploads/fund_units.xlsx",
+              "FUND_FORMULA_SAMPLE" => "/sample_uploads/fund_formulas.xlsx",
               "ACCOUNT_ENTRY_SAMPLE" => "/sample_uploads/account_entries.xlsx",
               "KPIS_SAMPLE" => "/sample_uploads/kpis.xlsx" }.freeze
 
