@@ -56,7 +56,7 @@ test: &test
     database: IRM_test
   primary_replica:
     <<: *default_replica
-    database: IRM_test<%= ENV['TEST_ENV_NUMBER'] %>
+    database: IRM_test
     database_tasks: false
 
 # As with config/credentials.yml, you never want to store sensitive information,

@@ -19,7 +19,7 @@ class Task < ApplicationRecord
   scope :completed, -> { where(completed: true) }
   scope :incomplete, -> { where(completed: false) }
 
-  counter_culture :entity, column_name: proc { |t| t.completed ? nil : 'tasks_count' }
+  # counter_culture :entity, column_name: proc { |t| t.completed ? nil : 'tasks_count' }
 
   # after_commit :send_notification, unless: :destroyed?
   def send_notification
