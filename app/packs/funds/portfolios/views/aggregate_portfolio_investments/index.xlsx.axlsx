@@ -38,7 +38,7 @@ form_type, custom_field_names, custom_headers, custom_calcs, custom_calc_headers
 
 wb.add_worksheet(name: "PortfolioInvestments") do |sheet|
   # Create the header row
-  sheet.add_row(["Id", "Fund", "Portfolio Company", "Investment Date", "Amount", "Quantity", "Total Qty As Of Date", "Cost", "Cost Of Sold", "FMV", "Gain", "Unrealized Gain", "Instrument", "Notes"] + custom_headers + custom_calc_headers)
+  sheet.add_row(["Id", "Fund", "Portfolio Company", "Investment Date", "Amount", "Quantity", "Net Quantity", "Total Qty As Of Date", "Cost", "Cost Of Sold", "FMV", "Gain", "Unrealized Gain", "Instrument", "Notes"] + custom_headers + custom_calc_headers)
 
   # Create entries for each item
   @aggregate_portfolio_investments.includes(portfolio_investments: %i[fund investment_instrument]).find_each do |api|
@@ -46,7 +46,17 @@ wb.add_worksheet(name: "PortfolioInvestments") do |sheet|
       custom_field_values = get_custom_values(pi, form_type, custom_field_names)
       custom_calc_values = get_custom_calc_values(pi, form_type, custom_calcs)
 
-      sheet.add_row [pi.id, pi.fund.name, pi.portfolio_company_name, pi.investment_date, pi.amount, pi.quantity, pi.quantity_as_of_date, pi.cost, pi.cost_of_sold, pi.fmv, pi.gain, pi.unrealized_gain, pi.investment_instrument, pi.notes] + custom_field_values + custom_calc_values
+      if pi.buy?
+        net_qty = pi.net_quantity
+        unrealized_gain = pi.unrealized_gain
+        gain = ""
+      else
+        net_qty = ""
+        unrealized_gain = ""
+        gain = pi.gain
+      end
+
+      sheet.add_row [pi.id, pi.fund.name, pi.portfolio_company_name, pi.investment_date, pi.amount, pi.quantity, net_qty, pi.quantity_as_of_date, pi.cost, pi.cost_of_sold, pi.fmv, gain, unrealized_gain, pi.investment_instrument, pi.notes] + custom_field_values + custom_calc_values
     end
   end
 end
