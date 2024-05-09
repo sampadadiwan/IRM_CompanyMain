@@ -69,4 +69,7 @@
 
     <%= render CustomTable.new(data_source:, id: "aggregate_portfolio_investments", column_names:)%>
   </div>
-  
+
+  <div class="associated_entity">
+    <%= render "aggregate_portfolio_investments/index_charts" %>
+  </div>
