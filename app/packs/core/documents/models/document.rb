@@ -31,8 +31,8 @@ class Document < ApplicationRecord
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   NESTED_ATTRIBUTES = %i[id name file tags owner_tag user_id entity_id orignal send_email].freeze
-  counter_culture :entity
-  counter_culture :folder
+  # counter_culture :entity
+  # counter_culture :folder
 
   has_rich_text :text
 

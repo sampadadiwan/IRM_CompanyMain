@@ -15,8 +15,7 @@ class FolderDashboard < Administrate::BaseDashboard
     full_path: Field::Text,
     level: Field::Number,
     created_at: Field::DateTime,
-    updated_at: Field::DateTime,
-    documents_count: Field::Number
+    updated_at: Field::DateTime
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -42,7 +41,6 @@ class FolderDashboard < Administrate::BaseDashboard
     level
     created_at
     updated_at
-    documents_count
     documents
   ].freeze
 

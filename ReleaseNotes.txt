@@ -1,3 +1,11 @@
+V7.0.91
+#####################################
+50c0310d4 Optimized kyc doc gen, better XL download for PI
+f70b14dc0 Fixed account_entry to use CustomTable
+8424d09bb Changed solid_queue settings
+61f24940f Added post to generate_fund_ratios
+6af67ca4f Charts bug fix in portfolio tab (#256)
+
 V7.0.89
 #####################################
 fce9e6db7 Import formulas (#254)
