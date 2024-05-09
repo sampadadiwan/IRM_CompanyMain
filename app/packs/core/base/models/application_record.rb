@@ -5,7 +5,12 @@ class ApplicationRecord < ActiveRecord::Base
 
   # Currently we write and read from the primary database
   connects_to database: { writing: :primary, reading: :primary }
-  # connects_to database: { writing: :primary, reading: :primary_replica }
+
+  # if Rails.env.production?
+  #   connects_to database: { writing: :primary, reading: :primary }
+  # else
+  #   connects_to database: { writing: :primary, reading: :primary_replica }
+  # end
 
   def investors
     investor_list = []

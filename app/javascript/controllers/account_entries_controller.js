@@ -4,23 +4,6 @@ import ServerDatatableController from "controllers/server_datatable_controller"
 export default class extends ServerDatatableController {
 
 
-  default = [
-    { "data": "fund_name" },
-    { "data": "investor_name" },
-    { "data": "folio_id" },
-    { "data": "reporting_date" },
-    { "data": "period" },
-    { "data": "entry_type" },
-    { "data": "name" },
-    { "data": "amount" },
-    { "data": "commitment_type" },
-    { "data": "dt_actions" }
-  ];
-
-  columns() {
-    return this.default;    
-  }
-
   filterData(event) {
     console.log("filterData called");
     let table = $(this.tableNameValue).DataTable();
@@ -35,15 +18,15 @@ export default class extends ServerDatatableController {
     table.ajax.url(url).load();
   }
 
-  finalizeTable() {    
-    var x = window.matchMedia("(max-width: 479px)")
-    console.log("account_entries_controller finalizeTable called");
-    let table = $(this.tableNameValue).DataTable();
+  // finalizeTable() {    
+  //   var x = window.matchMedia("(max-width: 479px)")
+  //   console.log("account_entries_controller finalizeTable called");
+  //   let table = $(this.tableNameValue).DataTable();
       
-    if($("#account_entry_cols").val() == "all") {
-      table.column(0).visible(true);
-    } else {
-      table.column(0).visible(false);
-    }
-  }
+  //   if($("#account_entry_cols").val() == "all") {
+  //     table.column(0).visible(true);
+  //   } else {
+  //     table.column(0).visible(false);
+  //   }
+  // }
 }

@@ -2,11 +2,34 @@
   fund ||= nil 
   import_upload_id ||= params[:import_upload_id]
 %>        
-<% data_source ||= account_entries_path(q: params.to_unsafe_h[:q], import_upload_id:, capital_commitment_id: params[:capital_commitment_id], format: :json, all: true, fund_id: params[:fund_id], fund_account_only: params[:fund_account_only]) %>    
-<% lazy_load_data ||= false %>
-<% xl_link = download_xl_link(data_source) %>
 
-<div class="table-responsive" data-controller="account-entries" data-account-entries-lazy-load-data-value=<%= lazy_load_data %> data-account-entries-table-name-value="#account_entries_table">
+<% 
+    data_source ||= account_entries_path(q: params.to_unsafe_h[:q], import_upload_id:, capital_commitment_id: params[:capital_commitment_id], format: :json, all: true, fund_id: params[:fund_id], fund_account_only: params[:fund_account_only])
+
+    xl_link = download_xl_link(data_source) 
+    lazy_load_data ||= false 
+
+    col_params = { }
+    cols ||= "default"
+
+    if current_user.curr_role == "investor"
+      col_params[:column_names] = AccountEntry::INVESTOR_COLUMN_NAMES
+      col_params[:column_fields] = AccountEntry::INVESTOR_COLUMN_FIELDS
+    else
+      col_params[:column_names] = AccountEntry::STANDARD_COLUMN_NAMES
+      col_params[:column_fields] = AccountEntry::STANDARD_COLUMN_FIELDS
+    end
+
+    if params[:capital_commitment_id].blank?
+      col_params[:column_names] = ["Fund", "Investor"] + col_params[:column_names]
+      col_params[:column_fields] = ["fund_name", "investor_name"] + col_params[:column_fields]
+    end
+
+    column_names, field_list = get_columns(AccountEntry, params: col_params) 
+  %>
+
+
+<div class="table-responsive">
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Account Entries</h1>
@@ -45,56 +68,19 @@
     
   </div>
 
+  
 
-  <% if lazy_load_data %>
+  <div class="table-responsive" data-controller="account-entries" 
+    data-account-entries-lazy-load-data-value=<%= lazy_load_data %> 
+    data-account-entries-table-name-value="#account_entries_table"
+    data-account-entries-field-list-value=<%=field_list%> >
+
+    <% if lazy_load_data %>
       <a class="load_data_link" data-action="click->account-entries#loadData"><span>Load Data</span></a>
-  <% end %>
+    <% end %>
 
-  <% if params[:capital_commitment_id].blank? %>        
-    <input type="text" id="account_entry_cols" hidden value="all">
-  <% end %>
+    <%= render CustomTable.new(data_source:, id: "account_entries_table", column_names:) %>
     
-  <table id="account_entries_table" class="table table-bordered dataTable" 
-        data-source="<%= data_source %>" style="width:100%" >
-
-    <thead>
-      <tr>
-        <% if params[:capital_commitment_id].blank? %>          
-          <th>
-            Fund
-          </th>
-          <th>
-            Investor
-          </th>
-        <% end %> 
-        <th>
-          Folio
-        </th>
-        <th>
-          Reporting Date
-        </th>
-        <th>
-          Period
-        </th>
-        <th>
-          Entry Type
-        </th>
-        <th>
-          Name
-        </th>
-        <th>
-          Amount
-        </th>
-        <th>
-          Type
-        </th>
-        <th>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      
-    </tbody>
-  </table>
+  </div>
 
 </div>
