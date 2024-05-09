@@ -10,7 +10,7 @@
   </div>
 
 
-  <%= form_with(model: @fund, url: generate_fund_ratios_fund_path(@fund), method: :get) do |form| %>
+  <%= form_with(model: @fund, url: generate_fund_ratios_fund_path(@fund), method: :post) do |form| %>
     
     <%= form.text_field :id, class: "form-control", hidden: true  %>
 

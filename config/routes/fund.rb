@@ -79,6 +79,7 @@ resources :funds do
   get   'timeline', on: :member
   get   'last', on: :member
   get 'report', on: :member
+  post 'generate_fund_ratios', on: :member
   get 'generate_fund_ratios', on: :member
   patch 'allocate', on: :member
   patch 'generate_documentation', on: :member

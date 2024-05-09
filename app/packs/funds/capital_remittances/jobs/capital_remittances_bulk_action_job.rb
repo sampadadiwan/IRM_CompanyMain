@@ -9,7 +9,7 @@ class CapitalRemittancesBulkActionJob < BulkActionJob
     case bulk_action.downcase
 
     when "verify"
-      CapitalRemittanceVerify.call(capital_remittance: capital_remittance)
+      CapitalRemittanceVerify.call(capital_remittance:)
     else
       msg = "Invalid bulk action"
       send_notification(msg, user_id, :error)
