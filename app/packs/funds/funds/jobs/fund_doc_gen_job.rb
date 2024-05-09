@@ -1,5 +1,5 @@
 class FundDocGenJob < ApplicationJob
-  queue_as :serial
+  queue_as :doc_gen
   retry_on StandardError, attempts: 1
 
   def perform(fund_id, start_date, end_date, user_id: nil)

@@ -1,5 +1,5 @@
 class KycDocGenJob < ApplicationJob
-  queue_as :serial
+  queue_as :doc_gen
   retry_on StandardError, attempts: 1
 
   def perform(investor_kyc_id, document_template_ids, start_date, end_date,
