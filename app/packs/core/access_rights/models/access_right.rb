@@ -13,7 +13,7 @@ class AccessRight < ApplicationRecord
   # Additional permission - this is experimental and does not work yet
   flag :permissions, %i[create read update destroy]
 
-  belongs_to :owner, polymorphic: true, touch: true # , strict_loading: true
+  belongs_to :owner, polymorphic: true # , strict_loading: true
   belongs_to :entity
   # If this is a user access
   belongs_to :user, optional: true
@@ -168,9 +168,11 @@ class AccessRight < ApplicationRecord
   # rubocop:disable Rails/SkipsModelValidations
   # This is to bust any cached dashboards showing the commitments
   def update_owner
-    investors.each do |i|
-      i.investor_entity.touch
-    end
+    # Update the investors entity to bust any cache
+    Entity.where(id: investors.pluck(:investor_entity_id)).update_all(updated_at: Time.zone.now)
+    # Update the owner to bust any cache
+    owner.touch
+    # Tell the owner that the access rights have changed
     owner.access_rights_changed(self) if owner.respond_to?(:access_rights_changed)
   end
   # rubocop:enable Rails/SkipsModelValidations

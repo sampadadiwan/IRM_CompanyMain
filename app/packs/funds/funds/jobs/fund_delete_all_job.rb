@@ -1,13 +1,13 @@
 class FundDeleteAllJob < ApplicationJob
   queue_as :low
-  retry_on StandardError, attempts: 1
+  sidekiq_options retry: 1
   # user_id - The id of the user who is requesting the docs generation
   # fund_id - The id of the fund for which we want to generate docs for all capital_commitments.
   def perform(fund_id, delete_class_name, user_id = nil, really_destroy: false)
     fund = Fund.find(fund_id)
     send_notification("Started deleting #{delete_class_name} for fund #{fund.name}", user_id, :info)
 
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       # Delete the required associations
       if delete_class_name.present?
         delete(fund, delete_class_name)

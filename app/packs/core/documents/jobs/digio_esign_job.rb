@@ -1,7 +1,7 @@
 # Purpose: To send a document for e-signing to Digio
 class DigioEsignJob < ApplicationJob
   def perform(document_id, user_id = nil, folder_id: nil)
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       if folder_id.present?
         send_documents_for_esign(folder_id, user_id)
       else

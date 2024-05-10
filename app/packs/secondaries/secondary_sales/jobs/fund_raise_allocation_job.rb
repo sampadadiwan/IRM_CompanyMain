@@ -1,6 +1,6 @@
 class FundRaiseAllocationJob < AllocationBase
   def perform(secondary_sale_id)
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       secondary_sale = SecondarySale.find(secondary_sale_id)
 
       unless secondary_sale.lock_allocations

@@ -2,7 +2,7 @@ class InvestorMergeJob < ApplicationJob
   queue_as :low
 
   def perform(old_investor_id, new_investor_id, user_id)
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       old_investor = Investor.find(old_investor_id)
       new_investor = Investor.find(new_investor_id)
       Investor.merge(old_investor, new_investor)

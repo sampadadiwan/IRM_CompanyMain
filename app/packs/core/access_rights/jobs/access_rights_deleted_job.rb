@@ -7,7 +7,7 @@ class AccessRightsDeletedJob < ApplicationJob
     owner = owner_type.constantize.find(owner_id)
     access_right = AccessRight.with_deleted.where(id: access_right_id).first
 
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       if access_right&.deleted? && owner.respond_to?(:document_folder)
         # We need to ensure that all documents and folders have explicit access rights destroyed
         folder_ids = owner.document_folder.descendant_ids

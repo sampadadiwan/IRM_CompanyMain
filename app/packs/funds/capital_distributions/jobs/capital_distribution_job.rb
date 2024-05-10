@@ -6,7 +6,7 @@ class CapitalDistributionJob < ApplicationJob
   # This job is idempotent and can be run multiple times for the same capital_distribution_id
   def perform(capital_distribution_id)
     @payments = []
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       @capital_distribution = CapitalDistribution.find(capital_distribution_id)
       generate_payments
 

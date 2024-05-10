@@ -2,7 +2,7 @@ class ReminderJob < ApplicationJob
   queue_as :low
 
   def perform(*_args)
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       Reminder.unsent.due_today.each do |reminder|
         reminder.send_reminder
         reminder.sent = true

@@ -5,7 +5,7 @@ class FundUnitsJob < ApplicationJob
   def perform(owner_id, owner_type, reason, user_id)
     owner = owner_type.constantize.find(owner_id)
 
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       case owner_type
       when "CapitalCall"
         reason ||= owner.name

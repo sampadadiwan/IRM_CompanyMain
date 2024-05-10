@@ -83,9 +83,7 @@ module CapHive
 
     config.secret_key_base = Rails.application.credentials[:SECRET_KEY_BASE]
 
-    config.active_job.queue_adapter = :solid_queue
-    config.mission_control.jobs.adapters = [:solid_queue]
-    config.mission_control.jobs.base_controller_class = "Admin::ApplicationController"
+    config.active_job.queue_adapter = :sidekiq
 
     Rails.application.routes.default_url_options[:host] = ENV.fetch('HOST', nil)
 
@@ -121,7 +119,7 @@ module CapHive
 
     # We make sure that the ES index gets updated in the background.
     # This helps in reducing the impact to app if ES is down
-    Chewy.request_strategy = :active_job
+    Chewy.request_strategy = :sidekiq
 
     # config.active_storage.replace_on_assign_to_many = false
     config.active_storage.analyzers = []

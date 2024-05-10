@@ -2,7 +2,7 @@ class VestedJob < ApplicationJob
   queue_as :default
 
   def perform(option_pool_id: nil, user_id: nil)
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       # We need to check for vesting only in pools where excercise is not complete
       if option_pool_id.present?
         process_pool(OptionPool.find(option_pool_id))

@@ -13,7 +13,7 @@ class DocumentApprovalJob < ApplicationJob
 
     send_notification("Document approval #{start_date} - #{end_date} started", user_id, "info")
 
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       documents = documents_to_approve(entity_id, parent_folder_id, start_date, end_date, owner_type)
 
       documents.find_each do |document|

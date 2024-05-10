@@ -2,7 +2,7 @@ class VerifyOfferPanJob < VerifyPanJob
   queue_as :default
 
   def perform(offer_id)
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       @model = Offer.find(offer_id)
       verify
       @model.save

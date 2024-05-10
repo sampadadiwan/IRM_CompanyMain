@@ -1,6 +1,6 @@
 class TasksMailbox < ApplicationMailbox
   def process
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       if owner.instance_of?(::Task)
         owner.response ||= ""
         owner.response += "</br> #{user.email}: #{mail.subject}. #{mail.body} </br>"

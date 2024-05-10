@@ -30,11 +30,14 @@ require "capistrano/rvm"
 require "whenever/capistrano"
 require 'capistrano/bundler'
 require 'capistrano/puma'
+require 'capistrano/sidekiq'
+require 'capistrano/sidekiq/monit'
 
 require 'capistrano/solid_queue'
 install_plugin Capistrano::SolidQueue::Systemd
-# install_plugin Capistrano::SolidQueue, load_hooks: false
 
+install_plugin Capistrano::Sidekiq # Default sidekiq tasks
+install_plugin Capistrano::Sidekiq::Monit
 install_plugin Capistrano::Puma # Default puma tasks
 install_plugin Capistrano::Puma::Systemd
 install_plugin Capistrano::Puma::Workers # if you want to control the workers (in cluster mode)

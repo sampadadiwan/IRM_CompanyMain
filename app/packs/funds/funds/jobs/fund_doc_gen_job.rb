@@ -1,6 +1,6 @@
 class FundDocGenJob < ApplicationJob
   queue_as :doc_gen
-  retry_on StandardError, attempts: 1
+  sidekiq_options retry: 1
 
   def perform(fund_id, start_date, end_date, user_id: nil)
     error_msg = []
@@ -13,7 +13,7 @@ class FundDocGenJob < ApplicationJob
       fund = Fund.find(fund_id)
       # Find the template with owner_tag "Fund Template"
       templates = fund.documents.templates.where(owner_tag: "Fund Template")
-      Chewy.strategy(:active_job) do
+      Chewy.strategy(:sidekiq) do
         # Loop through each fund and generate the documents
         templates.each do |document_template|
           send_notification("Generating #{document_template.name} for #{fund.name}", user_id)

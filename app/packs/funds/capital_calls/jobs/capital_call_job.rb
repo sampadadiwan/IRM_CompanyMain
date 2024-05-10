@@ -7,7 +7,7 @@ class CapitalCallJob < ApplicationJob
   def perform(capital_call_id, type)
     @remittances = []
     @payments = []
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       case type
       when "Generate"
         generate(capital_call_id)

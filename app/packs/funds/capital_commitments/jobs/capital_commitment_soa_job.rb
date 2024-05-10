@@ -1,10 +1,10 @@
 class CapitalCommitmentSoaJob < ApplicationJob
   queue_as :doc_gen
-  retry_on StandardError, attempts: 1
+  sidekiq_options retry: 1
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(capital_commitment_id, start_date, end_date, user_id: nil, template_name: nil)
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       @capital_commitment = CapitalCommitment.find(capital_commitment_id)
       @fund = @capital_commitment.fund
       @investor = @capital_commitment.investor
@@ -16,10 +16,14 @@ class CapitalCommitmentSoaJob < ApplicationJob
       Rails.logger.debug { "Generating documents for #{@investor.investor_name}, for fund #{@fund.name}" }
 
       @templates.each do |fund_doc_template|
-        Rails.logger.debug { "Generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@investor_kyc&.full_name}" }
-        send_notification("Generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@investor_kyc&.full_name}", user_id, :info)
+        msg = "Generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@investor_kyc&.full_name}"
+        Rails.logger.debug { msg }
+        # Notify started
+        send_notification(msg, user_id, :info)
         # Generate a new signed document
         SoaGenerator.new(@capital_commitment, fund_doc_template, start_date, end_date, user_id)
+        # Notify completed
+        send_notification(msg.gsub("Generating", "Generated"), user_id, :success)
       rescue Exception => e
         send_notification("Error generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@investor_kyc&.full_name}. #{e.message}", user_id, :danger)
         raise e

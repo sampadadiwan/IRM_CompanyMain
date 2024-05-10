@@ -1,11 +1,11 @@
 class XlReportJob < ApplicationJob
   queue_as :serial
-  retry_on StandardError, attempts: 2
+  sidekiq_options retry: 1
 
   # user_id - The id of the user who is requesting the docs generation
   # fund_id - The id of the fund for which we want to generate docs for all capital_commitments.
   def perform(fund_id, user_id = nil)
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       # Find the fund
       fund = Fund.find(fund_id)
       templates = fund.reports_folder.documents.templates

@@ -2,7 +2,7 @@ class InvestmentPercentageHoldingJob < ApplicationJob
   queue_as :default
 
   def perform(entity_id)
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       entity = Entity.find(entity_id)
       if entity.percentage_in_progress
 

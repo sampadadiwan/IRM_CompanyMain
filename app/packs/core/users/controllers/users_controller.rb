@@ -127,7 +127,9 @@ class UsersController < ApplicationController
   end
 
   def set_persona
-    current_user.set_persona(params[:persona]) if params[:persona].present?
+    ActiveRecord::Base.connected_to(role: :writing) do
+      current_user.set_persona(params[:persona]) if params[:persona].present?
+    end
     redirect_to request.referer || root_path
   end
 

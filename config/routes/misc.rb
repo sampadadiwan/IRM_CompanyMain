@@ -20,6 +20,9 @@ when :app
   mount Shrine.upload_endpoint(:cache) => "/upload"
 end
 
+require 'sidekiq/web'
+
 authenticate :user, ->(user) { user.has_cached_role?(:super) } do
+  mount Sidekiq::Web => '/sidekiq'
   mount Blazer::Engine, at: "blazer"
 end

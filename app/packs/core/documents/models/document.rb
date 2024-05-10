@@ -3,6 +3,7 @@ class Document < ApplicationRecord
   include InvestorsGrantedAccess
   include WithESignatures
   include DocumentScope
+  include EntityTouch
 
   include Trackable.new(associated_with: :owner)
 
@@ -20,7 +21,7 @@ class Document < ApplicationRecord
   has_many :e_signatures, dependent: :destroy
   belongs_to :user
 
-  belongs_to :entity, touch: true
+  belongs_to :entity
   belongs_to :folder
   belongs_to :signed_by, class_name: "User", optional: true
   belongs_to :approved_by, class_name: "User", optional: true
@@ -48,7 +49,7 @@ class Document < ApplicationRecord
 
   include FileUploader::Attachment(:file)
 
-  after_create_commit  :after_create_commit_callbacks
+  after_create_commit :after_create_commit_callbacks
 
   scope :generated, -> { where.not(from_template_id: nil) }
   scope :template, -> { where(template: true) }
@@ -63,6 +64,10 @@ class Document < ApplicationRecord
 
   # Sequence of callbacks is important here
   def after_create_commit_callbacks
+    DocumentPostCreateJob.perform_later(id)
+  end
+
+  def post_create_actions
     setup_access_rights
     update_owner
     send_notification_for_owner if send_email

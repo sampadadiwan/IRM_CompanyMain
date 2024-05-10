@@ -7,7 +7,7 @@ class DocumentEsignUpdateJob < ApplicationJob
   # to update the status of the e-signing process
   # Or it can be called with a document_id to update a single document
   def perform(document_id, user_id)
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       docs = Document.where('created_at > ?', 10.days.ago.beginning_of_day).sent_for_esign
       docs = Document.where(id: [document_id]) if document_id.present?
       docs.each do |doc|

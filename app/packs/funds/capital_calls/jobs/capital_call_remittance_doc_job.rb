@@ -1,6 +1,6 @@
 class CapitalCallRemittanceDocJob < ApplicationJob
   queue_as :doc_gen
-  retry_on StandardError, attempts: 1
+  sidekiq_options retry: 1
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCall
   def perform(capital_call_id, user_id)

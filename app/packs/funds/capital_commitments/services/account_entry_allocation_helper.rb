@@ -32,9 +32,9 @@ class AccountEntryAllocationHelper
   # generate the SOAs if the user has requested it, kick off SOA generation jobs
   def generate_soa(template_name)
     @fund.capital_commitments.each do |capital_commitment|
-      CapitalCommitmentSoaJob.perform_now(capital_commitment.id, @start_date.to_s, @end_date.to_s, user_id: @user_id, template_name:)
+      CapitalCommitmentSoaJob.perform_later(capital_commitment.id, @start_date.to_s, @end_date.to_s, user_id: @user_id, template_name:)
     end
-    notify("Done Genrating SOAs for #{@start_date} - #{@end_date}", :success, @user_id)
+    # notify("Done Genrating SOAs for #{@start_date} - #{@end_date}", :success, @user_id)
   end
 
   # generate the Fund ratios if the user has requested it, kick off FundRatiosJob

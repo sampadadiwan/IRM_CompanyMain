@@ -1,11 +1,11 @@
 class OfferSpaJob < ApplicationJob
   queue_as :doc_gen
-  retry_on StandardError, attempts: 1
+  sidekiq_options retry: 1
 
   def perform(offer_id, user_id: nil)
     succeeded = false
 
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       offer = Offer.find(offer_id)
       send_notification("Starting SPA generation for user #{offer.user}, Offer Id #{offer.id}", user_id, "info") if user_id.present?
       offer.secondary_sale.documents.where(owner_tag: "Offer Template").find_each do |template|

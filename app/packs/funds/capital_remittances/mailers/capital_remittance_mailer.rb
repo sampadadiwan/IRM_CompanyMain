@@ -20,7 +20,7 @@ class CapitalRemittanceMailer < ApplicationMailer
 
   #   send_mail(subject:)
 
-  #   Chewy.strategy(:active_job) do
+  #   Chewy.strategy(:sidekiq) do
   #     @capital_remittance.notification_sent = true
   #     @capital_remittance.save
   #   end

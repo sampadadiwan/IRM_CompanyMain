@@ -1,7 +1,7 @@
 # Updates a record, waits for 10 seconds, checks replica
 class ReplicationHealthJob < ApplicationJob
   def perform
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       # Update the user
       time = Time.zone.now.to_s
       user.json_fields ||= {}

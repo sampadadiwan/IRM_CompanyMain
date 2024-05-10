@@ -2,7 +2,7 @@ class InvestorNoticeJob < ApplicationJob
   queue_as :low
 
   def perform(id = nil)
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       if id.present?
         create_notice_entries(id)
       else

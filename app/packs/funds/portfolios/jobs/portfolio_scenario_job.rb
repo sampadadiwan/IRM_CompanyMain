@@ -1,6 +1,6 @@
 class PortfolioScenarioJob < ApplicationJob
   queue_as :low
-  retry_on StandardError, attempts: 1
+  sidekiq_options retry: 1
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
   def perform(id, user_id, return_cash_flows: false)

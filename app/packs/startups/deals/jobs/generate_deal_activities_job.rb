@@ -2,7 +2,7 @@ class GenerateDealActivitiesJob < ApplicationJob
   queue_as :serial
 
   def perform(id, class_name)
-    Chewy.strategy(:active_job) do
+    Chewy.strategy(:sidekiq) do
       case class_name
       when "Deal"
         @deal = Deal.find(id)
