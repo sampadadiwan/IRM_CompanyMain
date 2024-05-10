@@ -31,6 +31,8 @@ class SoaGenerator
 
   def prepare_context(capital_commitment, start_date, end_date)
     amount_in_words = capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
+    remittances = capital_commitment.capital_remittances.includes(:capital_commitment, :capital_call, :fund).order(:remittance_date)
+    distribution_payments = capital_commitment.capital_distribution_payments.includes(:capital_commitment, :fund, :capital_distribution).order(:payment_date)
 
     {
       date: Time.zone.today.strftime("%d %B %Y"),
@@ -43,21 +45,21 @@ class SoaGenerator
       fund: TemplateDecorator.decorate(capital_commitment.fund),
       fund_units: TemplateDecorator.decorate(fund_units(capital_commitment, start_date, end_date)),
 
-      capital_remittances: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances.order(:remittance_date)),
-      capital_remittances_between_dates: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date).order(:remittance_date)),
-      capital_remittances_before_end_date: TemplateDecorator.decorate_collection(capital_commitment.capital_remittances.where(remittance_date: ..end_date).order(:remittance_date)),
+      capital_remittances: TemplateDecorator.decorate_collection(remittances),
+      capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
+      capital_remittances_before_end_date: TemplateDecorator.decorate_collection(remittances.where(remittance_date: ..end_date)),
 
-      remittance_amounts: TemplateDecorator.decorate(remittance_amounts(capital_commitment.capital_remittances, capital_commitment.fund.currency)),
-      remittance_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(capital_commitment.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date), capital_commitment.fund.currency)),
-      remittance_amounts_before_end_date: TemplateDecorator.decorate(remittance_amounts(capital_commitment.capital_remittances.where(remittance_date: ..end_date), capital_commitment.fund.currency)),
+      remittance_amounts: TemplateDecorator.decorate(remittance_amounts(remittances, capital_commitment.fund.currency)),
+      remittance_amounts_between_dates: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date), capital_commitment.fund.currency)),
+      remittance_amounts_before_end_date: TemplateDecorator.decorate(remittance_amounts(remittances.where(remittance_date: ..end_date), capital_commitment.fund.currency)),
 
-      capital_distribution_payments: TemplateDecorator.decorate_collection(capital_commitment.capital_distribution_payments),
-      capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(capital_commitment.capital_distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
-      capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(capital_commitment.capital_distribution_payments.where(payment_date: ..end_date)),
+      capital_distribution_payments: TemplateDecorator.decorate_collection(distribution_payments),
+      capital_distribution_payments_between_dates: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
+      capital_distribution_payments_before_end_date: TemplateDecorator.decorate_collection(distribution_payments.where(payment_date: ..end_date)),
 
-      distribution_amounts: TemplateDecorator.decorate(distribution_amounts(capital_commitment.capital_distribution_payments, capital_commitment.fund.currency)),
-      distribution_amounts_between_dates: TemplateDecorator.decorate(distribution_amounts(capital_commitment.capital_distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date), capital_commitment.fund.currency)),
-      distribution_amounts_before_end_date: TemplateDecorator.decorate(distribution_amounts(capital_commitment.capital_distribution_payments.where(payment_date: ..end_date), capital_commitment.fund.currency)),
+      distribution_amounts: TemplateDecorator.decorate(distribution_amounts(distribution_payments, capital_commitment.fund.currency)),
+      distribution_amounts_between_dates: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date), capital_commitment.fund.currency)),
+      distribution_amounts_before_end_date: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: ..end_date), capital_commitment.fund.currency)),
 
       account_entries: TemplateDecorator.new(capital_commitment.account_entries),
       account_entries_between_dates: TemplateDecorator.new(capital_commitment.account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),

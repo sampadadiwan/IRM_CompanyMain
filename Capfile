@@ -33,8 +33,8 @@ require 'capistrano/puma'
 require 'capistrano/sidekiq'
 require 'capistrano/sidekiq/monit'
 
-require 'capistrano/solid_queue'
-install_plugin Capistrano::SolidQueue::Systemd
+# require 'capistrano/solid_queue'
+# install_plugin Capistrano::SolidQueue::Systemd
 
 install_plugin Capistrano::Sidekiq # Default sidekiq tasks
 install_plugin Capistrano::Sidekiq::Monit

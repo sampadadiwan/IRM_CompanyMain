@@ -26,6 +26,7 @@ class CapitalCommitmentSoaJob < ApplicationJob
         send_notification(msg.gsub("Generating", "Generated"), user_id, :success)
       rescue Exception => e
         send_notification("Error generating #{fund_doc_template.name} for fund #{@fund.name}, for user #{@investor_kyc&.full_name}. #{e.message}", user_id, :danger)
+        ExceptionNotifier.notify_exception(e, data: { capital_commitment_id:, start_date:, end_date:, user_id:, template_name: })
         raise e
       end
     end

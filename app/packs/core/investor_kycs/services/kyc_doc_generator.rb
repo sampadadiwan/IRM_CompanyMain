@@ -38,7 +38,7 @@ class KycDocGenerator
     capital_commitments_between_dates = investor_kyc.capital_commitments.where(commitment_date: start_date..).where(commitment_date: ..end_date)
     capital_commitments_before_end_date = investor_kyc.capital_commitments.where(commitment_date: ..end_date)
 
-    remittances = investor_kyc.capital_remittances.includes(:capital_commitment, :capital_call, :fund)
+    remittances = investor_kyc.capital_remittances.includes(:capital_commitment, :capital_call, :fund).order(:remittance_date)
     distribution_payments = investor_kyc.capital_distribution_payments.includes(:capital_commitment, :fund, :capital_distribution)
     {
       date: Time.zone.today.strftime("%d %B %Y"),
