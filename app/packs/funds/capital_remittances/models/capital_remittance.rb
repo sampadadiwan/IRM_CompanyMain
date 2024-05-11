@@ -1,5 +1,4 @@
 class CapitalRemittance < ApplicationRecord
-  
   include Trackable.new
   include ForInvestor
   include WithFolder

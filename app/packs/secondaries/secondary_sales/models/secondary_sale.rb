@@ -1,6 +1,6 @@
 class SecondarySale < ApplicationRecord
   include Trackable.new
-  
+
   include WithFolder
   include WithDataRoom
   include SecondarySaleNotifiers

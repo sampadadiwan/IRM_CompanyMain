@@ -130,7 +130,6 @@ class FundsController < ApplicationController
     end
   end
 
-
   def allocate_form; end
 
   def allocate

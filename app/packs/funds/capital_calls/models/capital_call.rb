@@ -2,11 +2,10 @@ class CapitalCall < ApplicationRecord
   include WithCustomField
   include WithFolder
   include Trackable.new
-  
+
   include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fees other_fees])
   include WithCustomNotifications
 
-  
   include ForInvestor
 
   FEE_TYPES = ["Fees Part Of Capital", "Other Fees"].freeze

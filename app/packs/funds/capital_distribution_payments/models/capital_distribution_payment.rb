@@ -2,7 +2,7 @@ class CapitalDistributionPayment < ApplicationRecord
   include WithCustomField
   include WithExchangeRate
   include Trackable.new
-  
+
   include WithFolder
 
   STANDARD_COLUMN_NAMES = ["Investor", "Folio No", "Amount", "Payment Date", "Completed", " "].freeze

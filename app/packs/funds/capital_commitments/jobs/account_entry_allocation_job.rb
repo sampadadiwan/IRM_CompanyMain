@@ -7,7 +7,6 @@ class AccountEntryAllocationJob < ApplicationJob
   def perform(fund_id, start_date, end_date, user_id: nil,
               generate_soa: nil, template_name: nil, fund_ratios: nil, sample: nil, rule_for: nil)
 
-    
     Chewy.strategy(:sidekiq) do
       fund = Fund.find(fund_id)
       user = User.find(user_id)

@@ -76,7 +76,7 @@ resources :capital_commitments do
 end
 
 resources :funds do
-  get   'last', on: :member
+  get 'last', on: :member
   get 'report', on: :member
   post 'generate_fund_ratios', on: :member
   get 'generate_fund_ratios', on: :member

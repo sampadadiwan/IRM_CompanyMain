@@ -1,6 +1,5 @@
 class InvestorAccess < ApplicationRecord
   include Trackable.new
-  
 
   attr_accessor :call_code
 

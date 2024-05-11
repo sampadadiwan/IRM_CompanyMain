@@ -5,7 +5,6 @@ class Deal < ApplicationRecord
   include WithDataRoom
   include WithCustomField
   include InvestorsGrantedAccess
-  # 
 
   # encrypts :name
   monetize :amount_cents, with_model_currency: :currency

@@ -6,7 +6,7 @@ class Fund < ApplicationRecord
   include WithDataRoom
   include WithCustomField
   include Trackable.new
-  
+
   update_index('fund') do
     self if index_record?
   end

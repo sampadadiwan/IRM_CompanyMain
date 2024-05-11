@@ -3,7 +3,7 @@ class CapitalCommitment < ApplicationRecord
   include WithExchangeRate
   include WithCustomField
   include Trackable.new
-  
+
   include CommitmentAccountEntry
   include RansackerAmounts.new(fields: %w[committed_amount collected_amount call_amount distribution_amount])
 

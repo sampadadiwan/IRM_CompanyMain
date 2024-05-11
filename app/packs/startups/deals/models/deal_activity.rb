@@ -1,6 +1,6 @@
 class DealActivity < ApplicationRecord
   include Trackable.new
-  
+
   include WithFolder
 
   attr_accessor :has_documents_nested_attributes

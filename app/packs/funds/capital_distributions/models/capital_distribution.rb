@@ -1,7 +1,7 @@
 class CapitalDistribution < ApplicationRecord
   include WithCustomField
   include Trackable.new
-  
+
   include WithFolder
   include RansackerAmounts.new(fields: %w[carry cost_of_investment distribution_amount fee gross_amount net_amount reinvestment])
 
