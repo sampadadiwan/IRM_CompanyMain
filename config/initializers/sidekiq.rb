@@ -4,7 +4,7 @@ Sidekiq.configure_server do |config|
   config.concurrency = 5
 
   # define a new capsule which processes jobs from the `serial and doc_gen` queue one at a time
-  config.capsule("serial") do |cap|
+  config.capsule("single-threaded") do |cap|
     cap.concurrency = 1
     cap.queues = %w[serial doc_gen]
   end
