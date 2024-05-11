@@ -46,7 +46,7 @@ class SoaGenerator
       fund_units: TemplateDecorator.decorate(fund_units(capital_commitment, start_date, end_date)),
 
       capital_remittances: TemplateDecorator.decorate_collection(remittances),
-      capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.capital_remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
+      capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
       capital_remittances_before_end_date: TemplateDecorator.decorate_collection(remittances.where(remittance_date: ..end_date)),
 
       remittance_amounts: TemplateDecorator.decorate(remittance_amounts(remittances, capital_commitment.fund.currency)),
