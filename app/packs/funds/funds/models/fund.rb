@@ -6,9 +6,7 @@ class Fund < ApplicationRecord
   include WithDataRoom
   include WithCustomField
   include Trackable.new
-  include ActivityTrackable
-  tracked owner: proc { |_controller, model| model }, entity_id: proc { |_controller, model| model.entity_id }
-
+  
   update_index('fund') do
     self if index_record?
   end

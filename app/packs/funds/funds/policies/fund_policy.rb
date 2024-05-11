@@ -48,10 +48,6 @@ class FundPolicy < FundBasePolicy
     update?
   end
 
-  def timeline?
-    show?
-  end
-
   def create?
     user.enable_funds &&
       permissioned_employee?(:create)

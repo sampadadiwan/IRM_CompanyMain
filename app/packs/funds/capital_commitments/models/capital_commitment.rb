@@ -3,11 +3,9 @@ class CapitalCommitment < ApplicationRecord
   include WithExchangeRate
   include WithCustomField
   include Trackable.new
-  include ActivityTrackable
+  
   include CommitmentAccountEntry
   include RansackerAmounts.new(fields: %w[committed_amount collected_amount call_amount distribution_amount])
-
-  tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
   include ForInvestor
 

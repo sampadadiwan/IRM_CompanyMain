@@ -2,12 +2,11 @@ class CapitalCall < ApplicationRecord
   include WithCustomField
   include WithFolder
   include Trackable.new
-  include ActivityTrackable
+  
   include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fees other_fees])
   include WithCustomNotifications
 
-  tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
-
+  
   include ForInvestor
 
   FEE_TYPES = ["Fees Part Of Capital", "Other Fees"].freeze

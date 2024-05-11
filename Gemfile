@@ -99,8 +99,6 @@ gem 'uppy-s3_multipart', '~> 1.1'
 gem 'cocoon'
 # Allows for soft delete
 gem "paranoia"
-# Audit trail
-gem 'public_activity' # , github: 'chaps-io/public_activity', branch: 'master'
 gem 'sanitize_email'
 # Cron
 gem 'whenever', require: false

@@ -2,7 +2,7 @@ class CapitalDistributionPayment < ApplicationRecord
   include WithCustomField
   include WithExchangeRate
   include Trackable.new
-  include ActivityTrackable
+  
   include WithFolder
 
   STANDARD_COLUMN_NAMES = ["Investor", "Folio No", "Amount", "Payment Date", "Completed", " "].freeze
@@ -10,8 +10,6 @@ class CapitalDistributionPayment < ApplicationRecord
 
   INVESTOR_COLUMN_NAMES = STANDARD_COLUMN_NAMES - ["Investor"]
   INVESTOR_COLUMN_FIELDS = STANDARD_COLUMN_FIELDS - %w[investor_name]
-
-  tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
 
   include ForInvestor
   update_index('capital_distribution_payment') { self if index_record? }

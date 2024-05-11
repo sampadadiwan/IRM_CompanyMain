@@ -1,6 +1,0 @@
-<tr>
-    <td><%= activity.key.titleize.gsub('.', ' ') %></td>
-    <td><%= link_to activity.trackable.to_s, activity.trackable if activity.trackable %></td>
-    <td><%= activity.owner.name if activity.owner %> </td>
-    <td><%= l activity.created_at %></td>
-</tr>

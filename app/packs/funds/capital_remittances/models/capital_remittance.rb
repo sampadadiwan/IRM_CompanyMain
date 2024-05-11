@@ -1,6 +1,5 @@
 class CapitalRemittance < ApplicationRecord
-  include ActivityTrackable
-  tracked owner: proc { |_controller, model| model.fund }, entity_id: proc { |_controller, model| model.entity_id }
+  
   include Trackable.new
   include ForInvestor
   include WithFolder

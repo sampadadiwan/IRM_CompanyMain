@@ -1,6 +1,6 @@
 class AccessRight < ApplicationRecord
   include Trackable.new
-  include ActivityTrackable
+  
 
   update_index('access_right') { self if index_record? }
 

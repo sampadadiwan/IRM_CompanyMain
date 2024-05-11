@@ -1,5 +1,5 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show edit update destroy timeline last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all]
+  before_action :set_fund, only: %i[show edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all]
 
   # GET /funds or /funds.json
   def index
@@ -130,10 +130,6 @@ class FundsController < ApplicationController
     end
   end
 
-  def timeline
-    @activities = PublicActivity::Activity.where(owner: @fund)
-                                          .includes(:trackable, :owner).order(id: :desc).page(params[:page])
-  end
 
   def allocate_form; end
 
