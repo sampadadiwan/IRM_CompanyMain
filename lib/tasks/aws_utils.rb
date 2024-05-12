@@ -1,7 +1,7 @@
 module AwsUtils
 
-  def get_confirmation 
-    puts "Press Enter to continue or type 'exit' to abort..."
+  def get_branch 
+    puts "Enter branch name to continue or type 'exit' to abort..."
     input = STDIN.gets.chomp  # Capture input and remove any trailing newline
 
     if input.downcase == 'exit'
@@ -9,6 +9,7 @@ module AwsUtils
       exit 1  # Exit the task with a non-zero status to indicate failure or abortion
     else
       puts "Continuing with the task..."
+      return input # this is the branch to be deployed
       # Place the rest of your task logic here
     end
   end
@@ -275,17 +276,17 @@ module AwsUtils
 
     pulumi_config.each do |key, value|
       puts "Setting pulumi config: #{key} => #{value}"
-      `cd ../IRM-infra; pulumi config set --stack #{stack} #{key} #{value}`
+      `cd ../IRM-infra; pulumi config set --stack #{stack}-#{region} #{key} #{value}`
     end
 
-    `cd ../IRM-infra; pulumi config set --stack #{stack} region #{region}`    
+    `cd ../IRM-infra; pulumi config set --stack #{stack}-#{region} region #{region}`    
   end
 
   def setup_infra(stack, web_server_name, db_server_name, region)    
     setup_pulumi_config(stack, web_server_name, db_server_name, region)
     puts "Running pulumi up for stack: #{stack}. (This could take a long time, please be patient)"
     # Run pulumi to setup the aws infra
-    run_cmd("cd ../IRM-infra; pulumi up --stack #{stack} --yes --color=always")
+    run_cmd("cd ../IRM-infra; pulumi up --stack #{stack}-#{region} --yes --color=always")
     # Get the pulumi output
     puts "Getting pulumi output"
     pulumi_output = JSON.parse(File.read "../IRM-infra/output.json")
@@ -309,15 +310,15 @@ module AwsUtils
     replace_ip_addresses(Rails.root.join('config', 'deploy', "#{stack}.rb"), pulumi_output["public_ips"]["AppServers"][0])
     puts "\n#######################"
     puts "You need to commit your code, with the updated credentials, .env and deploy files, before deploying the app."
-    puts "Please hit enter to continue once you have committed the code."
+    puts "Please enter branch name to deploy to continue once you have committed the code."
     puts "#########################"
-    get_confirmation
+    branch_name = get_branch
 
     # Deploy the app
-    run_cmd("LB=true bundle exec cap #{stack} recovery:delete_old_assets")
-    run_cmd("LB=true bundle exec cap #{stack} deploy")
+    run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack} recovery:delete_old_assets")
+    run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack} deploy")
     # Load the DB from backups and create the replica
-    run_cmd("bundle exec cap #{stack} recovery:load_db_from_backups")
+    run_cmd("branch=#{branch_name} bundle exec cap #{stack} recovery:load_db_from_backups")
   end
 
 end

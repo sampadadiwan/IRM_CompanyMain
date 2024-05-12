@@ -209,7 +209,9 @@ namespace :db do  desc "Backup database to AWS-S3"
     destination_port = 3306
 
     puts "\n#####################"
-    puts "Creating a MySQL replica on #{destination_host} for database #{destination_database}"
+    puts "Creating a MySQL replica"
+    puts "from #{source_host} of database #{source_database}"
+    puts "on #{destination_host} for database #{destination_database}"
     puts "#######################"
 
     # Connect to the source database
