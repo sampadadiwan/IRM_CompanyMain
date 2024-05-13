@@ -23,9 +23,11 @@ module Users
     # end
 
     # GET /resource/confirmation?confirmation_token=abcdef
-    # def show
-    #   super
-    # end
+    def show
+      ActiveRecord::Base.connected_to(role: :writing) do
+        super
+      end
+    end
 
     # protected
 
