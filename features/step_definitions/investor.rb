@@ -441,7 +441,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
       end
     end
   end
-  sleep(1)
+  sleep(2)
 
   fill_in("#{class_name}_full_name", with: @investor_kyc.full_name)
   select(@investor_kyc.residency.titleize, from: "#{class_name}_residency")
@@ -465,7 +465,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
       end
     end
   end
-  sleep(1)
+  sleep(2)
 
   fill_in("#{class_name}_address", with: @investor_kyc.address)
   fill_in("#{class_name}_corr_address", with: @investor_kyc.corr_address)
@@ -511,7 +511,6 @@ end
 
 Then('I should see the kyc documents {string}') do |docs|
   @investor_kyc = InvestorKyc.last
-
   document_names = @investor_kyc.documents.pluck(:name)
   docs.split(",").each do |doc_name|
     puts "Checking for #{doc_name}"
