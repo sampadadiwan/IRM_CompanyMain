@@ -269,4 +269,8 @@ class Entity < ApplicationRecord
     list = exchange_rates.pluck(:from) << currency
     list.uniq
   end
+
+  def folder_path
+    root_folder.full_path.to_s
+  end
 end

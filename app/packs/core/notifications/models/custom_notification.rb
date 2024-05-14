@@ -1,5 +1,6 @@
 class CustomNotification < ApplicationRecord
   include Trackable.new
+  include WithFolder
   belongs_to :entity
   belongs_to :owner, polymorphic: true, touch: true
 
@@ -46,5 +47,9 @@ class CustomNotification < ApplicationRecord
     renderer = ERB.new(body)
     # You need to set up the binding context. Here it’s done with the top-level binding, but it might be your controller or view context.
     renderer.result(binding)
+  end
+
+  def folder_path
+    "#{owner.folder_path}/Notifications/#{id}"
   end
 end

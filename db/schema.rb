@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_10_050456) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_14_114044) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -767,7 +767,9 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_10_050456) do
     t.string "email_method", limit: 100
     t.datetime "deleted_at"
     t.boolean "enabled", default: true
+    t.bigint "document_folder_id"
     t.index ["deleted_at"], name: "index_custom_notifications_on_deleted_at"
+    t.index ["document_folder_id"], name: "index_custom_notifications_on_document_folder_id"
     t.index ["entity_id"], name: "index_custom_notifications_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_custom_notifications_on_owner"
   end
@@ -2972,6 +2974,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_10_050456) do
   add_foreign_key "commitment_adjustments", "exchange_rates"
   add_foreign_key "commitment_adjustments", "funds"
   add_foreign_key "custom_notifications", "entities"
+  add_foreign_key "custom_notifications", "folders", column: "document_folder_id"
   add_foreign_key "deal_activities", "deal_investors"
   add_foreign_key "deal_activities", "deals"
   add_foreign_key "deal_activities", "folders", column: "document_folder_id"
