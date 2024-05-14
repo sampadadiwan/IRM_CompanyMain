@@ -48,6 +48,7 @@ class ValuationsController < ApplicationController
         authorize @valuation
         saved_all &&= @valuation.save
         valuations << @valuation
+        break unless saved_all
       end
     end
 
@@ -61,7 +62,7 @@ class ValuationsController < ApplicationController
         end
         format.json { render :show, status: :created, location: @valuation }
       else
-        format.html { render :new, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_entity, alert: "Valuation could not be saved. #{@valuation.errors.full_messages}" }
         format.json { render json: @valuation.errors, status: :unprocessable_entity }
       end
     end
