@@ -204,7 +204,7 @@ div.dataTables_wrapper div.dataTables_filter input {
 
 
 .turbo-progress-bar {
-  height: 20px; 
+  height: 20px;
   background-image: linear-gradient(
     -45deg,
     rgba(255, 255, 255, .2) 25%,
@@ -235,7 +235,7 @@ div.divider {
   .sticky-col {
     position: -webkit-sticky;
     position: sticky;
-    // background-color: white;
+    background-color: var(--bs-body-bg);
   }
 
   .sticky-col:hover {
@@ -309,6 +309,7 @@ div.divider {
   .button_to {
     width: 100%;
   }
+  z-index: 2;
 }
 
 .reset_password_prompt {
@@ -528,7 +529,7 @@ ul.vesting_schedule {
 }
 
 .io_card {
-  margin-bottom: 20px;  
+  margin-bottom: 20px;
   .logo_cell {
     text-align: center;
     .io_logo {
@@ -536,7 +537,7 @@ ul.vesting_schedule {
         width: 100%;
         height: 100%;
         object-fit: contain;
-        max-width: 400px;      
+        max-width: 400px;
       }
     }
   }
@@ -576,7 +577,7 @@ ul.vesting_schedule {
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-[data-bs-theme=dark] .uppy-FileInput-btn { 
+[data-bs-theme=dark] .uppy-FileInput-btn {
   color: #7c8fac !important;
   border-color: #7c8fac !important;
 }
@@ -749,7 +750,7 @@ ul.vesting_schedule {
     color: rgb(255, 115, 0) !important;
   }
 }
-  
+
 .hidden_form_field {
   display: none;
 }
@@ -798,14 +799,14 @@ ul.vesting_schedule {
 }
 
 .title-line {
-  width: 100%; 
-  text-align: center; 
+  width: 100%;
+  text-align: center;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   line-height: 0.1em;
-  margin: 10px 0px 40px 0px; 
-  span { 
-    background:#fff; 
-    padding:0 10px; 
+  margin: 10px 0px 40px 0px;
+  span {
+    background:#fff;
+    padding:0 10px;
     color: #4e73df;
   }
 }
@@ -838,7 +839,7 @@ ul.vesting_schedule {
 
 /* Note: Design for a width of 320px */
 @media all and (max-width: 479px) {
-  
+
   // Smaller buttons in mobile
   .btn {
       padding: 0.25rem 0.5rem !important;
@@ -869,7 +870,7 @@ ul.vesting_schedule {
     }
   }
 
-  
+
 }
 
 
@@ -965,7 +966,7 @@ select {
 .nav.nav-pills {
   .nav-link {
     text-align: center;
-    min-width: 160px !important;  
+    min-width: 160px !important;
     // border: 1px dotted lighten($color: lightgray, $amount: 10) ;
     margin-right: 5px;
     margin-bottom: 2px;
@@ -1027,7 +1028,7 @@ h6 {
   margin-top: -1px;
 }
 
-// To open dropdown buttons on hover 
+// To open dropdown buttons on hover
 .dropdown-submenu:hover>.dropdown-menu {
   display: block;
 }
@@ -1037,7 +1038,7 @@ h6 {
 }
 
 
-    
+
 .blink {
   animation: blinker 1s step-start infinite;
 }

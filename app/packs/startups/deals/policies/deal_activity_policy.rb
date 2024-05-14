@@ -4,7 +4,7 @@ class DealActivityPolicy < DealBasePolicy
       if user.entity_type == "Group Company"
         scope.where(entity_id: user.entity.child_ids)
       else
-        scope.joins(:deal_investor).where("deal_activities.entity_id=? or deal_investors.investor_entity_id=?", user.entity_id, user.entity_id)
+        scope.where("deal_activities.entity_id=?", user.entity_id)
       end
     end
   end
@@ -38,8 +38,12 @@ class DealActivityPolicy < DealBasePolicy
     update?
   end
 
-  def update_sequence?
+  def perform_activity_action?
     update?
+  end
+
+  def update_sequences?
+    permissioned_employee?
   end
 
   def destroy?

@@ -3,6 +3,7 @@ import "@hotwired/turbo-rails"
 import "trix"
 import "@rails/actiontext"
 import "controllers"
+import "channels"
 import "chartkick"
 import '@client-side-validations/client-side-validations/src'
 import "@nathanvda/cocoon"
@@ -23,16 +24,16 @@ addEventListener("trix-initialize", event => {
   inputElement.pattern = "(https?://|/).+";
 });
 
-$(document).on('turbo:before-cache', function() {     
+$(document).on('turbo:before-cache', function() {
   if( $('.select2-container').length > 0 ){
     // Hack to make sure select2 does not get duplicated due to turbolinks
     $('#investor_investor_entity_id').select2('destroy');
     $('#investment_investor_id').select2('destroy');
     $('#deal_investor_investor_id').select2('destroy');
     $('#folder_parent_id').select2('destroy');
-    $('#document_folder_id').select2('destroy');    
-    $('#access_right_access_to_category').select2('destroy');    
-    $('#access_right_access_to_investor_id').select2('destroy');    
+    $('#document_folder_id').select2('destroy');
+    $('#access_right_access_to_category').select2('destroy');
+    $('#access_right_access_to_investor_id').select2('destroy');
   }
 
 });
@@ -56,6 +57,6 @@ $( document ).on('turbo:load', function() {
     $(".data-simplebar").each(function() {
       new SimpleBar(this);
     });
-    
-    "use strict"; 
+
+    "use strict";
 });

@@ -16,3 +16,5 @@ pin_all_from "app/javascript/custom", under: "custom"
 pin "@rails/request.js", to: "request.js"
 pin "turbo_progress_bar"
 pin "countup.js" # @2.8.0
+pin "@rails/actioncable", to: "actioncable.esm.js"
+pin_all_from "app/javascript/channels", under: "channels"

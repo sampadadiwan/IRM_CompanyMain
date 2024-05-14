@@ -29,6 +29,35 @@ When('I edit the deal {string}') do |arg1|
   sleep(1)
 end
 
+When('I click on the action dropdown and select any Investor and save') do
+  select_investor_and_save(2, 'First Investment')
+  select_investor_and_save(3, 'Second Investment')
+  expect(all(".kanban-card").first.text).to include(@deal.deal_investors.first.investor_name)
+end
+
+When('I click on a Kanban Card and edit the form') do
+  all(".kanban-card").first.click()
+  sleep(0.5)
+  click_link('Edit')
+  sleep(0.25)
+  fill_in('Tags', with: "Random, Tag")
+  click_button('Save')
+  sleep(1)
+  expect(all(".kanban-card").first.text).to include("Random Tag")
+end
+
+When("I click on a Kanban Card's tags") do
+  expect(all(".kanban-card").count).to (eq(2))
+  click_link("Random")
+  sleep(1)
+  expect(all(".kanban-card").count).to (eq(1))
+end
+
+When("I move card from one column to another") do
+  all(".move-to-next-column").first.click()
+  sleep(1)
+  expect(@deal.deal_investors.first.deal_activities.first.status).to(eq("Complete"))
+end
 
 Then('an deal should be created') do
   @created = Deal.last
@@ -45,6 +74,13 @@ Then('I should see the deal details on the details page') do
   expect(page).to have_content(money_to_currency(@deal.amount))
   expect(page).to have_content(@deal.status)
   # sleep(10)
+end
+
+Then('I am at the deals kanban show page') do
+  visit(kanban_deal_path(@deal))
+  expect(page).to have_content(@deal.name)
+  deal_activities = DealActivity.templates(@deal).pluck(:title)
+  deal_activities.each {|activity| expect(page.html).to(include(activity)) }
 end
 
 Then('I should see the deal in all deals page') do
@@ -270,4 +306,72 @@ Then('the deal data room should be setup') do
   @deal.data_room_folder.should_not == nil
   @deal.data_room_folder.name.should == "Data Room"
   @deal.data_room_folder.full_path.should == "/Deals/#{@deal.name}/Data Room"
+end
+
+def select_investor_and_save(investor_id, tags)
+  find(".dropdown-toggle").click
+  sleep(0.5)
+  click_link('Add Deal Investor')
+  sleep(2)
+  select_box = find("#deal_investor_investor_id")
+  select_box.find("option:nth-of-type(#{investor_id})").select_option
+  input_field = find('#deal_investor_tags')
+  input_field.set(tags)
+  click_button('Save')
+  sleep(1)
+end
+
+When('I click on a Kanban Card') do
+  @deal_investor = DealInvestor.last
+  expect(all(".kanban-card").count).to (eq(2))
+  find('.kanban-card', text: /#{Regexp.escape(@deal_investor.name)}/).click
+  sleep(1)
+end
+
+Then('The offcanvas opens') do
+  # find('#offcanvas_DealInvestor83Activity1066')
+  expect(page).to have_content(@deal_investor.name)
+  # below contents are only on offcanvas
+  expect(page).to have_content(@deal_investor.deal.name)
+  expect(page).to have_content("Deal")
+  expect(page).to have_content("Status")
+end
+
+When('I click on the delete button on offcanvas') do
+  click_on('Delete')
+  sleep(0.5)
+  click_on("Proceed")
+  sleep(5)
+end
+
+Then('The card is deleted fromt the kanban board') do
+  expect(page).not_to have_content(@deal_investor.name)
+  expect(all(".kanban-card").count).to (eq(1))
+end
+
+When('I click on the action dropdown and create a deal activity without title and days') do
+  find(".dropdown-toggle").click
+  sleep(0.5)
+  click_link('Add Deal Activity')
+  sleep(1)
+  click_button('Save')
+  sleep(1)
+end
+
+Then('I should see the error "{string}"') do |string|
+  expect(page).to have_content(string)
+end
+
+When('I click on the action dropdown and select the same Investor and save') do
+  select_investor_and_save(2, 'First Investment')
+  select_investor_and_save(2, 'New Investment')
+end
+
+When('I click on the action dropdown and dont select any Investor and save') do
+  find(".dropdown-toggle").click
+  sleep(0.5)
+  click_link('Add Deal Investor')
+  sleep(1)
+  click_button('Save')
+  sleep(1)
 end

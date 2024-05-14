@@ -16,6 +16,7 @@ module CapHive
     config.active_support.key_generator_hash_digest_class = OpenSSL::Digest::SHA1
 
     config.autoload_paths += Dir[Rails.root.join('app/components/**/'), Rails.root.join('app/packs/**/')]
+    config.autoload_paths += %W[#{config.root}/app/packs/startups]
 
     # config.eager_load_paths += DirRails.root.join('app/jobs/**/'), Rails.root.join('app/models/**/'), Rails.root.join('app/dashboards/**/')]
 

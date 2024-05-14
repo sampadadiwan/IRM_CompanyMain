@@ -1,10 +1,12 @@
-<% 
-  hidden_fields ||= {} 
+<%
+  hidden_fields ||= {}
   disabled ||= false
+  state ||= "show"
+  css_class||= "show_filter"
 %>
 <% if params[:filter].present? || params[:q].present? || params[:ag].present? %>
 
-  <%= render ToggleCard.new(title: "Filter", css_class: "show_filter", controller: "filter") do %>
+  <%= render ToggleCard.new(title: "Filter", css_class: css_class, controller: "filter", state: state) do %>
 
     <% @q.build_condition if @q.conditions.empty? %>
 
@@ -25,7 +27,7 @@
             <%= render "/layouts/condition_fields", f: c, associations: associations %>
           <% end %>
 
-          <div class="action float-end">        
+          <div class="action float-end">
 
             <% if false && %w[capital_commitments account_entries].include?(params[:controller]) %>
             <div class="form-check form-check-inline">
@@ -41,23 +43,23 @@
             </div>
             <% end %>
 
-            <%= f.button "", class: "btn btn-outline-primary", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Search" do %>
+            <%= f.button "", class: "btn btn-outline-primary search-button", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Search" do %>
               <i class="ti ti-search"></i>
             <% end %>
 
             <%= link_to_add_fields '<i class="ti ti-plus"></i>'.html_safe, f, :condition, associations %>
-            
+
             <%= link_to new_report_path, class: "btn btn-outline-info", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Save Report" do %>
               <i class="ti ti-database"></i>
             <% end %>
           </div>
-        
+
           <% hidden_fields.each do |key, value| %>
             <%= hidden_field_tag key, value if value %>
           <% end %>
 
       <% end %>
     <% end %>
-    <!-- End of ToggleCard --> 
+    <!-- End of ToggleCard -->
   <% end %>
 <% end %>

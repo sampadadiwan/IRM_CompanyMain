@@ -2,6 +2,7 @@ class DealInvestor < ApplicationRecord
   include Trackable.new
   include WithFolder
   include ForInvestor
+  include RansackerAmounts.new(fields: %w[total_amount primary_amount secondary_investment fee])
 
   monetize  :fee_cents, :pre_money_valuation_cents, :secondary_investment_cents,
             :primary_amount_cents, with_currency: ->(i) { i.deal.currency }
@@ -39,7 +40,7 @@ class DealInvestor < ApplicationRecord
     self.investor_name = investor.investor_name
   end
 
-  after_commit :create_activities_later, unless: :destroyed?
+  after_create_commit :create_activities_later
 
   def create_activities_later
     GenerateDealActivitiesJob.perform_later(id, "DealInvestor")
@@ -68,6 +69,25 @@ class DealInvestor < ApplicationRecord
 
   def total
     primary_amount + secondary_investment + fee
+  end
+
+  def total_amount
+    total_amount_cents || total
+  end
+
+  def current_deal_activity_id
+    return nil if deal_activity.blank?
+
+    current_deal_activity = deal_activities.where.not(status: DealActivity.statuses["Template"]).find_by(title: deal_activity.title)
+    current_deal_activity&.id
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[total_amount investor_name tier tags source introduced_by deal_lead primary_amount secondary_investment fee]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[deal deal_activity deal_activities]
   end
 
   def create_activities

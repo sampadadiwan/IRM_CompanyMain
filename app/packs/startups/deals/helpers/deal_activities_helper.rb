@@ -1,8 +1,8 @@
 module DealActivitiesHelper
   def activity_color(deal_activity)
-    if deal_activity.completed == "Yes"
+    if deal_activity.Complete?
       "btn-outline-success"
-    elsif deal_activity.completed == "N/A"
+    elsif deal_activity.Incomplete?
       "btn-outline-info"
     elsif deal_activity.by_date && deal_activity.by_date < Time.zone.today
       "btn-outline-danger"
@@ -14,7 +14,7 @@ module DealActivitiesHelper
   end
 
   def completed_badge(deal_activity)
-    if deal_activity.completed == "Yes"
+    if deal_activity.Complete?
       "bg-success"
     elsif deal_activity.by_date && deal_activity.by_date < Time.zone.today
       "bg-danger"

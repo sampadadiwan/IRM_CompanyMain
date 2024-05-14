@@ -1,0 +1,114 @@
+<%= turbo_frame_tag "new_deal_investor" do %>
+  <div class="dynamic_form" data-controller="access">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Potential Investment</h6>
+            <span class="float-right">
+                <button type="button" class="btn-close text-reset" data-action="click->access#close" aria-label="Close"></button>
+            </span>
+        </div>
+        <div class="card-body">
+
+        <%= form_with(model: deal_investor, validate: true) do |form| %>
+            <% if deal_investor.errors.any? %>
+            <div class="alert alert-danger">
+                <h2><%= pluralize(deal_investor.errors.count, "error") %> prohibited this deal_investor from being saved:</h2>
+
+                <ul>
+                <% deal_investor.errors.each do |error| %>
+                    <li><%= error.full_message %></li>
+                <% end %>
+                </ul>
+            </div>
+            <% end %>
+
+            <div class="form-group">
+            <%= form.label :deal_id %>
+            <%= form.text_field :deal_name, class: "form-control", disabled: "disabled", value: deal_investor.deal.name  %>
+            <%= form.text_field :deal_id, class: "form-control", hidden: true  %>
+            <%= form.text_field :deal_activity_id, class: "form-control", hidden: true  %>
+            <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
+            </div>
+
+            <div class="form-group">
+            <%= form.label :investor_id, "Stakeholder" %>
+            <%= form.select :investor_id, deal_investor.entity.investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, {include_blank: true}, {class: "form-control select2"} %>
+            </div>
+
+            <div class="form-group">
+            <%= form.label :tier %>
+            <%= form.text_field :tier, {class: "form-control", maxlength: 20} %>
+            </div>
+
+            <div class="form-group">
+            <%= form.label :deal_lead %>
+            <%= form.text_field :deal_lead, {class: "form-control", maxlength: 20} %>
+            </div>
+
+            <div class="form-group">
+            <%= form.label :source %>
+            <%= form.text_field :source, {class: "form-control", maxlength: 20} %>
+            </div>
+
+            <div class="form-group">
+            <%= form.label :introduced_by %>
+            <%= form.text_field :introduced_by, {class: "form-control", maxlength: 20} %>
+            </div>
+
+            <div class="form-group">
+            <%= form.label :tags %>
+            <%= form.text_field :tags, {class: "form-control", maxlength: 20} %>
+            </div>
+
+            <div class="form-group">
+            <%= form.label :status %>
+            <%= form.select :status, DealInvestor::STATUS, {}, {class: "form-control"} %>
+            </div>
+
+            <div data-controller="currencyformat">
+            <div class="form-group">
+                <%= form.label :pre_money_valuation %> <span class="formatted_currency"></span>
+                <%= form.number_field :pre_money_valuation, class: "form-control", data: {action: "input->currencyformat#format"}  %>
+                <small class="text-muted">In <%= deal_investor.deal.currency %>. Leave blank if not available</small>
+            </div>
+
+            <div class="form-group">
+                <%= form.label :primary_amount %> <span class="formatted_currency"></span>
+                <%= form.number_field :primary_amount, class: "form-control", data: {action: "input->currencyformat#format"}  %>
+                <small class="text-muted">In <%= deal_investor.deal.currency %></small>
+            </div>
+
+
+            <div class="form-group">
+                <%= form.label :secondary_investment %> <span class="formatted_currency"></span>
+                <%= form.number_field :secondary_investment, class: "form-control", data: {action: "input->currencyformat#format"}  %>
+                <small class="text-muted">In <%= deal_investor.deal.currency %></small>
+            </div>
+            </div>
+
+            <% if deal_investor.entity.is_fund? %>
+
+            <div class="form-group">
+                <%= form.label :fee %>
+                <%= form.number_field :fee, class: "form-control"  %>
+                <small class="text-muted">In <%= deal_investor.deal.currency %></small>
+            </div>
+
+            <% end %>
+
+            <div class="form-group">
+            <%= form.label :notes %>
+            <%= form.rich_text_area :notes, class: "form-control trix-content"  %>
+            </div>
+
+
+            <div class="form-group">
+                <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+                <a class="btn btn-outline-danger", data-action="click->access#close">Close</a>
+            </div>
+        <% end %>
+
+        </div>
+    </div>
+  </div>
+<% end %>

@@ -2,23 +2,10 @@
 
 
 <% if params[:kanban].present? %>
-  <%= render "/deals/kanban", deal: @deal %>
+  <% deal_investor = @deal_investor || nil %>
+  <% deal_activity = @deal_activity || nil %>
+  <%= render "/deals/kanban", deal: @deal, deal_investors: @deal_investors, deal_investor: deal_investor, deal_activity: deal_activity %>
 <% else %>
   <%= render "/deals/show", deal: @deal %>
 <% end %>
 
-<% if current_user.entity_id == @deal.entity_id %>
-  
-  <%= render "/layouts/steps", steps: ["Setup Deal Details", "Upload Deal Docs", "Add Investments", 
-          "Customize Deal Steps", "Setup Access Rights", "Start Deal"].freeze %>
-          
-  
-  <%= render "/deals/deal_details", deal: @deal, show_deal: "No"  %>
-  
-<% else %>
-
-  <% deal_investor = @deal.deal_investors.for(current_user).first %>
-  <%= render "deal_investors/deal_investor_details", 
-    deal_investor: deal_investor, deal: @deal, show_tranch: true %>
-  
-<% end %>

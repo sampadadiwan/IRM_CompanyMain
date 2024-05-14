@@ -44,14 +44,18 @@ end
 resources :deal_activities do
   get 'search', on: :collection
   get 'update_sequence', on: :member
+  post 'update_sequences', on: :collection
   post 'toggle_completed', on: :member
+  post 'perform_activity_action', on: :member
 end
 resources :deal_investors do
   get 'search', on: :collection
+  get 'kanban_search', on: :collection
 end
 resources :deals do
   get 'search', on: :collection
   get 'investor_deals', on: :collection
+  get 'kanban', on: :member
 end
 
 resources :investments do

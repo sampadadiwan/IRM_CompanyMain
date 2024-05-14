@@ -1,8 +1,8 @@
 <tr id="<%=dom_id(deal_investor)%>">
-    <td class="sticky-col first-col">        
+    <td class="sticky-col first-col">
         <div class="dropdown">
             <span type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <%= deal_investor.investor_name %>      
+                <%= deal_investor.investor_name %>
             </span>
             <div class="dropdown-menu">
                 <%= link_to "View Investor", deal_investor_path(id: deal_investor.id), class: "dropdown-item" %>
@@ -12,27 +12,27 @@
                 <%= link_to "View Steps", deal_activities_path(deal_investor_id: deal_investor.id, deal_id: deal_investor.deal_id), class: "dropdown-item" %>
                 <%= link_to "Nudge", new_nudge_path("nudge[item_id]": deal_investor.id, "nudge[item_type]": "DealInvestor", back_to: deal_path(id: deal_investor.deal_id, grid_view: true)), class: "dropdown-item" %>
             </div>
-            
+
         </div>
         <div>
-            <span class="badge <%= status_badge(deal_investor) %>"><%= deal_investor.status %></span>          
+            <span class="badge <%= status_badge(deal_investor) %>"><%= deal_investor.status %></span>
         </div>
     </td>
     <td>
-        <%= money_to_currency deal_investor.pre_money_valuation, params %> 
+        <%= money_to_currency deal_investor.pre_money_valuation, params %>
     </td>
     <td>
-        <%= money_to_currency deal_investor.primary_amount, params  %> 
+        <%= money_to_currency deal_investor.primary_amount, params  %>
     </td>
     <td>
-        <%= money_to_currency deal_investor.secondary_investment, params %> 
+        <%= money_to_currency deal_investor.secondary_investment, params %>
     </td>
     <% if (@deal && @deal.entity.is_fund?) || deal_investor.entity.is_fund? %>
         <td>
-            <%= money_to_currency deal_investor.fee, params %> 
+            <%= money_to_currency deal_investor.fee, params %>
         </td>
         <td>
-            <%= money_to_currency deal_investor.total, params %> 
+            <%= money_to_currency deal_investor.total, params %>
         </td>
     <% end %>
     <td>
@@ -42,11 +42,11 @@
         <%# deal_investor.deal_activities.order("deal_activities.sequence asc").each do |activity| %>
         <% deal_investor.deal_activities.sort_by{|a| a.sequence}.each do |activity| %>
             <td class="deal_activity_cell">
-                
+                <% completed = activity.Complete? ? "Yes" : "No" %>
                 <div id="<%=dom_id(activity)%>" class="dropdown">
-                    <span class="btn btn-outline-sm dropdown-toggle <%=activity_color(activity)%>" 
+                    <span class="btn btn-outline-sm dropdown-toggle <%=activity_color(activity)%>"
                         id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <%= activity.completed %>
+                        <%= completed %>
                     </span>
 
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -54,23 +54,22 @@
                         <a class="dropdown-item">Due: <%= l activity.by_date if activity.by_date %></a>
                         <div class="dropdown-divider"></div>
 
-                        <% completed = activity.completed == "Yes" ? "No" : "Yes" %>
-                        
+
                         <div>
-                        <%= button_to "Toggle Done", toggle_completed_deal_activity_path(activity, "deal_activity[completed]": completed), class: "dropdown-item" %>
+                        <%= button_to "Toggle Done", toggle_completed_deal_activity_path(activity, "deal_activity[status]": "complete"), class: "dropdown-item" %>
                         </div>
 
                         <div>
-                        <%= button_to "N/A", toggle_completed_deal_activity_path(activity, "deal_activity[completed]": "N/A"), class: "dropdown-item" %>
+                        <%= button_to "N/A", toggle_completed_deal_activity_path(activity, "deal_activity[status]": "incomplete"), class: "dropdown-item" %>
                         </div>
 
                         <%= link_to "Show", deal_activity_path(activity), class: "dropdown-item" %>
-                        
-                        <%= link_to "Edit", edit_deal_activity_path(activity, 
-                                        back_to: deal_path(id: deal_investor.deal_id, grid_view: true)), 
+
+                        <%= link_to "Edit", edit_deal_activity_path(activity,
+                                        back_to: deal_path(id: deal_investor.deal_id, grid_view: true)),
                                         class: "dropdown-item" %>
 
-                        <%= link_to "Nudge", new_nudge_path("nudge[item_id]": activity.id, "nudge[item_type]": "DealActivity", 
+                        <%= link_to "Nudge", new_nudge_path("nudge[item_id]": activity.id, "nudge[item_type]": "DealActivity",
                                         back_to: deal_path(deal_investor.deal, grid_view: true)), class: "dropdown-item" %>
                     </div>
                 </div>

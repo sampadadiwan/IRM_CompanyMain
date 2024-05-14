@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   resources :doc_questions
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
+  mount ActionCable.server => '/cable'
   resources :support_client_mappings
   draw :admin
   draw :fund

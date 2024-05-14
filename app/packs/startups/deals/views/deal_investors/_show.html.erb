@@ -6,7 +6,7 @@
     </td>
     <td>
       <%= belongs_to_entity_id?(current_user, deal_investor.entity_id) ?
-        link_to(deal_investor.deal_name, deal_investor.deal) : 
+        link_to(deal_investor.deal_name, deal_investor.deal) :
         deal_investor.deal_name %>
     </td>
   </tr>
@@ -88,18 +88,26 @@
 
   <tr>
     <td>
-      Company Advisor
+      Deal Lead
     </td>
     <td>
-      <%=  deal_investor.company_advisor %>
+      <%= deal_investor.deal_lead %>
     </td>
   </tr>
   <tr>
     <td>
-      Investor Advisor
+      Source
     </td>
     <td>
-      <%= deal_investor.investor_advisor %>
+      <%= deal_investor.source %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Introduced By
+    </td>
+    <td>
+      <%= deal_investor.introduced_by %>
     </td>
   </tr>
   <tr>

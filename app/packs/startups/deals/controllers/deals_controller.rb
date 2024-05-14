@@ -1,10 +1,11 @@
 class DealsController < ApplicationController
-  before_action :set_deal, only: %w[show update destroy edit]
+  before_action :set_deal, only: %w[show update destroy edit kanban]
   after_action :verify_authorized, except: %i[index search investor_deals]
 
   # GET /deals or /deals.json
   def index
     @deals = policy_scope(Deal)
+    @bread_crumbs = { Deals: deals_path }
     @deals = @deals.where("deals.archived=?", false) if params[:include_archived].blank?
   end
 
@@ -45,6 +46,15 @@ class DealsController < ApplicationController
         format.html { render "grid_view" }
       end
     end
+  end
+
+  def kanban
+    @deal_investor = DealInvestor.new(deal: @deal, entity: @deal.entity)
+    @deal_activity = DealActivity.new(deal: @deal, entity: @deal.entity)
+    @q = @deal.deal_investors.ransack(params[:q])
+    @deal_investors = policy_scope(@q.result)
+    params[:kanban] = true
+    render "deals/show"
   end
 
   # GET /deals/new
@@ -109,6 +119,7 @@ class DealsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_deal
     @deal = Deal.find(params[:id])
+    @bread_crumbs = { Deals: deals_path, "#{@deal.name || '-'}": deal_path(@deal) }
     authorize(@deal)
   end
 

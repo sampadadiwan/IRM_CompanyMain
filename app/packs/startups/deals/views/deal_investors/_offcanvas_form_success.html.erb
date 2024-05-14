@@ -1,0 +1,5 @@
+<%deal_investor||= @deal_investor%>
+<%= render "deal_investors/deal_show", deal_investor: deal_investor, belongs_to_entity: current_user.entity_id == deal_investor.entity_id, update_allowed: true, current_user: current_user %>
+
+<%= turbo_stream.replace("DealInvestor#{deal_investor.id}Activity#{deal_investor.current_deal_activity_id}",partial: "deals/kanban_card_component", locals: {deal_investor: @deal_investor, current_user: current_user})
+%>

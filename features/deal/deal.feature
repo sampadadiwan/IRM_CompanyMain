@@ -32,4 +32,3 @@ Scenario Outline: Edit deal
   	|user	      |entity               |deal                             |msg	|
   	|  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully created|
     |  	        |entity_type=Company  |name=Series B;amount_cents=12000 |Deal was successfully created|
-
