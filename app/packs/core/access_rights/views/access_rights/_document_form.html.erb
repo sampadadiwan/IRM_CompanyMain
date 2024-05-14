@@ -5,7 +5,7 @@
       <h6 class="m-0 font-weight-bold text-primary">Grant Access</h6>
     </div>
     <div class="card-body">
-      <%= form_with(model: access_right, class: "associated_entity", id: "access_rights_form") do |form| %>
+      <%= form_with(model: access_right, class: "", id: "access_rights_form") do |form| %>
         <% if access_right.errors.any? %>
           <div class="alert alert-danger">
             <h2><%= pluralize(access_right.errors.count, "error") %> prohibited this access_right from being saved:</h2>
@@ -30,22 +30,29 @@
           select_employees = false
 
             users_url = investor_accesses_path
-            select_investor_users = true
+            select_investor_users = false
+            select_employees = true
+            users = current_user.entity.employees
         %>
         <div data-controller="select">
 
           <div class="form-group">
             <%= form.label :access_type %>
             <%= form.select :email_or_cat, types, {}, class: "form-control", 
-              name: "email_or_cat", "data-action": "change->access#onChange change->select#change", "data-url": "#{users_url}", "data-param": "email_or_cat", "data-target": "employee_id" %>
+              name: "email_or_cat", "data-action": "change->access#onChange change->select#change", "data-url": "#{users_url}", "data-param": "email_or_cat", "data-target": "investor_employee_id" %>
           </div>
 
-          <% if select_investor_users %>
-            <div class="form-group" id="employee_form_group">
+
+          <div class="form-group" id="employee_form_group">
+              <%= form.label :user_id, "Select Employee" %>
+              <%= form.select :user_id, users.map{|e| [e.full_name, e.id]} , {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", id: "employee_id"  %>
+          </div>
+
+          <div class="form-group" id="investor_employee_form_group">
               <%= form.label :user_id, "Select Specific User" %>
-              <%= form.select :user_id, [], {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", id: "employee_id"  %>
-            </div>
-          <% end %>
+              <%= form.select :user_id, [], {include_blank: false, include_hidden: false}, class: "form-control select2-multiple", multiple: "multiple", id: "investor_employee_id" %>
+          </div>
+          
 
           <div class="form-group" id="category_form_group">
             <%= form.label :access_to_category, "Select Stakeholder Category" %>

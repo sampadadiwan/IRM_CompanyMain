@@ -68,7 +68,7 @@ export default class extends Controller {
       case "Specific User":
         // hide category & disable
         this.hideAll();
-        this.showEmployee();
+        this.showInvestorUsers();
         this.hidePermissons();
         break;
       default:
@@ -149,14 +149,27 @@ export default class extends Controller {
 
   showEmployee() {
     $("#employee_form_group").show();
-    $('#access_right_user_id').prop('disabled', "");
-    $('#access_right_user_id').addClass('required');
+    $('#employee_form_group #access_right_user_id').prop('disabled', "");
+    $('#employee_form_group #access_right_user_id').addClass('required');
   }
 
   hideEmployee() {
     $("#employee_form_group").hide();
-    $('#access_right_user_id').prop('disabled', "disabled");
-    $('#access_right_user_id').removeClass('required');
+    $('#employee_form_group #access_right_user_id').prop('disabled', "disabled");
+    $('#employee_form_group #access_right_user_id').removeClass('required');
+  }
+
+
+  showInvestorUsers() {
+    $("#investor_employee_form_group").show();
+    $('#investor_employee_form_group #access_right_user_id').prop('disabled', "");
+    $('#investor_employee_form_group #access_right_user_id').addClass('required');
+  }
+
+  hideInvestorUsers() {
+    $("#investor_employee_form_group").hide();
+    $('#investor_employee_form_group #access_right_user_id').prop('disabled', "disabled");
+    $('#investor_employee_form_group #access_right_user_id').removeClass('required');
   }
 
   showInvestorAdvisor() {
@@ -184,6 +197,7 @@ export default class extends Controller {
     this.hideInvestor();
     this.hideMetadata();
     this.hideEmployee();
+    this.hideInvestorUsers();
     this.hidePermissons();
     this.hideInvestorAdvisor();
   }

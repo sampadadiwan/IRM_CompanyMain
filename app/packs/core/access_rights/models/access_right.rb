@@ -98,7 +98,7 @@ class AccessRight < ApplicationRecord
     when "Fund", "InvestmentOpportunity", "SecondarySale"
       AccessRight::TYPES + %w[Employee Advisor]
     when "Document", "Folder"
-      AccessRight::TYPES + ["Specific User"]
+      AccessRight::TYPES + ["Specific User", "Employee"]
     else
       AccessRight::TYPES
     end

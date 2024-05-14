@@ -7,7 +7,7 @@ class Folder < ApplicationRecord
   enum :folder_type, %i[regular system]
 
   belongs_to :parent, class_name: "Folder", optional: true
-  belongs_to :entity #, touch: true
+  belongs_to :entity # , touch: true
   belongs_to :owner, polymorphic: true, optional: true
 
   has_many :documents, dependent: :destroy

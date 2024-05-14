@@ -5,7 +5,7 @@
       <h6 class="m-0 font-weight-bold text-primary">Grant Access</h6>
     </div>
     <div class="card-body">
-      <%= form_with(model: access_right, class: "associated_entity", id: "access_rights_form") do |form| %>
+      <%= form_with(model: access_right, class: "", id: "access_rights_form") do |form| %>
         <% if access_right.errors.any? %>
           <div class="alert alert-danger">
             <h2><%= pluralize(access_right.errors.count, "error") %> prohibited this access_right from being saved:</h2>
