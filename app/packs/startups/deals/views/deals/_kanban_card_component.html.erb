@@ -1,0 +1,50 @@
+<% current_deal_activity_id = deal_investor.current_deal_activity_id%>
+<%= turbo_frame_tag "DealInvestor#{deal_investor.id}Activity#{current_deal_activity_id}" do %>
+  <% offcanvas_id = "offcanvas_DealInvestor#{deal_investor.id}Activity#{current_deal_activity_id}"%>
+  <div id="<%= current_deal_activity_id %>" draggable="true" class="card img-task ui-sortable-handle kanban-card"
+  data-deal-investor-id="<%= deal_investor.id %>" data-deal-template-id="<%= current_deal_activity_id %>" data-offcanvas-id="<%= offcanvas_id %>">
+    <div class="card-body">
+      <div class="task-header">
+        <div>
+          <h4 data-item-title="Investor Name">
+            <%= deal_investor.investor_name %>
+          </h4>
+        </div>
+      </div>
+      <div class="task-body">
+        <div class="task-bottom">
+          <div class="tb-section-1">
+            <span class="hstack gap-2 fs-2">
+              <% currency_unit = deal_investor.deal.currency == "INR" ? "Crores" : "Million" %>
+              <i class="ti ti-money fs-5"></i> <%= money_to_currency deal_investor.total_amount, {units: currency_unit} %>
+            </span>
+          </div>
+          <div class="tb-section-2">
+            <% unless deal_investor.tags.nil? || deal_investor.tags.empty? %>
+              <% deal_investor.tags.split(',').each do |tag| %>
+                <%= link_to tag.strip, kanban_search_deal_investors_path(query: tag.strip), method: :get, remote: true, class: "badge bg-secondary text-light fs-1 deal-investor-tag", style: "cursor: pointer;" %>
+              <% end %>
+            <% end %>
+            <%  if Rails.env.test? %>
+              <div class="move-to-next-column">
+                <button class="btn btn-outline-primary btn-sm">>></button>
+              </div>
+            <% end %>
+          </div>
+        </div>
+        <div class="fading-line" style="background: linear-gradient(to right, <%= severity_color(deal_investor) %> 30%, transparent 100%); height: 4px; width: 100%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <%deal ||= deal_investor.deal%>
+  <%= render OffcanvasComponent.new(title: deal_investor.investor_name, offcanvas_id: offcanvas_id) do %>
+      <%= link_to deal_investor_path( id: deal_investor.id, turbo: true ),
+                              class: "offcanvas_load_data_link_#{deal_investor.id}",
+                              data: { turbo_frame: "deal_investor_show_#{deal_investor.id}", turbo: true} do %>
+        <span>Loading...</span>
+      <% end %>
+    <%= turbo_frame_tag "deal_investor_show_#{deal_investor.id}" do %>
+    <% end %>
+  <% end %>
+<% end %>

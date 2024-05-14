@@ -23,6 +23,10 @@ class DealPolicy < ApplicationPolicy
     permissioned_employee? && user.enable_deals
   end
 
+  def kanban?
+    show? && belongs_to_entity?(user, record)
+  end
+
   def show_detail_tabs?
     belongs_to_entity?(user, record)
   end

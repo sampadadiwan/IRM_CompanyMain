@@ -1,0 +1,162 @@
+<%= turbo_frame_tag "deal_investor_show_#{deal_investor.id}" do %>
+<div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
+<table class="table table-bordered dataTable ">
+<%# Need to pass these params as they need current_user to compute and on turbo load give devise error %>
+<% belongs_to_entity ||= false %>
+<% update_allowed ||= false %>
+  <tr>
+    <td>
+      Deal
+    </td>
+    <td>
+      <%= belongs_to_entity ?
+        link_to(deal_investor.deal_name, deal_investor.deal) :
+        deal_investor.deal_name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Investor
+    </td>
+    <td>
+      <%= belongs_to_entity ?
+          link_to(deal_investor.investor_name, deal_investor.investor) :
+          deal_investor.investor_name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Status
+    </td>
+    <td>
+      <%= deal_investor.status %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Tier
+    </td>
+    <td>
+      <%= deal_investor.tier %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Pre Money Valuation
+    </td>
+    <td>
+      <%= money_to_currency deal_investor.pre_money_valuation, params %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Primary Amount
+    </td>
+    <td>
+      <%= money_to_currency deal_investor.primary_amount, params %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Secondary Investment
+    </td>
+    <td>
+      <%= money_to_currency deal_investor.secondary_investment, params %>
+    </td>
+  </tr>
+
+  <% if deal_investor.entity.is_fund? %>
+
+    <tr>
+      <td>
+        Fee
+      </td>
+      <td>
+        <%= money_to_currency deal_investor.fee, params %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Total
+        (Primary + Secondary + Fee)
+      </td>
+      <td>
+        <%= money_to_currency deal_investor.total, params %>
+      </td>
+    </tr>
+
+  <% end %>
+
+  <tr>
+    <td>
+      Deal Lead
+    </td>
+    <td>
+      <%= deal_investor.deal_lead %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Source
+    </td>
+    <td>
+      <%= deal_investor.source %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Introduced By
+    </td>
+    <td>
+      <%= deal_investor.introduced_by %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Entity
+    </td>
+    <td>
+      <%= link_to deal_investor.entity_name, deal_investor.entity %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+       Notes
+    </td>
+    <td>
+       <%= deal_investor.notes %>
+    </td>
+ </tr>
+
+</table>
+
+<div class="d-inline-flex">
+  <%= link_to "Edit", edit_deal_investor_path(deal_investor), class: "btn btn-outline-primary", data: { turbo_stream: true } if update_allowed %>
+  <%= form_with(model: deal_investor, url: deal_investor_path(deal_investor), method: :delete) do |form| %>
+    <%= form.submit "Delete", class: "btn btn-outline-danger", data: { action: "click->confirm#popup" } %>
+  <% end %>
+</div>
+
+<hr>
+<h5 class="mb-0 text-gray-800  d-none d-sm-block">
+  Documents
+</h5>
+<hr>
+
+<% da_ids = deal_investor.deal_activities.pluck(:id) %>
+<% sql = "#{deal_investor.documents.includes(:folder).to_sql}
+          # UNION #{deal_investor.deal.documents.includes(:folder).to_sql}
+          UNION #{Document.includes(:folder).where(owner_id: da_ids, owner_type: "DealActivity").to_sql}" %>
+<% documents= Document.find_by_sql(sql) %>
+
+<% documents.each do |document| %>
+<div>
+    <%= link_to document.name, document_path(document.id) %>
+</div>
+<% end %>
+
+<% end %>

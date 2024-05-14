@@ -1,70 +1,81 @@
+<%back_to ||= params[:back_to] || nil %>
+<%= turbo_frame_tag "new_deal_activity" do %>
+  <div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Deal Step</h6>
+      </div>
+    <div class="card-body">
 
+      <%= form_with(model: deal_activity, validate: true, data: {turbo: false}) do |form| %>
+        <% if deal_activity.errors.any? %>
+          <div class="alert alert-danger">
+            <h2><%= pluralize(deal_activity.errors.count, "error") %> prohibited this deal_activity from being saved:</h2>
 
-<%= form_with(model: deal_activity, validate: true) do |form| %>
-  <% if deal_activity.errors.any? %>
-    <div class="alert alert-danger">
-      <h2><%= pluralize(deal_activity.errors.count, "error") %> prohibited this deal_activity from being saved:</h2>
-
-      <ul>
-        <% deal_activity.errors.each do |error| %>
-          <li><%= error.full_message %></li>
+            <ul>
+              <% deal_activity.errors.each do |error| %>
+                <li><%= error.full_message %></li>
+              <% end %>
+            </ul>
+          </div>
         <% end %>
-      </ul>
+
+        <div class="form-group">
+          <%= form.text_field :deal_id, class: "form-control", hidden: true  %>
+          <%= form.text_field :back_to, class: "form-control", hidden: true, name: "back_to", value: params[:back_to] || back_to  %>
+        </div>
+
+        <% if deal_activity.deal_investor_id.present? %>
+          <div class="form-group">
+            <%= form.label :deal_investor_id %>
+            <%= form.text_field :deal_investor, class: "form-control", disabled: "disabled", value: deal_activity.investor_name  %>
+            <%= form.text_field :deal_investor_id, class: "form-control", hidden: true %>
+          </div>
+        <% end %>
+
+        <div class="form-group">
+          <%= form.label :title %>
+          <%= form.text_field :title, class: "form-control"  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :details %>
+          <%= form.rich_text_area :details, class: "form-control"  %>
+        </div>
+
+
+        <div class="form-group">
+          <%= form.label :days %>
+          <%= form.number_field :days, class: "form-control"  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :status %>
+          <%= form.text_field :status, class: "form-control"  %>
+        </div>
+
+        <% if deal_activity.deal_investor_id.present? %>
+
+          <div class="form-group">
+            <%= form.label :by_date %>
+            <%= form.date_field :by_date, class: "form-control"  %>
+          </div>
+
+          <div class="form-group">
+            <%= form.label :completed %>
+            <%= form.select :completed, ["Yes", "No", "N/A"], {}, class: "form-control"  %>
+          </div>
+
+        <% end %>
+
+        <%= render "layouts/multi_upload", form: form, title: "Documents",
+                    for_model: "deal_activity" %>
+
+        <div class="form-group">
+          <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
+        </div>
+      <% end %>
     </div>
-  <% end %>
-
-  <div class="form-group">
-    <%= form.text_field :deal_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :back_to, class: "form-control", hidden: true, name: "back_to", value: params[:back_to]  %>
-  </div>
-  
-  <% if deal_activity.deal_investor_id.present? %>
-    <div class="form-group">
-      <%= form.label :deal_investor_id %>
-      <%= form.text_field :deal_investor, class: "form-control", disabled: "disabled", value: deal_activity.investor_name  %>
-      <%= form.text_field :deal_investor_id, class: "form-control", hidden: true %>
-    </div>
-  <% end %>
-
-  <div class="form-group">
-    <%= form.label :title %>
-    <%= form.text_field :title, class: "form-control"  %>
   </div>
 
-  <div class="form-group">
-    <%= form.label :details %>
-    <%= form.rich_text_area :details, class: "form-control"  %>
-  </div>
-
-
-  <div class="form-group">
-    <%= form.label :days %>
-    <%= form.number_field :days, class: "form-control"  %>
-  </div>
-
-  <div class="form-group">
-    <%= form.label :status %>
-    <%= form.text_field :status, class: "form-control"  %>
-  </div>
-
-  <% if deal_activity.deal_investor_id.present? %>
-
-    <div class="form-group">
-      <%= form.label :by_date %>
-      <%= form.date_field :by_date, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :completed %>
-      <%= form.select :completed, ["Yes", "No", "N/A"], {}, class: "form-control"  %>
-    </div>
-
-  <% end %>
-
-  <%= render "layouts/multi_upload", form: form, title: "Documents", 
-              for_model: "deal_activity" %>
-
-  <div class="form-group">
-    <%= form.submit "Save", {class: "btn btn-outline-primary"}%>
-  </div>
 <% end %>

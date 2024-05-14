@@ -1,2 +1,5 @@
-<%= render "form", deal_activity: @deal_activity %>
-
+<% if params[:form_type] %>
+    <%= render params[:form_type], deal_activity: @deal_activity %>
+<% else %>
+    <%= render "form", deal_activity: @deal_activity %>
+<% end %>

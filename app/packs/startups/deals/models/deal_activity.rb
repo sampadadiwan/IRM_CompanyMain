@@ -5,6 +5,8 @@ class DealActivity < ApplicationRecord
 
   attr_accessor :has_documents_nested_attributes
 
+  enum :status, { Incomplete: "incomplete", Complete: "complete", Skip: "skip", Template: "template" }
+
   acts_as_list scope: %i[deal_id deal_investor_id], column: :sequence
 
   default_scope { order(sequence: :asc) }
@@ -35,7 +37,8 @@ class DealActivity < ApplicationRecord
   end
 
   def check_done
-    errors.add(:documents, "required for completing the activity") if completed == "Yes" && docs_required_for_completion && !(has_documents_nested_attributes || documents.present?)
+    errors.add(:documents, "required for completing the activity") if Complete? && docs_required_for_completion && !(has_documents_nested_attributes || documents.present?)
+    # TODO: completed is not used anymore; update below validation
     errors.add(:details, "required for marking N/A") if completed == "N/A" && details_required_for_na && details.blank?
   end
 
@@ -48,7 +51,7 @@ class DealActivity < ApplicationRecord
   end
 
   def completed_status
-    completed
+    Complete? ? "Yes" : "No"
   end
 
   def to_s

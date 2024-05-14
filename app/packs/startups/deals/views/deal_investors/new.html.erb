@@ -1,3 +1,7 @@
+<% if params[:form_type] %>
+    <%= render params[:form_type], deal_investor: @deal_investor %>
+<% else %>
+    <%= render "form", deal_investor: @deal_investor %>
+<% end %>
 
-<%= render "form", deal_investor: @deal_investor %>
 

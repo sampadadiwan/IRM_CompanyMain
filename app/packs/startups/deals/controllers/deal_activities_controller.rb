@@ -1,9 +1,12 @@
 class DealActivitiesController < ApplicationController
-  before_action :set_deal_activity, only: %w[show update destroy edit update_sequence toggle_completed]
-  skip_before_action :verify_authenticity_token, only: [:update_sequence], raise: false
+  include DealInvestorsHelper
+  before_action :set_deal_activity, only: %w[show update destroy edit update_sequence toggle_completed perform_activity_action]
+  skip_before_action :verify_authenticity_token, only: %i[update_sequence perform_activity_action update_sequences], raise: false
+  after_action :verify_authorized, except: %w[update_sequences]
 
   # GET /deal_activities or /deal_activities.json
   def index
+    authorize(DealActivity)
     @deal_activities = policy_scope(DealActivity).includes(:deal, deal_investor: :investor)
 
     @deal_activities = @deal_activities.where(deal_id: params[:deal_id]) if params[:deal_id].present?
@@ -36,10 +39,19 @@ class DealActivitiesController < ApplicationController
     @deal_activity = DealActivity.new(deal_activity_params)
     @deal_activity.entity_id = @deal_activity.deal.entity_id
     authorize @deal_activity
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.append('new_deal_activity', partial: "deal_activities/deal_form", locals: { deal_activity: @deal_activity })
+        ]
+      end
+      format.html
+    end
   end
 
   # GET /deal_activities/1/edit
   def edit
+    # DealActivityEditOperation
     @deal_activity[:completed] = deal_activity_params[:completed] if params[:deal_activity].present?
   end
 
@@ -52,17 +64,21 @@ class DealActivitiesController < ApplicationController
     @deal_activity.has_documents_nested_attributes = true if params[:deal_activity] && params[:deal_activity][:documents_attributes].present?
 
     setup_doc_user(@deal_activity)
-
+    @current_user = current_user
     respond_to do |format|
       if @deal_activity.save
+        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_activity.deal.broadcast_data)
         format.html do
-          redirect_url = params[:back_to].presence || deal_activity_url(@deal_activity)
-          redirect_to redirect_url, notice: "Deal activity was successfully created."
+          redirect_to deal_activity_url(@deal_activity), notice: "Deal activity was successfully created."
         end
         format.json { render :show, status: :created, location: @deal_activity }
+        format.turbo_stream { render :create }
       else
+        @alert = "Deal Investor could not be created!"
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @deal_activity.errors, status: :unprocessable_entity }
+        @alert += " #{@deal_investor.errors.full_messages.join(', ')}"
+        format.turbo_stream { render :create_failure, alert: @alert }
       end
     end
   end
@@ -74,6 +90,7 @@ class DealActivitiesController < ApplicationController
 
     respond_to do |format|
       if @deal_activity.update(deal_activity_params)
+        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_activity.deal.broadcast_data)
         format.html do
           redirect_url = params[:back_to].presence || deal_activity_url(@deal_activity)
           redirect_to redirect_url, notice: "Deal activity was successfully updated."
@@ -94,7 +111,7 @@ class DealActivitiesController < ApplicationController
     # @deal_activity.create_activity key: 'deal_activity.sequence.updated', owner: current_user
     @deal_activities = DealActivity.templates(@deal_activity.deal).includes(:deal).page params[:page]
     params[:template] = true
-
+    ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_activity.deal.broadcast_data)
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
@@ -128,9 +145,35 @@ class DealActivitiesController < ApplicationController
     end
   end
 
+  def perform_activity_action
+    result = PerformActivityAction.wtf?(params:,
+                                        deal_activity: @deal_activity)
+    if result.success?
+      render json: {
+        message: "Activity was successfully updated.",
+        current_deal_activity_id: result[:deal_investor].current_deal_activity_id,
+        severity_color: severity_color(result[:deal_investor])
+      }, status: :ok
+    else
+      render json: { errors: result["errors"] }, status: :unprocessable_entity
+    end
+  end
+
+  def update_sequences
+    @deal_activities = policy_scope(DealActivity)
+    result = UpdateSequences.call(params:)
+    if result.success?
+      render json: { success: true, message: "Sequences updated successfully" }
+    else
+      render json: { success: false, message: "Failed to update sequences" }, status: :unprocessable_entity
+    end
+  end
+
   # DELETE /deal_activities/1 or /deal_activities/1.json
   def destroy
+    deal = @deal_activity.deal
     @deal_activity.destroy
+    ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, deal.broadcast_data)
 
     redirect_path = if @deal_activity.deal_investor_id.blank?
                       deal_activities_path(deal_id: @deal_activity.deal_id, template: true)

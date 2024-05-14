@@ -1,31 +1,64 @@
-<div class="row scrumboard" id="cancel-row">
-  <div class="col-lg-12 layout-spacing pb-3">
-    <div data-simplebar="init" class="simplebar-scrollable-x">
-      <div class="simplebar-wrapper" style="margin: 0px;">
-        <div class="simplebar-height-auto-observer-wrapper">
-          <div class="simplebar-height-auto-observer"></div>
-        </div>
-        <div class="simplebar-mask">
-          <div class="simplebar-offset" style="right: 0px; bottom: 0px;">
-            <div class="simplebar-content-wrapper" tabindex="0" role="region" aria-label="scrollable content" style="height: auto; overflow: scroll hidden;">
-              <div class="simplebar-content" style="padding: 0px;">
-                <div class="task-list-section">
-                    <% DealActivity.templates(@deal).each do |deal_activity| %>
-                        <%= render "deals/kanban_column", deal_activity: deal_activity, deal: @deal %>
-                    <% end %>
-                </div>
-              </div>
+<% deal ||= @deal %>
+<%= turbo_stream_from("deal_activities_#{deal.id}") %>
+<%= turbo_frame_tag "kanban_#{deal.id}" do %>
+    <% deal ||= @deal %>
+    <% deal_investor ||= @deal_investor || nil %>
+    <% deal_activity ||= @deal_activity || nil %>
+    <% deal_investors ||= @deal_investors || nil %>
+    <% deal_activities = DealActivity.templates(deal) %>
+    <% back_to = params[:back_to] || nil %>
+    <% filter_state = "collapse" %>
+    <% params[:filter] = true  %>
+    <% @q ||=q%>
+    <div class="kanban-filter">
+      <%= render "/layouts/filter", associations: [], state: filter_state, hidden_fields: {kanban: true, turbo:true, deal: deal.id} %>
+    </div>
+    <div class="" data-deal_id="<% @deal.id %>">
+      <div class="action-btn layout-top-spacing mb-7 d-flex align-items-center justify-content-between flex-wrap gap-6">
+        <h5 class="mb-0 fs-5">Deal <%= deal.name %> : Kanban View</h5>
+        <div class="d-flex align-items-center justify-content-end">
+          <form id="kanban-search-form" action="<%= url_for(controller: 'deal_investors', action: 'kanban_search') %>" method="get">
+            <div class="search-box me-3">
+              <input id="kanban-search-input" name="query" type="text" class="form-control" placeholder="Search...">
             </div>
+            <input type="hidden" name="deal" value="<%= deal.id %>">
+          </form>
+          <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Actions
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <% params[:form_type] = "deal_form" %>
+            <% initial_deal_activity_id =  deal_activities.order(:sequence).first.id %>
+            <% deal_investor ||= DealInvestor.new(entity: deal.entity, deal: deal) %>
+            <%= link_to "Add Deal Investor",
+                        new_deal_investor_path(
+                            "deal_investor[deal_id]": deal.id,
+                            "deal_investor[entity_id]": deal.entity_id,
+                            "deal_investor[deal_activity_id]": initial_deal_activity_id,
+                            form_type: params[:form_type]),
+                        { data: { turbo_frame: 'new_deal_investor' },
+                        method: :get, class: "dropdown-item" } if deal_investor %>
+
+            <% deal_activity ||= DealActivity.new(entity: deal.entity, deal: deal) %>
+            <%= link_to "Add Deal Activity",
+                        new_deal_activity_path(
+                            "deal_activity[deal_id]": deal.id,
+                            "deal_activity[entity_id]": deal.entity_id,
+                            form_type: params[:form_type]),
+                        { data: { turbo_frame: 'new_deal_activity' },
+                        method: :get, class: "dropdown-item" } if deal_activity %>
+
           </div>
         </div>
-        <div class="simplebar-placeholder" style="width: 999px; height: 737px;"></div>
       </div>
-      <div class="simplebar-track simplebar-horizontal" style="visibility: visible;">
-        <div class="simplebar-scrollbar" style="width: 866px; display: block; transform: translate3d(0px, 0px, 0px);"></div>
+
+
+      <div>
+        <%= turbo_frame_tag "new_deal_investor" do %>
+        <% end %>
+        <%= turbo_frame_tag "new_deal_activity" do %>
+        <% end %>
       </div>
-      <div class="simplebar-track simplebar-vertical" style="visibility: hidden;">
-        <div class="simplebar-scrollbar" style="height: 0px; display: none;"></div>
-      </div>
+      <%= render "deals/kanban_deal_columns", deal_investors: deal_investors, deal_activities: deal_activities, deal: deal, current_user: current_user%>
     </div>
-  </div>
-</div>
+<% end %>

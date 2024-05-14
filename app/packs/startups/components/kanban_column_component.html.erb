@@ -1,0 +1,15 @@
+<div id="<%= deal_activity.id %>" data-item="item-todo" class="task-list-container" draggable="true" data-action="sorting" data-deal-activity-id="<%= deal_activity.id %>">
+  <div class="connect-sorting connect-sorting-todo" data-sortable="true">
+    <div class="task-container-header">
+      <h6 class="item-head mb-0 fs-4 fw-semibold" data-item-title="Todo"><%= deal_activity.title %></h6>
+    </div>
+    <div class="connect-sorting-content ui-sortable" data-sortable="true">
+      <%= helpers.turbo_frame_tag "deal_investors_#{deal_activity.id}" do %>
+        <% deal_investors.each do |deal_investor| %>
+          <%= render KanbanCardComponent.new(deal_investor, deal, deal_activity, current_user) %>
+        <% end %>
+      <% end %>
+      <div class="drop-zone" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+    </div>
+  </div>
+</div>

@@ -14,10 +14,10 @@ include CurrencyHelper
     fill_in('deal_investor_primary_amount', with: @deal_investor.primary_amount)
     fill_in('deal_investor_secondary_investment', with: @deal_investor.secondary_investment)
     fill_in('deal_investor_pre_money_valuation', with: @deal_investor.pre_money_valuation)
-    
+
     click_on("Save")
   end
-  
+
   Then('a deal investor should be created') do
     @created = DealInvestor.last
     @created.deal_id.should == @deal.id
@@ -26,7 +26,7 @@ include CurrencyHelper
     @created.secondary_investment.should == @deal_investor.secondary_investment
     @created.entity_id.should == @deal.entity_id
   end
-  
+
   Then('I should see the deal investor details on the details page') do
     expect(page).to have_content(@deal.name)
     expect(page).to have_content(@deal_investor.investor_name)
@@ -35,7 +35,7 @@ include CurrencyHelper
     expect(page).to have_content(money_to_currency @deal_investor.pre_money_valuation)
     expect(page).to have_content(@deal_investor.entity_name)
   end
-  
+
   Then('I should see the deal investor in all deal investors page') do
     visit("/deal_investors")
     expect(page).to have_content(@deal.name)
@@ -49,12 +49,12 @@ include CurrencyHelper
 
   Given('there are {string} deal_investors for the deal') do |arg|
     (1..arg.to_i).each do |i|
-      di = FactoryBot.create(:deal_investor, deal: @deal, entity: @deal.entity, 
+      di = FactoryBot.create(:deal_investor, deal: @deal, entity: @deal.entity,
                              status: "Active", investor: Investor.find(i+3))
     end
     @deal.reload
   end
-  
+
   Given('I should see the deal investors in the deal details page') do
     visit(deal_path(@deal))
 
@@ -74,45 +74,45 @@ include CurrencyHelper
       within("#deal_investor_#{deal_investor.id}") do
         deal_investor.deal_activities.each do |act|
           within("#deal_activity_#{act.id}") do
-            expect(page).to have_content(act.completed)
+            expect(page).to have_content(act.completed_status)
           end
-        end        
+        end
       end
     end
   end
-  
+
 
   Given('the deal activites are completed') do
     @deal.deal_activities.update_all(completed: true)
     @deal.reload
   end
-  
+
   Given('I complete an activity') do
     @deal_activity = @deal.deal_activities.where.not(deal_investor_id: nil).first
     within("#deal_activity_#{@deal_activity.id}") do
       find('span', text: 'No').click
       sleep(1)
-      find('button', text: "Toggle Done").click      
+      find('button', text: "Toggle Done").click
     end
     sleep(5)
   end
-  
+
   Then('the activity must be completed') do
     @deal_activity.reload
-    @deal_activity.completed.should == "Yes"
+    @deal_activity.completed_status.should == "Yes"
   end
-  
-  Given('there is a deal investor for the last investor') do 
+
+  Given('there is a deal investor for the last investor') do
     inv = Investor.last
     @deal_investor = FactoryBot.create(:deal_investor, investor: inv, entity_id: inv.entity_id, deal: @deal)
   end
-  
+
 
   Given('there is a deal investor with name {string}') do |name|
     inv = Investor.find_by(investor_name: name)
     @deal_investor = FactoryBot.create(:deal_investor, investor: inv, entity_id: inv.entity_id, deal: @deal)
   end
-  
+
   When('I view the deal investor details') do
     visit(deal_investor_path(@deal_investor))
   end
@@ -130,7 +130,7 @@ include CurrencyHelper
   Then('I {string} see the deal investors in the deal details page') do |should|
     visit(deal_path(@deal))
 
-    
+
     @deal.deal_investors.each do |deal_investor|
         if should == "true"
           within("#deal_investor_#{deal_investor.id}") do
@@ -141,8 +141,6 @@ include CurrencyHelper
           end
         else
           expect(page).not_to have_selector "#deal_investor_#{deal_investor.id}"
-        end      
+        end
     end
   end
-  
-  

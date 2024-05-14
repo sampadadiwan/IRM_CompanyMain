@@ -9,9 +9,11 @@ class GenerateDealActivitiesJob < ApplicationJob
         @deal.create_activities
         @deal.broadcast_message("Deal steps were created, please refresh your page.")
       when "DealInvestor"
+        Rails.logger.info "Generating deal activities for DealInvestor with id: #{id}"
         @deal_investor = DealInvestor.find(id)
         @deal_investor.create_activities
         @deal_investor.deal.broadcast_message("Deal steps were created, please refresh your page.")
+        ActionCable.server.broadcast(EventsChannel::BROADCAST_CHANNEL, @deal_investor.deal.broadcast_data)
       end
     end
   end

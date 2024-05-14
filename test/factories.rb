@@ -595,7 +595,8 @@ FactoryBot.define do
     deal { Deal.all.sample }
     deal_investor { deal.deal_investors.sample }
     by_date { Date.today + rand(10).days }
-    status {}
+    # status is now an enum
+    status { ["Incomplete", "Completed"][rand(2)] }
     completed { [true, false][rand(2)] }
     entity_id { deal.entity_id }
   end
@@ -610,6 +611,13 @@ FactoryBot.define do
     entity { deal.entity }
     company_advisor { Faker::Company.name }
     investor_advisor { Faker::Company.name }
+    tier { ["1", "2", "3"][rand(3)] }
+    fee { rand(1..10) * 1000 }
+    tags { ["Lead", "Co-Investor", "Follow-on"][rand(3)] }
+    deal_lead { Faker::Name.name }
+    source { Faker::Name.name }
+    introduced_by { Faker::Name.name }
+    notes { Faker::Company.catch_phrase }
   end
 
   factory :deal do
