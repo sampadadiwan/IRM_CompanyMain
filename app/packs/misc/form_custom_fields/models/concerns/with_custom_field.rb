@@ -69,6 +69,11 @@ module WithCustomField
     @cached_custom_fields ||= OpenStruct.new(json_fields)
     @cached_custom_fields
   end
+
+  def custom_fields_with_td
+    TemplateDecorator.decorate(custom_fields)
+  end
+
   # rubocop:enable Style/OpenStructUse
 
   def custom_calcs
