@@ -16,11 +16,11 @@ class PerformActivityAction < Trailblazer::Operation
     ctx[:deal_investor] = deal_investor
   end
 
-  def mark_action_done!(ctx, deal_activity:, **)
+  def mark_action_done!(_ctx, deal_activity:, **)
     deal_activity.Complete!
   end
 
-  def update_deal_investor(ctx, params:, deal_investor:, **)
+  def update_deal_investor(_ctx, params:, deal_investor:, **)
     target_deal_activity = DealActivity.find_by(id: params[:target_deal_activity_id])
     deal_investor.deal_activity = target_deal_activity
     deal_investor.save!

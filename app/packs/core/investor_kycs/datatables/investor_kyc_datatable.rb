@@ -2,6 +2,7 @@ class InvestorKycDatatable < ApplicationDatatable
   def view_columns
     @view_columns ||= {
       id: { source: "InvestorKyc.id" },
+      entity_name: { source: "Entity.name" },
       full_name: { source: "InvestorKyc.full_name", orderable: true },
       kyc_type: { source: "InvestorKyc.kyc_type", orderable: true },
       investor_name: { source: "InvestorKyc.investor_name", orderable: true },
@@ -27,6 +28,7 @@ class InvestorKycDatatable < ApplicationDatatable
     records.map do |record|
       {
         id: record.id,
+        entity_name: record.entity.name,
         full_name: record.decorate.full_name,
         kyc_type: record.kyc_type.titleize,
         investor_name: record.decorate.investor_link,

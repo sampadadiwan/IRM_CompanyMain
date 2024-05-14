@@ -776,7 +776,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_10_050456) do
     t.bigint "deal_id", null: false
     t.bigint "deal_investor_id"
     t.date "by_date"
-    t.string "status", limit: 20
+    t.string "status_temp", limit: 20
     t.string "completed", limit: 5, default: "No"
     t.integer "entity_id"
     t.datetime "created_at", null: false
@@ -790,6 +790,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_10_050456) do
     t.boolean "docs_required_for_completion", default: false
     t.boolean "details_required_for_na", default: false
     t.bigint "document_folder_id"
+    t.string "status", default: "incomplete"
     t.index ["deal_id"], name: "index_deal_activities_on_deal_id"
     t.index ["deal_investor_id"], name: "index_deal_activities_on_deal_investor_id"
     t.index ["deleted_at"], name: "index_deal_activities_on_deleted_at"
@@ -842,6 +843,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_10_050456) do
     t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.bigint "deal_activity_id"
+    t.decimal "total_amount_cents", precision: 20, scale: 2
+    t.string "tags"
+    t.string "deal_lead"
+    t.string "source"
+    t.string "introduced_by"
+    t.text "notes"
     t.index ["deal_activity_id"], name: "index_deal_investors_on_deal_activity_id"
     t.index ["deal_id"], name: "index_deal_investors_on_deal_id"
     t.index ["deleted_at"], name: "index_deal_investors_on_deleted_at"
@@ -920,6 +927,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_10_050456) do
 
   create_table "documents", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name"
+    t.string "visible_to", default: "--- []\n"
+    t.string "text", default: "--- []\n"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "entity_id", null: false
@@ -935,26 +944,27 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_10_050456) do
     t.string "owner_tag", limit: 40
     t.boolean "orignal", default: false
     t.bigint "user_id", null: false
-    t.boolean "signature_enabled", default: false
+    t.boolean "signature_enabled", default: false, null: false
     t.bigint "signed_by_id"
     t.bigint "from_template_id"
     t.boolean "signed_by_accept", default: false
+    t.boolean "adhaar_esign_enabled", default: false
+    t.boolean "adhaar_esign_completed", default: false
     t.string "signature_type", limit: 100
-    t.boolean "locked", default: false
+    t.boolean "locked", default: false, null: false
     t.boolean "public_visibility", default: false
     t.string "tag_list", limit: 120
-    t.boolean "template", default: false
-    t.boolean "send_email", default: false, null: false
-    t.boolean "sent_for_esign", default: false
+    t.boolean "template", default: false, null: false
+    t.boolean "send_email", null: false
+    t.boolean "sent_for_esign", default: false, null: false
     t.string "provider_doc_id"
     t.string "esign_status", default: "", null: false
     t.string "display_on_page", limit: 6
     t.bigint "approved_by_id"
-    t.boolean "approved", default: false
+    t.boolean "approved", default: false, null: false
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "sent_for_esign_date"
-    t.integer "flags", default: 0
     t.index ["approved_by_id"], name: "index_documents_on_approved_by_id"
     t.index ["deleted_at"], name: "index_documents_on_deleted_at"
     t.index ["entity_id"], name: "index_documents_on_entity_id"

@@ -24,7 +24,7 @@ class InvestorKycsController < ApplicationController
   def fetch_rows
     authorize(InvestorKyc)
     @q = InvestorKyc.ransack(params[:q])
-    @investor_kycs = policy_scope(@q.result)
+    @investor_kycs = policy_scope(@q.result).includes(:entity, :investor)
     @investor_kycs = apply_scopes(@investor_kycs)
 
     @investor = Investor.find(params[:investor_id]) if params[:investor_id].present?
