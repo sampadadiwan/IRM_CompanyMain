@@ -76,10 +76,25 @@ class ApplicationMailer < ActionMailer::Base
     @current_entity.entity_setting.from_email.presence || ENV.fetch("SUPPORT_EMAIL", nil)
   end
 
+  def attach_custom_notification_documents
+    if @custom_notification && @custom_notification.documents.present?
+      @custom_notification.documents.each do |document|
+        file = document.file
+        # Check for attachments
+        attachments["#{document.name}.#{document.uploaded_file_extension}"] = file.read
+        file.close
+        File.delete(file) if file.instance_of?(::File)
+      end
+    end
+  end
+
   # Convinience method to send mail with simply the subject
   def send_mail(subject: nil)
     # Change the subject if we have a custom notification
-    subject = @custom_notification&.subject || subject
+    if @custom_notification
+      subject = @custom_notification.subject
+      attach_custom_notification_documents
+    end
     # send the email
     mail(from: @from, to: @to, cc: @cc, reply_to: @reply_to, subject:) if @to.present?
   end
