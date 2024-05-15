@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_15_102100) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_15_130724) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -492,7 +492,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_15_102100) do
     t.bigint "investor_kyc_id"
     t.string "investor_name"
     t.bigint "document_folder_id"
-    t.string "unit_type", limit: 15
+    t.string "unit_type", limit: 25
     t.decimal "total_fund_units_quantity", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_allocated_income_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_allocated_expense_cents", precision: 20, scale: 2, default: "0.0"

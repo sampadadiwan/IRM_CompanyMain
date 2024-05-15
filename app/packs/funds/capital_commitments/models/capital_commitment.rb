@@ -71,7 +71,7 @@ class CapitalCommitment < ApplicationRecord
   validates_uniqueness_of :folio_id, scope: :fund_id
 
   validates :commitment_type, length: { maximum: 10 }
-  validates :unit_type, length: { maximum: 15 }
+  validates :unit_type, length: { maximum: 25 }
   validates :folio_currency, length: { maximum: 5 }
   validates :folio_id, :virtual_bank_account, length: { maximum: 20 }
   normalizes :unit_type, with: ->(unit_type) { unit_type.strip.squeeze(" ") }

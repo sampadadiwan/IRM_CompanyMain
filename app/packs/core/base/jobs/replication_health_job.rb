@@ -4,7 +4,6 @@ class ReplicationHealthJob < ApplicationJob
     Chewy.strategy(:sidekiq) do
       # Update the user
       time = Time.zone.now.to_s
-      user = User.joins(:roles).where(roles: { name: 'support' }).first
       user.json_fields ||= {}
       user.json_fields["replication_health"] = time
       user.save!
@@ -19,7 +18,7 @@ class ReplicationHealthJob < ApplicationJob
         user_replica = UserReplica.find(user.id)
         if user_replica.json_fields["replication_health"] == time
           Rails.logger.debug("Replication is Ok")
-          user_replica.json_fields["replication_health_status"] = "Ok"
+          user.json_fields["replication_health_status"] = "Ok"
         else
           msg = "Replication is lagging"
           Rails.logger.debug(msg)
