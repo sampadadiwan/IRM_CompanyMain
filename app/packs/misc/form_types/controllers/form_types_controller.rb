@@ -61,8 +61,11 @@ class FormTypesController < ApplicationController
     begin
       unless current_user.has_cached_role?(:support)
         # We dont allow non support users to update calculations
-        @form_type.form_custom_fields.each do |fcf|
-          allowed = false if fcf.field_type == "Calculation"
+        params["form_type"]["form_custom_fields_attributes"].each_value do |fcf|
+          if fcf["field_type"] == "Calculation"
+            allowed = false
+            @form_type.errors.add(:position, "#{fcf['position']}, calculation cannot be updated by non support user.")
+          end
         end
       end
       saved = allowed ? @form_type.update(form_type_params) : false
