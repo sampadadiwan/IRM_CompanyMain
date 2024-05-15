@@ -1,5 +1,5 @@
 check_replication_status:
-  cron: '*/1 * * * *'
+  cron: '*/5 * * * *'
   class: ReplicationHealthJob
   queue: low
   args: 
