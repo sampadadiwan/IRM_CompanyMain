@@ -1,3 +1,9 @@
+V7.0.97
+#####################################
+ad2cad156 Increased fund unit types to 255
+31c97a37d Fixed update of calculation by non support user in FCF
+933eb4845 Added sidekiq scheduler and replication health job
+
 V7.0.96
 #####################################
 d477c9805 Added custom notifications documents
