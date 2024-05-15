@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_14_114044) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_15_102100) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -1423,7 +1423,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_14_114044) do
   create_table "fund_unit_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
-    t.string "name", limit: 15
+    t.string "name", limit: 25
     t.decimal "management_fee", precision: 24, scale: 8, default: "0.0"
     t.decimal "setup_fee", precision: 24, scale: 8, default: "0.0"
     t.bigint "form_type_id"
@@ -1515,7 +1515,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_14_114044) do
     t.datetime "deleted_at"
     t.bigint "data_room_folder_id"
     t.bigint "document_folder_id"
-    t.string "unit_types", limit: 100
+    t.string "unit_types"
     t.string "units_allocation_engine", limit: 50
     t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "co_invest_call_amount_cents", precision: 20, scale: 2, default: "0.0"
