@@ -1,3 +1,13 @@
+V7.0.96
+#####################################
+d477c9805 Added custom notifications documents
+b3bfbf7dc Added entity_name to kyc grid for investors
+c40a8d015 Added uniqueness contraint for valuation
+64c38247c Abhay/deals kanban (#255)
+0a858fa0c Added TD to custom fields
+39dd833e1 Fixed bug with audit_trail nil check
+2b25dd7ed Fixed documents access rights form
+
 V7.0.91
 #####################################
 50c0310d4 Optimized kyc doc gen, better XL download for PI

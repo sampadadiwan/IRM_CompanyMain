@@ -4,6 +4,7 @@ class ReplicationHealthJob < ApplicationJob
     Chewy.strategy(:sidekiq) do
       # Update the user
       time = Time.zone.now.to_s
+      user = User.joins(:roles).where(roles: { name: 'support' }).first
       user.json_fields ||= {}
       user.json_fields["replication_health"] = time
       user.save!
@@ -13,9 +14,12 @@ class ReplicationHealthJob < ApplicationJob
 
       # Check the replica
       ActiveRecord::Base.connected_to(role: :reading, prevent_writes: true) do
-        if user.reload.json_fields["replication_health"] == time
+        # This is a temp hack, to read from the replica. Once replication is stable, replace with user
+        # Its there cause we read and write from the primary today. See UserReplica however reads from replica (see base class ReplicaRecord)
+        user_replica = UserReplica.find(user.id)
+        if user_replica.json_fields["replication_health"] == time
           Rails.logger.debug("Replication is Ok")
-          user.json_fields["replication_health_status"] = "Ok"
+          user_replica.json_fields["replication_health_status"] = "Ok"
         else
           msg = "Replication is lagging"
           Rails.logger.debug(msg)

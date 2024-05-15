@@ -1,3 +1,6 @@
+require 'sidekiq'
+require 'sidekiq-scheduler'
+
 Sidekiq.configure_server do |config|
   # edits the default capsule
   config.queues = %w[critical high default low chewy]
@@ -8,4 +11,12 @@ Sidekiq.configure_server do |config|
     cap.concurrency = 1
     cap.queues = %w[serial doc_gen]
   end
+
+
+  config.on(:startup) do
+    Sidekiq.schedule = YAML.load_file(File.expand_path('../../sidekiq_scheduler.yml', __FILE__))
+    SidekiqScheduler::Scheduler.instance.reload_schedule!
+  end
 end
+
+

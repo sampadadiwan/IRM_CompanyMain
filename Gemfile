@@ -45,6 +45,8 @@ gem 'rswag-ui'
 gem "redis", "~> 4.0"
 # Background Jobs
 gem "sidekiq"
+gem "sidekiq-scheduler"
+
 
 gem 'devise'
 gem 'devise-api', github: 'nejdetkadir/devise-api', branch: 'main'

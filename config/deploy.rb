@@ -70,7 +70,7 @@ end
 namespace :recovery do
   desc 'Setup the DB and the Replica from the latest backup'
   task :load_db_from_backups do
-    on roles(:recovery), in: :sequence, wait: 5 do
+    on roles(:primary), in: :sequence, wait: 5 do
       within release_path do
         execute :rake, "'db:restore['IRM_#{fetch(:stage)}', 'Primary']' RAILS_ENV=#{fetch(:stage)}"
         execute :rake, "db:create_replica RAILS_ENV=#{fetch(:stage)}"
@@ -79,7 +79,7 @@ namespace :recovery do
   end
 
   task :create_replica do
-    on roles(:recovery), in: :sequence, wait: 5 do
+    on roles(:primary), in: :sequence, wait: 5 do
       within release_path do
         execute :rake, "db:create_replica RAILS_ENV=#{fetch(:stage)}"
       end
