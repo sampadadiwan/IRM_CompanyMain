@@ -47,6 +47,10 @@ class TemplateDecorator < ApplicationDecorator
 
     end
     super
+  rescue StandardError => e
+    msg = "Error in TemplateDecorator #{method_name}: #{e.message}"
+    Rails.logger.error { msg }
+    raise msg
   end
 
   def respond_to_missing? *_args

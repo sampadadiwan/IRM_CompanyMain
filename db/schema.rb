@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_15_130724) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_16_080433) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -45,7 +45,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_15_130724) do
     t.string "folio_id", limit: 20
     t.date "reporting_date"
     t.string "entry_type", limit: 50
-    t.string "name", limit: 100
+    t.string "name", limit: 125
     t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
     t.text "notes"
     t.datetime "created_at", null: false
@@ -1297,7 +1297,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_15_130724) do
   create_table "fund_formulas", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "fund_id"
     t.bigint "entity_id"
-    t.string "name", limit: 50
+    t.string "name", limit: 125
     t.text "description"
     t.text "formula"
     t.datetime "created_at", null: false

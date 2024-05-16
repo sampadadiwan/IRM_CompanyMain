@@ -299,4 +299,18 @@ class CapitalCommitment < ApplicationRecord
   def soa_folder
     get_or_create_folder("SOA", AccessRight.new(entity_id:, access_to_investor_id: investor_id))
   end
+
+  def self.clone_account_entries(id)
+    capital_commitment = CapitalCommitment.find(id)
+    capital_commitment.fund.capital_commitments.where.not(id:).find_each do |cc|
+      capital_commitment.account_entries.each do |ae|
+        dup_ae = ae.dup
+        dup_ae.folio_id = cc.folio_id
+        dup_ae.capital_commitment_id = cc.id
+        dup_ae.amount_cents = 0
+        dup_ae.investor_id = cc.investor_id
+        dup_ae.save
+      end
+    end
+  end
 end

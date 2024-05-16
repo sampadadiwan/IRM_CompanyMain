@@ -11,7 +11,7 @@
             <%= render ToggleCard.new(title: "Funds", css_class: "show_funds") do %>
                 <%= render "entities/vc_dashboard_menus" %>
 
-                <% capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor_kyc) %>
+                <% capital_commitments = policy_scope(CapitalCommitment).includes(:entity, :fund, :investor, :investor_kyc, :fund_ratios) %>
 
                 <% capital_commitments.each do |cc| %>
                     <%= render "/capital_commitments/card", capital_commitment: cc %>
