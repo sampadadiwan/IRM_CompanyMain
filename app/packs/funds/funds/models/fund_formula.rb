@@ -13,7 +13,8 @@ class FundFormula < ApplicationRecord
   scope :accounting, -> { where(rule_for: "Accounting") }
   scope :reporting, -> { where(rule_for: "Reporting") }
 
-  validates :name, :entry_type, length: { maximum: 50 }
+  validates :entry_type, length: { maximum: 50 }
+  validates :name, length: { maximum: 125 }
   validates :rule_type, length: { maximum: 30 }
   validates :commitment_type, length: { maximum: 10 }
   validates :formula, :entry_type, :name, :rule_type, presence: true
