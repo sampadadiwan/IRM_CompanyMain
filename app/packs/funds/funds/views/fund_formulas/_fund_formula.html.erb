@@ -5,6 +5,11 @@
   <td>
     <%= fund_formula.name %>
   </td>
+  <% if params[:debug].present? %>
+    <td>
+      <%= fund_formula.template_field_name %>
+    </td>
+  <% end %>
   <td>
     <%= fund_formula.rule_type %>
     (<%= fund_formula.rule_for %>)

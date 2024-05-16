@@ -102,4 +102,8 @@ class AccountEntry < ApplicationRecord
   def self.ransackable_associations(_auth_object = nil)
     %w[capital_commitment fund investor]
   end
+
+  def template_field_name
+    name.titleize.delete(' :,;').underscore
+  end
 end

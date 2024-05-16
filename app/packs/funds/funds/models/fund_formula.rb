@@ -39,4 +39,8 @@ class FundFormula < ApplicationRecord
     end
     cc
   end
+
+  def template_field_name
+    name.titleize.delete(' :,;').underscore
+  end
 end
