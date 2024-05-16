@@ -71,7 +71,19 @@ module WithCustomField
   end
 
   def custom_fields_with_td
-    TemplateDecorator.decorate(custom_fields)
+    struct = {}
+    # We convert DateField to Date, Money to Money object, so that the template can use it
+    form_type.form_custom_fields.visible.each do |cf|
+      Rails.logger.debug { "cf: #{cf.name} #{cf.field_type} #{json_fields[cf.name]} " }
+      if cf.field_type == 'DateField'
+        struct[cf.name] = Date.parse(json_fields[cf.name]) if json_fields[cf.name].present?
+      elsif cf.field_type == 'Money'
+        struct[cf.name] = Money.new(json_fields[cf.name], currency) if json_fields[cf.name].present?
+      else
+        struct[cf.name] = json_fields[cf.name]
+      end
+    end
+    TemplateDecorator.decorate(OpenStruct.new(struct))
   end
 
   # rubocop:enable Style/OpenStructUse
