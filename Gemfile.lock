@@ -262,8 +262,6 @@ GEM
     capistrano-rvm (0.1.2)
       capistrano (~> 3.0)
       sshkit (~> 1.2)
-    capistrano-solid_queue (0.1.0)
-      capistrano (>= 3.0)
     capistrano3-puma (5.2.0)
       capistrano (~> 3.7)
       capistrano-bundler
@@ -951,7 +949,6 @@ DEPENDENCIES
   capistrano-rails
   capistrano-rvm
   capistrano-sidekiq!
-  capistrano-solid_queue
   capistrano3-puma
   capybara
   capybara-email
