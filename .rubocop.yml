@@ -196,6 +196,7 @@ Metrics/MethodLength:
     - 'app/packs/core/investor_kycs/services/kyc_doc_generator.rb'
     - 'app/packs/funds/capital_commitments/services/soa_generator.rb'
     - 'app/packs/funds/funds/services/fund_doc_generator.rb'
+    - 'app/packs/core/base/decorators/template_decorator.rb'
   
 Metrics/BlockNesting:
   Exclude:

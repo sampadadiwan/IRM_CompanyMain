@@ -30,12 +30,12 @@ class FundFormula < ApplicationRecord
   # Sometimes we just want to sample the commitments to check if all the formulas are ok
   def commitments(sample)
     cc = fund.capital_commitments
-
+    logger.debug "Sampling 1 commitment" if sample
     case commitment_type
     when "Pool"
-      cc = sample ? cc.pool.limit(10) : cc.pool
+      cc = sample ? cc.pool.limit(1) : cc.pool
     when "CoInvest"
-      cc = sample ? cc.co_invest.limit(10) : cc.co_invest
+      cc = sample ? cc.co_invest.limit(1) : cc.co_invest
     end
     cc
   end

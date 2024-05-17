@@ -92,7 +92,7 @@
 
 
             <div class="form-group">
-              <%= file_fields("Upload PAN Card", investor_kyc, form, required: is_investor) %>
+              <%= file_fields("Upload PAN Card", investor_kyc, form, required: is_investor, meta_data: "PAN") %>
               <small class="form-text text-muted">Please upload a clear image of your PAN card</small>
             </div>
 
@@ -173,7 +173,7 @@
 
 
           <div class="form-group">
-              <%= file_fields("Upload Cancelled Cheque / Bank Statement", investor_kyc, form, required: is_investor) %>
+              <%= file_fields("Upload Cancelled Cheque / Bank Statement", investor_kyc, form, required: is_investor, meta_data: "Cheque") %>
               <small class="form-text text-muted"></small>
           </div>
 
