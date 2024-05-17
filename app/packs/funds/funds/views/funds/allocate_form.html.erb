@@ -1,8 +1,8 @@
 <%
   start_date ||= params[:start_date] || Time.zone.today.beginning_of_quarter
   end_date ||= params[:end_date] || Time.zone.today.end_of_quarter
-  run_allocations ||= params[:run_allocations].present?
-  generate_soa ||= params[:generate_soa].present?
+  run_allocations = params[:run_allocations] == "true"
+  generate_soa = params[:generate_soa] == "true"
 %>
 
 <%= render NewCard.new do %>
@@ -78,6 +78,9 @@
             End Date
           </th>
           <th>
+            Run Allocations
+          </th>
+          <th>
             Generate Fund Ratios
           </th>
           <th>
@@ -109,6 +112,9 @@
           </td>
           <td>
             <%= l runs.end_date %>
+          </td>
+          <td>
+            <%= display_boolean runs.run_allocations %>
           </td>
           <td>
             <%= display_boolean runs.fund_ratios %>
