@@ -147,7 +147,7 @@
                         <%= link_to "Allocation Formulas" , fund_formulas_path(fund_id: @fund.id), {class: "dropdown-item" } %>
                     </li>
                     <li>
-                        <%= link_to "Allocate Account Entries", allocate_form_fund_path(@fund), class: "dropdown-item" if policy(@fund).allocate? %>
+                        <%= link_to "Allocate Account Entries", allocate_form_fund_path(@fund, run_allocations: true), class: "dropdown-item" if policy(@fund).allocate? %>
                     </li>
                 </ul>
               </li> 

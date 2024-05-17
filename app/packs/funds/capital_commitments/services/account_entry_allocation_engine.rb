@@ -1,12 +1,13 @@
 class AccountEntryAllocationEngine
   attr_accessor :cached_generated_fields
 
-  def initialize(fund, start_date, end_date, user_id: nil, rule_for: nil,
+  def initialize(fund, start_date, end_date, user_id: nil, rule_for: nil, run_allocations: true,
                  generate_soa: false, template_name: nil, fund_ratios: false, sample: false)
     @fund = fund
     @start_date = start_date
     @end_date = end_date
     @user_id = user_id
+    @run_allocations = run_allocations
     @generate_soa = generate_soa
     @template_name = template_name
     @fund_ratios = fund_ratios
@@ -17,27 +18,29 @@ class AccountEntryAllocationEngine
 
   # There are 3 types of formulas - we need to run them in the sequence defined
   def run_formulas
-    @helper.cleaup_prev_allocation(rule_for: @rule_for)
+    if @run_allocations
+      @helper.cleaup_prev_allocation(rule_for: @rule_for)
 
-    fund_unit_settings = FundUnitSetting.where(fund_id: @fund.id).index_by(&:name)
+      fund_unit_settings = FundUnitSetting.where(fund_id: @fund.id).index_by(&:name)
 
-    formulas = FundFormula.enabled.where(fund_id: @fund.id).order(sequence: :asc)
-    formulas = formulas.where(rule_for: @rule_for) if @rule_for.present?
+      formulas = FundFormula.enabled.where(fund_id: @fund.id).order(sequence: :asc)
+      formulas = formulas.where(rule_for: @rule_for) if @rule_for.present?
 
-    count = formulas.count
+      count = formulas.count
 
-    formulas.each_with_index do |fund_formula, index|
-      AccountEntry.transaction(joinable: false) do
-        run_formula(fund_formula, fund_unit_settings)
+      formulas.each_with_index do |fund_formula, index|
+        AccountEntry.transaction(joinable: false) do
+          run_formula(fund_formula, fund_unit_settings)
+        end
+        @helper.notify("Completed #{index + 1} of #{count}: #{fund_formula.name}", :success, @user_id)
+      rescue Exception => e
+        @helper.notify("Error in Formula #{fund_formula.sequence}: #{fund_formula.name} : #{e.message}", :danger, @user_id)
+        Rails.logger.debug { "Error in #{fund_formula.name} : #{e.message}" }
+        raise e
       end
-      @helper.notify("Completed #{index + 1} of #{count}: #{fund_formula.name}", :success, @user_id)
-    rescue Exception => e
-      @helper.notify("Error in Formula #{fund_formula.sequence}: #{fund_formula.name} : #{e.message}", :danger, @user_id)
-      Rails.logger.debug { "Error in #{fund_formula.name} : #{e.message}" }
-      raise e
-    end
 
-    @helper.notify("Done running all allocations for #{@start_date} - #{@end_date}", :success, @user_id)
+      @helper.notify("Done running all allocations for #{@start_date} - #{@end_date}", :success, @user_id)
+    end
 
     @helper.generate_fund_ratios if @fund_ratios
     @helper.generate_soa(@template_name) if @generate_soa

@@ -34,6 +34,8 @@
                                 msg: } %>
                         <% end %>
 
+                        <%= link_to "Generate SOA", allocate_form_fund_path(@fund, generate_soa: true), class: "dropdown-item" if policy(@fund).allocate? %>
+
                     </div>
                 </div>
             </div>

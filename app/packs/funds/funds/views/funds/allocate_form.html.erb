@@ -1,6 +1,8 @@
 <%
   start_date ||= params[:start_date] || Time.zone.today.beginning_of_quarter
   end_date ||= params[:end_date] || Time.zone.today.end_of_quarter
+  run_allocations ||= params[:run_allocations].present?
+  generate_soa ||= params[:generate_soa].present?
 %>
 
 <%= render NewCard.new do %>
@@ -22,6 +24,12 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :run_allocations, "Run Allocation Formulas" %>
+      <%= form.check_box :run_allocations, class: "form-check-input", name: "run_allocations", value: true, checked: run_allocations %>
+      <small class="text-muted">Check if you want to run all formulas</small>
+    </div>
+
+    <div class="form-group">
       <%= form.label :fund_ratios, "Generate Fund Ratios" %>
       <%= form.check_box :fund_ratios, class: "form-check-input", name: "fund_ratios", value: true %>
       <small class="text-muted">Check if the fund ratios should be generated post the allocation process</small>
@@ -29,7 +37,7 @@
 
     <div class="form-group">
       <%= form.label :generate_soa, "Generate SOA" %>
-      <%= form.check_box :generate_soa, class: "form-check-input", name: "generate_soa", value: true %>
+      <%= form.check_box :generate_soa, class: "form-check-input", name: "generate_soa", value: true, checked: generate_soa %>
       <small class="text-muted">Check if the SOA for each LP should be generated post the allocation process</small>
     </div>
 
