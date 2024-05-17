@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_16_080433) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_17_112139) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -64,7 +64,8 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_16_080433) do
     t.json "json_fields"
     t.bigint "import_upload_id"
     t.datetime "deleted_at"
-    t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative"], name: "idx_account_entries_reporting_date_uniq", unique: true
+    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
+    t.index ["capital_commitment_id", "name", "entry_type", "reporting_date", "cumulative", "generated_deleted"], name: "idx_account_entries_reporting_date_uniq", unique: true
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["deleted_at"], name: "index_account_entries_on_deleted_at"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"

@@ -52,7 +52,9 @@ class ImportAccountEntry < ImportUtil
                     [false, account_entry.errors.full_messages]
                   end
       else
-        ret_val = [false, "Duplicate, already present"] unless account_entry.new_record?
+        msg = "Duplicate, already present"
+        Rails.logger.debug { "#{msg} #{account_entry}" }
+        ret_val = [false, msg] unless account_entry.new_record?
         ret_val = [false, account_entry.errors.full_messages] unless account_entry.valid?
       end
     else
@@ -85,7 +87,7 @@ class ImportAccountEntry < ImportUtil
     super(ctx, import_upload:, **)
 
     begin
-      results = AccountEntry.import @account_entries, on_duplicate_key_ignore: true, validate_uniqueness: true, track_validation_failures: true
+      results = AccountEntry.import @account_entries, validate_uniqueness: true, track_validation_failures: true
     rescue StandardError => e
       import_upload.status = "Failed to import all rows #{e.message}"
       import_upload.error_text = "Failed to import #{e.backtrace}"
