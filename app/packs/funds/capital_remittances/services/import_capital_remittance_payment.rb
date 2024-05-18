@@ -1,6 +1,8 @@
 class ImportCapitalRemittancePayment < ImportUtil
   STANDARD_HEADERS = ["Investor", "Fund", "Capital Call", "Amount", "Currency", "Folio No", "Virtual Bank Account", "Verified", "Reference No", "Payment Date", "Notes", "Update Only"].freeze
 
+  step nil, delete: :create_custom_fields
+
   def initialize(**)
     super(**)
     @capital_remittance_ids = {}
