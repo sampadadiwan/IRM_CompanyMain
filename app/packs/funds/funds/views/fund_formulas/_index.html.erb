@@ -5,7 +5,7 @@
     <span>
       <%= link_to "New Fund Formula", new_fund_formula_path("fund_formula[fund_id]": params[:fund_id]), {class: "btn btn-outline-primary"}  if policy(FundFormula.new(fund_id: params[:fund_id])).create? %>
 
-      <%= link_to "Run All", allocate_form_fund_path(id: params[:fund_id]), 
+      <%= link_to "Run All", allocate_form_fund_path(id: params[:fund_id], run_allocations: true), 
                       class: "btn btn-outline-success"  %> 
 
       <%= link_to "Download", fund_formulas_path(fund_id: params[:fund_id], format: :xlsx), 

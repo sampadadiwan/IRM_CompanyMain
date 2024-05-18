@@ -17,12 +17,13 @@
       <%= form.label :start_date %>
       <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date  %>
     </div>
-
+    
     <div class="form-group">
       <%= form.label :end_date %>
       <%= form.date_field :end_date, class: "form-control", name: "end_date", value: end_date %>
     </div>
 
+    <% if run_allocations %>
     <div class="form-group">
       <%= form.label :run_allocations, "Run Allocation Formulas" %>
       <%= form.check_box :run_allocations, class: "form-check-input", name: "run_allocations", value: true, checked: run_allocations %>
@@ -30,22 +31,23 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :rule_for, "For" %>
+      <% selected = params[:rule_for] || "Accounting" %>
+      <%= form.select :rule_for, ["Accounting", "Reporting"],  {include_blank: "Both", selected: selected}, class: "form-control", name: "rule_for" %>
+    </div>
+
+    <div class="form-group">
       <%= form.label :fund_ratios, "Generate Fund Ratios" %>
       <%= form.check_box :fund_ratios, class: "form-check-input", name: "fund_ratios", value: true %>
       <small class="text-muted">Check if the fund ratios should be generated post the allocation process</small>
     </div>
+    <% end %>
 
     <div class="form-group">
       <%= form.label :generate_soa, "Generate SOA" %>
       <%= form.check_box :generate_soa, class: "form-check-input", name: "generate_soa", value: true, checked: generate_soa %>
       <small class="text-muted">Check if the SOA for each LP should be generated post the allocation process</small>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :rule_for, "For" %>
-      <% selected = params[:rule_for] || "Accounting" %>
-      <%= form.select :rule_for, ["Accounting", "Reporting"],  {include_blank: "Both", selected: selected}, class: "form-control", name: "rule_for" %>
-    </div>
+    </div>    
 
     <div class="form-group">
       <%= form.label :template_name, "SOA Template" %>
