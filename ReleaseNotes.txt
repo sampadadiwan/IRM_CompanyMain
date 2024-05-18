@@ -1,3 +1,12 @@
+V7.1.01
+#####################################
+45a5e1d51 limit-grab-to-kanban (#263)
+0e48dc44a Moved counters computation to CapitalRemittancesCountersJob
+294299d2e Added filtering by tags for funds
+d90094c73 Hide allocation fields when not required
+2705c3cd3 No creation of custom fields for CRP import
+47815dbbc Added ability to run only SOAs
+
 V7.0.97
 #####################################
 ad2cad156 Increased fund unit types to 255

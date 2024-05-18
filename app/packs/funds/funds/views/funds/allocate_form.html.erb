@@ -3,11 +3,12 @@
   end_date ||= params[:end_date] || Time.zone.today.end_of_quarter
   run_allocations = params[:run_allocations] == "true"
   generate_soa = params[:generate_soa] == "true"
+  title = run_allocations ? "Allocate Account Entries For : #{@fund.name}" : "Generate SOA For : #{@fund.name}"
 %>
 
 <%= render NewCard.new do %>
 
-  <%= render FormCard.new(title: "Allocate Account Entries For : #{@fund.name}") do %>
+  <%= render FormCard.new(title:) do %>
 
   <%= form_with(model: @fund, url: allocate_fund_path(@fund), method: :patch) do |form| %>
     
@@ -56,7 +57,7 @@
     </div>
 
     <div class="form-group">
-      <%= form.submit "Allocate Now", {class: "btn btn-outline-primary"}%>
+      <%= form.submit "Submit", {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>
 
