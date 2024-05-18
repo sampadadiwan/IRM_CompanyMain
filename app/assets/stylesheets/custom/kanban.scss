@@ -13,10 +13,6 @@
   z-index: 999;
 }
 
-.card-body {
-  cursor: grab;
-}
-
 .offcanvas {
   z-index: 1050;
   position: fixed;
@@ -65,6 +61,7 @@
 }
 
 .kanban-card {
+  cursor: grab;
   position: relative;
   left: 0px;
   top: 0px;
