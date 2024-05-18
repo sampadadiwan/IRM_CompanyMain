@@ -188,4 +188,8 @@ class ImportUtil < Trailblazer::Operation
   def defer_counter_culture_updates
     false
   end
+
+  def send_notification(message, user_id, level = "success")
+    UserAlert.new(user_id:, message:, level:).broadcast if user_id.present? && message.present?
+  end
 end

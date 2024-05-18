@@ -113,9 +113,12 @@ class ImportCapitalRemittancePayment < ImportUtil
       # We need to reload the capital_remittance, as the capital_remittance_payment counter caches would have updated the capital_remittance
       capital_remittance.verified = @capital_remittance_ids[capital_remittance.id]
       CapitalRemittanceUpdate.call(capital_remittance:)
+      send_notification("Saving remittance payment for Folio: #{capital_remittance.folio_id}", import_upload.user_id)
     end
 
-    CapitalRemittance.counter_culture_fix_counts where: { entity_id: import_upload.entity_id }
+    # We need to run the counter cache update for the capital_remittances
+    # This usually takes a long time.
+    CapitalRemittancesCountersJob.perform_later(import_upload.entity_id, import_upload.user_id)
 
     true
   end
