@@ -33,7 +33,8 @@ class SoaGenerator
     amount_in_words = capital_commitment.fund.currency == "INR" ? capital_commitment.committed_amount.to_i.rupees.humanize : capital_commitment.committed_amount.to_i.to_words.humanize
     remittances = capital_commitment.capital_remittances.includes(:capital_commitment, :capital_call, :fund).order(:remittance_date)
     distribution_payments = capital_commitment.capital_distribution_payments.includes(:capital_commitment, :fund, :capital_distribution).order(:payment_date)
-
+    account_entries = capital_commitment.account_entries.includes(:capital_commitment, :fund)
+    fund_ratios = capital_commitment.fund_ratios.includes(:capital_commitment, :fund)
     {
       date: Time.zone.today.strftime("%d %B %Y"),
       start_date:,
@@ -61,13 +62,13 @@ class SoaGenerator
       distribution_amounts_between_dates: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: start_date..).where(payment_date: ..end_date), capital_commitment.fund.currency)),
       distribution_amounts_before_end_date: TemplateDecorator.decorate(distribution_amounts(distribution_payments.where(payment_date: ..end_date), capital_commitment.fund.currency)),
 
-      account_entries: TemplateDecorator.new(capital_commitment.account_entries),
-      account_entries_between_dates: TemplateDecorator.new(capital_commitment.account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
-      account_entries_before_end_date: TemplateDecorator.new(capital_commitment.account_entries.where(reporting_date: ..end_date)),
+      account_entries: TemplateDecorator.new(account_entries),
+      account_entries_between_dates: TemplateDecorator.new(account_entries.where(reporting_date: start_date..).where(reporting_date: ..end_date)),
+      account_entries_before_end_date: TemplateDecorator.new(account_entries.where(reporting_date: ..end_date)),
 
-      fund_ratios: TemplateDecorator.decorate_collection(capital_commitment.fund_ratios),
-      fund_ratios_between_dates: TemplateDecorator.decorate_collection(capital_commitment.fund_ratios.where(end_date: start_date..).where(end_date: ..end_date)),
-      fund_ratios_before_end_date: TemplateDecorator.decorate_collection(capital_commitment.fund_ratios.where(end_date: ..end_date)),
+      fund_ratios: TemplateDecorator.decorate_collection(fund_ratios),
+      fund_ratios_between_dates: TemplateDecorator.decorate_collection(fund_ratios.where(end_date: start_date..).where(end_date: ..end_date)),
+      fund_ratios_before_end_date: TemplateDecorator.decorate_collection(fund_ratios.where(end_date: ..end_date)),
 
       investor_kyc: TemplateDecorator.decorate(capital_commitment.investor_kyc),
 
