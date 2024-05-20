@@ -27,6 +27,8 @@ class ApplicationController < ActionController::Base
     else
       # Authenticate using normal devise authentication using UI
       super
+      # setup support_user_id if it is present
+      current_user.support_user_id = session[:support_user_id] if current_user
     end
   end
 
@@ -132,6 +134,6 @@ class ApplicationController < ActionController::Base
 
   # This is called by the audited get see config/initializers/audited.rb For support staff that login as a user, we need to return the support user. This is so that any changes made will be logged under the support user and not the user they are importsonating
   def current_user_or_support_user
-    session[:support_user_id].present? ? User.find(session[:support_user_id]) : current_user
+    current_user && current_user.support_user_id.present? ? current_user.support_user : current_user
   end
 end

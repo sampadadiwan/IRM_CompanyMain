@@ -31,7 +31,6 @@ class ApprovalMailer < ApplicationMailer
 
   def approval_reminder
     subject = "Approval required for #{@approval.entity.name}: #{@approval.title}"
-
     # Check for attachments
     @approval.documents.each do |doc|
       # This password protects the file if required and attachs it

@@ -1,9 +1,10 @@
-
 <div id="<%= dom_id approval_response %>">
 
   <% if policy(approval_response).approve? %>
-    <p class="card-text"> Please update your response below using the drop down. </p>
-    
+
+    <% if approval_response.status == "Pending" %>
+      <p class="card-text"> Please update your response below using the drop down. </p>
+    <% end %>
     <%= render "/approval_responses/quick_response", approval_response: approval_response %>
   <% else %>
     <p class="card-text"> 

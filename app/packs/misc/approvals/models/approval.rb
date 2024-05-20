@@ -54,18 +54,35 @@ class Approval < ApplicationRecord
 
   def generate_responses
     investors.each do |inv|
-      ar = ApprovalResponse.find_or_initialize_by(entity_id:, investor_id: inv.id,
-                                                  response_entity_id: inv.investor_entity_id, approval_id: id)
-
-      if ar.new_record?
-        ar.status = "Pending"
-        ar.save
-        logger.debug "Creating pending ApprovalResponse for #{inv.investor_name}"
+      if owner
+        # Generate a response for each investor's folio in the fund
+        owner.approval_for(inv.id).each do |approval_response_owner|
+          create_response(inv, approval_response_owner:)
+        end
       else
-        logger.debug "ApprovalResponse already exists for #{inv.investor_name}"
+        # Generate a response for each investor
+        create_response(inv)
       end
     end
     nil
+  end
+
+  def create_response(inv, approval_response_owner: nil)
+    ar = if approval_response_owner
+           ApprovalResponse.find_or_initialize_by(entity_id:, investor_id: inv.id, owner: approval_response_owner,
+                                                  response_entity_id: inv.investor_entity_id, approval_id: id)
+         else
+           ApprovalResponse.find_or_initialize_by(entity_id:, investor_id: inv.id, owner: nil,
+                                                  response_entity_id: inv.investor_entity_id, approval_id: id)
+         end
+
+    if ar.new_record?
+      ar.status = "Pending"
+      ar.save!
+      logger.debug "Creating pending ApprovalResponse for #{inv.investor_name}"
+    else
+      logger.debug "ApprovalResponse already exists for #{inv.investor_name}"
+    end
   end
 
   def send_notification(reminder: false)

@@ -30,6 +30,7 @@ end
 resources :approvals do
   patch 'approve', on: :member
   patch 'send_reminder', on: :member
+  patch 'close', on: :member
 end
 
 resources :individual_kycs, controller: "investor_kycs", type: "IndividualKyc"

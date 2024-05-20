@@ -24,10 +24,13 @@ class ApprovalResponsesController < ApplicationController
     @approval_response.response_user_id = current_user.id
     @approval_response.entity_id = @approval_response.approval.entity_id
     authorize @approval_response
+    setup_custom_fields(@approval_response)
   end
 
   # GET /approval_responses/1/edit
-  def edit; end
+  def edit
+    setup_custom_fields(@approval_response)
+  end
 
   # POST /approval_responses or /approval_responses.json
   def create
@@ -64,6 +67,7 @@ class ApprovalResponsesController < ApplicationController
 
   def approve
     @approval_response.status = params[:status]
+    @approval_response.properties = params[:approval_response][:properties] if params[:approval_response] && params[:approval_response][:properties].present?
     @approval_response.response_user_id = current_user.id
     if @approval_response.save
       redirect_to approval_url(@approval_response.approval), notice: "Successfully #{params[:status]}."
@@ -116,6 +120,6 @@ class ApprovalResponsesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def approval_response_params
-    params.require(:approval_response).permit(:entity_id, :approval_id, :status, :details, :investor_id)
+    params.require(:approval_response).permit(:entity_id, :approval_id, :status, :details, :investor_id, :owner_type, :owner_id, properties: {})
   end
 end

@@ -13,6 +13,19 @@
     click_on("Save")
   end
 
+  When('I create a new approval {string} for the fund') do |arg1|
+    @approval = FactoryBot.build(:approval)
+    key_values(@approval, arg1)
+
+    visit(fund_path(@fund))
+    click_on("Actions")
+    click_on("Fund Approval")
+    fill_in('approval_title', with: @approval.title)
+    fill_in('approval_due_date', with: @approval.due_date)
+    find('trix-editor').click.set(@approval.agreements_reference.body.to_plain_text)
+    click_on("Save")
+  end
+
   Then('an approval should be created') do
     db_approval = Approval.last
     db_approval.title.should == @approval.title
@@ -262,4 +275,32 @@ end
 
 When('the approval reminder is sent internally') do
   ApprovalReminder.wtf?(approval: @approval).success?.should == true
+end
+
+
+Then('the approval should have the right access rights') do
+  if @approval.owner_type == "Fund"
+    @approval.owner.access_rights.count.should == @approval.access_rights.count
+    @approval.owner.access_rights.each do |ar|
+      puts "Checking Access Right: #{ar}"
+      @approval.access_rights.where(access_to_investor_id: ar.access_to_investor_id).count.should == 1
+    end    
+  else
+    puts "No owner access rights copied"
+    @approval.access_rights.count.should == 0
+  end
+end
+
+Then('the approval should have the right approval responses created') do
+  if @approval.owner
+    @approval.approval_responses.each do |approval_response|
+      # The approval response should be created for the right owner
+      puts "Checking Approval Response Owner: #{approval_response.owner}"
+      @approval.owner.approval_for(approval_response.investor_id).include?(approval_response.owner).should == true
+    end
+  else
+    @approval.approval_responses.each do |approval_response|
+      approval_response.owner.should == nil
+    end
+  end
 end

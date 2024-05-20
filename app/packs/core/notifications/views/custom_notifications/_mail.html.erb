@@ -1,6 +1,16 @@
 <% if @custom_notification.present? %>
-    
-    <%= @custom_notification.body.html_safe %>
+
+    <% if @custom_notification.is_erb %>
+        <!-- Render the ERB content -->
+        <% 
+            content =  CGI.unescapeHTML(@custom_notification.body).gsub("&nbsp;", " ")
+            rendered_content = ERB.new(content).result(binding) 
+        %>
+        <%= raw rendered_content %>
+    <% else %>
+        <!-- Render the HTML content -->
+        <%= @custom_notification.body.html_safe %>
+    <% end %>
     
     <!-- Anything else passed into the block -->
     <% if (block = yield).present? %>

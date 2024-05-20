@@ -10,6 +10,8 @@ module WithCustomField
     belongs_to :form_type, optional: true
     has_many :form_custom_fields, through: :form_type
 
+    before_create :setup_form_type, if: -> { respond_to?(:form_type_id) && form_type.blank? }
+
     # Scope to search for custom fields Useage: InvestorKyc.search_custom_fields("nationality", "Indian")
     scope :search_custom_fields, lambda { |key, value|
       where("JSON_UNQUOTE(json_fields -> ?) = ?", "$.#{key}", value)
@@ -22,6 +24,11 @@ module WithCustomField
       key = args
       Arel::Nodes::InfixOperation.new('->>', parent.table[:json_fields],
                                       Arel::Nodes.build_quoted("$.#{key}"))
+    end
+
+    def setup_form_type
+      # Ensure that the form type is set, if not already present
+      self.form_type ||= entity.form_types.where(name: self.class.name).first
     end
 
     # This is used to create the query for json fields, used in the above ransacker

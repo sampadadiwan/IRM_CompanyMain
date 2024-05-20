@@ -1,13 +1,20 @@
-<%= form_with(model: approval_response, url: approve_approval_response_path(approval_response),
+<%= render NewCard.new do %>
+  <% title = approval_response.owner.blank? ? "Approval Response" : "Approval Response for #{approval_response.owner}" %>
+  <%= render FormCard.new(title:) do %>
+    <%= render "/layouts/alerts" %>
+    <%= form_with(model: approval_response, url: approve_approval_response_path(approval_response),
     method: :patch) do |form| %>
-
-    <div class="row">
-        <div class="form-group col-md-7">
-            <%= form.select :status, approval_response.approval.response_status.split(","),
+      <div>
+        <div class="form-group">
+          <%= form.select :status, approval_response.approval.response_status.split(","),
                 {include_blank: false}, class: "form-control", name: "status" %>
         </div>
-        <div class="form-group col-md-2">
-            <%= form.submit "Submit", {class: "btn btn-outline-primary"}%>
+        <%= custom_form_fields(approval_response, form) %>
+        <div class="form-group">
+          <%= form.submit "Submit", {class: "btn btn-outline-primary"}%>
         </div>
-    </div>
+      </div>
+    <% end %>
+    
+  <% end %>
 <% end %>

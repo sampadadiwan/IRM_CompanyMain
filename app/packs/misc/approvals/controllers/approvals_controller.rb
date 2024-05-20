@@ -1,5 +1,5 @@
 class ApprovalsController < ApplicationController
-  before_action :set_approval, only: %i[show edit update destroy approve send_reminder]
+  before_action :set_approval, only: %i[show edit update destroy approve close send_reminder]
   after_action :verify_policy_scoped, only: %i[]
 
   # GET /approvals or /approvals.json
@@ -70,6 +70,15 @@ class ApprovalsController < ApplicationController
   def approve
     approved = ApprovalApprove.call(approval: @approval).success?
     notice = approved ? "Successfully approved." : "Failed to approve."
+    respond_to do |format|
+      format.html { redirect_to approval_url(@approval), notice: }
+      format.json { head :no_content }
+    end
+  end
+
+  def close
+    closed = ApprovalClose.call(approval: @approval).success?
+    notice = closed ? "Successfully closed." : "Failed to close."
     respond_to do |format|
       format.html { redirect_to approval_url(@approval), notice: }
       format.json { head :no_content }

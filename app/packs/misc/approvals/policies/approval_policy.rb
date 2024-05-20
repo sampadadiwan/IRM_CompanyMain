@@ -45,7 +45,11 @@ class ApprovalPolicy < ApplicationPolicy
     user.has_cached_role?(:approver) && update? && !record.approved
   end
 
+  def close?
+    update?
+  end
+
   def send_reminder?
-    create? && record.due_date >= Time.zone.today && record.approved
+    update? && record.due_date >= Time.zone.today && record.approved
   end
 end

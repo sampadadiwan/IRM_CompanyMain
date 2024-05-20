@@ -79,7 +79,18 @@
         Show Details
       </td>
       <td>
-        <%= display_boolean @custom_notification.show_details%>
+        <%= display_boolean @custom_notification.show_details %>
+      </td>
+    </tr>
+  <% end %>
+
+  <% if @custom_notification.is_erb %>
+    <tr>
+      <td>
+        Dynamic Template
+      </td>
+      <td>
+        <%= display_boolean @custom_notification.is_erb %>
       </td>
     </tr>
   <% end %>
@@ -105,7 +116,7 @@
 
 </table>
 <div>
-  <%= link_to "Edit", edit_custom_notification_path(@custom_notification), {class: "btn btn-outline-primary"} %>   <%= button_to "Delete", @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
+  <%= link_to "Edit", edit_custom_notification_path(@custom_notification), {class: "btn btn-outline-primary"} if policy(@custom_notification).update? %>   <%= button_to "Delete", @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@custom_notification).destroy? %>
 </div>
 
 <% end %>

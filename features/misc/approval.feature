@@ -16,7 +16,27 @@ Scenario Outline: Create new approval
   	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created|
     |  	        |entity_type=Company  |title=Merger Approval    |Approval was successfully created|
 
+Scenario Outline: Create new approval for Fund
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Test Fund;unit_types=Series A,Series B" for the entity
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
+  Given the investors are added to the fund
+  Given there are capital commitments of "folio_committed_amount_cents=100000000" from each investor
+  Given there are capital commitments of "folio_committed_amount_cents=200000000" from each investor
+  When I create a new approval "<approval>" for the fund
+  Then I should see the "<msg>"
+  And an approval should be created
+  And the approval should have the right access rights
+  And the approval should have the right approval responses created
+  And I should see the approval details on the details page
+  And I should see the approval in all approvals page
 
+  Examples:
+  	|user	    |entity               |approval                 |msg	|
+  	|  	        |entity_type=Company  |title=Test approval      |Approval was successfully created|
+    |  	        |entity_type=Company  |title=Merger Approval    |Approval was successfully created|
 
 Scenario Outline: Edit approval
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -103,7 +123,7 @@ Scenario Outline: Provide approval response
 
 
 Scenario Outline: Provide approval response
-  Given there is a user "<user>" for an entity "<entity>"
+  Given there is a user "<user>" for an entity "entity_type=Company;sub_domain=test"
   Given there is an existing investor "" with "1" users
   Given there is an approval "<approval>" for the entity
   Given the investors are added to the approval 
@@ -113,6 +133,6 @@ Scenario Outline: Provide approval response
   And the approval response user is correctly captured
   
   Examples:
-  	|user	    |entity               |approval                 |msg	| status |
-  	|  	        |entity_type=Company  |title=Test approval;response_enabled_email=true      |Approval was successfully created| Approved |
-    |  	        |entity_type=Company  |title=Merger Approval;response_enabled_email=true    |Approval was successfully created| Rejected |
+  	|user	    |approval                 |msg	| status |
+  	|  	      |title=Test approval;response_enabled_email=true      |Approval was successfully created| Approved |
+    |  	      |title=Merger Approval;response_enabled_email=true    |Approval was successfully created| Rejected |

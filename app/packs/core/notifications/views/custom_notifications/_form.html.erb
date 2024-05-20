@@ -59,6 +59,17 @@
         <%= form.text_field :attachment_password, class: "form-control"  %>
         <small class="form-text text-muted">Contact support to set this up, if you are unsure. E.x investor_kyc.PAN </small>
       </div>
+
+    <% end %>
+
+    <% if current_user.has_cached_role?(:support) %>      
+
+      <div class="form-group">
+        <%= form.label :is_erb, "Dynamic Template" %>
+        <%= form.check_box :is_erb, class: "form-check-input"  %>
+        <small class="form-text text-muted">Check if this is a dynamic template</small>
+      </div>
+
     <% end %>
 
     <div class="form-group">

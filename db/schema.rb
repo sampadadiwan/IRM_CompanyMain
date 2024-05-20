@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_05_17_144000) do
+ActiveRecord::Schema[7.1].define(version: 2024_05_19_040236) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -291,10 +291,16 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_17_144000) do
     t.bigint "investor_id", null: false
     t.boolean "notification_sent", default: false
     t.timestamp "deleted_at"
+    t.bigint "form_type_id"
+    t.json "json_fields"
+    t.string "owner_type"
+    t.bigint "owner_id"
     t.index ["approval_id"], name: "index_approval_responses_on_approval_id"
     t.index ["deleted_at"], name: "index_approval_responses_on_deleted_at"
     t.index ["entity_id"], name: "index_approval_responses_on_entity_id"
+    t.index ["form_type_id"], name: "index_approval_responses_on_form_type_id"
     t.index ["investor_id"], name: "index_approval_responses_on_investor_id"
+    t.index ["owner_type", "owner_id"], name: "index_approval_responses_on_owner"
     t.index ["response_entity_id"], name: "index_approval_responses_on_response_entity_id"
     t.index ["response_user_id"], name: "index_approval_responses_on_response_user_id"
   end
@@ -770,6 +776,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_17_144000) do
     t.datetime "deleted_at"
     t.boolean "enabled", default: true
     t.bigint "document_folder_id"
+    t.boolean "is_erb", default: false
     t.index ["deleted_at"], name: "index_custom_notifications_on_deleted_at"
     t.index ["document_folder_id"], name: "index_custom_notifications_on_document_folder_id"
     t.index ["entity_id"], name: "index_custom_notifications_on_entity_id"
@@ -2946,6 +2953,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_05_17_144000) do
   add_foreign_key "approval_responses", "approvals"
   add_foreign_key "approval_responses", "entities"
   add_foreign_key "approval_responses", "entities", column: "response_entity_id"
+  add_foreign_key "approval_responses", "form_types"
   add_foreign_key "approval_responses", "investors"
   add_foreign_key "approval_responses", "users", column: "response_user_id"
   add_foreign_key "approvals", "entities"

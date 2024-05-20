@@ -22,6 +22,16 @@
           {}, class: "form-control select2"  %>
     </div>
 
+    <% if approval_response.approval.owner %>      
+      <div class="form-group">
+        <%= form.label :owner_id, "For" %>
+        <% response_owners = approval_response.approval.owner.approval_for(approval_response.investor_id) %>
+        <%= form.select :owner_id, response_owners.map{|o| [o, o.id]}, {}, class: "form-control"  %>
+      </div>
+    <% end %>
+
+    <%= custom_form_fields(approval_response, form) %>
+
     <div class="form-group">
       <%= form.label :details %>
       <%= form.rich_text_area :details, class: "form-control"  %>

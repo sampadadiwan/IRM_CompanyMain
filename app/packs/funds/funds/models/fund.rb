@@ -6,6 +6,7 @@ class Fund < ApplicationRecord
   include WithDataRoom
   include WithCustomField
   include Trackable.new
+  include WithApprovals
 
   update_index('fund') do
     self if index_record?
@@ -163,5 +164,47 @@ class Fund < ApplicationRecord
 
   def unit_types_list
     unit_types&.split(",")&.map(&:strip)
+  end
+
+  # This method is called when an approval responses are created
+  # It should return the owner for the approval_response, like commitments for a fund, offer for a sale etc
+  def approval_for(investor_id)
+    capital_commitments.where(investor_id:)
+  end
+
+  # This method is called when an approval is closed
+  def post_approval(approval)
+    Rails.logger.debug { "#{approval.title}: post approval" }
+    # 1. Extract the approved amount from the approval responses
+    # 2. Update the commitment capturing the approved amount for a PI
+    # 3. Compute the total approved amount ratio for each commitment
+    total_approved_amount = 0
+    approval.approval_responses.each do |approval_response|
+      approved_amount = approval_response.properties["approved_amount"]&.to_d || 0
+      total_approved_amount += approved_amount
+      approval_response.owner.properties ||= {}
+      approval_response.owner.properties["approvals"] ||= {}
+
+      approval_properties = approval_response.owner.properties["approvals"]
+      approval_properties[approval.id] ||= {}
+      approval_properties[approval.id]["title"] = approval.title
+      approval_properties[approval.id]["approved_amount"] = approved_amount
+      approval_response.owner.save
+    end
+
+    Rails.logger.debug { "Total approved amount: #{total_approved_amount}" }
+
+    capital_commitments.each do |capital_commitment|
+      capital_commitment.properties ||= {}
+      capital_commitment.properties["approvals"] ||= {}
+
+      approval_properties = capital_commitment.properties["approvals"]
+      approval_properties[approval.id] ||= {}
+      approval_properties[approval.id]["approved_amount"] ||= 0
+      approval_properties[approval.id]["approved_percentage"] = total_approved_amount.positive? ? (approval_properties[approval.id]["approved_amount"].to_d / total_approved_amount) : 0
+      capital_commitment.save
+    end
+
+    Rails.logger.debug { "Total approved amount: #{total_approved_amount}" }
   end
 end

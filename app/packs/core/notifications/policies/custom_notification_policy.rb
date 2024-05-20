@@ -10,7 +10,7 @@ class CustomNotificationPolicy < ApplicationPolicy
   end
 
   def show?
-    (user.entity_id == record.entity_id)
+    (user.entity_id == record.entity_id) || support?
   end
 
   def mark_as_read?
@@ -26,7 +26,8 @@ class CustomNotificationPolicy < ApplicationPolicy
   end
 
   def update?
-    create?
+    # Templates can be edited only by support, for security reasons
+    record.is_erb ? support? : create?
   end
 
   def edit?

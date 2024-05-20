@@ -32,7 +32,19 @@
         <%= approval_response.status %>
       </td>
     </tr>
+
+    <tr>
+      <td>
+        Reference
+      </td>
+      <td>
+        <%= link_to approval_response.owner %>
+      </td>
     </tr>
+    
+
+    <%= display_custom_fields(approval_response) if current_user %>
+
     <tr>
       <td>
         Details

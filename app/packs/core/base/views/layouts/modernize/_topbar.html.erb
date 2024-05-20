@@ -38,8 +38,8 @@
           
           <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-center">
             
-            <% if session[:support_user_id].present? %>
-              <span class="blink text-danger fs-6"> Support for: <%= current_user.entity.name %> </span>
+            <% if current_user && current_user.support_user_id.present? %>
+              <span class="blink text-danger fs-5"> Support for: <%= current_user.entity.name %> &nbsp; </span>
             <% end %>
 
             <% if current_user && current_user.advisor_entity_id.present? %>

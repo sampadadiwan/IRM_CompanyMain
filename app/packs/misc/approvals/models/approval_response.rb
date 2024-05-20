@@ -1,7 +1,11 @@
 class ApprovalResponse < ApplicationRecord
   include Trackable.new
+  include WithCustomField
+
   belongs_to :entity
   belongs_to :investor
+  # This is the folio, offer, deal_investor
+  belongs_to :owner, polymorphic: true, optional: true
   belongs_to :response_entity, class_name: "Entity"
   belongs_to :response_user, class_name: "User", optional: true
   belongs_to :approval, touch: true
@@ -13,14 +17,11 @@ class ApprovalResponse < ApplicationRecord
   counter_culture :approval, column_name: proc { |resp| resp.status == 'Rejected' ? 'rejected_count' : nil }
   counter_culture :approval, column_name: proc { |resp| %w[Approved Rejected].include?(resp.status) ? nil : 'pending_count' }
 
-  validate :already_exists, on: :create
+  # validate :already_exists, on: :create
   validates :status, length: { maximum: 50 }
+  validates :investor_id, uniqueness: { scope: %i[approval_id owner_type owner_id], message: "Investor already has a response for this approval" }
 
   scope :pending, -> { where("approval_responses.status=?", "Pending") }
-
-  def already_exists
-    errors.add(:approval, "Approval Response for this investor and approval already exists. Please delete or edit the existing response") if approval.approval_responses.where(response_entity_id:).count.positive?
-  end
 
   validate :no_pending_response, if: proc { |r| !r.new_record? }
   def no_pending_response

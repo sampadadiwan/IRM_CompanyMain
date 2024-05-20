@@ -8,6 +8,14 @@ class User < ApplicationRecord
   acts_as_paranoid
 
   attr_accessor :role_name
+  # This is set from session[:support_user_id] in the ApplicationController.
+  # The session is setup in users_controller#no_password_login when support user logs in as another user
+  attr_accessor :support_user_id
+
+  def support_user
+    @support_user ||= User.find(support_user_id) if support_user_id.present?
+    @support_user
+  end
 
   UPDATABLE_ROLES = %w[company_admin approver signatory].freeze
   CALL_CODES = {

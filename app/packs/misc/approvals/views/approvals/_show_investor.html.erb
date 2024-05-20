@@ -18,7 +18,7 @@
 
     <%= render "approval_responses/index", 
               approval_responses: policy_scope(approval.approval_responses).includes(:investor, :response_entity, :response_user), approval: approval, layout: :card %>
-
+    
   </div>
 </div>
 
