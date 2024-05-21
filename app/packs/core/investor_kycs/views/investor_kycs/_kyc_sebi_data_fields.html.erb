@@ -7,7 +7,11 @@
 </div>
 
 <div class="form-group">
-    <% sub_categories = investor_kyc.investor_kyc_sebi_data.investor_category.present? ? InvestorKycSebiData::INVESTOR_SUB_CATEGORIES.stringify_keys[investor_kyc.investor_kyc_sebi_data.investor_category.to_s.downcase] : "" %>
+    <% sub_categories = if investor_kyc.investor_kyc_sebi_data.investor_category.present?
+                      InvestorKycSebiData::INVESTOR_SUB_CATEGORIES.stringify_keys[investor_kyc.investor_kyc_sebi_data.investor_category.to_s.downcase] || []
+                    else
+                      []
+                    end %>
     <%= form.label :investor_sub_category, "SEBI Investor Sub-Category" %>
     <%= form.select :investor_sub_category, sub_categories, {include_blank: true}, class: 'form-control', id: "sub_category_select" %>
     <small class="text-muted">Select the investor sub category (For SEBI Reports)</small>

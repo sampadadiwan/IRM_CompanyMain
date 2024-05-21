@@ -16,6 +16,11 @@ class InvestorKycSebiData < ApplicationRecord
   def investor_sub_category_heirarchy
     self.investor_category = investor_category&.downcase
     Rails.logger.debug { "investor_category: #{investor_category}, investor_sub_category: #{investor_sub_category}" }
+
+    errors.add(:investor_category, "should be present to enter investor sub-category") if investor_sub_category.present? && investor_category.blank?
+
+    errors.add(:investor_category, "should be one of #{INVESTOR_CATEGORIES.join(', ')}") if investor_category.present? && INVESTOR_CATEGORIES.map { |x| x.to_s.downcase }.exclude?(investor_category)
+
     errors.add(:investor_sub_category, "should be one of #{INVESTOR_SUB_CATEGORIES.stringify_keys[investor_category].join(', ')}") if investor_category.present? && investor_sub_category.present? && INVESTOR_SUB_CATEGORIES.stringify_keys[investor_category]&.exclude?(investor_sub_category)
   end
 end

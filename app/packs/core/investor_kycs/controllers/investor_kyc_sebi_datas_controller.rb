@@ -38,7 +38,7 @@ class InvestorKycSebiDatasController < ApplicationController
   end
 
   def sub_categories
-    @sub_categories = InvestorKycSebiData::INVESTOR_SUB_CATEGORIES.stringify_keys[params[:investor_category]]
+    @sub_categories = InvestorKycSebiData::INVESTOR_SUB_CATEGORIES.stringify_keys[params[:investor_category]] || []
   end
 
   # PATCH/PUT /investor_kyc_sebi_datas/1 or /investor_kyc_sebi_datas/1.json
